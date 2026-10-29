@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Continuação: [destruição por efeito](cards/monster-destruction.md), comando
+0x79 até retirada/inserção, desvio de Banisher e tratamento das quatro fichas.
+
 Seleção de alvo: [Man-Eater Bug](cards/man-eater-bug-targeting.md), com
 comparação de registros de Tribute to The Doomed. Entrada de 16 bits e
 revalidação de chave na posição confirmadas estaticamente.

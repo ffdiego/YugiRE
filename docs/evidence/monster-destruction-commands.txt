@@ -1,0 +1,108 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005b966d JMP 0x00404b40
+SELECTED EXCERPT: dispatch instruction and state removal/insertion helpers.
+FUNCTION FUN_00570790 @00570790
+ CALLER 00409139 FUN_00408ee0
+ CALLER 004095ba FUN_00409240
+ CALLER 004098d4 FUN_00409700
+ CALLER 005730fe null
+ CALLER 00405e93 FUN_00405cb0
+ CALLER 00405acc FUN_004059c0
+ CALLER 0040774e FUN_004074f0
+ CALLER 004054a0 FUN_00405190
+ CALLER 00404e8b FUN_00404b40
+ CALLER 004066ee FUN_004063e0
+
+void FUN_00570790(uint param_1,uint param_2,int param_3)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  undefined4 *puVar3;
+  
+  uVar2 = FUN_005700f0(param_1,param_2,param_3);
+  switch(param_2) {
+  case 0xb:
+    FUN_0056cfc0(param_1,param_3);
+    FUN_0056d190(param_1);
+    return;
+  case 0xc:
+    FUN_00569200(param_1,uVar2);
+    return;
+  case 0xd:
+    FUN_005690d0(param_1,uVar2);
+    return;
+  case 0xe:
+    FUN_0056c870(param_1,uVar2);
+    FUN_0056ad50(uVar2);
+    return;
+  case 0xf:
+    FUN_0056cd20(param_1,uVar2);
+    return;
+  }
+  iVar1 = param_2 + param_3;
+  if (iVar1 < 0xb) {
+    FUN_0056a490(param_1,iVar1);
+    FUN_005bddf0(&DAT_00a55d74 + iVar1 * 0x24 + (param_1 & 1) * 0x351,0x90);
+    DAT_00a577f0 = DAT_00a577f0 &
+                   ~(1 << ((char)param_1 * '\x10' + (char)param_2 + (char)param_3 & 0x1fU));
+    return;
+  }
+  if ((param_1 != (DAT_00a57840 & 1)) ||
+     (puVar3 = &DAT_00a57864, param_2 != ((DAT_00a57840 & 0xffff) >> 8 & 7))) {
+    puVar3 = &DAT_00a578f4;
+  }
+  FUN_005bddf0(puVar3,0x90);
+  return;
+}
+
+
+FUNCTION FUN_005708d0 @005708d0
+ CALLER 0040917e FUN_00408ee0
+ CALLER 00409634 FUN_00409240
+ CALLER 004098fc FUN_00409700
+ CALLER 00573129 null
+ CALLER 00407784 FUN_004074f0
+ CALLER 004054cb FUN_00405190
+ CALLER 00404ec1 FUN_00404b40
+ CALLER 00406718 FUN_004063e0
+
+void FUN_005708d0(uint param_1,int param_2,uint param_3,uint *param_4)
+
+{
+  switch(param_2) {
+  case 0xb:
+    FUN_0056cef0(param_1,param_4);
+    break;
+  case 0xc:
+    FUN_00568d10(param_1,param_4);
+    break;
+  case 0xd:
+    if (param_3 == 0) {
+      FUN_00568c00(param_1,param_4);
+    }
+    else {
+      FUN_00568ca0();
+    }
+    break;
+  case 0xe:
+    FUN_0056c590(param_4);
+    break;
+  case 0xf:
+    FUN_0056c640(param_4,param_3);
+    break;
+  default:
+    if (param_2 < 5) {
+      FUN_00568610(param_1,param_2,param_4,param_3 >> 8 & 0xff,param_3 & 0xff);
+    }
+    else {
+      FUN_005686e0(param_1,param_2,param_4,param_3 & 0xff);
+    }
+  }
+  if ((((*param_4 >> 0xc & 1) == param_1) && (param_2 != 0xe)) && (10 < param_2)) {
+    FUN_0056ad50(param_4);
+  }
+  return;
+}
+
+

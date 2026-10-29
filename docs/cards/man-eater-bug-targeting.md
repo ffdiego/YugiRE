@@ -96,8 +96,10 @@ O helper lê os bytes da entrada antes de verificar o contador e não verifica
 limites de posição no trecho examinado. Isso descreve um caminho para pedidos
 internos válidos, não um parser defensivo para dados arbitrários.
 
-Esta etapa fecha seleção, codificação e revalidação do alvo. Não fecha a
-sequência inteira de destruição, custos, animação ou interações de proteção.
+Esta etapa fecha seleção, codificação e revalidação do alvo. A continuação em
+[destruição por efeito](monster-destruction.md) segue a emissão e o consumidor
+até retirada da origem e listas de destino, incluindo Banisher e fichas.
+Custos, animação e a matriz completa de interações continuam abertos.
 
 ## Evidências e reprodução
 

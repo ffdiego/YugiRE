@@ -1,0 +1,210 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "command": {
+    "opcode": "0x79",
+    "normalized": 79,
+    "stub": "0x5b966d",
+    "handler": "0x404b40"
+  },
+  "instruction_checks": [
+    {
+      "va": "0x5769f7",
+      "file_offset": "0x1769f7",
+      "bytes": "6853040000e8bf2fffff83c40485c07408"
+    },
+    {
+      "va": "0x576a08",
+      "file_offset": "0x176a08",
+      "bytes": "814c242c00000100"
+    },
+    {
+      "va": "0x576c5e",
+      "file_offset": "0x176c5e",
+      "bytes": "83fa0e7518f7c3000001007410c74424300f000000c744243800000000"
+    },
+    {
+      "va": "0x576d29",
+      "file_offset": "0x176d29",
+      "bytes": "8b4c24388b542428f7d91bc95383e1f183c110f7da1bd25181e2008000005083ca7952"
+    },
+    {
+      "va": "0x404e8b",
+      "file_offset": "0x4e8b",
+      "bytes": "e800b91600"
+    },
+    {
+      "va": "0x404ec1",
+      "file_offset": "0x4ec1",
+      "bytes": "e80aba1600"
+    },
+    {
+      "va": "0x576f07",
+      "file_offset": "0x176f07",
+      "bytes": "e874030000"
+    },
+    {
+      "va": "0x570848",
+      "file_offset": "0x170848",
+      "bytes": "e8a3d50400"
+    },
+    {
+      "va": "0x56c615",
+      "file_offset": "0x16c615",
+      "bytes": "e8a6afffff"
+    },
+    {
+      "va": "0x56c6d6",
+      "file_offset": "0x16c6d6",
+      "bytes": "e8e5aeffff"
+    }
+  ],
+  "cards": [
+    {
+      "index": 741,
+      "resource_id": 1107,
+      "name": "Banisher of the Light",
+      "description": "As long as this card remains face-up on the field, any card sent to the Graveyard is removed from play."
+    },
+    {
+      "index": 726,
+      "resource_id": 1160,
+      "name": "Premature Burial",
+      "description": "Pay 800 Life Points. Select 1 Monster Card from your Graveyard, Special Summon it on the field in face-up Attack Position, and equip it with this card. When this card is destroyed, the monster is also destroyed."
+    },
+    {
+      "index": 1061,
+      "resource_id": 1095,
+      "name": "Call Of The Haunted",
+      "description": "Select 1 monster from your Graveyard and Special Summon it in face-up Attack Position. When this card is destroyed or removed from the field, the summoned monster is destroyed. If the summoned monster is destroyed, this card is also destroyed.  "
+    },
+    {
+      "index": 1111,
+      "resource_id": 1920,
+      "name": "Insect Monster Token",
+      "description": ""
+    },
+    {
+      "index": 1112,
+      "resource_id": 1921,
+      "name": "Kuriboh Token",
+      "description": ""
+    },
+    {
+      "index": 1113,
+      "resource_id": 1922,
+      "name": "Sheep Token",
+      "description": ""
+    },
+    {
+      "index": 1114,
+      "resource_id": 1923,
+      "name": "Slime Token",
+      "description": ""
+    }
+  ],
+  "model_case_count": 64,
+  "model_samples": [
+    {
+      "side": 0,
+      "owner": 0,
+      "banisher_counted": false,
+      "resource_id": 500,
+      "mode": 1,
+      "region": 14,
+      "append": true,
+      "destination_block": 0
+    },
+    {
+      "side": 0,
+      "owner": 0,
+      "banisher_counted": false,
+      "resource_id": 1920,
+      "mode": 16,
+      "region": 15,
+      "append": false,
+      "destination_block": 0
+    },
+    {
+      "side": 0,
+      "owner": 0,
+      "banisher_counted": true,
+      "resource_id": 500,
+      "mode": 16,
+      "region": 15,
+      "append": true,
+      "destination_block": 0
+    },
+    {
+      "side": 0,
+      "owner": 0,
+      "banisher_counted": true,
+      "resource_id": 1920,
+      "mode": 16,
+      "region": 15,
+      "append": false,
+      "destination_block": 0
+    },
+    {
+      "side": 0,
+      "owner": 1,
+      "banisher_counted": false,
+      "resource_id": 500,
+      "mode": 1,
+      "region": 14,
+      "append": true,
+      "destination_block": 1
+    },
+    {
+      "side": 0,
+      "owner": 1,
+      "banisher_counted": true,
+      "resource_id": 500,
+      "mode": 16,
+      "region": 15,
+      "append": true,
+      "destination_block": 1
+    },
+    {
+      "side": 1,
+      "owner": 0,
+      "banisher_counted": false,
+      "resource_id": 500,
+      "mode": 1,
+      "region": 14,
+      "append": true,
+      "destination_block": 0
+    },
+    {
+      "side": 1,
+      "owner": 0,
+      "banisher_counted": true,
+      "resource_id": 500,
+      "mode": 16,
+      "region": 15,
+      "append": true,
+      "destination_block": 0
+    },
+    {
+      "side": 1,
+      "owner": 1,
+      "banisher_counted": false,
+      "resource_id": 500,
+      "mode": 1,
+      "region": 14,
+      "append": true,
+      "destination_block": 1
+    },
+    {
+      "side": 1,
+      "owner": 1,
+      "banisher_counted": true,
+      "resource_id": 500,
+      "mode": 16,
+      "region": 15,
+      "append": true,
+      "destination_block": 1
+    }
+  ],
+  "method": "Static bytes/resources and transcribed destination model; no native execution.",
+  "limits": "No complete eligibility, dependency, event or rendering emulation; region names corroborated by local card text."
+}

@@ -1,12 +1,21 @@
 # Efeitos das cartas — questão em aberto
 
+## Destruição por efeito até a escrita de estado
+
+A [continuação de Man-Eater Bug](cards/monster-destruction.md) liga
+0x00576960/0x00576B30 ao comando 0x79 e seu consumidor 0x00404B40.
+A origem de campo é zerada e a palavra da carta é inserida na região 14;
+o desvio de Banisher seleciona a 15. As quatro fichas de ID 0x780–0x783
+não são inseridas nessas listas. Dependências têm preparação e emissão
+recursivas separadas; regras completas de proteção e ordem de eventos pendentes.
+
 ## Seleção e revalidação de alvo
 
 [Man-Eater Bug](cards/man-eater-bug-targeting.md) usa o slot +8 para filtrar
 candidatos e compartilha resolução/+20 com Tribute to The Doomed. O alvo em
 pedido+6 contém lado, posição e chave de oito bits. 0x00583470 confere contador,
 ocupação e chave na posição antes de a resolução emitir a operação por máscara.
-Custos de Tribute e sequência completa de destruição continuam abertos.
+Custos de Tribute e matriz completa de interações continuam abertos.
 
 ## Comparação estática: Sparks e Ookazi
 

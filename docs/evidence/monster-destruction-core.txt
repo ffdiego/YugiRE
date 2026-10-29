@@ -1,0 +1,86 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00576960 @00576960
+ CALLER 00577b78 FUN_00577b30
+ CALLER 00577829 FUN_005777f0
+ CALLER 0057694e FUN_00576940
+ CALLER 005778cf FUN_005778b0
+ CALLER 00577a1d FUN_005779d0
+ CALLER 00577a7f FUN_00577a60
+ CALLER 00577972 FUN_00577950
+ CALLER 00577a4e FUN_00577a40
+ CALLER 00577aae FUN_00577aa0
+ CALLER 00577bd5 FUN_00577b90
+ CALLER 00577938 FUN_005778f0
+ CALLER 00577c3d FUN_00577bf0
+ CALLER 00577c7f FUN_00577c60
+
+uint FUN_00576960(undefined2 *param_1,uint param_2,int param_3,uint param_4)
+
+{
+  uint uVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  int iVar5;
+  uint uVar6;
+  int iVar7;
+  int iVar8;
+  int local_8;
+  
+  uVar1 = DAT_00a577f0;
+  uVar6 = param_4 >> 1 & 1;
+  uVar2 = FUN_00576300(param_1,param_2,uVar6);
+  param_2 = 0;
+  do {
+    iVar8 = 0;
+    uVar4 = DAT_00a577f8._2_1_ & 1 ^ param_2;
+    iVar7 = uVar4 << 4;
+    do {
+      if ((uVar2 & 1 << ((byte)iVar7 & 0x1f)) != 0) {
+        FUN_00576360(uVar4,iVar8,uVar6,*param_1);
+      }
+      iVar8 = iVar8 + 1;
+      iVar7 = iVar7 + 1;
+    } while (iVar8 < 0xb);
+    param_2 = param_2 + 1;
+  } while ((int)param_2 < 2);
+  if (DAT_00a577f0 != 0) {
+    FUN_00598d70();
+    iVar7 = FUN_005699c0(0x453);
+    if (iVar7 != 0) {
+      param_4 = param_4 | 0x10000;
+    }
+    FUN_00579810();
+    DAT_00a577f0 = uVar2 | uVar1;
+    param_2 = 0;
+    do {
+      iVar7 = 0;
+      uVar6 = DAT_00a577f8._2_1_ & 1 ^ param_2;
+      local_8 = uVar6 << 4;
+      iVar8 = 0;
+      do {
+        uVar4 = 1 << ((byte)local_8 & 0x1f);
+        if ((uVar2 & uVar4) != 0) {
+          iVar3 = FUN_00567ad0(*(ushort *)((int)&DAT_00a55d74 + (uVar6 & 1) * 0xd44 + iVar8) & 0xfff
+                              );
+          iVar5 = param_3;
+          if ((iVar3 != 0) && ((param_3 == 0xb || (param_3 == 0xd)))) {
+            iVar5 = 0xc;
+          }
+          DAT_00a577f0 = DAT_00a577f0 & ~uVar4;
+          FUN_00576b30(uVar6,iVar7,iVar5,
+                       (((ushort)param_1[1] >> 0xe & 1 ^ (ushort)param_1[1] & 1) != uVar6) + param_4
+                       ,*param_1);
+        }
+        iVar7 = iVar7 + 1;
+        iVar8 = iVar8 + 0x90;
+        local_8 = local_8 + 1;
+      } while (iVar8 < 0x5a1);
+      param_2 = param_2 + 1;
+    } while ((int)param_2 < 2);
+    FUN_00579890();
+  }
+  return DAT_00a577f0 ^ uVar1;
+}
+
+

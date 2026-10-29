@@ -1,5 +1,19 @@
 # Catálogo inicial de funções
 
+## Destruição por efeito e listas de destino
+
+Endereços VA; nomes descritivos somente na documentação. Ver
+[fluxo e limites](cards/monster-destruction.md).
+
+| VA | Papel confirmado no caminho examinado |
+|---|---|
+| 0x00576960 | Filtra máscara, prepara dependências e coordena movimentação |
+| 0x00576B30 | Emite operação por posição; caso de Man-Eater Bug usa 0x79 |
+| 0x00577280 | Pode emitir operações para posições vinculadas |
+| 0x00404B40 | Consome 0x79; estado 2 retira origem e insere destino |
+| 0x0056C590 | Acrescenta palavra à lista da região 14, excluindo quatro IDs de ficha |
+| 0x0056C640 | Acrescenta palavra à lista da região 15, com a mesma exclusão |
+
 ## Décima rodada: seleção de callback e criação de vínculo
 
 Nomes sugeridos somente na documentação; nenhum aplicado ao banco.

@@ -1,0 +1,334 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005769f2 CALL 0x00598d70
+INS 005769f7 PUSH 0x453
+INS 005769fc CALL 0x005699c0
+INS 00576a01 ADD ESP,0x4
+INS 00576a04 TEST EAX,EAX
+INS 00576a06 JZ 0x00576a10
+INS 00576a08 OR dword ptr [ESP + 0x2c],0x10000
+INS 00576a10 CALL 0x00579810
+INS 00576a15 MOV EAX,dword ptr [ESP + 0x10]
+INS 00576c5e CMP EDX,0xe
+INS 00576c61 JNZ 0x00576c7b
+INS 00576c63 TEST EBX,0x10000
+INS 00576c69 JZ 0x00576c7b
+INS 00576c6b MOV dword ptr [ESP + 0x30],0xf
+INS 00576c73 MOV dword ptr [ESP + 0x38],0x0
+INS 00576c7b MOV EDX,dword ptr [ESP + 0x18]
+FUNCTION FUN_00577280 @00577280
+ CALLER 00576f07 FUN_00576b30
+ CALLER 00578228 FUN_00578030
+ CALLER 00578009 FUN_00577cf0
+
+void FUN_00577280(uint *param_1,uint param_2,int param_3,uint param_4)
+
+{
+  int iVar1;
+  uint uVar2;
+  ushort uVar3;
+  short sVar4;
+  undefined2 uVar5;
+  int iVar6;
+  uint uVar7;
+  uint uVar8;
+  uint uVar9;
+  uint *puVar10;
+  byte *pbVar11;
+  uint uVar12;
+  int iVar13;
+  
+  uVar9 = *param_1 & 0xfff;
+  uVar12 = param_4 >> 1 & 1;
+  param_4 = param_4 & 0x10000;
+  uVar3 = FUN_004022e0(uVar9);
+  if (0x488 < uVar3) {
+    if ((((uVar3 == 0x5f8) || ((0x604 < uVar3 && (uVar3 < 0x609)))) && (iVar13 = 5, 4 < param_3)) &&
+       (iVar6 = FUN_005699a0(param_2,0x5f8), iVar6 != 0)) {
+      iVar6 = 0x2d0;
+      do {
+        if ((((iVar13 != param_3) &&
+             (iVar1 = iVar6 + (param_2 & 1) * 0xd44,
+             (*(uint *)((int)&DAT_00a55d74 + iVar1) & 0xfff) != 0)) &&
+            (((&DAT_00a55d7a)[iVar1] & 2) != 0)) &&
+           ((uVar3 = FUN_004022e0(*(ushort *)((int)&DAT_00a55d74 + iVar1) & 0xfff), uVar3 == 0x5f8
+            || ((0x604 < uVar3 && (uVar3 < 0x609)))))) {
+          uVar5 = FUN_00402460(0x5f8);
+          FUN_00576b30(param_2,iVar13,0xe,param_4 + 2,uVar5);
+        }
+        iVar6 = iVar6 + 0x90;
+        iVar13 = iVar13 + 1;
+      } while (iVar6 < 0x5a0);
+    }
+    goto LAB_0057755e;
+  }
+  if (uVar3 == 0x488) {
+    if (uVar12 == 0) goto LAB_0057755e;
+  }
+  else {
+    if (uVar3 == 0x3ba) {
+      if (uVar12 != 0) {
+        uVar8 = 0;
+        do {
+          iVar13 = 0;
+          puVar10 = &DAT_00a55d74 + (uVar8 & 1) * 0x351;
+          do {
+            if (((*(byte *)((int)puVar10 + 6) & 2) != 0) &&
+               (iVar6 = FUN_005675f0((ushort)*puVar10 & 0xfff), iVar6 != 0)) {
+              uVar7 = *puVar10;
+              iVar6 = FUN_0056b440(uVar7 & 0xfff,(uVar7 >> 0xc & 1) + (uVar7 >> 0x18 & 0x7f) * 2);
+              if (iVar6 == 0) {
+                FUN_00576b30(uVar8,iVar13,0xe,(uVar8 != param_2) + 2 + param_4,uVar9);
+              }
+            }
+            iVar13 = iVar13 + 1;
+            puVar10 = puVar10 + 0x24;
+          } while (iVar13 < 5);
+          uVar8 = uVar8 + 1;
+        } while ((int)uVar8 < 2);
+      }
+      goto LAB_0057755e;
+    }
+    if (uVar3 != 0x447) goto LAB_0057755e;
+  }
+  uVar8 = param_2 & 1;
+  if (((((&DAT_00a55d74)[uVar8 * 0x351 + param_3 * 0x24] & 0xfff) == uVar9) &&
+      (((uint)((byte)(&DAT_00a55d7a)[param_3 * 0x90 + uVar8 * 0xd44] >> 1) &
+        ~((uint)(&DAT_00a55e00)[uVar8 * 0x351 + param_3 * 0x24] >> 5) &
+        ~((uint)(&DAT_00a55e00)[uVar8 * 0x351 + param_3 * 0x24] >> 1) & 1) != 0)) &&
+     (uVar8 = FUN_0056b250(param_2,param_3), (short)uVar8 != -1)) {
+    uVar7 = uVar8 >> 8 & 0xff;
+    if ((((&DAT_00a55d74)[(uVar8 & 1) * 0x351 + uVar7 * 0x24] & 0xfff) != 0) &&
+       (((&DAT_00a55d7a)[uVar7 * 0x90 + (uVar8 & 1) * 0xd44] & 2) != 0)) {
+      FUN_00576b30(uVar8 & 0xff,uVar7,0xe,((uVar8 & 0xff) != param_2) + 2 + param_4,uVar9);
+    }
+  }
+LAB_0057755e:
+  if (((param_3 == 10) && (((&DAT_00a5631a)[(param_2 & 1) * 0xd44] & 2) != 0)) &&
+     ((uVar8 = -param_2 - 1 & 1, (*(uint *)(&DAT_00a56314 + uVar8 * 0x6a2) & 0xfff) == 0 ||
+      ((((&DAT_00a5631a)[uVar8 * 0xd44] & 2) == 0 ||
+       ((DAT_00a577f0 & 1 << ((char)param_2 * -0x10 + 0x1aU & 0x1f)) != 0)))))) {
+    FUN_005b9170(-(uint)(param_2 != 0) & 0x8000 | 0x11,0,0,0);
+    sVar4 = FUN_004022e0(uVar9);
+    if (sVar4 == 0x14d) {
+      uVar9 = 0;
+      do {
+        iVar13 = 5;
+        pbVar11 = (byte *)(&DAT_00a5604a + (uVar9 & 1) * 0x6a2);
+        do {
+          sVar4 = FUN_004022e0(*(ushort *)(pbVar11 + -6) & 0xfff);
+          if (((sVar4 == 0x58f) && ((*pbVar11 & 2) != 0)) && ((pbVar11[0x86] & 0x20) == 0)) {
+            uVar5 = FUN_00402460(0x58f);
+            FUN_00576b30(uVar9,iVar13,0xe,(uVar9 != param_2) + 2 + param_4,uVar5);
+          }
+          iVar13 = iVar13 + 1;
+          pbVar11 = pbVar11 + 0x90;
+        } while (iVar13 < 0xb);
+        uVar9 = uVar9 + 1;
+      } while ((int)uVar9 < 2);
+    }
+  }
+  param_2 = 0;
+  if (*(short *)((int)param_1 + 10) != 0) {
+    puVar10 = param_1 + 0x13;
+    do {
+      uVar8 = (uint)(byte)puVar10[-0x10];
+      uVar9 = (uint)(byte)(puVar10[-0x10] >> 8);
+      switch((byte)*puVar10 & 0xf) {
+      case 1:
+      case 4:
+      case 5:
+        uVar2 = (&DAT_00a55d74)[uVar9 * 0x24 + (uVar8 & 1) * 0x351] & 0xfff;
+joined_r0x0057777d:
+        if (uVar2 != 0) {
+LAB_0057777f:
+          FUN_00576b30(uVar8,uVar9,0xe,param_4 + 2,0);
+        }
+        break;
+      case 2:
+      case 6:
+      case 7:
+      case 8:
+        uVar7 = uVar8 & 1;
+        uVar3 = FUN_004022e0(*(ushort *)(&DAT_00a55d74 + uVar7 * 0x351 + uVar9 * 0x24) & 0xfff);
+        if (uVar3 < 0x4dd) {
+          if (uVar3 == 0x4dc) {
+LAB_005777c0:
+            if ((*(byte *)(&DAT_00a55e00 + uVar7 * 0x351 + uVar9 * 0x24) & 0x20) == 0)
+            goto LAB_0057777f;
+          }
+          else if (((uVar3 == 0x15c) || (uVar3 == 0x447)) &&
+                  (uVar2 = uVar12,
+                  (*(byte *)(&DAT_00a55e00 + uVar7 * 0x351 + uVar9 * 0x24) & 0x20) == 0))
+          goto joined_r0x0057777d;
+        }
+        else if (uVar3 == 0x589) goto LAB_005777c0;
+      }
+      param_2 = param_2 + 1;
+      puVar10 = (uint *)((int)puVar10 + 2);
+    } while ((int)param_2 < (int)(uint)*(ushort *)((int)param_1 + 10));
+  }
+  return;
+}
+
+
+FUNCTION FUN_005699c0 @005699c0
+ CALLER 00575b00 FUN_00575af0
+ CALLER 0057eb5f FUN_0057eac0
+ CALLER 0057eb82 FUN_0057eac0
+ CALLER 0057ebf8 FUN_0057eac0
+ CALLER 005769fc FUN_00576960
+ CALLER 00598d96 FUN_00598d70
+ CALLER 00598cec FUN_00598c40
+ CALLER 0056a18a FUN_0056a140
+ CALLER 0056b974 FUN_0056b7d0
+ CALLER 0056b9d2 FUN_0056b7d0
+ CALLER 0056ba08 FUN_0056b7d0
+ CALLER 0056bac4 FUN_0056b7d0
+ CALLER 0056bb72 FUN_0056b7d0
+ CALLER 0056e49d FUN_0056dd30
+ CALLER 0056e4e0 FUN_0056dd30
+ CALLER 0056d526 FUN_0056d520
+ CALLER 005754a9 FUN_005754a0
+ CALLER 00575413 FUN_00575210
+ CALLER 00578bec FUN_00578bb0
+ CALLER 0059d046 FUN_0059d040
+ CALLER 0057e70d FUN_0057e650
+ CALLER 00570b1b FUN_00570af0
+ CALLER 00570b2f FUN_00570af0
+ CALLER 00599870 FUN_00599850
+ CALLER 005aaf81 FUN_005aae00
+ CALLER 0056a299 FUN_0056a290
+ CALLER 00570a2b FUN_00570a10
+ CALLER 005ab2b2 FUN_005ab280
+ CALLER 005ab422 FUN_005ab3f0
+ CALLER 005ab589 FUN_005ab580
+ CALLER 0056b668 FUN_0056b5a0
+ CALLER 0056b68f FUN_0056b5a0
+ CALLER 005741a9 null
+ CALLER 005687ac FUN_005686e0
+ CALLER 005af8de FUN_005af600
+ CALLER 0056c55b FUN_0056c510
+ CALLER 005adb41 FUN_005adb10
+ CALLER 0040e4c2 null
+ CALLER 005bce05 FUN_005bce00
+ CALLER 0057f139 FUN_0057f130
+ CALLER 00583751 null
+ CALLER 00579347 FUN_00579330
+ CALLER 005ada51 FUN_005ada20
+ CALLER 0058039a FUN_00580360
+ CALLER 005780bc FUN_00578030
+ CALLER 0056d41a FUN_0056d3f0
+ CALLER 0056d43f FUN_0056d3f0
+ CALLER 00578d0f FUN_00578d00
+ CALLER 00583405 FUN_00583400
+ CALLER 005ad79b FUN_005ad740
+ CALLER 0056a209 FUN_0056a200
+ CALLER 005a4576 null
+ CALLER 005a04e6 FUN_005a02a0
+ CALLER 005aac5c FUN_005aab90
+ CALLER 00570ab2 FUN_00570a70
+ CALLER 005a1f84 null
+ CALLER 005a58c1 null
+ CALLER 005a1edd null
+ CALLER 005a3403 null
+ CALLER 005a34b9 null
+ CALLER 00577d71 FUN_00577cf0
+ CALLER 005abb39 null
+ CALLER 005ae277 FUN_005ae270
+ CALLER 005acae8 FUN_005ac990
+ CALLER 0059cbc9 FUN_0059cbb0
+ CALLER 0059cd7c FUN_0059cd70
+ CALLER 005bb882 FUN_005bb720
+ CALLER 005ae634 FUN_005ae3e0
+ CALLER 00570ac5 FUN_00570ac0
+ CALLER 005ae395 FUN_005ae390
+ CALLER 00581485 null
+ CALLER 00589b80 FUN_00589b70
+ CALLER 00582685 null
+ CALLER 00582f07 null
+ CALLER 005b6cbd null
+
+int FUN_005699c0(undefined4 param_1)
+
+{
+  int iVar1;
+  int iVar2;
+  
+  iVar1 = FUN_00569820(1,param_1,0xffffffff);
+  iVar2 = FUN_00569820(0,param_1,0xffffffff);
+  return iVar2 + iVar1;
+}
+
+
+FUNCTION FUN_005675c0 @005675c0
+ CALLER 0056d4e3 FUN_0056d460
+ CALLER 0056d4ea FUN_0056d460
+ CALLER 0056d4f5 FUN_0056d460
+ CALLER 005691a1 FUN_005690d0
+ CALLER 005692d1 FUN_00569200
+ CALLER 0056d0d5 FUN_0056d010
+ CALLER 0059c3ec FUN_00599e30
+ CALLER 00571ea7 null
+ CALLER 00569066 FUN_00569010
+ CALLER 0056909e FUN_00569010
+ CALLER 0056cf9b FUN_0056cef0
+ CALLER 00568d56 FUN_00568d10
+ CALLER 0056c615 FUN_0056c590
+ CALLER 0056c6d6 FUN_0056c640
+ CALLER 00572535 null
+ CALLER 00568651 FUN_00568610
+ CALLER 005726e6 null
+ CALLER 00568c4d FUN_00568c00
+ CALLER 00568c8b FUN_00568c00
+ CALLER 00568ce6 FUN_00568ca0
+ CALLER 005711d5 null
+ CALLER 005712ce null
+ CALLER 00571519 null
+ CALLER 0057171f null
+ CALLER 005717b4 null
+ CALLER 00409005 FUN_00408ee0
+ CALLER 0056872b FUN_005686e0
+ CALLER 004093b1 FUN_00409240
+ CALLER 004097c7 FUN_00409700
+ CALLER 00573e15 null
+ CALLER 00573f1e null
+ CALLER 00408df1 FUN_00408d30
+ CALLER 005733a0 null
+ CALLER 0056d1f7 FUN_0056d190
+ CALLER 0057353c null
+ CALLER 0057368a null
+ CALLER 0056c791 FUN_0056c720
+ CALLER 0056cb2b FUN_0056cac0
+ CALLER 00572bcf null
+ CALLER 00572f42 null
+ CALLER 00573071 null
+ CALLER 0056c816 FUN_0056c7c0
+ CALLER 0056c842 FUN_0056c7c0
+ CALLER 0056c9b7 FUN_0056c910
+ CALLER 00572876 null
+ CALLER 00573206 null
+ CALLER 0056cce0 FUN_0056cc50
+ CALLER 0056ca9c FUN_0056c9e0
+ CALLER 00405e29 FUN_00405cb0
+ CALLER 00405a62 FUN_004059c0
+ CALLER 004076b8 FUN_004074f0
+ CALLER 00405421 FUN_00405190
+ CALLER 0040584c FUN_00405620
+ CALLER 00404db9 FUN_00404b40
+ CALLER 004065e2 FUN_004063e0
+ CALLER 005adbb2 FUN_005adb10
+ CALLER 00599b85 FUN_005999d0
+ CALLER 005adacd FUN_005ada20
+ CALLER 0058aa72 null
+ CALLER 00568ffc FUN_00568fa0
+ CALLER 0058c736 null
+ CALLER 005add22 FUN_005adbf0
+
+void FUN_005675c0(undefined4 *param_1,undefined4 *param_2)
+
+{
+  *param_1 = *param_2;
+  return;
+}
+
+

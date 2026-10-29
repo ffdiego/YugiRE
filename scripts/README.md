@@ -1,5 +1,11 @@
 # Reprodução
 
+Destruição e listas de destino:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_monster_destruction.py`.
+Esperado: oito linhas `PASS`, preservação dos originais/banco, dispatcher,
+identidades e modelo de 64 casos em `docs/evidence/monster-destruction-validation.json`.
+Ver [continuação de Man-Eater Bug](../docs/cards/monster-destruction.md).
+
 Seleção de alvo de Man-Eater Bug:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_monster_targets.py`.
 Esperado: sete linhas `PASS`, identidades e modelo de revalidação em
