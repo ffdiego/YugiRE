@@ -1,5 +1,12 @@
 # Efeitos das cartas — questão em aberto
 
+Décima rodada: [registro por ID e callback de Parasite Paracide](13-parasite-creation.md)
+confirmados. A busca 0x0059DBE0 converte índice→ID e localiza registro de
+24 bytes; 0x0059DEB0 chama o ponteiro em +4. Para ID 762, chega a 0x005875A0,
+cujo ramo examinado cria associação de tipo 13. Há evidência de callbacks
+selecionados por carta nesse caminho; não foi provada arquitetura exclusiva
+para todos os efeitos nem reconstruído o comportamento completo dessa carta.
+
 Oitava rodada: o caminho de Parasite Paracide chega a uma limpeza concreta
 da associação via comando 0x4D. [Produtor, fila, dispatcher e duas escritas](11-command-4d.md).
 A existência desse dispatcher de comandos não resolve a arquitetura geral

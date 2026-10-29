@@ -13,6 +13,13 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+Décima rodada concluída: [produtor de tipo 13](13-parasite-creation.md)
+ligado ao ID 762 via busca 0x0059DBE0 e callback 0x0059DEB0. Registro 150
+da tabela de passo 24 aponta para 0x005875A0, que em um ramo emite
+inserção em categoria 11 do bloco oposto com tipo 13 e chave de `pedido+4`.
+Próximo passo: seguir o preenchimento desse campo e comprovar sua relação
+com a chave extraída da palavra de estado pela busca 0x00570BE0.
+
 Nona rodada concluída: [inserção e chave](12-association-insertion.md).
 0x0056AB60 insere índice/metadados e incrementa o contador; opcode 0x86
 chega a esse helper. 0x005687D0 usa a mesma chave para procurar palavras

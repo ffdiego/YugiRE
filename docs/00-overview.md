@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Décima rodada: [callback e criação de Parasite Paracide](13-parasite-creation.md).
+Registro de ID 762 seleciona 0x005875A0; um ramo produz associação de tipo 13
+via comando 0x86. Origem da chave no pedido ainda pendente.
+
 Nona rodada: [inserção genérica e resolução da chave](12-association-insertion.md).
 Comando 0x86 e incremento de contador confirmados; criação específica do
 tipo 13 de Parasite Paracide permanece aberta.

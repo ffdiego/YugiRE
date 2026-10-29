@@ -33,6 +33,12 @@ Revalida a rodada anterior e o despacho/instruções de 0x86, gerando
 `docs/evidence/association-insertion-validation.json`. Ver
 [inserção e resolução da chave](../docs/12-association-insertion.md).
 
+Para o produtor de Parasite Paracide:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_parasite_creation.py`.
+Esperado: três linhas `PASS`. O script valida também o registro de ID 762,
+a busca e a chamada indireta; gera `docs/evidence/parasite-creation-validation.json`.
+Ver [callback e produtor](../docs/13-parasite-creation.md).
+
 Executar em PowerShell 7, a partir de `Z:\YugiRE`:
 
 ```powershell

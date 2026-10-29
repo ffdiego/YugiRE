@@ -1,5 +1,18 @@
 # Catálogo inicial de funções
 
+## Décima rodada: seleção de callback e criação de vínculo
+
+Nomes sugeridos somente na documentação; nenhum aplicado ao banco.
+
+| VA | Sugestão | Comportamento confirmado |
+|---|---|---|
+| 0x0059DBE0 | buscar_registro_por_indice_carta | Converte por CARD_ID e busca tabela de passo 24 em 0x005ED0A8 |
+| 0x0059DEB0 | chamar_callback_primario_carta | Usa primeiro uint16 do pedido e chama ponteiro em registro+4 |
+| 0x005875A0 | callback_parasite_paracide | Registrado para ID 762; um ramo produz associação de tipo 13 no outro bloco |
+
+Evidências, restrições dos ramos e assinatura ainda parcial do pedido em
+[criação de Parasite Paracide](13-parasite-creation.md).
+
 Endereços VA, image base `0x00400000`. Nenhum nome ou tipo persistente foi alterado no Ghidra.
 
 | Endereço | Nome original | Nome sugerido na documentação | Evidência/comportamento | Xrefs | Confiança |

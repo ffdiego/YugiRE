@@ -1,0 +1,60 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005bb98b MOV word ptr [0x00a55c8a],0x80
+INS 005bb994 MOV EAX,[0x00a55c88]
+INS 005bb999 JMP 0x005bb7b0
+INS 005bb99e MOV CX,word ptr [ESI]
+INS 005bb9a1 PUSH ECX
+INS 005bb9a2 CALL 0x0059dbe0
+INS 005bb9a7 ADD ESP,0x4
+INS 005bb9aa TEST EAX,EAX
+INS 005bb9ac JL 0x005bba2a
+INS 005bb9ae LEA EDX,[EAX + EAX*0x2]
+INS 005bb9b1 MOV EAX,dword ptr [EDX*0x8 + 0x5ed0ac]
+INS 005bb9b8 TEST EAX,EAX
+INS 005bb9ba JZ 0x005bba2a
+INS 005bb9bc PUSH ESI
+INS 005bb9bd CALL 0x005ba2d0
+INS 005bb9c2 ADD ESP,0x4
+INS 005bb9c5 TEST EAX,EAX
+INS 005bb9c7 JZ 0x005bba1b
+INS 005bb9c9 MOV AX,[0x00a55c80]
+INS 005bb9cf PUSH 0x14
+INS 005bb9d1 LEA ECX,[ESP + 0x1a]
+INS 005bb9d5 PUSH ESI
+INS 005bb9d6 PUSH ECX
+INS 005bb9d7 MOV word ptr [ESP + 0x20],AX
+INS 005bb9dc CALL 0x005bde10
+INS 005bb9e1 ADD ESP,0xc
+INS 005bb9e4 CMP word ptr [0x00a55c80],0x1
+INS 005bb9ec MOV EAX,0x16
+INS 005bb9f1 JBE 0x005bba08
+INS 005bb9f3 PUSH 0x14
+INS 005bb9f5 LEA EDX,[ESP + 0x2e]
+INS 005bb9f9 PUSH EDI
+INS 005bb9fa PUSH EDX
+INS 005bb9fb CALL 0x005bde10
+INS 005bba00 ADD ESP,0xc
+INS 005bba03 MOV EAX,0x2a
+INS 005bba08 PUSH EAX
+INS 005bba09 LEA EAX,[ESP + 0x18]
+FUNCTION FUN_0059deb0 @0059deb0
+ CALLER 005bba78 FUN_005bb720
+
+undefined2 FUN_0059deb0(undefined2 *param_1,undefined4 param_2)
+
+{
+  undefined2 uVar1;
+  int iVar2;
+  
+  iVar2 = FUN_0059dbe0(*param_1);
+  if (iVar2 < 0) {
+    return 0;
+  }
+  if ((code *)(&PTR_LAB_005ed0ac)[iVar2 * 6] == (code *)0x0) {
+    return 0;
+  }
+  uVar1 = (*(code *)(&PTR_LAB_005ed0ac)[iVar2 * 6])(param_1,param_2);
+  return uVar1;
+}
+
+

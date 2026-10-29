@@ -1,0 +1,109 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 0059dbe0 MOV EAX,dword ptr [ESP + 0x4]
+INS 0059dbe4 PUSH EBX
+INS 0059dbe5 PUSH ESI
+INS 0059dbe6 PUSH EDI
+INS 0059dbe7 PUSH EAX
+INS 0059dbe8 XOR ESI,ESI
+INS 0059dbea MOV EDI,0x1ba
+INS 0059dbef CALL 0x004022e0
+INS 0059dbf4 MOV EBX,EAX
+INS 0059dbf6 MOV EAX,[0x005ee560]
+INS 0059dbfb ADD ESP,0x4
+INS 0059dbfe CMP BX,AX
+INS 0059dc01 MOV ECX,0xdd
+INS 0059dc06 JZ 0x0059dc3f
+INS 0059dc08 CMP ESI,EDI
+INS 0059dc0a JZ 0x0059dc45
+INS 0059dc0c CMP BX,AX
+INS 0059dc0f JBE 0x0059dc13
+INS 0059dc11 MOV ESI,ECX
+INS 0059dc13 JNC 0x0059dc17
+INS 0059dc15 MOV EDI,ECX
+INS 0059dc17 LEA EAX,[EDI + ESI*0x1]
+INS 0059dc1a CDQ
+INS 0059dc1b SUB EAX,EDX
+INS 0059dc1d SAR EAX,0x1
+INS 0059dc1f CMP EAX,ECX
+INS 0059dc21 JNZ 0x0059dc25
+INS 0059dc23 MOV ESI,EDI
+INS 0059dc25 LEA EAX,[EDI + ESI*0x1]
+INS 0059dc28 CDQ
+INS 0059dc29 SUB EAX,EDX
+INS 0059dc2b MOV ECX,EAX
+INS 0059dc2d SAR ECX,0x1
+INS 0059dc2f LEA EDX,[ECX + ECX*0x2]
+INS 0059dc32 MOV AX,word ptr [EDX*0x8 + 0x5ed0a8]
+INS 0059dc3a CMP BX,AX
+INS 0059dc3d JNZ 0x0059dc08
+INS 0059dc3f POP EDI
+INS 0059dc40 POP ESI
+INS 0059dc41 MOV EAX,ECX
+INS 0059dc43 POP EBX
+INS 0059dc44 RET
+INS 0059dc45 POP EDI
+INS 0059dc46 POP ESI
+INS 0059dc47 OR EAX,0xffffffff
+INS 0059dc4a POP EBX
+INS 0059dc4b RET
+INS 0059dc50 PUSH ESI
+INS 0059dc51 MOV ESI,dword ptr [ESP + 0x8]
+INS 0059dc55 TEST ESI,ESI
+INS 0059dc57 JZ 0x0059dc98
+INS 0059dc59 MOV AX,word ptr [ESI]
+INS 0059dc5c PUSH EAX
+INS 0059dc5d CALL 0x0059dbe0
+INS 0059dc62 ADD ESP,0x4
+FUNCTION FUN_0059dbe0 @0059dbe0
+ CALLER 0059dd9d FUN_0059dd90
+ CALLER 0059dc5d FUN_0059dc50
+ CALLER 0059dcb3 FUN_0059dca0
+ CALLER 0059dd33 FUN_0059dd20
+ CALLER 005b3d8f FUN_005b3d80
+ CALLER 005bb160 FUN_005bafd0
+ CALLER 0059de39 FUN_0059de30
+ CALLER 005bb285 FUN_005bafd0
+ CALLER 0059de79 FUN_0059de70
+ CALLER 005bb9a2 FUN_005bb720
+ CALLER 0059deb9 FUN_0059deb0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+int FUN_0059dbe0(undefined4 param_1)
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  uint uVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  
+  iVar5 = 0;
+  iVar6 = 0x1ba;
+  uVar1 = FUN_004022e0(param_1);
+  uVar2 = (ushort)_DAT_005ee560;
+  iVar4 = 0xdd;
+  uVar3 = _DAT_005ee560;
+  while( true ) {
+    if (uVar1 == uVar2) {
+      return iVar4;
+    }
+    if (iVar5 == iVar6) break;
+    if ((ushort)uVar3 < uVar1) {
+      iVar5 = iVar4;
+    }
+    if (uVar1 < (ushort)uVar3) {
+      iVar6 = iVar4;
+    }
+    if ((iVar6 + iVar5) / 2 == iVar4) {
+      iVar5 = iVar6;
+    }
+    iVar4 = (iVar6 + iVar5) / 2;
+    uVar2 = *(ushort *)(iVar4 * 0x18 + 0x5ed0a8);
+    uVar3 = (uint)uVar2;
+  }
+  return -1;
+}
+
+
