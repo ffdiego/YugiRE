@@ -1,0 +1,52 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "instruction_checks": [
+    {
+      "va": "0x58767a",
+      "file_offset": "0x18767a",
+      "bytes": "83e97e0f8412010000"
+    },
+    {
+      "va": "0x5876a3",
+      "file_offset": "0x1876a3",
+      "bytes": "e88814feff"
+    },
+    {
+      "va": "0x5876e7",
+      "file_offset": "0x1876e7",
+      "bytes": "66b87f00"
+    },
+    {
+      "va": "0x58771b",
+      "file_offset": "0x18771b",
+      "bytes": "e8f01bffff"
+    },
+    {
+      "va": "0x58778d",
+      "file_offset": "0x18778d",
+      "bytes": "66b87e00"
+    },
+    {
+      "va": "0x5877a6",
+      "file_offset": "0x1877a6",
+      "bytes": "83ca0d"
+    },
+    {
+      "va": "0x5877c2",
+      "file_offset": "0x1877c2",
+      "bytes": "68e8030000"
+    },
+    {
+      "va": "0x5877cb",
+      "file_offset": "0x1877cb",
+      "bytes": "e8100dffff"
+    }
+  ],
+  "states": {
+    "0x80": "resolve key and choose path",
+    "0x7f": "prepare placement",
+    "0x7e": "append position metadata and emit command 0x43"
+  },
+  "observed_value": 1000,
+  "limitation": "Command 0x43 consumer and placement completion not traced; no runtime execution."
+}

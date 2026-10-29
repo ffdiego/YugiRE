@@ -13,6 +13,12 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+Décima segunda rodada concluída: [segundo ramo](16-parasite-continuation.md)
+localiza palavra de estado pela chave e pode preparar colocação, em três
+estados. Emite metadados tipo 13 na lista de uma posição e comando 0x43 com
+1000. Próximo passo: confirmar consumidor de 0x43, destinatário e operação;
+não rotular como dano antes disso. Colocação final e evento inicial pendentes.
+
 Décima primeira rodada concluída: [chave do pedido](14-parasite-request-key.md).
 0x005BA310 grava o argumento-chave em bits 5–12 de +4 de registros de
 20 bytes; transferência e seleção para o callback identificadas. O chamador

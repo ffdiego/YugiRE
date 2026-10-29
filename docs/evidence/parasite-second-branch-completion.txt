@@ -1,0 +1,96 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT DISASSEMBLY 00587795
+INS 00587795 MOV CL,byte ptr [ESI + 0x2]
+INS 00587798 XOR EDX,EDX
+INS 0058779a AND CL,0x1
+INS 0058779d AND EAX,0x1
+INS 005877a0 MOVZX CX,CL
+INS 005877a4 MOV DH,CL
+INS 005877a6 OR EDX,0xd
+INS 005877a9 PUSH EDX
+INS 005877aa XOR EDX,EDX
+INS 005877ac MOV DH,byte ptr [0x00a55c8c]
+INS 005877b2 OR EDX,ECX
+INS 005877b4 MOV CX,word ptr [ESI]
+INS 005877b7 PUSH EDX
+INS 005877b8 PUSH ECX
+INS 005877b9 PUSH EAX
+INS 005877ba CALL 0x005747e0
+INS 005877bf MOV DL,byte ptr [ESI + 0x2]
+INS 005877c2 PUSH 0x3e8
+INS 005877c7 AND EDX,0x1
+INS 005877ca PUSH EDX
+INS 005877cb CALL 0x005784e0
+INS 005877d0 ADD ESP,0x18
+INS 005877d3 POP EDI
+INS 005877d4 POP ESI
+FUNCTION FUN_00569f70 @00569f70
+ CALLER 0056a049 FUN_0056a030
+ CALLER 0056a0a3 FUN_0056a030
+ CALLER 0056a00d FUN_0056a000
+ CALLER 00596de2 null
+ CALLER 00596ed2 null
+ CALLER 00596f93 null
+
+bool FUN_00569f70(uint param_1,int param_2)
+
+{
+  int iVar1;
+  
+  if (((&DAT_00a55d74)[param_2 * 0x24 + (param_1 & 1) * 0x351] & 0xfff) == 0) {
+    iVar1 = FUN_00569e10(param_1,param_2);
+    return iVar1 != 0;
+  }
+  return false;
+}
+
+
+FUNCTION FUN_005ada20 @005ada20
+ CALLER 00587d2a null
+ CALLER 0058ad76 null
+ CALLER 0058b2cd null
+ CALLER 0058b307 null
+ CALLER 0058b527 null
+ CALLER 0058be49 null
+ CALLER 0058c77e null
+ CALLER 0058e739 null
+ CALLER 005a4bd8 null
+ CALLER 005a7422 null
+ CALLER 005a7902 null
+ CALLER 0058e375 FUN_0058e2f0
+
+void FUN_005ada20(uint param_1,uint *param_2,uint param_3,uint param_4,uint param_5,int param_6,
+                 uint param_7)
+
+{
+  uint uVar1;
+  int iVar2;
+  uint uVar3;
+  
+  uVar1 = FUN_0056a030(param_1);
+  if (-1 < (int)uVar1) {
+    if (param_6 == -1) {
+      param_6 = 0;
+      uVar1 = param_7;
+    }
+    iVar2 = FUN_005699c0(0x47f);
+    uVar3 = 1;
+    if (iVar2 == 0) {
+      uVar3 = param_3;
+    }
+    DAT_00a55080 = (param_7 * 0x10 + param_6) * 0x40 & 0x3fc0 ^
+                   ((DAT_00a55080 & 0xffffff00 ^ param_1 & 1) & 0xf1ff003f | (uVar1 & 0x1f) << 1) |
+                   ((param_4 & 1) << 1 | uVar3 & 1) << 0xe;
+    DAT_00a55084 = *param_2 & 0xfff | DAT_00a55084 & 0xffff0000;
+    FUN_005675c0(&DAT_00a55088,param_2);
+    DAT_00a5508e = DAT_00a5508e & 0xfff3 | 0x10;
+    DAT_00a5508c = (ushort)(param_5 | 4);
+    if (param_6 == 0xe) {
+      DAT_00a5508c = (ushort)CONCAT31((int3)(param_5 >> 8),(char)(param_5 | 4)) | 0x20;
+    }
+    FUN_005ad8c0();
+  }
+  return;
+}
+
+

@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Décima segunda rodada: [continuação de Parasite Paracide](16-parasite-continuation.md).
+Estados 0x80/0x7F/0x7E, busca pela chave e emissão de comando 0x43 com valor
+1000 identificados; semântica de pontos de vida ainda não comprovada.
+
 Décima primeira rodada: [transporte da chave no pedido](14-parasite-request-key.md).
 Bits 5–12 de pedido+4 preservam a chave; código 0x365F seleciona outro ramo
 do callback, distinguindo a busca posterior da criação inicial.

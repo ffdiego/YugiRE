@@ -1,5 +1,10 @@
 # Reprodução
 
+Validação da continuação de Parasite Paracide:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_parasite_continuation.py`
+(a partir da raiz do workspace). Esperado: cinco linhas `PASS`. Ver
+[análise dos estados](../docs/16-parasite-continuation.md).
+
 ## Consultas no Fedora
 
 Com JDK 25 completo e Ghidra 12.2 extraído em
