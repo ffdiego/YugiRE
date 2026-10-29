@@ -20,9 +20,10 @@ garantia de identidade ilimitada; reutilização e colisões não foram estudada
 Na tabela em `0x005ED0A8`, ambas têm **0x00585C80 em +4** e
 **0x005944D0 em +20**. O slot +8 difere: **0x0057A930** para Man-Eater
 Bug e **0x0057A9A0** para Tribute. Man-Eater Bug tem +12/+16 nulos;
-Tribute tem 0x00580D20/0x0057D7C0. Esses últimos dois callbacks não foram
-analisados nesta etapa; o descarte mencionado na descrição de Tribute não
-foi reconstruído. Identidades e descrições foram lidas dos recursos locais.
+Tribute tem 0x00580D20/0x0057D7C0. A continuação em
+[custo de Tribute](tribute-discard-cost.md) reconstrói esses dois callbacks
+e identifica 0x00583510 como caso Big Shield Gardna. Identidades e descrições
+foram lidas dos recursos locais.
 
 ## Candidatos e gravação
 
@@ -99,7 +100,8 @@ internos válidos, não um parser defensivo para dados arbitrários.
 Esta etapa fecha seleção, codificação e revalidação do alvo. A continuação em
 [destruição por efeito](monster-destruction.md) segue a emissão e o consumidor
 até retirada da origem e listas de destino, incluindo Banisher e fichas.
-Custos, animação e a matriz completa de interações continuam abertos.
+O custo foi seguido na continuação de Tribute; animação e matriz completa
+de interações continuam abertos.
 
 ## Evidências e reprodução
 

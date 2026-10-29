@@ -1,0 +1,148 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00575af0 @00575af0
+ CALLER 005759c0 FUN_005759a0
+ CALLER 00599753 FUN_005995e0
+ CALLER 00599d25 FUN_005999d0
+ CALLER 0058fe83 null
+ CALLER 0058ff22 null
+ CALLER 00592806 null
+ CALLER 0059f328 FUN_0059df40
+
+void FUN_00575af0(uint param_1,uint *param_2,uint param_3)
+
+{
+  uint uVar1;
+  byte bVar2;
+  ushort uVar3;
+  undefined8 uVar4;
+  
+  uVar4 = FUN_005699c0(0x453);
+  if ((int)uVar4 != 0) {
+    FUN_00575a80(param_1,param_2,param_3);
+    return;
+  }
+  bVar2 = (byte)(*param_2 >> 0xc);
+  FUN_005b9170(0x8e,CONCAT11((char)(*param_2 >> 0x18) * '\x02' + (bVar2 & 1),(char)param_1) & 0xff01
+                    | 0x16,CONCAT31((int3)((ulonglong)uVar4 >> 0x28),bVar2) & 0xffff0001 | 0x11c,
+               param_3);
+  uVar3 = FUN_004022e0((ushort)*param_2 & 0xfff);
+  if (uVar3 < 0x216) {
+    if ((uVar3 == 0x215) || (uVar3 == 0x1ce)) {
+      if (((param_3 & 1) == 0) || ((*param_2 >> 0xc & 1) != param_1)) goto LAB_00575bec;
+    }
+    else if (uVar3 != 0x1de) goto LAB_00575bec;
+  }
+  else if ((uVar3 != 0x412) && (uVar3 != 0x4da)) goto LAB_00575bec;
+  uVar1 = *param_2;
+  FUN_005ba490((uVar1 & 0xfffff7c9) << 0x13 | uVar1 & 0xfff | 0x3e4e0000,
+               (uVar1 >> 0xc & 1) + (uVar1 >> 0x18 & 0x7f) * 2,0);
+LAB_00575bec:
+  FUN_0059d6e0(*param_2 >> 0xc & 1,1);
+  FUN_00598590(DAT_00a577f8._2_1_ & 1,0x1f,
+               (*param_2 >> 0xc & 1) + (*param_2 >> 0x18 & 0x7f) * 2 |
+               (uint)((param_3 & 1) != 0) << 0x10);
+  return;
+}
+
+
+FUNCTION FUN_0056d190 @0056d190
+ CALLER 0057332c null
+ CALLER 005734b4 null
+ CALLER 00573605 null
+ CALLER 00406acd FUN_004067d0
+ CALLER 00570806 FUN_00570790
+
+void FUN_0056d190(uint *param_1)
+
+{
+  uint uVar1;
+  uint uVar2;
+  int iVar3;
+  int iVar4;
+  uint *puVar5;
+  
+  uVar1 = (uint)param_1 & 1;
+  iVar4 = 0;
+  uVar2 = (uint)(ushort)(&DAT_00a55d68)[uVar1 * 0x6a2];
+  if (((&DAT_00a55d68)[uVar1 * 0x6a2] & 0xff) != 0) {
+    puVar5 = &DAT_00a56434 + uVar1 * 0x351;
+    param_1 = puVar5;
+    do {
+      if ((*puVar5 & 0xfff) == 0) {
+        uVar2 = (byte)((byte)uVar2 - 1 ^ (byte)uVar2) ^ uVar2;
+        (&DAT_00a55d68)[uVar1 * 0x6a2] = (short)uVar2;
+        iVar3 = iVar4;
+        if (iVar4 < (int)(uVar2 & 0xff)) {
+          do {
+            FUN_005675c0(puVar5,puVar5 + 1);
+            iVar3 = iVar3 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar3 < (int)(uint)*(byte *)(&DAT_00a55d68 + uVar1 * 0x6a2));
+          puVar5 = param_1;
+        }
+      }
+      else {
+        iVar4 = iVar4 + 1;
+        puVar5 = puVar5 + 1;
+        param_1 = puVar5;
+      }
+      uVar2 = (uint)(ushort)(&DAT_00a55d68)[uVar1 * 0x6a2];
+    } while (iVar4 < (int)(uVar2 & 0xff));
+  }
+  return;
+}
+
+
+FUNCTION FUN_0059dd90 @0059dd90
+ CALLER 0057ec56 FUN_0057eac0
+ CALLER 00587acf null
+ CALLER 005ba5b7 FUN_005ba4d0
+ CALLER 005ba64d FUN_005ba4d0
+ CALLER 005ba79a FUN_005ba6b0
+ CALLER 005ba800 FUN_005ba6b0
+ CALLER 005ba8e2 FUN_005ba880
+ CALLER 005ba915 FUN_005ba880
+
+undefined4 FUN_0059dd90(undefined2 *param_1,undefined4 param_2,undefined4 param_3)
+
+{
+  code *pcVar1;
+  undefined2 *puVar2;
+  int iVar3;
+  uint uVar4;
+  uint unaff_ESI;
+  
+  puVar2 = param_1;
+  iVar3 = FUN_0059dbe0(*param_1);
+  if (-1 < iVar3) {
+    pcVar1 = *(code **)(&DAT_005ed0b0 + iVar3 * 0x18);
+    if ((code *)(&PTR_LAB_005ed0b4)[iVar3 * 6] != (code *)0x0) {
+      iVar3 = (*(code *)(&PTR_LAB_005ed0b4)[iVar3 * 6])(param_1,param_2,param_3);
+      if (iVar3 == 0) {
+        return 0;
+      }
+      if (1 < iVar3) {
+        return 1;
+      }
+    }
+    if (pcVar1 == (code *)0x0) {
+      return 1;
+    }
+    param_1 = (undefined2 *)0x0;
+    do {
+      unaff_ESI = CONCAT22((short)(unaff_ESI >> 0x10),(ushort)(byte)param_1);
+      uVar4 = 0;
+      do {
+        iVar3 = (*pcVar1)(puVar2,(uVar4 & 0xff) << 8 | unaff_ESI);
+        if (iVar3 != 0) {
+          return 1;
+        }
+        uVar4 = uVar4 + 1;
+      } while ((int)uVar4 < 0xb);
+      param_1 = (undefined2 *)((int)param_1 + 1);
+    } while ((int)param_1 < 2);
+  }
+  return 0;
+}
+
+

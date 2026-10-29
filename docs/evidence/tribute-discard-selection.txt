@@ -1,0 +1,82 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005bca42 MOV ECX,dword ptr [0x00a57814]
+INS 005bca48 AND ECX,0xffff
+INS 005bca4e MOV EDX,ECX
+INS 005bca50 AND EDX,0x8
+INS 005bca53 PUSH EDX
+INS 005bca54 MOV EDX,ECX
+INS 005bca56 AND EDX,0x4
+INS 005bca59 AND ECX,0x1
+INS 005bca5c PUSH EDX
+INS 005bca5d PUSH ECX
+INS 005bca5e XOR ECX,ECX
+INS 005bca60 MOV CX,word ptr [0x00a57812]
+INS 005bca67 SHR EAX,0x2
+INS 005bca6a AND EAX,0x1
+INS 005bca6d PUSH ECX
+INS 005bca6e PUSH EAX
+INS 005bca6f CALL 0x005a91f0
+INS 005bca74 ADD ESP,0x14
+INS 005bca77 JMP 0x005bcbeb
+INS 005bca7c MOV EDX,dword ptr [0x00a57814]
+INS 005bcc22 AND word ptr [0x00a57810],0xfffd
+INS 005bcc2b MOV EAX,0x1
+INS 005bcc30 RET
+INS 005bcc70 MOV AL,byte ptr [ESP + 0x8]
+FUNCTION FUN_005a91f0 @005a91f0
+ CALLER 005bca6f null
+
+undefined4
+FUN_005a91f0(undefined4 param_1,uint param_2,undefined4 param_3,undefined4 param_4,
+            undefined4 param_5)
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  ushort uVar3;
+  
+  uVar3 = (ushort)DAT_00a57810;
+  uVar1 = (DAT_00a57810 & 0xffff) >> 9;
+  if (uVar1 == 0) {
+    DAT_00a55d3c = DAT_00a55d3c ^ (DAT_00a55d3c ^ param_2) & 0xff;
+  }
+  else {
+    if (uVar1 != 1) {
+      return 1;
+    }
+    if (((DAT_00a54e5c >> 1 & 3) >> ((byte)param_1 & 0x1f) & 1) == 0) {
+      FUN_005bdbd0(param_1,0xb,0);
+      FUN_005bf800(0xeb);
+      FUN_005bf9a0(8,0);
+      uVar3 = (ushort)DAT_00a57810;
+    }
+    else if ((char)DAT_00a55d3c != '\0') {
+      uVar2 = FUN_005af450(param_1,param_3,param_4,param_5);
+      FUN_00575a10(param_1,uVar2);
+      DAT_00a55d3c = DAT_00a55d3c ^ (DAT_00a55d3c - 1 ^ DAT_00a55d3c) & 0xff;
+      return 0;
+    }
+  }
+  DAT_00a57810 = CONCAT22(DAT_00a57810._2_2_,(uVar3 & 0xfe00) + 0x200 ^ uVar3 & 0x1ff);
+  return 0;
+}
+
+
+FUNCTION FUN_005ba2d0 @005ba2d0
+ CALLER 005bb191 FUN_005bafd0
+ CALLER 005bb205 FUN_005bafd0
+ CALLER 005bb2b6 FUN_005bafd0
+ CALLER 005bb32a FUN_005bafd0
+ CALLER 005bb9bd FUN_005bb720
+ CALLER 005bba60 FUN_005bb720
+
+ushort FUN_005ba2d0(int param_1)
+
+{
+  if ((DAT_00a577f8._2_1_ & 0x10) == 0) {
+    return 0;
+  }
+  return (*(ushort *)(param_1 + 2) >> 0xe ^ *(ushort *)(param_1 + 2) ^ (ushort)DAT_00a54e5c) & 1;
+}
+
+

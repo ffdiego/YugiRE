@@ -13,19 +13,26 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Custo de Tribute seguido:** [estudo](cards/tribute-discard-cost.md) liga
+pré-condição, descritor tipo 2, seleção, comando 0x8E e compactação da mão.
+O callback também parametriza custos de Magic Jammer, Final Destiny e
+Darkness Approaches. 0x00583510 foi identificado como ramo de Big Shield
+Gardna. Pendentes: execução assistida da ordem de pagamento/negação e ramos
+especiais de descarte. Próxima trilha estática: evento FLIP de Man-Eater Bug.
+
 **Destruição seguida até o estado:** [continuação](cards/monster-destruction.md)
 confirma o consumidor de 0x79, retirada da origem, regiões 14/15, desvio de
 Banisher e exclusão das fichas das listas de destino. Preparação e emissão
 de operações vinculadas identificadas, sem matriz completa de interações.
-Próxima trilha estática útil: evento inicial de FLIP de Man-Eater Bug ou
-condição extra/custo de Tribute. Para execução assistida, conferir Banisher
+O custo/condição extra de Tribute foi seguido no estudo acima. Para execução
+assistida, conferir Banisher
 marcada na própria operação, fichas e carta sob controle do outro lado.
 
 **Seleção de alvo concluída estaticamente:**
 [Man-Eater Bug](cards/man-eater-bug-targeting.md) liga filtro +8, preparação
 +20, entrada de 16 bits e revalidação de ocorrência na posição.
-O caminho de 0x00576960 foi seguido na continuação acima; a condição extra
-de Tribute em 0x00583510 e seus callbacks adicionais permanece aberta.
+O caminho de 0x00576960 e os callbacks adicionais de Tribute foram seguidos
+nas continuações acima.
 Testes com mudança de campo ficam para execução assistida pelo usuário.
 
 **Comparação posterior:** [Sparks/Ookazi](cards/sparks-ookazi.md) confirma

@@ -1,5 +1,20 @@
 # Catálogo inicial de funções
 
+## Preparação de descarte e condição de resolução
+
+Endereços VA; nomes descritivos somente na documentação. Ver
+[custo de Tribute](cards/tribute-discard-cost.md).
+
+| VA | Papel confirmado no caminho examinado |
+|---|---|
+| 0x00580D20 | Consulta disponibilidade de uma entrada elegível da mão para Tribute |
+| 0x0057D7C0 | Seleciona quantidade de descarte 1/2/5 por ID e agenda tipo 2 |
+| 0x005BCE00 | Prepara flags e encaminha solicitação de descarte |
+| 0x005A91F0 | Processa a solicitação tipo 2 e contador de escolhas |
+| 0x00575AF0 | Emite movimentação por chave da mão, com desvio de Banisher |
+| 0x00408EE0 | Consome 0x8E e chama remoção/inserção após localizar a origem |
+| 0x00583510 | Ramo específico de Big Shield Gardna que pode impedir destruição |
+
 ## Destruição por efeito e listas de destino
 
 Endereços VA; nomes descritivos somente na documentação. Ver

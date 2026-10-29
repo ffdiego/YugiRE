@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Custos: [Tribute to The Doomed](cards/tribute-discard-cost.md), descarte
+compartilhado com quantidades 1/2/5, ordem de preparação e caso Big Shield Gardna.
+
 Continuação: [destruição por efeito](cards/monster-destruction.md), comando
 0x79 até retirada/inserção, desvio de Banisher e tratamento das quatro fichas.
 

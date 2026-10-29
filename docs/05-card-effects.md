@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Descarte como etapa de preparação
+
+[Tribute e callback compartilhado](cards/tribute-discard-cost.md) separam
+disponibilidade (+12), preparação do descarte (+16), alvo (+20) e resolução
+(+4). O descarte usa descritor tipo 2 e comando 0x8E, com compactação da mão.
+Quantidades 1/2/5 são selecionadas por ID no mesmo callback. A condição
+0x00583510 da resolução trata de Big Shield Gardna; não cobra o descarte.
+
 ## Destruição por efeito até a escrita de estado
 
 A [continuação de Man-Eater Bug](cards/monster-destruction.md) liga
@@ -15,7 +23,8 @@ recursivas separadas; regras completas de proteção e ordem de eventos pendente
 candidatos e compartilha resolução/+20 com Tribute to The Doomed. O alvo em
 pedido+6 contém lado, posição e chave de oito bits. 0x00583470 confere contador,
 ocupação e chave na posição antes de a resolução emitir a operação por máscara.
-Custos de Tribute e matriz completa de interações continuam abertos.
+O custo de Tribute foi seguido no estudo acima; a matriz completa de
+interações continua aberta.
 
 ## Comparação estática: Sparks e Ookazi
 

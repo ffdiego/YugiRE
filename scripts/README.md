@@ -1,5 +1,11 @@
 # Reprodução
 
+Custo de descarte de Tribute e callback compartilhado:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_tribute_cost.py`.
+Esperado: nove linhas `PASS`; registros, quantidades, seletores e modelo de
+elegibilidade em `docs/evidence/tribute-cost-validation.json`. Ver
+[análise de custo](../docs/cards/tribute-discard-cost.md).
+
 Destruição e listas de destino:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_monster_destruction.py`.
 Esperado: oito linhas `PASS`, preservação dos originais/banco, dispatcher,

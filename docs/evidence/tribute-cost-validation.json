@@ -1,0 +1,145 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "cards": [
+    {
+      "index": 363,
+      "resource_id": 1023,
+      "name": "Tribute to The Doomed",
+      "registration_index": 187,
+      "discard_amount": 1,
+      "description": "Discard 1 card from your hand to the Graveyard to destroy 1 Monster Card on the field (regardless of its position). "
+    },
+    {
+      "index": 893,
+      "resource_id": 1029,
+      "name": "Magic Jammer",
+      "registration_index": 193,
+      "discard_amount": 1,
+      "description": "Discard 1 card from your hand to the Graveyard to negate the activation of a Spell Card and destroy it."
+    },
+    {
+      "index": 319,
+      "resource_id": 1067,
+      "name": "Final Destiny",
+      "registration_index": 224,
+      "discard_amount": 5,
+      "description": "Discard 5 cards from your hand to destroy all the cards on the field."
+    },
+    {
+      "index": 1015,
+      "resource_id": 1072,
+      "name": "Darkness Approaches",
+      "registration_index": 229,
+      "discard_amount": 2,
+      "description": "Discard 2 cards from your hand. Select 1 face-up monster and flip it face-down, but do not change its battle position. "
+    },
+    {
+      "index": 748,
+      "resource_id": 1201,
+      "name": "Big Shield Gardna",
+      "registration_index": null,
+      "discard_amount": null,
+      "description": "When this card is face-down and targeted by a Spell Card whose effect targets only 1 monster the Spell Card is negated and this card is turned face-up in Defense Position. When this card is attacked, it is shifted to Attack Position following the Damage step."
+    },
+    {
+      "index": 913,
+      "resource_id": 1180,
+      "name": "Anti-Spell Fragrance",
+      "registration_index": null,
+      "discard_amount": null,
+      "description": "As long as this card remains face-up on the field, both players must first Set Spell Cards when they use them and cannot activate them until their next turn."
+    }
+  ],
+  "instruction_checks": [
+    {
+      "va": "0x580d35",
+      "file_offset": "0x180d35",
+      "bytes": "6a006a00508a410283e0016a0150e8e8e3ffff"
+    },
+    {
+      "va": "0x57d80e",
+      "file_offset": "0x17d80e",
+      "bytes": "e8edf50300"
+    },
+    {
+      "va": "0x5bb218",
+      "file_offset": "0x1bb218",
+      "bytes": "e8132cfeff"
+    },
+    {
+      "va": "0x5bca6f",
+      "file_offset": "0x1bca6f",
+      "bytes": "e87cc7feff"
+    },
+    {
+      "va": "0x5bc672",
+      "file_offset": "0x1bc672",
+      "bytes": "e83903000085c07574"
+    },
+    {
+      "va": "0x5bc68d",
+      "file_offset": "0x1bc68d",
+      "bytes": "e8aef7ffff"
+    },
+    {
+      "va": "0x575a2f",
+      "file_offset": "0x175a2f",
+      "bytes": "e86cffffff"
+    },
+    {
+      "va": "0x5835d8",
+      "file_offset": "0x1835d8",
+      "bytes": "804b040e"
+    }
+  ],
+  "model_cases": [
+    {
+      "name": "empty",
+      "eligible": 0,
+      "requested_one_allowed": false
+    },
+    {
+      "name": "source_only",
+      "eligible": 0,
+      "requested_one_allowed": false
+    },
+    {
+      "name": "source_and_monster",
+      "eligible": 1,
+      "requested_one_allowed": true
+    },
+    {
+      "name": "duplicate_source_excluded_once",
+      "eligible": 1,
+      "requested_one_allowed": true
+    },
+    {
+      "name": "parasite_excluded",
+      "eligible": 0,
+      "requested_one_allowed": false
+    },
+    {
+      "name": "restricted_spell",
+      "eligible": 0,
+      "requested_one_allowed": false
+    },
+    {
+      "name": "restricted_monster",
+      "eligible": 1,
+      "requested_one_allowed": true
+    },
+    {
+      "name": "source_not_excluded",
+      "eligible": 1,
+      "requested_one_allowed": true
+    }
+  ],
+  "discard_command": {
+    "opcode": "0x8e",
+    "normalized": 98,
+    "stub": "0x5b96b8",
+    "handler": "0x408ee0"
+  },
+  "method": "Static resource/registration/instruction checks and hand eligibility model; no native execution.",
+  "limits": "Selection UI, synchronization, negation/refunds and full interactions not dynamically tested."
+}

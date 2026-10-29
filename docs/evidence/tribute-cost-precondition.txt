@@ -1,0 +1,80 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT DISASSEMBLY 00580d20
+INS 00580d20 MOV EAX,dword ptr [ESP + 0xc]
+INS 00580d24 MOV ECX,dword ptr [ESP + 0x4]
+INS 00580d28 TEST EAX,EAX
+INS 00580d2a JZ 0x00580d33
+INS 00580d2c XOR EAX,EAX
+INS 00580d2e MOV AX,word ptr [ECX]
+INS 00580d31 JMP 0x00580d35
+INS 00580d33 XOR EAX,EAX
+INS 00580d35 PUSH 0x0
+INS 00580d37 PUSH 0x0
+INS 00580d39 PUSH EAX
+INS 00580d3a MOV AL,byte ptr [ECX + 0x2]
+INS 00580d3d AND EAX,0x1
+INS 00580d40 PUSH 0x1
+INS 00580d42 PUSH EAX
+INS 00580d43 CALL 0x0057f130
+INS 00580d48 ADD ESP,0x14
+INS 00580d4b NEG EAX
+INS 00580d4d SBB EAX,EAX
+INS 00580d4f NEG EAX
+INS 00580d51 RET
+INS 00580de0 PUSH ESI
+INS 00580de1 PUSH EDI
+INS 00580de2 MOV EDI,dword ptr [ESP + 0xc]
+INS 00580de6 XOR ESI,ESI
+INS 00580de8 MOV AL,byte ptr [EDI + 0x2]
+INS 00580deb AND EAX,0x1
+INS 00580dee LEA ECX,[EAX + EAX*0x2]
+INS 00580df1 LEA ECX,[ECX + ECX*0x8]
+INS 00580df4 SHL ECX,0x1
+INS 00580df6 SUB ECX,EAX
+INS 00580df8 SHL ECX,0x4
+INS 00580dfb ADD ECX,EAX
+INS 00580dfd MOV DL,byte ptr [ECX*0x4 + 0xa55d68]
+INS 00580e04 AND EDX,0xff
+FUNCTION FUN_005bce00 @005bce00
+ CALLER 0057d80e FUN_0057d7c0
+
+void FUN_005bce00(undefined4 param_1,undefined4 param_2,int param_3,int param_4)
+
+{
+  int iVar1;
+  byte bVar2;
+  
+  iVar1 = FUN_005699c0(0x49c);
+  bVar2 = param_3 != 0;
+  if (0 < iVar1) {
+    bVar2 = bVar2 | 4;
+  }
+  if (param_4 != 0) {
+    bVar2 = bVar2 | 8;
+  }
+  FUN_005bcc70(param_1,2,param_2,bVar2 | 0x10);
+  return;
+}
+
+
+FUNCTION FUN_0059de30 @0059de30
+ CALLER 005bb218 FUN_005bafd0
+
+undefined4 FUN_0059de30(undefined2 *param_1,undefined4 param_2)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  
+  iVar1 = FUN_0059dbe0(*param_1);
+  if (iVar1 < 0) {
+    return 1;
+  }
+  if (*(code **)(&DAT_005ed0b8 + iVar1 * 0x18) == (code *)0x0) {
+    return 1;
+  }
+  uVar2 = (**(code **)(&DAT_005ed0b8 + iVar1 * 0x18))(param_1,param_2);
+  return uVar2;
+}
+
+
