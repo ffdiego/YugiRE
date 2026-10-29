@@ -13,6 +13,13 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+Nona rodada concluída: [inserção e chave](12-association-insertion.md).
+0x0056AB60 insere índice/metadados e incrementa o contador; opcode 0x86
+chega a esse helper. 0x005687D0 usa a mesma chave para procurar palavras
+de estado em várias regiões. Os produtores amostrados de categoria 11
+usam tipo 3; a criação de tipo 13 para Parasite Paracide não foi provada.
+Próximo passo: identificar escritor explícito de `13 | (chave << 8)`.
+
 Oitava rodada concluída: [comando 0x4D](11-command-4d.md) seguido até escrita
 de estado. O dispatcher 0x005B9470 usa tabela de normalização: opcode 0x4D
 → índice 0x2C → 0x00571BF0 → 0x0056B1C0. No caminho de Parasite Paracide,

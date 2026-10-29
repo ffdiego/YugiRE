@@ -1,0 +1,47 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "dispatch": {
+    "opcode": "0x86",
+    "normalized": "0x5c",
+    "stub": "0x5b969a",
+    "handler": "0x571bc0"
+  },
+  "instruction_checks": [
+    {
+      "va": "0x56abbe",
+      "file_offset": "0x16abbe",
+      "bytes": "668988805da500"
+    },
+    {
+      "va": "0x56abca",
+      "file_offset": "0x16abca",
+      "bytes": "668988c05da500"
+    },
+    {
+      "va": "0x56abd1",
+      "file_offset": "0x16abd1",
+      "bytes": "66ff02"
+    },
+    {
+      "va": "0x571bd7",
+      "file_offset": "0x171bd7",
+      "bytes": "e8848fffff"
+    },
+    {
+      "va": "0x5797a2",
+      "file_offset": "0x1797a2",
+      "bytes": "80cd0b"
+    },
+    {
+      "va": "0x5747fc",
+      "file_offset": "0x1747fc",
+      "bytes": "0c86"
+    }
+  ],
+  "category_11_bases": {
+    "count": "0xa563ae",
+    "index": "0xa563b0",
+    "metadata": "0xa563f0"
+  },
+  "limitation": "No type-13 Parasite Paracide producer established in this round."
+}

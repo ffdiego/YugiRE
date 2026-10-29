@@ -1,0 +1,213 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005690d0 @005690d0
+ CALLER 005722f3 null
+ CALLER 00572463 null
+ CALLER 0057251f null
+ CALLER 005726bd null
+ CALLER 00572a3a null
+ CALLER 005707cd FUN_00570790
+
+undefined4 FUN_005690d0(uint param_1,uint *param_2)
+
+{
+  int iVar1;
+  ushort uVar2;
+  int iVar3;
+  uint *puVar4;
+  undefined4 *puVar5;
+  bool bVar6;
+  
+  iVar3 = 0;
+  param_1 = param_1 & 1;
+  if (((&DAT_00a55d68)[param_1 * 0x6a2] & 0xff00) != 0) {
+    puVar4 = &DAT_00a56574 + param_1 * 0x351;
+    do {
+      iVar1 = FUN_0044baa0();
+      if (iVar1 < 0x3e9) {
+        bVar6 = ((*puVar4 ^ *param_2) & 0xfff) == 0;
+      }
+      else {
+        bVar6 = *param_2 == *puVar4;
+      }
+      if (bVar6) {
+        uVar2 = ((&DAT_00a55d68)[param_1 * 0x6a2] & 0xff00) - 1;
+        (&DAT_00a55d68)[param_1 * 0x6a2] = (byte)~(byte)(&DAT_00a55d68)[param_1 * 0x6a2] ^ uVar2;
+        if (iVar3 < (int)(uint)(uVar2 >> 8)) {
+          puVar5 = &DAT_00a56574 + iVar3 + param_1 * 0x351;
+          do {
+            FUN_005675c0(puVar5,puVar5 + 1);
+            iVar3 = iVar3 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar3 < (int)(uint)((ushort)(&DAT_00a55d68)[param_1 * 0x6a2] >> 8));
+        }
+        return 1;
+      }
+      iVar3 = iVar3 + 1;
+      puVar4 = puVar4 + 1;
+    } while (iVar3 < (int)(uint)((ushort)(&DAT_00a55d68)[param_1 * 0x6a2] >> 8));
+  }
+  return 0;
+}
+
+
+FUNCTION FUN_00568c00 @00568c00
+ CALLER 00572959 null
+ CALLER 00572a45 null
+ CALLER 0056a760 FUN_0056a700
+ CALLER 00573628 null
+ CALLER 00572d17 null
+ CALLER 00570918 FUN_005708d0
+
+void FUN_00568c00(uint param_1,undefined4 param_2)
+
+{
+  undefined4 *puVar1;
+  uint uVar2;
+  
+  param_1 = param_1 & 1;
+  uVar2 = (uint)((ushort)(&DAT_00a55d68)[param_1 * 0x6a2] >> 8);
+  if (uVar2 != 0) {
+    puVar1 = &DAT_00a56574 + uVar2 + param_1 * 0x351;
+    do {
+      FUN_005675c0(puVar1,puVar1 + -1);
+      uVar2 = uVar2 - 1;
+      puVar1 = puVar1 + -1;
+    } while (uVar2 != 0);
+  }
+  (&DAT_00a55d68)[param_1 * 0x6a2] =
+       ((&DAT_00a55d68)[param_1 * 0x6a2] & 0xff00) + 0x100 ^ (&DAT_00a55d68)[param_1 * 0x6a2] & 0xff
+  ;
+  FUN_005675c0(&DAT_00a56574 + param_1 * 0x351,param_2);
+  return;
+}
+
+
+FUNCTION FUN_005687d0 @005687d0
+ CALLER 00568b95 FUN_00568b90
+ CALLER 00572a06 null
+ CALLER 00406b77 FUN_00406b20
+ CALLER 00408f00 FUN_00408ee0
+ CALLER 00409722 FUN_00409700
+ CALLER 004065a8 FUN_004063e0
+ CALLER 0040cbd6 FUN_0040cb50
+ CALLER 00575ff9 FUN_00575fe0
+ CALLER 005a4ea1 null
+ CALLER 005a5f18 null
+ CALLER 005a74c7 null
+ CALLER 005a3d44 null
+
+uint FUN_005687d0(int param_1)
+
+{
+  ushort uVar1;
+  uint uVar2;
+  byte bVar3;
+  undefined1 uVar4;
+  uint *puVar5;
+  int iVar6;
+  uint uVar7;
+  uint local_4;
+  
+  uVar7 = 0;
+  do {
+    iVar6 = 0;
+    puVar5 = &DAT_00a55d74 + (uVar7 & 1) * 0x351;
+    do {
+      uVar2 = *puVar5;
+      if (((uVar2 & 0xfff) != 0) && ((uVar2 >> 0xc & 1) + (uVar2 >> 0x18 & 0x7f) * 2 == param_1)) {
+        return CONCAT31((int3)iVar6,(char)uVar7) & 0xffff;
+      }
+      iVar6 = iVar6 + 1;
+      puVar5 = puVar5 + 0x24;
+    } while (iVar6 < 0xb);
+    uVar7 = uVar7 + 1;
+    if (1 < (int)uVar7) {
+      local_4 = 0;
+      do {
+        uVar7 = local_4 & 1;
+        iVar6 = 0;
+        uVar1 = (&DAT_00a55d6a)[uVar7 * 0x6a2];
+        bVar3 = (byte)local_4;
+        if ((uVar1 & 0xff) != 0) {
+          puVar5 = &DAT_00a566f0 + uVar7 * 0x351;
+          do {
+            if ((*puVar5 >> 0xc & 1) + (*puVar5 >> 0x18 & 0x7f) * 2 == param_1) {
+              return CONCAT22((short)iVar6,(ushort)bVar3) | 0xe00;
+            }
+            iVar6 = iVar6 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar6 < (int)(uVar1 & 0xff));
+        }
+        iVar6 = 0;
+        if (*(byte *)(&DAT_00a55d6c + uVar7 * 0x351) != 0) {
+          puVar5 = &DAT_00a5686c + uVar7 * 0x351;
+          do {
+            if ((*puVar5 >> 0xc & 1) + (*puVar5 >> 0x18 & 0x7f) * 2 == param_1) {
+              return CONCAT22((short)iVar6,(ushort)bVar3) | 0xf00;
+            }
+            iVar6 = iVar6 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar6 < (int)(uint)*(byte *)(&DAT_00a55d6c + uVar7 * 0x351));
+        }
+        iVar6 = 0;
+        if ((ushort)(&DAT_00a55d68)[uVar7 * 0x6a2] >> 8 != 0) {
+          puVar5 = &DAT_00a56574 + uVar7 * 0x351;
+          do {
+            if ((*puVar5 >> 0xc & 1) + (*puVar5 >> 0x18 & 0x7f) * 2 == param_1) {
+              return CONCAT22((short)iVar6,(ushort)bVar3) | 0xd00;
+            }
+            iVar6 = iVar6 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar6 < (int)(uint)((ushort)(&DAT_00a55d68)[uVar7 * 0x6a2] >> 8));
+        }
+        iVar6 = 0;
+        if (uVar1 >> 8 != 0) {
+          puVar5 = &DAT_00a566b4 + uVar7 * 0x351;
+          do {
+            if ((*puVar5 >> 0xc & 1) + (*puVar5 >> 0x18 & 0x7f) * 2 == param_1) {
+              return CONCAT22((short)iVar6,(ushort)bVar3) | 0xc00;
+            }
+            iVar6 = iVar6 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar6 < (int)(uint)(uVar1 >> 8));
+        }
+        local_4 = local_4 + 1;
+      } while ((int)local_4 < 2);
+      uVar7 = 0;
+      do {
+        iVar6 = 0;
+        if (*(byte *)(&DAT_00a55d68 + (uVar7 & 1) * 0x6a2) != 0) {
+          puVar5 = &DAT_00a56434 + (uVar7 & 1) * 0x351;
+          do {
+            if ((*puVar5 >> 0xc & 1) + (*puVar5 >> 0x18 & 0x7f) * 2 == param_1) {
+              return CONCAT22((short)iVar6,(ushort)(byte)uVar7) | 0xb00;
+            }
+            iVar6 = iVar6 + 1;
+            puVar5 = puVar5 + 1;
+          } while (iVar6 < (int)(uint)*(byte *)(&DAT_00a55d68 + (uVar7 & 1) * 0x6a2));
+        }
+        uVar7 = uVar7 + 1;
+      } while ((int)uVar7 < 2);
+      iVar6 = 0;
+      puVar5 = &DAT_00a57864;
+      do {
+        if ((*puVar5 >> 0xc & 1) + (*puVar5 >> 0x18 & 0x7f) * 2 == param_1) {
+          if (iVar6 == 0) {
+            uVar4 = (undefined1)(DAT_00a57840 >> 8);
+            uVar7 = DAT_00a57840;
+          }
+          else {
+            uVar7 = (DAT_00a57840 & 0xffff) >> 1;
+            uVar4 = (undefined1)((DAT_00a57840 & 0xffff) >> 0xb);
+          }
+          return (CONCAT11(uVar4,(char)uVar7) & 0x7ff) & 0xffffff01 | 0xffff0000;
+        }
+        puVar5 = puVar5 + 0x24;
+        iVar6 = iVar6 + 1;
+      } while ((int)puVar5 < 0xa57984);
+      return 0x1000;
+    }
+  } while( true );
+}
+
+

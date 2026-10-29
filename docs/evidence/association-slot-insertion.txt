@@ -1,0 +1,136 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 0056ab60 MOV ECX,dword ptr [ESP + 0x4]
+INS 0056ab64 XOR EDX,EDX
+INS 0056ab66 MOV EAX,ECX
+INS 0056ab68 MOV DL,CH
+INS 0056ab6a AND EAX,0xff
+INS 0056ab6f AND EDX,0xff
+INS 0056ab75 AND EAX,0x1
+INS 0056ab78 MOV ECX,EDX
+INS 0056ab7a PUSH ESI
+INS 0056ab7b PUSH EDI
+INS 0056ab7c LEA EDX,[EAX + EAX*0x2]
+INS 0056ab7f LEA EDI,[EAX + EAX*0x2]
+INS 0056ab82 LEA ESI,[ECX + ECX*0x8]
+INS 0056ab85 LEA EDX,[EDX + EDX*0x8]
+INS 0056ab88 LEA EDI,[EDI + EDI*0x8]
+INS 0056ab8b SHL EDX,0x1
+INS 0056ab8d SUB EDX,EAX
+INS 0056ab8f SHL EDX,0x4
+INS 0056ab92 SHL EDI,0x1
+INS 0056ab94 ADD EDX,EAX
+INS 0056ab96 SUB EDI,EAX
+INS 0056ab98 SHL ESI,0x4
+INS 0056ab9b SHL EDI,0x4
+INS 0056ab9e LEA EDX,[ESI + EDX*0x4 + 0xa55d7e]
+INS 0056aba5 XOR ESI,ESI
+INS 0056aba7 ADD EDI,EAX
+INS 0056aba9 LEA EAX,[ECX + ECX*0x8]
+INS 0056abac MOV SI,word ptr [EDX]
+INS 0056abaf LEA ECX,[ESI + EAX*0x8]
+INS 0056abb2 LEA EAX,[ECX + EDI*0x2]
+INS 0056abb5 MOV CX,word ptr [ESP + 0x10]
+INS 0056abba SHL EAX,0x1
+INS 0056abbc POP EDI
+INS 0056abbd POP ESI
+INS 0056abbe MOV word ptr [EAX + 0xa55d80],CX
+INS 0056abc5 MOV CX,word ptr [ESP + 0xc]
+INS 0056abca MOV word ptr [EAX + 0xa55dc0],CX
+INS 0056abd1 INC word ptr [EDX]
+INS 0056abd4 RET
+INS 0056abe0 MOV EAX,dword ptr [ESP + 0x4]
+INS 0056abe4 PUSH EBX
+INS 0056abe5 PUSH EBP
+INS 0056abe6 PUSH ESI
+INS 0056abe7 MOV ESI,EAX
+INS 0056abe9 XOR ECX,ECX
+INS 0056abeb AND ESI,0xff
+INS 0056abf1 MOV CL,AH
+INS 0056abf3 MOV EAX,ESI
+INS 0056abf5 AND ECX,0xff
+INS 0056abfb AND EAX,0x1
+INS 0056abfe PUSH EDI
+INS 0056abff MOV EDI,ECX
+INS 0056ac01 XOR EBX,EBX
+INS 0056ac03 LEA ECX,[EAX + EAX*0x2]
+INS 0056ac06 LEA EDX,[ECX + ECX*0x8]
+INS 0056ac09 SHL EDX,0x1
+INS 0056ac0b SUB EDX,EAX
+INS 0056ac0d SHL EDX,0x4
+INS 0056ac10 ADD EDX,EAX
+INS 0056ac12 LEA EAX,[EDI + EDI*0x8]
+INS 0056ac15 SHL EAX,0x4
+INS 0056ac18 LEA ECX,[EAX + EDX*0x4]
+INS 0056ac1b MOV dword ptr [ESP + 0x14],ECX
+INS 0056ac1f CMP word ptr [ECX + 0xa55d7e],BX
+INS 0056ac26 JBE 0x0056ac80
+FUNCTION FUN_0056ab60 @0056ab60
+ CALLER 0040a20d FUN_0040a0d0
+ CALLER 00571bd7 null
+ CALLER 0040a39c FUN_0040a230
+
+void FUN_0056ab60(uint param_1,undefined2 param_2,undefined2 param_3)
+
+{
+  int iVar1;
+  ushort *puVar2;
+  uint uVar3;
+  
+  uVar3 = param_1 >> 8 & 0xff;
+  puVar2 = &DAT_00a55d7e + uVar3 * 0x48 + (param_1 & 1) * 0x6a2;
+  iVar1 = (uint)*puVar2 + uVar3 * 0x48 + (param_1 & 1) * 0x6a2;
+  (&DAT_00a55d80)[iVar1] = param_2;
+  *(undefined2 *)(&DAT_00a55dc0 + iVar1 * 2) = param_3;
+  *puVar2 = *puVar2 + 1;
+  return;
+}
+
+
+FUNCTION FUN_0056b360 @0056b360
+ CALLER 00571788 null
+ CALLER 00571b35 null
+ CALLER 00571b46 null
+ CALLER 00571b51 null
+ CALLER 0040b0ee FUN_0040afc0
+ CALLER 0040b1ce FUN_0040afc0
+
+void FUN_0056b360(uint param_1,ushort param_2)
+
+{
+  uint uVar1;
+  ushort *puVar2;
+  byte bVar3;
+  ushort *puVar4;
+  uint uVar5;
+  int iVar6;
+  ushort *puVar7;
+  uint local_8;
+  
+  uVar1 = param_1 >> 8;
+  uVar5 = param_1 & 0xff;
+  local_8 = 0;
+  do {
+    param_1 = 0xb;
+    puVar7 = &DAT_00a55d7e + (local_8 & 1) * 0x6a2;
+    do {
+      if (((*(uint *)(puVar7 + -5) & 0xfff) != 0) && (iVar6 = 0, puVar2 = puVar7, *puVar7 != 0)) {
+        do {
+          puVar4 = puVar2 + 1;
+          bVar3 = (byte)puVar2[0x21] & 0xf;
+          if ((((bVar3 == 2) || ((5 < bVar3 && (bVar3 < 8)))) && ((byte)*puVar4 == uVar5)) &&
+             ((uint)(byte)(*puVar4 >> 8) == (uVar1 & 0xff))) {
+            *puVar4 = param_2;
+          }
+          iVar6 = iVar6 + 1;
+          puVar2 = puVar4;
+        } while (iVar6 < (int)(uint)*puVar7);
+      }
+      puVar7 = puVar7 + 0x48;
+      param_1 = param_1 + -1;
+    } while (param_1 != 0);
+    local_8 = local_8 + 1;
+  } while ((int)local_8 < 2);
+  return;
+}
+
+

@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Nona rodada: [inserção genérica e resolução da chave](12-association-insertion.md).
+Comando 0x86 e incremento de contador confirmados; criação específica do
+tipo 13 de Parasite Paracide permanece aberta.
+
 Oitava rodada: [comando 0x4D e escrita no estado](11-command-4d.md).
 Fila de oito bytes e dispatcher com normalização confirmados; o caminho de
 Parasite Paracide zera índice e metadados de uma posição associada.

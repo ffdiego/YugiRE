@@ -28,6 +28,11 @@ da rodada anterior; saída esperada `PASS`, metadados em
 `docs/evidence/command-4d-validation.json`. Ver
 [análise do comando](../docs/11-command-4d.md).
 
+Para a inserção genérica: `python3 YugiRE/scripts/validate_association_insertion.py`.
+Revalida a rodada anterior e o despacho/instruções de 0x86, gerando
+`docs/evidence/association-insertion-validation.json`. Ver
+[inserção e resolução da chave](../docs/12-association-insertion.md).
+
 Executar em PowerShell 7, a partir de `Z:\YugiRE`:
 
 ```powershell

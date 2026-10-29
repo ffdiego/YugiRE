@@ -1,0 +1,86 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005747e0 @005747e0
+ CALLER 005797a8 FUN_00579790
+ CALLER 0059d4a2 FUN_0059d370
+ CALLER 0059d52b FUN_0059d370
+ CALLER 005b85b0 FUN_005b8210
+ CALLER 005b863c FUN_005b8210
+ CALLER 005b86a9 FUN_005b8210
+ CALLER 005b87a8 FUN_005b8210
+ CALLER 005b8822 FUN_005b8210
+ CALLER 005b8889 FUN_005b8210
+ CALLER 00587db4 null
+ CALLER 0059060a null
+ CALLER 0059614a null
+ CALLER 005a20e4 null
+ CALLER 005a25d7 null
+ CALLER 0059d1ab FUN_0059d090
+ CALLER 005a3be5 null
+ CALLER 005a2eec null
+ CALLER 005a3037 null
+ CALLER 005a30cd null
+ CALLER 005a3717 null
+ CALLER 005a3808 null
+ CALLER 005a3831 null
+ CALLER 005a38c5 null
+ CALLER 005a39db null
+ CALLER 0059c9e7 FUN_0059c8d0
+ CALLER 005864ad null
+ CALLER 005864d7 null
+
+void FUN_005747e0(int param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+
+{
+  FUN_005b9170(CONCAT31((uint3)(-(uint)(param_1 != 0) >> 8) & 0x80,0x86),param_2,param_3,param_4);
+  return;
+}
+
+
+FUNCTION FUN_00574900 @00574900
+ CALLER 0059d438 FUN_0059d370
+ CALLER 005797d1 FUN_005797c0
+ CALLER 005a4be6 null
+ CALLER 005a3bd3 null
+ CALLER 005a3e04 null
+ CALLER 005a3ebe null
+ CALLER 005a3a53 null
+ CALLER 0058645b null
+ CALLER 00586481 null
+
+void FUN_00574900(int param_1,undefined4 param_2,undefined4 param_3,int param_4)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  
+  iVar1 = FUN_0056db30(param_1,param_2,param_3);
+  if (iVar1 != 0) {
+    uVar2 = FUN_00402460(param_3,CONCAT11((undefined1)param_2,(char)param_1),
+                         (uint)(param_4 == 0) << 8 | 3);
+    FUN_005b9170(CONCAT31((uint3)(-(uint)(param_1 != 0) >> 8) & 0x80,0x87),uVar2);
+  }
+  return;
+}
+
+
+FUNCTION FUN_005783c0 @005783c0
+ CALLER 005771d6 FUN_00576f40
+ CALLER 0057959a FUN_00579330
+ CALLER 005a65e6 FUN_005a6530
+ CALLER 005a71ee null
+ CALLER 005a73eb null
+ CALLER 005a2cce null
+ CALLER 00577f66 FUN_00577cf0
+ CALLER 005bb12b FUN_005bafd0
+
+void FUN_005783c0(int param_1,undefined1 param_2,undefined4 param_3,undefined1 param_4)
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = FUN_004022e0(param_3,CONCAT11(param_4,param_2),0);
+  FUN_005b9170(-(uint)(param_1 != 0) & 0x8000 | 0x72,uVar1);
+  return;
+}
+
+
