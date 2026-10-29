@@ -213,6 +213,10 @@ Evidências: [callback de limpeza](../evidence/parasite-damage-and-callbacks.txt
 
 ## Reprodução, conclusão e limites
 
+Os testes com o jogo foram separados em
+[experimentos dinâmicos pendentes](parasite-dynamic-checks.md). Cada cenário
+tem breakpoints, regiões e uma expectativa verificável para a sessão futura.
+
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_parasite_lifecycle.py
 PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/inspect_parasite_resources.py
