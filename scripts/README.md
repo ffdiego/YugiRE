@@ -1,5 +1,25 @@
 # Reprodução
 
+## Consultas no Fedora
+
+Com JDK 25 completo e Ghidra 12.2 extraído em
+`../../tools/ghidra_12.2_PUBLIC/` (relativamente a este diretório), executar
+a partir da raiz do workspace:
+
+```bash
+bash YugiRE/scripts/run-archive-query.sh parasite-callers.txt 00570be0 00570420 0057f130 00578860 ins:00570be0:65
+```
+
+O wrapper Linux usa o projeto persistente com `-noanalysis -readOnly`.
+Define `XDG_CONFIG_HOME` para que o launcher também salve sua seleção de JDK
+em `scratch/`; configurações, cache e logs de cada consulta ficam em um
+diretório temporário próprio nesse local. `GHIDRA_INSTALL_DIR` permite
+escolher outra instalação. O primeiro argumento é um nome de relatório `.txt`
+sem diretórios, destinado a `docs/evidence/`; relatórios existentes com esse
+nome são substituídos após a consulta ter sucesso. O wrapper verifica erros
+no console porque o headless pode retornar zero mesmo após falha de abertura.
+Não executa o jogo. Os comandos PowerShell abaixo documentam o fluxo Windows.
+
 Executar em PowerShell 7, a partir de `Z:\YugiRE`:
 
 ```powershell
