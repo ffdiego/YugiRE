@@ -50,13 +50,14 @@ public class QueryArchive extends GhidraScript {
                 }
                 continue;
             }
-            if(args[i].startsWith("ref:")) {
-                Address address=toAddr(args[i].substring(4));
+            if(args[i].startsWith("ref:") || args[i].startsWith("xref:")) {
+                boolean selectOwners=args[i].startsWith("ref:");
+                Address address=toAddr(args[i].substring(selectOwners?4:5));
                 out.println("REFERENCES TO "+address);
                 for(Reference ref:getReferencesTo(address)) {
                     Function owner=getFunctionContaining(ref.getFromAddress());
                     out.println(" XREF "+ref+" FUNCTION "+(owner==null?"none":owner.getEntryPoint()));
-                    if(owner!=null)selected.add(owner);
+                    if(selectOwners && owner!=null)selected.add(owner);
                 }
                 continue;
             }

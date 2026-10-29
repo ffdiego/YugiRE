@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Oitava rodada: [comando 0x4D e escrita no estado](11-command-4d.md).
+Fila de oito bytes e dispatcher com normalização confirmados; o caminho de
+Parasite Paracide zera índice e metadados de uma posição associada.
+
 Sétima rodada: [consulta de associação de Parasite Paracide](10-parasite-association.md)
 e três chamadores investigados no Fedora. Retorno posição+1, arrays paralelos
 e chave de associação confirmados; semântica dos comandos ainda aberta.

@@ -1,0 +1,39 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00449d90 MOV dword ptr [ESP],0x5db084
+INS 00449d98 MOV dword ptr [ESP + 0x8],EAX
+INS 00449d9c MOV EAX,dword ptr [ECX + 0x8]
+INS 00449d9f PUSH EDX
+INS 00449da0 PUSH 0x1
+INS 00449da2 PUSH EAX
+INS 00449da3 CALL 0x0044b2a0
+INS 00449da8 MOV EAX,dword ptr [ESP + 0x8]
+INS 00449dac MOV dword ptr [ESP],0x5db084
+INS 00449db4 TEST EAX,EAX
+FUNCTION FUN_005b93f0 @005b93f0
+ CALLER 005bd551 FUN_005bd2d0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_005b93f0(undefined2 param_1,undefined2 param_2,undefined2 param_3,undefined2 param_4)
+
+{
+  undefined2 local_8;
+  undefined2 local_6;
+  undefined2 local_4;
+  undefined2 local_2;
+  
+  _DAT_00a58294 = _DAT_00a58294 & 0xff00;
+  _DAT_00a5828c = param_1;
+  local_8 = param_1;
+  DAT_00a58260 = DAT_00a58260 | 0x80;
+  _DAT_00a5828e = param_2;
+  _DAT_00a58290 = param_3;
+  _DAT_00a58292 = param_4;
+  local_6 = param_2;
+  local_4 = param_3;
+  local_2 = param_4;
+  FUN_00449d50(&local_8);
+  return;
+}
+
+

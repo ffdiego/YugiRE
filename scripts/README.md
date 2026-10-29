@@ -11,6 +11,8 @@ bash YugiRE/scripts/run-archive-query.sh parasite-callers.txt 00570be0 00570420 
 ```
 
 O wrapper Linux usa o projeto persistente com `-noanalysis -readOnly`.
+O seletor `xref:VA` exporta somente referências, sem selecionar as funções
+donas para descompilação; `ref:VA` mantém o comportamento anterior.
 Define `XDG_CONFIG_HOME` para que o launcher também salve sua seleção de JDK
 em `scratch/`; configurações, cache e logs de cada consulta ficam em um
 diretório temporário próprio nesse local. `GHIDRA_INSTALL_DIR` permite
@@ -19,6 +21,12 @@ sem diretórios, destinado a `docs/evidence/`; relatórios existentes com esse
 nome são substituídos após a consulta ter sucesso. O wrapper verifica erros
 no console porque o headless pode retornar zero mesmo após falha de abertura.
 Não executa o jogo. Os comandos PowerShell abaixo documentam o fluxo Windows.
+
+Validação estática do comando 0x4D: `python3 YugiRE/scripts/validate_command_4d.py`
+(a partir da raiz do workspace). Exige o alvo conhecido e o banco preservado
+da rodada anterior; saída esperada `PASS`, metadados em
+`docs/evidence/command-4d-validation.json`. Ver
+[análise do comando](../docs/11-command-4d.md).
 
 Executar em PowerShell 7, a partir de `Z:\YugiRE`:
 

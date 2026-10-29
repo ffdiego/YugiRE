@@ -1,5 +1,11 @@
 # Efeitos das cartas — questão em aberto
 
+Oitava rodada: o caminho de Parasite Paracide chega a uma limpeza concreta
+da associação via comando 0x4D. [Produtor, fila, dispatcher e duas escritas](11-command-4d.md).
+A existência desse dispatcher de comandos não resolve a arquitetura geral
+de efeitos. Criação da associação com nibble 13 e significado do vínculo
+continuam em aberto. As rodadas abaixo registram o progresso anterior.
+
 Nenhuma evidência suficiente nesta rodada para distinguir funções por carta, tabelas, IDs de comportamento, bytecode ou combinação. Arquivos `.txt` citados em strings não comprovam scripts de efeitos.
 
 Plano futuro: estabelecer IDs com uma tabela verificável; seguir os consumidores; comparar duas cartas com comportamentos distintos; localizar dispatch por ID, tabelas de ponteiros ou loop de interpretação. Registrar também evidência contrária a cada hipótese. Nenhum endereço de efeito foi atribuído.

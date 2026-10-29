@@ -1,0 +1,77 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "dispatch": {
+    "opcode": "0x4d",
+    "normalized": "0x2c",
+    "stub": "0x5b9586",
+    "handler": "0x571bf0"
+  },
+  "instruction_checks": [
+    {
+      "va": "0x5b9249",
+      "file_offset": "0x1b9249",
+      "bytes": "66813da858a5000001"
+    },
+    {
+      "va": "0x5b9491",
+      "file_offset": "0x1b9491",
+      "bytes": "8a88ec9a5b00"
+    },
+    {
+      "va": "0x5b9497",
+      "file_offset": "0x1b9497",
+      "bytes": "ff248d38985b00"
+    },
+    {
+      "va": "0x571c25",
+      "file_offset": "0x171c25",
+      "bytes": "e89695ffff"
+    },
+    {
+      "va": "0x56b202",
+      "file_offset": "0x16b202",
+      "bytes": "668988805da500"
+    },
+    {
+      "va": "0x56b209",
+      "file_offset": "0x16b209",
+      "bytes": "668990c05da500"
+    }
+  ],
+  "slot_aliases": {
+    "category": 11,
+    "index_base": "0xa563b0",
+    "metadata_base": "0xa563f0",
+    "block_stride": "0xd44",
+    "slot_stride": 2
+  },
+  "originals": [
+    {
+      "name": "joey_pc.exe",
+      "sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+      "size": 2060288
+    },
+    {
+      "name": "data.dat",
+      "sha256": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed",
+      "size": 318892812
+    },
+    {
+      "name": "Voice.dat",
+      "sha256": "50275ac744b8d029162dcedc2d19d318b34d6d56ee8dcabec2f1a9119438d6c8",
+      "size": 145041724
+    },
+    {
+      "name": "Region.dat",
+      "sha256": "4a64a107f0cb32536e5bce6c98c393db21cca7f4ea187ba8c4dca8b51d4ea80a",
+      "size": 1
+    },
+    {
+      "name": "deck.ydc",
+      "sha256": "a7e4537553753c2b24b0a276bca80db5fa08b3212b3fc7b33c5087dd8fd38846",
+      "size": 100
+    }
+  ],
+  "database_sha256": "8a803c643a0cdae898bb066a2bd0fcade43414322feaf3c830ba8ef965baca18",
+  "method": "Static PE reads and address arithmetic; no target execution."
+}

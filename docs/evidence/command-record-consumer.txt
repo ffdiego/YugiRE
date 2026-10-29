@@ -1,0 +1,88 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005b9249 CMP word ptr [0x00a558a8],0x100
+INS 005b9252 JNC 0x005b92ab
+INS 005b9254 MOV ESI,dword ptr [0x00a558a8]
+INS 005b925a AND ESI,0xffff
+INS 005b9260 MOV word ptr [ESI*0x8 + 0xa550a8],DI
+INS 005b9268 MOV ESI,dword ptr [0x00a558a8]
+INS 005b926e AND ESI,0xffff
+INS 005b9274 MOV word ptr [ESI*0x8 + 0xa550aa],AX
+INS 005b927c MOV ESI,dword ptr [0x00a558a8]
+INS 005b9282 AND ESI,0xffff
+INS 005b9288 MOV word ptr [ESI*0x8 + 0xa550ac],CX
+INS 005b9290 MOV ESI,dword ptr [0x00a558a8]
+INS 005b9296 AND ESI,0xffff
+INS 005b929c MOV word ptr [ESI*0x8 + 0xa550ae],DX
+INS 005b92a4 INC word ptr [0x00a558a8]
+INS 005b92ab MOV word ptr [ESP + 0xc],CX
+INS 005b92b0 LEA ECX,[ESP + 0x8]
+INS 005b92b4 PUSH ECX
+INS 005b92b5 MOV word ptr [ESP + 0xc],DI
+INS 005b92ba MOV word ptr [ESP + 0xe],AX
+INS 005b92bf MOV word ptr [ESP + 0x12],DX
+INS 005b92c4 CALL 0x00449d50
+INS 005b92c9 ADD ESP,0x4
+INS 005b92cc POP EDI
+INS 005b92cd POP ESI
+INS 005b92ce ADD ESP,0x8
+INS 005b92d1 RET
+INS 005b9370 CMP word ptr [0x00a558a8],0x100
+INS 005b9379 JNC 0x005b93e2
+INS 005b937b MOV EAX,[0x00a558a8]
+INS 005b9380 MOV CX,word ptr [ESP + 0x4]
+INS 005b9385 AND EAX,0xffff
+INS 005b938a MOV word ptr [EAX*0x8 + 0xa550a8],CX
+INS 005b9392 MOV EDX,dword ptr [0x00a558a8]
+INS 005b9398 MOV AX,word ptr [ESP + 0x8]
+INS 005b939d AND EDX,0xffff
+INS 005b93a3 MOV word ptr [EDX*0x8 + 0xa550aa],AX
+INS 005b93ab MOV ECX,dword ptr [0x00a558a8]
+INS 005b93b1 MOV DX,word ptr [ESP + 0xc]
+INS 005b93b6 AND ECX,0xffff
+INS 005b93bc MOV word ptr [ECX*0x8 + 0xa550ac],DX
+INS 005b93c4 MOV EAX,[0x00a558a8]
+INS 005b93c9 MOV CX,word ptr [ESP + 0x10]
+INS 005b93ce AND EAX,0xffff
+INS 005b93d3 MOV word ptr [EAX*0x8 + 0xa550ae],CX
+FUNCTION FUN_00449d50 @00449d50
+ CALLER 005b92c4 FUN_005b9170
+ CALLER 0044a527 FUN_0044a3d0
+ CALLER 005b9458 FUN_005b93f0
+
+void FUN_00449d50(undefined4 *param_1)
+
+{
+  undefined **local_10;
+  undefined4 *local_c;
+  undefined1 *local_8;
+  undefined1 *local_4;
+  
+  local_c = (undefined4 *)FUN_0054a1d0(8);
+  local_4 = (undefined1 *)&local_10;
+  local_8 = (undefined1 *)&local_10;
+  if (local_c == (undefined4 *)0x0) {
+    local_c = (undefined4 *)0x0;
+  }
+  else {
+    *local_c = *param_1;
+    local_c[1] = param_1[1];
+  }
+  local_10 = &PTR_FUN_005db084;
+  FUN_0044b2a0(*(undefined4 *)(DAT_005f3248 + 0xc),1,&local_10);
+  local_10 = &PTR_FUN_005db084;
+  if (local_8 != (undefined1 *)0x0) {
+    if ((undefined ***)local_8 == &local_10) {
+      if (local_c != (undefined4 *)0x0) {
+        FUN_0054a2d0(local_c);
+        return;
+      }
+    }
+    else {
+      *(undefined1 **)(local_8 + 0xc) = local_4;
+      *(undefined1 **)(local_4 + 8) = local_8;
+    }
+  }
+  return;
+}
+
+

@@ -13,6 +13,14 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+Oitava rodada concluída: [comando 0x4D](11-command-4d.md) seguido até escrita
+de estado. O dispatcher 0x005B9470 usa tabela de normalização: opcode 0x4D
+→ índice 0x2C → 0x00571BF0 → 0x0056B1C0. No caminho de Parasite Paracide,
+zera índice/metadados da associação, sem compactar o array nem reduzir seu
+contador nesse handler. Próximo passo: escritores de entradas com nibble 13
+para estabelecer criação e significado do vínculo. O dispatcher identificado
+é de comandos; não comprova interpretador geral de efeitos.
+
 Sétima rodada concluída: [associação de Parasite Paracide](10-parasite-association.md).
 0x00570BE0 retorna posição+1 de uma entrada de ID 762 com metadados de
 nibble 13 e chave derivada da palavra de estado. Três chamadores confirmam

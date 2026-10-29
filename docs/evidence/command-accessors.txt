@@ -1,0 +1,52 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00449df0 @00449df0
+ CALLER 005bc58e FUN_005bc580
+ CALLER 0048d3d5 FUN_0048d320
+ CALLER 0048d3e1 FUN_0048d320
+ CALLER 0040c00d FUN_0040bff0
+ CALLER 0040c019 FUN_0040bff0
+
+undefined4 FUN_00449df0(void)
+
+{
+  return *(undefined4 *)(*(int *)(DAT_005f3248 + 0x30) + 4);
+}
+
+
+FUNCTION FUN_00449e00 @00449e00
+ CALLER 005bc5ae FUN_005bc580
+ CALLER 0040c008 FUN_0040bff0
+
+void FUN_00449e00(void)
+
+{
+  *(int *)(DAT_005f3248 + 0x30) = *(int *)(DAT_005f3248 + 0x30) + 0x10;
+  return;
+}
+
+
+FUNCTION FUN_00449e10 @00449e10
+ CALLER 0040bffa FUN_0040bff0
+ CALLER 0040c031 FUN_0040bff0
+
+void FUN_00449e10(void)
+
+{
+  *(undefined4 *)(DAT_005f3248 + 0x30) = *(undefined4 *)(DAT_005f3248 + 8);
+  return;
+}
+
+
+FUNCTION FUN_00449e20 @00449e20
+ CALLER 005bc581 FUN_005bc580
+ CALLER 005bc5b7 FUN_005bc580
+ CALLER 0040bfff FUN_0040bff0
+ CALLER 0040c028 FUN_0040bff0
+
+bool FUN_00449e20(void)
+
+{
+  return *(int *)(DAT_005f3248 + 0x30) == *(int *)(DAT_005f3248 + 0xc);
+}
+
+

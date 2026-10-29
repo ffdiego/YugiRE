@@ -1,0 +1,30 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005bc580 @005bc580
+ CALLER 005b9e3f FUN_005b9ca0
+ CALLER 005b9f9b null
+
+void FUN_005bc580(int param_1)
+
+{
+  int iVar1;
+  undefined2 *puVar2;
+  undefined2 extraout_var;
+  undefined2 extraout_var_00;
+  
+  iVar1 = FUN_00449e20();
+  while( true ) {
+    if (iVar1 != 0) {
+      DAT_00a54e5d = DAT_00a54e5d | 2;
+      return;
+    }
+    puVar2 = (undefined2 *)FUN_00449df0();
+    FUN_005b9370(CONCAT22(extraout_var_00,*puVar2),CONCAT22(extraout_var,puVar2[1]),
+                 CONCAT22(extraout_var_00,puVar2[2]),CONCAT22(extraout_var,puVar2[3]));
+    FUN_00449e00();
+    if (param_1 == 0) break;
+    iVar1 = FUN_00449e20();
+  }
+  return;
+}
+
+

@@ -1,0 +1,13 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005b9470 @005b9470
+ CALLER 005b9c49 FUN_005b9bf0
+ CALLER 005b9db3 FUN_005b9ca0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_005b9470(void)
+EXCERPT ONLY: normalized switch index, not original opcode. Full transient export in scratch/command-opcode-dispatch-full.txt.
+  case 0x2c:
+    FUN_0056b1c0();
+    DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+    return;

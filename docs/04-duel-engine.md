@@ -1,5 +1,17 @@
 # Motor de duelos — primeiros dados de cartas
 
+## Oitava rodada: fila de comandos e escrita de estado
+
+[Comando 0x4D](11-command-4d.md) seguido de 0x005B9170 até
+0x005B9CA0/0x005B9470 e 0x00571BF0/0x0056B1C0. Registros de quatro
+palavras uint16 são enfileirados; o dispatcher normaliza o opcode antes
+do salto. No caso da associação de Parasite Paracide, duas escritas zeram
+índice e metadados na posição encontrada. Isso liga uma consulta a uma
+atualização concreta do estado, sem identificar ainda estruturas completas
+de campo/jogadores ou todos os códigos de localização.
+
+As observações anteriores abaixo permanecem como histórico.
+
 Esta rodada não identifica estruturas de jogador, campo, fases ou resolução. Não foi reconstruído nem implementado motor algum.
 
 Pistas observadas: caminhos de recursos como `duel/card/deck.txt` no executável; possível sequência de IDs de 16 bits em deck.ydc. Confiança alta na presença dos bytes; baixa quanto à relação com representação em memória. Recursos de interface não demonstram implementação das regras.
