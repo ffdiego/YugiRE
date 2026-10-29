@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Comparação estática: Sparks e Ookazi
+
+[Duas cartas de dano simples](cards/sparks-ookazi.md) compartilham os callbacks
+0x00584E60 e 0x00593CC0. A seleção por ID dentro do callback escolhe 200/800,
+depois usa o mesmo emissor 0x005784E0 identificado para Parasite.
+Isso confirma uma combinação de tabela de callbacks, código compartilhado e
+condições por ID. Não há evidência de uma função exclusiva por carta nesses casos.
+
 ## Caso funcional concluído: Parasite Paracide
 
 Ver [análise consolidada](cards/parasite-paracide.md). O caso liga callbacks

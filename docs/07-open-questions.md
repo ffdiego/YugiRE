@@ -13,6 +13,12 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Comparação posterior:** [Sparks/Ookazi](cards/sparks-ookazi.md) confirma
+callbacks compartilhados com seleção por ID e constantes 200/800. As incertezas
+de execução de Parasite foram separadas em [experimentos](cards/parasite-dynamic-checks.md).
+Próxima trilha estática útil: contrastar esses efeitos automáticos com uma carta
+que escolha um alvo de campo, para mapear validação e seleção do pedido.
+
 **Atualização de conclusão:** [Parasite Paracide — caso consolidado](cards/parasite-paracide.md)
 fecha a análise funcional estática da carta. O consumidor de 0x43, o transporte
 inicial, o embaralhamento, a colocação, o tipo dinâmico e o callback de limpeza

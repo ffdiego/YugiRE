@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "name": "Sparks",
+      "index": 755,
+      "resource_id": 342,
+      "registration_index": 66,
+      "callback": "0x584e60",
+      "target_callback": "0x593cc0",
+      "amount": 200,
+      "immediate_va": "0x584f1f",
+      "description": "Inflicts 200 points of Direct Damage to your opponent's Life Points."
+    },
+    {
+      "name": "Ookazi",
+      "index": 557,
+      "resource_id": 345,
+      "registration_index": 69,
+      "callback": "0x584e60",
+      "target_callback": "0x593cc0",
+      "amount": 800,
+      "immediate_va": "0x584fab",
+      "description": "Inflicts 800 points of Direct Damage to your opponent's Life Points."
+    }
+  ],
+  "method": "Static registration, local resources and immediate checks; no target execution."
+}

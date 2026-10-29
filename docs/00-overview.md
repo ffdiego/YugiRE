@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Comparação concluída: [Sparks e Ookazi](cards/sparks-ookazi.md), com callbacks
+compartilhados e seleção de dano 200/800 por ID. Os testes com jogo aberto de
+Parasite ficam em [plano dinâmico](cards/parasite-dynamic-checks.md).
+
 **Caso concluído — análise funcional estática de
 [Parasite Paracide](cards/parasite-paracide.md):** ativação, transferência e
 embaralhamento, compra, colocação, perda de 1000 LP, alteração dinâmica para

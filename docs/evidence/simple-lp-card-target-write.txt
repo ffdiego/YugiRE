@@ -1,0 +1,32 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00584fa7 MOV BL,byte ptr [EDI + 0x6]
+INS 00584faa MOV ESI,0x320
+INS 00584faf AND EBX,0x1
+INS 00584fb2 PUSH ESI
+INS 00584fb3 PUSH EBX
+INS 00584fb4 CALL 0x005784e0
+INS 00584fb9 ADD ESP,0x8
+INS 00584fbc XOR AX,AX
+INS 00584fbf POP EDI
+INS 00584fc0 POP ESI
+FUNCTION FUN_00592a50 @00592a50
+ CALLER 0059517b null
+ CALLER 00592a43 FUN_005929f0
+ CALLER 005949f0 null
+ CALLER 00595ed6 null
+ CALLER 00596123 null
+ CALLER 00596e14 null
+ CALLER 00596fea null
+
+void FUN_00592a50(int param_1,undefined2 param_2)
+
+{
+  if (param_1 != 0) {
+    *(undefined2 *)(param_1 + 6 + (uint)(*(ushort *)(param_1 + 4) >> 0xd) * 2) = param_2;
+    *(ushort *)(param_1 + 4) =
+         (*(ushort *)(param_1 + 4) & 0xe000) + 0x2000 ^ *(ushort *)(param_1 + 4) & 0x1fff;
+  }
+  return;
+}
+
+

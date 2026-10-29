@@ -1,5 +1,11 @@
 # Reprodução
 
+Comparação Sparks/Ookazi:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_simple_lp_cards.py`.
+Esperado: sete linhas `PASS`, com metadados em
+`docs/evidence/simple-lp-cards-validation.json`. Ver
+[análise comparativa](../docs/cards/sparks-ookazi.md).
+
 Caso consolidado de Parasite Paracide:
 
 ```bash
