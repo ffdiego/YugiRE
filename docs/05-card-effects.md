@@ -1,5 +1,10 @@
 # Efeitos das cartas — questão em aberto
 
+Décima primeira rodada: [pedido de 20 bytes e transporte da chave](14-parasite-request-key.md)
+confirmados. A emissão com 0x365F preserva a chave de uma palavra de estado,
+mas seleciona outro ramo do callback de Parasite Paracide. Criação e limpeza
+não foram demonstradas como consequências da mesma chamada.
+
 Décima rodada: [registro por ID e callback de Parasite Paracide](13-parasite-creation.md)
 confirmados. A busca 0x0059DBE0 converte índice→ID e localiza registro de
 24 bytes; 0x0059DEB0 chama o ponteiro em +4. Para ID 762, chega a 0x005875A0,

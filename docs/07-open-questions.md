@@ -13,6 +13,13 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+Décima primeira rodada concluída: [chave do pedido](14-parasite-request-key.md).
+0x005BA310 grava o argumento-chave em bits 5–12 de +4 de registros de
+20 bytes; transferência e seleção para o callback identificadas. O chamador
+0x00578981 fornece a mesma chave de palavra de estado usada na busca, mas
+código 0x365F seleciona o ramo 0x0058766E, não o de criação já examinado.
+Próximo passo: esse segundo ramo; produtor inicial do primeiro ainda pendente.
+
 Décima rodada concluída: [produtor de tipo 13](13-parasite-creation.md)
 ligado ao ID 762 via busca 0x0059DBE0 e callback 0x0059DEB0. Registro 150
 da tabela de passo 24 aponta para 0x005875A0, que em um ramo emite

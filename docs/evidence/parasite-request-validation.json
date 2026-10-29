@@ -1,0 +1,53 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "instruction_checks": [
+    {
+      "va": "0x5ba408",
+      "file_offset": "0x1ba408",
+      "bytes": "8a442424"
+    },
+    {
+      "va": "0x5ba423",
+      "file_offset": "0x1ba423",
+      "bytes": "c1e00581e11fe000000bc166894604"
+    },
+    {
+      "va": "0x5ba4b3",
+      "file_offset": "0x1ba4b3",
+      "bytes": "e858feffff"
+    },
+    {
+      "va": "0x5bb742",
+      "file_offset": "0x1bb742",
+      "bytes": "8db02c5ba500"
+    },
+    {
+      "va": "0x57895d",
+      "file_offset": "0x17895d",
+      "bytes": "c1e918c1e80c83e17f83e0018d1448"
+    }
+  ],
+  "key_roundtrips": 65536,
+  "key_domain": 256,
+  "preserved_patterns_per_key": 256,
+  "request_stride": 20,
+  "pending_base": "0xa558c0",
+  "active_base": "0xa55b40",
+  "callback_request": "0xa55b40 + (active_count - 1) * 20",
+  "branch_examples": [
+    {
+      "side": 0,
+      "code": "0x365f00c5",
+      "request_word_2": "0x26fe",
+      "type_13_creation_branch": false
+    },
+    {
+      "side": 1,
+      "code": "0xb65f00c5",
+      "request_word_2": "0x26ff",
+      "type_13_creation_branch": false
+    }
+  ],
+  "method": "Static bytes and exhaustive finite-domain arithmetic; no game execution.",
+  "limitation": "Encoding equality proven; initial creation event and complete callback branches unresolved."
+}

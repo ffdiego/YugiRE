@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Décima primeira rodada: [transporte da chave no pedido](14-parasite-request-key.md).
+Bits 5–12 de pedido+4 preservam a chave; código 0x365F seleciona outro ramo
+do callback, distinguindo a busca posterior da criação inicial.
+
 Décima rodada: [callback e criação de Parasite Paracide](13-parasite-creation.md).
 Registro de ID 762 seleciona 0x005875A0; um ramo produz associação de tipo 13
 via comando 0x86. Origem da chave no pedido ainda pendente.

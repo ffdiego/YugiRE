@@ -39,6 +39,13 @@ Esperado: três linhas `PASS`. O script valida também o registro de ID 762,
 a busca e a chamada indireta; gera `docs/evidence/parasite-creation-validation.json`.
 Ver [callback e produtor](../docs/13-parasite-creation.md).
 
+Para o transporte da chave:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_parasite_request.py`.
+Esperado: quatro linhas `PASS`, incluindo 65.536 casos de codificação e
+a distinção do ramo selecionado por 0x365F. Relatório em
+`docs/evidence/parasite-request-validation.json`; análise em
+[chave do pedido](../docs/14-parasite-request-key.md).
+
 Executar em PowerShell 7, a partir de `Z:\YugiRE`:
 
 ```powershell
