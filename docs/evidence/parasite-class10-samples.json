@@ -1,0 +1,110 @@
+{
+  "method": "Four bounded resources decoded in memory; all output SHA256 checked. Properties/names hashes from earlier rounds; description/offsets pinned in this round.",
+  "samples": [
+    {
+      "index": 23,
+      "name": "Acid Crawler",
+      "class_code": 10
+    },
+    {
+      "index": 58,
+      "name": "Minar",
+      "class_code": 10
+    },
+    {
+      "index": 65,
+      "name": "Alinsection",
+      "class_code": 10
+    },
+    {
+      "index": 66,
+      "name": "Insect Queen",
+      "class_code": 10
+    },
+    {
+      "index": 161,
+      "name": "Ganigumo",
+      "class_code": 10
+    },
+    {
+      "index": 162,
+      "name": "Kamakiriman",
+      "class_code": 10
+    },
+    {
+      "index": 197,
+      "name": "Parasite Paracide",
+      "class_code": 10
+    },
+    {
+      "index": 203,
+      "name": "Kattapillar",
+      "class_code": 10
+    },
+    {
+      "index": 208,
+      "name": "Perfectly Ultimate Great Moth",
+      "class_code": 10
+    },
+    {
+      "index": 209,
+      "name": "Giant Flea",
+      "class_code": 10
+    },
+    {
+      "index": 223,
+      "name": "Killer Needle",
+      "class_code": 10
+    },
+    {
+      "index": 226,
+      "name": "Girochin Kuwagata",
+      "class_code": 10
+    },
+    {
+      "index": 240,
+      "name": "Kumootoko",
+      "class_code": 10
+    },
+    {
+      "index": 255,
+      "name": "Great Moth",
+      "class_code": 10
+    },
+    {
+      "index": 267,
+      "name": "Kwagar Hercules",
+      "class_code": 10
+    },
+    {
+      "index": 268,
+      "name": "Kuwagata Alpha",
+      "class_code": 10
+    },
+    {
+      "index": 271,
+      "name": "Gale Dogra",
+      "class_code": 10
+    },
+    {
+      "index": 296,
+      "name": "Cockroach Knight",
+      "class_code": 10
+    },
+    {
+      "index": 297,
+      "name": "Gokibore",
+      "class_code": 10
+    },
+    {
+      "index": 312,
+      "name": "Korogashi",
+      "class_code": 10
+    }
+  ],
+  "description": "FLIP: Put this card face-up in your opponent's Deck and shuffle it. When your opponent draws this card, it is immediately Special Summoned on your opponent's side of the field face-up in Defense Position and inflicts 1000 points of Direct Damage to your opponent's Life Points. From this point, all face-up Monster Cards on your opponent's side of the field are treated as Insect-Type monsters as long as this card remains face-up on the field.",
+  "description_offset": 22170,
+  "description_sha256": "751d81fe6e8484afc53a311e8fc1c66b5fc50a5b1f4a95edba241422b3c27a92",
+  "offsets_sha256": "e4918a06fa86882e8998220f067ed36fd5ca8c148c62f6a1bedd15b48e11ce60",
+  "parasite_property_word": "0xa4a4641e"
+}

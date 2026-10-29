@@ -1,0 +1,88 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 0047c5d0 NEG DL
+INS 0047c5d2 MOV ECX,dword ptr [ESI + 0x24]
+INS 0047c5d5 SBB EDX,EDX
+INS 0047c5d7 AND EDX,0xffffffec
+INS 0047c5da ADD EDX,0xa
+INS 0047c5dd MOV EAX,EDX
+INS 0047c5df ADD ECX,EAX
+INS 0047c5e1 PUSH EAX
+INS 0047c5e2 MOV EAX,dword ptr [ESI + 0x20]
+INS 0047c5e5 MOV dword ptr [ESI + 0x24],ECX
+INS 0047c5e8 PUSH EAX
+INS 0047c5e9 JMP 0x0047c60a
+INS 0047c5eb CMP EDI,0x1
+INS 0047c5ee JL 0x0047c612
+INS 0047c5f0 MOV CL,BL
+INS 0047c5f2 DEC EDI
+INS 0047c5f3 NEG CL
+INS 0047c5f5 SBB ECX,ECX
+INS 0047c5f7 MOV EDX,dword ptr [ESI + 0x20]
+INS 0047c5fa AND ECX,0xfffffffe
+INS 0047c5fd INC ECX
+INS 0047c5fe MOV EAX,ECX
+INS 0047c600 MOV ECX,dword ptr [ESI + 0x24]
+INS 0047c603 ADD ECX,EAX
+FUNCTION FUN_0047c560 @0047c560
+ CALLER 005dbaac null
+
+void __fastcall FUN_0047c560(int param_1)
+
+{
+  int iVar1;
+  uint uVar2;
+  int iVar3;
+  bool bVar4;
+  undefined4 uVar5;
+  
+  uVar2 = *(uint *)(param_1 + 0x28);
+  *(uint *)(param_1 + 0x38) = (*(int *)(param_1 + 0x3c) != 0) + 1 + *(int *)(param_1 + 0x38) & 0x7f;
+  bVar4 = (int)uVar2 < 0;
+  iVar3 = (uVar2 ^ (int)uVar2 >> 0x1f) - ((int)uVar2 >> 0x1f);
+  if (*(int *)(param_1 + 0x34) < 0x100) {
+    *(int *)(param_1 + 0x34) = *(int *)(param_1 + 0x34) + 8;
+  }
+  else if (*(char *)(param_1 + 0x30) == '\0') {
+    if (iVar3 < 100) {
+      if (iVar3 < 10) {
+        if (iVar3 < 1) goto LAB_0047c612;
+        iVar3 = iVar3 + -1;
+        uVar5 = *(undefined4 *)(param_1 + 0x20);
+        iVar1 = (-(uint)bVar4 & 0xfffffffe) + 1;
+        *(int *)(param_1 + 0x24) = *(int *)(param_1 + 0x24) + iVar1;
+      }
+      else {
+        iVar3 = iVar3 + -10;
+        iVar1 = (-(uint)bVar4 & 0xffffffec) + 10;
+        uVar5 = *(undefined4 *)(param_1 + 0x20);
+        *(int *)(param_1 + 0x24) = *(int *)(param_1 + 0x24) + iVar1;
+      }
+    }
+    else {
+      iVar3 = iVar3 + -100;
+      uVar5 = *(undefined4 *)(param_1 + 0x20);
+      iVar1 = (-(uint)bVar4 & 0xffffff38) + 100;
+      *(int *)(param_1 + 0x24) = *(int *)(param_1 + 0x24) + iVar1;
+    }
+    FUN_00573fb0(uVar5,iVar1);
+  }
+LAB_0047c612:
+  uVar2 = (int)*(uint *)(param_1 + 0x28) >> 0x1f;
+  if (iVar3 != (*(uint *)(param_1 + 0x28) ^ uVar2) - uVar2) {
+    *(undefined4 *)(param_1 + 0x3c) = 0x1f;
+  }
+  if (bVar4) {
+    iVar3 = -iVar3;
+  }
+  *(int *)(param_1 + 0x28) = iVar3;
+  uVar2 = *(uint *)(param_1 + 0x24) & ((int)*(uint *)(param_1 + 0x24) < 0) - 1;
+  *(uint *)(param_1 + 0x24) = uVar2;
+  if (0xffff < (int)uVar2) {
+    uVar2 = 0xffff;
+  }
+  *(uint *)(param_1 + 0x24) = uVar2;
+  *(uint *)(param_1 + 0x3c) = *(int *)(param_1 + 0x3c) - (uint)(0 < *(int *)(param_1 + 0x3c));
+  return;
+}
+
+

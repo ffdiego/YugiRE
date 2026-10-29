@@ -1,0 +1,145 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00573fb0 MOV EDX,dword ptr [ESP + 0x8]
+INS 00573fb4 MOV EAX,dword ptr [ESP + 0x4]
+INS 00573fb8 TEST EDX,EDX
+INS 00573fba JL 0x00573ff1
+INS 00573fbc AND EAX,0x1
+INS 00573fbf LEA ECX,[EAX + EAX*0x2]
+INS 00573fc2 LEA ECX,[ECX + ECX*0x8]
+INS 00573fc5 SHL ECX,0x1
+INS 00573fc7 SUB ECX,EAX
+INS 00573fc9 SHL ECX,0x4
+INS 00573fcc ADD ECX,EAX
+INS 00573fce XOR EAX,EAX
+INS 00573fd0 MOV AX,word ptr [ECX*0x4 + 0xa55d64]
+INS 00573fd8 LEA ECX,[ECX*0x4 + 0xa55d64]
+INS 00573fdf ADD EAX,EDX
+INS 00573fe1 CMP EAX,0xffff
+INS 00573fe6 JLE 0x00573fed
+INS 00573fe8 MOV EAX,0xffff
+INS 00573fed MOV word ptr [ECX],AX
+INS 00573ff0 RET
+INS 00573ff1 AND EAX,0x1
+INS 00573ff4 LEA ECX,[EAX + EAX*0x2]
+INS 00573ff7 LEA ECX,[ECX + ECX*0x8]
+INS 00573ffa SHL ECX,0x1
+INS 00573ffc SUB ECX,EAX
+INS 00573ffe SHL ECX,0x4
+INS 00574001 ADD ECX,EAX
+INS 00574003 LEA EAX,[ECX*0x4 + 0xa55d64]
+INS 0057400a XOR ECX,ECX
+INS 0047c600 MOV ECX,dword ptr [ESI + 0x24]
+INS 0047c603 ADD ECX,EAX
+INS 0047c605 PUSH EAX
+INS 0047c606 MOV dword ptr [ESI + 0x24],ECX
+INS 0047c609 PUSH EDX
+INS 0047c60a CALL 0x00573fb0
+FUNCTION FUN_0044c3e0 @0044c3e0
+ CALLER 00483680 FUN_00483500
+
+undefined4 * __fastcall FUN_0044c3e0(undefined4 *param_1)
+
+{
+  undefined4 *puVar1;
+  undefined4 *local_20;
+  undefined4 *local_1c;
+  undefined4 *local_18;
+  undefined1 local_14 [8];
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  puStack_8 = &LAB_005d3188;
+  local_c = ExceptionList;
+  ExceptionList = &local_c;
+  *(undefined1 *)(param_1 + 2) = 0;
+  param_1[3] = 0;
+  *param_1 = &PTR_FUN_005db238;
+  DAT_005f3400 = param_1 + 4;
+  *(undefined1 *)(param_1 + 5) = 0;
+  *(undefined1 *)((int)param_1 + 0x15) = 0;
+  param_1[7] = 0;
+  param_1[8] = 0x20;
+  param_1[0xd] = 0;
+  *DAT_005f3400 = &PTR_LAB_005db234;
+  param_1[10] = 0;
+  param_1[9] = 0;
+  param_1[0xc] = 0;
+  param_1[0xb] = 0;
+  local_4 = 1;
+  local_1c = param_1;
+  FUN_0041be80();
+  local_4._0_1_ = 2;
+  FUN_00449330();
+  puVar1 = param_1 + 0x11f;
+  local_4._0_1_ = 3;
+  local_20 = puVar1;
+  FUN_005c3e67(puVar1,0x460,2,FUN_0044c730,FUN_0044c9a0);
+  local_4._0_1_ = 4;
+  FUN_0040dac0();
+  local_4._0_1_ = 5;
+  DAT_005f300c = puVar1;
+  FUN_0043c550(0,0xd,0);
+  FUN_0043c550(0,0xc,0);
+  FUN_0043c550(0,0xe,0);
+  FUN_0043c550(0,0xf,0);
+  FUN_0043c550(1,0xd,0);
+  FUN_0043c550(1,0xc,0);
+  FUN_0043c550(1,0xe,0);
+  FUN_0043c550(1,0xf,0);
+  puVar1 = param_1 + 0x39a;
+  local_4._0_1_ = 6;
+  local_20 = puVar1;
+  FUN_005c3e67(puVar1,0x40,2,FUN_0047c310,FUN_0044cc40);
+  local_4._0_1_ = 7;
+  FUN_0041ae80();
+  local_4._0_1_ = 8;
+  FUN_0041ae80();
+  local_4._0_1_ = 9;
+  FUN_00413db0(s_duel_life_lifepoint_txt_005ebcb4);
+  FUN_00413db0(s_duel_life_match_txt_005ebca0);
+  param_1[0x3a2] = 0;
+  param_1[0x39e] = puVar1;
+  param_1[0x3b2] = 1;
+  param_1[0x3ae] = puVar1;
+  DAT_00a53754 = param_1 + 0x400;
+  *DAT_00a53754 = &PTR_LAB_005db230;
+  local_4._0_1_ = 0xb;
+  FUN_00481040(0);
+  local_4._0_1_ = 0xc;
+  FUN_00413bc0();
+  local_4._0_1_ = 0xd;
+  FUN_0045e250();
+  local_4._0_1_ = 0xe;
+  FUN_0040fbb0();
+  param_1[0x4b6] = &PTR_FUN_005db22c;
+  local_4._0_1_ = 0xf;
+  DAT_005f3404 = param_1 + 0x4b6;
+  FUN_0040fbb0();
+  param_1[0x4bb] = &PTR_FUN_005db228;
+  local_4._0_1_ = 0x10;
+  DAT_005f3018 = param_1 + 0x4bb;
+  FUN_005bfeb0(DAT_005f3288,DAT_005f328c,DAT_005f3290);
+  param_1[0x4c2] = 0;
+  param_1[0x4c1] = &PTR_FUN_005db220;
+  param_1[0x4c4] = 0;
+  param_1[0x4c3] = 0;
+  puVar1 = param_1 + 0x4c9;
+  local_4._0_1_ = 0x11;
+  local_18 = puVar1;
+  FUN_0044c710();
+  local_4 = CONCAT31(local_4._1_3_,0x12);
+  *puVar1 = &PTR_FUN_005da604;
+  local_20 = puVar1;
+  FUN_0044e060(local_14,&local_20);
+  param_1[0x4cf] = 0;
+  param_1[0x4ce] = &PTR_FUN_005db218;
+  param_1[0x4d1] = 0;
+  param_1[0x4d0] = 0;
+  *param_1 = &PTR_FUN_005db1f8;
+  *(undefined4 *)(DAT_005f33f0 + 0x144) = DAT_005f328c;
+  ExceptionList = local_c;
+  return param_1;
+}
+
+

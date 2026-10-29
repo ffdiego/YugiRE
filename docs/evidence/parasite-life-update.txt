@@ -1,0 +1,54 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_0047c4f0 @0047c4f0
+ CALLER 00414261 FUN_00414110
+ CALLER 004084f0 FUN_00408470
+ CALLER 004085f3 FUN_00408470
+
+void __thiscall FUN_0047c4f0(int param_1,int param_2,undefined4 param_3,undefined1 param_4)
+
+{
+  if (*(char *)(param_1 + 0x30) == '\0') {
+    *(undefined4 *)(param_1 + 0x2c) = param_3;
+    *(undefined4 *)(param_1 + 0x34) = 0;
+    *(int *)(param_1 + 0x28) = param_2;
+    *(undefined1 *)(param_1 + 0x30) = param_4;
+    FUN_005c03d0(((-1 < param_2) - 1 & 0xffffffea) + 0x1000001f,0);
+    return;
+  }
+  FUN_0047c540();
+  return;
+}
+
+
+FUNCTION FUN_0044c320 @0044c320
+ CALLER 0044ba06 FUN_0044ba00
+ CALLER 0044db6f null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_0044c320(void)
+
+{
+  if (2999 < (int)((uint)(ushort)(&DAT_00a55d64)[((byte)~(byte)_DAT_00a54e5c & 1) * 0x6a2] -
+                  (uint)(ushort)(&DAT_00a55d64)[(_DAT_00a54e5c & 1) * 0x6a2])) {
+    FUN_005c03d0(0x20000008,0xf);
+    return;
+  }
+  if ((int)((uint)(ushort)(&DAT_00a55d64)[((byte)~(byte)_DAT_00a54e5c & 1) * 0x6a2] -
+           (uint)(ushort)(&DAT_00a55d64)[(_DAT_00a54e5c & 1) * 0x6a2]) < -2999) {
+    FUN_005c03d0(0x20000007,0xf);
+    return;
+  }
+  if (DAT_005f3294 == 3) {
+    FUN_005c03d0(0x20000006,0xf);
+    return;
+  }
+  if (DAT_005f3294 == 1) {
+    FUN_005c03d0(0x20000005,0xf);
+    return;
+  }
+  FUN_005c03d0(0x20000004,0xf);
+  return;
+}
+
+

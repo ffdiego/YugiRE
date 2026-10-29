@@ -13,6 +13,15 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Atualização de conclusão:** [Parasite Paracide — caso consolidado](cards/parasite-paracide.md)
+fecha a análise funcional estática da carta. O consumidor de 0x43, o transporte
+inicial, o embaralhamento, a colocação, o tipo dinâmico e o callback de limpeza
+foram seguidos. As pendências listadas nas rodadas abaixo são históricas.
+Permanecem fora desse fechamento: execução dinâmica, matriz de interações,
+reimplementação equivalente e detalhes completos dos helpers compartilhados.
+Próximo trabalho independente: comparar uma carta mais simples ou executar
+o [plano de integração do REA](15-rea-integration-todo.md).
+
 Décima segunda rodada concluída: [segundo ramo](16-parasite-continuation.md)
 localiza palavra de estado pela chave e pode preparar colocação, em três
 estados. Emite metadados tipo 13 na lista de uma posição e comando 0x43 com

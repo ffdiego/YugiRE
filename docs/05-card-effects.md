@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Caso funcional concluído: Parasite Paracide
+
+Ver [análise consolidada](cards/parasite-paracide.md). O caso liga callbacks
+por ID, pedidos de 20 bytes, comandos de oito bytes e modificadores dinâmicos.
+Foram seguidos embaralhamento, colocação, -1000 LP e classe Insect. É uma
+conclusão específica de análise estática; a arquitetura de todos os efeitos
+continua aberta. As observações cronológicas abaixo são histórico.
+
 Décima primeira rodada: [pedido de 20 bytes e transporte da chave](14-parasite-request-key.md)
 confirmados. A emissão com 0x365F preserva a chave de uma palavra de estado,
 mas seleciona outro ramo do callback de Parasite Paracide. Criação e limpeza

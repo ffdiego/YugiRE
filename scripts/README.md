@@ -1,5 +1,18 @@
 # Reprodução
 
+Caso consolidado de Parasite Paracide:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_parasite_lifecycle.py
+PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/inspect_parasite_resources.py
+```
+
+Executar da raiz do workspace. O primeiro imprime seis linhas `PASS` e
+revalida originais/banco, instruções e modelo aritmético. O segundo valida
+quatro recursos limitados em memória e imprime JSON com descrição e amostras;
+não salva os payloads completos. A classificação de Insect combina os nomes
+locais com a descrição da carta. Ver [caso consolidado](../docs/cards/parasite-paracide.md).
+
 Validação da continuação de Parasite Paracide:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_parasite_continuation.py`
 (a partir da raiz do workspace). Esperado: cinco linhas `PASS`. Ver

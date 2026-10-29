@@ -1,0 +1,125 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+REFERENCES TO 005ed0b4
+ XREF From: 0059ddaf To: 005ed0b4 Type: DATA Op: 1 ANALYSIS FUNCTION 0059dd90
+REFERENCES TO 005ed0b8
+ XREF From: 005bb181 To: 005ed0b8 Type: DATA Op: 1 ANALYSIS FUNCTION 005bafd0
+ XREF From: 0059de4f To: 005ed0b8 Type: DATA Op: 1 ANALYSIS FUNCTION 0059de30
+FUNCTION FUN_00408470 @00408470
+ CALLER 005b9572 FUN_005b9470
+ CALLER 005b957d FUN_005b9470
+
+void FUN_00408470(int param_1)
+
+{
+  int *piVar1;
+  char cVar2;
+  char cVar3;
+  uint uVar4;
+  uint uVar5;
+  int iVar6;
+  bool bVar7;
+  
+  uVar5 = DAT_00a550a0 & 0xffff;
+  if (param_1 == 0) {
+    uVar4 = -(uint)DAT_00a550a0._2_2_;
+  }
+  else {
+    uVar4 = (uint)DAT_00a550a0._2_2_;
+  }
+  bVar7 = DAT_00a550a4._2_2_ != 0;
+  switch(DAT_00a558ac & 0x7f) {
+  case 0:
+    if (*(char *)(DAT_005f3280 + 0xed8) == '\0' && *(char *)(DAT_005f3280 + 0xe98) == '\0') {
+      FUN_0047c4f0(uVar4,0xffffffff,1);
+    }
+    DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+    return;
+  case 1:
+    piVar1 = (int *)(DAT_005f3280 + 0xe68);
+    cVar2 = (**(code **)(*(int *)(DAT_005f3280 + 0xea8) + 4))();
+    cVar3 = (**(code **)(*piVar1 + 4))();
+    if (cVar2 == '\0' && cVar3 == '\0') {
+      if (bVar7) {
+        FUN_00403ce0(uVar5 >> 0xf,uVar4);
+      }
+      DAT_00a558ac = ((DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f ^ DAT_00a558ac) & 0xffffc07f;
+      return;
+    }
+    break;
+  case 2:
+    iVar6 = *(int *)(DAT_005f3280 + 0x132c);
+    piVar1 = (int *)(DAT_005f3280 + 0x1330);
+    if (iVar6 != *(int *)(DAT_005f3280 + 0x1330)) {
+      do {
+        cVar2 = (**(code **)(**(int **)(iVar6 + 4) + 4))();
+        if (cVar2 != '\0') {
+          return;
+        }
+        iVar6 = iVar6 + 0x10;
+      } while (iVar6 != *piVar1);
+    }
+    DAT_00a558ac = DAT_00a558ac ^ ((DAT_00a558ac & 0xffffff80) + 0x80 ^ DAT_00a558ac) & 0x3f80;
+    if (0x500 < (DAT_00a558ac & 0x3f80)) {
+      DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+      return;
+    }
+    break;
+  case 3:
+    FUN_0047c4f0(uVar4,0xffffffff,0);
+    DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+    return;
+  case 4:
+    piVar1 = (int *)(DAT_005f3280 + 0xea8);
+    cVar2 = (**(code **)(*(int *)(DAT_005f3280 + 0xe68) + 4))();
+    cVar3 = (**(code **)(*piVar1 + 4))();
+    if (cVar2 == '\0' && cVar3 == '\0') {
+      FUN_0044ba00();
+      DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+    }
+  }
+  return;
+}
+
+
+FUNCTION FUN_0057ee80 @0057ee80
+ CALLER 005ba4a2 FUN_005ba490
+ CALLER 00575092 FUN_00574f70
+ CALLER 0059ffda FUN_0059ff90
+ CALLER 005a4f5e null
+ CALLER 005a3148 null
+ CALLER 005acda2 FUN_005ac990
+
+undefined4 FUN_0057ee80(uint param_1,byte param_2,int param_3)
+
+{
+  ushort uVar1;
+  undefined4 uVar2;
+  undefined2 local_14;
+  ushort local_12;
+  short sStack_10;
+  undefined2 local_e;
+  undefined2 uStack_c;
+  undefined4 local_a;
+  int local_6;
+  undefined2 local_2;
+  
+  local_e = 0;
+  uStack_c = 0;
+  local_a = 0;
+  local_14 = (undefined2)param_1;
+  uVar1 = (ushort)(((((param_1 >> 0x18 & 1) << 2 | param_1 >> 0x15 & 3) << 6 |
+                    param_1 >> 0x19 & 0x3f) << 5 | param_1 >> 0x10 & 0x1f) << 1);
+  local_12 = uVar1 | (byte)(param_1 >> 0x1f);
+  sStack_10 = (ushort)param_2 << 5;
+  local_6 = param_3 << 0x10;
+  local_2 = (undefined2)((uint)param_3 >> 0x10);
+  if ((((uVar1 & 0x3000) == 0x1000) && (((byte)local_12 & 0x3e) < 0x15)) &&
+     ((*(byte *)(&DAT_00a55e00 + (uVar1 >> 1 & 0x1f) * 0x24 + (local_12 & 1) * 0x351) & 0x20) != 0))
+  {
+    return 0;
+  }
+  uVar2 = FUN_0057eac0(&local_14,0);
+  return uVar2;
+}
+
+

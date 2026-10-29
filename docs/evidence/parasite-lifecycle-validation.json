@@ -1,0 +1,54 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "instruction_checks": [
+    {
+      "va": "0x5b957b",
+      "file_offset": "0x1b957b",
+      "bytes": "6a00e8eeeee4ff"
+    },
+    {
+      "va": "0x47c60a",
+      "file_offset": "0x7c60a",
+      "bytes": "e8a1790f00"
+    },
+    {
+      "va": "0x573fed",
+      "file_offset": "0x173fed",
+      "bytes": "668901"
+    },
+    {
+      "va": "0x56f824",
+      "file_offset": "0x16f824",
+      "bytes": "c74424280a000000"
+    },
+    {
+      "va": "0x57cd30",
+      "file_offset": "0x17cd30",
+      "bytes": "e82b7cffff"
+    }
+  ],
+  "lp_model_cases": [
+    {
+      "initial": 0,
+      "final": 0
+    },
+    {
+      "initial": 500,
+      "final": 0
+    },
+    {
+      "initial": 1000,
+      "final": 0
+    },
+    {
+      "initial": 8000,
+      "final": 7000
+    },
+    {
+      "initial": 65535,
+      "final": 64535
+    }
+  ],
+  "method": "Static byte checks and arithmetic model; game not executed.",
+  "scope": "Functional card flow; arbitrary cross-card interactions not exhaustively tested."
+}

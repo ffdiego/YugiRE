@@ -29,6 +29,12 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+**Caso concluído — análise funcional estática de
+[Parasite Paracide](cards/parasite-paracide.md):** ativação, transferência e
+embaralhamento, compra, colocação, perda de 1000 LP, alteração dinâmica para
+Insect e limpeza ligados ao código. Não houve execução do jogo. Esse documento
+consolidado substitui as dúvidas intermediárias das rodadas 10–16 para o caso.
+
 Décima segunda rodada: [continuação de Parasite Paracide](16-parasite-continuation.md).
 Estados 0x80/0x7F/0x7E, busca pela chave e emissão de comando 0x43 com valor
 1000 identificados; semântica de pontos de vida ainda não comprovada.
