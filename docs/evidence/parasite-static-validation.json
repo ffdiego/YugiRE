@@ -1,0 +1,66 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "originals": [
+    {
+      "file": "passion/joey_pc.exe",
+      "size": 2060288,
+      "sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+      "passed": true
+    },
+    {
+      "file": "passion/data.dat",
+      "size": 318892812,
+      "sha256": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed",
+      "passed": true
+    },
+    {
+      "file": "passion/Voice.dat",
+      "size": 145041724,
+      "sha256": "50275ac744b8d029162dcedc2d19d318b34d6d56ee8dcabec2f1a9119438d6c8",
+      "passed": true
+    },
+    {
+      "file": "passion/Region.dat",
+      "size": 1,
+      "sha256": "4a64a107f0cb32536e5bce6c98c393db21cca7f4ea187ba8c4dca8b51d4ea80a",
+      "passed": true
+    },
+    {
+      "file": "passion/deck.ydc",
+      "size": 100,
+      "sha256": "a7e4537553753c2b24b0a276bca80db5fa08b3212b3fc7b33c5087dd8fd38846",
+      "passed": true
+    }
+  ],
+  "instruction_checks": [
+    {
+      "va": "0x570c2f",
+      "rva": "0x170c2f",
+      "file_offset": "0x170c2f",
+      "expected": "68fa020000",
+      "actual": "68fa020000",
+      "passed": true
+    },
+    {
+      "va": "0x570c3c",
+      "rva": "0x170c3c",
+      "file_offset": "0x170c3c",
+      "expected": "663947c0",
+      "actual": "663947c0",
+      "passed": true
+    },
+    {
+      "va": "0x578994",
+      "rva": "0x178994",
+      "file_offset": "0x178994",
+      "expected": "48506a0b53",
+      "actual": "48506a0b53",
+      "passed": true
+    }
+  ],
+  "database": {
+    "sha256": "8a803c643a0cdae898bb066a2bd0fcade43414322feaf3c830ba8ef965baca18",
+    "matches_pre_query_copy": true
+  },
+  "method": "Static reads; VA translated using PE section headers. No game execution. Ghidra queries used -noanalysis -readOnly."
+}

@@ -13,6 +13,13 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+Sétima rodada concluída: [associação de Parasite Paracide](10-parasite-association.md).
+0x00570BE0 retorna posição+1 de uma entrada de ID 762 com metadados de
+nibble 13 e chave derivada da palavra de estado. Três chamadores confirmam
+uso como exclusão de contagem e caminho especial de comandos. Próximo passo:
+seguir o comando 0x4D emitido por 0x00574960/0x005B9170 ou escritores dos
+metadados; significado da lista e do vínculo ainda não confirmado.
+
 Sexta rodada concluída: nomes e domínio dos IDs no deck confirmados. O leitor converte IDs de recurso para índices de propriedades e o escritor faz o inverso. Parser estrutural testado; amostra de 100 bytes consumida exatamente, listas 42/1/0, 43 IDs validados. Próxima prioridade: seguir callers e registros de **0x00570BE0**, associado a Parasite Paracide, para descobrir seu papel real e se participa de validação/efeitos. Manter escopo em poucas funções. Permanecem abertas: cabeçalho YDC, significado da segunda/terceira lista, semântica de +2000, diferença do limite 1115 e ausência de evidência de interpretador de efeitos.
 
 Quinta rodada concluída: CARD_ID e CARD_IntID inspecionados em memória e suas relações validadas em todos os elementos presentes: 1114 roundtrips, 1105 IDs base e nove pares acrescidos de 2000. Domínios documentados sem atribuir números oficiais. Limite de CARD_ID confirmado nas instruções e diferença física continua aberta. Próximo incremento recomendado: correlacionar um ID com nome de carta e com deck.ydc, verificando os respectivos acessores/leitores. Depois escolher um dos consumidores de ID constante (0x00570BE0 ou 0x00570C70) para seguir chamadas e descobrir seu papel. Não investigar indiscriminadamente todos os callers da conversão.

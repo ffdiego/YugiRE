@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Sétima rodada: [consulta de associação de Parasite Paracide](10-parasite-association.md)
+e três chamadores investigados no Fedora. Retorno posição+1, arrays paralelos
+e chave de associação confirmados; semântica dos comandos ainda aberta.
+
 Segunda rodada concluída: layout DAT confirmado pelo Ghidra e por validação integral dos índices, sem extração em massa. Foram adicionados parser PowerShell, testes e relatórios. Ver também [referências externas](external-references.md) indicadas pelo usuário.
 
 Terceira rodada concluída: LZSS de 0x0054A000 confirmado estaticamente e em um recurso de 23 bytes comprimidos/34 descomprimidos. Decoder auxiliar e testes adicionados, sem executar o alvo nem alterar originais. Relatório em [lzss-small-validation.json](evidence/lzss-small-validation.json).

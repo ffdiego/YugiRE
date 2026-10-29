@@ -1,0 +1,59 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 0057898d PUSH EDI
+INS 0057898e PUSH EBX
+INS 0057898f CALL 0x00570be0
+INS 00578994 DEC EAX
+INS 00578995 PUSH EAX
+INS 00578996 PUSH 0xb
+INS 00578998 PUSH EBX
+INS 00578999 CALL 0x00574960
+INS 0057899e ADD ESP,0x14
+INS 005789a1 INC dword ptr [ESP + 0x24]
+INS 005789a5 ADD EDI,0x4
+INS 005789a8 DEC EBP
+FUNCTION FUN_00575af0 @00575af0
+ CALLER 005759c0 FUN_005759a0
+ CALLER 00599753 FUN_005995e0
+ CALLER 00599d25 FUN_005999d0
+ CALLER 0058fe83 null
+ CALLER 0058ff22 null
+ CALLER 00592806 null
+ CALLER 0059f328 FUN_0059df40
+
+void FUN_00575af0(uint param_1,uint *param_2,uint param_3)
+
+{
+  uint uVar1;
+  byte bVar2;
+  ushort uVar3;
+  undefined8 uVar4;
+  
+  uVar4 = FUN_005699c0(0x453);
+  if ((int)uVar4 != 0) {
+    FUN_00575a80(param_1,param_2,param_3);
+    return;
+  }
+  bVar2 = (byte)(*param_2 >> 0xc);
+  FUN_005b9170(0x8e,CONCAT11((char)(*param_2 >> 0x18) * '\x02' + (bVar2 & 1),(char)param_1) & 0xff01
+                    | 0x16,CONCAT31((int3)((ulonglong)uVar4 >> 0x28),bVar2) & 0xffff0001 | 0x11c,
+               param_3);
+  uVar3 = FUN_004022e0((ushort)*param_2 & 0xfff);
+  if (uVar3 < 0x216) {
+    if ((uVar3 == 0x215) || (uVar3 == 0x1ce)) {
+      if (((param_3 & 1) == 0) || ((*param_2 >> 0xc & 1) != param_1)) goto LAB_00575bec;
+    }
+    else if (uVar3 != 0x1de) goto LAB_00575bec;
+  }
+  else if ((uVar3 != 0x412) && (uVar3 != 0x4da)) goto LAB_00575bec;
+  uVar1 = *param_2;
+  FUN_005ba490((uVar1 & 0xfffff7c9) << 0x13 | uVar1 & 0xfff | 0x3e4e0000,
+               (uVar1 >> 0xc & 1) + (uVar1 >> 0x18 & 0x7f) * 2,0);
+LAB_00575bec:
+  FUN_0059d6e0(*param_2 >> 0xc & 1,1);
+  FUN_00598590(DAT_00a577f8._2_1_ & 1,0x1f,
+               (*param_2 >> 0xc & 1) + (*param_2 >> 0x18 & 0x7f) * 2 |
+               (uint)((param_3 & 1) != 0) << 0x10);
+  return;
+}
+
+
