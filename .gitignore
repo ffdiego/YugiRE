@@ -1,0 +1,5 @@
+scratch/
+ghidra-projects/
+*.gpr
+*.rep/
+*.log

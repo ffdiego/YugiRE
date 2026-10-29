@@ -1,0 +1,350 @@
+{
+  "archive_sha256_before": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+  "archive_sha256_after": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+  "deck_sha256": "A7E4537553753C2B24B0A276BCA80DB5FA08B3212B3FC7B33C5087DD8FD38846",
+  "exe_sha256": "DB8FE7B7EA4B12F18A9BB1777B5F5B8EAB254011DB2A52571A0264725505B6DE",
+  "name_path_table": {
+    "va": "0x005EB444",
+    "file_offset": "0x001EB444",
+    "first_pointer": "0x005EB4C0",
+    "first_string": "data/bin#/CARD_Name"
+  },
+  "resources": [
+    {
+      "entry": {
+        "index": 6,
+        "name": "bin#\\card_id.bin",
+        "offset": 1273896,
+        "size1": 2230,
+        "size2": 2230
+      },
+      "consumed": 2230,
+      "produced": 2230,
+      "sha256": "A36CDE2192FA85D9CCBCDB0DDB8BA8494A5199EA31D11A50A70B5FD32BF5879C"
+    },
+    {
+      "entry": {
+        "index": 13,
+        "name": "bin#\\card_intid.bin",
+        "offset": 1301435,
+        "size1": 4096,
+        "size2": 2750
+      },
+      "consumed": 2750,
+      "produced": 4096,
+      "sha256": "CF0E1E662B71D3EFD1644F59C94A262281DE4B9A7B212D8F94996208BDAC6E09"
+    },
+    {
+      "entry": {
+        "index": 14,
+        "name": "bin#\\card_nameeng.bin",
+        "offset": 1304185,
+        "size1": 71360,
+        "size2": 17402
+      },
+      "consumed": 17402,
+      "produced": 71360,
+      "sha256": "74848D0B2CD7D5FAC7A767075BD5B01E0366183CE934AFA6070CE24394A24032"
+    }
+  ],
+  "name_record_count": 1115,
+  "name_samples": [
+    {
+      "property_index": 1,
+      "id": 1504,
+      "name": "Earthbound Spirit"
+    },
+    {
+      "property_index": 2,
+      "id": 614,
+      "name": "Armored Starfish"
+    },
+    {
+      "property_index": 3,
+      "id": 50,
+      "name": "Armored Lizard"
+    },
+    {
+      "property_index": 31,
+      "id": 37,
+      "name": "Gaia The Fierce Knight"
+    },
+    {
+      "property_index": 32,
+      "id": 2037,
+      "name": "Gaia The Fierce Knight"
+    },
+    {
+      "property_index": 97,
+      "id": 40,
+      "name": "Celtic Guardian"
+    },
+    {
+      "property_index": 98,
+      "id": 2040,
+      "name": "Celtic Guardian"
+    },
+    {
+      "property_index": 816,
+      "id": 0,
+      "name": "Blue-Eyes White Dragon"
+    },
+    {
+      "property_index": 817,
+      "id": 2000,
+      "name": "Blue-Eyes White Dragon"
+    }
+  ],
+  "constant_id_samples": [
+    {
+      "id": 762,
+      "property_index": 197,
+      "name": "Parasite Paracide"
+    },
+    {
+      "id": 1091,
+      "property_index": 703,
+      "name": "Graverobber"
+    }
+  ],
+  "header_hex": "0100000091B6B154",
+  "consumed": 100,
+  "groups": [
+    {
+      "list": 0,
+      "count_offset": 8,
+      "count": 42,
+      "cards": [
+        {
+          "id": 528,
+          "property_index": 823,
+          "name": "Flame Cerebrus"
+        },
+        {
+          "id": 722,
+          "property_index": 459,
+          "name": "Slot Machine"
+        },
+        {
+          "id": 531,
+          "property_index": 550,
+          "name": "Gemini Elf"
+        },
+        {
+          "id": 531,
+          "property_index": 550,
+          "name": "Gemini Elf"
+        },
+        {
+          "id": 1409,
+          "property_index": 153,
+          "name": "Gadget Soldier"
+        },
+        {
+          "id": 77,
+          "property_index": 24,
+          "name": "Axe Raider"
+        },
+        {
+          "id": 77,
+          "property_index": 24,
+          "name": "Axe Raider"
+        },
+        {
+          "id": 760,
+          "property_index": 1099,
+          "name": "Alligator's Sword"
+        },
+        {
+          "id": 760,
+          "property_index": 1099,
+          "name": "Alligator's Sword"
+        },
+        {
+          "id": 800,
+          "property_index": 886,
+          "name": "Gamma The Magnet Warrior"
+        },
+        {
+          "id": 1503,
+          "property_index": 239,
+          "name": "Headless Knight"
+        },
+        {
+          "id": 1502,
+          "property_index": 954,
+          "name": "The Gross Ghost of Fled Dreams"
+        },
+        {
+          "id": 63,
+          "property_index": 525,
+          "name": "Tiger Axe"
+        },
+        {
+          "id": 63,
+          "property_index": 525,
+          "name": "Tiger Axe"
+        },
+        {
+          "id": 3,
+          "property_index": 834,
+          "name": "Baby Dragon"
+        },
+        {
+          "id": 3,
+          "property_index": 834,
+          "name": "Baby Dragon"
+        },
+        {
+          "id": 1339,
+          "property_index": 558,
+          "name": "Gradius"
+        },
+        {
+          "id": 1345,
+          "property_index": 380,
+          "name": "Island Turtle"
+        },
+        {
+          "id": 808,
+          "property_index": 716,
+          "name": "Buster Blader"
+        },
+        {
+          "id": 1344,
+          "property_index": 307,
+          "name": "Goblin Attack Force"
+        },
+        {
+          "id": 1523,
+          "property_index": 515,
+          "name": "Zombyra the Dark"
+        },
+        {
+          "id": 573,
+          "property_index": 261,
+          "name": "Witch of the Black Forest"
+        },
+        {
+          "id": 1115,
+          "property_index": 453,
+          "name": "Nimble Momonga"
+        },
+        {
+          "id": 47,
+          "property_index": 248,
+          "name": "Sangan"
+        },
+        {
+          "id": 1163,
+          "property_index": 146,
+          "name": "Morphing Jar #2"
+        },
+        {
+          "id": 601,
+          "property_index": 839,
+          "name": "Penguin Soldier"
+        },
+        {
+          "id": 671,
+          "property_index": 695,
+          "name": "Harpie's Feather Duster"
+        },
+        {
+          "id": 1008,
+          "property_index": 359,
+          "name": "Monster Reborn"
+        },
+        {
+          "id": 1027,
+          "property_index": 300,
+          "name": "Change of Heart"
+        },
+        {
+          "id": 1003,
+          "property_index": 1026,
+          "name": "Polymerization"
+        },
+        {
+          "id": 1079,
+          "property_index": 316,
+          "name": "Mystical Space Typhoon"
+        },
+        {
+          "id": 1079,
+          "property_index": 316,
+          "name": "Mystical Space Typhoon"
+        },
+        {
+          "id": 1429,
+          "property_index": 461,
+          "name": "Card of Safe Return"
+        },
+        {
+          "id": 1023,
+          "property_index": 363,
+          "name": "Tribute to The Doomed"
+        },
+        {
+          "id": 1080,
+          "property_index": 729,
+          "name": "Giant Trunade"
+        },
+        {
+          "id": 1203,
+          "property_index": 610,
+          "name": "Graceful Dice"
+        },
+        {
+          "id": 1425,
+          "property_index": 272,
+          "name": "Torrential Tribute"
+        },
+        {
+          "id": 969,
+          "property_index": 549,
+          "name": "Chain Destruction"
+        },
+        {
+          "id": 1029,
+          "property_index": 893,
+          "name": "Magic Jammer"
+        },
+        {
+          "id": 1095,
+          "property_index": 1061,
+          "name": "Call Of The Haunted"
+        },
+        {
+          "id": 1214,
+          "property_index": 894,
+          "name": "Magic Cylinder"
+        },
+        {
+          "id": 1147,
+          "property_index": 851,
+          "name": "Backup Soldier"
+        }
+      ]
+    },
+    {
+      "list": 1,
+      "count_offset": 94,
+      "count": 1,
+      "cards": [
+        {
+          "id": 812,
+          "property_index": 651,
+          "name": "Alligator's Sword Dragon"
+        }
+      ]
+    },
+    {
+      "list": 2,
+      "count_offset": 98,
+      "count": 0,
+      "cards": []
+    }
+  ],
+  "all_card_ids_roundtrip": true
+}

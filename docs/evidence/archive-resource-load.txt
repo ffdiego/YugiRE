@@ -1,0 +1,252 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00543290 @00543290
+ CALLER 00543193 FUN_00543170
+ CALLER 005431ee FUN_00543170
+
+/* WARNING: Removing unreachable block (ram,0x0054343b) */
+
+int FUN_00543290(void)
+
+{
+  byte *pbVar1;
+  byte bVar2;
+  char cVar3;
+  int iVar4;
+  HGLOBAL pvVar5;
+  int *piVar6;
+  int *extraout_ECX;
+  uint uVar7;
+  uint uVar8;
+  undefined4 *puVar9;
+  char *pcVar10;
+  undefined4 *puVar11;
+  undefined1 local_res0;
+  undefined1 uStack00000010;
+  undefined4 *in_stack_00000014;
+  uint in_stack_00000018;
+  void *in_stack_0000d44c;
+  undefined4 in_stack_0000d45c;
+  undefined **local_c;
+  undefined1 *local_8;
+  undefined4 local_4;
+  
+  local_4 = 0xffffffff;
+  local_8 = &LAB_005d87b6;
+  local_c = ExceptionList;
+  ExceptionList = &local_c;
+  FUN_005c3dc0();
+  FUN_00402850(0);
+  uVar7 = 0xffffffff;
+  pcVar10 = &DAT_005ec944;
+  do {
+    if (uVar7 == 0) break;
+    uVar7 = uVar7 - 1;
+    cVar3 = *pcVar10;
+    pcVar10 = pcVar10 + 1;
+  } while (cVar3 != '\0');
+  uVar7 = ~uVar7 - 1;
+  cVar3 = FUN_00402980(uVar7,1);
+  if (cVar3 != '\0') {
+    puVar9 = (undefined4 *)&DAT_005ec944;
+    puVar11 = in_stack_00000014;
+    for (uVar8 = uVar7 >> 2; uVar8 != 0; uVar8 = uVar8 - 1) {
+      *puVar11 = *puVar9;
+      puVar9 = puVar9 + 1;
+      puVar11 = puVar11 + 1;
+    }
+    for (uVar8 = uVar7 & 3; uVar8 != 0; uVar8 = uVar8 - 1) {
+      *(undefined1 *)puVar11 = *(undefined1 *)puVar9;
+      puVar9 = (undefined4 *)((int)puVar9 + 1);
+      puVar11 = (undefined4 *)((int)puVar11 + 1);
+    }
+    *(undefined1 *)((int)in_stack_00000014 + uVar7) = 0;
+    in_stack_00000018 = uVar7;
+  }
+  iVar4 = FUN_005428d0(in_stack_0000d45c,&uStack00000010);
+  FUN_00402850(1);
+  if (iVar4 == 0) {
+    if (*(char *)((int)extraout_ECX + 0x27) == '\0') {
+      pvVar5 = GlobalAlloc(0x10,extraout_ECX[3] + 1);
+      piVar6 = extraout_ECX + 2;
+      *piVar6 = (int)pvVar5;
+      if (pvVar5 == (HGLOBAL)0x0) {
+        (**(code **)(*extraout_ECX + 0xc))();
+        ExceptionList = in_stack_0000d44c;
+        return 3;
+      }
+      *(undefined1 *)(extraout_ECX[3] + (int)pvVar5) = 0;
+      iVar4 = extraout_ECX[10];
+      if (extraout_ECX[3] == iVar4) {
+        (**(code **)(*extraout_ECX + 0x44))(*piVar6,iVar4);
+      }
+      else {
+        local_c = &PTR_FUN_005daf40;
+        local_4 = 0;
+        local_8 = (undefined1 *)0x0;
+        local_8 = (undefined1 *)FUN_0054a1d0(iVar4);
+        local_4 = 1;
+        (**(code **)(*extraout_ECX + 0x44))(local_8,extraout_ECX[10]);
+        FUN_0054a000(local_8,piVar6,extraout_ECX[3],0);
+        local_c = &PTR_FUN_005daf40;
+        if (&local_res0 != (undefined1 *)0xc) {
+          FUN_0054a2d0(local_8);
+        }
+        local_8 = (undefined1 *)0x0;
+        local_c = &PTR_LAB_005daf3c;
+      }
+    }
+    iVar4 = FUN_005428b0();
+    if (iVar4 == 0) {
+      piVar6 = (int *)extraout_ECX[2];
+      if (*piVar6 == 0x314b5059) {
+        uVar7 = 4;
+        *(undefined1 *)(extraout_ECX + 9) = 1;
+        if (4 < (uint)extraout_ECX[3]) {
+          do {
+            pbVar1 = (byte *)(extraout_ECX[2] + uVar7);
+            bVar2 = *(byte *)(extraout_ECX[2] + uVar7);
+            uVar7 = uVar7 + 1;
+            *pbVar1 = bVar2 * '\x10' + (bVar2 >> 4) ^ 0xcc;
+          } while (uVar7 < (uint)extraout_ECX[3]);
+        }
+        piVar6 = (int *)(extraout_ECX[2] + 4);
+      }
+      else {
+        *(undefined1 *)(extraout_ECX + 9) = 0;
+      }
+      extraout_ECX[4] = (int)piVar6;
+      iVar4 = 0;
+    }
+    else {
+      (**(code **)(*extraout_ECX + 0xc))();
+      iVar4 = 5;
+    }
+  }
+  ExceptionList = in_stack_0000d44c;
+  return iVar4;
+}
+
+
+FUNCTION FUN_00543760 @00543760
+ CALLER 00549a67 FUN_005498b0
+ CALLER 005da398 null
+ CALLER 005da648 null
+ CALLER 005dc810 null
+
+void __fastcall FUN_00543760(int *param_1)
+
+{
+  int iVar1;
+  
+  if (param_1[1] != 0) {
+    FUN_005c5767(param_1[1],param_1[0xb],0);
+  }
+  iVar1 = (**(code **)(*param_1 + 0x2c))();
+  param_1[4] = iVar1;
+  return;
+}
+
+
+FUNCTION FUN_00543960 @00543960
+ CALLER 005da394 null
+ CALLER 005da644 null
+ CALLER 005dc80c null
+
+undefined4 __thiscall FUN_00543960(int *param_1,LPSTR param_2,int param_3)
+
+{
+  char cVar1;
+  int iVar2;
+  uint uVar3;
+  LPCSTR pCVar4;
+  LPCSTR unaff_EBX;
+  code *pcVar5;
+  LPSTR pCVar6;
+  undefined4 local_24;
+  undefined4 local_20;
+  int local_1c;
+  int local_18;
+  undefined4 *local_14;
+  undefined4 *local_10;
+  void *pvStack_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  puStack_8 = &LAB_005d87d8;
+  pvStack_c = ExceptionList;
+  local_20 = 0;
+  local_1c = 0;
+  local_18 = 0;
+  local_14 = (undefined4 *)0x0;
+  local_10 = (undefined4 *)0x0;
+  local_24 = &PTR_FUN_005dc8ac;
+  local_4 = 0;
+  ExceptionList = &pvStack_c;
+  FUN_00544140();
+  local_20 = FUN_0054a1d0(param_3);
+  pcVar5 = lstrcpyA_exref;
+  local_18 = param_3;
+  local_10 = &local_24;
+  local_14 = &local_24;
+  local_1c = 1;
+  lstrcpyA(param_2,&DAT_005f23d4);
+  iVar2 = (**(code **)(*param_1 + 0x38))(local_20,0x100);
+  if (iVar2 == 0) {
+    iVar2 = lstrcmpA(unaff_EBX,s__END__005eca6c);
+    if (iVar2 != 0) {
+      pCVar4 = unaff_EBX + 1;
+      do {
+        (*pcVar5)(param_2,pCVar4);
+        uVar3 = 0xffffffff;
+        pCVar6 = param_2;
+        do {
+          if (uVar3 == 0) break;
+          uVar3 = uVar3 - 1;
+          cVar1 = *pCVar6;
+          pCVar6 = pCVar6 + 1;
+        } while (cVar1 != '\0');
+        if (param_2[~uVar3 - 2] == '\"') {
+          iVar2 = lstrlenA(param_2);
+          param_2[iVar2 + -1] = '\0';
+          if (local_1c != 0) {
+            if (local_1c == (int)register0x00000010 + -0x2c) {
+              FUN_0054a2d0(unaff_EBX);
+            }
+            else {
+              *(int *)(local_1c + 0x14) = local_18;
+              *(int *)(local_18 + 0x10) = local_1c;
+            }
+          }
+          ExceptionList = local_14;
+          return 0;
+        }
+        iVar2 = (**(code **)(*param_1 + 0x38))(unaff_EBX,0x100);
+        pcVar5 = lstrcatA_exref;
+        if (iVar2 != 0) {
+          if (local_1c != 0) {
+            if (local_1c == (int)register0x00000010 + -0x2c) {
+              FUN_0054a2d0(unaff_EBX);
+              ExceptionList = local_14;
+              return 1;
+            }
+            *(int *)(local_1c + 0x14) = local_18;
+            *(int *)(local_18 + 0x10) = local_1c;
+          }
+          ExceptionList = local_14;
+          return 1;
+        }
+        lstrcatA(param_2,&DAT_005ec804);
+        pCVar4 = unaff_EBX;
+      } while( true );
+    }
+    pvStack_c = (void *)0x2;
+  }
+  else {
+    pvStack_c = (void *)0x1;
+  }
+  FUN_00544140();
+  ExceptionList = local_14;
+  return 1;
+}
+
+

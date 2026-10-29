@@ -1,0 +1,27 @@
+[
+  {
+    "name": "joey_pc.exe",
+    "sha256_after": "DB8FE7B7EA4B12F18A9BB1777B5F5B8EAB254011DB2A52571A0264725505B6DE",
+    "unchanged": true
+  },
+  {
+    "name": "data.dat",
+    "sha256_after": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+    "unchanged": true
+  },
+  {
+    "name": "Voice.dat",
+    "sha256_after": "50275AC744B8D029162DCEDC2D19D318B34D6D56EE8DCABEC2F1A9119438D6C8",
+    "unchanged": true
+  },
+  {
+    "name": "Region.dat",
+    "sha256_after": "4A64A107F0CB32536E5BCE6C98C393DB21CCA7F4EA187BA8C4DCA8B51D4EA80A",
+    "unchanged": true
+  },
+  {
+    "name": "deck.ydc",
+    "sha256_after": "A7E4537553753C2B24B0A276BCA80DB5FA08B3212B3FC7B33C5087DD8FD38846",
+    "unchanged": true
+  }
+]

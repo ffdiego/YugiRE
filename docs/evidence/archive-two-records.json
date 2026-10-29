@@ -1,0 +1,46 @@
+[
+  {
+    "file": "data.dat",
+    "count": 3568,
+    "index": 0,
+    "candidate_table_end": 956236,
+    "name": "bin#\\card_desceng.bin",
+    "offset": 956236,
+    "size1": 125132,
+    "size2": 49690,
+    "payload_first32": "FF0000412076656E67FF6566756C20637265FF617475726520666FFF726D6564"
+  },
+  {
+    "file": "data.dat",
+    "count": 3568,
+    "index": 1,
+    "candidate_table_end": 956236,
+    "name": "bin#\\card_descfra.bin",
+    "offset": 1005926,
+    "size1": 136832,
+    "size2": 54998,
+    "payload_first32": "FF00004372E9617475FF72652076656E6765FF726573736520666FFF726DE965"
+  },
+  {
+    "file": "Voice.dat",
+    "count": 132,
+    "index": 0,
+    "candidate_table_end": 35388,
+    "name": "joey\\english\\dummy.txt",
+    "offset": 35388,
+    "size1": 0,
+    "size2": 0,
+    "payload_first32": "5249464656E6010057415645666D742012000000010002002256000088580100"
+  },
+  {
+    "file": "Voice.dat",
+    "count": 132,
+    "index": 1,
+    "candidate_table_end": 35388,
+    "name": "joey\\english\\internal\\attack.wav",
+    "offset": 35388,
+    "size1": 124550,
+    "size2": 124550,
+    "payload_first32": "5249464656E6010057415645666D742012000000010002002256000088580100"
+  }
+]

@@ -1,0 +1,96 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00402290 MOV ECX,0x5f25a8
+INS 00402295 CALL 0x00542220
+INS 0040229a MOV ECX,dword ptr [ESP + 0x4]
+INS 0040229e AND ECX,0xffff
+INS 004022a4 SHL ECX,0x6
+INS 004022a7 ADD EAX,ECX
+INS 004022a9 RET
+INS 004022b0 PUSH ESI
+INS 004022b1 PUSH EDI
+INS 004022b2 MOV ECX,0x5f2578
+INS 004022b7 CALL 0x00542220
+INS 004022bc MOV EDI,dword ptr [ESP + 0xc]
+REFERENCES TO 005eb444
+ XREF From: 00401f77 To: 005eb444 Type: DATA Op: 1 ANALYSIS FUNCTION none
+FUNCTION FUN_0044aa00 @0044aa00
+ CALLER 0046e45e FUN_0046e260
+ CALLER 0044c0b9 FUN_0044bee0
+ CALLER 0044c221 FUN_0044bee0
+ CALLER 0048ab4d null
+ CALLER 0048b4c7 null
+
+undefined4 FUN_0044aa00(undefined1 param_1,int param_2)
+
+{
+  char cVar1;
+  int iVar2;
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  puStack_8 = &LAB_005d2f98;
+  local_c = ExceptionList;
+  local_4 = 0;
+  ExceptionList = &local_c;
+  FUN_00448b00(&param_1);
+  iVar2 = FUN_0044a920(0);
+  if (iVar2 == 0) {
+    if ((((0x50 < (ushort)DAT_00a54f3c) || ((ushort)DAT_00a54f3c < 0x28)) ||
+        (0xf < DAT_00a54f3c._2_2_)) || (0xf < (ushort)DAT_00a54f40)) goto LAB_0044aafb;
+  }
+  else {
+    if (iVar2 == 0xb) {
+LAB_0044aafb:
+      if (param_2 != 0) {
+        cVar1 = *(char *)(param_2 + -1);
+        if ((cVar1 == '\0') || (cVar1 == -1)) {
+          FUN_0054a2d0();
+        }
+        else {
+          *(char *)(param_2 + -1) = cVar1 + -1;
+        }
+      }
+      ExceptionList = local_c;
+      return 0xb;
+    }
+    FUN_005bdc50();
+    FUN_005bea80();
+    FUN_00403f40(&param_1,0);
+    FUN_0044a830();
+  }
+  if (param_2 != 0) {
+    cVar1 = *(char *)(param_2 + -1);
+    if ((cVar1 != '\0') && (cVar1 != -1)) {
+      *(char *)(param_2 + -1) = cVar1 + -1;
+      ExceptionList = local_c;
+      return 0;
+    }
+    FUN_0054a2d0();
+  }
+  ExceptionList = local_c;
+  return 0;
+}
+
+
+FUNCTION FUN_004834a0 @004834a0
+ CALLER 004458d9 FUN_00445840
+ CALLER 0046e3e6 FUN_0046e260
+ CALLER 0047db64 FUN_0047daa0
+ CALLER 0047dd6c FUN_0047dce0
+ CALLER 00421d09 null
+ CALLER 0048a762 null
+ CALLER 0048a8a4 null
+ CALLER 00446e8f FUN_00446df0
+
+undefined4 FUN_004834a0(void)
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = FUN_00483440();
+  FUN_005bee30();
+  return uVar1;
+}
+
+

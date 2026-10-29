@@ -1,0 +1,21 @@
+{
+  "archive_sha256_before": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+  "archive_sha256_after": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+  "entry": {
+    "index": 1368,
+    "name": "j\\deck_c\\line.txt",
+    "offset": 197189114,
+    "size1": 34,
+    "size2": 23
+  },
+  "compressed_hex": "DF6C696E652FEEF15F78BF2E626D700D0AEEF77900F9F3",
+  "output_hex": "6C696E652F6C696E655F782E626D700D0A6C696E652F6C696E655F792E626D700D0A",
+  "output_ascii": "line/line_x.bmp\r\nline/line_y.bmp\r\n",
+  "output_sha256": "AC15544AFBF72F8E5F00EE3CC91DE91383B0079266066E3FF01AC8DFD3723D5F",
+  "consumed": 23,
+  "produced": 34,
+  "trailing_bytes": 0,
+  "literals": 14,
+  "references": 3,
+  "reference_bytes": 20
+}

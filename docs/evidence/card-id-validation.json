@@ -1,0 +1,484 @@
+{
+  "archive_sha256_before": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+  "archive_sha256_after": "7E8841CEB015861DACF898D4A62A909E399DA14BB7D69C40DE3AFA3A4610E1ED",
+  "tables": [
+    {
+      "name": "bin#\\card_id.bin",
+      "entry": {
+        "index": 6,
+        "name": "bin#\\card_id.bin",
+        "offset": 1273896,
+        "size1": 2230,
+        "size2": 2230
+      },
+      "count": 1115,
+      "consumed": 2230,
+      "produced": 2230,
+      "decoded_sha256": "A36CDE2192FA85D9CCBCDB0DDB8BA8494A5199EA31D11A50A70B5FD32BF5879C",
+      "first48_hex": "FFFFE00566023200AB007B00050132059600BD01B9019A04D4000A01A1024001B404A10062020D04CE047E0087047F02",
+      "min": 0.0,
+      "max": 65535.0,
+      "zero_count": 1,
+      "sentinel_ffff_count": 1,
+      "unique_count": 1115,
+      "first24": [
+        65535,
+        1504,
+        614,
+        50,
+        171,
+        123,
+        261,
+        1330,
+        150,
+        445,
+        441,
+        1178,
+        212,
+        266,
+        673,
+        320,
+        1204,
+        161,
+        610,
+        1037,
+        1230,
+        126,
+        1159,
+        639
+      ],
+      "last8": [
+        1903,
+        1910,
+        1911,
+        1912,
+        1920,
+        1921,
+        1922,
+        1923
+      ]
+    },
+    {
+      "name": "bin#\\card_intid.bin",
+      "entry": {
+        "index": 13,
+        "name": "bin#\\card_intid.bin",
+        "offset": 1301435,
+        "size1": 4096,
+        "size2": 2750
+      },
+      "count": 2048,
+      "consumed": 2750,
+      "produced": 4096,
+      "decoded_sha256": "CF0E1E662B71D3EFD1644F59C94A262281DE4B9A7B212D8F94996208BDAC6E09",
+      "first48_hex": "30034A033B014203810001019202C80046032200EE01B5021302D3005A037602090307030A030803060346027E014904",
+      "min": 0.0,
+      "max": 1114.0,
+      "zero_count": 943,
+      "sentinel_ffff_count": 0,
+      "unique_count": 1106,
+      "first24": [
+        816,
+        842,
+        315,
+        834,
+        129,
+        257,
+        658,
+        200,
+        838,
+        34,
+        494,
+        693,
+        531,
+        211,
+        858,
+        630,
+        777,
+        775,
+        778,
+        776,
+        774,
+        582,
+        382,
+        1097
+      ],
+      "last8": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "forward_valid_ids": 1114,
+  "ids_ge_2000": [
+    {
+      "property_index": 32,
+      "id": 2037,
+      "reverse_slot": 37,
+      "reverse_base": 31,
+      "mapped_index": 32,
+      "matches": true
+    },
+    {
+      "property_index": 98,
+      "id": 2040,
+      "reverse_slot": 40,
+      "reverse_base": 97,
+      "mapped_index": 98,
+      "matches": true
+    },
+    {
+      "property_index": 328,
+      "id": 2068,
+      "reverse_slot": 68,
+      "reverse_base": 327,
+      "mapped_index": 328,
+      "matches": true
+    },
+    {
+      "property_index": 526,
+      "id": 2063,
+      "reverse_slot": 63,
+      "reverse_base": 525,
+      "mapped_index": 526,
+      "matches": true
+    },
+    {
+      "property_index": 575,
+      "id": 2389,
+      "reverse_slot": 389,
+      "reverse_base": 574,
+      "mapped_index": 575,
+      "matches": true
+    },
+    {
+      "property_index": 804,
+      "id": 2034,
+      "reverse_slot": 34,
+      "reverse_base": 803,
+      "mapped_index": 804,
+      "matches": true
+    },
+    {
+      "property_index": 810,
+      "id": 2387,
+      "reverse_slot": 387,
+      "reverse_base": 809,
+      "mapped_index": 810,
+      "matches": true
+    },
+    {
+      "property_index": 817,
+      "id": 2000,
+      "reverse_slot": 0,
+      "reverse_base": 816,
+      "mapped_index": 817,
+      "matches": true
+    },
+    {
+      "property_index": 859,
+      "id": 2014,
+      "reverse_slot": 14,
+      "reverse_base": 858,
+      "mapped_index": 859,
+      "matches": true
+    }
+  ],
+  "variant_pairs": [
+    {
+      "base_id": 37,
+      "base_index": 31,
+      "forward_at_base": 37,
+      "variant_id": 2037,
+      "variant_index": 32,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 40,
+      "base_index": 97,
+      "forward_at_base": 40,
+      "variant_id": 2040,
+      "variant_index": 98,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 68,
+      "base_index": 327,
+      "forward_at_base": 68,
+      "variant_id": 2068,
+      "variant_index": 328,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 63,
+      "base_index": 525,
+      "forward_at_base": 63,
+      "variant_id": 2063,
+      "variant_index": 526,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 389,
+      "base_index": 574,
+      "forward_at_base": 389,
+      "variant_id": 2389,
+      "variant_index": 575,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 34,
+      "base_index": 803,
+      "forward_at_base": 34,
+      "variant_id": 2034,
+      "variant_index": 804,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 387,
+      "base_index": 809,
+      "forward_at_base": 387,
+      "variant_id": 2387,
+      "variant_index": 810,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 0,
+      "base_index": 816,
+      "forward_at_base": 0,
+      "variant_id": 2000,
+      "variant_index": 817,
+      "adjacent": true,
+      "base_matches": true
+    },
+    {
+      "base_id": 14,
+      "base_index": 858,
+      "forward_at_base": 14,
+      "variant_id": 2014,
+      "variant_index": 859,
+      "adjacent": true,
+      "base_matches": true
+    }
+  ],
+  "reverse_nonzero_0_1999": 1105,
+  "reverse_roundtrip_failures": [],
+  "roundtrip_matches": 1114,
+  "roundtrip_mismatches": [
+    {
+      "property_index": 0,
+      "id": 65535,
+      "reverse_slot": 1535,
+      "reverse_base": null,
+      "mapped_index": null,
+      "matches": false
+    }
+  ],
+  "first24_roundtrips": [
+    {
+      "property_index": 0,
+      "id": 65535,
+      "reverse_slot": 1535,
+      "reverse_base": null,
+      "mapped_index": null,
+      "matches": false
+    },
+    {
+      "property_index": 1,
+      "id": 1504,
+      "reverse_slot": 1504,
+      "reverse_base": 1,
+      "mapped_index": 1,
+      "matches": true
+    },
+    {
+      "property_index": 2,
+      "id": 614,
+      "reverse_slot": 614,
+      "reverse_base": 2,
+      "mapped_index": 2,
+      "matches": true
+    },
+    {
+      "property_index": 3,
+      "id": 50,
+      "reverse_slot": 50,
+      "reverse_base": 3,
+      "mapped_index": 3,
+      "matches": true
+    },
+    {
+      "property_index": 4,
+      "id": 171,
+      "reverse_slot": 171,
+      "reverse_base": 4,
+      "mapped_index": 4,
+      "matches": true
+    },
+    {
+      "property_index": 5,
+      "id": 123,
+      "reverse_slot": 123,
+      "reverse_base": 5,
+      "mapped_index": 5,
+      "matches": true
+    },
+    {
+      "property_index": 6,
+      "id": 261,
+      "reverse_slot": 261,
+      "reverse_base": 6,
+      "mapped_index": 6,
+      "matches": true
+    },
+    {
+      "property_index": 7,
+      "id": 1330,
+      "reverse_slot": 1330,
+      "reverse_base": 7,
+      "mapped_index": 7,
+      "matches": true
+    },
+    {
+      "property_index": 8,
+      "id": 150,
+      "reverse_slot": 150,
+      "reverse_base": 8,
+      "mapped_index": 8,
+      "matches": true
+    },
+    {
+      "property_index": 9,
+      "id": 445,
+      "reverse_slot": 445,
+      "reverse_base": 9,
+      "mapped_index": 9,
+      "matches": true
+    },
+    {
+      "property_index": 10,
+      "id": 441,
+      "reverse_slot": 441,
+      "reverse_base": 10,
+      "mapped_index": 10,
+      "matches": true
+    },
+    {
+      "property_index": 11,
+      "id": 1178,
+      "reverse_slot": 1178,
+      "reverse_base": 11,
+      "mapped_index": 11,
+      "matches": true
+    },
+    {
+      "property_index": 12,
+      "id": 212,
+      "reverse_slot": 212,
+      "reverse_base": 12,
+      "mapped_index": 12,
+      "matches": true
+    },
+    {
+      "property_index": 13,
+      "id": 266,
+      "reverse_slot": 266,
+      "reverse_base": 13,
+      "mapped_index": 13,
+      "matches": true
+    },
+    {
+      "property_index": 14,
+      "id": 673,
+      "reverse_slot": 673,
+      "reverse_base": 14,
+      "mapped_index": 14,
+      "matches": true
+    },
+    {
+      "property_index": 15,
+      "id": 320,
+      "reverse_slot": 320,
+      "reverse_base": 15,
+      "mapped_index": 15,
+      "matches": true
+    },
+    {
+      "property_index": 16,
+      "id": 1204,
+      "reverse_slot": 1204,
+      "reverse_base": 16,
+      "mapped_index": 16,
+      "matches": true
+    },
+    {
+      "property_index": 17,
+      "id": 161,
+      "reverse_slot": 161,
+      "reverse_base": 17,
+      "mapped_index": 17,
+      "matches": true
+    },
+    {
+      "property_index": 18,
+      "id": 610,
+      "reverse_slot": 610,
+      "reverse_base": 18,
+      "mapped_index": 18,
+      "matches": true
+    },
+    {
+      "property_index": 19,
+      "id": 1037,
+      "reverse_slot": 1037,
+      "reverse_base": 19,
+      "mapped_index": 19,
+      "matches": true
+    },
+    {
+      "property_index": 20,
+      "id": 1230,
+      "reverse_slot": 1230,
+      "reverse_base": 20,
+      "mapped_index": 20,
+      "matches": true
+    },
+    {
+      "property_index": 21,
+      "id": 126,
+      "reverse_slot": 126,
+      "reverse_base": 21,
+      "mapped_index": 21,
+      "matches": true
+    },
+    {
+      "property_index": 22,
+      "id": 1159,
+      "reverse_slot": 1159,
+      "reverse_base": 22,
+      "mapped_index": 22,
+      "matches": true
+    },
+    {
+      "property_index": 23,
+      "id": 639,
+      "reverse_slot": 639,
+      "reverse_base": 23,
+      "mapped_index": 23,
+      "matches": true
+    }
+  ],
+  "unused_reverse_0_1999": 895
+}

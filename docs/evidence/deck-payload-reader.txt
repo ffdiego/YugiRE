@@ -1,0 +1,278 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00401f77 MOV ESI,dword ptr [EAX + 0x5eb444]
+INS 00401f7d LEA ECX,[ESP + 0x18]
+INS 00401f81 CALL 0x00402850
+INS 00401f86 MOV EDI,ESI
+INS 00401f88 OR ECX,0xffffffff
+INS 00401f8b XOR EAX,EAX
+INS 00401f8d PUSH 0x1
+INS 00401f8f SCASB.REPNE ES:EDI
+INS 00401f91 NOT ECX
+INS 00401f93 DEC ECX
+INS 00401f94 MOV EBP,ECX
+INS 00401f96 LEA ECX,[ESP + 0x18]
+INS 00401f9a PUSH EBP
+INS 00401f9b CALL 0x00402980
+INS 00401fa0 TEST AL,AL
+INS 00401fa2 JZ 0x00401fc2
+INS 00401fa4 MOV EDI,dword ptr [ESP + 0x18]
+INS 00401fa8 MOV ECX,EBP
+INS 00401faa MOV EDX,ECX
+INS 00401fac PUSH EBP
+INS 00401fad SHR ECX,0x2
+INS 00401fb0 MOVSD.REP ES:EDI,ESI
+INS 00401fb2 MOV ECX,EDX
+INS 00401fb4 AND ECX,0x3
+INS 00401fb7 MOVSB.REP ES:EDI,ESI
+INS 00401fb9 LEA ECX,[ESP + 0x18]
+INS 00401fbd CALL 0x00402960
+INS 00401fc2 MOV EAX,dword ptr [ESP + 0x10]
+INS 00401fc6 CMP EAX,0x5
+INS 00401fc9 JA 0x004021a7
+INS 00401fcf JMP dword ptr [EAX*0x4 + 0x40226c]
+INS 00401fd6 MOV EDI,0x5eb4f0
+INS 00401fdb OR ECX,0xffffffff
+INS 00401fde XOR EAX,EAX
+INS 00401fe0 SCASB.REPNE ES:EDI
+INS 00401fe2 NOT ECX
+INS 00401fe4 DEC ECX
+INS 00401fe5 PUSH ECX
+INS 00401fe6 PUSH 0x5eb4f0
+INS 00401feb LEA ECX,[ESP + 0x1c]
+INS 00401fef CALL 0x004028a0
+INS 00401ff4 JMP 0x004021a7
+INS 00401ff9 MOV EDI,0x5eb4ec
+INS 00401ffe OR ECX,0xffffffff
+INS 00402001 XOR EAX,EAX
+INS 00402003 MOV EDX,dword ptr [ESP + 0x1c]
+INS 00402007 SCASB.REPNE ES:EDI
+INS 00402009 MOV EAX,[0x005da354]
+INS 0040200e NOT ECX
+INS 00402010 DEC ECX
+INS 00402011 SUB EAX,EDX
+INS 00402013 MOV ESI,ECX
+INS 00402015 CMP EAX,ESI
+INS 00402017 JA 0x0040201e
+INS 00402019 CALL 0x005c1ad6
+INS 0040201e CMP ESI,EBX
+INS 00402020 JBE 0x004021a7
+INS 00402026 MOV ECX,dword ptr [ESP + 0x1c]
+INS 0040202a PUSH EBX
+INS 0040202b LEA EBP,[ESI + ECX*0x1]
+INS 0040202e LEA ECX,[ESP + 0x18]
+INS 00402032 PUSH EBP
+INS 00402033 CALL 0x00402980
+INS 00402038 TEST AL,AL
+INS 0040203a JZ 0x004021a7
+INS 00402040 MOV ECX,ESI
+INS 00402042 MOV ESI,0x5eb4ec
+INS 00402047 JMP 0x00402184
+INS 0040204c MOV EDI,0x5eb4e8
+INS 00402051 OR ECX,0xffffffff
+INS 00402054 XOR EAX,EAX
+INS 00402056 MOV EDX,dword ptr [ESP + 0x1c]
+INS 0040205a SCASB.REPNE ES:EDI
+INS 0040205c MOV EAX,[0x005da354]
+INS 00402061 NOT ECX
+INS 00402063 DEC ECX
+INS 00402064 SUB EAX,EDX
+INS 00402066 MOV ESI,ECX
+INS 00402068 CMP EAX,ESI
+INS 0040206a JA 0x00402071
+INS 0040206c CALL 0x005c1ad6
+INS 00402071 CMP ESI,EBX
+INS 00402073 JBE 0x004021a7
+INS 00402079 MOV ECX,dword ptr [ESP + 0x1c]
+INS 0040207d PUSH EBX
+INS 0040207e LEA EBP,[ECX + ESI*0x1]
+INS 00402081 LEA ECX,[ESP + 0x18]
+INS 00402085 PUSH EBP
+INS 00402086 CALL 0x00402980
+INS 0040208b TEST AL,AL
+FUNCTION FUN_0044a550 @0044a550
+ CALLER 0044a89a FUN_0044a830
+ CALLER 0044a9a0 FUN_0044a920
+ CALLER 0044abb9 FUN_0044ab40
+
+undefined4 __thiscall FUN_0044a550(int param_1,char param_2)
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  undefined4 uVar4;
+  int iVar5;
+  undefined1 local_14 [4];
+  undefined4 local_10;
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  local_4 = 0xffffffff;
+  puStack_8 = &LAB_005d2f18;
+  local_c = ExceptionList;
+  if (*(char *)(param_1 + 0x28) == '\0') {
+    local_14[0] = 1;
+    local_10 = 0;
+    local_4 = 0;
+    iVar3 = 0;
+    ExceptionList = &local_c;
+    if (*(char *)(param_1 + 0x28) == '\0') {
+      do {
+        iVar5 = *(int *)(param_1 + 0x2c);
+        iVar2 = iVar3 + 1;
+        *(int *)(param_1 + 0x2c) = iVar5 + 1;
+        local_14[iVar3] = *(undefined1 *)(*(int *)(param_1 + 0x1c) + iVar5);
+        iVar3 = iVar2;
+      } while (iVar2 < 8);
+    }
+    else {
+      iVar3 = 0;
+      ExceptionList = &local_c;
+      do {
+        FUN_0044b690(*(undefined4 *)(param_1 + 0x20),local_14 + iVar3);
+        iVar3 = iVar3 + 1;
+      } while (iVar3 < 8);
+    }
+    if ((param_2 == '\0') && (iVar3 = FUN_0045cd20(local_14), iVar3 != 0)) {
+      ExceptionList = local_c;
+      return 10;
+    }
+    local_4 = 0xffffffff;
+  }
+  else {
+    iVar3 = DAT_005f32f0 + 4;
+    if (*(char *)(param_1 + 0x28) == '\0') {
+      iVar5 = 0;
+      ExceptionList = &local_c;
+      do {
+        iVar2 = *(int *)(param_1 + 0x2c);
+        iVar1 = iVar5 + 1;
+        *(int *)(param_1 + 0x2c) = iVar2 + 1;
+        *(undefined1 *)(iVar5 + iVar3) = *(undefined1 *)(*(int *)(param_1 + 0x1c) + iVar2);
+        iVar5 = iVar1;
+      } while (iVar1 < 8);
+    }
+    else {
+      iVar5 = 0;
+      ExceptionList = &local_c;
+      do {
+        FUN_0044b690(*(undefined4 *)(param_1 + 0x20),iVar5 + iVar3);
+        iVar5 = iVar5 + 1;
+      } while (iVar5 < 8);
+    }
+  }
+  FUN_00449ef0(param_1 + 0x14,&DAT_00a54e60);
+  if ((*(char *)(param_1 + 0x28) == '\0') && (iVar3 = FUN_005bea80(), iVar3 != 0)) {
+    uVar4 = 0xb;
+  }
+  else {
+    uVar4 = 0;
+  }
+  ExceptionList = local_c;
+  return uVar4;
+}
+
+
+FUNCTION FUN_0044a690 @0044a690
+ CALLER 0044a890 FUN_0044a830
+ CALLER 0044a992 FUN_0044a920
+
+undefined4 __fastcall FUN_0044a690(int param_1)
+
+{
+  int iVar1;
+  int iVar2;
+  undefined2 *puVar3;
+  int iVar4;
+  int iVar5;
+  undefined1 local_14 [4];
+  undefined4 local_10;
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  local_4 = 0xffffffff;
+  puStack_8 = &LAB_005d2f38;
+  local_c = ExceptionList;
+  if (*(char *)(param_1 + 0x28) == '\0') {
+    local_14[0] = 1;
+    local_10 = 0;
+    local_4 = 0;
+    iVar5 = 0;
+    ExceptionList = &local_c;
+    if (*(char *)(param_1 + 0x28) == '\0') {
+      do {
+        iVar4 = *(int *)(param_1 + 0x2c);
+        iVar2 = iVar5 + 1;
+        *(int *)(param_1 + 0x2c) = iVar4 + 1;
+        local_14[iVar5] = *(undefined1 *)(*(int *)(param_1 + 0x1c) + iVar4);
+        iVar5 = iVar2;
+      } while (iVar2 < 8);
+    }
+    else {
+      iVar5 = 0;
+      ExceptionList = &local_c;
+      do {
+        FUN_0045bc20(*(undefined4 *)(param_1 + 0x20),1,local_14 + iVar5);
+        iVar5 = iVar5 + 1;
+      } while (iVar5 < 8);
+    }
+    local_4 = 0xffffffff;
+  }
+  else {
+    iVar5 = DAT_005f32f0 + 4;
+    if (*(char *)(param_1 + 0x28) == '\0') {
+      iVar4 = 0;
+      ExceptionList = &local_c;
+      do {
+        iVar2 = *(int *)(param_1 + 0x2c);
+        iVar1 = iVar4 + 1;
+        *(int *)(param_1 + 0x2c) = iVar2 + 1;
+        *(undefined1 *)(iVar4 + iVar5) = *(undefined1 *)(*(int *)(param_1 + 0x1c) + iVar2);
+        iVar4 = iVar1;
+      } while (iVar1 < 8);
+    }
+    else {
+      iVar4 = 0;
+      ExceptionList = &local_c;
+      do {
+        FUN_0044b690(*(undefined4 *)(param_1 + 0x20),iVar4 + iVar5);
+        iVar4 = iVar4 + 1;
+      } while (iVar4 < 8);
+    }
+  }
+  FUN_00449ef0(param_1 + 0x14,0xa54f42);
+  if (*(char *)(param_1 + 0x28) == '\0') {
+    iVar5 = 0;
+    if (DAT_00a5501e != 0) {
+      puVar3 = (undefined2 *)((int)&DAT_00a54f40 + 2);
+      do {
+        iVar4 = FUN_005be190(*puVar3);
+        if (iVar4 == 0) {
+          DAT_00a5501e = DAT_00a5501e - 1;
+          *puVar3 = *(undefined2 *)((int)&DAT_00a54f40 + (uint)DAT_00a5501e * 2 + 2);
+        }
+        iVar5 = iVar5 + 1;
+        puVar3 = puVar3 + 1;
+      } while (iVar5 < (int)(uint)DAT_00a5501e);
+    }
+    iVar5 = 0;
+    if (DAT_00a55022 != 0) {
+      puVar3 = &DAT_00a55000;
+      do {
+        iVar4 = FUN_005be190(*puVar3);
+        if (iVar4 == 0) {
+          DAT_00a55022 = DAT_00a55022 - 1;
+          *puVar3 = (&DAT_00a55000)[DAT_00a55022];
+        }
+        iVar5 = iVar5 + 1;
+        puVar3 = puVar3 + 1;
+      } while (iVar5 < (int)(uint)DAT_00a55022);
+    }
+  }
+  ExceptionList = local_c;
+  return 0;
+}
+
+

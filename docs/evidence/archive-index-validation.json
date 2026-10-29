@@ -1,0 +1,64 @@
+[
+  {
+    "file": "data.dat",
+    "count": 3568,
+    "table_end": 956236,
+    "all_ranges_valid": true,
+    "contiguous": true,
+    "final_payload_end": 318892812,
+    "file_size": 318892812,
+    "samples": [
+      {
+        "entry": {
+          "index": 0,
+          "name": "bin#\\card_desceng.bin",
+          "offset": 956236,
+          "size1": 125132,
+          "size2": 49690
+        },
+        "first_bytes": "FF0000412076656E67FF6566756C20637265FF617475726520666FFF726D6564"
+      },
+      {
+        "entry": {
+          "index": 1,
+          "name": "bin#\\card_descfra.bin",
+          "offset": 1005926,
+          "size1": 136832,
+          "size2": 54998
+        },
+        "first_bytes": "FF00004372E9617475FF72652076656E6765FF726573736520666FFF726DE965"
+      }
+    ]
+  },
+  {
+    "file": "Voice.dat",
+    "count": 132,
+    "table_end": 35388,
+    "all_ranges_valid": true,
+    "contiguous": true,
+    "final_payload_end": 145041724,
+    "file_size": 145041724,
+    "samples": [
+      {
+        "entry": {
+          "index": 0,
+          "name": "joey\\english\\dummy.txt",
+          "offset": 35388,
+          "size1": 0,
+          "size2": 0
+        },
+        "first_bytes": ""
+      },
+      {
+        "entry": {
+          "index": 1,
+          "name": "joey\\english\\internal\\attack.wav",
+          "offset": 35388,
+          "size1": 124550,
+          "size2": 124550
+        },
+        "first_bytes": "5249464656E6010057415645666D742012000000010002002256000088580100"
+      }
+    ]
+  }
+]

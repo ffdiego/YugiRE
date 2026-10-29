@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# Preserve generated evidence exactly, including original line endings and spacing.
+docs/evidence/** -text -whitespace
+*.bin binary
