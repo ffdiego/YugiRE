@@ -1,0 +1,181 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT DISASSEMBLY 0057a9a0
+INS 0057a9a0 MOV EAX,dword ptr [ESP + 0x8]
+INS 0057a9a4 XOR ECX,ECX
+INS 0057a9a6 MOV CL,AH
+INS 0057a9a8 PUSH ESI
+INS 0057a9a9 AND ECX,0xff
+INS 0057a9af PUSH EDI
+INS 0057a9b0 MOV ESI,EAX
+INS 0057a9b2 MOV EDI,ECX
+INS 0057a9b4 AND ESI,0xff
+INS 0057a9ba CMP EDI,0x5
+INS 0057a9bd JL 0x0057a9c4
+INS 0057a9bf POP EDI
+INS 0057a9c0 XOR EAX,EAX
+INS 0057a9c2 POP ESI
+INS 0057a9c3 RET
+INS 0057a9c4 PUSH EDI
+INS 0057a9c5 PUSH ESI
+INS 0057a9c6 CALL 0x0056c510
+INS 0057a9cb ADD ESP,0x8
+INS 0057a9ce TEST EAX,EAX
+INS 0057a9d0 JNZ 0x0057a9d5
+INS 0057a9d2 POP EDI
+INS 0057a9d3 POP ESI
+INS 0057a9d4 RET
+INS 0057a9d5 MOV EDX,dword ptr [ESP + 0xc]
+INS 0057a9d9 MOV AX,word ptr [EDX]
+INS 0057a9dc PUSH EAX
+INS 0057a9dd CALL 0x004025d0
+INS 0057a9e2 ADD ESP,0x4
+INS 0057a9e5 CMP AX,0x16
+INS 0057a9e9 JNZ 0x0057a9fe
+INS 0057a9eb PUSH EDI
+INS 0057a9ec PUSH ESI
+INS 0057a9ed CALL 0x0056c460
+INS 0057a9f2 ADD ESP,0x8
+INS 0057a9f5 TEST EAX,EAX
+INS 0057a9f7 JZ 0x0057a9fe
+INS 0057a9f9 POP EDI
+INS 0057a9fa XOR EAX,EAX
+INS 0057a9fc POP ESI
+INS 0057a9fd RET
+INS 0057a9fe AND ESI,0x1
+INS 0057aa01 LEA EDX,[EDI + EDI*0x8]
+INS 0057aa04 SHL EDX,0x4
+INS 0057aa07 LEA EAX,[ESI + ESI*0x2]
+FUNCTION FUN_00592b00 @00592b00
+ CALLER 00595256 null
+ CALLER 00593e4b null
+ CALLER 00593f43 null
+ CALLER 0059439d null
+ CALLER 00594498 null
+ CALLER 00594737 null
+ CALLER 005949a5 null
+ CALLER 00594d57 null
+ CALLER 00594e2a null
+ CALLER 00594ed2 null
+ CALLER 00595a49 null
+ CALLER 005962e7 null
+ CALLER 005963b7 null
+ CALLER 0059659b null
+ CALLER 00597406 null
+ CALLER 00597491 null
+ CALLER 00593b0f null
+ CALLER 0059349f FUN_00593440
+
+undefined4 FUN_00592b00(int param_1,undefined4 param_2,undefined4 param_3)
+
+{
+  int iVar1;
+  
+  if (((DAT_00a54e5c >> 1 & 3) >> (*(byte *)(param_1 + 2) & 1) & 1) == 0) {
+    iVar1 = FUN_005aa480();
+    if (iVar1 == 0) {
+      return 0;
+    }
+  }
+  FUN_00592a90(param_1,param_2,param_3);
+  return 1;
+}
+
+
+FUNCTION FUN_0059dc50 @0059dc50
+ CALLER 00591107 FUN_00591040
+ CALLER 00587b0e null
+ CALLER 00587b30 null
+ CALLER 00587bca null
+ CALLER 0059438e null
+ CALLER 00594481 null
+ CALLER 00594724 null
+ CALLER 00594d44 null
+ CALLER 00594e17 null
+ CALLER 00594ec3 null
+ CALLER 005b41ce FUN_005b3fa0
+ CALLER 005b4231 FUN_005b3fa0
+ CALLER 005b42fb FUN_005b3fa0
+ CALLER 005b44ab FUN_005b3fa0
+ CALLER 005b4540 FUN_005b3fa0
+ CALLER 005b45d9 FUN_005b3fa0
+ CALLER 005b46dc FUN_005b3fa0
+ CALLER 005b4783 FUN_005b3fa0
+ CALLER 005b3f4e FUN_005b3ef0
+ CALLER 00596227 null
+ CALLER 005962d8 null
+ CALLER 005963a4 null
+ CALLER 00596472 null
+ CALLER 005964c0 null
+ CALLER 0059658c null
+ CALLER 005973f7 null
+ CALLER 0059747a null
+ CALLER 00593490 FUN_00593440
+ CALLER 0057d946 null
+ CALLER 0057d9b4 null
+
+undefined4 FUN_0059dc50(undefined2 *param_1,undefined1 param_2,undefined1 param_3)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  
+  if (param_1 == (undefined2 *)0x0) {
+    return 0;
+  }
+  iVar1 = FUN_0059dbe0(*param_1);
+  if (iVar1 < 0) {
+    return 1;
+  }
+  if (*(code **)(&DAT_005ed0b0 + iVar1 * 0x18) == (code *)0x0) {
+    return 1;
+  }
+  uVar2 = (**(code **)(&DAT_005ed0b0 + iVar1 * 0x18))(param_1,CONCAT11(param_3,param_2));
+  return uVar2;
+}
+
+
+FUNCTION FUN_0059dca0 @0059dca0
+ CALLER 005910c3 FUN_00591040
+ CALLER 0057cfdc null
+ CALLER 00593dd0 null
+ CALLER 00594326 null
+ CALLER 005943aa null
+ CALLER 00594549 null
+ CALLER 005957b2 null
+ CALLER 005b3fb2 FUN_005b3fa0
+ CALLER 00593a4e null
+ CALLER 00593d1e null
+ CALLER 005934e9 FUN_00593440
+ CALLER 0057d214 null
+
+int FUN_0059dca0(undefined2 *param_1)
+
+{
+  code *pcVar1;
+  undefined2 *puVar2;
+  int iVar3;
+  uint uVar4;
+  int local_4;
+  
+  puVar2 = param_1;
+  local_4 = 0;
+  iVar3 = FUN_0059dbe0(*param_1);
+  if ((iVar3 < 0) || (pcVar1 = *(code **)(&DAT_005ed0b0 + iVar3 * 0x18), pcVar1 == (code *)0x0)) {
+    return 0;
+  }
+  param_1 = (undefined2 *)0x0;
+  do {
+    uVar4 = 0;
+    do {
+      iVar3 = (*pcVar1)(puVar2,(uVar4 & 0xff) << 8 | (uint)param_1 & 0xff);
+      if (iVar3 != 0) {
+        local_4 = local_4 + 1;
+      }
+      uVar4 = uVar4 + 1;
+    } while ((int)uVar4 < 0xb);
+    param_1 = (undefined2 *)((int)param_1 + 1);
+  } while ((int)param_1 < 2);
+  return local_4;
+}
+
+

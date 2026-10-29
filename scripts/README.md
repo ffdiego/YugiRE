@@ -1,5 +1,11 @@
 # Reprodução
 
+Seleção de alvo de Man-Eater Bug:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_monster_targets.py`.
+Esperado: sete linhas `PASS`, identidades e modelo de revalidação em
+`docs/evidence/monster-target-validation.json`. Ver
+[análise de seleção](../docs/cards/man-eater-bug-targeting.md).
+
 Comparação Sparks/Ookazi:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_simple_lp_cards.py`.
 Esperado: sete linhas `PASS`, com metadados em

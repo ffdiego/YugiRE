@@ -1,0 +1,33 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005834ec MOV ECX,EAX
+INS 005834ee POP EDI
+INS 005834ef SHR ECX,0x18
+INS 005834f2 SHR EAX,0xc
+INS 005834f5 AND ECX,0x7f
+INS 005834f8 AND EAX,0x1
+INS 005834fb POP ESI
+INS 005834fc POP EBP
+INS 005834fd LEA EDX,[EAX + ECX*0x2]
+INS 00583500 XOR EAX,EAX
+INS 00583502 CMP EDX,EBX
+INS 00583504 POP EBX
+INS 00583505 SETZ AL
+INS 00583508 RET
+INS 00583510 PUSH EBX
+INS 00583511 PUSH EBP
+INS 00583512 MOV EBP,dword ptr [ESP + 0x10]
+FUNCTION FUN_005929f0 @005929f0
+ CALLER 00592af2 FUN_00592a90
+
+void FUN_005929f0(undefined4 param_1,uint param_2,int param_3)
+
+{
+  FUN_00592a50(param_1,CONCAT11((char)((uint)(&DAT_00a55d74)[param_3 * 0x24 + (param_2 & 1) * 0x351]
+                                      >> 0x18) * '\x02' +
+                                ((byte)((uint)(&DAT_00a55d74)
+                                              [param_3 * 0x24 + (param_2 & 1) * 0x351] >> 0xc) & 1),
+                                (char)param_3 << 4 | (byte)param_2 & 0xf));
+  return;
+}
+
+

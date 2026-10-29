@@ -13,11 +13,17 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Seleção de alvo concluída estaticamente:**
+[Man-Eater Bug](cards/man-eater-bug-targeting.md) liga filtro +8, preparação
++20, entrada de 16 bits e revalidação de ocorrência na posição. Próxima trilha:
+seguir 0x00576960 para explicar destruição e suas exceções, ou a condição
+extra de Tribute em 0x00583510 e os callbacks adicionais. Testes com mudança de campo
+ficam para execução assistida pelo usuário.
+
 **Comparação posterior:** [Sparks/Ookazi](cards/sparks-ookazi.md) confirma
 callbacks compartilhados com seleção por ID e constantes 200/800. As incertezas
 de execução de Parasite foram separadas em [experimentos](cards/parasite-dynamic-checks.md).
-Próxima trilha estática útil: contrastar esses efeitos automáticos com uma carta
-que escolha um alvo de campo, para mapear validação e seleção do pedido.
+O contraste com uma carta de alvo de campo foi realizado no estudo acima.
 
 **Atualização de conclusão:** [Parasite Paracide — caso consolidado](cards/parasite-paracide.md)
 fecha a análise funcional estática da carta. O consumidor de 0x43, o transporte

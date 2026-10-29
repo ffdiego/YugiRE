@@ -1,0 +1,83 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "cards": [
+    {
+      "name": "Man-Eater Bug",
+      "index": 753,
+      "resource_id": 500,
+      "registration_index": 91,
+      "callbacks": [
+        "0x585c80",
+        "0x57a930",
+        "0x0",
+        "0x0",
+        "0x5944d0"
+      ],
+      "description": "FLIP: Destroys 1 monster on the field (regardless of position)."
+    },
+    {
+      "name": "Tribute to The Doomed",
+      "index": 363,
+      "resource_id": 1023,
+      "registration_index": 187,
+      "callbacks": [
+        "0x585c80",
+        "0x57a9a0",
+        "0x580d20",
+        "0x57d7c0",
+        "0x5944d0"
+      ],
+      "description": "Discard 1 card from your hand to the Graveyard to destroy 1 Monster Card on the field (regardless of its position). "
+    }
+  ],
+  "instruction_checks": [
+    {
+      "va": "0x5929fb",
+      "file_offset": "0x1929fb",
+      "bytes": "80e10f"
+    },
+    {
+      "va": "0x592a17",
+      "file_offset": "0x192a17",
+      "bytes": "c0e0048bb496745da5000ac1"
+    },
+    {
+      "va": "0x592a27",
+      "file_offset": "0x192a27",
+      "bytes": "c1ea1880e27fc1eb0cd0e280e30102d3"
+    },
+    {
+      "va": "0x592a63",
+      "file_offset": "0x192a63",
+      "bytes": "c1e80d6689544106"
+    },
+    {
+      "va": "0x583482",
+      "file_offset": "0x183482",
+      "bytes": "668b547e068a4c7e068ac28adec0e80483e10f83e00f81e3ff000000"
+    },
+    {
+      "va": "0x5834ad",
+      "file_offset": "0x1834ad",
+      "bytes": "668b5604c1ea0d3bfa"
+    },
+    {
+      "va": "0x5834de",
+      "file_offset": "0x1834de",
+      "bytes": "a9ff0f0000"
+    },
+    {
+      "va": "0x5834ec",
+      "file_offset": "0x1834ec",
+      "bytes": "8bc85fc1e918c1e80c83e17f83e0015e5d8d144833c03bd35b0f94c0c3"
+    }
+  ],
+  "model_cases": {
+    "accepted": 2560,
+    "rejected_keys": 652800,
+    "rejected_empty": 2560,
+    "rejected_count": 2560
+  },
+  "method": "Static bytes, resource identities and Python bitfield model; no native execution.",
+  "limits": "Valid monster positions only; key reuse, selection UI, costs and interactions not tested."
+}

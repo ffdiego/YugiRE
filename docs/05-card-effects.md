@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Seleção e revalidação de alvo
+
+[Man-Eater Bug](cards/man-eater-bug-targeting.md) usa o slot +8 para filtrar
+candidatos e compartilha resolução/+20 com Tribute to The Doomed. O alvo em
+pedido+6 contém lado, posição e chave de oito bits. 0x00583470 confere contador,
+ocupação e chave na posição antes de a resolução emitir a operação por máscara.
+Custos de Tribute e sequência completa de destruição continuam abertos.
+
 ## Comparação estática: Sparks e Ookazi
 
 [Duas cartas de dano simples](cards/sparks-ookazi.md) compartilham os callbacks

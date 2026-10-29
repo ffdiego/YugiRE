@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Seleção de alvo: [Man-Eater Bug](cards/man-eater-bug-targeting.md), com
+comparação de registros de Tribute to The Doomed. Entrada de 16 bits e
+revalidação de chave na posição confirmadas estaticamente.
+
 Comparação concluída: [Sparks e Ookazi](cards/sparks-ookazi.md), com callbacks
 compartilhados e seleção de dano 200/800 por ID. Os testes com jogo aberto de
 Parasite ficam em [plano dinâmico](cards/parasite-dynamic-checks.md).
