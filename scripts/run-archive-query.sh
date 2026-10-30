@@ -5,7 +5,7 @@ repository=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 workspace=$(dirname -- "$repository")
 ghidra_dir=${GHIDRA_INSTALL_DIR:-"$workspace/tools/ghidra_12.2_PUBLIC"}
 if [[ $# -lt 1 || ! $1 =~ ^[a-zA-Z0-9_-]+\.txt$ ]]; then
-    echo "Usage: bash scripts/run-archive-query.sh report.txt [VA|ref:VA|ins:VA:count|text:string ...]" >&2
+    echo "Usage: bash scripts/run-archive-query.sh report.txt [VA|ref:VA|xref:VA|ins:VA:count|decode:VA:count|tempfunc:VA|text:string ...]" >&2
     exit 2
 fi
 report="$repository/docs/evidence/$1"

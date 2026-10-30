@@ -1,0 +1,94 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 0058e160
+TRANSIENT FUNCTION 00579c40
+TRANSIENT FUNCTION 00582080
+TRANSIENT FUNCTION 005944d0
+FUNCTION FUN_0058e160 @0058e160
+
+uint FUN_0058e160(undefined2 *param_1)
+
+{
+  uint uVar1;
+  int iVar2;
+  undefined4 uVar3;
+  uint uVar4;
+  undefined2 extraout_var;
+  
+  uVar1 = FUN_00583440(param_1,0);
+  iVar2 = FUN_00583510(param_1,uVar1 & 0xff,uVar1 >> 8 & 0xff);
+  uVar4 = 0;
+  if (iVar2 != 0) {
+    uVar3 = FUN_00579930(*(byte *)(param_1 + 1) & 1,0x12,1);
+    uVar4 = CONCAT31((int3)((uint)uVar3 >> 8),*(byte *)(param_1 + 2));
+    if ((*(byte *)(param_1 + 2) & 4) == 0) {
+      iVar2 = FUN_00583470(param_1,0,0);
+      uVar4 = 0;
+      if (iVar2 != 0) {
+        uVar4 = FUN_005747e0(*(byte *)(param_1 + 1) & 1,CONCAT22(extraout_var,*param_1),
+                             uVar1 & 0xffff,(*(byte *)(param_1 + 1) & 1) << 8 | 3);
+      }
+    }
+  }
+  return uVar4 & 0xffff0000;
+}
+
+
+FUNCTION FUN_00579c40 @00579c40
+ CALLER 005edad0 null
+
+bool FUN_00579c40(undefined2 *param_1,uint param_2)
+
+{
+  short sVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  
+  uVar3 = param_2 >> 8 & 0xff;
+  uVar4 = param_2 & 0xff;
+  if ((*(byte *)(param_1 + 1) & 1) == uVar4) {
+    return false;
+  }
+  if (4 < uVar3) {
+    return false;
+  }
+  iVar2 = FUN_0056c510(uVar4,uVar3);
+  if (iVar2 == 0) {
+    return false;
+  }
+  sVar1 = FUN_004025d0(*param_1);
+  if (sVar1 == 0x16) {
+    iVar2 = FUN_0056c460(uVar4,uVar3);
+    if (iVar2 != 0) {
+      return false;
+    }
+  }
+  return ((&DAT_00a55d74)[uVar3 * 0x24 + (param_2 & 1) * 0x351] & 0xfff) != 0;
+}
+
+
+FUNCTION FUN_00582080 @00582080
+
+bool FUN_00582080(void)
+
+{
+  return (DAT_00a577f8._2_1_ & 0xe) == 4;
+}
+
+
+FUNCTION FUN_005944d0 @005944d0
+ CALLER 005edadc null
+ CALLER 005ee244 null
+
+void FUN_005944d0(int param_1,undefined4 param_2)
+
+{
+  if (((DAT_00a54e5c >> 1 & 3) >> (*(byte *)(param_1 + 2) & 1) & 1) == 0) {
+    FUN_00593440(param_1,param_2);
+    return;
+  }
+  FUN_005b3fa0(param_1,param_2,500);
+  return;
+}
+
+

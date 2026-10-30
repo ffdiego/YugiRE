@@ -8,6 +8,8 @@ import java.util.*;
 
 public class QueryArchive extends GhidraScript {
     public void run() throws Exception {
+        int transaction=currentProgram.startTransaction("Transient archive query");
+        try {
         String[] args=getScriptArgs();
         PrintWriter out=new PrintWriter(new File(args[0]));
         out.println("SHA256: "+currentProgram.getExecutableSHA256());
@@ -61,6 +63,21 @@ public class QueryArchive extends GhidraScript {
                 }
                 continue;
             }
+            if(args[i].startsWith("tempfunc:")) {
+                Address entry=toAddr(args[i].substring(9));
+                Function temporary=getFunctionContaining(entry);
+                if(temporary!=null && !temporary.getEntryPoint().equals(entry)) {
+                    throw new IllegalArgumentException("Entry lies inside existing function: "+entry);
+                }
+                if(temporary==null) {
+                    disassemble(entry);
+                    temporary=createFunction(entry,null);
+                }
+                if(temporary==null) throw new IllegalStateException("Cannot create transient function: "+entry);
+                out.println("TRANSIENT FUNCTION "+entry);
+                selected.add(temporary);
+                continue;
+            }
             Function f=getFunctionContaining(toAddr(args[i]));
             if(f!=null)selected.add(f);
         }
@@ -74,5 +91,8 @@ public class QueryArchive extends GhidraScript {
             out.println(result.decompileCompleted()?result.getDecompiledFunction().getC():result.getErrorMessage());
         }
         decomp.dispose();out.close();
+        } finally {
+            currentProgram.endTransaction(transaction,false);
+        }
     }
 }

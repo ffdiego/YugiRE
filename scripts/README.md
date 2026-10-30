@@ -239,3 +239,19 @@ não executa código nativo.
 `python3 scripts/validate_ritual_placement.py` valida modo 5 e a cadeia de
 despacho do comando 0x70 no EXE fingerprintado; exporta somente metadados
 em `docs/evidence/ritual-placement-validation.json`. Não executa o jogo.
+
+## Decompilação temporária de entradas conhecidas
+
+`bash scripts/run-archive-query.sh report.txt tempfunc:0058e160` permite
+definir uma função transitória em entrada confirmada por tabela/chamada.
+Não usar em offsets arbitrários: disassembly pode seguir fluxo fora do trecho.
+O script agora envolve toda consulta numa transação com rollback em `finally`,
+além do `-readOnly` do runner. Entradas dentro de outra função são recusadas.
+A decompilação continua limitada a 12 funções por relatório.
+
+Validação: quatro funções de Soul Exchange foram decompiladas em
+`soul-exchange-transient-functions.txt`; nova consulta sem o prefixo produziu
+somente o fingerprint (`soul-exchange-function-rollback-check.txt`), mostrando
+que as definições não foram persistidas na rodada headless. Isso confere o
+fluxo completo com descarte, sem atribuir isoladamente o resultado apenas
+ao rollback Java, já que o runner também usa `-readOnly`.
