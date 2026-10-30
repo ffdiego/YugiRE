@@ -1,6 +1,36 @@
 # Prioridades e questões abertas
 
-## Próximas investigações pequenas
+## Checkpoint de retomada — 2026-10-30
+
+A investigação estática retomou depois da entrega do protótipo. Estado atual:
+
+- [Rituais](cards/ritual-bindings.md): critério de materiais, restrições,
+  pagamento, modo 5 de colocação e continuação do callback seguidos.
+- [Soul Exchange](cards/soul-exchange.md) e [limpeza](19-temporary-state-cleanup.md):
+  associação tipo 3, ator autorizado, bit de combate e produtor 0x02 → 0x03.
+- [Agendamento](20-turn-scheduling.md): prioridade da fila/contextos sobre
+  callbacks e índices de sequência distintos dos bits de fase.
+- [Compra](21-native-card-draw.md): mão inicial de cinco, transferência por
+  0x61, falta de cartas e família Pot/Jar/Skelengel.
+- [Batalha](22-battle-core.md): núcleo ATK/DEF, empate zero, cópia por 0x3C,
+  dano por 0x43 e destino por 0x7C; exceções específicas ainda parciais.
+- [Encerramento](23-terminal-conditions.md): Exodia central fora da tabela de
+  callbacks, Destiny Board e relação com falta de cartas/LP.
+
+Validação desta rodada: 25 testes Python, 55 verificações C#, compilação e
+sete validadores de bytes/cadeias passaram. Hashes do EXE e data.dat conferidos.
+Não houve execução do original nem validação visual do protótipo. Só a regra
+de empate zero foi corrigida na aplicação, por evidência estática e regressão;
+os demais limites de demonstração continuam em src/README.md.
+
+O usuário pretende testar as telas em ambiente gráfico no Windows antes dos
+próximos ajustes visuais. Até lá, manter investigação estática em incrementos,
+sem expandir catálogo em massa. Próximas trilhas pequenas possíveis: modo 1
+em 0x005ABD00 (confirmar regras de invocação/nível antes de nomear o modo) ou
+uma resposta de batalha específica em 0x005A2990. Não reabrir dúvidas já
+resolvidas apenas porque constam nos checkpoints históricos abaixo.
+
+## Plano inicial (histórico)
 
 1. **Leitor compartilhado de arquivos:** xrefs de `KCEJYUGI`, `*.dat` e APIs de leitura; no máximo algumas funções por rodada. Entrega: layout mínimo de cabeçalho e dois registros comprovados, com endereços e limites.
 2. **Amostra de recurso:** validar offsets/tamanhos contra os dois arquivos e ler apenas um payload pequeno. Entrega: distinguir transformação de nomes e compressão de conteúdo; extrator somente após validação.
@@ -11,7 +41,7 @@
 
 Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo selecionado, conclusão com confiança e um teste que possa refutar a hipótese. Não é necessário decompilar em massa. Análise dinâmica exigirá autorização separada.
 
-## Limites atuais
+## Checkpoints anteriores (histórico)
 
 **Tabela de Rituais concluída:** [mapeamento](cards/ritual-bindings.md) cobre
 os 16 pares P269 e cruza requisitos com níveis base. Próxima trilha estática:
