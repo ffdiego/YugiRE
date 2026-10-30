@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Royal Command](cards/royal-command.md): supressão FLIP na validação,
+no callback de resposta e antes da resolução; flags de pedido, posição e globais.
+Execução fica para uma etapa futura no Windows.
+
 FLIP: [classificação e produtor condicional](cards/man-eater-flip-activation.md)
 de Man-Eater Bug/Parasite, comando de face 0x80 e ligação ao pedido.
 Inclui limites das verificações estáticas e primeiro teste dinâmico sem carta rara.

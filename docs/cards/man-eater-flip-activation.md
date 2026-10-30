@@ -79,8 +79,9 @@ em +20 e resolução em +4. Depois da preparação e das possíveis respostas,
 [destruição até o estado](monster-destruction.md) já foram seguidas.
 
 No estado 4 dessa máquina, cartas reconhecidas por 0x00567620 também passam
-por uma consulta de ID **0x5FA**, que pode emitir comando 0xB1. Esse ramo e
-outras respostas/negações continuam fora do fechamento atual. Não concluímos
+por uma consulta de ID **0x5FA**, que pode emitir comando 0xB1. O ID e os
+caminhos de supressão foram seguidos na [continuação de Royal Command](royal-command.md).
+Outras respostas/negações continuam fora do fechamento atual. Não concluímos
 que uma carta marcada como FLIP sempre tenha seu efeito aplicado.
 
 ## O que foi validado
@@ -123,7 +124,8 @@ sequência; um dump isolado não demonstra causalidade.
 
 O Ghidra Debugger oferece inspeção de execução e snapshots por meio de um
 backend; a instalação 12.2 inclui agente x64dbg. Nenhuma sessão dinâmica foi
-configurada ou testada aqui. Documentação oficial:
+configurada ou testada aqui. A orientação atual é adiar essa etapa para o
+Windows e manter a análise estática por enquanto. Documentação oficial:
 [estado](https://ghidra.re/ghidra_docs/GhidraClass/Debugger/A4-MachineState.html)
 e [snapshots](https://ghidra.re/ghidra_docs/GhidraClass/Debugger/A5-Navigation.html).
 O snapshot guarda o estado capturado, não uma gravação automática integral

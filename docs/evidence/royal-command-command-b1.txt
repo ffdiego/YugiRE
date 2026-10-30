@@ -1,0 +1,154 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005bb85b CALL 0x00402690
+INS 005bb860 ADD ESP,0x4
+INS 005bb863 TEST EAX,EAX
+INS 005bb865 JZ 0x005bb8d9
+INS 005bb867 MOV DX,word ptr [ESI]
+INS 005bb86a PUSH 0x0
+INS 005bb86c PUSH EDX
+INS 005bb86d CALL 0x00567620
+INS 005bb872 ADD ESP,0x8
+INS 005bb875 TEST EAX,EAX
+INS 005bb877 JZ 0x005bb93e
+INS 005bb87d PUSH 0x5fa
+INS 005bb882 CALL 0x005699c0
+INS 005bb887 ADD ESP,0x4
+INS 005bb88a TEST EAX,EAX
+INS 005bb88c JNZ 0x005bb898
+INS 005bb88e TEST byte ptr [ESI + 0x4],0x4
+INS 005bb892 JZ 0x005bb93e
+INS 005bb898 MOV AX,word ptr [ESI + 0x2]
+INS 005bb89c PUSH 0x0
+INS 005bb89e MOV CL,AL
+INS 005bb8a0 PUSH 0x1
+INS 005bb8a2 SHR CL,0x1
+INS 005bb8a4 SHL EAX,0xf
+INS 005bb8a7 AND ECX,0x1f
+INS 005bb8aa OR AL,0xb1
+INS 005bb8ac PUSH ECX
+INS 005bb8ad PUSH EAX
+INS 005bb8ae CALL 0x005b9170
+INS 005bb8b3 ADD ESP,0x10
+INS 0057eb5f CALL 0x005699c0
+INS 0057eb64 ADD ESP,0x4
+INS 0057eb67 TEST EAX,EAX
+INS 0057eb69 JNZ 0x0057eb8e
+INS 0057eb6b MOV AX,word ptr [EDI]
+INS 0057eb6e PUSH -0x1
+INS 0057eb70 PUSH EAX
+INS 0057eb71 CALL 0x00567620
+INS 0057eb76 ADD ESP,0x8
+INS 0057eb79 TEST EAX,EAX
+INS 0057eb7b JZ 0x0057ebac
+INS 0057eb7d PUSH 0x5fa
+INS 0057eb82 CALL 0x005699c0
+INS 0057eb87 ADD ESP,0x4
+INS 0057eb8a TEST EAX,EAX
+INS 0057eb8c JZ 0x0057ebac
+INS 0057eb8e MOV ECX,dword ptr [0x00a54e5c]
+INS 0057eb94 AND ECX,0x1
+INS 0057eb97 CMP ESI,ECX
+FUNCTION FUN_00408730 @00408730
+ CALLER 005b9708 FUN_005b9470
+
+void FUN_00408730(void)
+
+{
+  char cVar1;
+  ushort uVar2;
+  ushort uVar3;
+  uint uVar4;
+  undefined4 *puVar5;
+  undefined1 uVar6;
+  uint uVar7;
+  int *piVar8;
+  uint uVar9;
+  int iVar10;
+  ushort uStack_18;
+  uint local_14;
+  undefined **ppuStack_10;
+  undefined4 *puStack_c;
+  undefined ***pppuStack_8;
+  undefined ***pppuStack_4;
+  
+  iVar10 = *(int *)(DAT_005f3280 + 0x132c);
+  local_14 = DAT_00a550a4 >> 0x10;
+  piVar8 = (int *)(DAT_005f3280 + 0x1330);
+  uVar2 = DAT_00a550a0._2_2_;
+  uVar9 = (uint)DAT_00a550a0._2_2_;
+  uVar7 = (DAT_00a550a0 & 0xffff) >> 0xf;
+  if (iVar10 != *piVar8) {
+    do {
+      cVar1 = (**(code **)(**(int **)(iVar10 + 4) + 4))();
+      if (cVar1 != '\0') {
+        return;
+      }
+      iVar10 = iVar10 + 0x10;
+    } while (iVar10 != *piVar8);
+  }
+  if ((((DAT_00a558ac & 0x7f) != 0) || (10 < uVar2)) ||
+     (((&DAT_00a55d74)[uVar7 * 0x351 + uVar9 * 0x24] & 0xfff) == 0)) {
+    DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+    return;
+  }
+  FUN_00570710(uVar7,uVar9,5,DAT_00a550a4 & 0xffff);
+  if (((short)DAT_00a550a4 != 0) && (local_14 == 0)) {
+    if (uVar2 < 10) {
+      uVar4 = (uVar9 / 5) * 5;
+    }
+    else {
+      uVar4 = 10;
+    }
+    if (uVar2 < 10) {
+      uVar6 = (undefined1)(uVar9 % 5);
+    }
+    else {
+      uVar6 = 0;
+    }
+    uVar2 = CONCAT11((&DAT_00a55d7a)[uVar9 * 0x90 + uVar7 * 0xd44],uVar6) << 6 |
+            (ushort)((uVar4 & 0x1f) << 1) |
+            (uStack_18 ^ (byte)((byte)uVar7 ^ (byte)uStack_18) & 1) & 1;
+    uVar3 = uVar2 & 0x7ffe ^ uVar2;
+    local_14._0_1_ = (byte)uVar3;
+    uVar3 = uVar3 ^ ((byte)(&DAT_00a55d7a)[uVar9 * 0x90 + uVar7 * 0xd44] & 1) << 0xe ^
+            (byte)((byte)local_14 ^ (byte)uVar2) & 0x3e;
+    local_14 = (uint)(uVar3 ^ (uVar3 ^ uVar2) & 0x3fc0);
+    iVar10 = FUN_0054a1d0(0xa4);
+    if (iVar10 == 0) {
+      puVar5 = (undefined4 *)0x0;
+    }
+    else {
+      puVar5 = (undefined4 *)FUN_00452f20(&local_14);
+    }
+    iVar10 = DAT_005f3280;
+    puStack_c = (undefined4 *)0x0;
+    ppuStack_10 = &PTR_FUN_005da438;
+    pppuStack_4 = (undefined ***)0x0;
+    pppuStack_8 = (undefined ***)0x0;
+    (*(code *)PTR_FUN_005da43c)();
+    if (puVar5 != (undefined4 *)0x0) {
+      pppuStack_4 = &ppuStack_10;
+      pppuStack_8 = &ppuStack_10;
+      puStack_c = puVar5;
+    }
+    FUN_0040c570(*(undefined4 *)(iVar10 + 0x1330),1,&ppuStack_10);
+    ppuStack_10 = &PTR_FUN_005da438;
+    if (pppuStack_8 != (undefined ***)0x0) {
+      if (pppuStack_8 == &ppuStack_10) {
+        if (puStack_c != (undefined4 *)0x0) {
+          (**(code **)*puStack_c)(1);
+          DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+          return;
+        }
+      }
+      else {
+        pppuStack_8[3] = (undefined **)pppuStack_4;
+        pppuStack_4[2] = (undefined **)pppuStack_8;
+      }
+    }
+  }
+  DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+  return;
+}
+
+

@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Supressão FLIP por Royal Command
+
+[Royal Command](cards/royal-command.md), ID 0x5FA, participa de verificações
+genéricas e tem ramo próprio em um callback compartilhado. Pode marcar outro
+pedido com OR 0x0E, e a máquina de resolução pode desviar antes de chamar o
+callback do monstro FLIP. Flags globais e por posição usam máscara 0x20;
+as relações entre esses campos foram seguidas sem assumir equivalência geral.
+
 ## Classificação FLIP e mudança de face
 
 [Continuação de Man-Eater Bug](cards/man-eater-flip-activation.md):

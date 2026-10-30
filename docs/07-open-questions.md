@@ -13,12 +13,22 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Diretriz atual:** manter a investigação estática; dúvidas de timing e
+comportamento facilmente conferíveis por execução ficam para futura etapa
+no Windows. Não instalar Wine nem configurar depuração nesta etapa.
+
+**Royal Command identificada e seguida:** [estudo](cards/royal-command.md)
+liga ID 0x5FA, validação, marcação de outro pedido e desvio da resolução FLIP.
+0xB1 também define estado por posição; a recomputação usa flags globais.
+Pendentes: janelas de resposta e interações completas. Próxima trilha estática
+útil: 0x0056B440, condição compartilhada por contadores e ativação.
+
 **FLIP — produtor condicional identificado:**
 [estudo](cards/man-eater-flip-activation.md) liga classificação de IDs,
 0x00574F70, comando 0x80, escrita de face e criação de pedido. Corrige o
 alcance da atribuição anterior de 0x00597E90 à ativação de Parasite.
-Pendentes: chamadores por ação de interface/batalha, timing e supressão por
-ID 0x5FA. Para validação dinâmica inicial, um duelo qualquer já permite
+Pendentes: chamadores por ação de interface/batalha e timing. A supressão por
+ID 0x5FA foi seguida acima. Para validação dinâmica inicial, um duelo qualquer já permite
 conferir LP/mão; não é necessário montar uma interação rara.
 
 **Custo de Tribute seguido:** [estudo](cards/tribute-discard-cost.md) liga

@@ -1,0 +1,82 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "card": {
+    "index": 108,
+    "resource_id": 1530,
+    "name": "Royal Command",
+    "description": "Negates the activation and effects of all Flip Effect monsters.",
+    "registration_index": 418,
+    "row": [
+      "0x5fa",
+      "0x588d90",
+      "0x0",
+      "0x0",
+      "0x0",
+      "0x0"
+    ]
+  },
+  "instruction_checks": [
+    {
+      "va": "0x57eb7d",
+      "file_offset": "0x17eb7d",
+      "bytes": "68fa050000e839aefeff83c40485c0741e"
+    },
+    {
+      "va": "0x5bb87d",
+      "file_offset": "0x1bb87d",
+      "bytes": "68fa050000e839e1faff83c40485c0750a"
+    },
+    {
+      "va": "0x57540e",
+      "file_offset": "0x17540e",
+      "bytes": "68fa050000e8a845ffff83c40485c07539"
+    },
+    {
+      "va": "0x588db1",
+      "file_offset": "0x188db1",
+      "bytes": "803d8a5ca50080"
+    },
+    {
+      "va": "0x588f58",
+      "file_offset": "0x188f58",
+      "bytes": "2df5050000746383e805740a"
+    },
+    {
+      "va": "0x588fab",
+      "file_offset": "0x188fab",
+      "bytes": "e870e6fdff"
+    },
+    {
+      "va": "0x588fb7",
+      "file_offset": "0x188fb7",
+      "bytes": "804e040e"
+    },
+    {
+      "va": "0x598e1f",
+      "file_offset": "0x198e1f",
+      "bytes": "576a05e8c90afeff"
+    },
+    {
+      "va": "0x5bb8b6",
+      "file_offset": "0x1bb8b6",
+      "bytes": "8b15885ca5005f81e2c9ff00005e80cac85d668915885ca500"
+    }
+  ],
+  "command": {
+    "opcode": "0xb1",
+    "normalized": 114,
+    "stub": "0x5b9708",
+    "handler": "0x408730"
+  },
+  "state_fields": {
+    "global_flags_va": "0xa577ec",
+    "global_mask": "0x20",
+    "position_flags_offset": "0x8c",
+    "position_mask": "0x20",
+    "prior_request_flags_offset": 4,
+    "prior_request_or_mask": "0xe",
+    "resolution_skip_state": 100
+  },
+  "method": "Static original/resource/registration/instruction checks; no native execution.",
+  "limits": "Does not execute the branches, prove response ordering or cover all suppression interactions."
+}

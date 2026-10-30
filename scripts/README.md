@@ -1,5 +1,11 @@
 # Reprodução
 
+Supressão FLIP por Royal Command:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_royal_command.py`.
+Esperado: onze linhas `PASS`; identidade, registro, instruções e despacho
+de 0xB1 em `docs/evidence/royal-command-validation.json`. Não executa o jogo.
+Ver [análise e limites](../docs/cards/royal-command.md).
+
 Classificação e produtor condicional de FLIP:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_flip_activation.py`.
 Esperado: dez linhas `PASS`; tabelas/instruções e despacho de 0x80 em
