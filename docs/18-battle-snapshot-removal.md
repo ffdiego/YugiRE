@@ -65,3 +65,53 @@ bash scripts/run-archive-query.sh cyber-jar-battle-snapshot.txt decode:0058a880:
 Os relatórios de instruções indicam quando o endereço pedido não coincide
 com uma instrução definida; nesses casos a ferramenta parte da próxima
 instrução existente. Não se interpreta o trecho omitido como código ausente.
+
+## Continuação: acessores distinguem campo, listas e cópias
+
+A consulta de referências levou a acessores compartilhados, não ainda ao
+produtor da captura. [Referências](evidence/battle-snapshot-references.txt),
+[decompilações](evidence/battle-snapshot-copy-helpers.txt) e
+[instruções](evidence/battle-snapshot-copy-instructions.txt).
+
+`0x005700F0(lado, região, posição)` retorna ponteiro. Para regiões 11–15,
+usa arrays de palavras de 32 bits; para o caminho comum com
+`região + posição < 11`, retorna registro de 0x90 bytes no campo:
+
+| Região | Base do lado zero | Passo por elemento |
+|---:|---:|---:|
+| 11 | 0x00A56434 | 4 |
+| 12 | 0x00A566B4 | 4 |
+| 13 | 0x00A56574 | 4 |
+| 14 | 0x00A566F0 | 4 |
+| 15 | 0x00A5686C | 4 |
+| Campo comum | 0x00A55D74 | 0x90 |
+
+Esses ramos usam lado mascarado por 1 e passo entre lados de 0xD44 bytes.
+Não acrescentamos nomes novos às regiões 12/13 somente por sua ordem física.
+Os papéis de 11, 14 e 15 já foram discutidos nos estudos de movimentação.
+
+Fora desses ramos, compara o argumento lado com bit 0 de 0x00A57840 e
+região com bits 8–10; correspondência seleciona 0x00A57864, qualquer outra
+combinação seleciona 0x00A578F4. Não é uma validação defensiva de coordenadas.
+`0x00570230` repete o roteamento e retorna o índice nos 12 bits baixos.
+As instruções confirmam o ramo por soma (CMP 10/JLE), comparação de lado e
+seleção dos ponteiros. Não há conclusão de que argumentos arbitrários sejam
+válidos apenas porque o helper retorna um endereço.
+
+`0x005703A0` retorna bit 0 do byte +6 para campo/cópias e zero para regiões
+11–15. Ainda não atribuímos aqui esse bit à posição ataque/defesa.
+`0x00570420` retorna bit 1 do mesmo byte para campo/cópias; é coerente com a
+máscara de face já seguida no filtro de Legendary Sword. Seus demais ramos
+possuem regras de visibilidade próprias e não são equivalentes a ler bit 1
+em todas as listas.
+
+A região em torno de 0x005A31DF também escolhe entre campo normal e as duas
+cópias e testa se seus índices estão ocupados. O trecho selecionado não contém
+uma escrita de captura; não foi apresentado como produtor. A consulta a
+0x005A1580 revelou lógica de escolha/validação de alvo, cujo fluxo completo
+permanece fora deste fechamento. Próximo passo: localizar a cópia/escrita dos
+0x90 bytes e os consumidores de ATK/DEF do contexto de batalha.
+
+Esses resultados orientam a separação entre estado físico, listas e contexto
+transitório. Não justificam portar os endereços/seletores para o modelo .NET,
+que mantém objetos próprios e continua com combate de demonstração.
