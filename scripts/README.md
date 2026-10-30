@@ -232,7 +232,8 @@ despacho 0x7C → 0x00405190 e quatro alvos de CALL. Não executa o original.
 
 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_ritual_selection_model.py'`
 compara a transcrição de 0x00599570/parte de 0x00599140 com enumeração
-independente de subconjuntos. Quatro testes; não executa código nativo.
+independente de subconjuntos e verifica a montagem do campo. Seis testes;
+não executa código nativo.
 [Critério, pagamento e limites](../docs/cards/ritual-bindings.md).
 
 `python3 scripts/validate_ritual_placement.py` valida modo 5 e a cadeia de

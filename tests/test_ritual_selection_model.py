@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from ritual_selection_model import candidate_can_finish, progress, subset_search
+from ritual_selection_model import additional_field_levels, candidate_can_finish, progress, subset_search
 
 
 def oracle(levels, required, minimum, mandatory=()):
@@ -31,6 +31,18 @@ class RitualSelectionTests(unittest.TestCase):
                     for required in range(1, 9):
                         for minimum in (1, 3, 255):
                             self.assertEqual(candidate_can_finish(candidate, others, required, minimum), oracle(others, required, minimum, (candidate,)), (candidate, others, required, minimum))
+
+    def test_additional_fields_are_relative_to_candidate_side(self):
+        fields = [(0, 0, 4, False, True), (0, 1, 6, True, True),
+                  (1, 0, 3, True, True), (1, 1, 5, False, True)]
+        self.assertEqual(additional_field_levels(fields, 0, 0, 1), [4, 3])
+        self.assertEqual(additional_field_levels(fields, 1, 0, 0), [6, 5])
+        self.assertEqual(additional_field_levels(fields, 0, 11, 1), [4, 6, 3])
+
+    def test_additional_fields_keep_eligibility_and_capacity(self):
+        fields = [(0, 0, 4, True, False), (0, 1, 6, True, True), (1, 0, 3, True, True)]
+        self.assertEqual(additional_field_levels(fields, 0, 11, 0, existing_count=41), [6])
+        self.assertEqual(additional_field_levels(fields, 0, 11, 0, existing_count=42), [])
 
     def test_not_global_minimum_sum(self):
         self.assertTrue(candidate_can_finish(6, [6, 8], 8))  # 12 allowed although 8 exists.

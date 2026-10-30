@@ -259,3 +259,43 @@ preservam também os ramos inspecionados e descartados como rota principal.
 tabela de seis saltos, quatro CALLs e despacho 0x70 diretamente nos bytes.
 [Relatório](../evidence/ritual-placement-validation.json).
 Nenhum desses checks executa o jogo ou comprova o timing dos estágios.
+
+## Conferência das condições de campo
+
+O listing confirmou a comparação de lado do candidato, antes deixada como
+dúvida do decompilador. Após SUB ESP,0xB8 e quatro PUSHes na entrada de
+0x00599140, os argumentos estão em ESP+0xCC (pedido), +0xD0 (lado do
+candidato), +0xD4 (região), +0xD8 (posição). Em 0x005994A4, o CMP usa
+**ESP+0xD0 contra EDI**, o lado sendo percorrido. No lado correspondente,
+exclui a própria posição quando região=0; no outro lado, exige bit 1 do
+byte de face. O array aceita no máximo 42 contribuições, incluindo a parte
+de mão já acumulada. Isso confirma a leitura local, sem provar alcance de
+todas as combinações em execução.
+
+Exemplo puramente de modelo: ator no lado 0 e candidato elegível no lado 1.
+Um material adicional virado para baixo no lado 0 será excluído desse array;
+um material no lado 1 poderá entrar sem esse teste de face, ainda sujeito a
+0x0056A140. O candidato adversário em si exige face aberta no filtro inicial.
+Portanto não se deve substituir a montagem pelo atalho “todos os próprios
+mais adversários abertos” em uma reprodução fiel. Não classificamos isso
+como bug: contexto, disponibilidade e condições de associação ainda limitam
+os casos possíveis.
+
+0x00569E10 também foi seguido: verifica associações de tipo 2 que apontem
+para **Ground Collapse, ID 0x528**, face aberta e flags permitidas; o byte de
+metadados precisa corresponder à posição. Depois percorre registros de dois
+blocos com marcador 0x40 e coordenadas de lado/posição, também capazes de
+impedir o retorno verdadeiro. O papel completo desses registros continua
+aberto. Esse helper explica por que “tributar próprio monstro” não basta
+para garantir espaço utilizável no teste de disponibilidade com campo cheio.
+
+A busca 0x0056DA10 usada para Soul Exchange percorre associações tipo 4 e
+compara o ID da origem referenciada; a confirmação de entrada em 0x005AA480
+consulta máscara 0x201 após atualizar o estado de entrada por 0x004182D0.
+Não atribuímos botões físicos específicos a essa máscara nesta rodada.
+
+Novas evidências: [filtro/espaço](../evidence/ritual-field-eligibility-detail.txt),
+[argumentos/associações/entrada](../evidence/ritual-remaining-material-array.txt).
+O modelo ganhou duas verificações de montagem de contribuições e limite,
+passando a seis testes de seleção; elas não executam nem o filtro de
+associações nem o original.
