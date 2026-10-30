@@ -299,3 +299,74 @@ Novas evidências: [filtro/espaço](../evidence/ritual-field-eligibility-detail.
 O modelo ganhou duas verificações de montagem de contribuições e limite,
 passando a seis testes de seleção; elas não executam nem o filtro de
 associações nem o original.
+
+## Continuação e encerramento do callback
+
+O executor compartilhado **0x005BB720** distingue dois estados no DWORD
+0x00A55C88:
+
+| Campo | Uso neste caso |
+|---|---|
+| Bit 0 | Flag de resolução ativa, consultada pelo wrapper 0x005BBE40 |
+| Bits 1–7 | Etapa do executor genérico |
+| Byte +2, 0x00A55C8A | Continuação privada do callback |
+| Byte +3, 0x00A55C8B | R do Ritual, não etapa genérica |
+
+Na etapa genérica 4, o executor inicializa a metade alta com 0x0080: o
+callback começa com continuação 0x80 e o byte R inicialmente zero. Na etapa
+6, **0x0059DEB0** procura o registro da carta e chama seu slot principal.
+As instruções 0x005BBA78–0x005BBA99 mostram uso de **AL**, com máscara 0xFF,
+para substituir apenas o byte de continuação, preservando R. Se esse byte
+for diferente de zero, mantém a etapa 6; zero marca uma flag global e avança
+o executor. Retorno não é simplesmente “sucesso/falha”. Não interpretar bits
+altos de EAX recuperados pelo decompilador como parte desse protocolo.
+
+No Ritual, a sequência comum é:
+
+```text
+0x80 -> 0x78 automático, ou 100 depois de abrir seleção interativa
+0x78 -> 0x78 enquanto R != 0; ao terminar -> 100
+100  -> procura/copia o monstro preservado -> 99
+99   -> prepara o contexto de colocação -> 98 (0x62)
+98   -> ramo default do callback -> zero
+```
+
+As instruções de 0x00599BB4 confirmam CALL 0x005ADB10 e retorno AX=0x62.
+A etapa 98 não é uma chamada explícita ao consumidor 0x70: a colocação
+segue pelo contexto de invocação já documentado. Não concluímos apenas
+por essa sequência quando o próximo polling ocorre em relação à animação,
+a fila ou à janela de resposta. O wrapper 0x005BBE40, por sua vez, processa
+os pedidos ativos e alimenta a resolução; foi encontrado como chamador em
+uma etapa de outro contexto compartilhado, 0x005AC310.
+
+0x005BA2D0 pode desviar a chamada na etapa 6: depende do bit global 0x10 em
+0x00A577FA e de bits do pedido comparados a 0x00A54E5C. O mesmo predicado
+pode encaminhar cópias de pedidos por 0x005BD090/0xF071 na etapa anterior.
+Este caminho é registrado numericamente; não precisa ser suposto como
+cancelamento local nem como validação do alvo.
+
+## Interface: guarda de apresentação não prova cancelamento
+
+0x00441AD0 atualiza sua base, verifica campos do objeto e consulta
+0x0041CEC0 → **0x0041D050** antes de chamar o seletor interativo 0x005995E0.
+Este último helper de guarda chama 0x0041D0C0 e métodos virtuais de vários
+objetos; retorna 1 quando encontra um estado pendente. Portanto, o early
+return não deve ser nomeado como “cancelar Ritual” nesta análise.
+
+Quando o seletor retorna R=0, 0x00441AD0 chama **0x0043E0A0(0)** para
+encaminhar o fechamento. Esta rotina altera campos do objeto e chama
+0x005BFCC0, que grava o valor em 0x00A558B4 e atualiza a seleção global por
+0x005BDBD0. Nenhum reembolso de materiais ou restauração de R/M foi visto
+nesse caminho. Isso não prova ausência de cancelamento em outros handlers.
+A validade de cancelar após o primeiro tributo continua pendente para
+identificação de um chamador específico ou teste dinâmico futuro.
+
+Evidências: [entrada e referências](../evidence/ritual-callback-resume-and-input.txt),
+[executor](../evidence/ritual-generic-resolution-driver.txt),
+[wrapper e fechamento](../evidence/ritual-resolution-gates.txt),
+[guardas e predicado](../evidence/ritual-ui-and-resolution-synchronization.txt),
+[instruções de continuação](../evidence/ritual-callback-state-instructions.txt),
+[referências de polling](../evidence/ritual-placement-polling-references.txt).
+A ausência de xrefs diretos para 0x005AB820 no banco atual não demonstra
+que o dispatcher não seja chamado: sua entrada foi recuperada por decoding
+transitório e há chamadas/tabelas que o banco ainda não tipou.
