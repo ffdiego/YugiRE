@@ -1,0 +1,24 @@
+{
+  "sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "mode": 5,
+  "table_index": 4,
+  "dispatch_targets": [
+    "0x5ab87f",
+    "0x5ab893",
+    "0x5ab8a7",
+    "0x5ab8bb",
+    "0x5ab8cf",
+    "0x5ab8e3"
+  ],
+  "calls": {
+    "0x5adbe8": "0x5ad8c0",
+    "0x5ab8cf": "0x5ad210",
+    "0x5ad26e": "0x5acf10",
+    "0x5ad05d": "0x5b9170"
+  },
+  "command": "0x70",
+  "normalized_index": 70,
+  "stub": "0x5b962c",
+  "consumer": "0x4063e0",
+  "limitation": "Static byte checks only; no native execution or timing validation."
+}

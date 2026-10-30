@@ -37,6 +37,8 @@ de Cyber Jar; não constitui reconstrução do combate geral.
 
 [Rituais](cards/ritual-bindings.md): 16 pares magia/monstro e requisitos de
 nível em tabela compactada do EXE, conferidos com callbacks e recursos locais.
+Continuação: seleção sem materiais redundantes, pagamento e colocação pelo
+modo compartilhado 5 → comando 0x70; testes do modelo sem execução nativa.
 
 [Limpeza de equipamentos](cards/equipment-cleanup.md): retirada da origem,
 remoção/compactação de referências e operações para os equipamentos quando

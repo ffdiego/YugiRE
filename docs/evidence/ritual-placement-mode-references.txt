@@ -1,0 +1,51 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+REFERENCES TO 00a5508c
+ XREF From: 005adbd7 To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005adb10
+ XREF From: 005adbe2 To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005adb10
+ XREF From: 005ad8f4 To: 00a5508c Type: READ Op: 0 DEFAULT FUNCTION 005ad8c0
+ XREF From: 005adaf2 To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005ada20
+ XREF From: 005adafd To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005ada20
+ XREF From: 005add3c To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005adbf0
+ XREF From: 005ad866 To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005ad740
+ XREF From: 005aba12 To: 00a5508c Type: READ Op: 0 DEFAULT FUNCTION none
+ XREF From: 005abf8b To: 00a5508c Type: READ Op: 1 DEFAULT FUNCTION 005abd00
+ XREF From: 005acba8 To: 00a5508c Type: READ Op: 1 DEFAULT FUNCTION 005ac990
+ XREF From: 005ad0a7 To: 00a5508c Type: READ Op: 1 DEFAULT FUNCTION 005acf10
+ XREF From: 005ad598 To: 00a5508c Type: READ Op: 1 DEFAULT FUNCTION 005ad350
+ XREF From: 005ad991 To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005ad960
+ XREF From: 005ada0d To: 00a5508c Type: WRITE Op: 0 DEFAULT FUNCTION 005ad960
+FUNCTION FUN_005ad210 @005ad210
+ CALLER 005ab8cf null
+
+undefined4 FUN_005ad210(void)
+
+{
+  uint uVar1;
+  undefined4 uVar2;
+  undefined2 extraout_var;
+  
+  uVar1 = (DAT_00a5508e & 0xfe0) >> 5;
+  if (uVar1 != 0) {
+    if (uVar1 == 1) {
+      DAT_00a55080 = ((byte)DAT_00a558b4 & 1) << 0xf | DAT_00a55080 & 0xffff7fff;
+      if ((DAT_00a558b4 & 1) == 0) {
+        DAT_00a55080 = DAT_00a55080 | 0x4000;
+      }
+      DAT_00a5508e = DAT_00a5508e ^ ((DAT_00a5508e & 0xffe0) + 0x20 ^ DAT_00a5508e) & 0xfe0;
+    }
+    uVar2 = FUN_005acf10();
+    return uVar2;
+  }
+  if (((DAT_00a54e5c >> 1 & 3) >> (sbyte)(DAT_00a55080 & 1) & 1) == 0) {
+    FUN_005bf800(0xf7);
+    uVar1 = FUN_004022e0(CONCAT22(extraout_var,(undefined2)DAT_00a55084));
+    FUN_005bf9a0(6,uVar1 & 0xffff | (~DAT_00a55080 >> 0xe & 1) << 0x10);
+    DAT_00a5508e = DAT_00a5508e ^ ((DAT_00a5508e & 0xffe0) + 0x20 ^ DAT_00a5508e) & 0xfe0;
+    return 0;
+  }
+  DAT_00a558b4 = FUN_005ae270(DAT_00a55080 & 1,DAT_00a55084 & 0xffff,DAT_00a55080 >> 0xe & 1,0);
+  DAT_00a5508e = DAT_00a5508e ^ ((DAT_00a5508e & 0xffe0) + 0x20 ^ DAT_00a5508e) & 0xfe0;
+  return 0;
+}
+
+

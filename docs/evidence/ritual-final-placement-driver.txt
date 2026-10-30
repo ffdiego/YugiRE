@@ -1,0 +1,51 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005adb10 @005adb10
+ CALLER 00591679 FUN_005914a0
+ CALLER 00599bb4 FUN_005999d0
+ CALLER 00583a3f null
+ CALLER 00583a7a null
+ CALLER 005848a3 null
+ CALLER 005848dd null
+ CALLER 0058812f null
+ CALLER 0058976c null
+ CALLER 0058aabe null
+ CALLER 0058b55b null
+ CALLER 0058f27f null
+ CALLER 0058ff03 null
+ CALLER 005905da null
+ CALLER 0059297a null
+
+void FUN_005adb10(uint param_1,uint *param_2,uint param_3,uint param_4,int param_5,uint param_6)
+
+{
+  uint uVar1;
+  int iVar2;
+  uint uVar3;
+  
+  uVar1 = FUN_0056a030(param_1);
+  if (-1 < (int)uVar1) {
+    if (param_5 == -1) {
+      param_5 = 0;
+      uVar1 = param_6;
+    }
+    iVar2 = FUN_005699c0(0x47f);
+    uVar3 = 1;
+    if (iVar2 == 0) {
+      uVar3 = param_3;
+    }
+    DAT_00a55080 = (param_6 * 0x10 + param_5) * 0x40 & 0x3fc0 ^
+                   ((DAT_00a55080 & 0xffffff00 ^ param_1 & 1) & 0xf1ff003f | (uVar1 & 0x1f) << 1) |
+                   (uVar3 & 1) << 0xe;
+    DAT_00a55084 = *param_2 & 0xfff | DAT_00a55084 & 0xffff0000;
+    FUN_005675c0(&DAT_00a55088,param_2);
+    DAT_00a5508e = DAT_00a5508e & 0xfff7 | 0x14;
+    DAT_00a5508c = (ushort)(param_4 | 4);
+    if (param_5 == 0xe) {
+      DAT_00a5508c = (ushort)CONCAT31((int3)(param_4 >> 8),(char)(param_4 | 4)) | 0x20;
+    }
+    FUN_005ad8c0();
+  }
+  return;
+}
+
+

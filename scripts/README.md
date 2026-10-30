@@ -234,3 +234,7 @@ despacho 0x7C → 0x00405190 e quatro alvos de CALL. Não executa o original.
 compara a transcrição de 0x00599570/parte de 0x00599140 com enumeração
 independente de subconjuntos. Quatro testes; não executa código nativo.
 [Critério, pagamento e limites](../docs/cards/ritual-bindings.md).
+
+`python3 scripts/validate_ritual_placement.py` valida modo 5 e a cadeia de
+despacho do comando 0x70 no EXE fingerprintado; exporta somente metadados
+em `docs/evidence/ritual-placement-validation.json`. Não executa o jogo.

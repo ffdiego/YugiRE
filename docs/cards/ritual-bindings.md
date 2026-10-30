@@ -188,3 +188,74 @@ de nível possíveis, seleção gráfica nem a aplicação real de tributos.
 
 Evidências novas: [seleção e somas](../evidence/ritual-selection-progress.txt),
 [elegibilidade e instruções de progresso](../evidence/ritual-eligibility-and-progress-instructions.txt).
+
+## Colocação: modo 5 e comando 0x70
+
+O estado 99 de 0x005999D0 chama
+`0x005ADB10(lado, &0x00A55C90, 1, 1, 11, posição_mão_preservada)`.
+O helper exige posição livre por 0x0056A030 e prepara contexto compartilhado:
+
+| Endereço | Conteúdo seguido |
+|---|---|
+| 0x00A55080 | Lado, posição livre, local de origem e flags |
+| 0x00A55084 | Índice do monstro nos 12 bits baixos |
+| 0x00A55088 | Cópia do registro preservado |
+| 0x00A5508C | Argumento de flags OR 4; no Ritual, valor 5 |
+| 0x00A5508E | Controle: força bits 0x14 e limpa bit 3 |
+
+0x005AD8C0 limpa o progresso, ativa bit 0 e preserva o seletor de modo.
+Não coloca a carta diretamente: prepara trabalho posterior. Pode também
+encaminhar um contexto de 20 bytes por 0x005BD090 conforme modo global.
+
+A entrada transitória **0x005AB820**, identificada após nove NOPs que seguem
+o RET de 0x005AB816, lê esse controle. O dispatcher em 0x005AB868 calcula:
+
+```text
+índice = ((controle >> 2) & 7) - 1
+```
+
+O contexto do Ritual resulta em **modo 5, índice 4**. A tabela em
+0x005ABCA8 aponta para **0x005AB8CF → CALL 0x005AD210**. Não confundir com
+0x005AD350, que pertence ao índice 5/modo 6: apenas olhar a ordem dos helpers
+sem o decremento levaria ao ramo errado.
+
+0x005AD210 passa por escolha de posição/flags, interativa ou automática,
+e encaminha os estágios posteriores a **0x005ACF10**. No estado 3, para o
+monstro comum de Ritual, esse helper emite **0x70** em 0x005AD05B/0x005AD05D:
+transporta lado/posição de destino, chave de ocorrência do registro preservado
+e duas flags. Há um caminho separado para fichas, fora do caso Ritual.
+No estado seguinte, testa ocupação e emite comandos/eventos posteriores.
+Os significados completos das flags de posição e os gatilhos não foram
+reconstruídos nesta continuação.
+
+0x70 normaliza para **70 decimal**, stub **0x005B962C**, consumidor
+**0x004063E0**. No estado 2 do consumidor:
+
+1. Localiza a ocorrência por **0x005687D0**, usando a chave transportada.
+2. Obtém o registro por 0x005700F0 e copia para temporário 0x00A558B0.
+3. Chama **0x00570790** para retirar a origem encontrada.
+4. Chama **0x005708D0** para inserir no destino transportado pelo comando.
+5. Atualiza apresentação e flags por helpers compartilhados.
+
+Isso liga o Ritual ao mecanismo de transferência da ocorrência preservada
+para o campo, em vez de fabricar um índice novo na posição. Para o caso
+normal, a origem esperada é a mão já examinada; não assumimos comportamento
+seguro se a chave deixar de existir antes da resolução. A busca, as rotinas
+de retirada/inserção e seus endereços já aparecem nos estudos de movimentação.
+Timing, cancelamento, destino invalidado e todas as respostas possíveis
+continuam para análise adicional ou validação dinâmica futura.
+
+Evidências: [preparação](../evidence/ritual-final-placement-driver.txt),
+[inicialização](../evidence/ritual-placement-state-machine.txt),
+[dispatcher em instruções](../evidence/ritual-placement-mode-dispatch-instructions.txt),
+[modo e seleção](../evidence/ritual-placement-mode-references.txt),
+[estágios e emissão](../evidence/ritual-special-placement-route.txt),
+[consumidor](../evidence/ritual-command-70-consumer.txt).
+As consultas auxiliares `ritual-placement-dispatch.txt`,
+`ritual-placement-mode-five.txt` e `ritual-placement-global-references.txt`
+preservam também os ramos inspecionados e descartados como rota principal.
+
+`python3 scripts/validate_ritual_placement.py` confirma fingerprint, seletor,
+tabela de seis saltos, quatro CALLs e despacho 0x70 diretamente nos bytes.
+[Relatório](../evidence/ritual-placement-validation.json).
+Nenhum desses checks executa o jogo ou comprova o timing dos estágios.

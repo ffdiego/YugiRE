@@ -1,0 +1,150 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+NOTE no instruction at 005ab850; starting at next defined instruction
+INS 005ab87f CALL 0x005abd00
+INS 005ab884 TEST EAX,EAX
+INS 005ab886 JNZ 0x005ab8f7
+INS 005ab888 POP ESI
+INS 005ab889 MOV EAX,0x1
+INS 005ab88e POP EBX
+INS 005ab88f ADD ESP,0xc
+INS 005ab892 RET
+INS 005ab893 CALL 0x005ac870
+INS 005ab898 TEST EAX,EAX
+INS 005ab89a JNZ 0x005ab8f7
+INS 005ab89c POP ESI
+INS 005ab89d MOV EAX,0x1
+INS 005ab8a2 POP EBX
+INS 005ab8a3 ADD ESP,0xc
+INS 005ab8a6 RET
+INS 005ab8a7 CALL 0x005ac990
+INS 005ab8ac TEST EAX,EAX
+INS 005ab8ae JNZ 0x005ab8f7
+INS 005ab8b0 POP ESI
+INS 005ab8b1 MOV EAX,0x1
+INS 005ab8b6 POP EBX
+INS 005ab8b7 ADD ESP,0xc
+INS 005ab8ba RET
+INS 005ab8bb CALL 0x005acf10
+INS 005ab8c0 TEST EAX,EAX
+INS 005ab8c2 JNZ 0x005ab8f7
+INS 005ab8c4 POP ESI
+INS 005ab8c5 MOV EAX,0x1
+INS 005ab8ca POP EBX
+INS 005ab8cb ADD ESP,0xc
+INS 005ab8ce RET
+INS 005ab8cf CALL 0x005ad210
+INS 005ab8d4 TEST EAX,EAX
+INS 005ab8d6 JNZ 0x005ab8f7
+INS 005ab8d8 POP ESI
+INS 005ab8d9 MOV EAX,0x1
+INS 005ab8de POP EBX
+INS 005ab8df ADD ESP,0xc
+INS 005ab8e2 RET
+INS 005ab8e3 CALL 0x005ad350
+INS 005ab8e8 TEST EAX,EAX
+INS 005ab8ea JNZ 0x005ab8f7
+INS 005ab8ec POP ESI
+INS 005ab8ed MOV EAX,0x1
+INS 005ab8f2 POP EBX
+INS 005ab8f3 ADD ESP,0xc
+INS 005ab8f6 RET
+INS 005ab8f7 MOV ECX,dword ptr [0x00a55080]
+INS 005ab8fd MOV EBX,dword ptr [0x00a54e5c]
+INS 005ab903 MOV EDX,ECX
+INS 005ab905 PUSH EDI
+INS 005ab906 SHR EDX,0x1
+INS 005ab908 MOV EAX,EDX
+INS 005ab90a AND word ptr [0x00a5508e],0xfffe
+INS 005ab913 AND EAX,0x1f
+INS 005ab916 LEA EDI,[EAX + EAX*0x8]
+INS 005ab919 MOV EAX,ECX
+INS 005ab91b AND EAX,0x1
+INS 005ab91e SHL EDI,0x4
+INS 005ab921 LEA ESI,[EAX + EAX*0x2]
+INS 005ab924 LEA ESI,[ESI + ESI*0x8]
+INS 005ab927 SHL ESI,0x1
+INS 005ab929 SUB ESI,EAX
+INS 005ab92b SHL ESI,0x4
+INS 005ab92e ADD ESI,EAX
+INS 005ab930 LEA EDI,[EDI + ESI*0x4]
+INS 005ab933 MOV ESI,dword ptr [EDI + 0xa55d74]
+INS 005ab939 TEST ESI,0xfff
+INS 005ab93f JZ 0x005abc71
+INS 005ab945 MOV AL,byte ptr [EDI + 0xa55d7a]
+INS 005ab94b MOV EDI,ECX
+INS 005ab94d SHR EAX,0x1
+INS 005ab94f AND EAX,0x1
+INS 005ab952 AND EDX,0xf
+FUNCTION FUN_005acf10 @005acf10
+ CALLER 005ab8bb null
+ CALLER 005ad26e FUN_005ad210
+
+undefined4 __fastcall FUN_005acf10(ushort param_1)
+
+{
+  short sVar1;
+  undefined4 uVar2;
+  ushort uVar3;
+  undefined2 extraout_var;
+  byte local_4;
+  
+  switch((DAT_00a5508e & 0xfe0) >> 5) {
+  case 0:
+    DAT_00a5508e = DAT_00a5508e & 0xf05f | 0x40;
+  case 2:
+    if ((DAT_00a55080 & 0x4000) != 0) {
+      uVar2 = FUN_004022e0(CONCAT22((short)(DAT_00a55080 >> 0x10),(undefined2)DAT_00a55084),0,4);
+      FUN_005b9170(DAT_00a55080 << 0xf | 0xe6,uVar2);
+    }
+    DAT_00a5508e = DAT_00a5508e ^ ((DAT_00a5508e & 0xffe0) + 0x20 ^ DAT_00a5508e) & 0xfe0;
+    return 0;
+  case 3:
+    uVar3 = FUN_004022e0(DAT_00a55084 & 0xffff);
+    if (0x77f < uVar3) {
+      uVar3 = FUN_004022e0(CONCAT22(extraout_var,(undefined2)DAT_00a55084));
+      if (uVar3 < 0x784) {
+        FUN_005b9170(DAT_00a55080 << 0xf | 0xa5,
+                     (uint)(byte)(((byte)(DAT_00a55080 >> 0xf) & 1 | (char)(DAT_00a55080 >> 1) << 3)
+                                  << 1 | (byte)(DAT_00a55080 >> 0xe) & 1) << 8,DAT_00a55088 & 0xffff
+                     ,DAT_00a55088 >> 0x10);
+        goto LAB_005ad1bd;
+      }
+    }
+    FUN_005b9170(0x70,CONCAT11((char)(DAT_00a55080 >> 1),(byte)DAT_00a55080) & 0x1f01,
+                 (DAT_00a55088 >> 0xc & 1) + (DAT_00a55088 >> 0x18 & 0x7f) * 2,
+                 CONCAT11((char)(DAT_00a55080 >> 0xf),(char)(DAT_00a55080 >> 0xe)) & 0x101);
+LAB_005ad1bd:
+    DAT_00a5508e = DAT_00a5508e ^ ((DAT_00a5508e & 0xffe0) + 0x20 ^ DAT_00a5508e) & 0xfe0;
+    return 0;
+  case 4:
+    if (((&DAT_00a55d74)[(DAT_00a55080 >> 1 & 0x1f) * 0x24 + (DAT_00a55080 & 1) * 0x351] & 0xfff) !=
+        0) {
+      FUN_005b9170(DAT_00a55080 << 0xf | 0x92,DAT_00a55080 >> 1 & 0x1f,
+                   CONCAT22((short)((uint)(&DAT_00a55d74)
+                                          [(DAT_00a55080 >> 1 & 0x1f) * 0x24 +
+                                           (DAT_00a55080 & 1) * 0x351] >> 0x10),DAT_00a5508c),0);
+      if ((DAT_00a55080 & 0x4000) != 0) {
+        local_4 = (byte)(param_1 & 0xc0ff);
+        uVar3 = ((ushort)(byte)(((byte)((DAT_00a55080 >> 0xf & 1) << 4) |
+                                (byte)(DAT_00a55080 >> 1) & 0xf) << 1 | (byte)DAT_00a55080 & 1) << 8
+                | param_1 & 0xc0ff) ^
+                (ushort)(byte)(((byte)((uint)(&DAT_00a55d74)
+                                             [(DAT_00a55080 >> 1 & 0x1f) * 0x24 +
+                                              (DAT_00a55080 & 1) * 0x351] >> 0xc) & 1) +
+                               (char)((uint)(&DAT_00a55d74)
+                                            [(DAT_00a55080 >> 1 & 0x1f) * 0x24 +
+                                             (DAT_00a55080 & 1) * 0x351] >> 0x18) * '\x02' ^ local_4
+                              );
+        sVar1 = FUN_004022e0(DAT_00a55084 & 0xffff);
+        if ((sVar1 == 0x4de) || (sVar1 == 0x5f6)) {
+          FUN_005ba490((DAT_00a55080 & 0x3e | DAT_00a55080 << 0x10 | 0x1c40) << 0xf |
+                       DAT_00a55084 & 0xffff,uVar3 & 0xff,uVar3);
+        }
+      }
+      goto LAB_005ad1bd;
+    }
+  }
+  return 1;
+}
+
+

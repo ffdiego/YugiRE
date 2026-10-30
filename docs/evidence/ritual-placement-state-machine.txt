@@ -1,0 +1,26 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005ad8c0 @005ad8c0
+ CALLER 005adbe8 FUN_005adb10
+ CALLER 005adb03 FUN_005ada20
+ CALLER 005add54 FUN_005adbf0
+ CALLER 005ad8b2 FUN_005ad740
+ CALLER 005ada16 FUN_005ad960
+
+void FUN_005ad8c0(void)
+
+{
+  DAT_00a55090._0_2_ = (ushort)DAT_00a55090 & 0x8000;
+  DAT_00a55090._2_2_ = DAT_00a55090._2_2_ & 0xff00;
+  DAT_00a5508e = DAT_00a5508e & 0xf01d | 1;
+  if (((DAT_00a55080 & 0x4000) != 0) || (((byte)DAT_00a5508c & 4) != 0)) {
+    FUN_00579930(DAT_00a55080 & 1,0x10,1);
+  }
+  if (((DAT_00a577f8._2_1_ & 0x10) != 0) && (((byte)~DAT_00a54e5c & 1) == (DAT_00a55080 & 1))) {
+    DAT_00a5508e = DAT_00a5508e | 2;
+    FUN_005bd090(0xf05a,&DAT_00a55080,0x14);
+    DAT_00a58260 = DAT_00a58260 & 0xffffffbf;
+  }
+  return;
+}
+
+

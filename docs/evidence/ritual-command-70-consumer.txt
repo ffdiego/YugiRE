@@ -1,0 +1,134 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 005b962c JMP 0x004063e0
+FUNCTION FUN_004063e0 @004063e0
+ CALLER 005b962c FUN_005b9470
+
+void FUN_004063e0(void)
+
+{
+  int *piVar1;
+  ushort uVar2;
+  ushort uVar3;
+  ushort uVar4;
+  int iVar5;
+  char cVar6;
+  ushort uVar7;
+  short sVar8;
+  uint uVar9;
+  undefined4 uVar10;
+  uint uVar11;
+  int iVar12;
+  ushort local_30 [2];
+  uint local_2c;
+  uint local_28;
+  uint local_24;
+  uint local_20;
+  uint local_1c;
+  ushort local_18;
+  uint local_14;
+  undefined **ppuStack_10;
+  int iStack_c;
+  undefined ***pppuStack_8;
+  undefined ***pppuStack_4;
+  
+  local_24 = (uint)(byte)DAT_00a550a0._2_2_;
+  uVar9 = (uint)(byte)((ushort)DAT_00a550a0._2_2_ >> 8);
+  local_28 = DAT_00a550a4 >> 0x10 & 0xff;
+  local_2c = DAT_00a550a4 >> 0x18;
+  uVar11 = DAT_00a550a4 & 0xffff;
+  local_1c = uVar9;
+  switch(DAT_00a558ac & 0x7f) {
+  case 0:
+    iVar12 = *(int *)(DAT_005f3280 + 0x132c);
+    piVar1 = (int *)(DAT_005f3280 + 0x1330);
+    if (iVar12 != *(int *)(DAT_005f3280 + 0x1330)) {
+      do {
+        cVar6 = (**(code **)(**(int **)(iVar12 + 4) + 4))();
+        if (cVar6 != '\0') {
+          return;
+        }
+        iVar12 = iVar12 + 0x10;
+      } while (iVar12 != *piVar1);
+    }
+    uVar10 = FUN_00568b90(uVar11);
+    local_1c = CONCAT22(local_1c._2_2_,
+                        (ushort)(((local_28 * 2 | local_2c & 1) << 0xd | uVar9 & 0x1f) << 1) |
+                        (ushort)local_24 & 1);
+    iVar12 = FUN_0054a1d0(0x188);
+    if (iVar12 == 0) {
+      iVar12 = 0;
+    }
+    else {
+      iVar12 = FUN_0044fcc0(uVar10,&local_1c);
+    }
+    iVar5 = DAT_005f3280;
+    iStack_c = 0;
+    ppuStack_10 = &PTR_FUN_005da438;
+    pppuStack_4 = (undefined ***)0x0;
+    pppuStack_8 = (undefined ***)0x0;
+    (*(code *)PTR_FUN_005da43c)();
+    if (iVar12 != 0) {
+      pppuStack_4 = &ppuStack_10;
+      pppuStack_8 = &ppuStack_10;
+      iStack_c = iVar12;
+    }
+    FUN_0040c3e0(*(undefined4 *)(iVar5 + 0x1330),&ppuStack_10);
+    FUN_0040c240();
+    (**(code **)(*(int *)(DAT_005f3280 + 0x3c) + 0x24))(uVar10);
+    uVar9 = DAT_00a558ac & 0xffffc07f;
+    DAT_00a558ac = uVar9 ^ (uVar9 + 1 ^ uVar9) & 0x7f;
+    return;
+  case 1:
+    DAT_00a558ac = DAT_00a558ac ^ ((DAT_00a558ac & 0xffffff80) + 0x80 ^ DAT_00a558ac) & 0x3f80;
+    if (0x3ff < (DAT_00a558ac & 0x3f80)) {
+      uVar9 = DAT_00a558ac & 0xffffc07f;
+      DAT_00a558ac = uVar9 ^ (uVar9 + 1 ^ uVar9) & 0x7f;
+      return;
+    }
+    break;
+  case 2:
+    uVar9 = FUN_005687d0(uVar11);
+    local_14 = uVar9 >> 0x10;
+    local_18 = (ushort)uVar9 >> 8;
+    uVar10 = FUN_005700f0(uVar9 & 0xff,local_18,local_14);
+    FUN_005675c0(&DAT_00a558b0,uVar10);
+    uVar3 = (ushort)((byte)uVar9 & 1);
+    uVar2 = (ushort)(((uint)((byte)local_18 & 0x1f) | (local_14 & 0xff) << 5) << 1);
+    local_30[0] = uVar2 | uVar3 | local_30[0] & 0xc000;
+    uVar7 = FUN_005703a0(uVar3,(uVar2 & 0x3e) >> 1,uVar2 >> 6);
+    uVar3 = local_30[0] & 0x3fc0;
+    uVar4 = local_30[0] & 0x3e;
+    uVar2 = local_30[0] & 1;
+    local_30[0] = (uVar7 & 1) << 0xe | local_30[0] & 0xbfff;
+    sVar8 = FUN_00570420(uVar2,uVar4 >> 1,uVar3 >> 6);
+    uVar9 = local_24;
+    uVar2 = local_30[0];
+    local_30[0] = sVar8 << 0xf | local_30[0] & 0x7fff;
+    local_20 = CONCAT22(local_20._2_2_,
+                        (ushort)(((local_28 * 2 | local_2c & 1) << 0xd | local_1c & 0x1f) << 1) |
+                        (ushort)local_24 & 1);
+    FUN_00570790(uVar2 & 1,(uVar2 & 0x3e) >> 1,(uVar2 & 0x3fc0) >> 6);
+    FUN_005708d0(local_20 & 1,(local_20 & 0xffff) >> 1 & 0x1f,
+                 CONCAT11((undefined1)local_2c,(undefined1)local_28),&DAT_00a558b0);
+    FUN_0040ce10(DAT_00a558b0 & 0xfff,local_30,&local_20);
+    FUN_00570710(uVar9,local_1c,1,1);
+    DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+    return;
+  case 3:
+    iVar12 = *(int *)(DAT_005f3280 + 0x132c);
+    piVar1 = (int *)(DAT_005f3280 + 0x1330);
+    if (iVar12 != *(int *)(DAT_005f3280 + 0x1330)) {
+      do {
+        cVar6 = (**(code **)(**(int **)(iVar12 + 4) + 4))();
+        if (cVar6 != '\0') {
+          return;
+        }
+        iVar12 = iVar12 + 0x10;
+      } while (iVar12 != *piVar1);
+    }
+    DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+  }
+  return;
+}
+
+
