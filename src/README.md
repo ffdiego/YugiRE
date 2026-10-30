@@ -27,8 +27,14 @@ Não há extração permanente de recursos nem dependência do Ghidra em execuç
   linha para ver atributos e descrição; Previous/Next mudam a página.
   Não há restrição de desbloqueio. Variantes mantêm seus IDs e índices próprios;
   registros sem nome são identificados, sem inferir jogabilidade.
-- Duelo: selecione uma carta na mão e clique em uma zona de monstro própria
-  vazia. Next turn alterna o jogador; Reset restaura o cenário.
+- Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
+  Draw compra uma carta por turno; selecione um monstro e uma zona própria vazia
+  para invocar uma vez por turno. Não há custos de tributo nesta demonstração.
+- Use card ativa Sparks ou Ookazi da mão. Outros efeitos são recusados.
+- Battle inicia combate após o primeiro turno. Clique em um monstro próprio,
+  depois em um monstro inimigo; Direct attack funciona se o adversário não
+  tiver monstros. Cada monstro ataca uma vez. Só há posição de ataque.
+- Hand </> percorrem mãos grandes. Cancel limpa seleção; Reset reinicia.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
@@ -39,11 +45,14 @@ Não há extração permanente de recursos nem dependência do Ghidra em execuç
 | Comprovado estaticamente por RE | Índice DAT, troca de nibbles, LZSS, IDs/índices, nomes, descrições e campos de propriedades; referências em `../docs/02-file-formats.md`. |
 | Observado no jogo original | Organização geral de telas fornecida pelo usuário; fidelidade visual ainda não conferida neste ambiente. |
 | Hipótese | Códigos de classe são preservados numericamente; não atribuímos nomes a classes ainda não confirmadas. |
-| Demonstração | `Joey.Core/Demo.cs`: mãos fixas, oponente estático, LP 8000, turnos manuais e invocações sem tributos, limites por turno ou efeitos. A política de aceitar classes 0–20 como monstros é uma simplificação local. |
+| Demonstração | `Joey.Core/Demo.cs`: mãos/decks fixos, LP 8000, dois jogadores locais, turnos manuais, uma compra e invocação por turno, invocações sem tributos e combate simplificado por ATK. A política de aceitar classes 0–20 como monstros é uma simplificação local. |
 
 Os nomes e atributos são reais; os desenhos são representações temporárias,
-sem ilustrações originais. LP não muda nesta etapa. Não há batalha, IA,
-efeitos, compra automática, vitória ou multiplayer. Textos de cartas exibidos
+sem ilustrações originais. Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
+Ativação imediata sem correntes, cemitério, combate, bloqueio de batalha no
+primeiro turno, derrota por deck vazio e vitória por LP são políticas do demo,
+ainda não atribuídas ao motor original. Não há IA, defesa, efeitos de monstros,
+armadilhas, compra automática ou multiplayer em rede. Textos de cartas exibidos
 não implicam que seus efeitos estejam implementados.
 
 ## Validação
@@ -58,10 +67,10 @@ dotnet run --project Joey.App -- --check-data
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 16
+código diferente de zero. `dotnet test` não substitui esse comando. São 31
 verificações sintéticas e mais 7 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 23 verificações C# e 14 testes Python
+Nesta sessão: compilação concluída; 38 verificações C# e 14 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

@@ -9,7 +9,7 @@ static class Game
     static readonly Color Background = new(16, 23, 35, 255), Panel = new(29, 42, 57, 255), Gold = new(230, 185, 93, 255);
     static List<Card> cards = [];
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
-    static int page, selected, hand = -1;
+    static int page, selected, hand = -1, attacker = -1, handPage;
     static DemoDuel duel = null!;
     public static int Run(string[] args)
     {
@@ -50,7 +50,7 @@ static class Game
             {
                 Label("JOEY THE PASSION", 90, 110, 42, Gold);
                 Label("Reimplementation prototype", 93, 167, 22);
-                if (Button("Single Duel Mode", 90, 250, 390, 56, cards.Count > 0)) { screen = "duel"; duel = new(cards); hand = -1; }
+                if (Button("Single Duel Mode", 90, 250, 390, 56, cards.Count > 0)) { screen = "duel"; duel = new(cards); hand = attacker = -1; handPage = 0; message = "Local two-player demo. Draw or summon, then enter battle."; }
                 Button("Deck Construction - coming later", 90, 320, 390, 56, false);
                 if (Button("Card List", 90, 390, 390, 56, cards.Count > 0)) screen = "cards";
                 Button("Options - coming later", 90, 460, 390, 56, false);
@@ -124,10 +124,16 @@ static class Game
     }
     static void DrawDuel()
     {
-        Label("DEMO DUEL - partial rules", 190, 26, 24, Gold);
-        Label($"Opponent LP {duel.Life[1]}", 30, 85, 23);
-        Label($"Turn {duel.Turn} | {(duel.ActivePlayer == 0 ? "Player" : "Opponent")}", 440, 85, 23);
-        Label($"Player LP {duel.Life[0]}", 920, 85, 23);
+        Label("LOCAL DEMO", 190, 26, 24, Gold);
+        if (Button("Draw", 650, 18, 120, 38)) duel.Draw(out message);
+        if (Button("Battle", 785, 18, 120, 38)) { duel.BeginBattle(out message); hand = -1; }
+        if (Button("Use card", 24, 150, 115, 45)) { if (duel.Play(hand, out message)) hand = -1; }
+        if (Button("Direct attack", 24, 210, 115, 45)) duel.Attack(attacker, -1, out message);
+        if (Button("Cancel", 24, 270, 115, 38)) { hand = attacker = -1; message = "Selection cleared."; }
+        Label(duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" : $"Phase: {duel.Phase}", 390, 120, 20, Gold);
+        Label($"Player 2 LP {duel.Life[1]}", 30, 85, 23);
+        Label($"Turn {duel.Turn} | {($"Player {duel.ActivePlayer + 1}")}", 440, 85, 23);
+        Label($"Player 1 LP {duel.Life[0]}", 920, 85, 23);
         for (int player = 0; player < 2; player++)
         {
             int y = player == 1 ? 145 : 365;
@@ -136,20 +142,32 @@ static class Game
                 var card = duel.Monsters[player, z];
                 int x = 150 + z * 180;
                 if (Button(card == null ? "Monster" : "", x, y, 162, 105))
-                { if (duel.Summon(hand, player, z, true, out message)) hand = -1; }
+                {
+                    if (duel.Phase == DemoPhase.Battle)
+                    {
+                        if (player == duel.ActivePlayer && card != null) { attacker = z; hand = -1; message = $"Attacker: {card.Name}. Choose a target."; }
+                        else if (player != duel.ActivePlayer) duel.Attack(attacker, z, out message);
+                        else message = "Choose an occupied friendly monster as attacker.";
+                    }
+                    else if (duel.Summon(hand, player, z, true, out message)) hand = -1;
+                }
                 if (card != null) { Wrap(card.Name, x + 8, y + 8, 145, 16); Label($"{card.Attack}/{card.Defense}", x + 8, y + 77, 17, Gold); }
                 if (Button("Spell / Trap", x, y + 112, 162, 50)) duel.Summon(hand, player, z, false, out message);
             }
         }
-        for (int i = 0; i < duel.Hand.Count; i++)
+        handPage = Math.Clamp(handPage, 0, Math.Max(0, (duel.Hand.Count - 1) / 6));
+        Label($"Active hand: {duel.Hand.Count} | Deck P1/P2: {duel.DeckCount(0)}/{duel.DeckCount(1)} | Grave P1/P2: {duel.Graveyard(0).Count}/{duel.Graveyard(1).Count}", 25, 535, 18);
+        for (int slot = 0; slot < 6 && handPage * 6 + slot < duel.Hand.Count; slot++)
         {
-            int x = 30 + i * 185;
-            if (Button("", x, 560, 175, 155)) hand = i;
+            int i = handPage * 6 + slot, x = 30 + slot * 185;
+            if (Button("", x, 560, 175, 155)) { hand = i; attacker = -1; message = $"Selected {duel.Hand[i].Name}. Summon or Use card (Sparks / Ookazi)."; }
             Wrap(duel.Hand[i].Name, x + 9, 575, 155, 18);
-            Label(i == hand ? "SELECTED" : (duel.Hand[i].IsMonster ? "Monster" : "Spell / Trap"), x + 9, 685, 16, Gold);
+            Label(i == hand ? "SELECTED" : (duel.Hand[i].IsMonster ? $"ATK {duel.Hand[i].Attack}" : "Use card"), x + 9, 685, 16, Gold);
         }
-        if (Button("Next turn", 920, 18, 120, 38)) duel.NextTurn();
-        if (Button("Reset", 1050, 18, 120, 38)) { duel = new(cards); hand = -1; message = "Demo reset."; }
+        if (Button("Hand <", 24, 330, 115, 35, handPage > 0)) handPage--;
+        if (Button("Hand >", 24, 375, 115, 35, (handPage + 1) * 6 < duel.Hand.Count)) handPage++;
+        if (Button("End turn", 920, 18, 120, 38)) { duel.NextTurn(); hand = attacker = -1; handPage = 0; message = "Turn changed. Draw once; summon once; Battle to attack."; }
+        if (Button("Reset", 1050, 18, 120, 38)) { duel = new(cards); hand = attacker = -1; handPage = 0; message = "Demo reset."; }
         Label(message, 25, 738, 19, Gold);
     }
 }
