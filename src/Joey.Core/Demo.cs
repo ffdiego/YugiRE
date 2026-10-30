@@ -83,6 +83,8 @@ public sealed class DemoDuel
         foreach (int tribute in tributes) RemoveMonster(player, tribute);
         Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
         DefensePosition[player, zone] = false;
+        // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
+        changedPosition[player, zone] = true;
         message = $"Monster summoned in attack position; {required} tribute(s)."; return true;
     }
     public bool Draw(out string message)
@@ -129,7 +131,7 @@ public sealed class DemoDuel
     }
     public bool ChangePosition(int zone, out string message)
     {
-        message = "Position changes require an occupied own zone in main phase, once per turn.";
+        message = "Change position in main phase, once per turn, after the monster's summon turn.";
         if (Winner != null || Phase != DemoPhase.Main || zone < 0 || zone >= 5 || Monsters[ActivePlayer, zone] == null || changedPosition[ActivePlayer, zone]) return false;
         DefensePosition[ActivePlayer, zone] = !DefensePosition[ActivePlayer, zone];
         changedPosition[ActivePlayer, zone] = true;

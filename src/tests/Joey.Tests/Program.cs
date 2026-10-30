@@ -80,6 +80,7 @@ foreach (int defense in new[] { 500, 1000, 2000 })
     var wall = new Card(7, 7, "Wall", "", (1u << 20) | (4u << 25) | (uint)(defense / 10));
     var defenseDuel = new DemoDuel([weak, wall, weak]);
     defenseDuel.Summon(0, 0, 0, true, out _); defenseDuel.NextTurn(); defenseDuel.Summon(1, 1, 0, true, out _);
+    defenseDuel.NextTurn(); defenseDuel.NextTurn(); // Position changes become legal on its next own turn.
     Check(defenseDuel.ChangePosition(0, out _) && !defenseDuel.ChangePosition(0, out _), $"Defense {defense}: position changes once per turn");
     defenseDuel.BeginBattle(out _);
     Check(!defenseDuel.Attack(0, 0, out _) && !defenseDuel.ChangePosition(0, out _), $"Defense {defense}: cannot attack or change position during battle");

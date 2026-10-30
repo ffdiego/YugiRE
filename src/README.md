@@ -76,7 +76,8 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - Battle inicia combate após o primeiro turno. Clique em um monstro próprio,
   depois em um monstro inimigo; Direct attack funciona se o adversário não
   tiver monstros. Cada monstro ataca uma vez. Em Main, Cancel e clique num monstro próprio para alternar ataque/defesa
-  aberta uma vez por turno. Monstros em defesa não atacam.
+  aberta uma vez por turno, a partir do próximo turno próprio após a invocação.
+  Monstros em defesa não atacam; invocar não impede atacar no mesmo turno.
 - Hand </> percorrem mãos grandes. Cancel limpa seleção; Reset reinicia.
 - End turn com mais de seis cartas exige descarte. Selecione uma carta e use
   **Discard** até ficar com seis; só então o jogador muda. A regra básica foi
@@ -167,11 +168,11 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 114
+código diferente de zero. `dotnet test` não substitui esse comando. São 117
 verificações sintéticas, mais 23 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 143 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 146 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

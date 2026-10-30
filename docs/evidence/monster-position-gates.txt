@@ -1,0 +1,193 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 0056b5a0
+TRANSIENT FUNCTION 0056b730
+TRANSIENT FUNCTION 0059cb10
+REFERENCES TO 00a56430
+ XREF From: 00579953 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00579930
+ XREF From: 00573f0e To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 00405405 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00405190
+ XREF From: 00405419 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00405190
+ XREF From: 0040937e To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00409240
+ XREF From: 00409392 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00409240
+ XREF From: 0056d3d6 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0056d3c0
+ XREF From: 0040b510 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040b4d0
+ XREF From: 0040b514 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040b4d0
+ XREF From: 0040b544 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040b4d0
+ XREF From: 0040b54a To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040b4d0
+ XREF From: 004076a3 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 004074f0
+ XREF From: 004076b0 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 004074f0
+ XREF From: 00570b06 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 00570af0
+ XREF From: 00404da4 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00404b40
+ XREF From: 00404db1 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00404b40
+ XREF From: 005a0dfa To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 005a0dd0
+ XREF From: 0040ae59 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040ad90
+ XREF From: 0040ae63 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040ad90
+ XREF From: 005b1195 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 005b0f40
+ XREF From: 005b11c6 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 005b0f40
+ XREF From: 00406179 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00406060
+ XREF From: 0040618a To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00406060
+ XREF From: 005b8459 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 005b8210
+ XREF From: 005b8484 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 005b8210
+ XREF From: 005706e0 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 005706b0
+ XREF From: 00570707 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 005706b0
+ XREF From: 0057070d To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 005706b0
+ XREF From: 00404d9d To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00404b40
+ XREF From: 0040540c To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00405190
+ XREF From: 00406180 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00406060
+ XREF From: 0040769c To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 004074f0
+ XREF From: 00409385 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 00409240
+ XREF From: 0040ae52 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040ad90
+ XREF From: 0040b502 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040b4d0
+ XREF From: 0040b536 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 0040b4d0
+ XREF From: 005706d3 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 005706b0
+ XREF From: 005706fa To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION 005706b0
+ XREF From: 0058d05c To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 0058e6e0 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 005a4d18 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 005a03c2 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 005a02a0
+ XREF From: 00570a88 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 00570a70
+ XREF From: 005a41f9 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 005a5a7e To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 005ba194 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION 005ba060
+ XREF From: 005b72e0 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 005b749a To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 005b75e1 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 005b7b67 To: 00a56430 Type: DATA Op: 0 ANALYSIS FUNCTION none
+ XREF From: 005a5156 To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 005a80be To: 00a56430 Type: DATA Op: 1 ANALYSIS FUNCTION none
+FUNCTION FUN_0056b5a0 @0056b5a0
+ CALLER 005b0803 FUN_005b05a0
+ CALLER 005b0857 FUN_005b05a0
+ CALLER 005a06f7 FUN_005a0530
+ CALLER 005b0a21 FUN_005b09c0
+ CALLER 005b6e4f FUN_005b6e40
+ CALLER 005b66f9 FUN_005b6690
+ CALLER 005b7840 FUN_005b77f0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_0056b5a0(uint param_1,int param_2)
+
+{
+  short sVar1;
+  uint uVar2;
+  int iVar3;
+  
+  uVar2 = param_1 & 1;
+  if (((&DAT_00a55d74)[uVar2 * 0x351 + param_2 * 0x24] & 0xfff) == 0) {
+    return 0;
+  }
+  if (((&DAT_00a55e00)[uVar2 * 0x351 + param_2 * 0x24] & 0x20000) != 0) {
+    if (param_1 == (_DAT_00a54e5c & 1)) {
+      FUN_0045e240(3);
+      return 0;
+    }
+    return 0;
+  }
+  iVar3 = FUN_005709d0(param_1,0x3ca);
+  if (((iVar3 == 0) && (iVar3 = FUN_0056d790(param_1,param_2,0x15c), iVar3 == 0)) &&
+     (iVar3 = FUN_0056d790(param_1,param_2,0x4dc), iVar3 == 0)) {
+    sVar1 = FUN_004022e0(*(ushort *)(&DAT_00a55d74 + uVar2 * 0x351 + param_2 * 0x24) & 0xfff);
+    iVar3 = FUN_005699c0(0x536);
+    if ((((int)(iVar3 - (uint)(sVar1 == 0x536)) < 1) &&
+        (iVar3 = FUN_0056db30(param_1,param_2,0x540), iVar3 == 0)) &&
+       ((iVar3 = FUN_005699c0(0x148), iVar3 < 1 ||
+        ((((&DAT_00a55d7a)[param_2 * 0x90 + uVar2 * 0xd44] & 2) == 0 ||
+         (sVar1 = FUN_0056f6d0(param_1,param_2), sVar1 != 1)))))) {
+      uVar2 = (&DAT_00a55d74)[uVar2 * 0x351 + param_2 * 0x24];
+      iVar3 = FUN_0056b440(uVar2 & 0xfff,(uVar2 >> 0xc & 1) + (uVar2 >> 0x18 & 0x7f) * 2);
+      if (iVar3 == 0) {
+        return 1;
+      }
+      if (param_1 == (_DAT_00a54e5c & 1)) {
+        FUN_0045e240(0x10);
+        return 0;
+      }
+      return 0;
+    }
+  }
+  if (param_1 == (_DAT_00a54e5c & 1)) {
+    FUN_0045e240(0x12);
+  }
+  return 0;
+}
+
+
+FUNCTION FUN_0056b730 @0056b730
+ CALLER 005a0d9e FUN_005a0d60
+ CALLER 005b0bc6 FUN_005b0b90
+ CALLER 00414377 null
+ CALLER 005a07b3 FUN_005a0530
+ CALLER 005a1a77 null
+ CALLER 005a0f59 FUN_005a0f00
+ CALLER 005b2fc6 null
+
+undefined4 FUN_0056b730(uint param_1,int param_2,undefined4 param_3)
+
+{
+  short sVar1;
+  undefined4 uVar2;
+  int iVar3;
+  
+  iVar3 = (param_1 & 1) * 0xd44;
+  if (((&DAT_00a55d74)[(param_1 & 1) * 0x351 + param_2 * 0x24] & 0xfff) == 0) {
+    return 0;
+  }
+  if ((*(ushort *)(&DAT_00a55d7a + param_2 * 0x90 + iVar3) & 2) == 0) {
+    return 0;
+  }
+  if ((*(ushort *)(&DAT_00a55d7a + param_2 * 0x90 + iVar3) & 1) != 0) {
+    sVar1 = FUN_004022e0((&DAT_00a55d74)[(param_1 & 1) * 0x351 + param_2 * 0x24] & 0xfff);
+    if (sVar1 != 0x31c) {
+      return 0;
+    }
+  }
+  if ((1 << ((byte)param_2 & 0x1f) & (uint)*(ushort *)(&DAT_00a55d70 + iVar3)) == 0) {
+    uVar2 = FUN_0056b7d0(param_1,param_2,param_3);
+    return uVar2;
+  }
+  return 0;
+}
+
+
+FUNCTION FUN_0059cb10 @0059cb10
+ CALLER 005abfb5 FUN_005abd00
+ CALLER 005acbed FUN_005ac990
+
+void FUN_0059cb10(uint param_1,int param_2)
+
+{
+  int iVar1;
+  int iVar2;
+  uint uVar3;
+  int iVar4;
+  int local_4;
+  
+  local_4 = 0;
+  do {
+    if (local_4 == 0) {
+      uVar3 = param_1;
+    }
+    else {
+      uVar3 = 1 - param_1;
+    }
+    iVar4 = 0;
+    iVar2 = 0;
+    do {
+      if ((uVar3 != param_1) || (iVar4 != param_2)) {
+        iVar1 = FUN_00569790(uVar3,iVar4,0xa5);
+        if (iVar1 != 0) {
+          FUN_00578390(uVar3,*(ushort *)((int)&DAT_00a55d74 + (uVar3 & 1) * 0xd44 + iVar2) & 0xfff,
+                       iVar4);
+          FUN_005787f0(uVar3,500);
+        }
+      }
+      iVar2 = iVar2 + 0x90;
+      iVar4 = iVar4 + 1;
+    } while (iVar2 < 0x2d0);
+    local_4 = local_4 + 1;
+  } while (local_4 < 2);
+  return;
+}
+
+

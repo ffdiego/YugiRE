@@ -1,4 +1,4 @@
-"""Validate native level-to-tribute tables on the pinned executable, without running it."""
+"""Validate native level/position gates on the pinned executable, without running it."""
 import hashlib
 import json
 from pathlib import Path
@@ -21,7 +21,9 @@ def main():
     for va, expected in targets.items():
         if struct.unpack_from('<2I', data, va - 0x400000) != expected:
             raise ValueError(f'Unexpected level jump table at {va:#x}')
-    checks = {0x5aee86: '83f806', 0x5aee9a: '33ed', 0x5aee9e: 'bd01000000', 0x5aeea5: 'bd02000000'}
+    checks = {0x5aee86: '83f806', 0x5aee9a: '33ed', 0x5aee9e: 'bd01000000', 0x5aeea5: 'bd02000000',
+              0x568698: '81c900000200', 0x56b5da: 'f785005ea50000000200',
+              0x56c1af: '0d00000200', 0x574271: '81e6ffff0000'}
     for va, expected in checks.items():
         off = va - 0x400000
         if data[off:off + len(expected) // 2].hex() != expected:
@@ -31,7 +33,7 @@ def main():
                   branches={hex(va): value for va, value in checks.items()},
                   limitation='Static level counts, not complete summon legality, timing or effect interactions.')
     (REPO / 'docs/evidence/normal-tributes-validation.json').write_text(json.dumps(report, indent=2) + '\n')
-    print('PASS: two level selectors, two jump tables and four tribute-count branches')
+    print('PASS: two level selectors, two jump tables and eight count/position instructions')
 
 
 if __name__ == '__main__':

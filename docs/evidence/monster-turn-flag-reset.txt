@@ -1,0 +1,167 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00574230
+TRANSIENT FUNCTION 0040b4d0
+TRANSIENT FUNCTION 00579930
+TRANSIENT FUNCTION 0056c180
+FUNCTION FUN_00574230 @00574230
+ CALLER 005b94a3 FUN_005b9470
+
+void FUN_00574230(void)
+
+{
+  uint *puVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  
+  FUN_00403ec0((DAT_00a550a0 & 0xffff) >> 0xf);
+  uVar4 = 0;
+  do {
+    iVar2 = 0xc;
+    puVar1 = &DAT_00a55e00 + (uVar4 & 1) * 0x351;
+    do {
+      iVar2 = iVar2 + -1;
+      *puVar1 = *puVar1 & 0xffff;
+      puVar1 = puVar1 + 0x24;
+    } while (iVar2 != 0);
+    uVar4 = uVar4 + 1;
+  } while ((int)uVar4 < 2);
+  DAT_00a577ec = DAT_00a577ec & 0xffff;
+  uVar4 = 0;
+  do {
+    iVar2 = 0;
+    uVar3 = uVar4 & 1;
+    if (*(char *)(&DAT_00a55d68 + uVar3 * 0x6a2) != '\0') {
+      puVar1 = &DAT_00a56434 + uVar3 * 0x351;
+      do {
+        iVar2 = iVar2 + 1;
+        *puVar1 = *puVar1 & 0xff1fffff;
+        puVar1 = puVar1 + 1;
+      } while (iVar2 < (int)(uint)*(byte *)(&DAT_00a55d68 + uVar3 * 0x6a2));
+    }
+    iVar2 = 0;
+    if (((&DAT_00a55d68)[uVar3 * 0x6a2] & 0xff00) != 0) {
+      puVar1 = &DAT_00a56574 + uVar3 * 0x351;
+      do {
+        iVar2 = iVar2 + 1;
+        *puVar1 = *puVar1 & 0xff1fffff;
+        puVar1 = puVar1 + 1;
+      } while (iVar2 < (int)(uint)((ushort)(&DAT_00a55d68)[uVar3 * 0x6a2] >> 8));
+    }
+    iVar2 = 0;
+    if (((&DAT_00a55d6a)[uVar3 * 0x6a2] & 0xff00) != 0) {
+      puVar1 = &DAT_00a566b4 + uVar3 * 0x351;
+      do {
+        iVar2 = iVar2 + 1;
+        *puVar1 = *puVar1 & 0xff1fffff;
+        puVar1 = puVar1 + 1;
+      } while (iVar2 < (int)(uint)((ushort)(&DAT_00a55d6a)[uVar3 * 0x6a2] >> 8));
+    }
+    iVar2 = 0;
+    if (*(char *)(&DAT_00a55d6a + uVar3 * 0x6a2) != '\0') {
+      puVar1 = &DAT_00a566f0 + uVar3 * 0x351;
+      do {
+        iVar2 = iVar2 + 1;
+        *puVar1 = *puVar1 & 0xff1fffff;
+        puVar1 = puVar1 + 1;
+      } while (iVar2 < (int)(uint)*(byte *)(&DAT_00a55d6a + uVar3 * 0x6a2));
+    }
+    iVar2 = 0;
+    if (*(char *)(&DAT_00a55d6c + uVar3 * 0x351) != '\0') {
+      puVar1 = &DAT_00a5686c + uVar3 * 0x351;
+      do {
+        iVar2 = iVar2 + 1;
+        *puVar1 = *puVar1 & 0xff1fffff;
+        puVar1 = puVar1 + 1;
+      } while (iVar2 < (int)(uint)*(byte *)(&DAT_00a55d6c + uVar3 * 0x351));
+    }
+    uVar4 = uVar4 + 1;
+  } while ((int)uVar4 < 2);
+  FUN_0056aea0();
+  DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+  return;
+}
+
+
+FUNCTION FUN_0040b4d0 @0040b4d0
+ CALLER 005b94d5 FUN_005b9470
+
+void FUN_0040b4d0(void)
+
+{
+  uint uVar1;
+  byte bVar2;
+  
+  uVar1 = (DAT_00a550a0 & 0xffff) >> 0xf;
+  bVar2 = (byte)(DAT_00a550a0 >> 0x10);
+  if ((short)DAT_00a550a4 == 0) {
+    *(uint *)(&DAT_00a56430 + uVar1 * 0xd44) =
+         *(uint *)(&DAT_00a56430 + uVar1 * 0xd44) & ~(1 << (bVar2 & 0x1f));
+    DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+    return;
+  }
+  *(uint *)(&DAT_00a56430 + uVar1 * 0xd44) =
+       *(uint *)(&DAT_00a56430 + uVar1 * 0xd44) | 1 << (bVar2 & 0x1f);
+  DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+  return;
+}
+
+
+FUNCTION FUN_00579930 @00579930
+ CALLER 005a4072 FUN_005a4010
+ CALLER 005ad905 FUN_005ad8c0
+ CALLER 0058bd68 null
+ CALLER 0058bd72 null
+ CALLER 0058be90 null
+ CALLER 0058e75e null
+ CALLER 0058e76e null
+ CALLER 0059fbf9 FUN_0059df40
+ CALLER 0059e228 FUN_0059df40
+ CALLER 005a4256 null
+ CALLER 005a88fd null
+ CALLER 005a9bce switchD_005a9b6a::caseD_1
+ CALLER 005a9bd8 switchD_005a9b6a::caseD_1
+ CALLER 005a9cfa FUN_005a9b50
+ CALLER 005ba15f FUN_005ba060
+ CALLER 005ba169 FUN_005ba060
+ CALLER 005ba178 FUN_005ba060
+ CALLER 005b7271 FUN_005b6ff0
+ CALLER 005b8e3c null
+ CALLER 005a59e5 null
+
+void FUN_00579930(uint param_1,undefined4 param_2,uint param_3)
+
+{
+  if ((*(uint *)(&DAT_00a56430 + (param_1 & 1) * 0xd44) >> ((byte)param_2 & 0x1f) & 1) != param_3) {
+    FUN_005706b0(param_1,param_2,param_3);
+    FUN_005b9170(-(uint)(param_1 != 0) & 0x8000 | 0xd,param_2,param_3,0);
+  }
+  return;
+}
+
+
+FUNCTION FUN_0056c180 @0056c180
+ CALLER 00570db9 null
+ CALLER 00570f8a null
+
+void FUN_0056c180(uint param_1,int param_2)
+
+{
+  int iVar1;
+  short sVar2;
+  
+  param_1 = param_1 & 1;
+  iVar1 = param_2 * 0x90 + param_1 * 0xd44;
+  (&DAT_00a55e00)[param_1 * 0x351 + param_2 * 0x24] =
+       (&DAT_00a55e00)[param_1 * 0x351 + param_2 * 0x24] | 0x20000;
+  sVar2 = FUN_004022e0(*(ushort *)(&DAT_00a55d74 + param_1 * 0x351 + param_2 * 0x24) & 0xfff);
+  if ((sVar2 == 0x538) && ((*(ushort *)(&DAT_00a55d7a + iVar1) & 0x200) != 0)) {
+    *(ushort *)(&DAT_00a55d7a + iVar1) = *(ushort *)(&DAT_00a55d7a + iVar1) & 0xfdff;
+    return;
+  }
+  *(ushort *)(&DAT_00a55d70 + param_1 * 0xd44) =
+       *(ushort *)(&DAT_00a55d70 + param_1 * 0xd44) | (ushort)(1 << ((byte)param_2 & 0x1f));
+  return;
+}
+
+

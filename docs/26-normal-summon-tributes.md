@@ -92,3 +92,36 @@ fora do demo.
 Validação acumulada: **138 verificações C#**. Inclui Alligator's Sword Dragon,
 Black Luster Soldier, Great Moth e Blue-Eyes do DAT original, rejeição sem
 pagamento e as exceções da categoria derivada. Não houve execução do original.
+
+## Mudança de posição no turno de colocação
+
+`0x00568610` define bit **0x20000** no DWORD de `registro+0x8C` ao colocar
+um monstro no campo. `0x0056B5A0` recusa a mudança de posição quando esse bit
+está definido; `0x005A0530` consulta o helper ao construir as ações disponíveis.
+`0x0056C180` é outro produtor da mesma marca. O consumidor do comando 0x02,
+`0x00574230`, aplica AND 0xFFFF aos flags dos 12 registros de ambos os lados,
+removendo essa marca antes da alternância de jogador já seguida anteriormente.
+
+Não confundir com o bit **0x20000 do controle do jogador**, consultado em
+`0x005A02A0`, ou com **0x100000 do controle do jogador**, consultado em
+`0x00570A70`. O segundo helper também verifica Jam Breeding Machine do lado
+consultado e The Last Warrior from Another Planet nos dois lados; ele não é
+simplesmente um contador de invocações normais. O ciclo completo dos bits de
+controle do jogador permanece parcialmente aberto.
+
+O demo agora bloqueia mudar para defesa imediatamente após invocar. No
+próximo turno próprio, volta a permitir uma mudança; atacar depois da
+invocação continua permitido quando a fase de batalha está disponível.
+Os testes de combate foram ajustados para montar defesa em um turno legal.
+Total acumulado: **146 verificações C#**. O validador de tributos também
+confere os quatro trechos de instruções relacionados à marca de posição.
+
+Para comparar no Windows: invoque um monstro, tente mudar sua posição no
+mesmo turno e repita no próximo turno próprio. Não exige uma carta específica.
+
+Evidências: [gates da mão](evidence/normal-summon-turn-controls.txt),
+[ações de campo](evidence/monster-field-action-gates.txt),
+[condições](evidence/monster-position-gates.txt),
+[colocação](evidence/monster-placement-turn-flags.txt),
+[limpeza](evidence/monster-turn-flag-reset.txt) e
+[instruções](evidence/monster-turn-state-application.txt).

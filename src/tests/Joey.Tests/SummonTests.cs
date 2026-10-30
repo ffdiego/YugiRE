@@ -59,5 +59,12 @@ static class SummonTests
             NormalSummonRules.Category(new Card(0, 0x777, "Token", "", 0)) == 1 &&
             NormalSummonRules.Category(new Card(0, 1, "Spell", "", (21u << 20) | (3u << 18))) == 8,
             "Derived categories retain native token and non-monster overrides");
+        var fresh = new DemoDuel([low]);
+        fresh.Summon(0, 0, 0, true, out _);
+        check(!fresh.ChangePosition(0, out _) && !fresh.DefensePosition[0, 0], "Newly summoned monster cannot change position immediately");
+        fresh.NextTurn(); fresh.NextTurn();
+        check(fresh.ChangePosition(0, out _) && !fresh.ChangePosition(0, out _), "Position lock expires before the next own turn; once-per-turn limit remains");
+        var attacker = new DemoDuel([low]); attacker.NextTurn(); attacker.Summon(0, 1, 0, true, out _);
+        check(attacker.BeginBattle(out _) && attacker.Attack(0, -1, out _), "Summon-turn position lock does not create summoning sickness for attacks");
     }
 }
