@@ -63,6 +63,7 @@ sealed class DatGraphics : IDisposable
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         var names = new[] { MenuResources.Background, MenuResources.Normal, MenuResources.Highlight,
             CardListResources.Frame, CardListResources.Left, CardListResources.Right, CardListResources.Digits,
+            CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         int count = 0;

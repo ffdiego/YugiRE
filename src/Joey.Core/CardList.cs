@@ -27,13 +27,21 @@ public sealed record CardListResources(CardGrid Grid, SceneSprite Previous, Scen
 {
     public const string Frame = @"j\list\card_waku_s.bmp", Left = @"j\list\pe_yaji_l.bmp",
         Right = @"j\list\pe_yaji_r.bmp", Digits = @"j\list\page_font.bmp";
+    public const string All = @"j\list\e_allcards1.bmp", AllSelected = @"j\list\e_allcards2.bmp",
+        Joey = @"j\list\joey_only1.bmp", JoeySelected = @"j\list\joey_only2.bmp";
+    public SceneSprite AllPosition { get; init; }
+    public SceneSprite JoeyPosition { get; init; }
     public static CardListResources Load(Archive archive)
     {
         byte[] scene = archive.Read(@"j\list\list_scene.txt");
         var grid = SceneSprite.Find(scene, "card_waku_s.bmp");
         return new(new(grid.X, grid.Y), SceneSprite.Find(scene, "pe_yaji_l.bmp"),
             SceneSprite.Find(scene, "pe_yaji_r.bmp"), SceneSprite.Find(scene, "page_font.bmp"),
-            SceneSprite.Find(scene, "page_font.bmp", 1));
+            SceneSprite.Find(scene, "page_font.bmp", 1))
+        {
+            AllPosition = SceneSprite.Find(scene, "?_allcards1.bmp"),
+            JoeyPosition = SceneSprite.Find(scene, "joey_only1.bmp")
+        };
     }
     public static List<Card> Sort(IEnumerable<Card> cards, byte[] ranks)
     {

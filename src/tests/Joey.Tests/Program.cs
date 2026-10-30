@@ -116,6 +116,12 @@ if (args.Length > 0)
     var cards = Catalog.Load(archive);
     if (args.Length > 1) DeckTests.Original(args[1], cards, Check);
     var listResources = CardListResources.Load(archive);
+    Check(listResources.AllPosition.X == 214 && listResources.AllPosition.Y == 531 &&
+        listResources.JoeyPosition.X == 664 && listResources.JoeyPosition.Y == 530,
+        "Original All cards and Joey filter positions");
+    Check(BitmapInfo.Read(archive.Read(CardListResources.All)) == new BitmapInfo(120, 69) &&
+        BitmapInfo.Read(archive.Read(CardListResources.Joey)) == new BitmapInfo(127, 70),
+        "Original pool filter sprite dimensions");
     var packs = archive.Read(@"bin#\card_pack.bin");
     var gameCards = CardListResources.ForPacks(cards, packs);
     Check(gameCards.Count == 771 && CardListResources.ForPacks(cards, packs, 1).Count == 155 &&

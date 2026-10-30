@@ -113,3 +113,17 @@ O registro do Windows e a disponibilidade do save continuam sem implementação.
 Validação adicional: **89 verificações C#**, incluindo contagens individuais,
 união sem duplicatas e exclusão dos placeholders pelo critério do original.
 Os modos normal e `--include-unused` também passaram em `--check-data`.
+
+## Filtros da Card List
+
+All cards e Joey usam os sprites `e_allcards1/2.bmp` (120×69) e
+`joey_only1/2.bmp` (127×70), nas posições (214,531) e (664,530) do manifesto.
+O recurso `2` é o estado indisponível descrito em `list_scene.txt`; a interface
+o usa para o filtro já selecionado. A máscara 7 mostra 771 cartas e a máscara
+4 mostra as 350 do Joey, incluindo cartas compartilhadas com outras versões.
+A busca é mantida ao trocar de grupo; página e seleção retornam ao início.
+O destaque de hover ainda é uma tintura local. O modo sem desbloqueios e o
+grupo inicial All cards são escolhas do protótipo.
+
+Validação desta etapa: 111 verificações C# e 793 BMPs decodificados, incluindo
+as quatro imagens dos filtros. A confirmação visual permanece pendente.

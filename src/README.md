@@ -53,7 +53,9 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   Digite para pesquisar por nome; Backspace apaga. Registros sem nome ficam no fim.
   O fundo, o título, o botão Back e as imagens das cartas vêm do DAT.
   Use a roda do mouse sobre a descrição para percorrer textos longos.
-  Mostra as 771 cartas dos três jogos, sem restrição de desbloqueio. O filtro
+  Os botões originais All cards e Joey alternam entre as 771 cartas dos três
+  jogos e as 350 do Joey, sem restrição de desbloqueio. A busca é preservada
+  entre filtros e a página retorna ao início. O filtro
   usa `card_pack.bin`, não a imagem da carta. Para inspecionar os 1114 registros
   internos, use `dotnet run -- --include-unused` (junto ao caminho DAT, se necessário).
   Esse modo mantém variantes e registros sem nome, sem inferir jogabilidade.
@@ -154,14 +156,14 @@ dotnet run --project Joey.App -- --check-graphics
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
 código diferente de zero. `dotnet test` não substitui esse comando. São 83
-verificações sintéticas, mais 20 contra o DAT e seis contra o deck de referência
+verificações sintéticas, mais 22 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 109 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 111 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
-`--check-graphics` decodificou 789 BMPs com o Raylib sem criar janela,
+`--check-graphics` decodificou 793 BMPs com o Raylib sem criar janela,
 e o manifesto associou os 1114 registros por índice e ID.
 Os testes PowerShell existentes requerem `pwsh`, ausente neste ambiente.
 
