@@ -1,0 +1,40 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005b7b50
+NOTE no instruction at 005bc5d0; starting at next defined instruction
+INS 005bc700 MOV EAX,[0x00a577fc]
+INS 005bc705 AND EAX,0xffff
+INS 005bc70a SHR EAX,0x8
+INS 005bc70d MOV ECX,dword ptr [EAX*0x4 + 0x5efbb0]
+INS 005bc714 TEST ECX,ECX
+INS 005bc716 JZ 0x005bc7a2
+INS 005bc71c TEST byte ptr [0x00a577fa],0x10
+INS 005bc723 JZ 0x005bc732
+INS 005bc725 CALL 0x005bd2d0
+INS 005bc72a TEST EAX,EAX
+INS 005bc72c JZ 0x005bc7c3
+INS 005bc732 CALL 0x0040ca70
+FUNCTION FUN_005b7b50 @005b7b50
+ CALLER 005efb84 null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005b7b50(void)
+
+{
+  byte bVar1;
+  int iVar2;
+  
+  if (((*(uint *)(&DAT_00a56430 + (DAT_00a577f8._2_1_ & 1) * 0xd44) & 0x800000) != 0) ||
+     ((code *)(&PTR_LAB_005efb50)[_DAT_00a579a0 & 0xff] == (code *)0x0)) {
+    return 1;
+  }
+  iVar2 = (*(code *)(&PTR_LAB_005efb50)[_DAT_00a579a0 & 0xff])();
+  if (iVar2 != 0) {
+    _DAT_00a579a0 = _DAT_00a579a0 & 0xff0000ff;
+    bVar1 = DAT_00a579a0 + 1 ^ DAT_00a579a0;
+    _DAT_00a579a0 = _DAT_00a579a0 ^ bVar1;
+  }
+  return 0;
+}
+
+

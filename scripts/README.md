@@ -267,3 +267,6 @@ o laço de 12 registros, a máscara de flags e os tipos de associação.
 `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_temporary_state_model.py'`
 executa cinco testes de um modelo estático separado do protótipo .NET.
 [Semântica e limites](../docs/19-temporary-state-cleanup.md).
+
+`python3 scripts/validate_turn_scheduling.py` confere três tabelas e dez
+chamadas do [agendamento](../docs/20-turn-scheduling.md). Não executa o jogo.

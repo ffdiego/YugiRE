@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Agendamento](20-turn-scheduling.md): prioridade de comandos, contextos e
+callbacks; duas sequências por modo de controle, sem confundir índice e fase.
+
 [Limpeza temporária](19-temporary-state-cleanup.md): comando 0x02, flags
 compartilhadas com categoria 11 e contador de associações tipo 3/12.
 Produtor 0x005A8A50 emite limpeza e depois alternância de turno.

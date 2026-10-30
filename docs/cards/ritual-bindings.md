@@ -372,3 +372,12 @@ Evidências: [entrada e referências](../evidence/ritual-callback-resume-and-inp
 A ausência de xrefs diretos para 0x005AB820 no banco atual não demonstra
 que o dispatcher não seja chamado: sua entrada foi recuperada por decoding
 transitório e há chamadas/tabelas que o banco ainda não tipou.
+
+## Ordem lógica do agendador confirmada
+
+A [continuação do agendamento](../20-turn-scheduling.md) encontrou o
+chamador que processa comandos e o contexto de invocação antes de revisitar
+o executor dos callbacks. Isso resolve a dúvida anterior de ordenação entre
+a preparação do estado 99 e o encerramento no estado 98 no caminho local.
+Continuam abertos o timing em frames, invalidação de ocorrências e respostas
+específicas de outras cartas.

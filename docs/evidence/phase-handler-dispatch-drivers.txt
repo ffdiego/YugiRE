@@ -1,0 +1,97 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005bc3c0
+TRANSIENT DISASSEMBLY 005b7bc0
+INS 005b7bc0 MOV EAX,0x1
+INS 005b7bc5 RET
+INS 005b7c50 SUB ESP,0x34
+INS 005b7c53 MOV EAX,[0x00a57840]
+INS 005b7c58 PUSH EBX
+INS 005b7c59 MOV ECX,EAX
+INS 005b7c5b PUSH EBP
+INS 005b7c5c AND ECX,0xffff
+INS 005b7c62 PUSH ESI
+INS 005b7c63 MOV EDX,ECX
+INS 005b7c65 MOV ESI,0xa57854
+INS 005b7c6a SHR ECX,0x1
+INS 005b7c6c AND ECX,0x1
+INS 005b7c6f AND EDX,0x1
+INS 005b7c72 MOV dword ptr [ESP + 0xc],ECX
+INS 005b7c76 MOV ECX,EDX
+INS 005b7c78 SHL ECX,0x4
+INS 005b7c7b PUSH EDI
+INS 005b7c7c SUB ESI,ECX
+INS 005b7c7e XOR EDI,EDI
+INS 005b7c80 MOV dword ptr [ESP + 0x20],ESI
+INS 005b7c84 MOV dword ptr [ESP + 0x18],EDX
+INS 005b7c88 MOV dword ptr [ESP + 0x24],ECX
+INS 005b7c8c MOV dword ptr [ESP + 0x14],EDI
+INS 005b7c90 LEA EBP,[ESP + 0x2c]
+INS 005b7c94 MOV ESI,0xa57848
+INS 005b7c99 JMP 0x005b7ca8
+INS 005b7c9b MOV EAX,[0x00a57840]
+INS 005b7ca0 MOV EDI,dword ptr [ESP + 0x14]
+INS 005b7ca4 MOV EDX,dword ptr [ESP + 0x18]
+FUNCTION FUN_005bc3c0 @005bc3c0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005bc3c0(void)
+
+{
+  byte bVar1;
+  uint uVar2;
+  undefined4 uVar3;
+  
+  if (((DAT_00a577f8._2_2_ & 0x10) != 0) && (((byte)DAT_00a58260 & 0x20) != 0)) {
+    return 1;
+  }
+  if (_DAT_00a577fe >> 8 == 0) {
+    if (((DAT_00a55d6c & 0x200) != 0) || ((_DAT_00a56ab0 & 0x200) != 0)) {
+      uVar2 = _DAT_00a54e5c & 1;
+      if ((*(ushort *)(&DAT_00a55d6c + uVar2 * 0x351) & 0x200) == 0) {
+        uVar2 = (byte)~(byte)_DAT_00a54e5c & 1;
+      }
+      FUN_005b9170(CONCAT31((uint3)(-(uint)(uVar2 != 0) >> 8) & 0x80,5),0,0,0);
+    }
+    if (((DAT_00a55d6c & 0x400) != 0) || ((_DAT_00a56ab0 & 0x400) != 0)) {
+      uVar2 = _DAT_00a54e5c & 1;
+      if ((*(ushort *)(&DAT_00a55d6c + uVar2 * 0x351) & 0x400) == 0) {
+        uVar2 = (byte)~(byte)_DAT_00a54e5c & 1;
+      }
+      FUN_005b9170(CONCAT31((uint3)(-(uint)(uVar2 != 0) >> 8) & 0x80,6),0,0,0);
+    }
+    FUN_0044b9e0(DAT_00a577f8._2_1_ >> 6);
+    bVar1 = DAT_00a577f8._2_1_ >> 6;
+    if (bVar1 == 1) {
+      uVar2 = _DAT_00a54e5c << 0xf | 4;
+      uVar3 = 0;
+    }
+    else if (bVar1 == 2) {
+      uVar2 = _DAT_00a54e5c << 0xf | 4;
+      uVar3 = 1;
+    }
+    else {
+      if (bVar1 != 3) goto LAB_005bc548;
+      uVar2 = _DAT_00a54e5c << 0xf | 4;
+      uVar3 = 2;
+    }
+    FUN_005b9170(uVar2,uVar3,0,0);
+  }
+  else {
+    if (_DAT_00a577fe >> 8 != 1) {
+      return 0;
+    }
+    if (DAT_00a558a8 != 0) {
+      return 0;
+    }
+    if ((DAT_00a577f8._2_2_ & 0x10) == 0) {
+      return 1;
+    }
+    FUN_005bd050(0xf002,DAT_00a577f8._2_1_ >> 6,0,0);
+  }
+LAB_005bc548:
+  _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+  return 0;
+}
+
+
