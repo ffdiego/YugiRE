@@ -29,6 +29,12 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Protótipo executável](../src/README.md): catálogo DAT e duelo local com compra,
+combate demonstrativo e Sparks/Ookazi.
+
+[Retirada das cópias de batalha](18-battle-snapshot-removal.md): chamador concreto
+de Cyber Jar; não constitui reconstrução do combate geral.
+
 [Rituais](cards/ritual-bindings.md): 16 pares magia/monstro e requisitos de
 nível em tabela compactada do EXE, conferidos com callbacks e recursos locais.
 

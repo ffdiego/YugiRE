@@ -1,0 +1,73 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00578030 @00578030
+ CALLER 0058a8dc null
+ CALLER 0058a8e4 null
+
+undefined4 FUN_00578030(undefined2 *param_1,int param_2)
+
+{
+  bool bVar1;
+  undefined2 *puVar2;
+  short sVar3;
+  ushort uVar4;
+  ushort uVar5;
+  uint uVar6;
+  int iVar7;
+  uint uVar8;
+  uint *puVar9;
+  uint uVar10;
+  uint uVar11;
+  
+  puVar2 = param_1;
+  if (param_2 == 0) {
+    uVar6 = (DAT_00a57840 & 0xffff) >> 8;
+    uVar11 = DAT_00a57840;
+  }
+  else {
+    uVar11 = (DAT_00a57840 & 0xffff) >> 1;
+    uVar6 = (DAT_00a57840 & 0xffff) >> 0xb;
+  }
+  uVar11 = uVar11 & 1;
+  uVar6 = uVar6 & 7;
+  puVar9 = &DAT_00a57864 + param_2 * 0x24;
+  uVar5 = (ushort)*puVar9 & 0xfff;
+  sVar3 = FUN_004025d0(*param_1);
+  if ((sVar3 == 0x16) && (iVar7 = FUN_0056c460(uVar11,uVar6), iVar7 != 0)) {
+    return 0;
+  }
+  if (uVar5 == 0) {
+    return 0;
+  }
+  iVar7 = FUN_005699c0(0x453);
+  if ((0 < iVar7) ||
+     ((uVar4 = FUN_004022e0(uVar5), 0x77f < uVar4 && (uVar4 = FUN_004022e0(uVar5), uVar4 < 0x784))))
+  {
+    bVar1 = false;
+  }
+  else {
+    bVar1 = true;
+  }
+  param_1 = (undefined2 *)0x2;
+  uVar8 = (uint)((*(byte *)(puVar2 + 1) & 1) != uVar11);
+  uVar10 = ((((((0xf - bVar1 & 0xf) << 1 | uVar8 ^ uVar11) << 2 |
+              *(ushort *)(&DAT_00a5786a + param_2 * 0x90) & 2) << 2 |
+              *(ushort *)(&DAT_00a5786a + param_2 * 0x90) & 1 | 2) << 4 | uVar6) << 1 | uVar11) << 8
+           | (*puVar9 >> 0xc & 1) + (*puVar9 >> 0x18 & 0x7f) * 2;
+  if (uVar8 != 0) {
+    param_1 = (undefined2 *)0x3;
+  }
+  FUN_005b9170(-(uint)(uVar11 != 0) & 0x8000 | 0x79,CONCAT31((int3)uVar6,0xff),
+               (-(0 < iVar7) & 0xfU) + 1,param_1);
+  if (bVar1) {
+    FUN_0059d6e0(*puVar9 >> 0xc & 1,1);
+  }
+  FUN_00576f40(uVar10,puVar9);
+  uVar4 = FUN_004022e0(uVar5);
+  if ((uVar4 < 0x780) || (uVar5 = FUN_004022e0(uVar5), 0x783 < uVar5)) {
+    FUN_00598590(DAT_00a577f8._2_1_ & 1,0x1c,uVar10);
+  }
+  FUN_00577280(puVar9,uVar11,uVar6,param_1);
+  return 1;
+}
+
+
