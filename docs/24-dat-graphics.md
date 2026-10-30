@@ -41,8 +41,9 @@ no hover é uma escolha temporária: o temporizador e a sequência de animação
 original ainda não foram reconstruídos. Deck Construction e Options recebem
 um escurecimento local e ficam desabilitados. A região clicável inclui a faixa
 inteira de cada botão, inclusive seus pequenos espaços decorativos.
-Na lista, título, Back, fundo e carta usam os recursos originais. Busca,
-paginação, tipografia e rolagem são locais. No duelo, fundo e ilustrações são
+Na lista, título, Back, fundo, cartas, moldura, setas e números de página usam
+os recursos originais. Busca, tipografia da descrição e rolagem são locais.
+No duelo, fundo e ilustrações são
 originais; controles, posições e apresentação de ataque/defesa continuam de
 demonstração. Não há reprodução das animações YGA ou de todo o renderizador.
 
@@ -55,3 +56,36 @@ Python existentes e 785 BMPs decodificados pelo Raylib em memória. Os hashes
 de `data.dat` e `joey_pc.exe` permaneceram iguais aos registrados. A sessão
 SSH não tem DISPLAY/WAYLAND_DISPLAY; a janela, hover, redimensionamento e
 interação das três telas precisam ser conferidos no desktop.
+
+## Grade e ordem da Card List
+
+O usuário confirmou no original 10 colunas × 5 linhas e ordem alfabética.
+Relatou também as 350 cartas inicialmente disponíveis e a integração com saves
+das outras versões; o filtro de disponibilidade continua fora desta etapa.
+
+A análise estática confirmou em `0x0047DE80` os passos de **55×87 pixels**,
+os limites de 10 colunas/5 linhas e o índice `coluna + linha * 10`.
+`0x0047E750` desenha a grade e a moldura deslocada -4 pixels em cada eixo.
+Usamos miniaturas de 50×72, inferidas da moldura de 58×80 com essa margem.
+O início (225,110), as setas (408,565)/(549,565) e os centros dos números
+(476,576)/(530,576) vêm de `list_scene.txt`. `0x00480690` centraliza os números.
+O verde RGB(0,255,0) desses sprites é tratado como transparência; a remoção
+foi conferida pelo decodificador em memória, sem janela.
+
+`0x0047DBB0` ordena com o comparador `0x0047DCB0`, que subtrai os valores
+retornados por `0x00402540` para os índices das cartas. A aplicação usa os
+uint16 de `bin#\card_sorteng.bin` por índice, preservando IDs e variantes.
+Registros sem nome são mantidos **no fim**, uma política do demo sem desbloqueios.
+Hover mostra a carta imediatamente; o atraso nativo de quatro atualizações,
+as transições de página e o efeito de destaque das setas não foram reproduzidos.
+
+Evidência: [consulta Ghidra](evidence/card-list-ui-ghidra.txt). Reprodução:
+
+```bash
+bash scripts/run-archive-query.sh card-list-ui-ghidra.txt tempfunc:0047de80 tempfunc:0047e750 tempfunc:0047ed50 tempfunc:0047dcb0 00402540 tempfunc:00480690
+```
+
+Validação da grade: build sem avisos/erros, **83 verificações C#**, 25 testes
+Python e **789 BMPs** decodificados. Inclui limites e espaços da grade,
+paginação vazia/exata/parcial, ordenação por índice e posições dos sprites.
+O teste visual desta alteração permanece pendente no desktop do usuário.

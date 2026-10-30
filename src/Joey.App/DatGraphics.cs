@@ -8,6 +8,7 @@ sealed class DatGraphics : IDisposable
     readonly Queue<string> loaded = new();
     Archive? archive;
     public MenuResources? Menu { get; private set; }
+    public CardListResources CardList { get; private set; } = null!;
     public CardArtwork Artwork { get; private set; } = null!;
     public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
     // Evict between frames, after the previous Raylib batch has been submitted.
@@ -24,6 +25,7 @@ sealed class DatGraphics : IDisposable
     {
         archive = new Archive(path);
         Menu = MenuResources.Load(archive);
+        CardList = CardListResources.Load(archive);
         return archive;
     }
     public Texture2D Texture(string name)
@@ -49,19 +51,30 @@ sealed class DatGraphics : IDisposable
             Raylib.UnloadImage(image);
             throw new InvalidDataException($"Cannot decode BMP {name}");
         }
+        if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits)
+        {
+            Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
+            Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
+        }
         return image;
     }
     public void Validate()
     {
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         var names = new[] { MenuResources.Background, MenuResources.Normal, MenuResources.Highlight,
+            CardListResources.Frame, CardListResources.Left, CardListResources.Right, CardListResources.Digits,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         int count = 0;
         foreach (string name in names)
         {
             var image = ReadImage(name);
-            Raylib.UnloadImage(image);
+            try
+            {
+                if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
+                    throw new InvalidDataException("Card selection frame color key is not transparent");
+            }
+            finally { Raylib.UnloadImage(image); }
             count++;
         }
         Console.WriteLine($"Decoded {count} BMP resources, including card artwork; {Artwork.Count} card mappings.");

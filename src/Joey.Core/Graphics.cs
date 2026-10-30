@@ -32,14 +32,14 @@ public readonly record struct BitmapInfo(int Width, int Height)
 public readonly record struct SceneSprite(string Name, int X, int Y)
 {
     // Only explicit xxxYYY positions are interpreted; other numeric parameters are not coordinates.
-    public static SceneSprite Find(byte[] text, string name)
+    public static SceneSprite Find(byte[] text, string name, int occurrence = 0)
     {
         foreach (string line in Encoding.Latin1.GetString(text).Split('\n'))
         {
             string[] words = line.Split("//")[0].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
             if (words.Length < 2 || !words[0].Equals(name, StringComparison.OrdinalIgnoreCase)) continue;
             string position = words[1];
-            if (position.Length == 6 && position.All(char.IsAsciiDigit))
+            if (position.Length == 6 && position.All(char.IsAsciiDigit) && occurrence-- == 0)
                 return new(name, int.Parse(position[..3]), int.Parse(position[3..]));
         }
         throw new InvalidDataException($"Missing position for scene sprite {name}");

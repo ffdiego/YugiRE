@@ -113,6 +113,17 @@ if (args.Length > 0)
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_id.bin"))).Equals("A36CDE2192FA85D9CCBCDB0DDB8BA8494A5199EA31D11A50A70B5FD32BF5879C"), "Original ID resource hash");
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_nameeng.bin"))).Equals("74848D0B2CD7D5FAC7A767075BD5B01E0366183CE934AFA6070CE24394A24032"), "Original names resource hash");
     var cards = Catalog.Load(archive);
+    var listResources = CardListResources.Load(archive);
+    Check(listResources.Grid == new CardGrid(225, 110) && listResources.Previous.X == 408 && listResources.Previous.Y == 565 &&
+        listResources.Next.X == 549 && listResources.Next.Y == 565, "Original grid and pagination sprite positions");
+    Check(BitmapInfo.Read(archive.Read(CardListResources.Frame)) == new BitmapInfo(58, 80) &&
+        BitmapInfo.Read(archive.Read(CardListResources.Left)) == new BitmapInfo(49, 23) &&
+        BitmapInfo.Read(archive.Read(CardListResources.Digits)) == new BitmapInfo(120, 21), "Original frame, arrow and digit atlas dimensions");
+    var alphabetical = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
+    Check(alphabetical.Take(6).Select(c => c.Name).SequenceEqual(new[] { "30,000-Year White Turtle", "4-Starred Ladybug of Doom",
+        "7 Colored Fish", "7 Completed", "Abyss Flower", "Acid Crawler" }), "Original English ranks yield alphabetical card names");
+    Check(alphabetical.Count == cards.Count && alphabetical.Select(c => c.Index).ToHashSet().SetEquals(cards.Select(c => c.Index)) &&
+        alphabetical[^1].Name.Length == 0, "Alphabetical view retains variants and unnamed records");
     var artwork = CardArtwork.Load(archive, cards);
     Check(artwork.Count == cards.Count, "Original artwork manifest covers every non-sentinel record with matching ID");
     Check(artwork.For(cards.Single(c => c.Id == 0)) == @"card\LOB001.bmp", "Blue-Eyes artwork uses explicit manifest mapping");

@@ -47,8 +47,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - Menu: fundo e botões originais lidos do DAT em 800×600. Single Duel Mode,
   Card List e Quit Game funcionais. Deck Construction
   e Options permanecem desabilitados.
-- Card List: digite para pesquisar por nome; Backspace apaga. Selecione uma
-  linha para ver atributos e descrição; Previous/Next mudam a página.
+- Card List: grade de 10 colunas × 5 linhas, 50 cartas por página, em ordem
+  alfabética pela tabela inglesa do DAT. Passe o mouse sobre a miniatura para
+  ver atributos e descrição. As setas originais ou PageUp/PageDown mudam a página.
+  Digite para pesquisar por nome; Backspace apaga. Registros sem nome ficam no fim.
   O fundo, o título, o botão Back e as imagens das cartas vêm do DAT.
   Use a roda do mouse sobre a descrição para percorrer textos longos.
   Não há restrição de desbloqueio. Variantes mantêm seus IDs e índices próprios;
@@ -85,8 +87,9 @@ fichas e negação não são reproduzidas.
 
 Os nomes, atributos, fundos e ilustrações vêm do DAT. O menu usa os cinco
 botões originais e suas dimensões; Card List usa também título e botão Back
-originais. As três telas usam 800×600, com escala proporcional ao redimensionar.
-Os controles de busca/paginação e os controles e posições das cartas no duelo
+originais, além de moldura, setas e números de página. As três telas usam
+800×600, com escala proporcional ao redimensionar. A grade usa os passos
+nativos de 55×87 pixels. A busca e os controles e posições das cartas no duelo
 ainda são temporários. O menu usa dois quadros estáticos em lugar da animação.
 Alguns registros apontam para imagens compartilhadas de placeholder no próprio
 DAT; isso não significa que tenhamos uma ilustração exclusiva para cada carta.
@@ -110,14 +113,14 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 57
-verificações sintéticas e mais 14 contra o arquivo original opcional.
+código diferente de zero. `dotnet test` não substitui esse comando. São 65
+verificações sintéticas e mais 18 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 71 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 83 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
-`--check-graphics` decodificou 785 BMPs com o Raylib sem criar janela,
+`--check-graphics` decodificou 789 BMPs com o Raylib sem criar janela,
 e o manifesto associou os 1114 registros por índice e ID.
 Os testes PowerShell existentes requerem `pwsh`, ausente neste ambiente.
 

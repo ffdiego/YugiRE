@@ -7,7 +7,7 @@ return Game.Run(args);
 static class Game
 {
     static readonly Color Background = new(16, 23, 35, 255), Panel = new(29, 42, 57, 255), Gold = new(230, 185, 93, 255);
-    static List<Card> cards = [];
+    static List<Card> cards = [], orderedCards = [];
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
     static int page, selected, hand = -1, attacker = -1, handPage;
     static DemoDuel duel = null!;
@@ -31,6 +31,7 @@ static class Game
             var archive = graphics.Open(path);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
+            orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
@@ -147,21 +148,32 @@ static class Game
         string shown = search;
         while (shown.Length > 0 && Raylib.MeasureText("Search: " + shown + "_", 16) > 440) shown = shown[1..];
         Label("Search: " + shown + "_", 230, 88, 16);
-        var filtered = cards.Where(c => c.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-        const int rows = 14;
-        page = Math.Clamp(page, 0, Math.Max(0, (filtered.Count - 1) / rows));
-        for (int row = 0; row < rows && page * rows + row < filtered.Count; row++)
+        var filtered = orderedCards.Where(c => c.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+        var resources = graphics.CardList;
+        int lastPage = CardGrid.LastPage(filtered.Count);
+        page = Math.Clamp(page, 0, lastPage);
+        int direction = SpriteButton(CardListResources.Left, resources.Previous, page > 0) ? -1 : 0;
+        if (SpriteButton(CardListResources.Right, resources.Next, page < lastPage)) direction = 1;
+        if (Raylib.IsKeyPressed(KeyboardKey.PageUp) && page > 0) direction = -1;
+        if (Raylib.IsKeyPressed(KeyboardKey.PageDown) && page < lastPage) direction = 1;
+        if (direction != 0) { page = Math.Clamp(page + direction, 0, lastPage); selected = page * CardGrid.PageSize; detailScroll = 0; }
+        int hover = resources.Grid.Hit(mouse.X, mouse.Y);
+        if (hover >= 0 && page * CardGrid.PageSize + hover < filtered.Count)
         {
-            int index = page * rows + row; var c = filtered[index];
-            string name = c.Name.Length == 0 ? "[unnamed resource]" : c.Name;
-            if (Button($"{c.Id}: {name}", 225, 110 + row * 29, 545, 27)) { selected = index; detailScroll = 0; }
-            if (index == selected) Raylib.DrawRectangleLines(225, 110 + row * 29, 545, 27, Color.White);
+            int index = page * CardGrid.PageSize + hover;
+            if (selected != index) { selected = index; detailScroll = 0; }
         }
-        if (Button("Previous", 225, 532, 110, 30, page > 0)) { page--; selected = page * rows; detailScroll = 0; }
-        if (Button("Next", 345, 532, 90, 30, (page + 1) * rows < filtered.Count)) { page++; selected = page * rows; detailScroll = 0; }
-        Raylib.DrawRectangle(445, 532, 325, 30, Panel);
-        Label($"Page {page + 1} | {filtered.Count} records", 451, 540, 16);
-        Label("All records / unlock restrictions disabled", 225, 580, 14, Color.Black);
+        for (int slot = 0; slot < CardGrid.PageSize && page * CardGrid.PageSize + slot < filtered.Count; slot++)
+        {
+            int index = page * CardGrid.PageSize + slot;
+            var cell = resources.Grid.Cell(slot);
+            DrawArtwork(filtered[index], cell.X, cell.Y, CardGrid.CardWidth, CardGrid.CardHeight);
+            if (index == selected) Raylib.DrawTexture(graphics.Texture(CardListResources.Frame), cell.X - 4, cell.Y - 4, Color.White);
+        }
+        SpriteNumber(filtered.Count == 0 ? 0 : page + 1, resources.CurrentPage);
+        SpriteNumber(filtered.Count == 0 ? 0 : lastPage + 1, resources.TotalPages);
+        Label("/", 499, resources.CurrentPage.Y - 10, 20, Gold);
+        Label($"{filtered.Count} records / unlock restrictions disabled", 225, 540, 12, Color.Black);
         if (filtered.Count == 0) { Label("No matches", 230, 120, 18); return; }
         selected = Math.Clamp(selected, 0, filtered.Count - 1); var card = filtered[selected];
         DrawArtwork(card, 6, 87, 200, 290);
@@ -175,6 +187,24 @@ static class Game
         for (int i = 0; i < 10 && detailScroll + i < lines.Count; i++)
             Label(lines[detailScroll + i], 16, 397 + i * 18, 14, Color.Black);
         if (lines.Count > 10) Label("Scroll here for text", 16, 580, 12, Color.Black);
+    }
+    static bool SpriteButton(string name, SceneSprite sprite, bool enabled)
+    {
+        var texture = graphics.Texture(name);
+        bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(sprite.X, sprite.Y, texture.Width, texture.Height));
+        Raylib.DrawTexture(texture, sprite.X, sprite.Y, !enabled ? new Color(110, 110, 110, 255) :
+            hover ? new Color(255, 255, 200, 255) : Color.White);
+        return enabled && hover && Raylib.IsMouseButtonPressed(MouseButton.Left);
+    }
+    static void SpriteNumber(int value, SceneSprite sprite)
+    {
+        var texture = graphics.Texture(CardListResources.Digits);
+        int width = texture.Width / 10;
+        string digits = value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        // Native 0x00480690 centers the number on its scene position.
+        for (int i = 0; i < digits.Length; i++)
+            Raylib.DrawTextureRec(texture, new Rectangle((digits[i] - '0') * width, 0, width, texture.Height),
+                new Vector2(sprite.X - digits.Length * width / 2 + i * width, sprite.Y - texture.Height / 2), Color.White);
     }
     static int detailScroll;
     static List<string> TextLines(string text, int width, int size)
