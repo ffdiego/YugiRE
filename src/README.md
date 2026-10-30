@@ -49,6 +49,8 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   e Options permanecem desabilitados.
 - Card List: digite para pesquisar por nome; Backspace apaga. Selecione uma
   linha para ver atributos e descrição; Previous/Next mudam a página.
+  O fundo, o título, o botão Back e as imagens das cartas vêm do DAT.
+  Use a roda do mouse sobre a descrição para percorrer textos longos.
   Não há restrição de desbloqueio. Variantes mantêm seus IDs e índices próprios;
   registros sem nome são identificados, sem inferir jogabilidade.
 - Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
@@ -69,7 +71,7 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 
 | Categoria | Uso nesta versão |
 |---|---|
-| Comprovado estaticamente por RE | Índice DAT, troca de nibbles, LZSS, IDs/índices, nomes, descrições e campos de propriedades; referências em `../docs/02-file-formats.md`. |
+| Comprovado estaticamente por RE / recursos | BMPs e manifestos de posições/imagens, índice DAT, troca de nibbles, LZSS, IDs/índices, nomes, descrições e campos de propriedades; referências em `../docs/02-file-formats.md`. |
 | Observado no jogo original | Organização geral de telas fornecida pelo usuário; fidelidade visual ainda não conferida neste ambiente. |
 | Hipótese | Códigos de classe são preservados numericamente; não atribuímos nomes a classes ainda não confirmadas. |
 | Demonstração | `Joey.Core/Demo.cs`: mãos/decks fixos, LP 8000, dois jogadores locais, turnos manuais, uma compra e invocação por turno, invocações sem tributos e combate simplificado por ATK/DEF. A política de aceitar classes 0–20 como monstros é uma simplificação local. |
@@ -81,10 +83,14 @@ neste sandbox. Ao destruir o alvo, cada equipamento vai ao cemitério de seu
 dono; reutilizar a zona não mantém o bônus. Exceções de efeitos, Banisher,
 fichas e negação não são reproduzidas.
 
-Os nomes e atributos são reais. O menu já usa os BMPs originais do DAT;
-as outras telas ainda usam representações temporárias, sem ilustrações originais.
-A janela inicia em 800×600; as telas de demonstração ainda são escaladas de
-1200×800. Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md). Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
+Os nomes, atributos, fundos e ilustrações vêm do DAT. O menu usa os cinco
+botões originais e suas dimensões; Card List usa também título e botão Back
+originais. As três telas usam 800×600, com escala proporcional ao redimensionar.
+Os controles de busca/paginação e os controles e posições das cartas no duelo
+ainda são temporários. O menu usa dois quadros estáticos em lugar da animação.
+Alguns registros apontam para imagens compartilhadas de placeholder no próprio
+DAT; isso não significa que tenhamos uma ilustração exclusiva para cada carta.
+Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md). Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
 Ativação imediata sem correntes, cemitério, combate, bloqueio de batalha no
 primeiro turno, derrota por deck vazio e vitória por LP são políticas do demo,
 ainda não atribuídas ao motor original. Não há IA, cartas viradas para baixo, efeitos de monstros,
@@ -105,12 +111,14 @@ dotnet run --project Joey.App -- --check-graphics
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
 código diferente de zero. `dotnet test` não substitui esse comando. São 57
-verificações sintéticas e mais 10 contra o arquivo original opcional.
+verificações sintéticas e mais 14 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 67 verificações C# e 14 testes Python
+Nesta sessão: compilação concluída; 71 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
+`--check-graphics` decodificou 785 BMPs com o Raylib sem criar janela,
+e o manifesto associou os 1114 registros por índice e ID.
 Os testes PowerShell existentes requerem `pwsh`, ausente neste ambiente.
 
 Não houve validação visual: sessão SSH sem DISPLAY/WAYLAND_DISPLAY. O modo

@@ -5,8 +5,21 @@ using Raylib_cs;
 sealed class DatGraphics : IDisposable
 {
     readonly Dictionary<string, Texture2D> textures = new(StringComparer.OrdinalIgnoreCase);
+    readonly Queue<string> loaded = new();
     Archive? archive;
     public MenuResources? Menu { get; private set; }
+    public CardArtwork Artwork { get; private set; } = null!;
+    public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
+    // Evict between frames, after the previous Raylib batch has been submitted.
+    public void BeginFrame()
+    {
+        while (textures.Count > 64)
+        {
+            string name = loaded.Dequeue();
+            Raylib.UnloadTexture(textures[name]);
+            textures.Remove(name);
+        }
+    }
     public Archive Open(string path)
     {
         archive = new Archive(path);
@@ -23,6 +36,7 @@ sealed class DatGraphics : IDisposable
         if (texture.Id == 0) throw new InvalidDataException($"Cannot upload texture {name}");
         Raylib.SetTextureFilter(texture, TextureFilter.Point);
         textures.Add(name, texture);
+        loaded.Enqueue(name);
         return texture;
     }
     Image ReadImage(string name)
@@ -39,12 +53,18 @@ sealed class DatGraphics : IDisposable
     }
     public void Validate()
     {
-        foreach (string name in new[] { MenuResources.Background, MenuResources.Normal, MenuResources.Highlight })
+        Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
+        var names = new[] { MenuResources.Background, MenuResources.Normal, MenuResources.Highlight,
+            @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
+            .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
+        int count = 0;
+        foreach (string name in names)
         {
             var image = ReadImage(name);
-            Console.WriteLine($"Decoded {name}: {image.Width}x{image.Height}");
             Raylib.UnloadImage(image);
+            count++;
         }
+        Console.WriteLine($"Decoded {count} BMP resources, including card artwork; {Artwork.Count} card mappings.");
     }
     public void Dispose()
     {

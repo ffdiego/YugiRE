@@ -113,6 +113,12 @@ if (args.Length > 0)
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_id.bin"))).Equals("A36CDE2192FA85D9CCBCDB0DDB8BA8494A5199EA31D11A50A70B5FD32BF5879C"), "Original ID resource hash");
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_nameeng.bin"))).Equals("74848D0B2CD7D5FAC7A767075BD5B01E0366183CE934AFA6070CE24394A24032"), "Original names resource hash");
     var cards = Catalog.Load(archive);
+    var artwork = CardArtwork.Load(archive, cards);
+    Check(artwork.Count == cards.Count, "Original artwork manifest covers every non-sentinel record with matching ID");
+    Check(artwork.For(cards.Single(c => c.Id == 0)) == @"card\LOB001.bmp", "Blue-Eyes artwork uses explicit manifest mapping");
+    Check(artwork.For(cards.Single(c => c.Id == 762)) == @"card\PSV003.bmp", "Parasite artwork uses explicit manifest mapping");
+    Check(archive.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+        .All(e => BitmapInfo.Read(archive.Read(e.Name)) == new BitmapInfo(200, 290)), "Original card BMP dimensions including shared placeholders");
     Check(cards.Count == 1114, "Non-sentinel records retained including variants");
     Check(cards.Single(c => c.Id == 0).Name == "Blue-Eyes White Dragon", "ID zero is valid");
     Check(cards.Single(c => c.Id == 762).Name == "Parasite Paracide", "Known card identity");

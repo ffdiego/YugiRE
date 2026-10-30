@@ -30,6 +30,7 @@ static class Game
             if (path == null) throw new FileNotFoundException("data.dat not found. Pass its path: dotnet run -- /path/to/data.dat");
             var archive = graphics.Open(path);
             cards = Catalog.Load(archive);
+            graphics.LoadArtwork(cards);
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
@@ -43,19 +44,17 @@ static class Game
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
-        { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data for data validation."); return 2; }
+        { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data or --check-graphics for validation."); return 2; }
         duel = new(cards);
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
-        var demoCanvas = Raylib.LoadRenderTexture(1200, 800);
-        var menuCanvas = Raylib.LoadRenderTexture(800, 600);
+        var canvas = Raylib.LoadRenderTexture(800, 600);
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
-            bool menuFrame = screen == "menu";
-            int width = menuFrame ? 800 : 1200, height = menuFrame ? 600 : 800;
-            var canvas = menuFrame ? menuCanvas : demoCanvas;
+            const int width = 800, height = 600;
+            graphics.BeginFrame();
             float scale = Math.Min(Raylib.GetScreenWidth() / (float)width, Raylib.GetScreenHeight() / (float)height);
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
             mouse = (Raylib.GetMousePosition() - origin) / scale;
@@ -88,17 +87,17 @@ static class Game
             }
             else
             {
-                if (Button("< Menu", 24, 18, 130, 38) || Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel") DrawDuel();
             }
-            if (!menuFrame) Label("Temporary layout | Local DAT resources | Demonstration build", 24, 775, 16, Gold);
+
             Raylib.EndTextureMode();
             Raylib.BeginDrawing(); Raylib.ClearBackground(Color.Black);
             Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height), new Rectangle(origin.X, origin.Y, width * scale, height * scale), Vector2.Zero, 0, Color.White);
             Raylib.EndDrawing();
         }
-        Raylib.UnloadRenderTexture(demoCanvas); Raylib.UnloadRenderTexture(menuCanvas);
+        Raylib.UnloadRenderTexture(canvas);
         graphics.Dispose(); Raylib.CloseWindow(); return 0;
     }
     static Vector2 mouse;
@@ -107,10 +106,11 @@ static class Game
         bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(x, y, w, h));
         Raylib.DrawRectangle(x, y, w, h, enabled && hover ? new Color(65, 86, 103, 255) : Panel);
         Raylib.DrawRectangleLines(x, y, w, h, enabled ? Gold : Color.Gray);
+        int font = w < 150 ? 14 : 18;
         string caption = text;
-        while (caption.Length > 0 && Raylib.MeasureText(caption, 18) > w - 22) caption = caption[..^1];
+        while (caption.Length > 0 && Raylib.MeasureText(caption, font) > w - 16) caption = caption[..^1];
         if (caption.Length < text.Length && caption.Length > 3) caption = caption[..^3] + "...";
-        Label(caption, x + 10, y + (h - 18) / 2, 18, enabled ? Color.White : Color.Gray);
+        Label(caption, x + 8, y + (h - font) / 2, font, enabled ? Color.White : Color.Gray);
         return enabled && hover && Raylib.IsMouseButtonPressed(MouseButton.Left);
     }
     static void Label(string text, int x, int y, int size = 20, Color? color = null) => Raylib.DrawText(text, x, y, size, color ?? Color.White);
@@ -124,52 +124,102 @@ static class Game
         }
         Label(line, x, y, size);
     }
+    static void DrawArtwork(Card card, int x, int y, int w, int h)
+    {
+        string? name = graphics.Artwork.For(card);
+        if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
+        var texture = graphics.Texture(name);
+        float scale = Math.Min(w / (float)texture.Width, h / (float)texture.Height);
+        Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
+            new Rectangle(x + (w - texture.Width * scale) / 2, y + (h - texture.Height * scale) / 2,
+                texture.Width * scale, texture.Height * scale), Vector2.Zero, 0, Color.White);
+    }
     static void DrawCards()
     {
-        Label("CARD LIST - all resource entries available", 190, 26, 23, Gold);
-        int ch; while ((ch = Raylib.GetCharPressed()) > 0) if (ch >= 32 && ch < 127 && search.Length < 50) { search += (char)ch; page = selected = 0; }
-        if (Raylib.IsKeyPressed(KeyboardKey.Backspace) && search.Length > 0) { search = search[..^1]; page = selected = 0; }
-        Label("Type to search: " + search + "_", 25, 82, 22);
+        Raylib.DrawTexture(graphics.Texture(@"j\list\list_bg.bmp"), 0, 0, Color.White);
+        Raylib.DrawTexture(graphics.Texture(@"j\list\e_cardlistmoji2.bmp"), 205, 0, Color.White);
+        bool back = Raylib.CheckCollisionPointRec(mouse, new Rectangle(692, 0, 108, 93));
+        Raylib.DrawTexture(graphics.Texture(back ? @"j\list\e_back2.bmp" : @"j\list\e_back1.bmp"), 692, 0, Color.White);
+        if (back && Raylib.IsMouseButtonPressed(MouseButton.Left)) screen = "menu";
+        int ch; while ((ch = Raylib.GetCharPressed()) > 0) if (ch >= 32 && ch < 127 && search.Length < 50) { search += (char)ch; page = selected = detailScroll = 0; }
+        if (Raylib.IsKeyPressed(KeyboardKey.Backspace) && search.Length > 0) { search = search[..^1]; page = selected = detailScroll = 0; }
+        Raylib.DrawRectangle(225, 85, 455, 23, Panel);
+        string shown = search;
+        while (shown.Length > 0 && Raylib.MeasureText("Search: " + shown + "_", 16) > 440) shown = shown[1..];
+        Label("Search: " + shown + "_", 230, 88, 16);
         var filtered = cards.Where(c => c.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-        page = Math.Clamp(page, 0, Math.Max(0, (filtered.Count - 1) / 12));
-        for (int row = 0; row < 12 && page * 12 + row < filtered.Count; row++)
+        const int rows = 14;
+        page = Math.Clamp(page, 0, Math.Max(0, (filtered.Count - 1) / rows));
+        for (int row = 0; row < rows && page * rows + row < filtered.Count; row++)
         {
-            int index = page * 12 + row; var c = filtered[index];
+            int index = page * rows + row; var c = filtered[index];
             string name = c.Name.Length == 0 ? "[unnamed resource]" : c.Name;
-            if (Button($"{c.Id}: {name}", 25, 125 + row * 44, 550, 38)) selected = index;
+            if (Button($"{c.Id}: {name}", 225, 110 + row * 29, 545, 27)) { selected = index; detailScroll = 0; }
+            if (index == selected) Raylib.DrawRectangleLines(225, 110 + row * 29, 545, 27, Color.White);
         }
-        if (Button("Previous", 25, 670, 140, 38, page > 0)) page--;
-        if (Button("Next", 180, 670, 140, 38, (page + 1) * 12 < filtered.Count)) page++;
-        Label($"Page {page + 1} | {filtered.Count} records", 25, 725);
-        if (filtered.Count == 0) { Label("No matching records", 630, 140); return; }
+        if (Button("Previous", 225, 532, 110, 30, page > 0)) { page--; selected = page * rows; detailScroll = 0; }
+        if (Button("Next", 345, 532, 90, 30, (page + 1) * rows < filtered.Count)) { page++; selected = page * rows; detailScroll = 0; }
+        Raylib.DrawRectangle(445, 532, 325, 30, Panel);
+        Label($"Page {page + 1} | {filtered.Count} records", 451, 540, 16);
+        Label("All records / unlock restrictions disabled", 225, 580, 14, Color.Black);
+        if (filtered.Count == 0) { Label("No matches", 230, 120, 18); return; }
         selected = Math.Clamp(selected, 0, filtered.Count - 1); var card = filtered[selected];
-        Raylib.DrawRectangle(620, 120, 550, 620, Panel);
-        Wrap(card.Name.Length == 0 ? "[Unnamed resource]" : card.Name, 640, 140, 510, 28);
-        Label($"Resource ID {card.Id} | Index {card.Index} | Class {card.ClassCode}", 640, 225, 19, Gold);
-        if (card.IsMonster) Label($"ATK {card.Attack}  DEF {card.Defense}  Level {card.Level}", 640, 270, 23);
-        Wrap(card.Description, 640, 330, 500, 22);
-        Label("Illustration not implemented", 640, 700, 18, Gold);
+        DrawArtwork(card, 6, 87, 200, 290);
+        // Limit the description to its panel; scrolling/wrapping is local demonstration behavior.
+        string detail = $"{card.Name}\nID {card.Id} / index {card.Index}\n" +
+            (card.IsMonster ? $"ATK {card.Attack} DEF {card.Defense} LV {card.Level}\n" : "") + card.Description;
+        var lines = TextLines(detail, 170, 14);
+        int wheel = (int)Raylib.GetMouseWheelMove();
+        if (mouse.X < 210) detailScroll -= wheel * 3;
+        detailScroll = Math.Clamp(detailScroll, 0, Math.Max(0, lines.Count - 10));
+        for (int i = 0; i < 10 && detailScroll + i < lines.Count; i++)
+            Label(lines[detailScroll + i], 16, 397 + i * 18, 14, Color.Black);
+        if (lines.Count > 10) Label("Scroll here for text", 16, 580, 12, Color.Black);
+    }
+    static int detailScroll;
+    static List<string> TextLines(string text, int width, int size)
+    {
+        List<string> lines = [];
+        foreach (var paragraph in text.Replace("\r", "").Split('\n'))
+        {
+            string line = "";
+            foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (line.Length > 0 && Raylib.MeasureText(line + " " + word, size) > width) { lines.Add(line); line = ""; }
+                line = line.Length == 0 ? word : line + " " + word;
+            }
+            lines.Add(line);
+        }
+        return lines;
     }
     static void DrawDuel()
     {
-        Label("LOCAL DEMO", 190, 26, 24, Gold);
-        if (Button("Draw", 650, 18, 120, 38)) duel.Draw(out message);
-        if (Button("Battle", 785, 18, 120, 38)) { duel.BeginBattle(out message); hand = -1; }
-        if (Button("Use card", 24, 150, 115, 45)) { if (duel.Play(hand, out message)) hand = -1; }
-        if (Button("Direct attack", 24, 210, 115, 45)) duel.Attack(attacker, -1, out message);
-        if (Button("Cancel", 24, 270, 115, 38)) { hand = attacker = -1; message = "Selection cleared."; }
-        Label(duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" : $"Phase: {duel.Phase}", 390, 120, 20, Gold);
-        Label($"Player 2 LP {duel.Life[1]}", 30, 85, 23);
-        Label($"Turn {duel.Turn} | {($"Player {duel.ActivePlayer + 1}")}", 440, 85, 23);
-        Label($"Player 1 LP {duel.Life[0]}", 920, 85, 23);
+        Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
+        if (Button("< Menu", 8, 8, 85, 30)) screen = "menu";
+        Label("LOCAL DEMO", 105, 16, 16, Gold);
+        if (Button("Draw", 240, 8, 80, 30)) duel.Draw(out message);
+        if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); hand = -1; }
+        if (Button("End turn", 412, 8, 105, 30)) { duel.NextTurn(); hand = attacker = -1; handPage = 0; message = "Turn changed. Draw once; summon once; Battle to attack."; }
+        if (Button("Reset", 523, 8, 75, 30)) { duel = new(cards); hand = attacker = -1; handPage = 0; message = "Demo reset."; }
+        Label(duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" : $"Turn {duel.Turn} P{duel.ActivePlayer + 1}: {duel.Phase}", 8, 50, 16, Gold);
+        Raylib.DrawRectangle(240, 46, 545, 24, Panel);
+        Label($"P2 LP {duel.Life[1]}     P1 LP {duel.Life[0]}     Hand: {duel.Hand.Count}", 245, 51, 16);
+        if (hand >= 0 && hand < duel.Hand.Count) DrawArtwork(duel.Hand[hand], 8, 78, 200, 290);
+        else if (attacker >= 0 && duel.Monsters[duel.ActivePlayer, attacker] is { } selectedAttacker) DrawArtwork(selectedAttacker, 8, 78, 200, 290);
+        else Wrap("Select a hand card or an attacking monster to preview its original image.", 12, 95, 195, 18);
+        if (Button("Use card", 8, 380, 98, 30)) { if (duel.Play(hand, out message)) hand = -1; }
+        if (Button("Direct attack", 112, 380, 108, 30)) duel.Attack(attacker, -1, out message);
+        if (Button("Cancel", 8, 416, 98, 30)) { hand = attacker = -1; message = "Selection cleared."; }
+        if (Button("Hand <", 8, 452, 98, 30, handPage > 0)) handPage--;
+        if (Button("Hand >", 112, 452, 108, 30, (handPage + 1) * 6 < duel.Hand.Count)) handPage++;
         for (int player = 0; player < 2; player++)
         {
-            int y = player == 1 ? 145 : 365;
+            int y = player == 1 ? 192 : 312;
             for (int z = 0; z < 5; z++)
             {
                 var card = duel.Monsters[player, z];
-                int x = 150 + z * 180;
-                if (Button(card == null ? "Monster" : "", x, y, 162, 105))
+                int x = 306 + z * 80;
+                if (Button(card == null ? "Monster" : "", x, y, 74, 92))
                 {
                     if (duel.Phase == DemoPhase.Battle)
                     {
@@ -182,24 +232,29 @@ static class Game
                     else if (card != null && player == duel.ActivePlayer && hand < 0) duel.ChangePosition(z, out message);
                     else if (duel.Summon(hand, player, z, true, out message)) hand = -1;
                 }
-                if (card != null) { Wrap(card.Name, x + 8, y + 8, 145, 16); Label($"{(duel.DefensePosition[player, z] ? "DEF" : "ATK")} {duel.AttackValue(player, z)}/{duel.DefenseValue(player, z)}", x + 8, y + 77, 17, Gold); }
+                if (card != null)
+                {
+                    DrawArtwork(card, x + 3, y + 2, 68, 66);
+                    Label(duel.DefensePosition[player, z] ? "DEF" : "ATK", x + 3, y + 67, 10, Gold);
+                    Label($"{duel.AttackValue(player, z)}/{duel.DefenseValue(player, z)}", x + 3, y + 79, 10, Gold);
+                }
+                if (attacker == z && player == duel.ActivePlayer) Raylib.DrawRectangleLines(x, y, 74, 92, Color.White);
                 var equip = duel.EquipmentCards.FirstOrDefault(e => e.Owner == player && e.SourceZone == z);
-                if (Button(equip == null ? "Spell / Trap" : equip.Card.Name, x, y + 112, 162, 50)) message = equip == null ? "For Sword select the card, then a Warrior monster." : $"Equipment targets player {equip.TargetPlayer + 1}, zone {equip.TargetZone + 1}.";
+                if (Button(equip == null ? "Spell" : "Equip", x, player == 1 ? 118 : 410, 74, 35))
+                    message = equip == null ? "For Sword select the card, then a Warrior monster." : $"Equipment targets player {equip.TargetPlayer + 1}, zone {equip.TargetZone + 1}.";
             }
         }
         handPage = Math.Clamp(handPage, 0, Math.Max(0, (duel.Hand.Count - 1) / 6));
-        Label($"Active hand: {duel.Hand.Count} | Deck P1/P2: {duel.DeckCount(0)}/{duel.DeckCount(1)} | Grave P1/P2: {duel.Graveyard(0).Count}/{duel.Graveyard(1).Count}", 25, 535, 18);
         for (int slot = 0; slot < 6 && handPage * 6 + slot < duel.Hand.Count; slot++)
         {
-            int i = handPage * 6 + slot, x = 30 + slot * 185;
-            if (Button("", x, 560, 175, 155)) { hand = i; attacker = -1; message = $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword."; }
-            Wrap(duel.Hand[i].Name, x + 9, 575, 155, 18);
-            Label(i == hand ? "SELECTED" : (duel.Hand[i].IsMonster ? $"ATK {duel.Hand[i].Attack}" : "Use card"), x + 9, 685, 16, Gold);
+            int i = handPage * 6 + slot, x = 236 + slot * 93;
+            if (Button("", x, 458, 86, 120)) { hand = i; attacker = -1; message = $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword."; }
+            DrawArtwork(duel.Hand[i], x + 3, 461, 80, 114);
+            if (i == hand) Raylib.DrawRectangleLines(x, 458, 86, 120, Color.White);
         }
-        if (Button("Hand <", 24, 330, 115, 35, handPage > 0)) handPage--;
-        if (Button("Hand >", 24, 375, 115, 35, (handPage + 1) * 6 < duel.Hand.Count)) handPage++;
-        if (Button("End turn", 920, 18, 120, 38)) { duel.NextTurn(); hand = attacker = -1; handPage = 0; message = "Turn changed. Draw once; summon once; Battle to attack."; }
-        if (Button("Reset", 1050, 18, 120, 38)) { duel = new(cards); hand = attacker = -1; handPage = 0; message = "Demo reset."; }
-        Label(message, 25, 738, 19, Gold);
+        var lines = TextLines(message, 205, 14);
+        for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, Gold);
+        Label($"Deck {duel.DeckCount(0)}/{duel.DeckCount(1)} Grave {duel.Graveyard(0).Count}/{duel.Graveyard(1).Count}", 8, 568, 13);
+        Label("Demonstration duel | Simplified layout and rules", 8, 587, 12, Gold);
     }
 }

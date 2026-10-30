@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Joey.Core;
 
@@ -54,4 +55,29 @@ public sealed record MenuResources(SceneSprite Buttons)
     public static MenuResources Load(Archive archive) => new(SceneSprite.Find(archive.Read(@"j\title\title.txt"), "menu_?_ani0.bmp"));
     public int Hit(float x, float y) => x >= Buttons.X && x < Buttons.X + ButtonWidth &&
         y >= Buttons.Y && y < Buttons.Y + 5 * ButtonHeight ? (int)((y - Buttons.Y) / ButtonHeight) : -1;
+}
+
+public sealed class CardArtwork
+{
+    readonly Dictionary<int, string> names = [];
+    public int Count => names.Count;
+    public string? For(Card card) => names.GetValueOrDefault(card.Index);
+    public static CardArtwork Load(Archive archive, IReadOnlyCollection<Card> cards)
+    {
+        var result = new CardArtwork();
+        var byIndex = cards.ToDictionary(c => c.Index);
+        var entries = archive.Entries.Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        string text = Encoding.Latin1.GetString(archive.Read(@"card\list_card.txt"));
+        // The shipped manifest explicitly supplies both table index and public card ID.
+        foreach (Match match in Regex.Matches(text, @"(?m)^//\s*(\d{4}):\[(\d{4})\][^\r\n]*\r?\n([A-Za-z0-9_]+\.bmp)\r?$", RegexOptions.IgnoreCase))
+        {
+            int index = int.Parse(match.Groups[1].Value), id = int.Parse(match.Groups[2].Value);
+            if (!byIndex.TryGetValue(index, out var card)) continue; // Includes the back/sentinel entry.
+            if (card.Id != id) throw new InvalidDataException($"Artwork manifest ID mismatch at index {index}");
+            string name = @"card\" + match.Groups[3].Value;
+            if (!entries.Contains(name)) throw new InvalidDataException($"Missing artwork resource {name}");
+            if (!result.names.TryAdd(index, name)) throw new InvalidDataException($"Duplicate artwork index {index}");
+        }
+        return result;
+    }
 }
