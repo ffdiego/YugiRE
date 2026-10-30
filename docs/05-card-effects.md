@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Classificação FLIP e mudança de face
+
+[Continuação de Man-Eater Bug](cards/man-eater-flip-activation.md):
+0x00567620 reconhece IDs 500 e 762 no executável. 0x00574F70 pode emitir
+0x80 e criar pedido por 0x005BA490 após validar condições genéricas.
+O consumidor alterna a máscara 0x0002 em registro+6. Produtor condicional comprovado;
+entradas por interface/batalha e timing completos continuam pendentes.
+
 ## Descarte como etapa de preparação
 
 [Tribute e callback compartilhado](cards/tribute-discard-cost.md) separam

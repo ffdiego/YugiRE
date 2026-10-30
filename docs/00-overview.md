@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+FLIP: [classificação e produtor condicional](cards/man-eater-flip-activation.md)
+de Man-Eater Bug/Parasite, comando de face 0x80 e ligação ao pedido.
+Inclui limites das verificações estáticas e primeiro teste dinâmico sem carta rara.
+
 Custos: [Tribute to The Doomed](cards/tribute-discard-cost.md), descarte
 compartilhado com quantidades 1/2/5, ordem de preparação e caso Big Shield Gardna.
 

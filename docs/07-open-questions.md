@@ -13,12 +13,20 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**FLIP — produtor condicional identificado:**
+[estudo](cards/man-eater-flip-activation.md) liga classificação de IDs,
+0x00574F70, comando 0x80, escrita de face e criação de pedido. Corrige o
+alcance da atribuição anterior de 0x00597E90 à ativação de Parasite.
+Pendentes: chamadores por ação de interface/batalha, timing e supressão por
+ID 0x5FA. Para validação dinâmica inicial, um duelo qualquer já permite
+conferir LP/mão; não é necessário montar uma interação rara.
+
 **Custo de Tribute seguido:** [estudo](cards/tribute-discard-cost.md) liga
 pré-condição, descritor tipo 2, seleção, comando 0x8E e compactação da mão.
 O callback também parametriza custos de Magic Jammer, Final Destiny e
 Darkness Approaches. 0x00583510 foi identificado como ramo de Big Shield
 Gardna. Pendentes: execução assistida da ordem de pagamento/negação e ramos
-especiais de descarte. Próxima trilha estática: evento FLIP de Man-Eater Bug.
+especiais de descarte. O produtor condicional de FLIP foi seguido acima.
 
 **Destruição seguida até o estado:** [continuação](cards/monster-destruction.md)
 confirma o consumidor de 0x79, retirada da origem, regiões 14/15, desvio de

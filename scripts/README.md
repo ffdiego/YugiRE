@@ -1,5 +1,11 @@
 # Reprodução
 
+Classificação e produtor condicional de FLIP:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_flip_activation.py`.
+Esperado: dez linhas `PASS`; tabelas/instruções e despacho de 0x80 em
+`docs/evidence/flip-activation-validation.json`. Não executa o jogo. Ver
+[alcance da validação e plano dinâmico](../docs/cards/man-eater-flip-activation.md).
+
 Custo de descarte de Tribute e callback compartilhado:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_tribute_cost.py`.
 Esperado: nove linhas `PASS`; registros, quantidades, seletores e modelo de

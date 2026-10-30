@@ -7,6 +7,9 @@ Endereços são VA, image base `0x00400000`. Consultas Ghidra 12.2 com
 
 ## Resultado e registros
 
+A [continuação de ativação FLIP](man-eater-flip-activation.md) identifica a
+classificação e um produtor condicional do pedido, com os limites de timing.
+
 O pedido guarda o alvo como uma palavra de 16 bits: lado, posição e chave
 de ocorrência. A resolução exige que a posição continue ocupada por uma
 palavra de estado com a chave registrada. A chave de oito bits não é uma

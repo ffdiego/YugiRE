@@ -5,7 +5,7 @@ Consolidado em 2026-10-29. ID de recurso **762 / 0x2FA**, índice de propriedade
 `DB8FE7B7EA4B12F18A9BB1777B5F5B8EAB254011DB2A52571A0264725505B6DE`.
 Endereços são VA, base `0x00400000`. Originais e banco preservados.
 
-O fluxo funcional da carta foi reconstruído estaticamente: ativação,
+O fluxo funcional da carta a partir dos pedidos foi reconstruído estaticamente: callback,
 transferência/embaralhamento, interceptação da compra, colocação, perda de
 LP, mudança dinâmica de tipo e limpeza da associação. Não foi executado o
 jogo. Essa conclusão não equivale à validação de todas as interações possíveis
@@ -63,12 +63,18 @@ O callback de validação retorna falso quando o pedido é do ramo inicial e a
 posição indicada está vazia; o ramo 0x2000 é admitido por esse callback.
 Isso não elimina as demais condições genéricas da ativação em 0x0057EAC0.
 
-A máquina 0x00597E90, caso 11/regiões 0 ou 5, emite 0x91 quando o bit de
-face não estava definido e monta o pedido em 0x005BA4D0 com a chave da palavra
-de estado. O código montado nesse caminho não seleciona o discriminante
-0x2000. O primeiro ramo de 0x005875A0 confirma índice e bit de face da posição
-antes de inserir a associação. Isso liga o produtor inicial ao ramo correto;
-o texto FLIP do recurso confirma a semântica do caso de virar a carta.
+A [continuação sobre FLIP](man-eater-flip-activation.md) confirma Parasite
+na classificação 0x00567620 e identifica um produtor condicional em
+0x00574F70: emite mudança de face 0x80 e pode criar pedido por
+0x005BA490 → 0x005BA310. O primeiro ramo de 0x005875A0 confirma índice e
+bit de face da posição antes de inserir a associação. O texto FLIP do recurso
+corrobora essa interpretação. A chegada por cada ação de interface/batalha
+e o timing permanecem pendentes de confirmação dinâmica.
+
+O trecho antes citado de 0x00597E90, caso 11/regiões 0 ou 5, constrói um
+pedido genérico via 0x005BA4D0 e pode emitir 0x91. Ele não comprova sozinho
+a ativação FLIP de Parasite; sua análise permanece como evidência de
+infraestrutura de pedidos, com alcance corrigido nesta continuação.
 
 Evidências: [registro](../evidence/parasite-handler-registration.txt),
 [busca](../evidence/card-handler-id-search.txt),

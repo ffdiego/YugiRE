@@ -1,0 +1,105 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "classifications": [
+    {
+      "resource_id": 500,
+      "byte_table": "0x5677b0",
+      "jump_table": "0x5677a8",
+      "normalized": 0,
+      "branch": "0x567716",
+      "classified": true
+    },
+    {
+      "resource_id": 501,
+      "byte_table": "0x5677b0",
+      "jump_table": "0x5677a8",
+      "normalized": 1,
+      "branch": "0x567691",
+      "classified": false
+    },
+    {
+      "resource_id": 762,
+      "byte_table": "0x567830",
+      "jump_table": "0x567824",
+      "normalized": 1,
+      "branch": "0x567716",
+      "classified": true
+    },
+    {
+      "resource_id": 761,
+      "byte_table": "0x567830",
+      "jump_table": "0x567824",
+      "normalized": 2,
+      "branch": "0x567691",
+      "classified": false
+    }
+  ],
+  "instruction_checks": [
+    {
+      "va": "0x567694",
+      "file_offset": "0x167694",
+      "bytes": "0517feffff83f87077f333d28a90b0775600ff2495a8775600"
+    },
+    {
+      "va": "0x5676c4",
+      "file_offset": "0x1676c4",
+      "bytes": "0580fdffff83f87a77c333c98a8830785600ff248d24785600"
+    },
+    {
+      "va": "0x567716",
+      "file_offset": "0x167716",
+      "bytes": "b801000000c3"
+    },
+    {
+      "va": "0x567691",
+      "file_offset": "0x167691",
+      "bytes": "33c0c3"
+    },
+    {
+      "va": "0x575078",
+      "file_offset": "0x175078",
+      "bytes": "e8a325ffff"
+    },
+    {
+      "va": "0x575092",
+      "file_offset": "0x175092",
+      "bytes": "e8e99d0000"
+    },
+    {
+      "va": "0x5750e4",
+      "file_offset": "0x1750e4",
+      "bytes": "e887400400"
+    },
+    {
+      "va": "0x57511f",
+      "file_offset": "0x17511f",
+      "bytes": "e86c530400"
+    },
+    {
+      "va": "0x407f02",
+      "file_offset": "0x7f02",
+      "bytes": "668b4f068bc1f7d032c183e00233c1a80266894706"
+    },
+    {
+      "va": "0x5ba4b3",
+      "file_offset": "0x1ba4b3",
+      "bytes": "e858feffff"
+    }
+  ],
+  "identities": [
+    {
+      "name": "Man-Eater Bug",
+      "index": 753,
+      "resource_id": 500,
+      "description": "FLIP: Destroys 1 monster on the field (regardless of position)."
+    }
+  ],
+  "face_command": {
+    "opcode": "0x80",
+    "normalized": 86,
+    "stub": "0x5b9668",
+    "handler": "0x407e60"
+  },
+  "method": "Native table values, instruction bytes and local FLIP description; no target execution.",
+  "limits": "Classification and one conditional face-change producer; battle timing, UI reachability and all FLIP interactions pending."
+}
