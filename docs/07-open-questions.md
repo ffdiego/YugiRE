@@ -13,6 +13,11 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Tabela de Rituais concluída:** [mapeamento](cards/ritual-bindings.md) cobre
+os 16 pares P269 e cruza requisitos com níveis base. Próxima trilha estática:
+0x00599140/0x00599570 para seleção dos materiais, depois pagamento e colocação.
+Nenhum jogo foi executado. Timing permanece para o Windows.
+
 **Limpeza comum de equipamentos seguida:** [continuação](cards/equipment-cleanup.md)
 liga retirada da origem, remoção de referências, compactação e dependências
 do monstro. Pendentes: outros movimentos, invalidar equipamento por mudança de

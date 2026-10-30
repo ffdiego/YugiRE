@@ -1,5 +1,16 @@
 # Reprodução
 
+Tabela de Rituais:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s YugiRE/tests -p 'test_ritual_rules.py'
+PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/catalog_ritual_rules.py
+```
+
+Seis testes sem binários; o gerador imprime dois `PASS`, confere 16 pares,
+callbacks e níveis base e exporta `docs/evidence/ritual-rules-catalog.json`.
+Ver [layout e alcance](../docs/cards/ritual-bindings.md).
+
 Limpeza dos vínculos de equipamento:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_equipment_cleanup.py`.
 Esperado: treze linhas `PASS`; instruções, dispatch de tipos e nove cenários

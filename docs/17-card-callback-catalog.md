@@ -116,7 +116,8 @@ e nomes iguais também permanecem distintos; não são unidos pelo nome.
    também foi seguida; outros movimentos e ramos por ID continuam abertos.
 2. **Black Luster Ritual / P269:** 16 registros com principal 0x005999D0 e
    disponibilidade 0x00599850. Candidato para estudar seleção de materiais
-   e invocação; ainda é uma hipótese guiada pelas identidades das cartas.
+   e invocação. O [mapeamento de pares e níveis](cards/ritual-bindings.md)
+   foi concluído; seleção/pagamento/colocação permanecem em investigação.
 3. **Giant Rat / P164:** seis registros com a mesma combinação, incluindo
    UFO Turtle e Shining Angel. Candidato para estudar gatilhos e busca no deck.
 

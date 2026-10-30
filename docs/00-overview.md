@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Rituais](cards/ritual-bindings.md): 16 pares magia/monstro e requisitos de
+nível em tabela compactada do EXE, conferidos com callbacks e recursos locais.
+
 [Limpeza de equipamentos](cards/equipment-cleanup.md): retirada da origem,
 remoção/compactação de referências e operações para os equipamentos quando
 o monstro sai pelo caminho de destruição.

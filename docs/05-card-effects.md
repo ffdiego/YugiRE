@@ -1,5 +1,12 @@
 # Efeitos das cartas — questão em aberto
 
+## Parametrização de Rituais
+
+[Tabela de Rituais](cards/ritual-bindings.md): as 16 cartas P269 compartilham
+callbacks e consultam palavras uint32 que codificam magia, monstro e requisito
+de nível. Black Luster Ritual seleciona Black Luster Soldier e nível 8.
+A tabela foi catalogada; seleção, pagamento e colocação não estão fechados.
+
 ## Limpeza de equipamentos
 
 [Continuação](cards/equipment-cleanup.md): a retirada de campo limpa referências

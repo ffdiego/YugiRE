@@ -1,0 +1,405 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "table": {
+    "va": "0x5ed060",
+    "file_offset": "0x1ed060",
+    "stride": 4,
+    "count": 16,
+    "sentinel_va": "0x5ed0a0",
+    "fields": "monster ID bits 0-12; spell ID bits 13-25; required Level bits 26-31"
+  },
+  "callback_profile": "P269",
+  "rules": [
+    {
+      "row": 0,
+      "raw_word": "0x1c540163",
+      "monster_id": 355,
+      "spell_id": 672,
+      "required_level": 7,
+      "spell": [
+        {
+          "index": 1046,
+          "name": "War-Lion Ritual",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 433,
+          "name": "Super War-Lion",
+          "class_code": 11
+        }
+      ],
+      "monster_base_levels": [
+        7
+      ]
+    },
+    {
+      "row": 1,
+      "raw_word": "0x2053c167",
+      "monster_id": 359,
+      "spell_id": 670,
+      "required_level": 8,
+      "spell": [
+        {
+          "index": 479,
+          "name": "Zera Ritual",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 478,
+          "name": "Zera The Mant",
+          "class_code": 3
+        }
+      ],
+      "monster_base_levels": [
+        8
+      ]
+    },
+    {
+      "row": 2,
+      "raw_word": "0x2053a16b",
+      "monster_id": 363,
+      "spell_id": 669,
+      "required_level": 8,
+      "spell": [
+        {
+          "index": 145,
+          "name": "Black Luster Ritual",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 144,
+          "name": "Black Luster Soldier",
+          "class_code": 15
+        }
+      ],
+      "monster_base_levels": [
+        8
+      ]
+    },
+    {
+      "row": 3,
+      "raw_word": "0x1854216c",
+      "monster_id": 364,
+      "spell_id": 673,
+      "required_level": 6,
+      "spell": [
+        {
+          "index": 14,
+          "name": "Beastly Mirror Ritual",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 597,
+          "name": "Fiend's Mirror",
+          "class_code": 3
+        }
+      ],
+      "monster_base_levels": [
+        6
+      ]
+    },
+    {
+      "row": 4,
+      "raw_word": "0x185462bc",
+      "monster_id": 700,
+      "spell_id": 675,
+      "required_level": 6,
+      "spell": [
+        {
+          "index": 122,
+          "name": "Commencement Dance",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 547,
+          "name": "Performance of Sword",
+          "class_code": 15
+        }
+      ],
+      "monster_base_levels": [
+        6
+      ]
+    },
+    {
+      "row": 5,
+      "raw_word": "0x185482bd",
+      "monster_id": 701,
+      "spell_id": 676,
+      "required_level": 6,
+      "spell": [
+        {
+          "index": 737,
+          "name": "Hamburger Recipe",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 734,
+          "name": "Hungry Burger",
+          "class_code": 15
+        }
+      ],
+      "monster_base_levels": [
+        6
+      ]
+    },
+    {
+      "row": 6,
+      "raw_word": "0x1c54c2bf",
+      "monster_id": 703,
+      "spell_id": 678,
+      "required_level": 7,
+      "spell": [
+        {
+          "index": 1091,
+          "name": "Novox's Prayer",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 1089,
+          "name": "Skull Guardian",
+          "class_code": 15
+        }
+      ],
+      "monster_base_levels": [
+        7
+      ]
+    },
+    {
+      "row": 7,
+      "raw_word": "0x1c56a2c4",
+      "monster_id": 708,
+      "spell_id": 693,
+      "required_level": 7,
+      "spell": [
+        {
+          "index": 556,
+          "name": "Resurrection of Chakra",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 555,
+          "name": "Chakra",
+          "class_code": 3
+        }
+      ],
+      "monster_base_levels": [
+        7
+      ]
+    },
+    {
+      "row": 8,
+      "raw_word": "0x205662c5",
+      "monster_id": 709,
+      "spell_id": 691,
+      "required_level": 8,
+      "spell": [
+        {
+          "index": 168,
+          "name": "Turtle Oath",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 245,
+          "name": "Crab Turtle",
+          "class_code": 14
+        }
+      ],
+      "monster_base_levels": [
+        8
+      ]
+    },
+    {
+      "row": 9,
+      "raw_word": "0x1c5702cb",
+      "monster_id": 715,
+      "spell_id": 696,
+      "required_level": 7,
+      "spell": [
+        {
+          "index": 183,
+          "name": "Garma Sword Oath",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 182,
+          "name": "Garma Sword",
+          "class_code": 15
+        }
+      ],
+      "monster_base_levels": [
+        7
+      ]
+    },
+    {
+      "row": 10,
+      "raw_word": "0x2056e2cc",
+      "monster_id": 716,
+      "spell_id": 695,
+      "required_level": 8,
+      "spell": [
+        {
+          "index": 398,
+          "name": "Javelin Beetle Pact",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 397,
+          "name": "Javelin Beetle",
+          "class_code": 10
+        }
+      ],
+      "monster_base_levels": [
+        8
+      ]
+    },
+    {
+      "row": 11,
+      "raw_word": "0x1c5762cd",
+      "monster_id": 717,
+      "spell_id": 699,
+      "required_level": 7,
+      "spell": [
+        {
+          "index": 1036,
+          "name": "Fortress Whale's Oath",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 1035,
+          "name": "Fortress Whale",
+          "class_code": 8
+        }
+      ],
+      "monster_base_levels": [
+        7
+      ]
+    },
+    {
+      "row": 12,
+      "raw_word": "0x185742ce",
+      "monster_id": 718,
+      "spell_id": 698,
+      "required_level": 6,
+      "spell": [
+        {
+          "index": 439,
+          "name": "Revival of Dokurorider",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 438,
+          "name": "Dokurorider",
+          "class_code": 2
+        }
+      ],
+      "monster_base_levels": [
+        6
+      ]
+    },
+    {
+      "row": 13,
+      "raw_word": "0x205a02d1",
+      "monster_id": 721,
+      "spell_id": 720,
+      "required_level": 8,
+      "spell": [
+        {
+          "index": 143,
+          "name": "Dark Magic Ritual",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 891,
+          "name": "Magician of Black Chaos",
+          "class_code": 18
+        }
+      ],
+      "monster_base_levels": [
+        8
+      ]
+    },
+    {
+      "row": 14,
+      "raw_word": "0x477c2da",
+      "monster_id": 730,
+      "spell_id": 958,
+      "required_level": 1,
+      "spell": [
+        {
+          "index": 62,
+          "name": "Black Illusion Ritual",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 331,
+          "name": "Relinquished",
+          "class_code": 18
+        }
+      ],
+      "monster_base_levels": [
+        1
+      ]
+    },
+    {
+      "row": 15,
+      "raw_word": "0x20b10583",
+      "monster_id": 1411,
+      "spell_id": 1416,
+      "required_level": 8,
+      "spell": [
+        {
+          "index": 172,
+          "name": "Curse of the Masked Beast",
+          "class_code": 22
+        }
+      ],
+      "monster": [
+        {
+          "index": 173,
+          "name": "The Masked Beast",
+          "class_code": 3
+        }
+      ],
+      "monster_base_levels": [
+        8
+      ]
+    }
+  ],
+  "black_luster_description": "This card is used to Ritual Summon \"Black Luster Soldier\". You must also offer monsters whose total Level Stars equal 8 or more as a Tribute from the field or your hand.",
+  "validation": {
+    "profile_members_match": true,
+    "monster_base_levels_match": true,
+    "method": "Static packed data, callback records and local resource cross-checks; no native execution.",
+    "limits": "Material selection, payment, summon completion and timing not validated by this catalog."
+  }
+}
