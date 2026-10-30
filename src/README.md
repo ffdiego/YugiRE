@@ -180,6 +180,13 @@ foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
 e o manifesto associou os 1114 registros por índice e ID.
 Os testes PowerShell existentes requerem `pwsh`, ausente neste ambiente.
 
+Para comparar memória do original no Windows, há também
+`scripts/Get-JoeyDuelSnapshot.ps1`, descrito em
+[comparação de estado](../docs/26-normal-summon-tributes.md). Ele lê um processo
+já aberto e produz JSON com LP, quantidade na mão e flags dos monstros, sem
+alterar o jogo. O código C# de interop compilou; a execução PowerShell/Windows
+ainda precisa ser conferida no ambiente do usuário.
+
 Não houve validação visual: sessão SSH sem DISPLAY/WAYLAND_DISPLAY. O modo
 `--check-data` valida os dados sem abrir a janela; execução gráfica nesta
 condição encerra com código 2 e mensagem explicativa. Dependências nativas

@@ -125,3 +125,37 @@ Evidências: [gates da mão](evidence/normal-summon-turn-controls.txt),
 [colocação](evidence/monster-placement-turn-flags.txt),
 [limpeza](evidence/monster-turn-flag-reset.txt) e
 [instruções](evidence/monster-turn-state-application.txt).
+
+## Comparação de estado no Windows
+
+Com o original já aberto em um duelo, execute da raiz do repositório:
+
+```powershell
+.\scripts\Get-JoeyDuelSnapshot.ps1 -OutputPath "$env:TEMP\joey-before.json"
+# Invoque um monstro no jogo e capture novamente:
+.\scripts\Get-JoeyDuelSnapshot.ps1 -OutputPath "$env:TEMP\joey-after.json"
+```
+
+O script valida o SHA256 do executável selecionado e abre o processo com
+VM_READ/QUERY_LIMITED_INFORMATION. Não inicia o jogo, não pausa threads e não
+escreve na memória. Lê um bloco cobrindo os dois jogadores: LP em
+`0x00A55D64 + lado*0xD44`, contagem da mão em +4, cinco registros de monstros
+a partir de +0x10 e flags do jogador em +0x6CC. Usa o endereço relativo à base
+real do módulo. `card_index` é índice interno, **não** ID de recurso; zero
+significa zona vazia. `position_locked_this_turn` decodifica o bit seguido acima.
+
+O arquivo de saída é criado com CreateNew, sem sobrescrever capturas existentes.
+Sem OutputPath, mostra JSON no console. Se houver vários processos, escolha
+um com `-TargetProcessId`. A leitura de um processo vivo não é um snapshot
+atômico: faça a comparação com a interface em repouso entre ações.
+
+Compare antes/depois de invocar e depois de encerrar o turno: o bit de posição
+deve aparecer no monstro recém-colocado e desaparecer na limpeza. As flags do
+jogador são exportadas em hexadecimal, sem dar nomes definitivos a cada bit.
+O estudo adicional dos setters em [player-summon-flag-lifecycle.txt](evidence/player-summon-flag-lifecycle.txt)
+não fechou o ciclo completo do contador de invocação normal.
+
+O C# de interoperabilidade do script compilou sem avisos/erros. PowerShell
+não está instalado no host Fedora desta sessão; a sintaxe/execução do script
+completo e a leitura de um processo Windows ainda precisam de validação pelo
+operador. Até receber uma captura, estes resultados continuam sendo estáticos.
