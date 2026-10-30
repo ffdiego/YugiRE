@@ -1,0 +1,20 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00403ec0 @00403ec0
+ CALLER 00574240 null
+
+void FUN_00403ec0(uint param_1)
+
+{
+  int iVar1;
+  
+  iVar1 = FUN_0044b9b0();
+  if (iVar1 == 0) {
+    iVar1 = FUN_0044b980();
+    if ((iVar1 == 0) && (param_1 == ((byte)~DAT_00a54e5c & 1))) {
+      FUN_005c03d0(0x10000042,0);
+    }
+  }
+  return;
+}
+
+

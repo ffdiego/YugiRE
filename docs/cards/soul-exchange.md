@@ -76,8 +76,9 @@ A associação do bit com a restrição de combate é sustentada pelo produtor,
 esses consumidores e pela descrição. Não demos nomes globais a todos os
 estados numéricos da interface nem fechamos todo o controle de fases.
 O helper 0x005A4010, consultado como possível reset, na verdade também marca
-o bit; não é evidência de limpeza. A validade por apenas um turno e a limpeza
-das associações ainda precisam de um caminho de encerramento identificado.
+o bit; não é evidência de limpeza. A [continuação de limpeza](../19-temporary-state-cleanup.md) identificou
+o comando 0x02 que limpa o bit e a associação. O agendamento temporal desse
+comando, necessário para fechar a duração por turno, permanece aberto.
 
 ## Validação e limites
 

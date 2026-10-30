@@ -259,3 +259,11 @@ ao rollback Java, já que o runner também usa `-readOnly`.
 `python3 scripts/validate_soul_exchange.py` verifica o registro, sequências
 e chamadas do caso [Soul Exchange](../docs/cards/soul-exchange.md).
 O relatório é estático e não valida expiração do efeito.
+
+## Limpeza temporária compartilhada
+
+`python3 scripts/validate_temporary_cleanup.py` confere o despacho de 0x02,
+o laço de 12 registros, a máscara de flags e os tipos de associação.
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_temporary_state_model.py'`
+executa cinco testes de um modelo estático separado do protótipo .NET.
+[Semântica e limites](../docs/19-temporary-state-cleanup.md).

@@ -1,0 +1,19 @@
+{
+  "sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "opcode": "0x02",
+  "normalized_index": 1,
+  "stub": "0x5b94a3",
+  "transfers": {
+    "0x5b94a3": "0x574230",
+    "0x5743d2": "0x56aea0",
+    "0x56af3a": "0x5695e0"
+  },
+  "instruction_sites": [
+    "0x574265",
+    "0x574271",
+    "0x56af0d",
+    "0x56af11"
+  ],
+  "virtual_slot_flag_address": "0xa56430",
+  "limitation": "Static bytes only; does not identify the producer/event scheduling command 2."
+}

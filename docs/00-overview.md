@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Limpeza temporária](19-temporary-state-cleanup.md): comando 0x02, flags
+compartilhadas com categoria 11 e contador de associações tipo 3/12.
+
 [Soul Exchange](cards/soul-exchange.md): associação tipo 3 no alvo, ator
 autorizado a tributar e bit de bloqueio de combate; duração ainda pendente.
 
