@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Núcleo de batalha](22-battle-core.md): comparação ATK/DEF, empate zero,
+apresentação, cópia temporária e atualização de LP/destino.
+
 [Compra nativa](21-native-card-draw.md): mão inicial de cinco, comando 0x61,
 transferência deck→mão, falta de cartas e callbacks de Pot/Jar/Skelengel.
 

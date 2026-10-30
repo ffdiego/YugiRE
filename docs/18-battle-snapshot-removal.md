@@ -154,3 +154,10 @@ Evidências: [trecho chamador](evidence/battle-snapshot-write-candidate.txt),
 alvos de CALL diretamente nos bytes, gerando
 [battle-command-7c-validation.json](evidence/battle-command-7c-validation.json).
 É uma validação estática, não execução ou prova da interpretação completa.
+
+## Produtor das cópias identificado posteriormente
+
+O [núcleo de batalha](22-battle-core.md) identificou o comando 0x3C e
+0x00405020 como produtor das cópias de 0x90 bytes. O campo é esvaziado antes
+do encaminhamento final por 0x7C. A indicação histórica de produtor pendente
+acima foi superada por essa continuação, sem execução do original.

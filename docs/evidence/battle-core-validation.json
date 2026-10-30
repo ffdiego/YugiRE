@@ -1,0 +1,67 @@
+{
+  "sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "sequence": [
+    "0x5a2740",
+    "0x5a2990",
+    "0x5a2d60",
+    "0x5a31a0"
+  ],
+  "dispatch": {
+    "0x31": {
+      "index": 29,
+      "stub": "0x5b952f",
+      "consumer": "0x407a20"
+    },
+    "0x3c": {
+      "index": 39,
+      "stub": "0x5b9561",
+      "consumer": "0x405020"
+    }
+  },
+  "transfers": [
+    {
+      "site": "0x5b952f",
+      "target": "0x407a20"
+    },
+    {
+      "site": "0x5b9561",
+      "target": "0x405020"
+    },
+    {
+      "site": "0x5a2780",
+      "target": "0x5b7c50"
+    },
+    {
+      "site": "0x5a2800",
+      "target": "0x5b8210"
+    },
+    {
+      "site": "0x5a2b50",
+      "target": "0x578540"
+    },
+    {
+      "site": "0x5a2b67",
+      "target": "0x578540"
+    },
+    {
+      "site": "0x57862a",
+      "target": "0x5b9170"
+    },
+    {
+      "site": "0x40509d",
+      "target": "0x5bde10"
+    },
+    {
+      "site": "0x4050a8",
+      "target": "0x5bddf0"
+    }
+  ],
+  "instruction_sites": [
+    "0x5b82ec",
+    "0x5b8416",
+    "0x5b842b",
+    "0x405072",
+    "0x578627"
+  ],
+  "limitation": "Static checks only. Covers the selected core and transfer chain, not all card overrides or frame timing."
+}

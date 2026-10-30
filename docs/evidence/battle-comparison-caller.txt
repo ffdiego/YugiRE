@@ -1,0 +1,66 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005a2740
+FUNCTION FUN_005a2740 @005a2740
+ CALLER 005efa84 null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005a2740(int param_1)
+
+{
+  byte bVar1;
+  undefined4 *puVar2;
+  uint uVar3;
+  uint uVar4;
+  
+  switch(_DAT_00a577fc & 0xff) {
+  case 0:
+    FUN_005b9170(DAT_00a57840 << 0xf | 0x30,DAT_00a57846,DAT_00a57856,0);
+    FUN_005b7c50(1);
+    if ((DAT_00a57840 & 0x40) == 0) {
+      puVar2 = &DAT_00a5785c;
+      if (((&DAT_00a57854)[param_1 * -0x10] & 0x20) == 0) {
+        puVar2 = &DAT_00a57858;
+      }
+      FUN_00598590(DAT_00a577f8._2_1_ & 1,0xd,
+                   puVar2[param_1 * -4] << 0x10 | (&DAT_00a57848)[param_1 * 4] & 0xffff);
+    }
+    bVar1 = DAT_00a577fc + 1 ^ DAT_00a577fc;
+    _DAT_00a577fc = _DAT_00a577fc ^ bVar1;
+    return 0;
+  case 1:
+    FUN_005b8210(1);
+    bVar1 = DAT_00a577fc + 1 ^ DAT_00a577fc;
+    _DAT_00a577fc = _DAT_00a577fc ^ bVar1;
+    return 0;
+  case 2:
+    uVar3 = 0xffff;
+    if (DAT_00a57860 < 0x10000) {
+      uVar3 = DAT_00a57860;
+    }
+    uVar4 = 0xffff;
+    if (DAT_00a57850 < 0x10000) {
+      uVar4 = DAT_00a57850;
+    }
+    FUN_005b9170(DAT_00a57840 << 0xf | 0x31,uVar4,uVar3,
+                 CONCAT11(((((DAT_00a57854 >> 7) << 1 | DAT_00a57854 >> 6 & 1) << 1 |
+                           DAT_00a57860 != 0) << 1 | DAT_00a57854 >> 4 & 1) << 1 |
+                          DAT_00a57854 >> 5 & 1,
+                          ((((DAT_00a57844 >> 7) << 1 | DAT_00a57844 >> 6 & 1) << 1 |
+                           DAT_00a57850 != 0) << 1 | DAT_00a57844 >> 4 & 1) << 1 |
+                          DAT_00a57844 >> 5 & 1));
+    bVar1 = DAT_00a577fc + 1 ^ DAT_00a577fc;
+    _DAT_00a577fc = _DAT_00a577fc ^ bVar1;
+    return 0;
+  case 3:
+    if (((&DAT_00a57844)[(DAT_00a57840 & 1) * 0x10] & 0x10) != 0) {
+      FUN_005b9170(DAT_00a57840 << 0xf | 0x3c,DAT_00a57840 >> 8 & 7,0,0);
+    }
+    if (((&DAT_00a57854)[(DAT_00a57840 & 1) * -0x10] & 0x10) != 0) {
+      FUN_005b9170((DAT_00a57840 & 0xfffe) << 0xe | 0x3c,DAT_00a57840 >> 0xb & 7,1,0);
+    }
+  }
+  return 1;
+}
+
+

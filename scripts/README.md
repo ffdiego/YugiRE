@@ -273,3 +273,7 @@ chamadas do [agendamento](../docs/20-turn-scheduling.md). Não executa o jogo.
 
 `python3 scripts/validate_native_draw.py` confere o comando 0x61, quantidades
 iniciais e os três registros da família de compra. [Estudo](../docs/21-native-card-draw.md).
+
+`python3 scripts/validate_battle_core.py` confere a comparação selecionada,
+a captura de registros de batalha e a cadeia de dano.
+[Semântica e exceções ainda abertas](../docs/22-battle-core.md).
