@@ -144,6 +144,7 @@ disponibilidade; não substituem a busca combinatória durante a seleção.
 **0x0056A140** exige posição ocupada até 4 e ausência do ID 0x58A
 (**Mask of Restrict**). Para posição do outro lado, procura por 0x0056DA10
 uma associação com ID 0x4C4 (**Soul Exchange**) e confere um byte de lado.
+[Produtor da associação e restrição de combate](soul-exchange.md).
 Isso explica por que alguns loops incluem ambos os lados; não significa
 permissão irrestrita para tributar qualquer monstro adversário.
 
@@ -289,7 +290,8 @@ impedir o retorno verdadeiro. O papel completo desses registros continua
 aberto. Esse helper explica por que “tributar próprio monstro” não basta
 para garantir espaço utilizável no teste de disponibilidade com campo cheio.
 
-A busca 0x0056DA10 usada para Soul Exchange percorre associações tipo 4 e
+A busca 0x0056DA10 usada para Soul Exchange percorre associações de tipo
+3 ou 11–13 e
 compara o ID da origem referenciada; a confirmação de entrada em 0x005AA480
 consulta máscara 0x201 após atualizar o estado de entrada por 0x004182D0.
 Não atribuímos botões físicos específicos a essa máscara nesta rodada.

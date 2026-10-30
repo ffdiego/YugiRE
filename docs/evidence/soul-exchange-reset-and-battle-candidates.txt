@@ -1,0 +1,62 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005a4010 @005a4010
+ CALLER 005efa9c null
+
+undefined4 FUN_005a4010(undefined4 param_1)
+
+{
+  short sVar1;
+  uint uVar2;
+  int iVar3;
+  ushort *puVar4;
+  
+  uVar2 = 0;
+  do {
+    iVar3 = 5;
+    puVar4 = &DAT_00a56044 + (uVar2 & 1) * 0x6a2;
+    do {
+      sVar1 = FUN_004022e0(*puVar4 & 0xfff);
+      if (sVar1 == 0x590) {
+        FUN_00574b50(uVar2,iVar3);
+      }
+      iVar3 = iVar3 + 1;
+      puVar4 = puVar4 + 0x48;
+    } while (iVar3 < 10);
+    uVar2 = uVar2 + 1;
+  } while ((int)uVar2 < 2);
+  FUN_00579930(param_1,0x12,1);
+  return 1;
+}
+
+
+FUNCTION FUN_005a0d60 @005a0d60
+ CALLER 005a0e14 FUN_005a0dd0
+ CALLER 00570d78 null
+ CALLER 005a14ff null
+
+void FUN_005a0d60(int param_1,uint param_2,undefined4 param_3,int param_4)
+
+{
+  undefined2 uVar1;
+  int iVar2;
+  int iVar3;
+  
+  iVar3 = 0;
+  uVar1 = *(undefined2 *)(param_1 + 0xc + (param_2 & 1) * 0xd44);
+  param_1 = param_1 + (param_2 & 1) * 0xd44;
+  *(undefined2 *)(param_1 + 10) = 0;
+  if (param_4 != 0) {
+    *(undefined2 *)(param_1 + 0xc) = 0;
+  }
+  do {
+    iVar2 = FUN_0056b730(param_2,iVar3,1);
+    if (iVar2 != 0) {
+      *(ushort *)(param_1 + 10) = *(ushort *)(param_1 + 10) | (ushort)(1 << ((byte)iVar3 & 0x1f));
+    }
+    iVar3 = iVar3 + 1;
+  } while (iVar3 < 5);
+  *(undefined2 *)(param_1 + 0xc) = uVar1;
+  return;
+}
+
+

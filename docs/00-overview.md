@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Soul Exchange](cards/soul-exchange.md): associação tipo 3 no alvo, ator
+autorizado a tributar e bit de bloqueio de combate; duração ainda pendente.
+
 [Protótipo executável](../src/README.md): catálogo DAT e duelo local com compra,
 combate demonstrativo e Sparks/Ookazi.
 

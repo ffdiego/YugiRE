@@ -255,3 +255,7 @@ somente o fingerprint (`soul-exchange-function-rollback-check.txt`), mostrando
 que as definições não foram persistidas na rodada headless. Isso confere o
 fluxo completo com descarte, sem atribuir isoladamente o resultado apenas
 ao rollback Java, já que o runner também usa `-readOnly`.
+
+`python3 scripts/validate_soul_exchange.py` verifica o registro, sequências
+e chamadas do caso [Soul Exchange](../docs/cards/soul-exchange.md).
+O relatório é estático e não valida expiração do efeito.

@@ -1,0 +1,95 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005747e0 @005747e0
+ CALLER 005797a8 FUN_00579790
+ CALLER 0059d4a2 FUN_0059d370
+ CALLER 0059d52b FUN_0059d370
+ CALLER 005b85b0 FUN_005b8210
+ CALLER 005b863c FUN_005b8210
+ CALLER 005b86a9 FUN_005b8210
+ CALLER 005b87a8 FUN_005b8210
+ CALLER 005b8822 FUN_005b8210
+ CALLER 005b8889 FUN_005b8210
+ CALLER 00587db4 null
+ CALLER 0059060a null
+ CALLER 0059614a null
+ CALLER 005a20e4 null
+ CALLER 005a25d7 null
+ CALLER 0059d1ab FUN_0059d090
+ CALLER 005a3be5 null
+ CALLER 005a2eec null
+ CALLER 005a3037 null
+ CALLER 005a30cd null
+ CALLER 005a3717 null
+ CALLER 005a3808 null
+ CALLER 005a3831 null
+ CALLER 005a38c5 null
+ CALLER 005a39db null
+ CALLER 0059c9e7 FUN_0059c8d0
+ CALLER 005864ad null
+ CALLER 005864d7 null
+
+void FUN_005747e0(int param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)
+
+{
+  FUN_005b9170(CONCAT31((uint3)(-(uint)(param_1 != 0) >> 8) & 0x80,0x86),param_2,param_3,param_4);
+  return;
+}
+
+
+FUNCTION FUN_00579930 @00579930
+ CALLER 005a4072 FUN_005a4010
+ CALLER 005ad905 FUN_005ad8c0
+ CALLER 0058bd68 null
+ CALLER 0058bd72 null
+ CALLER 0058be90 null
+ CALLER 0058e75e null
+ CALLER 0058e76e null
+ CALLER 0059fbf9 FUN_0059df40
+ CALLER 0059e228 FUN_0059df40
+ CALLER 005a4256 null
+ CALLER 005a88fd null
+ CALLER 005a9bce switchD_005a9b6a::caseD_1
+ CALLER 005a9bd8 switchD_005a9b6a::caseD_1
+ CALLER 005a9cfa FUN_005a9b50
+ CALLER 005ba15f FUN_005ba060
+ CALLER 005ba169 FUN_005ba060
+ CALLER 005ba178 FUN_005ba060
+ CALLER 005b7271 FUN_005b6ff0
+ CALLER 005b8e3c null
+ CALLER 005a59e5 null
+
+void FUN_00579930(uint param_1,undefined4 param_2,uint param_3)
+
+{
+  if ((*(uint *)(&DAT_00a56430 + (param_1 & 1) * 0xd44) >> ((byte)param_2 & 0x1f) & 1) != param_3) {
+    FUN_005706b0(param_1,param_2,param_3);
+    FUN_005b9170(-(uint)(param_1 != 0) & 0x8000 | 0xd,param_2,param_3,0);
+  }
+  return;
+}
+
+
+FUNCTION FUN_00583440 @00583440
+ CALLER 005914ab FUN_005914a0
+ CALLER 00592b81 FUN_00592b50
+ CALLER 0058efdc null
+ CALLER 00593f12 null
+ CALLER 00594464 null
+ CALLER 00594dfe null
+ CALLER 005958f4 null
+ CALLER 00595904 null
+ CALLER 00595992 null
+ CALLER 005956b4 FUN_00595690
+ CALLER 005956c4 FUN_00595690
+ CALLER 0059572a FUN_00595690
+ CALLER 0059638b null
+ CALLER 0059745d null
+
+uint FUN_00583440(int param_1,int param_2)
+
+{
+  return *(byte *)(param_1 + 6 + param_2 * 2) & 0xf |
+         (uint)(*(byte *)(param_1 + 6 + param_2 * 2) >> 4) << 8;
+}
+
+
