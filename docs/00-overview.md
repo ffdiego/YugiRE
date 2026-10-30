@@ -29,6 +29,10 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+Mapa para escolher próximos casos: [catálogo completo de callbacks](17-card-callback-catalog.md),
+443 registros, 269 combinações exatas e 219 callbacks principais distintos.
+CSV/JSON incluem cartas, ponteiros e grupos, com lacunas de nomes explícitas.
+
 [Royal Command](cards/royal-command.md): supressão FLIP na validação,
 no callback de resposta e antes da resolução; flags de pedido, posição e globais.
 Execução fica para uma etapa futura no Windows.

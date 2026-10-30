@@ -1,5 +1,17 @@
 # Reprodução
 
+Catálogo completo de callbacks:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s YugiRE/tests -p 'test_card_callback_catalog.py'
+PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/catalog_card_callbacks.py
+```
+
+Oito testes sem binários; o gerador exige o alvo conhecido, imprime dois `PASS`
+e o resumo (443 registros, 269 combinações, 219 principais distintos).
+Exporta `docs/evidence/card-callback-catalog.{json,csv}` sem executar/decompilar
+efeitos. Ver [fonte, limites e próximas amostras](../docs/17-card-callback-catalog.md).
+
 Supressão FLIP por Royal Command:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_royal_command.py`.
 Esperado: onze linhas `PASS`; identidade, registro, instruções e despacho

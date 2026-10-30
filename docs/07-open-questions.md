@@ -13,6 +13,13 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Catálogo concluído:** [tabela inteira](17-card-callback-catalog.md) exportada
+em CSV/JSON e agrupada por principal e pelos cinco slots. Contagem de registros
+não é cobertura de regras. Priorizar representantes das combinações: Legendary
+Sword (P025), Black Luster Ritual (P269), Giant Rat (P164). Restam um ID sem
+CARD_ID correspondente e três registros com nomes vazios, mantidos sem hipótese
+de identidade. Este inventário passa a orientar a escolha das próximas cartas.
+
 **Diretriz atual:** manter a investigação estática; dúvidas de timing e
 comportamento facilmente conferíveis por execução ficam para futura etapa
 no Windows. Não instalar Wine nem configurar depuração nesta etapa.

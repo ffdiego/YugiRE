@@ -1,5 +1,13 @@
 # Efeitos das cartas — questão em aberto
 
+## Inventário estrutural completo da tabela
+
+O [catálogo de callbacks](17-card-callback-catalog.md) agrupa 443 registros
+em 269 combinações exatas, com 219 endereços principais distintos. Ele orienta
+estudos por famílias; igualdade de ponteiros não prova igualdade de regras.
+Inclui registros nulos, nomes vazios e um ID sem mapeamento, sem atribuir
+ausência de efeito a essas condições. Próxima amostra sugerida: Legendary Sword.
+
 ## Supressão FLIP por Royal Command
 
 [Royal Command](cards/royal-command.md), ID 0x5FA, participa de verificações
