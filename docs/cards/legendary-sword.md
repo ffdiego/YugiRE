@@ -23,7 +23,9 @@ O efeito usa uma associação do monstro para a posição do equipamento.
 O cálculo de atributos percorre essa associação e chama um helper que
 seleciona a regra por ID. Para Legendary Sword, exige tipo dinâmico **0x0F**
 e acrescenta **300/300** aos acumuladores. Os valores estão em código.
-Este estudo cobre seleção, vinculação e recálculo; não fecha toda a limpeza.
+Este estudo cobre seleção, vinculação e recálculo. A
+[continuação de limpeza](equipment-cleanup.md) segue a retirada comum do
+equipamento/monstro e a compactação dos vínculos.
 
 ## Seleção e revalidação
 
@@ -129,6 +131,6 @@ Evidências: [callbacks](../evidence/legendary-sword-callbacks.txt),
 [xrefs dos acessores base](../evidence/legendary-sword-attribute-accessors.txt),
 [relatório](../evidence/legendary-sword-validation.json).
 
-Pendências estáticas: remoção/compactação dos vínculos ao sair equipamento
-ou monstro; mudanças posteriores de tipo; composição/ordem dos modificadores;
-outros ramos P025. Execução futura pode confirmar o caminho comum e a interface.
+Retirada e compactação foram seguidas na continuação. Permanecem pendentes
+outras rotas de movimento, mudanças posteriores de tipo, composição/ordem
+dos modificadores e outros ramos P025. Execução futura pode confirmar a interface.

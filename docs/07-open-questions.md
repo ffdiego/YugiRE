@@ -13,10 +13,16 @@ Cada rodada deve produzir bytes de entrada, endereços/xrefs, pseudocódigo sele
 
 ## Limites atuais
 
+**Limpeza comum de equipamentos seguida:** [continuação](cards/equipment-cleanup.md)
+liga retirada da origem, remoção de referências, compactação e dependências
+do monstro. Pendentes: outros movimentos, invalidar equipamento por mudança de
+tipo/orientação e ordem de efeitos simultâneos. Ritual é a próxima amostra
+independente sugerida pelo catálogo; execução permanece futura no Windows.
+
 **Equipamento seguido até o cálculo:** [Legendary Sword](cards/legendary-sword.md)
 liga seleção de tipo dinâmico, revalidação, associação no monstro e contribuição
-de 300/300. Próxima trilha estática: retirar equipamento/monstro e seguir limpeza
-dos vínculos. Ritual permanece como próximo mecanismo independente sugerido
+de 300/300. A retirada comum e a limpeza foram seguidas na continuação acima.
+Ritual permanece como próximo mecanismo independente sugerido
 pelo catálogo. Timing e valores exibidos ficam para confirmação futura no Windows.
 
 **Catálogo concluído:** [tabela inteira](17-card-callback-catalog.md) exportada

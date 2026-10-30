@@ -1,0 +1,318 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "instruction_checks": [
+    {
+      "va": "0x56a505",
+      "file_offset": "0x16a505",
+      "bytes": "e8d6f0ffff"
+    },
+    {
+      "va": "0x56a50d",
+      "file_offset": "0x16a50d",
+      "bytes": "4e83ef0283ed02"
+    },
+    {
+      "va": "0x569620",
+      "file_offset": "0x169620",
+      "bytes": "486689410a"
+    },
+    {
+      "va": "0x569632",
+      "file_offset": "0x169632",
+      "bytes": "668b700242668930668b704266897040"
+    },
+    {
+      "va": "0x570857",
+      "file_offset": "0x170857",
+      "bytes": "e8349cffff"
+    },
+    {
+      "va": "0x57778d",
+      "file_offset": "0x17778d",
+      "bytes": "e89ef3ffff"
+    }
+  ],
+  "kind_dispatch": [
+    {
+      "kind": 1,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    },
+    {
+      "kind": 2,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    },
+    {
+      "kind": 3,
+      "normalized": 1,
+      "branch": "0x56a514"
+    },
+    {
+      "kind": 4,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    },
+    {
+      "kind": 5,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    },
+    {
+      "kind": 6,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    },
+    {
+      "kind": 7,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    },
+    {
+      "kind": 8,
+      "normalized": 0,
+      "branch": "0x56a4eb"
+    }
+  ],
+  "model_cases": [
+    {
+      "name": "empty",
+      "before": [],
+      "active_after": [],
+      "count_after": 0
+    },
+    {
+      "name": "single_match",
+      "before": [
+        [
+          1281,
+          1
+        ]
+      ],
+      "active_after": [],
+      "count_after": 0
+    },
+    {
+      "name": "no_match",
+      "before": [
+        [
+          1537,
+          1
+        ],
+        [
+          1792,
+          2
+        ]
+      ],
+      "active_after": [
+        [
+          1537,
+          1
+        ],
+        [
+          1792,
+          2
+        ]
+      ],
+      "count_after": 2
+    },
+    {
+      "name": "adjacent_matches",
+      "before": [
+        [
+          1281,
+          1
+        ],
+        [
+          1281,
+          2
+        ],
+        [
+          1281,
+          4
+        ]
+      ],
+      "active_after": [],
+      "count_after": 0
+    },
+    {
+      "name": "middle_pair",
+      "before": [
+        [
+          256,
+          43777
+        ],
+        [
+          1281,
+          1
+        ],
+        [
+          512,
+          52482
+        ]
+      ],
+      "active_after": [
+        [
+          256,
+          43777
+        ],
+        [
+          512,
+          52482
+        ]
+      ],
+      "count_after": 2
+    },
+    {
+      "name": "last_pair",
+      "before": [
+        [
+          256,
+          1
+        ],
+        [
+          1281,
+          8
+        ]
+      ],
+      "active_after": [
+        [
+          256,
+          1
+        ]
+      ],
+      "count_after": 1
+    },
+    {
+      "name": "noncoordinate_same_value",
+      "before": [
+        [
+          1281,
+          0
+        ],
+        [
+          1281,
+          3
+        ],
+        [
+          1281,
+          9
+        ],
+        [
+          1281,
+          11
+        ],
+        [
+          1281,
+          13
+        ],
+        [
+          1281,
+          15
+        ]
+      ],
+      "active_after": [
+        [
+          1281,
+          0
+        ],
+        [
+          1281,
+          3
+        ],
+        [
+          1281,
+          9
+        ],
+        [
+          1281,
+          11
+        ],
+        [
+          1281,
+          13
+        ],
+        [
+          1281,
+          15
+        ]
+      ],
+      "count_after": 6
+    },
+    {
+      "name": "metadata_high_bits",
+      "before": [
+        [
+          1281,
+          43777
+        ],
+        [
+          1281,
+          52483
+        ],
+        [
+          1536,
+          61186
+        ]
+      ],
+      "active_after": [
+        [
+          1281,
+          52483
+        ],
+        [
+          1536,
+          61186
+        ]
+      ],
+      "count_after": 2
+    },
+    {
+      "name": "mixed_duplicates",
+      "before": [
+        [
+          1281,
+          1
+        ],
+        [
+          1536,
+          4
+        ],
+        [
+          1281,
+          13
+        ],
+        [
+          1281,
+          7
+        ]
+      ],
+      "active_after": [
+        [
+          1536,
+          4
+        ],
+        [
+          1281,
+          13
+        ]
+      ],
+      "count_after": 2
+    }
+  ],
+  "cleanup_scan": {
+    "sides": 2,
+    "positions_per_side": 12,
+    "coordinate_kinds": [
+      1,
+      2,
+      4,
+      5,
+      6,
+      7,
+      8
+    ]
+  },
+  "method": "Static bytes/table checks and nine Python model scenarios; no native execution.",
+  "limits": "Valid internal counts and nonnegative indices; complete timing, all movement routes and special equipment interactions pending."
+}

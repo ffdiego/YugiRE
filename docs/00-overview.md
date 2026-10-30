@@ -29,8 +29,12 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Limpeza de equipamentos](cards/equipment-cleanup.md): retirada da origem,
+remoção/compactação de referências e operações para os equipamentos quando
+o monstro sai pelo caminho de destruição.
+
 [Legendary Sword](cards/legendary-sword.md): seleção Warrior, comando de vínculo
-0xB2, associação tipo 1 e recálculo de +300/+300. Limpeza completa pendente.
+0xB2, associação tipo 1 e recálculo de +300/+300. Limpeza comum seguida acima.
 
 Mapa para escolher próximos casos: [catálogo completo de callbacks](17-card-callback-catalog.md),
 443 registros, 269 combinações exatas e 219 callbacks principais distintos.

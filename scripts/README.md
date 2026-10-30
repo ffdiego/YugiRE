@@ -1,5 +1,11 @@
 # Reprodução
 
+Limpeza dos vínculos de equipamento:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_equipment_cleanup.py`.
+Esperado: treze linhas `PASS`; instruções, dispatch de tipos e nove cenários
+de transcrição em `docs/evidence/equipment-cleanup-validation.json`. Não executa
+o alvo. Ver [análise e limites](../docs/cards/equipment-cleanup.md).
+
 Vínculo e bônus de Legendary Sword:
 `PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_legendary_sword.py`.
 Esperado: doze linhas `PASS`; identidade, combinação de callbacks, dispatch
