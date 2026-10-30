@@ -106,6 +106,7 @@ GraphicsTests.Run(Check, Reject);
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
+InfiniteCardsTests.Run(Check);
 if (args.Length > 0)
 {
     using var archive = new Archive(args[0]);

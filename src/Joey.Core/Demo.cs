@@ -20,13 +20,16 @@ public sealed class DemoDuel
     public IReadOnlyList<Card> Graveyard(int player) => graves[player].AsReadOnly();
     public int DeckCount(int player) => decks[player].Count;
     public Card?[,] Monsters { get; } = new Card?[2, 5];
+    public Card?[,] Spells { get; } = new Card?[2, 5];
     public int[] Life { get; } = [8000, 8000];
     public int Turn { get; private set; } = 1;
     public int ActivePlayer => (Turn - 1) % 2;
     public DemoPhase Phase { get; private set; }
     public int? Winner { get; private set; }
     public const int EndTurnHandLimit = 6;
-    public int PendingEndDiscards => Phase == DemoPhase.End ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
+    // All placed demo spells are face-up and active; native suppression/negation is not modeled.
+    public bool HandLimitDisabled => Spells.Cast<Card?>().Any(card => card?.Id == 0x593);
+    public int PendingEndDiscards => Phase == DemoPhase.End && !HandLimitDisabled ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
     public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979)
@@ -92,8 +95,16 @@ public sealed class DemoDuel
     }
     public bool Play(int index, out string message)
     {
-        message = "Use Sparks/Ookazi here; select a Warrior on the field for Legendary Sword.";
+        message = "Use Sparks, Ookazi or Infinite Cards; select a Warrior on the field for Legendary Sword.";
         if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
+        if (Hand[index].Id == 0x593)
+        {
+            int zone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
+            if (zone < 0) { message = "Infinite Cards needs a free spell zone."; return false; }
+            Spells[ActivePlayer, zone] = Hand[index]; hands[ActivePlayer].RemoveAt(index);
+            message = "Infinite Cards active: neither player has an end-turn hand limit.";
+            return true;
+        }
         // Proven RE effect amount and opponent targeting: docs/cards/sparks-ookazi.md.
         // Immediate activation and graveyard movement here are demo orchestration, no chains.
         int damage = Hand[index].Id switch { 342 => 200, 345 => 800, _ => 0 };
@@ -108,11 +119,12 @@ public sealed class DemoDuel
     {
         message = "Legendary Sword needs a face-up Warrior and a free own spell zone.";
         if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count || Hand[index].Id != 300 || targetPlayer < 0 || targetPlayer > 1 || targetZone < 0 || targetZone >= 5 || Monsters[targetPlayer, targetZone]?.ClassCode != 15) return false;
-        int sourceZone = Enumerable.Range(0, 5).FirstOrDefault(z => !equipment.Any(e => e.Owner == ActivePlayer && e.SourceZone == z), -1);
+        int sourceZone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
         if (sourceZone < 0) return false;
         // RE: docs/cards/legendary-sword.md. Target may be on either side, +300/+300.
         // Demo substitutes static class for dynamic type; no type-changing effects exist here.
-        equipment.Add(new(Hand[index], ActivePlayer, sourceZone, targetPlayer, targetZone)); hands[ActivePlayer].RemoveAt(index);
+        equipment.Add(new(Hand[index], ActivePlayer, sourceZone, targetPlayer, targetZone));
+        Spells[ActivePlayer, sourceZone] = Hand[index]; hands[ActivePlayer].RemoveAt(index);
         message = "Legendary Sword equipped: +300 ATK / +300 DEF."; return true;
     }
     public bool ChangePosition(int zone, out string message)
@@ -169,7 +181,7 @@ public sealed class DemoDuel
         graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false;
         // Common cleanup only: no Banisher/token/trigger exceptions in this sandbox.
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
-        { graves[e.Owner].Add(e.Card); equipment.Remove(e); }
+        { graves[e.Owner].Add(e.Card); Spells[e.Owner, e.SourceZone] = null; equipment.Remove(e); }
     }
     private void Damage(int p, int value) { Life[p] = Math.Max(0, Life[p] - value); if (Life[p] == 0) Winner = 1 - p; }
     public void NextTurn() => EndTurn(out _);
@@ -177,8 +189,8 @@ public sealed class DemoDuel
     {
         message = "The duel has ended.";
         if (Winner != null) return false;
-        // RE: 0x005A58BC..0x005A58F7. Infinite Cards and other effect interactions are not implemented.
-        if (Hand.Count > EndTurnHandLimit)
+        // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
+        if (!HandLimitDisabled && Hand.Count > EndTurnHandLimit)
         {
             Phase = DemoPhase.End;
             message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";

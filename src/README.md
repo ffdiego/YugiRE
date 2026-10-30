@@ -67,7 +67,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   Fusões, Rituais e monstros especiais reconhecidos pelo gate nativo são
   recusados para invocação normal; seus procedimentos especiais não estão implementados.
   Evidência e limites: [invocação normal](../docs/26-normal-summon-tributes.md).
-- Use card ativa Sparks ou Ookazi da mão. Para Legendary Sword, selecione a carta e clique em um Warrior no campo
+- Use card ativa Sparks, Ookazi ou Infinite Cards da mão. Infinite Cards ocupa
+  uma zona de magia e elimina o limite da mão de ambos os jogadores enquanto
+  estiver no campo; negação e destruição dessa magia ainda não são simuladas.
+  Para Legendary Sword, selecione a carta e clique em um Warrior no campo
   de qualquer jogador. Ela ocupa uma zona de magia própria e concede +300/+300.
   Os demais efeitos são recusados.
 - Battle inicia combate após o primeiro turno. Clique em um monstro próprio,
@@ -78,7 +81,7 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - End turn com mais de seis cartas exige descarte. Selecione uma carta e use
   **Discard** até ficar com seis; só então o jogador muda. A regra básica foi
   confirmada por RE em [limite da mão](../docs/25-end-turn-hand-limit.md).
-  A exceção de Infinite Cards e outros efeitos de fim de turno ainda não são simulados.
+  Infinite Cards ativa dispensa esse descarte; outros efeitos de fim de turno ainda não são simulados.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
@@ -164,11 +167,11 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 109
+código diferente de zero. `dotnet test` não substitui esse comando. São 114
 verificações sintéticas, mais 23 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 138 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 143 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

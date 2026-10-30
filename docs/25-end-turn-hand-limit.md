@@ -37,8 +37,13 @@ escolha necessária alterna o jogador.
 A regra de seis é comprovada. O estado compacto End, o botão, a transferência
 direta ao cemitério e a alternância imediata são orquestração do demo, sem
 fila nativa, respostas, efeitos disparados ou exceções de destino.
-Infinite Cards continua sem ativação implementada; sua exceção foi documentada,
-mas não é simulada. Não estamos reconstruindo todos os efeitos de fim de turno.
+Infinite Cards agora pode ser usada por Play no demo, ocupando uma das cinco
+zonas de magia e permanecendo aberta no campo. O limite é consultado pelo
+estado atual das zonas dos dois jogadores, em vez de uma flag permanente de
+ativação. Equipamentos usam essas mesmas zonas, evitando sobreposição.
+Ativação imediata sem correntes, ausência de negação e permanência até reset
+(não há destruição de magias implementada) são limites da demonstração.
+Não estamos reconstruindo todos os efeitos de fim de turno.
 
 ## Validação e comparação no Windows
 
@@ -62,3 +67,8 @@ Evidências: [handler](evidence/end-turn-hand-limit.txt),
 [descritor e filtros](evidence/end-turn-discard-selector.txt),
 [seleção](evidence/end-turn-discard-movement.txt),
 [movimento](evidence/end-turn-discard-application.txt).
+
+Validação acumulada após Infinite Cards: **143 verificações C#**. A cobertura
+inclui ativação sem envio ao cemitério, aplicação ao adversário, retorno do
+limite após uma remoção montada em fixture, campo de magias cheio e divisão
+das cinco zonas entre a magia contínua e Legendary Sword.

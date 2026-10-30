@@ -311,8 +311,10 @@ static partial class Game
                 if (attacker == z && player == duel.ActivePlayer) Raylib.DrawRectangleLines(x, y, 74, 92, Color.White);
                 if (player == duel.ActivePlayer && tributeZones.Contains(z)) Raylib.DrawRectangleLines(x, y, 74, 92, Color.Red);
                 var equip = duel.EquipmentCards.FirstOrDefault(e => e.Owner == player && e.SourceZone == z);
-                if (Button(equip == null ? "Spell" : "Equip", x, player == 1 ? 118 : 410, 74, 35))
-                    message = equip == null ? "For Sword select the card, then a Warrior monster." : $"Equipment targets player {equip.TargetPlayer + 1}, zone {equip.TargetZone + 1}.";
+                var spell = duel.Spells[player, z];
+                if (Button(spell?.Id == 0x593 ? "Infinite" : equip == null ? "Spell" : "Equip", x, player == 1 ? 118 : 410, 74, 35))
+                    message = spell?.Id == 0x593 ? "Infinite Cards: neither player has an end-turn hand limit." :
+                        equip == null ? "For Sword select the card, then a Warrior monster." : $"Equipment targets player {equip.TargetPlayer + 1}, zone {equip.TargetZone + 1}.";
             }
         }
         handPage = Math.Clamp(handPage, 0, Math.Max(0, (duel.Hand.Count - 1) / 6));
