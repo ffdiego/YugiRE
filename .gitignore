@@ -6,3 +6,5 @@ ghidra-projects/
 **/bin/
 **/obj/
 __pycache__/
+.vs/
+*.csproj.user

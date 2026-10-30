@@ -19,6 +19,29 @@ Os arquivos originais são abertos somente para leitura e não são distribuído
 com o código. Voice.dat e Region.dat não são necessários nesta versão.
 Não há extração permanente de recursos nem dependência do Ghidra em execução.
 
+## Windows e Visual Studio
+
+Abra `YugiRE.sln` na raiz do repositório e defina **Joey.App** como projeto
+de inicialização. A solução inclui o leitor, a aplicação e o executável de
+verificações. A partir da raiz, também é possível usar PowerShell:
+
+```powershell
+dotnet restore .\YugiRE.sln
+dotnet build .\YugiRE.sln --no-restore
+dotnet run --project .\src\Joey.App -- "C:\Jogos\Joey\data.dat"
+```
+
+Ajuste o caminho de `data.dat` para sua instalação. Ele não acompanha o clone.
+Para corrigir NETSDK1004 antes de obter a solução, restaure diretamente o
+projeto: `dotnet restore .\src\Joey.App\Joey.App.csproj`. Isso restaura
+Joey.Core por sua referência. `project.assets.json` é gerado pelo NuGet em
+`obj/`; essa pasta fica fora do Git e deve ser recriada em cada máquina.
+Se a restauração falhar, resolva o erro apresentado pelo próprio restore
+antes de executar build com `--no-restore`.
+
+No Visual Studio, a ação **Restaurar Pacotes NuGet** no menu da solução
+executa essa etapa caso a restauração automática esteja desabilitada.
+
 ## Telas e controles
 
 - Menu: Single Duel Mode, Card List e Quit Game funcionais. Deck Construction
