@@ -68,3 +68,27 @@ Evidências: [consumidores de nível](evidence/normal-summon-level-consumers.txt
 [pagamento e espaço](evidence/normal-summon-tribute-payment.txt),
 [elegibilidade](evidence/normal-summon-tribute-eligibility.txt),
 [colocação e limites](evidence/normal-summon-placement-boundaries.txt).
+
+## Monstros que não podem usar invocação normal
+
+O gate `0x005AAB90` rejeita retorno não zero de `0x00567A00` antes de contar
+tributos. Esse helper usa a categoria derivada de `0x00402740`: para monstros,
+categorias 2 e 3 são bloqueadas. Na categoria não zero, também há uma lista
+explícita de IDs, incluindo Great Moth, Harpie Lady Sisters, Gate Guardian,
+Toons, Valkyrion e Dark Necrofear. A transcrição completa está isolada em
+`Joey.Core/NormalSummonRules.cs`; não depende de comparação de nomes.
+
+O acessor da categoria usa bits 18–19 e preserva as exceções por classe e
+IDs 0x776–0x778. Evidência anterior do acessor em
+[card-property-consumers.txt](evidence/card-property-consumers.txt), e do gate em
+[normal-summon-placement-boundaries.txt](evidence/normal-summon-placement-boundaries.txt).
+
+A interface informa que é necessária invocação especial. A recusa não paga
+tributos nem remove a carta da mão. Isso **não** implementa Fusão, Ritual ou
+os procedimentos especiais dessas cartas; apenas impede uma invocação normal
+que o original recusa. Os outros gates dinâmicos e modificadores continuam
+fora do demo.
+
+Validação acumulada: **138 verificações C#**. Inclui Alligator's Sword Dragon,
+Black Luster Soldier, Great Moth e Blue-Eyes do DAT original, rejeição sem
+pagamento e as exceções da categoria derivada. Não houve execução do original.

@@ -65,6 +65,8 @@ public sealed class DemoDuel
         if (Winner != null || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
         if (index < 0 || index >= Hand.Count || player != ActivePlayer || zone < 0 || zone >= 5 || !monsterZone) return false;
         if (!Hand[index].IsMonster) { message = "Only monsters can be summoned here."; return false; }
+        if (NormalSummonRules.RequiresSpecialSummon(Hand[index]))
+        { message = "This monster requires a special summon, which is not implemented in this demo."; return false; }
         int required = NormalTributes(Hand[index]);
         int[] tributes = tributeZones?.ToArray() ?? [];
         if (tributes.Length != required)

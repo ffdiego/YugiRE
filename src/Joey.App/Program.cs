@@ -241,6 +241,8 @@ static partial class Game
     {
         if (duel.Phase == DemoPhase.Main && player == duel.ActivePlayer && hand >= 0 && hand < duel.Hand.Count && duel.Hand[hand].IsMonster)
         {
+            if (NormalSummonRules.RequiresSpecialSummon(duel.Hand[hand]))
+            { message = "This monster requires a special summon (not implemented)."; return; }
             int needed = DemoDuel.NormalTributes(duel.Hand[hand]);
             if (needed > 0 && tributeZones.Count < needed)
             {
@@ -321,6 +323,7 @@ static partial class Game
             {
                 hand = i; attacker = -1; tributeZones.Clear();
                 message = duel.PendingEndDiscards > 0 ? $"Selected {duel.Hand[i].Name}. Use Discard to finish the turn." :
+                    NormalSummonRules.RequiresSpecialSummon(duel.Hand[i]) ? "This monster requires a special summon (not implemented)." :
                     duel.Hand[i].IsMonster && DemoDuel.NormalTributes(duel.Hand[i]) > 0 ?
                     $"Select {DemoDuel.NormalTributes(duel.Hand[i])} own tribute(s), then an empty or selected zone." :
                     $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword.";

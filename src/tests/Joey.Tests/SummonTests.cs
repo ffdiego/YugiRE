@@ -45,5 +45,19 @@ static class SummonTests
         equipped.Monsters[0, 1] = low;
         check(equipped.Summon(0, 0, 0, true, out _, [0, 1]) && equipped.Graveyard(0).Count == 3 && equipped.EquipmentCards.Count == 0,
             "Tribute payment also removes equipment attached to a released monster");
+        foreach (uint category in new[] { 2u, 3u })
+        {
+            var special = Monster(8, 9) with { Properties = (1u << 20) | (8u << 25) | (category << 18) };
+            var blocked = new DemoDuel([special]); blocked.Monsters[0, 0] = low; blocked.Monsters[0, 1] = low;
+            check(!blocked.Summon(0, 0, 0, true, out _, [0, 1]) && blocked.Hand.Count == 1 && blocked.Graveyard(0).Count == 0,
+                $"Category {category} cannot use a normal summon even with sufficient tributes");
+        }
+        var moth = Monster(6, 0x38) with { Properties = (1u << 20) | (6u << 25) | (1u << 18) };
+        check(NormalSummonRules.RequiresSpecialSummon(moth) && !NormalSummonRules.RequiresSpecialSummon(Monster(6, 0x38)),
+            "Native exceptional-ID gate applies within the nonzero monster category");
+        check(NormalSummonRules.Category(new Card(0, 0x776, "Token", "", 0)) == 3 &&
+            NormalSummonRules.Category(new Card(0, 0x777, "Token", "", 0)) == 1 &&
+            NormalSummonRules.Category(new Card(0, 1, "Spell", "", (21u << 20) | (3u << 18))) == 8,
+            "Derived categories retain native token and non-monster overrides");
     }
 }

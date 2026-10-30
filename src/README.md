@@ -64,6 +64,8 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   para invocar uma vez por turno. Níveis 5–6 exigem um tributo; 7+ exigem dois.
   Selecione os monstros próprios, depois uma zona vazia ou selecionada. Cancel
   abandona a seleção. É possível liberar uma zona de um campo cheio.
+  Fusões, Rituais e monstros especiais reconhecidos pelo gate nativo são
+  recusados para invocação normal; seus procedimentos especiais não estão implementados.
   Evidência e limites: [invocação normal](../docs/26-normal-summon-tributes.md).
 - Use card ativa Sparks ou Ookazi da mão. Para Legendary Sword, selecione a carta e clique em um Warrior no campo
   de qualquer jogador. Ela ocupa uma zona de magia própria e concede +300/+300.
@@ -162,11 +164,11 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 105
-verificações sintéticas, mais 22 contra o DAT e seis contra o deck de referência
+código diferente de zero. `dotnet test` não substitui esse comando. São 109
+verificações sintéticas, mais 23 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 133 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 138 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
