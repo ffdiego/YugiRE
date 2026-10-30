@@ -70,6 +70,17 @@ lethal.Life[1] = 500;
 Check(lethal.Play(3, out _) && lethal.Life[1] == 0 && lethal.Winner == 0, "Spell damage saturates at zero and declares winner");
 int finalTurn = lethal.Turn; lethal.NextTurn();
 Check(lethal.Turn == finalTurn && !lethal.BeginBattle(out _), "Game over locks turn and battle progression");
+foreach (int defense in new[] { 500, 1000, 2000 })
+{
+    var wall = new Card(7, 7, "Wall", "", (4u << 25) | (uint)(defense / 10));
+    var defenseDuel = new DemoDuel([weak, wall, weak]);
+    defenseDuel.Summon(0, 0, 0, true, out _); defenseDuel.NextTurn(); defenseDuel.Summon(1, 1, 0, true, out _);
+    Check(defenseDuel.ChangePosition(0, out _) && !defenseDuel.ChangePosition(0, out _), $"Defense {defense}: position changes once per turn");
+    defenseDuel.BeginBattle(out _);
+    Check(!defenseDuel.Attack(0, 0, out _) && !defenseDuel.ChangePosition(0, out _), $"Defense {defense}: cannot attack or change position during battle");
+    defenseDuel.NextTurn(); defenseDuel.BeginBattle(out _);
+    Check(defenseDuel.Attack(0, 0, out _) && defenseDuel.Monsters[0, 0] != null && (defenseDuel.Monsters[1, 0] == null) == (defense < 1000) && defenseDuel.Life[0] == (defense > 1000 ? 7000 : 8000) && defenseDuel.Life[1] == 8000, $"ATK 1000 against DEF {defense}: correct casualties and damage");
+}
 var empty = new DemoDuel([]);
 Check(empty.Draw(out _) && empty.Winner == 1, "Drawing from empty deck ends demo");
 Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over");

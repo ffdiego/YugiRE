@@ -149,9 +149,10 @@ static class Game
                         else if (player != duel.ActivePlayer) duel.Attack(attacker, z, out message);
                         else message = "Choose an occupied friendly monster as attacker.";
                     }
+                    else if (card != null && player == duel.ActivePlayer && hand < 0) duel.ChangePosition(z, out message);
                     else if (duel.Summon(hand, player, z, true, out message)) hand = -1;
                 }
-                if (card != null) { Wrap(card.Name, x + 8, y + 8, 145, 16); Label($"{card.Attack}/{card.Defense}", x + 8, y + 77, 17, Gold); }
+                if (card != null) { Wrap(card.Name, x + 8, y + 8, 145, 16); Label($"{(duel.DefensePosition[player, z] ? "DEF" : "ATK")} {card.Attack}/{card.Defense}", x + 8, y + 77, 17, Gold); }
                 if (Button("Spell / Trap", x, y + 112, 162, 50)) duel.Summon(hand, player, z, false, out message);
             }
         }

@@ -10,6 +10,8 @@ public sealed class DemoDuel
     private readonly Queue<Card>[] decks = [new(), new()];
     private readonly List<Card>[] graves = [[], []];
     private readonly bool[,] attacked = new bool[2, 5];
+    private readonly bool[,] changedPosition = new bool[2, 5];
+    public bool[,] DefensePosition { get; } = new bool[2, 5];
     private bool summoned, drawn;
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> Graveyard(int player) => graves[player].AsReadOnly();
@@ -60,6 +62,15 @@ public sealed class DemoDuel
         var card = Hand[index]; hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
         Damage(1 - ActivePlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
     }
+    public bool ChangePosition(int zone, out string message)
+    {
+        message = "Position changes require an occupied own zone in main phase, once per turn.";
+        if (Winner != null || Phase != DemoPhase.Main || zone < 0 || zone >= 5 || Monsters[ActivePlayer, zone] == null || changedPosition[ActivePlayer, zone]) return false;
+        DefensePosition[ActivePlayer, zone] = !DefensePosition[ActivePlayer, zone];
+        changedPosition[ActivePlayer, zone] = true;
+        message = DefensePosition[ActivePlayer, zone] ? "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
+        return true;
+    }
     public bool BeginBattle(out string message)
     {
         message = "Battle unavailable on the opening turn or after game over.";
@@ -70,7 +81,7 @@ public sealed class DemoDuel
     {
         message = "Select an unused attacker and a valid enemy target in battle phase.";
         int p = ActivePlayer, enemy = 1 - p;
-        if (Winner != null || Phase != DemoPhase.Battle || source < 0 || source >= 5 || Monsters[p, source] is not Card attacker || attacked[p, source]) return false;
+        if (Winner != null || Phase != DemoPhase.Battle || source < 0 || source >= 5 || Monsters[p, source] is not Card attacker || attacked[p, source] || DefensePosition[p, source]) return false;
         if (target == -1)
         {
             if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] != null)) { message = "Enemy monsters block direct attacks."; return false; }
@@ -78,6 +89,14 @@ public sealed class DemoDuel
         }
         if (target < 0 || target >= 5 || Monsters[enemy, target] is not Card defender) return false;
         attacked[p, source] = true;
+        if (DefensePosition[enemy, target])
+        {
+            int difference = attacker.Attack - defender.Defense;
+            if (difference > 0) Destroy(enemy, target);
+            else if (difference < 0) Damage(p, -difference);
+            message = difference > 0 ? "Defense overcome: defender destroyed, no LP damage." : difference == 0 ? "Equal ATK/DEF: no destruction or damage." : $"Defense holds: attacker takes {-difference} damage, neither destroyed.";
+            return true;
+        }
         int delta = attacker.Attack - defender.Attack;
         if (delta >= 0) Destroy(enemy, target);
         if (delta <= 0) Destroy(p, source);
@@ -86,11 +105,11 @@ public sealed class DemoDuel
         message = delta == 0 ? "Equal ATK: both monsters destroyed, no damage." : $"Battle: {Math.Abs(delta)} damage; weaker monster destroyed.";
         return true;
     }
-    private void Destroy(int p, int z) { graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; }
+    private void Destroy(int p, int z) { graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false; }
     private void Damage(int p, int value) { Life[p] = Math.Max(0, Life[p] - value); if (Life[p] == 0) Winner = 1 - p; }
     public void NextTurn()
     {
         if (Winner != null) return;
-        Turn++; Phase = DemoPhase.Main; summoned = drawn = false; Array.Clear(attacked);
+        Turn++; Phase = DemoPhase.Main; summoned = drawn = false; Array.Clear(attacked); Array.Clear(changedPosition);
     }
 }
