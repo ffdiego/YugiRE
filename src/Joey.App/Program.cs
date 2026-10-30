@@ -4,7 +4,7 @@ using System.Numerics;
 
 return Game.Run(args);
 
-static class Game
+static partial class Game
 {
     static readonly Color Background = new(16, 23, 35, 255), Panel = new(29, 42, 57, 255), Gold = new(230, 185, 93, 255);
     static List<Card> cards = [], orderedCards = [];
@@ -37,9 +37,11 @@ static class Game
             if (!includeUnused) orderedCards = CardListResources.ForPacks(orderedCards, archive.Read(@"bin#\card_pack.bin"));
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
             Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
+            InitializeDeck(args, path);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
+        if (args.Contains("--check-deck")) return CheckDeck();
         if (args.Contains("--check-data")) return error.Length == 0 ? 0 : 1;
         if (args.Contains("--check-graphics"))
         {
@@ -72,14 +74,15 @@ static class Game
                     int hover = menu.Hit(mouse.X, mouse.Y);
                     for (int row = 0; row < 5; row++)
                     {
-                        bool enabled = row is 0 or 2 or 4;
+                        bool enabled = row is 0 or 1 or 2 or 4;
                         var texture = graphics.Texture(enabled && hover == row ? MenuResources.Highlight : MenuResources.Normal);
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
                     if (Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
-                        if (hover == 0) { screen = "duel"; duel = new(cards); hand = attacker = -1; handPage = 0; message = "Local two-player demo. Draw or summon, then enter battle."; }
+                        if (hover == 0) StartDemo();
+                        if (hover == 1) screen = "deck";
                         if (hover == 2) screen = "cards";
                         if (hover == 4) quit = true;
                     }
@@ -95,6 +98,7 @@ static class Game
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel") DrawDuel();
+                else if (screen == "deck") DrawDeck();
             }
 
             Raylib.EndTextureMode();
@@ -234,7 +238,7 @@ static class Game
         if (Button("Draw", 240, 8, 80, 30)) duel.Draw(out message);
         if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); hand = -1; }
         if (Button("End turn", 412, 8, 105, 30)) { duel.NextTurn(); hand = attacker = -1; handPage = 0; message = "Turn changed. Draw once; summon once; Battle to attack."; }
-        if (Button("Reset", 523, 8, 75, 30)) { duel = new(cards); hand = attacker = -1; handPage = 0; message = "Demo reset."; }
+        if (Button("Reset", 523, 8, 75, 30)) StartDemo();
         Label(duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" : $"Turn {duel.Turn} P{duel.ActivePlayer + 1}: {duel.Phase}", 8, 50, 16, Gold);
         Raylib.DrawRectangle(240, 46, 545, 24, Panel);
         Label($"P2 LP {duel.Life[1]}     P1 LP {duel.Life[0]}     Hand: {duel.Hand.Count}", 245, 51, 16);

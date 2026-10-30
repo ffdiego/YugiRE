@@ -25,6 +25,23 @@ public sealed class DemoDuel
     public int ActivePlayer => (Turn - 1) % 2;
     public DemoPhase Phase { get; private set; }
     public int? Winner { get; private set; }
+    private DemoDuel() { }
+    // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
+    public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979)
+    {
+        if (first.Count is < 40 or > 80 || second.Count is < 40 or > 80)
+            throw new ArgumentException("Imported main decks must contain 40 to 80 cards");
+        var duel = new DemoDuel();
+        var random = new Random(seed);
+        for (int player = 0; player < 2; player++)
+        {
+            Card[] shuffled = (player == 0 ? first : second).ToArray();
+            random.Shuffle(shuffled);
+            duel.hands[player].AddRange(shuffled.Take(5));
+            foreach (var card in shuffled.Skip(5)) duel.decks[player].Enqueue(card);
+        }
+        return duel;
+    }
     public DemoDuel(IEnumerable<Card> cards)
     {
         var all = cards.Where(c => c.Name.Length > 0).ToList();

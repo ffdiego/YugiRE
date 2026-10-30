@@ -28,6 +28,19 @@ static class DeckTests
             check(parsed.HasDuelSize && parsed.Resolve(0, [blue]).Count == count,
                 $"YDC main size {count} preserves repeated copies");
         }
+        var first = Enumerable.Repeat(blue, 40).ToArray();
+        var second = Enumerable.Repeat(gaia, 80).ToArray();
+        var duel = DemoDuel.FromDecks(first, second);
+        check(duel.Hand.Count == 5 && duel.DeckCount(0) == 35 && duel.Hand.All(c => c == blue) && first.Length == 40,
+            "Imported demo deals five cards and conserves player one's main deck");
+        duel.NextTurn();
+        check(duel.Hand.Count == 5 && duel.DeckCount(1) == 75 && duel.Hand.All(c => c == gaia),
+            "Imported demo keeps player decks independent");
+        check(duel.Draw(out _) && duel.Hand.Count == 6 && duel.DeckCount(1) == 74,
+            "Imported demo draw conserves hand and deck cards");
+        bool rejected = false;
+        try { DemoDuel.FromDecks([], second); } catch (ArgumentException) { rejected = true; }
+        check(rejected, "Imported demo rejects undersized main decks");
     }
     public static void Original(string path, IReadOnlyList<Card> cards, Action<bool, string> check)
     {
@@ -39,5 +52,10 @@ static class DeckTests
         check(main.Count(c => c.Id == 531) == 2, "Reference YDC preserves both Gemini Elf copies");
         check(deck.Resolve(1, cards).Single().Name == "Alligator's Sword Dragon" && deck.HasDuelSize,
             "Reference YDC secondary list resolves its original card");
+        var duel = DemoDuel.FromDecks(main, main);
+        check(duel.Hand.Count == 5 && duel.DeckCount(0) == 37 && duel.DeckCount(1) == 37 &&
+            duel.Hand.All(card => main.Contains(card)), "Reference YDC starts a local demo using its real main deck");
+        check(duel.Draw(out _) && duel.Hand.Count == 6 && duel.DeckCount(0) == 36,
+            "Reference YDC draw uses imported cards");
     }
 }

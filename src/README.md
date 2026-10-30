@@ -45,8 +45,8 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 ## Telas e controles
 
 - Menu: fundo e botões originais lidos do DAT em 800×600. Single Duel Mode,
-  Card List e Quit Game funcionais. Deck Construction
-  e Options permanecem desabilitados.
+  Card List e Quit Game funcionais. Deck Construction abre o inspetor de deck
+  descrito abaixo; edição ainda não implementada. Options permanece desabilitado.
 - Card List: grade de 10 colunas × 5 linhas, 50 cartas por página, em ordem
   alfabética pela tabela inglesa do DAT. Passe o mouse sobre a miniatura para
   ver atributos e descrição. As setas originais ou PageUp/PageDown mudam a página.
@@ -71,6 +71,38 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
+## Importar e comparar um deck original
+
+O inspetor procura `deck.ydc` ao lado de `data.dat`. Para outra localização,
+execute da raiz do repositório no Windows:
+
+```powershell
+dotnet run --project .\src\Joey.App -- "C:\Jogos\Joey\data.dat" "--deck=C:\Jogos\Joey\deck.ydc"
+```
+
+Abra **Deck Construction**. As abas mostram a lista principal e as duas listas
+adicionais, preservando ordem e cópias repetidas. Os papéis das listas 1 e 2
+continuam sem confirmação completa; não atribuímos nomes modernos por analogia.
+**Reload** relê o mesmo arquivo após uma alteração feita no original.
+Para comparar nomes e contagens sem janela, acrescente `--check-deck` ao comando.
+Esse modo verifica estrutura e resolução de IDs, não legalidade nem o cabeçalho
+de compatibilidade ainda desconhecido. O arquivo é aberto somente para leitura.
+
+**Play this deck** inicia o duelo local com o mesmo deck principal para ambos
+os jogadores; cada jogador recebe cinco cartas e pode comprar do restante.
+Requer 40–80 cartas, conforme a checagem nativa documentada. O embaralhamento
+com semente fixa é política de demonstração, não o algoritmo original.
+**Demo fixture** retorna às cartas de teste anteriores. Reset preserva a opção
+usada ao iniciar o duelo. As listas adicionais não participam da simulação.
+Os efeitos suportados continuam limitados aos já descritos acima.
+
+O inspetor reutiliza o fundo e as miniaturas da Card List com controles
+temporários; não reproduz a tela original de construção de decks.
+Comparação sugerida no Windows: conferir as três contagens, duas cópias da
+mesma carta, nomes/ilustrações e a segunda lista. Na amostra deste workspace,
+esperamos 42/1/0 e Alligator's Sword Dragon na lista 1. Ao iniciar o demo,
+a mão deve ter cinco cartas e o deck restante 37; Draw muda para seis/36.
+
 ## Procedência e limites
 
 | Categoria | Uso nesta versão |
@@ -79,6 +111,11 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 | Observado no jogo original | Organização geral de telas fornecida pelo usuário; fidelidade visual ainda não conferida neste ambiente. |
 | Hipótese | Códigos de classe são preservados numericamente; não atribuímos nomes a classes ainda não confirmadas. |
 | Demonstração | `Joey.Core/Demo.cs`: mãos/decks fixos, LP 8000, dois jogadores locais, turnos manuais, uma compra e invocação por turno, invocações sem tributos e combate simplificado por ATK/DEF. A política de aceitar classes 0–20 como monstros é uma simplificação local. |
+
+`Joey.Core/DeckFile.cs` transcreve o leitor YDC comprovado em
+`../docs/02-file-formats.md`, preservando os oito bytes opacos do cabeçalho,
+IDs, ordem e duplicatas. Importar esse deck para os dois jogadores do demo
+e embaralhá-lo com semente fixa são escolhas locais de demonstração.
 
 Legendary Sword usa a regra de seleção e bônus de `../docs/cards/legendary-sword.md`
 e limpeza comum de `../docs/cards/equipment-cleanup.md`. O tipo estático 15 é
@@ -110,15 +147,17 @@ A partir de `src/`:
 dotnet build Joey.App
 dotnet run --project tests/Joey.Tests
 dotnet run --project tests/Joey.Tests -- ../../passion/data.dat
+dotnet run --project tests/Joey.Tests -- ../../passion/data.dat ../../passion/deck.ydc
 dotnet run --project Joey.App -- --check-data
 dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 69
-verificações sintéticas e mais 20 contra o arquivo original opcional.
+código diferente de zero. `dotnet test` não substitui esse comando. São 83
+verificações sintéticas, mais 20 contra o DAT e seis contra o deck de referência
+opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 89 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 109 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
