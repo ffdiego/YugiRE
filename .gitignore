@@ -3,3 +3,5 @@ ghidra-projects/
 *.gpr
 *.rep/
 *.log
+**/bin/
+**/obj/
