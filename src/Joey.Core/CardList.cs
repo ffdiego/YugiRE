@@ -47,4 +47,15 @@ public sealed record CardListResources(CardGrid Grid, SceneSprite Previous, Scen
         return ranked.OrderBy(c => c.Card.Name.Length == 0).ThenBy(c => c.Rank).ThenBy(c => c.Card.Index)
             .Select(c => c.Card).ToList();
     }
+    // 0x004024E0 reads CARD_Pack.bin; 0x0047DBB0 tests membership against a version mask.
+    // A mask of 7 includes all three releases and does not check save/unlock state.
+    public static List<Card> ForPacks(IEnumerable<Card> cards, byte[] packs, ushort mask = 7)
+    {
+        if (packs.Length % 2 != 0) throw new InvalidDataException("Truncated card pack table");
+        return cards.Where(card =>
+        {
+            if (card.Index < 0 || card.Index >= packs.Length / 2) throw new InvalidDataException("Card index outside pack table");
+            return (BinaryPrimitives.ReadUInt16LittleEndian(packs.AsSpan(card.Index * 2)) & mask) != 0;
+        }).ToList();
+    }
 }

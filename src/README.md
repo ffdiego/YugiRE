@@ -53,8 +53,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   Digite para pesquisar por nome; Backspace apaga. Registros sem nome ficam no fim.
   O fundo, o título, o botão Back e as imagens das cartas vêm do DAT.
   Use a roda do mouse sobre a descrição para percorrer textos longos.
-  Não há restrição de desbloqueio. Variantes mantêm seus IDs e índices próprios;
-  registros sem nome são identificados, sem inferir jogabilidade.
+  Mostra as 771 cartas dos três jogos, sem restrição de desbloqueio. O filtro
+  usa `card_pack.bin`, não a imagem da carta. Para inspecionar os 1114 registros
+  internos, use `dotnet run -- --include-unused` (junto ao caminho DAT, se necessário).
+  Esse modo mantém variantes e registros sem nome, sem inferir jogabilidade.
 - Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
   Draw compra uma carta por turno; selecione um monstro e uma zona própria vazia
   para invocar uma vez por turno. Não há custos de tributo nesta demonstração.
@@ -113,10 +115,10 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 65
-verificações sintéticas e mais 18 contra o arquivo original opcional.
+código diferente de zero. `dotnet test` não substitui esse comando. São 69
+verificações sintéticas e mais 20 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 83 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 89 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

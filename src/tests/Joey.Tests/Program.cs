@@ -114,6 +114,14 @@ if (args.Length > 0)
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_nameeng.bin"))).Equals("74848D0B2CD7D5FAC7A767075BD5B01E0366183CE934AFA6070CE24394A24032"), "Original names resource hash");
     var cards = Catalog.Load(archive);
     var listResources = CardListResources.Load(archive);
+    var packs = archive.Read(@"bin#\card_pack.bin");
+    var gameCards = CardListResources.ForPacks(cards, packs);
+    Check(gameCards.Count == 771 && CardListResources.ForPacks(cards, packs, 1).Count == 155 &&
+        CardListResources.ForPacks(cards, packs, 2).Count == 315 && CardListResources.ForPacks(cards, packs, 4).Count == 350,
+        "Original per-game counts include overlap: union is 771, not 820");
+    var allArtwork = CardArtwork.Load(archive, cards);
+    Check(gameCards.All(c => !allArtwork.For(c)!.StartsWith(@"card\token_", StringComparison.OrdinalIgnoreCase)),
+        "Original pack membership excludes shared token placeholders");
     Check(listResources.Grid == new CardGrid(225, 110) && listResources.Previous.X == 408 && listResources.Previous.Y == 565 &&
         listResources.Next.X == 549 && listResources.Next.Y == 565, "Original grid and pagination sprite positions");
     Check(BitmapInfo.Read(archive.Read(CardListResources.Frame)) == new BitmapInfo(58, 80) &&

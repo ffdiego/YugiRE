@@ -89,3 +89,27 @@ Validação da grade: build sem avisos/erros, **83 verificações C#**, 25 teste
 Python e **789 BMPs** decodificados. Inclui limites e espaços da grade,
 paginação vazia/exata/parcial, ordenação por índice e posições dos sprites.
 O teste visual desta alteração permanece pendente no desktop do usuário.
+
+## Cartas de cada versão e registros fora do catálogo
+
+`0x004024E0` carrega `CARD_Pack.bin` e retorna o uint16 pelo índice interno.
+`0x0047DBB0` só inclui a carta se esse valor tiver bits em comum com a máscara
+da versão. `0x005BEA40` retorna um bit de versão; `0x005BEA60` retorna todos os
+bits até a versão atual. [Evidência direta](evidence/card-list-pools-ghidra.txt).
+
+No DAT analisado, os bits 1/2/4 selecionam 155/315/350 registros. A união é
+**771**, pois os grupos se sobrepõem: há 4 repetições entre os dois primeiros
+e 45 cartas do terceiro já presentes nos anteriores. A soma 820 conta essas
+49 ocorrências novamente. Restam 343 registros sem associação a esses grupos:
+340 apontam para `token_sl.bmp` e três para outros `token_*.bmp`.
+Isso os exclui do catálogo colecionável; não prova que sejam todos inválidos
+para usos internos do motor, como fichas.
+
+A lista agora aplica a máscara 7 por padrão, preservando as 771 cartas sem
+restrição de desbloqueio. `--include-unused` mantém a inspeção dos 1114
+registros. A filtragem é por tabela, sem depender de nome ou imagem.
+O registro do Windows e a disponibilidade do save continuam sem implementação.
+
+Validação adicional: **89 verificações C#**, incluindo contagens individuais,
+união sem duplicatas e exclusão dos placeholders pelo critério do original.
+Os modos normal e `--include-unused` também passaram em `--check-data`.

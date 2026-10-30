@@ -12,10 +12,12 @@ static class Game
     static int page, selected, hand = -1, attacker = -1, handPage;
     static DemoDuel duel = null!;
     static DatGraphics graphics = null!;
+    static bool includeUnused;
     public static int Run(string[] args)
     {
         using var resources = new DatGraphics();
         graphics = resources;
+        includeUnused = args.Contains("--include-unused");
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
@@ -32,7 +34,9 @@ static class Game
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
+            if (!includeUnused) orderedCards = CardListResources.ForPacks(orderedCards, archive.Read(@"bin#\card_pack.bin"));
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
+            Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
@@ -173,7 +177,7 @@ static class Game
         SpriteNumber(filtered.Count == 0 ? 0 : page + 1, resources.CurrentPage);
         SpriteNumber(filtered.Count == 0 ? 0 : lastPage + 1, resources.TotalPages);
         Label("/", 499, resources.CurrentPage.Y - 10, 20, Gold);
-        Label($"{filtered.Count} records / unlock restrictions disabled", 225, 540, 12, Color.Black);
+        Label($"{filtered.Count} {(includeUnused ? "resource records" : "cards")} / unlock restrictions disabled", 225, 540, 12, Color.Black);
         if (filtered.Count == 0) { Label("No matches", 230, 120, 18); return; }
         selected = Math.Clamp(selected, 0, filtered.Count - 1); var card = filtered[selected];
         DrawArtwork(card, 6, 87, 200, 290);

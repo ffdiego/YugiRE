@@ -50,5 +50,13 @@ static class GraphicsTests
         reject(() => CardListResources.Sort([], [0]), "Reject truncated sort word");
         var duplicateScene = Encoding.ASCII.GetBytes("digits.bmp 476576\ndigits.bmp 530576\n");
         check(SceneSprite.Find(duplicateScene, "digits.bmp", 1).X == 530, "Read second placement of a shared sprite");
+        var overlap = new Card(3, 40, "Both", "", 0);
+        byte[] packs = [0, 0, 1, 0, 4, 0, 5, 0];
+        check(CardListResources.ForPacks([unnamed, beta, alpha, overlap], packs).SequenceEqual([beta, alpha, overlap]),
+            "Union of game packs excludes unused entries without duplicating shared cards");
+        check(CardListResources.ForPacks([unnamed, beta, alpha, overlap], packs, 4).SequenceEqual([alpha, overlap]),
+            "Joey pack mask includes shared cards");
+        reject(() => CardListResources.ForPacks([alpha], [0, 0]), "Reject card outside pack table");
+        reject(() => CardListResources.ForPacks([], [0]), "Reject truncated pack word");
     }
 }
