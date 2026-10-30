@@ -1,0 +1,203 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00577cf0 PUSH EBP
+INS 00577cf1 PUSH ESI
+INS 00577cf2 MOV ESI,dword ptr [ESP + 0x14]
+INS 00577cf6 MOV EAX,dword ptr [ESI]
+INS 00577cf8 TEST EAX,0xfff
+INS 00577cfd JZ 0x00578013
+INS 00577d03 MOV EBP,dword ptr [ESP + 0x10]
+INS 00577d07 CMP EBP,0x5
+INS 00577d0a JGE 0x00578013
+INS 00577d10 PUSH EBX
+INS 00577d11 AND EAX,0xfff
+INS 00577d16 PUSH EDI
+INS 00577d17 PUSH EAX
+INS 00577d18 CALL 0x004022e0
+INS 00577d1d ADD ESP,0x4
+INS 00577d20 CMP AX,0x780
+INS 00577d24 JC 0x00577d6c
+INS 00577d26 MOV CX,word ptr [ESI]
+INS 00577d29 AND ECX,0xfff
+INS 00577d2f PUSH ECX
+INS 00577d30 CALL 0x004022e0
+INS 00577d35 ADD ESP,0x4
+INS 00577d38 CMP AX,0x783
+INS 00577d3c JA 0x00577d6c
+INS 00577d3e MOV EBX,dword ptr [ESP + 0x20]
+INS 00577d42 MOV EDI,dword ptr [ESP + 0x14]
+INS 00577d46 XOR EDX,EDX
+INS 00577d48 MOV EAX,EDI
+INS 00577d4a TEST EBX,EBX
+INS 00577d4c SETNZ DL
+INS 00577d4f NEG EAX
+INS 00577d51 SBB EAX,EAX
+INS 00577d53 PUSH EDX
+INS 00577d54 AND EAX,0x8000
+INS 00577d59 PUSH 0x0
+INS 00577d5b OR AL,0x7c
+INS 00577d5d PUSH EBP
+INS 00577d5e PUSH EAX
+INS 00577d5f CALL 0x005b9170
+INS 00577d64 ADD ESP,0x10
+INS 00577d67 JMP 0x00577f98
+INS 00577d6c PUSH 0x453
+INS 00577d71 CALL 0x005699c0
+INS 00577d76 ADD ESP,0x4
+INS 00577d79 TEST EAX,EAX
+INS 00577d7b JZ 0x00577dad
+INS 00577d7d MOV EBX,dword ptr [ESP + 0x20]
+INS 00577d81 MOV EDI,dword ptr [ESP + 0x14]
+INS 00577d85 XOR ECX,ECX
+INS 00577d87 MOV EDX,EDI
+INS 00577d89 TEST EBX,EBX
+INS 00577d8b SETNZ CL
+INS 00577d8e NEG EDX
+INS 00577d90 SBB EDX,EDX
+INS 00577d92 PUSH ECX
+INS 00577d93 AND EDX,0x8000
+INS 00577d99 PUSH 0x1
+INS 00577d9b OR EDX,0x7c
+INS 00577d9e PUSH EBP
+INS 00577d9f PUSH EDX
+INS 00577da0 CALL 0x005b9170
+INS 00577da5 ADD ESP,0x10
+INS 00577da8 JMP 0x00577f98
+INS 00577dad MOV EBX,dword ptr [ESP + 0x20]
+INS 00577db1 MOV EDI,dword ptr [ESP + 0x14]
+INS 005b967c JMP 0x00405190
+FUNCTION FUN_00405190 @00405190
+ CALLER 005b967c FUN_005b9470
+
+void FUN_00405190(void)
+
+{
+  int *piVar1;
+  uint uVar2;
+  char cVar3;
+  ushort uVar4;
+  ushort uVar5;
+  ushort uVar6;
+  short sVar7;
+  undefined2 uVar8;
+  undefined4 *puVar9;
+  uint uVar10;
+  uint *puVar11;
+  int iVar12;
+  uint uVar13;
+  uint local_18;
+  uint local_14;
+  undefined **local_10;
+  undefined4 *local_c;
+  undefined ***local_8;
+  undefined ***local_4;
+  
+  uVar5 = DAT_00a550a0._2_2_;
+  local_14 = (uint)DAT_00a550a0._2_2_;
+  uVar10 = (DAT_00a550a0 & 0xffff) >> 0xf;
+  uVar13 = DAT_00a550a4 & 1;
+  if ((uVar10 != (DAT_00a57840 & 1)) ||
+     (puVar11 = &DAT_00a57864, local_14 != ((DAT_00a57840 & 0xffff) >> 8 & 7))) {
+    puVar11 = &DAT_00a578f4;
+  }
+  uVar6 = (ushort)uVar10;
+  switch(DAT_00a558ac & 0x7f) {
+  case 0:
+    uVar6 = (ushort)(((uint)(ushort)(*(ushort *)((int)puVar11 + 6) << 0xd) | local_14 & 0x1f |
+                     0x1fe0) << 1) | uVar6;
+    local_14 = (uint)uVar6;
+    uVar5 = (ushort)local_18 ^ uVar6;
+    uVar4 = uVar5 & 0x7ffe ^ uVar6;
+    local_18._0_1_ = (byte)uVar4;
+    uVar5 = uVar4 ^ uVar5 & 0x4000 ^ (byte)((byte)local_18 ^ (byte)uVar6) & 0x3e;
+    local_18 = CONCAT22(local_18._2_2_,uVar5 ^ (uVar5 ^ uVar6) & 0x3fc0);
+    iVar12 = FUN_0054a1d0(0xac);
+    if (iVar12 == 0) {
+      puVar9 = (undefined4 *)0x0;
+    }
+    else {
+      puVar9 = (undefined4 *)FUN_004511d0(*puVar11 & 0xfff,&local_18);
+    }
+    iVar12 = DAT_005f3280;
+    local_c = (undefined4 *)0x0;
+    local_10 = &PTR_FUN_005da438;
+    local_4 = (undefined ***)0x0;
+    local_8 = (undefined ***)0x0;
+    (*(code *)PTR_FUN_005da43c)();
+    if (puVar9 != (undefined4 *)0x0) {
+      local_4 = &local_10;
+      local_8 = &local_10;
+      local_c = puVar9;
+    }
+    FUN_0040c570(*(undefined4 *)(iVar12 + 0x1330),1,&local_10);
+    local_10 = &PTR_FUN_005da438;
+    if (local_8 != (undefined ***)0x0) {
+      if (local_8 == &local_10) {
+        if (local_c != (undefined4 *)0x0) {
+          (**(code **)*local_c)(1);
+        }
+      }
+      else {
+        local_8[3] = (undefined **)local_4;
+        local_4[2] = (undefined **)local_8;
+      }
+    }
+    DAT_00a558ac = ((DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f ^ DAT_00a558ac) & 0xffffc07f;
+    return;
+  case 1:
+    DAT_00a558ac = DAT_00a558ac ^ ((DAT_00a558ac & 0xffffff80) + 0x80 ^ DAT_00a558ac) & 0x3f80;
+    if (0x700 < (DAT_00a558ac & 0x3f80)) {
+      DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+      return;
+    }
+    break;
+  case 2:
+    uVar2 = *puVar11;
+    *puVar11 = (DAT_00a550a4 >> 0x10 & 1) << 0x16 | uVar2 & 0xffbfffff | 0xa00000;
+    if ((((uVar10 == (uVar2 & 0x1000) >> 0xc) && (uVar5 < 5)) && (uVar13 == 0)) &&
+       ((uVar5 = FUN_004022e0((ushort)*puVar11 & 0xfff), uVar5 < 0x780 ||
+        (uVar5 = FUN_004022e0((ushort)*puVar11 & 0xfff), 0x783 < uVar5)))) {
+      *(uint *)(&DAT_00a56430 + uVar10 * 0xd44) =
+           *(uint *)(&DAT_00a56430 + uVar10 * 0xd44) | 0x1000000;
+    }
+    FUN_005675c0(&DAT_00a558b0,puVar11);
+    uVar5 = (ushort)(((uint)(ushort)(*(ushort *)((int)puVar11 + 6) << 0xd) | local_14 & 0x1f |
+                     0x1fe0) << 1);
+    local_14 = CONCAT22(local_14._2_2_,uVar5 | uVar6);
+    local_18 = CONCAT22(local_18._2_2_,
+                        ((byte)((byte)(DAT_00a558b0 >> 0xc) ^ (byte)local_18) & 1 ^ (ushort)local_18
+                        ) & 0xc041 | ((uVar13 != 0) + 0xe | 0x20) << 1);
+    FUN_00570790(uVar6,uVar5 >> 1 & 0x1f,uVar5 >> 6 & 0xff);
+    FUN_005708d0(local_18 & 1,(local_18 & 0xffff) >> 1 & 0x1f,(local_18 & 0xffff) >> 6 & 0xff,
+                 &DAT_00a558b0);
+    uVar6 = FUN_005703a0(local_18 & 1,(local_18 & 0xffff) >> 1 & 0x1f,
+                         (local_18 & 0xffff) >> 6 & 0xff);
+    uVar5 = (ushort)local_18;
+    local_18._0_2_ = (uVar6 & 1) << 0xe | uVar5 & 0xbfff;
+    sVar7 = FUN_00570420(uVar5 & 1,(uVar5 & 0x3e) >> 1,(uVar5 & 0x3fc0) >> 6);
+    local_18 = CONCAT22(local_18._2_2_,sVar7 << 0xf | (ushort)local_18 & 0x7fff);
+    FUN_0040ce10(DAT_00a558b0 & 0xfff,&local_14,&local_18);
+    DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+    return;
+  case 3:
+    uVar8 = FUN_004022e0(DAT_00a558b0 & 0xfff);
+    FUN_00403cb0(uVar10,uVar8);
+    DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+    return;
+  case 4:
+    iVar12 = *(int *)(DAT_005f3280 + 0x132c);
+    piVar1 = (int *)(DAT_005f3280 + 0x1330);
+    if (iVar12 != *(int *)(DAT_005f3280 + 0x1330)) {
+      do {
+        cVar3 = (**(code **)(**(int **)(iVar12 + 4) + 4))();
+        if (cVar3 != '\0') {
+          return;
+        }
+        iVar12 = iVar12 + 0x10;
+      } while (iVar12 != *piVar1);
+    }
+    DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+  }
+  return;
+}
+
+

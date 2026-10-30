@@ -221,3 +221,9 @@ Validação sem execução do jogo: 1115 palavras em CARD_ID, 2048 em CARD_IntID
 O inspetor carrega somente CARD_ID, CARD_IntID e um idioma de CARD_Name (17402 bytes comprimidos → 71360 bytes), mantendo dados em memória. Lê também os 100 bytes do deck e consulta um ponteiro no executável após verificar seu hash. Exporta nomes amostrados e a lista de cartas do deck. Resultado esperado: 1115 registros de 64 bytes, listas 42/1/0 e 43 associações ID→índice→nome com roundtrip.
 
 `decode:VA:quantidade` desassembla estaticamente a partir do endereço em memória do Ghidra; no wrapper atual, alterações são transitórias e descartadas por `-readOnly`. Não executa instruções do alvo. Usado para preencher a lacuna de listing no prologue 0x00401F20. `ins:` agora começa pela próxima instrução definida quando o endereço não contém instrução e registra aviso; relatórios antigos podem simplesmente não conter saída nesse caso.
+
+## Retirada em contexto de batalha — 0x7C
+
+`python3 scripts/validate_battle_command.py` verifica o hash do EXE, o
+despacho 0x7C → 0x00405190 e quatro alvos de CALL. Não executa o original.
+[Contexto e limites](../docs/18-battle-snapshot-removal.md).

@@ -115,3 +115,42 @@ permanece fora deste fechamento. Próximo passo: localizar a cópia/escrita dos
 Esses resultados orientam a separação entre estado físico, listas e contexto
 transitório. Não justificam portar os endereços/seletores para o modelo .NET,
 que mantém objetos próprios e continua com combate de demonstração.
+
+## Produtor distinto encontrado: comando 0x7C
+
+A referência próxima de 0x005A3433 não era uma escrita de captura. Ela fica
+em um caminho que chama **0x00577CF0** em 0x005A3442 e 0x005A34F8. Esse
+produtor usa o registro fornecido, exige índice ocupado e posição menor que
+5, e emite **0x7C** em vez do 0x79 do caminho examinado de Cyber Jar.
+O guarda de posição nativo usa comparação assinada; não o apresentamos como
+checagem completa contra valores negativos.
+
+Para fichas IDs 0x780–0x783, emite 0x7C com argumento de destino zero.
+Para presença de ID 0x453, emite o argumento 1. O caminho comum usa zero e
+chama 0x0059D6E0. Depois existem ramos específicos por ID que produzem pedidos;
+o estudo não fecha a semântica de cada um. Termina emitindo evento 0x15 e
+chamando 0x00577280 com motivo 6 ou 7, derivado do quarto argumento.
+
+O dispatcher usa byte normalizado **82**, stub **0x005B967C**, JMP para
+**0x00405190**. O consumidor seleciona a cópia de batalha por lado/posição
+transportados no comando. No estado 2:
+
+- Atualiza flags no registro copiado e o transfere para temporário 0x00A558B0
+  por 0x005675C0.
+- Monta destino com região `14 + (argumento != 0)` e lado vindo do bit 12
+  do primeiro DWORD do registro, não simplesmente do jogador que clicou.
+- Chama 0x00570790 para retirada e 0x005708D0 para inserção.
+- Atualiza a apresentação; outros estados tratam espera e finalização.
+
+Isso fornece um caminho de consequências de retirada no contexto de batalha,
+distinto do produtor de destruição por efeito previamente seguido. Não fecha
+quem decide que o monstro perdeu a comparação, nem a fórmula de dano.
+O protótipo continua sem as exceções de Banisher, fichas e gatilhos.
+
+Evidências: [trecho chamador](evidence/battle-snapshot-write-candidate.txt),
+[produtor](evidence/battle-destruction-producer.txt),
+[consumidor/instruções](evidence/battle-command-7c-consumer.txt).
+`python3 scripts/validate_battle_command.py` confirma hash, despacho e quatro
+alvos de CALL diretamente nos bytes, gerando
+[battle-command-7c-validation.json](evidence/battle-command-7c-validation.json).
+É uma validação estática, não execução ou prova da interpretação completa.
