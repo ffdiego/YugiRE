@@ -227,3 +227,10 @@ O inspetor carrega somente CARD_ID, CARD_IntID e um idioma de CARD_Name (17402 b
 `python3 scripts/validate_battle_command.py` verifica o hash do EXE, o
 despacho 0x7C → 0x00405190 e quatro alvos de CALL. Não executa o original.
 [Contexto e limites](../docs/18-battle-snapshot-removal.md).
+
+## Modelo estático de seleção de tributos de Ritual
+
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_ritual_selection_model.py'`
+compara a transcrição de 0x00599570/parte de 0x00599140 com enumeração
+independente de subconjuntos. Quatro testes; não executa código nativo.
+[Critério, pagamento e limites](../docs/cards/ritual-bindings.md).

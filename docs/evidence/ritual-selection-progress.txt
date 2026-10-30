@@ -1,0 +1,145 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_005995e0 @005995e0
+ CALLER 00441aef FUN_00441ad0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+bool FUN_005995e0(void)
+
+{
+  ushort uVar1;
+  byte bVar2;
+  int iVar3;
+  undefined4 uVar4;
+  int iVar5;
+  uint uVar6;
+  
+  uVar6 = 0xf0;
+  iVar5 = (DAT_00a55c80 & 0xffff) * 0x14;
+  FUN_00598ed0(*(undefined2 *)(&DAT_00a55b2c + (DAT_00a55c80 & 0xffff) * 0x14));
+  if (((DAT_00a558ac & 0x4000) != 0) || (DAT_00a558a8 != 0)) {
+    return false;
+  }
+  iVar3 = FUN_0056a030((&DAT_00a55b2e)[iVar5] & 1);
+  if (-1 < iVar3) {
+    uVar6 = 0xf1;
+  }
+  iVar3 = FUN_005aa440(uVar6 << 0x10 | uVar6);
+  if (iVar3 != 0) {
+    if (DAT_00a55048 == 0) {
+      uVar1 = *(ushort *)(&DAT_00a55d74 + DAT_00a5504c * 0x24 + (DAT_00a55044 & 1) * 0x351);
+      iVar5 = FUN_00599140(&DAT_00a55b2c + iVar5,DAT_00a55044,0,DAT_00a5504c);
+      if ((iVar5 != 0) && (iVar5 = FUN_005aa480(), iVar5 != 0)) {
+        uVar6 = FUN_004026c0(uVar1 & 0xfff);
+        uVar6 = uVar6 & 0xffff;
+        iVar5 = (DAT_00a55c88._2_2_ >> 8) - uVar6;
+        DAT_00a55c88._2_2_ = CONCAT11((iVar5 < 0) - 1U & (byte)iVar5,DAT_00a55c88._2_1_);
+        if ((_DAT_00a55c8c & 0xff) <= uVar6) {
+          uVar6 = _DAT_00a55c8c & 0xff;
+        }
+        bVar2 = (byte)uVar6 ^ DAT_00a55c8c;
+        _DAT_00a55c8c = _DAT_00a55c8c ^ bVar2;
+        FUN_00577b30(DAT_00a55044,DAT_00a5504c);
+      }
+    }
+    else if (DAT_00a55048 == 0xb) {
+      uVar6 = (byte)(&DAT_00a55b2e)[iVar5] & 1;
+      if (uVar6 != DAT_00a55044) {
+        return false;
+      }
+      uVar1 = *(ushort *)(&DAT_00a56434 + DAT_00a5504c + uVar6 * 0x351);
+      iVar3 = FUN_00599140(&DAT_00a55b2c + iVar5,uVar6,0xb,DAT_00a5504c);
+      if ((iVar3 != 0) && (iVar3 = FUN_005aa480(), iVar3 != 0)) {
+        uVar6 = FUN_004026c0(uVar1 & 0xfff);
+        uVar6 = uVar6 & 0xffff;
+        iVar3 = (DAT_00a55c88._2_2_ >> 8) - uVar6;
+        DAT_00a55c88._2_2_ = CONCAT11((iVar3 < 0) - 1U & (byte)iVar3,DAT_00a55c88._2_1_);
+        if ((_DAT_00a55c8c & 0xff) <= uVar6) {
+          uVar6 = _DAT_00a55c8c & 0xff;
+        }
+        bVar2 = (byte)uVar6 ^ DAT_00a55c8c;
+        _DAT_00a55c8c = _DAT_00a55c8c ^ bVar2;
+        uVar4 = FUN_005700f0((&DAT_00a55b2e)[iVar5] & 1,0xb,DAT_00a5504c,0);
+        FUN_00575af0((&DAT_00a55b2e)[iVar5] & 1,uVar4);
+      }
+    }
+  }
+  return (DAT_00a55c88._2_2_ & 0xff00) == 0;
+}
+
+
+FUNCTION FUN_00598ff0 @00598ff0
+ CALLER 0059999f FUN_00599850
+
+int FUN_00598ff0(uint param_1,ushort param_2)
+
+{
+  bool bVar1;
+  uint uVar2;
+  int iVar3;
+  ushort *puVar4;
+  ushort uVar5;
+  int local_8;
+  
+  param_1 = param_1 & 1;
+  iVar3 = 0;
+  local_8 = 0;
+  bVar1 = false;
+  if (*(char *)(&DAT_00a55d68 + param_1 * 0x6a2) == '\0') {
+    return 0;
+  }
+  puVar4 = (ushort *)(&DAT_00a56434 + param_1 * 0x351);
+  do {
+    uVar5 = *puVar4 & 0xfff;
+    if ((bVar1) || (uVar5 != param_2)) {
+      uVar2 = FUN_004026c0(uVar5);
+      local_8 = local_8 + (uVar2 & 0xffff);
+      if (param_2 == uVar5) goto LAB_0059906a;
+    }
+    else {
+LAB_0059906a:
+      bVar1 = true;
+    }
+    iVar3 = iVar3 + 1;
+    puVar4 = puVar4 + 2;
+    if ((int)(uint)*(byte *)(&DAT_00a55d68 + param_1 * 0x6a2) <= iVar3) {
+      return local_8;
+    }
+  } while( true );
+}
+
+
+FUNCTION FUN_005990a0 @005990a0
+ CALLER 005999ad FUN_00599850
+
+int FUN_005990a0(uint param_1)
+
+{
+  int iVar1;
+  uint uVar2;
+  int iVar3;
+  int iVar4;
+  int iVar5;
+  uint uVar6;
+  
+  iVar3 = 0;
+  uVar6 = 0;
+  do {
+    iVar4 = 0;
+    iVar5 = 0;
+    do {
+      iVar1 = FUN_0056a140(param_1,uVar6,iVar4);
+      if ((iVar1 != 0) &&
+         ((param_1 == uVar6 || (((&DAT_00a55d7a)[(uVar6 & 1) * 0xd44 + iVar5] & 2) != 0)))) {
+        uVar2 = FUN_004026c0(*(ushort *)((int)&DAT_00a55d74 + (uVar6 & 1) * 0xd44 + iVar5) & 0xfff);
+        iVar3 = iVar3 + (uVar2 & 0xffff);
+      }
+      iVar5 = iVar5 + 0x90;
+      iVar4 = iVar4 + 1;
+    } while (iVar5 < 0x2d0);
+    uVar6 = uVar6 + 1;
+  } while ((int)uVar6 < 2);
+  return iVar3;
+}
+
+
