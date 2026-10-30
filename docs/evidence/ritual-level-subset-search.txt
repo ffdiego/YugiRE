@@ -1,0 +1,83 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00599570 PUSH EBX
+INS 00599571 PUSH EBP
+INS 00599572 PUSH ESI
+INS 00599573 MOV ESI,dword ptr [ESP + 0x14]
+INS 00599577 TEST ESI,ESI
+INS 00599579 PUSH EDI
+INS 0059957a JL 0x005995c9
+INS 0059957c MOV EAX,dword ptr [ESP + 0x14]
+INS 00599580 MOV EBP,dword ptr [ESP + 0x20]
+INS 00599584 MOV EDI,dword ptr [ESP + 0x1c]
+INS 00599588 LEA EBX,[EAX + ESI*0x4]
+INS 0059958b MOV EAX,dword ptr [EBX]
+INS 0059958d CMP EAX,EDI
+INS 0059958f JGE 0x005995ba
+INS 00599591 TEST ESI,ESI
+INS 00599593 JZ 0x005995c1
+INS 00599595 CMP EBP,EAX
+INS 00599597 MOV ECX,EBP
+INS 00599599 JL 0x0059959d
+INS 0059959b MOV ECX,EAX
+INS 0059959d PUSH ECX
+INS 0059959e MOV ECX,EDI
+INS 005995a0 SUB ECX,EAX
+INS 005995a2 MOV EAX,dword ptr [ESP + 0x18]
+INS 005995a6 LEA EDX,[ESI + -0x1]
+INS 005995a9 PUSH ECX
+INS 005995aa PUSH EDX
+INS 005995ab PUSH EAX
+INS 005995ac CALL 0x00599570
+INS 005995b1 ADD ESP,0x10
+INS 005995b4 TEST EAX,EAX
+INS 005995b6 JNZ 0x005995d0
+INS 005995b8 JMP 0x005995c1
+INS 005995ba LEA ECX,[EDI + EBP*0x1]
+INS 005995bd CMP EAX,ECX
+INS 005995bf JL 0x005995d0
+INS 005995c1 DEC ESI
+INS 005995c2 SUB EBX,0x4
+INS 005995c5 TEST ESI,ESI
+INS 005995c7 JGE 0x0059958b
+INS 005995c9 POP EDI
+INS 005995ca POP ESI
+INS 005995cb POP EBP
+INS 005995cc XOR EAX,EAX
+FUNCTION FUN_00599570 @00599570
+ CALLER 00599558 FUN_00599140
+ CALLER 005995ac FUN_00599570
+
+undefined4 FUN_00599570(int param_1,int param_2,int param_3,int param_4)
+
+{
+  int iVar1;
+  int iVar2;
+  int *piVar3;
+  
+  if (-1 < param_2) {
+    piVar3 = (int *)(param_1 + param_2 * 4);
+    do {
+      iVar1 = *piVar3;
+      if (iVar1 < param_3) {
+        if (param_2 != 0) {
+          iVar2 = param_4;
+          if (iVar1 <= param_4) {
+            iVar2 = iVar1;
+          }
+          iVar1 = FUN_00599570(param_1,param_2 + -1,param_3 - iVar1,iVar2);
+          if (iVar1 != 0) {
+            return 1;
+          }
+        }
+      }
+      else if (iVar1 < param_3 + param_4) {
+        return 1;
+      }
+      param_2 = param_2 + -1;
+      piVar3 = piVar3 + -1;
+    } while (-1 < param_2);
+  }
+  return 0;
+}
+
+

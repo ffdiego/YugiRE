@@ -80,6 +80,12 @@ Evidências: [callback/disponibilidade](../evidence/ritual-primary-and-availabil
 [instruções](../evidence/ritual-level-and-binding-instructions.txt).
 
 O catálogo não valida execução da função nativa. Seleção efetiva dos tributos,
-excesso de níveis permitido, exclusão de cópias, pagamento e colocação final
-ainda exigem seguir os helpers. 0x00599140 chama **0x00599570** ao avaliar
-combinações de níveis: é a próxima trilha estática. Timing permanece futuro.
+exclusão de cópias, pagamento e colocação final ainda exigem seguir os helpers.
+
+Consulta final do checkpoint: [0x00599570](../evidence/ritual-level-subset-search.txt)
+faz busca recursiva por níveis. Com nível candidato L, requisito restante R e
+limite M, admite diretamente `R <= L < R + M`; para `L < R`, pode procurar
+entre entradas anteriores com `R-L` e `min(M,L)`. Comparações e chamada
+recursiva foram conferidas no listing. A relação desse critério com todas as
+escolhas permitidas ao jogador permanece em investigação pelo chamador
+0x00599140. Não foi executado teste nativo desse algoritmo. Timing permanece futuro.
