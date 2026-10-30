@@ -149,11 +149,14 @@ static class Game
                         else if (player != duel.ActivePlayer) duel.Attack(attacker, z, out message);
                         else message = "Choose an occupied friendly monster as attacker.";
                     }
+                    else if (hand >= 0 && hand < duel.Hand.Count && duel.Hand[hand].Id == 300)
+                    { if (duel.Equip(hand, player, z, out message)) hand = -1; }
                     else if (card != null && player == duel.ActivePlayer && hand < 0) duel.ChangePosition(z, out message);
                     else if (duel.Summon(hand, player, z, true, out message)) hand = -1;
                 }
-                if (card != null) { Wrap(card.Name, x + 8, y + 8, 145, 16); Label($"{(duel.DefensePosition[player, z] ? "DEF" : "ATK")} {card.Attack}/{card.Defense}", x + 8, y + 77, 17, Gold); }
-                if (Button("Spell / Trap", x, y + 112, 162, 50)) duel.Summon(hand, player, z, false, out message);
+                if (card != null) { Wrap(card.Name, x + 8, y + 8, 145, 16); Label($"{(duel.DefensePosition[player, z] ? "DEF" : "ATK")} {duel.AttackValue(player, z)}/{duel.DefenseValue(player, z)}", x + 8, y + 77, 17, Gold); }
+                var equip = duel.EquipmentCards.FirstOrDefault(e => e.Owner == player && e.SourceZone == z);
+                if (Button(equip == null ? "Spell / Trap" : equip.Card.Name, x, y + 112, 162, 50)) message = equip == null ? "For Sword select the card, then a Warrior monster." : $"Equipment targets player {equip.TargetPlayer + 1}, zone {equip.TargetZone + 1}.";
             }
         }
         handPage = Math.Clamp(handPage, 0, Math.Max(0, (duel.Hand.Count - 1) / 6));
@@ -161,7 +164,7 @@ static class Game
         for (int slot = 0; slot < 6 && handPage * 6 + slot < duel.Hand.Count; slot++)
         {
             int i = handPage * 6 + slot, x = 30 + slot * 185;
-            if (Button("", x, 560, 175, 155)) { hand = i; attacker = -1; message = $"Selected {duel.Hand[i].Name}. Summon or Use card (Sparks / Ookazi)."; }
+            if (Button("", x, 560, 175, 155)) { hand = i; attacker = -1; message = $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword."; }
             Wrap(duel.Hand[i].Name, x + 9, 575, 155, 18);
             Label(i == hand ? "SELECTED" : (duel.Hand[i].IsMonster ? $"ATK {duel.Hand[i].Attack}" : "Use card"), x + 9, 685, 16, Gold);
         }

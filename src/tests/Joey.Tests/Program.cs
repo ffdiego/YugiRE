@@ -81,6 +81,19 @@ foreach (int defense in new[] { 500, 1000, 2000 })
     defenseDuel.NextTurn(); defenseDuel.BeginBattle(out _);
     Check(defenseDuel.Attack(0, 0, out _) && defenseDuel.Monsters[0, 0] != null && (defenseDuel.Monsters[1, 0] == null) == (defense < 1000) && defenseDuel.Life[0] == (defense > 1000 ? 7000 : 8000) && defenseDuel.Life[1] == 8000, $"ATK 1000 against DEF {defense}: correct casualties and damage");
 }
+var warrior = new Card(9, 9, "Warrior", "", (15u << 20) | (100u << 9) | 100u);
+var sword = new Card(10, 300, "Legendary Sword", "", 21u << 20);
+var equipped = new DemoDuel([warrior, strong, weak, sword]);
+Check(!equipped.Equip(3, 0, 0, out _) && equipped.Hand.Count == 4, "Cannot equip empty zone; preserve hand");
+equipped.Summon(0, 0, 0, true, out _);
+Check(equipped.Equip(2, 0, 0, out _) && equipped.AttackValue(0, 0) == 1300 && equipped.DefenseValue(0, 0) == 1300 && equipped.EquipmentCards.Count == 1, "Sword grants Warrior +300/+300 and occupies a spell zone");
+equipped.NextTurn(); equipped.Summon(1, 1, 0, true, out _);
+Check(!equipped.Equip(2, 1, 0, out _) && equipped.Hand.Count == 3, "Sword rejects non-Warrior");
+Check(equipped.Equip(2, 0, 0, out _) && equipped.AttackValue(0, 0) == 1600, "Sword can target enemy Warrior and bonuses stack");
+equipped.BeginBattle(out _); equipped.Attack(0, 0, out _);
+Check(equipped.Monsters[0, 0] == null && equipped.EquipmentCards.Count == 0 && equipped.Graveyard(0).Count == 2 && equipped.Graveyard(1).Count == 1, "Destroyed target cleans both owners' equipment to their graveyards");
+equipped.NextTurn(); equipped.Summon(0, 0, 0, true, out _);
+Check(equipped.AttackValue(0, 0) == 2000, "Reused monster slot does not inherit equipment bonus");
 var empty = new DemoDuel([]);
 Check(empty.Draw(out _) && empty.Winner == 1, "Drawing from empty deck ends demo");
 Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over");

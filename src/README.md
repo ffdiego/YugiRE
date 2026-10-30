@@ -30,7 +30,9 @@ Não há extração permanente de recursos nem dependência do Ghidra em execuç
 - Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
   Draw compra uma carta por turno; selecione um monstro e uma zona própria vazia
   para invocar uma vez por turno. Não há custos de tributo nesta demonstração.
-- Use card ativa Sparks ou Ookazi da mão. Outros efeitos são recusados.
+- Use card ativa Sparks ou Ookazi da mão. Para Legendary Sword, selecione a carta e clique em um Warrior no campo
+  de qualquer jogador. Ela ocupa uma zona de magia própria e concede +300/+300.
+  Os demais efeitos são recusados.
 - Battle inicia combate após o primeiro turno. Clique em um monstro próprio,
   depois em um monstro inimigo; Direct attack funciona se o adversário não
   tiver monstros. Cada monstro ataca uma vez. Em Main, Cancel e clique num monstro próprio para alternar ataque/defesa
@@ -47,6 +49,13 @@ Não há extração permanente de recursos nem dependência do Ghidra em execuç
 | Observado no jogo original | Organização geral de telas fornecida pelo usuário; fidelidade visual ainda não conferida neste ambiente. |
 | Hipótese | Códigos de classe são preservados numericamente; não atribuímos nomes a classes ainda não confirmadas. |
 | Demonstração | `Joey.Core/Demo.cs`: mãos/decks fixos, LP 8000, dois jogadores locais, turnos manuais, uma compra e invocação por turno, invocações sem tributos e combate simplificado por ATK/DEF. A política de aceitar classes 0–20 como monstros é uma simplificação local. |
+
+Legendary Sword usa a regra de seleção e bônus de `../docs/cards/legendary-sword.md`
+e limpeza comum de `../docs/cards/equipment-cleanup.md`. O tipo estático 15 é
+usado como aproximação do tipo dinâmico, pois não há modificadores de tipo
+neste sandbox. Ao destruir o alvo, cada equipamento vai ao cemitério de seu
+dono; reutilizar a zona não mantém o bônus. Exceções de efeitos, Banisher,
+fichas e negação não são reproduzidas.
 
 Os nomes e atributos são reais; os desenhos são representações temporárias,
 sem ilustrações originais. Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
@@ -68,10 +77,10 @@ dotnet run --project Joey.App -- --check-data
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 40
+código diferente de zero. `dotnet test` não substitui esse comando. São 46
 verificações sintéticas e mais 7 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 47 verificações C# e 14 testes Python
+Nesta sessão: compilação concluída; 53 verificações C# e 14 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
