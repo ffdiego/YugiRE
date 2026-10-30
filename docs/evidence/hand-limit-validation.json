@@ -1,0 +1,25 @@
+{
+  "sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "instructions": {
+    "0x5a58bc": "6893050000",
+    "0x5a58e0": "83fa06",
+    "0x5a58e3": "0f8685fdffff",
+    "0x5a58f0": "83e806",
+    "0x5bcde7": "6a01"
+  },
+  "calls": [
+    {
+      "site": "0x5a58c1",
+      "target": "0x5699c0"
+    },
+    {
+      "site": "0x5a58f7",
+      "target": "0x5bcdc0"
+    },
+    {
+      "site": "0x5bcdea",
+      "target": "0x5bcc70"
+    }
+  ],
+  "limitation": "Static bytes only; not execution of discard selection, triggers or turn scheduling."
+}

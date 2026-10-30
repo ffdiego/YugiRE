@@ -70,6 +70,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   tiver monstros. Cada monstro ataca uma vez. Em Main, Cancel e clique num monstro próprio para alternar ataque/defesa
   aberta uma vez por turno. Monstros em defesa não atacam.
 - Hand </> percorrem mãos grandes. Cancel limpa seleção; Reset reinicia.
+- End turn com mais de seis cartas exige descarte. Selecione uma carta e use
+  **Discard** até ficar com seis; só então o jogador muda. A regra básica foi
+  confirmada por RE em [limite da mão](../docs/25-end-turn-hand-limit.md).
+  A exceção de Infinite Cards e outros efeitos de fim de turno ainda não são simulados.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
@@ -155,11 +159,11 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 83
+código diferente de zero. `dotnet test` não substitui esse comando. São 92
 verificações sintéticas, mais 22 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 111 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 120 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

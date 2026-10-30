@@ -104,6 +104,7 @@ Check(empty.Draw(out _) && empty.Winner == 1, "Drawing from empty deck ends demo
 Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over");
 GraphicsTests.Run(Check, Reject);
 DeckTests.Run(Check, Reject);
+EndTurnTests.Run(Check);
 if (args.Length > 0)
 {
     using var archive = new Archive(args[0]);

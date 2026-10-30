@@ -1,6 +1,6 @@
 namespace Joey.Core;
 
-public enum DemoPhase { Main, Battle }
+public enum DemoPhase { Main, Battle, End }
 
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
@@ -25,6 +25,8 @@ public sealed class DemoDuel
     public int ActivePlayer => (Turn - 1) % 2;
     public DemoPhase Phase { get; private set; }
     public int? Winner { get; private set; }
+    public const int EndTurnHandLimit = 6;
+    public int PendingEndDiscards => Phase == DemoPhase.End ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
     public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979)
@@ -155,9 +157,33 @@ public sealed class DemoDuel
         { graves[e.Owner].Add(e.Card); equipment.Remove(e); }
     }
     private void Damage(int p, int value) { Life[p] = Math.Max(0, Life[p] - value); if (Life[p] == 0) Winner = 1 - p; }
-    public void NextTurn()
+    public void NextTurn() => EndTurn(out _);
+    public bool EndTurn(out string message)
     {
-        if (Winner != null) return;
+        message = "The duel has ended.";
+        if (Winner != null) return false;
+        // RE: 0x005A58BC..0x005A58F7. Infinite Cards and other effect interactions are not implemented.
+        if (Hand.Count > EndTurnHandLimit)
+        {
+            Phase = DemoPhase.End;
+            message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
+            return true;
+        }
+        AdvanceTurn(); message = "Turn changed. Draw once; summon once; Battle to attack.";
+        return true;
+    }
+    public bool DiscardForEndTurn(int index, out string message)
+    {
+        message = "Select a hand card while resolving the end-phase hand limit.";
+        if (Winner != null || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
+        var card = hands[ActivePlayer][index];
+        hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
+        if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";
+        else { AdvanceTurn(); message = $"Discarded {card.Name}. Turn changed."; }
+        return true;
+    }
+    private void AdvanceTurn()
+    {
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false; Array.Clear(attacked); Array.Clear(changedPosition);
     }
 }

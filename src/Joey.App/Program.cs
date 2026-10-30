@@ -243,7 +243,7 @@ static partial class Game
         Label("LOCAL DEMO", 105, 16, 16, Gold);
         if (Button("Draw", 240, 8, 80, 30)) duel.Draw(out message);
         if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); hand = -1; }
-        if (Button("End turn", 412, 8, 105, 30)) { duel.NextTurn(); hand = attacker = -1; handPage = 0; message = "Turn changed. Draw once; summon once; Battle to attack."; }
+        if (Button("End turn", 412, 8, 105, 30)) { duel.EndTurn(out message); hand = attacker = -1; handPage = 0; }
         if (Button("Reset", 523, 8, 75, 30)) StartDemo();
         Label(duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" : $"Turn {duel.Turn} P{duel.ActivePlayer + 1}: {duel.Phase}", 8, 50, 16, Gold);
         Raylib.DrawRectangle(240, 46, 545, 24, Panel);
@@ -251,7 +251,11 @@ static partial class Game
         if (hand >= 0 && hand < duel.Hand.Count) DrawArtwork(duel.Hand[hand], 8, 78, 200, 290);
         else if (attacker >= 0 && duel.Monsters[duel.ActivePlayer, attacker] is { } selectedAttacker) DrawArtwork(selectedAttacker, 8, 78, 200, 290);
         else Wrap("Select a hand card or an attacking monster to preview its original image.", 12, 95, 195, 18);
-        if (Button("Use card", 8, 380, 98, 30)) { if (duel.Play(hand, out message)) hand = -1; }
+        if (Button(duel.PendingEndDiscards > 0 ? "Discard" : "Use card", 8, 380, 98, 30))
+        {
+            bool used = duel.PendingEndDiscards > 0 ? duel.DiscardForEndTurn(hand, out message) : duel.Play(hand, out message);
+            if (used) { hand = attacker = -1; handPage = 0; }
+        }
         if (Button("Direct attack", 112, 380, 108, 30)) duel.Attack(attacker, -1, out message);
         if (Button("Cancel", 8, 416, 98, 30)) { hand = attacker = -1; message = "Selection cleared."; }
         if (Button("Hand <", 8, 452, 98, 30, handPage > 0)) handPage--;
@@ -292,7 +296,12 @@ static partial class Game
         for (int slot = 0; slot < 6 && handPage * 6 + slot < duel.Hand.Count; slot++)
         {
             int i = handPage * 6 + slot, x = 236 + slot * 93;
-            if (Button("", x, 458, 86, 120)) { hand = i; attacker = -1; message = $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword."; }
+            if (Button("", x, 458, 86, 120))
+            {
+                hand = i; attacker = -1;
+                message = duel.PendingEndDiscards > 0 ? $"Selected {duel.Hand[i].Name}. Use Discard to finish the turn." :
+                    $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword.";
+            }
             DrawArtwork(duel.Hand[i], x + 3, 461, 80, 114);
             if (i == hand) Raylib.DrawRectangleLines(x, 458, 86, 120, Color.White);
         }
