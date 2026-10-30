@@ -5,3 +5,4 @@ ghidra-projects/
 *.log
 **/bin/
 **/obj/
+__pycache__/

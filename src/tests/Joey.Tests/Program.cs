@@ -15,6 +15,24 @@ Reject(() => Archive.Decode(compressed[..^1], 34), "Reject truncated compressed 
 Reject(() => Archive.Decode([..compressed, 0], 34), "Reject compressed trailing data");
 Reject(() => Archive.Decode([], -1), "Reject negative output allocation");
 Reject(() => Archive.Decode([], 17 * 1024 * 1024), "Reject oversized output allocation");
+string malformed = Path.Combine(Path.GetTempPath(), "joey-dat-" + Guid.NewGuid() + ".dat");
+try
+{
+    File.WriteAllBytes(malformed, Encoding.ASCII.GetBytes("BADMAGIC0000"));
+    Reject(() => { using var a = new Archive(malformed); }, "Reject invalid DAT signature");
+    using (var writer = new BinaryWriter(File.Create(malformed)))
+    {
+        writer.Write(Encoding.ASCII.GetBytes("KCEJYUGI")); writer.Write(1u);
+    }
+    Reject(() => { using var a = new Archive(malformed); }, "Reject truncated DAT index");
+    using (var writer = new BinaryWriter(File.Create(malformed)))
+    {
+        writer.Write(Encoding.ASCII.GetBytes("KCEJYUGI")); writer.Write(1u);
+        writer.Write(new byte[256]); writer.Write(280u); writer.Write(1u); writer.Write(1u);
+    }
+    Reject(() => { using var a = new Archive(malformed); }, "Reject payload beyond EOF");
+}
+finally { File.Delete(malformed); }
 var monster = new Card(1, 1, "Synthetic monster", "", 4u << 25);
 var spell = new Card(2, 2, "Synthetic spell", "", 21u << 20);
 var demo = new DemoDuel([monster, monster, monster, monster, spell]);
