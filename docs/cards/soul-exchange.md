@@ -77,8 +77,9 @@ esses consumidores e pela descrição. Não demos nomes globais a todos os
 estados numéricos da interface nem fechamos todo o controle de fases.
 O helper 0x005A4010, consultado como possível reset, na verdade também marca
 o bit; não é evidência de limpeza. A [continuação de limpeza](../19-temporary-state-cleanup.md) identificou
-o comando 0x02 que limpa o bit e a associação. O agendamento temporal desse
-comando, necessário para fechar a duração por turno, permanece aberto.
+o comando 0x02 que limpa o bit e a associação. Também foi encontrado o
+produtor 0x005A8A50, que emite essa limpeza antes do comando 0x03 de
+alternância de lado e incremento do contador. Timing visual continua pendente.
 
 ## Validação e limites
 
@@ -86,6 +87,7 @@ comando, necessário para fechar a duração por turno, permanece aberto.
 seis DWORDs, cinco sequências de instruções e cinco alvos de CALL. Resultado
 em [soul-exchange-validation.json](../evidence/soul-exchange-validation.json).
 Não executa funções e não valida todas as interações de Soul Exchange.
+O produtor da transição é conferido por `validate_temporary_cleanup.py`.
 
 As quatro entradas não estavam definidas como funções no banco. Foram
 criadas/decompiladas em transação temporária, descartada ao terminar; nova

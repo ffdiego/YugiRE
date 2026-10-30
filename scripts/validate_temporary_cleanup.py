@@ -16,19 +16,23 @@ def main():
     if index != 1 or stub != 0x5b94a3:
         raise ValueError('Unexpected opcode-2 dispatch')
     targets = {}
-    for site, opcode, target in [(stub, 0xe9, 0x574230), (0x5743d2, 0xe8, 0x56aea0), (0x56af3a, 0xe8, 0x5695e0)]:
+    for site, opcode, target in [(stub, 0xe9, 0x574230), (0x5743d2, 0xe8, 0x56aea0), (0x56af3a, 0xe8, 0x5695e0), (0x5a8ac3, 0xe8, 0x5b9170), (0x5a8a82, 0xe8, 0x5b9170), (0x5b94a8, 0xe9, 0x4048c0)]:
         off = site - 0x400000
         if data[off] != opcode or site + 5 + struct.unpack_from('<i', data, off + 1)[0] != target:
             raise ValueError(f'Unexpected control transfer at {site:#x}')
         targets[hex(site)] = hex(target)
-    checks = {0x574265: 'b90c000000', 0x574271: '81e6ffff0000', 0x56af0d: '3c03', 0x56af11: '3c0c'}
+    checks = {0x574265: 'b90c000000', 0x574271: '81e6ffff0000', 0x56af0d: '3c03', 0x56af11: '3c0c', 0x5a8abe: '0c02', 0x5a8a7d: '0c03'}
     for va, expected in checks.items():
         raw = bytes.fromhex(expected)
         if data[va - 0x400000:va - 0x400000 + len(raw)] != raw:
             raise ValueError(f'Unexpected cleanup instruction at {va:#x}')
+    for va in (0x5efb8c, 0x5efba8):
+        if struct.unpack_from('<I', data, va - 0x400000)[0] != 0x5a8a50:
+            raise ValueError('Unexpected transition callback table entry')
     report = dict(sha256=digest, opcode='0x02', normalized_index=index, stub=hex(stub), transfers=targets,
                   instruction_sites=[hex(x) for x in checks], virtual_slot_flag_address=hex(0xa55d74 + 11 * 0x90 + 0x8c),
-                  limitation='Static bytes only; does not identify the producer/event scheduling command 2.')
+                  transition_producer='0x5a8a50', transition_table_entries=['0x5efb8c', '0x5efba8'],
+                  limitation='Static bytes only; event ordering is followed through native state branches, not measured at runtime.')
     (REPO / 'docs/evidence/temporary-cleanup-validation.json').write_text(json.dumps(report, indent=2) + '\n')
     print('PASS: command-2 dispatch, cleanup transfers, count, flag mask and association kinds')
 

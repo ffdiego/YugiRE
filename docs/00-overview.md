@@ -31,9 +31,11 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 [Limpeza temporária](19-temporary-state-cleanup.md): comando 0x02, flags
 compartilhadas com categoria 11 e contador de associações tipo 3/12.
+Produtor 0x005A8A50 emite limpeza e depois alternância de turno.
 
 [Soul Exchange](cards/soul-exchange.md): associação tipo 3 no alvo, ator
-autorizado a tributar e bit de bloqueio de combate; duração ainda pendente.
+autorizado a tributar e bit de bloqueio de combate; limpeza ligada à
+alternância de turno, sem execução do original.
 
 [Protótipo executável](../src/README.md): catálogo DAT e duelo local com compra,
 combate demonstrativo e Sparks/Ookazi.

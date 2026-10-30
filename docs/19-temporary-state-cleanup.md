@@ -87,10 +87,10 @@ python3 scripts/validate_temporary_cleanup.py
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_temporary_state_model.py'
 ```
 
-O validador confere fingerprint, despacho, três transferências e quatro
+O validador confere fingerprint, despacho, seis transferências e seis
 sequências nativas. Cinco testes do modelo verificam expiração, contador,
 compactação ativa, categoria global e máscaras. Não executam o original,
-não modelam caudas inativas e não identificam quem agenda o comando.
+não modelam caudas inativas. A continuação abaixo identifica o produtor.
 
 [Handler](evidence/temporary-state-cleanup-handler.txt),
 [associações](evidence/temporary-association-cleanup.txt),
@@ -100,3 +100,36 @@ não modelam caudas inativas e não identificam quem agenda o comando.
 [relatório de validação](evidence/temporary-cleanup-validation.json).
 As consultas com sufixos “candidate”, “reset” e “offsets” preservam caminhos
 exploratórios; seus nomes não atribuem funções semânticas a cada trecho.
+
+## Produtor encontrado: limpeza antes da alternância
+
+A continuação encontrou **0x005A8A50**, referenciada pelas entradas de tabela
+0x005EFB8C e 0x005EFBA8. O byte alto do word 0x00A577FE é seu estágio:
+
+| Estágio | Ação | Próximo estágio gravado pelo produtor |
+|---:|---|---:|
+| 0 | Emite 0x02, lado atual, demais palavras zero | 1 |
+| 1 | Emite 0x03, lado atual, demais palavras zero | 2 |
+
+O byte baixo do word é preservado nessas atualizações. Em 0x005A8ABE aparece
+OR AL,2 e CALL em 0x005A8AC3; em 0x005A8A7D aparece OR AL,3 e CALL em
+0x005A8A82. A ordem textual dos blocos no binário é inversa à ordem dos
+estágios; a comparação na entrada determina que 0x02 venha primeiro.
+
+O produtor usa o lado do bit 0 de 0x00A577FA para o bit 15 de cada comando.
+O consumidor 0x03 incrementa o contador, alterna esse bit de lado, altera
+bits de etapa e zera 0x00A577FE. Assim, a cadeia fecha a limpeza antes da
+alternância, não apenas dois handlers isolados. Não inferimos duração de
+animações ou que cada estágio seja executado em exatamente um frame.
+
+Para Soul Exchange, a marca tipo 3/contador zero e o bit de combate são
+removidos pelo comando 0x02 dessa transição, antes da troca de lado por
+0x03. O mapeamento completo das fases e dos índices das tabelas continua
+aberto; as duas referências de dados não foram chamadas de “jogador 0/1”
+sem reconstruir o indexador.
+
+[Produtor em instruções](evidence/turn-command-producer-candidates.txt),
+[decompilação temporária e referências](evidence/turn-transition-cleanup-sequence.txt).
+O validador foi ampliado para conferir os dois CALLs, os opcodes e as duas
+entradas de tabela, além dos checks do consumidor. Essa continuação supera
+a limitação de agendamento indicada nas seções históricas acima.

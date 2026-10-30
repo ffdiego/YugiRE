@@ -1,0 +1,28 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+REFERENCES TO 005a8a50
+ XREF From: 005efb8c To: 005a8a50 Type: DATA Op: 0 DEFAULT FUNCTION none
+ XREF From: 005efba8 To: 005a8a50 Type: DATA Op: 0 DEFAULT FUNCTION none
+TRANSIENT FUNCTION 005a8a50
+REFERENCES TO 005a8ac3
+FUNCTION FUN_005a8a50 @005a8a50
+ CALLER 005efb8c null
+ CALLER 005efba8 null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005a8a50(void)
+
+{
+  if (_DAT_00a577fe >> 8 == 0) {
+    FUN_005b9170(CONCAT31((uint3)(-(uint)((DAT_00a577f8._2_1_ & 1) != 0) >> 8) & 0x80,2),0,0,0);
+    _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+  }
+  else if (_DAT_00a577fe >> 8 == 1) {
+    FUN_005b9170(CONCAT31((uint3)(-(uint)((DAT_00a577f8._2_1_ & 1) != 0) >> 8) & 0x80,3),0,0,0);
+    _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+    return 0;
+  }
+  return 0;
+}
+
+
