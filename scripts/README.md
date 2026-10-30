@@ -270,3 +270,6 @@ executa cinco testes de um modelo estático separado do protótipo .NET.
 
 `python3 scripts/validate_turn_scheduling.py` confere três tabelas e dez
 chamadas do [agendamento](../docs/20-turn-scheduling.md). Não executa o jogo.
+
+`python3 scripts/validate_native_draw.py` confere o comando 0x61, quantidades
+iniciais e os três registros da família de compra. [Estudo](../docs/21-native-card-draw.md).

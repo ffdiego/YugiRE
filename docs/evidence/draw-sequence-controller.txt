@@ -1,0 +1,80 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005a41c0
+TRANSIENT FUNCTION 005a59b0
+FUNCTION FUN_005a41c0 @005a41c0
+ CALLER 005efb7c null
+ CALLER 005efb98 null
+
+/* WARNING: Removing unreachable block (ram,0x005a42a9) */
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005a41c0(void)
+
+{
+  int iVar1;
+  uint uVar2;
+  
+  uVar2 = DAT_00a577f8._2_2_ & 1;
+  switch(_DAT_00a577fe >> 8) {
+  case 0:
+    if (((*(uint *)(&DAT_00a56430 + uVar2 * 0xd44) & 2) != 0) ||
+       ((*(uint *)(&DAT_00a56430 + uVar2 * 0xd44) & 0x800000) != 0)) {
+      FUN_00579930(uVar2,1,0);
+      return 1;
+    }
+    FUN_005b9170(-(uint)((DAT_00a577f8._2_2_ & 1) != 0) & 0x8000 | 0x50,0,0,0);
+    break;
+  case 1:
+    iVar1 = FUN_005709f0(uVar2,0x520);
+    if (((-1 < iVar1) &&
+        (uVar2 == ((byte)(&DAT_00a563f1)[(iVar1 + uVar2 * 0x6a2) * 2] & 0x80000001))) &&
+       ((byte)(&DAT_00a563f1)[(iVar1 + uVar2 * 0x6a2) * 2] / 2 <= (uint)(ushort)DAT_00a577f8)) {
+      FUN_005797c0(0,0x520,0);
+      FUN_005797c0(1,0x520,0);
+      return 0;
+    }
+    break;
+  case 2:
+    FUN_00578b60(uVar2,1);
+    _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+    return 0;
+  case 3:
+    FUN_00598590(uVar2,1,0);
+    _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+    return 0;
+  default:
+    return 1;
+  }
+  _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+  return 0;
+}
+
+
+FUNCTION FUN_005a59b0 @005a59b0
+ CALLER 005efb78 null
+ CALLER 005efb94 null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005a59b0(void)
+
+{
+  byte bVar1;
+  int iVar2;
+  
+  bVar1 = DAT_00a577f8._2_1_ & 1;
+  if (_DAT_00a577fe >> 8 == 0) {
+    FUN_005b9170(-(uint)((DAT_00a577f8._2_1_ & 1) != 0) & 0x8000 | 1,0,0,0);
+    _DAT_00a577fe = (_DAT_00a577fe & 0xff00) + 0x100 ^ _DAT_00a577fe & 0xff;
+    return 0;
+  }
+  if (_DAT_00a577fe >> 8 == 1) {
+    iVar2 = FUN_005709d0(bVar1,0x517);
+    if (iVar2 != 0) {
+      FUN_00579930(bVar1,0x17,1);
+    }
+  }
+  return 1;
+}
+
+

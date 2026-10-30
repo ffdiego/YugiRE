@@ -35,7 +35,7 @@ pelos retornos. Endereços exatos das chamadas foram conferidos nos bytes:
 | 4 | 0x005B8C00 | Outro contexto pendente, não expandido aqui |
 | 5 | 0x005BBE40 | Pedidos e resolução dos callbacks |
 | 6 | 0x005BA060 | Processamento adicional compartilhado de eventos |
-| 7 | 0x005BC050 | Verificação/atualização restante; pode encerrar o estágio |
+| 7 | 0x005BC050 | Condições de encerramento; falta de cartas seguida na análise de compra |
 
 Só depois desses trabalhos o fluxo escolhe o despachante da sequência.
 Não atribuímos ao segundo helper um teste de vitória: ele despacha por tipo

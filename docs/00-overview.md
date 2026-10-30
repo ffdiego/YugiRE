@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Compra nativa](21-native-card-draw.md): mão inicial de cinco, comando 0x61,
+transferência deck→mão, falta de cartas e callbacks de Pot/Jar/Skelengel.
+
 [Agendamento](20-turn-scheduling.md): prioridade de comandos, contextos e
 callbacks; duas sequências por modo de controle, sem confundir índice e fase.
 

@@ -1,0 +1,162 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+INS 00571e30 MOV ECX,dword ptr [0x00a558ac]
+INS 00571e36 SUB ESP,0x8
+INS 00571e39 MOV EAX,ECX
+INS 00571e3b PUSH EDI
+INS 00571e3c MOV EDI,dword ptr [0x00a550a0]
+INS 00571e42 AND EDI,0xffff
+INS 00571e48 AND EAX,0x7f
+INS 00571e4b SHR EDI,0xf
+INS 00571e4e SUB EAX,0x0
+INS 00571e51 JZ 0x00571f7b
+INS 00571e57 DEC EAX
+INS 00571e58 JZ 0x00571e83
+INS 00571e5a DEC EAX
+INS 00571e5b JNZ 0x00571fb0
+INS 00571e61 DEC word ptr [0x00a550a4]
+INS 00571e68 JZ 0x00571fb0
+INS 00571e6e LEA EAX,[ECX + -0x1]
+INS 00571e71 POP EDI
+INS 00571e72 XOR EAX,ECX
+INS 00571e74 AND EAX,0x7f
+INS 00571e77 XOR ECX,EAX
+INS 00571e79 MOV dword ptr [0x00a558ac],ECX
+INS 00571e7f ADD ESP,0x8
+INS 00571e82 RET
+INS 00571e83 MOV EAX,EDI
+INS 00571e85 PUSH ESI
+INS 00571e86 AND EAX,0x1
+INS 00571e89 LEA ECX,[EAX + EAX*0x2]
+INS 00571e8c LEA ESI,[ECX + ECX*0x8]
+INS 00571e8f SHL ESI,0x1
+INS 00571e91 SUB ESI,EAX
+INS 00571e93 SHL ESI,0x4
+INS 00571e96 ADD ESI,EAX
+INS 00571e98 SHL ESI,0x2
+INS 00571e9b LEA ECX,[ESI + 0xa56574]
+INS 00571ea1 PUSH ECX
+INS 00571ea2 PUSH 0xa558b0
+INS 00571ea7 CALL 0x005675c0
+INS 00571eac XOR EDX,EDX
+INS 00571eae MOV DX,word ptr [0x00a550a2]
+INS 00571eb5 PUSH EDX
+INS 00571eb6 PUSH EDI
+INS 00571eb7 CALL 0x005691d0
+INS 00571ebc MOV ECX,dword ptr [ESP + 0x1c]
+INS 00571ec0 MOV DX,word ptr [ESI + 0xa55d68]
+INS 00571ec7 AND EDI,0x1
+INS 00571eca AND ECX,0xffd6
+INS 00571ed0 MOV EAX,EDI
+INS 00571ed2 XOR ECX,EDI
+INS 00571ed4 AND EDX,0x3ff
+INS 00571eda OR AL,0x1a
+INS 00571edc OR ECX,0x16
+INS 00571edf ADD EDX,0x3ff
+INS 00571ee5 MOV word ptr [ESP + 0x1a],AX
+INS 00571eea MOV word ptr [ESP + 0x1c],CX
+INS 00571eef MOV EAX,dword ptr [ESP + 0x1c]
+INS 00571ef3 SHL EDX,0x6
+INS 00571ef6 AND EDX,0x3fc0
+INS 00571efc AND EAX,0x803f
+INS 00571f01 XOR EDX,EAX
+INS 00571f03 MOV word ptr [ESP + 0x1c],DX
+INS 00571f08 MOV EAX,dword ptr [ESP + 0x1c]
+INS 00571f0c AND EAX,0xffff
+INS 00571f11 MOV ECX,EAX
+INS 00571f13 MOV EDX,EAX
+INS 00571f15 SHR ECX,0x6
+INS 00571f18 SHR EDX,0x1
+INS 00571f1a AND ECX,0xff
+INS 00571f20 AND EDX,0x1f
+INS 00571f23 PUSH ECX
+INS 00571f24 AND EAX,0x1
+INS 00571f27 PUSH EDX
+INS 00571f28 PUSH EAX
+INS 00571f29 CALL 0x00570420
+INS 00571f2e MOV ECX,dword ptr [ESP + 0x28]
+INS 00571f32 LEA EDX,[ESP + 0x28]
+INS 00571f36 SHL EAX,0xf
+INS 00571f39 AND ECX,0x7fff
+INS 00571f3f PUSH EDX
+INS 00571f40 OR EAX,ECX
+INS 00571f42 MOV ECX,dword ptr [0x00a558b0]
+INS 00571f48 MOV word ptr [ESP + 0x2c],AX
+INS 00571f4d LEA EAX,[ESP + 0x2a]
+INS 00571f51 AND ECX,0xfff
+INS 00571f57 PUSH EAX
+FUNCTION FUN_005691d0 @005691d0
+ CALLER 00571eb7 null
+
+void FUN_005691d0(undefined4 param_1)
+
+{
+  undefined4 uVar1;
+  int iVar2;
+  
+  uVar1 = param_1;
+  iVar2 = FUN_00569010(param_1,0,&param_1);
+  if (iVar2 != 0) {
+    FUN_0056cef0(uVar1,&param_1);
+  }
+  return;
+}
+
+
+FUNCTION FUN_00568d80 @00568d80
+ CALLER 005b9f14 FUN_005b9e50
+ CALLER 005b9f2f FUN_005b9e50
+ CALLER 00408c11 FUN_00408b90
+
+void FUN_00568d80(uint param_1,int param_2)
+
+{
+  ushort *puVar1;
+  int iVar2;
+  uint uVar3;
+  int iVar4;
+  undefined4 *puVar5;
+  uint uVar6;
+  uint uVar7;
+  
+  uVar6 = param_1 & 1;
+  puVar1 = &DAT_00a55d68 + uVar6 * 0x6a2;
+  if (*(char *)((int)&DAT_00a55d68 + uVar6 * 0xd44 + 1) != '\0') {
+    iVar2 = FUN_0044baa0();
+    if (iVar2 < 0x3e9) {
+      param_2 = (uint)(*puVar1 >> 8) * param_2;
+      if (0 < param_2) {
+        do {
+          iVar2 = FUN_005bddb0(*puVar1 >> 8);
+          iVar4 = FUN_005bddb0(*puVar1 >> 8);
+          FUN_005675d0(&DAT_00a56574 + uVar6 * 0x351 + iVar2,&DAT_00a56574 + iVar4 + uVar6 * 0x351);
+          param_2 = param_2 + -1;
+        } while (param_2 != 0);
+      }
+      if (((DAT_00a54e5c >> 1 & 3) >> ((byte)param_1 & 0x1f) & 1) != 0) {
+        FUN_00568ed0(1,0x10,0x14);
+        FUN_00568ed0(1,0x11,0x14);
+        FUN_00568ed0(1,0x12,0x14);
+        FUN_00568ed0(1,0x13,0x14);
+        FUN_00568ed0(1,0x14,0x14);
+      }
+    }
+    else {
+      uVar3 = (uint)(*puVar1 >> 8);
+      if (-1 < (int)(uVar3 - 1)) {
+        puVar5 = &DAT_00a56574 + uVar6 * 0x351 + (uVar3 - 1);
+        uVar7 = uVar3;
+        do {
+          iVar2 = FUN_005bddb0(uVar7);
+          FUN_005675d0(puVar5,&DAT_00a56574 + uVar6 * 0x351 + iVar2);
+          puVar5 = puVar5 + -1;
+          uVar7 = uVar7 - 1;
+          uVar3 = uVar3 - 1;
+        } while (uVar3 != 0);
+        return;
+      }
+    }
+  }
+  return;
+}
+
+

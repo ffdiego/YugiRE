@@ -1,0 +1,33 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005887c0
+FUNCTION FUN_005887c0 @005887c0
+
+uint FUN_005887c0(undefined2 *param_1)
+
+{
+  byte bVar1;
+  short sVar2;
+  uint uVar3;
+  undefined4 uVar4;
+  
+  uVar4 = 0;
+  bVar1 = *(byte *)(param_1 + 3);
+  if ((*(byte *)(param_1 + 2) & 4) != 0) goto LAB_0058880d;
+  sVar2 = FUN_004022e0(*param_1);
+  if (sVar2 == 0x21b) {
+LAB_005887fe:
+    uVar4 = 1;
+  }
+  else {
+    if (sVar2 == 0x3f2) {
+      uVar3 = FUN_00578b60(bVar1 & 1,2);
+      return uVar3 & 0xffff0000;
+    }
+    if (sVar2 == 0x5a7) goto LAB_005887fe;
+  }
+  param_1 = (undefined2 *)FUN_00578b60(bVar1 & 1,uVar4);
+LAB_0058880d:
+  return (uint)param_1 & 0xffff0000;
+}
+
+

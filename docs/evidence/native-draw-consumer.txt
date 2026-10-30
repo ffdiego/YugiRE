@@ -1,0 +1,49 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00571e30
+INS 005b95e6 JMP 0x00571e30
+FUNCTION FUN_00571e30 @00571e30
+ CALLER 005b95e6 FUN_005b9470
+
+void FUN_00571e30(void)
+
+{
+  byte *pbVar1;
+  short sVar2;
+  uint uVar3;
+  uint uVar4;
+  ushort uStack_6;
+  ushort auStack_4 [2];
+  
+  uVar3 = DAT_00a558ac & 0x7f;
+  uVar4 = (DAT_00a550a0 & 0xffff) >> 0xf;
+  if (uVar3 == 0) {
+    DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+    if (*(char *)((int)&DAT_00a55d68 + uVar4 * 0xd44 + 1) != '\0') {
+      return;
+    }
+    pbVar1 = (byte *)((int)&DAT_00a55d6c + uVar4 * 0xd44 + 1);
+    *pbVar1 = *pbVar1 | 1;
+  }
+  else {
+    if (uVar3 == 1) {
+      FUN_005675c0(&DAT_00a558b0,&DAT_00a56574 + uVar4 * 0x351);
+      FUN_005691d0(uVar4,DAT_00a550a0 >> 0x10);
+      uStack_6 = (ushort)(byte)((byte)uVar4 | 0x1a);
+      auStack_4[0] = (((&DAT_00a55d68)[uVar4 * 0x6a2] & 0x3ff) + 0x3ff) * 0x40 & 0x3fc0 ^
+                     ((auStack_4[0] & 0xffd6 ^ (ushort)uVar4) & 0x803f | 0x16);
+      sVar2 = FUN_00570420(auStack_4[0] & 1,auStack_4[0] >> 1 & 0x1f,auStack_4[0] >> 6 & 0xff);
+      auStack_4[0] = sVar2 << 0xf | auStack_4[0] & 0x7fff;
+      FUN_0040cdb0(DAT_00a558b0 & 0xfff,&uStack_6,auStack_4);
+      DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac + 1 ^ DAT_00a558ac) & 0x7f;
+      return;
+    }
+    if ((uVar3 == 2) && (DAT_00a550a4._0_2_ = (short)DAT_00a550a4 + -1, (short)DAT_00a550a4 != 0)) {
+      DAT_00a558ac = DAT_00a558ac ^ (DAT_00a558ac - 1 ^ DAT_00a558ac) & 0x7f;
+      return;
+    }
+  }
+  DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+  return;
+}
+
+
