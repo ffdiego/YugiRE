@@ -1,5 +1,11 @@
 # Reprodução
 
+Vínculo e bônus de Legendary Sword:
+`PYTHONDONTWRITEBYTECODE=1 python3 YugiRE/scripts/validate_legendary_sword.py`.
+Esperado: doze linhas `PASS`; identidade, combinação de callbacks, dispatch
+de 0xB2 e instruções de +300/+300 em `docs/evidence/legendary-sword-validation.json`.
+Não executa o jogo. Ver [análise e pendências](../docs/cards/legendary-sword.md).
+
 Catálogo completo de callbacks:
 
 ```bash

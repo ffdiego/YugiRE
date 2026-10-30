@@ -111,6 +111,8 @@ e nomes iguais também permanecem distintos; não são unidos pelo nome.
    sugere equipamentos; seguir uma amostra pode revelar vínculos e modificadores
    de atributos. O grupo por principal tem 44 registros, pois os demais slots
    variam em três entradas.
+   A [amostra foi seguida](cards/legendary-sword.md): tipo dinâmico, associação
+   tipo 1 e cálculo do bônus. Limpeza e outros ramos por ID seguem abertos.
 2. **Black Luster Ritual / P269:** 16 registros com principal 0x005999D0 e
    disponibilidade 0x00599850. Candidato para estudar seleção de materiais
    e invocação; ainda é uma hipótese guiada pelas identidades das cartas.

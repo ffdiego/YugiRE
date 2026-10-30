@@ -1,5 +1,20 @@
 # Catálogo inicial de funções
 
+## Equipamentos e atributos calculados
+
+Endereços VA; nomes descritivos somente na documentação. Ver
+[Legendary Sword](cards/legendary-sword.md).
+
+| VA | Papel seguido neste caso |
+|---|---|
+| 0x00584500 | Resolve alvo e emite vínculo de equipamento |
+| 0x00579CE0 | Condições de alvo por ID; Legendary Sword exige tipo 15 |
+| 0x0040A230 | Consome 0xB2 e encaminha a inserção de associação |
+| 0x0056AB60 | Grava posição/metadados e incrementa contador de associações |
+| 0x0056DD30 | Calcula tipo e ATK/DEF com modificadores |
+| 0x0056FD40 | Contribuições de equipamentos por ID e atributos dinâmicos |
+| 0x0056F690 / 0x0056F6B0 | Retornam ATK / DEF calculados |
+
 ## Preparação de descarte e condição de resolução
 
 Endereços VA; nomes descritivos somente na documentação. Ver

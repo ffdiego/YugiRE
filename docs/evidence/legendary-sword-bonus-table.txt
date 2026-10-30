@@ -1,0 +1,250 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_0056fd40 @0056fd40
+ CALLER 0056ef80 FUN_0056dd30
+
+void FUN_0056fd40(undefined2 *param_1,undefined4 param_2,int *param_3,int *param_4)
+
+{
+  ushort uVar1;
+  short sVar2;
+  undefined2 extraout_var;
+  undefined2 extraout_var_00;
+  undefined2 extraout_var_01;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  
+  iVar3 = 0;
+  iVar4 = 0;
+  uVar1 = FUN_004022e0(param_2);
+  if (0x28a < uVar1) {
+    if (0x422 < uVar1) {
+      if (0x58c < uVar1) {
+        if (uVar1 == 0x58e) {
+          if (*(char *)(param_1 + 1) == '\x0f') {
+            iVar3 = 800;
+          }
+        }
+        else if ((uVar1 == 0x604) &&
+                (sVar2 = FUN_004022e0(CONCAT22(extraout_var_00,*param_1)), sVar2 == 0x53b)) {
+          iVar3 = 300;
+        }
+        goto switchD_0056fd78_caseD_13d;
+      }
+      if (uVar1 == 0x58c) {
+        iVar3 = 1000;
+        iVar4 = -1000;
+        goto switchD_0056fd78_caseD_13d;
+      }
+      if (uVar1 != 0x49e) {
+        if (uVar1 == 0x4da) {
+          iVar3 = -500;
+        }
+        goto switchD_0056fd78_caseD_13d;
+      }
+      if (*(char *)(param_1 + 1) != '\x0f') goto switchD_0056fd78_caseD_13d;
+switchD_0056fd78_caseD_140:
+      iVar3 = 700;
+      goto switchD_0056fd78_caseD_13d;
+    }
+    if (uVar1 == 0x422) {
+      iVar3 = -500;
+      iVar4 = -500;
+      goto switchD_0056fd78_caseD_13d;
+    }
+    if (0x3f4 < uVar1) {
+      if (uVar1 != 0x3f5) {
+        if (uVar1 == 0x412) {
+          iVar3 = 500;
+          iVar4 = 500;
+        }
+        goto switchD_0056fd78_caseD_13d;
+      }
+      bVar5 = (param_1[1] & 0xff00) == 0x600;
+      goto LAB_0056ffda;
+    }
+    if (uVar1 == 0x3f4) {
+      bVar5 = (param_1[1] & 0xff00) == 0x400;
+      goto LAB_0056ffda;
+    }
+    if (uVar1 == 0x28d) {
+      if ((param_1[1] & 0xff00) == 0x400) {
+        iVar3 = 700;
+      }
+      goto switchD_0056fd78_caseD_13d;
+    }
+    if (uVar1 != 0x291) {
+      if ((uVar1 == 0x29b) && ((param_1[1] & 0xff00) == 0x100)) {
+        iVar3 = 700;
+      }
+      goto switchD_0056fd78_caseD_13d;
+    }
+    goto LAB_0056ff13;
+  }
+  if (uVar1 == 0x28a) goto switchD_0056fd78_caseD_136;
+  switch(uVar1) {
+  case 300:
+    bVar5 = *(char *)(param_1 + 1) == '\x0f';
+    break;
+  case 0x12d:
+    bVar5 = (param_1[1] & 0xff00) == 0x200;
+    goto LAB_0056ffda;
+  case 0x12e:
+    bVar5 = *(char *)(param_1 + 1) == '\x03';
+    break;
+  case 0x12f:
+    iVar3 = 1000;
+    goto switchD_0056fd78_caseD_13d;
+  case 0x130:
+    bVar5 = *(char *)(param_1 + 1) == '\n';
+    break;
+  case 0x131:
+    if (*(char *)(param_1 + 1) == '\n') {
+      iVar3 = 700;
+    }
+    goto switchD_0056fd78_caseD_13d;
+  case 0x132:
+    bVar5 = (param_1[1] & 0xff00) == 0x100;
+    goto LAB_0056ffda;
+  case 0x133:
+    bVar5 = *(char *)(param_1 + 1) == '\v';
+    break;
+  case 0x134:
+    bVar5 = (param_1[1] & 0xff00) == 0x300;
+    goto LAB_0056ffda;
+  case 0x135:
+    bVar5 = *(char *)(param_1 + 1) == '\r';
+    break;
+  case 0x136:
+    goto switchD_0056fd78_caseD_136;
+  case 0x137:
+    bVar5 = *(char *)(param_1 + 1) == '\x11';
+    break;
+  case 0x138:
+    iVar4 = 800;
+    goto switchD_0056fd78_caseD_13d;
+  case 0x139:
+    iVar3 = 700;
+    iVar4 = 700;
+    goto switchD_0056fd78_caseD_13d;
+  case 0x13a:
+    bVar5 = *(char *)(param_1 + 1) == '\x01';
+    break;
+  case 0x13b:
+    bVar5 = *(char *)(param_1 + 1) == '\x13';
+    break;
+  case 0x13c:
+    sVar2 = FUN_004022e0(CONCAT22(extraout_var,*param_1));
+    if (((sVar2 != 0x3d) &&
+        (sVar2 = FUN_004022e0(CONCAT22(extraout_var_01,*param_1)), sVar2 != 0x3e)) &&
+       (sVar2 = FUN_004022e0(*param_1), sVar2 != 0x4e1)) goto switchD_0056fd78_caseD_13d;
+    goto switchD_0056fd78_caseD_136;
+  default:
+    goto switchD_0056fd78_caseD_13d;
+  case 0x13e:
+    bVar5 = *(char *)(param_1 + 1) == '\f';
+    break;
+  case 0x140:
+    goto switchD_0056fd78_caseD_140;
+  case 0x141:
+    bVar5 = *(char *)(param_1 + 1) == '\x02';
+    break;
+  case 0x142:
+    bVar5 = *(char *)(param_1 + 1) == '\x12';
+    break;
+  case 0x143:
+    bVar5 = (param_1[1] & 0xff00) == 0x500;
+LAB_0056ffda:
+    if (bVar5) {
+      iVar3 = 400;
+      iVar4 = -200;
+    }
+    goto switchD_0056fd78_caseD_13d;
+  case 0x144:
+    bVar5 = *(char *)(param_1 + 1) == '\a';
+    break;
+  case 0x145:
+    bVar5 = *(char *)(param_1 + 1) == '\t';
+    break;
+  case 0x146:
+    bVar5 = *(char *)(param_1 + 1) == '\x10';
+    break;
+  case 0x147:
+    bVar5 = *(char *)(param_1 + 1) == '\x0e';
+  }
+  if (bVar5) {
+LAB_0056ff13:
+    iVar3 = 300;
+    iVar4 = 300;
+  }
+switchD_0056fd78_caseD_13d:
+  *param_3 = *param_3 + iVar3;
+  *param_4 = *param_4 + iVar4;
+  return;
+switchD_0056fd78_caseD_136:
+  iVar3 = 500;
+  goto switchD_0056fd78_caseD_13d;
+}
+
+
+FUNCTION FUN_0056f690 @0056f690
+ CALLER 005aed2e FUN_005aece0
+ CALLER 005b0c45 FUN_005b0b90
+ CALLER 005b0d2f FUN_005b0b90
+ CALLER 005b0efa FUN_005b0d90
+ CALLER 005b062e FUN_005b05a0
+ CALLER 005b068d FUN_005b05a0
+ CALLER 005b06af FUN_005b05a0
+ CALLER 005b0741 FUN_005b05a0
+ CALLER 005b0815 FUN_005b05a0
+ CALLER 005b082b FUN_005b05a0
+ CALLER 005b0865 FUN_005b05a0
+ CALLER 005b0876 FUN_005b05a0
+ CALLER 005b24d4 FUN_005b24c0
+ CALLER 005b24e8 FUN_005b24c0
+ CALLER 005b254c FUN_005b24c0
+ CALLER 005837df null
+ CALLER 0057a688 FUN_0057a630
+ CALLER 005b01cf FUN_005b0150
+ CALLER 005b467c FUN_005b3fa0
+ CALLER 005b4690 FUN_005b3fa0
+ CALLER 005a6f16 null
+ CALLER 005a70c1 null
+ CALLER 005b2a2f null
+ CALLER 005b308b null
+ CALLER 005b30c6 null
+ CALLER 005b3137 null
+ CALLER 005b316a null
+ CALLER 005b1923 FUN_005b16c0
+
+undefined4 FUN_0056f690(undefined4 param_1,undefined4 param_2)
+
+{
+  undefined1 local_c [4];
+  undefined4 local_8;
+  
+  FUN_0056dd30(param_1,param_2,local_c);
+  return local_8;
+}
+
+
+FUNCTION FUN_0056f6b0 @0056f6b0
+ CALLER 005b0e83 FUN_005b0d90
+ CALLER 005b0e96 FUN_005b0d90
+ CALLER 005b072a FUN_005b05a0
+ CALLER 005b24fa FUN_005b24c0
+ CALLER 005b250e FUN_005b24c0
+ CALLER 005b309f null
+ CALLER 005b3152 null
+
+undefined4 FUN_0056f6b0(undefined4 param_1,undefined4 param_2)
+
+{
+  undefined1 local_c [8];
+  undefined4 local_4;
+  
+  FUN_0056dd30(param_1,param_2,local_c);
+  return local_4;
+}
+
+

@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Legendary Sword](cards/legendary-sword.md): seleção Warrior, comando de vínculo
+0xB2, associação tipo 1 e recálculo de +300/+300. Limpeza completa pendente.
+
 Mapa para escolher próximos casos: [catálogo completo de callbacks](17-card-callback-catalog.md),
 443 registros, 269 combinações exatas e 219 callbacks principais distintos.
 CSV/JSON incluem cartas, ponteiros e grupos, com lacunas de nomes explícitas.

@@ -1,12 +1,20 @@
 # Efeitos das cartas — questão em aberto
 
+## Equipamento e recálculo de atributos
+
+[Legendary Sword](cards/legendary-sword.md) liga o callback compartilhado ao
+comando 0xB2, que acrescenta associação tipo 1 no monstro. 0x0056DD30 percorre
+essa associação e chama 0x0056FD40 para a contribuição por ID: Warrior recebe
+300 ATK/300 DEF no caminho comum. Seleção e cálculo conferem o tipo dinâmico.
+Limpeza dos vínculos e composição completa de modificadores continuam abertas.
+
 ## Inventário estrutural completo da tabela
 
 O [catálogo de callbacks](17-card-callback-catalog.md) agrupa 443 registros
 em 269 combinações exatas, com 219 endereços principais distintos. Ele orienta
 estudos por famílias; igualdade de ponteiros não prova igualdade de regras.
 Inclui registros nulos, nomes vazios e um ID sem mapeamento, sem atribuir
-ausência de efeito a essas condições. Próxima amostra sugerida: Legendary Sword.
+ausência de efeito a essas condições. Legendary Sword foi seguida no estudo acima.
 
 ## Supressão FLIP por Royal Command
 

@@ -1,0 +1,74 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_00584500 @00584500
+ CALLER 0058462e null
+
+uint FUN_00584500(ushort *param_1)
+
+{
+  ushort uVar1;
+  ushort *puVar2;
+  byte bVar3;
+  short sVar4;
+  int iVar5;
+  undefined4 uVar6;
+  ushort uVar8;
+  undefined2 extraout_var;
+  uint uVar7;
+  undefined2 extraout_var_00;
+  undefined2 extraout_var_01;
+  
+  puVar2 = param_1;
+  if (((ushort)(&DAT_00a55d74)[(param_1[1] >> 1 & 0x1f) * 0x24 + (param_1[1] & 1) * 0x351] & 0xfff)
+      == *param_1) {
+    iVar5 = FUN_00583470(param_1,0,&param_1);
+    if ((iVar5 != 0) && (iVar5 = FUN_0057a470(puVar2,param_1), iVar5 != 0)) {
+      uVar6 = FUN_004025d0(CONCAT22(extraout_var_01,*puVar2));
+      if ((short)uVar6 == 0x15) {
+        uVar1 = puVar2[2];
+        uVar8 = (ushort)((uint)uVar6 >> 0x10);
+        if ((uVar1 & 4) != 0) {
+          puVar2[2] = (ushort)CONCAT31((int3)(CONCAT22(uVar8,uVar1) >> 8),(char)uVar1) | 8;
+          return (uint)uVar8 << 0x10;
+        }
+      }
+      bVar3 = (byte)puVar2[1];
+      FUN_00574990(puVar2[1] & 1,CONCAT11(bVar3 >> 1,bVar3) & 0x1f01,param_1);
+      sVar4 = FUN_004022e0(CONCAT22(extraout_var,*puVar2));
+      if ((sVar4 == 0x3c2) || (sVar4 == 0x5a8)) {
+        uVar7 = FUN_005b9170((uint)puVar2[1] << 0xf | 0x88,(byte)puVar2[1] >> 1 & 0x1f,
+                             CONCAT22(extraout_var_00,puVar2[4]),0);
+        return uVar7 & 0xffff0000;
+      }
+      return 0;
+    }
+    *(byte *)(puVar2 + 2) = (byte)puVar2[2] | 8;
+  }
+  return 0;
+}
+
+
+FUNCTION FUN_0057a470 @0057a470
+ CALLER 0058455e FUN_00584500
+ CALLER 0058eb5f null
+ CALLER 005b01b9 FUN_005b0150
+ CALLER 005b02e7 FUN_005b0150
+ CALLER 00594992 null
+ CALLER 005ed338 null
+ CALLER 00593af8 null
+ CALLER 005ed410 null
+ CALLER 005ed4d0 null
+
+bool FUN_0057a470(undefined4 param_1,uint param_2)
+
+{
+  int iVar1;
+  
+  iVar1 = FUN_00579ce0(param_1,param_2);
+  if (iVar1 == 0) {
+    return false;
+  }
+  iVar1 = FUN_0056c510(param_2 & 0xff,param_2 >> 8 & 0xff);
+  return iVar1 != 0;
+}
+
+

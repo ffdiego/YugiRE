@@ -1,0 +1,63 @@
+{
+  "target_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "card": {
+    "index": 614,
+    "resource_id": 300,
+    "name": "Legendary Sword",
+    "description": "A Warrior-Type monster equipped with this card increases its ATK and DEF by 300 points.",
+    "registration_index": 24,
+    "profile": "P025",
+    "profile_member_count": 41
+  },
+  "candidate_branch": "0x57a146",
+  "bonus_branch": "0x56fd7f",
+  "dynamic_type": 15,
+  "atk_bonus": 300,
+  "def_bonus": 300,
+  "association_kind": 1,
+  "link_command": {
+    "opcode": "0xb2",
+    "normalized": 115,
+    "stub": "0x5b970d",
+    "handler": "0x40a230"
+  },
+  "instruction_checks": [
+    {
+      "va": "0x57a148",
+      "file_offset": "0x17a148",
+      "bytes": "66837c24200f"
+    },
+    {
+      "va": "0x56fd83",
+      "file_offset": "0x16fd83",
+      "bytes": "8079020f"
+    },
+    {
+      "va": "0x56ff13",
+      "file_offset": "0x16ff13",
+      "bytes": "be2c0100008bfe"
+    },
+    {
+      "va": "0x570066",
+      "file_offset": "0x170066",
+      "bytes": "8b4424188b1003d689108b44241c8b0803cf5f5e8908"
+    },
+    {
+      "va": "0x5845b3",
+      "file_offset": "0x1845b3",
+      "bytes": "e8d803ffff"
+    },
+    {
+      "va": "0x56ef80",
+      "file_offset": "0x16ef80",
+      "bytes": "e8bb0d0000"
+    },
+    {
+      "va": "0x56abbe",
+      "file_offset": "0x16abbe",
+      "bytes": "668988805da500668b4c240c668988c05da500"
+    }
+  ],
+  "method": "Static original/resource/registration/dispatch/instruction checks; no native execution.",
+  "limits": "One equipment's attach and recalculation path; complete unlink, battle use and cross-card interactions pending."
+}
