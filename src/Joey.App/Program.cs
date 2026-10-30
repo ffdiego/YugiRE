@@ -11,8 +11,11 @@ static class Game
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
     static int page, selected, hand = -1, attacker = -1, handPage;
     static DemoDuel duel = null!;
+    static DatGraphics graphics = null!;
     public static int Run(string[] args)
     {
+        using var resources = new DatGraphics();
+        graphics = resources;
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
@@ -25,39 +28,63 @@ static class Game
                 }
             }
             if (path == null) throw new FileNotFoundException("data.dat not found. Pass its path: dotnet run -- /path/to/data.dat");
-            using var archive = new Archive(path);
+            var archive = graphics.Open(path);
             cards = Catalog.Load(archive);
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--check-data")) return error.Length == 0 ? 0 : 1;
+        if (args.Contains("--check-graphics"))
+        {
+            if (error.Length > 0) return 1;
+            try { graphics.Validate(); return 0; }
+            catch (Exception ex) when (ex is InvalidDataException or IOException or KeyNotFoundException)
+            { Console.Error.WriteLine(ex.Message); return 1; }
+        }
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
         { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data for data validation."); return 2; }
         duel = new(cards);
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-        Raylib.InitWindow(1200, 800, "Joey RE - playable interface prototype");
+        Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
-        var canvas = Raylib.LoadRenderTexture(1200, 800);
+        var demoCanvas = Raylib.LoadRenderTexture(1200, 800);
+        var menuCanvas = Raylib.LoadRenderTexture(800, 600);
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
-            float scale = Math.Min(Raylib.GetScreenWidth() / 1200f, Raylib.GetScreenHeight() / 800f);
-            Vector2 origin = new((Raylib.GetScreenWidth() - 1200 * scale) / 2, (Raylib.GetScreenHeight() - 800 * scale) / 2);
+            bool menuFrame = screen == "menu";
+            int width = menuFrame ? 800 : 1200, height = menuFrame ? 600 : 800;
+            var canvas = menuFrame ? menuCanvas : demoCanvas;
+            float scale = Math.Min(Raylib.GetScreenWidth() / (float)width, Raylib.GetScreenHeight() / (float)height);
+            Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
             mouse = (Raylib.GetMousePosition() - origin) / scale;
             Raylib.BeginTextureMode(canvas); Raylib.ClearBackground(Background);
             if (screen == "menu")
             {
-                Label("JOEY THE PASSION", 90, 110, 42, Gold);
-                Label("Reimplementation prototype", 93, 167, 22);
-                if (Button("Single Duel Mode", 90, 250, 390, 56, cards.Count > 0)) { screen = "duel"; duel = new(cards); hand = attacker = -1; handPage = 0; message = "Local two-player demo. Draw or summon, then enter battle."; }
-                Button("Deck Construction - coming later", 90, 320, 390, 56, false);
-                if (Button("Card List", 90, 390, 390, 56, cards.Count > 0)) screen = "cards";
-                Button("Options - coming later", 90, 460, 390, 56, false);
-                if (Button("Quit Game", 90, 530, 390, 56)) quit = true;
-                Label($"{cards.Count} resource records loaded from data.dat", 590, 300, 22);
-                Wrap("Real card data. Temporary graphics. Duel rules are a demonstration.", 590, 350, 490, 24);
-                if (error.Length > 0) Wrap(error, 90, 640, 1000, 20);
+                if (graphics.Menu is { } menu && error.Length == 0)
+                {
+                    Raylib.DrawTexture(graphics.Texture(MenuResources.Background), 0, 0, Color.White);
+                    int hover = menu.Hit(mouse.X, mouse.Y);
+                    for (int row = 0; row < 5; row++)
+                    {
+                        bool enabled = row is 0 or 2 or 4;
+                        var texture = graphics.Texture(enabled && hover == row ? MenuResources.Highlight : MenuResources.Normal);
+                        Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
+                            new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
+                    }
+                    if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+                    {
+                        if (hover == 0) { screen = "duel"; duel = new(cards); hand = attacker = -1; handPage = 0; message = "Local two-player demo. Draw or summon, then enter battle."; }
+                        if (hover == 2) screen = "cards";
+                        if (hover == 4) quit = true;
+                    }
+                }
+                else
+                {
+                    Wrap(error, 30, 80, 740, 20);
+                    if (Button("Quit", 30, 500, 150, 50)) quit = true;
+                }
             }
             else
             {
@@ -65,13 +92,14 @@ static class Game
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel") DrawDuel();
             }
-            Label("Temporary graphics | Local DAT resources | Demonstration build", 24, 775, 16, Gold);
+            if (!menuFrame) Label("Temporary layout | Local DAT resources | Demonstration build", 24, 775, 16, Gold);
             Raylib.EndTextureMode();
             Raylib.BeginDrawing(); Raylib.ClearBackground(Color.Black);
-            Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, 1200, -800), new Rectangle(origin.X, origin.Y, 1200 * scale, 800 * scale), Vector2.Zero, 0, Color.White);
+            Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height), new Rectangle(origin.X, origin.Y, width * scale, height * scale), Vector2.Zero, 0, Color.White);
             Raylib.EndDrawing();
         }
-        Raylib.UnloadRenderTexture(canvas); Raylib.CloseWindow(); return 0;
+        Raylib.UnloadRenderTexture(demoCanvas); Raylib.UnloadRenderTexture(menuCanvas);
+        graphics.Dispose(); Raylib.CloseWindow(); return 0;
     }
     static Vector2 mouse;
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)

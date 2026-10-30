@@ -102,9 +102,13 @@ Check(equipped.AttackValue(0, 0) == 2000, "Reused monster slot does not inherit 
 var empty = new DemoDuel([]);
 Check(empty.Draw(out _) && empty.Winner == 1, "Drawing from empty deck ends demo");
 Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over");
+GraphicsTests.Run(Check, Reject);
 if (args.Length > 0)
 {
     using var archive = new Archive(args[0]);
+    Check(BitmapInfo.Read(archive.Read(MenuResources.Background)) == new BitmapInfo(800, 600), "Original menu background dimensions");
+    Check(BitmapInfo.Read(archive.Read(MenuResources.Normal)) == new BitmapInfo(400, 250), "Original menu button atlas dimensions");
+    Check(MenuResources.Load(archive).Buttons == new SceneSprite("menu_?_ani0.bmp", 200, 320), "Original menu scene position");
     Check(archive.Entries.Count == 3568, "Original archive index count");
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_id.bin"))).Equals("A36CDE2192FA85D9CCBCDB0DDB8BA8494A5199EA31D11A50A70B5FD32BF5879C"), "Original ID resource hash");
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_nameeng.bin"))).Equals("74848D0B2CD7D5FAC7A767075BD5B01E0366183CE934AFA6070CE24394A24032"), "Original names resource hash");

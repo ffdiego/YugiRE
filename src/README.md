@@ -44,7 +44,8 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 
 ## Telas e controles
 
-- Menu: Single Duel Mode, Card List e Quit Game funcionais. Deck Construction
+- Menu: fundo e botões originais lidos do DAT em 800×600. Single Duel Mode,
+  Card List e Quit Game funcionais. Deck Construction
   e Options permanecem desabilitados.
 - Card List: digite para pesquisar por nome; Backspace apaga. Selecione uma
   linha para ver atributos e descrição; Previous/Next mudam a página.
@@ -80,8 +81,10 @@ neste sandbox. Ao destruir o alvo, cada equipamento vai ao cemitério de seu
 dono; reutilizar a zona não mantém o bônus. Exceções de efeitos, Banisher,
 fichas e negação não são reproduzidas.
 
-Os nomes e atributos são reais; os desenhos são representações temporárias,
-sem ilustrações originais. Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
+Os nomes e atributos são reais. O menu já usa os BMPs originais do DAT;
+as outras telas ainda usam representações temporárias, sem ilustrações originais.
+A janela inicia em 800×600; as telas de demonstração ainda são escaladas de
+1200×800. Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md). Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
 Ativação imediata sem correntes, cemitério, combate, bloqueio de batalha no
 primeiro turno, derrota por deck vazio e vitória por LP são políticas do demo,
 ainda não atribuídas ao motor original. Não há IA, cartas viradas para baixo, efeitos de monstros,
@@ -97,13 +100,14 @@ dotnet build Joey.App
 dotnet run --project tests/Joey.Tests
 dotnet run --project tests/Joey.Tests -- ../../passion/data.dat
 dotnet run --project Joey.App -- --check-data
+dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 48
-verificações sintéticas e mais 7 contra o arquivo original opcional.
+código diferente de zero. `dotnet test` não substitui esse comando. São 57
+verificações sintéticas e mais 10 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 55 verificações C# e 14 testes Python
+Nesta sessão: compilação concluída; 67 verificações C# e 14 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
