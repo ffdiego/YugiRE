@@ -35,13 +35,29 @@ def main():
         raw = bytes.fromhex(expected)
         if data[va - 0x400000:va - 0x400000 + len(raw)] != raw:
             raise ValueError(f'Unexpected draw instruction at {va:#x}')
+    exodia_calls = (0x5bbf78, 0x5bbf89, 0x5bbf9a, 0x5bbfab, 0x5bbfbc)
+    terminal_calls = [(site, 0x56d2c0) for site in exodia_calls]
+    terminal_calls += [(0x5bbfdb, 0x5699a0), (0x5bbfef, 0x569720),
+                       (0x5bc005, 0x569720), (0x5bc01b, 0x569720), (0x5bc031, 0x569720)]
+    for expected_id, site in enumerate(exodia_calls, 16):
+        if data[site - 0x400000 - 3:site - 0x400000 - 1] != bytes((0x6a, expected_id)):
+            raise ValueError('Unexpected Exodia hand predicate ID')
+    for site, target in terminal_calls:
+        off = site - 0x400000
+        if data[off] != 0xe8 or site + 5 + struct.unpack_from('<i', data, off + 1)[0] != target:
+            raise ValueError('Unexpected terminal predicate call')
+    registered = {struct.unpack_from('<I', data, 0x1ed0a8 + row * 24)[0] for row in range(443)}
+    if registered.intersection(range(16, 21)):
+        raise ValueError('Expected Exodia parts to have no record in this callback table')
     report = dict(sha256=digest, opcode='0x61', normalized_index=index, stub=hex(stub), consumer='0x571e30',
                   records={hex(k): [hex(v) for v in row] for k, row in records.items()},
                   transfers=[dict(site=hex(site), target=hex(target)) for site, _, target in transfers],
                   instruction_sites=[hex(x) for x in checks],
-                  limitation='Static checks only; no native drawing, shuffling, animations or chain scenarios executed.')
+                  terminal_calls=[dict(site=hex(site), target=hex(target)) for site, target in terminal_calls],
+                  exodia_ids_without_callback_record=list(range(16, 21)),
+                  limitation='Static checks only; no native drawing, shuffling, animations, terminal scenarios or chain scenarios executed.')
     (REPO / 'docs/evidence/native-draw-validation.json').write_text(json.dumps(report, indent=2) + '\n')
-    print('PASS: draw dispatch, three card records, seven transfers and five constants')
+    print('PASS: draw dispatch, three card records, seven transfers, five constants and ten terminal calls; Exodia IDs absent from callback table')
 
 if __name__ == '__main__':
     main()

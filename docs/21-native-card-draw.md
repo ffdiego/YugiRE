@@ -127,3 +127,8 @@ execução de compras, embaralhamento ou cenários de correntes.
 [exceções e encerramento](evidence/native-draw-special-kinds-and-terminal-checks.txt),
 [callback](evidence/pot-of-greed-draw-callback.txt),
 [disponibilidade e instruções](evidence/pot-of-greed-draw-eligibility.txt).
+
+A [continuação das condições de encerramento](23-terminal-conditions.md)
+identificou os dois predicados especiais como Exodia e Destiny Board e
+confirmou as regiões consultadas. A validação da compra foi ampliada com
+as chamadas desses predicados e a ausência de Exodia na tabela de callbacks.

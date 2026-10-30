@@ -277,3 +277,7 @@ iniciais e os três registros da família de compra. [Estudo](../docs/21-native-
 `python3 scripts/validate_battle_core.py` confere a comparação selecionada,
 a captura de registros de batalha e a cadeia de dano.
 [Semântica e exceções ainda abertas](../docs/22-battle-core.md).
+
+O validador da compra também confere IDs e chamadas dos predicados centrais
+de [Exodia/Destiny Board](../docs/23-terminal-conditions.md) e a ausência das
+cinco partes de Exodia na tabela de callbacks.

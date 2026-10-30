@@ -1,0 +1,111 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+FUNCTION FUN_0056d2c0 @0056d2c0
+ CALLER 0059922b FUN_00599140
+ CALLER 005ab536 FUN_005ab3f0
+ CALLER 005b0562 FUN_005b0540
+ CALLER 005bbf78 FUN_005bbf70
+ CALLER 005bbf89 FUN_005bbf70
+ CALLER 005bbf9a FUN_005bbf70
+ CALLER 005bbfab FUN_005bbf70
+ CALLER 005bbfbc FUN_005bbf70
+ CALLER 005ae4c1 FUN_005ae3e0
+ CALLER 005ae603 FUN_005ae3e0
+ CALLER 005ae697 FUN_005ae3e0
+ CALLER 005b6387 null
+
+int FUN_0056d2c0(uint param_1,short param_2)
+
+{
+  short sVar1;
+  ushort *puVar2;
+  int iVar3;
+  int iVar4;
+  
+  param_1 = param_1 & 1;
+  iVar3 = 0;
+  iVar4 = 0;
+  if (*(char *)(&DAT_00a55d68 + param_1 * 0x6a2) == '\0') {
+    return 0;
+  }
+  puVar2 = (ushort *)(&DAT_00a56434 + param_1 * 0x351);
+  do {
+    sVar1 = FUN_004022e0(*puVar2 & 0xfff);
+    if (sVar1 == param_2) {
+      iVar3 = iVar3 + 1;
+    }
+    iVar4 = iVar4 + 1;
+    puVar2 = puVar2 + 2;
+  } while (iVar4 < (int)(uint)*(byte *)(&DAT_00a55d68 + param_1 * 0x6a2));
+  return iVar3;
+}
+
+
+FUNCTION FUN_00569720 @00569720
+ CALLER 00569cba FUN_00569cb0
+ CALLER 005bbfef FUN_005bbfd0
+ CALLER 005bc005 FUN_005bbfd0
+ CALLER 005bc01b FUN_005bbfd0
+ CALLER 005bc031 FUN_005bbfd0
+
+int FUN_00569720(uint param_1,short param_2)
+
+{
+  short sVar1;
+  byte *pbVar2;
+  int iVar3;
+  
+  iVar3 = 5;
+  pbVar2 = (byte *)(&DAT_00a5604a + (param_1 & 1) * 0x6a2);
+  do {
+    if (((*(ushort *)(pbVar2 + -6) & 0xfff) != 0) && ((*pbVar2 & 2) != 0)) {
+      sVar1 = FUN_004022e0(*(ushort *)(pbVar2 + -6) & 0xfff);
+      if (sVar1 == param_2) {
+        return iVar3;
+      }
+    }
+    iVar3 = iVar3 + 1;
+    pbVar2 = pbVar2 + 0x90;
+  } while (iVar3 < 0xb);
+  return -1;
+}
+
+
+FUNCTION FUN_005699a0 @005699a0
+ CALLER 0059d24b FUN_0059d240
+ CALLER 00576646 FUN_00576360
+ CALLER 005774a9 FUN_00577280
+ CALLER 0056bae4 FUN_0056b7d0
+ CALLER 0056bb55 FUN_0056b7d0
+ CALLER 0056e51f FUN_0056dd30
+ CALLER 00570b4b FUN_00570b40
+ CALLER 00570bc1 FUN_00570bb0
+ CALLER 005b11ef FUN_005b0f40
+ CALLER 005b1222 FUN_005b0f40
+ CALLER 005b84ca FUN_005b8210
+ CALLER 005b84f5 FUN_005b8210
+ CALLER 0058376a null
+ CALLER 00583782 null
+ CALLER 0058379a null
+ CALLER 0056d402 FUN_0056d3f0
+ CALLER 005bbfdb FUN_005bbfd0
+ CALLER 005a4621 null
+ CALLER 00570a9e FUN_00570a70
+ CALLER 005a2151 null
+ CALLER 0059d1eb FUN_0059d090
+ CALLER 005a1ea2 null
+ CALLER 005ae141 FUN_005ae0a0
+ CALLER 005acb33 FUN_005ac990
+ CALLER 0059ce18 FUN_0059cd70
+ CALLER 005ae4ab FUN_005ae3e0
+ CALLER 005ae5ed FUN_005ae3e0
+ CALLER 005b1816 FUN_005b16c0
+ CALLER 005b183f FUN_005b16c0
+
+void FUN_005699a0(undefined4 param_1,undefined4 param_2)
+
+{
+  FUN_00569820(param_1,param_2,0xffffffff);
+  return;
+}
+
+

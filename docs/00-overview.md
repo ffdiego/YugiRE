@@ -29,6 +29,9 @@ Criação persistente concluída com `Analysis succeeded` e `Save succeeded for:
 
 ## Índice
 
+[Encerramento](23-terminal-conditions.md): Exodia fora da tabela de callbacks,
+Destiny Board, falta de cartas e LP na verificação central.
+
 [Núcleo de batalha](22-battle-core.md): comparação ATK/DEF, empate zero,
 apresentação, cópia temporária e atualização de LP/destino.
 

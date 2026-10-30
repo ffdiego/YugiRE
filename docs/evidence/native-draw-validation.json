@@ -67,5 +67,54 @@
     "0x571fa9",
     "0x571e61"
   ],
-  "limitation": "Static checks only; no native drawing, shuffling, animations or chain scenarios executed."
+  "terminal_calls": [
+    {
+      "site": "0x5bbf78",
+      "target": "0x56d2c0"
+    },
+    {
+      "site": "0x5bbf89",
+      "target": "0x56d2c0"
+    },
+    {
+      "site": "0x5bbf9a",
+      "target": "0x56d2c0"
+    },
+    {
+      "site": "0x5bbfab",
+      "target": "0x56d2c0"
+    },
+    {
+      "site": "0x5bbfbc",
+      "target": "0x56d2c0"
+    },
+    {
+      "site": "0x5bbfdb",
+      "target": "0x5699a0"
+    },
+    {
+      "site": "0x5bbfef",
+      "target": "0x569720"
+    },
+    {
+      "site": "0x5bc005",
+      "target": "0x569720"
+    },
+    {
+      "site": "0x5bc01b",
+      "target": "0x569720"
+    },
+    {
+      "site": "0x5bc031",
+      "target": "0x569720"
+    }
+  ],
+  "exodia_ids_without_callback_record": [
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "limitation": "Static checks only; no native drawing, shuffling, animations, terminal scenarios or chain scenarios executed."
 }
