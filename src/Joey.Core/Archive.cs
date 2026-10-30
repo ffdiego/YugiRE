@@ -72,7 +72,8 @@ public sealed class Archive : IDisposable
 public record Card(int Index, ushort Id, string Name, string Description, uint Properties)
 {
     public int ClassCode => (int)((Properties >> 20) & 31);
-    public bool IsMonster => ClassCode <= 20;
+    // Native 0x00402690 accepts classes 1 through 20, excluding the empty class 0.
+    public bool IsMonster => ClassCode is >= 1 and <= 20;
     public int Attack => (int)((Properties >> 9) & 511) * 10;
     public int Defense => (int)(Properties & 511) * 10;
     public int Level => (int)((Properties >> 25) & 15);

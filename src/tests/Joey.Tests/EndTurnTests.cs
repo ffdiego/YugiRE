@@ -4,7 +4,7 @@ static class EndTurnTests
 {
     public static void Run(Action<bool, string> check)
     {
-        var monster = new Card(1, 1, "Monster", "", 0);
+        var monster = new Card(1, 1, "Monster", "", 1u << 20);
         var sparks = new Card(2, 342, "Sparks", "", 21u << 20);
         // Deliberately oversized opening fixture to exercise multiple required choices.
         var duel = new DemoDuel([monster, monster, monster, sparks, sparks, sparks, sparks, sparks]);

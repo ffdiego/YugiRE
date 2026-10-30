@@ -47,6 +47,7 @@ static partial class Game
         ? DemoDuel.FromDecks(deckGroups[0], deckGroups[0]) : new(cards);
     static void StartDemo()
     {
+        tributeZones.Clear();
         duel = NewDemo(); screen = "duel"; hand = attacker = -1; handPage = 0;
         message = useImportedDeck ? "Imported main deck for both local players. Only selected effects work in this demo." :
             "Local two-player demo. Draw or summon, then enter battle.";

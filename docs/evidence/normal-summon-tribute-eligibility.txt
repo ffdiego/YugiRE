@@ -1,0 +1,82 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 0056a0d0
+TRANSIENT FUNCTION 00577b30
+REFERENCES TO 005aab90
+ XREF From: 005a03d1 To: 005aab90 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005a02a0
+ XREF From: 005b13e0 To: 005aab90 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005b1360
+ XREF From: 005b19d4 To: 005aab90 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005b16c0
+ XREF From: 005b1ae9 To: 005aab90 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005b16c0
+REFERENCES TO 005aae00
+ XREF From: 005a03da To: 005aae00 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005a02a0
+ XREF From: 005a03ef To: 005aae00 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005a02a0
+ XREF From: 005b64f4 To: 005aae00 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION none
+ XREF From: 005b6a84 To: 005aae00 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION none
+REFERENCES TO 005abd00
+ XREF From: 005ab87f To: 005abd00 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION none
+ XREF From: 005ac8ad To: 005abd00 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 005ac870
+FUNCTION FUN_0056a0d0 @0056a0d0
+ CALLER 005aab61 FUN_005aab30
+ CALLER 005aecc7 FUN_005aecb0
+ CALLER 0059e4e5 FUN_0059df40
+ CALLER 0059e6a4 FUN_0059df40
+ CALLER 0059e876 FUN_0059df40
+ CALLER 0056a25d FUN_0056a200
+
+undefined4 FUN_0056a0d0(undefined4 param_1,uint param_2,int param_3)
+
+{
+  ushort uVar1;
+  undefined4 uVar2;
+  
+  uVar1 = FUN_004022e0(*(ushort *)(&DAT_00a55d74 + param_3 * 0x24 + (param_2 & 1) * 0x351) & 0xfff);
+  if ((uVar1 < 0x781) || (0x782 < uVar1)) {
+    uVar2 = FUN_0056a140(param_1,param_2,param_3);
+    return uVar2;
+  }
+  return 0;
+}
+
+
+FUNCTION FUN_00577b30 @00577b30
+ CALLER 00599817 FUN_005995e0
+ CALLER 00599d9c FUN_005999d0
+ CALLER 005839b2 null
+ CALLER 0059f33a FUN_0059df40
+ CALLER 005a1bf5 null
+ CALLER 005a1cca null
+ CALLER 005a86ef null
+ CALLER 005a96e6 FUN_005a9500
+ CALLER 005abe0d FUN_005abd00
+ CALLER 005abe31 FUN_005abd00
+ CALLER 005abe55 FUN_005abd00
+ CALLER 005ad43b FUN_005ad350
+ CALLER 005ad45f FUN_005ad350
+ CALLER 005ad483 FUN_005ad350
+ CALLER 0057cb66 null
+ CALLER 0057d965 null
+ CALLER 0057d9de null
+
+bool FUN_00577b30(ushort param_1,char param_2)
+
+{
+  uint uVar1;
+  uint uVar2;
+  undefined2 local_14;
+  ushort local_12;
+  undefined4 local_10;
+  undefined4 local_c;
+  undefined4 local_8;
+  undefined4 local_4;
+  
+  local_12 = param_1 & 1;
+  uVar2 = 1 << ((char)param_1 * '\x10' + param_2 & 0x1fU);
+  local_10 = 0;
+  local_c = 0;
+  local_8 = 0;
+  local_14 = 0;
+  local_4 = 0;
+  uVar1 = FUN_00576960(&local_14,uVar2,0xe,0x1000);
+  return (uVar1 & uVar2) != 0;
+}
+
+

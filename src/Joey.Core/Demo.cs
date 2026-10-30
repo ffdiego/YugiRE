@@ -58,14 +58,27 @@ public sealed class DemoDuel
             foreach (var c in monsters.Skip(3).Concat(spells)) decks[p].Enqueue(c);
         }
     }
-    public bool Summon(int index, int player, int zone, bool monsterZone, out string message)
+    public static int NormalTributes(Card card) => card.Level <= 4 ? 0 : card.Level <= 6 ? 1 : 2;
+    public bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null)
     {
         message = "Choose an empty monster zone on the active player's side.";
         if (Winner != null || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
-        if (index < 0 || index >= Hand.Count || player != ActivePlayer || zone < 0 || zone >= 5 || !monsterZone || Monsters[player, zone] != null) return false;
+        if (index < 0 || index >= Hand.Count || player != ActivePlayer || zone < 0 || zone >= 5 || !monsterZone) return false;
         if (!Hand[index].IsMonster) { message = "Only monsters can be summoned here."; return false; }
+        int required = NormalTributes(Hand[index]);
+        int[] tributes = tributeZones?.ToArray() ?? [];
+        if (tributes.Length != required)
+        { message = $"This monster needs {required} tribute(s). Select own monsters, then a destination."; return false; }
+        if (tributes.Distinct().Count() != tributes.Length || tributes.Any(z => z < 0 || z >= 5 || Monsters[player, z] == null))
+        { message = "Tributes must be distinct occupied monster zones on your side."; return false; }
+        if (Monsters[player, zone] != null && !tributes.Contains(zone))
+        { message = "Choose an empty zone or one of the selected tribute zones."; return false; }
+        // RE base count: 0x005AAB90. All validation precedes payment in this compact demo transaction.
+        // Special summon restrictions, Soul Exchange and token-specific restrictions remain unsupported.
+        foreach (int tribute in tributes) RemoveMonster(player, tribute);
         Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
-        message = "Monster summoned in attack position (demo: no tribute costs)."; return true;
+        DefensePosition[player, zone] = false;
+        message = $"Monster summoned in attack position; {required} tribute(s)."; return true;
     }
     public bool Draw(out string message)
     {
@@ -130,7 +143,7 @@ public sealed class DemoDuel
         if (DefensePosition[enemy, target])
         {
             int difference = AttackValue(p, source) - DefenseValue(enemy, target);
-            if (difference > 0) Destroy(enemy, target);
+            if (difference > 0) RemoveMonster(enemy, target);
             else if (difference < 0) Damage(p, -difference);
             message = difference > 0 ? "Defense overcome: defender destroyed, no LP damage." : difference == 0 ? "Equal ATK/DEF: no destruction or damage." : $"Defense holds: attacker takes {-difference} damage, neither destroyed.";
             return true;
@@ -142,14 +155,14 @@ public sealed class DemoDuel
             message = "Zero ATK tie: neither monster destroyed, no damage.";
             return true;
         }
-        if (delta >= 0) Destroy(enemy, target);
-        if (delta <= 0) Destroy(p, source);
+        if (delta >= 0) RemoveMonster(enemy, target);
+        if (delta <= 0) RemoveMonster(p, source);
         if (delta > 0) Damage(enemy, delta);
         if (delta < 0) Damage(p, -delta);
         message = delta == 0 ? "Equal ATK: both monsters destroyed, no damage." : $"Battle: {Math.Abs(delta)} damage; weaker monster destroyed.";
         return true;
     }
-    private void Destroy(int p, int z)
+    private void RemoveMonster(int p, int z)
     {
         graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false;
         // Common cleanup only: no Banisher/token/trigger exceptions in this sandbox.

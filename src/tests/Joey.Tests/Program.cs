@@ -33,8 +33,8 @@ try
     Reject(() => { using var a = new Archive(malformed); }, "Reject payload beyond EOF");
 }
 finally { File.Delete(malformed); }
-var weak = new Card(1, 1, "Weak", "", (4u << 25) | (100u << 9));
-var strong = new Card(2, 2, "Strong", "", (4u << 25) | (200u << 9));
+var weak = new Card(1, 1, "Weak", "", (1u << 20) | (4u << 25) | (100u << 9));
+var strong = new Card(2, 2, "Strong", "", (1u << 20) | (4u << 25) | (200u << 9));
 var sparks = new Card(3, 342, "Sparks", "", 21u << 20);
 var ookazi = new Card(4, 345, "Ookazi", "", 21u << 20);
 var demo = new DemoDuel([weak, strong, weak, strong, weak, sparks, ookazi]);
@@ -60,7 +60,7 @@ Check(!demo.Attack(0, -1, out _), "Attacker cannot attack twice");
 var equal = new DemoDuel([weak, weak, weak]);
 equal.Summon(0, 0, 0, true, out _); equal.NextTurn(); equal.Summon(0, 1, 0, true, out _); equal.BeginBattle(out _);
 Check(equal.Attack(0, 0, out _) && equal.Monsters[0, 0] == null && equal.Monsters[1, 0] == null && equal.Life[0] == 8000, "Equal attack destroys both without damage");
-var zero = new Card(20, 20, "Zero ATK test monster", "", 4u << 25);
+var zero = new Card(20, 20, "Zero ATK test monster", "", (1u << 20) | (4u << 25));
 var zeroBattle = new DemoDuel([zero, zero, zero]);
 zeroBattle.Summon(0, 0, 0, true, out _); zeroBattle.NextTurn(); zeroBattle.Summon(0, 1, 0, true, out _); zeroBattle.BeginBattle(out _);
 Check(zeroBattle.Attack(0, 0, out _) && zeroBattle.Monsters[0, 0] != null && zeroBattle.Monsters[1, 0] != null && zeroBattle.Graveyard(0).Count == 0 && zeroBattle.Graveyard(1).Count == 0 && zeroBattle.Life[0] == 8000 && zeroBattle.Life[1] == 8000, "Native zero-ATK tie preserves both monsters and LP");
@@ -77,7 +77,7 @@ int finalTurn = lethal.Turn; lethal.NextTurn();
 Check(lethal.Turn == finalTurn && !lethal.BeginBattle(out _), "Game over locks turn and battle progression");
 foreach (int defense in new[] { 500, 1000, 2000 })
 {
-    var wall = new Card(7, 7, "Wall", "", (4u << 25) | (uint)(defense / 10));
+    var wall = new Card(7, 7, "Wall", "", (1u << 20) | (4u << 25) | (uint)(defense / 10));
     var defenseDuel = new DemoDuel([weak, wall, weak]);
     defenseDuel.Summon(0, 0, 0, true, out _); defenseDuel.NextTurn(); defenseDuel.Summon(1, 1, 0, true, out _);
     Check(defenseDuel.ChangePosition(0, out _) && !defenseDuel.ChangePosition(0, out _), $"Defense {defense}: position changes once per turn");
@@ -105,6 +105,7 @@ Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over")
 GraphicsTests.Run(Check, Reject);
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
+SummonTests.Run(Check);
 if (args.Length > 0)
 {
     using var archive = new Archive(args[0]);

@@ -8,8 +8,8 @@ static class DeckTests
         var deck = DeckFile.Read(bytes);
         check(deck.HeaderHex == "0100000091B6B154" && deck.Groups.Count == 3 && deck.Groups[0].SequenceEqual(new ushort[] { 0, 2037 }) &&
             deck.Groups[1].SequenceEqual(new ushort[] { 812 }) && deck.Groups[2].Count == 0, "YDC fixture: header, zero ID, extended ID and three lists");
-        var blue = new Card(816, 0, "Blue", "", 0);
-        var gaia = new Card(32, 2037, "Gaia variant", "", 0);
+        var blue = new Card(816, 0, "Blue", "", 1u << 20);
+        var gaia = new Card(32, 2037, "Gaia variant", "", 1u << 20);
         check(deck.Resolve(0, [gaia, blue]).SequenceEqual([blue, gaia]) && !deck.HasDuelSize,
             "YDC resolves resource IDs rather than table indices; short decks remain inspectable");
         reject(() => deck.Resolve(1, [blue]), "YDC unknown card ID is reported");

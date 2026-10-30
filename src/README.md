@@ -61,7 +61,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   Esse modo mantém variantes e registros sem nome, sem inferir jogabilidade.
 - Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
   Draw compra uma carta por turno; selecione um monstro e uma zona própria vazia
-  para invocar uma vez por turno. Não há custos de tributo nesta demonstração.
+  para invocar uma vez por turno. Níveis 5–6 exigem um tributo; 7+ exigem dois.
+  Selecione os monstros próprios, depois uma zona vazia ou selecionada. Cancel
+  abandona a seleção. É possível liberar uma zona de um campo cheio.
+  Evidência e limites: [invocação normal](../docs/26-normal-summon-tributes.md).
 - Use card ativa Sparks ou Ookazi da mão. Para Legendary Sword, selecione a carta e clique em um Warrior no campo
   de qualquer jogador. Ela ocupa uma zona de magia própria e concede +300/+300.
   Os demais efeitos são recusados.
@@ -116,7 +119,7 @@ a mão deve ter cinco cartas e o deck restante 37; Draw muda para seis/36.
 | Comprovado estaticamente por RE / recursos | BMPs e manifestos de posições/imagens, índice DAT, troca de nibbles, LZSS, IDs/índices, nomes, descrições e campos de propriedades; referências em `../docs/02-file-formats.md`. |
 | Observado no jogo original | Organização geral de telas fornecida pelo usuário; fidelidade visual ainda não conferida neste ambiente. |
 | Hipótese | Códigos de classe são preservados numericamente; não atribuímos nomes a classes ainda não confirmadas. |
-| Demonstração | `Joey.Core/Demo.cs`: mãos/decks fixos, LP 8000, dois jogadores locais, turnos manuais, uma compra e invocação por turno, invocações sem tributos e combate simplificado por ATK/DEF. A política de aceitar classes 0–20 como monstros é uma simplificação local. |
+| Demonstração | `Joey.Core/Demo.cs`: mãos/decks fixos, LP 8000, dois jogadores locais, turnos manuais, uma compra e invocação por turno, seleção local de tributos e combate simplificado por ATK/DEF. Classes 1–20 como monstros seguem o gate nativo; restrições especiais completas de invocação continuam ausentes. |
 
 `Joey.Core/DeckFile.cs` transcreve o leitor YDC comprovado em
 `../docs/02-file-formats.md`, preservando os oito bytes opacos do cabeçalho,
@@ -159,11 +162,11 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 92
+código diferente de zero. `dotnet test` não substitui esse comando. São 105
 verificações sintéticas, mais 22 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 120 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 133 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

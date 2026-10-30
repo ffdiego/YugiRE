@@ -9,6 +9,7 @@ static partial class Game
     static readonly Color Background = new(16, 23, 35, 255), Panel = new(29, 42, 57, 255), Gold = new(230, 185, 93, 255);
     static List<Card> cards = [], orderedCards = [], joeyCards = [];
     static bool joeyOnly;
+    static readonly List<int> tributeZones = [];
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
     static int page, selected, hand = -1, attacker = -1, handPage;
     static DemoDuel duel = null!;
@@ -236,14 +237,33 @@ static partial class Game
         }
         return lines;
     }
+    static void SummonFromHand(int player, int zone)
+    {
+        if (duel.Phase == DemoPhase.Main && player == duel.ActivePlayer && hand >= 0 && hand < duel.Hand.Count && duel.Hand[hand].IsMonster)
+        {
+            int needed = DemoDuel.NormalTributes(duel.Hand[hand]);
+            if (needed > 0 && tributeZones.Count < needed)
+            {
+                if (duel.Monsters[player, zone] != null)
+                {
+                    if (!tributeZones.Remove(zone)) tributeZones.Add(zone);
+                    message = tributeZones.Count == needed ? "Tributes selected. Click an empty or selected zone to summon; Cancel to reset." :
+                        $"Select {needed - tributeZones.Count} more own tribute(s).";
+                }
+                else message = $"Select {needed - tributeZones.Count} own tribute(s) first.";
+                return;
+            }
+        }
+        if (duel.Summon(hand, player, zone, true, out message, tributeZones)) { hand = -1; tributeZones.Clear(); }
+    }
     static void DrawDuel()
     {
         Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
         if (Button("< Menu", 8, 8, 85, 30)) screen = "menu";
         Label("LOCAL DEMO", 105, 16, 16, Gold);
         if (Button("Draw", 240, 8, 80, 30)) duel.Draw(out message);
-        if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); hand = -1; }
-        if (Button("End turn", 412, 8, 105, 30)) { duel.EndTurn(out message); hand = attacker = -1; handPage = 0; }
+        if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); hand = -1; tributeZones.Clear(); }
+        if (Button("End turn", 412, 8, 105, 30)) { duel.EndTurn(out message); hand = attacker = -1; handPage = 0; tributeZones.Clear(); }
         if (Button("Reset", 523, 8, 75, 30)) StartDemo();
         Label(duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" : $"Turn {duel.Turn} P{duel.ActivePlayer + 1}: {duel.Phase}", 8, 50, 16, Gold);
         Raylib.DrawRectangle(240, 46, 545, 24, Panel);
@@ -254,10 +274,10 @@ static partial class Game
         if (Button(duel.PendingEndDiscards > 0 ? "Discard" : "Use card", 8, 380, 98, 30))
         {
             bool used = duel.PendingEndDiscards > 0 ? duel.DiscardForEndTurn(hand, out message) : duel.Play(hand, out message);
-            if (used) { hand = attacker = -1; handPage = 0; }
+            if (used) { hand = attacker = -1; handPage = 0; tributeZones.Clear(); }
         }
         if (Button("Direct attack", 112, 380, 108, 30)) duel.Attack(attacker, -1, out message);
-        if (Button("Cancel", 8, 416, 98, 30)) { hand = attacker = -1; message = "Selection cleared."; }
+        if (Button("Cancel", 8, 416, 98, 30)) { hand = attacker = -1; tributeZones.Clear(); message = "Selection cleared."; }
         if (Button("Hand <", 8, 452, 98, 30, handPage > 0)) handPage--;
         if (Button("Hand >", 112, 452, 108, 30, (handPage + 1) * 6 < duel.Hand.Count)) handPage++;
         for (int player = 0; player < 2; player++)
@@ -278,7 +298,7 @@ static partial class Game
                     else if (hand >= 0 && hand < duel.Hand.Count && duel.Hand[hand].Id == 300)
                     { if (duel.Equip(hand, player, z, out message)) hand = -1; }
                     else if (card != null && player == duel.ActivePlayer && hand < 0) duel.ChangePosition(z, out message);
-                    else if (duel.Summon(hand, player, z, true, out message)) hand = -1;
+                    else SummonFromHand(player, z);
                 }
                 if (card != null)
                 {
@@ -287,6 +307,7 @@ static partial class Game
                     Label($"{duel.AttackValue(player, z)}/{duel.DefenseValue(player, z)}", x + 3, y + 79, 10, Gold);
                 }
                 if (attacker == z && player == duel.ActivePlayer) Raylib.DrawRectangleLines(x, y, 74, 92, Color.White);
+                if (player == duel.ActivePlayer && tributeZones.Contains(z)) Raylib.DrawRectangleLines(x, y, 74, 92, Color.Red);
                 var equip = duel.EquipmentCards.FirstOrDefault(e => e.Owner == player && e.SourceZone == z);
                 if (Button(equip == null ? "Spell" : "Equip", x, player == 1 ? 118 : 410, 74, 35))
                     message = equip == null ? "For Sword select the card, then a Warrior monster." : $"Equipment targets player {equip.TargetPlayer + 1}, zone {equip.TargetZone + 1}.";
@@ -298,8 +319,10 @@ static partial class Game
             int i = handPage * 6 + slot, x = 236 + slot * 93;
             if (Button("", x, 458, 86, 120))
             {
-                hand = i; attacker = -1;
+                hand = i; attacker = -1; tributeZones.Clear();
                 message = duel.PendingEndDiscards > 0 ? $"Selected {duel.Hand[i].Name}. Use Discard to finish the turn." :
+                    duel.Hand[i].IsMonster && DemoDuel.NormalTributes(duel.Hand[i]) > 0 ?
+                    $"Select {DemoDuel.NormalTributes(duel.Hand[i])} own tribute(s), then an empty or selected zone." :
                     $"Selected {duel.Hand[i].Name}. Summon, Use card, or target a Warrior with Sword.";
             }
             DrawArtwork(duel.Hand[i], x + 3, 461, 80, 114);
