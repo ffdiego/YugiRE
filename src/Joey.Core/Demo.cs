@@ -2,8 +2,8 @@ namespace Joey.Core;
 
 public enum DemoPhase { Main, Battle }
 
-// Temporary local two-player sandbox, NOT a reconstruction of the original turn engine.
-// Deck order, summon restrictions and battle rules below are demonstration policy.
+// Temporary local two-player turn engine. Deck order and progression are demo policy.
+// Selected RE-backed battle/spell rules are marked individually; see src/README.md.
 public sealed class DemoDuel
 {
     private readonly List<Card>[] hands = [[], []];
@@ -117,6 +117,12 @@ public sealed class DemoDuel
             return true;
         }
         int delta = AttackValue(p, source) - AttackValue(enemy, target);
+        // RE: docs/22-battle-core.md, 0x005B82EC..0x005B82EE: equal ATK destroys only above zero.
+        if (delta == 0 && AttackValue(p, source) == 0)
+        {
+            message = "Zero ATK tie: neither monster destroyed, no damage.";
+            return true;
+        }
         if (delta >= 0) Destroy(enemy, target);
         if (delta <= 0) Destroy(p, source);
         if (delta > 0) Damage(enemy, delta);

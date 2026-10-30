@@ -77,10 +77,10 @@ dotnet run --project Joey.App -- --check-data
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 46
+código diferente de zero. `dotnet test` não substitui esse comando. São 48
 verificações sintéticas e mais 7 contra o arquivo original opcional.
 
-Nesta sessão: compilação concluída; 53 verificações C# e 14 testes Python
+Nesta sessão: compilação concluída; 55 verificações C# e 14 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
@@ -96,3 +96,8 @@ indisponível para consulta de vulnerabilidades.
 Roteiro visual pendente: abrir a janela, percorrer os três destinos do menu,
 pesquisar Blue-Eyes e Parasite, mudar páginas, tentar zonas inválidas,
 invocar em zona livre, avançar turno, reiniciar e redimensionar a janela.
+
+Conferência posterior por RE: a comparação nativa só destrói ambos em empate
+de ATK **positivo** ([evidência](../docs/22-battle-core.md)). O protótipo foi corrigido para manter ambos em 0 contra 0,
+com teste que falhava antes da correção. Os demais limites do modo de
+demonstração continuam válidos; não foi feita validação visual nesta sessão.

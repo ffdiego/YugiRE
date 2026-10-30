@@ -60,6 +60,11 @@ Check(!demo.Attack(0, -1, out _), "Attacker cannot attack twice");
 var equal = new DemoDuel([weak, weak, weak]);
 equal.Summon(0, 0, 0, true, out _); equal.NextTurn(); equal.Summon(0, 1, 0, true, out _); equal.BeginBattle(out _);
 Check(equal.Attack(0, 0, out _) && equal.Monsters[0, 0] == null && equal.Monsters[1, 0] == null && equal.Life[0] == 8000, "Equal attack destroys both without damage");
+var zero = new Card(20, 20, "Zero ATK test monster", "", 4u << 25);
+var zeroBattle = new DemoDuel([zero, zero, zero]);
+zeroBattle.Summon(0, 0, 0, true, out _); zeroBattle.NextTurn(); zeroBattle.Summon(0, 1, 0, true, out _); zeroBattle.BeginBattle(out _);
+Check(zeroBattle.Attack(0, 0, out _) && zeroBattle.Monsters[0, 0] != null && zeroBattle.Monsters[1, 0] != null && zeroBattle.Graveyard(0).Count == 0 && zeroBattle.Graveyard(1).Count == 0 && zeroBattle.Life[0] == 8000 && zeroBattle.Life[1] == 8000, "Native zero-ATK tie preserves both monsters and LP");
+Check(!zeroBattle.Attack(0, 0, out _), "Zero-damage attack still spends the attack allowance");
 var winning = new DemoDuel([strong, weak, weak, sparks, ookazi]);
 winning.Summon(0, 0, 0, true, out _); winning.NextTurn(); winning.Summon(0, 1, 0, true, out _); winning.NextTurn(); winning.BeginBattle(out _);
 // Change the defender fixture to exercise the winning-attacker branch explicitly.
