@@ -15,6 +15,8 @@ public sealed class DemoDuel
     private readonly bool[,] attacked = new bool[2, 5];
     private readonly bool[,] changedPosition = new bool[2, 5];
     public bool[,] DefensePosition { get; } = new bool[2, 5];
+    public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
+    public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> Graveyard(int player) => graves[player].AsReadOnly();
@@ -27,8 +29,9 @@ public sealed class DemoDuel
     public DemoPhase Phase { get; private set; }
     public int? Winner { get; private set; }
     public const int EndTurnHandLimit = 6;
-    // All placed demo spells are face-up and active; native suppression/negation is not modeled.
-    public bool HandLimitDisabled => Spells.Cast<Card?>().Any(card => card?.Id == 0x593);
+    // Native suppression/negation is not modeled; setting a spell does not activate it.
+    public bool HandLimitDisabled => Enumerable.Range(0, 2).Any(p =>
+        Enumerable.Range(0, 5).Any(z => Spells[p, z]?.Id == 0x593 && !SpellFaceDown[p, z]));
     public int PendingEndDiscards => Phase == DemoPhase.End && !HandLimitDisabled ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
@@ -62,7 +65,34 @@ public sealed class DemoDuel
         }
     }
     public static int NormalTributes(Card card) => card.Level <= 4 ? 0 : card.Level <= 6 ? 1 : 2;
-    public bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null)
+    public bool CanSummonFromHand(int index) => Winner == null && Phase == DemoPhase.Main && !summoned &&
+        index >= 0 && index < Hand.Count && Hand[index].IsMonster &&
+        !NormalSummonRules.RequiresSpecialSummon(Hand[index]) &&
+        Enumerable.Range(0, 5).Count(z => Monsters[ActivePlayer, z] != null) >= NormalTributes(Hand[index]) &&
+        (NormalTributes(Hand[index]) > 0 || FirstFreeMonsterZone() >= 0);
+    public int FirstFreeMonsterZone(IReadOnlyList<int>? tributes = null) => Enumerable.Range(0, 5)
+        .FirstOrDefault(z => Monsters[ActivePlayer, z] == null || tributes?.Contains(z) == true, -1);
+    public int FirstFreeSpellZone() => Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
+    public bool CanSetFromHand(int index) => index >= 0 && index < Hand.Count && (Hand[index].IsMonster
+        ? CanSummonFromHand(index)
+        : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 && FirstFreeSpellZone() >= 0);
+    public bool CanActivateFromHand(int index) => Winner == null && Phase == DemoPhase.Main &&
+        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && Hand[index].Id is 300 or 342 or 345 or 0x593;
+    // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
+    public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
+        Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
+    public bool SetFromHand(int index, out string message, IReadOnlyList<int>? tributes = null)
+    {
+        message = "Set unavailable: choose a card in main phase with a free matching zone.";
+        if (!CanSetFromHand(index)) return false;
+        if (Hand[index].IsMonster) return SummonLeftmost(index, true, out message, tributes);
+        int zone = FirstFreeSpellZone();
+        Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = true;
+        hands[ActivePlayer].RemoveAt(index);
+        message = "Card set face-down in the leftmost free spell/trap zone.";
+        return true;
+    }
+    public bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null, bool faceDown = false)
     {
         message = "Choose an empty monster zone on the active player's side.";
         if (Winner != null || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
@@ -82,10 +112,11 @@ public sealed class DemoDuel
         // Special summon restrictions, Soul Exchange and token-specific restrictions remain unsupported.
         foreach (int tribute in tributes) RemoveMonster(player, tribute);
         Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
-        DefensePosition[player, zone] = false;
+        DefensePosition[player, zone] = faceDown;
+        MonsterFaceDown[player, zone] = faceDown;
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
-        message = $"Monster summoned in attack position; {required} tribute(s)."; return true;
+        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s)."; return true;
     }
     public bool Draw(out string message)
     {
@@ -99,11 +130,12 @@ public sealed class DemoDuel
     {
         message = "Use Sparks, Ookazi or Infinite Cards; select a Warrior on the field for Legendary Sword.";
         if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
+        if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
         if (Hand[index].Id == 0x593)
         {
             int zone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
             if (zone < 0) { message = "Infinite Cards needs a free spell zone."; return false; }
-            Spells[ActivePlayer, zone] = Hand[index]; hands[ActivePlayer].RemoveAt(index);
+            Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = false; hands[ActivePlayer].RemoveAt(index);
             message = "Infinite Cards active: neither player has an end-turn hand limit.";
             return true;
         }
@@ -114,19 +146,35 @@ public sealed class DemoDuel
         var card = Hand[index]; hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
         Damage(1 - ActivePlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
     }
+    public bool ActivateSetSpell(int zone, out string message)
+    {
+        message = "This set card's activation is not implemented in the demo.";
+        int p = ActivePlayer;
+        if (Winner != null || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
+            !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
+        if (card.Id == 0x593)
+        {
+            SpellFaceDown[p, zone] = false;
+            message = "Infinite Cards activated."; return true;
+        }
+        int damage = card.Id switch { 342 => 200, 345 => 800, _ => 0 };
+        if (damage == 0) return false;
+        Spells[p, zone] = null; SpellFaceDown[p, zone] = false; graves[p].Add(card);
+        Damage(1 - p, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
+    }
     public int AttackValue(int p, int z) => (Monsters[p, z]?.Attack ?? 0) + Bonus(p, z);
     public int DefenseValue(int p, int z) => (Monsters[p, z]?.Defense ?? 0) + Bonus(p, z);
     private int Bonus(int p, int z) => Monsters[p, z]?.ClassCode == 15 ? equipment.Count(e => e.TargetPlayer == p && e.TargetZone == z) * 300 : 0;
     public bool Equip(int index, int targetPlayer, int targetZone, out string message)
     {
         message = "Legendary Sword needs a face-up Warrior and a free own spell zone.";
-        if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count || Hand[index].Id != 300 || targetPlayer < 0 || targetPlayer > 1 || targetZone < 0 || targetZone >= 5 || Monsters[targetPlayer, targetZone]?.ClassCode != 15) return false;
+        if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count || Hand[index].Id != 300 || targetPlayer < 0 || targetPlayer > 1 || targetZone < 0 || targetZone >= 5 || Monsters[targetPlayer, targetZone]?.ClassCode != 15 || MonsterFaceDown[targetPlayer, targetZone]) return false;
         int sourceZone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
         if (sourceZone < 0) return false;
         // RE: docs/cards/legendary-sword.md. Target may be on either side, +300/+300.
         // Demo substitutes static class for dynamic type; no type-changing effects exist here.
         equipment.Add(new(Hand[index], ActivePlayer, sourceZone, targetPlayer, targetZone));
-        Spells[ActivePlayer, sourceZone] = Hand[index]; hands[ActivePlayer].RemoveAt(index);
+        Spells[ActivePlayer, sourceZone] = Hand[index]; SpellFaceDown[ActivePlayer, sourceZone] = false; hands[ActivePlayer].RemoveAt(index);
         message = "Legendary Sword equipped: +300 ATK / +300 DEF."; return true;
     }
     public bool ChangePosition(int zone, out string message)
@@ -134,6 +182,7 @@ public sealed class DemoDuel
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
         if (Winner != null || Phase != DemoPhase.Main || zone < 0 || zone >= 5 || Monsters[ActivePlayer, zone] == null || changedPosition[ActivePlayer, zone]) return false;
         DefensePosition[ActivePlayer, zone] = !DefensePosition[ActivePlayer, zone];
+        MonsterFaceDown[ActivePlayer, zone] = false;
         changedPosition[ActivePlayer, zone] = true;
         message = DefensePosition[ActivePlayer, zone] ? "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
         return true;
@@ -156,6 +205,7 @@ public sealed class DemoDuel
         }
         if (target < 0 || target >= 5 || Monsters[enemy, target] is not Card defender) return false;
         attacked[p, source] = true;
+        MonsterFaceDown[enemy, target] = false;
         if (DefensePosition[enemy, target])
         {
             int difference = AttackValue(p, source) - DefenseValue(enemy, target);
@@ -180,10 +230,10 @@ public sealed class DemoDuel
     }
     private void RemoveMonster(int p, int z)
     {
-        graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false;
+        graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
         // Common cleanup only: no Banisher/token/trigger exceptions in this sandbox.
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
-        { graves[e.Owner].Add(e.Card); Spells[e.Owner, e.SourceZone] = null; equipment.Remove(e); }
+        { graves[e.Owner].Add(e.Card); Spells[e.Owner, e.SourceZone] = null; SpellFaceDown[e.Owner, e.SourceZone] = false; equipment.Remove(e); }
     }
     private void Damage(int p, int value) { Life[p] = Math.Max(0, Life[p] - value); if (Life[p] == 0) Winner = 1 - p; }
     public void NextTurn() => EndTurn(out _);

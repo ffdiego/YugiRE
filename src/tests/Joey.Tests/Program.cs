@@ -107,6 +107,7 @@ GraphicsTests.Run(Check, Reject);
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
+HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 if (args.Length > 0)
 {
