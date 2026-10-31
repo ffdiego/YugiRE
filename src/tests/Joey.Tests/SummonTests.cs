@@ -65,10 +65,10 @@ static class SummonTests
         var moth = Monster(6, 0x38) with { Properties = (1u << 20) | (6u << 25) | (1u << 18) };
         check(NormalSummonRules.RequiresSpecialSummon(moth) && !NormalSummonRules.RequiresSpecialSummon(Monster(6, 0x38)),
             "Native exceptional-ID gate applies within the nonzero monster category");
-        check(NormalSummonRules.Category(new Card(0, 0x776, "Token", "", 0)) == 3 &&
-            NormalSummonRules.Category(new Card(0, 0x777, "Token", "", 0)) == 1 &&
+        check(NormalSummonRules.Category(new Card(0, 0x776, "Obelisk metadata", "", 0)) == 3 &&
+            NormalSummonRules.Category(new Card(0, 0x777, "Slifer metadata", "", 0)) == 1 &&
             NormalSummonRules.Category(new Card(0, 1, "Spell", "", (21u << 20) | (3u << 18))) == 8,
-            "Derived categories retain native token and non-monster overrides");
+            "Derived categories retain native Egyptian God and non-monster overrides");
         var fresh = new DemoDuel([low]);
         fresh.Summon(0, 0, 0, true, out _);
         check(!fresh.ChangePosition(0, out _) && !fresh.DefensePosition[0, 0], "Newly summoned monster cannot change position immediately");

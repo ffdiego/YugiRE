@@ -127,3 +127,15 @@ grupo inicial All cards são escolhas do protótipo.
 
 Validação desta etapa: 111 verificações C# e 793 BMPs decodificados, incluindo
 as quatro imagens dos filtros. A confirmação visual permanece pendente.
+
+## Registros dos Deuses Egípcios fora do catálogo
+
+Conferência direta do DAT em 2026-10-31: há nomes para Obelisk the Tormentor
+(índice 1108, ID 1910/0x776), Slifer the Sky Dragon (1109, 1911/0x777) e
+The Winged Dragon of Ra (1110, 1912/0x778). Os três têm classe 24, máscara de
+versão zero em `card_pack.bin` e apontam para `token_sl.bmp` no manifesto.
+Portanto não pertencem às 771 cartas selecionadas pelo filtro original.
+Os IDs 0x776–0x778 das exceções do acessor de categoria referem-se a esses
+registros; não são os tokens comuns `token_in/ku/sh` das entradas seguintes.
+A existência dos nomes e dessas exceções não comprova efeitos jogáveis dos
+Deuses nessa versão. Não foi feita investigação adicional de seus callbacks.
