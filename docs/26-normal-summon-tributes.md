@@ -163,8 +163,8 @@ executou o script no Windows e forneceu as duas capturas descritas abaixo.
 
 [JSON transcrito das duas saídas](evidence/windows-gemini-elf-before-after-2026-10-31.json).
 As capturas têm o mesmo PID 2240, hash do alvo estudado e base 0x00400000.
-Não são observação direta do agente; a ação exata entre elas ainda não foi
-descrita pelo operador.
+Não são observação direta do agente. O operador posteriormente confirmou a
+invocação em ataque e esclareceu a sequência de turnos descrita abaixo.
 
 | Campo | Antes | Depois |
 |---|---|---|
@@ -183,10 +183,10 @@ Não atribuímos individualmente significado a esses bits a partir de um único
 par de capturas. `occurrence_word=0` é observado no monstro ocupado e não deve
 ser usado como teste de zona vazia; a ocupação é determinada pelo índice.
 
-A mudança é compatível com uma colocação de Gemini Elf da mão no campo,
-sem custo de LP. Falta confirmar a ação do operador, tentar mudar posição e
-capturar após a limpeza de fim de turno. O booleano `position_locked_this_turn`
-é uma interpretação do script baseada no bit, não um teste independente da UI.
+A mudança é compatível com a colocação de Gemini Elf da mão no campo,
+sem custo de LP entre as duas capturas completas. O booleano
+`position_locked_this_turn` é uma interpretação do script baseada no bit;
+a confirmação independente do comportamento veio pelo relato posterior.
 
 ### Continuação: defesa e encerramento de turno
 
@@ -201,9 +201,19 @@ o instante exato da limpeza.
 O trecho também informa LP 7900, mão com seis cartas e `occurrence_word=2`
 (antes 0). Não foram fornecidos timestamp, PID ou restante da captura. Não
 atribuímos causas à perda de 100 LP, à carta adicional ou à alteração dessa
-palavra; o mesmo índice não basta para afirmar continuidade de ocorrência.
+palavra. O operador identifica a carta como a mesma Gemini Elf, mas não foi
+fechado o mecanismo que atualiza essa palavra em memória.
 
-**Ainda é necessário esclarecer** se o operador mudou para defesa no mesmo
-turno da colocação ou depois de um turno do adversário. Se foi no mesmo turno,
-isso exigirá reavaliar a interpretação do bloqueio e a implementação do demo.
-O relato não foi tratado como confirmação automática de toda a regra.
+### Sequência esclarecida pelo operador
+
+O usuário confirmou que **não é possível trocar a posição no turno da
+invocação**. Relatou invocar Gemini Elf em ataque e usá-la para atacar e
+destruir uma carta no turno inicial; só no **próximo turno próprio** mudou-a
+para defesa. O trecho final foi capturado após encerrar esse segundo turno.
+O momento exato do ataque em relação à segunda captura completa não foi fixado.
+
+Esse relato corrobora no original as três regras já usadas no demo: bloqueio
+da mudança manual no turno de invocação, possibilidade de atacar nesse turno
+e liberação da mudança no próximo turno próprio. Não foi necessária alteração
+de código. A causa da mudança de `occurrence_word`, os demais bits dos flags
+e o instante preciso de cada limpeza continuam separados dessas conclusões.

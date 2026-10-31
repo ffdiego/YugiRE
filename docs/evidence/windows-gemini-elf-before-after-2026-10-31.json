@@ -1,6 +1,6 @@
 {
   "source": "Console output supplied by the user on 2026-10-31; not captured by the agent.",
-  "action_confirmed": false,
+  "action_confirmed": true,
   "before": {
     "captured_utc": "2026-10-31T04:22:51.9310505Z",
     "process_id": 2240,
@@ -237,14 +237,13 @@
     "name": "Gemini Elf"
   },
   "limitations": [
-    "User has not yet described the precise action between captures.",
-    "The position-lock boolean is decoded by the script, not an independent attempt to change position.",
-    "No capture after end-of-turn cleanup has been supplied."
+    "Runtime observations were supplied by the operator, not collected directly by the agent.",
+    "The position-lock boolean is decoded by the script; the operator independently confirmed the gameplay restriction.",
+    "Only an excerpt was supplied for the capture after the later turn ended; the exact flag-reset instant is not isolated."
   ],
   "follow_up_excerpt": {
     "source": "Partial console output supplied by user on 2026-10-31; timestamp, PID and remaining fields were not provided.",
-    "reported_actions": "Changed to defense and ended the turn.",
-    "same_turn_as_placement_confirmed": false,
+    "reported_actions": "Changed to defense on the next own turn after the summon, ended that turn, then captured the excerpt.",
     "player": {
       "side": 1,
       "life_points": 7900,
@@ -264,9 +263,27 @@
     },
     "limitations": [
       "This is an excerpt, not a full third snapshot.",
-      "It is unknown whether defense was selected during the placement turn or a later turn.",
-      "The occurrence word changed from 0 to 2; identity continuity has not been established.",
-      "The LP and hand deltas are observed; their causes were not specified."
+      "The occurrence word changed from 0 to 2; its update mechanism has not been established.",
+      "The LP and hand deltas are observed; their precise causes were not specified."
+    ],
+    "defense_change_during_placement_turn": false
+  },
+  "operator_clarification": {
+    "source": "Follow-up statement by user on 2026-10-31.",
+    "reported_sequence": [
+      "Gemini Elf was summoned in attack position.",
+      "It attacked and destroyed a card during the initial own turn.",
+      "On the next own turn, it was changed to defense.",
+      "The follow-up excerpt was captured only after ending that own turn."
+    ],
+    "confirmed_behaviors": [
+      "Manual position change is not possible during the summon turn.",
+      "Attacking during the summon turn is possible.",
+      "Changing to defense on the next own turn is possible."
+    ],
+    "remaining_limits": [
+      "The exact attack timing relative to the second complete capture was not specified.",
+      "The causes of the 100 LP difference and occurrence-word update are not established."
     ]
   }
 }
