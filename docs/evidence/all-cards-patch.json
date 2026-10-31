@@ -1,0 +1,11 @@
+{
+  "original_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "patched_sha256": "0b8b26c158ecf1a46ade7a989e9f0bf81710409ef6042ae5e26465a72e0ec116",
+  "hook_va": "0x5bea80",
+  "hook_file_offset": "0x1bea80",
+  "stub_va": "0xa5e000",
+  "stub_file_offset": "0x1f7000",
+  "stub_size": 79,
+  "behavior": "At deck reconciliation: minimum 3 copies for card_pack & 7; preserve flags and larger quantities; recount copies; mark collection dirty.",
+  "runtime_validation": "Pending Windows test. Normal saving may persist granted cards."
+}
