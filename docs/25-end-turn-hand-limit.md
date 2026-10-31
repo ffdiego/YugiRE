@@ -72,3 +72,26 @@ Validação acumulada após Infinite Cards: **143 verificações C#**. A cobertu
 inclui ativação sem envio ao cemitério, aplicação ao adversário, retorno do
 limite após uma remoção montada em fixture, campo de magias cheio e divisão
 das cinco zonas entre a magia contínua e Legendary Sword.
+
+## Confirmação fornecida pelo operador — 2026-10-31
+
+O usuário confirmou que, com sete cartas, clicar em End Turn faz o original
+pedir a escolha de uma carta para descartar. Forneceu capturas antes/depois
+no mesmo processo, PID 22040, com o hash estudado e base 0x00400000.
+[JSON transcrito](evidence/windows-hand-limit-before-after-2026-10-31.json).
+
+| Campo | Antes, 04:49:29 UTC | Depois, 04:49:50 UTC |
+|---|---:|---:|
+| Mão do lado 1 | 7 | 6 |
+| Mão do lado 0 | 4 | 5 |
+| LP dos lados 0/1 | 7900/7900 | 7900/7900 |
+
+Os registros dos monstros e flags do jogador são iguais nas duas capturas.
+O operador identificou a captura posterior como feita após o descarte.
+Isso corrobora a regra básica e a exigência de seleção implementadas no demo.
+
+A carta adicional do lado 0 é compatível com o andamento do turno seguinte,
+mas o script não captura fase/lado ativo ou cemitério. Não se infere desse par
+a identidade ou o destino exato da carta descartada nem o instante da troca
+de turno: o intervalo contém mais do que a operação isolada de descarte.
+A exceção de Infinite Cards ainda não foi validada em execução pelo operador.
