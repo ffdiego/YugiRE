@@ -156,6 +156,34 @@ O estudo adicional dos setters em [player-summon-flag-lifecycle.txt](evidence/pl
 não fechou o ciclo completo do contador de invocação normal.
 
 O C# de interoperabilidade do script compilou sem avisos/erros. PowerShell
-não está instalado no host Fedora desta sessão; a sintaxe/execução do script
-completo e a leitura de um processo Windows ainda precisam de validação pelo
-operador. Até receber uma captura, estes resultados continuam sendo estáticos.
+não está instalado no host Fedora desta sessão. Em 2026-10-31, o usuário
+executou o script no Windows e forneceu as duas capturas descritas abaixo.
+
+## Primeira comparação fornecida pelo operador — 2026-10-31
+
+[JSON transcrito das duas saídas](evidence/windows-gemini-elf-before-after-2026-10-31.json).
+As capturas têm o mesmo PID 2240, hash do alvo estudado e base 0x00400000.
+Não são observação direta do agente; a ação exata entre elas ainda não foi
+descrita pelo operador.
+
+| Campo | Antes | Depois |
+|---|---|---|
+| LP dos lados 0/1 | 8000/8000 | 8000/8000 |
+| Mão do lado 0 | 5 | 5 |
+| Mão do lado 1 | 6 | 5 |
+| Zona 0 do lado 1 | vazia | índice 550 |
+| Flags do registro nessa zona | 0 | 0x00030000 |
+| Palavra de posição | 0 | 0x0202 |
+| Flags do jogador lado 1 | 0 | 0x000B0000 |
+
+O DAT associa índice **550** a ID **531**, **Gemini Elf**. O registro observado
+contém o bit 0x20000 que a análise estática ligou ao bloqueio de mudança de
+posição. Também contém 0x10000; as flags do jogador têm bits 16, 17 e 19.
+Não atribuímos individualmente significado a esses bits a partir de um único
+par de capturas. `occurrence_word=0` é observado no monstro ocupado e não deve
+ser usado como teste de zona vazia; a ocupação é determinada pelo índice.
+
+A mudança é compatível com uma colocação de Gemini Elf da mão no campo,
+sem custo de LP. Falta confirmar a ação do operador, tentar mudar posição e
+capturar após a limpeza de fim de turno. O booleano `position_locked_this_turn`
+é uma interpretação do script baseada no bit, não um teste independente da UI.
