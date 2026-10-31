@@ -169,10 +169,10 @@ dotnet run --project Joey.App -- --check-graphics
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
 código diferente de zero. `dotnet test` não substitui esse comando. São 117
-verificações sintéticas, mais 23 contra o DAT e seis contra o deck de referência
+verificações sintéticas, mais 24 contra o DAT e seis contra o deck de referência
 opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
 
-Nesta sessão: compilação concluída; 146 verificações C# e 25 testes Python
+Nesta sessão: compilação concluída; 147 verificações C# e 25 testes Python
 existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
 sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
 foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.

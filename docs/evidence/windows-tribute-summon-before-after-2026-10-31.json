@@ -1,0 +1,256 @@
+{
+  "source": "Before/after console output supplied by the operator on 2026-10-31; not collected by the agent.",
+  "operator_action": "Tribute summon.",
+  "before": {
+    "captured_utc": "2026-10-31T05:02:46.5130336Z",
+    "process_id": 22040,
+    "executable_sha256": "DB8FE7B7EA4B12F18A9BB1777B5F5B8EAB254011DB2A52571A0264725505B6DE",
+    "image_base_hex": "00400000",
+    "limitation": "One read of a live process, not an atomic paused snapshot. Card indices are not resource IDs.",
+    "players": [
+      {
+        "side": 0,
+        "life_points": 8000,
+        "hand_count": 5,
+        "player_flags_hex": "00000000",
+        "monsters": [
+          {
+            "zone": 0,
+            "card_index": 525,
+            "occupied": true,
+            "occurrence_word": 29,
+            "position_word_hex": "0202",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 1,
+            "card_index": 1099,
+            "occupied": true,
+            "occurrence_word": 31,
+            "position_word_hex": "0202",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 2,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 3,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 4,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          }
+        ]
+      },
+      {
+        "side": 1,
+        "life_points": 400,
+        "hand_count": 3,
+        "player_flags_hex": "00090000",
+        "monsters": [
+          {
+            "zone": 0,
+            "card_index": 651,
+            "occupied": true,
+            "occurrence_word": 34,
+            "position_word_hex": "0202",
+            "flags_hex": "00020008",
+            "position_locked_this_turn": true
+          },
+          {
+            "zone": 1,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 2,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 3,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 4,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          }
+        ]
+      }
+    ]
+  },
+  "after": {
+    "captured_utc": "2026-10-31T05:03:01.0960206Z",
+    "process_id": 22040,
+    "executable_sha256": "DB8FE7B7EA4B12F18A9BB1777B5F5B8EAB254011DB2A52571A0264725505B6DE",
+    "image_base_hex": "00400000",
+    "limitation": "One read of a live process, not an atomic paused snapshot. Card indices are not resource IDs.",
+    "players": [
+      {
+        "side": 0,
+        "life_points": 8000,
+        "hand_count": 5,
+        "player_flags_hex": "00000000",
+        "monsters": [
+          {
+            "zone": 0,
+            "card_index": 525,
+            "occupied": true,
+            "occurrence_word": 29,
+            "position_word_hex": "0202",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 1,
+            "card_index": 1099,
+            "occupied": true,
+            "occurrence_word": 31,
+            "position_word_hex": "0202",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 2,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 3,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 4,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          }
+        ]
+      },
+      {
+        "side": 1,
+        "life_points": 400,
+        "hand_count": 2,
+        "player_flags_hex": "010B0000",
+        "monsters": [
+          {
+            "zone": 0,
+            "card_index": 823,
+            "occupied": true,
+            "occurrence_word": 35,
+            "position_word_hex": "0202",
+            "flags_hex": "00030000",
+            "position_locked_this_turn": true
+          },
+          {
+            "zone": 1,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 2,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 3,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          },
+          {
+            "zone": 4,
+            "card_index": 0,
+            "occupied": false,
+            "occurrence_word": 0,
+            "position_word_hex": "0000",
+            "flags_hex": "00000000",
+            "position_locked_this_turn": false
+          }
+        ]
+      }
+    ]
+  },
+  "decoded_cards": [
+    {
+      "index": 651,
+      "resource_id": 812,
+      "name": "Alligator's Sword Dragon",
+      "level": 5,
+      "category": 2
+    },
+    {
+      "index": 823,
+      "resource_id": 528,
+      "name": "Flame Cerebrus",
+      "level": 6,
+      "category": 0
+    }
+  ],
+  "player_flag_xor_hex": "01020000",
+  "limitations": [
+    "The probe does not read graveyard entries or the UI selection stage.",
+    "A newly set player-flag bit is not individually assigned a meaning from one observation.",
+    "The interval is a live before/after comparison, not an atomic instruction trace."
+  ]
+}

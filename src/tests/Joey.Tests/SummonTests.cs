@@ -2,6 +2,16 @@ using Joey.Core;
 
 static class SummonTests
 {
+    public static void OperatorTribute(IReadOnlyList<Card> cards, Action<bool, string> check)
+    {
+        var fusion = cards.Single(c => c.Id == 812);
+        var cerebrus = cards.Single(c => c.Id == 528);
+        var duel = new DemoDuel([cerebrus]); duel.NextTurn();
+        duel.Life[1] = 400; duel.Monsters[1, 0] = fusion;
+        check(duel.Summon(0, 1, 0, true, out _, [0]) && duel.Monsters[1, 0] == cerebrus &&
+            duel.Graveyard(1).SequenceEqual([fusion]) && duel.Hand.Count == 0 && duel.Life[1] == 400,
+            "Operator case: an existing Alligator's Sword Dragon can tribute for Flame Cerebrus without LP cost");
+    }
     public static void Run(Action<bool, string> check)
     {
         Card Monster(int level, ushort id = 1) => new(id, id, "Level " + level, "", (1u << 20) | ((uint)level << 25));

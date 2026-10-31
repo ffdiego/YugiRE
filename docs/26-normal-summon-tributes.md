@@ -217,3 +217,37 @@ da mudança manual no turno de invocação, possibilidade de atacar nesse turno
 e liberação da mudança no próximo turno próprio. Não foi necessária alteração
 de código. A causa da mudança de `occurrence_word`, os demais bits dos flags
 e o instante preciso de cada limpeza continuam separados dessas conclusões.
+
+## Tributo observado pelo operador — 2026-10-31
+
+[Capturas transcritas](evidence/windows-tribute-summon-before-after-2026-10-31.json),
+PID 22040, mesmo fingerprint/base estudados. O operador identificou a ação
+como tribute summon. O lado 0 permanece integralmente igual no par.
+
+| Lado 1 | Antes, 05:02:46 UTC | Depois, 05:03:01 UTC |
+|---|---|---|
+| LP | 400 | 400 |
+| Mão | 3 | 2 |
+| Zona 0 | índice 651, Alligator's Sword Dragon | índice 823, Flame Cerebrus |
+| Palavra de ocorrência | 34 | 35 |
+| Palavra de posição | 0x0202 | 0x0202 |
+| Flags do monstro | 0x00020008 | 0x00030000 |
+| Flags do jogador | 0x00090000 | 0x010B0000 |
+
+O DAT identifica o primeiro monstro como Fusão de nível 5, ID 812, e o segundo
+como monstro de nível 6, ID 528 (grafia **Flame Cerebrus** no recurso inglês).
+O par corrobora a retirada de um monstro para invocar o de nível 6, o consumo
+de uma carta da mão, o reaproveitamento da mesma zona e ausência de custo de
+LP nessa operação. O monstro usado como tributo tinha a marca 0x20000; isso
+também demonstra que o bloqueio de posição não impede servir de tributo.
+
+Uma Fusão já presente no campo pode ser tributada: a restrição de invocação
+normal da Fusão aplica-se à carta a invocar, não a essa utilização como custo.
+Foi adicionado um teste de regressão com os dois registros reais, incluindo
+os 400 LP. Total C# acumulado: **147 verificações**.
+
+O XOR dos flags do jogador é 0x01020000: surgem os bits 17 e 24. O primeiro
+também apareceu na invocação anterior de Gemini Elf; o segundo é candidato
+a relação com esta invocação por tributo, mas seu significado individual
+ainda precisa ser seguido no código. Não usamos o par para deduzir sozinho
+o destino da carta retirada: o script atual não captura o cemitério.
