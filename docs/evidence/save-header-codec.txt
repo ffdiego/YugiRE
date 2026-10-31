@@ -1,0 +1,124 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00439c00
+TRANSIENT FUNCTION 0045cd20
+TRANSIENT FUNCTION 00439fb0
+TRANSIENT FUNCTION 005c40b7
+FUNCTION FUN_00439c00 @00439c00
+ CALLER 00439d0d FUN_00439c90
+ CALLER 00439d27 FUN_00439c90
+
+uint FUN_00439c00(uint param_1,uint param_2,uint param_3)
+
+{
+  int iVar1;
+  uint uVar2;
+  uint uVar3;
+  ushort uVar4;
+  
+  uVar4 = (ushort)param_2;
+  if (uVar4 == 0) {
+    return 1;
+  }
+  iVar1 = 0x1f;
+  do {
+    iVar1 = iVar1 + -1;
+  } while ((uVar4 >> ((byte)iVar1 & 0x1f) & 1) == 0);
+  uVar3 = 1;
+  if (iVar1 < 0) {
+    return param_2;
+  }
+  do {
+    if (((byte)(uVar4 >> ((byte)iVar1 & 0x1f)) & 1) == 1) {
+      uVar2 = param_1 & 0xffff;
+    }
+    else {
+      uVar2 = 1;
+    }
+    uVar3 = (uVar2 * uVar3 * uVar3) % (param_3 & 0xffff);
+    iVar1 = iVar1 + -1;
+  } while (-1 < iVar1);
+  return uVar3;
+}
+
+
+FUNCTION FUN_0045cd20 @0045cd20
+ CALLER 0044a629 FUN_0044a550
+ CALLER 0044aef5 FUN_0044ad50
+
+undefined4 __thiscall FUN_0045cd20(int param_1,char *param_2)
+
+{
+  if ((*(int *)(param_2 + 4) == *(int *)(param_1 + 8)) && (*param_2 == *(char *)(param_1 + 4))) {
+    return 0;
+  }
+  return 1;
+}
+
+
+FUNCTION FUN_00439fb0 @00439fb0
+ CALLER 005da584 null
+
+void FUN_00439fb0(undefined4 param_1,undefined4 param_2,int param_3)
+
+{
+  FUN_00439c90(param_1,param_2,param_3 + 4,5,299);
+  FUN_00439e50(param_3,param_2);
+  return;
+}
+
+
+FUNCTION FUN_005c40b7 @005c40b7
+ CALLER 0045cafa FUN_0045ca80
+ CALLER 0044c002 FUN_0044bee0
+ CALLER 0044c0f7 FUN_0044bee0
+ CALLER 0044c14d FUN_0044bee0
+ CALLER 0044c23d FUN_0044bee0
+
+void FUN_005c40b7(undefined4 *param_1)
+
+{
+  DWORD DVar1;
+  undefined4 uVar2;
+  _TIME_ZONE_INFORMATION local_d0;
+  _SYSTEMTIME local_24;
+  _SYSTEMTIME local_14;
+  
+  GetLocalTime(&local_14);
+  GetSystemTime(&local_24);
+  if (local_24.wMinute == DAT_00a53908._2_2_) {
+    if (local_24.wHour == (WORD)DAT_00a53908) {
+      if (local_24.wDay == DAT_00a53904._2_2_) {
+        if (local_24.wMonth == DAT_00a53900._2_2_) {
+          if (local_24.wYear == (WORD)DAT_00a53900) goto LAB_005c4161;
+        }
+      }
+    }
+  }
+  DVar1 = GetTimeZoneInformation(&local_d0);
+  if (DVar1 == 0xffffffff) {
+    DAT_00a538f8 = 0xffffffff;
+  }
+  else if (((DVar1 == 2) && (local_d0.DaylightDate.wMonth != 0)) && (local_d0.DaylightBias != 0)) {
+    DAT_00a538f8 = 1;
+  }
+  else {
+    DAT_00a538f8 = 0;
+  }
+  DAT_00a53900._0_2_ = local_24.wYear;
+  DAT_00a53900._2_2_ = local_24.wMonth;
+  DAT_00a53904._0_2_ = local_24.wDayOfWeek;
+  DAT_00a53904._2_2_ = local_24.wDay;
+  DAT_00a53908._0_2_ = local_24.wHour;
+  DAT_00a53908._2_2_ = local_24.wMinute;
+  DAT_00a5390c._0_2_ = local_24.wSecond;
+  DAT_00a5390c._2_2_ = local_24.wMilliseconds;
+LAB_005c4161:
+  uVar2 = FUN_005c7823(local_14.wYear,local_14.wMonth,local_14.wDay,local_14.wHour,local_14.wMinute,
+                       local_14.wSecond,DAT_00a538f8);
+  if (param_1 != (undefined4 *)0x0) {
+    *param_1 = uVar2;
+  }
+  return;
+}
+
+

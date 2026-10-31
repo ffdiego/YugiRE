@@ -1,0 +1,177 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00439c90
+TRANSIENT FUNCTION 00439e50
+TRANSIENT FUNCTION 00482650
+FUNCTION FUN_00439c90 @00439c90
+ CALLER 00439fd0 FUN_00439fb0
+
+void FUN_00439c90(byte *param_1,uint param_2,int param_3,undefined4 param_4,undefined4 param_5)
+
+{
+  byte bVar1;
+  uint uVar2;
+  int iVar3;
+  byte bVar4;
+  uint uVar5;
+  byte *pbVar6;
+  uint local_4;
+  
+  uVar2 = 0;
+  param_2 = param_2 & 0xffff;
+  local_4 = 0;
+  if (param_2 != 0) {
+    do {
+      if (uVar2 * 8 + 8 < param_2) {
+        bVar4 = 8;
+      }
+      else {
+        bVar4 = (char)param_2 + (char)uVar2 * -8;
+      }
+      pbVar6 = (byte *)(param_3 + uVar2 * 9);
+      pbVar6[0] = 0;
+      pbVar6[1] = 0;
+      pbVar6[2] = 0;
+      pbVar6[3] = 0;
+      pbVar6[4] = 0;
+      pbVar6[5] = 0;
+      pbVar6[6] = 0;
+      pbVar6[7] = 0;
+      pbVar6[8] = 0;
+      uVar2 = (uint)bVar4;
+      if (bVar4 != 0) {
+        bVar4 = 0;
+        uVar5 = uVar2;
+        do {
+          FUN_00439c00(CONCAT22((short)(uVar2 >> 0x10),(ushort)*param_1),param_4,param_5);
+          bVar1 = *param_1;
+          param_1 = param_1 + 1;
+          iVar3 = FUN_00439c00(bVar1,param_4,param_5);
+          iVar3 = iVar3 << (bVar4 & 0x1f);
+          *pbVar6 = *pbVar6 | (byte)iVar3;
+          bVar1 = pbVar6[1] | (byte)((uint)iVar3 >> 8);
+          uVar2 = CONCAT31((int3)((uint)iVar3 >> 8),bVar1);
+          bVar4 = bVar4 + 1;
+          pbVar6[1] = bVar1;
+          pbVar6 = pbVar6 + 1;
+          uVar5 = uVar5 - 1;
+        } while (uVar5 != 0);
+      }
+      local_4 = local_4 + 1;
+      uVar2 = local_4 & 0xffff;
+    } while (uVar2 * 8 < param_2);
+  }
+  return;
+}
+
+
+FUNCTION FUN_00439e50 @00439e50
+ CALLER 00439fd9 FUN_00439fb0
+
+void FUN_00439e50(char *param_1,int param_2)
+
+{
+  char cVar1;
+  int iVar2;
+  int iVar3;
+  char *pcVar4;
+  char *pcVar5;
+  byte bVar6;
+  byte bVar7;
+  undefined4 uStack_4;
+  
+  pcVar4 = param_1 + param_2;
+  pcVar5 = param_1 + 4;
+  uStack_4 = -0x75ec8300;
+  bVar6 = 0xbb;
+  bVar7 = 0x8a;
+  if (pcVar5 < pcVar4) {
+    do {
+      iVar2 = uStack_4;
+      cVar1 = *pcVar5;
+      pcVar5 = pcVar5 + 4;
+      uStack_4 = (uint)CONCAT21(uStack_4._2_2_,uStack_4._1_1_ + cVar1) << 8;
+      iVar3 = uStack_4;
+    } while (pcVar5 < pcVar4);
+    uStack_4._3_1_ = SUB41(iVar2,3);
+    bVar7 = uStack_4._3_1_;
+    uStack_4 = iVar3;
+  }
+  pcVar5 = param_1 + 5;
+  if (pcVar5 < pcVar4) {
+    do {
+      cVar1 = *pcVar5;
+      pcVar5 = pcVar5 + 4;
+      cVar1 = uStack_4._2_1_ + cVar1;
+      uStack_4._0_3_ = CONCAT12(cVar1,(undefined2)uStack_4);
+    } while (pcVar5 < pcVar4);
+    bVar7 = uStack_4._3_1_;
+  }
+  for (pcVar5 = param_1 + 6; pcVar5 < pcVar4; pcVar5 = pcVar5 + 4) {
+    bVar7 = bVar7 + *pcVar5;
+  }
+  for (pcVar5 = param_1 + 7; pcVar5 < pcVar4; pcVar5 = pcVar5 + 4) {
+    bVar6 = bVar6 + *pcVar5;
+  }
+  *param_1 = ~uStack_4._1_1_ + 1;
+  param_1[1] = ~uStack_4._2_1_ + 1;
+  param_1[2] = ~bVar7 + 1;
+  param_1[3] = ~bVar6 + 1;
+  return;
+}
+
+
+FUNCTION FUN_00482650 @00482650
+ CALLER 0045cb6f FUN_0045ca80
+
+LSTATUS FUN_00482650(undefined1 param_1,int param_2,undefined4 param_3,undefined4 param_4,
+                    undefined4 param_5,LPCSTR param_6,undefined4 param_7,undefined4 param_8,
+                    BYTE *param_9,DWORD param_10)
+
+{
+  char cVar1;
+  LPCSTR pCVar2;
+  LPCSTR lpValueName;
+  LSTATUS LVar3;
+  HKEY__ aHStackY_230 [128];
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  puStack_8 = &LAB_005d6170;
+  local_c = ExceptionList;
+  local_4 = 1;
+  ExceptionList = &local_c;
+  FUN_00448b00(&param_1);
+  FUN_00482440();
+  pCVar2 = param_6;
+  lpValueName = &DAT_005da40c;
+  if (param_6 != (LPCSTR)0x0) {
+    lpValueName = param_6;
+  }
+  LVar3 = RegSetValueExA(aHStackY_230 + 0x81,lpValueName,0,3,param_9,param_10);
+  if (param_2 != 0) {
+    cVar1 = *(char *)(param_2 + -1);
+    if ((cVar1 == '\0') || (cVar1 == -1)) {
+      FUN_0054a2d0();
+    }
+    else {
+      *(char *)(param_2 + -1) = cVar1 + -1;
+    }
+  }
+  param_2 = 0;
+  param_3 = 0;
+  param_4 = 0;
+  if (pCVar2 != (LPCSTR)0x0) {
+    cVar1 = pCVar2[-1];
+    if ((cVar1 == '\0') || (cVar1 == -1)) {
+      FUN_0054a2d0();
+    }
+    else {
+      pCVar2[-1] = cVar1 + -1;
+    }
+  }
+  ExceptionList = local_c;
+  return LVar3;
+}
+
+

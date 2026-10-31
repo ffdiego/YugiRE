@@ -1,0 +1,209 @@
+{
+  "sha256": "98e2ea327a7603a782f0899c413bab73d6dc8fee62b7fd3f5277b7ce0cb1f558",
+  "encoded_size": 5062,
+  "decoded_size": 4496,
+  "header_hex": "010000008e79e56a",
+  "header_identifier_hex": "8e79e56a",
+  "encoded_checksum_valid": true,
+  "image_checksum_valid": true,
+  "owned_types_without_pack_filter": 38,
+  "owned_copies": 44,
+  "stored_copy_counter": 44,
+  "owned_cards": [
+    {
+      "card_index": 24,
+      "copies": 2,
+      "flags_hex": "4200"
+    },
+    {
+      "card_index": 146,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 153,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 239,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 248,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 261,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 272,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 300,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 307,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 316,
+      "copies": 2,
+      "flags_hex": "4200"
+    },
+    {
+      "card_index": 359,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 363,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 380,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 423,
+      "copies": 1,
+      "flags_hex": "0000"
+    },
+    {
+      "card_index": 453,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 459,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 461,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 515,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 525,
+      "copies": 2,
+      "flags_hex": "4200"
+    },
+    {
+      "card_index": 549,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 550,
+      "copies": 2,
+      "flags_hex": "4200"
+    },
+    {
+      "card_index": 558,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 610,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 651,
+      "copies": 1,
+      "flags_hex": "5000"
+    },
+    {
+      "card_index": 695,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 716,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 729,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 823,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 834,
+      "copies": 2,
+      "flags_hex": "4200"
+    },
+    {
+      "card_index": 839,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 851,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 886,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 893,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 894,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 954,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 1026,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 1061,
+      "copies": 1,
+      "flags_hex": "4100"
+    },
+    {
+      "card_index": 1099,
+      "copies": 2,
+      "flags_hex": "4200"
+    }
+  ],
+  "limitations": [
+    "Counts omit edition filtering; indices are not resource IDs.",
+    "Registry flcrc was not supplied, so its header match is unverified.",
+    "Options and other image fields have not been interpreted."
+  ]
+}
