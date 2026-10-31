@@ -1,0 +1,698 @@
+
+../passion/SetupReg.exe:     file format pei-i386
+
+
+Disassembly of section .code:
+
+00401000 <.code>:
+  401000:	68 49 18 40 00       	push   $0x401849
+  401005:	e8 ba 08 00 00       	call   0x4018c4
+  40100a:	57                   	push   %edi
+  40100b:	33 c0                	xor    %eax,%eax
+  40100d:	b9 d0 20 00 00       	mov    $0x20d0,%ecx
+  401012:	bf 1c 31 40 00       	mov    $0x40311c,%edi
+  401017:	f3 ab                	rep stos %eax,%es:(%edi)
+  401019:	b9 02 00 00 00       	mov    $0x2,%ecx
+  40101e:	f3 aa                	rep stos %al,%es:(%edi)
+  401020:	5f                   	pop    %edi
+  401021:	50                   	push   %eax
+  401022:	e8 8b 08 00 00       	call   0x4018b2
+  401027:	a3 24 31 40 00       	mov    %eax,0x403124
+  40102c:	50                   	push   %eax
+  40102d:	68 42 10 40 00       	push   $0x401042
+  401032:	6a 00                	push   $0x0
+  401034:	6a 64                	push   $0x64
+  401036:	50                   	push   %eax
+  401037:	e8 a0 08 00 00       	call   0x4018dc
+  40103c:	50                   	push   %eax
+  40103d:	e8 5e 08 00 00       	call   0x4018a0
+  401042:	55                   	push   %ebp
+  401043:	8b ec                	mov    %esp,%ebp
+  401045:	81 7d 0c 10 01 00 00 	cmpl   $0x110,0xc(%ebp)
+  40104c:	0f 85 aa 00 00 00    	jne    0x4010fc
+  401052:	8b 45 08             	mov    0x8(%ebp),%eax
+  401055:	a3 20 31 40 00       	mov    %eax,0x403120
+  40105a:	6a 00                	push   $0x0
+  40105c:	50                   	push   %eax
+  40105d:	e8 92 08 00 00       	call   0x4018f4
+  401062:	68 f8 20 40 00       	push   $0x4020f8
+  401067:	6a 0a                	push   $0xa
+  401069:	6a 00                	push   $0x0
+  40106b:	50                   	push   %eax
+  40106c:	6a 00                	push   $0x0
+  40106e:	6a 00                	push   $0x0
+  401070:	68 00 08 00 00       	push   $0x800
+  401075:	50                   	push   %eax
+  401076:	e8 55 08 00 00       	call   0x4018d0
+  40107b:	e8 50 08 00 00       	call   0x4018d0
+  401080:	6a 02                	push   $0x2
+  401082:	ff 75 14             	push   0x14(%ebp)
+  401085:	e8 76 08 00 00       	call   0x401900
+  40108a:	a3 00 30 40 00       	mov    %eax,0x403000
+  40108f:	50                   	push   %eax
+  401090:	6a 01                	push   $0x1
+  401092:	68 80 00 00 00       	push   $0x80
+  401097:	ff 75 08             	push   0x8(%ebp)
+  40109a:	e8 7f 08 00 00       	call   0x40191e
+  40109f:	6a 66                	push   $0x66
+  4010a1:	ff 75 08             	push   0x8(%ebp)
+  4010a4:	e8 45 08 00 00       	call   0x4018ee
+  4010a9:	6a 00                	push   $0x0
+  4010ab:	50                   	push   %eax
+  4010ac:	e8 79 08 00 00       	call   0x40192a
+  4010b1:	e8 f0 07 00 00       	call   0x4018a6
+  4010b6:	33 d2                	xor    %edx,%edx
+  4010b8:	33 c9                	xor    %ecx,%ecx
+  4010ba:	b2 20                	mov    $0x20,%dl
+  4010bc:	80 38 22             	cmpb   $0x22,(%eax)
+  4010bf:	75 02                	jne    0x4010c3
+  4010c1:	b2 22                	mov    $0x22,%dl
+  4010c3:	40                   	inc    %eax
+  4010c4:	80 38 00             	cmpb   $0x0,(%eax)
+  4010c7:	74 16                	je     0x4010df
+  4010c9:	38 10                	cmp    %dl,(%eax)
+  4010cb:	75 f6                	jne    0x4010c3
+  4010cd:	40                   	inc    %eax
+  4010ce:	83 fa 22             	cmp    $0x22,%edx
+  4010d1:	0f 94 c1             	sete   %cl
+  4010d4:	03 c1                	add    %ecx,%eax
+  4010d6:	80 38 00             	cmpb   $0x0,(%eax)
+  4010d9:	0f 85 00 02 00 00    	jne    0x4012df
+  4010df:	c6 05 5c b4 40 00 01 	movb   $0x1,0x40b45c
+  4010e6:	6a 00                	push   $0x0
+  4010e8:	6a 6e                	push   $0x6e
+  4010ea:	68 11 01 00 00       	push   $0x111
+  4010ef:	ff 75 08             	push   0x8(%ebp)
+  4010f2:	e8 1b 08 00 00       	call   0x401912
+  4010f7:	e9 e3 01 00 00       	jmp    0x4012df
+  4010fc:	81 7d 0c 12 01 00 00 	cmpl   $0x112,0xc(%ebp)
+  401103:	75 0f                	jne    0x401114
+  401105:	83 7d 10 0a          	cmpl   $0xa,0x10(%ebp)
+  401109:	0f 84 3d 01 00 00    	je     0x40124c
+  40110f:	e9 cb 01 00 00       	jmp    0x4012df
+  401114:	81 7d 0c 11 01 00 00 	cmpl   $0x111,0xc(%ebp)
+  40111b:	0f 85 7f 01 00 00    	jne    0x4012a0
+  401121:	8b 45 10             	mov    0x10(%ebp),%eax
+  401124:	66 83 f8 6e          	cmp    $0x6e,%ax
+  401128:	75 42                	jne    0x40116c
+  40112a:	68 c2 21 40 00       	push   $0x4021c2
+  40112f:	e8 2e 06 00 00       	call   0x401762
+  401134:	ff 35 8b 22 40 00    	push   0x40228b
+  40113a:	e8 a6 01 00 00       	call   0x4012e5
+  40113f:	68 4d 22 40 00       	push   $0x40224d
+  401144:	e8 19 06 00 00       	call   0x401762
+  401149:	80 3d 5c b4 40 00 00 	cmpb   $0x0,0x40b45c
+  401150:	0f 84 89 01 00 00    	je     0x4012df
+  401156:	6a 00                	push   $0x0
+  401158:	68 b8 0b 00 00       	push   $0xbb8
+  40115d:	6a 01                	push   $0x1
+  40115f:	ff 75 08             	push   0x8(%ebp)
+  401162:	e8 bd 07 00 00       	call   0x401924
+  401167:	e9 73 01 00 00       	jmp    0x4012df
+  40116c:	66 83 f8 6f          	cmp    $0x6f,%ax
+  401170:	0f 85 d0 00 00 00    	jne    0x401246
+  401176:	80 3d 5d b4 40 00 00 	cmpb   $0x0,0x40b45d
+  40117d:	74 51                	je     0x4011d0
+  40117f:	6a 65                	push   $0x65
+  401181:	ff 75 08             	push   0x8(%ebp)
+  401184:	e8 65 07 00 00       	call   0x4018ee
+  401189:	6a 05                	push   $0x5
+  40118b:	50                   	push   %eax
+  40118c:	e8 99 07 00 00       	call   0x40192a
+  401191:	6a 66                	push   $0x66
+  401193:	ff 75 08             	push   0x8(%ebp)
+  401196:	e8 53 07 00 00       	call   0x4018ee
+  40119b:	6a 00                	push   $0x0
+  40119d:	50                   	push   %eax
+  40119e:	e8 87 07 00 00       	call   0x40192a
+  4011a3:	6a 6e                	push   $0x6e
+  4011a5:	ff 75 08             	push   0x8(%ebp)
+  4011a8:	e8 41 07 00 00       	call   0x4018ee
+  4011ad:	6a 01                	push   $0x1
+  4011af:	50                   	push   %eax
+  4011b0:	e8 2d 07 00 00       	call   0x4018e2
+  4011b5:	68 c2 21 40 00       	push   $0x4021c2
+  4011ba:	e8 a3 05 00 00       	call   0x401762
+  4011bf:	e8 91 03 00 00       	call   0x401555
+  4011c4:	68 4d 22 40 00       	push   $0x40224d
+  4011c9:	e8 94 05 00 00       	call   0x401762
+  4011ce:	eb 6a                	jmp    0x40123a
+  4011d0:	6a 00                	push   $0x0
+  4011d2:	6a 00                	push   $0x0
+  4011d4:	68 84 01 00 00       	push   $0x184
+  4011d9:	6a 66                	push   $0x66
+  4011db:	ff 75 08             	push   0x8(%ebp)
+  4011de:	e8 35 07 00 00       	call   0x401918
+  4011e3:	ff 35 8b 22 40 00    	push   0x40228b
+  4011e9:	e8 86 02 00 00       	call   0x401474
+  4011ee:	68 d9 21 40 00       	push   $0x4021d9
+  4011f3:	6a 00                	push   $0x0
+  4011f5:	68 81 01 00 00       	push   $0x181
+  4011fa:	6a 66                	push   $0x66
+  4011fc:	ff 75 08             	push   0x8(%ebp)
+  4011ff:	e8 14 07 00 00       	call   0x401918
+  401204:	6a 66                	push   $0x66
+  401206:	ff 75 08             	push   0x8(%ebp)
+  401209:	e8 e0 06 00 00       	call   0x4018ee
+  40120e:	6a 05                	push   $0x5
+  401210:	50                   	push   %eax
+  401211:	e8 14 07 00 00       	call   0x40192a
+  401216:	6a 65                	push   $0x65
+  401218:	ff 75 08             	push   0x8(%ebp)
+  40121b:	e8 ce 06 00 00       	call   0x4018ee
+  401220:	6a 00                	push   $0x0
+  401222:	50                   	push   %eax
+  401223:	e8 02 07 00 00       	call   0x40192a
+  401228:	6a 6e                	push   $0x6e
+  40122a:	ff 75 08             	push   0x8(%ebp)
+  40122d:	e8 bc 06 00 00       	call   0x4018ee
+  401232:	6a 00                	push   $0x0
+  401234:	50                   	push   %eax
+  401235:	e8 a8 06 00 00       	call   0x4018e2
+  40123a:	80 35 5d b4 40 00 01 	xorb   $0x1,0x40b45d
+  401241:	e9 99 00 00 00       	jmp    0x4012df
+  401246:	66 83 f8 70          	cmp    $0x70,%ax
+  40124a:	75 3e                	jne    0x40128a
+  40124c:	c7 05 1c 31 40 00 28 	movl   $0x28,0x40311c
+  401253:	00 00 00 
+  401256:	c7 05 28 31 40 00 8b 	movl   $0x40208b,0x403128
+  40125d:	20 40 00 
+  401260:	c7 05 2c 31 40 00 7c 	movl   $0x40207c,0x40312c
+  401267:	20 40 00 
+  40126a:	c7 05 30 31 40 00 80 	movl   $0x80,0x403130
+  401271:	00 00 00 
+  401274:	c7 05 34 31 40 00 02 	movl   $0x2,0x403134
+  40127b:	00 00 00 
+  40127e:	68 1c 31 40 00       	push   $0x40311c
+  401283:	e8 84 06 00 00       	call   0x40190c
+  401288:	eb 55                	jmp    0x4012df
+  40128a:	66 83 f8 71          	cmp    $0x71,%ax
+  40128e:	75 4f                	jne    0x4012df
+  401290:	6a 00                	push   $0x0
+  401292:	6a 00                	push   $0x0
+  401294:	6a 10                	push   $0x10
+  401296:	ff 75 08             	push   0x8(%ebp)
+  401299:	e8 80 06 00 00       	call   0x40191e
+  40129e:	eb 3f                	jmp    0x4012df
+  4012a0:	81 7d 0c 13 01 00 00 	cmpl   $0x113,0xc(%ebp)
+  4012a7:	75 1b                	jne    0x4012c4
+  4012a9:	ff 75 10             	push   0x10(%ebp)
+  4012ac:	ff 75 08             	push   0x8(%ebp)
+  4012af:	e8 46 06 00 00       	call   0x4018fa
+  4012b4:	6a 00                	push   $0x0
+  4012b6:	6a 00                	push   $0x0
+  4012b8:	6a 10                	push   $0x10
+  4012ba:	ff 75 08             	push   0x8(%ebp)
+  4012bd:	e8 50 06 00 00       	call   0x401912
+  4012c2:	eb 1b                	jmp    0x4012df
+  4012c4:	83 7d 0c 10          	cmpl   $0x10,0xc(%ebp)
+  4012c8:	75 15                	jne    0x4012df
+  4012ca:	6a 00                	push   $0x0
+  4012cc:	ff 75 08             	push   0x8(%ebp)
+  4012cf:	e8 14 06 00 00       	call   0x4018e8
+  4012d4:	ff 35 00 30 40 00    	push   0x403000
+  4012da:	e8 f7 05 00 00       	call   0x4018d6
+  4012df:	33 c0                	xor    %eax,%eax
+  4012e1:	c9                   	leave
+  4012e2:	c2 10 00             	ret    $0x10
+  4012e5:	55                   	push   %ebp
+  4012e6:	8b ec                	mov    %esp,%ebp
+  4012e8:	83 c4 ec             	add    $0xffffffec,%esp
+  4012eb:	68 95 17 40 00       	push   $0x401795
+  4012f0:	64 ff 35 00 00 00 00 	push   %fs:0x0
+  4012f7:	89 25 04 31 40 00    	mov    %esp,0x403104
+  4012fd:	89 2d 08 31 40 00    	mov    %ebp,0x403108
+  401303:	89 1d 0c 31 40 00    	mov    %ebx,0x40310c
+  401309:	89 35 10 31 40 00    	mov    %esi,0x403110
+  40130f:	89 3d 14 31 40 00    	mov    %edi,0x403114
+  401315:	c7 05 18 31 40 00 66 	movl   $0x401466,0x403118
+  40131c:	14 40 00 
+  40131f:	64 89 25 00 00 00 00 	mov    %esp,%fs:0x0
+  401326:	56                   	push   %esi
+  401327:	57                   	push   %edi
+  401328:	53                   	push   %ebx
+  401329:	b9 44 31 40 00       	mov    $0x403144,%ecx
+  40132e:	51                   	push   %ecx
+  40132f:	51                   	push   %ecx
+  401330:	68 04 01 00 00       	push   $0x104
+  401335:	e8 72 05 00 00       	call   0x4018ac
+  40133a:	59                   	pop    %ecx
+  40133b:	a3 50 34 40 00       	mov    %eax,0x403450
+  401340:	03 c1                	add    %ecx,%eax
+  401342:	80 38 5c             	cmpb   $0x5c,(%eax)
+  401345:	75 03                	jne    0x40134a
+  401347:	c6 00 00             	movb   $0x0,(%eax)
+  40134a:	b9 48 32 40 00       	mov    $0x403248,%ecx
+  40134f:	51                   	push   %ecx
+  401350:	68 04 01 00 00       	push   $0x104
+  401355:	51                   	push   %ecx
+  401356:	e8 5d 05 00 00       	call   0x4018b8
+  40135b:	59                   	pop    %ecx
+  40135c:	a3 54 34 40 00       	mov    %eax,0x403454
+  401361:	03 c1                	add    %ecx,%eax
+  401363:	80 38 5c             	cmpb   $0x5c,(%eax)
+  401366:	75 03                	jne    0x40136b
+  401368:	c6 00 00             	movb   $0x0,(%eax)
+  40136b:	b9 4c 33 40 00       	mov    $0x40334c,%ecx
+  401370:	51                   	push   %ecx
+  401371:	68 04 01 00 00       	push   $0x104
+  401376:	51                   	push   %ecx
+  401377:	e8 42 05 00 00       	call   0x4018be
+  40137c:	59                   	pop    %ecx
+  40137d:	a3 58 34 40 00       	mov    %eax,0x403458
+  401382:	03 c1                	add    %ecx,%eax
+  401384:	80 38 5c             	cmpb   $0x5c,(%eax)
+  401387:	75 03                	jne    0x40138c
+  401389:	c6 00 00             	movb   $0x0,(%eax)
+  40138c:	8b 75 08             	mov    0x8(%ebp),%esi
+  40138f:	8b 06                	mov    (%esi),%eax
+  401391:	33 c9                	xor    %ecx,%ecx
+  401393:	39 04 cd 53 22 40 00 	cmp    %eax,0x402253(,%ecx,8)
+  40139a:	74 0e                	je     0x4013aa
+  40139c:	41                   	inc    %ecx
+  40139d:	81 f9 07 00 00 00    	cmp    $0x7,%ecx
+  4013a3:	75 ee                	jne    0x401393
+  4013a5:	e9 b9 00 00 00       	jmp    0x401463
+  4013aa:	ff 34 cd 57 22 40 00 	push   0x402257(,%ecx,8)
+  4013b1:	8f 45 fc             	pop    -0x4(%ebp)
+  4013b4:	83 c6 05             	add    $0x5,%esi
+  4013b7:	89 75 f8             	mov    %esi,-0x8(%ebp)
+  4013ba:	46                   	inc    %esi
+  4013bb:	80 3e 00             	cmpb   $0x0,(%esi)
+  4013be:	75 fa                	jne    0x4013ba
+  4013c0:	46                   	inc    %esi
+  4013c1:	89 75 f4             	mov    %esi,-0xc(%ebp)
+  4013c4:	80 3e 00             	cmpb   $0x0,(%esi)
+  4013c7:	74 03                	je     0x4013cc
+  4013c9:	46                   	inc    %esi
+  4013ca:	eb f8                	jmp    0x4013c4
+  4013cc:	46                   	inc    %esi
+  4013cd:	0f b6 1e             	movzbl (%esi),%ebx
+  4013d0:	46                   	inc    %esi
+  4013d1:	83 fb 01             	cmp    $0x1,%ebx
+  4013d4:	74 0a                	je     0x4013e0
+  4013d6:	83 fb 02             	cmp    $0x2,%ebx
+  4013d9:	74 05                	je     0x4013e0
+  4013db:	83 fb 07             	cmp    $0x7,%ebx
+  4013de:	75 20                	jne    0x401400
+  4013e0:	56                   	push   %esi
+  4013e1:	68 5c 34 40 00       	push   $0x40345c
+  4013e6:	e8 e3 02 00 00       	call   0x4016ce
+  4013eb:	c7 45 f0 5c 34 40 00 	movl   $0x40345c,-0x10(%ebp)
+  4013f2:	89 4d ec             	mov    %ecx,-0x14(%ebp)
+  4013f5:	80 3e 00             	cmpb   $0x0,(%esi)
+  4013f8:	74 03                	je     0x4013fd
+  4013fa:	46                   	inc    %esi
+  4013fb:	eb f8                	jmp    0x4013f5
+  4013fd:	46                   	inc    %esi
+  4013fe:	eb 27                	jmp    0x401427
+  401400:	83 fb 03             	cmp    $0x3,%ebx
+  401403:	75 0b                	jne    0x401410
+  401405:	ad                   	lods   %ds:(%esi),%eax
+  401406:	89 75 f0             	mov    %esi,-0x10(%ebp)
+  401409:	89 45 ec             	mov    %eax,-0x14(%ebp)
+  40140c:	03 f0                	add    %eax,%esi
+  40140e:	eb 17                	jmp    0x401427
+  401410:	83 fb 04             	cmp    $0x4,%ebx
+  401413:	74 05                	je     0x40141a
+  401415:	83 fb 05             	cmp    $0x5,%ebx
+  401418:	75 0d                	jne    0x401427
+  40141a:	89 75 f0             	mov    %esi,-0x10(%ebp)
+  40141d:	c7 45 ec 04 00 00 00 	movl   $0x4,-0x14(%ebp)
+  401424:	83 c6 04             	add    $0x4,%esi
+  401427:	ff 75 ec             	push   -0x14(%ebp)
+  40142a:	ff 75 f0             	push   -0x10(%ebp)
+  40142d:	ff 75 f4             	push   -0xc(%ebp)
+  401430:	ff 75 f8             	push   -0x8(%ebp)
+  401433:	53                   	push   %ebx
+  401434:	ff 75 fc             	push   -0x4(%ebp)
+  401437:	e8 0a 02 00 00       	call   0x401646
+  40143c:	ff 75 f8             	push   -0x8(%ebp)
+  40143f:	ff 75 f4             	push   -0xc(%ebp)
+  401442:	68 07 22 40 00       	push   $0x402207
+  401447:	68 04 30 40 00       	push   $0x403004
+  40144c:	e8 79 04 00 00       	call   0x4018ca
+  401451:	83 c4 10             	add    $0x10,%esp
+  401454:	68 04 30 40 00       	push   $0x403004
+  401459:	e8 04 03 00 00       	call   0x401762
+  40145e:	e9 2c ff ff ff       	jmp    0x40138f
+  401463:	5b                   	pop    %ebx
+  401464:	5f                   	pop    %edi
+  401465:	5e                   	pop    %esi
+  401466:	64 8f 05 00 00 00 00 	pop    %fs:0x0
+  40146d:	83 c4 04             	add    $0x4,%esp
+  401470:	c9                   	leave
+  401471:	c2 04 00             	ret    $0x4
+  401474:	55                   	push   %ebp
+  401475:	8b ec                	mov    %esp,%ebp
+  401477:	68 95 17 40 00       	push   $0x401795
+  40147c:	64 ff 35 00 00 00 00 	push   %fs:0x0
+  401483:	89 25 04 31 40 00    	mov    %esp,0x403104
+  401489:	89 2d 08 31 40 00    	mov    %ebp,0x403108
+  40148f:	89 1d 0c 31 40 00    	mov    %ebx,0x40310c
+  401495:	89 35 10 31 40 00    	mov    %esi,0x403110
+  40149b:	89 3d 14 31 40 00    	mov    %edi,0x403114
+  4014a1:	c7 05 18 31 40 00 47 	movl   $0x401547,0x403118
+  4014a8:	15 40 00 
+  4014ab:	64 89 25 00 00 00 00 	mov    %esp,%fs:0x0
+  4014b2:	56                   	push   %esi
+  4014b3:	8b 75 08             	mov    0x8(%ebp),%esi
+  4014b6:	e9 82 00 00 00       	jmp    0x40153d
+  4014bb:	56                   	push   %esi
+  4014bc:	6a ff                	push   $0xffffffff
+  4014be:	68 a2 01 00 00       	push   $0x1a2
+  4014c3:	6a 66                	push   $0x66
+  4014c5:	ff 35 20 31 40 00    	push   0x403120
+  4014cb:	e8 48 04 00 00       	call   0x401918
+  4014d0:	40                   	inc    %eax
+  4014d1:	75 2a                	jne    0x4014fd
+  4014d3:	56                   	push   %esi
+  4014d4:	6a 00                	push   $0x0
+  4014d6:	68 80 01 00 00       	push   $0x180
+  4014db:	6a 66                	push   $0x66
+  4014dd:	ff 35 20 31 40 00    	push   0x403120
+  4014e3:	e8 30 04 00 00       	call   0x401918
+  4014e8:	50                   	push   %eax
+  4014e9:	6a 01                	push   $0x1
+  4014eb:	68 85 01 00 00       	push   $0x185
+  4014f0:	6a 66                	push   $0x66
+  4014f2:	ff 35 20 31 40 00    	push   0x403120
+  4014f8:	e8 1b 04 00 00       	call   0x401918
+  4014fd:	46                   	inc    %esi
+  4014fe:	80 3e 00             	cmpb   $0x0,(%esi)
+  401501:	75 fa                	jne    0x4014fd
+  401503:	46                   	inc    %esi
+  401504:	80 3e 00             	cmpb   $0x0,(%esi)
+  401507:	75 fa                	jne    0x401503
+  401509:	46                   	inc    %esi
+  40150a:	0f b6 06             	movzbl (%esi),%eax
+  40150d:	83 f8 01             	cmp    $0x1,%eax
+  401510:	74 0a                	je     0x40151c
+  401512:	83 f8 02             	cmp    $0x2,%eax
+  401515:	74 05                	je     0x40151c
+  401517:	83 f8 07             	cmp    $0x7,%eax
+  40151a:	75 09                	jne    0x401525
+  40151c:	46                   	inc    %esi
+  40151d:	80 3e 00             	cmpb   $0x0,(%esi)
+  401520:	75 fa                	jne    0x40151c
+  401522:	46                   	inc    %esi
+  401523:	eb 18                	jmp    0x40153d
+  401525:	83 f8 03             	cmp    $0x3,%eax
+  401528:	75 06                	jne    0x401530
+  40152a:	46                   	inc    %esi
+  40152b:	ad                   	lods   %ds:(%esi),%eax
+  40152c:	03 f0                	add    %eax,%esi
+  40152e:	eb 0d                	jmp    0x40153d
+  401530:	83 f8 04             	cmp    $0x4,%eax
+  401533:	74 05                	je     0x40153a
+  401535:	83 f8 05             	cmp    $0x5,%eax
+  401538:	75 03                	jne    0x40153d
+  40153a:	83 c6 05             	add    $0x5,%esi
+  40153d:	80 3e 00             	cmpb   $0x0,(%esi)
+  401540:	0f 85 75 ff ff ff    	jne    0x4014bb
+  401546:	5e                   	pop    %esi
+  401547:	64 8f 05 00 00 00 00 	pop    %fs:0x0
+  40154e:	83 c4 04             	add    $0x4,%esp
+  401551:	c9                   	leave
+  401552:	c2 04 00             	ret    $0x4
+  401555:	68 95 17 40 00       	push   $0x401795
+  40155a:	64 ff 35 00 00 00 00 	push   %fs:0x0
+  401561:	89 25 04 31 40 00    	mov    %esp,0x403104
+  401567:	89 2d 08 31 40 00    	mov    %ebp,0x403108
+  40156d:	89 1d 0c 31 40 00    	mov    %ebx,0x40310c
+  401573:	89 35 10 31 40 00    	mov    %esi,0x403110
+  401579:	89 3d 14 31 40 00    	mov    %edi,0x403114
+  40157f:	c7 05 18 31 40 00 3b 	movl   $0x40163b,0x403118
+  401586:	16 40 00 
+  401589:	64 89 25 00 00 00 00 	mov    %esp,%fs:0x0
+  401590:	53                   	push   %ebx
+  401591:	6a 00                	push   $0x0
+  401593:	6a 00                	push   $0x0
+  401595:	68 8b 01 00 00       	push   $0x18b
+  40159a:	6a 66                	push   $0x66
+  40159c:	ff 35 20 31 40 00    	push   0x403120
+  4015a2:	e8 71 03 00 00       	call   0x401918
+  4015a7:	83 f8 01             	cmp    $0x1,%eax
+  4015aa:	8b d8                	mov    %eax,%ebx
+  4015ac:	0f 86 88 00 00 00    	jbe    0x40163a
+  4015b2:	4b                   	dec    %ebx
+  4015b3:	6a 00                	push   $0x0
+  4015b5:	53                   	push   %ebx
+  4015b6:	68 87 01 00 00       	push   $0x187
+  4015bb:	6a 66                	push   $0x66
+  4015bd:	ff 35 20 31 40 00    	push   0x403120
+  4015c3:	e8 50 03 00 00       	call   0x401918
+  4015c8:	85 c0                	test   %eax,%eax
+  4015ca:	74 67                	je     0x401633
+  4015cc:	68 5c 34 40 00       	push   $0x40345c
+  4015d1:	53                   	push   %ebx
+  4015d2:	68 89 01 00 00       	push   $0x189
+  4015d7:	6a 66                	push   $0x66
+  4015d9:	ff 35 20 31 40 00    	push   0x403120
+  4015df:	e8 34 03 00 00       	call   0x401918
+  4015e4:	33 c9                	xor    %ecx,%ecx
+  4015e6:	a1 5c 34 40 00       	mov    0x40345c,%eax
+  4015eb:	39 04 cd 53 22 40 00 	cmp    %eax,0x402253(,%ecx,8)
+  4015f2:	74 0b                	je     0x4015ff
+  4015f4:	41                   	inc    %ecx
+  4015f5:	81 f9 07 00 00 00    	cmp    $0x7,%ecx
+  4015fb:	75 ee                	jne    0x4015eb
+  4015fd:	eb 3b                	jmp    0x40163a
+  4015ff:	6a 00                	push   $0x0
+  401601:	68 61 34 40 00       	push   $0x403461
+  401606:	ff 34 cd 57 22 40 00 	push   0x402257(,%ecx,8)
+  40160d:	e8 7f 00 00 00       	call   0x401691
+  401612:	68 5c 34 40 00       	push   $0x40345c
+  401617:	68 30 22 40 00       	push   $0x402230
+  40161c:	68 04 30 40 00       	push   $0x403004
+  401621:	e8 a4 02 00 00       	call   0x4018ca
+  401626:	83 c4 0c             	add    $0xc,%esp
+  401629:	68 04 30 40 00       	push   $0x403004
+  40162e:	e8 2f 01 00 00       	call   0x401762
+  401633:	4b                   	dec    %ebx
+  401634:	0f 85 79 ff ff ff    	jne    0x4015b3
+  40163a:	5b                   	pop    %ebx
+  40163b:	64 8f 05 00 00 00 00 	pop    %fs:0x0
+  401642:	83 c4 04             	add    $0x4,%esp
+  401645:	c3                   	ret
+  401646:	55                   	push   %ebp
+  401647:	8b ec                	mov    %esp,%ebp
+  401649:	68 04 30 40 00       	push   $0x403004
+  40164e:	8d 45 08             	lea    0x8(%ebp),%eax
+  401651:	50                   	push   %eax
+  401652:	6a 00                	push   $0x0
+  401654:	6a 02                	push   $0x2
+  401656:	6a 00                	push   $0x0
+  401658:	6a 00                	push   $0x0
+  40165a:	6a 00                	push   $0x0
+  40165c:	ff 75 10             	push   0x10(%ebp)
+  40165f:	ff 75 08             	push   0x8(%ebp)
+  401662:	e8 cf 02 00 00       	call   0x401936
+  401667:	85 c0                	test   %eax,%eax
+  401669:	8b 55 1c             	mov    0x1c(%ebp),%edx
+  40166c:	75 1f                	jne    0x40168d
+  40166e:	85 d2                	test   %edx,%edx
+  401670:	8b 4d 08             	mov    0x8(%ebp),%ecx
+  401673:	74 18                	je     0x40168d
+  401675:	51                   	push   %ecx
+  401676:	52                   	push   %edx
+  401677:	ff 75 18             	push   0x18(%ebp)
+  40167a:	ff 75 0c             	push   0xc(%ebp)
+  40167d:	6a 00                	push   $0x0
+  40167f:	ff 75 14             	push   0x14(%ebp)
+  401682:	51                   	push   %ecx
+  401683:	e8 ba 02 00 00       	call   0x401942
+  401688:	e8 a3 02 00 00       	call   0x401930
+  40168d:	c9                   	leave
+  40168e:	c2 18 00             	ret    $0x18
+  401691:	55                   	push   %ebp
+  401692:	8b ec                	mov    %esp,%ebp
+  401694:	83 ec 04             	sub    $0x4,%esp
+  401697:	54                   	push   %esp
+  401698:	8d 45 08             	lea    0x8(%ebp),%eax
+  40169b:	50                   	push   %eax
+  40169c:	6a 00                	push   $0x0
+  40169e:	6a 02                	push   $0x2
+  4016a0:	6a 00                	push   $0x0
+  4016a2:	6a 00                	push   $0x0
+  4016a4:	6a 00                	push   $0x0
+  4016a6:	ff 75 0c             	push   0xc(%ebp)
+  4016a9:	ff 75 08             	push   0x8(%ebp)
+  4016ac:	e8 85 02 00 00       	call   0x401936
+  4016b1:	83 c4 04             	add    $0x4,%esp
+  4016b4:	85 c0                	test   %eax,%eax
+  4016b6:	8b 4d 08             	mov    0x8(%ebp),%ecx
+  4016b9:	75 0f                	jne    0x4016ca
+  4016bb:	51                   	push   %ecx
+  4016bc:	ff 75 10             	push   0x10(%ebp)
+  4016bf:	51                   	push   %ecx
+  4016c0:	e8 77 02 00 00       	call   0x40193c
+  4016c5:	e8 66 02 00 00       	call   0x401930
+  4016ca:	c9                   	leave
+  4016cb:	c2 0c 00             	ret    $0xc
+  4016ce:	55                   	push   %ebp
+  4016cf:	8b ec                	mov    %esp,%ebp
+  4016d1:	56                   	push   %esi
+  4016d2:	57                   	push   %edi
+  4016d3:	33 c9                	xor    %ecx,%ecx
+  4016d5:	33 d2                	xor    %edx,%edx
+  4016d7:	8b 75 0c             	mov    0xc(%ebp),%esi
+  4016da:	8b 7d 08             	mov    0x8(%ebp),%edi
+  4016dd:	8b 06                	mov    (%esi),%eax
+  4016df:	3d 25 63 64 25       	cmp    $0x25646325,%eax
+  4016e4:	75 1f                	jne    0x401705
+  4016e6:	56                   	push   %esi
+  4016e7:	51                   	push   %ecx
+  4016e8:	be 44 31 40 00       	mov    $0x403144,%esi
+  4016ed:	8b 0d 50 34 40 00    	mov    0x403450,%ecx
+  4016f3:	f3 a4                	rep movsb %ds:(%esi),%es:(%edi)
+  4016f5:	59                   	pop    %ecx
+  4016f6:	5e                   	pop    %esi
+  4016f7:	03 0d 50 34 40 00    	add    0x403450,%ecx
+  4016fd:	83 c6 04             	add    $0x4,%esi
+  401700:	83 c2 04             	add    $0x4,%edx
+  401703:	eb 52                	jmp    0x401757
+  401705:	3d 25 73 64 25       	cmp    $0x25647325,%eax
+  40170a:	75 1f                	jne    0x40172b
+  40170c:	56                   	push   %esi
+  40170d:	51                   	push   %ecx
+  40170e:	be 48 32 40 00       	mov    $0x403248,%esi
+  401713:	8b 0d 54 34 40 00    	mov    0x403454,%ecx
+  401719:	f3 a4                	rep movsb %ds:(%esi),%es:(%edi)
+  40171b:	59                   	pop    %ecx
+  40171c:	5e                   	pop    %esi
+  40171d:	03 0d 54 34 40 00    	add    0x403454,%ecx
+  401723:	83 c6 04             	add    $0x4,%esi
+  401726:	83 c2 04             	add    $0x4,%edx
+  401729:	eb 2c                	jmp    0x401757
+  40172b:	3d 25 77 64 25       	cmp    $0x25647725,%eax
+  401730:	75 1f                	jne    0x401751
+  401732:	56                   	push   %esi
+  401733:	51                   	push   %ecx
+  401734:	be 4c 33 40 00       	mov    $0x40334c,%esi
+  401739:	8b 0d 58 34 40 00    	mov    0x403458,%ecx
+  40173f:	f3 a4                	rep movsb %ds:(%esi),%es:(%edi)
+  401741:	59                   	pop    %ecx
+  401742:	5e                   	pop    %esi
+  401743:	03 0d 58 34 40 00    	add    0x403458,%ecx
+  401749:	83 c6 04             	add    $0x4,%esi
+  40174c:	83 c2 04             	add    $0x4,%edx
+  40174f:	eb 06                	jmp    0x401757
+  401751:	88 07                	mov    %al,(%edi)
+  401753:	46                   	inc    %esi
+  401754:	47                   	inc    %edi
+  401755:	41                   	inc    %ecx
+  401756:	42                   	inc    %edx
+  401757:	84 c0                	test   %al,%al
+  401759:	75 82                	jne    0x4016dd
+  40175b:	5f                   	pop    %edi
+  40175c:	49                   	dec    %ecx
+  40175d:	5e                   	pop    %esi
+  40175e:	c9                   	leave
+  40175f:	c2 08 00             	ret    $0x8
+  401762:	55                   	push   %ebp
+  401763:	8b ec                	mov    %esp,%ebp
+  401765:	ff 75 08             	push   0x8(%ebp)
+  401768:	6a 00                	push   $0x0
+  40176a:	68 80 01 00 00       	push   $0x180
+  40176f:	6a 65                	push   $0x65
+  401771:	ff 35 20 31 40 00    	push   0x403120
+  401777:	e8 9c 01 00 00       	call   0x401918
+  40177c:	6a 00                	push   $0x0
+  40177e:	50                   	push   %eax
+  40177f:	68 86 01 00 00       	push   $0x186
+  401784:	6a 65                	push   $0x65
+  401786:	ff 35 20 31 40 00    	push   0x403120
+  40178c:	e8 87 01 00 00       	call   0x401918
+  401791:	c9                   	leave
+  401792:	c2 04 00             	ret    $0x4
+  401795:	55                   	push   %ebp
+  401796:	8b ec                	mov    %esp,%ebp
+  401798:	8b 45 08             	mov    0x8(%ebp),%eax
+  40179b:	8b 4d 10             	mov    0x10(%ebp),%ecx
+  40179e:	ff b1 9c 00 00 00    	push   0x9c(%ecx)
+  4017a4:	ff b1 a0 00 00 00    	push   0xa0(%ecx)
+  4017aa:	ff b1 b4 00 00 00    	push   0xb4(%ecx)
+  4017b0:	ff b1 c4 00 00 00    	push   0xc4(%ecx)
+  4017b6:	ff b1 a8 00 00 00    	push   0xa8(%ecx)
+  4017bc:	ff b1 ac 00 00 00    	push   0xac(%ecx)
+  4017c2:	ff b1 a4 00 00 00    	push   0xa4(%ecx)
+  4017c8:	ff b1 b0 00 00 00    	push   0xb0(%ecx)
+  4017ce:	ff 70 0c             	push   0xc(%eax)
+  4017d1:	68 17 21 40 00       	push   $0x402117
+  4017d6:	68 04 30 40 00       	push   $0x403004
+  4017db:	e8 ea 00 00 00       	call   0x4018ca
+  4017e0:	83 c4 2c             	add    $0x2c,%esp
+  4017e3:	6a 10                	push   $0x10
+  4017e5:	68 11 21 40 00       	push   $0x402111
+  4017ea:	68 04 30 40 00       	push   $0x403004
+  4017ef:	ff 35 20 31 40 00    	push   0x403120
+  4017f5:	e8 0c 01 00 00       	call   0x401906
+  4017fa:	8b 45 10             	mov    0x10(%ebp),%eax
+  4017fd:	ff 35 04 31 40 00    	push   0x403104
+  401803:	8f 80 c4 00 00 00    	pop    0xc4(%eax)
+  401809:	ff 35 08 31 40 00    	push   0x403108
+  40180f:	8f 80 b4 00 00 00    	pop    0xb4(%eax)
+  401815:	ff 35 0c 31 40 00    	push   0x40310c
+  40181b:	8f 80 a4 00 00 00    	pop    0xa4(%eax)
+  401821:	ff 35 10 31 40 00    	push   0x403110
+  401827:	8f 80 a0 00 00 00    	pop    0xa0(%eax)
+  40182d:	ff 35 14 31 40 00    	push   0x403114
+  401833:	8f 80 9c 00 00 00    	pop    0x9c(%eax)
+  401839:	ff 35 18 31 40 00    	push   0x403118
+  40183f:	8f 80 b8 00 00 00    	pop    0xb8(%eax)
+  401845:	33 c0                	xor    %eax,%eax
+  401847:	c9                   	leave
+  401848:	c3                   	ret
+  401849:	55                   	push   %ebp
+  40184a:	8b ec                	mov    %esp,%ebp
+  40184c:	8b 45 08             	mov    0x8(%ebp),%eax
+  40184f:	ff 70 0c             	push   0xc(%eax)
+  401852:	68 a6 21 40 00       	push   $0x4021a6
+  401857:	68 04 30 40 00       	push   $0x403004
+  40185c:	e8 69 00 00 00       	call   0x4018ca
+  401861:	83 c4 0c             	add    $0xc,%esp
+  401864:	6a 10                	push   $0x10
+  401866:	68 11 21 40 00       	push   $0x402111
+  40186b:	68 04 30 40 00       	push   $0x403004
+  401870:	ff 35 20 31 40 00    	push   0x403120
+  401876:	e8 8b 00 00 00       	call   0x401906
+  40187b:	50                   	push   %eax
+  40187c:	ff 35 20 31 40 00    	push   0x403120
+  401882:	e8 61 00 00 00       	call   0x4018e8
+  401887:	ff 35 00 30 40 00    	push   0x403000
+  40188d:	e8 44 00 00 00       	call   0x4018d6
+  401892:	6a 00                	push   $0x0
+  401894:	e8 07 00 00 00       	call   0x4018a0
+  401899:	33 c0                	xor    %eax,%eax
+  40189b:	40                   	inc    %eax
+  40189c:	c9                   	leave
+  40189d:	c2 04 00             	ret    $0x4
+  4018a0:	ff 25 2c 20 40 00    	jmp    *0x40202c
+  4018a6:	ff 25 14 20 40 00    	jmp    *0x402014
+  4018ac:	ff 25 20 20 40 00    	jmp    *0x402020
+  4018b2:	ff 25 1c 20 40 00    	jmp    *0x40201c
+  4018b8:	ff 25 18 20 40 00    	jmp    *0x402018
+  4018be:	ff 25 24 20 40 00    	jmp    *0x402024
+  4018c4:	ff 25 28 20 40 00    	jmp    *0x402028
+  4018ca:	ff 25 70 20 40 00    	jmp    *0x402070
+  4018d0:	ff 25 6c 20 40 00    	jmp    *0x40206c
+  4018d6:	ff 25 68 20 40 00    	jmp    *0x402068
+  4018dc:	ff 25 64 20 40 00    	jmp    *0x402064
+  4018e2:	ff 25 3c 20 40 00    	jmp    *0x40203c
+  4018e8:	ff 25 54 20 40 00    	jmp    *0x402054
+  4018ee:	ff 25 38 20 40 00    	jmp    *0x402038
+  4018f4:	ff 25 74 20 40 00    	jmp    *0x402074
+  4018fa:	ff 25 40 20 40 00    	jmp    *0x402040
+  401900:	ff 25 44 20 40 00    	jmp    *0x402044
+  401906:	ff 25 48 20 40 00    	jmp    *0x402048
+  40190c:	ff 25 4c 20 40 00    	jmp    *0x40204c
+  401912:	ff 25 50 20 40 00    	jmp    *0x402050
+  401918:	ff 25 34 20 40 00    	jmp    *0x402034
+  40191e:	ff 25 58 20 40 00    	jmp    *0x402058
+  401924:	ff 25 5c 20 40 00    	jmp    *0x40205c
+  40192a:	ff 25 60 20 40 00    	jmp    *0x402060
+  401930:	ff 25 00 20 40 00    	jmp    *0x402000
+  401936:	ff 25 04 20 40 00    	jmp    *0x402004
+  40193c:	ff 25 0c 20 40 00    	jmp    *0x40200c
+  401942:	ff 25 08 20 40 00    	jmp    *0x402008

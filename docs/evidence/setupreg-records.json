@@ -1,0 +1,48 @@
+{
+  "artifact": "passion/SetupReg.exe",
+  "size": 7962,
+  "sha256": "27267e43bb4e184b17e3c6ae5cd55dd0e3059ad6f448b6faf1ab2f4a26a2fc88",
+  "method": "Static PE section .reg: NUL-terminated key, value name, one-byte type, NUL-terminated REG_SZ value. No execution.",
+  "section_file_offset": "0x1e00",
+  "section_va": "0x0040d000",
+  "records": [
+    {
+      "file_offset": "0x1e00",
+      "key": "HKLM\\SOFTWARE\\KONAMI\\Yu-Gi-Oh! Power Of Chaos",
+      "value_name": "",
+      "type": "REG_SZ",
+      "value": ""
+    },
+    {
+      "file_offset": "0x1e31",
+      "key": "HKLM\\SOFTWARE\\KONAMI\\Yu-Gi-Oh! Power Of Chaos",
+      "value_name": "",
+      "type": "REG_SZ",
+      "value": ""
+    },
+    {
+      "file_offset": "0x1e62",
+      "key": "HKLM\\SOFTWARE\\KONAMI\\Yu-Gi-Oh! Power Of Chaos\\system",
+      "value_name": "",
+      "type": "REG_SZ",
+      "value": ""
+    },
+    {
+      "file_offset": "0x1e9a",
+      "key": "HKLM\\SOFTWARE\\KONAMI\\Yu-Gi-Oh! Power Of Chaos\\system",
+      "value_name": "",
+      "type": "REG_SZ",
+      "value": ""
+    },
+    {
+      "file_offset": "0x1ed2",
+      "key": "HKLM\\SOFTWARE\\KONAMI\\Yu-Gi-Oh! Power Of Chaos\\system",
+      "value_name": "InstallDirJ",
+      "type": "REG_SZ",
+      "value": "%cd%"
+    }
+  ],
+  "limitations": [
+    "Embedded installation records do not establish every possible runtime side effect. No original save was available for collection counting."
+  ]
+}

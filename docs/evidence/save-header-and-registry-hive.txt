@@ -1,0 +1,100 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00439ff0
+TRANSIENT FUNCTION 0045ccf0
+TRANSIENT FUNCTION 0045cbc0
+FUNCTION FUN_00439ff0 @00439ff0
+
+int FUN_00439ff0(int param_1,undefined4 param_2)
+
+{
+  int iVar1;
+  
+  iVar1 = func_0x00439ef0(param_1,param_2);
+  if (iVar1 == 0) {
+    func_0x00439d80(param_1 + 4,param_2,param_1,0x35,299);
+    iVar1 = 0;
+  }
+  return iVar1;
+}
+
+
+FUNCTION FUN_0045ccf0 @0045ccf0
+
+void FUN_0045ccf0(int *param_1,int *param_2)
+
+{
+  FUN_0045cd20(*param_1);
+  *param_2 = *param_2 + -8;
+  *param_1 = *param_1 + 8;
+  return;
+}
+
+
+FUNCTION FUN_0045cbc0 @0045cbc0
+ CALLER 005da57c null
+
+undefined4 __thiscall FUN_0045cbc0(int param_1,undefined ***param_2,uint *param_3)
+
+{
+  uint uVar1;
+  uint uVar2;
+  undefined **ppuVar3;
+  undefined **ppuVar4;
+  undefined **local_1c;
+  undefined **local_18;
+  undefined ***local_14;
+  undefined ***local_10;
+  void *pvStack_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  local_4 = 0xffffffff;
+  puStack_8 = &LAB_005d4578;
+  pvStack_c = ExceptionList;
+  ExceptionList = &pvStack_c;
+  local_18 = (undefined **)FUN_0054a1d0(*param_3 + 8);
+  local_10 = &local_1c;
+  local_14 = &local_1c;
+  local_1c = &PTR_FUN_005db618;
+  *local_18 = *(undefined **)(param_1 + 4);
+  local_18[1] = *(undefined **)(param_1 + 8);
+  uVar2 = *param_3;
+  local_4 = 0;
+  ppuVar3 = param_2[1];
+  ppuVar4 = local_18 + 2;
+  for (uVar1 = uVar2 >> 2; uVar1 != 0; uVar1 = uVar1 - 1) {
+    *ppuVar4 = *ppuVar3;
+    ppuVar3 = ppuVar3 + 1;
+    ppuVar4 = ppuVar4 + 1;
+  }
+  for (uVar2 = uVar2 & 3; uVar2 != 0; uVar2 = uVar2 - 1) {
+    *(undefined1 *)ppuVar4 = *(undefined1 *)ppuVar3;
+    ppuVar3 = (undefined **)((int)ppuVar3 + 1);
+    ppuVar4 = (undefined **)((int)ppuVar4 + 1);
+  }
+  *param_3 = *param_3 + 8;
+  if (param_2 != &local_1c) {
+    (*(code *)(*param_2)[1])();
+    if (local_14 != (undefined ***)0x0) {
+      param_2[2] = (undefined **)&local_1c;
+      param_2[3] = (undefined **)local_10;
+      local_10[2] = (undefined **)param_2;
+      local_10 = param_2;
+    }
+    param_2[1] = local_18;
+  }
+  local_1c = &PTR_FUN_005db618;
+  if (local_14 != (undefined ***)0x0) {
+    if (local_14 == &local_1c) {
+      FUN_0054a2d0(local_18);
+      ExceptionList = pvStack_c;
+      return 0;
+    }
+    local_14[3] = (undefined **)local_10;
+    local_10[2] = (undefined **)local_14;
+  }
+  ExceptionList = pvStack_c;
+  return 0;
+}
+
+
