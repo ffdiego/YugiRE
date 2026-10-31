@@ -240,5 +240,33 @@
     "User has not yet described the precise action between captures.",
     "The position-lock boolean is decoded by the script, not an independent attempt to change position.",
     "No capture after end-of-turn cleanup has been supplied."
-  ]
+  ],
+  "follow_up_excerpt": {
+    "source": "Partial console output supplied by user on 2026-10-31; timestamp, PID and remaining fields were not provided.",
+    "reported_actions": "Changed to defense and ended the turn.",
+    "same_turn_as_placement_confirmed": false,
+    "player": {
+      "side": 1,
+      "life_points": 7900,
+      "hand_count": 6,
+      "player_flags_hex": "00000000",
+      "monsters": [
+        {
+          "zone": 0,
+          "card_index": 550,
+          "occupied": true,
+          "occurrence_word": 2,
+          "position_word_hex": "0203",
+          "flags_hex": "00000000",
+          "position_locked_this_turn": false
+        }
+      ]
+    },
+    "limitations": [
+      "This is an excerpt, not a full third snapshot.",
+      "It is unknown whether defense was selected during the placement turn or a later turn.",
+      "The occurrence word changed from 0 to 2; identity continuity has not been established.",
+      "The LP and hand deltas are observed; their causes were not specified."
+    ]
+  }
 }

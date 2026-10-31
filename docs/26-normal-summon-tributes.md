@@ -187,3 +187,23 @@ A mudança é compatível com uma colocação de Gemini Elf da mão no campo,
 sem custo de LP. Falta confirmar a ação do operador, tentar mudar posição e
 capturar após a limpeza de fim de turno. O booleano `position_locked_this_turn`
 é uma interpretação do script baseada no bit, não um teste independente da UI.
+
+### Continuação: defesa e encerramento de turno
+
+O operador relatou "mudei pra defesa e encerrei o turno" e forneceu um trecho
+adicional, preservado no mesmo JSON como `follow_up_excerpt`. No lado 1, zona
+0 mantém índice 550, palavra de posição passa de 0x0202 para **0x0203** e os
+flags passam a **zero**, incluindo a marca 0x20000. O relato corrobora o bit 0
+da palavra de posição associado à defesa. A ausência da marca após encerrar
+o turno é compatível com a limpeza estática seguida anteriormente; não isola
+o instante exato da limpeza.
+
+O trecho também informa LP 7900, mão com seis cartas e `occurrence_word=2`
+(antes 0). Não foram fornecidos timestamp, PID ou restante da captura. Não
+atribuímos causas à perda de 100 LP, à carta adicional ou à alteração dessa
+palavra; o mesmo índice não basta para afirmar continuidade de ocorrência.
+
+**Ainda é necessário esclarecer** se o operador mudou para defesa no mesmo
+turno da colocação ou depois de um turno do adversário. Se foi no mesmo turno,
+isso exigirá reavaliar a interpretação do bloqueio e a implementação do demo.
+O relato não foi tratado como confirmação automática de toda a regra.
