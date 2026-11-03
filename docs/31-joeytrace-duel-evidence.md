@@ -62,6 +62,8 @@ Hipotese: arg1=0 significa vitoria local e arg1=1 derrota local. Nao foi testado
 - Mao do lado 1 diminui uma carta em t=1281,000.
 - Cinco zonas de monstro do lado 0 sao esvaziadas em t=1282,406 (seq=136), 1284,000 (seq=137), 1285,609 (seq=139), 1285,703 (seq=140), 1285,796 (seq=141).
 - A remocao e observada ao longo de ~3,39 s, nao numa amostra atomica. Fortemente compativel com a anotacao do operador.
+- **Ordem exata das zonas no trace:** 0 (indice 844, t=1282,406, seq=136), 1 (1082, t=1284,000, seq=137), 2 (147, t=1285,609, seq=139), 3 (1052, t=1285,703, seq=140), 4 (591, t=1285,796, seq=141). O operador confirmou que as cartas sao visualmente removidas uma a uma e levantou a possibilidade de percurso da direita para a esquerda.
+- **Hipotese a verificar:** o motor ou sua camada de apresentacao percorre as zonas internas em ordem crescente. Ainda nao foi comprovado se zona 0 corresponde a extrema direita na interface, nem se as remocoes logicas ocorrem nesta mesma ordem (em vez de apenas sua animacao).
 
 ### Trap Hole (captura 013432)
 
@@ -70,7 +72,7 @@ Hipotese: arg1=0 significa vitoria local e arg1=1 derrota local. Nao foi testado
 
 ### Dark Hole, Spellbinding Circle e Monster Reborn (captura 013432)
 
-- Apos a acao descrita como Dark Hole, tres monstros do lado 0 desaparecem das zonas 0, 1, 2 em t=1471,891, 1473,391, 1475,094 (seq=270/271/273). O lado 1 nao tinha monstros no instante, portanto este teste nao prova eliminacao bilateral.
+- Apos a acao descrita como Dark Hole, tres monstros do lado 0 desaparecem **na mesma ordem crescente de zona 0 -> 1 -> 2** em t=1471,891, 1473,391, 1475,094 (seq=270/271/273). Esse segundo caso reforca a hipotese de percorrer os slots na ordem interna, mas a direcao visual e a distincao entre logica e animacao seguem pendentes. O lado 1 nao tinha monstros no instante, portanto este teste nao prova eliminacao bilateral.
 - O operador relatou destruicao de Spellbinding Circle por estar vinculada a Red-Eyes. Essa relacao nao e observavel no JoeyTrace v1: nenhuma zona de spell/trap ou associacao de equipamento e decodificada. Existem 2 ocorrencias do opcode 0xB2 no replay, mas a correspondencia temporal com Spellbinding Circle e desconhecida.
 - Indice 1082/ocorrencia 33 e removido da zona 1 do lado 0 em t=1473,391 (seq=271). Depois, indice 1082/ocorrencia 67 entra na zona 1 do lado 1 em t=1571,906 (seq=321) apos Monster Reborn relatado. Isso corrobora a reentrada do mesmo tipo de carta do outro lado, com nova palavra de ocorrencia. Nao significa que indice sozinho identifique uma instancia fisica.
 
