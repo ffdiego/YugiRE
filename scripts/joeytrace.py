@@ -36,10 +36,12 @@ class WinProcessProbe:
 
     PROCESS_VM_READ = 0x0010
     PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    PROCESS_SYNCHRONIZE = 0x00100000
     TH32CS_SNAPPROCESS = 0x00000002
     TH32CS_SNAPMODULE = 0x00000008
     TH32CS_SNAPMODULE32 = 0x00000010
-    STILL_ACTIVE_WAIT = 0x00000102
+    WAIT_OBJECT_0 = 0x00000000
+    WAIT_TIMEOUT = 0x00000102
 
     def __init__(self, pid: int | None = None):
         if sys.platform != "win32":
@@ -162,7 +164,8 @@ class WinProcessProbe:
                 f"SHA-256 desconhecido: {sha256}. Esperado: {EXPECTED_EXE_SHA256}. "
                 "Nao aplique enderecos deste coletor a outro executavel (incluindo EXE com patch)."
             )
-        handle = self.kernel32.OpenProcess(self.PROCESS_VM_READ | self.PROCESS_QUERY_LIMITED_INFORMATION,
+        handle = self.kernel32.OpenProcess(self.PROCESS_VM_READ | self.PROCESS_QUERY_LIMITED_INFORMATION
+                                           | self.PROCESS_SYNCHRONIZE,
                                            False, pid)
         if not handle:
             raise self.ctypes.WinError(self.ctypes.get_last_error())
@@ -173,7 +176,14 @@ class WinProcessProbe:
         self.exe_sha256 = sha256
 
     def alive(self) -> bool:
-        return bool(self.handle) and self.kernel32.WaitForSingleObject(self.handle, 0) == 0x102
+        if not self.handle:
+            return False
+        result = self.kernel32.WaitForSingleObject(self.handle, 0)
+        if result == self.WAIT_TIMEOUT:
+            return True
+        if result == self.WAIT_OBJECT_0:
+            return False
+        raise self.ctypes.WinError(self.ctypes.get_last_error())
 
     def read(self) -> bytes:
         if not self.handle:
@@ -344,6 +354,7 @@ def run_capture(args: argparse.Namespace) -> int:
             outcome, reason = "interrupted", "Ctrl+C"
         finally:
             report = session.finish(outcome, int((time.monotonic() - started) * 1000), reason)
+            print(f"[joeytrace] Encerramento: {outcome}; motivo: {reason or 'nao informado'}")
             print(f"\n[joeytrace] {session.change_batches} lotes de mudanca; {session.marker_count} marcadores.")
             print(f"[joeytrace] Relatorio: {report}")
             print("[joeytrace] Para anexar o replay salvo: py scripts/joeytrace.py import-replay --session \"" + str(session_dir) + "\" --file caminho\\replay.ydr")
