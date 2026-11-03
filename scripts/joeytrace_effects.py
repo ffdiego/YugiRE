@@ -40,9 +40,9 @@ def _card_indexes(changes: list[dict]) -> list[int]:
     return sorted(x for x in indexes if x > 0)
 
 
-def generate_effect_windows(folder: Path, *, before_ms: int = 3000,
+def generate_effect_windows(folder: Path, *, before_ms: int = 15000,
                             after_ms: int = 20000,
-                            max_events: int = 80) -> Path:
+                            max_events: int = 250) -> Path:
     """Summarize observed state changes near every marker.
 
     Never infer that the marked card caused these changes; the operator may
