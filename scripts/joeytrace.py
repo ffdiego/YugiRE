@@ -552,9 +552,9 @@ def main(argv: list[str] | None = None) -> int:
     effect = sub.add_parser("effect-windows",
                             help="Agrupar alteracoes por proximidade temporal aos marcadores (nao prova causalidade)")
     effect.add_argument("--session", type=Path, required=True)
-    effect.add_argument("--before-ms", type=int, default=3000)
+    effect.add_argument("--before-ms", type=int, default=15000)
     effect.add_argument("--after-ms", type=int, default=20000)
-    effect.add_argument("--max-events", type=int, default=80)
+    effect.add_argument("--max-events", type=int, default=250)
     discovery = sub.add_parser("list-replays", help="Mostrar CommonDir nas visoes do Registro e replays encontrados")
     discovery.add_argument("--limit", type=int, default=10, help="Maximo de resultados (padrao 10)")
     annotate = sub.add_parser("annotate", help="Anotar marcador F9 apos o duelo")
