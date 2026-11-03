@@ -28,6 +28,7 @@ from joeytrace_core import (
 )
 
 from joeytrace_replay import choose_replay, list_replays
+from joeytrace_effects import generate_effect_windows
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TRACES_ROOT = ROOT / "scratch" / "traces"
@@ -298,12 +299,14 @@ def run_capture(args: argparse.Namespace) -> int:
             "exe_path_local": str(probe.exe_path),
             "poll_ms_requested": args.poll_ms,
             "unknown_only_enabled": args.track_unknown,
-            "hand_cards_enabled": args.hand_cards,
+            "hand_cards_enabled": args.hand_cards or args.card_events,
+            "card_events_enabled": args.card_events,
             "raw_blocks_enabled": args.raw_blocks,
             "marker_hotkey": None if args.no_hotkey else args.hotkey,
             "duel_start_detection": "heuristic_two_consecutive_plausible_snapshots",
         }, track_unknown=args.track_unknown, raw_blocks=args.raw_blocks,
-           raw_sample_limit=args.raw_sample_limit, capture_hand_cards=args.hand_cards)
+           raw_sample_limit=args.raw_sample_limit, capture_hand_cards=args.hand_cards,
+           capture_card_events=args.card_events)
         print(f"[joeytrace] Gravando em {session_dir}")
         print("[joeytrace] Aguardando estado plausivel de duelo (LP>0 nos dois lados)...")
         queue_ = queue.SimpleQueue()
@@ -405,6 +408,12 @@ def run_capture(args: argparse.Namespace) -> int:
             outcome, reason = "interrupted", "Ctrl+C"
         finally:
             report = session.finish(outcome, int((time.monotonic() - started) * 1000), reason)
+            if session.marker_count:
+                try:
+                    path = generate_effect_windows(session_dir)
+                    print(f"[joeytrace] Observacoes por marcador: {path}", flush=True)
+                except (ValueError, OSError) as exc:
+                    print(f"[joeytrace] Nao foi possivel gerar effect-windows: {exc}", flush=True)
             print(f"[joeytrace] Encerramento: {outcome}; motivo: {reason or 'nao informado'}")
             print(f"\n[joeytrace] {session.change_batches} lotes de mudanca; {session.marker_count} marcadores.")
             print(f"[joeytrace] Relatorio: {report}")
@@ -484,6 +493,7 @@ def run_annotate(args: argparse.Namespace) -> int:
     with annotations_path.open("a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps({"marker_index": args.marker, "annotated_utc": utc_now(),
                             "note": args.text}, ensure_ascii=False) + "\n")
+    generate_effect_windows(folder)
     print(f"[joeytrace] Anotacao salva para marcador #{args.marker}")
     return 0
 
@@ -527,6 +537,8 @@ def main(argv: list[str] | None = None) -> int:
     capture.add_argument("--raw-blocks", action="store_true", help="Persistir blocos completos de RAM localmente (dados potencialmente sensiveis)")
     capture.add_argument("--hand-cards", action="store_true",
                          help="Registrar indices/words das cartas das duas maos; dados ocultos/sensiveis")
+    capture.add_argument("--card-events", action="store_true",
+                         help="Observacao geral: maos, deck count, 11 slots do campo, associacoes e bytes locais")
     capture.add_argument("--raw-sample-limit", type=int, default=32,
                          help="Numero maximo de offsets de bytes incluidos em cada evento")
     capture.add_argument("--duration", type=float, default=0, help="Parar automaticamente apos N segundos")
@@ -537,6 +549,12 @@ def main(argv: list[str] | None = None) -> int:
     replay.add_argument("--session", type=Path, required=True)
     replay.add_argument("--file", type=Path,
                         help="Arquivo YDR; se omitido, sugerir o mais recente via Registro")
+    effect = sub.add_parser("effect-windows",
+                            help="Agrupar alteracoes por proximidade temporal aos marcadores (nao prova causalidade)")
+    effect.add_argument("--session", type=Path, required=True)
+    effect.add_argument("--before-ms", type=int, default=3000)
+    effect.add_argument("--after-ms", type=int, default=20000)
+    effect.add_argument("--max-events", type=int, default=80)
     discovery = sub.add_parser("list-replays", help="Mostrar CommonDir nas visoes do Registro e replays encontrados")
     discovery.add_argument("--limit", type=int, default=10, help="Maximo de resultados (padrao 10)")
     annotate = sub.add_parser("annotate", help="Anotar marcador F9 apos o duelo")
@@ -557,6 +575,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "annotate":
         try:
             return run_annotate(args)
+        except (ValueError, OSError) as exc:
+            print(f"[joeytrace] ERRO: {exc}", file=sys.stderr)
+            return 1
+    if args.command == "effect-windows":
+        try:
+            output = generate_effect_windows(args.session, before_ms=args.before_ms,
+                                             after_ms=args.after_ms, max_events=args.max_events)
+            print(f"[joeytrace] Janela dos marcadores: {output}")
+            return 0
         except (ValueError, OSError) as exc:
             print(f"[joeytrace] ERRO: {exc}", file=sys.stderr)
             return 1
