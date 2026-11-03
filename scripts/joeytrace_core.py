@@ -24,13 +24,20 @@ MONSTER_COUNT = 5
 MONSTER_START = 0x10
 MONSTER_STRIDE = 0x90
 PLAYER_FLAGS_OFFSET = 0x00A56430 - MEMORY_VA_DOCUMENTED
+# Known from docs/21-native-card-draw.md and docs/23-terminal-conditions.md.
+HAND_ARRAY_OFFSET = 0x00A56434 - MEMORY_VA_DOCUMENTED
+DUEL_STATUS_OFFSET = 0x00A55D6C - MEMORY_VA_DOCUMENTED
+HAND_CAPTURE_LIMIT = 80  # defensive, not an established native limit
+EXODIA_CARD_INDEXES = frozenset((774, 775, 776, 777, 778))
+TERMINAL_BITS = {"deck_out": 0x100, "exodia": 0x200, "destiny_board": 0x400}
+assert HAND_ARRAY_OFFSET + HAND_CAPTURE_LIMIT * 4 <= PLAYER_STRIDE
 
 
 def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-def parse_state(data: bytes) -> dict[str, Any]:
+def parse_state(data: bytes, *, include_hand_cards: bool = False) -> dict[str, Any]:
     """Decode established *visible fields only* from two player blocks."""
     if len(data) != BLOCK_SIZE:
         raise ValueError(f"Expected {BLOCK_SIZE} bytes, got {len(data)}")
@@ -40,6 +47,7 @@ def parse_state(data: bytes) -> dict[str, Any]:
         lp = struct.unpack_from("<H", data, start)[0]
         hand_count = data[start + 4]
         flags = struct.unpack_from("<I", data, start + PLAYER_FLAGS_OFFSET)[0]
+        status_word = struct.unpack_from("<H", data, start + DUEL_STATUS_OFFSET)[0]
         monsters = []
         for zone in range(MONSTER_COUNT):
             pos = start + MONSTER_START + zone * MONSTER_STRIDE
@@ -56,13 +64,24 @@ def parse_state(data: bytes) -> dict[str, Any]:
                 "flags_hex": f"{mflags:08X}",
                 "position_locked_this_turn": index != 0 and bool(mflags & 0x20000),
             })
-        players.append({
-            "side": side,
-            "life_points": lp,
-            "hand_count": hand_count,
+        player = {
+            "side": side, "life_points": lp, "hand_count": hand_count,
             "player_flags_hex": f"{flags:08X}",
+            # Terminal bits are observations, not proof that a duel ended.
+            "terminal_bits_hex": f"{status_word & 0x700:03X}",
+            "terminal_bits": {key: bool(status_word & mask) for key, mask in TERMINAL_BITS.items()},
             "monsters": monsters,
-        })
+        }
+        if include_hand_cards:
+            cards = []
+            for i in range(min(hand_count, HAND_CAPTURE_LIMIT)):
+                word = struct.unpack_from("<I", data, start + HAND_ARRAY_OFFSET + i * 4)[0]
+                cards.append({"card_index": word & 0xFFF, "raw_word_hex": f"{word:08X}"})
+            player["hand_cards"] = cards
+            player["exodia_parts_present"] = sorted(
+                EXODIA_CARD_INDEXES.intersection(c["card_index"] for c in cards))
+            player["exodia_all_parts_in_hand"] = len(player["exodia_parts_present"]) == 5
+        players.append(player)
     return {"players": players}
 
 
@@ -96,6 +115,30 @@ def diff_states(before: dict[str, Any], after: dict[str, Any]) -> list[dict[str,
                 if key == "player_flags_hex":
                     entry["xor_hex"] = f"{int(old[key], 16) ^ int(new[key], 16):08X}"
                 changes.append(entry)
+        if old["terminal_bits_hex"] != new["terminal_bits_hex"]:
+            changes.append({
+                "type": "terminal_bits_changed", "side": side,
+                "before": old["terminal_bits_hex"], "after": new["terminal_bits_hex"],
+                "became_set": [key for key in TERMINAL_BITS
+                               if not old["terminal_bits"][key] and new["terminal_bits"][key]],
+                "became_clear": [key for key in TERMINAL_BITS
+                                 if old["terminal_bits"][key] and not new["terminal_bits"][key]],
+            })
+        if "hand_cards" in old and "hand_cards" in new and old["hand_cards"] != new["hand_cards"]:
+            from collections import Counter
+            before_words = Counter(c["raw_word_hex"] for c in old["hand_cards"])
+            after_words = Counter(c["raw_word_hex"] for c in new["hand_cards"])
+            additions = after_words - before_words
+            removals = before_words - after_words
+            changes.append({
+                "type": "hand_cards_changed", "side": side,
+                "before_indices": [c["card_index"] for c in old["hand_cards"]],
+                "after_indices": [c["card_index"] for c in new["hand_cards"]],
+                "added": [{"card_index": int(word, 16) & 0xFFF, "raw_word_hex": word}
+                          for word in sorted(additions) for _ in range(additions[word])],
+                "removed": [{"card_index": int(word, 16) & 0xFFF, "raw_word_hex": word}
+                            for word in sorted(removals) for _ in range(removals[word])],
+            })
         for a, b in zip(old["monsters"], new["monsters"]):
             zone = a["zone"]
             if (a["card_index"], a["occurrence_word"]) != (b["card_index"], b["occurrence_word"]):
@@ -115,7 +158,22 @@ def diff_states(before: dict[str, Any], after: dict[str, Any]) -> list[dict[str,
                     "before": a["flags_hex"], "after": b["flags_hex"],
                     "xor_hex": f"{int(a['flags_hex'], 16) ^ int(b['flags_hex'], 16):08X}",
                 })
+    if is_possible_duel_reset(before, after):
+        changes.append({"type": "possible_duel_reset",
+                        "reason": "hand_counters_zero_fields_empty_both_lp_8000",
+                        "evidence_method": "heuristic_state_comparison"})
     return changes
+
+
+def is_possible_duel_reset(before: dict[str, Any], after: dict[str, Any]) -> bool:
+    """Conservative reset candidate: do not discard samples on this basis."""
+    def resetlike(state):
+        return all(p["life_points"] == 8000 and p["hand_count"] == 0
+                   and all(not m["occupied"] for m in p["monsters"])
+                   for p in state["players"])
+    return resetlike(after) and not resetlike(before) and any(
+        p["hand_count"] > 0 or any(m["occupied"] for m in p["monsters"])
+        for p in before["players"])
 
 
 def raw_byte_diff(before: bytes, after: bytes, limit: int = 32) -> dict[str, Any]:
@@ -142,19 +200,25 @@ class TraceSession:
     """Append-only local evidence. No native calls; easy to test with synthetic blocks."""
 
     def __init__(self, folder: Path, metadata: dict[str, Any], *, track_unknown: bool = False,
-                 raw_blocks: bool = False, raw_sample_limit: int = 32):
+                 raw_blocks: bool = False, raw_sample_limit: int = 32,
+                 capture_hand_cards: bool = False):
         folder = Path(folder)
         folder.mkdir(parents=True, exist_ok=False)  # no silent overwrite
         self.folder = folder
         self.track_unknown = track_unknown
         self.raw_sample_limit = raw_sample_limit
         self.raw_blocks = raw_blocks
+        self.capture_hand_cards = capture_hand_cards
+        self.segment_id = 0
+        self.boundary_candidates = 0
         self.manifest: dict[str, Any] = {
             "schema": "joeytrace-v1", "status": "recording", "started_utc": utc_now(),
             "capture_mode": "read_only_external_polling", "data_origin": "ReadProcessMemory",
             "memory_rva_hex": f"0x{MEMORY_RVA:08X}",
             "memory_block_size": BLOCK_SIZE,
             "sampling_is_atomic": False,
+            "hand_cards_enabled": capture_hand_cards,
+            "boundary_detection": "heuristic_reset_not_proven",
             "native_command_hook_enabled": False,
             "interpretation_limit": "Changes are sampled state differences, not proven game actions; intermediate states can be missed.",
             **metadata,
@@ -190,7 +254,8 @@ class TraceSession:
     def _save_snapshot(self, state: dict[str, Any], raw: bytes, elapsed_ms: int,
                        captured_utc: str, reason: str) -> None:
         obj = {"seq": self.sequence, "elapsed_ms": elapsed_ms, "captured_utc": captured_utc,
-               "reason": reason, "raw_sha256": hashlib.sha256(raw).hexdigest(), **state}
+               "reason": reason, "segment_id": self.segment_id,
+               "raw_sha256": hashlib.sha256(raw).hexdigest(), **state}
         _write_json_line(self.files["snapshots"], obj)
         if self.raw_file:
             # little endian: uint32 sequence, uint64 elapsed milliseconds,
@@ -203,7 +268,7 @@ class TraceSession:
         """Return True if a semantic or opted-in unknown-only change was recorded."""
         self.poll_count += 1
         captured_utc = captured_utc or utc_now()
-        state = parse_state(raw)
+        state = parse_state(raw, include_hand_cards=self.capture_hand_cards)
         if self.before is None:
             self.before = state
             self.before_raw = raw
@@ -214,6 +279,9 @@ class TraceSession:
             return False
         assert self.before_raw is not None
         delta = diff_states(self.before, state)
+        if any(item["type"] == "possible_duel_reset" for item in delta):
+            self.boundary_candidates += 1
+            self.segment_id += 1
         # Preserve comparison against previous sample even if no semantic fields changed.
         raw_diff = raw_byte_diff(self.before_raw, raw, self.raw_sample_limit)
         should_save = bool(delta) or (self.track_unknown and raw_diff["count"] > 0)
@@ -222,6 +290,7 @@ class TraceSession:
             self.change_batches += 1
             self.counts.update(entry["type"] for entry in delta)
             event = {"seq": self.sequence, "elapsed_ms": elapsed_ms, "captured_utc": captured_utc,
+                     "segment_id": self.segment_id,
                      "type": "observed_state_difference", "changes": delta,
                      "raw_byte_diff": raw_diff, "evidence_method": "non_atomic_polling"}
             _write_json_line(self.files["changes"], event)
@@ -235,6 +304,7 @@ class TraceSession:
         self.marker_count += 1
         _write_json_line(self.files["markers"], {
             "marker_index": self.marker_count, "elapsed_ms": elapsed_ms,
+            "segment_id": self.segment_id,
             "captured_utc": utc_now(), "source": source, "note": note,
             "semantic_label_supplied_by_operator": bool(note.strip()),
         })
@@ -265,6 +335,8 @@ class TraceSession:
             "status": status, "finished_utc": utc_now(), "duration_ms": elapsed_ms,
             "poll_count": self.poll_count, "change_batches": self.change_batches,
             "marker_count": self.marker_count, "read_error_count": self.read_error_count,
+            "boundary_candidates": self.boundary_candidates,
+            "segment_count_observed": self.segment_id + 1,
             "armed_at_utc": self.armed_at_utc, "last_snapshot_utc": self.last_snapshot_utc,
             "event_counts": dict(sorted(self.counts.items())),
         })
@@ -297,6 +369,7 @@ class TraceSession:
             f"- Leituras bem-sucedidas: {self.poll_count}; falhas: {self.read_error_count}\n"
             f"- Lotes de alteracoes: **{self.change_batches}**\n"
             f"- Marcadores: **{self.marker_count}**\n"
+            f"- Possiveis reinicios de duelo: **{self.boundary_candidates}** (heuristica; dados preservados)\n"
             f"- Comandos nativos capturados: **nao** (nenhum hook instalado)\n\n"
             f"## Campos alterados\n\n| Campo | Ocorrencias |\n|---|---:|\n{rows}\n\n"
             f"## Evidencias\n\n"
@@ -309,7 +382,9 @@ class TraceSession:
             + ("\n## Anotacoes dos marcadores\n\n" + note_lines + "\n" if note_lines else "")
             + "\n## Limites\n\nA leitura e periodica e nao atomica. Mudancas entre amostras podem ser perdidas; "
               "as labels indicam diferencas observadas e nao a causa das alteracoes. "
-              "Indices de carta nao sao IDs de recurso. A captura nao contem a fila nativa de comandos.\n",
+              "Indices de carta nao sao IDs de recurso. Segmentos sao heuristicas, nao limites comprovados. "
+              "As cartas da mao so sao registradas com --hand-cards. "
+              "A captura nao contem a fila nativa de comandos.\n",
             encoding="utf-8",
         )
         return report
