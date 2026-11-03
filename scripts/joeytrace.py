@@ -298,11 +298,12 @@ def run_capture(args: argparse.Namespace) -> int:
             "exe_path_local": str(probe.exe_path),
             "poll_ms_requested": args.poll_ms,
             "unknown_only_enabled": args.track_unknown,
+            "hand_cards_enabled": args.hand_cards,
             "raw_blocks_enabled": args.raw_blocks,
             "marker_hotkey": None if args.no_hotkey else args.hotkey,
             "duel_start_detection": "heuristic_two_consecutive_plausible_snapshots",
         }, track_unknown=args.track_unknown, raw_blocks=args.raw_blocks,
-           raw_sample_limit=args.raw_sample_limit)
+           raw_sample_limit=args.raw_sample_limit, capture_hand_cards=args.hand_cards)
         print(f"[joeytrace] Gravando em {session_dir}")
         print("[joeytrace] Aguardando estado plausivel de duelo (LP>0 nos dois lados)...")
         queue_ = queue.SimpleQueue()
@@ -318,6 +319,7 @@ def run_capture(args: argparse.Namespace) -> int:
         outcome = "stopped_by_operator"
         reason = ""
         last_changes_printed = 0
+        last_segment_printed = 0
         try:
             while True:
                 now = time.monotonic()
@@ -348,6 +350,11 @@ def run_capture(args: argparse.Namespace) -> int:
                             print("[joeytrace] Estado plausivel de duelo detectado; iniciando amostras.", flush=True)
                     if armed:
                         session.sample(raw, elapsed_ms)
+                        if session.segment_id != last_segment_printed:
+                            last_segment_printed = session.segment_id
+                            print(f"[joeytrace] POSSIVEL REINICIO DE DUELO: "
+                                  f"segmento {session.segment_id} em {elapsed_ms} ms. "
+                                  "Heuristica; nenhuma amostra foi descartada.", flush=True)
                         if session.change_batches != last_changes_printed:
                             last_changes_printed = session.change_batches
                             if args.verbose:
@@ -518,6 +525,8 @@ def main(argv: list[str] | None = None) -> int:
                          help="Atalho global (padrao ctrl+shift+j; F9 conflita com historico do console)")
     capture.add_argument("--track-unknown", action="store_true", help="Gravar mudancas apenas em bytes desconhecidos (pode gerar muito log)")
     capture.add_argument("--raw-blocks", action="store_true", help="Persistir blocos completos de RAM localmente (dados potencialmente sensiveis)")
+    capture.add_argument("--hand-cards", action="store_true",
+                         help="Registrar indices/words das cartas das duas maos; dados ocultos/sensiveis")
     capture.add_argument("--raw-sample-limit", type=int, default=32,
                          help="Numero maximo de offsets de bytes incluidos em cada evento")
     capture.add_argument("--duration", type=float, default=0, help="Parar automaticamente apos N segundos")
