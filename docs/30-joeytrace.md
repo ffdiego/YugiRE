@@ -28,7 +28,9 @@ py -3 scripts/joeytrace.py capture
 
 É possível começar a captura antes de abrir o Joey. O coletor espera `joey_pc.exe`, valida o executável, lê dois blocos contíguos e só começa a registrar estados quando duas amostras consecutivas parecem corresponder a um duelo: LP válidos para os dois lados, mãos com quantidades plausíveis e índices de cartas dentro do catálogo conhecido. **Isso é apenas uma heurística**; também não detecta rigorosamente fim/início de outro duelo no mesmo processo. O registro continua após LP chegar a zero.
 
-Durante a partida, **F9** registra um marcador global (por borda de pressionamento); não precisa trocar o foco do jogo. Se voltar ao terminal, pode digitar `mark texto livre` e pressionar Enter. Digite `stop` ou use Ctrl+C para finalizar e gerar `report.md`. Ao terminar o processo do jogo, a sessão também é finalizada.
+Durante a partida, **Ctrl+Shift+J** registra um marcador global (por borda de pressionamento, com debounce de 800 ms); não precisa trocar o foco do jogo. Quando voltar ao terminal, **digite a descrição em texto livre e pressione Enter**: o texto será associado ao marcador mais recente em `marker-annotations.jsonl`. Também é possível usar `note descrição` para anotar o último, ou `mark descrição` para criar um novo marcador com texto. Sem marcador anterior, texto livre cria um marcador de console. Digite `stop` ou use Ctrl+C para finalizar e gerar `report.md`.
+
+O atalho antigo F9 causa conflito com o histórico do console Windows, que apresenta **Enter command number:**. Por isso não é mais o padrão; `--hotkey f9` permanece disponível apenas para testes. O novo padrão é `--hotkey ctrl+shift+j`. Para desativar, use `--no-hotkey`. Pressionar o atalho global enquanto o console estiver recebendo comandos pode interferir na digitação; use-o de preferência com o jogo em foco.
 
 Opcionalmente, para uma investigação de **bytes ainda desconhecidos**:
 
@@ -51,7 +53,7 @@ snapshots.jsonl            # baseline e estados após cada lote registrado
 markers.jsonl              # marcações F9 e console (e erros de leitura)
 report.md                  # relatório gerado ao finalizar
 raw-snapshots.bin          # opcional com --raw-blocks
-marker-annotations.jsonl   # opcional, se anotar marcadores posteriormente
+marker-annotations.jsonl   # descrições digitadas ao vivo ou após a partida (append-only)
 replay.ydr                 # opcional, anexado depois da partida
 replay-commands.csv        # opcional, extraído do YDR
 replay-summary.json        # opcional, extraído do YDR com ID do save omitido
@@ -123,4 +125,4 @@ O layout foi transcrito sem especulação de `scripts/Get-JoeyDuelSnapshot.ps1`:
 4. A captura só aceita a impressão digital do executável conhecido; alterações no EXE invalidam o mapeamento até serem revalidadas.
 5. O modo de investigação nativa proposto para a fase seguinte é uma pequena ponte independente com registro ordenado dos comandos do dispatcher; não recomendamos chamar callbacks diretamente nem instalar hooks sem validar ABI, thread e duração das operações.
 
-A próxima rodada ideal é capturar uma partida real com `--raw-blocks`, marcar dois ou três efeitos com F9, conferir `state-changes.jsonl`, salvar o YDR e usar as anotações como contexto para o Codex mapear offsets adicionais.
+A próxima rodada ideal é capturar uma partida real com `--raw-blocks`, marcar dois ou três efeitos com Ctrl+Shift+J, conferir `state-changes.jsonl`, salvar o YDR e usar as anotações como contexto para o Codex mapear offsets adicionais.

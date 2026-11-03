@@ -197,8 +197,15 @@ class WinProcessProbe:
             raise self.ctypes.WinError(self.ctypes.get_last_error())
         return buffer.raw
 
+    def hotkey_pressed(self, hotkey: str) -> bool:
+        # GetAsyncKeyState checks global state. F9 conflicts with the Windows
+        # console command-history prompt, so use Ctrl+Shift+J by default.
+        keys = (0x11, 0x10, 0x4A) if hotkey == "ctrl+shift+j" else (0x78,)
+        return all(bool(self.user32.GetAsyncKeyState(vk) & 0x8000) for vk in keys)
+
     def f9_pressed(self) -> bool:
-        return bool(self.user32.GetAsyncKeyState(0x78) & 0x8000)
+        # Backwards-compatible helper for experiments selecting --hotkey f9.
+        return self.hotkey_pressed("f9")
 
     def close(self) -> None:
         if self.handle:
@@ -214,25 +221,44 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest().upper()
 
 
+def parse_console_command(raw: str) -> tuple[str, str] | None:
+    """Free text annotates the last hotkey marker; explicit 'mark' creates one."""
+    text = raw.strip()
+    if not text:
+        return None
+    command, _, rest = text.partition(" ")
+    key = command.lower()
+    if key in ("stop", "quit", "exit") and not rest.strip():
+        return ("stop", "")
+    if key in ("mark", "marcar"):
+        return ("mark", rest.strip())
+    if key in ("note", "anotar"):
+        return ("annotate", rest.strip())
+    if key in ("help", "ajuda", "?") and not rest.strip():
+        return ("help", "")
+    return ("annotate", text)
+
+
 def console_commands(q: queue.SimpleQueue) -> None:
-    print("[joeytrace] Console: 'mark texto', 'note texto', 'stop' (Enter). F9 marca durante o jogo.")
+    print("[joeytrace] Texto livre + Enter anota o ultimo marcador. "
+          "'mark descricao' cria outro; 'stop' encerra. "
+          "Atalho padrao no jogo: Ctrl+Shift+J.", flush=True)
     while True:
         try:
             cmd = input()
         except (EOFError, OSError):
             return
-        text = cmd.strip()
-        if not text:
+        parsed = parse_console_command(cmd)
+        if parsed is None:
             continue
-        if text.lower() in ("stop", "quit", "exit"):
-            q.put(("stop", ""))
+        kind, text = parsed
+        if kind == "help":
+            print("[joeytrace] Texto livre anota o ultimo marcador; "
+                  "'mark texto' cria outro; 'stop' encerra.", flush=True)
+            continue
+        q.put(parsed)
+        if kind == "stop":
             return
-        if text.lower() in ("mark", "note"):
-            q.put(("mark", ""))
-        elif text.lower().startswith(("mark ", "note ")):
-            q.put(("mark", text.split(" ", 1)[1]))
-        else:
-            print("[joeytrace] Use 'mark descricao' ou 'stop'.")
 
 
 def make_session_folder(root: Path, pid: int | str) -> Path:
@@ -271,7 +297,7 @@ def run_capture(args: argparse.Namespace) -> int:
             "poll_ms_requested": args.poll_ms,
             "unknown_only_enabled": args.track_unknown,
             "raw_blocks_enabled": args.raw_blocks,
-            "f9_marker_enabled": not args.no_hotkey,
+            "marker_hotkey": None if args.no_hotkey else args.hotkey,
             "duel_start_detection": "heuristic_two_consecutive_plausible_snapshots",
         }, track_unknown=args.track_unknown, raw_blocks=args.raw_blocks,
            raw_sample_limit=args.raw_sample_limit)
@@ -285,6 +311,7 @@ def run_capture(args: argparse.Namespace) -> int:
         armed = False
         consecutive_valid = 0
         last_key = False
+        last_hotkey_ms = -1000000
         read_failures = 0
         outcome = "stopped_by_operator"
         reason = ""
@@ -323,10 +350,12 @@ def run_capture(args: argparse.Namespace) -> int:
                             last_changes_printed = session.change_batches
                             if args.verbose:
                                 print(f"[joeytrace] t={elapsed_ms}ms mudanca #{last_changes_printed}")
-                pressed = probe.f9_pressed() if not args.no_hotkey else False
-                if armed and pressed and not last_key:
-                    session.marker(elapsed_ms)
-                    print(f"[joeytrace] Marcador F9 #{session.marker_count} em {elapsed_ms}ms", flush=True)
+                pressed = probe.hotkey_pressed(args.hotkey) if not args.no_hotkey else False
+                if armed and pressed and not last_key and elapsed_ms - last_hotkey_ms >= 800:
+                    session.marker(elapsed_ms, source=args.hotkey.upper())
+                    last_hotkey_ms = elapsed_ms
+                    print(f"[joeytrace] Marcador #{session.marker_count} "
+                          f"({args.hotkey}) em {elapsed_ms}ms", flush=True)
                 last_key = pressed
                 while True:
                     try:
@@ -336,9 +365,22 @@ def run_capture(args: argparse.Namespace) -> int:
                     if cmd == "mark":
                         if armed:
                             session.marker(elapsed_ms, content, "console")
-                            print(f"[joeytrace] Marcador #{session.marker_count}: {content}")
+                            print(f"[joeytrace] Marcador #{session.marker_count}: {content}", flush=True)
                         else:
                             print("[joeytrace] Ainda aguardando inicio de duelo; marcador ignorado")
+                    elif cmd == "annotate":
+                        if not content:
+                            print("[joeytrace] Descricao vazia; nada foi gravado.", flush=True)
+                        elif not armed:
+                            print("[joeytrace] Duelo nao detectado; anotacao nao gravada.", flush=True)
+                        elif session.marker_count:
+                            session.annotate_marker(session.marker_count, content, source="console")
+                            print(f"[joeytrace] Descricao anexada ao marcador "
+                                  f"#{session.marker_count}: {content}", flush=True)
+                        else:
+                            session.marker(elapsed_ms, content, "console")
+                            print(f"[joeytrace] Marcador #{session.marker_count} "
+                                  f"criado com descricao: {content}", flush=True)
                     elif cmd == "stop":
                         outcome, reason = "stopped_by_operator", "Comando stop recebido"
                         break
@@ -455,7 +497,9 @@ def main(argv: list[str] | None = None) -> int:
                          help="Pasta raiz das sessoes (default: scratch/traces)")
     capture.add_argument("--poll-ms", type=int, default=100, help="Intervalo entre leituras em ms (padrao: 100)")
     capture.add_argument("--no-wait", action="store_true", help="Falhar se o jogo nao estiver aberto")
-    capture.add_argument("--no-hotkey", action="store_true", help="Desabilitar marcador global F9")
+    capture.add_argument("--no-hotkey", action="store_true", help="Desabilitar marcador global")
+    capture.add_argument("--hotkey", choices=["ctrl+shift+j", "f9"], default="ctrl+shift+j",
+                         help="Atalho global (padrao ctrl+shift+j; F9 conflita com historico do console)")
     capture.add_argument("--track-unknown", action="store_true", help="Gravar mudancas apenas em bytes desconhecidos (pode gerar muito log)")
     capture.add_argument("--raw-blocks", action="store_true", help="Persistir blocos completos de RAM localmente (dados potencialmente sensiveis)")
     capture.add_argument("--raw-sample-limit", type=int, default=32,

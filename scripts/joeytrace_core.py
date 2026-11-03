@@ -173,6 +173,7 @@ class TraceSession:
             "snapshots": (folder / "snapshots.jsonl").open("x", encoding="utf-8", newline="\n"),
             "changes": (folder / "state-changes.jsonl").open("x", encoding="utf-8", newline="\n"),
             "markers": (folder / "markers.jsonl").open("x", encoding="utf-8", newline="\n"),
+            "annotations": (folder / "marker-annotations.jsonl").open("x", encoding="utf-8", newline="\n"),
         }
         self.raw_file = (folder / "raw-snapshots.bin").open("xb") if raw_blocks else None
         if self.raw_file:
@@ -238,6 +239,19 @@ class TraceSession:
             "semantic_label_supplied_by_operator": bool(note.strip()),
         })
 
+    def annotate_marker(self, marker_index: int, note: str, source: str = "console") -> None:
+        """Attach a live note to a marker without rewriting its original evidence."""
+        if not 1 <= marker_index <= self.marker_count:
+            raise ValueError(f"Marcador inexistente: {marker_index}")
+        if not note.strip():
+            raise ValueError("A anotacao nao pode estar vazia")
+        _write_json_line(self.files["annotations"], {
+            "marker_index": marker_index,
+            "annotated_utc": utc_now(),
+            "note": note.strip(),
+            "source": source,
+        })
+
     def record_read_error(self, message: str, elapsed_ms: int) -> None:
         self.read_error_count += 1
         # Keep the reason rather than silently accepting discontinuities.
@@ -262,6 +276,15 @@ class TraceSession:
         if self.raw_file:
             self.raw_file.close()
         report = self.folder / "report.md"
+        live_notes = [
+            json.loads(line)
+            for line in (self.folder / "marker-annotations.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        note_lines = "\n".join(
+            f"- Marcador #{item['marker_index']}: {item['note'].replace(chr(10), ' ')}"
+            for item in live_notes
+        )
         rows = "\n".join(f"| `{k}` | {v} |" for k, v in sorted(self.counts.items()))
         if not rows:
             rows = "| (nenhuma mudanca semantica observada) | 0 |"
@@ -281,7 +304,9 @@ class TraceSession:
             f"- `state-changes.jsonl`: deltas observados, com offsets dos bytes modificados.\n"
             f"- `snapshots.jsonl`: estados interpretados na primeira leitura e a cada mudanca registrada.\n"
             f"- `markers.jsonl`: marcadores manuais e erros de leitura.\n"
+            f"- `marker-annotations.jsonl`: descricoes anexadas a marcadores.\n"
             + ("- `raw-snapshots.bin`: blocos binarios completos, somente para RE local.\n" if self.raw_blocks else "")
+            + ("\n## Anotacoes dos marcadores\n\n" + note_lines + "\n" if note_lines else "")
             + "\n## Limites\n\nA leitura e periodica e nao atomica. Mudancas entre amostras podem ser perdidas; "
               "as labels indicam diferencas observadas e nao a causa das alteracoes. "
               "Indices de carta nao sao IDs de recurso. A captura nao contem a fila nativa de comandos.\n",
