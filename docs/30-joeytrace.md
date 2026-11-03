@@ -87,13 +87,45 @@ py -3 scripts/joeytrace.py annotate --session "scratch/traces/duel-..." --marker
 
 Anotações adicionais são *append-only* em `marker-annotations.jsonl`.
 
+### Descoberta automática dos replays e views do Registro
+
+A fonte **comprovada** no binário é `CommonDir` em
+`HKLM\SOFTWARE\KONAMI\Yu-Gi-Oh! Power Of Chaos\system`.
+O coletor consulta as views 32 e 64 bits pelo `winreg.KEY_WOW64_32KEY` e
+`KEY_WOW64_64KEY` (não concatena `WOW6432Node` na chave HKLM), além dos
+possíveis caminhos sob `HKCU\Software\Classes\VirtualStore\MACHINE\SOFTWARE`
+com e sem `WOW6432Node`. Também consulta opcionalmente `ReplayDir` caso exista,
+mas esse valor **não foi confirmado** no Joey original.
+
+Para diagnosticar as pastas e ver os replays localizados, sem importar nada:
+
+```powershell
+python scripts/joeytrace.py list-replays
+```
+
+São exibidas as origens, se a pasta existe e os arquivos `.ydr` encontrados
+na raiz de cada diretório (ordenados por **data de modificação do arquivo**).
+A data mais recente **não comprova** que o replay pertence ao duelo gravado.
+O coletor não modifica o Registro.
+
 ### Anexar o replay YDR
 
 Depois que terminar a partida e salvar o replay pelo jogo:
 
 ```powershell
+# Interativo: sugere mais recente; Enter aceita, numero seleciona, caminho manual substitui
+py -3 scripts/joeytrace.py import-replay --session "scratch/traces/duel-..."
+
+# Opcional: --file continua aceito para escolha direta
 py -3 scripts/joeytrace.py import-replay --session "scratch/traces/duel-..." --file "C:\caminho\replay.ydr"
 ```
+
+Se encerrar uma captura digitando `stop` no terminal, o programa já oferece
+importar o replay ao final da sessão; Enter aceita o candidato mais recente.
+Para desativar essa pergunta, capture com `--no-replay-prompt`. Em caso de
+`Ctrl+C`, não há pergunta automática, pois o leitor de console pode continuar
+bloqueado em `input()`; execute `import-replay --session ...` depois.
+Em modo não interativo, informe explicitamente `--file`.
 
 O YDR original é copiado **apenas** para a pasta local ignorada pelo Git. O `replay-summary.json` omite o identificador de save, mas o `.ydr` original continua com seus bytes originais. O parser é exploratório e atualmente baseado em uma amostra documentada em `docs/29-replay-ydr.md`.
 

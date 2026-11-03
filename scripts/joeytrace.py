@@ -27,6 +27,8 @@ from joeytrace_core import (
     parse_state, plausible_duel, utc_now,
 )
 
+from joeytrace_replay import choose_replay, list_replays
+
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TRACES_ROOT = ROOT / "scratch" / "traces"
 
@@ -399,7 +401,14 @@ def run_capture(args: argparse.Namespace) -> int:
             print(f"[joeytrace] Encerramento: {outcome}; motivo: {reason or 'nao informado'}")
             print(f"\n[joeytrace] {session.change_batches} lotes de mudanca; {session.marker_count} marcadores.")
             print(f"[joeytrace] Relatorio: {report}")
-            print("[joeytrace] Para anexar o replay salvo: py scripts/joeytrace.py import-replay --session \"" + str(session_dir) + "\" --file caminho\\replay.ydr")
+            print("[joeytrace] Para anexar replay depois: py scripts/joeytrace.py import-replay --session \"" + str(session_dir) + "\"")
+        # 'stop' terminates the reader thread; Ctrl+C may leave input() blocked.
+        if outcome == "stopped_by_operator" and args.prompt_replay and sys.stdin.isatty():
+            try:
+                print("[joeytrace] Importacao opcional do replay desta sessao:")
+                run_import_replay(argparse.Namespace(session=session_dir, file=None))
+            except (ValueError, OSError, FileExistsError) as exc:
+                print(f"[joeytrace] Replay nao importado: {exc}")
         return 0 if outcome not in ("read_failed",) else 1
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"[joeytrace] ERRO: {exc}", file=sys.stderr)
@@ -418,13 +427,20 @@ def run_import_replay(args: argparse.Namespace) -> int:
     manifest_path = folder / "manifest.json"
     if not manifest_path.is_file():
         raise ValueError(f"Sessao invalida, manifest.json ausente: {folder}")
-    if not args.file.is_file():
-        raise ValueError(f"Replay nao encontrado: {args.file}")
-    records, summary = read_file(args.file)
+    file = args.file
+    if file is None:
+        file = choose_replay()
+        if file is None:
+            print("[joeytrace] Importacao cancelada; nenhum arquivo foi alterado.")
+            return 0
+    if not file.is_file():
+        raise ValueError(f"Replay nao encontrado: {file}")
+    print(f"[joeytrace] Selecionado: {file}")
+    records, summary = read_file(file)
     raw_file = folder / "replay.ydr"
     if raw_file.exists():
         raise FileExistsError(f"Nao sobrescrevo o replay da sessao: {raw_file}")
-    shutil.copy2(args.file, raw_file)
+    shutil.copy2(file, raw_file)
     summary["header"]["save_identifier_hex"] = "REDACTED"
     (folder / "replay-summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -506,9 +522,14 @@ def main(argv: list[str] | None = None) -> int:
                          help="Numero maximo de offsets de bytes incluidos em cada evento")
     capture.add_argument("--duration", type=float, default=0, help="Parar automaticamente apos N segundos")
     capture.add_argument("--verbose", action="store_true", help="Mostrar mudancas no terminal")
+    capture.add_argument("--no-replay-prompt", action="store_false", dest="prompt_replay",
+                         help="Nao oferecer anexar replay ao encerrar com stop")
     replay = sub.add_parser("import-replay", help="Anexar YDR salvo a sessao existente")
     replay.add_argument("--session", type=Path, required=True)
-    replay.add_argument("--file", type=Path, required=True)
+    replay.add_argument("--file", type=Path,
+                        help="Arquivo YDR; se omitido, sugerir o mais recente via Registro")
+    discovery = sub.add_parser("list-replays", help="Mostrar CommonDir nas visoes do Registro e replays encontrados")
+    discovery.add_argument("--limit", type=int, default=10, help="Maximo de resultados (padrao 10)")
     annotate = sub.add_parser("annotate", help="Anotar marcador F9 apos o duelo")
     annotate.add_argument("--session", type=Path, required=True)
     annotate.add_argument("--marker", type=int, required=True)
@@ -530,6 +551,11 @@ def main(argv: list[str] | None = None) -> int:
         except (ValueError, OSError) as exc:
             print(f"[joeytrace] ERRO: {exc}", file=sys.stderr)
             return 1
+    if args.command == "list-replays":
+        if args.limit < 1:
+            p.error("--limit deve ser >= 1")
+        list_replays(args.limit)
+        return 0
     if args.command == "import-replay":
         try:
             return run_import_replay(args)
