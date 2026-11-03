@@ -32,6 +32,29 @@ Durante a partida, **Ctrl+Shift+J** registra um marcador global (por borda de pr
 
 O atalho antigo F9 causa conflito com o histórico do console Windows, que apresenta **Enter command number:**. Por isso não é mais o padrão; `--hotkey f9` permanece disponível apenas para testes. O novo padrão é `--hotkey ctrl+shift+j`. Para desativar, use `--no-hotkey`. Pressionar o atalho global enquanto o console estiver recebendo comandos pode interferir na digitação; use-o de preferência com o jogo em foco.
 
+## Observação genérica do comportamento das cartas
+
+A opção --card-events habilita o modo ampliado de coleta: ambas as mãos (equivalente a --hand-cards), quantidade no deck, os onze registros de campo por lado, flags, arrays de associações e diferenças de bytes por registro. O objetivo é observar o que mudou para qualquer carta, mesmo que seu efeito ainda não tenha sido decodificado no Ghidra.
+
+Os registros físicos de campo seguem base 0x00A55D74 + lado*0xD44 + slot*0x90, slot de 0 a 10. Os slots de 0 a 4 são os cinco monstros já mapeados; de 5 a 10 são registrados apenas como other_field (não são atribuídos nomes ou posições gráficas definitivos). O índice 11 NÃO é um slot de campo: coincide com flags do jogador e com estruturas auxiliares. As associações são lidas pelo contador uint16 +0x0A, referências de 16 bits a partir de +0x0C e metadados a partir de +0x4C, com até 32 pares por registro. Se o contador exceder 32, os pares são descartados e o contador bruto permanece para análise, sem ler fora do registro.
+
+Para cada registro alterado o coletor gera field_slot_bytes_changed com lado, slot, índices internos antes/depois, quantidade de bytes modificados e amostra dos offsets locais. Também emite field_slot_associations_changed, mudanças nos slots não-monstro e deck_count_changed. São OBSERVAÇÕES de RAM; não demonstram quem ativou o efeito nem que uma carta foi destruída, equipada ou enviada ao cemitério. Essa captura continua sendo externa e read-only.
+
+```powershell
+git pull
+python -m unittest discover -s tests -p 'test_joeytrace*.py' -v
+python scripts/joeytrace.py capture --card-events --verbose
+```
+
+Ao pressionar Ctrl+Shift+J durante um efeito e digitar uma descrição, o encerramento da sessão gera effect-windows.json. O programa reúne alterações entre 15 segundos antes e 20 segundos depois de cada marcador, preservando tipo, timestamps, índice de carta e eventos de campo e mão. A proximidade no tempo não prova causalidade. Quando a anotação é adicionada depois do duelo, o arquivo é regenerado.
+
+Também é possível gerar ou personalizar a análise de uma sessão antiga:
+
+```powershell
+python scripts/joeytrace.py effect-windows --session 'scratch/traces/duel-...' --before-ms 15000 --after-ms 20000
+```
+
+A opção --card-events é opt-in porque revela cartas ocultas e vínculos internos. Não compartilhe nem comite indiscriminadamente os arquivos brutos. Para investigar bytes fora das onze posições de campo, use --track-unknown e --raw-blocks somente em sessões curtas e locais. ATK/DEF efetivos de batalha, resolução de comandos e as demais listas ainda não são cobertos pela interpretação desse modo.
 ## Melhorias após análise dos cinco duelos
 
 O JoeyTrace agora lê os bits de condição terminal já documentados em `docs/23-terminal-conditions.md`: **0x100 (deck-out), 0x200 (Exodia), 0x400 (Destiny Board)**, no word em `0x00A55D6C + lado*0xD44`. São indicadores do estado observado, não provas isoladas de vitória.
