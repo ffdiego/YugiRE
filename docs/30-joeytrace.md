@@ -1,6 +1,6 @@
 # JoeyTrace v1 — evidências contínuas do duelo original
 
-Estado: **implementação funcional do coletor externo**, testada com dados sintéticos e integração do parser YDR em Linux. **A captura em um Windows com o Joey aberto ainda precisa de validação em máquina real.** Não existe hook de comandos nativos nesta versão.
+Estado: **implementação funcional do coletor externo**, testada com dados sintéticos e integração do parser YDR em Linux. **A versão original já foi usada pelo operador em cinco sessões reais; as novas leituras da mão e dos bits terminais ainda precisam de validação no Windows.** Não existe hook de comandos nativos nesta versão.
 
 ## Objetivo
 
@@ -32,6 +32,18 @@ Durante a partida, **Ctrl+Shift+J** registra um marcador global (por borda de pr
 
 O atalho antigo F9 causa conflito com o histórico do console Windows, que apresenta **Enter command number:**. Por isso não é mais o padrão; `--hotkey f9` permanece disponível apenas para testes. O novo padrão é `--hotkey ctrl+shift+j`. Para desativar, use `--no-hotkey`. Pressionar o atalho global enquanto o console estiver recebendo comandos pode interferir na digitação; use-o de preferência com o jogo em foco.
 
+## Melhorias após análise dos cinco duelos
+
+O JoeyTrace agora lê os bits de condição terminal já documentados em `docs/23-terminal-conditions.md`: **0x100 (deck-out), 0x200 (Exodia), 0x400 (Destiny Board)**, no word em `0x00A55D6C + lado*0xD44`. São indicadores do estado observado, não provas isoladas de vitória.
+
+A opção **`--hand-cards`** acrescenta aos snapshots a lista de palavras `uint32` das cartas da mão dos dois lados, do array em `0x00A56434 + lado*0xD44`, conforme `docs/21-native-card-draw.md`. Registra índice `word & 0xFFF` e `raw_word_hex` (índice interno, não ID de recurso), além das partes de Exodia observadas. Aplica limite defensivo de 80 posições para evitar leituras fora do bloco; não é um limite nativo comprovado. Compara cartas por palavra completa, preservando repetições. **Revela as cartas ocultas do oponente**, por isso é opt-in; não publique essas capturas brutas.
+
+```powershell
+python scripts/joeytrace.py capture --hand-cards --verbose
+```
+
+Para diminuir confusões entre partidas, o coletor marca **`possible_duel_reset`** quando ambos os LP voltam a 8000, mãos ficam vazias e as dez zonas de monstro estão livres após um estado ativo. Cada ocorrência aumenta o `segment_id`, presente nas amostras e marcadores. Essa é **apenas uma heurística**: pode perder resets rápidos entre amostras ou gerar falsos positivos. Nenhuma amostra é descartada e o replay YDR não é automaticamente sincronizado aos segmentos.
+
 Opcionalmente, para uma investigação de **bytes ainda desconhecidos**:
 
 ```powershell
@@ -40,7 +52,7 @@ py -3 scripts/joeytrace.py capture --track-unknown --raw-blocks
 
 `--track-unknown` registra alterações que não modificam campos mapeados; essa opção pode gerar logs muito grandes por causa de contadores e temporários internos. `--raw-blocks` salva os blocos de 6792 bytes **completos** a cada evento gravado, para futuras comparações por offset; podem conter dados privados/ocultos da partida. Ambos são opcionais e recomendados somente em sessões curtas de descoberta.
 
-Outras opções: `--poll-ms 100` (padrão, aceita 20 a 5000), `--duration 120`, `--pid 1234` para selecionar uma instância e `--no-hotkey` para desativar F9. Para exibir cada lote detectado em tempo real, use `--verbose`.
+Outras opções: `--hand-cards` (opcional), `--poll-ms 100` (padrão, aceita 20 a 5000), `--duration 120`, `--pid 1234` para selecionar uma instância e `--no-hotkey` para desativar F9. Para exibir cada lote detectado em tempo real, use `--verbose`.
 
 ## Arquivos gerados
 
@@ -153,8 +165,8 @@ O layout foi transcrito sem especulação de `scripts/Get-JoeyDuelSnapshot.ps1`:
 
 1. **Nenhum hook nativo nesta versão.** A fila de comandos `0x30`, `0x31`, `0x43`, etc. só aparece na importação do `.ydr` salvo; o coletor de RAM não captura seus comandos em tempo real.
 2. O sampling não é atômico, não captura estados intermediários rápidos e pode observar transições de múltiplas ações no mesmo lote.
-3. O coletor não sabe ainda cemitério, mão por IDs, deck, fase ou relação de equipamentos; os offsets brutos podem orientar investigações futuras.
+3. O coletor não sabe ainda cemitério, IDs de recurso na mão, deck, fase ou relação de equipamentos. Com `--hand-cards`, registra índices internos de cartas e suas palavras completas, não IDs de recurso.
 4. A captura só aceita a impressão digital do executável conhecido; alterações no EXE invalidam o mapeamento até serem revalidadas.
 5. O modo de investigação nativa proposto para a fase seguinte é uma pequena ponte independente com registro ordenado dos comandos do dispatcher; não recomendamos chamar callbacks diretamente nem instalar hooks sem validar ABI, thread e duração das operações.
 
-A próxima rodada ideal é capturar uma partida real com `--raw-blocks`, marcar dois ou três efeitos com Ctrl+Shift+J, conferir `state-changes.jsonl`, salvar o YDR e usar as anotações como contexto para o Codex mapear offsets adicionais.
+A próxima rodada ideal é capturar uma partida real com `--hand-cards`, marcar dois ou três efeitos com Ctrl+Shift+J, conferir `state-changes.jsonl`, salvar o YDR e usar as anotações como contexto para o Codex mapear offsets adicionais.
