@@ -21,6 +21,8 @@ MEMORY_RVA = MEMORY_VA_DOCUMENTED - IMAGE_BASE_DOCUMENTED
 PLAYER_STRIDE = 0xD44
 BLOCK_SIZE = PLAYER_STRIDE * 2
 MONSTER_COUNT = 5
+FIELD_SLOT_COUNT = 11  # docs/18, docs/19: slots 0..10; 11 is not a field slot
+ASSOCIATION_LIMIT = 32  # refs at +0x0C, metadata at +0x4C; 2 bytes per entry
 MONSTER_START = 0x10
 MONSTER_STRIDE = 0x90
 PLAYER_FLAGS_OFFSET = 0x00A56430 - MEMORY_VA_DOCUMENTED
@@ -37,7 +39,8 @@ def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-def parse_state(data: bytes, *, include_hand_cards: bool = False) -> dict[str, Any]:
+def parse_state(data: bytes, *, include_hand_cards: bool = False,
+                include_card_events: bool = False) -> dict[str, Any]:
     """Decode established *visible fields only* from two player blocks."""
     if len(data) != BLOCK_SIZE:
         raise ValueError(f"Expected {BLOCK_SIZE} bytes, got {len(data)}")
@@ -72,7 +75,39 @@ def parse_state(data: bytes, *, include_hand_cards: bool = False) -> dict[str, A
             "terminal_bits": {key: bool(status_word & mask) for key, mask in TERMINAL_BITS.items()},
             "monsters": monsters,
         }
-        if include_hand_cards:
+        if include_card_events:
+            # Follow the same 0x90 layout across all eleven physical field
+            # records. Slots 5..10 are not assigned definitive UI names.
+            slots = []
+            for slot in range(FIELD_SLOT_COUNT):
+                pos = start + MONSTER_START + slot * MONSTER_STRIDE
+                word = struct.unpack_from("<I", data, pos)[0]
+                count = struct.unpack_from("<H", data, pos + 0x0A)[0]
+                associations = []
+                # A nonsensical count can occur during non-atomic reads.
+                # Do not accept it as a valid active association array.
+                if count <= ASSOCIATION_LIMIT:
+                    for j in range(count):
+                        ref = struct.unpack_from("<H", data, pos + 0x0C + 2*j)[0]
+                        meta = struct.unpack_from("<H", data, pos + 0x4C + 2*j)[0]
+                        associations.append({
+                            "reference_word_hex": f"{ref:04X}",
+                            "metadata_word_hex": f"{meta:04X}",
+                            "kind_nibble": meta & 0xF,
+                        })
+                slots.append({
+                    "slot": slot, "region_hint": "monster" if slot < MONSTER_COUNT else "other_field",
+                    "card_index": word & 0xFFF,
+                    "occurrence_word": struct.unpack_from("<H", data, pos + 4)[0],
+                    "position_word_hex": f"{struct.unpack_from('<H', data, pos + 6)[0]:04X}",
+                    "flags_hex": f"{struct.unpack_from('<I', data, pos + 0x8C)[0]:08X}",
+                    "association_count": count,
+                    "association_count_valid": count <= ASSOCIATION_LIMIT,
+                    "associations": associations,
+                })
+            player["field_slots"] = slots
+            player["deck_count"] = data[start + 5]  # deck byte documented in docs/21
+        if include_hand_cards or include_card_events:
             cards = []
             for i in range(min(hand_count, HAND_CAPTURE_LIMIT)):
                 word = struct.unpack_from("<I", data, start + HAND_ARRAY_OFFSET + i * 4)[0]
@@ -139,6 +174,27 @@ def diff_states(before: dict[str, Any], after: dict[str, Any]) -> list[dict[str,
                 "removed": [{"card_index": int(word, 16) & 0xFFF, "raw_word_hex": word}
                             for word in sorted(removals) for _ in range(removals[word])],
             })
+        if "deck_count" in old and "deck_count" in new and old["deck_count"] != new["deck_count"]:
+            changes.append({"type": "deck_count_changed", "side": side,
+                            "before": old["deck_count"], "after": new["deck_count"]})
+        if "field_slots" in old and "field_slots" in new:
+            for a, b in zip(old["field_slots"], new["field_slots"]):
+                slot = a["slot"]
+                if slot >= MONSTER_COUNT:
+                    for key in ("card_index", "occurrence_word", "position_word_hex", "flags_hex"):
+                        if a[key] != b[key]:
+                            changes.append({
+                                "type": "field_slot_" + key + "_changed", "side": side,
+                                "slot": slot, "region_hint": a["region_hint"],
+                                "before": a[key], "after": b[key],
+                            })
+                if a["association_count"] != b["association_count"] or a["associations"] != b["associations"]:
+                    changes.append({
+                        "type": "field_slot_associations_changed", "side": side, "slot": slot,
+                        "region_hint": a["region_hint"],
+                        "before": {"count": a["association_count"], "items": a["associations"]},
+                        "after": {"count": b["association_count"], "items": b["associations"]},
+                    })
         for a, b in zip(old["monsters"], new["monsters"]):
             zone = a["zone"]
             if (a["card_index"], a["occurrence_word"]) != (b["card_index"], b["occurrence_word"]):
@@ -176,6 +232,37 @@ def is_possible_duel_reset(before: dict[str, Any], after: dict[str, Any]) -> boo
         for p in before["players"])
 
 
+def field_slot_byte_diffs(before: bytes, after: bytes, limit_per_slot: int = 12) -> list[dict[str, Any]]:
+    """Card-local raw differences, without guessing the semantics of the bytes."""
+    if len(before) != BLOCK_SIZE or len(after) != BLOCK_SIZE:
+        raise ValueError("Invalid block length")
+    entries = []
+    for side in range(2):
+        for slot in range(FIELD_SLOT_COUNT):
+            offset = side * PLAYER_STRIDE + MONSTER_START + slot * MONSTER_STRIDE
+            original = before[offset:offset + MONSTER_STRIDE]
+            current = after[offset:offset + MONSTER_STRIDE]
+            if original == current:
+                continue
+            offsets = [(i, x, y) for i, (x, y) in
+                       enumerate(zip(original, current)) if x != y]
+            entries.append({
+                "type": "field_slot_bytes_changed",
+                "side": side, "slot": slot,
+                "region_hint": "monster" if slot < MONSTER_COUNT else "other_field",
+                "before_card_index": struct.unpack_from("<I", original)[0] & 0xFFF,
+                "after_card_index": struct.unpack_from("<I", current)[0] & 0xFFF,
+                "changed_byte_count": len(offsets),
+                "byte_samples": [
+                    {"slot_offset_hex": f"0x{i:02X}", "before_hex": f"{x:02X}",
+                     "after_hex": f"{y:02X}"}
+                    for i, x, y in offsets[:limit_per_slot]
+                ],
+                "sample_truncated": len(offsets) > limit_per_slot,
+            })
+    return entries
+
+
 def raw_byte_diff(before: bytes, after: bytes, limit: int = 32) -> dict[str, Any]:
     """Preserve raw byte offsets to enable later field mapping without claiming semantics."""
     if len(before) != BLOCK_SIZE or len(after) != BLOCK_SIZE:
@@ -201,14 +288,15 @@ class TraceSession:
 
     def __init__(self, folder: Path, metadata: dict[str, Any], *, track_unknown: bool = False,
                  raw_blocks: bool = False, raw_sample_limit: int = 32,
-                 capture_hand_cards: bool = False):
+                 capture_hand_cards: bool = False, capture_card_events: bool = False):
         folder = Path(folder)
         folder.mkdir(parents=True, exist_ok=False)  # no silent overwrite
         self.folder = folder
         self.track_unknown = track_unknown
         self.raw_sample_limit = raw_sample_limit
         self.raw_blocks = raw_blocks
-        self.capture_hand_cards = capture_hand_cards
+        self.capture_card_events = capture_card_events
+        self.capture_hand_cards = capture_hand_cards or capture_card_events
         self.segment_id = 0
         self.boundary_candidates = 0
         self.manifest: dict[str, Any] = {
@@ -217,7 +305,8 @@ class TraceSession:
             "memory_rva_hex": f"0x{MEMORY_RVA:08X}",
             "memory_block_size": BLOCK_SIZE,
             "sampling_is_atomic": False,
-            "hand_cards_enabled": capture_hand_cards,
+            "hand_cards_enabled": self.capture_hand_cards,
+            "card_events_enabled": capture_card_events,
             "boundary_detection": "heuristic_reset_not_proven",
             "native_command_hook_enabled": False,
             "interpretation_limit": "Changes are sampled state differences, not proven game actions; intermediate states can be missed.",
@@ -268,7 +357,8 @@ class TraceSession:
         """Return True if a semantic or opted-in unknown-only change was recorded."""
         self.poll_count += 1
         captured_utc = captured_utc or utc_now()
-        state = parse_state(raw, include_hand_cards=self.capture_hand_cards)
+        state = parse_state(raw, include_hand_cards=self.capture_hand_cards,
+                            include_card_events=self.capture_card_events)
         if self.before is None:
             self.before = state
             self.before_raw = raw
@@ -279,6 +369,8 @@ class TraceSession:
             return False
         assert self.before_raw is not None
         delta = diff_states(self.before, state)
+        if self.capture_card_events:
+            delta.extend(field_slot_byte_diffs(self.before_raw, raw))
         if any(item["type"] == "possible_duel_reset" for item in delta):
             self.boundary_candidates += 1
             self.segment_id += 1
@@ -383,7 +475,8 @@ class TraceSession:
             + "\n## Limites\n\nA leitura e periodica e nao atomica. Mudancas entre amostras podem ser perdidas; "
               "as labels indicam diferencas observadas e nao a causa das alteracoes. "
               "Indices de carta nao sao IDs de recurso. Segmentos sao heuristicas, nao limites comprovados. "
-              "As cartas da mao so sao registradas com --hand-cards. "
+              "As cartas da mao so sao registradas com --hand-cards ou --card-events. "
+              "Com --card-events os slots 5..10 sao observados sem atribuir zona semantica. "
               "A captura nao contem a fila nativa de comandos.\n",
             encoding="utf-8",
         )
