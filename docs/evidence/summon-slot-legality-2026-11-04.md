@@ -24,12 +24,14 @@ condições necessárias:
 1. O low12 do slot precisa ser zero (sem carta presente).
 2. `FUN_00569E10(side, slot)` precisa retornar != 0.
 
-**Não sabemos ainda o conteúdo de `FUN_00569E10`**.
-Essa é agora a função prioritária para rastrear o bloqueio
-de dois slots relatado pelo usuário sob efeito de Ground
-Collapse. A evidência de summon no slot 2 e set no slot 3
-é consistente com a rejeição de slots 0 e 1, mas não
-demonstra isoladamente qual condição foi responsável.
+**Resolvido em consulta posterior:** `FUN_00569E10` compara a
+carta de origem com o resource ID `0x528` (Ground Collapse)
+e rejeita o slot alvo se o estado indica efeito ativo. Também
+verifica uma tabela separada de registros `'@'` de
+bloqueio por lado/slot. Ver
+[`ground-collapse-zone-predicate-2026-11-04.md`](ground-collapse-zone-predicate-2026-11-04.md).
+O trace de summon/set não observou os retornos individuais do
+predicado para os slots 0 e 1.
 
 ## Contagem das zonas elegíveis: FUN_0056A000
 
@@ -101,7 +103,7 @@ contraexemplo. No futuro executor, sempre revalidar
 seleção/legitimidade no contexto da thread de duelo e
 impedir índice inválido `0xFFFFFFFF`.
 
-## Próxima consulta: segundo nível do predicado
+## Consulta original: segundo nível do predicado (concluída)
 
 Executar a partir da raiz do repositório Windows:
 
@@ -115,10 +117,8 @@ Executar a partir da raiz do repositório Windows:
   )
 ```
 
-A decompilação deve revelar se `FUN_00569E10`
-consulta as zonas impedidas por Ground Collapse ou se
-essa restrição vem de uma função ainda mais profunda.
-`xref` complementa a lista de callers, mas não garante
-referências indiretas que o Ghidra não reconheceu.
-
-Nenhuma chamada ativa de summon/set foi acrescentada nesta etapa.
+A decompilação confirmou que `FUN_00569E10` testa
+diretamente Ground Collapse (`0x528`), além de
+registros de bloqueio `'@'`; `xref` complementou a
+lista de chamadores. Ver o relatório subsequente indicado
+acima. Nenhuma chamada ativa de summon/set foi acrescentada.

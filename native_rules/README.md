@@ -394,9 +394,11 @@ testa duas condições: ausência de carta no slot e
 `FUN_0056A000(side)` conta as zonas aceitas por essa
 mesma função. Por isso, um slot vazio não pode ser
 assumido como elegível, especialmente com Ground Collapse.
-Próxima análise: decompilar `FUN_00569E10` para descobrir
-a origem exata do bloqueio. Veja
-[`relatório`](../docs/evidence/summon-slot-legality-2026-11-04.md).
+A decompilação posterior mostrou **Ground Collapse**
+(`resourceId=0x528`) dentro de `FUN_00569E10`,
+além de bloqueios codificados na tabela `'@'`.
+Veja [relatório de legalidade](../docs/evidence/summon-slot-legality-2026-11-04.md)
+e [regra Ground Collapse](../docs/evidence/ground-collapse-zone-predicate-2026-11-04.md).
 
 ### Confirmação estática do seletor de zonas
 
@@ -409,8 +411,9 @@ não encontrar destino. `FUN_00579930(side,0x11,1)`
 altera a flag de bit 17 (`0x20000`) e emite `0x0D`
 se necessário. Consulte
 [`relatório estático`](../docs/evidence/summon-slot-selector-2026-11-04.md).
-Ainda falta estudar o predicado de zone blocking para Ground
-Collapse antes de habilitar summon/set nativos.
+O predicado nativo de bloqueio Ground Collapse já foi identificado,
+mas ainda faltam gates de turno/carta e preflight seguro na thread
+do duelo antes de habilitar summon/set nativos.
 
 ### Ground Collapse e seleção de zonas disponíveis
 

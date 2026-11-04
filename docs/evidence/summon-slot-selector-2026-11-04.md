@@ -22,8 +22,10 @@ A função percorre os cinco slots `0..4` e usa **sempre**
   (equivalente a `-1` quando interpretado como inteiro).
 
 O corpo **não verifica diretamente** o efeito Ground Collapse;
-o predicado `FUN_00569F70` é o próximo alvo prioritário
-para demonstrar a ligação com zonas indisponíveis.
+o predicado `FUN_00569F70` delega a `FUN_00569E10`,
+cuja análise posterior confirmou a comparação explícita
+com Ground Collapse (resource ID `0x528`). Ver
+[`ground-collapse-zone-predicate-2026-11-04.md`](ground-collapse-zone-predicate-2026-11-04.md).
 
 A captura anterior de Ground Collapse mostrou o mesmo caller
 `0x0059E203` entregando slot 2 e depois slot 3 ao construtor.
@@ -129,9 +131,10 @@ low12 do registro do slot é zero (vazia) **e**
 `FUN_00569E10(side,slot)` retorna valor não zero.
 `FUN_0056A000(side)` conta quantas zonas satisfazem o
 mesmo predicado; `FUN_005706B0` altera bits de flags
-diretamente em memória. Assim, a restrição aplicada por
-Ground Collapse pode estar no predicado mais profundo,
-que ainda não foi decompilado. Ver
+diretamente em memória. A análise posterior demonstrou que a restrição de Ground
+Collapse está explicitamente codificada em `FUN_00569E10`,
+junto de outro mecanismo de bloqueio por entradas `'@'`.
+Ver [relatório da regra](ground-collapse-zone-predicate-2026-11-04.md). Ver
 [`summon-slot-legality-2026-11-04.md`](summon-slot-legality-2026-11-04.md).
 
 ## 4. Consulta original no Ghidra (concluída)

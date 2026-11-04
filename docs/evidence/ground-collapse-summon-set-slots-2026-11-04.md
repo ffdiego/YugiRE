@@ -121,10 +121,12 @@ anteriores ficam na pilha para o construtor. Ver
 zona deve estar vazia (low12 zero) e
 `FUN_00569E10(side,slot)` deve aceitá-la.
 `FUN_0056A000(side)` conta zonas aceitas por esse
-mesmo predicado. O efeito de Ground Collapse ainda
-não foi localizado diretamente, mas esse segundo
-predicado é a próxima hipótese verificável. Ver
-[`summon-slot-legality-2026-11-04.md`](summon-slot-legality-2026-11-04.md).
+mesmo predicado. O estudo posterior de `FUN_00569E10` confirmou
+uma comparação específica com o resource ID `0x528`
+(Ground Collapse). A regra também verifica bits de
+atividade da carta e uma tabela independente `'@'`.
+Ver [relatório do predicado](ground-collapse-zone-predicate-2026-11-04.md)
+e [estudo do predicado externo](summon-slot-legality-2026-11-04.md).
 
 ## Consulta Ghidra anterior (concluída)
 

@@ -35,9 +35,12 @@ que uma zona precisa estar **vazia** e ter
 esse predicado, também utilizado pela seleção de slots.
 `FUN_005706B0` altera flags do jogador em memória;
 `FUN_00579930` acrescenta a notificação `0x0D`.
-O próximo ponto a investigar, para explicar Ground Collapse,
-é `FUN_00569E10`. Veja
-[`estudo de legalidade`](evidence/summon-slot-legality-2026-11-04.md).
+A investigação seguinte de `FUN_00569E10` confirmou a
+comparação direta com o ID `0x528`, identificado no
+catálogo como Ground Collapse, e uma segunda tabela
+de restrições marcada com `'@'`. Ver
+[`detalhamento da regra`](evidence/ground-collapse-zone-predicate-2026-11-04.md)
+e [estudo de legalidade](evidence/summon-slot-legality-2026-11-04.md).
 
 ## Seletor de destino e flags pós-invocação identificados
 
