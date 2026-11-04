@@ -16,6 +16,16 @@ mas não valida injeção direta nem testes de turno. Detalhes, limites,
 marcadores e outros opcodes em
 [`windows-native-summon-set-trace-2026-11-04.md`](evidence/windows-native-summon-set-trace-2026-11-04.md).
 
+## Confirmação dinâmica de slot, mão e pagamento de tributo
+
+Nova captura passiva do jogador, com segundo monstro colocado no slot 1,
+confirmou o código do `0xCE` em `FUN_005ABD00`: `context=0x4103`,
+`source=705` e recurso 268. O `watch` observou a carta 705
+sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
+`0x57` antes de `0xCE` com bit de tributo `0x02000000`,
+retirando um monstro de campo. Evidência e ressalvas no
+[`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
+
 ## Critério comprovado
 
 `0x005AAB90` verifica condições para invocação normal e consulta o nível por

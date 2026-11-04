@@ -95,6 +95,15 @@ byte **não está determinado**. Em `0xCE`, o produtor foi observado
 passando somente dois argumentos: `args[2]`/`args[3]`
 podem conter valores residuais da pilha.
 
+## Validação posterior: posição de mão, slot 1 e Field Zone
+
+Uma terceira sessão (52 comandos + watch/state) confirmou
+`(context >> 1) & 0x1F == 1` para a segunda invocação do jogador
+no slot 1 e `(context >> 6) & 0xFF == 4` para o item 705
+no final da mão. Também mostrou Umi no slot físico 10 e
+uma invocação com tributo pela CPU. Ver
+[`windows-native-second-monster-slot-and-field-2026-11-04.md`](windows-native-second-monster-slot-and-field-2026-11-04.md).
+
 ## Próximo experimento
 
 - Isolar somente Fusion Gate: `state` antes, `trace on`,

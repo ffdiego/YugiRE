@@ -338,6 +338,17 @@ uma ação: o jogo pode emitir múltiplos comandos e efeitos em etapas.
 Ainda precisamos testar a captura em execução real para guiar a futura
 implementação de `summon`, `set` e `discard`.
 
+### Validação em duelo: segundo slot e Field Zone
+
+Em nova sessão de 52 comandos, o trace capturou
+`CE context=0x4103, source=705` e o `watch` confirmou
+que a carta 705 saiu do índice 4 da mão e ocupou o **slot 1**
+do campo (lado 1). Também capturou Umi (índice 86) no **slot físico
+10**, associado a `0xCF` com ID de recurso 333. Esses fatos
+corroboram a decodificação candidata e a hipótese de Field Zone,
+sem validar execução direta de comandos. Ver
+[`relatório da sessão`](../docs/evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
+
 ## Testes offline
 
 Execute a partir de `native_rules`:
