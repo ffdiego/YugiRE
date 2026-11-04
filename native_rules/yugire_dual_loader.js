@@ -45,6 +45,16 @@ const kCeCallsiteReturn = va('0x005ABEAB');
 const kPlacementContext = va('0x00A55080');
 const kPlacementSource = va('0x00A55084');
 const kPlacementStage = va('0x00A5508E');
+// Read-only observation of the normal summon/tribute path, based on
+// docs/evidence/normal-summon-{level-consumers,tribute-context,...}.
+const kSummonPrepTargets = [
+  {name: 'eligibility', va: '0x005AAB90', address: va('0x005AAB90'), argCount: 2},
+  {name: 'dispatcher', va: '0x005AB820', address: va('0x005AB820'), argCount: 0},
+  {name: 'placement', va: '0x005ABD00', address: va('0x005ABD00'), argCount: 0},
+  {name: 'adjust', va: '0x005AC870', address: va('0x005AC870'), argCount: 0}
+];
+const kSummonPlayerFlags = va('0x00A56430'); // includes 0x20000 normal-summon bit
+const kSummonDuelPhase = va('0x00A577FA');
 const kTraceDefaultCapacity = 8192;
 const kTraceMaxCapacity = 20000;
 const kQueueCount = va('0x00A558A8');
@@ -105,6 +115,8 @@ let traceSeen = 0;
 let traceSession = 0;
 let traceExportedSession = 0;
 let traceExportedSeen = -1;
+let summonPrepHooks = [];
+let summonPrepCallSequence = 0;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -324,6 +336,8 @@ function cancelPendingConsoleAction() {
 function traceStatus() {
   return {
     active: commandTraceHook !== null,
+    prepActive: summonPrepHooks.length > 0,
+    prepHooks: summonPrepHooks.length,
     session: traceSession,
     producer: kCommandProducer.toString(),
     capacity: traceCapacity,
@@ -346,6 +360,97 @@ function recordTraceEvent(event) {
     traceBuffer[traceHead] = event;
     traceHead = (traceHead + 1) % traceCapacity;
   }
+}
+
+// No writes or calls into Joey. Sample raw globals on its own game thread.
+function readSummonPrepState() {
+  try {
+    return {
+      context: kPlacementContext.readU32(),
+      source: kPlacementSource.readU32(),
+      stage: kPlacementStage.readU16(),
+      turnFlags: kDuelFlags.readU32(),
+      duelPhaseRaw: kSummonDuelPhase.readU8(),
+      playerFlags: [kSummonPlayerFlags.readU32(),
+        kSummonPlayerFlags.add(kPlayerStride).readU32()],
+      queueCount: kQueueCount.readU32()
+    };
+  } catch (error) {
+    return {readError: String(error)};
+  }
+}
+
+function isSummonDispatcherActive(state) {
+  // FUN_005AB820 mode 1 when ((stage>>2)&7) == 1.
+  return Number.isInteger(state.stage) &&
+    (state.stage & 1) !== 0 && ((state.stage >> 2) & 7) === 1;
+}
+
+function stopSummonPrepProbe() {
+  const hooks = summonPrepHooks;
+  summonPrepHooks = [];
+  let failure = null;
+  for (let i = hooks.length - 1; i >= 0; i--) {
+    try { hooks[i].detach(); } catch (error) { failure = error; }
+  }
+  if (failure !== null) throw new Error('Summon prep hook detach failed: ' + failure);
+  return traceStatus();
+}
+
+function startSummonPrepProbe() {
+  if (!installed || commandTraceHook === null) {
+    throw new Error('Start trace on before enabling the summon prep probe');
+  }
+  if (summonPrepHooks.length > 0) throw new Error('Summon prep probe is already active');
+  for (const target of kSummonPrepTargets) {
+    const range = Process.findRangeByAddress(target.address);
+    if (range === null || !range.protection.includes('x')) {
+      throw new Error('Summon prep target is not executable: ' + target.va);
+    }
+  }
+  const attached = [];
+  try {
+    for (const target of kSummonPrepTargets) {
+      const hook = Interceptor.attach(target.address, {
+        onEnter(args) {
+          const state = readSummonPrepState();
+          this.prepObserved = target.name !== 'dispatcher' ||
+            isSummonDispatcherActive(state);
+          if (!this.prepObserved) return;
+          this.prepCallId = ++summonPrepCallSequence;
+          const event = {
+            kind: 'summon_prep', phase: 'enter', function: target.name,
+            functionVa: target.va, callId: this.prepCallId,
+            threadId: Process.getCurrentThreadId(),
+            caller: this.returnAddress.toString(), state
+          };
+          if (target.argCount === 2) {
+            event.argsRaw = [args[0].toUInt32(), args[1].toUInt32()];
+          }
+          recordTraceEvent(event);
+        },
+        onLeave(retval) {
+          if (!this.prepObserved) return;
+          recordTraceEvent({
+            kind: 'summon_prep', phase: 'leave', function: target.name,
+            functionVa: target.va, callId: this.prepCallId,
+            threadId: Process.getCurrentThreadId(),
+            returnRaw: retval.toUInt32(),
+            state: readSummonPrepState()
+          });
+        }
+      });
+      attached.push(hook);
+    }
+  } catch (error) {
+    for (let i = attached.length - 1; i >= 0; i--) {
+      try { attached[i].detach(); } catch (_) { /* rollback best effort */ }
+    }
+    throw new Error('Summon prep probe install failed; hooks rolled back: ' + error);
+  }
+  summonPrepHooks = attached;
+  summonPrepCallSequence = 0;
+  return traceStatus();
 }
 
 function startCommandTrace(capacity = kTraceDefaultCapacity) {
@@ -402,6 +507,8 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
 }
 
 function stopCommandTrace() {
+  // The probe must stop before anyone can export this bounded buffer.
+  stopSummonPrepProbe();
   if (commandTraceHook !== null) {
     const hook = commandTraceHook;
     commandTraceHook = null;
@@ -538,6 +645,8 @@ rpc.exports = {
   tracestatus: traceStatus,
   tracestart: startCommandTrace,
   tracestop: stopCommandTrace,
+  traceprepstart: startSummonPrepProbe,
+  traceprepstop: stopSummonPrepProbe,
   tracemark: markCommandTrace,
   traceevents: commandTraceEvents,
   traceacknowledge: acknowledgeTraceExport,

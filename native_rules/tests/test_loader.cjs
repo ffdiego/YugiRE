@@ -44,6 +44,7 @@ function fixture(options = {}) {
   let lastDestroyCall = null;
   let tickHandler = null;
   let traceHandler = null;
+  const prepHandlers = new Map();
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -74,7 +75,9 @@ function fixture(options = {}) {
       mainModule:{name:'joey_pc.exe',path:'Z:\\passion\\joey_pc.exe',base:ptr(0x400000)},
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
         p.n === 0x005BC700 || p.n === 0x00576960 ||
-        p.n === 0x005B9170 || p.n >= 0x20000000)
+        p.n === 0x005B9170 ||
+        [0x005AAB90,0x005AB820,0x005ABD00,0x005AC870].includes(p.n) ||
+        p.n >= 0x20000000)
         ? 'r-x' : 'r--'}; },
     },
     Memory: {
@@ -90,6 +93,12 @@ function fixture(options = {}) {
           assert.equal(traceHandler, null);
           traceHandler = callbacks.onEnter;
           return {detach(){traceHandler=null;}};
+        }
+        if ([0x005AAB90,0x005AB820,0x005ABD00,0x005AC870].includes(address.n)) {
+          if (options.failPrepAttachAt === address.n) throw new Error('Simulated prep attach fault');
+          assert.equal(prepHandlers.has(address.n), false);
+          prepHandlers.set(address.n, callbacks);
+          return {detach(){prepHandlers.delete(address.n);}};
         }
         assert.equal(address.n, 0x005BC700, 'Hook must be on the duel scheduler');
         if (options.failTickAttach) throw new Error('Simulated scheduler hook failure');
@@ -159,6 +168,15 @@ function fixture(options = {}) {
       }
     },
     traceActive(){return traceHandler !== null;},
+    prepCount(){return prepHandlers.size;},
+    prepCall(address,args=[],retval=1,beforeLeave=null) {
+      const callback=prepHandlers.get(address);
+      if(!callback)return;
+      const receiver={returnAddress:ptr(0x005B1337)};
+      callback.onEnter.call(receiver,args.map(v=>ptr(v)));
+      if(beforeLeave)beforeLeave();
+      callback.onLeave.call(receiver,ptr(retval));
+    },
     consoleCalls(){return consoleDrawCalls;},
     damageCalls(){return damageCalls;},
     destroyCalls(){return destroyCalls;},
@@ -484,3 +502,66 @@ assert.equal(failedTrace.api.tracestatus().active,false);
 assert.equal(failedTrace.hookActive(),true);
 failedTrace.api.restore();
 console.log('PASS: bounded passive command trace, marker, export pagination, hook rollback and teardown');
+
+
+// Passive high-level probe: eligibility arguments, mode 1 filter, per-call
+// entry/leave state, and complete rollback even if the third hook fails.
+const prepFixture=fixture();
+assert.throws(()=>prepFixture.api.traceprepstart(),/Start trace on/);
+prepFixture.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+assert.throws(()=>prepFixture.api.traceprepstart(),/Start trace on/);
+prepFixture.api.tracestart(64);
+let prepStatus=prepFixture.api.traceprepstart();
+assert.equal(prepStatus.prepActive,true);
+assert.equal(prepStatus.prepHooks,4);
+assert.equal(prepFixture.prepCount(),4);
+assert.throws(()=>prepFixture.api.traceprepstart(),/already active/);
+prepFixture.prepCall(0x005AAB90,[1,705],0x11);
+let prepEvents=prepFixture.api.traceevents; // not permitted while trace active
+assert.throws(()=>prepEvents(0,1),/Stop trace/);
+// Dispatcher idle should not create events.
+prepFixture.memory.set(0x00A5508E,0);
+prepFixture.prepCall(0x005AB820,[],0);
+prepFixture.memory.set(0x00A5508E,0x25);
+prepFixture.memory.set(0x00A55080,0x4103);
+prepFixture.memory.set(0x00A55084,705);
+prepFixture.prepCall(0x005AB820,[],1,()=> {
+  prepFixture.memory.set(0x00A5508E,0x45);
+});
+prepFixture.prepCall(0x005ABD00,[],0);
+assert.equal(prepFixture.api.tracestop().prepActive,false);
+assert.equal(prepFixture.prepCount(),0);
+assert.equal(prepFixture.traceActive(),false);
+prepEvents=prepFixture.api.traceevents(0,20);
+assert.equal(prepEvents.length,6); // 3 function invocations, paired enter/leave
+assert.equal(prepEvents[0].function,'eligibility');
+assert.equal(prepEvents[0].argsRaw[0],1);
+assert.equal(prepEvents[0].argsRaw[1],705);
+assert.equal(prepEvents[1].returnRaw,0x11);
+assert.equal(prepEvents[0].callId,prepEvents[1].callId);
+assert.equal(prepEvents[2].function,'dispatcher');
+assert.equal(prepEvents[2].state.context,0x4103);
+assert.equal(prepEvents[2].state.source,705);
+assert.equal(prepEvents[2].state.stage,0x25);
+assert.equal(prepEvents[3].state.stage,0x45);
+assert.equal(prepEvents[4].function,'placement');
+assert.equal(prepEvents[5].phase,'leave');
+assert.equal(prepFixture.api.tracestatus().retained,6);
+// Verify explicitly turning prep off preserves plain command tracing.
+prepFixture.api.tracestart(32);
+prepFixture.api.traceprepstart();
+assert.equal(prepFixture.api.traceprepstop().prepActive,false);
+assert.equal(prepFixture.traceActive(),true);
+prepFixture.command(0xCE,0x123,0,0);
+prepFixture.api.restore();
+assert.equal(prepFixture.prepCount(),0);
+assert.equal(prepFixture.api.traceevents(0,10).length,1);
+const brokenPrep=fixture({failPrepAttachAt:0x005ABD00});
+brokenPrep.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+brokenPrep.api.tracestart(32);
+assert.throws(()=>brokenPrep.api.traceprepstart(),/hooks rolled back/);
+assert.equal(brokenPrep.prepCount(),0);
+assert.equal(brokenPrep.traceActive(),true);
+brokenPrep.api.tracestop();
+brokenPrep.api.restore();
+console.log('PASS: passive summon preparation probe, paired calls, filtering and rollback');
