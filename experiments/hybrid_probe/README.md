@@ -161,3 +161,15 @@ Deixe o terminal aberto. Em um duelo **normal** (não replay), use Sparks. Press
 Para diagnóstico inicial de instalação, copiar as mensagens [sparks] do host e relatar LP do oponente antes/depois. O teste **não prova ainda** equivalência completa em todos os contextos de negação e múltiplas ativações.
 
 Esta prova demonstra reimplementação seletiva de um efeito usando os helpers nativos do motor; não confundir com injeção no callback de Jam Breeding Machine (corpo vazio) ou com implementação do sistema de turnos. Não rodar ao mesmo tempo que joey_all_primary_callbacks.js, joey_abi_probe.js ou outro hook na tabela. O modo anterior de Jam Breeding Machine em patch_jam_breeding.py permanece pendente de revisão e não é recomendado.
+
+
+### Confirmação real do primeiro efeito reimplementado
+
+O operador confirmou que, no primeiro teste com `patch_sparks.py` padrão, o contador do callback foi de 0 para 1, o oponente perdeu **200 LP**, e o ponteiro foi restaurado pelo comando `stop`. Este é um teste dinâmico funcional da substituição individual de Sparks, não uma validação de todos os contextos da carta.
+
+A próxima experiência opcional muda apenas o dano causado pelo nosso stub, de **200 para 300 LP**, para provar controle semântico. Na pasta `experiments/hybrid_probe` e com Joey reiniciado:
+
+    $joeyPid = (Get-Process joey_pc).Id
+    .\.venv-frida\Scripts\python.exe .\patch_sparks.py --pid $joeyPid --damage 300
+
+O agente JS em disco permanece equivalente ao original de 200 LP. O host modifica apenas os quatro bytes imediatos da instrução `push 200` na fonte do agente **em memória antes da injeção**, após verificar que o padrão a substituir aparece exatamente uma vez. O argumento `--damage` só aceita `200` ou `300`; sem argumento, permanece `200`. Em duelo normal, verificar LP do adversário antes/depois de uma única Sparks e `callbackCalls=1`. Digitar `stop` para restaurar a entrada da tabela. O efeito de 300 LP ainda NÃO foi testado no Joey real. Backups dos saves e cópia do jogo continuam recomendados.
