@@ -383,7 +383,7 @@ function stopCommandTrace() {
 function markCommandTrace(label) {
   if (commandTraceHook === null) throw new Error('Start trace before marking');
   if (typeof label !== 'string' || label.length === 0 || label.length > 120 ||
-      /[\\r\\n]/.test(label)) {
+      /[\r\n]/.test(label)) {
     throw new Error('Marker label must contain 1..120 chars without line breaks');
   }
   // Marker comes from RPC, not the game's duel thread; do not treat its
