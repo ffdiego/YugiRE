@@ -45,35 +45,62 @@ function readRequest20(candidate) {
   }
 }
 
+// A single short/unsupported function must not abort all other probes.
 const counts = [];
+const statuses = [];
 for (const target of TARGETS) {
   const counter = { name: target.name, calls: 0 };
-  counts.push(counter);
-  Interceptor.attach(absoluteAddress(target.va), {
-    onEnter(args) {
-      counter.calls++;
-      this.callNo = counter.calls;
-      this.shouldLog = this.callNo <= MAX_PER_FUNCTION;
-      if (!this.shouldLog) return;
-      this.requestPointer = args[0];
-      this.before20 = readRequest20(args[0]);
-      send({ kind: 'enter', function: target.name, call: this.callNo,
-             thread: this.threadId, returnAddress: this.returnAddress.toString(),
-             arg0: args[0].toString(), arg1: args[1].toString(),
-             ecx: this.context.ecx.toString(), edx: this.context.edx.toString(),
-             maybeRequest20Hex: this.before20,
-             requestAssumption: target.requestArg ? 'verified_first_stack_argument' : 'unknown' });
-    },
-    onLeave(retval) {
-      if (!this.shouldLog) return;
-      const after20 = readRequest20(this.requestPointer);
-      send({ kind: 'leave', function: target.name, call: this.callNo,
-             returnEax: retval.toString(), maybeRequest20HexAfter: after20,
-             requestBytesChanged: this.before20 !== null && after20 !== null && this.before20 !== after20 });
-    },
-  });
+  try {
+    const address = absoluteAddress(target.va);
+    Interceptor.attach(address, {
+      onEnter(args) {
+        counter.calls++;
+        this.callNo = counter.calls;
+        this.shouldLog = this.callNo <= MAX_PER_FUNCTION;
+        if (!this.shouldLog) return;
+        this.requestPointer = args[0];
+        this.before20 = readRequest20(args[0]);
+        send({ kind: 'enter', function: target.name, call: this.callNo,
+               thread: this.threadId, returnAddress: this.returnAddress.toString(),
+               arg0: args[0].toString(), arg1: args[1].toString(),
+               ecx: this.context.ecx.toString(), edx: this.context.edx.toString(),
+               maybeRequest20Hex: this.before20,
+               requestAssumption: target.requestArg ? 'verified_first_stack_argument' : 'unknown' });
+      },
+      onLeave(retval) {
+        if (!this.shouldLog) return;
+        const after20 = readRequest20(this.requestPointer);
+        send({ kind: 'leave', function: target.name, call: this.callNo,
+               returnEax: retval.toString(), maybeRequest20HexAfter: after20,
+               requestBytesChanged: this.before20 !== null && after20 !== null && this.before20 !== after20 });
+      },
+    });
+    counts.push(counter);
+    statuses.push({ name: target.name, va: target.va, status: 'attached' });
+  } catch (error) {
+    // Some valid x86 functions cannot be patched by Frida's Interceptor.
+    // Do not pretend that this hook worked.
+    let first16Bytes = null;
+    try {
+      const address = absoluteAddress(target.va);
+      const bytes = new Uint8Array(address.readByteArray(16));
+      first16Bytes = Array.from(bytes).map(x => x.toString(16).padStart(2, '0')).join('');
+    } catch (_e) {
+      // Binary bytes are diagnostic only; absence is not a fatal error.
+    }
+    const skipped = { name: target.name, va: target.va,
+                      status: 'skipped', error: String(error),
+                      first16Bytes };
+    statuses.push(skipped);
+    send({ kind: 'hook_skipped', ...skipped });
+  }
 }
 
-send({kind: 'ready_handlers', pid: Process.id, actualBase: main.base.toString(),
-      targets: TARGETS.map(t => ({name:t.name,va:t.va})), maxPerFunction: MAX_PER_FUNCTION });
-setInterval(() => send({kind:'totals', counts}), 10000);
+send({ kind: 'ready_handlers', pid: Process.id,
+       actualBase: main.base.toString(), targets: statuses,
+       maxPerFunction: MAX_PER_FUNCTION,
+       note: 'Skipped hooks do not contribute to counts.' });
+
+if (counts.length > 0) {
+  setInterval(() => send({ kind: 'totals', counts }), 10000);
+}
