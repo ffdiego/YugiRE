@@ -26,6 +26,19 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Predicado de disponibilidade de slot confirmado
+
+A decompilação de `FUN_00569F70(side,slot)` demonstrou
+que uma zona precisa estar **vazia** e ter
+`FUN_00569E10(side,slot) != 0` para ser usada.
+`FUN_0056A000(side)` conta quantas zonas passam por
+esse predicado, também utilizado pela seleção de slots.
+`FUN_005706B0` altera flags do jogador em memória;
+`FUN_00579930` acrescenta a notificação `0x0D`.
+O próximo ponto a investigar, para explicar Ground Collapse,
+é `FUN_00569E10`. Veja
+[`estudo de legalidade`](evidence/summon-slot-legality-2026-11-04.md).
+
 ## Seletor de destino e flags pós-invocação identificados
 
 `FUN_0056A030(side)` percorre slots `0..4`, verificando

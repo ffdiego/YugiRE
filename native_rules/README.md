@@ -386,6 +386,18 @@ no controlador de jogada `0x0059DF40` e no caminho de IA
 `0x005B6FF0`; a validação dessas chamadas continua pendente.
 Veja [análise do construtor](../docs/evidence/summon-builder-contract-2026-11-04.md).
 
+### Verificação de legalidade de cada zona
+
+O Ghidra confirmou que `FUN_00569F70(side,slot)`
+testa duas condições: ausência de carta no slot e
+`FUN_00569E10(side,slot) != 0`.
+`FUN_0056A000(side)` conta as zonas aceitas por essa
+mesma função. Por isso, um slot vazio não pode ser
+assumido como elegível, especialmente com Ground Collapse.
+Próxima análise: decompilar `FUN_00569E10` para descobrir
+a origem exata do bloqueio. Veja
+[`relatório`](../docs/evidence/summon-slot-legality-2026-11-04.md).
+
 ### Confirmação estática do seletor de zonas
 
 O helper `FUN_0056A030(side)` é o **seletor do primeiro slot

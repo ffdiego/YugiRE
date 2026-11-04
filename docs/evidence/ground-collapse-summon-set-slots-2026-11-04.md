@@ -115,7 +115,18 @@ passa **um** argumento ao seletor, não três: dois pushes
 anteriores ficam na pilha para o construtor. Ver
 [`summon-slot-selector-2026-11-04.md`](summon-slot-selector-2026-11-04.md).
 
-## Próxima consulta Ghidra
+## Consulta de legalidade concluída
+
+`FUN_00569F70(side,slot)` contém duas condições: a
+zona deve estar vazia (low12 zero) e
+`FUN_00569E10(side,slot)` deve aceitá-la.
+`FUN_0056A000(side)` conta zonas aceitas por esse
+mesmo predicado. O efeito de Ground Collapse ainda
+não foi localizado diretamente, mas esse segundo
+predicado é a próxima hipótese verificável. Ver
+[`summon-slot-legality-2026-11-04.md`](summon-slot-legality-2026-11-04.md).
+
+## Consulta Ghidra anterior (concluída)
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 -Report summon-slot-selector.txt -Addresses @(

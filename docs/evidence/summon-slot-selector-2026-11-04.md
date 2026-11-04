@@ -122,7 +122,19 @@ não uma ordem universal de execução.
 pendentes autorização de turno/efeitos, confirmação do predicado
 de zona, parâmetros de tributos e rechecagens na thread do duelo.
 
-## 4. Próxima consulta no Ghidra
+## 4. Resultado da investigação da legalidade de slots
+
+`FUN_00569F70(side,slot)` só aceita a zona quando o
+low12 do registro do slot é zero (vazia) **e**
+`FUN_00569E10(side,slot)` retorna valor não zero.
+`FUN_0056A000(side)` conta quantas zonas satisfazem o
+mesmo predicado; `FUN_005706B0` altera bits de flags
+diretamente em memória. Assim, a restrição aplicada por
+Ground Collapse pode estar no predicado mais profundo,
+que ainda não foi decompilado. Ver
+[`summon-slot-legality-2026-11-04.md`](summon-slot-legality-2026-11-04.md).
+
+## 4. Consulta original no Ghidra (concluída)
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 -Report summon-slot-legality.txt -Addresses @(
@@ -138,9 +150,9 @@ Queremos identificar o que `FUN_00569F70` testa
 (ocupação, bloqueios contínuos, máscaras de efeito)
 e obter o contrato de atualização da flag por
 `FUN_005706B0`, antes de qualquer executor ativo.
-`FUN_0056A000` é consultada num ramo adjacente e
-pode representar contagem de slots, mas essa atribuição
-é uma hipótese até a decompilação.
+`FUN_0056A000` **conta as zonas aceitas** por
+`FUN_00569F70`; isso está agora confirmado na
+decompilação subsequente.
 
 Essa consulta é estática e pode ser executada no projeto
 Ghidra existente do Windows; não é necessário rodar
