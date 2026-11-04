@@ -96,6 +96,7 @@ function status() {
   return {
     installed,
     processId: Process.id,
+    modulePath: main.path,
     cardResourceId: RESOURCE_ID,
     cardRow: ROW_INDEX,
     slot: PRIMARY_SLOT.toString(),
