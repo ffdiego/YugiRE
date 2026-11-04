@@ -386,6 +386,15 @@ no controlador de jogada `0x0059DF40` e no caminho de IA
 `0x005B6FF0`; a validação dessas chamadas continua pendente.
 Veja [análise do construtor](../docs/evidence/summon-builder-contract-2026-11-04.md).
 
+### Ground Collapse e seleção de zonas disponíveis
+
+Uma captura do construtor com duas zonas de monstro indisponíveis
+devido a Ground Collapse registrou `normal_builder` com slot 2
+para summon e slot 3 para set. Os dois saíram do mesmo callsite
+`0x0059E208`. Isso prova que o destino é decidido antes do
+construtor; uma zona vazia **não** é necessariamente jogável.
+Veja [evidência de zonas](../docs/evidence/ground-collapse-summon-set-slots-2026-11-04.md).
+
 ### Próximo teste dinâmico do construtor normal
 
 O `trace prep on` existente registra `normal_builder`

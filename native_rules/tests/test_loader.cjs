@@ -169,10 +169,10 @@ function fixture(options = {}) {
     },
     traceActive(){return traceHandler !== null;},
     prepCount(){return prepHandlers.size;},
-    prepCall(address,args=[],retval=1,beforeLeave=null) {
+    prepCall(address,args=[],retval=1,beforeLeave=null,caller=0x005B1337) {
       const callback=prepHandlers.get(address);
       if(!callback)return;
-      const receiver={returnAddress:ptr(0x005B1337)};
+      const receiver={returnAddress:ptr(caller)};
       callback.onEnter.call(receiver,args.map(v=>ptr(v)));
       if(beforeLeave)beforeLeave();
       callback.onLeave.call(receiver,ptr(retval));
@@ -604,3 +604,38 @@ assert.equal(brokenPrep.traceActive(),true);
 brokenPrep.api.tracestop();
 brokenPrep.api.restore();
 console.log('PASS: passive summon preparation probe, paired calls, filtering and rollback');
+
+
+// Ground Collapse regression: the UI chooses constrained slots 2 and 3
+// BEFORE calling the native descriptor builder (same player callsite).
+for (const scenario of [
+  {label:'summon',args:[1,5,2,0,1],context:0x4145,source:907,resource:174,
+   raw:0x20A280CE,hand:5,slot:2},
+  {label:'set',args:[1,4,3,0,0],context:0x8107,source:273,resource:1049,
+   raw:0x408380CE,hand:4,slot:3},
+]) {
+  const f=fixture();
+  f.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+  f.api.tracestart(32);
+  f.api.traceprepstart();
+  f.prepCall(0x005AD740,scenario.args,0,()=>{
+    f.memory.set(0x00A55080,scenario.context);
+    f.memory.set(0x00A55084,scenario.source);
+    f.memory.set(0x00A5508E,5);
+  },0x0059E208);
+  f.command(scenario.raw,scenario.resource,0,0,0x005ABEAB);
+  f.api.tracestop();
+  const events=f.api.traceevents(0,10);
+  assert.equal(events.length,3);
+  assert.equal(events[0].caller,'0x59e208');
+  assert.equal(events[0].builderIntent.modeCandidate,scenario.label);
+  assert.equal(events[0].builderIntent.handIndex,scenario.hand);
+  assert.equal(events[0].builderIntent.fieldSlot,scenario.slot);
+  assert.equal(events[0].builderIntent.fieldSlotValid,true);
+  assert.equal(events[1].state.context,scenario.context);
+  assert.equal(events[1].state.source,scenario.source);
+  assert.equal(events[2].ceNativeState.context,scenario.context);
+  assert.equal((events[2].ceNativeState.context>>1)&0x1f,scenario.slot);
+  f.api.restore();
+}
+console.log('PASS: Ground Collapse observed builder calls retain available monster slots 2 and 3');

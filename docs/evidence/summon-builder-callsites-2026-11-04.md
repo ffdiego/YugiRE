@@ -112,6 +112,20 @@ validação de identidade da carta na thread do duelo e estado
 sem outra operação ativa. A autorização do turno precisa ser
 confirmada antes de qualquer execução experimental.
 
+## Experimento com Ground Collapse: slot 2 e 3
+
+Com duas zonas de monstro indisponíveis devido a Ground Collapse,
+o caller do jogador `0x0059E208` foi observado invocando
+`FUN_005AD740(1,5,2,0,1)` para Ancient Brain e
+`FUN_005AD740(1,4,3,0,0)` para baixar Wall of Illusion.
+O `0xCE` reproduziu o contexto/slot dos dois casos.
+Essa evidência indica que a escolha de zona ocorre **antes**
+do construtor; não basta procurar o primeiro slot vazio
+em um executor externo. Ver
+[`ground-collapse-summon-set-slots-2026-11-04.md`](ground-collapse-summon-set-slots-2026-11-04.md).
+O candidato prioritário para estudar a escolha é
+`FUN_0056A030` no callsite `0x0059E203`.
+
 ## Experimento recomendado
 
 O probe **já implementado** `trace prep on` registra

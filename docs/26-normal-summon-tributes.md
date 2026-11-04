@@ -26,6 +26,16 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Colocação sob efeito Ground Collapse
+
+As últimas capturas de summon e set, com duas zonas bloqueadas,
+confirmaram `FUN_005AD740` recebendo slots **2** e **3**
+respectivamente, ambos originados no callsite `0x0059E203`.
+A validação de slots ocorre a montante do construtor:
+[`relatório do experimento`](evidence/ground-collapse-summon-set-slots-2026-11-04.md).
+O próximo alvo é a seleção de slot via `FUN_0056A030`;
+não selecionar a primeira zona vazia na implementação externa.
+
 ## Chamadores e gates examinados (2026-11-04)
 
 O Ghidra revelou o preenchimento de argumentos de
