@@ -170,3 +170,14 @@ Evidências acumuladas:
 A confirmação do teste de 300 LP foi relatada sem log adicional de contador, restauração ou estado de RAM/YDR nessa mensagem; não atribuir valores ou afirmar restauração verificada para essa segunda execução. A alteração afeta somente uma entrada da tabela, não o código compartilhado de `0x00584E60` nem o executável em disco por intenção. **Conclusão limitada:** capacidade demonstrada de substituir e alterar o efeito de Sparks em um duelo normal. Não equivale a recompilação matching, validação de todas as cartas nem demonstração de robustez ante múltiplos turnos, replay, cancelamento ou interações raras.
 
 Próximo checkpoint sugerido: portar o stub para uma DLL x86 com ABI explícita e ponteiro restaurado no teardown, mantendo prova de equivalência 200 LP e alteração 300 LP como testes de regressão; documentar fronteiras de ownership de memória e funções auxiliares nativas antes de expandir para outros callbacks.
+
+
+## Oitava captura — Sparks executado a partir de DLL C++ x86 (2026-11-04)
+
+O operador compilou `joey_rules.dll` com Visual Studio 2026, configurado para Win32. Ao tentar carregar a DLL pela primeira vez, o agente Frida falhou com `invalid abi specified` (uso de `cdecl` em `NativeFunction` no carregador), após validar o fingerprint do EXE. A correção do agente substituiu a designação de ABI de `cdecl` por `mscdecl`; não houve necessidade de recompilar a DLL.
+
+No teste subsequente, o operador confirmou explicitamente: **Sparks causou 300 LP de dano ao adversário usando a variante carregada pela DLL C++**. Isso demonstra em duelo real que o callback selecionado foi redirecionado com sucesso para a implementação compilada em Win32, que reutilizou o produtor de dano nativo do jogo.
+
+Escopo validado: execução de efeito normal com dano modificado (300 LP) usando código compilado em C++ fora do executável original. Informações não fornecidas nesta captura: contador da DLL, status final da restauração, log das chamadas ao helper, nova captura de RAM e replay. Não alegar que estes elementos foram observados. A solução de DLL ainda não foi submetida a testes de várias cartas, negação, dupla ativação ou descarregamento com chamadas em andamento.
+
+Próximo passo arquitetural sugerido: transformar o experimento Sparks em um módulo reproduzível (fonte C++, CMake, carregador Frida e teste) versionado na branch; centralizar validação do fingerprint, resolução de RVA e operações reversíveis de tabela num adaptador, e preservar a lógica das cartas em código C++ independente.
