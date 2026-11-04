@@ -38,10 +38,15 @@ A execução ativa usa `FUN_005AD740` e consome/sincroniza
 a flag pelo `FUN_00579930`. O diagnóstico não chama
 o construtor. A mudança não altera ABI da DLL.
 
-**Apenas testes offline/simulados:** a versão deve ser
-validada em duelo local descartável antes de ampliar
-escopo ou habilitar automação. Consulte
-[`native_rules/README.md`](../native_rules/README.md).
+**Validado em um duelo real do Joey:** o operador usou
+`summon check 1 5` com retorno `allowed=true`,
+`eligibility=0x11`, slot 0 e carta interna 221;
+`summon 1 5` reduziu a mão de 6 para 5 e colocou
+a carta 221 no slot 0. A captura não incluiu um
+`console.last` posterior ao pedido ativo nem
+prova equivalência em outros níveis/efeitos.
+Ver [validação funcional](evidence/console-native-summon-live-2026-11-04.md)
+e [README native](../native_rules/README.md).
 
 ## Predicado de disponibilidade de slot confirmado
 

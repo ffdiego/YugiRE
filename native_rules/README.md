@@ -344,13 +344,18 @@ O índice da mão é **zero-based**. Exemplo de teste:
 
 ```text
 hand 1
+state
 summon check 1 4
 # Pressione Enter para ler console.last: checked, allowed, selectedSlot
 summon 1 4
-# Pressione Enter para ler console.last, depois:
-state
+# Pressione Enter para ler console.last e então faça:
 diff
+state
 ```
+
+**Observação:** `state` atualiza a baseline usada por `diff`.
+Para ver a mudança, capture `state` antes do summon e
+execute `diff` **antes de um novo `state`** após a jogada.
 
 Os dois comandos são agendados no `0x005BC700` e atendidos
 **somente na thread do duelo**, jamais na thread RPC.
@@ -376,7 +381,11 @@ Escopo intencional: **apenas side 1 em duelo local**,
 monstros comuns nível 1–4, sem tributos, set,
 invocações especiais ou exceções. O guard pode rejeitar
 conservadoramente jogadas legais. Ainda não validado
-em Joey real — use duelo descartável.
+no Joey real para um caso de monstro nível 4:
+`summon 1 5` colocou a carta interna 221 no slot 0
+e reduziu a mão de 6 para 5. Veja
+[`validação ao vivo`](../docs/evidence/console-native-summon-live-2026-11-04.md).
+Ainda use duelo descartável para outras situações.
 A ABI da DLL continua v6; **não recompilar a DLL**.
 
 ### Probe passivo da preparação de summon/set
