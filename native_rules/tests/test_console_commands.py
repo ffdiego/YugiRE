@@ -243,9 +243,33 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertEqual(rows[1]["sideBit15"], 1)
             self.assertEqual(rows[1]["argsHex"][0], "0x00008079")
             self.assertEqual(rows[2]["label"], "set monstro")
+            self.assertNotIn("ceContextLow17Hex", rows[1])
             self.assertTrue(self.api.trace_exported)
             with self.assertRaises(FileExistsError):
                 save_command_trace(self.api, path)
+
+    def test_ce_decode_only_at_validated_callsite(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "command", "seq": 1, "caller": "0x5abeab",
+             "args": [0x200080CE, 0x00D10065, 0, 1]},
+            {"kind": "command", "seq": 2, "caller": "0x5abeab",
+             "args": [0x408080CE, 0x00D10419, 4, 256]},
+            {"kind": "command", "seq": 3, "caller": "0x579984",
+             "args": [0x000080CE, 0x00000065, 0, 0]}
+        ]
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "test.jsonl"
+            with redirect_stdout(io.StringIO()):
+                save_command_trace(self.api, output)
+            data = [json.loads(x) for x in output.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(data[1]["ceContextLow17Hex"], "0x04001")
+            self.assertEqual(data[1]["ceResourceIdLow16"], 101)
+            self.assertEqual(data[2]["ceContextLow17Hex"], "0x08101")
+            self.assertEqual(data[2]["ceResourceIdLow16"], 1049)
+            self.assertNotIn("ceContextLow17Hex", data[3])
 
     def test_diff_without_baseline(self):
         cache = {}

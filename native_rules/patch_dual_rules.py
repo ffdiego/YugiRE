@@ -220,6 +220,15 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                              "sideBit15": (command_word >> 15) & 1,
                              "argsHex": [f"0x{v:08X}" for v in args]}
                     counts[event["opcodeMasked"]] += 1
+                    # FUN_005ABD00 at this call site emits
+                    # FUN_005B9170(DAT_00A55080 << 15 | 0xCE, resource_id).
+                    # Only the first TWO arguments have a known contract here.
+                    # Context is truncated to 17 bits by the 32-bit shift.
+                    if (opcode == 0xCE and
+                            event.get("caller", "").lower() == "0x5abeab" and
+                            len(args) >= 2):
+                        event["ceContextLow17Hex"] = f"0x{(args[0] >> 15) & 0x1FFFF:05X}"
+                        event["ceResourceIdLow16"] = args[1] & 0xFFFF
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
                 exported += 1
     print(f"[trace] Saved {exported} events: {output}", flush=True)

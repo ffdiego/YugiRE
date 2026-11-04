@@ -284,6 +284,14 @@ trace dump
   padrão; mínimo 16, máximo 20000. Uma nova sessão **descarta o buffer anterior**
   (use `trace dump` antes). O hook lê quatro argumentos de 32 bits, endereço
   de retorno/chamador, ID da thread, timestamp em milissegundos e sequência.
+- Para o produtor `0xCE` especificamente **a partir de `0x005ABEAB`**,
+  `trace dump` também informa `ceContextLow17Hex` e
+  `ceResourceIdLow16`. A análise das duas capturas de 2026-11-04
+  mostrou contexto `0x04001` (summon de Mask of Darkness, ID 101) e
+  `0x08101` (set de Wall of Illusion, ID 1049). São campos observados
+  neste caminho, **não** uma ABI universal nem uma prova de legalidade.
+  O produtor é chamado com apenas dois argumentos nesse trecho;
+  `args[2]` e `args[3]` do trace podem ser leituras residuais da pilha.
 - `trace mark <texto>` acrescenta uma anotação temporal emitida pela
   **thread RPC**, não pelo game thread. A hora da anotação é aproximada;
   **não prova** que um comando já terminou.

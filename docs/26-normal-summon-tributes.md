@@ -3,6 +3,19 @@
 EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 Endereços VA, image base `0x00400000`. Análise estática, sem execução do original.
 
+## Evidência dinâmica de summon vs set — 2026-11-04
+
+O operador forneceu duas capturas passivas do produtor `0x005B9170`.
+Ambas contêm `0xCE` com o mesmo chamador `0x005ABEAB`. O contexto
+transmitido em `arg0` corresponde a `0x04001` para summon e
+`0x08101` para set; a carta em `arg1 & 0xFFFF` é respectivamente
+Mask of Darkness (ID 101) e Wall of Illusion (ID 1049).
+Somente os 17 bits baixos do contexto podem ser recuperados a partir
+do shift. Essa observação corrobora os estudos estáticos de `0xCE`,
+mas não valida injeção direta nem testes de turno. Detalhes, limites,
+marcadores e outros opcodes em
+[`windows-native-summon-set-trace-2026-11-04.md`](evidence/windows-native-summon-set-trace-2026-11-04.md).
+
 ## Critério comprovado
 
 `0x005AAB90` verifica condições para invocação normal e consulta o nível por
