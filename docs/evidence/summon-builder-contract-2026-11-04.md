@@ -69,6 +69,17 @@ Os chamadores, não o construtor, são os primeiros candidatos
 a conter os gates de legalidade de turno, tributos, espaços
 livres, escolha da carta e condições especiais.
 
+### Callers e gates: estudo subsequente
+
+O relatório adicional `summon-builder-callsites.txt` identificou
+a montagem dos cinco parâmetros em três ramos de
+`FUN_0059DF40` e a seleção de slot/tributos em
+`FUN_005B6FF0`. O trecho de controle automatizado inclui
+o teste `playerFlags & 0x20000`, mas **não permite garantir
+que todas as rotas sejam protegidas pelo mesmo gate**.
+Veja [estudo dos callsites](summon-builder-callsites-2026-11-04.md).
+Não é seguro habilitar a chamada externa ainda.
+
 ### Construtores distintos
 
 `FUN_005ADBF0` também obtém uma carta da mão, mas constrói

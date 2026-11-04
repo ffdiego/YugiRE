@@ -26,6 +26,15 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Chamadores e gates examinados (2026-11-04)
+
+O Ghidra revelou o preenchimento de argumentos de
+`FUN_005AD740` nos ramos `0x0059E203`,
+`0x0059EAD1`, `0x0059FBD4` e `0x005B7267`.
+Há controles de estado e possíveis tributos nos chamadores,
+mas não temos todas as condições de autorização.
+[Análise dos callsites](evidence/summon-builder-callsites-2026-11-04.md).
+
 ## Construtor normal identificado: FUN_005AD740
 
 Novo relatório Ghidra confirmou que `FUN_005AD740(side,handIndex,

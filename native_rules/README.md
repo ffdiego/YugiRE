@@ -386,6 +386,16 @@ no controlador de jogada `0x0059DF40` e no caminho de IA
 `0x005B6FF0`; a validação dessas chamadas continua pendente.
 Veja [análise do construtor](../docs/evidence/summon-builder-contract-2026-11-04.md).
 
+### Próximo teste dinâmico do construtor normal
+
+O `trace prep on` existente registra `normal_builder`
+(`0x005AD740`), os cinco parâmetros e a `caller` de cada
+invocação; não é necessária outra alteração de código.
+Uma captura de summon e outra de set permitem confirmar
+qual dos três callsites de `FUN_0059DF40` é usado em cada
+ação. Para o estudo das condições de autorização, veja
+[análise dos chamadores](../docs/evidence/summon-builder-callsites-2026-11-04.md).
+
 ### Validação em duelo: segundo slot e Field Zone
 
 Em nova sessão de 52 comandos, o trace capturou
