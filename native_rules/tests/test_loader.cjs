@@ -17,6 +17,12 @@ function fixture(options = {}) {
   memory.set(0x00A55080,0x4001);           // placement context
   memory.set(0x00A55084,0x12345678);       // placement source word
   memory.set(0x00A5508E,0x21);             // placement stage
+  memory.set(0x00A577F8,1);                // duel running
+  memory.set(0x00A577FA,5);                // main phase 1 (2), side 1
+  memory.set(0x00A54E5C,1);                // active side 1
+  memory.set(0x00A56430+0xD44,0);          // normal summon unused
+  memory.set(0x00A55D68+0xD44,6);          // player hand size
+  memory.set(0x00A56434+0xD44+4*4,0x02A8038B);  // index 907 at hand[4]
   memory.set(0x00A55D74,0x120015A2);         // monster 0: owner 1, key 0x12, index 0x5A2
   memory.set(0x00A55D74 + 0xD44 + 3*0x90,0x250000AB); // side 1 slot 3
   for(const [row,id] of [[sparks,342],[raimei,1007]]) {
@@ -39,6 +45,9 @@ function fixture(options = {}) {
   let consoleDrawCalls = 0;
   let damageCalls = 0;
   let destroyCalls = 0;
+  let summonBuilderCalls = [];
+  let summonFlagCalls = [];
+  let summonChecks = [];
   let lastManualCall = null;
   let lastDamageCall = null;
   let lastDestroyCall = null;
@@ -76,7 +85,8 @@ function fixture(options = {}) {
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
         p.n === 0x005BC700 || p.n === 0x00576960 ||
         p.n === 0x005B9170 ||
-        [0x005AAB90,0x005AD740,0x005AB820,0x005ABD00,0x005AC870].includes(p.n) ||
+        [0x005AAB90,0x005AD740,0x005AB820,0x005ABD00,0x005AC870,
+         0x0056A030,0x00569F70,0x00402690,0x004026C0,0x00579930].includes(p.n) ||
         p.n >= 0x20000000)
         ? 'r-x' : 'r--'}; },
     },
@@ -112,6 +122,25 @@ function fixture(options = {}) {
       if(addr.sys==='LoadLibraryW')return (p)=>{assert.ok(p.text.includes('.dll'));return ptr(0x10000000);};
       if(addr.sys==='GetProcAddress')return (_h,name)=>ptr(addrExport.get(name.text) ?? 0);
       if(addr.sys==='VirtualProtect')return (_p,_size,_pnew,oldProt)=>{oldProt.writeU32(2);return true;};
+      if(addr.n===0x005AAB90)return (side,card)=>{
+        summonChecks.push([side,card]);
+        return options.eligibilityMask ?? 0x11;
+      };
+      if(addr.n===0x0056A030)return side=>options.selectedSlot ?? 2;
+      if(addr.n===0x00569F70)return (side,slot)=>options.slotLegal===false?0:1;
+      if(addr.n===0x00402690)return card=>options.monster===false?0:1;
+      if(addr.n===0x004026C0)return card=>options.levelClass ?? 3;
+      if(addr.n===0x005AD740)return (side,hand,slot,tribute,mode)=>{
+        summonBuilderCalls.push([side,hand,slot,tribute,mode]);
+        memory.set(0x00A55080,0x4000 | (side&1) | (hand<<6) | (slot<<1));
+        memory.set(0x00A55084,memory.get(0x00A56434+side*0xD44+hand*4)&0xFFF);
+        memory.set(0x00A5508E,5);
+      };
+      if(addr.n===0x00579930)return (side,bit,value)=>{
+        summonFlagCalls.push([side,bit,value]);
+        const at=0x00A56430+side*0xD44;
+        memory.set(at,(memory.get(at)??0) | ((value?1:0)<<bit));
+      };
       const entry=[...addrExport].find(([name,value])=> value===addr.n)?.[0];
       assert.ok(entry, 'Unknown export address '+addr);
       if(entry==='YugiRE_Initialize')return (_base,s,o,sm,rm)=>{
@@ -180,6 +209,9 @@ function fixture(options = {}) {
     consoleCalls(){return consoleDrawCalls;},
     damageCalls(){return damageCalls;},
     destroyCalls(){return destroyCalls;},
+    summonBuilders(){return summonBuilderCalls;},
+    summonFlags(){return summonFlagCalls;},
+    summonEligibilityChecks(){return summonChecks;},
     lastManualCall(){return lastManualCall;},
     lastDamageCall(){return lastDamageCall;},
     lastDestroyCall(){return lastDestroyCall;},
@@ -639,3 +671,89 @@ for (const scenario of [
   f.api.restore();
 }
 console.log('PASS: Ground Collapse observed builder calls retain available monster slots 2 and 3');
+
+
+// New normal summon: an explicitly opt-in request, validated and executed
+// only inside the duel tick hook. Ghidra evidence supports levels 1..4,
+// side 1, phase 2/4, slot availability and normal-summon flag bit 17.
+const summon = fixture();
+summon.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+summon.memory.set(0x00A5508E,0); // no placement pending
+assert.throws(()=>summon.api.queuesummon(0,4,false),/player side only/);
+assert.throws(()=>summon.api.queuesummon(1,-1,false),/player side only/);
+assert.throws(()=>summon.api.queuesummon(1,80,false),/player side only/);
+assert.throws(()=>summon.api.queuesummon(1,6,false),/not present/);
+const checkReq=summon.api.queuesummon(1,4,true);
+assert.equal(checkReq.state,'pending');
+assert.equal(checkReq.expectedIndex,907);
+assert.equal(summon.summonBuilders().length,0);
+summon.memory.set(0x00A558A8,1); // queue busy -> cannot execute check
+summon.tick();
+assert.equal(summon.api.status().console.pending.id,checkReq.id);
+summon.memory.set(0x00A558A8,0);
+summon.tick();
+let result=summon.api.status().console.last;
+assert.equal(result.state,'checked');
+assert.equal(result.allowed,true);
+assert.equal(result.selectedSlot,2);
+assert.equal(result.levelClass,3);
+assert.equal(result.eligibility,0x11);
+assert.equal(summon.summonBuilders().length,0,'check cannot invoke builder');
+assert.equal(summon.summonFlags().length,0,'check cannot consume summon');
+const summonReq=summon.api.queuesummon(1,4,false);
+summon.tick();
+result=summon.api.status().console.last;
+assert.equal(result.state,'submitted');
+assert.equal(result.allowed,true);
+assert.equal(summon.summonBuilders().length,1);
+assert.deepEqual(Array.from(summon.summonBuilders()[0]),[1,4,2,0,1]);
+assert.equal(summon.memory.get(0x00A55080),0x4105);
+assert.equal(summon.memory.get(0x00A5508E),5);
+assert.deepEqual(Array.from(summon.summonFlags()[0]),[1,0x11,1]);
+assert.ok((summon.memory.get(0x00A56430+0xD44)&0x20000)!==0);
+// A second queued summon is rejected when the bit 17 marker is already set.
+summon.memory.set(0x00A5508E,0);
+summon.api.queuesummon(1,4,false);
+summon.tick();
+assert.equal(summon.api.status().console.last.state,'rejected');
+assert.match(summon.api.status().console.last.detail,/already used/);
+assert.equal(summon.summonBuilders().length,1);
+summon.api.restore();
+console.log('PASS: guarded summon check and builder scheduling on duel update thread');
+
+function summonFailure(config,edit,expected) {
+  const f=fixture(config);
+  f.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+  f.memory.set(0x00A5508E,0);
+  if(edit)edit(f);
+  f.api.queuesummon(1,4,false);
+  f.tick();
+  assert.equal(f.api.status().console.last.state,'rejected');
+  assert.match(f.api.status().console.last.detail,expected);
+  assert.equal(f.summonBuilders().length,0);
+  assert.equal(f.summonFlags().length,0);
+  f.api.restore();
+}
+summonFailure({},f=>f.memory.set(0x00A577F8,0),/No active duel/);
+summonFailure({},f=>f.memory.set(0x00A54E5C,0),/player turn/);
+summonFailure({},f=>f.memory.set(0x00A577FA,7),/main phase/);
+summonFailure({},f=>f.memory.set(0x00A56430+0xD44,0x20000),/already used/);
+summonFailure({monster:false},null,/not a monster/);
+summonFailure({levelClass:5},null,/level 1..4/);
+summonFailure({eligibilityMask:0x10},null,/Engine rejects/);
+summonFailure({selectedSlot:0xFFFFFFFF},null,/No permitted/);
+summonFailure({slotLegal:false},null,/no longer permitted/);
+summonFailure({},f=>f.memory.set(0x00A55D68+0xD44,5),/Hand size/);
+summonFailure({},f=>f.memory.set(0x00A56434+0xD44+4*4,0x02A8038A),/card changed/);
+const pendingPlacement=fixture();
+pendingPlacement.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+pendingPlacement.api.queuesummon(1,4,false);
+pendingPlacement.tick();
+assert.equal(pendingPlacement.api.status().console.pending.kind,'summon');
+assert.equal(pendingPlacement.summonBuilders().length,0);
+pendingPlacement.memory.set(0x00A5508E,0);
+pendingPlacement.api.canceldraw();
+pendingPlacement.tick();
+assert.equal(pendingPlacement.summonBuilders().length,0);
+pendingPlacement.api.restore();
+console.log('PASS: summon preflight fail-closed rules, stale-hand rejection and pending cancellation');
