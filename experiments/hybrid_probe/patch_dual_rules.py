@@ -72,8 +72,8 @@ def show_help(default_side: int) -> None:
           "draw 5 [0|1] = request five cards; cancel = cancel pending; "
           "help = this text; stop = restore", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
-          "Side 0 is a starting assumption for the local player; "
-          "use 'draw 5 1' if side 1 is yours.", flush=True)
+          "Confirmed in the local CPU duel: side 0 = CPU, side 1 = player. "
+          "Use an explicit side for other modes.", flush=True)
 
 
 def handle_command(command: str, api: object, default_side: int) -> bool:
@@ -119,8 +119,8 @@ def main() -> int:
                         help="Sparks effect: damage, draw or damage-draw (default: damage)")
     parser.add_argument("--raimei-mode", choices=tuple(MODES), default="damage",
                         help="Raimei effect: damage, draw or damage-draw (default: damage)")
-    parser.add_argument("--console-side", type=int, choices=(0, 1), default=0,
-                        help="Default player side for 'draw 5' (experimental: 0)")
+    parser.add_argument("--console-side", type=int, choices=(0, 1), default=1,
+                        help="Default side for 'draw 5' (1 = player, 0 = CPU in tested local duel)")
     args = parser.parse_args()
     dll_path = args.dll.resolve()
 

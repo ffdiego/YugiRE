@@ -217,3 +217,34 @@ de LP transcrito; evitar afirmar valores de contadores que não foram enviados.
 Próximos testes possíveis: negadores e correntes, poucas cartas no deck,
 ativação em lados diferentes e repetição de efeito. A confirmação de cenário
 normal não prova equivalência geral, nem segurança de todos os casos-limite.
+
+
+## Décima primeira captura — console de compra estressado em duelo CPU (2026-11-04)
+
+O operador fez uma rodada de testes em duelo normal, inclusive **enquanto
+a CPU fazia jogadas**, com comandos `draw 5`, `draw 5 1`, solicitações
+repetidas e valores inválidos. Confirmou: "estressei bastante e funciona
+bem, consigo usar o comando enquanto a CPU faz jogadas e tudo é enfileirado
+corretamente".
+
+**Mapeamento observado nesse modo de duelo:** `side 0 = CPU` e
+`side 1 = jogador humano`. O valor-padrão anterior do console era o lado
+0, que comprava para a CPU. Alterado para lado 1, preservando
+`--console-side 0|1` e `draw 5 0|1` como controle explícito.
+
+O log compartilhado registrou:
+- Solicitações aceitas `Request 1` a `Request 6` com lados explícitos ou
+  padrão, sem falha relatada do motor;
+- `draw 30` e `draw 6` foram recusados por sintaxe fora da operação
+  experimental permitida (`draw 5 [0|1]`);
+- Quando duas solicitações competiram antes que o agendador consumisse a
+  anterior, o console retornou
+  `A console draw request is already pending; wait or cancel it`.
+  Essa é a proteção deliberada de **um único pedido externo pendente**,
+  não significa que a fila interna do Joey esteja travada.
+
+O relatório do operador confirma compra funcional e processamento
+assíncrono sob carga manual, mas não fornece contadores finais de
+`batchesQueued`, documentação de todas as contagens do deck/mão nem
+execução em duelo remoto. Não inferir que a implementação suporte
+pedidos externos ilimitados ou todos os modos do jogo sem teste.

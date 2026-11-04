@@ -127,14 +127,16 @@ interactive prompt:
 
 ```text
 [dual-rules] > draw 5
-[console] Request 1 pending for side 0.
+[console] Request 1 pending for side 1.
 [dual-rules] >
 ```
 
-For the first test, **side 0 is the default assumption for the local
-player**; this has not been independently confirmed in all duel modes.
-If the five cards go to the opponent, use `draw 5 1`. You may also pass
-`--console-side 1` when starting the patcher to choose the default.
+**Live test confirmed the sides in a normal CPU duel:** side 0 = CPU and
+side 1 = the human player. The default is now **side 1**, so `draw 5`
+draws for the player. Use `draw 5 0` to draw for the CPU. The default
+can still be overridden with `--console-side 0` or `--console-side 1`
+on the host command line; other duel modes have not been tested for the
+same mapping.
 The explicit commands are:
 
 - `draw 5`: request a batch of five draws for the configured default side.
@@ -155,12 +157,19 @@ C++ DLL export `YugiRE_ConsoleDraw(side, 5)`, which enqueues the original
 `YugiRE_GetConsoleDrawBatchCount`. The Frida ABI is bumped to **v3**,
 so an outdated DLL is rejected.
 
-**This external-console path is experimental and not yet live-tested.**
-The native duel scheduler is a reasonable game-thread entry point based
-on static RE, not a formally guaranteed injection boundary. If the
-state never becomes idle, `status` shows the pending request and gate
-values; `cancel` removes it safely. Enqueueing does not guarantee the
-five cards were drawn: inspect deck and hand in the game.
+**The external-console path was validated by the operator in a normal CPU
+duel, including repeated requests while the CPU was playing.** Native
+draws were reported to resolve and be queued correctly; the full trace
+of hand/deck counts and all concurrency conditions has not been collected.
+This remains an experimental game-thread injection boundary, not a
+formal guarantee for every duel mode.
+
+There is intentionally only **one outstanding console request** at a
+time: `A console draw request is already pending` is expected backpressure,
+not evidence of a crash or lost queue entries. After the pending request
+is accepted by the duel scheduler, another can be sent. Invalid counts
+(`draw 6`, `draw 30`) are rejected with a usage message. If a request
+remains pending, `status` displays the gate values and `cancel` removes it.
 
 Start by testing in a local duel with at least 15 remaining deck cards,
 away from any active animation or card chain. Back up the save and do

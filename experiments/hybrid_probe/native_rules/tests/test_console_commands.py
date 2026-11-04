@@ -36,18 +36,18 @@ class ConsoleCommandTests(unittest.TestCase):
     def setUp(self):
         self.api = FakeApi()
 
-    def invoke(self, text: str, side: int = 0) -> bool:
+    def invoke(self, text: str, side: int = 1) -> bool:
         with redirect_stdout(io.StringIO()):
             return handle_command(text, self.api, side)
 
-    def test_draw_five_defaults_to_side_zero(self):
+    def test_draw_five_defaults_to_player_side_one(self):
         self.assertTrue(self.invoke("draw 5"))
-        self.assertEqual(self.api.draws, [(0, 5)])
+        self.assertEqual(self.api.draws, [(1, 5)])
 
-    def test_explicit_other_side_and_default_override(self):
-        self.assertTrue(self.invoke("draw 5 1"))
-        self.assertTrue(self.invoke("draw 5", side=1))
-        self.assertEqual(self.api.draws, [(1, 5), (1, 5)])
+    def test_explicit_cpu_side_and_default_override(self):
+        self.assertTrue(self.invoke("draw 5 0"))
+        self.assertTrue(self.invoke("draw 5", side=0))
+        self.assertEqual(self.api.draws, [(0, 5), (0, 5)])
 
     def test_reject_non_five_and_bad_side(self):
         for command in ("draw", "draw 1", "draw 6", "draw 5 2", "draw 5 -1",
