@@ -292,6 +292,13 @@ trace dump
   neste caminho, **não** uma ABI universal nem uma prova de legalidade.
   O produtor é chamado com apenas dois argumentos nesse trecho;
   `args[2]` e `args[3]` do trace podem ser leituras residuais da pilha.
+- Para `0xCE` no mesmo callsite, agora o trace também registra, no evento
+  `ceNativeState`, os valores **brutos e completos** dos globais
+  `0x00A55080` (`context`), `0x00A55084` (`source`) e
+  `0x00A5508E` (`stage`). Isso é apenas leitura no instante em que
+  `0xCE` entra no produtor, e pode ser comparado com o contexto truncado
+  `ceContextLow17Hex` durante `trace dump`. Esses globais ainda não
+  são uma API segura de invocação.
 - `trace mark <texto>` acrescenta uma anotação temporal emitida pela
   **thread RPC**, não pelo game thread. A hora da anotação é aproximada;
   **não prova** que um comando já terminou.

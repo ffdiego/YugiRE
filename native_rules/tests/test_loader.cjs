@@ -14,6 +14,9 @@ function fixture(options = {}) {
   const target = 0x00593CC0;
   memory.set(0x00A55D69,20);                 // deck of side 0
   memory.set(0x00A55D69 + 0xD44,20);         // deck of side 1
+  memory.set(0x00A55080,0x4001);           // placement context
+  memory.set(0x00A55084,0x12345678);       // placement source word
+  memory.set(0x00A5508E,0x21);             // placement stage
   memory.set(0x00A55D74,0x120015A2);         // monster 0: owner 1, key 0x12, index 0x5A2
   memory.set(0x00A55D74 + 0xD44 + 3*0x90,0x250000AB); // side 1 slot 3
   for(const [row,id] of [[sparks,342],[raimei,1007]]) {
@@ -149,9 +152,9 @@ function fixture(options = {}) {
   return {api:context.rpc.exports, memory, sparks: sparks+4, raimei: raimei+4,
     original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); },
     tick(){ if(tickHandler !== null) tickHandler(); },
-    command(a0, a1, a2, a3) {
+    command(a0, a1, a2, a3, caller=0x00578123) {
       if (traceHandler !== null) {
-        traceHandler.call({returnAddress:ptr(0x00578123)},
+        traceHandler.call({returnAddress:ptr(caller)},
           [a0,a1,a2,a3].map(v=>ptr(v)));
       }
     },
@@ -437,6 +440,7 @@ assert.equal(ev1[0].seq,6);
 assert.equal(ev1[0].args[0],0xCE);
 assert.equal(ev1[0].threadId,778);
 assert.equal(ev1[0].caller,'0x578123');
+assert.equal(ev1[0].ceNativeState,undefined); // only CE callsite reads globals
 assert.equal(ev2[7].kind,'marker');
 assert.equal(ev2[7].label,'Summon normal');
 assert.equal(traceFixture.api.traceevents(16,8).length,0);
@@ -456,6 +460,23 @@ traceFixture.api.restore();
 assert.equal(traceFixture.traceActive(),false);
 assert.equal(traceFixture.api.tracestatus().seen,1);
 assert.equal(traceFixture.api.traceevents(0,20).length,1);
+// Validate that the CE-only snapshot captures full, unshifted native state.
+const capturedCe=fixture();
+capturedCe.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+capturedCe.api.tracestart(16);
+capturedCe.memory.set(0x00A55080,0x8101);
+capturedCe.memory.set(0x00A55084,0xD10419);
+capturedCe.memory.set(0x00A5508E,0x41);
+capturedCe.command(0x408080CE,0x00D10419,0,0,0x005ABEAB);
+capturedCe.command(0x408080CE,0x00D10419,0,0,0x00579984);
+capturedCe.api.tracestop();
+const ceEvents=capturedCe.api.traceevents(0,5);
+assert.equal(ceEvents.length,2);
+assert.equal(ceEvents[0].ceNativeState.context,0x8101);
+assert.equal(ceEvents[0].ceNativeState.source,0xD10419);
+assert.equal(ceEvents[0].ceNativeState.stage,0x41);
+assert.equal(ceEvents[1].ceNativeState,undefined);
+capturedCe.api.restore();
 const failedTrace=fixture({failTraceAttach:true});
 failedTrace.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
 assert.throws(()=>failedTrace.api.tracestart(16),/Simulated trace hook failure/);

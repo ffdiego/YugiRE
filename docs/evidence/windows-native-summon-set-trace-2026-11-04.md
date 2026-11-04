@@ -97,6 +97,11 @@ sempre os mesmos comandos**.
   cartas proibidas. **Não habilitar `summon`/`set` apenas reproduzindo
   `FUN_005B9170` com os argumentos acima.**
 
+O trace foi ampliado **após estas duas capturas** para registrar os globais
+`DAT_00A55080`, `DAT_00A55084` e `DAT_00A5508E` como
+`ceNativeState` durante a emissão de `0xCE` por `0x005ABEAB`.
+Portanto os arquivos originais deste relatório **não têm** esse campo.
+
 Próximo experimento: observar os campos `DAT_00A55080`,
 `DAT_00A55084`, `DAT_00A5508E`, os parâmetros de
 `FUN_005AB820`/`FUN_005ABD00` e o estado antes/depois em

@@ -39,6 +39,12 @@ const kSnapshotBytes = kSnapshotPlayerWords * 4 * 2;
 const kDuelUpdate = va('0x005BC700');
 // Common command producer. Observer only: no argument/retval replacement.
 const kCommandProducer = va('0x005B9170');
+// Known CE callsite and native placement descriptor.
+// These are read ONLY for CE emitted by FUN_005ABD00.
+const kCeCallsiteReturn = va('0x005ABEAB');
+const kPlacementContext = va('0x00A55080');
+const kPlacementSource = va('0x00A55084');
+const kPlacementStage = va('0x00A5508E');
 const kTraceDefaultCapacity = 8192;
 const kTraceMaxCapacity = 20000;
 const kQueueCount = va('0x00A558A8');
@@ -357,13 +363,33 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
   const hook = Interceptor.attach(kCommandProducer, {
     onEnter(args) {
       // Only read the four stack arguments; no engine state manipulation.
-      recordTraceEvent({
+      // The general observer reads four stack DWORDs, but the CE callsite
+      // in FUN_005ABD00 passes only TWO defined arguments; the tail may
+      // be caller stack residue, not genuine producer parameters.
+      const raw = args[0].toUInt32();
+      const event = {
         kind: 'command',
         threadId: Process.getCurrentThreadId(),
         caller: this.returnAddress.toString(),
-        args: [args[0].toUInt32(), args[1].toUInt32(),
+        args: [raw, args[1].toUInt32(),
                args[2].toUInt32(), args[3].toUInt32()]
-      });
+      };
+      if ((raw & 0x7FFF) === 0xCE &&
+          this.returnAddress.equals(kCeCallsiteReturn)) {
+        // Sampling these globals at the producer entry preserves the
+        // complete context before the 32-bit left shift loses high bits.
+        // The descriptor fields are raw: do not infer legal summons.
+        try {
+          event.ceNativeState = {
+            context: kPlacementContext.readU32(),
+            source: kPlacementSource.readU32(),
+            stage: kPlacementStage.readU16()
+          };
+        } catch (readError) {
+          event.ceNativeReadError = String(readError);
+        }
+      }
+      recordTraceEvent(event);
     }
   });
   traceBuffer = [];
