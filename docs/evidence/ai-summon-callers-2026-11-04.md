@@ -70,8 +70,9 @@ Antes de chamar, o trecho:
 - `FUN_005AE390(side)` precisa retornar não zero.
 - `TEST playerFlags[side], 0x20000` rejeita ramo
   quando a invocação normal já foi consumida.
-- Um índice anteriormente salvo em `ESI` é usado
-  para ler `hand[side][ESI] & 0xFFF`.
+- Um índice retornado por `FUN_005B16C0(side)`,
+  salvo em `ESI`, é usado para ler
+  `hand[side][ESI] & 0xFFF` após teste de sinal.
 - `FUN_005AE270(side, cardIndex, 0, 0)` é
   chamada; o fluxo que alcança a colocação exige
   que seu retorno seja `0`.
@@ -79,9 +80,11 @@ Antes de chamar, o trecho:
 A chamada direta é então
 `FUN_005B6FF0(side, ESI, 0)`, pois o código faz
 `PUSH EAX` após um `TEST EAX; JNZ` que
-descarta retornos não zero. **Ainda não sabemos de
-onde `ESI` foi originalmente obtido**, porque o
-relatório começa no meio desse bloco.
+descarta retornos não zero. **O relatório posterior
+mostrou que `ESI` vem de `FUN_005B16C0(side)`
+em `0x005B74DB`** e uma guarda `TEST ESI; JL`
+em `0x005B74E5`. Ver
+[`ai-hand-selection-2026-11-04.md`](ai-hand-selection-2026-11-04.md).
 
 `FUN_005AE270` é uma validação/filtro candidato,
 mas não temos pseudocódigo suficiente para nomear
@@ -113,11 +116,14 @@ summon vs set, sujeito à substituição por
 deve ser estudada antes de afirmar o significado
 estratégico dessa escolha.
 
-O recorte não mostra uma checagem explícita de
-`ESI == -1` entre `FUN_005B16C0` e o
-acesso à mão. Isso pode estar garantido pelos
-gates/contratos do seletor, mas precisa de
-verificação, não de um acesso externo replicado.
+**Correção após novo relatório:** o recorte anterior
+começava em `0x005B762D`; a nova extração revelou
+em `0x005B7628` um `CMP ESI,-1` seguido de
+`JLE 0x005B7695`. Portanto o caller rejeita
+`-1` **antes de acessar a mão**. Há guarda
+equivalente (`TEST ESI; JL`) no caminho B,
+após `FUN_005B16C0`. Ver
+[`ai-hand-selection-2026-11-04.md`](ai-hand-selection-2026-11-04.md).
 
 ## Cruzamento de chamadas: seletores consultam regras
 

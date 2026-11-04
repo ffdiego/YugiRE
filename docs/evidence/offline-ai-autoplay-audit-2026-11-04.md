@@ -31,20 +31,25 @@ e `turn-processing-mode-selection.txt`.
 
 - Se o modo de demonstração do menu usa replays ou IA;
 - como o oponente seleciona um deck;
-- pesos, aleatoriedade e função de avaliação das decisões;
+- pesos exatos, RNG e semântica completa da avaliação
+  de cenário (a comparação por ATK/DEF e uma tabela
+  de prioridades específicas já foram identificadas);
 - como a UI solicita o encerramento de turno de modo seguro;
 - validação real de `set` sob efeitos especiais
   e outros modos; um set básico já teve sucesso.
 
 ## Experimentos futuros de alto rendimento
 
-**Ghidra, próximo passo:** o relatório dos três
-chamadores foi fornecido e analisado. `FUN_005B1360`
-e `FUN_005B16C0` foram identificadas como fontes
-do índice de mão; ambas consultam a elegibilidade
-`FUN_005AAB90`. O próximo alvo estático é
-seus corpos, além do filtro `FUN_005AE270`.
-Ver [análise detalhada](ai-summon-callers-2026-11-04.md).
+**Ghidra, próximo passo:** os seletores já foram
+decompilados. O relatório
+[`ai-hand-selection-2026-11-04.md`](ai-hand-selection-2026-11-04.md)
+demonstra prioridades condicionais para monstros
+FLIP, comparação de `max(ATK,DEF)` e filtro
+de postura com Light of Intervention. Investigar
+`FUN_0056D340`, `FUN_005AE0A0`,
+`FUN_005AFFD0` e `FUN_005B1610` para
+entender a política exata e o risco de simulação.
+A parte de deck selection continua separada.
 
 **Quando for possível executar o Windows novamente:**
 o primeiro teste de `set` já foi concluído com sucesso.
