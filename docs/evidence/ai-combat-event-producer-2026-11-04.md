@@ -169,24 +169,44 @@ num estado candidato; **não há prova de minimax,
 profundidade de múltiplos turnos ou aleatoriedade
 na escolha dos ataques**.
 
+## Fórmula do evento obtida em extração posterior
+
+`FUN_005B0F40` foi decompilada: a palavra
+alta do evento é a diferença assinada
+`(int16)attackerContribution -
+(int16)defenderContribution`. O bit de
+utilidade `0x08` é ativado quando há
+score positivo **ou** o defensor é removido
+(bit `0x800`) sem perder o atacante
+(bit `0x400`). Isso explica por que
+a IA pode considerar vantajoso eliminar um
+monstro em defesa, mesmo sem dano de LP.
+
+A avaliação possui ramos específicos para
+Metalmorph, Mad Sword Beast, Fairy Meteor
+Crush, Cyclon Laser e Tornado Wall + Umi;
+a rota com destino `5` também possui
+tratamento para o adversário com The
+Legendary Fisherman sob Umi. Veja
+[fórmula e exceções](ai-combat-outcome-scoring-2026-11-04.md).
+
 ## Próxima extração Ghidra — prioridade clara
 
-A função de maior valor é **`FUN_005B0F40`**:
-ela monta diretamente os quatro bytes do evento,
-inclusive a métrica acumulada. Para interpretar
-se o valor é dano potencial, troca de monstros
-ou penalidade, capturar também os filtros.
+A função `FUN_005B0F40` já foi decompilada
+e seus score/flags foram identificados. Resta
+confirmar a composição de atributos que alimenta
+a fórmula e os ajustes por efeitos.
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-outcome-scoring.txt `
+  -Report ai-combat-stat-layout.txt `
   -Addresses @(
-    '005b0f40',
-    '005b05a0',
-    '0056bd80',
-    '0056bf20',
-    '0056bfd0',
-    'ins:005b0d90:85'
+    '005add60',
+    '005addc0',
+    '005be050',
+    '0056d790',
+    '0056d8d0',
+    'ins:005b0f90:85'
   )
 ```
 

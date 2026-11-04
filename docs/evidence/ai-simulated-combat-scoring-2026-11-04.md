@@ -182,28 +182,42 @@ estrutural do valor acumulado; seu significado
 estratégico exato depende de `FUN_005B0F40`.
 Ver [análise de alvos e evento](ai-combat-event-producer-2026-11-04.md).
 
+## Pontuação de combate decodificada
+
+Uma extração posterior de `FUN_005B0F40`
+estabeleceu que a segunda palavra do evento
+é a diferença assinada de duas contribuições
+de combate, e que o evento é útil se
+`score>0` **ou** se o alvo é removido
+(0x800) sem remoção do atacante (0x400).
+Existem exceções para efeitos, perfuração e
+bloqueio de dano, então não interpretar o
+score como LP de forma universal.
+Ver [fórmula e cartas especiais](ai-combat-outcome-scoring-2026-11-04.md).
+
 ## Próxima investigação estática recomendada
 
-**Prioridade 1: `FUN_005B0F40`** para entender
-como o valor de 16 bits e as flags são calculados.
+**Prioridade 1: `FUN_005ADD60` e
+`FUN_005ADDC0`** para confirmar os offsets de
+atributos usados na fórmula.
 
-**Prioridade 2: `FUN_005B05A0`** para confirmar
-restrições de combate e o destino `5`.
+**Prioridade 2: `FUN_005BE050` e
+`FUN_0056D790`** para explicar modificadores
+como Metalmorph.
 
-**Prioridade 3: `FUN_0056BD80`,
-`FUN_0056BF20`, `FUN_0056BFD0`**
-para mapear o alvo e as condições da rota especial.
+**Prioridade 3: `FUN_0056D8D0`** para confirmar
+a detecção de perfuração contra defesa.
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-outcome-scoring.txt `
+  -Report ai-combat-stat-layout.txt `
   -Addresses @(
-    '005b0f40',
-    '005b05a0',
-    '0056bd80',
-    '0056bf20',
-    '0056bfd0',
-    'ins:005b0d90:85'
+    '005add60',
+    '005addc0',
+    '005be050',
+    '0056d790',
+    '0056d8d0',
+    'ins:005b0f90:85'
   )
 ```
 

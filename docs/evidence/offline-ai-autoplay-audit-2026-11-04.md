@@ -81,6 +81,17 @@ e alimenta a soma do score; é prematuro
 identificá-la diretamente como dano aos LP.
 Ver [relatório](ai-combat-event-producer-2026-11-04.md).
 
+**Fórmula de confronto identificada:** `FUN_005B0F40`
+grava diferença assinada de contribuições em
+`event[1]` (16 bits); o bit `0x08` permite
+score positivo ou destruir adversário (`0x800`)
+sem perda própria (`0x400`). Ramo de alvo
+`5` sugere ataque direto; há exceções de
+posicionamento, perfuração e efeitos de carta.
+Ver [relatório da fórmula](ai-combat-outcome-scoring-2026-11-04.md).
+O próximo passo é mapear as saídas de ATK/DEF
+de `FUN_005ADD60`/`FUN_005ADDC0`.
+
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
 `action_selected`, `action_submitted`, `action_resolved`,
