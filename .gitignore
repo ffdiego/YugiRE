@@ -8,3 +8,4 @@ ghidra-projects/
 __pycache__/
 .vs/
 *.csproj.user
+**.venv-frida/
