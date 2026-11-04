@@ -102,6 +102,19 @@ não podemos afirmar ainda que ele sozinho implementa todas
 as restrições por efeitos. Seus três valores empilhados no
 callsite exigem decompilação para validar a convenção/chamada.
 
+## Resultado da consulta: escolha de slot confirmada
+
+O relatório `summon-slot-selector.txt` demonstrou que
+`FUN_0056A030(side)` percorre os cinco slots e chama
+`FUN_00569F70(side,slot)` como predicado de elegibilidade
+do destino; retorna `0xFFFFFFFF` se nenhum servir.
+O ramo inicial também considera três registros especiais
+de seleção (`0x00A57840/64/F4`).
+Foi esclarecido também que o callsite `0x0059E1E0`
+passa **um** argumento ao seletor, não três: dois pushes
+anteriores ficam na pilha para o construtor. Ver
+[`summon-slot-selector-2026-11-04.md`](summon-slot-selector-2026-11-04.md).
+
 ## Próxima consulta Ghidra
 
 ```powershell

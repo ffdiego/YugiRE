@@ -19,9 +19,10 @@ nomes originais.
 
 - `side = (DAT_00A5780A >> 8) & 1`.
 - `handIndex = DAT_00A5780C & 0xFF`.
-- `destinationSlot = FUN_0056A030(side, 0)` (o trecho mostra dois
-  pushes recentes e o callsite, mas é necessário conferir a convenção
-  desse helper antes de fixar a assinatura).
+- `destinationSlot = FUN_0056A030(side)` (**confirmado** no
+  Ghidra). Os pushes anteriores de `mode` e `tributeData=0`
+  permanecem na pilha até a posterior chamada ao construtor.
+  Ver [estudo do seletor](summon-slot-selector-2026-11-04.md).
 - `tributeData = 0`.
 - `mode = valor lido de [ESP+0x248]` antes dos pushes.
 - Depois do retorno do construtor, um valor de contexto da pilha é
@@ -45,7 +46,9 @@ nomes originais.
   `CMP word ptr [0x00A558B4],0`, com desvio se zero.
 - `side = (DAT_00A5780A >> 8) & 1`.
 - `handIndex = DAT_00A5780C & 0xFF`.
-- `destinationSlot = FUN_0056A030(side,0,1)`.
+- `destinationSlot = FUN_0056A030(side)`. Os `PUSH 1` e
+  `PUSH 0` fazem parte da preparação dos argumentos
+  da chamada seguinte, não da função de seleção de slot.
 - `tributeData = 0`.
 - `mode = 1`, ou seja, ramo de summon de `FUN_005AD740`.
 - Também existe a emissão subsequente de

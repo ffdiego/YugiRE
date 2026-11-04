@@ -26,6 +26,19 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Seletor de destino e flags pós-invocação identificados
+
+`FUN_0056A030(side)` percorre slots `0..4`, verificando
+`FUN_00569F70(side,slot)` antes de escolher o primeiro
+válido (com um ramo adicional de seleção contextual).
+`FUN_00579930(side,bit,value)` muda flags do jogador
+por `FUN_005706B0` e emite o comando de sincronização
+`0x0D` somente quando a flag é diferente. `bit=0x11`
+representa a máscara `0x20000`, vinculada ao limite
+de invocação normal. Veja
+[`estudo do seletor`](evidence/summon-slot-selector-2026-11-04.md).
+O próximo alvo é o predicado `FUN_00569F70`.
+
 ## Colocação sob efeito Ground Collapse
 
 As últimas capturas de summon e set, com duas zonas bloqueadas,

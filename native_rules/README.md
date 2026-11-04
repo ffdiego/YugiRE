@@ -386,6 +386,20 @@ no controlador de jogada `0x0059DF40` e no caminho de IA
 `0x005B6FF0`; a validação dessas chamadas continua pendente.
 Veja [análise do construtor](../docs/evidence/summon-builder-contract-2026-11-04.md).
 
+### Confirmação estática do seletor de zonas
+
+O helper `FUN_0056A030(side)` é o **seletor do primeiro slot
+considerado permitido pelo motor**, usando
+`FUN_00569F70(side,slot)` para testar as cinco posições.
+Possui ramo adicional que evita posições selecionadas em
+estado de duelo especial e retorna `0xFFFFFFFF` se
+não encontrar destino. `FUN_00579930(side,0x11,1)`
+altera a flag de bit 17 (`0x20000`) e emite `0x0D`
+se necessário. Consulte
+[`relatório estático`](../docs/evidence/summon-slot-selector-2026-11-04.md).
+Ainda falta estudar o predicado de zone blocking para Ground
+Collapse antes de habilitar summon/set nativos.
+
 ### Ground Collapse e seleção de zonas disponíveis
 
 Uma captura do construtor com duas zonas de monstro indisponíveis
