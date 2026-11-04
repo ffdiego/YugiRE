@@ -159,28 +159,51 @@ threshold 900, bitmask de slot e desempates.
 Portanto `bestScore = max(scores)` é apenas
 uma abstração, não a especificação integral.
 
+## Evento de combate explicado em extração posterior
+
+O relatório de `FUN_005B0D90` comprovou:
+- rota especial com destino numérico `5` (possível
+  ataque direto, ainda sem confirmação);
+- rota de teste de cada slot adversário com
+  `FUN_0056BD80` e `FUN_005B05A0`;
+- `FUN_005B0F40` preenchendo descritor
+  com flags e valor de 16 bits;
+- comparação dos resultados assinados para
+  escolher melhor evento e desempate por DEF;
+- `FUN_0056B730` filtrando monstros por
+  posição, máscara e gates de regras;
+- `FUN_005A0D60` construindo o bitmap dos
+  slots elegíveis.
+
+`DAT_00A579A8` é a **segunda palavra** do
+descritor de quatro bytes a partir de
+`DAT_00A579A6`. Isso confirma a origem
+estrutural do valor acumulado; seu significado
+estratégico exato depende de `FUN_005B0F40`.
+Ver [análise de alvos e evento](ai-combat-event-producer-2026-11-04.md).
+
 ## Próxima investigação estática recomendada
 
-**Prioridade 1: `FUN_005B0D90`** para entender o
-evento produzido (`DAT_00A579A6`) e de onde vem
-`DAT_00A579A8`.
+**Prioridade 1: `FUN_005B0F40`** para entender
+como o valor de 16 bits e as flags são calculados.
 
-**Prioridade 2: `FUN_0056B730`** para determinar
-por que determinado monstro participa da
-ordenação de ataques candidatos.
+**Prioridade 2: `FUN_005B05A0`** para confirmar
+restrições de combate e o destino `5`.
 
-**Prioridade 3: `FUN_005A0D60`** para explicar
-o gate `0x40000`.
+**Prioridade 3: `FUN_0056BD80`,
+`FUN_0056BF20`, `FUN_0056BFD0`**
+para mapear o alvo e as condições da rota especial.
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-event-producer.txt `
+  -Report ai-combat-outcome-scoring.txt `
   -Addresses @(
-    '005b0d90',
-    '0056b730',
-    '005a0d60',
-    '005b1310',
-    'ins:005b0b90:100'
+    '005b0f40',
+    '005b05a0',
+    '0056bd80',
+    '0056bf20',
+    '0056bfd0',
+    'ins:005b0d90:85'
   )
 ```
 

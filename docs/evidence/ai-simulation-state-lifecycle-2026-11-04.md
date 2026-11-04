@@ -138,17 +138,35 @@ O assembly de `FUN_005B1360` contém ainda
 threshold `900`, bitmask de slot e desempates.
 Ver [detalhes do score](ai-simulated-combat-scoring-2026-11-04.md).
 
+## Confirmação da produção de alvos e eventos
+
+`FUN_005B0D90` foi decompilada e percorre
+os cinco possíveis alvos, utilizando
+`FUN_0056BD80`, `FUN_005B05A0` e
+`FUN_005B0F40`. A segunda palavra do
+evento de quatro bytes é comparada como
+`int16` e acumula-se em `DAT_00A579A8`
+durante `FUN_005B0A50`. O desempate
+considera DEF calculada do alvo.
+Uma rota com destino `5` permanece sem
+semântica completamente confirmada.
+`FUN_0056B730` filtra os monstros e
+`FUN_005A0D60` constrói seu bitmap.
+
+Ver [análise de alvos e eventos](ai-combat-event-producer-2026-11-04.md).
+
 ## Próxima consulta (PowerShell)
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-event-producer.txt `
+  -Report ai-combat-outcome-scoring.txt `
   -Addresses @(
-    '005b0d90',
-    '0056b730',
-    '005a0d60',
-    '005b1310',
-    'ins:005b0b90:100'
+    '005b0f40',
+    '005b05a0',
+    '0056bd80',
+    '0056bf20',
+    '0056bfd0',
+    'ins:005b0d90:85'
   )
 ```
 

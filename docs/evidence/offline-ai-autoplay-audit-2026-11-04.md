@@ -71,6 +71,16 @@ slots ordenados por prioridade e ATK;
 entender evento e contribuição para o score.
 Ver [relatório](ai-simulated-combat-scoring-2026-11-04.md).
 
+**Alvos de combate identificados:** a extração
+de `FUN_005B0D90` confirmou a varredura
+dos cinco alvos por atacante, os filtros de
+elegibilidade e a comparação de eventos
+de quatro bytes gerados por `FUN_005B0F40`.
+`DAT_00A579A8` é a palavra alta do evento
+e alimenta a soma do score; é prematuro
+identificá-la diretamente como dano aos LP.
+Ver [relatório](ai-combat-event-producer-2026-11-04.md).
+
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
 `action_selected`, `action_submitted`, `action_resolved`,
