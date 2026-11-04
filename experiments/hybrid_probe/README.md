@@ -75,3 +75,16 @@ Para verificar se o wrapper encaminha chamadas a esses handlers e se os 20 bytes
 Substitua 1234 pelo PID atual. A captura registra no máximo 48 chamadas detalhadas por função, os valores brutos de arg0/arg1, ECX/EDX, EAX ao retornar e uma leitura protegida de 20 bytes em arg0. **Somente no dispatcher** foi confirmado que arg0 aponta para o pedido; nos callbacks específicos o campo maybeRequest20Hex ainda é hipótese e pode ser irrelevante. Ao terminar, compare as entradas e saídas por função/thread e posição temporal no log.
 
 Esse script ainda não é uma DLL substituta. Logs podem conter estruturas internas e devem permanecer locais ou ser compartilhados conscientemente. Mais jogatinas não são necessárias para seguir o próximo passo estático: estudar 0x005860E0 no Ghidra, especialmente o avanço de estados e os efeitos colaterais das chamadas.
+
+
+### Frida 17: erro `unable to intercept function at 00583F30`
+
+Observado no Windows x86 com Frida 17.25.2 ao tentar instrumentar `JamBreedingMachinePrimary` (`0x00583F30`). O attach ao processo já estava funcionando; a falha específica veio de `Interceptor.attach` nesse endereço. O motivo exato (função curta, prólogo/relocação ou outra restrição) **ainda não foi determinado**.
+
+O script `joey_card_handlers.js` foi atualizado para envolver **cada** instalação de hook com `try/catch`, emitir `hook_skipped` com o erro e até 16 bytes iniciais da função e continuar com os demais. A mensagem `ready_handlers.targets` agora distingue `attached` e `skipped`. Não inferir que um hook pulado foi observado. Isso não substitui a investigação no Ghidra sobre o prólogo de `0x00583F30`.
+
+Após `git pull` na branch experimental, no mesmo diretório com a venv existente:
+
+    .\Scripts\frida.exe -p 3664 -l ..\joey_card_handlers.js
+
+Troque 3664 pelo PID atual. Mesmo que a função `0x00583F30` continue impossível de interceptar, os hooks de Morphing Jar, Sangan, Magic Jammer e dispatcher poderão registrar chamadas. Esse ajuste ainda requer teste no processo real.
