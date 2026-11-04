@@ -46,11 +46,12 @@ confirmou a busca linear por ID de carta;
 `300/1000` e retornos `-1/0/1`;
 `FUN_005AFFD0` resume o maior atributo
 de campo; **`FUN_005B1610` modifica registros
-do campo para avaliar candidato**. Este último
-ponto torna urgente localizar as rotinas de
-save/restore para não confundir simulação com
-jogada real nem arriscar estado corrompido.
-Ver [relatório dos helpers](ai-decision-helpers-2026-11-04.md).
+do campo para avaliar candidato**. As rotinas posteriores `FUN_005B08E0` e
+`FUN_005B0950` **confirmaram** backup/restore
+dos dois campos de monstros, mas não um isolamento
+completo de todas as globais. Ver
+[ciclo confirmado](ai-simulation-state-lifecycle-2026-11-04.md)
+e [relatório dos helpers](ai-decision-helpers-2026-11-04.md).
 Seleção de deck da CPU continua separada.
 
 **Quando for possível executar o Windows novamente:**

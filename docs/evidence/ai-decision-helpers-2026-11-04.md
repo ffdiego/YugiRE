@@ -40,7 +40,7 @@ quatro argumentos e executa:
 // Esquema sem todas as estruturas e flags originais:
 for (int i = 0; i < tributeCount; ++i) {
     auto slotPointer = FieldSlot(targets[i].side, targets[i].slot);
-    FUN_005BDDF0(slotPointer, 0x90);  // efeito exato NÃO identificado
+    FUN_005BDDF0(slotPointer, 0x90);  // confirmado como memset zero
 }
 int selected = FUN_0056A030(side);
 FieldSlot(side, selected).cardIdentityBits = card;
@@ -51,9 +51,8 @@ FieldSlot(side, selected).positionFlags =
 O Ghidra acessa os targets como **pares de bytes**;
 o primeiro codifica side no bit 0, e o segundo
 fornece o slot. `FUN_005BDDF0` recebe um endereço
-de registro e tamanho `0x90`; ainda não foi
-decompilada, portanto não afirmar que apaga, remove
-ou devolve esses dados. A escrita posterior da identidade
+de registro e tamanho `0x90`; foi decompilada no relatório posterior: é
+um zerador de memória equivalente a `memset`. A escrita posterior da identidade
 da carta usa uma expressão de bits com máscara
 `0xFFF` que deve ser reconfirmada em assembly,
 pois o decompilador inferiu tipo de ponteiro pequeno
@@ -63,9 +62,10 @@ para `DAT_00A55D74`.
 de campo** antes da decisão final. Por estar ligado
 ao loop de avaliação do seletor `FUN_005B1360`,
 isso sugere *avaliação sobre um estado candidato*.
-Não está provado se o campo real é salvo/restaurado
-por funções adjacentes, nem se existe um buffer
-separado ou ambiente de simulação. **Nunca chamar
+Uma análise posterior confirmou o snapshot
+`FUN_005B08E0` e o restore `FUN_005B0950`
+dos cinco registros de monstros de ambos os
+jogadores; os buffers são globais compartilhados. **Nunca chamar
 esse helper de maneira avulsa em um duelo real.**
 
 ### Sequência do caller `0x005B14C4`
@@ -90,19 +90,20 @@ seguido de `CMP EAX,0x384`. A associação exata
 entre essa variável, ATK/DEF e a estrutura de saída
 ainda depende do layout real da pilha.
 
-**Inconsistência de ABI aparente:** após chamar
-`FUN_005B1610`, o caller faz `MOV EDI,EAX`,
-embora a função decompilada seja `void`. O valor
-pode permanecer em EAX por convenção incidental
-ou o protótipo inferido estar incompleto.
-É um motivo concreto para inspecionar o assembly
-da função antes de criar uma assinatura Frida.
-Não assumir `slot` como retorno confirmado.
+**ABI corrigida:** o assembly mostra
+`FUN_005B1610` chamando `FUN_0056A030`
+para escolher o slot em `EAX` e preservando
+`EAX` até o retorno. O caller usa essa informação
+em `MOV EDI,EAX`. O `void` inferido pelo
+Ghidra não reflete o contrato observado.
+Não invocar a rotina isoladamente.
 
-Também é necessário verificar os efeitos exatos
-de `FUN_005B08E0`, `FUN_005B09C0` e
-`FUN_005B0950`: poderiam preparar/restaurar
-um estado, mas isso **não está confirmado**.
+`FUN_005B08E0` e `FUN_005B0950` foram
+confirmadas como backup/restore dos registros
+de monstro de ambos os lados. A restauração
+não garante transação completa de todas as
+estruturas de estado. Ver [relatório detalhado
+do ciclo](ai-simulation-state-lifecycle-2026-11-04.md).
 
 ## 3. FUN_005AFFD0: maior atributo entre slots
 

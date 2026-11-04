@@ -67,14 +67,19 @@ A decompilação posterior **confirmou que
 depois de tocar os registros dos tributos candidatos
 e selecionar um slot nativo. Trata-se de forte
 evidência de avaliação de **estado hipotético**.
-Ainda falta confirmar se o estado é salvo/restaurado
-por `FUN_005B08E0`, `FUN_005B09C0` ou
-`FUN_005B0950`. O assembly lê o valor comparado
+O novo relatório **confirmou** que
+`FUN_005B08E0` salva os cinco registros de
+monstro de ambos os jogadores (`0x2D0` bytes
+por lado) e `FUN_005B0950` os restaura.
+`FUN_005B09C0` prepara flags de posição.
+Ver [ciclo de simulação](ai-simulation-state-lifecycle-2026-11-04.md). O assembly lê o valor comparado
 com 900 por `[ESP+0x60]`, após passar ponteiro
 de buffer à sequência, mas não confirma isoladamente
 a semântica do local Ghidra. O caller lê EAX após
-`FUN_005B1610`, mesmo com protótipo `void`
-no Ghidra: **não reproduzir a ABI sem revisão**.
+`FUN_005B1610`; o assembly mostrou que EAX
+mantém o slot escolhido em `FUN_0056A030`,
+apesar do protótipo `void` decompilado.
+Não invocar o helper fora do contexto de avaliação.
 Ver [relatório de helpers](ai-decision-helpers-2026-11-04.md).
 
 Não há chamada explícita a RNG observada neste corpo.
