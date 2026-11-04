@@ -88,3 +88,18 @@ Após `git pull` na branch experimental, no mesmo diretório com a venv existent
     .\Scripts\frida.exe -p 3664 -l ..\joey_card_handlers.js
 
 Troque 3664 pelo PID atual. Mesmo que a função `0x00583F30` continue impossível de interceptar, os hooks de Morphing Jar, Sangan, Magic Jammer e dispatcher poderão registrar chamadas. Esse ajuste ainda requer teste no processo real.
+
+
+## 5. Observador genérico de todas as cartas que chegam ao dispatcher
+
+No terceiro experimento de 2026-11-03, Frida anexou os hooks do dispatcher, Morphing Jar, Sangan e Magic Jammer. O hook de \`0x00583F30\` não pôde ser instalado: seus bytes iniciais \`66 33 C0 C3\` representam \`xor ax, ax; ret\`, uma função de apenas quatro bytes. Durante o teste, o Morphing Jar recebeu 13 chamadas no handler específico; Sangan e Magic Jammer não receberam chamadas. O dispatcher geral, porém, viu outras cartas: Cyber Jar 31, Giant Rat 7, DNA Surgery 2, Raigeki 2, Harpie's Feather Duster 2, e outras (apenas 48 registros detalhados do wrapper). Esse é o motivo pelo qual monitorar exclusivamente quatro handlers dá uma visão incompleta.
+
+Para observar qualquer carta cujo **callback principal** seja invocado, sem instalar hooks individualmente nos handlers, use o novo \`joey_all_primary_callbacks.js\`. O script instala um único hook no dispatcher \`0x0059DEB0\`, captura o índice interno do pedido e tenta obter o nome do buffer \`CARD_Name\` de 64 bytes por índice. Se o nome não puder ser lido ou parecer inválido, o índice é preservado sem nome. Registra no máximo 12 eventos detalhados por índice e faz resumo com contadores a cada 15 segundos quando há novas chamadas. Não usa hooks nos callbacks individuais.
+
+No diretório \`experiments/hybrid_probe/.venv-frida\`:
+
+    .\Scripts\frida.exe -p 1234 -l ..\joey_all_primary_callbacks.js
+
+Substitua o PID atual do Joey. Salve o texto de \`ready_all_cards\`, \`card_seen\`, \`card_callback\` e \`summary\` para comparação com o catálogo do repositório. O script ainda necessita validação de execução no Windows.
+
+Este observador **não vê monstros normais, nem cartas cujos efeitos sejam tratados por código global sem passar pelo callback principal**, e não demonstra que todo nome carregado na RAM corresponde a um nome válido. Também não resolve a hipótese de recompilação automática ou substituição seletiva; seu papel é facilitar a identificação do contrato do dispatcher e escolher a próxima função pequena a investigar.
