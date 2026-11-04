@@ -3,7 +3,7 @@ EXPORTS
     YugiRE_GetAbiVersion
     YugiRE_Initialize
     YugiRE_Sparks
-    YugiRE_Ookazi
+    YugiRE_Raimei
     YugiRE_GetCallCount
     YugiRE_GetEmitCount
     YugiRE_GetConfiguredDamage

@@ -1,8 +1,8 @@
-"""Install Sparks and Ookazi C++ callbacks together, with guarded rollback.
+"""Install Sparks and Raimei C++ callbacks together, with guarded rollback.
 
 Requirements: the existing YugiRE pe_preflight.py and .venv-frida environment.
 The original Joey EXE SHA256 is checked against the *loaded* process module.
-Only the primary callback pointers of resources 342 and 345 are modified.
+Only the primary callback pointers of resources 342 and 1007 are modified.
 Both pointer slots are restored at the end; the DLL stays loaded until Joey
 exits to avoid dangling code addresses. Never attach two patchers at once.
 """
@@ -50,8 +50,8 @@ def main() -> int:
                         help="32-bit Windows yugire_rules.dll built by Visual Studio")
     parser.add_argument("--sparks", type=int, choices=(200, 300), default=200,
                         help="Sparks LP damage (default: 200)")
-    parser.add_argument("--ookazi", type=int, choices=(800, 900), default=800,
-                        help="Ookazi LP damage (default: 800)")
+    parser.add_argument("--raimei", type=int, choices=(300, 400), default=300,
+                        help="Raimei LP damage (default: 300)")
     args = parser.parse_args()
     dll_path = args.dll.resolve()
 
@@ -86,10 +86,10 @@ def main() -> int:
             return 2
         print("[dual-rules] Exact loaded Joey EXE SHA256 confirmed.", flush=True)
         print(f"[dual-rules] Loading {dll_path}", flush=True)
-        state = api.install(str(dll_path), args.sparks, args.ookazi)
+        state = api.install(str(dll_path), args.sparks, args.raimei)
         print("[dual-rules] Both primary callback pointers installed.", flush=True)
         show_counters(state)
-        print("[dual-rules] Play a NORMAL duel with Sparks and Ookazi.", flush=True)
+        print("[dual-rules] Play a NORMAL duel with Sparks and Raimei.", flush=True)
         print("[dual-rules] Press Enter for counters or type 'stop' to restore both.", flush=True)
         while True:
             command = input("[dual-rules] > ").strip().lower()

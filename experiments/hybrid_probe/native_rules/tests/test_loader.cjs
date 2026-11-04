@@ -9,10 +9,10 @@ const source = fs.readFileSync(path.resolve(__dirname, '../../yugire_dual_loader
 function fixture(options = {}) {
   const memory = new Map();
   const sparks = 0x005ED0A8 + 66*24;
-  const ookazi = 0x005ED0A8 + 69*24;
+  const raimei = 0x005ED0A8 + 172*24;
   const original = 0x00584E60;
   const target = 0x00593CC0;
-  for(const [row,id] of [[sparks,342],[ookazi,345]]) {
+  for(const [row,id] of [[sparks,342],[raimei,1007]]) {
     for(const off of [0,4,8,12,16,20]) memory.set(row + off, 0);
     memory.set(row, id);
     memory.set(row+4, original);
@@ -21,11 +21,11 @@ function fixture(options = {}) {
   const addrExport = new Map();
   let nextAddress = 0x20000000;
   for(const name of [
-    'YugiRE_GetAbiVersion','YugiRE_Initialize','YugiRE_Sparks','YugiRE_Ookazi',
+    'YugiRE_GetAbiVersion','YugiRE_Initialize','YugiRE_Sparks','YugiRE_Raimei',
     'YugiRE_GetCallCount','YugiRE_GetEmitCount','YugiRE_GetConfiguredDamage'
   ]) { addrExport.set(name, nextAddress); nextAddress += 0x100; }
   let config = [0,0];
-  let failOokaziWrite = Boolean(options.failOokaziWrite);
+  let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
     constructor(value, text) { this.n = typeof value === 'string' ? Number(value) : value; this.text = text; }
     add(n) { return new Pointer(this.n + (n instanceof Pointer ? n.n : n)); }
@@ -37,8 +37,8 @@ function fixture(options = {}) {
     writeU32(value) { memory.set(this.n, value); }
     readPointer() { return new Pointer(this.readU32()); }
     writePointer(value) {
-      if(this.n === ookazi+4 && value.n !== original && failOokaziWrite)
-        throw new Error('Simulated write fault for Ookazi');
+      if(this.n === raimei+4 && value.n !== original && failRaimeiWrite)
+        throw new Error('Simulated write fault for Raimei');
       memory.set(this.n, value.n);
     }
   }
@@ -74,34 +74,34 @@ function fixture(options = {}) {
     ptr, rpc:{exports:{}},
   };
   vm.runInNewContext(source,context,{filename:'yugire_dual_loader.js'});
-  return {api:context.rpc.exports, memory, sparks: sparks+4, ookazi: ookazi+4,
-    original, exports: addrExport, setFault(value){ failOokaziWrite=Boolean(value); }};
+  return {api:context.rpc.exports, memory, sparks: sparks+4, raimei: raimei+4,
+    original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); }};
 }
 
 const normal=fixture();
 assert.equal(normal.api.status().installed,false);
-let status=normal.api.install('Z:\\YugiRE\\native_rules\\build-vs2026\\Release\\yugire_rules.dll',300,900);
+let status=normal.api.install('Z:\\YugiRE\\native_rules\\build-vs2026\\Release\\yugire_rules.dll',300,400);
 assert.equal(status.installed,true);
 assert.equal(status.entries[0].configuredDamage,300);
-assert.equal(status.entries[1].configuredDamage,900);
+assert.equal(status.entries[1].configuredDamage,400);
 assert.equal(normal.memory.get(normal.sparks),normal.exports.get('YugiRE_Sparks'));
-assert.equal(normal.memory.get(normal.ookazi),normal.exports.get('YugiRE_Ookazi'));
+assert.equal(normal.memory.get(normal.raimei),normal.exports.get('YugiRE_Raimei'));
 status=normal.api.restore();
 assert.equal(status.installed,false);
 assert.equal(normal.memory.get(normal.sparks),normal.original);
-assert.equal(normal.memory.get(normal.ookazi),normal.original);
+assert.equal(normal.memory.get(normal.raimei),normal.original);
 normal.api.restore(); // idempotent
 
-const failure=fixture({failOokaziWrite:true});
-assert.throws(()=>failure.api.install('Z:\\YugiRE\\rules.dll',300,900),
+const failure=fixture({failRaimeiWrite:true});
+assert.throws(()=>failure.api.install('Z:\\YugiRE\\rules.dll',300,400),
   /Installation failed.*original pointers restored/);
 assert.equal(failure.memory.get(failure.sparks),failure.original);
-assert.equal(failure.memory.get(failure.ookazi),failure.original);
+assert.equal(failure.memory.get(failure.raimei),failure.original);
 assert.equal(failure.api.restore().installed,false);
 
 const wrongId=fixture();
 wrongId.memory.set(wrongId.sparks-4,1234);
-assert.throws(()=>wrongId.api.install('Z:\\YugiRE\\rules.dll',200,800),/resource ID mismatch/);
+assert.throws(()=>wrongId.api.install('Z:\\YugiRE\\rules.dll',200,300),/resource ID mismatch/);
 assert.equal(wrongId.memory.get(wrongId.sparks),wrongId.original);
 
 console.log('PASS: dual install, independent configs, both restore, rollback, wrong-row guard');

@@ -1,5 +1,5 @@
 /*
- * Frida 17 adapter: selectively redirects Sparks and Ookazi to C++ DLL x86.
+ * Frida 17 adapter: selectively redirects Sparks and Raimei to C++ DLL x86.
  * Only edits two PRIMARY pointer slots, not the shared original function.
  * Runtime effect code is always in the DLL; JS only installs/monitors/restores.
  * Loaded by patch_dual_rules.py after hash / PE preflight.
@@ -31,7 +31,7 @@ const kAbiVersion = 1;
 
 const cards = [
   {name: 'Sparks', resourceId: 342, row: 66, exportName: 'YugiRE_Sparks'},
-  {name: 'Ookazi', resourceId: 345, row: 69, exportName: 'YugiRE_Ookazi'},
+  {name: 'Raimei', resourceId: 1007, row: 172, exportName: 'YugiRE_Raimei'},
 ];
 for (const card of cards) {
   card.record = kTable.add(card.row * kStride);
@@ -160,12 +160,12 @@ function restore() {
 
 rpc.exports = {
   status,
-  install(dllPath, sparksDamage, ookaziDamage) {
+  install(dllPath, sparksDamage, raimeiDamage) {
     if (installed) throw new Error('Already installed');
     if (typeof dllPath !== 'string' || !/^[a-zA-Z]:\\/.test(dllPath)) {
       throw new Error('Expected an absolute Windows DLL path');
     }
-    if (![200, 300].includes(sparksDamage) || ![800, 900].includes(ookaziDamage)) {
+    if (![200, 300].includes(sparksDamage) || ![300, 400].includes(raimeiDamage)) {
       throw new Error('Damage configuration outside tested safe experiment values');
     }
     verifyBeforeLoading();
@@ -186,10 +186,10 @@ rpc.exports = {
     getDamage = new NativeFunction(getExport('YugiRE_GetConfiguredDamage'),
       'uint32', ['uint32'], 'mscdecl');
 
-    if (initialize(main.base, sparksDamage, ookaziDamage) !== kInitMagic) {
+    if (initialize(main.base, sparksDamage, raimeiDamage) !== kInitMagic) {
       throw new Error('DLL returned wrong initialization marker');
     }
-    if (getDamage(342) !== sparksDamage || getDamage(345) !== ookaziDamage) {
+    if (getDamage(342) !== sparksDamage || getDamage(1007) !== raimeiDamage) {
       throw new Error('DLL did not accept independent damage configurations');
     }
 

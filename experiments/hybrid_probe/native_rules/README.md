@@ -1,88 +1,90 @@
-# YugiRE Native Rules — dual card experiment
+# YugiRE Native Rules — Sparks + Raimei
 
-This replaces **two individual card-table primary pointers** for the exact
-`joey_pc.exe` fingerprint documented in `pe_preflight.py`. It does **not**
-modify the shared original callback function or the EXE on disk.
+Two-card proof of concept for the exact original `joey_pc.exe` fingerprint validated
+by `experiments/hybrid_probe/pe_preflight.py`.
 
-- `include/yugire/card_request.hpp` — deliberately limited 20-byte request view;
-  the only interpreted bytes are offsets +4 and +6.
-- `include/yugire/engine.hpp`, `src/engine.cpp` — link to Joey's native LP
-  command generator by RVA, and per-card counters.
-- `src/cards/sparks.cpp` — Sparks C++ implementation.
-- `src/cards/ookazi.cpp` — Ookazi C++ implementation.
-- `src/exports.cpp`, `yugire_rules.def` — stable `__cdecl` exports without
-  decorated names; the loader calls the exports with Frida `mscdecl` ABI.
-- `../yugire_dual_loader.js` — Frida-only memory table adapter (two pointers).
-- `../patch_dual_rules.py` — Python runner, EXE hash check, DLL PE32 check,
-  status display, and cleanup.
+**This DLL version has NOT yet been validated inside Joey.** Prior tests established
+Sparks (200/300 LP) from an earlier single-card C++ DLL.
 
-## Build on Visual Studio 2026 Developer PowerShell
+| Card | Internal index | Resource ID | Callback row | Original damage | Experiment damage |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Sparks | 755 | 342 | 66 | 200 LP | 300 LP |
+| Raimei | 1049 | 1007 | 172 | 300 LP | 400 LP |
 
-From `experiments\hybrid_probe`:
+Both cards share the original main callback `0x00584E60` and target-preparation
+`0x00593CC0`. Only the primary pointer (+4) of each individual table record
+is redirected. The shared original callback is not patched.
+
+## Project layout
+
+- `include/yugire/card_request.hpp`: 20-byte request, only fields +4 and +6 identified here.
+- `include/yugire/engine.hpp`, `src/engine.cpp`: engine adapter, per-card call
+  and emission counters, native damage-command producer `0x005784E0`.
+- `src/cards/sparks.cpp` and `src/cards/raimei.cpp`: independent rules.
+- `src/exports.cpp`, `yugire_rules.def`: undecorated C ABI exports,
+  called by the Frida adapter with `mscdecl` on x86.
+- `../yugire_dual_loader.js`: installs/restores both pointers with rollback.
+- `../patch_dual_rules.py`: loaded-EXE hash validation and Python host.
+
+## Compile (Visual Studio 2026 Developer PowerShell)
+
+In `experiments\hybrid_probe`:
 
 ```powershell
 cmake -S .\native_rules -B .\native_rules\build-vs2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build .\native_rules\build-vs2026 --config Release
 ```
 
-The output should be `native_rules\build-vs2026\Release\yugire_rules.dll`.
-Verify with `dumpbin /headers`, `dumpbin /imports`, `dumpbin /exports`.
+Output: `native_rules\build-vs2026\Release\yugire_rules.dll`.
 
-## Test on a **new Joey process**
+To validate exports: `dumpbin /exports .\native_rules\build-vs2026\Release\yugire_rules.dll`.
+You should find `YugiRE_Sparks` and `YugiRE_Raimei`.
 
-Back up save data; do not run with any other Frida callback patcher attached.
-Play a duel normally rather than playing a saved YDR.
+## Test in a NEW Joey process
+
+Before launching the game, back up the save; do not attach another Frida
+callback patcher simultaneously. From `experiments\hybrid_probe`:
 
 ```powershell
 $joeyPid = (Get-Process joey_pc).Id
-.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --pid $joeyPid --sparks 300 --ookazi 900
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --pid $joeyPid --sparks 300 --raimei 400
 ```
 
-If you use another build folder:
+When the game lets you play Sparks and Raimei, observe **300 LP** and **400 LP**
+damage respectively. The first value is already known to work in the earlier
+single-card DLL; the Raimei test is NEW. During the duel, press Enter in the
+host to inspect the counters. Type `stop` AFTER the effects have finished
+to restore both callback pointers. Expected restored pointer for both:
+`0x00584E60` (in the original image base).
+
+For original-rule comparison, choose `--sparks 200 --raimei 300`.
+
+**Important:** catalogued in the game files does not imply unlocked in your
+current save, or visible under every collection filter. If Raimei is missing,
+check whether its card-list filters/collection availability permit adding it
+to the deck; do not patch the save during the callback test.
+
+Other build folder? Pass `--dll .\native_rules\build\Release\yugire_rules.dll`.
+
+## Limitations and safety
+
+The DLL is not unloaded while Joey is running. The loader checks table IDs,
+other slots, original pointers, executable hash, x86 architecture, and required
+exports; it attempts to restore both slots on exit and after partial installation.
+An abnormal Frida exit can leave code redirected until Joey terminates.
+Always close Joey after a failed or interrupted patch before retrying.
+
+The tests cover neither all card interactions nor effect suppression, chaining,
+multiple copies, YDR replay execution, or simultaneous callback execution. The
+engine's queue/consumer stays original.
+
+## Offline checks
 
 ```powershell
-.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --pid $joeyPid --sparks 300 --ookazi 900 --dll .\native_rules\build\Release\yugire_rules.dll
+python .\native_rules\tests\test_catalog.py
+node .\native_rules\tests\test_loader.cjs
 ```
 
-The two cards should cause 300 and 900 LP, respectively, when the effect is
-allowed. Press **Enter** to inspect counters for each card, then type **stop**.
-The original primary pointers should both reappear in the final status.
-
-**Safer initial control:** test default values `--sparks 200 --ookazi 800`
-first, then `300/900`. The 200/300 Sparks behavior has previously been tested
-with an earlier DLL. **This new two-card DLL has not yet been run inside Joey.**
-
-The DLL remains loaded until Joey closes, even after pointers are restored,
-so in-flight callbacks never jump into unloaded code. If the Python/Frida
-process exits abnormally, **close Joey before any further patch test**.
-
-## Scope and known limitations
-
-- Only primary callbacks `+4` of table rows 66 and 69 are redirected.
-- The `+20` target-preparation callbacks remain original.
-- Both original entries share `0x00584E60`; it is not modified directly.
-- The engine helper `0x005784E0` emits the LP command; it and its consumers
-  remain original.
-- The test does not prove behavior under negation, all effect flags, replays,
-  multiple simultaneous copies, or interaction with other callbacks.
-- Do not invoke `YugiRE_Initialize` after installing pointers, or reset
-  counters during an in-flight callback.
-- Restore is not a thread-suspending atomic operation; avoid patch/unpatch
-  during effect resolution. Stop after the effect finishes, not mid-animation.
-
-## Expected outputs
-
-```text
-[dual-rules] Both primary callback pointers installed.
-[dual-rules] Sparks: calls=0 commands=0 damage=300 ...
-[dual-rules] Ookazi: calls=0 commands=0 damage=900 ...
-...normal duel...
-[dual-rules] Sparks: calls=1 commands=1 damage=300 ...
-[dual-rules] Ookazi: calls=1 commands=1 damage=900 ...
-[dual-rules] Restore completed; table pointers:
-[dual-rules] Sparks: ... currentPointer=0x584e60
-[dual-rules] Ookazi: ... currentPointer=0x584e60
-```
-
-Counts may be greater than one if the game invokes callbacks more than once;
-they count actual calls and commands, not completed damage effects.
+The catalogue check verifies both indices/IDs/profile P045. The JavaScript
+fixture checks two distinct pointers, configuration, restoration and rollback.
+These are structural tests; they do not substitute for the Windows test.

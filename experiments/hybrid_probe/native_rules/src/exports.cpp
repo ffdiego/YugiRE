@@ -15,17 +15,17 @@ extern "C" unsigned int __cdecl YugiRE_GetAbiVersion() {
     return kAbiVersion;
 }
 extern "C" unsigned int __cdecl YugiRE_Initialize(
-    void* image_base, unsigned int sparks_damage, unsigned int ookazi_damage) {
-    return yugire::engine::configure(image_base, sparks_damage, ookazi_damage)
+    void* image_base, unsigned int sparks_damage, unsigned int raimei_damage) {
+    return yugire::engine::configure(image_base, sparks_damage, raimei_damage)
         ? kInitMagic : 0;
 }
 extern "C" unsigned short __cdecl YugiRE_Sparks(
     const yugire::CardRequest* request, void* opaque) {
     return yugire::cards::sparks(request, opaque);
 }
-extern "C" unsigned short __cdecl YugiRE_Ookazi(
+extern "C" unsigned short __cdecl YugiRE_Raimei(
     const yugire::CardRequest* request, void* opaque) {
-    return yugire::cards::ookazi(request, opaque);
+    return yugire::cards::raimei(request, opaque);
 }
 extern "C" unsigned int __cdecl YugiRE_GetCallCount(unsigned int resource_id) {
     return yugire::engine::call_count(static_cast<yugire::Card>(resource_id));

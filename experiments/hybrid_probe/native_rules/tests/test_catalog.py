@@ -1,4 +1,4 @@
-"""Verify Sparks/Ookazi rows against the already-versioned YugiRE card catalogue.
+"""Verify Sparks/Raimei rows against the already-versioned YugiRE card catalogue.
 
 Run from experiments/hybrid_probe:
     python native_rules/tests/test_catalog.py
@@ -16,7 +16,7 @@ CATALOG = ROOT / "docs" / "evidence" / "card-callback-catalog.json"
 def main() -> int:
     catalog = json.loads(CATALOG.read_text(encoding="utf-8"))
     rows = catalog["records"]
-    expected = {66: (342, 755, "Sparks"), 69: (345, 557, "Ookazi")}
+    expected = {66: (342, 755, "Sparks"), 172: (1007, 1049, "Raimei")}
     for row, (resource_id, index, name) in expected.items():
         record = rows[row]
         assert record["row"] == row
@@ -24,7 +24,7 @@ def main() -> int:
         assert any(item["index"] == index and item["name"] == name
                    for item in record["identities"])
         assert record["profile"] == "P045"
-    print("PASS: row 66 Sparks and row 69 Ookazi map to expected IDs/profile")
+    print("PASS: row 66 Sparks and row 172 Raimei map to expected IDs/profile")
     return 0
 
 

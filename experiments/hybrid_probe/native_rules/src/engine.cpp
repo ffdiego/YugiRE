@@ -34,45 +34,45 @@ constexpr unsigned int kDamageCommandRva = 0x001784E0;
 using DamageCommand = unsigned int (__cdecl*)(unsigned int, unsigned int);
 DamageCommand g_damage_command = nullptr;
 unsigned int g_sparks_damage = 0;
-unsigned int g_ookazi_damage = 0;
+unsigned int g_raimei_damage = 0;
 volatile long g_sparks_calls = 0;
-volatile long g_ookazi_calls = 0;
+volatile long g_raimei_calls = 0;
 volatile long g_sparks_emits = 0;
-volatile long g_ookazi_emits = 0;
+volatile long g_raimei_emits = 0;
 
 volatile long* calls_for(Card card) {
     switch (card) {
         case Card::Sparks: return &g_sparks_calls;
-        case Card::Ookazi: return &g_ookazi_calls;
+        case Card::Raimei: return &g_raimei_calls;
         default: return nullptr;
     }
 }
 volatile long* emits_for(Card card) {
     switch (card) {
         case Card::Sparks: return &g_sparks_emits;
-        case Card::Ookazi: return &g_ookazi_emits;
+        case Card::Raimei: return &g_raimei_emits;
         default: return nullptr;
     }
 }
 }
 
 bool configure(void* image_base, unsigned int sparks_damage,
-               unsigned int ookazi_damage) {
+               unsigned int raimei_damage) {
     if (!image_base || !((sparks_damage == 200) || (sparks_damage == 300)) ||
-        !((ookazi_damage == 800) || (ookazi_damage == 900))) return false;
+        !((raimei_damage == 300) || (raimei_damage == 400))) return false;
     auto* base = static_cast<unsigned char*>(image_base);
     g_damage_command = reinterpret_cast<DamageCommand>(base + kDamageCommandRva);
     g_sparks_damage = sparks_damage;
-    g_ookazi_damage = ookazi_damage;
-    g_sparks_calls = g_ookazi_calls = 0;
-    g_sparks_emits = g_ookazi_emits = 0;
+    g_raimei_damage = raimei_damage;
+    g_sparks_calls = g_raimei_calls = 0;
+    g_sparks_emits = g_raimei_emits = 0;
     return true;
 }
 
 unsigned int configured_damage(Card card) {
     switch (card) {
         case Card::Sparks: return g_sparks_damage;
-        case Card::Ookazi: return g_ookazi_damage;
+        case Card::Raimei: return g_raimei_damage;
         default: return 0;
     }
 }
