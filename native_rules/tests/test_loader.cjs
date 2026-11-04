@@ -50,6 +50,7 @@ function fixture(options = {}) {
     equals(n) { return this.n === n.n; }
     isNull() { return this.n === 0; }
     toString() { return '0x' + this.n.toString(16); }
+    toUInt32() { return this.n >>> 0; }
     readU32() { return memory.get(this.n) ?? 0; }
     readU16() { return this.readU32() & 0xffff; }
     readU8() { return this.readU32() & 0xff; }
