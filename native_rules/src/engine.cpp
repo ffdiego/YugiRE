@@ -1,4 +1,5 @@
 #include "yugire/engine.hpp"
+#include "yugire/field_target.hpp"
 
 #if !defined(_WIN32) || (!defined(_M_IX86) && !defined(__i386__))
 #error "Compile as 32-bit Windows, not x64."
@@ -34,10 +35,23 @@ constexpr unsigned int kDamageCommandRva = 0x001784E0;
 // FUN_00578B60(side, amount) produces ordinary 0x61 draw commands via
 // FUN_00578860, as used by Pot of Greed's native 0x005887C0 callback.
 constexpr unsigned int kDrawCommandRva = 0x00178B60;
+// FUN_00576960(request, position_mask, destination_region, flags) is the
+// original effect-destruction helper used by Man-Eater Bug. It handles
+// eligibility, linked cards, Banisher and 0x79 command production.
+// Synthetic request use is EXPERIMENTAL and requires in-game validation.
+constexpr unsigned int kDestroyEffectRva = 0x00176960;
+constexpr unsigned int kMonsterFieldRva = 0x00655D74; // 0x00A55D74 - 0x00400000
+constexpr unsigned int kPlayerStride = 0xD44u;
+constexpr unsigned int kFieldSlotStride = 0x90u;
 using DamageCommand = unsigned int (__cdecl*)(unsigned int, unsigned int);
 using DrawCommand = void (__cdecl*)(unsigned int, unsigned int);
+using DestroyEffect = unsigned int (__cdecl*)(const std::uint16_t*,
+                                              unsigned int, unsigned int,
+                                              unsigned int);
 DamageCommand g_damage_command = nullptr;
 DrawCommand g_draw_command = nullptr;
+DestroyEffect g_destroy_effect = nullptr;
+unsigned char* g_image_base = nullptr;
 unsigned int g_sparks_damage = 0;
 unsigned int g_raimei_damage = 0;
 unsigned int g_sparks_mode = 1;
@@ -50,6 +64,7 @@ volatile long g_sparks_draws = 0;
 volatile long g_raimei_draws = 0;
 volatile long g_manual_draws = 0;
 volatile long g_manual_damages = 0;
+volatile long g_manual_destroy_attempts = 0;
 
 volatile long* calls_for(Card card) {
     switch (card) {
@@ -88,6 +103,8 @@ bool configure(void* image_base, unsigned int sparks_damage,
     auto* base = static_cast<unsigned char*>(image_base);
     g_damage_command = reinterpret_cast<DamageCommand>(base + kDamageCommandRva);
     g_draw_command = reinterpret_cast<DrawCommand>(base + kDrawCommandRva);
+    g_destroy_effect = reinterpret_cast<DestroyEffect>(base + kDestroyEffectRva);
+    g_image_base = base;
     g_sparks_damage = sparks_damage;
     g_raimei_damage = raimei_damage;
     g_sparks_mode = sparks_mode;
@@ -97,6 +114,7 @@ bool configure(void* image_base, unsigned int sparks_damage,
     g_sparks_draws = g_raimei_draws = 0;
     g_manual_draws = 0;
     g_manual_damages = 0;
+    g_manual_destroy_attempts = 0;
     return true;
 }
 
@@ -131,6 +149,9 @@ unsigned int manual_draw_batch_count() {
 }
 unsigned int manual_damage_command_count() {
     return atomic_load(&g_manual_damages);
+}
+unsigned int manual_destroy_attempt_count() {
+    return atomic_load(&g_manual_destroy_attempts);
 }
 void record_call(Card card) {
     volatile long* p = calls_for(card);
@@ -171,6 +192,30 @@ bool damage_from_console(unsigned int side, unsigned int amount) {
         return false;
     g_damage_command(side, amount);
     atomic_inc(&g_manual_damages);
+    return true;
+}
+bool destroy_from_console(unsigned int side, unsigned int slot,
+                          unsigned int expected_word) {
+    std::uint32_t mask = 0;
+    if (!g_destroy_effect || !g_image_base ||
+        !monster_slot_mask(side, slot, &mask)) return false;
+    // Read fresh state after the queue is idle. Checking the occurrence key
+    // avoids hitting a replacement card that happened to reuse the same slot.
+    const auto* word = reinterpret_cast<const volatile std::uint32_t*>(
+        g_image_base + kMonsterFieldRva +
+        side * kPlayerStride + slot * kFieldSlotStride);
+    if (!same_field_card(*word, expected_word)) return false;
+
+    // 20-byte, stack-local request; internal index 753 is Man-Eater Bug.
+    // This mirrors the request fields consumed by FUN_00576960, WITHOUT
+    // editing the game's field records or bypassing the native filters.
+    std::uint16_t request[10] = {};
+    request[0] = 753u;
+    request[1] = static_cast<std::uint16_t>(side);
+    (void)g_destroy_effect(request, mask, 14u, 2u);
+    atomic_inc(&g_manual_destroy_attempts);
+    // This means "native helper invoked", not "card was destroyed":
+    // native filters may refuse the target and resolution is asynchronous.
     return true;
 }
 }} // yugire::engine

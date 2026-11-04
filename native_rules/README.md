@@ -179,15 +179,46 @@ diff
 ```
 
 **O console de compra já foi testado em duelo real; os comandos
-`state`, `diff` e `damage` são novos e ainda não foram testados
+`state`, `diff`, `damage` e `destroy` ainda exigem validação específica
 dentro do Joey.** Primeiro verifique `state` com o duelo parado,
 depois use `damage 100 0` e confira os LP pelo jogo e por `diff`.
 Não extrapole para multiplayer ou replay.
 
 O parser de `DuelSnapshot` fica em `src/duel_state.cpp`, testável
-independentemente, e os exports agora exigem ABI **v4**. Para evitar
+independentemente, e os exports agora exigem ABI **v5**. Para evitar
 reutilizar a DLL antiga, feche o Joey antes de recompilar e reinicie
 o processo após a build.
+
+## Experimento: destruir monstro em slot (ABI v5; ainda sem teste no Joey)
+
+O comando `destroy <lado> <slot>` tenta destruir um monstro usando a
+rotina nativa de **destruição por efeito** `FUN_00576960`, que produz
+comandos `0x79`. O lado é obrigatório: `0` = CPU, `1` = humano
+(no duelo local validado). O slot é **zero-based, de 0 a 4**, exclusivamente
+na zona de monstros; mágicas/armadilhas e outros campos ficam para outra etapa.
+
+```text
+state
+destroy 0 2
+status
+diff
+```
+
+Antes de agendar, o adaptador recusa slots vazios e armazena índice interno,
+dono e chave de ocorrência. No tick o adaptador e a DLL verificam novamente
+a identidade, pois o slot pode ter sido reutilizado. A operação só acontece
+na thread do duelo e compartilha o único pedido pendente de `draw`/`damage`.
+`status` informa `submitted` quando o helper foi *invocado*, não quando
+a destruição realmente ocorreu. Consulte `state` e `diff` após a resolução.
+
+**Limitação experimental importante:** a DLL cria um pedido temporário
+de 20 bytes com índice interno 753 (Man-Eater Bug) para chamar
+`FUN_00576960(pedido, máscara, 14, 2)`. O caminho é fundamentado nos
+estudos estáticos em [destruição](../docs/cards/monster-destruction.md)
+e [seleção](../docs/cards/man-eater-bug-targeting.md), mas **não foi validado
+em execução real**. Filtros nativos podem rejeitar o alvo e interações de
+cartas, vínculos e animações ainda precisam ser verificadas. Não usar em
+duelo remoto/replay. Reinicie Joey antes de testar a nova DLL/ABI.
 
 ## Testes offline
 

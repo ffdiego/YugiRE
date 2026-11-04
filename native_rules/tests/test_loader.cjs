@@ -14,6 +14,8 @@ function fixture(options = {}) {
   const target = 0x00593CC0;
   memory.set(0x00A55D69,20);                 // deck of side 0
   memory.set(0x00A55D69 + 0xD44,20);         // deck of side 1
+  memory.set(0x00A55D74,0x120015A2);         // monster 0: owner 1, key 0x12, index 0x5A2
+  memory.set(0x00A55D74 + 0xD44 + 3*0x90,0x250000AB); // side 1 slot 3
   for(const [row,id] of [[sparks,342],[raimei,1007]]) {
     for(const off of [0,4,8,12,16,20]) memory.set(row + off, 0);
     memory.set(row, id);
@@ -27,13 +29,16 @@ function fixture(options = {}) {
     'YugiRE_GetCallCount','YugiRE_GetEmitCount','YugiRE_GetConfiguredDamage',
     'YugiRE_GetConfiguredMode','YugiRE_GetDrawBatchCount',
     'YugiRE_ConsoleDraw','YugiRE_GetConsoleDrawBatchCount',
-    'YugiRE_ConsoleDamage','YugiRE_GetConsoleDamageCount','YugiRE_ReadDuelState'
+    'YugiRE_ConsoleDamage','YugiRE_GetConsoleDamageCount','YugiRE_ReadDuelState',
+    'YugiRE_ConsoleDestroy','YugiRE_GetConsoleDestroyCount'
   ]) { addrExport.set(name, nextAddress); nextAddress += 0x100; }
   let config = [0,0];
   let consoleDrawCalls = 0;
   let damageCalls = 0;
+  let destroyCalls = 0;
   let lastManualCall = null;
   let lastDamageCall = null;
+  let lastDestroyCall = null;
   let tickHandler = null;
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
@@ -62,7 +67,7 @@ function fixture(options = {}) {
       platform: 'windows', arch: 'ia32', id: 123,
       mainModule:{name:'joey_pc.exe',path:'Z:\\passion\\joey_pc.exe',base:ptr(0x400000)},
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
-        p.n === 0x005BC700 || p.n >= 0x20000000)
+        p.n === 0x005BC700 || p.n === 0x00576960 || p.n >= 0x20000000)
         ? 'r-x' : 'r--'}; },
     },
     Memory: {
@@ -90,7 +95,7 @@ function fixture(options = {}) {
       if(entry==='YugiRE_Initialize')return (_base,s,o,sm,rm)=>{
         config=[s,o];modes=[sm,rm];return 0x59554735;
       };
-      if(entry==='YugiRE_GetAbiVersion')return ()=>4;
+      if(entry==='YugiRE_GetAbiVersion')return ()=>5;
       if(entry==='YugiRE_GetCallCount')return ()=>0;
       if(entry==='YugiRE_GetEmitCount')return ()=>0;
       if(entry==='YugiRE_GetConfiguredDamage')return (id)=> id===342?config[0] : config[1];
@@ -108,6 +113,12 @@ function fixture(options = {}) {
         return 1;
       };
       if(entry==='YugiRE_GetConsoleDamageCount')return ()=>damageCalls;
+      if(entry==='YugiRE_ConsoleDestroy')return (side,slot,expectedWord)=>{
+        destroyCalls++;
+        lastDestroyCall={side,slot,expectedWord};
+        return 1;
+      };
+      if(entry==='YugiRE_GetConsoleDestroyCount')return ()=>destroyCalls;
       if(entry==='YugiRE_ReadDuelState')return (_base,out)=>{
         const values=[
           8000,4,27,1,0,0,727,0,0,0,0,
@@ -126,8 +137,10 @@ function fixture(options = {}) {
     tick(){ if(tickHandler !== null) tickHandler(); },
     consoleCalls(){return consoleDrawCalls;},
     damageCalls(){return damageCalls;},
+    destroyCalls(){return destroyCalls;},
     lastManualCall(){return lastManualCall;},
     lastDamageCall(){return lastDamageCall;},
+    lastDestroyCall(){return lastDestroyCall;},
     hookActive(){return tickHandler !== null;} };
 }
 
@@ -209,7 +222,7 @@ for(const invalid of [-1,0,4,5,2.5,'2',NaN,Infinity,null]){
     assert.equal(fixtureBad.memory.get(fixtureBad.raimei),fixtureBad.original);
   }
 }
-console.log('PASS: ABI 4, independent modes, invalid-mode rejection and restore');
+console.log('PASS: ABI 5, independent modes, invalid-mode rejection and restore');
 
 
 // Manual draw is staged by RPC, then executed ONLY on the duel scheduler
@@ -317,3 +330,43 @@ assert.equal(lab.hookActive(),false);
 lab.tick();
 assert.equal(lab.damageCalls(),1);
 console.log('PASS: native duel snapshot, damage scheduling, input limits, cancel and restore');
+
+
+// Native destruction: RPC only stages. Identity changes or an empty slot
+// while waiting MUST reject rather than hitting a replacement monster.
+const destruction=fixture();
+destruction.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+assert.throws(()=>destruction.api.queuedestroy(0,1),/slot is empty/);
+for(const [side,slot] of [[-1,0],[2,0],['0',0],[0,-1],[0,5],[0,'0'],[0,0.5]]) {
+  assert.throws(()=>destruction.api.queuedestroy(side,slot),/explicit side and monster slot/);
+}
+const destroyReq=destruction.api.queuedestroy(0,0);
+assert.equal(destroyReq.expectedIndex,0x5A2);
+assert.equal(destroyReq.state,'pending');
+assert.equal(destruction.destroyCalls(),0);
+assert.throws(()=>destruction.api.queuedamage(0,100),/already pending/);
+destruction.memory.set(0x00A558A8,1); destruction.tick();
+assert.equal(destruction.destroyCalls(),0);
+destruction.memory.set(0x00A558A8,0); destruction.tick();
+assert.equal(destruction.destroyCalls(),1);
+assert.equal(destruction.lastDestroyCall().side,0);
+assert.equal(destruction.lastDestroyCall().slot,0);
+assert.equal(destruction.lastDestroyCall().expectedWord,0x120015A2);
+assert.equal(destruction.api.status().console.last.state,'submitted');
+assert.equal(destruction.api.status().console.destroyAttempts,1);
+destruction.tick();
+assert.equal(destruction.destroyCalls(),1);
+destruction.api.queuedestroy(1,3);
+destruction.memory.set(0x00A55D74 + 0xD44 + 3*0x90,0x260000AB); // replaced key
+destruction.tick();
+assert.equal(destruction.api.status().console.last.state,'rejected');
+assert.equal(destruction.destroyCalls(),1);
+destruction.api.queuedestroy(0,0);
+assert.equal(destruction.api.canceldraw().state,'cancelled');
+destruction.tick();
+assert.equal(destruction.destroyCalls(),1);
+destruction.api.queuedestroy(0,0);
+destruction.api.restore();
+destruction.tick();
+assert.equal(destruction.destroyCalls(),1);
+console.log('PASS: destruction staged on duel thread, identity recheck, validation and cancel');

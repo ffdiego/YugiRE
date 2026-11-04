@@ -65,6 +65,7 @@ def show_counters(state: dict) -> None:
         gate = console.get("gate")
         print(f"[console] drawBatches={console['batchesQueued']} "
               f"damageCommands={console.get('damageCommandsQueued', 0)} "
+               f"destroyAttempts={console.get('destroyAttempts', 0)} "
               f"pending={pending} last={last}", flush=True)
         if pending is not None:
             print(f"[console] duelQueueGate={gate}", flush=True)
@@ -100,11 +101,13 @@ def show_duel_diff(before: dict, after: dict) -> None:
 
 def show_help(default_side: int) -> None:
     print("[dual-rules] Commands: Enter/status = counters; "
-          "draw 5 [0|1]; damage <1..9999> <0|1>; state; diff; "
+          "draw 5 [0|1]; damage <1..9999> <0|1>; "
+          "destroy <0|1> <0..4>; state; diff; "
           "cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
           "Side 0 = CPU, side 1 = player in the tested local duel. "
-          "Damage requires an explicit target side.", flush=True)
+          "Damage and destroy require an explicit target side. "
+          "Monster slots are zero-based.", flush=True)
 
 
 def handle_command(command: str, api: object, default_side: int,
@@ -144,6 +147,20 @@ def handle_command(command: str, api: object, default_side: int,
         print(f"[console] Damage request {queued['id']} pending: "
               f"{amount} LP to side {side}. "
               "It will be queued on an idle duel update.", flush=True)
+        return True
+    if parts[0] == "destroy":
+        if len(parts) != 3 or parts[1] not in ("0", "1") or parts[2] not in (
+                "0", "1", "2", "3", "4"):
+            print("[console] Usage: destroy <0|1> <0..4> "
+                  "(side, zero-based monster slot)", flush=True)
+            return True
+        side, slot = int(parts[1]), int(parts[2])
+        queued = api.queuedestroy(side, slot)
+        print(f"[console] Destruction request {queued['id']} pending: "
+              f"side {side}, monster slot {slot}, "
+              f"index {queued['expectedIndex']}. "
+              "Submission does not guarantee destruction; check state/diff.",
+              flush=True)
         return True
     if parts[0] == "draw":
         if len(parts) not in (2, 3) or parts[1] != "5" or (

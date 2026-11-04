@@ -14,3 +14,5 @@ EXPORTS
     YugiRE_ConsoleDamage
     YugiRE_GetConsoleDamageCount
     YugiRE_ReadDuelState
+    YugiRE_ConsoleDestroy
+    YugiRE_GetConsoleDestroyCount

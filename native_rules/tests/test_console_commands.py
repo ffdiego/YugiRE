@@ -15,6 +15,7 @@ class FakeApi:
     def __init__(self):
         self.draws = []
         self.damages = []
+        self.destroys = []
         self.snapshot = {"sides": [
             {"side": 0, "lifePoints": 8000, "handCount": 4, "deckCount": 30,
              "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
@@ -39,6 +40,11 @@ class FakeApi:
     def queuedamage(self, side, amount):
         self.damages.append((side, amount))
         return {"id": 50, "side": side, "amount": amount, "state": "pending"}
+
+    def queuedestroy(self, side, slot):
+        self.destroys.append((side, slot))
+        return {"id": 60, "side": side, "slot": slot, "expectedIndex": 727,
+                "state": "pending"}
 
     def duelstate(self):
         import copy
@@ -81,6 +87,16 @@ class ConsoleCommandTests(unittest.TestCase):
                         "damage x 1", "damage 200 0 1"):
             self.assertTrue(self.invoke(command))
         self.assertEqual(len(self.api.damages), 2)
+
+    def test_destroy_requires_explicit_side_and_valid_slot(self):
+        self.assertTrue(self.invoke("destroy 0 3"))
+        self.assertTrue(self.invoke("destroy 1 0"))
+        self.assertEqual(self.api.destroys, [(0, 3), (1, 0)])
+        for command in ("destroy", "destroy 0", "destroy 3 0", "destroy 0 5",
+                        "destroy 1 -1", "destroy 1 1 1", "destroy x 0",
+                        "destroy 0 1.5"):
+            self.assertTrue(self.invoke(command))
+        self.assertEqual(len(self.api.destroys), 2)
 
     def test_state_and_diff_baseline(self):
         cache = {}

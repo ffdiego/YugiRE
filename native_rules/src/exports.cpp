@@ -10,7 +10,7 @@ static_assert(sizeof(void*) == 4, "Requires x86");
 // Names exported undecorated via yugire_rules.def. Frida must call these
 // functions using its 'mscdecl' ABI, matching the Win32 __cdecl below.
 constexpr unsigned int kInitMagic = 0x59554735;  // "YUG5"
-constexpr unsigned int kAbiVersion = 4;
+constexpr unsigned int kAbiVersion = 5;
 
 extern "C" unsigned int __cdecl YugiRE_GetAbiVersion() {
     return kAbiVersion;
@@ -65,4 +65,12 @@ extern "C" unsigned int __cdecl YugiRE_GetConsoleDamageCount() {
 extern "C" unsigned int __cdecl YugiRE_ReadDuelState(
     const void* image_base, yugire::DuelSnapshot* output) {
     return yugire::read_duel_snapshot(image_base, output) ? 1u : 0u;
+}
+
+extern "C" unsigned int __cdecl YugiRE_ConsoleDestroy(
+    unsigned int side, unsigned int slot, unsigned int expected_word) {
+    return yugire::engine::destroy_from_console(side, slot, expected_word) ? 1u : 0u;
+}
+extern "C" unsigned int __cdecl YugiRE_GetConsoleDestroyCount() {
+    return yugire::engine::manual_destroy_attempt_count();
 }

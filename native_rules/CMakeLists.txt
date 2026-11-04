@@ -41,3 +41,8 @@ add_executable(test_duel_state tests/test_duel_state.cpp src/duel_state.cpp)
 target_include_directories(test_duel_state PRIVATE include)
 target_compile_features(test_duel_state PRIVATE cxx_std_17)
 add_test(NAME duel_state COMMAND test_duel_state)
+
+add_executable(test_field_target tests/test_field_target.cpp)
+target_include_directories(test_field_target PRIVATE include)
+target_compile_features(test_field_target PRIVATE cxx_std_17)
+add_test(NAME field_target COMMAND test_field_target)

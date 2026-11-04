@@ -24,6 +24,7 @@ unsigned int emit_count(Card card);
 unsigned int draw_batch_count(Card card);
 unsigned int manual_draw_batch_count();
 unsigned int manual_damage_command_count();
+unsigned int manual_destroy_attempt_count();
 void record_call(Card card);
 void emit_damage(Card card, unsigned int target_side);
 void emit_draw_cards(Card card, unsigned int activating_side, unsigned int count);
@@ -32,5 +33,9 @@ void emit_draw_cards(Card card, unsigned int activating_side, unsigned int count
 bool draw_from_console(unsigned int side, unsigned int count);
 // Same rule: only call via the duel scheduler's original thread.
 bool damage_from_console(unsigned int side, unsigned int amount);
+// Target is checked AGAIN on the duel thread before calling the original
+// effect-destruction path. expected_word is captured when RPC stages the request.
+bool destroy_from_console(unsigned int side, unsigned int slot,
+                          unsigned int expected_word);
 } // namespace engine
 } // namespace yugire

@@ -27,8 +27,9 @@ const kPrimaryOriginal = va('0x00584E60');
 const kTargetPreparation = va('0x00593CC0');
 const kDamageEmitter = va('0x005784E0');
 const kDrawEmitter = va('0x00578B60'); // FUN_00578B60(side, count)
+const kDestroyEffect = va('0x00576960'); // FUN_00576960(request, mask, 14, 2)
 const kInitMagic = 0x59554735; // YUG5
-const kAbiVersion = 4;
+const kAbiVersion = 5;
 const kSnapshotBytes = 88; // Two PlayerSnapshot structs, 11 DWORDs each
 
 // The console command does NOT call Joey from Frida's RPC thread. A short
@@ -40,6 +41,9 @@ const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
 const kDuelFlags = va('0x00A54E5C');
 const kDeckCountBase = va('0x00A55D69');
+const kMonsterSlotBase = va('0x00A55D74');
+const kFieldSlotStride = 0x90;
+const kFieldIdentityMask = 0x7F001FFF; // index + owner + occurrence key
 const kPlayerStride = 0xD44; // documented per-player duel state stride
 const kModeDamage = 1;
 const kModeDrawFive = 2;
@@ -71,9 +75,11 @@ let getMode = null;
 let getDrawBatches = null;
 let getManualDrawBatches = null;
 let getManualDamageCommands = null;
+let getManualDestroyAttempts = null;
 let readNativeDuelState = null;
 let manualDrawOnDuelThread = null;
 let manualDamageOnDuelThread = null;
+let manualDestroyOnDuelThread = null;
 let duelUpdateHook = null;
 let pendingConsoleAction = null;
 let lastConsoleAction = null;
@@ -107,12 +113,17 @@ function verifyBeforeLoading() {
   if (drawRange === null || !drawRange.protection.includes('x')) {
     throw new Error('Native draw command producer is not executable');
   }
+  const destructionRange = Process.findRangeByAddress(kDestroyEffect);
+  if (destructionRange === null || !destructionRange.protection.includes('x')) {
+    throw new Error('Native destruction helper 0x00576960 is not executable');
+  }
   const tickRange = Process.findRangeByAddress(kDuelUpdate);
   if (tickRange === null || !tickRange.protection.includes('x')) {
     throw new Error('Duel scheduler 0x005BC700 is not executable');
   }
   for (const address of [kQueueCount, kQueueFlags, kCommandStage, kDuelFlags,
-                          kDeckCountBase, kDeckCountBase.add(kPlayerStride)]) {
+                          kDeckCountBase, kDeckCountBase.add(kPlayerStride),
+                           kMonsterSlotBase, kMonsterSlotBase.add(kPlayerStride)]) {
     const range = Process.findRangeByAddress(address);
     if (range === null || !range.protection.includes('r')) {
       throw new Error('Cannot read native duel queue state at ' + address);
@@ -170,6 +181,14 @@ function queueGate() {
     commandStage, terminalFlag: (duelFlags & 0x180) === 0x80};
 }
 
+function monsterWord(side, slot) {
+  return kMonsterSlotBase.add(side * kPlayerStride + slot * kFieldSlotStride).readU32();
+}
+function sameMonsterIdentity(observed, expected) {
+  return (observed & 0xFFF) !== 0 && (expected & 0xFFF) !== 0 &&
+    (observed & kFieldIdentityMask) === (expected & kFieldIdentityMask);
+}
+
 // Only called synchronously from Interceptor.onLeave for 0x005BC700,
 // on the game's own duel-update thread. Never invoke NativeFunction
 // YugiRE_ConsoleDraw from rpc.exports or a Python/Frida RPC thread.
@@ -192,13 +211,22 @@ function servicePendingConsoleAction() {
       accepted = manualDrawOnDuelThread(request.side, request.count);
     } else if (request.kind === 'damage') {
       accepted = manualDamageOnDuelThread(request.side, request.amount);
+    } else if (request.kind === 'destroy') {
+      if (!sameMonsterIdentity(monsterWord(request.side, request.slot), request.expectedWord)) {
+        lastConsoleAction = {...request, state: 'rejected',
+          detail: 'Target slot is empty or card identity changed while pending'};
+        return;
+      }
+      accepted = manualDestroyOnDuelThread(request.side, request.slot, request.expectedWord);
     } else {
       throw new Error('Invalid pending console action');
     }
     lastConsoleAction = {...request,
-      state: accepted === 1 ? 'enqueued' : 'rejected',
-      detail: accepted === 1 ? 'Original engine command(s) queued; resolution is asynchronous' :
-        'The native producer refused the action'};
+      state: accepted === 1 ? (request.kind === 'destroy' ? 'submitted' : 'enqueued') : 'rejected',
+      detail: accepted !== 1 ? 'The native producer refused the action' :
+        request.kind === 'destroy' ?
+          'Native effect-destruction helper invoked; check state/diff for actual removal' :
+          'Original engine command(s) queued; resolution is asynchronous'};
   } catch (error) {
     lastConsoleAction = {...request, state: 'failed', detail: String(error)};
   }
@@ -247,6 +275,17 @@ function queueConsoleDamage(side, amount) {
     throw new Error('Use damage <1..9999> <0|1>; explicit target side required');
   }
   return stageConsoleAction({kind: 'damage', side, amount});
+}
+
+function queueConsoleDestroy(side, slot) {
+  if (!Number.isInteger(side) || (side !== 0 && side !== 1) ||
+      !Number.isInteger(slot) || slot < 0 || slot >= 5) {
+    throw new Error('Use destroy <0|1> <0..4>; explicit side and monster slot required');
+  }
+  const expectedWord = monsterWord(side, slot);
+  if ((expectedWord & 0xFFF) === 0) throw new Error('Target monster slot is empty');
+  return stageConsoleAction({kind: 'destroy', side, slot,
+    expectedWord, expectedIndex: expectedWord & 0xFFF});
 }
 
 function cancelPendingConsoleAction() {
@@ -303,6 +342,7 @@ function status() {
     console: {
       batchesQueued: getManualDrawBatches === null ? 0 : getManualDrawBatches(),
       damageCommandsQueued: getManualDamageCommands === null ? 0 : getManualDamageCommands(),
+      destroyAttempts: getManualDestroyAttempts === null ? 0 : getManualDestroyAttempts(),
       pending: pendingConsoleAction,
       last: lastConsoleAction,
       gate: installed ? queueGate() : null
@@ -339,6 +379,7 @@ rpc.exports = {
   duelstate: duelState,
   queuedraw: queueConsoleDraw,
   queuedamage: queueConsoleDamage,
+  queuedestroy: queueConsoleDestroy,
   canceldraw: cancelPendingConsoleAction,
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
@@ -382,6 +423,10 @@ rpc.exports = {
     manualDamageOnDuelThread = new NativeFunction(getExport('YugiRE_ConsoleDamage'),
       'uint32', ['uint32', 'uint32'], 'mscdecl');
     getManualDamageCommands = new NativeFunction(getExport('YugiRE_GetConsoleDamageCount'),
+      'uint32', [], 'mscdecl');
+    manualDestroyOnDuelThread = new NativeFunction(getExport('YugiRE_ConsoleDestroy'),
+      'uint32', ['uint32', 'uint32', 'uint32'], 'mscdecl');
+    getManualDestroyAttempts = new NativeFunction(getExport('YugiRE_GetConsoleDestroyCount'),
       'uint32', [], 'mscdecl');
     readNativeDuelState = new NativeFunction(getExport('YugiRE_ReadDuelState'),
       'uint32', ['pointer', 'pointer'], 'mscdecl');
