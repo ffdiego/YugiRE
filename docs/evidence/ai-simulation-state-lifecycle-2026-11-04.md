@@ -118,17 +118,37 @@ da execução real pelo builder `FUN_005AD740`.
 Não instalar hooks que invoquem esses helpers no
 processo sem mapear seus efeitos e sincronização.
 
+## Pontuação de baseline e confrontos documentada
+
+O relatório posterior `ai-simulated-combat-scoring.txt`
+confirma que `FUN_005B08B0(side)` é um wrapper
+de snapshot → preparação → `FUN_005B0A50`
+→ restore. Ele é usado por `FUN_005B1360`
+como score de referência antes de simular
+invocações hipotéticas.
+
+`FUN_005B0B90(side)` ordena candidatos de
+confronto por classes de prioridade de carta
+e `FUN_0056F690(side,slot) & 0xFFFF`, depois
+chama `FUN_005B0D90` para gerar eventos.
+Um gate anterior `FUN_005A0DD0` verifica
+o duelo e o bit `0x40000` (diferente do
+bit `0x20000` de summon/set).
+O assembly de `FUN_005B1360` contém ainda
+threshold `900`, bitmask de slot e desempates.
+Ver [detalhes do score](ai-simulated-combat-scoring-2026-11-04.md).
+
 ## Próxima consulta (PowerShell)
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-simulated-combat-scoring.txt `
+  -Report ai-combat-event-producer.txt `
   -Addresses @(
-    '005b08b0',
-    '005b0b90',
-    '005a0dd0',
-    '005bde10',
-    'ins:005b153f:75'
+    '005b0d90',
+    '0056b730',
+    '005a0d60',
+    '005b1310',
+    'ins:005b0b90:100'
   )
 ```
 

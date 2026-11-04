@@ -205,6 +205,24 @@ não atribuir um significado único a todos os IDs.
 E, em `FUN_005B6FF0`, a própria
 `FUN_00570A70` ainda pode forçar set.
 
+## O que sabemos da pontuação de confrontos
+
+A extração seguinte comprovou que
+`FUN_005B08B0(side)` computa a pontuação
+do campo atual com `FUN_005B0A50` sob
+snapshot/restore. Em `FUN_005B1360`,
+o score de referência é comparado aos scores
+de invocações hipotéticas; o comparador
+considera ainda um threshold 900, bitmask
+de slot e desempates.
+
+`FUN_005B0B90` organiza os monstros
+por chave `(classCode<<16)|(ATK&0xFFFF)`
+e usa `FUN_005B0D90` para tentar produzir
+um evento. O acumulador é `DAT_00A579A8`;
+sua semântica completa ainda não foi confirmada.
+Ver [estudo do score](ai-simulated-combat-scoring-2026-11-04.md).
+
 ## Estado do entendimento
 
 | Questão | Status |
@@ -223,14 +241,13 @@ E, em `FUN_005B6FF0`, a própria
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-simulation-state-lifecycle.txt `
+  -Report ai-combat-event-producer.txt `
   -Addresses @(
-    '005b08e0',
-    '005b09c0',
-    '005b0950',
-    '005bddf0',
-    '005b0a50',
-    'ins:005b1610:75'
+    '005b0d90',
+    '0056b730',
+    '005a0d60',
+    '005b1310',
+    'ins:005b0b90:100'
   )
 ```
 

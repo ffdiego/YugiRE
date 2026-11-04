@@ -62,6 +62,15 @@ também dois ou mais decks da CPU em `.ydr` para
 investigar variabilidade por comparação, não
 por suposição.
 
+**Pontuação já identificada:** `FUN_005B08B0`
+calcula baseline do estado atual; cada hipótese
+de `FUN_005B1360` calcula novo score
+`FUN_005B0A50`. `FUN_005B0B90` seleciona
+slots ordenados por prioridade e ATK;
+`FUN_005B0D90` é o próximo alvo para
+entender evento e contribuição para o score.
+Ver [relatório](ai-simulated-combat-scoring-2026-11-04.md).
+
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
 `action_selected`, `action_submitted`, `action_resolved`,
