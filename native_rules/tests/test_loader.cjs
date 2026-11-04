@@ -132,7 +132,8 @@ function fixture(options = {}) {
       if(addr.n===0x004026C0)return card=>options.levelClass ?? 3;
       if(addr.n===0x005AD740)return (side,hand,slot,tribute,mode)=>{
         summonBuilderCalls.push([side,hand,slot,tribute,mode]);
-        memory.set(0x00A55080,0x4000 | (side&1) | (hand<<6) | (slot<<1));
+        memory.set(0x00A55080,(mode === 0 ? 0x8000 : 0x4000) |
+          (side&1) | (hand<<6) | (slot<<1));
         memory.set(0x00A55084,memory.get(0x00A56434+side*0xD44+hand*4)&0xFFF);
         memory.set(0x00A5508E,5);
       };
@@ -758,3 +759,116 @@ pendingPlacement.tick();
 assert.equal(pendingPlacement.summonBuilders().length,0);
 pendingPlacement.api.restore();
 console.log('PASS: summon preflight fail-closed rules, stale-hand rejection and pending cancellation');
+
+
+// Offline normal monster set: separate legality bit 0x10 and mode=0.
+function setFixture(options={}) {
+  const f=fixture(options);
+  f.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+  f.memory.set(0x00A5508E,0);
+  return f;
+}
+const setAction=setFixture({eligibilityMask:0x10,selectedSlot:3});
+// Test fixture contains a monster at side 1 slot 3 by default; clear it.
+setAction.memory.set(0x00A55D74+0xD44+3*0x90,0);
+assert.throws(()=>setAction.api.queueset(0,4),/player side only/);
+assert.throws(()=>setAction.api.queueset(1,-1),/player side only/);
+assert.throws(()=>setAction.api.queueset(1,80),/player side only/);
+assert.throws(()=>setAction.api.queueset(1,6),/not present/);
+setAction.api.queueset(1,4,true);
+setAction.memory.set(0x00A558A8,1);
+setAction.tick();
+assert.equal(setAction.api.status().console.pending.kind,'set');
+setAction.memory.set(0x00A558A8,0);
+setAction.tick();
+let setResult=setAction.api.status().console.last;
+assert.equal(setResult.state,'checked');
+assert.equal(setResult.allowed,true);
+assert.equal(setResult.selectedSlot,3);
+assert.equal(setResult.eligibility,0x10);
+assert.equal(setResult.eligibilityMask,0x10);
+assert.equal(setAction.summonBuilders().length,0);
+assert.equal(setAction.summonFlags().length,0);
+setAction.api.queueset(1,4,false);
+setAction.tick();
+setResult=setAction.api.status().console.last;
+assert.equal(setResult.state,'submitted');
+assert.equal(setResult.mode,0);
+assert.equal(setResult.kind,'set');
+assert.deepEqual(Array.from(setAction.summonBuilders()[0]),[1,4,3,0,0]);
+assert.equal(setAction.memory.get(0x00A55080),0x8107);
+assert.deepEqual(Array.from(setAction.summonFlags()[0]),[1,0x11,1]);
+// Set consumes the summon opportunity for the entire turn.
+setAction.memory.set(0x00A5508E,0);
+setAction.api.queuesummon(1,4,false);
+setAction.tick();
+setResult=setAction.api.status().console.last;
+assert.equal(setResult.state,'rejected');
+assert.equal(setResult.normalSummonUsed,true);
+assert.equal(setResult.playerFlags & 0x20000,0x20000);
+assert.match(setResult.detail,/flag 0x20000/);
+assert.equal(setAction.summonBuilders().length,1);
+setAction.api.restore();
+console.log('PASS: face-down set uses eligibility 0x10, mode 0 and common turn flag');
+
+// The authorization bits are intentionally NOT interchangeable.
+const summonOnly=setFixture({eligibilityMask:0x01});
+summonOnly.api.queueset(1,4,false);
+summonOnly.tick();
+assert.equal(summonOnly.api.status().console.last.state,'rejected');
+assert.equal(summonOnly.api.status().console.last.eligibilityMask,0x10);
+assert.match(summonOnly.api.status().console.last.detail,/face-down set/);
+assert.equal(summonOnly.summonBuilders().length,0);
+summonOnly.api.restore();
+const setOnly=setFixture({eligibilityMask:0x10});
+setOnly.api.queuesummon(1,4,false);
+setOnly.tick();
+assert.equal(setOnly.api.status().console.last.state,'rejected');
+assert.equal(setOnly.summonBuilders().length,0);
+setOnly.api.restore();
+
+const postSummon=setFixture();
+postSummon.api.queuesummon(1,4,false);
+postSummon.tick();
+postSummon.memory.set(0x00A5508E,0);
+postSummon.api.queueset(1,4,false);
+postSummon.tick();
+assert.equal(postSummon.api.status().console.last.state,'rejected');
+assert.equal(postSummon.api.status().console.last.normalSummonUsed,true);
+assert.equal(postSummon.summonBuilders().length,1);
+postSummon.api.restore();
+
+function setFailure(options,afterRequest,expectedReason) {
+  const f=setFixture(options);
+  f.api.queueset(1,4,false);
+  if(afterRequest)afterRequest(f);
+  f.tick();
+  assert.equal(f.api.status().console.last.state,'rejected');
+  assert.match(f.api.status().console.last.detail,expectedReason);
+  assert.equal(f.summonBuilders().length,0);
+  assert.equal(f.summonFlags().length,0);
+  f.api.restore();
+}
+setFailure({},f=>f.memory.set(0x00A577F8,0),/No active duel/);
+setFailure({},f=>f.memory.set(0x00A54E5C,0),/player turn/);
+setFailure({},f=>f.memory.set(0x00A577FA,7),/main phase/);
+setFailure({},f=>f.memory.set(0x00A56430+0xD44,0x20000),/flag 0x20000/);
+setFailure({monster:false},null,/not a monster/);
+setFailure({levelClass:5},null,/level 1..4/);
+setFailure({eligibilityMask:0x01},null,/face-down set/);
+setFailure({selectedSlot:0xFFFFFFFF},null,/No permitted/);
+setFailure({slotLegal:false},null,/no longer permitted/);
+setFailure({},f=>f.memory.set(0x00A55D68+0xD44,5),/Hand size/);
+setFailure({},f=>f.memory.set(0x00A56434+0xD44+4*4,0x02A8038A),/card changed/);
+const waitingSet=setFixture();
+waitingSet.memory.set(0x00A5508E,0x21);
+waitingSet.api.queueset(1,4,false);
+waitingSet.tick();
+assert.equal(waitingSet.api.status().console.pending.kind,'set');
+assert.equal(waitingSet.summonBuilders().length,0);
+assert.equal(waitingSet.api.canceldraw().state,'cancelled');
+waitingSet.memory.set(0x00A5508E,0);
+waitingSet.tick();
+assert.equal(waitingSet.summonBuilders().length,0);
+waitingSet.api.restore();
+console.log('PASS: set preflight failures, unchanged hand and pending cancellation');

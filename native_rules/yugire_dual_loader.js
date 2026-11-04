@@ -244,7 +244,7 @@ function sameMonsterIdentity(observed, expected) {
     (observed & kFieldIdentityMask) === (expected & kFieldIdentityMask);
 }
 
-// Guarded level 1..4 normal summons only. Called on original duel thread.
+// Guarded level 1..4 face-up summons and face-down sets, on original duel thread.
 // The eligibility engine may show error notifications, so avoid invoking
 // it when inexpensive phase/turn/hand checks already reject the request.
 function handCount(side) {
@@ -253,7 +253,7 @@ function handCount(side) {
 function handWord(side, index) {
   return kHandWordBase.add(side * kPlayerStride + index * 4).readU32();
 }
-function preflightNormalSummon(request) {
+function preflightNormalPlacement(request) {
   const fail = detail => ({allowed: false, detail});
   const side = request.side;
   if (kDuelRunning.readU16() === 0) return fail('No active duel');
@@ -263,8 +263,10 @@ function preflightNormalSummon(request) {
     return fail('Not the selected player turn');
   }
   if (phase !== 2 && phase !== 4) return fail('Not a main phase');
-  if ((kSummonPlayerFlags.add(side * kPlayerStride).readU32() & 0x20000) !== 0) {
-    return fail('Normal summon already used');
+  const playerFlags = kSummonPlayerFlags.add(side * kPlayerStride).readU32();
+  if ((playerFlags & 0x20000) !== 0) {
+    return {allowed: false, playerFlags, normalSummonUsed: true,
+      detail: 'Normal summon/set already used (player flag 0x20000)'};
   }
   if ((kPlacementStage.readU16() & 1) !== 0) {
     return fail('Native placement is already active');
@@ -283,8 +285,13 @@ function preflightNormalSummon(request) {
     return fail('Only ordinary level 1..4 monsters without tributes are supported');
   }
   const eligibility = nativeSummonEligible(side, card) >>> 0;
-  if ((eligibility & 1) === 0) {
-    return {allowed: false, eligibility, detail: 'Engine rejects normal face-up summon'};
+  // Independent flags in FUN_005AAB90: bit 0 face-up summon, bit 4 set.
+  const eligibilityMask = request.kind === 'set' ? 0x10 : 0x01;
+  if ((eligibility & eligibilityMask) === 0) {
+    return {allowed: false, eligibility, eligibilityMask,
+      detail: request.kind === 'set' ?
+        'Engine rejects normal face-down set' :
+        'Engine rejects normal face-up summon'};
   }
   const selectedSlot = nativeFindMonsterSlot(side) >>> 0;
   if (selectedSlot >= 5) {
@@ -296,8 +303,11 @@ function preflightNormalSummon(request) {
     return {allowed: false, eligibility, selectedSlot,
       detail: 'Selected monster slot is no longer permitted'};
   }
-  return {allowed: true, eligibility, selectedSlot, cardIndex: card & 0xFFF,
-    handIndex: request.handIndex, levelClass, detail: 'Native preflight approved'};
+  return {allowed: true, eligibility, eligibilityMask, selectedSlot,
+    playerFlags, normalSummonUsed: false, cardIndex: card & 0xFFF,
+    handIndex: request.handIndex, levelClass,
+    detail: request.kind === 'set' ?
+      'Native set preflight approved' : 'Native summon preflight approved'};
 }
 
 // Only called synchronously from Interceptor.onLeave for 0x005BC700,
@@ -309,7 +319,8 @@ function servicePendingConsoleAction() {
   if (!installed || pendingConsoleAction === null) return;
   if (!queueGate().idle) return;
   // Queue idle does not necessarily mean placement is idle between ticks.
-  if (pendingConsoleAction.kind === 'summon' &&
+  if ((pendingConsoleAction.kind === 'summon' ||
+       pendingConsoleAction.kind === 'set') &&
       (kPlacementStage.readU16() & 1) !== 0) return;
   const request = pendingConsoleAction;
   pendingConsoleAction = null;
@@ -332,20 +343,22 @@ function servicePendingConsoleAction() {
         return;
       }
       accepted = manualDestroyOnDuelThread(request.side, request.slot, request.expectedWord);
-    } else if (request.kind === 'summon') {
-      const preflight = preflightNormalSummon(request);
+    } else if (request.kind === 'summon' || request.kind === 'set') {
+      const preflight = preflightNormalPlacement(request);
       if (request.checkOnly || !preflight.allowed) {
         lastConsoleAction = {...request, ...preflight,
           state: request.checkOnly ? 'checked' : 'rejected'};
         return;
       }
       // The original engine is responsible for all later placement ticks.
+      const mode = request.kind === 'set' ? 0 : 1;
       nativeSummonBuilder(request.side, request.handIndex,
-        preflight.selectedSlot, 0, 1);
-      // Same turn-consumption flag as the game's player/AI callsites.
+        preflight.selectedSlot, 0, mode);
+      // Both operations consume the shared normal-summon bit 17.
       nativePlayerFlagEmitter(request.side, 0x11, 1);
-      lastConsoleAction = {...request, ...preflight, state: 'submitted',
-        detail: 'Native builder invoked; verify eventual field state with diff'};
+      lastConsoleAction = {...request, ...preflight, mode, state: 'submitted',
+        detail: 'Native ' + request.kind +
+          ' builder invoked; verify eventual field state with diff'};
       return;
     } else {
       throw new Error('Invalid pending console action');
@@ -417,18 +430,26 @@ function queueConsoleDestroy(side, slot) {
     expectedWord, expectedIndex: expectedWord & 0xFFF});
 }
 
-function queueConsoleSummon(side, index, checkOnly = false) {
-  if (side !== 1 || !Number.isInteger(index) || index < 0 || index >= 80 ||
+function queueConsoleMonsterPlacement(kind, side, index, checkOnly) {
+  if ((kind !== 'summon' && kind !== 'set') || side !== 1 ||
+      !Number.isInteger(index) || index < 0 || index >= 80 ||
       typeof checkOnly !== 'boolean') {
-    throw new Error('Use summon [check] 1 <handIndex 0..79>; player side only');
+    throw new Error('Use summon/set [check] 1 <handIndex 0..79>; player side only');
   }
+  // Snapshot at RPC time; validate same identity again on the duel thread.
   const count = handCount(side);
   if (count > 80 || index >= count) throw new Error('Selected hand index is not present');
   const card = handWord(side, index);
   if ((card & 0xFFF) === 0) throw new Error('Selected hand card is empty');
-  return stageConsoleAction({kind: 'summon', side, handIndex: index,
+  return stageConsoleAction({kind, side, handIndex: index,
     expectedHandCount: count, expectedWord: card, expectedIndex: card & 0xFFF,
     checkOnly});
+}
+function queueConsoleSummon(side, index, checkOnly = false) {
+  return queueConsoleMonsterPlacement('summon', side, index, checkOnly);
+}
+function queueConsoleSet(side, index, checkOnly = false) {
+  return queueConsoleMonsterPlacement('set', side, index, checkOnly);
 }
 
 function cancelPendingConsoleAction() {
@@ -780,6 +801,7 @@ rpc.exports = {
   queuedamage: queueConsoleDamage,
   queuedestroy: queueConsoleDestroy,
   queuesummon: queueConsoleSummon,
+  queueset: queueConsoleSet,
   canceldraw: cancelPendingConsoleAction,
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
