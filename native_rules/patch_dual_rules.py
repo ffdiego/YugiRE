@@ -264,7 +264,14 @@ def handle_command(command: str, api: object, default_side: int,
                   "(side, zero-based monster slot)", flush=True)
             return True
         side, slot = int(parts[1]), int(parts[2])
-        queued = api.queuedestroy(side, slot)
+        try:
+            queued = api.queuedestroy(side, slot)
+        except Exception as error:
+            if "Target monster slot is empty" in str(error):
+                print(f"[console] Side {side} monster slot {slot} is empty; "
+                      "nothing was queued.", flush=True)
+                return True
+            raise
         print(f"[console] Destruction request {queued['id']} pending: "
               f"side {side}, monster slot {slot}, "
               f"index {queued['expectedIndex']}. "

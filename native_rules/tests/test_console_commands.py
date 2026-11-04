@@ -104,6 +104,14 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertTrue(self.invoke(command))
         self.assertEqual(len(self.api.destroys), 2)
 
+    def test_destroy_empty_slot_is_reported_without_rpc_traceback(self):
+        class EmptyApi(FakeApi):
+            def queuedestroy(self, side, slot):
+                raise RuntimeError("Error: Target monster slot is empty\\n at queueConsoleDestroy")
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertTrue(handle_command("destroy 0 4", EmptyApi(), 1))
+        self.assertIn("is empty; nothing was queued", output.getvalue())
+
     def test_state_and_diff_baseline(self):
         cache = {}
         with redirect_stdout(io.StringIO()) as stdout:
