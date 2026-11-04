@@ -3,6 +3,8 @@
 Requirements: pe_preflight.py in this directory and Python with the Frida package.
 The original Joey EXE SHA256 is checked against the *loaded* process module.
 Only the primary callback pointers of resources 342 and 1007 are modified.
+Without flags, automatically locates Joey and uses the validated draw-five
+Sparks and damage-plus-draw Raimei effects (400 LP).
 Both pointer slots are restored at the end; the DLL stays loaded until Joey
 exits to avoid dangling code addresses. Never attach two patchers at once.
 """
@@ -159,22 +161,53 @@ def handle_command(command: str, api: object, default_side: int,
     return True
 
 
-def main() -> int:
+def resolve_joey_pid(device: object, explicit_pid: int | None = None) -> int:
+    """Return the unique running joey_pc.exe PID, without guessing if ambiguous."""
+    if explicit_pid is not None:
+        if explicit_pid <= 0:
+            raise ValueError("--pid must be a positive process ID")
+        return explicit_pid
+
+    processes = device.enumerate_processes()
+    matches = sorted(
+        {process.pid for process in processes
+         if process.name.casefold() == "joey_pc.exe"}
+    )
+    if not matches:
+        raise ValueError(
+            "joey_pc.exe is not running. Start Joey and try again."
+        )
+    if len(matches) > 1:
+        candidates = ", ".join(str(pid) for pid in matches)
+        raise ValueError(
+            f"Multiple joey_pc.exe processes found (PIDs: {candidates}). "
+            "Choose one with --pid <number>."
+        )
+    return matches[0]
+
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--pid", type=int, required=True, help="PID of joey_pc.exe")
+    parser.add_argument("--pid", type=int, default=None,
+                        help="Optional PID override when multiple Joey processes exist")
     parser.add_argument("--dll", type=Path, default=DEFAULT_DLL,
                         help="32-bit Windows yugire_rules.dll built by Visual Studio")
     parser.add_argument("--sparks", type=damage_type, default=200,
                         help="Sparks LP damage, 1..9999 (default: 200)")
-    parser.add_argument("--raimei", type=damage_type, default=300,
-                        help="Raimei LP damage, 1..9999 (default: 300)")
-    parser.add_argument("--sparks-mode", choices=tuple(MODES), default="damage",
-                        help="Sparks effect: damage, draw or damage-draw (default: damage)")
-    parser.add_argument("--raimei-mode", choices=tuple(MODES), default="damage",
-                        help="Raimei effect: damage, draw or damage-draw (default: damage)")
+    parser.add_argument("--raimei", type=damage_type, default=400,
+                        help="Raimei LP damage, 1..9999 (default: 400)")
+    parser.add_argument("--sparks-mode", choices=tuple(MODES), default="draw",
+                        help="Sparks effect: damage, draw or damage-draw (default: draw)")
+    parser.add_argument("--raimei-mode", choices=tuple(MODES), default="damage-draw",
+                        help="Raimei effect: damage, draw or damage-draw (default: damage-draw)")
     parser.add_argument("--console-side", type=int, choices=(0, 1), default=1,
                         help="Default side for 'draw 5' (1 = player, 0 = CPU in tested local duel)")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
     dll_path = args.dll.resolve()
 
     try:
@@ -190,8 +223,9 @@ def main() -> int:
     script = None
     exit_code = 0
     try:
-        print(f"[dual-rules] Attaching to Joey PID {args.pid}", flush=True)
-        session = frida.attach(args.pid)
+        joey_pid = resolve_joey_pid(frida.get_local_device(), args.pid)
+        print(f"[dual-rules] Attaching to joey_pc.exe PID {joey_pid}", flush=True)
+        session = frida.attach(joey_pid)
         source = (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8")
         script = session.create_script(source)
         script.on("message", lambda message, data:

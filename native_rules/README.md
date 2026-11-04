@@ -70,21 +70,24 @@ A pasta `.venv-frida` e os binários de compilação não são versionados.
 ## Executar em um duelo normal
 
 Reinicie o Joey antes de testar uma DLL recém-compilada e aguarde a
-inicialização de um duelo. No diretório `native_rules`:
+inicialização de um duelo. No diretório `native_rules`, basta:
 
 ```powershell
-$joeyPid = (Get-Process joey_pc).Id
-
-.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py `
-    --pid $joeyPid `
-    --sparks-mode draw `
-    --raimei-mode damage-draw `
-    --raimei 400
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py
 ```
 
-Valores originais por padrão: `--sparks 200 --raimei 300`. Os danos podem
-ser números inteiros entre 1 e 9999. Cada carta aceita `--sparks-mode` ou
-`--raimei-mode` com `damage`, `draw` ou `damage-draw`.
+Ou `python .\patch_dual_rules.py` se o Python ativo já tiver Frida.
+O script localiza automaticamente **um único processo `joey_pc.exe`**.
+Se Joey não estiver aberto, retorna uma mensagem clara. Se houver mais
+de uma instância, não escolhe aleatoriamente: lista os PIDs e solicita
+`--pid <número>` para desambiguar.
+
+Sem parâmetros, os efeitos padrão são **Sparks = comprar 5**, sem dano,
+e **Raimei = 400 LP de dano + comprar 5**. O lado padrão de `draw 5`
+é 1 (jogador, no duelo CPU testado). As opções anteriores continuam
+disponíveis para experimentos futuros: `--sparks`, `--raimei`,
+`--sparks-mode`, `--raimei-mode`, `--console-side`, `--pid`
+e `--dll`. Os danos permitidos permanecem de 1 a 9999 LP.
 
 | Carta | Exemplo de efeito |
 |---|---|
@@ -194,6 +197,7 @@ Execute a partir de `native_rules`:
 python .\tests\test_catalog.py
 python .\tests\test_damage_limits.py
 python .\tests\test_console_commands.py
+python .\tests\test_process_selection.py
 node .\tests\test_loader.cjs
 ctest --test-dir .\build-vs2026 -C Release --output-on-failure
 ```
