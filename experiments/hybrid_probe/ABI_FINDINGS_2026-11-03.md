@@ -116,3 +116,19 @@ O listing de `docs/evidence/parasite-callback-dispatch.txt` mostra no dispatcher
 ```
 
 Assim, **esse ponto de chamada** utiliza duas palavras/pointers de 32 bits na pilha, limpeza pelo chamador (compatível com `__cdecl` x86), retornando um valor efetivo de 16 bits no wrapper. É uma base suficiente para projetar uma função de ponteiro substituta de baixo risco, mas ainda não assegura compatibilidade com todos os outros slots, chamadas fora desse dispatcher ou semântica dos dois argumentos. Antes de substituir um ponteiro na tabela, planejar retorno/restauração no detach; caso contrário, o jogo pode chamar código descarregado.
+
+
+## Quinta captura — Jam Breeding Machine no dispatcher principal (2026-11-04)
+
+Nova sessão Frida do operador no processo `joey_pc.exe` PID 25580, base `0x00400000`, usando `joey_all_primary_callbacks.js` com catálogo de nomes. O log terminou com **21 chamadas ao dispatcher em 12 índices**; todos os pedidos relatados foram legíveis. Essas contagens são do intervalo instrumentado, não de toda a partida.
+
+- **Jam Breeding Machine:** índice interno **457**, ID recurso **1426**; **1 chamada**, `returnLow16=0x0000`, sem alterações nos 20 bytes do pedido pelo wrapper. Bytes da entrada: `c9011380a1070000000000000000000000000000`.
+- **Gravity Bind:** índice **244**, ID recurso **1323**; **1 chamada**, `returnLow16=0x0000` e pedido inalterado.
+- **Aqua Chorus:** índice **11**, ID recurso **1178**; **1 chamada**, `returnLow16=0x0000` e pedido inalterado.
+- Os três registros têm callback principal compartilhado **0x00583F30**, cujo corpo observado é apenas `xor ax, ax; ret`. Portanto **esse corpo específico não cria tokens nem agenda comandos por si só**.
+
+Interpretação: a passagem de Jam Breeding Machine pelo dispatcher principal está **comprovada**. A emissão recorrente dos tokens deve passar por outra função ou mecanismo, ou ao menos não é implementada pelo corpo de quatro bytes de `0x00583F30`. O baseline externo anterior registrou 20 entradas distintas do índice de monstro 1114, mas essa captura do Frida não registrou diretamente tokens ou instantes de Standby; não alegar correlação temporal estrita entre eventos de sessões diferentes.
+
+**Próxima investigação recomendada**: no Ghidra procurar xrefs de ID de recurso `1426 / 0x592`, índice interno `457 / 0x1C9` (cuidado: constantes podem ser genéricas), e o caminho de criação do token/índice `1114` durante o agendador de fases `docs/20-turn-scheduling.md`. Localizar o teste de espaço nas cinco zonas, o produtor de comandos e a função que itera cartas contínuas. Registrar evidência do fluxo e só então escolher esse código como alvo de substituição semântica.
+
+**O protótipo `patch_jam_breeding.py` e `jam_primary_replacement.js` continua experimental e não está validado no Windows; não executar ainda.** Mesmo um patch equivalente no slot do callback principal somente demonstra redirecionamento técnico, não substituição do efeito recorrente.
