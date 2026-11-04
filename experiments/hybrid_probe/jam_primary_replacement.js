@@ -31,10 +31,10 @@ const EXPECTED_POINTER = main.base.add(EXPECTED_PRIMARY_VA.sub(DOC_BASE));
 
 const kernelVirtualAlloc = new NativeFunction(
   Module.getGlobalExportByName('VirtualAlloc'),
-  'pointer', ['pointer', 'uint32', 'uint32', 'uint32']);
+  'pointer', ['pointer', 'uint32', 'uint32', 'uint32'], 'stdcall');
 const kernelVirtualProtect = new NativeFunction(
   Module.getGlobalExportByName('VirtualProtect'),
-  'bool', ['pointer', 'uint32', 'uint32', 'pointer']);
+  'bool', ['pointer', 'uint32', 'uint32', 'pointer'], 'stdcall');
 
 let stub = null;
 let counterAddress = null;
