@@ -103,3 +103,12 @@ No diretório \`experiments/hybrid_probe/.venv-frida\`:
 Substitua o PID atual do Joey. Salve o texto de \`ready_all_cards\`, \`card_seen\`, \`card_callback\` e \`summary\` para comparação com o catálogo do repositório. O script ainda necessita validação de execução no Windows.
 
 Este observador **não vê monstros normais, nem cartas cujos efeitos sejam tratados por código global sem passar pelo callback principal**, e não demonstra que todo nome carregado na RAM corresponde a um nome válido. Também não resolve a hipótese de recompilação automática ou substituição seletiva; seu papel é facilitar a identificação do contrato do dispatcher e escolher a próxima função pequena a investigar.
+
+
+## Resultado da quarta captura e nomes das cartas (2026-11-03)
+
+O observador genérico registrou **169 chamadas ao dispatcher**, distribuídas entre **17 índices internos**, todos reconhecidos pelo catálogo estático. Entretanto, o código que tentava ler o nome de uma região presumida da RAM retornou `None` em todas as cartas. Esse endereço/layout não foi validado e foi **removido** do script.
+
+O `joey_all_primary_callbacks.js` atualizado agora contém um mapa estático para **439 índices com nomes**, derivado de `docs/evidence/card-callback-catalog.json`, incluindo nome, ID de recurso e endereço do callback principal. Isso evita depender de uma hipótese de endereço em memória e preserva índices ainda sem nome. Depois de atualizar a branch com `git pull`, as novas mensagens `card_seen` e `summary` devem exibir nomes das cartas presentes no catálogo. Não precisamos repetir longas sessões para validar o funcionamento do dispatcher; esse ajuste melhora apenas os rótulos.
+
+Também foi confirmado pelo listing do próprio repositório que o wrapper `0x0059DEB0` chama os callbacks via dois argumentos na pilha e limpa oito bytes após a chamada, preservando 16 bits baixos do retorno. Ver `ABI_FINDINGS_2026-11-03.md` para a evidência e os cuidados com experimentos de substituição.
