@@ -29,8 +29,9 @@ const kDamageEmitter = va('0x005784E0');
 const kDrawEmitter = va('0x00578B60'); // FUN_00578B60(side, count)
 const kDestroyEffect = va('0x00576960'); // FUN_00576960(request, mask, 14, 2)
 const kInitMagic = 0x59554735; // YUG5
-const kAbiVersion = 5;
-const kSnapshotBytes = 88; // Two PlayerSnapshot structs, 11 DWORDs each
+const kAbiVersion = 6;
+const kSnapshotPlayerWords = 108; // six scalars, 5+6 slots, 11 positions, 80 hand
+const kSnapshotBytes = kSnapshotPlayerWords * 4 * 2;
 
 // The console command does NOT call Joey from Frida's RPC thread. A short
 // request is staged here and consumed on the original duel update thread.
@@ -308,16 +309,22 @@ function duelState() {
     throw new Error('The DLL refused the duel-state snapshot');
   }
   const sides = [0, 1].map(side => {
-    const offset = side * 44;
+    const offset = side * kSnapshotPlayerWords * 4;
     const word = n => buffer.add(offset + n * 4).readU32();
+    const series = (start, count) => Array.from({length: count}, (_, i) => word(start+i));
+    const handCount = word(1);
     return {
-      side, lifePoints: word(0), handCount: word(1), deckCount: word(2),
+      side, lifePoints: word(0), handCount, deckCount: word(2),
       graveyardCount: word(3), banishedCount: word(4),
       terminalFlags: word(5),
-      monsterIndices: [word(6), word(7), word(8), word(9), word(10)]
+      monsterIndices: series(6, 5),
+      otherFieldIndices: series(11, 6),
+      fieldPositionWords: series(17, 11),
+      handIndices: series(28, Math.min(handCount, 80)),
+      handTruncated: handCount > 80
     };
   });
-  return {sides, note: 'Non-atomic read; monster indices are internal, not resource IDs'};
+  return {sides, note: 'Non-atomic read; internal card indices. Physical slots 5..10 have provisional UI mapping.'};
 }
 
 function status() {

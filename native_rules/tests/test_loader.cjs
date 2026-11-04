@@ -95,7 +95,7 @@ function fixture(options = {}) {
       if(entry==='YugiRE_Initialize')return (_base,s,o,sm,rm)=>{
         config=[s,o];modes=[sm,rm];return 0x59554735;
       };
-      if(entry==='YugiRE_GetAbiVersion')return ()=>5;
+      if(entry==='YugiRE_GetAbiVersion')return ()=>6;
       if(entry==='YugiRE_GetCallCount')return ()=>0;
       if(entry==='YugiRE_GetEmitCount')return ()=>0;
       if(entry==='YugiRE_GetConfiguredDamage')return (id)=> id===342?config[0] : config[1];
@@ -120,11 +120,15 @@ function fixture(options = {}) {
       };
       if(entry==='YugiRE_GetConsoleDestroyCount')return ()=>destroyCalls;
       if(entry==='YugiRE_ReadDuelState')return (_base,out)=>{
-        const values=[
-          8000,4,27,1,0,0,727,0,0,0,0,
-          7600,6,22,2,1,0x100,0,503,0,0,0
-        ];
-        values.forEach((value,i)=>out.add(i*4).writeU32(value));
+        const cpu=Array(108).fill(0), player=Array(108).fill(0);
+        cpu.splice(0,11,8000,4,27,1,0,0,727,0,0,0,0);
+        cpu[11]=342; cpu[16]=1007;
+        cpu[22]=2; cpu[27]=3;
+        cpu.splice(28,4,323,444,555,666);
+        player.splice(0,11,7600,6,22,2,1,0x100,0,503,0,0,0);
+        player[11]=501; player[16]=907;
+        player.splice(28,6,101,102,103,104,105,106);
+        [...cpu,...player].forEach((value,i)=>out.add(i*4).writeU32(value));
         return 1;
       };
       throw Error('Should not call callback directly from JS');
@@ -222,7 +226,7 @@ for(const invalid of [-1,0,4,5,2.5,'2',NaN,Infinity,null]){
     assert.equal(fixtureBad.memory.get(fixtureBad.raimei),fixtureBad.original);
   }
 }
-console.log('PASS: ABI 5, independent modes, invalid-mode rejection and restore');
+console.log('PASS: ABI 6, independent modes, invalid-mode rejection and restore');
 
 
 // Manual draw is staged by RPC, then executed ONLY on the duel scheduler
@@ -298,6 +302,13 @@ assert.equal(snapshot.sides[1].lifePoints,7600);
 assert.equal(snapshot.sides[1].handCount,6);
 assert.equal(snapshot.sides[1].terminalFlags,0x100);
 assert.equal(snapshot.sides[1].monsterIndices[1],503);
+assert.equal(snapshot.sides[0].otherFieldIndices[0],342);
+assert.equal(snapshot.sides[0].otherFieldIndices[5],1007);
+assert.equal(snapshot.sides[0].fieldPositionWords[5],2);
+assert.equal(snapshot.sides[0].fieldPositionWords[10],3);
+assert.equal(snapshot.sides[0].handIndices.length,4);
+assert.equal(snapshot.sides[1].handIndices.length,6);
+assert.equal(snapshot.sides[1].handIndices[0],101);
 
 const queuedDamage=lab.api.queuedamage(0,1200);
 assert.equal(queuedDamage.kind,'damage');
