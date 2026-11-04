@@ -340,8 +340,9 @@ implementação de `summon`, `set` e `discard`.
 
 ### Probe passivo da preparação de summon/set
 
-Após `trace on`, use `trace prep on` para ativar quatro hooks
+Após `trace on`, use `trace prep on` para ativar **cinco** hooks
 adicionais de **leitura**: `0x005AAB90` (elegibilidade),
+`0x005AD740` (**construtor da invocação normal/set**),
 `0x005AB820` (despacho), `0x005ABD00` (colocação)
 e `0x005AC870` (ajuste de contexto). Nenhum altera o jogo.
 
@@ -361,9 +362,15 @@ trace dump
 O JSONL recebe eventos `kind=summon_prep` com `phase=enter/leave`,
 `callId`, nome da função, thread, retorno bruto, e snapshots dos
 globais `0x00A55080/84/8E`, fase, turno, tamanho da fila e flags
-dos dois jogadores (`0x00A56430 + lado*0xD44`). Só para a função
-`0x005AAB90` são lidos dois argumentos brutos. O retorno não é
-interpretado como verdadeiro/falso sem uma análise mais específica.
+dos dois jogadores (`0x00A56430 + lado*0xD44`). Para `0x005AAB90` são lidos dois argumentos brutos; para o
+construtor `0x005AD740`, os **cinco argumentos brutos**, mais
+`builderIntent` com `side, handIndex, fieldSlot, tributeData,
+modeRaw, modeCandidate`. O modo é `0=set` e `!=0=summon`
+nos caminhos normais identificados; efeitos podem sobrescrever
+flags. `state.auxFlags` registra `DAT_00A5508C` (16 bits).
+O evento de saída permite comparar o estado antes/depois
+da preparação sem alterar nada. Valores de retorno de rotinas
+`void` não devem ser interpretados como sucesso/falha.
 
 O hook do despachante é filtrado: registra apenas estágio ativo no
 modo 1, evitando centenas de amostras de ticks vazios. Os demais
@@ -372,10 +379,12 @@ entram no mesmo buffer circular de `trace on`, então `trace off`,
 `trace dump` e `stop` removem os hooks de preparação antes da exportação.
 Falha de instalação remove os hooks parcialmente instalados.
 
-**Limite:** isso observa etapas já conhecidas do fluxo, mas não
-identifica automaticamente todas as instruções que **escrevem**
-`DAT_00A55080`. Para encontrar o construtor inicial, precisamos
-das referências de escrita no Ghidra e de capturas reais do probe.
+**Limite:** `0x005AD740` monta o descritor e inicia a operação,
+mas **não verifica sozinho** se a invocação é legal. Nenhum
+`summon`/`set` ativo foi adicionado. Já identificamos seu chamador
+no controlador de jogada `0x0059DF40` e no caminho de IA
+`0x005B6FF0`; a validação dessas chamadas continua pendente.
+Veja [análise do construtor](../docs/evidence/summon-builder-contract-2026-11-04.md).
 
 ### Validação em duelo: segundo slot e Field Zone
 

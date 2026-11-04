@@ -26,6 +26,18 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Construtor normal identificado: FUN_005AD740
+
+Novo relatório Ghidra confirmou que `FUN_005AD740(side,handIndex,
+fieldSlot,tributeData,mode)` monta o contexto normal de summon/set
+(`0x4000` para summon, `0x8000` para set), busca a carta na mão,
+preenche `DAT_00A55084` e inicia a máquina de estados com
+`FUN_005AD8C0`. Chamadores encontrados:
+`FUN_0059DF40` (três callsites) e `FUN_005B6FF0` (um).
+A rotina prepara a operação, **não contém todas as validações**.
+Veja [contrato do construtor](evidence/summon-builder-contract-2026-11-04.md).
+O probe passivo já inclui `FUN_005AD740`.
+
 ## Resultado: preparação de summon e set (2026-11-04)
 
 Capturas de `trace prep on` indicam `FUN_005AAB90` retornando

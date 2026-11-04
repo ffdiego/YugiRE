@@ -45,10 +45,14 @@ const kCeCallsiteReturn = va('0x005ABEAB');
 const kPlacementContext = va('0x00A55080');
 const kPlacementSource = va('0x00A55084');
 const kPlacementStage = va('0x00A5508E');
+const kPlacementAuxFlags = va('0x00A5508C');
 // Read-only observation of the normal summon/tribute path, based on
 // docs/evidence/normal-summon-{level-consumers,tribute-context,...}.
 const kSummonPrepTargets = [
   {name: 'eligibility', va: '0x005AAB90', address: va('0x005AAB90'), argCount: 2},
+  // Ghidra 2026-11-04: FUN_005AD740(side, handIndex, slot, tributeData, mode).
+  // This builds the normal summon/set descriptor but does not validate legality.
+  {name: 'normal_builder', va: '0x005AD740', address: va('0x005AD740'), argCount: 5},
   {name: 'dispatcher', va: '0x005AB820', address: va('0x005AB820'), argCount: 0},
   {name: 'placement', va: '0x005ABD00', address: va('0x005ABD00'), argCount: 0},
   {name: 'adjust', va: '0x005AC870', address: va('0x005AC870'), argCount: 0}
@@ -369,6 +373,7 @@ function readSummonPrepState() {
       context: kPlacementContext.readU32(),
       source: kPlacementSource.readU32(),
       stage: kPlacementStage.readU16(),
+      auxFlags: kPlacementAuxFlags.readU16(),
       turnFlags: kDuelFlags.readU32(),
       duelPhaseRaw: kSummonDuelPhase.readU8(),
       playerFlags: [kSummonPlayerFlags.readU32(),
@@ -424,8 +429,23 @@ function startSummonPrepProbe() {
             threadId: Process.getCurrentThreadId(),
             caller: this.returnAddress.toString(), state
           };
-          if (target.argCount === 2) {
-            event.argsRaw = [args[0].toUInt32(), args[1].toUInt32()];
+          if (target.argCount > 0) {
+            event.argsRaw = Array.from({length: target.argCount},
+              (_, i) => args[i].toUInt32());
+          }
+          if (target.name === 'normal_builder') {
+            // Meaning of these five arguments is supported by the Ghidra
+            // builder body. Raw values retained for unusual duel effects.
+            const [sideRaw, handIndexRaw, fieldSlotRaw, tributeData, modeRaw] = event.argsRaw;
+            event.builderIntent = {
+              side: sideRaw & 1,
+              handIndex: handIndexRaw & 0xFF,
+              fieldSlot: fieldSlotRaw | 0,
+              tributeData,
+              modeRaw,
+              modeCandidate: modeRaw === 0 ? 'set' : 'summon',
+              fieldSlotValid: (fieldSlotRaw | 0) >= 0 && (fieldSlotRaw | 0) < 5
+            };
           }
           recordTraceEvent(event);
         },

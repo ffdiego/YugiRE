@@ -76,7 +76,7 @@ function fixture(options = {}) {
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
         p.n === 0x005BC700 || p.n === 0x00576960 ||
         p.n === 0x005B9170 ||
-        [0x005AAB90,0x005AB820,0x005ABD00,0x005AC870].includes(p.n) ||
+        [0x005AAB90,0x005AD740,0x005AB820,0x005ABD00,0x005AC870].includes(p.n) ||
         p.n >= 0x20000000)
         ? 'r-x' : 'r--'}; },
     },
@@ -94,7 +94,7 @@ function fixture(options = {}) {
           traceHandler = callbacks.onEnter;
           return {detach(){traceHandler=null;}};
         }
-        if ([0x005AAB90,0x005AB820,0x005ABD00,0x005AC870].includes(address.n)) {
+        if ([0x005AAB90,0x005AD740,0x005AB820,0x005ABD00,0x005AC870].includes(address.n)) {
           if (options.failPrepAttachAt === address.n) throw new Error('Simulated prep attach fault');
           assert.equal(prepHandlers.has(address.n), false);
           prepHandlers.set(address.n, callbacks);
@@ -513,10 +513,16 @@ assert.throws(()=>prepFixture.api.traceprepstart(),/Start trace on/);
 prepFixture.api.tracestart(64);
 let prepStatus=prepFixture.api.traceprepstart();
 assert.equal(prepStatus.prepActive,true);
-assert.equal(prepStatus.prepHooks,4);
-assert.equal(prepFixture.prepCount(),4);
+assert.equal(prepStatus.prepHooks,5);
+assert.equal(prepFixture.prepCount(),5);
 assert.throws(()=>prepFixture.api.traceprepstart(),/already active/);
 prepFixture.prepCall(0x005AAB90,[1,705],0x11);
+prepFixture.prepCall(0x005AD740,[1,4,1,0,1],0,()=>{
+  prepFixture.memory.set(0x00A55080,0x4103);
+  prepFixture.memory.set(0x00A55084,705);
+  prepFixture.memory.set(0x00A5508E,5);
+  prepFixture.memory.set(0x00A5508C,2);
+});
 let prepEvents=prepFixture.api.traceevents; // not permitted while trace active
 assert.throws(()=>prepEvents(0,1),/Stop trace/);
 // Dispatcher idle should not create events.
@@ -533,20 +539,53 @@ assert.equal(prepFixture.api.tracestop().prepActive,false);
 assert.equal(prepFixture.prepCount(),0);
 assert.equal(prepFixture.traceActive(),false);
 prepEvents=prepFixture.api.traceevents(0,20);
-assert.equal(prepEvents.length,6); // 3 function invocations, paired enter/leave
+assert.equal(prepEvents.length,8); // 4 function invocations, paired enter/leave
 assert.equal(prepEvents[0].function,'eligibility');
 assert.equal(prepEvents[0].argsRaw[0],1);
 assert.equal(prepEvents[0].argsRaw[1],705);
 assert.equal(prepEvents[1].returnRaw,0x11);
 assert.equal(prepEvents[0].callId,prepEvents[1].callId);
-assert.equal(prepEvents[2].function,'dispatcher');
-assert.equal(prepEvents[2].state.context,0x4103);
-assert.equal(prepEvents[2].state.source,705);
-assert.equal(prepEvents[2].state.stage,0x25);
-assert.equal(prepEvents[3].state.stage,0x45);
-assert.equal(prepEvents[4].function,'placement');
-assert.equal(prepEvents[5].phase,'leave');
-assert.equal(prepFixture.api.tracestatus().retained,6);
+assert.equal(prepEvents[2].function,'normal_builder');
+assert.equal(prepEvents[2].argsRaw.length,5);
+assert.equal(prepEvents[2].builderIntent.side,1);
+assert.equal(prepEvents[2].builderIntent.handIndex,4);
+assert.equal(prepEvents[2].builderIntent.fieldSlot,1);
+assert.equal(prepEvents[2].builderIntent.tributeData,0);
+assert.equal(prepEvents[2].builderIntent.modeCandidate,'summon');
+assert.equal(prepEvents[2].state.context,0x4001); // previous descriptor
+assert.equal(prepEvents[3].state.context,0x4103);
+assert.equal(prepEvents[3].state.source,705);
+assert.equal(prepEvents[3].state.stage,5);
+assert.equal(prepEvents[3].state.auxFlags,2);
+assert.equal(prepEvents[4].function,'dispatcher');
+assert.equal(prepEvents[4].state.context,0x4103);
+assert.equal(prepEvents[4].state.source,705);
+assert.equal(prepEvents[4].state.stage,0x25);
+assert.equal(prepEvents[5].state.stage,0x45);
+assert.equal(prepEvents[6].function,'placement');
+assert.equal(prepEvents[7].phase,'leave');
+assert.equal(prepFixture.api.tracestatus().retained,8);
+// The builder also covers set, including a slot destination other than 0.
+prepFixture.api.tracestart(32);
+prepFixture.api.traceprepstart();
+prepFixture.prepCall(0x005AD740,[1,0,1,0,0],0,()=>{
+  prepFixture.memory.set(0x00A55080,0x8003);
+  prepFixture.memory.set(0x00A55084,261);
+  prepFixture.memory.set(0x00A5508E,5);
+});
+prepFixture.api.tracestop();
+const setBuilder=prepFixture.api.traceevents(0,8);
+assert.equal(setBuilder.length,2);
+assert.equal(setBuilder[0].builderIntent.modeCandidate,'set');
+assert.equal(setBuilder[0].builderIntent.handIndex,0);
+assert.equal(setBuilder[0].builderIntent.fieldSlot,1);
+assert.equal(setBuilder[1].state.context,0x8003);
+// Builder with invalid slot must be only observed, never executed/queued.
+prepFixture.api.tracestart(32);
+prepFixture.api.traceprepstart();
+prepFixture.prepCall(0x005AD740,[1,0,0xFFFFFFFF,0,0],0);
+prepFixture.api.tracestop();
+assert.equal(prepFixture.api.traceevents(0,2)[0].builderIntent.fieldSlotValid,false);
 // Verify explicitly turning prep off preserves plain command tracing.
 prepFixture.api.tracestart(32);
 prepFixture.api.traceprepstart();

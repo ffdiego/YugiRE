@@ -88,6 +88,15 @@ descritor a outra função que o escreva indiretamente.
 indiretas. Nenhuma dessas funções pode ser declarada a
 entrada principal sem examinar decompilação, callers e execução.
 
+## Resolução posterior: construtor normal identificado
+
+O relatório `summon-descriptor-builders.txt` revelou que
+`FUN_005AD740` monta explicitamente a colocação normal
+da mão, usa `param_5=0` para set e inicia a operação via
+`FUN_005AD8C0`. Os callsites incluem
+`FUN_0059DF40` e `FUN_005B6FF0`.
+Ver [análise específica](summon-builder-contract-2026-11-04.md).
+
 ## Próxima consulta no Ghidra
 
 ```powershell
