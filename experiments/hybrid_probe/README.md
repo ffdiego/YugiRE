@@ -44,3 +44,21 @@ Esse teste não demonstra que o motor inteiro pode ser recompilado nem que já �
 ## O que compartilhar depois
 
 Envie a saída JSON do preflight, as mensagens ready/counts do Frida e diga quais ações executou e se houve algum problema. Não é necessário enviar o executável. Para um estudo de recompilação automática, o próximo experimento deve testar lifting de uma função separadamente e avaliar as dependências.
+
+
+## 3. Próximo experimento após o teste de chamadas (2026-11-03)
+
+O operador confirmou preflight com SHA256 esperado, PE32 x86, base 0x00400000 e as três funções na seção .text. Frida 17.25.2 anexou em ia32 e registrou, ao longo da sessão, 123 chamadas ao callback primário, 690 chamadas ao enfileiramento de comandos e 128513 cálculos de atributos. Primeiras três chamadas ao callback primário retornaram de 0x005BBA7D; há evidência de um ponto comum de despacho, sem provar que cada invocação represente uma ativação de carta. Não foi relatada falha no log. A instrumentação (não a substituição) está validada nessa versão.
+
+A etapa seguinte é observar os **contratos das funções**, antes de usar DLL ou Interceptor.replace. O novo joey_abi_probe.js registra as primeiras 48 chamadas ao callback primário e as primeiras 48 chamadas ao produtor de comandos. Não instala hook em CalculateCardAttributes, que recebe chamadas demais para um experimento detalhado sem necessidade.
+
+No PowerShell, na pasta experiments/hybrid_probe, com a venv anterior já instalada e o jogo aberto:
+
+    Get-Process joey_pc
+    .\.venv-frida\Scripts\frida.exe -p 1234 -l .\joey_abi_probe.js
+
+Troque 1234 pelo PID real. Faça algumas ações de duelo e salve a saída do terminal. O script registra quatro words no pedido a partir do ponteiro em [ESP+4] no callback (layout parcialmente identificado estaticamente em docs/13-parasite-creation.md), seu segundo argumento bruto, o endereço de retorno e EAX no fim. Para o produtor de comandos registra quatro words de argumentos, o opcode base mascarado e o bit alto, sem inferir efeitos de cartas. A leitura do pedido é protegida por verificação de faixa legível; falhas são registradas, não corrigidas.
+
+A interpretação do primeiro word como índice de propriedades já está sustentada pela análise estática; identificar as outras words exige confrontar com o cenário e seguir os chamadores no Ghidra. Em especial, valores brutos de ECX e EDX da primeira prova não determinam a convenção de chamada.
+
+**Não há recompilação nem substituição de função neste estágio.** Instrumentação pode influenciar timing e exige a mesma cópia descartável do jogo. Uma substituição só deve ser tentada após confirmar ABI, retorno, side effects e ponteiros compartilhados de uma função de baixo risco.
