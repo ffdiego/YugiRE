@@ -156,3 +156,17 @@ Após o primeiro redirecionamento de Sparks (recurso 342, linha 66), que já hav
 Esse resultado é consistente com o stub nativo chamando `0x005784E0(destinatario, 200)`; junto com o contador e a checagem do slot, sustenta que o efeito passou pelo código substituto. Não prova equivalência completa em condições de negação, bloqueio, múltiplas instâncias ou todas as configurações de partida, nem se todo o estado/transcrição YDR corresponde bit a bit ao original.
 
 Para uma prova controlada de capacidade de alterar a regra, foi acrescentada a opção **`--damage 300`** no host `patch_sparks.py`, que modifica **somente o imediato PUSH 200 -> PUSH 300** no script de agente carregado em memória, após conferir exatamente a sequência de bytes pretendida. O padrão permanece **200 LP** sem alterar o JavaScript validado na primeira captura. Essa variante de 300 LP **ainda não foi executada pelo operador**. Antes do teste, fazer backup de saves; executar duelo normal, capturar LP antes/depois e contador; digitar `stop` para restaurar a função original.
+
+
+## Sétima captura — alteração funcional confirmada: Sparks 300 LP (2026-11-04)
+
+O operador confirmou que a variante do patch `patch_sparks.py --damage 300`, adicionada após a captura funcional original de 200 LP, foi executada em duelo real e que **o adversário perdeu 300 LP**, conforme configurado. Isso é a primeira validação dinâmica de **modificação semântica da regra de uma carta**: o mesmo redirecionamento seletivo na tabela de callbacks (somente registro de Sparks, ID de recurso 342) permite produzir um dano diferente do original por uma rotina x86 própria e pelo helper nativo de dano.
+
+Evidências acumuladas:
+
+1. `--damage 200`: registro de instalação, `callbackCalls=1`, restauração de ponteiro e confirmação visual do operador de perda de 200 LP.
+2. `--damage 300`: confirmação visual do operador de perda de **300 LP** na partida com a variante do patch.
+
+A confirmação do teste de 300 LP foi relatada sem log adicional de contador, restauração ou estado de RAM/YDR nessa mensagem; não atribuir valores ou afirmar restauração verificada para essa segunda execução. A alteração afeta somente uma entrada da tabela, não o código compartilhado de `0x00584E60` nem o executável em disco por intenção. **Conclusão limitada:** capacidade demonstrada de substituir e alterar o efeito de Sparks em um duelo normal. Não equivale a recompilação matching, validação de todas as cartas nem demonstração de robustez ante múltiplos turnos, replay, cancelamento ou interações raras.
+
+Próximo checkpoint sugerido: portar o stub para uma DLL x86 com ABI explícita e ponteiro restaurado no teardown, mantendo prova de equivalência 200 LP e alteração 300 LP como testes de regressão; documentar fronteiras de ownership de memória e funções auxiliares nativas antes de expandir para outros callbacks.
