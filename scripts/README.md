@@ -1,3 +1,21 @@
+## Decompilar construtores do descritor de summon/set
+
+O CSV gerado por `SummonDescriptorXrefs.java` identificou cinco
+candidatos que escrevem `0x00A55080`, `0x00A55084` e
+`0x00A5508E`. Para extrair o pseudocódigo e os callers usando
+o Ghidra já configurado no Windows, execute na raiz do repo:
+
+```powershell
+.\scripts\Run-ArchiveQuery.ps1 -Report summon-descriptor-builders.txt -Addresses @(
+  '005ad740','005ad960','005ada20','005adb10','005adbf0','005ad8c0'
+)
+```
+
+Resultado: `docs/evidence/summon-descriptor-builders.txt`.
+O último endereço é secundário: possui uma referência DATA ao
+ponteiro do descritor. Ver
+[análise das capturas](../docs/evidence/summon-prep-constructors-2026-11-04.md).
+
 ## Xrefs de preparação da invocação (Ghidra)
 
 Use [`SummonDescriptorXrefs.java`](SummonDescriptorXrefs.java) na

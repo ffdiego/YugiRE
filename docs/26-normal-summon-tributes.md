@@ -26,6 +26,16 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Resultado: preparação de summon e set (2026-11-04)
+
+Capturas de `trace prep on` indicam `FUN_005AAB90` retornando
+`0x11` antes de summon e set. O descritor permanece antigo ou vazio
+nesse momento e passa a estar ativo (`stage=0x0005`) antes do primeiro
+`FUN_005AB820`. Cinco funções Ghidra escrevem o trio
+`context/source/stage` e são candidatas a construtoras.
+Ver [relatório de investigação](evidence/summon-prep-constructors-2026-11-04.md).
+Esses dados ainda não constituem uma API segura para invocação externa.
+
 ## Checkpoint de investigação: estágio de preparação (probe passivo)
 
 A análise das rotinas já extraídas mostra uma separação:
