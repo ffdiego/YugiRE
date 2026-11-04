@@ -59,6 +59,17 @@ const kSummonPrepTargets = [
 ];
 const kSummonPlayerFlags = va('0x00A56430'); // includes 0x20000 normal-summon bit
 const kSummonDuelPhase = va('0x00A577FA');
+const kDuelRunning = va('0x00A577F8');
+const kHandCountBase = va('0x00A55D68');
+const kHandWordBase = va('0x00A56434');
+// Native engine entry points known from Ghidra (same executable SHA).
+const kSummonEligible = va('0x005AAB90');
+const kFindMonsterSlot = va('0x0056A030');
+const kSlotLegal = va('0x00569F70');
+const kMonsterIdentity = va('0x00402690');
+const kMonsterLevelClass = va('0x004026C0');
+const kNormalSummonBuilder = va('0x005AD740');
+const kPlayerFlagEmitter = va('0x00579930');
 const kTraceDefaultCapacity = 8192;
 const kTraceMaxCapacity = 20000;
 const kQueueCount = va('0x00A558A8');
@@ -105,6 +116,13 @@ let readNativeDuelState = null;
 let manualDrawOnDuelThread = null;
 let manualDamageOnDuelThread = null;
 let manualDestroyOnDuelThread = null;
+let nativeSummonEligible = null;
+let nativeFindMonsterSlot = null;
+let nativeSlotLegal = null;
+let nativeMonsterIdentity = null;
+let nativeMonsterLevelClass = null;
+let nativeSummonBuilder = null;
+let nativePlayerFlagEmitter = null;
 let duelUpdateHook = null;
 let pendingConsoleAction = null;
 let lastConsoleAction = null;
@@ -226,6 +244,62 @@ function sameMonsterIdentity(observed, expected) {
     (observed & kFieldIdentityMask) === (expected & kFieldIdentityMask);
 }
 
+// Guarded level 1..4 normal summons only. Called on original duel thread.
+// The eligibility engine may show error notifications, so avoid invoking
+// it when inexpensive phase/turn/hand checks already reject the request.
+function handCount(side) {
+  return kHandCountBase.add(side * kPlayerStride).readU8();
+}
+function handWord(side, index) {
+  return kHandWordBase.add(side * kPlayerStride + index * 4).readU32();
+}
+function preflightNormalSummon(request) {
+  const fail = detail => ({allowed: false, detail});
+  const side = request.side;
+  if (kDuelRunning.readU16() === 0) return fail('No active duel');
+  const phaseByte = kSummonDuelPhase.readU8();
+  const phase = (phaseByte >>> 1) & 7;
+  if ((kDuelFlags.readU32() & 1) !== side || (phaseByte & 1) !== side) {
+    return fail('Not the selected player turn');
+  }
+  if (phase !== 2 && phase !== 4) return fail('Not a main phase');
+  if ((kSummonPlayerFlags.add(side * kPlayerStride).readU32() & 0x20000) !== 0) {
+    return fail('Normal summon already used');
+  }
+  if ((kPlacementStage.readU16() & 1) !== 0) {
+    return fail('Native placement is already active');
+  }
+  const count = handCount(side);
+  if (count !== request.expectedHandCount || request.handIndex >= count) {
+    return fail('Hand size or index changed while pending');
+  }
+  const card = handWord(side, request.handIndex);
+  if ((card & 0xFFF) === 0 || card !== request.expectedWord) {
+    return fail('Selected hand card changed while pending');
+  }
+  if (nativeMonsterIdentity(card) === 0) return fail('Selected card is not a monster');
+  const levelClass = nativeMonsterLevelClass(card) & 0xFFFF;
+  if (levelClass < 1 || levelClass > 4) {
+    return fail('Only ordinary level 1..4 monsters without tributes are supported');
+  }
+  const eligibility = nativeSummonEligible(side, card) >>> 0;
+  if ((eligibility & 1) === 0) {
+    return {allowed: false, eligibility, detail: 'Engine rejects normal face-up summon'};
+  }
+  const selectedSlot = nativeFindMonsterSlot(side) >>> 0;
+  if (selectedSlot >= 5) {
+    return {allowed: false, eligibility, selectedSlot: null,
+      detail: 'No permitted monster slot (including zone blocks)'};
+  }
+  if ((monsterWord(side, selectedSlot) & 0xFFF) !== 0 ||
+      nativeSlotLegal(side, selectedSlot) === 0) {
+    return {allowed: false, eligibility, selectedSlot,
+      detail: 'Selected monster slot is no longer permitted'};
+  }
+  return {allowed: true, eligibility, selectedSlot, cardIndex: card & 0xFFF,
+    handIndex: request.handIndex, levelClass, detail: 'Native preflight approved'};
+}
+
 // Only called synchronously from Interceptor.onLeave for 0x005BC700,
 // on the game's own duel-update thread. Never invoke NativeFunction
 // YugiRE_ConsoleDraw from rpc.exports or a Python/Frida RPC thread.
@@ -234,6 +308,9 @@ function servicePendingConsoleAction() {
   // producer, preserving the game-thread requirement.
   if (!installed || pendingConsoleAction === null) return;
   if (!queueGate().idle) return;
+  // Queue idle does not necessarily mean placement is idle between ticks.
+  if (pendingConsoleAction.kind === 'summon' &&
+      (kPlacementStage.readU16() & 1) !== 0) return;
   const request = pendingConsoleAction;
   pendingConsoleAction = null;
   try {
@@ -255,6 +332,21 @@ function servicePendingConsoleAction() {
         return;
       }
       accepted = manualDestroyOnDuelThread(request.side, request.slot, request.expectedWord);
+    } else if (request.kind === 'summon') {
+      const preflight = preflightNormalSummon(request);
+      if (request.checkOnly || !preflight.allowed) {
+        lastConsoleAction = {...request, ...preflight,
+          state: request.checkOnly ? 'checked' : 'rejected'};
+        return;
+      }
+      // The original engine is responsible for all later placement ticks.
+      nativeSummonBuilder(request.side, request.handIndex,
+        preflight.selectedSlot, 0, 1);
+      // Same turn-consumption flag as the game's player/AI callsites.
+      nativePlayerFlagEmitter(request.side, 0x11, 1);
+      lastConsoleAction = {...request, ...preflight, state: 'submitted',
+        detail: 'Native builder invoked; verify eventual field state with diff'};
+      return;
     } else {
       throw new Error('Invalid pending console action');
     }
@@ -323,6 +415,20 @@ function queueConsoleDestroy(side, slot) {
   if ((expectedWord & 0xFFF) === 0) throw new Error('Target monster slot is empty');
   return stageConsoleAction({kind: 'destroy', side, slot,
     expectedWord, expectedIndex: expectedWord & 0xFFF});
+}
+
+function queueConsoleSummon(side, index, checkOnly = false) {
+  if (side !== 1 || !Number.isInteger(index) || index < 0 || index >= 80 ||
+      typeof checkOnly !== 'boolean') {
+    throw new Error('Use summon [check] 1 <handIndex 0..79>; player side only');
+  }
+  const count = handCount(side);
+  if (count > 80 || index >= count) throw new Error('Selected hand index is not present');
+  const card = handWord(side, index);
+  if ((card & 0xFFF) === 0) throw new Error('Selected hand card is empty');
+  return stageConsoleAction({kind: 'summon', side, handIndex: index,
+    expectedHandCount: count, expectedWord: card, expectedIndex: card & 0xFFF,
+    checkOnly});
 }
 
 function cancelPendingConsoleAction() {
@@ -673,6 +779,7 @@ rpc.exports = {
   queuedraw: queueConsoleDraw,
   queuedamage: queueConsoleDamage,
   queuedestroy: queueConsoleDestroy,
+  queuesummon: queueConsoleSummon,
   canceldraw: cancelPendingConsoleAction,
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
@@ -723,6 +830,30 @@ rpc.exports = {
       'uint32', [], 'mscdecl');
     readNativeDuelState = new NativeFunction(getExport('YugiRE_ReadDuelState'),
       'uint32', ['pointer', 'pointer'], 'mscdecl');
+
+    // Bind native routines; never invoke them from the RPC thread.
+    for (const addr of [kSummonEligible, kFindMonsterSlot, kSlotLegal,
+        kMonsterIdentity, kMonsterLevelClass, kNormalSummonBuilder,
+        kPlayerFlagEmitter]) {
+      const range = Process.findRangeByAddress(addr);
+      if (range === null || !range.protection.includes('x')) {
+        throw new Error('Summon native routine is not executable: ' + addr);
+      }
+    }
+    nativeSummonEligible = new NativeFunction(kSummonEligible,
+      'uint32', ['uint32', 'uint32'], 'mscdecl');
+    nativeFindMonsterSlot = new NativeFunction(kFindMonsterSlot,
+      'uint32', ['uint32'], 'mscdecl');
+    nativeSlotLegal = new NativeFunction(kSlotLegal,
+      'uint32', ['uint32','uint32'], 'mscdecl');
+    nativeMonsterIdentity = new NativeFunction(kMonsterIdentity,
+      'uint32', ['uint32'], 'mscdecl');
+    nativeMonsterLevelClass = new NativeFunction(kMonsterLevelClass,
+      'uint32', ['uint32'], 'mscdecl');
+    nativeSummonBuilder = new NativeFunction(kNormalSummonBuilder,
+      'void', ['uint32','uint32','uint32','uint32','uint32'], 'mscdecl');
+    nativePlayerFlagEmitter = new NativeFunction(kPlayerFlagEmitter,
+      'void', ['uint32','uint32','uint32'], 'mscdecl');
 
     if (initialize(main.base, sparksDamage, raimeiDamage,
                    sparksMode, raimeiMode) !== kInitMagic) {
