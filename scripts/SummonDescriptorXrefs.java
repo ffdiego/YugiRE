@@ -35,7 +35,7 @@ public class SummonDescriptorXrefs extends GhidraScript {
             throw new IllegalStateException("Joey executable fingerprint differs: " + sha);
         }
         String[] args = getScriptArgs();
-        File output = args.length > 0
+        File output = (args != null && args.length > 0)
             ? new File(args[0]) : askFile("Export summon descriptor references", "Save");
         if (output == null) return;
         File dir = output.getAbsoluteFile().getParentFile();
