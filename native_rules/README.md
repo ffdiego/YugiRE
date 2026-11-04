@@ -296,8 +296,9 @@ trace dump
   evento mantém os quatro argumentos brutos e recebe formatos hexadecimais
   e opcode mascarado (bit 15 separado para análise). Também mostra a
   frequência dos 12 códigos mais comuns.
-- Ao sair do console, a sessão retida é salva automaticamente se houver
-  eventos ainda em memória. Nenhum comando é emitido pelo trace.
+- `trace dump` confirma a exportação após gravar o arquivo completo e
+  preserva o buffer. Ao sair do console, eventos ainda **não exportados**
+  são salvos automaticamente. Nenhum comando é emitido pelo trace.
 - O hook tem custo de execução: prefira capturas curtas e separadas por
   ação, especialmente para comparar invocação, set, descarte, ativação e
   batalha. `trace` e `watch` são observadores complementares; nenhum

@@ -97,6 +97,8 @@ let traceHead = 0;
 let traceCapacity = kTraceDefaultCapacity;
 let traceSeen = 0;
 let traceSession = 0;
+let traceExportedSession = 0;
+let traceExportedSeen = -1;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -323,7 +325,9 @@ function traceStatus() {
     retained: traceBuffer.length,
     overwritten: traceSeen - traceBuffer.length,
     firstSeq: traceBuffer.length === 0 ? null :
-      traceBuffer[traceHead].seq
+      traceBuffer[traceHead].seq,
+    hasUnsaved: traceBuffer.length > 0 &&
+      (traceSession !== traceExportedSession || traceSeen !== traceExportedSeen)
   };
 }
 
@@ -389,6 +393,17 @@ function markCommandTrace(label) {
   // Marker comes from RPC, not the game's duel thread; do not treat its
   // timestamp as proof of command completion.
   recordTraceEvent({kind: 'marker', label});
+  return traceStatus();
+}
+
+function acknowledgeTraceExport(session, seen) {
+  if (commandTraceHook !== null) throw new Error('Stop trace before acknowledging export');
+  if (!Number.isInteger(session) || !Number.isInteger(seen) ||
+      session !== traceSession || seen !== traceSeen) {
+    throw new Error('Trace changed since export started; refusing acknowledgement');
+  }
+  traceExportedSession = session;
+  traceExportedSeen = seen;
   return traceStatus();
 }
 
@@ -499,6 +514,7 @@ rpc.exports = {
   tracestop: stopCommandTrace,
   tracemark: markCommandTrace,
   traceevents: commandTraceEvents,
+  traceacknowledge: acknowledgeTraceExport,
   queuedraw: queueConsoleDraw,
   queuedamage: queueConsoleDamage,
   queuedestroy: queueConsoleDestroy,

@@ -36,6 +36,7 @@ class FakeApi:
         self.trace_active = False
         self.trace_session = 0
         self.trace_records = []
+        self.trace_exported = False
 
     def status(self):
         self.reads += 1
@@ -61,12 +62,14 @@ class FakeApi:
         return {"active": self.trace_active, "session": self.trace_session,
                 "producer": "0x5B9170", "capacity": 16, "seen": n,
                 "retained": n, "overwritten": 0,
-                "firstSeq": 1 if n else None}
+                "firstSeq": 1 if n else None,
+                "hasUnsaved": n > 0 and not self.trace_exported}
 
     def tracestart(self, capacity):
         self.trace_calls.append(("start", capacity))
         self.trace_active = True
         self.trace_session += 1
+        self.trace_exported = False
         return self.tracestatus()
 
     def tracestop(self):
@@ -83,6 +86,13 @@ class FakeApi:
     def traceevents(self, offset, count):
         self.trace_calls.append(("events", offset, count))
         return self.trace_records[offset:offset+count]
+
+    def traceacknowledge(self, session, seen):
+        self.trace_calls.append(("ack", session, seen))
+        assert session == self.trace_session
+        assert seen == len(self.trace_records)
+        self.trace_exported = True
+        return self.tracestatus()
 
     def duelstate(self):
         import copy
@@ -233,6 +243,7 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertEqual(rows[1]["sideBit15"], 1)
             self.assertEqual(rows[1]["argsHex"][0], "0x00008079")
             self.assertEqual(rows[2]["label"], "set monstro")
+            self.assertTrue(self.api.trace_exported)
             with self.assertRaises(FileExistsError):
                 save_command_trace(self.api, path)
 

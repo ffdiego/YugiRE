@@ -229,6 +229,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     if counts:
         summary = ", ".join(f"{code}={n}" for code, n in counts.most_common(12))
         print(f"[trace] Most frequent masked opcodes: {summary}", flush=True)
+    api.traceacknowledge(status["session"], status["seen"])
     return output
 
 
@@ -486,7 +487,7 @@ def main(argv: list[str] | None = None) -> int:
             # Preserve the bounded buffer even if the user exits via Ctrl+C.
             try:
                 trace_state = script.exports_sync.tracestatus()
-                if trace_state["session"] > 0 and trace_state["retained"] > 0:
+                if trace_state.get("hasUnsaved", trace_state["retained"] > 0):
                     save_command_trace(script.exports_sync)
                 elif trace_state["active"]:
                     script.exports_sync.tracestop()

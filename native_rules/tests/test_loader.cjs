@@ -412,6 +412,7 @@ for (const cap of [0,15,20001,-3,1.5,'64',null]) {
 const firstTrace=traceFixture.api.tracestart(16);
 assert.equal(firstTrace.active,true);
 assert.equal(firstTrace.session,1);
+assert.equal(firstTrace.hasUnsaved,false);
 assert.equal(traceFixture.traceActive(),true);
 assert.throws(()=>traceFixture.api.tracestart(16),/already active/);
 assert.throws(()=>traceFixture.api.traceevents(0,10),/Stop trace before exporting/);
@@ -424,8 +425,10 @@ assert.equal(summary.seen,21);
 assert.equal(summary.retained,16);
 assert.equal(summary.overwritten,5);
 assert.equal(summary.firstSeq,6);
+assert.equal(summary.hasUnsaved,true);
 assert.equal(traceFixture.api.tracestop().active,false);
 assert.equal(traceFixture.api.tracestop().active,false);
+assert.throws(()=>traceFixture.api.traceacknowledge(1,20),/Trace changed/);
 const ev1=traceFixture.api.traceevents(0,8);
 const ev2=traceFixture.api.traceevents(8,8);
 assert.equal(ev1.length,8);
@@ -437,6 +440,7 @@ assert.equal(ev1[0].caller,'0x578123');
 assert.equal(ev2[7].kind,'marker');
 assert.equal(ev2[7].label,'Summon normal');
 assert.equal(traceFixture.api.traceevents(16,8).length,0);
+assert.equal(traceFixture.api.traceacknowledge(1,21).hasUnsaved,false);
 for(const [offset,count] of [[-1,1],[0,0],[0,257],['0',2]]){
  assert.throws(()=>traceFixture.api.traceevents(offset,count),/Trace pagination/);
 }
@@ -445,7 +449,9 @@ assert.equal(traceFixture.api.tracestatus().seen,21,'Stopped hook must not captu
 traceFixture.api.tracestart(16);
 assert.equal(traceFixture.api.tracestatus().session,2);
 assert.equal(traceFixture.api.tracestatus().seen,0);
+assert.equal(traceFixture.api.tracestatus().hasUnsaved,false);
 traceFixture.command(0x61,0,5,0);
+assert.equal(traceFixture.api.tracestatus().hasUnsaved,true);
 traceFixture.api.restore();
 assert.equal(traceFixture.traceActive(),false);
 assert.equal(traceFixture.api.tracestatus().seen,1);
