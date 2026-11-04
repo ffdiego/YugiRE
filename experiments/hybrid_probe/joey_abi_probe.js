@@ -15,13 +15,13 @@ const queueVA = ptr('0x005B9170');
 if (Process.platform !== 'windows' || Process.arch !== 'ia32') {
   throw new Error('This probe requires a Windows 32-bit x86 process.');
 }
-const module = Process.mainModule;
-if (module.name.toLowerCase() !== 'joey_pc.exe') {
-  throw new Error('Unexpected main module: ' + module.name);
+const mainModule = Process.mainModule;
+if (mainModule.name.toLowerCase() !== 'joey_pc.exe') {
+  throw new Error('Unexpected main module: ' + mainModule.name);
 }
 
 function addressOf(va) {
-  const address = module.base.add(va.sub(DOCUMENTED_BASE));
+  const address = mainModule.base.add(va.sub(DOCUMENTED_BASE));
   const range = Process.findRangeByAddress(address);
   if (range === null || !range.protection.includes('x')) {
     throw new Error('Not executable: ' + address);
@@ -96,7 +96,7 @@ Interceptor.attach(addressOf(queueVA), {
   },
 });
 
-send({kind: 'ready_abi', pid: Process.id, actualBase: module.base.toString(),
+send({kind: 'ready_abi', pid: Process.id, actualBase: mainModule.base.toString(),
       primary: addressOf(primaryVA).toString(),
       queue: addressOf(queueVA).toString(),
       primaryLimit: MAX_PRIMARY, queueLimit: MAX_QUEUE,
