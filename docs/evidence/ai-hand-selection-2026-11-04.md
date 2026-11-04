@@ -62,15 +62,20 @@ O caller primeiro pede `pass=0` e, se falhar
 
 **Interpretação:** o primeiro passe evita candidatos
 que exigem tributos; o fallback permite considerá-los.
-A série de helpers pode ser uma **avaliação de cenário
-simulado**, mas não se demonstrou se ela copia/restaura
-o campo ou qual métrica cada helper produz. Em especial,
-o pseudocódigo lê `local_8 > 899` sem mostrar
-inicialização de `local_8` no próprio corpo; isso pode
-ser efeito de *out-buffer* tratado incorretamente pelo
-decompilador. **Não** reproduzir literalmente a
-comparação sem conferir a escrita desse local em assembly
-e o contrato de `FUN_0056DD30`.
+A decompilação posterior **confirmou que
+`FUN_005B1610` escreve na estrutura do campo**
+depois de tocar os registros dos tributos candidatos
+e selecionar um slot nativo. Trata-se de forte
+evidência de avaliação de **estado hipotético**.
+Ainda falta confirmar se o estado é salvo/restaurado
+por `FUN_005B08E0`, `FUN_005B09C0` ou
+`FUN_005B0950`. O assembly lê o valor comparado
+com 900 por `[ESP+0x60]`, após passar ponteiro
+de buffer à sequência, mas não confirma isoladamente
+a semântica do local Ghidra. O caller lê EAX após
+`FUN_005B1610`, mesmo com protótipo `void`
+no Ghidra: **não reproduzir a ABI sem revisão**.
+Ver [relatório de helpers](ai-decision-helpers-2026-11-04.md).
 
 Não há chamada explícita a RNG observada neste corpo.
 Isso **não prova determinismo global**: os helpers
@@ -109,10 +114,12 @@ observados com estes nomes (a semântica exata de
 A tabela segue **ordem de prioridade estática** da
 decompilação: se um par é candidato, verifica o
 primeiro ID antes do segundo. Os nomes reforçam
-a hipótese de uma **política especial para FLIP monsters**,
-mas ainda não identificamos todos os efeitos dos filtros
-e não provamos que `FUN_0056D340` simplesmente procura
-a carta na mão sem efeitos colaterais.
+a hipótese de uma **política especial para FLIP monsters**.
+A decompilação posterior de `FUN_0056D340`
+**confirmou** que ela apenas percorre a mão,
+compara o ID de recurso e retorna o primeiro
+índice correspondente (ou `-1`). Ver
+[`ai-decision-helpers-2026-11-04.md`](ai-decision-helpers-2026-11-04.md).
 
 ### 2. Passagem geral por atributos
 
@@ -170,6 +177,13 @@ invoca o primeiro monstro da mão.
 Os callsites fornecem `FUN_005AE270(side,card,0,0)`.
 A função consulta `FUN_005699C0(0x47F)`, recurso
 identificado como **Light of Intervention** no catálogo.
+A inspeção posterior de `FUN_005AE0A0` mostrou
+comparações com diferenças de 300/1000 e
+retornos `-1`, `0` e `1`: o `-1` é
+convertido por `FUN_005AE270` para seu
+parâmetro de fallback. A lógica também consulta
+a presença do recurso `0x590` (**Fairy Box**).
+Ver [relatório de helpers](ai-decision-helpers-2026-11-04.md).
 Se houver a condição indicada pelo retorno,
 `iVar4` começa como 1 em vez de receber `param_3`;
 em seguida, o fluxo distingue vários IDs de
@@ -204,22 +218,21 @@ E, em `FUN_005B6FF0`, a própria
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-decision-helpers.txt `
+  -Report ai-simulation-state-lifecycle.txt `
   -Addresses @(
-    '0056d340',
-    '005ae0a0',
-    '005affd0',
-    '005b1610',
-    'ins:005b14c4:70'
+    '005b08e0',
+    '005b09c0',
+    '005b0950',
+    '005bddf0',
+    '005b0a50',
+    'ins:005b1610:75'
   )
 ```
 
-Priorizar `FUN_0056D340` para confirmar o domínio dos
-IDs das prioridades; `FUN_005AE0A0` para a decisão
-sobre set/summon; `FUN_005B1610` para entender
-o valor comparado no primeiro seletor. A janela
-`ins:005b14c4:70` deve esclarecer o aparente
-`local_8 > 899` e possíveis argumentos de saída.
+A extração anterior confirmou a escrita no
+campo pela `FUN_005B1610`; a nova consulta
+verificará o possível save/restore e a
+ambiguidade do retorno em EAX.
 
 O estudo é apenas estático: **não habilitar autoplay
 ou hooks ativos sem mais testes de estado/filas**.

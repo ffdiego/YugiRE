@@ -40,16 +40,18 @@ e `turn-processing-mode-selection.txt`.
 
 ## Experimentos futuros de alto rendimento
 
-**Ghidra, próximo passo:** os seletores já foram
-decompilados. O relatório
-[`ai-hand-selection-2026-11-04.md`](ai-hand-selection-2026-11-04.md)
-demonstra prioridades condicionais para monstros
-FLIP, comparação de `max(ATK,DEF)` e filtro
-de postura com Light of Intervention. Investigar
-`FUN_0056D340`, `FUN_005AE0A0`,
-`FUN_005AFFD0` e `FUN_005B1610` para
-entender a política exata e o risco de simulação.
-A parte de deck selection continua separada.
+**Ghidra, próximo passo:** `FUN_0056D340`
+confirmou a busca linear por ID de carta;
+`FUN_005AE0A0` expôs limiares de decisão
+`300/1000` e retornos `-1/0/1`;
+`FUN_005AFFD0` resume o maior atributo
+de campo; **`FUN_005B1610` modifica registros
+do campo para avaliar candidato**. Este último
+ponto torna urgente localizar as rotinas de
+save/restore para não confundir simulação com
+jogada real nem arriscar estado corrompido.
+Ver [relatório dos helpers](ai-decision-helpers-2026-11-04.md).
+Seleção de deck da CPU continua separada.
 
 **Quando for possível executar o Windows novamente:**
 o primeiro teste de `set` já foi concluído com sucesso.
