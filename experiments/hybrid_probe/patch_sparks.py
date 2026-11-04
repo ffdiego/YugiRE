@@ -20,6 +20,8 @@ from pe_preflight import probe
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True, help="PID for joey_pc.exe")
+    parser.add_argument("--damage", type=int, choices=(200, 300), default=200,
+                        help="Sparks damage amount in LP (default: original 200)")
     args = parser.parse_args()
 
     try:
@@ -28,6 +30,15 @@ def main() -> int:
         parser.error("Frida missing; run from experiments/hybrid_probe/.venv-frida")
 
     js = Path(__file__).with_name("sparks_primary_replacement.js")
+    source = js.read_text(encoding="utf-8")
+    if args.damage == 300:
+        # Modify only the PUSH imm32 in the native x86 code: 200 -> 300.
+        # The checked 200-LP baseline script on disk remains untouched.
+        old = "    0x68, 0xC8, 0x00, 0x00, 0x00,"
+        new = "    0x68, 0x2C, 0x01, 0x00, 0x00,"
+        if source.count(old) != 1:
+            parser.error("Unexpected native stub layout; refusing to modify damage amount")
+        source = source.replace(old, new, 1)
     session = None
     script = None
     installed = False
@@ -36,7 +47,7 @@ def main() -> int:
     try:
         print(f"[sparks] Attaching to PID {args.pid}", flush=True)
         session = frida.attach(args.pid)
-        script = session.create_script(js.read_text(encoding="utf-8"))
+        script = session.create_script(source)
         script.on("message", lambda msg, data:
                   print(f"[frida] {msg}", flush=True)
                   if msg.get("type") == "error" else None)
@@ -50,12 +61,14 @@ def main() -> int:
             print(json.dumps(checks["checks"], indent=2))
             return 2
 
-        print("[sparks] Exact executable SHA256 confirmed. Patching only Sparks row 66.")
+        print(f"[sparks] Exact executable SHA256 confirmed. Patching only Sparks row 66. "
+              f"Configured damage: {args.damage} LP.")
         installed_status = api.install()
         installed = True
         print("[sparks] Native replacement installed:")
         print(json.dumps(installed_status, ensure_ascii=False, indent=2), flush=True)
-        print("[sparks] Play one Sparks in a NORMAL live duel, not a saved replay.")
+        print(f"[sparks] Play one Sparks in a NORMAL live duel; "
+              f"expect {args.damage} LP damage (if not blocked).")
         print("[sparks] Press Enter to query the counter; type stop to restore.")
         while True:
             line = input("[sparks] > ").strip().lower()
