@@ -62,3 +62,16 @@ Troque 1234 pelo PID real. Faça algumas ações de duelo e salve a saída do te
 A interpretação do primeiro word como índice de propriedades já está sustentada pela análise estática; identificar as outras words exige confrontar com o cenário e seguir os chamadores no Ghidra. Em especial, valores brutos de ECX e EDX da primeira prova não determinam a convenção de chamada.
 
 **Não há recompilação nem substituição de função neste estágio.** Instrumentação pode influenciar timing e exige a mesma cópia descartável do jogo. Uma substituição só deve ser tentada após confirmar ABI, retorno, side effects e ponteiros compartilhados de uma função de baixo risco.
+
+
+## 4. Observação dos callbacks específicos (opcional, após resultado da etapa 3)
+
+O segundo log da sessão confirmou 34 chamadas ao wrapper e 263 enfileiramentos de comandos, com 48 registros de argumentos. O catálogo correlaciona os índices internos 972/Morphing Jar com 0x005860E0; 248/Sangan com 0x00583D20; 893/Magic Jammer com 0x00588D90; 457/Jam Breeding Machine com 0x00583F30. Detalhes e retornos observados: ABI_FINDINGS_2026-11-03.md.
+
+Para verificar se o wrapper encaminha chamadas a esses handlers e se os 20 bytes do pedido mudam entre entrada e saída, o script joey_card_handlers.js monitora essas quatro funções mais o dispatcher. Faça um duelo curto na mesma cópia de testes; com a Frida venv instalada e o processo aberto:
+
+    .\.venv-frida\Scripts\frida.exe -p 1234 -l .\joey_card_handlers.js
+
+Substitua 1234 pelo PID atual. A captura registra no máximo 48 chamadas detalhadas por função, os valores brutos de arg0/arg1, ECX/EDX, EAX ao retornar e uma leitura protegida de 20 bytes em arg0. **Somente no dispatcher** foi confirmado que arg0 aponta para o pedido; nos callbacks específicos o campo maybeRequest20Hex ainda é hipótese e pode ser irrelevante. Ao terminar, compare as entradas e saídas por função/thread e posição temporal no log.
+
+Esse script ainda não é uma DLL substituta. Logs podem conter estruturas internas e devem permanecer locais ou ser compartilhados conscientemente. Mais jogatinas não são necessárias para seguir o próximo passo estático: estudar 0x005860E0 no Ghidra, especialmente o avanço de estados e os efeitos colaterais das chamadas.
