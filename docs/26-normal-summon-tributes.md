@@ -48,6 +48,13 @@ Evidência estática:
 [`normal-summon-tribute-context.txt`](evidence/normal-summon-tribute-context.txt),
 [`normal-summon-placement-boundaries.txt`](evidence/normal-summon-placement-boundaries.txt).
 
+Incluí também um coletor Ghidra somente-leitura:
+[`scripts/SummonDescriptorXrefs.java`](../scripts/SummonDescriptorXrefs.java).
+Ele percorre cada byte do descritor `0x00A55080..0x00A5508F`,
+exporta referências com endereço de origem, função dona e classe
+READ/WRITE. É apenas uma lista das referências que o Ghidra
+conseguiu resolver: escritas indiretas ou calculadas podem não constar.
+
 **Próximo item no Ghidra:** obter *write references* para
 `0x00A55080`, `0x00A55084` e `0x00A5508E` (distinguir
 atribuições de leituras), e identificar onde o estado muda de

@@ -1,3 +1,23 @@
+## Xrefs de preparação da invocação (Ghidra)
+
+Use [`SummonDescriptorXrefs.java`](SummonDescriptorXrefs.java) na
+cópia **analisada** do `joey_pc.exe`. No Script Manager do Ghidra,
+importe/adicione `scripts/` como diretório de scripts, execute
+`SummonDescriptorXrefs` e escolha um arquivo CSV na pasta
+`scratch/` do repositório (não versionar a captura).
+
+Em modo headless, reutilize o projeto existente e passe o caminho de
+saída via `-postScript SummonDescriptorXrefs.java <caminho-absoluto.csv>`
+junto com `-scriptPath scripts`, `-noanalysis` e `-readOnly`.
+
+O script valida o SHA-256 do executável esperado e percorre
+`0x00A55080` até `0x00A5508F`, incluindo `context`,
+`source`, flags adjacentes e `stage`. Exporta `from`, `to`,
+instrução, função dona e flags `is_read/is_write` do Ghidra.
+**Não altera o programa.** Nem toda escrita indireta aparece
+como referência estática, então um CSV sem entradas WRITE não
+demonstra ausência de escritas. Esse CSV complementa `trace prep on`.
+
 # Reprodução
 
 Tabela de Rituais:
