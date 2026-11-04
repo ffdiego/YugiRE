@@ -58,8 +58,12 @@ volatile long* emits_for(Card card) {
 
 bool configure(void* image_base, unsigned int sparks_damage,
                unsigned int raimei_damage) {
-    if (!image_base || !((sparks_damage == 200) || (sparks_damage == 300)) ||
-        !((raimei_damage == 300) || (raimei_damage == 400))) return false;
+    // Keep this cap below 16-bit command-field limits; 8000 LP is the
+    // standard starting total. Large-damage behavior still needs live tests.
+    constexpr unsigned int kMinDamage = 1;
+    constexpr unsigned int kMaxDamage = 9999;
+    if (!image_base || sparks_damage < kMinDamage || sparks_damage > kMaxDamage ||
+        raimei_damage < kMinDamage || raimei_damage > kMaxDamage) return false;
     auto* base = static_cast<unsigned char*>(image_base);
     g_damage_command = reinterpret_cast<DamageCommand>(base + kDamageCommandRva);
     g_sparks_damage = sparks_damage;

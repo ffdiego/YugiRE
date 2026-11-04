@@ -35,6 +35,17 @@ def check_dll(dll: Path) -> None:
         raise ValueError(f"Expected DLL flag in PE COFF header: {dll}")
 
 
+def damage_type(raw: str) -> int:
+    """Argparse validator for the experimental LP damage range 1..9999."""
+    try:
+        value = int(raw, 10)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Damage must be an integer (1..9999 LP)") from exc
+    if value < 1 or value > 9999:
+        raise argparse.ArgumentTypeError("Damage must be between 1 and 9999 LP")
+    return value
+
+
 def show_counters(state: dict) -> None:
     for card in state["entries"]:
         print(f"[dual-rules] {card['name']}: calls={card['callbackCalls']} "
@@ -48,10 +59,10 @@ def main() -> int:
     parser.add_argument("--pid", type=int, required=True, help="PID of joey_pc.exe")
     parser.add_argument("--dll", type=Path, default=DEFAULT_DLL,
                         help="32-bit Windows yugire_rules.dll built by Visual Studio")
-    parser.add_argument("--sparks", type=int, choices=(200, 300), default=200,
-                        help="Sparks LP damage (default: 200)")
-    parser.add_argument("--raimei", type=int, choices=(300, 400), default=300,
-                        help="Raimei LP damage (default: 300)")
+    parser.add_argument("--sparks", type=damage_type, default=200,
+                        help="Sparks LP damage, 1..9999 (default: 200)")
+    parser.add_argument("--raimei", type=damage_type, default=300,
+                        help="Raimei LP damage, 1..9999 (default: 300)")
     args = parser.parse_args()
     dll_path = args.dll.resolve()
 

@@ -105,3 +105,25 @@ assert.throws(()=>wrongId.api.install('Z:\\YugiRE\\rules.dll',200,300),/resource
 assert.equal(wrongId.memory.get(wrongId.sparks),wrongId.original);
 
 console.log('PASS: dual install, independent configs, both restore, rollback, wrong-row guard');
+
+
+// Larger configurable amounts for one-hit-KO experimentation.
+for (const [sparksDamage, raimeiDamage] of [[1, 1], [8000, 8000], [9999, 9999]]) {
+  const large = fixture();
+  const installed = large.api.install('Z:\\YugiRE\\rules.dll', sparksDamage, raimeiDamage);
+  assert.equal(installed.entries[0].configuredDamage, sparksDamage);
+  assert.equal(installed.entries[1].configuredDamage, raimeiDamage);
+  large.api.restore();
+  assert.equal(large.memory.get(large.sparks), large.original);
+  assert.equal(large.memory.get(large.raimei), large.original);
+}
+for (const invalid of [-1, 0, 10000, 2.5, '8000', NaN, Infinity, null]) {
+  for (const [sparksDamage, raimeiDamage] of [[invalid, 8000], [8000, invalid]]) {
+    const rejected = fixture();
+    assert.throws(() => rejected.api.install('Z:\\YugiRE\\rules.dll', sparksDamage, raimeiDamage),
+      /Damage must be an integer from 1 to 9999/);
+    assert.equal(rejected.memory.get(rejected.sparks), rejected.original);
+    assert.equal(rejected.memory.get(rejected.raimei), rejected.original);
+  }
+}
+console.log('PASS: damage bounds 1..9999, OHKO 8000, rejection before DLL load');

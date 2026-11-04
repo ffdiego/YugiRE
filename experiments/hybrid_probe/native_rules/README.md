@@ -5,6 +5,8 @@ by `experiments/hybrid_probe/pe_preflight.py`.
 
 **This DLL version has NOT yet been validated inside Joey.** Prior tests established
 Sparks (200/300 LP) from an earlier single-card C++ DLL.
+The operator subsequently confirmed activating BOTH cards in the dual-C++ test,
+but did not supply exact observed damage/counters for that run.
 
 | Card | Internal index | Resource ID | Callback row | Original damage | Experiment damage |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -51,8 +53,8 @@ $joeyPid = (Get-Process joey_pc).Id
 ```
 
 When the game lets you play Sparks and Raimei, observe **300 LP** and **400 LP**
-damage respectively. The first value is already known to work in the earlier
-single-card DLL; the Raimei test is NEW. During the duel, press Enter in the
+damage respectively. Both activations were confirmed in the previous dual-card
+test; the new configurable damage range is not yet validated inside Joey. During the duel, press Enter in the
 host to inspect the counters. Type `stop` AFTER the effects have finished
 to restore both callback pointers. Expected restored pointer for both:
 `0x00584E60` (in the original image base).
@@ -88,3 +90,38 @@ node .\native_rules\tests\test_loader.cjs
 The catalogue check verifies both indices/IDs/profile P045. The JavaScript
 fixture checks two distinct pointers, configuration, restoration and rollback.
 These are structural tests; they do not substitute for the Windows test.
+
+
+## High damage / one-hit-KO experiment
+
+The Python host, Frida loader and C++ DLL now accept **any integer from 1 to
+9999 LP**, independently for Sparks and Raimei. Values outside that range,
+fractions and non-numeric strings are rejected. Default values stay 200/300 LP.
+
+For a standard duel starting at **8000 LP**, the first high-damage experiment
+can be 8000 LP for either or both cards:
+
+```powershell
+# Restart Joey before testing a freshly rebuilt DLL.
+$joeyPid = (Get-Process joey_pc).Id
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --pid $joeyPid --sparks 8000 --raimei 8000
+```
+
+This should be enough to reduce a full-8000-LP opponent to zero **if** the
+effect is permitted to resolve and the game's damage consumer handles this
+magnitude as expected. This is NOT yet experimentally confirmed.
+
+**Do not test values above 9999** until the LP command encoding, saturation,
+and terminal-condition handling have been validated. The helper accepts
+32-bit values, but its consumers may narrow them or apply other rules.
+In particular, a larger numeric argument does not guarantee a valid
+victory result or stable graphics. Keep backed-up saves, wait until effect
+resolution finishes, inspect both LP displays and the final game result, and
+type `stop` to restore the original callbacks. The same loader can still be
+run with 200/300 to test the original damages.
+
+Offline tests:
+```powershell
+python .\native_rules\tests\test_damage_limits.py
+node .\native_rules\tests\test_loader.cjs
+```

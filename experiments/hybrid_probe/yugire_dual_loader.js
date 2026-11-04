@@ -165,8 +165,9 @@ rpc.exports = {
     if (typeof dllPath !== 'string' || !/^[a-zA-Z]:\\/.test(dllPath)) {
       throw new Error('Expected an absolute Windows DLL path');
     }
-    if (![200, 300].includes(sparksDamage) || ![300, 400].includes(raimeiDamage)) {
-      throw new Error('Damage configuration outside tested safe experiment values');
+    const validDamage = value => Number.isInteger(value) && value >= 1 && value <= 9999;
+    if (!validDamage(sparksDamage) || !validDamage(raimeiDamage)) {
+      throw new Error('Damage must be an integer from 1 to 9999 LP per card');
     }
     verifyBeforeLoading();
 
