@@ -26,6 +26,24 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Set experimental do console (2026-11-04)
+
+O executor nativo agora aceita `set check 1 <handIndex>`
+e `set 1 <handIndex>`. Ambos compartilham o preflight
+do `summon` para turno, fase principal, posição/identidade
+da mão, classe de nível 1–4 e seleção de zona nativa.
+A elegibilidade de `FUN_005AAB90` usa **bit `0x10`**
+para set (em vez do bit `0x01` usado por summon).
+A chamada `FUN_005AD740(1,handIndex,slot,0,0)`
+produz colocação face-down. Ambas as operações consomem
+a mesma flag `0x20000` via `FUN_00579930`.
+O diagnóstico mostra `normalSummonUsed: true` e o valor
+bruto das flags quando a recusa ocorre por esse motivo.
+
+**Validação do set:** testes simulados JavaScript; não
+houve ainda execução do `set` no Joey real.
+[Relatório técnico](evidence/console-native-set-implementation-2026-11-04.md).
+
 ## Summon experimental do console (2026-11-04)
 
 Os comandos `summon check 1 <handIndex>` e

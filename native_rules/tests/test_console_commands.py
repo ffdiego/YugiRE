@@ -17,6 +17,7 @@ class FakeApi:
         self.damages = []
         self.destroys = []
         self.summons = []
+        self.sets = []
         self.snapshot = {"sides": [
             {"side": 0, "lifePoints": 8000, "handCount": 4, "deckCount": 30,
              "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
@@ -63,6 +64,11 @@ class FakeApi:
         self.summons.append((side, index, check_only))
         return {"id": len(self.summons), "side": side, "handIndex": index,
                 "expectedIndex": 907, "state": "pending", "checkOnly": check_only}
+
+    def queueset(self, side, index, check_only):
+        self.sets.append((side, index, check_only))
+        return {"id": len(self.sets), "side": side, "handIndex": index,
+                "expectedIndex": 221, "state": "pending", "checkOnly": check_only}
 
     def tracestatus(self):
         n = len(self.trace_records)
@@ -180,6 +186,34 @@ class ConsoleCommandTests(unittest.TestCase):
                         "summon 2 0", "summon 1"):
             self.assertTrue(self.invoke(command))
         self.assertEqual(self.api.summons, [])
+
+    def test_set_check_and_execute_parse(self):
+        self.assertTrue(self.invoke("set check 1 4"))
+        self.assertTrue(self.invoke("set 1 3"))
+        self.assertEqual(self.api.sets, [(1, 4, True), (1, 3, False)])
+        self.assertEqual(self.api.summons, [])
+
+    def test_set_reject_bad_sides_and_arguments(self):
+        for command in ("set", "set check", "set 0 4", "set 1 80",
+                        "set 1 -1", "set 1 3.5", "set check 0 4",
+                        "set check 1 abc", "set check 1 4 extra",
+                        "set 1 4 extra", "set 2 0", "set 1"):
+            self.assertTrue(self.invoke(command))
+        self.assertEqual(self.api.sets, [])
+
+    def test_set_missing_hand_card_is_reported(self):
+        class MissingHand(FakeApi):
+            def queueset(self, side, index, check_only):
+                raise RuntimeError("Error: Selected hand index is not present")
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertTrue(handle_command("set 1 5", MissingHand(), 1))
+        self.assertIn("Cannot select hand index", output.getvalue())
+
+    def test_set_and_summon_can_be_staged_in_independent_calls(self):
+        self.assertTrue(self.invoke("set check 1 2"))
+        self.assertTrue(self.invoke("summon check 1 2"))
+        self.assertEqual(self.api.sets, [(1, 2, True)])
+        self.assertEqual(self.api.summons, [(1, 2, True)])
 
     def test_summon_missing_hand_card_is_reported(self):
         class MissingHand(FakeApi):

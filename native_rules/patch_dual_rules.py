@@ -276,7 +276,8 @@ def show_help(default_side: int) -> None:
     print("[dual-rules] Commands: Enter/status = counters; "
           "draw 5 [0|1]; damage <1..9999> <0|1>; "
           "destroy <0|1> <0..4>; summon check 1 <index>; "
-          "summon 1 <index>; state; diff; hand [0|1]; "
+          "summon 1 <index>; set check 1 <index>; set 1 <index>; "
+          "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
           "trace on [16..20000]; trace prep on|off; trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
@@ -403,28 +404,32 @@ def handle_command(command: str, api: object, default_side: int,
               "Submission does not guarantee destruction; check state/diff.",
               flush=True)
         return True
-    if parts[0] == "summon":
+    if parts[0] in ("summon", "set"):
+        action = parts[0]
         check_only = len(parts) == 4 and parts[1] == "check"
         values = parts[2:] if check_only else parts[1:]
         if (len(values) != 2 or values[0] != "1" or
                 not values[1].isdecimal() or int(values[1]) >= 80):
-            print("[summon] Usage: summon [check] 1 <hand index 0..79>; "
+            print(f"[{action}] Usage: {action} [check] 1 <hand index 0..79>; "
                   "only player side 1, level 1..4, no tributes", flush=True)
             return True
         index = int(values[1])
         try:
-            queued = api.queuesummon(1, index, check_only)
+            queued = (api.queuesummon(1, index, check_only)
+                      if action == "summon" else api.queueset(1, index, check_only))
         except Exception as error:
             if ("hand index is not present" in str(error) or
                     "hand card is empty" in str(error)):
-                print(f"[summon] Cannot select hand index {index}: {error}",
+                print(f"[{action}] Cannot select hand index {index}: {error}",
                       flush=True)
                 return True
             raise
-        print(f"[summon] Request {queued['id']} pending: "
+        operation = "check only" if check_only else (
+            "normal summon" if action == "summon" else "face-down monster set"
+        )
+        print(f"[{action}] Request {queued['id']} pending: "
               f"side 1 hand[{index}], internal card {queued['expectedIndex']}, "
-              f"mode={'check only' if check_only else 'normal summon'}. "
-              "Press Enter to inspect console.last.", flush=True)
+              f"mode={operation}. Press Enter to inspect console.last.", flush=True)
         return True
     if parts[0] == "draw":
         if len(parts) not in (2, 3) or parts[1] != "5" or (

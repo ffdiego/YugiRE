@@ -338,7 +338,7 @@ uma ação: o jogo pode emitir múltiplos comandos e efeitos em etapas.
 Ainda precisamos testar a captura em execução real para guiar a futura
 implementação de `summon`, `set` e `discard`.
 
-### Summon experimental: nível 1–4 sem tributos
+### Summon e set experimentais: monstros nível 1–4, sem tributos
 
 O índice da mão é **zero-based**. Exemplo de teste:
 
@@ -348,6 +348,9 @@ state
 summon check 1 4
 # Pressione Enter para ler console.last: checked, allowed, selectedSlot
 summon 1 4
+# OU, em outro turno, para colocar o monstro virado para baixo:
+set check 1 4
+set 1 4
 # Pressione Enter para ler console.last e então faça:
 diff
 state
@@ -357,35 +360,51 @@ state
 Para ver a mudança, capture `state` antes do summon e
 execute `diff` **antes de um novo `state`** após a jogada.
 
-Os dois comandos são agendados no `0x005BC700` e atendidos
+Os quatro comandos (incluindo os modos `check`) são agendados
+no `0x005BC700` e atendidos
 **somente na thread do duelo**, jamais na thread RPC.
 Verificações: duelo ativo, jogador 1 na vez, Main Phase 1 ou 2,
 flag `0x20000` livre, fila/descritor inativos, identidade e
 tamanho da mão inalterados, carta de monstro nível 1–4,
-`FUN_005AAB90 & 1`, seleção de slot por
+máscara de `FUN_005AAB90` (**`0x01` para summon**;
+**`0x10` para set**), seleção de slot por
 `FUN_0056A030` e confirmação por `FUN_00569F70`.
 Assim preservamos as restrições de Ground Collapse.
 
-`summon check` retorna `state=checked`, sem chamar o
-construtor nem consumir a invocação normal. A função
-original de elegibilidade pode gerar mensagens de UI
-em casos inválidos; o comando não promete ausência
-total de efeitos de interface. A execução ativa chama
-`FUN_005AD740(1,handIndex,slot,0,1)` e depois
-`FUN_00579930(1,0x11,1)`, sincronizando o consumo do
-direito de invocação. `state=submitted` **não garante
-a colocação concluída** — confira `state`/`diff`.
-`cancel` descarta um pedido ainda pendente.
+`summon check` e `set check` retornam `state=checked`,
+sem chamar o construtor nem consumir a invocação normal.
+A função original de elegibilidade pode gerar mensagens de UI
+em casos inválidos; o diagnóstico não promete ausência
+total de efeitos de interface.
+
+A execução ativa usa `FUN_005AD740(1,handIndex,slot,0,mode)`:
+`mode=1` para invocação face para cima; `mode=0` para
+baixar o monstro em defesa, virado para baixo. Ambas
+chamam `FUN_00579930(1,0x11,1)`, sincronizando o
+consumo da **mesma oportunidade de invocação normal**.
+Uma operação bloqueia a outra até o próximo turno.
+
+Se a flag `0x20000` estiver marcada, `console.last`
+inclui `normalSummonUsed: true`, `playerFlags` e
+`detail: 'Normal summon/set already used (player flag 0x20000)'`.
+Isso distingue esse bloqueio de falhas de fase, classe
+da carta ou zona indisponível.
+
+`state=submitted` **não garante a colocação concluída**:
+confira `state`/`diff`. `cancel` descarta um pedido
+ainda pendente.
 
 Escopo intencional: **apenas side 1 em duelo local**,
-monstros comuns nível 1–4, sem tributos, set,
+monstros comuns nível 1–4, sem tributos, magias/armadilhas,
 invocações especiais ou exceções. O guard pode rejeitar
-conservadoramente jogadas legais. Ainda não validado
-no Joey real para um caso de monstro nível 4:
-`summon 1 5` colocou a carta interna 221 no slot 0
-e reduziu a mão de 6 para 5. Veja
+conservadoramente jogadas legais. O `summon` **já foi validado
+em um duelo real**: `summon 1 5` colocou a carta interna
+221 no slot 0, reduzindo a mão de 6 para 5. Veja
 [`validação ao vivo`](../docs/evidence/console-native-summon-live-2026-11-04.md).
-Ainda use duelo descartável para outras situações.
+O **`set` ainda não foi testado no Joey real** nesta versão.
+Use duelo descartável para a primeira execução.
+
+Ver [relatório do novo `set`](../docs/evidence/console-native-set-implementation-2026-11-04.md).
 A ABI da DLL continua v6; **não recompilar a DLL**.
 
 ### Probe passivo da preparação de summon/set
