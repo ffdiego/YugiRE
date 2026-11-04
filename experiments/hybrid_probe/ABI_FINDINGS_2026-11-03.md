@@ -60,3 +60,14 @@ Em Cyber Jar, os 20 bytes do pedido foram modificados entre entrada e saída em 
 O último retorno de `MorphingJarPrimary` foi registrado como EAX bruto `0xFFFF0000`; o low16 é `0x0000`. Não interpretar o EAX de 32 bits como contrato do callback antes de conferir a assinatura e as instruções consumidoras do valor.
 
 O log finaliza com `Process terminated`. Sem informação adicional, não se sabe se foi saída normal do jogo ou falha. O observador genérico `joey_all_primary_callbacks.js` foi criado para evitar a dependência de hooks em funções específicas e registrar índices de todos os pedidos que passarem pelo wrapper.
+
+
+## Contexto funcional fornecido pelo operador — Jam Breeding Machine
+
+O operador confirmou que **fechou deliberadamente o Joey** para encerrar a sessão anterior; portanto a mensagem `Process terminated` desse log não deve ser classificada como evidência de crash.
+
+Também informou que **Jam Breeding Machine cria um token a cada Standby Phase aplicável**, enquanto permanece como carta contínua. Essa é uma descrição observacional fornecida pelo operador, ainda não uma reconstrução do mecanismo no binário.
+
+O catálogo estático mostra que a entrada da carta é índice interno **457**, ID de recurso **1426 (0x592)**, perfil **P007**, com exatamente cinco slots `[0x00583F30, null, null, null, null]`. O mesmo perfil ocorre em **23 registros**, inclusive Gravity Bind, Messenger of Peace, Solemn Wishes, Anti-Spell Fragrance e The Dark Door. A função `0x00583F30` tem bytes iniciais `66 33 C0 C3` (`xor ax, ax; ret`): **não implementa emissão de comandos ou criação de token nesse corpo**. Isso não determina o mecanismo de outras rotinas do jogo.
+
+Hipótese prioritária: regras contínuas/recorrentes podem ser verificadas fora da tabela de callbacks principais, em código global, processamento por fases ou funções que consultam IDs de carta. Não inferir que todas as 23 cartas compartilhem a mesma regra nem que o sistema seja completamente dirigido por dados sem inspecionar os caminhos consumidores. Próxima investigação estática: localizar consumidores da carta ID 0x592 (ou seu índice 457) no código de Standby e nas operações de criação de token, incluindo verificações de fase/campo. Próxima validação dinâmica: registrar as emissões de comando e alterações de contagem de tokens próximas à Standby, sem tentar hook em 0x00583F30.
