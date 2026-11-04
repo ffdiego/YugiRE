@@ -40,6 +40,7 @@ function fixture(options = {}) {
   let lastDamageCall = null;
   let lastDestroyCall = null;
   let tickHandler = null;
+  let traceHandler = null;
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -65,9 +66,11 @@ function fixture(options = {}) {
   const context = {
     Process: {
       platform: 'windows', arch: 'ia32', id: 123,
+      getCurrentThreadId(){return 778;},
       mainModule:{name:'joey_pc.exe',path:'Z:\\passion\\joey_pc.exe',base:ptr(0x400000)},
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
-        p.n === 0x005BC700 || p.n === 0x00576960 || p.n >= 0x20000000)
+        p.n === 0x005BC700 || p.n === 0x00576960 ||
+        p.n === 0x005B9170 || p.n >= 0x20000000)
         ? 'r-x' : 'r--'}; },
     },
     Memory: {
@@ -78,6 +81,12 @@ function fixture(options = {}) {
     Module: {getGlobalExportByName(name){return {sys:name};}},
     Interceptor: {
       attach(address, callbacks) {
+        if (address.n === 0x005B9170) {
+          if (options.failTraceAttach) throw new Error('Simulated trace hook failure');
+          assert.equal(traceHandler, null);
+          traceHandler = callbacks.onEnter;
+          return {detach(){traceHandler=null;}};
+        }
         assert.equal(address.n, 0x005BC700, 'Hook must be on the duel scheduler');
         if (options.failTickAttach) throw new Error('Simulated scheduler hook failure');
         assert.equal(tickHandler, null);
@@ -139,6 +148,13 @@ function fixture(options = {}) {
   return {api:context.rpc.exports, memory, sparks: sparks+4, raimei: raimei+4,
     original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); },
     tick(){ if(tickHandler !== null) tickHandler(); },
+    command(a0, a1, a2, a3) {
+      if (traceHandler !== null) {
+        traceHandler.call({returnAddress:ptr(0x00578123)},
+          [a0,a1,a2,a3].map(v=>ptr(v)));
+      }
+    },
+    traceActive(){return traceHandler !== null;},
     consoleCalls(){return consoleDrawCalls;},
     damageCalls(){return damageCalls;},
     destroyCalls(){return destroyCalls;},
@@ -381,3 +397,62 @@ destruction.api.restore();
 destruction.tick();
 assert.equal(destruction.destroyCalls(),1);
 console.log('PASS: destruction staged on duel thread, identity recheck, validation and cancel');
+
+
+// Passive producer trace: captures raw args, stable caller/thread, markers,
+// bounded history, pagination, failures and teardown without changing inputs.
+const traceFixture=fixture();
+assert.throws(()=>traceFixture.api.tracestart(16),/requires installed native adapter/);
+traceFixture.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+assert.equal(traceFixture.api.tracestatus().active,false);
+for (const cap of [0,15,20001,-3,1.5,'64',null]) {
+  assert.throws(()=>traceFixture.api.tracestart(cap),/capacity must be an integer/);
+}
+const firstTrace=traceFixture.api.tracestart(16);
+assert.equal(firstTrace.active,true);
+assert.equal(firstTrace.session,1);
+assert.equal(traceFixture.traceActive(),true);
+assert.throws(()=>traceFixture.api.tracestart(16),/already active/);
+assert.throws(()=>traceFixture.api.traceevents(0,10),/Stop trace before exporting/);
+for(let i=0;i<20;i++){
+  traceFixture.command(i%2===0?0x8079:0x00CE,i,2,3);
+}
+traceFixture.api.tracemark('Summon normal');
+let summary=traceFixture.api.tracestatus();
+assert.equal(summary.seen,21);
+assert.equal(summary.retained,16);
+assert.equal(summary.overwritten,5);
+assert.equal(summary.firstSeq,6);
+assert.equal(traceFixture.api.tracestop().active,false);
+assert.equal(traceFixture.api.tracestop().active,false);
+const ev1=traceFixture.api.traceevents(0,8);
+const ev2=traceFixture.api.traceevents(8,8);
+assert.equal(ev1.length,8);
+assert.equal(ev2.length,8);
+assert.equal(ev1[0].seq,6);
+assert.equal(ev1[0].args[0],0xCE);
+assert.equal(ev1[0].threadId,778);
+assert.equal(ev1[0].caller,'0x578123');
+assert.equal(ev2[7].kind,'marker');
+assert.equal(ev2[7].label,'Summon normal');
+assert.equal(traceFixture.api.traceevents(16,8).length,0);
+for(const [offset,count] of [[-1,1],[0,0],[0,257],['0',2]]){
+ assert.throws(()=>traceFixture.api.traceevents(offset,count),/Trace pagination/);
+}
+traceFixture.command(0x61,1,0,0);
+assert.equal(traceFixture.api.tracestatus().seen,21,'Stopped hook must not capture');
+traceFixture.api.tracestart(16);
+assert.equal(traceFixture.api.tracestatus().session,2);
+assert.equal(traceFixture.api.tracestatus().seen,0);
+traceFixture.command(0x61,0,5,0);
+traceFixture.api.restore();
+assert.equal(traceFixture.traceActive(),false);
+assert.equal(traceFixture.api.tracestatus().seen,1);
+assert.equal(traceFixture.api.traceevents(0,20).length,1);
+const failedTrace=fixture({failTraceAttach:true});
+failedTrace.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+assert.throws(()=>failedTrace.api.tracestart(16),/Simulated trace hook failure/);
+assert.equal(failedTrace.api.tracestatus().active,false);
+assert.equal(failedTrace.hookActive(),true);
+failedTrace.api.restore();
+console.log('PASS: bounded passive command trace, marker, export pagination, hook rollback and teardown');

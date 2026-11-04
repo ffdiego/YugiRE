@@ -37,6 +37,10 @@ const kSnapshotBytes = kSnapshotPlayerWords * 4 * 2;
 // request is staged here and consumed on the original duel update thread.
 // For the documented EXE only (VA relative to image base 0x00400000).
 const kDuelUpdate = va('0x005BC700');
+// Common command producer. Observer only: no argument/retval replacement.
+const kCommandProducer = va('0x005B9170');
+const kTraceDefaultCapacity = 8192;
+const kTraceMaxCapacity = 20000;
 const kQueueCount = va('0x00A558A8');
 const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
@@ -85,6 +89,14 @@ let duelUpdateHook = null;
 let pendingConsoleAction = null;
 let lastConsoleAction = null;
 let consoleSequence = 0;
+// Bounded command trace; recording happens on the calling game thread.
+// RPC only retrieves snapshots, so high-frequency commands never spam send().
+let commandTraceHook = null;
+let traceBuffer = [];
+let traceHead = 0;
+let traceCapacity = kTraceDefaultCapacity;
+let traceSeen = 0;
+let traceSession = 0;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -298,6 +310,102 @@ function cancelPendingConsoleAction() {
   return lastConsoleAction;
 }
 
+// Trace records raw producer inputs; their semantics differ by opcode.
+// Calls to 0x005B9170 have been observed with four 32-bit arguments for
+// this exact EXE. Sequence is monotonically increasing within a session.
+function traceStatus() {
+  return {
+    active: commandTraceHook !== null,
+    session: traceSession,
+    producer: kCommandProducer.toString(),
+    capacity: traceCapacity,
+    seen: traceSeen,
+    retained: traceBuffer.length,
+    overwritten: traceSeen - traceBuffer.length,
+    firstSeq: traceBuffer.length === 0 ? null :
+      traceBuffer[traceHead].seq
+  };
+}
+
+function recordTraceEvent(event) {
+  event.seq = ++traceSeen;
+  event.timestampMs = Date.now();
+  if (traceBuffer.length < traceCapacity) {
+    traceBuffer.push(event);
+  } else {
+    traceBuffer[traceHead] = event;
+    traceHead = (traceHead + 1) % traceCapacity;
+  }
+}
+
+function startCommandTrace(capacity = kTraceDefaultCapacity) {
+  if (!installed) throw new Error('Trace requires installed native adapter');
+  if (commandTraceHook !== null) throw new Error('Command trace is already active');
+  if (!Number.isInteger(capacity) || capacity < 16 || capacity > kTraceMaxCapacity) {
+    throw new Error('Trace capacity must be an integer from 16 to 20000');
+  }
+  const range = Process.findRangeByAddress(kCommandProducer);
+  if (range === null || !range.protection.includes('x')) {
+    throw new Error('0x005B9170 is not executable in this process');
+  }
+  // Attaching may fail on an unsupported build or a short prologue.
+  // Keep prior trace data intact if it fails.
+  const hook = Interceptor.attach(kCommandProducer, {
+    onEnter(args) {
+      // Only read the four stack arguments; no engine state manipulation.
+      recordTraceEvent({
+        kind: 'command',
+        threadId: Process.getCurrentThreadId(),
+        caller: this.returnAddress.toString(),
+        args: [args[0].toUInt32(), args[1].toUInt32(),
+               args[2].toUInt32(), args[3].toUInt32()]
+      });
+    }
+  });
+  traceBuffer = [];
+  traceHead = 0;
+  traceSeen = 0;
+  traceCapacity = capacity;
+  traceSession++;
+  commandTraceHook = hook;
+  return traceStatus();
+}
+
+function stopCommandTrace() {
+  if (commandTraceHook !== null) {
+    const hook = commandTraceHook;
+    commandTraceHook = null;
+    hook.detach();
+  }
+  return traceStatus();
+}
+
+function markCommandTrace(label) {
+  if (commandTraceHook === null) throw new Error('Start trace before marking');
+  if (typeof label !== 'string' || label.length === 0 || label.length > 120 ||
+      /[\\r\\n]/.test(label)) {
+    throw new Error('Marker label must contain 1..120 chars without line breaks');
+  }
+  // Marker comes from RPC, not the game's duel thread; do not treat its
+  // timestamp as proof of command completion.
+  recordTraceEvent({kind: 'marker', label});
+  return traceStatus();
+}
+
+function commandTraceEvents(offset, count = 256) {
+  if (commandTraceHook !== null) throw new Error('Stop trace before exporting');
+  if (!Number.isInteger(offset) || offset < 0 ||
+      !Number.isInteger(count) || count < 1 || count > 256) {
+    throw new Error('Trace pagination requires offset >= 0 and count 1..256');
+  }
+  const retained = traceBuffer.length;
+  const result = [];
+  for (let i = offset; i < Math.min(retained, offset + count); i++) {
+    result.push(traceBuffer[(traceHead + i) % retained]);
+  }
+  return result;
+}
+
 function duelState() {
   // Safe read-only RPC operation. This is NOT an atomic snapshot: the
   // original game may update memory between individual field reads.
@@ -343,6 +451,7 @@ function status() {
   }));
   return {
     installed,
+    trace: traceStatus(),
     modulePath: main.path,
     processId: Process.id,
     dllBase: dllBase === null ? null : dllBase.toString(),
@@ -361,6 +470,7 @@ function status() {
 // The restore is idempotent and also handles a failed install that only
 // managed to patch the first card. It checks both slots BEFORE changing any.
 function restore() {
+  stopCommandTrace();
   stopConsoleHook(); // also drops any unserviced command before unpatching
   for (const card of cards) {
     const current = card.slot.readPointer();
@@ -384,6 +494,11 @@ function restore() {
 rpc.exports = {
   status,
   duelstate: duelState,
+  tracestatus: traceStatus,
+  tracestart: startCommandTrace,
+  tracestop: stopCommandTrace,
+  tracemark: markCommandTrace,
+  traceevents: commandTraceEvents,
   queuedraw: queueConsoleDraw,
   queuedamage: queueConsoleDamage,
   queuedestroy: queueConsoleDestroy,

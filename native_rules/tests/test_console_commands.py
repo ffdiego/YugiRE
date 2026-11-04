@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from patch_dual_rules import handle_command
+from patch_dual_rules import handle_command, save_command_trace
 
 
 class FakeApi:
@@ -32,6 +32,10 @@ class FakeApi:
         ]}
         self.cancels = 0
         self.reads = 0
+        self.trace_calls = []
+        self.trace_active = False
+        self.trace_session = 0
+        self.trace_records = []
 
     def status(self):
         self.reads += 1
@@ -51,6 +55,34 @@ class FakeApi:
         self.destroys.append((side, slot))
         return {"id": 60, "side": side, "slot": slot, "expectedIndex": 727,
                 "state": "pending"}
+
+    def tracestatus(self):
+        n = len(self.trace_records)
+        return {"active": self.trace_active, "session": self.trace_session,
+                "producer": "0x5B9170", "capacity": 16, "seen": n,
+                "retained": n, "overwritten": 0,
+                "firstSeq": 1 if n else None}
+
+    def tracestart(self, capacity):
+        self.trace_calls.append(("start", capacity))
+        self.trace_active = True
+        self.trace_session += 1
+        return self.tracestatus()
+
+    def tracestop(self):
+        self.trace_calls.append(("stop",))
+        self.trace_active = False
+        return self.tracestatus()
+
+    def tracemark(self, label):
+        self.trace_calls.append(("mark", label))
+        self.trace_records.append({"kind": "marker", "seq": len(self.trace_records) + 1,
+                                   "timestampMs": 1000, "label": label})
+        return self.tracestatus()
+
+    def traceevents(self, offset, count):
+        self.trace_calls.append(("events", offset, count))
+        return self.trace_records[offset:offset+count]
 
     def duelstate(self):
         import copy
@@ -170,6 +202,39 @@ class ConsoleCommandTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()):
             handle_command("watch on 50", self.api, 1, watcher=watcher)
         self.assertFalse(watcher.active)
+
+    def test_trace_on_mark_status_off_and_invalid_limit(self):
+        for cmd in ("trace on", "trace mark Summon normal",
+                    "trace status", "trace off", "trace on 50", "trace off",
+                    "trace on 20001", "trace on 0"):
+            self.assertTrue(self.invoke(cmd))
+        self.assertEqual(self.api.trace_calls[0], ("start", 8192))
+        self.assertEqual(self.api.trace_calls[1], ("mark", "Summon normal"))
+        self.assertEqual(self.api.trace_calls[2], ("stop",))
+        self.assertEqual(self.api.trace_calls[3], ("start", 50))
+        self.assertEqual(len([x for x in self.api.trace_calls if x[0] == "start"]), 2)
+
+    def test_trace_dump_jsonl(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "command", "seq": 1, "timestampMs": 1, "threadId": 7,
+             "caller": "0x00578123", "args": [0x8079, 1, 14, 2]},
+            {"kind": "marker", "seq": 2, "timestampMs": 2, "label": "set monstro"}
+        ]
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "commands.jsonl"
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(save_command_trace(self.api, path), path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(rows[0]["kind"], "metadata")
+            self.assertEqual(rows[1]["opcodeMasked"], "0x0079")
+            self.assertEqual(rows[1]["sideBit15"], 1)
+            self.assertEqual(rows[1]["argsHex"][0], "0x00008079")
+            self.assertEqual(rows[2]["label"], "set monstro")
+            with self.assertRaises(FileExistsError):
+                save_command_trace(self.api, path)
 
     def test_diff_without_baseline(self):
         cache = {}

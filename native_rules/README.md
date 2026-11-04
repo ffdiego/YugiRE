@@ -14,7 +14,7 @@ native_rules/
   src/engine.cpp                    # funções nativas de dano e compra do Joey
   src/effect_context.cpp            # composição de efeitos C++
   src/cards/{sparks,raimei}.cpp     # callbacks individuais
-  src/exports.cpp                   # ABI pública da DLL (versão 4)
+  src/exports.cpp                   # ABI pública da DLL (versão 6)
   yugire_rules.def                  # exports sem decoração
   patch_dual_rules.py               # host Python e console
   pe_preflight.py                   # validação PE + SHA-256 do EXE
@@ -261,6 +261,55 @@ destino e rotinas auxiliares. Precisam de validação antes de invocação
 pela DLL. A visualização de mão/campo desta etapa prepara esses testes.
 
 **Após a build da ABI v6, reinicie Joey para carregar a nova DLL.**
+
+## Native Command Trace (experimental, passivo)
+
+Esta instrumentação usa Frida `Interceptor.attach` em
+`FUN_005B9170` (VA original `0x005B9170`), o produtor comum de comandos.
+**Não substitui argumentos, retorno ou código de regras**, mas instalar o
+hook modifica temporariamente o prólogo em memória, como qualquer Interceptor.
+Valide exclusivamente o executável com fingerprint conhecido e em duelo local.
+
+```text
+trace on
+trace mark invocacao normal
+trace mark monstro baixado
+trace mark ativacao de armadilha
+trace status
+trace off
+trace dump
+```
+
+- `trace on [capacidade]`: inicia uma nova sessão, com até 8192 eventos por
+  padrão; mínimo 16, máximo 20000. Uma nova sessão **descarta o buffer anterior**
+  (use `trace dump` antes). O hook lê quatro argumentos de 32 bits, endereço
+  de retorno/chamador, ID da thread, timestamp em milissegundos e sequência.
+- `trace mark <texto>` acrescenta uma anotação temporal emitida pela
+  **thread RPC**, não pelo game thread. A hora da anotação é aproximada;
+  **não prova** que um comando já terminou.
+- `trace status` mostra vistos, retidos e sobrescritos. Quando a capacidade
+  acaba, o buffer circular substitui os eventos mais antigos em O(1).
+- `trace off` remove o hook e preserva os eventos. `trace dump` interrompe
+  a captura, exporta em lotes de até 256 por RPC e grava JSONL em
+  `scratch/traces/commands-<UTC>-pid<PID>.jsonl`; esse diretório já é
+  ignorado pelo Git. O primeiro registro traz metadados/contadores. Cada
+  evento mantém os quatro argumentos brutos e recebe formatos hexadecimais
+  e opcode mascarado (bit 15 separado para análise). Também mostra a
+  frequência dos 12 códigos mais comuns.
+- Ao sair do console, a sessão retida é salva automaticamente se houver
+  eventos ainda em memória. Nenhum comando é emitido pelo trace.
+- O hook tem custo de execução: prefira capturas curtas e separadas por
+  ação, especialmente para comparar invocação, set, descarte, ativação e
+  batalha. `trace` e `watch` são observadores complementares; nenhum
+  demonstra sozinho a causalidade completa.
+
+O contrato de quatro argumentos está fundamentado nos caminhos já estudados
+e na captura dinâmica anterior (ver
+[ABI findings](../docs/evidence/hybrid-native-abi-findings.md)).
+Não trate o código `0xCE`, `0x79` ou `0x80` como o único efeito de
+uma ação: o jogo pode emitir múltiplos comandos e efeitos em etapas.
+Ainda precisamos testar a captura em execução real para guiar a futura
+implementação de `summon`, `set` e `discard`.
 
 ## Testes offline
 

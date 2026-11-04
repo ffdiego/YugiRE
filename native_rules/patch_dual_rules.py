@@ -11,6 +11,8 @@ exits to avoid dangling code addresses. Never attach two patchers at once.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import struct
@@ -177,11 +179,66 @@ class DuelWatcher:
                 self._halt.set()
                 return
 
+def show_trace_status(status: dict) -> None:
+    print(f"[trace] active={status['active']} session={status['session']} "
+          f"seen={status['seen']} retained={status['retained']} "
+          f"overwritten={status['overwritten']} capacity={status['capacity']}",
+          flush=True)
+
+
+def save_command_trace(api: object, output: Path | None = None) -> Path:
+    """Stop tracing and export bounded records to an exclusive JSONL file."""
+    status = api.tracestop()
+    if status["session"] == 0:
+        raise ValueError("No trace session captured yet; use 'trace on'")
+    if output is None:
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
+        pid = api.status()["processId"]
+        output = HERE.parent / "scratch" / "traces" / f"commands-{timestamp}-pid{pid}.jsonl"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    counts: Counter[str] = Counter()
+    exported = 0
+    # Exclusive creation: never silently overwrite earlier recordings.
+    with output.open("x", encoding="utf-8") as destination:
+        header = {"kind": "metadata", "producer": status["producer"],
+                  "session": status["session"], "capacity": status["capacity"],
+                  "seen": status["seen"], "retained": status["retained"],
+                  "overwritten": status["overwritten"],
+                  "note": "Producer inputs only. Not proof of command execution or state mutation."}
+        destination.write(json.dumps(header, ensure_ascii=False) + "\n")
+        for offset in range(0, status["retained"], 256):
+            batch = api.traceevents(offset, 256)
+            if not batch:
+                raise RuntimeError(f"Trace truncated during export at offset {offset}")
+            for event in batch:
+                if event.get("kind") == "command":
+                    args = event["args"]
+                    command_word = args[0] & 0xFFFF
+                    opcode = command_word & 0x7FFF
+                    event = {**event, "opcodeRaw": f"0x{command_word:04X}",
+                             "opcodeMasked": f"0x{opcode:04X}",
+                             "sideBit15": (command_word >> 15) & 1,
+                             "argsHex": [f"0x{v:08X}" for v in args]}
+                    counts[event["opcodeMasked"]] += 1
+                destination.write(json.dumps(event, ensure_ascii=False) + "\n")
+                exported += 1
+    print(f"[trace] Saved {exported} events: {output}", flush=True)
+    if status["overwritten"]:
+        print(f"[trace] WARNING: {status['overwritten']} older events were "
+              "overwritten by the bounded buffer.", flush=True)
+    if counts:
+        summary = ", ".join(f"{code}={n}" for code, n in counts.most_common(12))
+        print(f"[trace] Most frequent masked opcodes: {summary}", flush=True)
+    return output
+
+
 def show_help(default_side: int) -> None:
     print("[dual-rules] Commands: Enter/status = counters; "
           "draw 5 [0|1]; damage <1..9999> <0|1>; "
           "destroy <0|1> <0..4>; state; diff; hand [0|1]; "
-          "watch on [100..5000 ms]; watch off; cancel; help; stop", flush=True)
+          "watch on [100..5000 ms]; watch off; "
+          "trace on [16..20000]; trace mark <label>; trace status; "
+          "trace off; trace dump; cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
           "Side 0 = CPU, side 1 = player in the tested local duel. "
           "Damage and destroy require an explicit target side. "
@@ -192,7 +249,8 @@ def handle_command(command: str, api: object, default_side: int,
                    state_cache: dict | None = None,
                    watcher: DuelWatcher | None = None) -> bool:
     """Return False only when the user requested shutdown."""
-    parts = command.lower().strip().split()
+    raw = command.strip()
+    parts = raw.lower().split()
     if not parts or parts == ["status"]:
         show_counters(api.status())
         return True
@@ -203,6 +261,27 @@ def handle_command(command: str, api: object, default_side: int,
         return False
     if parts == ["cancel"]:
         print(f"[console] {api.canceldraw()}", flush=True)
+        return True
+    if parts[0] == "trace":
+        if parts == ["trace", "status"] or parts == ["trace"]:
+            show_trace_status(api.tracestatus())
+        elif parts == ["trace", "off"]:
+            show_trace_status(api.tracestop())
+            print("[trace] Capture stopped; run 'trace dump' to save.", flush=True)
+        elif parts == ["trace", "dump"]:
+            save_command_trace(api)
+        elif (parts == ["trace", "on"] or
+              (len(parts) == 3 and parts[:2] == ["trace", "on"] and
+               parts[2].isdecimal() and 16 <= int(parts[2]) <= 20000)):
+            capacity = 8192 if len(parts) == 2 else int(parts[2])
+            show_trace_status(api.tracestart(capacity))
+        elif len(parts) >= 3 and parts[:2] == ["trace", "mark"]:
+            # Preserve case and spaces; marker is bounded by the Frida agent.
+            label = raw.split(None, 2)[2]
+            show_trace_status(api.tracemark(label))
+        else:
+            print("[trace] Usage: trace on [16..20000] | trace mark <label> | "
+                  "trace status | trace off | trace dump", flush=True)
         return True
     if parts[0] == "watch":
         if watcher is None:
@@ -404,6 +483,15 @@ def main(argv: list[str] | None = None) -> int:
         if watcher is not None:
             watcher.stop()
         if script is not None:
+            # Preserve the bounded buffer even if the user exits via Ctrl+C.
+            try:
+                trace_state = script.exports_sync.tracestatus()
+                if trace_state["session"] > 0 and trace_state["retained"] > 0:
+                    save_command_trace(script.exports_sync)
+                elif trace_state["active"]:
+                    script.exports_sync.tracestop()
+            except Exception as trace_error:
+                print(f"[trace] Auto-save failed: {trace_error}", flush=True)
             try:
                 # Idempotent: restores a complete install or partial install.
                 end = script.exports_sync.restore()
