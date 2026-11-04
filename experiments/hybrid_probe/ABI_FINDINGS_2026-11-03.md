@@ -188,3 +188,32 @@ Próximo passo arquitetural sugerido: transformar o experimento Sparks em um mó
 O operador relatou ter executado com sucesso **ambas as cartas, Sparks e Raimei**, no experimento de substituição simultânea por funções C++ independentes após o commit `949c746`. A configuração sugerida no teste era `--sparks 300 --raimei 400`. O relato confirma que foi possível usar as duas cartas; a mensagem não especifica separadamente os LP exatos observados de cada uma, nem inclui log de contadores ou restauração, portanto não presumir esses detalhes.
 
 A interface atual restringe explicitamente os danos a **Sparks 200/300** e **Raimei 300/400** em três camadas: argumentos do Python, validação do agente Frida e inicialização do módulo C++. A função nativa do jogo recebe quantidade numérica, mas limites altos, overflow, condições especiais e efeitos sobre a partida ainda não foram validados.
+
+
+## Décima captura — composição de efeitos com compra de cinco cartas (2026-11-04)
+
+O operador confirmou após executar no Joey a DLL C++ com os modos de efeito
+introduzidos pelo commit `bb1dcc37c2fd1f4fa0b19f4784cce6edade2c981`:
+
+> "funcionou perfeitamente, as duas cartas!"
+
+A configuração publicada para o teste era:
+- **Sparks** (`--sparks-mode draw`): substitui o dano original por compra de
+  cinco cartas para o jogador que ativou a magia;
+- **Raimei** (`--raimei-mode damage-draw --raimei 400`): solicita o comando
+  nativo de dano de 400 LP seguido de um lote de cinco compras para o ator.
+
+O sucesso relatado demonstra em duelo real a viabilidade de **trocar a
+categoria de um efeito** e de **compor dois mecanismos do motor original**
+(dano em `0x005784E0` e compra em `0x00578B60`) usando callbacks próprios
+em C++ e redirecionamentos individuais por tabela. Os efeitos continuam
+a ser consumidos pela fila original do Joey; a DLL não modifica as estruturas
+de mão ou deck diretamente.
+
+Esta captura é uma confirmação descritiva do operador, **não** inclui log
+novo de `drawBatches`, `damageCommands`, contagens de mão/deck ou um número
+de LP transcrito; evitar afirmar valores de contadores que não foram enviados.
+
+Próximos testes possíveis: negadores e correntes, poucas cartas no deck,
+ativação em lados diferentes e repetição de efeito. A confirmação de cenário
+normal não prova equivalência geral, nem segurança de todos os casos-limite.
