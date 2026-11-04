@@ -71,3 +71,48 @@ Também informou que **Jam Breeding Machine cria um token a cada Standby Phase a
 O catálogo estático mostra que a entrada da carta é índice interno **457**, ID de recurso **1426 (0x592)**, perfil **P007**, com exatamente cinco slots `[0x00583F30, null, null, null, null]`. O mesmo perfil ocorre em **23 registros**, inclusive Gravity Bind, Messenger of Peace, Solemn Wishes, Anti-Spell Fragrance e The Dark Door. A função `0x00583F30` tem bytes iniciais `66 33 C0 C3` (`xor ax, ax; ret`): **não implementa emissão de comandos ou criação de token nesse corpo**. Isso não determina o mecanismo de outras rotinas do jogo.
 
 Hipótese prioritária: regras contínuas/recorrentes podem ser verificadas fora da tabela de callbacks principais, em código global, processamento por fases ou funções que consultam IDs de carta. Não inferir que todas as 23 cartas compartilhem a mesma regra nem que o sistema seja completamente dirigido por dados sem inspecionar os caminhos consumidores. Próxima investigação estática: localizar consumidores da carta ID 0x592 (ou seu índice 457) no código de Standby e nas operações de criação de token, incluindo verificações de fase/campo. Próxima validação dinâmica: registrar as emissões de comando e alterações de contagem de tokens próximas à Standby, sem tentar hook em 0x00583F30.
+
+
+## Quarta captura — dispatcher genérico (2026-11-03)
+
+`joey_all_primary_callbacks.js` instrumentou apenas `0x0059DEB0` no PE32 ia32. Último resumo enviado: **169 chamadas**, **17 índices internos distintos** e **0 pedidos ilegíveis**. Houve 98 mensagens detalhadas (limite de 12 por índice); portanto os retornos individuais dos demais eventos constam apenas como histogramas agregados.
+
+| Índice | Carta (catálogo estático) | Callback principal | Chamadas |
+|---:|---|---|---:|
+| 972 | Morphing Jar | 0x005860E0 | 37 |
+| 320 | Cyber Jar | 0x0058A880 | 33 |
+| 107 | Royal Decree | 0x005872B0 | 28 |
+| 218 | Giant Rat | 0x0058AC10 | 21 |
+| 453 | Nimble Momonga | 0x0058B040 | 12 |
+| 22 | The Shallow Grave | 0x0058B400 | 12 |
+| 248 | Sangan | 0x00583D20 | 5 |
+| 851 | Backup Soldier | 0x0058BA80 | 4 |
+| 695 | Harpie's Feather Duster | 0x00586850 | 4 |
+| 1061 | Call Of The Haunted | 0x0058A4A0 | 3 |
+| 802 | Dark Hole | 0x00584C80 | 2 |
+| 359 | Monster Reborn | 0x005886C0 | 2 |
+| 929 | Shield & Sword | 0x005881D0 | 2 |
+| 467 | Mirror Force | 0x0058D660 | 1 |
+| 893 | Magic Jammer | 0x00588D90 | 1 |
+| 894 | Magic Cylinder | 0x0058D660 | 1 |
+| 610 | Graceful Dice | 0x0058CA70 | 1 |
+
+Todos os 17 índices aparecem no catálogo; não inferir quantidade de ativação por contagem de callbacks. Royal Decree foi consultada 28 vezes e apresentou retornos: `0x7F×2, 0x7E×12, 0x7D×12, 0x78×1, 0x00×1`. Essas sequências são compatíveis com processamento dividido em etapas; sem análise dos chamadores e da função específica não é válido nomear cada etapa. A sessão foi encerrada com o comando `exit`, sem mensagem de crash.
+
+### Correção da identificação de nomes
+
+Todos os 17 `card_seen` vieram com `name: null` porque o primeiro script tentou ler nomes a partir de `0x005F25A8 + índice×64`, endereço/layout **não demonstrado**. Não utilizar essa hipótese como fonte de nomes. O script foi corrigido para usar um dicionário estático derivado de `docs/evidence/card-callback-catalog.json`, para o SHA exato do executável, contendo **439 índices com nome** e seu `resourceId` e callback principal; três índices ligados a registros sem nome continuam sem rótulo. Isso não altera o motor nem exige novo dump de memória.
+
+### Interface de chamada do callback principal identificada estaticamente
+
+O listing de `docs/evidence/parasite-callback-dispatch.txt` mostra no dispatcher:
+
+```asm
+0059DEDD PUSH EDX        ; segundo argumento
+0059DEDE PUSH ESI        ; ponteiro para pedido
+0059DEDF CALL EAX        ; callback via tabela
+0059DEE1 ADD ESP,0x8     ; chamador remove dois argumentos
+0059DEE4 AND EAX,0xffff  ; wrapper mantém 16 bits baixos do retorno
+```
+
+Assim, **esse ponto de chamada** utiliza duas palavras/pointers de 32 bits na pilha, limpeza pelo chamador (compatível com `__cdecl` x86), retornando um valor efetivo de 16 bits no wrapper. É uma base suficiente para projetar uma função de ponteiro substituta de baixo risco, mas ainda não assegura compatibilidade com todos os outros slots, chamadas fora desse dispatcher ou semântica dos dois argumentos. Antes de substituir um ponteiro na tabela, planejar retorno/restauração no detach; caso contrário, o jogo pode chamar código descarregado.
