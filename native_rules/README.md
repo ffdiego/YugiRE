@@ -338,6 +338,45 @@ uma ação: o jogo pode emitir múltiplos comandos e efeitos em etapas.
 Ainda precisamos testar a captura em execução real para guiar a futura
 implementação de `summon`, `set` e `discard`.
 
+### Probe passivo da preparação de summon/set
+
+Após `trace on`, use `trace prep on` para ativar quatro hooks
+adicionais de **leitura**: `0x005AAB90` (elegibilidade),
+`0x005AB820` (despacho), `0x005ABD00` (colocação)
+e `0x005AC870` (ajuste de contexto). Nenhum altera o jogo.
+
+```text
+trace on
+trace prep on
+hand 1
+state
+trace mark antes de invocar
+# Invoque um monstro ou faça set pela interface do Joey
+trace mark depois de invocar
+trace prep off
+trace off
+trace dump
+```
+
+O JSONL recebe eventos `kind=summon_prep` com `phase=enter/leave`,
+`callId`, nome da função, thread, retorno bruto, e snapshots dos
+globais `0x00A55080/84/8E`, fase, turno, tamanho da fila e flags
+dos dois jogadores (`0x00A56430 + lado*0xD44`). Só para a função
+`0x005AAB90` são lidos dois argumentos brutos. O retorno não é
+interpretado como verdadeiro/falso sem uma análise mais específica.
+
+O hook do despachante é filtrado: registra apenas estágio ativo no
+modo 1, evitando centenas de amostras de ticks vazios. Os demais
+hooks observam todas as suas chamadas enquanto ativos. Os eventos
+entram no mesmo buffer circular de `trace on`, então `trace off`,
+`trace dump` e `stop` removem os hooks de preparação antes da exportação.
+Falha de instalação remove os hooks parcialmente instalados.
+
+**Limite:** isso observa etapas já conhecidas do fluxo, mas não
+identifica automaticamente todas as instruções que **escrevem**
+`DAT_00A55080`. Para encontrar o construtor inicial, precisamos
+das referências de escrita no Ghidra e de capturas reais do probe.
+
 ### Validação em duelo: segundo slot e Field Zone
 
 Em nova sessão de 52 comandos, o trace capturou

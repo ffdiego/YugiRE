@@ -37,6 +37,7 @@ class FakeApi:
         self.trace_session = 0
         self.trace_records = []
         self.trace_exported = False
+        self.prep_active = False
 
     def status(self):
         self.reads += 1
@@ -59,7 +60,8 @@ class FakeApi:
 
     def tracestatus(self):
         n = len(self.trace_records)
-        return {"active": self.trace_active, "session": self.trace_session,
+        return {"active": self.trace_active, "prepActive": self.prep_active,
+                "session": self.trace_session,
                 "producer": "0x5B9170", "capacity": 16, "seen": n,
                 "retained": n, "overwritten": 0,
                 "firstSeq": 1 if n else None,
@@ -72,9 +74,22 @@ class FakeApi:
         self.trace_exported = False
         return self.tracestatus()
 
+    def traceprepstart(self):
+        if not self.trace_active:
+            raise RuntimeError("Start trace first")
+        self.trace_calls.append(("prep_on",))
+        self.prep_active = True
+        return self.tracestatus()
+
+    def traceprepstop(self):
+        self.trace_calls.append(("prep_off",))
+        self.prep_active = False
+        return self.tracestatus()
+
     def tracestop(self):
         self.trace_calls.append(("stop",))
         self.trace_active = False
+        self.prep_active = False
         return self.tracestatus()
 
     def tracemark(self, label):
@@ -223,6 +238,39 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertEqual(self.api.trace_calls[2], ("stop",))
         self.assertEqual(self.api.trace_calls[3], ("start", 50))
         self.assertEqual(len([x for x in self.api.trace_calls if x[0] == "start"]), 2)
+
+    def test_prep_probe_console_dispatch(self):
+        with redirect_stdout(io.StringIO()):
+            self.assertTrue(handle_command("trace on", self.api, 1))
+            self.assertTrue(handle_command("trace prep on", self.api, 1))
+            self.assertTrue(handle_command("trace status", self.api, 1))
+            self.assertTrue(handle_command("trace prep off", self.api, 1))
+            self.assertTrue(handle_command("trace prep on", self.api, 1))
+            self.assertTrue(handle_command("trace off", self.api, 1))
+        self.assertFalse(self.api.prep_active)
+        self.assertEqual([x[0] for x in self.api.trace_calls],
+                         ["start", "prep_on", "prep_off", "prep_on", "stop"])
+
+    def test_prep_events_are_preserved_by_jsonl_export(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "summon_prep", "phase": "enter", "function": "eligibility",
+             "callId": 1, "threadId": 1, "state": {"context": 0x4103}},
+            {"kind": "summon_prep", "phase": "leave", "function": "eligibility",
+             "callId": 1, "threadId": 1, "returnRaw": 0x11,
+             "state": {"context": 0x4103}}
+        ]
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "prep.jsonl"
+            with redirect_stdout(io.StringIO()) as output:
+                save_command_trace(self.api, path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(rows[1]["state"]["context"], 0x4103)
+            self.assertEqual(rows[2]["returnRaw"], 0x11)
+            self.assertIn("eligibility/enter=1", output.getvalue())
+            self.assertTrue(self.api.trace_exported)
 
     def test_trace_dump_jsonl(self):
         from tempfile import TemporaryDirectory

@@ -180,7 +180,9 @@ class DuelWatcher:
                 return
 
 def show_trace_status(status: dict) -> None:
-    print(f"[trace] active={status['active']} session={status['session']} "
+    print(f"[trace] active={status['active']} "
+          f"prepActive={status.get('prepActive', False)} "
+          f"session={status['session']} "
           f"seen={status['seen']} retained={status['retained']} "
           f"overwritten={status['overwritten']} capacity={status['capacity']}",
           flush=True)
@@ -197,6 +199,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
         output = HERE.parent / "scratch" / "traces" / f"commands-{timestamp}-pid{pid}.jsonl"
     output.parent.mkdir(parents=True, exist_ok=True)
     counts: Counter[str] = Counter()
+    prep_counts: Counter[str] = Counter()
     exported = 0
     # Exclusive creation: never silently overwrite earlier recordings.
     with output.open("x", encoding="utf-8") as destination:
@@ -250,6 +253,8 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                             event.get("caller", "").lower() == "0x57977f" and
                             len(args) >= 2):
                         event["cfResourceIdCandidate"] = args[1] & 0xFFFF
+                if event.get("kind") == "summon_prep":
+                    prep_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
                 exported += 1
     print(f"[trace] Saved {exported} events: {output}", flush=True)
@@ -259,6 +264,10 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     if counts:
         summary = ", ".join(f"{code}={n}" for code, n in counts.most_common(12))
         print(f"[trace] Most frequent masked opcodes: {summary}", flush=True)
+    if prep_counts:
+        print("[trace] Summon prep observations: " +
+              ", ".join(f"{name}={n}" for name, n in sorted(prep_counts.items())),
+              flush=True)
     api.traceacknowledge(status["session"], status["seen"])
     return output
 
@@ -268,8 +277,8 @@ def show_help(default_side: int) -> None:
           "draw 5 [0|1]; damage <1..9999> <0|1>; "
           "destroy <0|1> <0..4>; state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
-          "trace on [16..20000]; trace mark <label>; trace status; "
-          "trace off; trace dump; cancel; help; stop", flush=True)
+          "trace on [16..20000]; trace prep on|off; trace mark <label>; "
+          "trace status; trace off; trace dump; cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
           "Side 0 = CPU, side 1 = player in the tested local duel. "
           "Damage and destroy require an explicit target side. "
@@ -296,6 +305,10 @@ def handle_command(command: str, api: object, default_side: int,
     if parts[0] == "trace":
         if parts == ["trace", "status"] or parts == ["trace"]:
             show_trace_status(api.tracestatus())
+        elif parts == ["trace", "prep", "on"]:
+            show_trace_status(api.traceprepstart())
+        elif parts == ["trace", "prep", "off"]:
+            show_trace_status(api.traceprepstop())
         elif parts == ["trace", "off"]:
             show_trace_status(api.tracestop())
             print("[trace] Capture stopped; run 'trace dump' to save.", flush=True)
@@ -311,8 +324,9 @@ def handle_command(command: str, api: object, default_side: int,
             label = raw.split(None, 2)[2]
             show_trace_status(api.tracemark(label))
         else:
-            print("[trace] Usage: trace on [16..20000] | trace mark <label> | "
-                  "trace status | trace off | trace dump", flush=True)
+            print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
+                  "trace mark <label> | trace status | trace off | trace dump",
+                  flush=True)
         return True
     if parts[0] == "watch":
         if watcher is None:

@@ -26,6 +26,34 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Checkpoint de investigação: estágio de preparação (probe passivo)
+
+A análise das rotinas já extraídas mostra uma separação:
+`FUN_005AAB90(side, card)` valida candidatos a invocação;
+`FUN_005AB820()` despacha uma operação em andamento usando
+`DAT_00A5508E` (bit ativo e modo da operação), enquanto
+`FUN_005ABD00()` emite `0xCE` e pode emitir `0x57`
+para tributos. `FUN_005AC870()` ajusta o contexto em um
+ramo alternativo antes de chamar o mesmo produtor. A
+seleção e inicialização do descritor **não foram identificadas**
+por uma única função segura; `FUN_005AAB90` não é uma
+API de invocação pronta.
+
+Um probe Frida opcional `trace prep on` captura entrada/saída
+dessas quatro funções, junto com os globais `00A55080/84/8E`,
+flags de jogadores, fase e fila, em um buffer bounded.
+O probe não executa ações e não modifica a DLL.
+Evidência estática:
+[`normal-summon-level-consumers.txt`](evidence/normal-summon-level-consumers.txt),
+[`normal-summon-tribute-context.txt`](evidence/normal-summon-tribute-context.txt),
+[`normal-summon-placement-boundaries.txt`](evidence/normal-summon-placement-boundaries.txt).
+
+**Próximo item no Ghidra:** obter *write references* para
+`0x00A55080`, `0x00A55084` e `0x00A5508E` (distinguir
+atribuições de leituras), e identificar onde o estado muda de
+inativo para ativo durante a seleção. Validar candidatos no
+duelo real antes de considerar uma chamada nativa de alto nível.
+
 ## Critério comprovado
 
 `0x005AAB90` verifica condições para invocação normal e consulta o nível por
