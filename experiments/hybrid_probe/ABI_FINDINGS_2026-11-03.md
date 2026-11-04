@@ -181,3 +181,10 @@ No teste subsequente, o operador confirmou explicitamente: **Sparks causou 300 L
 Escopo validado: execução de efeito normal com dano modificado (300 LP) usando código compilado em C++ fora do executável original. Informações não fornecidas nesta captura: contador da DLL, status final da restauração, log das chamadas ao helper, nova captura de RAM e replay. Não alegar que estes elementos foram observados. A solução de DLL ainda não foi submetida a testes de várias cartas, negação, dupla ativação ou descarregamento com chamadas em andamento.
 
 Próximo passo arquitetural sugerido: transformar o experimento Sparks em um módulo reproduzível (fonte C++, CMake, carregador Frida e teste) versionado na branch; centralizar validação do fingerprint, resolução de RVA e operações reversíveis de tabela num adaptador, e preservar a lógica das cartas em código C++ independente.
+
+
+## Nona captura — Sparks e Raimei simultâneos em DLL C++ (2026-11-04)
+
+O operador relatou ter executado com sucesso **ambas as cartas, Sparks e Raimei**, no experimento de substituição simultânea por funções C++ independentes após o commit `949c746`. A configuração sugerida no teste era `--sparks 300 --raimei 400`. O relato confirma que foi possível usar as duas cartas; a mensagem não especifica separadamente os LP exatos observados de cada uma, nem inclui log de contadores ou restauração, portanto não presumir esses detalhes.
+
+A interface atual restringe explicitamente os danos a **Sparks 200/300** e **Raimei 300/400** em três camadas: argumentos do Python, validação do agente Frida e inicialização do módulo C++. A função nativa do jogo recebe quantidade numérica, mas limites altos, overflow, condições especiais e efeitos sobre a partida ainda não foram validados.
