@@ -4,6 +4,31 @@ Análise estática do EXE SHA256
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 VA, image base 0x00400000. Banco mantido sem alterações persistentes.
 
+## Evidência posterior: replay real e limites de automação
+
+O arquivo `docs/evidence/replays/relinquished_commands.csv`,
+derivado de uma única partida de 1.062 registros, contém:
+
+| Opcode | Quantidade | Observação |
+| --- | ---: | --- |
+| `0x01` | 39 | Inícios de turno, alternando o bit alto |
+| `0x02` | 38 | Uma emissão em cada turno concluído |
+| `0x03` | 38 | Uma emissão em cada turno concluído |
+| `0xCE` | 19 | Colocações distribuídas por 19 turnos distintos |
+| `0x04` | 1 | Último registro, sem par final `0x02/0x03` |
+
+A sequência corrobora a separação estática de início de
+turno, limpeza e transição; não comprova que esses comandos
+sejam seguros para emissão direta por um executor externo.
+O end-turn original passa pelos contextos, handlers e fila
+antes de concluir a mudança. Um futuro comando de passagem
+de turno deve acionar o caminho de controle apropriado,
+não simplesmente injetar `0x03`.
+
+A amostra já é suficiente para montar um agrupador de
+eventos por turno; não fornece distribuições da IA nem
+evidência de sorteio de deck. Ver [plano de análise da IA](06-ai.md).
+
 ## Dois níveis de tabelas, com estados diferentes
 
 **0x005BC700** indexa a tabela de DWORDs em **0x005EFBB0** pelo byte alto do
