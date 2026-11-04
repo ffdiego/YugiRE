@@ -27,8 +27,9 @@ const kPrimaryOriginal = va('0x00584E60');
 const kTargetPreparation = va('0x00593CC0');
 const kDamageEmitter = va('0x005784E0');
 const kDrawEmitter = va('0x00578B60'); // FUN_00578B60(side, count)
-const kInitMagic = 0x59554734; // YUG4
-const kAbiVersion = 3;
+const kInitMagic = 0x59554735; // YUG5
+const kAbiVersion = 4;
+const kSnapshotBytes = 88; // Two PlayerSnapshot structs, 11 DWORDs each
 
 // The console command does NOT call Joey from Frida's RPC thread. A short
 // request is staged here and consumed on the original duel update thread.
@@ -69,10 +70,13 @@ let getDamage = null;
 let getMode = null;
 let getDrawBatches = null;
 let getManualDrawBatches = null;
+let getManualDamageCommands = null;
+let readNativeDuelState = null;
 let manualDrawOnDuelThread = null;
+let manualDamageOnDuelThread = null;
 let duelUpdateHook = null;
-let pendingConsoleDraw = null;
-let lastConsoleDraw = null;
+let pendingConsoleAction = null;
+let lastConsoleAction = null;
 let consoleSequence = 0;
 
 function verifyOriginalRecord(card) {
@@ -169,47 +173,47 @@ function queueGate() {
 // Only called synchronously from Interceptor.onLeave for 0x005BC700,
 // on the game's own duel-update thread. Never invoke NativeFunction
 // YugiRE_ConsoleDraw from rpc.exports or a Python/Frida RPC thread.
-function servicePendingConsoleDraw() {
-  if (!installed || pendingConsoleDraw === null || manualDrawOnDuelThread === null) return;
-  const gate = queueGate();
-  if (!gate.idle) return;
-  const request = pendingConsoleDraw;
-  pendingConsoleDraw = null;
+function servicePendingConsoleAction() {
+  // RPC stages an action; only Interceptor.onLeave invokes a native
+  // producer, preserving the game-thread requirement.
+  if (!installed || pendingConsoleAction === null) return;
+  if (!queueGate().idle) return;
+  const request = pendingConsoleAction;
+  pendingConsoleAction = null;
   try {
-    const cardsRemaining = kDeckCountBase.add(request.side * kPlayerStride).readU8();
-    if (cardsRemaining < request.count) {
-      lastConsoleDraw = {
-        ...request, state: 'rejected',
-        detail: 'Deck has only ' + cardsRemaining +
-          ' card(s); refusing a console draw of ' + request.count
-      };
-      return;
+    let accepted = 0;
+    if (request.kind === 'draw') {
+      const cardsRemaining = kDeckCountBase.add(request.side * kPlayerStride).readU8();
+      if (cardsRemaining < request.count) {
+        lastConsoleAction = {...request, state: 'rejected',
+          detail: 'Deck has only ' + cardsRemaining + ' card(s); refusing draw ' + request.count};
+        return;
+      }
+      accepted = manualDrawOnDuelThread(request.side, request.count);
+    } else if (request.kind === 'damage') {
+      accepted = manualDamageOnDuelThread(request.side, request.amount);
+    } else {
+      throw new Error('Invalid pending console action');
     }
-    const accepted = manualDrawOnDuelThread(request.side, request.count);
-    lastConsoleDraw = {
-      id: request.id, side: request.side, count: request.count,
+    lastConsoleAction = {...request,
       state: accepted === 1 ? 'enqueued' : 'rejected',
-      detail: accepted === 1 ? 'Engine queued draw commands (not necessarily resolved)' :
-        'C++ native draw producer refused the request'
-    };
+      detail: accepted === 1 ? 'Original engine command(s) queued; resolution is asynchronous' :
+        'The native producer refused the action'};
   } catch (error) {
-    lastConsoleDraw = {
-      id: request.id, side: request.side, count: request.count,
-      state: 'failed', detail: String(error)
-    };
+    lastConsoleAction = {...request, state: 'failed', detail: String(error)};
   }
 }
 
 function installConsoleHook() {
   duelUpdateHook = Interceptor.attach(kDuelUpdate, {
     onLeave(_retval) {
-      servicePendingConsoleDraw();
+      servicePendingConsoleAction();
     },
   });
 }
 
 function stopConsoleHook() {
-  pendingConsoleDraw = null;
+  pendingConsoleAction = null;
   if (duelUpdateHook !== null) {
     const hook = duelUpdateHook;
     duelUpdateHook = null;
@@ -217,28 +221,64 @@ function stopConsoleHook() {
   }
 }
 
-function queueConsoleDraw(side, count) {
+function stageConsoleAction(action) {
   if (!installed || duelUpdateHook === null) {
-    throw new Error('Console draw is available only while the patch is installed');
+    throw new Error('Console actions require an installed patch');
   }
+  if (pendingConsoleAction !== null) {
+    throw new Error('A console action is already pending; wait or cancel it');
+  }
+  const request = {id: ++consoleSequence, ...action};
+  pendingConsoleAction = request;
+  return {state: 'pending', ...request};
+}
+
+function queueConsoleDraw(side, count) {
   if (!Number.isInteger(side) || (side !== 0 && side !== 1) ||
       !Number.isInteger(count) || count !== 5) {
     throw new Error('Use draw 5 [0|1]; only 5 cards and side 0/1 are supported');
   }
-  if (pendingConsoleDraw !== null) {
-    throw new Error('A console draw request is already pending; wait or cancel it');
-  }
-  const request = {id: ++consoleSequence, side, count};
-  pendingConsoleDraw = request;
-  return {state: 'pending', ...request};
+  return stageConsoleAction({kind: 'draw', side, count});
 }
 
-function cancelPendingConsoleDraw() {
-  if (pendingConsoleDraw === null) return {state: 'none'};
-  const request = pendingConsoleDraw;
-  pendingConsoleDraw = null;
-  lastConsoleDraw = {...request, state: 'cancelled', detail: 'Cancelled before duel scheduler accepted it'};
-  return lastConsoleDraw;
+function queueConsoleDamage(side, amount) {
+  if (!Number.isInteger(side) || (side !== 0 && side !== 1) ||
+      !Number.isInteger(amount) || amount < 1 || amount > 9999) {
+    throw new Error('Use damage <1..9999> <0|1>; explicit target side required');
+  }
+  return stageConsoleAction({kind: 'damage', side, amount});
+}
+
+function cancelPendingConsoleAction() {
+  if (pendingConsoleAction === null) return {state: 'none'};
+  const request = pendingConsoleAction;
+  pendingConsoleAction = null;
+  lastConsoleAction = {...request, state: 'cancelled',
+    detail: 'Cancelled before the duel scheduler accepted it'};
+  return lastConsoleAction;
+}
+
+function duelState() {
+  // Safe read-only RPC operation. This is NOT an atomic snapshot: the
+  // original game may update memory between individual field reads.
+  if (!installed || readNativeDuelState === null) {
+    throw new Error('Duel-state inspection requires an installed patch');
+  }
+  const buffer = Memory.alloc(kSnapshotBytes);
+  if (readNativeDuelState(main.base, buffer) !== 1) {
+    throw new Error('The DLL refused the duel-state snapshot');
+  }
+  const sides = [0, 1].map(side => {
+    const offset = side * 44;
+    const word = n => buffer.add(offset + n * 4).readU32();
+    return {
+      side, lifePoints: word(0), handCount: word(1), deckCount: word(2),
+      graveyardCount: word(3), banishedCount: word(4),
+      terminalFlags: word(5),
+      monsterIndices: [word(6), word(7), word(8), word(9), word(10)]
+    };
+  });
+  return {sides, note: 'Non-atomic read; monster indices are internal, not resource IDs'};
 }
 
 function status() {
@@ -262,8 +302,9 @@ function status() {
     dllBase: dllBase === null ? null : dllBase.toString(),
     console: {
       batchesQueued: getManualDrawBatches === null ? 0 : getManualDrawBatches(),
-      pending: pendingConsoleDraw,
-      last: lastConsoleDraw,
+      damageCommandsQueued: getManualDamageCommands === null ? 0 : getManualDamageCommands(),
+      pending: pendingConsoleAction,
+      last: lastConsoleAction,
       gate: installed ? queueGate() : null
     },
     entries,
@@ -295,8 +336,10 @@ function restore() {
 
 rpc.exports = {
   status,
+  duelstate: duelState,
   queuedraw: queueConsoleDraw,
-  canceldraw: cancelPendingConsoleDraw,
+  queuedamage: queueConsoleDamage,
+  canceldraw: cancelPendingConsoleAction,
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
     if (typeof dllPath !== 'string' || !/^[a-zA-Z]:\\/.test(dllPath)) {
@@ -336,6 +379,12 @@ rpc.exports = {
       'uint32', [], 'mscdecl');
     manualDrawOnDuelThread = new NativeFunction(getExport('YugiRE_ConsoleDraw'),
       'uint32', ['uint32', 'uint32'], 'mscdecl');
+    manualDamageOnDuelThread = new NativeFunction(getExport('YugiRE_ConsoleDamage'),
+      'uint32', ['uint32', 'uint32'], 'mscdecl');
+    getManualDamageCommands = new NativeFunction(getExport('YugiRE_GetConsoleDamageCount'),
+      'uint32', [], 'mscdecl');
+    readNativeDuelState = new NativeFunction(getExport('YugiRE_ReadDuelState'),
+      'uint32', ['pointer', 'pointer'], 'mscdecl');
 
     if (initialize(main.base, sparksDamage, raimeiDamage,
                    sparksMode, raimeiMode) !== kInitMagic) {

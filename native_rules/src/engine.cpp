@@ -49,6 +49,7 @@ volatile long g_raimei_emits = 0;
 volatile long g_sparks_draws = 0;
 volatile long g_raimei_draws = 0;
 volatile long g_manual_draws = 0;
+volatile long g_manual_damages = 0;
 
 volatile long* calls_for(Card card) {
     switch (card) {
@@ -95,6 +96,7 @@ bool configure(void* image_base, unsigned int sparks_damage,
     g_sparks_emits = g_raimei_emits = 0;
     g_sparks_draws = g_raimei_draws = 0;
     g_manual_draws = 0;
+    g_manual_damages = 0;
     return true;
 }
 
@@ -126,6 +128,9 @@ unsigned int draw_batch_count(Card card) {
 }
 unsigned int manual_draw_batch_count() {
     return atomic_load(&g_manual_draws);
+}
+unsigned int manual_damage_command_count() {
+    return atomic_load(&g_manual_damages);
 }
 void record_call(Card card) {
     volatile long* p = calls_for(card);
@@ -159,6 +164,13 @@ void emit_draw_cards(Card card, unsigned int activating_side, unsigned int count
 bool draw_from_console(unsigned int side, unsigned int count) {
     if (count != 5u || !queue_draw_cards(side, count)) return false;
     atomic_inc(&g_manual_draws);
+    return true;
+}
+bool damage_from_console(unsigned int side, unsigned int amount) {
+    if (!g_damage_command || side > 1u || amount == 0u || amount > 9999u)
+        return false;
+    g_damage_command(side, amount);
+    atomic_inc(&g_manual_damages);
     return true;
 }
 }} // yugire::engine

@@ -61,22 +61,52 @@ def show_counters(state: dict) -> None:
         last = console.get("last")
         pending = console.get("pending")
         gate = console.get("gate")
-        print(f"[console] batchesQueued={console['batchesQueued']} "
+        print(f"[console] drawBatches={console['batchesQueued']} "
+              f"damageCommands={console.get('damageCommandsQueued', 0)} "
               f"pending={pending} last={last}", flush=True)
         if pending is not None:
             print(f"[console] duelQueueGate={gate}", flush=True)
 
 
+def show_duel_state(snapshot: dict) -> None:
+    """Human-readable, read-only view of native duel memory."""
+    print("[state] Snapshot is not atomic; card indices are internal.", flush=True)
+    for p in snapshot["sides"]:
+        who = "CPU" if p["side"] == 0 else "Player"
+        cards = ["-" if index == 0 else str(index)
+                 for index in p["monsterIndices"]]
+        print(f"[state] Side {p['side']} ({who}): "
+              f"LP={p['lifePoints']} hand={p['handCount']} deck={p['deckCount']} "
+              f"grave={p['graveyardCount']} banished={p['banishedCount']} "
+              f"terminalFlags=0x{p['terminalFlags']:03X} "
+              f"monsters=[{', '.join(cards)}]", flush=True)
+
+
+def show_duel_diff(before: dict, after: dict) -> None:
+    changes = 0
+    for prev, current in zip(before["sides"], after["sides"]):
+        for field in ("lifePoints", "handCount", "deckCount",
+                      "graveyardCount", "banishedCount", "terminalFlags",
+                      "monsterIndices"):
+            if prev[field] != current[field]:
+                print(f"[diff] side {current['side']} {field}: "
+                      f"{prev[field]} -> {current[field]}", flush=True)
+                changes += 1
+    if changes == 0:
+        print("[diff] No changes in the captured fields.", flush=True)
+
+
 def show_help(default_side: int) -> None:
     print("[dual-rules] Commands: Enter/status = counters; "
-          "draw 5 [0|1] = request five cards; cancel = cancel pending; "
-          "help = this text; stop = restore", flush=True)
+          "draw 5 [0|1]; damage <1..9999> <0|1>; state; diff; "
+          "cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
-          "Confirmed in the local CPU duel: side 0 = CPU, side 1 = player. "
-          "Use an explicit side for other modes.", flush=True)
+          "Side 0 = CPU, side 1 = player in the tested local duel. "
+          "Damage requires an explicit target side.", flush=True)
 
 
-def handle_command(command: str, api: object, default_side: int) -> bool:
+def handle_command(command: str, api: object, default_side: int,
+                   state_cache: dict | None = None) -> bool:
     """Return False only when the user requested shutdown."""
     parts = command.lower().strip().split()
     if not parts or parts == ["status"]:
@@ -89,6 +119,29 @@ def handle_command(command: str, api: object, default_side: int) -> bool:
         return False
     if parts == ["cancel"]:
         print(f"[console] {api.canceldraw()}", flush=True)
+        return True
+    if parts in (["state"], ["diff"]):
+        snapshot = api.duelstate()
+        if parts == ["diff"] and state_cache is not None and "previous" in state_cache:
+            show_duel_diff(state_cache["previous"], snapshot)
+        elif parts == ["diff"]:
+            print("[diff] No baseline. Capturing one now; run diff again later.",
+                  flush=True)
+        else:
+            show_duel_state(snapshot)
+        if state_cache is not None:
+            state_cache["previous"] = snapshot
+        return True
+    if parts[0] == "damage":
+        if (len(parts) != 3 or not parts[1].isdecimal() or
+                not (1 <= int(parts[1]) <= 9999) or parts[2] not in ("0", "1")):
+            print("[console] Usage: damage <1..9999> <0|1>", flush=True)
+            return True
+        amount, side = int(parts[1]), int(parts[2])
+        queued = api.queuedamage(side, amount)
+        print(f"[console] Damage request {queued['id']} pending: "
+              f"{amount} LP to side {side}. "
+              "It will be queued on an idle duel update.", flush=True)
         return True
     if parts[0] == "draw":
         if len(parts) not in (2, 3) or parts[1] != "5" or (
@@ -131,7 +184,7 @@ def main() -> int:
     try:
         import frida
     except ImportError:
-        parser.error("Frida not installed; use experiments/hybrid_probe/.venv-frida")
+        parser.error("Frida not installed; use native_rules/.venv-frida")
 
     session = None
     script = None
@@ -162,10 +215,11 @@ def main() -> int:
         print(f"[dual-rules] Effects: Sparks={args.sparks_mode}, "
               f"Raimei={args.raimei_mode}. Play a NORMAL duel.", flush=True)
         show_help(args.console_side)
+        state_cache = {}
         while True:
             command = input("[dual-rules] > ").strip()
             try:
-                if not handle_command(command, api, args.console_side):
+                if not handle_command(command, api, args.console_side, state_cache):
                     break
             except Exception as command_error:
                 print(f"[console] Command failed: {command_error}", flush=True)

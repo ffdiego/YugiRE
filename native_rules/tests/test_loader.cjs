@@ -26,11 +26,14 @@ function fixture(options = {}) {
     'YugiRE_GetAbiVersion','YugiRE_Initialize','YugiRE_Sparks','YugiRE_Raimei',
     'YugiRE_GetCallCount','YugiRE_GetEmitCount','YugiRE_GetConfiguredDamage',
     'YugiRE_GetConfiguredMode','YugiRE_GetDrawBatchCount',
-    'YugiRE_ConsoleDraw','YugiRE_GetConsoleDrawBatchCount'
+    'YugiRE_ConsoleDraw','YugiRE_GetConsoleDrawBatchCount',
+    'YugiRE_ConsoleDamage','YugiRE_GetConsoleDamageCount','YugiRE_ReadDuelState'
   ]) { addrExport.set(name, nextAddress); nextAddress += 0x100; }
   let config = [0,0];
   let consoleDrawCalls = 0;
+  let damageCalls = 0;
   let lastManualCall = null;
+  let lastDamageCall = null;
   let tickHandler = null;
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
@@ -85,9 +88,9 @@ function fixture(options = {}) {
       const entry=[...addrExport].find(([name,value])=> value===addr.n)?.[0];
       assert.ok(entry, 'Unknown export address '+addr);
       if(entry==='YugiRE_Initialize')return (_base,s,o,sm,rm)=>{
-        config=[s,o];modes=[sm,rm];return 0x59554734;
+        config=[s,o];modes=[sm,rm];return 0x59554735;
       };
-      if(entry==='YugiRE_GetAbiVersion')return ()=>3;
+      if(entry==='YugiRE_GetAbiVersion')return ()=>4;
       if(entry==='YugiRE_GetCallCount')return ()=>0;
       if(entry==='YugiRE_GetEmitCount')return ()=>0;
       if(entry==='YugiRE_GetConfiguredDamage')return (id)=> id===342?config[0] : config[1];
@@ -99,6 +102,20 @@ function fixture(options = {}) {
         return 1;
       };
       if(entry==='YugiRE_GetConsoleDrawBatchCount')return ()=>consoleDrawCalls;
+      if(entry==='YugiRE_ConsoleDamage')return (side,amount)=>{
+        damageCalls++;
+        lastDamageCall={side,amount};
+        return 1;
+      };
+      if(entry==='YugiRE_GetConsoleDamageCount')return ()=>damageCalls;
+      if(entry==='YugiRE_ReadDuelState')return (_base,out)=>{
+        const values=[
+          8000,4,27,1,0,0,727,0,0,0,0,
+          7600,6,22,2,1,0x100,0,503,0,0,0
+        ];
+        values.forEach((value,i)=>out.add(i*4).writeU32(value));
+        return 1;
+      };
       throw Error('Should not call callback directly from JS');
     },
     ptr, rpc:{exports:{}},
@@ -108,7 +125,9 @@ function fixture(options = {}) {
     original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); },
     tick(){ if(tickHandler !== null) tickHandler(); },
     consoleCalls(){return consoleDrawCalls;},
+    damageCalls(){return damageCalls;},
     lastManualCall(){return lastManualCall;},
+    lastDamageCall(){return lastDamageCall;},
     hookActive(){return tickHandler !== null;} };
 }
 
@@ -190,7 +209,7 @@ for(const invalid of [-1,0,4,5,2.5,'2',NaN,Infinity,null]){
     assert.equal(fixtureBad.memory.get(fixtureBad.raimei),fixtureBad.original);
   }
 }
-console.log('PASS: ABI 3, independent modes, invalid-mode rejection and restore');
+console.log('PASS: ABI 4, independent modes, invalid-mode rejection and restore');
 
 
 // Manual draw is staged by RPC, then executed ONLY on the duel scheduler
@@ -250,3 +269,51 @@ assert.equal(hookFailure.memory.get(hookFailure.sparks),hookFailure.original);
 assert.equal(hookFailure.memory.get(hookFailure.raimei),hookFailure.original);
 assert.equal(hookFailure.hookActive(),false);
 console.log('PASS: console draw is scheduled on idle duel hook, cancellation, restore, attach rollback');
+
+
+// New native damage command shares the same safe, game-thread-only
+// dispatcher queue as draw. Read-only snapshots inspect known offsets.
+const lab=fixture();
+assert.throws(()=>lab.api.duelstate(),/requires an installed patch/);
+lab.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
+const snapshot=lab.api.duelstate();
+assert.equal(snapshot.sides.length,2);
+assert.equal(snapshot.sides[0].lifePoints,8000);
+assert.equal(snapshot.sides[0].deckCount,27);
+assert.equal(snapshot.sides[0].monsterIndices[0],727);
+assert.equal(snapshot.sides[1].lifePoints,7600);
+assert.equal(snapshot.sides[1].handCount,6);
+assert.equal(snapshot.sides[1].terminalFlags,0x100);
+assert.equal(snapshot.sides[1].monsterIndices[1],503);
+
+const queuedDamage=lab.api.queuedamage(0,1200);
+assert.equal(queuedDamage.kind,'damage');
+assert.equal(queuedDamage.side,0);
+assert.equal(queuedDamage.amount,1200);
+assert.equal(lab.damageCalls(),0,'RPC must NOT call native damage directly');
+assert.throws(()=>lab.api.queuedraw(1,5),/already pending/);
+lab.memory.set(0x00A558A8,1); // native queue busy
+lab.tick();
+assert.equal(lab.damageCalls(),0);
+lab.memory.set(0x00A558A8,0);
+lab.tick();
+assert.equal(lab.damageCalls(),1);
+assert.equal(lab.lastDamageCall().side,0);
+assert.equal(lab.lastDamageCall().amount,1200);
+assert.equal(lab.api.status().console.damageCommandsQueued,1);
+assert.equal(lab.api.status().console.last.state,'enqueued');
+lab.tick();
+assert.equal(lab.damageCalls(),1);
+for (const [side,amount] of [[-1,1],[2,1],['0',1],[0,0],[0,10000],[0,1.5],[0,'100']]) {
+  assert.throws(()=>lab.api.queuedamage(side,amount),/explicit target side required/);
+}
+lab.api.queuedamage(1,300);
+assert.equal(lab.api.canceldraw().state,'cancelled');
+lab.tick();
+assert.equal(lab.damageCalls(),1);
+lab.api.queuedamage(1,500);
+lab.api.restore();
+assert.equal(lab.hookActive(),false);
+lab.tick();
+assert.equal(lab.damageCalls(),1);
+console.log('PASS: native duel snapshot, damage scheduling, input limits, cancel and restore');

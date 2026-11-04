@@ -14,6 +14,15 @@ from patch_dual_rules import handle_command
 class FakeApi:
     def __init__(self):
         self.draws = []
+        self.damages = []
+        self.snapshot = {"sides": [
+            {"side": 0, "lifePoints": 8000, "handCount": 4, "deckCount": 30,
+             "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
+             "monsterIndices": [0, 0, 0, 0, 0]},
+            {"side": 1, "lifePoints": 8000, "handCount": 5, "deckCount": 25,
+             "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
+             "monsterIndices": [0, 0, 0, 0, 0]},
+        ]}
         self.cancels = 0
         self.reads = 0
 
@@ -26,6 +35,14 @@ class FakeApi:
     def queuedraw(self, side, count):
         self.draws.append((side, count))
         return {"id": len(self.draws), "side": side, "count": count, "state": "pending"}
+
+    def queuedamage(self, side, amount):
+        self.damages.append((side, amount))
+        return {"id": 50, "side": side, "amount": amount, "state": "pending"}
+
+    def duelstate(self):
+        import copy
+        return copy.deepcopy(self.snapshot)
 
     def canceldraw(self):
         self.cancels += 1
@@ -54,6 +71,39 @@ class ConsoleCommandTests(unittest.TestCase):
                         "draw 5 1 0", "draw abc", "wat"):
             self.assertTrue(self.invoke(command))
         self.assertEqual(self.api.draws, [])
+
+    def test_damage_requires_amount_and_explicit_side(self):
+        self.assertTrue(self.invoke("damage 1200 0"))
+        self.assertTrue(self.invoke("damage 500 1"))
+        self.assertEqual(self.api.damages, [(0, 1200), (1, 500)])
+        for command in ("damage", "damage 100", "damage 0 0",
+                        "damage 10000 0", "damage 1 2", "damage 3.5 0",
+                        "damage x 1", "damage 200 0 1"):
+            self.assertTrue(self.invoke(command))
+        self.assertEqual(len(self.api.damages), 2)
+
+    def test_state_and_diff_baseline(self):
+        cache = {}
+        with redirect_stdout(io.StringIO()) as stdout:
+            self.assertTrue(handle_command("state", self.api, 1, cache))
+        self.assertIn("LP=8000", stdout.getvalue())
+        self.assertEqual(cache["previous"]["sides"][0]["deckCount"], 30)
+        self.api.snapshot["sides"][1]["lifePoints"] = 7300
+        self.api.snapshot["sides"][1]["handCount"] = 8
+        with redirect_stdout(io.StringIO()) as stdout:
+            self.assertTrue(handle_command("diff", self.api, 1, cache))
+        self.assertIn("lifePoints: 8000 -> 7300", stdout.getvalue())
+        self.assertIn("handCount: 5 -> 8", stdout.getvalue())
+        with redirect_stdout(io.StringIO()) as stdout:
+            self.assertTrue(handle_command("diff", self.api, 1, cache))
+        self.assertIn("No changes", stdout.getvalue())
+
+    def test_diff_without_baseline(self):
+        cache = {}
+        with redirect_stdout(io.StringIO()) as stdout:
+            self.assertTrue(handle_command("diff", self.api, 1, cache))
+        self.assertIn("No baseline", stdout.getvalue())
+        self.assertIn("previous", cache)
 
     def test_cancel_status_help_stop(self):
         self.assertTrue(self.invoke(""))

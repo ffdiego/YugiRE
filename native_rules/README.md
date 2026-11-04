@@ -14,7 +14,7 @@ native_rules/
   src/engine.cpp                    # funções nativas de dano e compra do Joey
   src/effect_context.cpp            # composição de efeitos C++
   src/cards/{sparks,raimei}.cpp     # callbacks individuais
-  src/exports.cpp                   # ABI pública da DLL (versão 3)
+  src/exports.cpp                   # ABI pública da DLL (versão 4)
   yugire_rules.def                  # exports sem decoração
   patch_dual_rules.py               # host Python e console
   pe_preflight.py                   # validação PE + SHA-256 do EXE
@@ -120,6 +120,71 @@ tiver menos de cinco cartas no deck.
 
 O mapeamento 0=CPU / 1=humano foi confirmado em duelo normal contra CPU.
 Não assumir que ele é idêntico em outros modos sem observação.
+
+## Duel Lab: dano externo e inspeção de estado (ABI v4)
+
+A partir desta versão, o console do Native Rules tem **dois novos comandos**
+que ajudam a investigar o motor original sem depender de cartas específicas:
+
+```text
+[dual-rules] > state
+[state] Side 0 (CPU): LP=8000 hand=4 deck=27 grave=1 banished=0 ...
+[state] Side 1 (Player): LP=7600 hand=6 deck=22 grave=2 banished=1 ...
+
+[dual-rules] > damage 1200 0
+[console] Damage request 1 pending: 1200 LP to side 0.
+
+[dual-rules] > diff
+[diff] side 0 lifePoints: 8000 -> 6800
+```
+
+`state` chama a nova exportação nativa de leitura
+`YugiRE_ReadDuelState` (DLL C++). Os dados já estavam documentados
+em [JoeyTrace](../docs/30-joeytrace.md), mas agora ficam disponíveis
+diretamente no nosso console:
+
+- LP, mão, deck, cemitério e cartas banidas de ambos os lados;
+- bits de condição terminal (deck-out 0x100, Exodia 0x200,
+  Destiny Board 0x400);
+- ocupação dos cinco slots de monstro, por **índice interno de carta**,
+  não por resource ID.
+
+`diff` compara o estado atual com o último `state` ou `diff`
+capturado, atualizando a referência. Use `state` antes de um efeito
+e `diff` depois para verificar exatamente o que mudou. **A leitura
+não é atômica:** se o jogo estiver movendo cartas ao mesmo tempo,
+alguns campos podem representar momentos ligeiramente diferentes.
+
+O comando `damage <quantidade> <lado>` solicita dano de **1 a 9999 LP**
+ao alvo explicitamente indicado. No duelo local testado, `0 = CPU` e
+`1 = jogador`. Exemplo: `damage 1200 0` tenta causar 1200 LP
+à CPU. O alvo é sempre obrigatório para evitar atingir o lado errado.
+
+Assim como `draw 5`, o dano é **agendado pelo hook de
+`0x005BC700` e executado na thread do duelo**, usando a função nativa
+`0x005784E0`. O console permite somente **um comando de alteração
+pendente** (`draw` ou `damage`) por vez; `cancel` descarta o
+pedido que ainda não entrou na fila original. `state` e `diff`
+são apenas leitura e não ocupam esse slot de comando.
+
+```text
+state
+damage 200 0
+diff
+draw 5 1
+diff
+```
+
+**O console de compra já foi testado em duelo real; os comandos
+`state`, `diff` e `damage` são novos e ainda não foram testados
+dentro do Joey.** Primeiro verifique `state` com o duelo parado,
+depois use `damage 100 0` e confira os LP pelo jogo e por `diff`.
+Não extrapole para multiplayer ou replay.
+
+O parser de `DuelSnapshot` fica em `src/duel_state.cpp`, testável
+independentemente, e os exports agora exigem ABI **v4**. Para evitar
+reutilizar a DLL antiga, feche o Joey antes de recompilar e reinicie
+o processo após a build.
 
 ## Testes offline
 

@@ -1,5 +1,6 @@
 #include "yugire/cards.hpp"
 #include "yugire/engine.hpp"
+#include "yugire/duel_state.hpp"
 
 #if !defined(_WIN32) || (!defined(_M_IX86) && !defined(__i386__))
 #error "The Joey DLL must be Windows x86."
@@ -8,8 +9,8 @@ static_assert(sizeof(void*) == 4, "Requires x86");
 
 // Names exported undecorated via yugire_rules.def. Frida must call these
 // functions using its 'mscdecl' ABI, matching the Win32 __cdecl below.
-constexpr unsigned int kInitMagic = 0x59554734;  // "YUG4"
-constexpr unsigned int kAbiVersion = 3;
+constexpr unsigned int kInitMagic = 0x59554735;  // "YUG5"
+constexpr unsigned int kAbiVersion = 4;
 
 extern "C" unsigned int __cdecl YugiRE_GetAbiVersion() {
     return kAbiVersion;
@@ -52,4 +53,16 @@ extern "C" unsigned int __cdecl YugiRE_ConsoleDraw(
 }
 extern "C" unsigned int __cdecl YugiRE_GetConsoleDrawBatchCount() {
     return yugire::engine::manual_draw_batch_count();
+}
+
+extern "C" unsigned int __cdecl YugiRE_ConsoleDamage(
+    unsigned int side, unsigned int amount) {
+    return yugire::engine::damage_from_console(side, amount) ? 1u : 0u;
+}
+extern "C" unsigned int __cdecl YugiRE_GetConsoleDamageCount() {
+    return yugire::engine::manual_damage_command_count();
+}
+extern "C" unsigned int __cdecl YugiRE_ReadDuelState(
+    const void* image_base, yugire::DuelSnapshot* output) {
+    return yugire::read_duel_snapshot(image_base, output) ? 1u : 0u;
 }

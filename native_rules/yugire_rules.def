@@ -11,3 +11,6 @@ EXPORTS
     YugiRE_GetDrawBatchCount
     YugiRE_ConsoleDraw
     YugiRE_GetConsoleDrawBatchCount
+    YugiRE_ConsoleDamage
+    YugiRE_GetConsoleDamageCount
+    YugiRE_ReadDuelState
