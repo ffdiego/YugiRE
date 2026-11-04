@@ -725,8 +725,9 @@ function summonFailure(config,edit,expected) {
   const f=fixture(config);
   f.api.install('Z:\\YugiRE\\rules.dll',200,300,1,1);
   f.memory.set(0x00A5508E,0);
-  if(edit)edit(f);
   f.api.queuesummon(1,4,false);
+  // Simulate an asynchronous change AFTER the RPC request is staged.
+  if(edit)edit(f);
   f.tick();
   assert.equal(f.api.status().console.last.state,'rejected');
   assert.match(f.api.status().console.last.detail,expected);
