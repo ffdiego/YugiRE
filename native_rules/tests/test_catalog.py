@@ -1,7 +1,7 @@
 """Verify Sparks/Raimei rows against the already-versioned YugiRE card catalogue.
 
-Run from experiments/hybrid_probe:
-    python native_rules/tests/test_catalog.py
+Run from native_rules:
+    python tests/test_catalog.py
 """
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve()
-ROOT = HERE.parents[4]
+ROOT = HERE.parents[2]
 CATALOG = ROOT / "docs" / "evidence" / "card-callback-catalog.json"
 
 

@@ -1,0 +1,12 @@
+# Local build output; never commit the native DLL or intermediate artifacts.
+/build/
+/build-*/
+/.vs/
+/.venv-frida/
+__pycache__/
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.dll

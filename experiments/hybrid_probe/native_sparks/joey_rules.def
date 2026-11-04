@@ -1,7 +1,0 @@
-LIBRARY joey_rules
-EXPORTS
-    YugiRE_Initialize
-    YugiRE_Sparks
-    YugiRE_GetCallCount
-    YugiRE_GetEmitCount
-    YugiRE_GetConfiguredDamage

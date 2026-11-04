@@ -1,6 +1,6 @@
 """Install Sparks and Raimei C++ callbacks together, with guarded rollback.
 
-Requirements: the existing YugiRE pe_preflight.py and .venv-frida environment.
+Requirements: pe_preflight.py in this directory and Python with the Frida package.
 The original Joey EXE SHA256 is checked against the *loaded* process module.
 Only the primary callback pointers of resources 342 and 1007 are modified.
 Both pointer slots are restored at the end; the DLL stays loaded until Joey
@@ -16,7 +16,7 @@ import struct
 from pe_preflight import parse_pe, probe
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_DLL = HERE / "native_rules" / "build-vs2026" / "Release" / "yugire_rules.dll"
+DEFAULT_DLL = HERE / "build-vs2026" / "Release" / "yugire_rules.dll"
 MODES = {"damage": 1, "draw": 2, "damage-draw": 3}
 MODE_NAMES = {value: name for name, value in MODES.items()}
 

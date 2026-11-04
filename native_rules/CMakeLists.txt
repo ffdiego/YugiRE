@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(YugiRENativeDualCards VERSION 0.4 LANGUAGES CXX)
+project(YugiRENativeDualCards VERSION 0.5 LANGUAGES CXX)
 if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
   message(FATAL_ERROR "This must be built for Windows x86 (Visual Studio -A Win32).")
 endif()

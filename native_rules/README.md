@@ -1,0 +1,160 @@
+# YugiRE Native Rules
+
+Implementação híbrida das regras de **Yu-Gi-Oh! Power of Chaos: Joey the Passion**.
+Este diretório contém **todo o código necessário** para os experimentos ativos
+com callbacks em DLL C++ e o console interativo de duelo, além dos testes.
+Não depende da pasta antiga `experiments/hybrid_probe`.
+
+## Organização
+
+```text
+native_rules/
+  CMakeLists.txt                    # build Windows Win32 / x86
+  include/yugire/                   # CardRequest, EffectContext, API do motor
+  src/engine.cpp                    # funções nativas de dano e compra do Joey
+  src/effect_context.cpp            # composição de efeitos C++
+  src/cards/{sparks,raimei}.cpp     # callbacks individuais
+  src/exports.cpp                   # ABI pública da DLL (versão 3)
+  yugire_rules.def                  # exports sem decoração
+  patch_dual_rules.py               # host Python e console
+  pe_preflight.py                   # validação PE + SHA-256 do EXE
+  yugire_dual_loader.js             # agente Frida que roda dentro do Joey
+  tests/                             # regressões Python / JS / C++
+```
+
+**O papel de cada parte:**
+1. **Python** conecta à instância do Joey por Frida, valida o fingerprint
+   do executável, mantém a sessão ativa e implementa o prompt `draw 5`.
+2. **JavaScript/Frida**, já dentro do Joey, usa `LoadLibraryW` para carregar
+   `yugire_rules.dll`, localiza os exports e substitui os dois ponteiros
+   de callback individuais. O comando do console é apenas *solicitado*
+   por RPC: um hook no despachante do duelo agenda a compra na thread do jogo,
+   não diretamente na thread RPC.
+3. **DLL C++** executa os efeitos e chama produtores de comandos do Joey:
+   `0x005784E0` para dano e `0x00578B60` para compra. O motor original
+   continua responsável por processar a fila, o deck, a mão e as animações.
+
+O código do executável em disco e os outros callbacks não são modificados.
+
+## Compilar
+
+Use **Developer PowerShell for Visual Studio 2026** na raiz do repositório:
+
+```powershell
+cd Z:\YugiRE\yugire
+git pull
+cmake -S native_rules -B native_rules\build-vs2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build native_rules\build-vs2026 --config Release
+ctest --test-dir native_rules\build-vs2026 -C Release --output-on-failure
+```
+
+A DLL será gerada em
+`native_rules\build-vs2026\Release\yugire_rules.dll`.
+Essa DLL deve ser **x86**, não x64.
+
+### Python/Frida
+
+O código Python precisa apenas do pacote `frida` instalado em um ambiente
+Python. Se você já tem um virtualenv funcional na pasta antiga, ele pode ser
+usado temporariamente apontando para o novo `patch_dual_rules.py`.
+Para deixar tudo autônomo e poder remover a pasta antiga por completo:
+
+```powershell
+cd Z:\YugiRE\yugire\native_rules
+py -3 -m venv .venv-frida
+.\.venv-frida\Scripts\python.exe -m pip install frida
+```
+
+A pasta `.venv-frida` e os binários de compilação não são versionados.
+
+## Executar em um duelo normal
+
+Reinicie o Joey antes de testar uma DLL recém-compilada e aguarde a
+inicialização de um duelo. No diretório `native_rules`:
+
+```powershell
+$joeyPid = (Get-Process joey_pc).Id
+
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py `
+    --pid $joeyPid `
+    --sparks-mode draw `
+    --raimei-mode damage-draw `
+    --raimei 400
+```
+
+Valores originais por padrão: `--sparks 200 --raimei 300`. Os danos podem
+ser números inteiros entre 1 e 9999. Cada carta aceita `--sparks-mode` ou
+`--raimei-mode` com `damage`, `draw` ou `damage-draw`.
+
+| Carta | Exemplo de efeito |
+|---|---|
+| Sparks (`resource_id=342`, linha 66) | comprar 5, sem dano |
+| Raimei (`resource_id=1007`, linha 172) | dano de 400 LP e comprar 5 |
+
+As duas alterações de efeito já foram validadas pelo operador em um duelo
+normal, assim como o console de compras.
+
+### Console interativo
+
+```text
+[dual-rules] > draw 5
+[console] Request 1 pending for side 1.
+[dual-rules] > status
+[dual-rules] > draw 5 0
+[dual-rules] > cancel
+[dual-rules] > stop
+```
+
+- `draw 5` envia uma compra de cinco cartas ao **jogador humano**, lado 1,
+  no duelo local testado.
+- `draw 5 0` compra para a **CPU**, lado 0.
+- `status` ou Enter consulta os contadores, último pedido e fila.
+- `cancel` cancela um pedido que ainda não entrou na fila.
+- `stop` restaura os ponteiros de callbacks e remove o hook.
+
+O carregador intencionalmente mantém **no máximo um pedido externo pendente**;
+a mensagem `A console draw request is already pending` é esperada se o
+comando anterior ainda não foi aceito. `draw 6` e `draw 30` são
+proibidos nesta versão. O comando manual recusa a compra se o lado escolhido
+tiver menos de cinco cartas no deck.
+
+O mapeamento 0=CPU / 1=humano foi confirmado em duelo normal contra CPU.
+Não assumir que ele é idêntico em outros modos sem observação.
+
+## Testes offline
+
+Execute a partir de `native_rules`:
+
+```powershell
+python .\tests\test_catalog.py
+python .\tests\test_damage_limits.py
+python .\tests\test_console_commands.py
+node .\tests\test_loader.cjs
+ctest --test-dir .\build-vs2026 -C Release --output-on-failure
+```
+
+Os testes de Python, JS e C++ não substituem testes reais dentro do jogo.
+O último cenário validado incluiu várias compras pelo console enquanto a
+CPU jogava; não inclui verificação completa de todos os casos-limite.
+
+## Segurança e escopo
+
+- O carregador só aceita o `joey_pc.exe` com SHA-256
+  `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`
+  (PE32/x86).
+- O DLL e o hook ficam ativos até `stop`. A DLL permanece carregada até
+  fechar o processo do Joey; reinicie o jogo antes de recompilar/retestar.
+- Não interrompa a sessão durante a resolução de efeitos, nem teste
+  injeções em replay, duelos remotos ou menus sem validação específica.
+- Frida é uma dependência **apenas do carregador**, não da lógica de
+  regras em C++; uma futura injeção própria pode substituí-la.
+- Endereços de funções são específicos dessa versão do EXE; nenhuma
+  compatibilidade automática com outras versões foi demonstrada.
+
+## Documentação de engenharia reversa
+
+A documentação e as evidências estáticas continuam no diretório `docs/`,
+independentemente deste projeto compilável. O histórico dos protótipos
+removidos pode ser recuperado no Git. Arquivos históricos relevantes:
+[ABI e testes híbridos](../docs/evidence/hybrid-native-abi-findings.md) e
+[baseline do Jam Breeding](../docs/evidence/hybrid-jam-baseline.md).
