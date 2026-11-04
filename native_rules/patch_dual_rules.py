@@ -14,6 +14,7 @@ import argparse
 import json
 from pathlib import Path
 import struct
+import threading
 
 from pe_preflight import parse_pe, probe
 
@@ -83,27 +84,104 @@ def show_duel_state(snapshot: dict) -> None:
               f"grave={p['graveyardCount']} banished={p['banishedCount']} "
               f"terminalFlags=0x{p['terminalFlags']:03X} "
               f"monsters=[{', '.join(cards)}]", flush=True)
+        other = p.get("otherFieldIndices", [])
+        positions = p.get("fieldPositionWords", [])
+        if len(other) == 6 and len(positions) == 11:
+            def describe(slot: int) -> str:
+                index = other[slot - 5]
+                return "-" if not index else f"{index}(pos=0x{positions[slot]:04X})"
+            print(f"[field] Side {p['side']}: slots 5..9="
+                  f"[{', '.join(describe(slot) for slot in range(5, 10))}] "
+                  f"slot 10={describe(10)}", flush=True)
 
 
-def show_duel_diff(before: dict, after: dict) -> None:
+def show_duel_diff(before: dict, after: dict, *, quiet: bool = False) -> int:
+    """Report meaningful field and hand transitions, with physical slot indices."""
     changes = 0
     for prev, current in zip(before["sides"], after["sides"]):
+        side = current["side"]
         for field in ("lifePoints", "handCount", "deckCount",
-                      "graveyardCount", "banishedCount", "terminalFlags",
-                      "monsterIndices"):
+                      "graveyardCount", "banishedCount", "terminalFlags"):
             if prev[field] != current[field]:
-                print(f"[diff] side {current['side']} {field}: "
+                print(f"[diff] side {side} {field}: "
                       f"{prev[field]} -> {current[field]}", flush=True)
                 changes += 1
-    if changes == 0:
+        for key, offset in (("monsterIndices", 0), ("otherFieldIndices", 5)):
+            before_slots = prev.get(key, [])
+            after_slots = current.get(key, [])
+            for index, (old, new) in enumerate(zip(before_slots, after_slots)):
+                if old != new:
+                    slot = offset + index
+                    print(f"[diff] side {side} field slot {slot}: "
+                          f"{old or '-'} -> {new or '-'}", flush=True)
+                    changes += 1
+        previous_indices = prev.get("monsterIndices", []) + prev.get("otherFieldIndices", [])
+        current_indices = current.get("monsterIndices", []) + current.get("otherFieldIndices", [])
+        for slot, (old, new) in enumerate(zip(prev.get("fieldPositionWords", []),
+                                              current.get("fieldPositionWords", []))):
+            if (old != new and slot < len(previous_indices) and
+                    (previous_indices[slot] or current_indices[slot])):
+                print(f"[diff] side {side} field slot {slot} position: "
+                      f"0x{old:04X} -> 0x{new:04X}", flush=True)
+                changes += 1
+        if prev.get("handIndices") != current.get("handIndices"):
+            print(f"[diff] side {side} handIndices: "
+                  f"{prev.get('handIndices', [])} -> {current.get('handIndices', [])}",
+                  flush=True)
+            changes += 1
+    if changes == 0 and not quiet:
         print("[diff] No changes in the captured fields.", flush=True)
+    return changes
 
+
+class DuelWatcher:
+    """A polling observer; it never calls native mutation routines."""
+
+    def __init__(self, api: object):
+        self.api = api
+        self.interval_ms = 250
+        self._halt = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._previous: dict | None = None
+
+    def running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def start(self, interval_ms: int = 250) -> None:
+        if self.running():
+            raise ValueError("Watch is already active; use watch off")
+        if not 100 <= interval_ms <= 5000:
+            raise ValueError("Watch interval must be 100..5000 ms")
+        self._previous = self.api.duelstate()
+        self.interval_ms = interval_ms
+        self._halt.clear()
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._halt.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2)
+            self._thread = None
+
+    def _loop(self) -> None:
+        while not self._halt.wait(self.interval_ms / 1000):
+            try:
+                current = self.api.duelstate()
+                if self._previous is not None and current != self._previous:
+                    print("[watch] Observed state change:", flush=True)
+                    show_duel_diff(self._previous, current, quiet=True)
+                self._previous = current
+            except Exception as error:
+                print(f"[watch] Stopped after read error: {error}", flush=True)
+                self._halt.set()
+                return
 
 def show_help(default_side: int) -> None:
     print("[dual-rules] Commands: Enter/status = counters; "
           "draw 5 [0|1]; damage <1..9999> <0|1>; "
-          "destroy <0|1> <0..4>; state; diff; "
-          "cancel; help; stop", flush=True)
+          "destroy <0|1> <0..4>; state; diff; hand [0|1]; "
+          "watch on [100..5000 ms]; watch off; cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
           "Side 0 = CPU, side 1 = player in the tested local duel. "
           "Damage and destroy require an explicit target side. "
@@ -111,7 +189,8 @@ def show_help(default_side: int) -> None:
 
 
 def handle_command(command: str, api: object, default_side: int,
-                   state_cache: dict | None = None) -> bool:
+                   state_cache: dict | None = None,
+                   watcher: DuelWatcher | None = None) -> bool:
     """Return False only when the user requested shutdown."""
     parts = command.lower().strip().split()
     if not parts or parts == ["status"]:
@@ -124,6 +203,36 @@ def handle_command(command: str, api: object, default_side: int,
         return False
     if parts == ["cancel"]:
         print(f"[console] {api.canceldraw()}", flush=True)
+        return True
+    if parts[0] == "watch":
+        if watcher is None:
+            print("[watch] No watcher available.", flush=True)
+        elif parts == ["watch", "off"]:
+            watcher.stop()
+            print("[watch] Stopped.", flush=True)
+        elif parts == ["watch"] or parts == ["watch", "status"]:
+            print(f"[watch] Active={watcher.running()} "
+                  f"interval={watcher.interval_ms}ms", flush=True)
+        elif (parts == ["watch", "on"] or
+              (len(parts) == 3 and parts[:2] == ["watch", "on"] and
+               parts[2].isdecimal() and 100 <= int(parts[2]) <= 5000)):
+            interval = 250 if len(parts) == 2 else int(parts[2])
+            watcher.start(interval)
+            print(f"[watch] Reading duel state every {interval}ms "
+                  "(non-atomic; transitions may be missed).", flush=True)
+        else:
+            print("[watch] Usage: watch on [100..5000] | watch off | watch status",
+                  flush=True)
+        return True
+    if parts[0] == "hand":
+        if len(parts) > 2 or (len(parts) == 2 and parts[1] not in ("0", "1")):
+            print("[console] Usage: hand [0|1] (default: player side 1)", flush=True)
+            return True
+        side = 1 if len(parts) == 1 else int(parts[1])
+        p = api.duelstate()["sides"][side]
+        print(f"[hand] side {side}: count={p['handCount']} "
+              f"indices={p.get('handIndices', [])} "
+              f"truncated={p.get('handTruncated', False)}", flush=True)
         return True
     if parts in (["state"], ["diff"]):
         snapshot = api.duelstate()
@@ -238,6 +347,7 @@ def main(argv: list[str] | None = None) -> int:
 
     session = None
     script = None
+    watcher = None
     exit_code = 0
     try:
         joey_pid = resolve_joey_pid(frida.get_local_device(), args.pid)
@@ -267,10 +377,12 @@ def main(argv: list[str] | None = None) -> int:
               f"Raimei={args.raimei_mode}. Play a NORMAL duel.", flush=True)
         show_help(args.console_side)
         state_cache = {}
+        watcher = DuelWatcher(api)
         while True:
             command = input("[dual-rules] > ").strip()
             try:
-                if not handle_command(command, api, args.console_side, state_cache):
+                if not handle_command(command, api, args.console_side, state_cache,
+                                      watcher):
                     break
             except Exception as command_error:
                 print(f"[console] Command failed: {command_error}", flush=True)
@@ -282,6 +394,8 @@ def main(argv: list[str] | None = None) -> int:
         exit_code = 2
         print(f"[dual-rules] ERROR: {exc}", flush=True)
     finally:
+        if watcher is not None:
+            watcher.stop()
         if script is not None:
             try:
                 # Idempotent: restores a complete install or partial install.

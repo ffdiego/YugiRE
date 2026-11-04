@@ -35,6 +35,7 @@ native_rules/
    continua responsável por processar a fila, o deck, a mão e as animações.
 
 O código do executável em disco e os outros callbacks não são modificados.
+A ABI atual é v6; apenas os snapshots de leitura foram ampliados.
 
 ## Compilar
 
@@ -124,7 +125,7 @@ tiver menos de cinco cartas no deck.
 O mapeamento 0=CPU / 1=humano foi confirmado em duelo normal contra CPU.
 Não assumir que ele é idêntico em outros modos sem observação.
 
-## Duel Lab: dano externo e inspeção de estado (ABI v4)
+## Duel Lab: dano externo e inspeção de estado (ABI v6)
 
 A partir desta versão, o console do Native Rules tem **dois novos comandos**
 que ajudam a investigar o motor original sem depender de cartas específicas:
@@ -150,7 +151,9 @@ diretamente no nosso console:
 - bits de condição terminal (deck-out 0x100, Exodia 0x200,
   Destiny Board 0x400);
 - ocupação dos cinco slots de monstro, por **índice interno de carta**,
-  não por resource ID.
+  não por resource ID;
+- observação dos seis slots físicos adicionais (5..10), a palavra de
+  posição/face (`+6`) e índices internos das cartas da mão (até 80 por lado).
 
 `diff` compara o estado atual com o último `state` ou `diff`
 capturado, atualizando a referência. Use `state` antes de um efeito
@@ -185,11 +188,11 @@ depois use `damage 100 0` e confira os LP pelo jogo e por `diff`.
 Não extrapole para multiplayer ou replay.
 
 O parser de `DuelSnapshot` fica em `src/duel_state.cpp`, testável
-independentemente, e os exports agora exigem ABI **v5**. Para evitar
+independentemente, e os exports agora exigem ABI **v6**. Para evitar
 reutilizar a DLL antiga, feche o Joey antes de recompilar e reinicie
 o processo após a build.
 
-## Experimento: destruir monstro em slot (ABI v5; ainda sem teste no Joey)
+## Experimento: destruir monstro em slot (iniciado na ABI v5)
 
 O comando `destroy <lado> <slot>` tenta destruir um monstro usando a
 rotina nativa de **destruição por efeito** `FUN_00576960`, que produz
@@ -211,6 +214,9 @@ na thread do duelo e compartilha o único pedido pendente de `draw`/`damage`.
 `status` informa `submitted` quando o helper foi *invocado*, não quando
 a destruição realmente ocorreu. Consulte `state` e `diff` após a resolução.
 
+O operador relatou destruição bem-sucedida em teste local e rejeição
+correta de alvo vazio. Ainda faltam capturas isoladas de causa/efeito.
+
 **Limitação experimental importante:** a DLL cria um pedido temporário
 de 20 bytes com índice interno 753 (Man-Eater Bug) para chamar
 `FUN_00576960(pedido, máscara, 14, 2)`. O caminho é fundamentado nos
@@ -219,6 +225,42 @@ e [seleção](../docs/cards/man-eater-bug-targeting.md), mas **não foi validado
 em execução real**. Filtros nativos podem rejeitar o alvo e interações de
 cartas, vínculos e animações ainda precisam ser verificadas. Não usar em
 duelo remoto/replay. Reinicie Joey antes de testar a nova DLL/ABI.
+
+## Inspeção da mão, zonas adicionais e watch (ABI v6)
+
+```text
+state
+hand
+hand 0
+watch on 250
+destroy 1 0
+watch off
+diff
+```
+
+`state` apresenta uma linha `[field]` por lado, contendo os slots físicos
+5..9 e 10 e a palavra de posição/face em hexadecimal para cada carta.
+A interpretação **5..9=mágicas/armadilhas e 10=Field Zone é provisória**:
+o arranjo de onze registros de campo é documentado, mas a correspondência
+com os slots da interface ainda não foi testada diretamente. Zero é vazio.
+Índices mostrados não são resource IDs.
+
+`hand` lê os índices internos da mão do jogador 1; `hand 0` mostra os
+da CPU, inclusive cartas ocultas. Não publique esses dados inadvertidamente.
+`diff` agora informa mudanças de slot físico, posição/face e mão.
+
+`watch on [ms]` inicia uma thread Python de leitura, com intervalo de
+100 a 5000 ms (padrão 250). `watch off` interrompe e `watch status`
+consulta o estado. O observador não gera comandos, não pausa o jogo e
+pode perder mudanças rápidas: o snapshot não é atômico e não registra
+cada etapa da fila. É encerrado antes de restaurar os hooks.
+
+`summon`, `set` e `discard` ainda não são comandos externos: os
+produtores nativos encontrados dependem de contexto de turno, seleção,
+destino e rotinas auxiliares. Precisam de validação antes de invocação
+pela DLL. A visualização de mão/campo desta etapa prepara esses testes.
+
+**Após a build da ABI v6, reinicie Joey para carregar a nova DLL.**
 
 ## Testes offline
 

@@ -10,7 +10,7 @@ static_assert(sizeof(void*) == 4, "Requires x86");
 // Names exported undecorated via yugire_rules.def. Frida must call these
 // functions using its 'mscdecl' ABI, matching the Win32 __cdecl below.
 constexpr unsigned int kInitMagic = 0x59554735;  // "YUG5"
-constexpr unsigned int kAbiVersion = 5;
+constexpr unsigned int kAbiVersion = 6;
 
 extern "C" unsigned int __cdecl YugiRE_GetAbiVersion() {
     return kAbiVersion;

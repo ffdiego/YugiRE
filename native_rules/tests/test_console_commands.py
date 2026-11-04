@@ -19,10 +19,16 @@ class FakeApi:
         self.snapshot = {"sides": [
             {"side": 0, "lifePoints": 8000, "handCount": 4, "deckCount": 30,
              "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
-             "monsterIndices": [0, 0, 0, 0, 0]},
+             "monsterIndices": [0, 0, 0, 0, 0],
+              "otherFieldIndices": [0, 0, 0, 0, 0, 0],
+              "fieldPositionWords": [0] * 11,
+              "handIndices": [123, 456, 789]},
             {"side": 1, "lifePoints": 8000, "handCount": 5, "deckCount": 25,
              "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
-             "monsterIndices": [0, 0, 0, 0, 0]},
+             "monsterIndices": [0, 0, 0, 0, 0],
+              "otherFieldIndices": [0, 0, 0, 0, 0, 0],
+              "fieldPositionWords": [0] * 11,
+              "handIndices": [123, 456, 789]},
         ]}
         self.cancels = 0
         self.reads = 0
@@ -113,6 +119,49 @@ class ConsoleCommandTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()) as stdout:
             self.assertTrue(handle_command("diff", self.api, 1, cache))
         self.assertIn("No changes", stdout.getvalue())
+
+    def test_other_field_and_hand_observation(self):
+        with redirect_stdout(io.StringIO()) as output:
+            handle_command("state", self.api, 1, {})
+        self.assertIn("slots 5..9", output.getvalue())
+        with redirect_stdout(io.StringIO()) as output:
+            handle_command("hand", self.api, 1)
+        self.assertIn("side 1", output.getvalue())
+        self.assertIn("123", output.getvalue())
+        cache = {}
+        with redirect_stdout(io.StringIO()):
+            handle_command("state", self.api, 1, cache)
+        self.api.snapshot["sides"][0]["otherFieldIndices"][5] = 900
+        self.api.snapshot["sides"][0]["fieldPositionWords"][10] = 2
+        self.api.snapshot["sides"][1]["handIndices"][0] = 902
+        with redirect_stdout(io.StringIO()) as output:
+            handle_command("diff", self.api, 1, cache)
+        self.assertIn("field slot 10: - -> 900", output.getvalue())
+        self.assertIn("field slot 10 position", output.getvalue())
+        self.assertIn("handIndices", output.getvalue())
+
+    def test_watch_command_dispatch(self):
+        class FakeWatcher:
+            interval_ms = 250
+            active = False
+            def running(self):
+                return self.active
+            def start(self, interval_ms=250):
+                self.active = True
+                self.interval_ms = interval_ms
+            def stop(self):
+                self.active = False
+        watcher = FakeWatcher()
+        with redirect_stdout(io.StringIO()):
+            handle_command("watch on 500", self.api, 1, watcher=watcher)
+        self.assertTrue(watcher.active)
+        self.assertEqual(watcher.interval_ms, 500)
+        with redirect_stdout(io.StringIO()):
+            handle_command("watch off", self.api, 1, watcher=watcher)
+        self.assertFalse(watcher.active)
+        with redirect_stdout(io.StringIO()):
+            handle_command("watch on 50", self.api, 1, watcher=watcher)
+        self.assertFalse(watcher.active)
 
     def test_diff_without_baseline(self):
         cache = {}
