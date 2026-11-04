@@ -112,3 +112,24 @@ O observador genérico registrou **169 chamadas ao dispatcher**, distribuídas e
 O `joey_all_primary_callbacks.js` atualizado agora contém um mapa estático para **439 índices com nomes**, derivado de `docs/evidence/card-callback-catalog.json`, incluindo nome, ID de recurso e endereço do callback principal. Isso evita depender de uma hipótese de endereço em memória e preserva índices ainda sem nome. Depois de atualizar a branch com `git pull`, as novas mensagens `card_seen` e `summary` devem exibir nomes das cartas presentes no catálogo. Não precisamos repetir longas sessões para validar o funcionamento do dispatcher; esse ajuste melhora apenas os rótulos.
 
 Também foi confirmado pelo listing do próprio repositório que o wrapper `0x0059DEB0` chama os callbacks via dois argumentos na pilha e limpa oito bytes após a chamada, preservando 16 bits baixos do retorno. Ver `ABI_FINDINGS_2026-11-03.md` para a evidência e os cuidados com experimentos de substituição.
+
+
+## 6. Replays .ydr como teste de regressão
+
+O formato YDR documentado em docs/29-replay-ydr.md contém listas iniciais de cartas e comandos de oito bytes. Já foi identificado um caminho nativo de reapresentação dos comandos (docs/11-command-4d.md). Isso sugere que reproduzir um replay gravado pode **não chamar os callbacks que produziram os comandos**. Não tratar um replay histórico funcionando como prova de equivalência de uma substituição de regra.
+
+Adicionado compare_ydr.py, que utiliza o parser scripts/inspect_joey_replay.py para comparar listas iniciais de cartas e a sequência ordenada de quatro palavras de 16 bits por comando. Ignora campos de identificação/timestamp do cabeçalho. Mostra o primeiro registro divergente, os tamanhos das sequências e histogramas de opcodes. Retorna 0 se decks e comandos são iguais, 1 se diferentes e 2 em caso de erro.
+
+Da raiz do repositório:
+
+    py -3 experiments/hybrid_probe/compare_ydr.py "scratch/baseline.ydr" "scratch/patched.ydr" --json "scratch/ydr-diff.json"
+    py -3 -m unittest discover -s tests -p "test_joey_compare_ydr.py" -v
+
+Plano experimental para Jam Breeding Machine:
+
+1. Em uma cópia do jogo, duelar normalmente sem patch, colocar a carta em campo, avançar por algumas Standby Phases, anotar se um token surge em cada fase aplicável e salvar YDR. Captura com JoeyTrace --card-events pode complementar observações; preserve saves.
+2. Duelo normal com o **patch do ponteiro principal apenas dessa carta**, registrando chamadas reais à função substituta. Observar os tokens durante as Standby Phases.
+3. Comparar os YDRs. Igualdade exata é evidência forte sobre comandos gravados, mas não prova equivalência de todo o estado; divergência também pode ser causada por decisões da IA, embaralhamento, RNG ou jogadas distintas. Não esperar igualdade bit a bit em duelos não determinísticos.
+4. Como teste complementar, abrir o YDR antigo enquanto o patch está ativo e medir se a função substituta é chamada. Caso o contador fique zero, esse replay testa principalmente o consumidor de comandos, não a lógica substituída.
+
+Por isso o melhor teste de funções produtoras de efeitos é duelo normal controlado + contador do patch + estado de campo + sequência YDR. Para substituições do consumidor/apresentação, um replay antigo pode ser um teste mais direto. A estrutura de reexecução do YDR ainda precisa ser confirmada dinamicamente.
