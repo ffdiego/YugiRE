@@ -132,3 +132,18 @@ Interpretação: a passagem de Jam Breeding Machine pelo dispatcher principal es
 **Próxima investigação recomendada**: no Ghidra procurar xrefs de ID de recurso `1426 / 0x592`, índice interno `457 / 0x1C9` (cuidado: constantes podem ser genéricas), e o caminho de criação do token/índice `1114` durante o agendador de fases `docs/20-turn-scheduling.md`. Localizar o teste de espaço nas cinco zonas, o produtor de comandos e a função que itera cartas contínuas. Registrar evidência do fluxo e só então escolher esse código como alvo de substituição semântica.
 
 **O protótipo `patch_jam_breeding.py` e `jam_primary_replacement.js` continua experimental e não está validado no Windows; não executar ainda.** Mesmo um patch equivalente no slot do callback principal somente demonstra redirecionamento técnico, não substituição do efeito recorrente.
+
+
+## Sexta captura — primeiro redirecionamento executado (Sparks, 2026-11-04)
+
+O operador executou `patch_sparks.py --pid 25580` no Windows com Frida e relatou o seguinte resultado real:
+
+- SHA256 do executável original carregado: verificação passou.
+- `rpc.install()`: `installed=true`, recurso **342** (Sparks), registro **66**, ponteiro principal original `0x00584E60`, ponteiro substituto `0x0B790000`.
+- Durante o teste, `callbackCalls` evoluiu de **0 para 1**. Isso demonstra que a rotina substituta nativa executou pelo menos sua instrução de contagem.
+- Após o comando `stop`, o host informou `Original callback pointer restored; callbackCalls=1`. Não houve erro reportado na restauração.
+- O console mostrou `Unable to start idund: idund did not start listening` antes da instalação, mas a instalação e a contagem aconteceram. Causa desse aviso não investigada, sem evidência de impedimento do teste.
+
+**Conclusão comprovada:** a técnica de modificar só o slot principal do registro da carta (sem alterar o endereço compartilhado `0x00584E60`) conseguiu redirecionar e executar código x86 inserido em memória, com restauração relatada pelo script. Esse é o primeiro checkpoint dinâmico de redirecionamento seletivo do YugiRE.
+
+**Não comprovado:** o operador não informou nesta saída os LP do oponente antes/depois. `callbackCalls=1` não prova, sozinho, que o branch do stub chamou `0x005784E0`, que o comando 0x43 foi emitido, ou que o efeito de 200 LP foi aplicado. Confirmação funcional pendente: observar LP antes/depois e, idealmente, registrar o comando correspondente; um teste com dano temporário 300 LP só deve ser considerado após baseline funcional de 200 LP e revisão do procedimento.
