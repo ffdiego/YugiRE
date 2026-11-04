@@ -147,3 +147,12 @@ O operador executou `patch_sparks.py --pid 25580` no Windows com Frida e relatou
 **Conclusão comprovada:** a técnica de modificar só o slot principal do registro da carta (sem alterar o endereço compartilhado `0x00584E60`) conseguiu redirecionar e executar código x86 inserido em memória, com restauração relatada pelo script. Esse é o primeiro checkpoint dinâmico de redirecionamento seletivo do YugiRE.
 
 **Não comprovado:** o operador não informou nesta saída os LP do oponente antes/depois. `callbackCalls=1` não prova, sozinho, que o branch do stub chamou `0x005784E0`, que o comando 0x43 foi emitido, ou que o efeito de 200 LP foi aplicado. Confirmação funcional pendente: observar LP antes/depois e, idealmente, registrar o comando correspondente; um teste com dano temporário 300 LP só deve ser considerado após baseline funcional de 200 LP e revisão do procedimento.
+
+
+## Sexta captura — confirmação funcional fornecida pelo operador (2026-11-04)
+
+Após o primeiro redirecionamento de Sparks (recurso 342, linha 66), que já havia mostrado `callbackCalls=1` e restauração do ponteiro, o operador confirmou explicitamente: **o adversário perdeu 200 LP ao utilizar Sparks com o patch ativo**. Portanto temos a primeira validação funcional em duelo real para o callback principal seletivamente reimplementado (contexto normal, uma chamada observada).
+
+Esse resultado é consistente com o stub nativo chamando `0x005784E0(destinatario, 200)`; junto com o contador e a checagem do slot, sustenta que o efeito passou pelo código substituto. Não prova equivalência completa em condições de negação, bloqueio, múltiplas instâncias ou todas as configurações de partida, nem se todo o estado/transcrição YDR corresponde bit a bit ao original.
+
+Para uma prova controlada de capacidade de alterar a regra, foi acrescentada a opção **`--damage 300`** no host `patch_sparks.py`, que modifica **somente o imediato PUSH 200 -> PUSH 300** no script de agente carregado em memória, após conferir exatamente a sequência de bytes pretendida. O padrão permanece **200 LP** sem alterar o JavaScript validado na primeira captura. Essa variante de 300 LP **ainda não foi executada pelo operador**. Antes do teste, fazer backup de saves; executar duelo normal, capturar LP antes/depois e contador; digitar `stop` para restaurar a função original.
