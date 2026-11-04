@@ -229,6 +229,27 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                             len(args) >= 2):
                         event["ceContextLow17Hex"] = f"0x{(args[0] >> 15) & 0x1FFFF:05X}"
                         event["ceResourceIdLow16"] = args[1] & 0xFFFF
+                        native = event.get("ceNativeState")
+                        if isinstance(native, dict) and isinstance(native.get("context"), int):
+                            context = native["context"]
+                            # Strong candidates across four observed normal/set
+                            # recordings; do not mistake them for a validated
+                            # public engine API or an exhaustive bitfield map.
+                            event["ceHandIndexCandidate"] = (context >> 6) & 0xFF
+                            event["ceFieldSlotCandidate"] = (context >> 1) & 0x1F
+                            event["ceFlag4000"] = bool(context & 0x4000)
+                            event["ceFlag8000"] = bool(context & 0x8000)
+                            if isinstance(native.get("source"), int):
+                                event["ceSourceIndexCandidate"] = native["source"] & 0xFFF
+                            if isinstance(native.get("stage"), int):
+                                event["ceStageGroup"] = (native["stage"] & 0xFE0) >> 5
+                    # 0xCF at this site correlated with playing Fusion Gate:
+                    # the low halfword of arg1 matched its resource ID 1547.
+                    # This is a candidate, not a validated CF ABI.
+                    if (opcode == 0xCF and
+                            event.get("caller", "").lower() == "0x57977f" and
+                            len(args) >= 2):
+                        event["cfResourceIdCandidate"] = args[1] & 0xFFFF
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
                 exported += 1
     print(f"[trace] Saved {exported} events: {output}", flush=True)

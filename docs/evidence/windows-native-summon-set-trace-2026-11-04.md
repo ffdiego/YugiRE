@@ -80,6 +80,14 @@ também contém `0x6F` e `0x92` de ramificações posteriores do mesmo
 produtor. **Esses extras não são prova de que toda invocação exige
 sempre os mesmos comandos**.
 
+## Repetição com outras cartas
+
+Uma segunda sessão, agora com `ceNativeState` completo, confirmou
+os padrões de `0xCE` com Ancient Brain e Wall of Illusion baixado.
+Também incluiu Fusion Gate. Evidências e hipóteses de posição de mão e
+zona foram registradas em
+[`windows-native-ancient-brain-fusion-gate-2026-11-04.md`](windows-native-ancient-brain-fusion-gate-2026-11-04.md).
+
 ## Limites e direção para implementação
 
 - O caminho registrado passa pelos produtores corretos, mas não prova

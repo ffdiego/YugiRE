@@ -271,6 +271,41 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertEqual(data[2]["ceResourceIdLow16"], 1049)
             self.assertNotIn("ceContextLow17Hex", data[3])
 
+    def test_native_ce_context_and_cf_card_candidates(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 3
+        self.api.trace_records = [
+            {"kind": "command", "seq": 1, "caller": "0x5abeab",
+             "args": [0x208080CE, 0x00D900AE, 4, 1],
+             "ceNativeState": {"context": 0x4101, "source": 907, "stage": 37}},
+            {"kind": "command", "seq": 2, "caller": "0x57977f",
+             "args": [0x80CF, 0x00D9060B, 2560, 1]},
+            {"kind": "command", "seq": 3, "caller": "0x5abeab",
+             "args": [0x402080CE, 0x00D90419, 1, 256],
+             "ceNativeState": {"context": 0x8041, "source": 273, "stage": 37}}
+        ]
+        with TemporaryDirectory() as directory:
+            output = Path(directory) / "extra-fields.jsonl"
+            with redirect_stdout(io.StringIO()):
+                save_command_trace(self.api, output)
+            rows = [json.loads(x) for x in output.read_text(encoding="utf-8").splitlines()]
+            summon, fusion_gate, set_card = rows[1:]
+            self.assertEqual(summon["ceHandIndexCandidate"], 4)
+            self.assertEqual(summon["ceFieldSlotCandidate"], 0)
+            self.assertEqual(summon["ceSourceIndexCandidate"], 907)
+            self.assertTrue(summon["ceFlag4000"])
+            self.assertFalse(summon["ceFlag8000"])
+            self.assertEqual(summon["ceStageGroup"], 1)
+            self.assertEqual(fusion_gate["cfResourceIdCandidate"], 1547)
+            self.assertNotIn("ceSourceIndexCandidate", fusion_gate)
+            self.assertEqual(set_card["ceHandIndexCandidate"], 1)
+            self.assertEqual(set_card["ceFieldSlotCandidate"], 0)
+            self.assertEqual(set_card["ceSourceIndexCandidate"], 273)
+            self.assertFalse(set_card["ceFlag4000"])
+            self.assertTrue(set_card["ceFlag8000"])
+            self.assertEqual(set_card["ceStageGroup"], 1)
+
     def test_diff_without_baseline(self):
         cache = {}
         with redirect_stdout(io.StringIO()) as stdout:

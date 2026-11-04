@@ -292,6 +292,17 @@ trace dump
   neste caminho, **não** uma ABI universal nem uma prova de legalidade.
   O produtor é chamado com apenas dois argumentos nesse trecho;
   `args[2]` e `args[3]` do trace podem ser leituras residuais da pilha.
+- Nas capturas seguintes, os bits `context >> 6 & 0xFF` seguiram
+  a posição aparente da carta na mão (0, 4 para summon; 4, 1 para set),
+  enquanto `context >> 1 & 0x1F` permaneceu 0 (zona de monstro 0).
+  Em novos JSONL, o exportador registra `ceHandIndexCandidate` e
+  `ceFieldSlotCandidate`, mais flags brutas `ceFlag4000`/
+  `ceFlag8000`, `ceSourceIndexCandidate` e `ceStageGroup`.
+  Esses campos são **candidatos para validação**, não controles de invocação.
+  A emissão `0xCF` no callsite `0x0057977F` também ganha
+  `cfResourceIdCandidate` (baixo 16 bits de arg1): o primeiro teste
+  registrou ID 1547, Fusion Gate. Veja
+  [comparação de quatro ações](../docs/evidence/windows-native-ancient-brain-fusion-gate-2026-11-04.md).
 - Para `0xCE` no mesmo callsite, agora o trace também registra, no evento
   `ceNativeState`, os valores **brutos e completos** dos globais
   `0x00A55080` (`context`), `0x00A55084` (`source`) e
