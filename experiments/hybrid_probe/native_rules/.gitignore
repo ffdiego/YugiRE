@@ -1,0 +1,9 @@
+/build/
+/build-vs2026/
+/build-*/
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.dll
