@@ -7,10 +7,14 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from patch_dual_rules import damage_type  # noqa: E402
+from patch_dual_rules import damage_type, MODES  # noqa: E402
 
 
 class DamageLimitsTests(unittest.TestCase):
+    def test_effect_mode_constants(self):
+        self.assertEqual(MODES, {"damage": 1, "draw": 2, "damage-draw": 3})
+        self.assertEqual(len(set(MODES.values())), len(MODES))
+
     def test_valid_values(self):
         for raw in ("1", "200", "300", "400", "8000", "9999"):
             with self.subTest(raw=raw):

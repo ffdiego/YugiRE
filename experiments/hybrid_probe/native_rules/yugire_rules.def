@@ -7,3 +7,5 @@ EXPORTS
     YugiRE_GetCallCount
     YugiRE_GetEmitCount
     YugiRE_GetConfiguredDamage
+    YugiRE_GetConfiguredMode
+    YugiRE_GetDrawBatchCount

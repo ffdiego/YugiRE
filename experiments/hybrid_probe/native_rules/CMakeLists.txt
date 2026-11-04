@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(YugiRENativeDualCards VERSION 0.2 LANGUAGES CXX)
+project(YugiRENativeDualCards VERSION 0.3 LANGUAGES CXX)
 if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
   message(FATAL_ERROR "This must be built for Windows x86 (Visual Studio -A Win32).")
 endif()
@@ -20,3 +20,11 @@ if(MSVC)
 else()
   target_compile_options(yugire_rules PRIVATE -Wall -Wextra)
 endif()
+
+# Small native test for the reconstructed CardRequest offsets. This test does
+# not load or call the Joey engine.
+enable_testing()
+add_executable(test_card_request tests/test_card_request.cpp)
+target_include_directories(test_card_request PRIVATE include)
+target_compile_features(test_card_request PRIVATE cxx_std_17)
+add_test(NAME card_request_offsets COMMAND test_card_request)

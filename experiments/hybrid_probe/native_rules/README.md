@@ -1,127 +1,139 @@
-# YugiRE Native Rules — Sparks + Raimei
+# YugiRE C++ dual-card rules — Sparks + Raimei
 
-Two-card proof of concept for the exact original `joey_pc.exe` fingerprint validated
-by `experiments/hybrid_probe/pe_preflight.py`.
+Experimental selective callbacks for the *exact* Joey executable fingerprint
+checked by `../pe_preflight.py`. The DLL does not patch the original executable,
+and the Frida adapter redirects only the two per-card primary callback slots.
 
-**This DLL version has NOT yet been validated inside Joey.** Prior tests established
-Sparks (200/300 LP) from an earlier single-card C++ DLL.
-The operator subsequently confirmed activating BOTH cards in the dual-C++ test,
-but did not supply exact observed damage/counters for that run.
+## Cards and callback ABI
 
-| Card | Internal index | Resource ID | Callback row | Original damage | Experiment damage |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Sparks | 755 | 342 | 66 | 200 LP | 300 LP |
-| Raimei | 1049 | 1007 | 172 | 300 LP | 400 LP |
+| Card | Internal card index | Resource ID | Table row | Original damage |
+|---|---:|---:|---:|---:|
+| Sparks | 755 | 342 | 66 | 200 LP |
+| Raimei | 1049 | 1007 | 172 | 300 LP |
 
-Both cards share the original main callback `0x00584E60` and target-preparation
-`0x00593CC0`. Only the primary pointer (+4) of each individual table record
-is redirected. The shared original callback is not patched.
+Both rows originally point to the shared `0x00584E60` callback and use
+`0x00593CC0` for opponent target preparation. The function-pointer table
+remains intact except for the two primary pointers while the patch is active.
 
-## Project layout
+Both compiled C++ functions now support **three independent modes**:
 
-- `include/yugire/card_request.hpp`: 20-byte request, only fields +4 and +6 identified here.
-- `include/yugire/engine.hpp`, `src/engine.cpp`: engine adapter, per-card call
-  and emission counters, native damage-command producer `0x005784E0`.
-- `src/cards/sparks.cpp` and `src/cards/raimei.cpp`: independent rules.
-- `src/exports.cpp`, `yugire_rules.def`: undecorated C ABI exports,
-  called by the Frida adapter with `mscdecl` on x86.
-- `../yugire_dual_loader.js`: installs/restores both pointers with rollback.
-- `../patch_dual_rules.py`: loaded-EXE hash validation and Python host.
+| Mode | Meaning |
+|---|---|
+| `damage` | Queue the configured damage (previous behavior; default) |
+| `draw` | Queue **five cards for the activating player**, no damage |
+| `damage-draw` | Queue damage, **then** queue five cards for the activating player |
 
-## Compile (Visual Studio 2026 Developer PowerShell)
+The damage value remains configurable from 1 to 9999 LP via
+`--sparks` and `--raimei`, with defaults 200 and 300. In draw-only
+mode, the corresponding damage amount is accepted but unused.
 
-In `experiments\hybrid_probe`:
+The C++ rules invoke two native functions:
+- **`0x005784E0(targetSide, damage)`** — the previously tested LP-change
+  command producer.
+- **`0x00578B60(actorSide, 5)`** — the same draw-command producer called
+  by the original Pot of Greed / Skelengel / Jar of Greed path. The
+  queue then uses original `0x61` command handling; card lists are not
+  modified manually by YugiRE.
+
+### Why the draw recipient is different
+
+The existing Sparks/Raimei target-preparation callback selects the
+**opponent** in request offset +6. The original shared damage callback
+derives the opponent as `1 - (request[2] & 1)`, so the draw recipient
+is tentatively derived as `request[2] & 1`, the **activating player**.
+This interpretation is grounded in the original damage callback but
+**the new five-card behavior has not been validated in a live duel**.
+Test who actually receives the cards before relying on the mapping in
+unusual activation modes.
+
+## Build on Visual Studio 2026 Developer PowerShell
+
+Run from `experiments\hybrid_probe`:
 
 ```powershell
 cmake -S .\native_rules -B .\native_rules\build-vs2026 -G "Visual Studio 18 2026" -A Win32
 cmake --build .\native_rules\build-vs2026 --config Release
+ctest --test-dir .\native_rules\build-vs2026 -C Release --output-on-failure
 ```
 
 Output: `native_rules\build-vs2026\Release\yugire_rules.dll`.
+Validate exports with `dumpbin /exports`; the DLL ABI is **version 2** and
+must include `YugiRE_GetConfiguredMode` and `YugiRE_GetDrawBatchCount`.
+The Frida loader rejects an older version of the DLL.
 
-To validate exports: `dumpbin /exports .\native_rules\build-vs2026\Release\yugire_rules.dll`.
-You should find `YugiRE_Sparks` and `YugiRE_Raimei`.
+## First in-game test: Sparks draws, Raimei damages AND draws
 
-## Test in a NEW Joey process
-
-Before launching the game, back up the save; do not attach another Frida
-callback patcher simultaneously. From `experiments\hybrid_probe`:
+Make a backup of your save, close any previous Joey process, relaunch it
+and use a **normal live duel**, not a replay. Put both cards in your deck
+and ensure there are **at least 10–15 cards still in your deck** before
+each activation to avoid accidentally testing a deck-out defeat.
 
 ```powershell
 $joeyPid = (Get-Process joey_pc).Id
-.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --pid $joeyPid --sparks 300 --raimei 400
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py `
+    --pid $joeyPid `
+    --sparks-mode draw `
+    --raimei-mode damage-draw `
+    --raimei 400
 ```
 
-When the game lets you play Sparks and Raimei, observe **300 LP** and **400 LP**
-damage respectively. Both activations were confirmed in the previous dual-card
-test; the new configurable damage range is not yet validated inside Joey. During the duel, press Enter in the
-host to inspect the counters. Type `stop` AFTER the effects have finished
-to restore both callback pointers. Expected restored pointer for both:
-`0x00584E60` (in the original image base).
+Expected **if the engine produces and resolves the queued draw commands**:
 
-For original-rule comparison, choose `--sparks 200 --raimei 300`.
+- **Sparks**: no damage, *five* cards drawn by the activating player.
+- **Raimei**: 400 LP of damage to the opponent, then *five* cards drawn by
+  the activating player.
+- Playing a spell itself removes one card from your hand, so the net hand
+  change after a successfully resolved five-card draw is **+4**.
+- Press **Enter** in the host console to see `calls`,
+  `damageCommands`, and `drawBatches` (batch count, NOT the number
+  of actually drawn cards).
+- Type **stop** only after the effect has completed; both pointers should
+  return to their original values. DLL memory stays loaded until exit.
 
-**Important:** catalogued in the game files does not imply unlocked in your
-current save, or visible under every collection filter. If Raimei is missing,
-check whether its card-list filters/collection availability permit adding it
-to the deck; do not patch the save during the callback test.
+If the wrong player draws or the engine misbehaves, stop the experiment,
+restore the pointers and restart Joey. This effect is deliberately experimental;
+do not infer that five cards were drawn just because `drawBatches=1`.
 
-Other build folder? Pass `--dll .\native_rules\build\Release\yugire_rules.dll`.
+## Regression mode (previous behavior)
 
-## Limitations and safety
+No extra flags, or explicitly:
 
-The DLL is not unloaded while Joey is running. The loader checks table IDs,
-other slots, original pointers, executable hash, x86 architecture, and required
-exports; it attempts to restore both slots on exit and after partial installation.
-An abnormal Frida exit can leave code redirected until Joey terminates.
-Always close Joey after a failed or interrupted patch before retrying.
+```powershell
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py `
+    --pid $joeyPid `
+    --sparks 300 --raimei 400 `
+    --sparks-mode damage --raimei-mode damage
+```
 
-The tests cover neither all card interactions nor effect suppression, chaining,
-multiple copies, YDR replay execution, or simultaneous callback execution. The
-engine's queue/consumer stays original.
+Also available: `--sparks-mode damage-draw --raimei-mode draw`, etc.
+Unlike the previous version, the *mode* is now decided at installation
+without needing another compilation.
 
 ## Offline checks
 
 ```powershell
 python .\native_rules\tests\test_catalog.py
-node .\native_rules\tests\test_loader.cjs
-```
-
-The catalogue check verifies both indices/IDs/profile P045. The JavaScript
-fixture checks two distinct pointers, configuration, restoration and rollback.
-These are structural tests; they do not substitute for the Windows test.
-
-
-## High damage / one-hit-KO experiment
-
-The Python host, Frida loader and C++ DLL now accept **any integer from 1 to
-9999 LP**, independently for Sparks and Raimei. Values outside that range,
-fractions and non-numeric strings are rejected. Default values stay 200/300 LP.
-
-For a standard duel starting at **8000 LP**, the first high-damage experiment
-can be 8000 LP for either or both cards:
-
-```powershell
-# Restart Joey before testing a freshly rebuilt DLL.
-$joeyPid = (Get-Process joey_pc).Id
-.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --pid $joeyPid --sparks 8000 --raimei 8000
-```
-
-This should be enough to reduce a full-8000-LP opponent to zero **if** the
-effect is permitted to resolve and the game's damage consumer handles this
-magnitude as expected. This is NOT yet experimentally confirmed.
-
-**Do not test values above 9999** until the LP command encoding, saturation,
-and terminal-condition handling have been validated. The helper accepts
-32-bit values, but its consumers may narrow them or apply other rules.
-In particular, a larger numeric argument does not guarantee a valid
-victory result or stable graphics. Keep backed-up saves, wait until effect
-resolution finishes, inspect both LP displays and the final game result, and
-type `stop` to restore the original callbacks. The same loader can still be
-run with 200/300 to test the original damages.
-
-Offline tests:
-```powershell
 python .\native_rules\tests\test_damage_limits.py
 node .\native_rules\tests\test_loader.cjs
 ```
+
+The JS fixture checks the DLL ABI, independent mode selection, rollback,
+restoration and rejection of invalid values. The C++ test exercises the
+inferred byte offsets. These tests do **not** execute the original game.
+
+## Safety / limitations
+
+- Only a specified original EXE hash, Win32 x86 process, and verified table
+  rows are supported.
+- The DLL remains loaded, and patch restoration is not a thread-suspending
+  atomic transaction. Do not press `stop` during an animation or resolution.
+- The draw producer may trigger other engine systems (e.g. deck-out, draw
+  triggers, deck restrictions). These cases and chain/negation handling
+  are **not** validated.
+- The `request[4] & 4` suppression flag is reused for both kinds of
+  effect; other modes/contexts have not been independently tested.
+- A null/aborted Frida connection can leave patched pointers active until
+  Joey terminates. Restart Joey before retrying a failed experiment.
+- The frame/text description of a card does not change: only runtime
+  primary-callback effects are replaced. The visual card still says its
+  original damage amount.

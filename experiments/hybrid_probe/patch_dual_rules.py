@@ -17,6 +17,8 @@ from pe_preflight import parse_pe, probe
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_DLL = HERE / "native_rules" / "build-vs2026" / "Release" / "yugire_rules.dll"
+MODES = {"damage": 1, "draw": 2, "damage-draw": 3}
+MODE_NAMES = {value: name for name, value in MODES.items()}
 
 
 def check_dll(dll: Path) -> None:
@@ -48,9 +50,11 @@ def damage_type(raw: str) -> int:
 
 def show_counters(state: dict) -> None:
     for card in state["entries"]:
+        mode = MODE_NAMES.get(card["configuredMode"], card["configuredMode"])
         print(f"[dual-rules] {card['name']}: calls={card['callbackCalls']} "
-              f"commands={card['commandsEmitted']} "
-              f"damage={card['configuredDamage']} "
+              f"damageCommands={card['commandsEmitted']} "
+              f"drawBatches={card['drawBatches']} "
+              f"mode={mode} damage={card['configuredDamage']} "
               f"currentPointer={card['currentPointer']}", flush=True)
 
 
@@ -63,6 +67,10 @@ def main() -> int:
                         help="Sparks LP damage, 1..9999 (default: 200)")
     parser.add_argument("--raimei", type=damage_type, default=300,
                         help="Raimei LP damage, 1..9999 (default: 300)")
+    parser.add_argument("--sparks-mode", choices=tuple(MODES), default="damage",
+                        help="Sparks effect: damage, draw or damage-draw (default: damage)")
+    parser.add_argument("--raimei-mode", choices=tuple(MODES), default="damage",
+                        help="Raimei effect: damage, draw or damage-draw (default: damage)")
     args = parser.parse_args()
     dll_path = args.dll.resolve()
 
@@ -97,10 +105,12 @@ def main() -> int:
             return 2
         print("[dual-rules] Exact loaded Joey EXE SHA256 confirmed.", flush=True)
         print(f"[dual-rules] Loading {dll_path}", flush=True)
-        state = api.install(str(dll_path), args.sparks, args.raimei)
+        state = api.install(str(dll_path), args.sparks, args.raimei,
+                            MODES[args.sparks_mode], MODES[args.raimei_mode])
         print("[dual-rules] Both primary callback pointers installed.", flush=True)
         show_counters(state)
-        print("[dual-rules] Play a NORMAL duel with Sparks and Raimei.", flush=True)
+        print(f"[dual-rules] Effects: Sparks={args.sparks_mode}, "
+              f"Raimei={args.raimei_mode}. Play a NORMAL duel.", flush=True)
         print("[dual-rules] Press Enter for counters or type 'stop' to restore both.", flush=True)
         while True:
             command = input("[dual-rules] > ").strip().lower()

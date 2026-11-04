@@ -26,8 +26,12 @@ const kStride = 24;
 const kPrimaryOriginal = va('0x00584E60');
 const kTargetPreparation = va('0x00593CC0');
 const kDamageEmitter = va('0x005784E0');
-const kInitMagic = 0x59554732; // YUG2
-const kAbiVersion = 1;
+const kDrawEmitter = va('0x00578B60'); // FUN_00578B60(side, count)
+const kInitMagic = 0x59554733; // YUG3
+const kAbiVersion = 2;
+const kModeDamage = 1;
+const kModeDrawFive = 2;
+const kModeDamageDrawFive = 3;
 
 const cards = [
   {name: 'Sparks', resourceId: 342, row: 66, exportName: 'YugiRE_Sparks'},
@@ -51,6 +55,8 @@ let installed = false;
 let getCalls = null;
 let getEmits = null;
 let getDamage = null;
+let getMode = null;
+let getDrawBatches = null;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -75,6 +81,10 @@ function verifyBeforeLoading() {
   const damageRange = Process.findRangeByAddress(kDamageEmitter);
   if (damageRange === null || !damageRange.protection.includes('x')) {
     throw new Error('Native damage command producer is not executable');
+  }
+  const drawRange = Process.findRangeByAddress(kDrawEmitter);
+  if (drawRange === null || !drawRange.protection.includes('x')) {
+    throw new Error('Native draw command producer is not executable');
   }
 }
 
@@ -126,6 +136,8 @@ function status() {
     callbackCalls: getCalls === null ? 0 : getCalls(card.resourceId),
     commandsEmitted: getEmits === null ? 0 : getEmits(card.resourceId),
     configuredDamage: getDamage === null ? null : getDamage(card.resourceId),
+    configuredMode: getMode === null ? null : getMode(card.resourceId),
+    drawBatches: getDrawBatches === null ? 0 : getDrawBatches(card.resourceId),
   }));
   return {
     installed,
@@ -160,7 +172,7 @@ function restore() {
 
 rpc.exports = {
   status,
-  install(dllPath, sparksDamage, raimeiDamage) {
+  install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
     if (typeof dllPath !== 'string' || !/^[a-zA-Z]:\\/.test(dllPath)) {
       throw new Error('Expected an absolute Windows DLL path');
@@ -168,6 +180,11 @@ rpc.exports = {
     const validDamage = value => Number.isInteger(value) && value >= 1 && value <= 9999;
     if (!validDamage(sparksDamage) || !validDamage(raimeiDamage)) {
       throw new Error('Damage must be an integer from 1 to 9999 LP per card');
+    }
+    const validMode = value => Number.isInteger(value) &&
+      value >= kModeDamage && value <= kModeDamageDrawFive;
+    if (!validMode(sparksMode) || !validMode(raimeiMode)) {
+      throw new Error('Modes must be integers 1 (damage), 2 (draw), or 3 (damage-draw)');
     }
     verifyBeforeLoading();
 
@@ -179,19 +196,25 @@ rpc.exports = {
       'uint32', [], 'mscdecl');
     if (abi() !== kAbiVersion) throw new Error('Incompatible YugiRE DLL ABI version');
     const initialize = new NativeFunction(getExport('YugiRE_Initialize'),
-      'uint32', ['pointer', 'uint32', 'uint32'], 'mscdecl');
+      'uint32', ['pointer', 'uint32', 'uint32', 'uint32', 'uint32'], 'mscdecl');
     getCalls = new NativeFunction(getExport('YugiRE_GetCallCount'),
       'uint32', ['uint32'], 'mscdecl');
     getEmits = new NativeFunction(getExport('YugiRE_GetEmitCount'),
       'uint32', ['uint32'], 'mscdecl');
     getDamage = new NativeFunction(getExport('YugiRE_GetConfiguredDamage'),
       'uint32', ['uint32'], 'mscdecl');
+    getMode = new NativeFunction(getExport('YugiRE_GetConfiguredMode'),
+      'uint32', ['uint32'], 'mscdecl');
+    getDrawBatches = new NativeFunction(getExport('YugiRE_GetDrawBatchCount'),
+      'uint32', ['uint32'], 'mscdecl');
 
-    if (initialize(main.base, sparksDamage, raimeiDamage) !== kInitMagic) {
+    if (initialize(main.base, sparksDamage, raimeiDamage,
+                   sparksMode, raimeiMode) !== kInitMagic) {
       throw new Error('DLL returned wrong initialization marker');
     }
-    if (getDamage(342) !== sparksDamage || getDamage(1007) !== raimeiDamage) {
-      throw new Error('DLL did not accept independent damage configurations');
+    if (getDamage(342) !== sparksDamage || getDamage(1007) !== raimeiDamage ||
+        getMode(342) !== sparksMode || getMode(1007) !== raimeiMode) {
+      throw new Error('DLL did not accept independent effect configurations');
     }
 
     try {
