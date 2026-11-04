@@ -338,6 +338,47 @@ uma ação: o jogo pode emitir múltiplos comandos e efeitos em etapas.
 Ainda precisamos testar a captura em execução real para guiar a futura
 implementação de `summon`, `set` e `discard`.
 
+### Summon experimental: nível 1–4 sem tributos
+
+O índice da mão é **zero-based**. Exemplo de teste:
+
+```text
+hand 1
+summon check 1 4
+# Pressione Enter para ler console.last: checked, allowed, selectedSlot
+summon 1 4
+# Pressione Enter para ler console.last, depois:
+state
+diff
+```
+
+Os dois comandos são agendados no `0x005BC700` e atendidos
+**somente na thread do duelo**, jamais na thread RPC.
+Verificações: duelo ativo, jogador 1 na vez, Main Phase 1 ou 2,
+flag `0x20000` livre, fila/descritor inativos, identidade e
+tamanho da mão inalterados, carta de monstro nível 1–4,
+`FUN_005AAB90 & 1`, seleção de slot por
+`FUN_0056A030` e confirmação por `FUN_00569F70`.
+Assim preservamos as restrições de Ground Collapse.
+
+`summon check` retorna `state=checked`, sem chamar o
+construtor nem consumir a invocação normal. A função
+original de elegibilidade pode gerar mensagens de UI
+em casos inválidos; o comando não promete ausência
+total de efeitos de interface. A execução ativa chama
+`FUN_005AD740(1,handIndex,slot,0,1)` e depois
+`FUN_00579930(1,0x11,1)`, sincronizando o consumo do
+direito de invocação. `state=submitted` **não garante
+a colocação concluída** — confira `state`/`diff`.
+`cancel` descarta um pedido ainda pendente.
+
+Escopo intencional: **apenas side 1 em duelo local**,
+monstros comuns nível 1–4, sem tributos, set,
+invocações especiais ou exceções. O guard pode rejeitar
+conservadoramente jogadas legais. Ainda não validado
+em Joey real — use duelo descartável.
+A ABI da DLL continua v6; **não recompilar a DLL**.
+
 ### Probe passivo da preparação de summon/set
 
 Após `trace on`, use `trace prep on` para ativar **cinco** hooks

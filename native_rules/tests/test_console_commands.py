@@ -16,6 +16,7 @@ class FakeApi:
         self.draws = []
         self.damages = []
         self.destroys = []
+        self.summons = []
         self.snapshot = {"sides": [
             {"side": 0, "lifePoints": 8000, "handCount": 4, "deckCount": 30,
              "graveyardCount": 0, "banishedCount": 0, "terminalFlags": 0,
@@ -57,6 +58,11 @@ class FakeApi:
         self.destroys.append((side, slot))
         return {"id": 60, "side": side, "slot": slot, "expectedIndex": 727,
                 "state": "pending"}
+
+    def queuesummon(self, side, index, check_only):
+        self.summons.append((side, index, check_only))
+        return {"id": len(self.summons), "side": side, "handIndex": index,
+                "expectedIndex": 907, "state": "pending", "checkOnly": check_only}
 
     def tracestatus(self):
         n = len(self.trace_records)
@@ -160,6 +166,28 @@ class ConsoleCommandTests(unittest.TestCase):
                         "destroy 0 1.5"):
             self.assertTrue(self.invoke(command))
         self.assertEqual(len(self.api.destroys), 2)
+
+    def test_summon_check_and_execute_parse(self):
+        self.assertTrue(self.invoke("summon check 1 4"))
+        self.assertTrue(self.invoke("summon 1 3"))
+        self.assertEqual(self.api.summons, [(1, 4, True), (1, 3, False)])
+
+    def test_summon_reject_bad_sides_and_arguments(self):
+        for command in ("summon", "summon check", "summon 0 4",
+                        "summon 1 80", "summon 1 -1", "summon 1 3.5",
+                        "summon check 0 4", "summon check 1 abc",
+                        "summon check 1 4 extra", "summon 1 4 extra",
+                        "summon 2 0", "summon 1"):
+            self.assertTrue(self.invoke(command))
+        self.assertEqual(self.api.summons, [])
+
+    def test_summon_missing_hand_card_is_reported(self):
+        class MissingHand(FakeApi):
+            def queuesummon(self, side, index, check_only):
+                raise RuntimeError("Error: Selected hand index is not present")
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertTrue(handle_command("summon 1 5", MissingHand(), 1))
+        self.assertIn("Cannot select hand index", output.getvalue())
 
     def test_destroy_empty_slot_is_reported_without_rpc_traceback(self):
         class EmptyApi(FakeApi):

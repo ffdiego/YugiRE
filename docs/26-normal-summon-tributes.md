@@ -26,6 +26,23 @@ sair da posição 4 da mão e ocupar o slot 1. A CPU também emitiu
 retirando um monstro de campo. Evidência e ressalvas no
 [`relatório do segundo slot`](evidence/windows-native-second-monster-slot-and-field-2026-11-04.md).
 
+## Summon experimental do console (2026-11-04)
+
+Os comandos `summon check 1 <handIndex>` e
+`summon 1 <handIndex>` foram implementados no agente
+Frida e agendados na própria thread de duelo. Ambos
+verificam turno, fase principal, flag `0x20000`, identidade
+da mão, tipo e nível 1–4 da carta, elegibilidade do motor
+e zona permitida por `FUN_0056A030`/`FUN_00569F70`.
+A execução ativa usa `FUN_005AD740` e consome/sincroniza
+a flag pelo `FUN_00579930`. O diagnóstico não chama
+o construtor. A mudança não altera ABI da DLL.
+
+**Apenas testes offline/simulados:** a versão deve ser
+validada em duelo local descartável antes de ampliar
+escopo ou habilitar automação. Consulte
+[`native_rules/README.md`](../native_rules/README.md).
+
 ## Predicado de disponibilidade de slot confirmado
 
 A decompilação de `FUN_00569F70(side,slot)` demonstrou
