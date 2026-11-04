@@ -57,7 +57,7 @@ ctest --test-dir .\native_rules\build-vs2026 -C Release --output-on-failure
 ```
 
 Output: `native_rules\build-vs2026\Release\yugire_rules.dll`.
-Validate exports with `dumpbin /exports`; the DLL ABI is **version 2** and
+Validate exports with `dumpbin /exports`; the DLL ABI is **version 3** and
 must include `YugiRE_GetConfiguredMode` and `YugiRE_GetDrawBatchCount`.
 The Frida loader rejects an older version of the DLL.
 
@@ -109,12 +109,75 @@ Also available: `--sparks-mode damage-draw --raimei-mode draw`, etc.
 Unlike the previous version, the *mode* is now decided at installation
 without needing another compilation.
 
+## Native C++ EffectContext and interactive terminal commands
+
+The card-specific callbacks are now deliberately tiny and use
+`EffectContext::ResolveConfigured(card)`, implemented in
+`include/yugire/effect_context.hpp` and `src/effect_context.cpp`.
+
+`EffectContext` provides `Controller()`, `Opponent()`,
+`InflictDamage(card)`, and `DrawCards(card, count)`. The actual game's
+queue producers remain concentrated in `src/engine.cpp`. Sparks and Raimei
+still retain independent modes `damage`, `draw` and `damage-draw`.
+
+### Interactive command while a live duel is running
+
+The same Python host now supports typing the following into its existing
+interactive prompt:
+
+```text
+[dual-rules] > draw 5
+[console] Request 1 pending for side 0.
+[dual-rules] >
+```
+
+For the first test, **side 0 is the default assumption for the local
+player**; this has not been independently confirmed in all duel modes.
+If the five cards go to the opponent, use `draw 5 1`. You may also pass
+`--console-side 1` when starting the patcher to choose the default.
+The explicit commands are:
+
+- `draw 5`: request a batch of five draws for the configured default side.
+- `draw 5 0` or `draw 5 1`: request a batch for that exact player side.
+- `status` or Enter: current counters and console request status.
+- `cancel`: cancel a request that has NOT yet been submitted to Joey.
+- `stop`: cancel pending work, restore Sparks/Raimei callback pointers,
+  and detach the duel-update hook.
+- `help`: show available commands.
+
+The command is **not executed on Frida's RPC thread**. RPC stages a single
+request in the JS agent. On `0x005BC700` (the duel scheduler), the Frida
+`Interceptor.onLeave` callback checks that the command queue is idle
+(`0x00A558A8`, `0x00A558AC` bit `0x4000`, and the stage byte at
+`0x00A5780E`). Then, on that original game thread, it calls the new
+C++ DLL export `YugiRE_ConsoleDraw(side, 5)`, which enqueues the original
+`0x61` commands through `0x00578B60`. The DLL also exposes
+`YugiRE_GetConsoleDrawBatchCount`. The Frida ABI is bumped to **v3**,
+so an outdated DLL is rejected.
+
+**This external-console path is experimental and not yet live-tested.**
+The native duel scheduler is a reasonable game-thread entry point based
+on static RE, not a formally guaranteed injection boundary. If the
+state never becomes idle, `status` shows the pending request and gate
+values; `cancel` removes it safely. Enqueueing does not guarantee the
+five cards were drawn: inspect deck and hand in the game.
+
+Start by testing in a local duel with at least 15 remaining deck cards,
+away from any active animation or card chain. Back up the save and do
+not fire commands repeatedly while an earlier one is pending. Do not use
+the console during menus, online duels, or replays.
+
+The command path does not require you to play Sparks or Raimei: it is
+a standalone console action while the dual patcher remains installed.
+
 ## Offline checks
 
 ```powershell
 python .\native_rules\tests\test_catalog.py
 python .\native_rules\tests\test_damage_limits.py
 node .\native_rules\tests\test_loader.cjs
+python .\native_rules\tests\test_console_commands.py
+ctest --test-dir .\native_rules\build-vs2026 -C Release --output-on-failure
 ```
 
 The JS fixture checks the DLL ABI, independent mode selection, rollback,
@@ -137,3 +200,15 @@ inferred byte offsets. These tests do **not** execute the original game.
 - The frame/text description of a card does not change: only runtime
   primary-callback effects are replaced. The visual card still says its
   original damage amount.
+
+
+The console-only draw also verifies the native **remaining deck count** at
+`0x00A55D69 + side * 0xD44` before enqueueing. A pending `draw 5` is
+rejected when fewer than five cards remain, to avoid triggering an accidental
+deck-out. Card callback modes are unchanged and still obey the original
+game's rules for deck exhaustion; this extra check applies only to the
+console command.
+
+The shared C++ engine's internal draw helper accepts 1–5 cards so additional
+card effects can reuse it. The interactive console deliberately remains
+restricted to `draw 5` for this initial cross-thread experiment.

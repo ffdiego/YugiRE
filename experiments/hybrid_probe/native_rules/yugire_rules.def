@@ -9,3 +9,5 @@ EXPORTS
     YugiRE_GetConfiguredDamage
     YugiRE_GetConfiguredMode
     YugiRE_GetDrawBatchCount
+    YugiRE_ConsoleDraw
+    YugiRE_GetConsoleDrawBatchCount

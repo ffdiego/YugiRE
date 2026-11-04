@@ -27,8 +27,19 @@ const kPrimaryOriginal = va('0x00584E60');
 const kTargetPreparation = va('0x00593CC0');
 const kDamageEmitter = va('0x005784E0');
 const kDrawEmitter = va('0x00578B60'); // FUN_00578B60(side, count)
-const kInitMagic = 0x59554733; // YUG3
-const kAbiVersion = 2;
+const kInitMagic = 0x59554734; // YUG4
+const kAbiVersion = 3;
+
+// The console command does NOT call Joey from Frida's RPC thread. A short
+// request is staged here and consumed on the original duel update thread.
+// For the documented EXE only (VA relative to image base 0x00400000).
+const kDuelUpdate = va('0x005BC700');
+const kQueueCount = va('0x00A558A8');
+const kQueueFlags = va('0x00A558AC');
+const kCommandStage = va('0x00A5780E');
+const kDuelFlags = va('0x00A54E5C');
+const kDeckCountBase = va('0x00A55D69');
+const kPlayerStride = 0xD44; // documented per-player duel state stride
 const kModeDamage = 1;
 const kModeDrawFive = 2;
 const kModeDamageDrawFive = 3;
@@ -57,6 +68,12 @@ let getEmits = null;
 let getDamage = null;
 let getMode = null;
 let getDrawBatches = null;
+let getManualDrawBatches = null;
+let manualDrawOnDuelThread = null;
+let duelUpdateHook = null;
+let pendingConsoleDraw = null;
+let lastConsoleDraw = null;
+let consoleSequence = 0;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -85,6 +102,17 @@ function verifyBeforeLoading() {
   const drawRange = Process.findRangeByAddress(kDrawEmitter);
   if (drawRange === null || !drawRange.protection.includes('x')) {
     throw new Error('Native draw command producer is not executable');
+  }
+  const tickRange = Process.findRangeByAddress(kDuelUpdate);
+  if (tickRange === null || !tickRange.protection.includes('x')) {
+    throw new Error('Duel scheduler 0x005BC700 is not executable');
+  }
+  for (const address of [kQueueCount, kQueueFlags, kCommandStage, kDuelFlags,
+                          kDeckCountBase, kDeckCountBase.add(kPlayerStride)]) {
+    const range = Process.findRangeByAddress(address);
+    if (range === null || !range.protection.includes('r')) {
+      throw new Error('Cannot read native duel queue state at ' + address);
+    }
   }
 }
 
@@ -125,6 +153,94 @@ function getExport(name) {
   return address;
 }
 
+function queueGate() {
+  const queueDepth = kQueueCount.readU32();
+  const queueFlags = kQueueFlags.readU32();
+  const commandStage = kCommandStage.readU16() >>> 8;
+  const duelFlags = kDuelFlags.readU32();
+  // 0x4000 marks a command being processed; stage must be zero.
+  // 0x180==0x80 is a special terminal state which suppresses commands.
+  const idle = queueDepth === 0 && (queueFlags & 0x4000) === 0 &&
+    commandStage === 0 && (duelFlags & 0x180) !== 0x80;
+  return {idle, queueDepth, busyCommand: (queueFlags & 0x4000) !== 0,
+    commandStage, terminalFlag: (duelFlags & 0x180) === 0x80};
+}
+
+// Only called synchronously from Interceptor.onLeave for 0x005BC700,
+// on the game's own duel-update thread. Never invoke NativeFunction
+// YugiRE_ConsoleDraw from rpc.exports or a Python/Frida RPC thread.
+function servicePendingConsoleDraw() {
+  if (!installed || pendingConsoleDraw === null || manualDrawOnDuelThread === null) return;
+  const gate = queueGate();
+  if (!gate.idle) return;
+  const request = pendingConsoleDraw;
+  pendingConsoleDraw = null;
+  try {
+    const cardsRemaining = kDeckCountBase.add(request.side * kPlayerStride).readU8();
+    if (cardsRemaining < request.count) {
+      lastConsoleDraw = {
+        ...request, state: 'rejected',
+        detail: 'Deck has only ' + cardsRemaining +
+          ' card(s); refusing a console draw of ' + request.count
+      };
+      return;
+    }
+    const accepted = manualDrawOnDuelThread(request.side, request.count);
+    lastConsoleDraw = {
+      id: request.id, side: request.side, count: request.count,
+      state: accepted === 1 ? 'enqueued' : 'rejected',
+      detail: accepted === 1 ? 'Engine queued draw commands (not necessarily resolved)' :
+        'C++ native draw producer refused the request'
+    };
+  } catch (error) {
+    lastConsoleDraw = {
+      id: request.id, side: request.side, count: request.count,
+      state: 'failed', detail: String(error)
+    };
+  }
+}
+
+function installConsoleHook() {
+  duelUpdateHook = Interceptor.attach(kDuelUpdate, {
+    onLeave(_retval) {
+      servicePendingConsoleDraw();
+    },
+  });
+}
+
+function stopConsoleHook() {
+  pendingConsoleDraw = null;
+  if (duelUpdateHook !== null) {
+    const hook = duelUpdateHook;
+    duelUpdateHook = null;
+    hook.detach();
+  }
+}
+
+function queueConsoleDraw(side, count) {
+  if (!installed || duelUpdateHook === null) {
+    throw new Error('Console draw is available only while the patch is installed');
+  }
+  if (!Number.isInteger(side) || (side !== 0 && side !== 1) ||
+      !Number.isInteger(count) || count !== 5) {
+    throw new Error('Use draw 5 [0|1]; only 5 cards and side 0/1 are supported');
+  }
+  if (pendingConsoleDraw !== null) {
+    throw new Error('A console draw request is already pending; wait or cancel it');
+  }
+  const request = {id: ++consoleSequence, side, count};
+  pendingConsoleDraw = request;
+  return {state: 'pending', ...request};
+}
+
+function cancelPendingConsoleDraw() {
+  if (pendingConsoleDraw === null) return {state: 'none'};
+  const request = pendingConsoleDraw;
+  pendingConsoleDraw = null;
+  lastConsoleDraw = {...request, state: 'cancelled', detail: 'Cancelled before duel scheduler accepted it'};
+  return lastConsoleDraw;
+}
+
 function status() {
   const entries = cards.map(card => ({
     name: card.name,
@@ -144,6 +260,12 @@ function status() {
     modulePath: main.path,
     processId: Process.id,
     dllBase: dllBase === null ? null : dllBase.toString(),
+    console: {
+      batchesQueued: getManualDrawBatches === null ? 0 : getManualDrawBatches(),
+      pending: pendingConsoleDraw,
+      last: lastConsoleDraw,
+      gate: installed ? queueGate() : null
+    },
     entries,
   };
 }
@@ -151,6 +273,7 @@ function status() {
 // The restore is idempotent and also handles a failed install that only
 // managed to patch the first card. It checks both slots BEFORE changing any.
 function restore() {
+  stopConsoleHook(); // also drops any unserviced command before unpatching
   for (const card of cards) {
     const current = card.slot.readPointer();
     if (!current.equals(kPrimaryOriginal) &&
@@ -172,6 +295,8 @@ function restore() {
 
 rpc.exports = {
   status,
+  queuedraw: queueConsoleDraw,
+  canceldraw: cancelPendingConsoleDraw,
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
     if (typeof dllPath !== 'string' || !/^[a-zA-Z]:\\/.test(dllPath)) {
@@ -207,6 +332,10 @@ rpc.exports = {
       'uint32', ['uint32'], 'mscdecl');
     getDrawBatches = new NativeFunction(getExport('YugiRE_GetDrawBatchCount'),
       'uint32', ['uint32'], 'mscdecl');
+    getManualDrawBatches = new NativeFunction(getExport('YugiRE_GetConsoleDrawBatchCount'),
+      'uint32', [], 'mscdecl');
+    manualDrawOnDuelThread = new NativeFunction(getExport('YugiRE_ConsoleDraw'),
+      'uint32', ['uint32', 'uint32'], 'mscdecl');
 
     if (initialize(main.base, sparksDamage, raimeiDamage,
                    sparksMode, raimeiMode) !== kInitMagic) {
@@ -219,6 +348,7 @@ rpc.exports = {
 
     try {
       for (const card of cards) writePrimary(card, card.replacement);
+      installConsoleHook();
       installed = true;
       return status();
     } catch (error) {

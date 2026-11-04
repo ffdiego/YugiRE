@@ -48,6 +48,7 @@ volatile long g_sparks_emits = 0;
 volatile long g_raimei_emits = 0;
 volatile long g_sparks_draws = 0;
 volatile long g_raimei_draws = 0;
+volatile long g_manual_draws = 0;
 
 volatile long* calls_for(Card card) {
     switch (card) {
@@ -93,6 +94,7 @@ bool configure(void* image_base, unsigned int sparks_damage,
     g_sparks_calls = g_raimei_calls = 0;
     g_sparks_emits = g_raimei_emits = 0;
     g_sparks_draws = g_raimei_draws = 0;
+    g_manual_draws = 0;
     return true;
 }
 
@@ -122,6 +124,9 @@ unsigned int draw_batch_count(Card card) {
     volatile long* p = draws_for(card);
     return p ? atomic_load(p) : 0;
 }
+unsigned int manual_draw_batch_count() {
+    return atomic_load(&g_manual_draws);
+}
 void record_call(Card card) {
     volatile long* p = calls_for(card);
     if (p) atomic_inc(p);
@@ -133,13 +138,27 @@ void emit_damage(Card card, unsigned int target_side) {
         if (p) atomic_inc(p);
     }
 }
-// Draw recipient is the card controller, NOT request[6] which Sparks/Raimei
-// target preparation fills with the opponent side.
-void emit_draw_five(Card card, unsigned int activating_side) {
-    if (g_draw_command) {
-        g_draw_command(activating_side & 1u, 5);
+// Shared producer for effects and console commands. This schedules native
+// 0x61 draw commands; the engine resolves them asynchronously. Never call
+// from a Frida RPC thread: this is only entered on the game/duel thread.
+static bool queue_draw_cards(unsigned int side, unsigned int count) {
+    // Native draw helper supports variable quantities. Keep this initial
+    // effect interface bounded to 1..5; console commands restrict to 5.
+    if (!g_draw_command || side > 1u || count == 0u || count > 5u) return false;
+    g_draw_command(side, count);
+    return true;
+}
+// Draw recipient is the card controller, NOT request[6], which the original
+// target-preparation callback fills with the opponent side.
+void emit_draw_cards(Card card, unsigned int activating_side, unsigned int count) {
+    if (queue_draw_cards(activating_side, count)) {
         volatile long* p = draws_for(card);
         if (p) atomic_inc(p);
     }
+}
+bool draw_from_console(unsigned int side, unsigned int count) {
+    if (count != 5u || !queue_draw_cards(side, count)) return false;
+    atomic_inc(&g_manual_draws);
+    return true;
 }
 }} // yugire::engine

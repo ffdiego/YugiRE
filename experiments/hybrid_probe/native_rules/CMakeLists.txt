@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
-project(YugiRENativeDualCards VERSION 0.3 LANGUAGES CXX)
+project(YugiRENativeDualCards VERSION 0.4 LANGUAGES CXX)
 if(NOT WIN32 OR NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
   message(FATAL_ERROR "This must be built for Windows x86 (Visual Studio -A Win32).")
 endif()
 add_library(yugire_rules SHARED
   src/engine.cpp
+  src/effect_context.cpp
   src/cards/sparks.cpp
   src/cards/raimei.cpp
   src/exports.cpp
@@ -28,3 +29,9 @@ add_executable(test_card_request tests/test_card_request.cpp)
 target_include_directories(test_card_request PRIVATE include)
 target_compile_features(test_card_request PRIVATE cxx_std_17)
 add_test(NAME card_request_offsets COMMAND test_card_request)
+
+# Pure C++ regression test with an engine mock: no live Joey process needed.
+add_executable(test_effect_context tests/test_effect_context.cpp src/effect_context.cpp)
+target_include_directories(test_effect_context PRIVATE include)
+target_compile_features(test_effect_context PRIVATE cxx_std_17)
+add_test(NAME effect_context COMMAND test_effect_context)

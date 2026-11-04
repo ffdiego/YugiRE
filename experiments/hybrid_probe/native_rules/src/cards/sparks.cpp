@@ -1,20 +1,8 @@
 #include "yugire/cards.hpp"
-#include "yugire/engine.hpp"
+#include "yugire/effect_context.hpp"
 
 namespace yugire { namespace cards {
 unsigned short sparks(const CardRequest* request, void* /*opaque*/) {
-    engine::record_call(Card::Sparks);
-    if (request && !request->suppresses_damage()) {
-        const unsigned int mode = engine::configured_mode(Card::Sparks);
-        if ((mode & 1u) != 0u) {
-            engine::emit_damage(Card::Sparks, request->selected_target_side());
-        }
-        if ((mode & 2u) != 0u) {
-            // After damage, enqueue five draws through Joey's native
-            // queue for the activating player (not the damage target).
-            engine::emit_draw_five(Card::Sparks, request->activating_side());
-        }
-    }
-    return 0;
+    return EffectContext(Card::Sparks, request).ResolveConfigured();
 }
 }} // namespace yugire::cards

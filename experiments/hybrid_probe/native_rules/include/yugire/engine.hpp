@@ -22,8 +22,12 @@ unsigned int configured_damage(Card card);
 unsigned int call_count(Card card);
 unsigned int emit_count(Card card);
 unsigned int draw_batch_count(Card card);
+unsigned int manual_draw_batch_count();
 void record_call(Card card);
 void emit_damage(Card card, unsigned int target_side);
-void emit_draw_five(Card card, unsigned int activating_side);
+void emit_draw_cards(Card card, unsigned int activating_side, unsigned int count);
+// May ONLY be called from the game's duel-update thread, never from RPC.
+// Accepts an explicit 0/1 player side and exactly 5 cards in this experiment.
+bool draw_from_console(unsigned int side, unsigned int count);
 } // namespace engine
 } // namespace yugire

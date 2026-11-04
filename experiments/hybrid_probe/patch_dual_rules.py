@@ -56,6 +56,54 @@ def show_counters(state: dict) -> None:
               f"drawBatches={card['drawBatches']} "
               f"mode={mode} damage={card['configuredDamage']} "
               f"currentPointer={card['currentPointer']}", flush=True)
+    console = state.get("console") or {}
+    if console:
+        last = console.get("last")
+        pending = console.get("pending")
+        gate = console.get("gate")
+        print(f"[console] batchesQueued={console['batchesQueued']} "
+              f"pending={pending} last={last}", flush=True)
+        if pending is not None:
+            print(f"[console] duelQueueGate={gate}", flush=True)
+
+
+def show_help(default_side: int) -> None:
+    print("[dual-rules] Commands: Enter/status = counters; "
+          "draw 5 [0|1] = request five cards; cancel = cancel pending; "
+          "help = this text; stop = restore", flush=True)
+    print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
+          "Side 0 is a starting assumption for the local player; "
+          "use 'draw 5 1' if side 1 is yours.", flush=True)
+
+
+def handle_command(command: str, api: object, default_side: int) -> bool:
+    """Return False only when the user requested shutdown."""
+    parts = command.lower().strip().split()
+    if not parts or parts == ["status"]:
+        show_counters(api.status())
+        return True
+    if parts == ["help"]:
+        show_help(default_side)
+        return True
+    if parts == ["stop"] or parts == ["quit"] or parts == ["exit"]:
+        return False
+    if parts == ["cancel"]:
+        print(f"[console] {api.canceldraw()}", flush=True)
+        return True
+    if parts[0] == "draw":
+        if len(parts) not in (2, 3) or parts[1] != "5" or (
+            len(parts) == 3 and parts[2] not in ("0", "1")
+        ):
+            print("[console] Usage: draw 5 [0|1]", flush=True)
+            return True
+        side = default_side if len(parts) == 2 else int(parts[2])
+        queued = api.queuedraw(side, 5)
+        print(f"[console] Request {queued['id']} pending for side {side}. "
+              "It will be enqueued on a later idle duel update; "
+              "press Enter to check status.", flush=True)
+        return True
+    print(f"[console] Unknown command: {command!r}; type help", flush=True)
+    return True
 
 
 def main() -> int:
@@ -71,6 +119,8 @@ def main() -> int:
                         help="Sparks effect: damage, draw or damage-draw (default: damage)")
     parser.add_argument("--raimei-mode", choices=tuple(MODES), default="damage",
                         help="Raimei effect: damage, draw or damage-draw (default: damage)")
+    parser.add_argument("--console-side", type=int, choices=(0, 1), default=0,
+                        help="Default player side for 'draw 5' (experimental: 0)")
     args = parser.parse_args()
     dll_path = args.dll.resolve()
 
@@ -111,12 +161,14 @@ def main() -> int:
         show_counters(state)
         print(f"[dual-rules] Effects: Sparks={args.sparks_mode}, "
               f"Raimei={args.raimei_mode}. Play a NORMAL duel.", flush=True)
-        print("[dual-rules] Press Enter for counters or type 'stop' to restore both.", flush=True)
+        show_help(args.console_side)
         while True:
-            command = input("[dual-rules] > ").strip().lower()
-            if command in ("stop", "quit", "exit"):
-                break
-            show_counters(api.status())
+            command = input("[dual-rules] > ").strip()
+            try:
+                if not handle_command(command, api, args.console_side):
+                    break
+            except Exception as command_error:
+                print(f"[console] Command failed: {command_error}", flush=True)
     except KeyboardInterrupt:
         print("\n[dual-rules] Ctrl+C: restoring original callbacks.", flush=True)
     except EOFError:

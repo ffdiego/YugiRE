@@ -8,8 +8,8 @@ static_assert(sizeof(void*) == 4, "Requires x86");
 
 // Names exported undecorated via yugire_rules.def. Frida must call these
 // functions using its 'mscdecl' ABI, matching the Win32 __cdecl below.
-constexpr unsigned int kInitMagic = 0x59554733;  // "YUG3"
-constexpr unsigned int kAbiVersion = 2;
+constexpr unsigned int kInitMagic = 0x59554734;  // "YUG4"
+constexpr unsigned int kAbiVersion = 3;
 
 extern "C" unsigned int __cdecl YugiRE_GetAbiVersion() {
     return kAbiVersion;
@@ -44,4 +44,12 @@ extern "C" unsigned int __cdecl YugiRE_GetConfiguredMode(unsigned int resource_i
 }
 extern "C" unsigned int __cdecl YugiRE_GetDrawBatchCount(unsigned int resource_id) {
     return yugire::engine::draw_batch_count(static_cast<yugire::Card>(resource_id));
+}
+
+extern "C" unsigned int __cdecl YugiRE_ConsoleDraw(
+    unsigned int side, unsigned int count) {
+    return yugire::engine::draw_from_console(side, count) ? 1u : 0u;
+}
+extern "C" unsigned int __cdecl YugiRE_GetConsoleDrawBatchCount() {
+    return yugire::engine::manual_draw_batch_count();
 }
