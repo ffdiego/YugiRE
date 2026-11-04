@@ -133,3 +133,31 @@ Plano experimental para Jam Breeding Machine:
 4. Como teste complementar, abrir o YDR antigo enquanto o patch está ativo e medir se a função substituta é chamada. Caso o contador fique zero, esse replay testa principalmente o consumidor de comandos, não a lógica substituída.
 
 Por isso o melhor teste de funções produtoras de efeitos é duelo normal controlado + contador do patch + estado de campo + sequência YDR. Para substituições do consumidor/apresentação, um replay antigo pode ser um teste mais direto. A estrutura de reexecução do YDR ainda precisa ser confirmada dinamicamente.
+
+
+## 7. Primeira substituição funcional — Sparks (experimental)
+
+A carta **Sparks** é mais adequada que Jam Breeding Machine para demonstrar uma substituição funcional: seu efeito normal de dano é imediato, quantificável e já foi acompanhado até o comando 0x43 em docs/cards/sparks-ookazi.md.
+
+- Índice interno **755**, recurso ID **342 / 0x156**, linha **66** da tabela de 443 registros.
+- Callback compartilhado original **0x00584E60**. Sparks e Ookazi usam o mesmo endereço, então **não modificar diretamente as instruções dessa função**.
+- Slot primário específico de Sparks: 0x005ED0A8 + 66*24 + 4 = 0x005ED6DC na imagem base 0x00400000.
+- Slot de preparo de alvo +20 continua apontando para 0x00593CC0. Esse slot resolve o oponente no pedido.
+- O código substituto, escrito como stub nativo x86 e **não** em JS no caminho crítico, incrementa um contador, checa pedido[4] & 4, lê pedido[6] & 1, chama 0x005784E0(lado, 200) e retorna limpando apenas AX. As chamadas a esse helper são responsáveis por emitir o mesmo comando de dano usado pela implementação original.
+- O programa Python valida o **hash do EXE realmente carregado** antes de alterar a RAM e confirma os cinco campos do registro da carta. O patch é somente em memória; não altera EXE, saves ou outros callbacks por intenção.
+- O patch restaura o ponteiro original quando o operador digita stop ou pressiona Ctrl+C e deixa a memória nativa alocada até o encerramento do processo, para não criar um endereço inválido no teardown. Se o terminal ou Frida cair abruptamente, feche o Joey normalmente antes de qualquer outro experimento.
+
+**ATENÇÃO:** o stub foi inspecionado com desmontagem x86 local, e a sintaxe JS validada estaticamente, porém **ainda não foi testado dentro do Joey no Windows**. Use backup dos saves, uma cópia descartável do jogo e faça primeiro um duelo curto.
+
+Para testar na branch experimental, inicie o Joey e, em um PowerShell na raiz do projeto:
+
+    git pull
+    cd experiments\hybrid_probe
+    $joeyPid = (Get-Process joey_pc).Id
+    .\.venv-frida\Scripts\python.exe .\patch_sparks.py --pid $joeyPid
+
+Deixe o terminal aberto. Em um duelo **normal** (não replay), use Sparks. Pressione Enter no terminal para ler callbackCalls; se o efeito funcionar, o oponente perderá **200 LP**. Ao terminar, digite stop para confirmar a restauração do ponteiro. Se não houver perda de 200 LP, qualquer erro ou encerramento inesperado, interrompa o experimento; não tente repetir comandos de patch no mesmo processo.
+
+Para diagnóstico inicial de instalação, copiar as mensagens [sparks] do host e relatar LP do oponente antes/depois. O teste **não prova ainda** equivalência completa em todos os contextos de negação e múltiplas ativações.
+
+Esta prova demonstra reimplementação seletiva de um efeito usando os helpers nativos do motor; não confundir com injeção no callback de Jam Breeding Machine (corpo vazio) ou com implementação do sistema de turnos. Não rodar ao mesmo tempo que joey_all_primary_callbacks.js, joey_abi_probe.js ou outro hook na tabela. O modo anterior de Jam Breeding Machine em patch_jam_breeding.py permanece pendente de revisão e não é recomendado.
