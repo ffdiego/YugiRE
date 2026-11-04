@@ -30,10 +30,11 @@ As duas operações consomem `FUN_00579930(side,0x11,1)`,
 marcando a flag compartilhada `0x20000`. A recusa
 por turno consumido agora inclui `normalSummonUsed:true`
 e `playerFlags` em `console.last`, tornando o motivo
-verificável no diagnóstico do console. O operador relatou
+verificável no diagnóstico do console. O operador havia relatado
 que uma segunda tentativa de summon no mesmo turno foi
-barrada no Joey real, mas não registrou qual condição a
-rejeitou; não atribuímos retroativamente o motivo à flag.
+barrada no Joey real, mas sem motivo registrado. Uma
+captura posterior confirmou explicitamente a flag
+`0x20000` após `set`, como detalhado abaixo.
 
 ## Testes offline
 
@@ -52,8 +53,47 @@ O suite do agente Frida simulado cobre:
   está ativa; sem invocar o construtor após cancelamento.
 
 Os testes do parser Python cobrem ambos os comandos e
-argumentos inválidos. **Não validado ainda ao vivo no
-Joey após adicionar `set`.**
+argumentos inválidos.
+
+## Primeiro teste funcional real de set
+
+Fonte: console Python/Frida fornecido pelo operador
+em 2026-11-04, `joey_pc.exe` PID 21052;
+fingerprint do EXE confirmado pelo loader.
+
+- Mão inicial de side 1: seis cartas, índices
+  `[705,221,206,273,369,795]`; cinco zonas de
+  monstro inicialmente vazias.
+- `set check 1 3` para a carta interna `273`
+  retornou `allowed=true`, `eligibility=17`
+  (`0x11`), `eligibilityMask=16` (`0x10`),
+  `selectedSlot=0`, `levelClass=4` e
+  `playerFlags=0`.
+- `set 1 3` foi agendado. `diff` confirmou:
+  `handCount: 6 → 5`; slot 0
+  `- → 273`; palavra de posição
+  `0x0000 → 0x0201`. A lista de mão
+  passou a `[705,221,206,369,795]`.
+- `set check 1 0`, depois da colocação,
+  retornou `allowed=false`,
+  `normalSummonUsed=true` e
+  `playerFlags=131072` (`0x20000`),
+  com `detail='Normal summon/set already used
+  (player flag 0x20000)'`.
+
+**Conclusão:** o primeiro `set` executado
+externamente teve resultado concreto no campo, e
+a recusa posterior ocorreu explicitamente por
+`0x20000`. A palavra `0x0201` é compatível
+com a posição de set esperada, sem exigir
+decodificar todos os bits de posição.
+Não foi capturado o `console.last` do request
+ativo de set, mas a mudança da mão e do campo
+confirma a conclusão da operação.
+
+Este teste não valida ainda todas as combinações
+de efeitos, tributos, zonas bloqueadas, mudança
+de fase ou o modo demo.
 
 ## Sequência sugerida para validação
 

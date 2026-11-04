@@ -40,9 +40,13 @@ a mesma flag `0x20000` via `FUN_00579930`.
 O diagnóstico mostra `normalSummonUsed: true` e o valor
 bruto das flags quando a recusa ocorre por esse motivo.
 
-**Validação do set:** testes simulados JavaScript; não
-houve ainda execução do `set` no Joey real.
-[Relatório técnico](evidence/console-native-set-implementation-2026-11-04.md).
+**Validação do set:** após os testes simulados JavaScript,
+uma execução real no Joey confirmou que
+`set 1 3` retirou a carta interna 273 da mão
+(6 → 5) e a colocou no slot 0, posição `0x0201`.
+`set check 1 0` confirmou o bit `0x20000` do
+jogador marcado após o set. Veja o
+[relatório técnico e teste real](evidence/console-native-set-implementation-2026-11-04.md).
 
 ## Summon experimental do console (2026-11-04)
 

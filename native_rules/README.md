@@ -401,8 +401,13 @@ conservadoramente jogadas legais. O `summon` **já foi validado
 em um duelo real**: `summon 1 5` colocou a carta interna
 221 no slot 0, reduzindo a mão de 6 para 5. Veja
 [`validação ao vivo`](../docs/evidence/console-native-summon-live-2026-11-04.md).
-O **`set` ainda não foi testado no Joey real** nesta versão.
-Use duelo descartável para a primeira execução.
+O **`set` também foi validado no Joey real**:
+`set 1 3` colocou a carta interna 273 no slot 0
+(`position=0x0201`) e reduziu a mão de 6 para 5.
+Em seguida, `set check 1 0` confirmou
+`normalSummonUsed=true`, com
+`playerFlags=0x20000`. Os demais cenários
+continuam experimentais; use duelos descartáveis.
 
 Ver [relatório do novo `set`](../docs/evidence/console-native-set-implementation-2026-11-04.md).
 A ABI da DLL continua v6; **não recompilar a DLL**.

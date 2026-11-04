@@ -33,20 +33,26 @@ e `turn-processing-mode-selection.txt`.
 - como o oponente seleciona um deck;
 - pesos, aleatoriedade e função de avaliação das decisões;
 - como a UI solicita o encerramento de turno de modo seguro;
-- validação real do novo comando `set`.
+- validação real de `set` sob efeitos especiais
+  e outros modos; um set básico já teve sucesso.
 
 ## Experimentos futuros de alto rendimento
 
-**No Fedora, se o Ghidra já estiver acessível:** extrair
-as instruções ao redor de três chamadas à
-`FUN_005B6FF0` e seguir os produtores do `handIndex`.
-Esse estudo pode ocorrer sem o jogo rodando.
+**Ghidra, próximo passo:** o relatório dos três
+chamadores foi fornecido e analisado. `FUN_005B1360`
+e `FUN_005B16C0` foram identificadas como fontes
+do índice de mão; ambas consultam a elegibilidade
+`FUN_005AAB90`. O próximo alvo estático é
+seus corpos, além do filtro `FUN_005AE270`.
+Ver [análise detalhada](ai-summon-callers-2026-11-04.md).
 
-**Quando o Windows voltar:** testar `set check`/`set`
-e usar hooks passivos para comparar o modo demo com um
-duelo normal. Coletar também dois ou mais decks do lado
-CPU em `.ydr` para investigar escolhas de deck por
-comparação, não por suposição.
+**Quando for possível executar o Windows novamente:**
+o primeiro teste de `set` já foi concluído com sucesso.
+O próximo experimento dinâmico é comparar o modo demo
+com um duelo normal usando hooks passivos. Coletar
+também dois ou mais decks da CPU em `.ydr` para
+investigar variabilidade por comparação, não
+por suposição.
 
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
