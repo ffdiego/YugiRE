@@ -47,3 +47,16 @@ Nos primeiros 48, aparecem `0x0061(..., 5, ...)` e `0x8061(..., 5, ...)` no iní
 Instrumentar `0x005860E0` e `0x00583D20` com `Interceptor.attach`, sem alterar seus retornos, e capturar uma amostra protegida dos **20 bytes** completos do pedido no começo e no fim de cada chamada. Correlacionar wrapper e handler pelo thread ID. Evitar instrumentar `0x0056DD30`, que teve mais de 128 mil chamadas na primeira prova.
 
 Antes de substituir qualquer função, confirmar pelo assembly e rastros: convenção de chamada; origem/destino dos argumentos; forma de retorno; globais, flags e filas modificadas; efeitos indiretos. Nenhuma dessas condições é comprovada apenas pelos dados desta sessão.
+
+
+## Terceira captura — hooks diretos e cobertura (2026-11-03)
+
+`joey_card_handlers.js` conseguiu instalar hooks no wrapper, Morphing Jar, Sangan e Magic Jammer. Ao tentar `0x00583F30` (compartilhado com Jam Breeding Machine e DNA Surgery), o Frida declarou `unable to intercept`. A leitura de bytes `66 33 C0 C3 90...` corresponde a `xor ax, ax; ret; nop...`: apenas quatro bytes úteis no corpo, compatível com dificuldade de realocação do prólogo. A causa interna do Frida não foi isolada.
+
+Na sessão, Morphing Jar teve 13 entradas no handler nativo `0x005860E0`; Sangan e Magic Jammer, zero. O wrapper, por sua vez, teve mais de 70 chamadas. **As primeiras 48 detalhadas** permitem mapear, pelo primeiro `uint16` e catálogo estático, Cyber Jar (índice 320, 31 chamadas), Giant Rat (218, 7), DNA Surgery (573, 2), Raigeki (345, 2), Harpie's Feather Duster (695, 2), Change of Heart (300, 1), Tribute to The Doomed (363, 1), Parasite Paracide (197, 1) e Magician of Faith (471, 1). Esses índices correspondem aos callbacks específicos do catálogo, mas não foram instrumentados individualmente.
+
+Em Cyber Jar, os 20 bytes do pedido foram modificados entre entrada e saída em algumas chamadas. Um dos campos de 16 bits, no offset +6, foi observado progredindo de 0 para 1, 3, 7 e 15 em etapas sucessivas. Outros campos do pedido também mudaram. Essa progressão sugere informação acumulativa de andamento, mas **o significado do bitmask não está demonstrado**.
+
+O último retorno de `MorphingJarPrimary` foi registrado como EAX bruto `0xFFFF0000`; o low16 é `0x0000`. Não interpretar o EAX de 32 bits como contrato do callback antes de conferir a assinatura e as instruções consumidoras do valor.
+
+O log finaliza com `Process terminated`. Sem informação adicional, não se sabe se foi saída normal do jogo ou falha. O observador genérico `joey_all_primary_callbacks.js` foi criado para evitar a dependência de hooks em funções específicas e registrar índices de todos os pedidos que passarem pelo wrapper.
