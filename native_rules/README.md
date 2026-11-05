@@ -331,6 +331,18 @@ não reinicia duelos. Essas etapas precisam
 respeitar o fluxo original e serão introduzidas
 depois de validar a decisão no lado 1.
 
+**Captura confirmada (2026-11-05 UTC):** em um
+`ai check 1` após a invocação normal já ter
+sido usada, o novo trace direto gravou
+**2 eventos `ai_console`** (início e recusa)
+e `overwritten=0`. A recusa ocorreu antes
+de `FUN_005B1360`, pela flag `0x20000`,
+portanto não há `select_enter/leave`
+nem dados de pontuação. Essa captura
+valida o trace **direto**, mas não prova
+que os hooks passivos funcionem.
+Ver [captura e próximo teste](../docs/evidence/ai-console-gate-capture-2026-11-05.md).
+
 ### Observar quais critérios a IA utilizou
 
 Em um duelo descartável, execute:
