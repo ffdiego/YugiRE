@@ -92,6 +92,17 @@ Ver [relatório da fórmula](ai-combat-outcome-scoring-2026-11-04.md).
 O próximo passo é mapear as saídas de ATK/DEF
 de `FUN_005ADD60`/`FUN_005ADDC0`.
 
+**Informação parcial e decodificador:**
+`FUN_005ADDC0` usa valores 1000/1900
+para monstros adversários ocultos.
+`FUN_0056D790` conta equipamentos ativos,
+e `FUN_005BE050` fornece metade
+arredondada para cima. Criado um decodificador
+offline com testes para o evento interno
+de quatro bytes, sem hooks e distinto de
+replays `.ydr`. Ver [estudo do
+layout](ai-combat-stat-layout-2026-11-04.md).
+
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
 `action_selected`, `action_submitted`, `action_resolved`,

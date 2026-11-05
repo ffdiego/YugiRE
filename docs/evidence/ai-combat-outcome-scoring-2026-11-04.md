@@ -174,36 +174,22 @@ O pseudocódigo de `FUN_005B05A0` contém
 provavelmente artefato de assinatura do Ghidra:
 verificar o assembly antes de chamar esse helper.
 
-## Próxima etapa: validar o layout dos atributos
+## Atributos e decodificador offline
 
-A formula já esclareceu a orientação
-da vantagem e as flags. Falta confirmar os
-campos e ajustes provenientes de:
+`FUN_005ADDC0` estima atributos de monstros
+ocultos: 1000 em classes até 4 e 1900 nas
+classes superiores, nos offsets +4/+8;
+`FUN_005ADD60` usa o calculador original
+com um bit de posição temporariamente marcado.
+`FUN_005BE050(x)=(x*5+5)/10` é metade
+arredondada para cima para x não negativo.
+`FUN_0056D790` e `FUN_0056D8D0`
+contam vínculos de equipamentos/efeitos ativos.
 
-- `FUN_005ADD60` e `FUN_005ADDC0`: saída
-  para atacante/alvo, atributos e bits de posição;
-- `FUN_005BE050`: transformação numérica
-  aplicada a atributos, particularmente
-  com Metalmorph;
-- `FUN_0056D790`: contribuição de Metalmorph;
-- `FUN_0056D8D0`: consulta de efeitos
-  que permitem dano contra defesa.
-
-```powershell
-.\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-stat-layout.txt `
-  -Addresses @(
-    '005add60',
-    '005addc0',
-    '005be050',
-    '0056d790',
-    '0056d8d0',
-    'ins:005b0f90:85'
-  )
-```
-
-Depois disso, um **decodificador offline do evento
-de 4 bytes** poderá reproduzir score e flags e
-ser confrontado com traces passivos, sem ativar
-o simulador nativo no duelo real. Nenhum hook
-foi alterado neste estudo.
+Foi acrescentado
+[`decode_ai_combat_event.py`](../../scripts/decode_ai_combat_event.py)
+com testes offline para decodificar os eventos
+hipotéticos de quatro bytes. Ainda não são
+capturas reais de `DAT_00A579A6` e não
+podem ser usados com registros `.ydr`.
+Ver [detalhes e comando Ghidra](ai-combat-stat-layout-2026-11-04.md).
