@@ -36,7 +36,13 @@ Command num ramo que pode criar pedido após mudar orientação.
 0x005699C0 soma os dois lados por **0x00569820**. O contador exige entrada
 ocupada, ID correspondente, máscara de face 0x0002 definida e condições sobre
 flags de posição; também consulta 0x0056B440. Não equivale a procurar o ID em
-qualquer lugar do duelo. A semântica completa de 0x0056B440 fica pendente.
+qualquer lugar do duelo. Uma decompilação posterior identificou que
+`0x0056B440` percorre os slots de
+magia/armadilha dos dois lados procurando
+**Prohibition** (`0x48A`) ativa e examina
+vínculos de tipo 9/11; os detalhes de
+`FUN_005674E0` ainda estão pendentes.
+Ver [estudo do filtro](../evidence/ai-combat-computed-stats-2026-11-04.md).
 
 ## 2. Callback de Royal Command sobre outro pedido
 

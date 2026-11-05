@@ -14,8 +14,12 @@ Somente análise estática, sem nova execução do Joey.
 O contexto aparentemente contém 12 bytes:
 `+0..1` ID interno, `+2` e `+3` metadados de tipo,
 `+4..7` e `+8..11` dois atributos numéricos.
-A interpretação precisa de cada atributo depende
-de `FUN_0056DD30`.
+A decompilação posterior de `FUN_0056DD30`
+**confirmou** que `+4` é ATK calculado
+(`FUN_004027B0`) e `+8` é DEF calculada
+(`FUN_00402800`); tipo/atributo ocupam
+respectivamente `+2` e `+3`.
+Ver [relatório do cálculo completo](ai-combat-computed-stats-2026-11-04.md).
 
 **FUN_005ADD60:** se a flag `positionFlags & 0x02`
 não está marcada, marca temporariamente, chama
@@ -118,22 +122,28 @@ precisaremos capturar `DAT_00A579A6` num
 contexto de simulação via hook passivo, sem
 chamar os helpers mutantes.
 
-## Próxima extração
+## Layout confirmado e próximo estudo
 
-Decompilar `FUN_0056DD30` para mapear
-os campos reais e `FUN_0056B440` para
-entender as condições dos vínculos:
+`FUN_0056DD30` confirmou o struct de 12 bytes
+e os modificadores. `FUN_0056B440` revelou
+uma pesquisa por **Prohibition** (`0x48A`)
+e vínculos nos slots 5..9 de ambos os lados.
+Adicionado `scripts/decode_ai_combat_stats.py`
+e testes para ler os atributos já computados.
+
+Próxima consulta:
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-computed-stats.txt `
+  -Report ai-combat-effect-gates.txt `
   -Addresses @(
-    '0056dd30',
-    '0056b440',
-    'ins:0056dd30:85',
-    'ins:005b10a0:90'
+    '0056fd40',
+    '0056daa0',
+    '0056d740',
+    '005674e0',
+    'ins:0056f200:80'
   )
 ```
 
-O decodificador possui testes offline e
-não modifica o executor, a DLL ou o agente Frida.
+Ver [relatório de cálculo e bloqueios](ai-combat-computed-stats-2026-11-04.md).
+As ferramentas continuam somente leitura.

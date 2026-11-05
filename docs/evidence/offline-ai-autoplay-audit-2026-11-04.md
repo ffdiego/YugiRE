@@ -103,6 +103,15 @@ de quatro bytes, sem hooks e distinto de
 replays `.ydr`. Ver [estudo do
 layout](ai-combat-stat-layout-2026-11-04.md).
 
+**Atributos computados confirmados:** `FUN_0056DD30`
+retorna tipo/atributo e ATK/DEF nos offsets
+`+2/+3` e `+4/+8`, com modificadores
+contextuais. `FUN_0056B440` consulta
+**Prohibition** e vínculos em magias/armadilhas.
+Foi criado leitor offline de contexto de 12 bytes
+com seis testes locais; ele não recalcula
+o motor original. Ver [relatório](ai-combat-computed-stats-2026-11-04.md).
+
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
 `action_selected`, `action_submitted`, `action_resolved`,

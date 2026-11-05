@@ -11,7 +11,8 @@ Endereços VA; nomes descritivos somente na documentação. Ver
 | 0x00579CE0 | Condições de alvo por ID; Legendary Sword exige tipo 15 |
 | 0x0040A230 | Consome 0xB2 e encaminha a inserção de associação |
 | 0x0056AB60 | Grava posição/metadados e incrementa contador de associações |
-| 0x0056DD30 | Calcula tipo e ATK/DEF com modificadores |
+| 0x0056DD30 | Preenche buffer de 12 bytes: index(+0), tipo(+2), atributo(+3), ATK calculado(int32 +4), DEF calculada(int32 +8); aplica efeitos contextuais |
+| 0x0056B440 | Filtra caminho de efeitos consultando Prohibition (recurso 0x48A) ativa em slots 5..9 e vínculos; contrato detalhado pendente |
 | 0x0056FD40 | Contribuições de equipamentos por ID e atributos dinâmicos |
 | 0x0056F690 / 0x0056F6B0 | Retornam ATK / DEF calculados |
 
