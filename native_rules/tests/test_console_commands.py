@@ -114,13 +114,13 @@ class FakeApi:
     def traceprepstop(self):
         self.trace_calls.append(("prep_off",))
         self.prep_active = False
-        self.ai_active = False
         return self.tracestatus()
 
     def tracestop(self):
         self.trace_calls.append(("stop",))
         self.trace_active = False
         self.prep_active = False
+        self.ai_active = False
         return self.tracestatus()
 
     def tracemark(self, label):
