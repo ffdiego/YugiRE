@@ -29,7 +29,10 @@ e `turn-processing-mode-selection.txt`.
 
 ## O que não conseguimos provar apenas com o repositório
 
-- Se o modo de demonstração do menu usa replays ou IA;
+- Em 2026-11-04 ainda não sabíamos se a demo usava IA ou replay. A captura
+  [posterior, em 2026-11-05](demo-native-ai-both-sides-2026-11-05.md)
+  confirmou chamadas de seletores nativos **nos dois lados**, mas não
+  determinou o mecanismo de ativação da demo;
 - como o oponente seleciona um deck;
 - pesos exatos, RNG e semântica completa da avaliação
   de cenário (a comparação por ATK/DEF e uma tabela

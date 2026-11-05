@@ -424,10 +424,14 @@ no Joey após a instalação desses hooks.
 
 ## Observação passiva da demonstração do menu
 
-O menu ocioso pode iniciar uma demonstração. Não sabemos se ela
-é IA × IA, replay ou uma sequência roteirizada. Este experimento
-**apenas observa**, sem chamar funções da IA, alterar flags ou
-enfileirar ações.
+A captura real de 2026-11-05
+[`demo-native-ai-both-sides`](../docs/evidence/demo-native-ai-both-sides-2026-11-05.md)
+mostrou seletores de IA e execução de colocações
+**para ambos os lados**, além de transições automáticas
+de turno. O teste **apenas observa**, sem chamar
+funções da IA, alterar flags ou enfileirar ações.
+Isso não revela ainda qual flag/dispatcher ativa
+o controle em um duelo normal.
 
 `trace demo on` instala um hook em
 `FUN_005B6FF0(side,handIndex,modeSelector)`,
@@ -484,11 +488,15 @@ produtor de comandos `FUN_005B9170`.
 Se `overwritten > 0`, repita com uma
 captura menor. O limite do buffer é 20.000.
 
-**Cuidado na interpretação:** executor chamado
-nos dois lados ainda não prova IA × IA.
-Correlacione `ai_probe` de seleção com os
-eventos `demo_executor` e seus `caller`;
-a demo pode ser replay, script ou outro modo.
+**Interpretação após captura real:** os hooks
+passivos registraram chamadas de **seletores**
+e de **executor** para os dois lados, com
+correlação de callsites. Isso confirma
+uso efetivo de decisões nativas de IA no
+modo demonstração, mas **não prova que
+todo o escalonador seja independente de
+scripts ou replay**, nem identifica o
+modo de ativação no duelo normal.
 Se não houver eventos, tampouco prova que
 é replay: outro executor pode ser usado.
 O modo `trace demo` só coleta chamadas
