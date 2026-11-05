@@ -125,7 +125,7 @@ os campos reais e `FUN_0056B440` para
 entender as condições dos vínculos:
 
 ```powershell
-.\\scripts\\Run-ArchiveQuery.ps1 `
+.\scripts\Run-ArchiveQuery.ps1 `
   -Report ai-combat-computed-stats.txt `
   -Addresses @(
     '0056dd30',
