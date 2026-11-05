@@ -256,17 +256,11 @@ zona habilitado em `DAT_00A579AC` e
 score melhor que baseline (ou desempate
 especial quando empata).
 
-O valor de `900` provavelmente se refere
-ao **ATK calculado** (`out+4` do struct de
-12 bytes de `FUN_0056DD30`), mas o
-ponteiro de saída no caller ainda precisa
-ser confirmado em assembly.
+O limite de **900 ATK calculado** está confirmado: o assembly mostra `out=S+0x28` e a leitura `S+0x2C`, exatamente `out+4`. Ver [prova de pilha](ai-selection-score-offsets-2026-11-05.md).
 
 Mystic Tomato (`resource=0x463`) não
 é um dos IDs excepcionais de
-`FUN_005AE3E0` em modo 2. O filtro de
-`FUN_005AE220` pode depender de vínculos
-`FUN_00567620`. O `summon check` passa
+`FUN_005AE3E0` em modo 2. `FUN_005AE220` não exclui Mystic Tomato (`0x463`) nem Wall of Illusion (`0x419`), conforme a classificação de recursos de `FUN_00567620`. O `summon check` passa
 um word completo ao helper de elegibilidade,
 enquanto a IA passa apenas `&0xFFF`;
 não presumir que esses caminhos são iguais.

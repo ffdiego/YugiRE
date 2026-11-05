@@ -62,7 +62,7 @@ máscaras e os alvos de tributos. Não é um
 algoritmo executável nem uma reimplementação
 completa do nativo.
 
-## O teste de 900: provavelmente ATK do candidato
+## O teste de 900: ATK computado confirmado
 
 Em `0x005B153F`, após
 `FUN_005B0950`, o assembly tem:
@@ -74,23 +74,7 @@ Em `0x005B153F`, após
 005B1550 JL  0x005B15B3
 ```
 
-A decompilação chama o valor testado de
-`local_8`. Ela passa `local_c` como saída
-de `FUN_0056DD30(side,slot,local_c)` e
-mostra `local_c[4]` imediatamente antes
-de `local_8` na organização local. Dado
-que **confirmamos anteriormente** que
-`FUN_0056DD30` grava o DWORD de **ATK**
-em `out+4`, é **forte hipótese** que
-`local_8` seja justamente a sobreposição
-desse ATK calculado.
-
-Pendente: conferir a instrução `LEA` que
-constrói o argumento `out` antes da chamada
-a `FUN_0056DD30` e reconciliar offsets de
-pilha em `0x005B14C4..`. Até isso, não
-afirmar como fato fechado que o gate é ATK
-e não outro dado de 32 bits da área local.
+A extração posterior confirmou a relação exata dos ponteiros: `out=S+0x28` em `0x005B14E1`; a leitura de `0x005B1544` é `S+0x2C = out+4`, o DWORD de **ATK calculado**. O valor mínimo de **900 ATK** é, portanto, um gate comprovado deste seletor. Ver [prova de pilha](ai-selection-score-offsets-2026-11-05.md).
 
 ## Bitmap de zona e pontuação
 
@@ -187,13 +171,7 @@ o recurso **não** estiver entre:
 - `0x492`: Kiseitai
 - `0x585`: nome não confirmado no catálogo
 
-Em outros casos retorna 1; portanto
-pode funcionar como filtro para certos
-vínculos/efeitos especiais. A semântica
-de `FUN_00567620` não foi extraída
-neste arquivo, logo ainda não podemos
-concluir se retornava zero para
-Mystic Tomato na captura.
+Em outros casos retorna 1. A função `FUN_00567620` foi extraída posteriormente e é uma classificação de recursos: Mystic Tomato (`0x463`) e Wall of Illusion (`0x419`) **não pertencem à whitelist**, logo `FUN_005AE220` retorna 0 para ambas. **Este gate não explica a recusa dessas cartas.** Ver [classificador e pilha](ai-selection-score-offsets-2026-11-05.md).
 
 ## O que mudou sobre o caso real
 
@@ -209,7 +187,7 @@ O novo código indica causas possíveis
    de flags/contexto;
 2. vínculo especial ou restrição
    específica `FUN_005AE220`;
-3. valor calculado menor que 900;
+3. **ATK calculado** menor que 900;
 4. bit do slot selecionado zerado em
    `DAT_00A579AC`;
 5. score da hipótese não superou o

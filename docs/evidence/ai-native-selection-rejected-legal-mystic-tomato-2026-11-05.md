@@ -133,12 +133,7 @@ na decompilação. O retorno de
 `FUN_005AE220` ainda depende de
 `FUN_00567620`.
 
-O valor comparado a `900` é
-**provavelmente ATK computado**,
-porque `local_c` recebe o struct
-de 12 bytes e `local_8` pode
-sobrepor `out+4`; falta validar o
-endereço no assembly do caller.
+A extração posterior [confirmou o offset de ATK](ai-selection-score-offsets-2026-11-05.md) e eliminou `FUN_005AE220` como causa para Mystic Tomato/Wall of Illusion. O motivo exato da decisão `-1` ainda depende dos outros gates e dos scores.
 Ver [estudo detalhado dos gates](ai-selection-rejection-gates-2026-11-05.md).
 
 **Próxima consulta:**
