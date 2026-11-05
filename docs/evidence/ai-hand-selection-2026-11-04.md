@@ -223,6 +223,27 @@ um evento. O acumulador é `DAT_00A579A8`;
 sua semântica completa ainda não foi confirmada.
 Ver [estudo do score](ai-simulated-combat-scoring-2026-11-04.md).
 
+## Caso real 2026-11-05: dois passes rejeitam Mystic Tomato legal
+
+Com lado 1 vazio e CPU com monstro interno
+`522` em slot 0, a mão continha duas
+Mystic Tomato (`221`) e uma Wall of
+Illusion (`273`). `FUN_005B1360(1,0)`
+e `FUN_005B1360(1,-1)` retornaram
+`-1` **registrados diretamente no JSONL**
+(`seen=6`, `overwritten=0`), enquanto
+`summon check 1 2` retornou `allowed=true`
+para uma Mystic Tomato no slot 0.
+
+O seletor pode recusar uma jogada legal
+por filtro de elegibilidade mais específico,
+pontuação de estado hipotético ou diferenças
+de contexto de CPU e jogador. A captura
+**não contém scores** nem demonstra qual
+dessas condições causou a recusa.
+Ver [relatório e consulta Ghidra
+dirigida](ai-native-selection-rejected-legal-mystic-tomato-2026-11-05.md).
+
 ## Estado do entendimento
 
 | Questão | Status |
