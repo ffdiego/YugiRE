@@ -138,26 +138,21 @@ DEF 1200. O segundo é o contexto sintético
 de monstro oculto avaliado como 1000/1000.
 Não há amostras reais de buffer de combate.
 
-## Próximo estudo Ghidra
+## Atualização: gates de efeito e próximo trabalho
 
-A investigação de atributos deve focar
-os helpers responsáveis pelas contribuições
-dinâmicas e pela restrição contextual:
+A extração posterior revelou:
+`FUN_0056FD40` calcula deltas por
+recurso de equipamento; `FUN_0056DAA0`
+conta vínculos de categorias específicas;
+`FUN_0056D740` conta efeitos sob um gate
+contextual; `FUN_005674E0` compara recursos
+com algumas equivalências explícitas (incluindo
+Polymerization e Kuriboh). Mirror Wall (`0x44B`)
+aplica metade arredondada repetidamente.
+Ver [evidência completa e helper offline](ai-combat-effect-gates-2026-11-04.md).
 
-```powershell
-.\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-combat-effect-gates.txt `
-  -Addresses @(
-    '0056fd40',
-    '0056daa0',
-    '0056d740',
-    '005674e0',
-    'ins:0056f200:80'
-  )
-```
-
-Depois, instrumentar passivamente
-`FUN_005B1360` e `FUN_005B0F40`
-e comparar dados capturados com o
-decodificador sem chamar os helpers
-de alteração de campo diretamente.
+A próxima etapa não precisa ser mais uma
+consulta Ghidra extensa: instrumentar
+**passivamente** entrada/saída dos seletores,
+contexto de atributos e eventos hipotéticos,
+sem chamar as rotinas mutantes.

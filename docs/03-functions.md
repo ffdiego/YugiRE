@@ -13,7 +13,10 @@ Endereços VA; nomes descritivos somente na documentação. Ver
 | 0x0056AB60 | Grava posição/metadados e incrementa contador de associações |
 | 0x0056DD30 | Preenche buffer de 12 bytes: index(+0), tipo(+2), atributo(+3), ATK calculado(int32 +4), DEF calculada(int32 +8); aplica efeitos contextuais |
 | 0x0056B440 | Filtra caminho de efeitos consultando Prohibition (recurso 0x48A) ativa em slots 5..9 e vínculos; contrato detalhado pendente |
-| 0x0056FD40 | Contribuições de equipamentos por ID e atributos dinâmicos |
+| 0x0056FD40 | Deltas de equipamentos por recurso, tipo e atributo; recebe dois int* acumuladores ATK/DEF |
+| 0x0056DAA0 | Conta vínculos de tipos 3/11/12/13, usado para paridade de Shield & Sword (0x3C7) |
+| 0x0056D740 | Consulta contagem de vínculos com gate por tipo e FUN_0056C460; Mirror Wall (0x44B) |
+| 0x005674E0 | Compara recursos com normalização >1999 (-2000) e pares equivalentes (Polymerization, Kuriboh e outros) |
 | 0x0056F690 / 0x0056F6B0 | Retornam ATK / DEF calculados |
 
 ## Preparação de descarte e condição de resolução

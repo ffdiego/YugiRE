@@ -112,6 +112,18 @@ Foi criado leitor offline de contexto de 12 bytes
 com seis testes locais; ele não recalcula
 o motor original. Ver [relatório](ai-combat-computed-stats-2026-11-04.md).
 
+**Gates e bônus contextualizados:** Mirror Wall
+reduz o ATK calculado por uma rodada de metade
+arredondada para cima a cada vínculo contado;
+Shield & Sword alterna os atributos conforme
+a paridade de uma contagem de vínculos;
+Prohibition usa um comparador com equivalências
+específicas de recursos. Implementado
+subconjunto offline/testável para bônus
+de equipamentos e recursos equivalentes;
+não há equivalência com o avaliador nativo
+integral. Ver [relatório](ai-combat-effect-gates-2026-11-04.md).
+
 **Antes de autoplay:** criar eventos semanticamente
 separados (`turn_begin`, `action_candidate`,
 `action_selected`, `action_submitted`, `action_resolved`,
