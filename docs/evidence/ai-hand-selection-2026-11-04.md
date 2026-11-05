@@ -244,6 +244,35 @@ dessas condições causou a recusa.
 Ver [relatório e consulta Ghidra
 dirigida](ai-native-selection-rejected-legal-mystic-tomato-2026-11-05.md).
 
+## Gates finais confirmados na extração de 2026-11-05
+
+O novo relatório [`ai-selection-rejection-gates`](ai-selection-rejection-gates-2026-11-05.md)
+confirmou a ordem `FUN_005AAB90 !=0`,
+`FUN_005AE3E0(side,2,resource)==false`,
+`FUN_005AE220(internalIndex)==0`.
+Após simular a invocação, exige um valor
+local de pelo menos **900**, o bit de
+zona habilitado em `DAT_00A579AC` e
+score melhor que baseline (ou desempate
+especial quando empata).
+
+O valor de `900` provavelmente se refere
+ao **ATK calculado** (`out+4` do struct de
+12 bytes de `FUN_0056DD30`), mas o
+ponteiro de saída no caller ainda precisa
+ser confirmado em assembly.
+
+Mystic Tomato (`resource=0x463`) não
+é um dos IDs excepcionais de
+`FUN_005AE3E0` em modo 2. O filtro de
+`FUN_005AE220` pode depender de vínculos
+`FUN_00567620`. O `summon check` passa
+um word completo ao helper de elegibilidade,
+enquanto a IA passa apenas `&0xFFF`;
+não presumir que esses caminhos são iguais.
+O trace que retornou `-1` nos dois passes
+ainda não identifica qual gate falhou.
+
 ## Estado do entendimento
 
 | Questão | Status |

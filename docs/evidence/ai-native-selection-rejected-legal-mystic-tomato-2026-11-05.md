@@ -114,31 +114,47 @@ pelos seis eventos. **Não concluir que
 Mystic Tomato foi rejeitado por ATK
 insuficiente ou que o monstro 522 é mais forte.**
 
-## Próxima extração dirigida
+## Refinamento após extração de gates
 
-Inspecionar em assembly as condições de
-aceitação/rejeição dos candidatos, especialmente
-a transição entre `FUN_005B0950`,
-o teste de 900 e a decisão final:
+O relatório `ai-selection-rejection-gates.txt`
+confirmou a ordem dos filtros
+`FUN_005AAB90` (máscara),
+`FUN_005AE3E0` (restrição de recurso)
+e `FUN_005AE220` (vínculos), seguida
+de simulação, teste numérico `>=900`,
+bit de slot em `DAT_00A579AC` e
+comparação do score com baseline.
+
+Mystic Tomato (`0x463`) e Wall of
+Illusion (`0x419`) passam pelo
+ramo padrão não bloqueado do filtro
+`FUN_005AE3E0(side,2,resource)`
+na decompilação. O retorno de
+`FUN_005AE220` ainda depende de
+`FUN_00567620`.
+
+O valor comparado a `900` é
+**provavelmente ATK computado**,
+porque `local_c` recebe o struct
+de 12 bytes e `local_8` pode
+sobrepor `out+4`; falta validar o
+endereço no assembly do caller.
+Ver [estudo detalhado dos gates](ai-selection-rejection-gates-2026-11-05.md).
+
+**Próxima consulta:**
 
 ```powershell
 .\scripts\Run-ArchiveQuery.ps1 `
-  -Report ai-selection-rejection-gates.txt `
+  -Report ai-selection-score-offsets.txt `
   -Addresses @(
-    '005b1360',
-    '005aab90',
-    '005ae3e0',
-    '005ae220',
-    'ins:005b1510:145'
+    'ins:005b1360:125',
+    'ins:005b14b0:145',
+    '00567620',
+    'ins:005b1540:90'
   )
 ```
 
-A validação mais útil depois dessa análise
-será coletar **qual branch** rejeita cada carta,
-sem executar de forma avulsa
-`FUN_005B1610` e os demais mutadores
-de campo. Também vale estudar o seletor
-alternativo `FUN_005B16C0` em regime
-somente consulta e com as mesmas guardas,
-mas sem transformá-lo em fallback automático
-de summon antes de validar sua ABI/efeitos.
+Também vale comparar o caminho do seletor
+alternativo `FUN_005B16C0`, mas não
+adicioná-lo como fallback executável
+sem validar seu contrato e contexto.
