@@ -313,6 +313,50 @@ não reinicia duelos. Essas etapas precisam
 respeitar o fluxo original e serão introduzidas
 depois de validar a decisão no lado 1.
 
+### Observar quais critérios a IA utilizou
+
+Em um duelo descartável, execute:
+
+```text
+trace on 12000
+trace ai on
+ai check 1
+# Aguarde a resposta e consulte o console.last com Enter
+trace status
+trace off
+trace dump
+```
+
+`trace ai on` instala hooks passivos em
+`FUN_005B1360`, `FUN_005B16C0`,
+`FUN_005B0F40` e `FUN_0056DD30`.
+Os dois seletores registram entrada e retorno,
+e os demais registram a saída hexadecimal
+de 4 bytes do evento e de 12 bytes de stats,
+**apenas enquanto houver um seletor ativo
+na mesma thread**, reduzindo eventos
+não relacionados do renderizador.
+
+O arquivo em `scratch/traces/commands-*.jsonl`
+inclui eventos `kind=ai_probe`, função,
+`callId`, `side`, `threadId`, `outputHex`
+ou `readError`, e
+`selectedHandIndex` no retorno do seletor.
+Para decodificar cada `outputHex`, use
+`scripts/decode_ai_combat_event.py` e
+`scripts/decode_ai_combat_stats.py`. Esses
+dados podem representar **estados de campo
+hipotéticos**, não jogadas resolvidas.
+
+`trace ai off` interrompe apenas os hooks de IA.
+`trace off` também interrompe todos os
+observadores auxiliares; `trace dump`
+exporta eventos preservados em JSONL.
+A capacidade é limitada e o hook tem custo
+de execução, então faça testes curtos.
+A análise **não está validada dinamicamente**
+no Joey após a instalação desses hooks.
+
 ## Native Command Trace (experimental, passivo)
 
 Esta instrumentação usa Frida `Interceptor.attach` em

@@ -76,6 +76,16 @@ const kTraceMaxCapacity = 20000;
 const kAiSelectNormal = va('0x005B1360'); // side, pass -> handIndex
 const kAiSelectPosture = va('0x005AE270'); // side, cardIndex, 0, 0 -> mode
 const kAiForceSet = va('0x00570A70');     // zero forces set in native executor
+// All four probes are optional and side-effect-free Interceptor observers.
+// Selector entry/exit bounds the simulated field evaluation window.
+const kAiProbeTargets = [
+  {name: 'select_normal', va: '0x005B1360', address: kAiSelectNormal, kind: 'selector'},
+  {name: 'select_priority', va: '0x005B16C0', address: va('0x005B16C0'), kind: 'selector'},
+  {name: 'combat_event', va: '0x005B0F40', address: va('0x005B0F40'),
+    kind: 'output', outputIndex: 3, outputSize: 4},
+  {name: 'computed_stats', va: '0x0056DD30', address: va('0x0056DD30'),
+    kind: 'output', outputIndex: 2, outputSize: 12}
+];
 const kQueueCount = va('0x00A558A8');
 const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
@@ -146,6 +156,9 @@ let summonPrepCallSequence = 0;
 let nativeAiSelectNormal = null;
 let nativeAiSelectPosture = null;
 let nativeAiForceSet = null;
+let aiProbeHooks = [];
+let aiProbeCallSequence = 0;
+let aiSelectorDepth = new Map();
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -576,6 +589,8 @@ function traceStatus() {
     active: commandTraceHook !== null,
     prepActive: summonPrepHooks.length > 0,
     prepHooks: summonPrepHooks.length,
+    aiActive: aiProbeHooks.length > 0,
+    aiHooks: aiProbeHooks.length,
     session: traceSession,
     producer: kCommandProducer.toString(),
     capacity: traceCapacity,
@@ -707,6 +722,121 @@ function startSummonPrepProbe() {
   return traceStatus();
 }
 
+// Extract raw native output bytes without interpreting undocumented rules.
+// The bytes can be decoded offline by the two scripts under scripts/.
+function readAiProbeHex(pointer, count) {
+  if (pointer === null || pointer.isNull()) throw new Error('null output pointer');
+  const range = Process.findRangeByAddress(pointer);
+  if (range === null || !range.protection.includes('r')) {
+    throw new Error('output pointer is not readable');
+  }
+  if (pointer.add(count - 1).compare(range.base.add(range.size)) >= 0) {
+    throw new Error('output pointer crosses a memory range');
+  }
+  let hex = '';
+  for (let i = 0; i < count; i++) {
+    hex += pointer.add(i).readU8().toString(16).padStart(2, '0');
+  }
+  return hex.toUpperCase();
+}
+
+// This is a *passive* probe: never invokes FUN_005B0F40 or FUN_0056DD30.
+// Only events nested inside an observed selector are kept to avoid renderer noise.
+function stopAiProbe() {
+  const hooks = aiProbeHooks;
+  aiProbeHooks = [];
+  aiSelectorDepth = new Map();
+  let failure = null;
+  for (let i = hooks.length - 1; i >= 0; i--) {
+    try { hooks[i].detach(); } catch (error) { failure = error; }
+  }
+  if (failure !== null) throw new Error('AI probe detach failed: ' + failure);
+  return traceStatus();
+}
+
+function startAiProbe() {
+  if (!installed || commandTraceHook === null) {
+    throw new Error('Start trace on before trace ai on');
+  }
+  if (aiProbeHooks.length > 0) throw new Error('AI probe is already active');
+  for (const target of kAiProbeTargets) {
+    const range = Process.findRangeByAddress(target.address);
+    if (range === null || !range.protection.includes('x')) {
+      throw new Error('AI probe function not executable: ' + target.va);
+    }
+  }
+  const hooks = [];
+  try {
+    for (const target of kAiProbeTargets) {
+      const hook = Interceptor.attach(target.address, {
+        onEnter(args) {
+          this.aiThread = Process.getCurrentThreadId();
+          this.aiCallId = ++aiProbeCallSequence;
+          this.aiSide = args[0].toUInt32() & 1;
+          this.aiIsSelector = target.kind === 'selector';
+          if (this.aiIsSelector) {
+            aiSelectorDepth.set(this.aiThread,
+              (aiSelectorDepth.get(this.aiThread) || 0) + 1);
+            recordTraceEvent({
+              kind: 'ai_probe', phase: 'enter', function: target.name,
+              functionVa: target.va, callId: this.aiCallId,
+              threadId: this.aiThread, side: this.aiSide,
+              caller: this.returnAddress.toString(),
+              pass: target.name === 'select_normal' ? args[1].toInt32() : null
+            });
+          } else {
+            this.aiInsideSelection = (aiSelectorDepth.get(this.aiThread) || 0) > 0;
+            if (this.aiInsideSelection) {
+              this.aiBuffer = args[target.outputIndex];
+              this.aiArguments = target.name === 'combat_event' ?
+                [args[0].toUInt32(), args[1].toUInt32(), args[2].toUInt32()] :
+                [args[0].toUInt32(), args[1].toUInt32()];
+            }
+          }
+        },
+        onLeave(retval) {
+          if (this.aiIsSelector) {
+            const previous = aiSelectorDepth.get(this.aiThread) || 0;
+            if (previous <= 1) aiSelectorDepth.delete(this.aiThread);
+            else aiSelectorDepth.set(this.aiThread, previous - 1);
+            recordTraceEvent({
+              kind: 'ai_probe', phase: 'leave', function: target.name,
+              functionVa: target.va, callId: this.aiCallId,
+              threadId: this.aiThread, side: this.aiSide,
+              returnRaw: retval.toUInt32(), selectedHandIndex: retval.toInt32()
+            });
+            return;
+          }
+          if (!this.aiInsideSelection) return;
+          const event = {
+            kind: 'ai_probe', phase: 'leave', function: target.name,
+            functionVa: target.va, callId: this.aiCallId,
+            threadId: this.aiThread, side: this.aiSide,
+            withinSelector: true, rawArgs: this.aiArguments,
+            byteCount: target.outputSize
+          };
+          try {
+            event.outputHex = readAiProbeHex(this.aiBuffer, target.outputSize);
+          } catch (error) {
+            event.readError = String(error);
+          }
+          recordTraceEvent(event);
+        }
+      });
+      hooks.push(hook);
+    }
+  } catch (error) {
+    for (let i = hooks.length - 1; i >= 0; i--) {
+      try { hooks[i].detach(); } catch (_) { /* best effort rollback */ }
+    }
+    throw new Error('AI probe installation failed; rolled back: ' + error);
+  }
+  aiProbeHooks = hooks;
+  aiProbeCallSequence = 0;
+  aiSelectorDepth = new Map();
+  return traceStatus();
+}
+
 function startCommandTrace(capacity = kTraceDefaultCapacity) {
   if (!installed) throw new Error('Trace requires installed native adapter');
   if (commandTraceHook !== null) throw new Error('Command trace is already active');
@@ -762,6 +892,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
 
 function stopCommandTrace() {
   // The probe must stop before anyone can export this bounded buffer.
+  stopAiProbe();
   stopSummonPrepProbe();
   if (commandTraceHook !== null) {
     const hook = commandTraceHook;
@@ -900,6 +1031,8 @@ rpc.exports = {
   tracestart: startCommandTrace,
   tracestop: stopCommandTrace,
   traceprepstart: startSummonPrepProbe,
+  traceaistart: startAiProbe,
+  traceaistop: stopAiProbe,
   traceprepstop: stopSummonPrepProbe,
   tracemark: markCommandTrace,
   traceevents: commandTraceEvents,

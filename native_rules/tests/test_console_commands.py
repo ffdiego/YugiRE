@@ -40,6 +40,7 @@ class FakeApi:
         self.trace_records = []
         self.trace_exported = False
         self.prep_active = False
+        self.ai_active = False
 
     def status(self):
         self.reads += 1
@@ -73,6 +74,7 @@ class FakeApi:
     def tracestatus(self):
         n = len(self.trace_records)
         return {"active": self.trace_active, "prepActive": self.prep_active,
+                "aiActive": self.ai_active,
                 "session": self.trace_session,
                 "producer": "0x5B9170", "capacity": 16, "seen": n,
                 "retained": n, "overwritten": 0,
@@ -90,6 +92,18 @@ class FakeApi:
         self.trace_calls.append(("ai_decision", side, check_only))
         return {"id": 77, "state": "pending", "side": side, "checkOnly": check_only}
 
+    def traceaistart(self):
+        if not self.trace_active:
+            raise RuntimeError("Start trace first")
+        self.trace_calls.append(("ai_on",))
+        self.ai_active = True
+        return self.tracestatus()
+
+    def traceaistop(self):
+        self.trace_calls.append(("ai_off",))
+        self.ai_active = False
+        return self.tracestatus()
+
     def traceprepstart(self):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
@@ -100,6 +114,7 @@ class FakeApi:
     def traceprepstop(self):
         self.trace_calls.append(("prep_off",))
         self.prep_active = False
+        self.ai_active = False
         return self.tracestatus()
 
     def tracestop(self):
@@ -302,6 +317,32 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertEqual([x for x in self.api.trace_calls if x[0] == "ai_decision"],
                          [("ai_decision", 1, True), ("ai_decision", 1, False)])
         self.assertIn("Usage: ai check 1", output.getvalue())
+
+    def test_trace_ai_probe_captures_native_output_buffers(self):
+        from tempfile import TemporaryDirectory
+        import json
+        with redirect_stdout(io.StringIO()):
+            self.assertTrue(handle_command("trace on", self.api, 1))
+            self.assertTrue(handle_command("trace ai on", self.api, 1))
+        self.assertTrue(self.api.ai_active)
+        self.api.trace_records = [
+            {"kind": "ai_probe", "phase": "enter", "function": "select_normal",
+             "callId": 1, "side": 1, "pass": 0},
+            {"kind": "ai_probe", "phase": "leave", "function": "combat_event",
+             "callId": 2, "side": 1, "outputHex": "A8096400"},
+            {"kind": "ai_probe", "phase": "leave", "function": "computed_stats",
+             "callId": 3, "side": 1, "outputHex": "1101060F40060000B0040000"}
+        ]
+        with TemporaryDirectory() as directory:
+            target = Path(directory) / "ai-probe.jsonl"
+            with redirect_stdout(io.StringIO()) as stdout:
+                save_command_trace(self.api, target)
+            rows = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(rows[2]["outputHex"], "A8096400")
+        self.assertEqual(rows[3]["outputHex"], "1101060F40060000B0040000")
+        self.assertFalse(self.api.ai_active)
+        self.assertTrue(self.api.trace_exported)
+        self.assertIn("combat_event/leave=1", stdout.getvalue())
 
     def test_trace_on_mark_status_off_and_invalid_limit(self):
         for cmd in ("trace on", "trace mark Summon normal",

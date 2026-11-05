@@ -182,6 +182,7 @@ class DuelWatcher:
 def show_trace_status(status: dict) -> None:
     print(f"[trace] active={status['active']} "
           f"prepActive={status.get('prepActive', False)} "
+          f"aiActive={status.get('aiActive', False)} "
           f"session={status['session']} "
           f"seen={status['seen']} retained={status['retained']} "
           f"overwritten={status['overwritten']} capacity={status['capacity']}",
@@ -200,6 +201,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     counts: Counter[str] = Counter()
     prep_counts: Counter[str] = Counter()
+    ai_counts: Counter[str] = Counter()
     exported = 0
     # Exclusive creation: never silently overwrite earlier recordings.
     with output.open("x", encoding="utf-8") as destination:
@@ -207,7 +209,8 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                   "session": status["session"], "capacity": status["capacity"],
                   "seen": status["seen"], "retained": status["retained"],
                   "overwritten": status["overwritten"],
-                  "note": "Producer inputs only. Not proof of command execution or state mutation."}
+                  "note": "Producer inputs and optional passive AI observations. "
+                          "AI output buffers may represent hypothetical states."}
         destination.write(json.dumps(header, ensure_ascii=False) + "\n")
         for offset in range(0, status["retained"], 256):
             batch = api.traceevents(offset, 256)
@@ -253,6 +256,8 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                             event.get("caller", "").lower() == "0x57977f" and
                             len(args) >= 2):
                         event["cfResourceIdCandidate"] = args[1] & 0xFFFF
+                if event.get("kind") == "ai_probe":
+                    ai_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 if event.get("kind") == "summon_prep":
                     prep_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
@@ -268,6 +273,10 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
         print("[trace] Summon prep observations: " +
               ", ".join(f"{name}={n}" for name, n in sorted(prep_counts.items())),
               flush=True)
+    if ai_counts:
+        print("[ai] Trace observations: " +
+              ", ".join(f"{name}={n}" for name, n in sorted(ai_counts.items())),
+              flush=True)
     api.traceacknowledge(status["session"], status["seen"])
     return output
 
@@ -280,7 +289,8 @@ def show_help(default_side: int) -> None:
           "ai check 1; ai step 1; "
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
-          "trace on [16..20000]; trace prep on|off; trace mark <label>; "
+          "trace on [16..20000]; trace prep on|off; trace ai on|off; "
+          "trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
           "Side 0 = CPU, side 1 = player in the tested local duel. "
@@ -308,6 +318,10 @@ def handle_command(command: str, api: object, default_side: int,
     if parts[0] == "trace":
         if parts == ["trace", "status"] or parts == ["trace"]:
             show_trace_status(api.tracestatus())
+        elif parts == ["trace", "ai", "on"]:
+            show_trace_status(api.traceaistart())
+        elif parts == ["trace", "ai", "off"]:
+            show_trace_status(api.traceaistop())
         elif parts == ["trace", "prep", "on"]:
             show_trace_status(api.traceprepstart())
         elif parts == ["trace", "prep", "off"]:
@@ -328,6 +342,7 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.tracemark(label))
         else:
             print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
+                  "trace ai on|off | "
                   "trace mark <label> | trace status | trace off | trace dump",
                   flush=True)
         return True
