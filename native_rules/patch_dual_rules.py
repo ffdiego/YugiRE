@@ -183,6 +183,7 @@ def show_trace_status(status: dict) -> None:
     print(f"[trace] active={status['active']} "
           f"prepActive={status.get('prepActive', False)} "
           f"aiActive={status.get('aiActive', False)} "
+          f"demoActive={status.get('demoActive', False)} "
           f"session={status['session']} "
           f"seen={status['seen']} retained={status['retained']} "
           f"overwritten={status['overwritten']} capacity={status['capacity']}",
@@ -203,6 +204,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     prep_counts: Counter[str] = Counter()
     ai_counts: Counter[str] = Counter()
     ai_console_counts: Counter[str] = Counter()
+    demo_counts: Counter[str] = Counter()
     exported = 0
     # Exclusive creation: never silently overwrite earlier recordings.
     with output.open("x", encoding="utf-8") as destination:
@@ -261,6 +263,10 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                     ai_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 if event.get("kind") == "ai_console":
                     ai_console_counts[event.get("phase", "unknown")] += 1
+                if event.get("kind") == "demo_executor":
+                    side = event.get("side")
+                    label = f"side{side}" if side in (0, 1) else "invalid_side"
+                    demo_counts[f"{label}/{event.get('phase', 'unknown')}"] += 1
                 if event.get("kind") == "summon_prep":
                     prep_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
@@ -284,6 +290,10 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
         print("[ai] Console decision records: " +
               ", ".join(f"{name}={n}" for name, n in sorted(ai_console_counts.items())),
               flush=True)
+    if demo_counts:
+        print("[demo] Native placement executor: " +
+              ", ".join(f"{name}={n}" for name, n in sorted(demo_counts.items())),
+              flush=True)
     api.traceacknowledge(status["session"], status["seen"])
     return output
 
@@ -297,6 +307,7 @@ def show_help(default_side: int) -> None:
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
           "trace on [16..20000]; trace prep on|off; trace ai on|off; "
+          "trace demo on|off; "
           "trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
@@ -329,6 +340,10 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.traceaistart())
         elif parts == ["trace", "ai", "off"]:
             show_trace_status(api.traceaistop())
+        elif parts == ["trace", "demo", "on"]:
+            show_trace_status(api.tracedemostart())
+        elif parts == ["trace", "demo", "off"]:
+            show_trace_status(api.tracedemostop())
         elif parts == ["trace", "prep", "on"]:
             show_trace_status(api.traceprepstart())
         elif parts == ["trace", "prep", "off"]:
@@ -349,7 +364,7 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.tracemark(label))
         else:
             print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
-                  "trace ai on|off | "
+                  "trace ai on|off | trace demo on|off | "
                   "trace mark <label> | trace status | trace off | trace dump",
                   flush=True)
         return True

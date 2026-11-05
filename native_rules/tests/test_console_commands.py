@@ -41,6 +41,7 @@ class FakeApi:
         self.trace_exported = False
         self.prep_active = False
         self.ai_active = False
+        self.demo_active = False
 
     def status(self):
         self.reads += 1
@@ -75,6 +76,7 @@ class FakeApi:
         n = len(self.trace_records)
         return {"active": self.trace_active, "prepActive": self.prep_active,
                 "aiActive": self.ai_active,
+                "demoActive": self.demo_active,
                 "session": self.trace_session,
                 "producer": "0x5B9170", "capacity": 16, "seen": n,
                 "retained": n, "overwritten": 0,
@@ -104,6 +106,18 @@ class FakeApi:
         self.ai_active = False
         return self.tracestatus()
 
+    def tracedemostart(self):
+        if not self.trace_active:
+            raise RuntimeError("Start trace first")
+        self.trace_calls.append(("demo_on",))
+        self.demo_active = True
+        return self.tracestatus()
+
+    def tracedemostop(self):
+        self.trace_calls.append(("demo_off",))
+        self.demo_active = False
+        return self.tracestatus()
+
     def traceprepstart(self):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
@@ -121,6 +135,7 @@ class FakeApi:
         self.trace_active = False
         self.prep_active = False
         self.ai_active = False
+        self.demo_active = False
         return self.tracestatus()
 
     def tracemark(self, label):
@@ -345,6 +360,40 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertIn("Console decision records: ", output.getvalue())
         self.assertIn("decision=1", output.getvalue())
         self.assertTrue(self.api.trace_exported)
+
+    def test_demo_lifecycle_and_export(self):
+        from tempfile import TemporaryDirectory
+        import json
+        with redirect_stdout(io.StringIO()) as status:
+            self.assertTrue(handle_command("trace on 20000", self.api, 1))
+            self.assertTrue(handle_command("trace ai on", self.api, 1))
+            self.assertTrue(handle_command("trace demo on", self.api, 1))
+            self.assertTrue(handle_command("trace demo off", self.api, 1))
+            self.assertTrue(handle_command("trace demo on", self.api, 1))
+        self.assertTrue(self.api.demo_active)
+        self.assertIn("demoActive=True", status.getvalue())
+        self.api.trace_records = [
+            {"kind": "demo_executor", "phase": "enter", "callId": 1,
+             "side": 0, "sideRaw": 0, "handIndex": 2,
+             "handInternalIndex": 221, "modeSelector": 0},
+            {"kind": "demo_executor", "phase": "leave", "callId": 1,
+             "side": 0, "returnRaw": 0},
+            {"kind": "demo_executor", "phase": "enter", "callId": 2,
+             "side": 1, "sideRaw": 1, "handIndex": 3,
+             "handInternalIndex": 273, "modeSelector": 1}
+        ]
+        with TemporaryDirectory() as directory:
+            target = Path(directory) / "demo.jsonl"
+            with redirect_stdout(io.StringIO()) as report:
+                save_command_trace(self.api, target)
+            rows = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(rows[1]["handInternalIndex"], 221)
+        self.assertEqual(rows[3]["modeSelector"], 1)
+        self.assertIn("side0/enter=1", report.getvalue())
+        self.assertIn("side1/enter=1", report.getvalue())
+        self.assertFalse(self.api.demo_active)
+        self.assertFalse(self.api.ai_active)
 
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory

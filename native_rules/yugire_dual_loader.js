@@ -77,6 +77,8 @@ const kAiSelectNormal = va('0x005B1360'); // side, pass -> handIndex
 // The observed callsite of FUN_005B1360 passes modeSelector=0
 // directly to FUN_005B6FF0. FUN_005AE270 belongs to OTHER AI branches.
 const kAiForceSet = va('0x00570A70');     // zero forces set in native executor
+// Opt-in passive hook: CPU's normal-placement executor, not all card actions.
+const kDemoNormalExecutor = va('0x005B6FF0');
 // All four probes are optional and side-effect-free Interceptor observers.
 // Selector entry/exit bounds the simulated field evaluation window.
 const kAiProbeTargets = [
@@ -159,6 +161,8 @@ let nativeAiForceSet = null;
 let aiProbeHooks = [];
 let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
+let demoExecutorHook = null;
+let demoExecutorCalls = 0;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -672,6 +676,8 @@ function traceStatus() {
     prepHooks: summonPrepHooks.length,
     aiActive: aiProbeHooks.length > 0,
     aiHooks: aiProbeHooks.length,
+    demoActive: demoExecutorHook !== null,
+    demoHooks: demoExecutorHook === null ? 0 : 1,
     session: traceSession,
     producer: kCommandProducer.toString(),
     capacity: traceCapacity,
@@ -918,6 +924,73 @@ function startAiProbe() {
   return traceStatus();
 }
 
+// Passive instrumentation only: never invokes a Joey function or changes
+// native state. A placement executor call alone cannot prove AI control.
+function stopDemoProbe() {
+  if (demoExecutorHook !== null) {
+    const hook = demoExecutorHook;
+    demoExecutorHook = null;
+    hook.detach();
+  }
+  return traceStatus();
+}
+
+function startDemoProbe() {
+  if (!installed || commandTraceHook === null) {
+    throw new Error('Start trace on before trace demo on');
+  }
+  if (demoExecutorHook !== null) throw new Error('Demo executor probe already active');
+  const range = Process.findRangeByAddress(kDemoNormalExecutor);
+  if (range === null || !range.protection.includes('x')) {
+    throw new Error('Demo executor 0x005B6FF0 is not executable');
+  }
+  const hook = Interceptor.attach(kDemoNormalExecutor, {
+    onEnter(args) {
+      const sideRaw = args[0].toUInt32();
+      const handIndex = args[1].toInt32();
+      this.demoCallId = ++demoExecutorCalls;
+      this.demoThreadId = Process.getCurrentThreadId();
+      this.demoSide = sideRaw;
+      const event = {
+        kind: 'demo_executor', function: 'normal_placement',
+        functionVa: '0x005B6FF0', phase: 'enter',
+        callId: this.demoCallId, threadId: this.demoThreadId,
+        sideRaw, side: sideRaw <= 1 ? sideRaw : null,
+        handIndex, modeSelector: args[2].toInt32(),
+        caller: this.returnAddress.toString()
+      };
+      // Protect against stale menu memory; never read out-of-range hands.
+      try {
+        event.duelRunning = kDuelRunning.readU16() !== 0;
+        if (event.duelRunning && sideRaw <= 1 &&
+            handIndex >= 0 && handIndex < 80) {
+          const count = handCount(sideRaw);
+          event.handCount = count;
+          if (count <= 80 && handIndex < count) {
+            event.handInternalIndex = handWord(sideRaw, handIndex) & 0xFFF;
+          }
+        }
+      } catch (error) {
+        event.readError = String(error);
+      }
+      recordTraceEvent(event);
+    },
+    onLeave(retval) {
+      recordTraceEvent({
+        kind: 'demo_executor', function: 'normal_placement',
+        functionVa: '0x005B6FF0', phase: 'leave',
+        callId: this.demoCallId, threadId: this.demoThreadId,
+        sideRaw: this.demoSide,
+        side: this.demoSide <= 1 ? this.demoSide : null,
+        returnRaw: retval.toUInt32()
+      });
+    }
+  });
+  demoExecutorHook = hook;
+  demoExecutorCalls = 0;
+  return traceStatus();
+}
+
 function startCommandTrace(capacity = kTraceDefaultCapacity) {
   if (!installed) throw new Error('Trace requires installed native adapter');
   if (commandTraceHook !== null) throw new Error('Command trace is already active');
@@ -973,6 +1046,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
 
 function stopCommandTrace() {
   // The probe must stop before anyone can export this bounded buffer.
+  stopDemoProbe();
   stopAiProbe();
   stopSummonPrepProbe();
   if (commandTraceHook !== null) {
@@ -1114,6 +1188,8 @@ rpc.exports = {
   traceprepstart: startSummonPrepProbe,
   traceaistart: startAiProbe,
   traceaistop: stopAiProbe,
+  tracedemostart: startDemoProbe,
+  tracedemostop: stopDemoProbe,
   traceprepstop: stopSummonPrepProbe,
   tracemark: markCommandTrace,
   traceevents: commandTraceEvents,

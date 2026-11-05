@@ -422,6 +422,64 @@ de execução, então faça testes curtos.
 A análise **não está validada dinamicamente**
 no Joey após a instalação desses hooks.
 
+## Observação passiva da demonstração do menu
+
+O menu ocioso pode iniciar uma demonstração. Não sabemos se ela
+é IA × IA, replay ou uma sequência roteirizada. Este experimento
+**apenas observa**, sem chamar funções da IA, alterar flags ou
+enfileirar ações.
+
+`trace demo on` instala um hook em
+`FUN_005B6FF0(side,handIndex,modeSelector)`,
+o executor de *summon/set*, não um controlador de
+todos os tipos de ação. Registra `kind=demo_executor`,
+`phase=enter|leave`, `callId`, `threadId`,
+`caller`, `side`, `handIndex`, `modeSelector`
+e, se existir duelo ativo e índice válido,
+`handInternalIndex`. O `returnRaw` é opaco:
+não prova que o summon/set foi resolvido.
+
+Com o jogo **ainda no menu principal**, inicie o
+console Python em outro terminal e execute:
+
+```text
+trace on 20000
+trace ai on
+trace demo on
+trace mark esperando-demo
+```
+
+Deixe o menu inativo até iniciar a demonstração,
+observe algumas jogadas, sem executar
+`ai check`/`ai step`, e encerre:
+
+```text
+trace status
+trace off
+trace dump
+```
+
+O JSONL fica em `scratch/traces/commands-*.jsonl`.
+O console resume as entradas do executor por
+`side0/enter` e `side1/enter`. O `trace ai on`
+já observa os seletores `FUN_005B1360` e
+`FUN_005B16C0`; `trace on` observa o
+produtor de comandos `FUN_005B9170`.
+Se `overwritten > 0`, repita com uma
+captura menor. O limite do buffer é 20.000.
+
+**Cuidado na interpretação:** executor chamado
+nos dois lados ainda não prova IA × IA.
+Correlacione `ai_probe` de seleção com os
+eventos `demo_executor` e seus `caller`;
+a demo pode ser replay, script ou outro modo.
+Se não houver eventos, tampouco prova que
+é replay: outro executor pode ser usado.
+O modo `trace demo` só coleta chamadas
+nativas; não altera o escalonador do jogo.
+Os hooks são opt-in e são removidos
+automaticamente por `trace off`.
+
 ## Native Command Trace (experimental, passivo)
 
 Esta instrumentação usa Frida `Interceptor.attach` em
