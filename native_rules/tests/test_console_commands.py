@@ -86,6 +86,10 @@ class FakeApi:
         self.trace_exported = False
         return self.tracestatus()
 
+    def queueaidecision(self, side, check_only):
+        self.trace_calls.append(("ai_decision", side, check_only))
+        return {"id": 77, "state": "pending", "side": side, "checkOnly": check_only}
+
     def traceprepstart(self):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
@@ -289,6 +293,15 @@ class ConsoleCommandTests(unittest.TestCase):
         with redirect_stdout(io.StringIO()):
             handle_command("watch on 50", self.api, 1, watcher=watcher)
         self.assertFalse(watcher.active)
+
+    def test_ai_native_check_and_one_step_commands(self):
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertTrue(handle_command("ai check 1", self.api, 1))
+            self.assertTrue(handle_command("ai step 1", self.api, 1))
+            self.assertTrue(handle_command("ai step 0", self.api, 1))
+        self.assertEqual([x for x in self.api.trace_calls if x[0] == "ai_decision"],
+                         [("ai_decision", 1, True), ("ai_decision", 1, False)])
+        self.assertIn("Usage: ai check 1", output.getvalue())
 
     def test_trace_on_mark_status_off_and_invalid_limit(self):
         for cmd in ("trace on", "trace mark Summon normal",

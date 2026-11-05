@@ -72,6 +72,10 @@ const kNormalSummonBuilder = va('0x005AD740');
 const kPlayerFlagEmitter = va('0x00579930');
 const kTraceDefaultCapacity = 8192;
 const kTraceMaxCapacity = 20000;
+// First opt-in player-side native AI experiment. Normal summon/set only.
+const kAiSelectNormal = va('0x005B1360'); // side, pass -> handIndex
+const kAiSelectPosture = va('0x005AE270'); // side, cardIndex, 0, 0 -> mode
+const kAiForceSet = va('0x00570A70');     // zero forces set in native executor
 const kQueueCount = va('0x00A558A8');
 const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
@@ -139,6 +143,9 @@ let traceExportedSession = 0;
 let traceExportedSeen = -1;
 let summonPrepHooks = [];
 let summonPrepCallSequence = 0;
+let nativeAiSelectNormal = null;
+let nativeAiSelectPosture = null;
+let nativeAiForceSet = null;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -320,7 +327,8 @@ function servicePendingConsoleAction() {
   if (!queueGate().idle) return;
   // Queue idle does not necessarily mean placement is idle between ticks.
   if ((pendingConsoleAction.kind === 'summon' ||
-       pendingConsoleAction.kind === 'set') &&
+       pendingConsoleAction.kind === 'set' ||
+       pendingConsoleAction.kind === 'ai_normal') &&
       (kPlacementStage.readU16() & 1) !== 0) return;
   const request = pendingConsoleAction;
   pendingConsoleAction = null;
@@ -343,6 +351,72 @@ function servicePendingConsoleAction() {
         return;
       }
       accepted = manualDestroyOnDuelThread(request.side, request.slot, request.expectedWord);
+    } else if (request.kind === 'ai_normal') {
+      // The AI selector mutates temporary field state; invoke only here on
+      // the game's original update thread. No native function calls from RPC.
+      const fail = detail => {
+        lastConsoleAction = {...request, allowed: false, 
+          state: request.checkOnly ? 'checked' : 'rejected', detail};
+      };
+      const phaseByte = kSummonDuelPhase.readU8();
+      const phase = (phaseByte >>> 1) & 7;
+      if (kDuelRunning.readU16() === 0 ||
+          (kDuelFlags.readU32() & 1) !== request.side ||
+          (phaseByte & 1) !== request.side || (phase !== 2 && phase !== 4)) {
+        fail('Not the player main phase; native AI selection not attempted');
+        return;
+      }
+      if ((kPlacementStage.readU16() & 1) !== 0) {
+        fail('Native placement busy; selection not attempted');
+        return;
+      }
+      if ((kSummonPlayerFlags.add(request.side * kPlayerStride).readU32() & 0x20000) !== 0) {
+        fail('Normal summon/set already used; selection not attempted');
+        return;
+      }
+      const count = handCount(request.side);
+      if (count !== request.expectedHandCount || count > 80) {
+        fail('Hand size changed before native AI selection');
+        return;
+      }
+      // First native pass only: no high-level tribute fallback or phase AI yet.
+      const handIndex = nativeAiSelectNormal(request.side, 0) | 0;
+      if (handIndex < 0) {
+        fail('Native AI found no suitable normal-placement candidate in pass 0');
+        return;
+      }
+      if (handIndex >= count) {
+        fail('Native AI returned out-of-bounds index ' + handIndex);
+        return;
+      }
+      const card = handWord(request.side, handIndex);
+      if ((card & 0xFFF) === 0) {
+        fail('Native AI selected an empty hand slot');
+        return;
+      }
+      // Mirror native FUN_005B6FF0 posture choice, not its unvalidated
+      // tribute paths. Final eligibility is checked again below.
+      const postureRaw = nativeAiSelectPosture(request.side, card & 0xFFF, 0, 0) | 0;
+      const forceSetRaw = nativeAiForceSet(request.side) | 0;
+      const kind = postureRaw !== 0 || forceSetRaw === 0 ? 'set' : 'summon';
+      const choice = {handIndex, selectedInternalIndex: card & 0xFFF,
+        postureRaw, forceSetRaw, selectedKind: kind, selectorPass: 0};
+      const preflight = preflightNormalPlacement({
+        ...request, kind, handIndex, expectedHandCount: count, expectedWord: card
+      });
+      if (request.checkOnly || !preflight.allowed) {
+        lastConsoleAction = {...request, ...choice, ...preflight,
+          state: request.checkOnly ? 'checked' : 'rejected',
+          detail: 'AI selected ' + kind + '; ' + preflight.detail};
+        return;
+      }
+      const mode = kind === 'set' ? 0 : 1;
+      nativeSummonBuilder(request.side, handIndex, preflight.selectedSlot, 0, mode);
+      nativePlayerFlagEmitter(request.side, 0x11, 1);
+      lastConsoleAction = {...request, ...choice, ...preflight, mode,
+        state: 'submitted', detail: 'AI-selected ' + kind +
+          ' submitted; verify eventual field resolution with diff'};
+      return;
     } else if (request.kind === 'summon' || request.kind === 'set') {
       const preflight = preflightNormalPlacement(request);
       if (request.checkOnly || !preflight.allowed) {
@@ -450,6 +524,39 @@ function queueConsoleSummon(side, index, checkOnly = false) {
 }
 function queueConsoleSet(side, index, checkOnly = false) {
   return queueConsoleMonsterPlacement('set', side, index, checkOnly);
+}
+
+function prepareAiSelection() {
+  if (nativeAiSelectNormal !== null) return;
+  for (const address of [kAiSelectNormal, kAiSelectPosture, kAiForceSet]) {
+    const range = Process.findRangeByAddress(address);
+    if (range === null || !range.protection.includes('x')) {
+      throw new Error('AI native function not executable: ' + address);
+    }
+  }
+  // Instantiating NativeFunction does not run Joey; actual calls happen
+  // on the original game update thread inside servicePendingConsoleAction.
+  nativeAiSelectNormal = new NativeFunction(kAiSelectNormal,
+    'int32', ['uint32', 'int32'], 'mscdecl');
+  nativeAiSelectPosture = new NativeFunction(kAiSelectPosture,
+    'int32', ['uint32', 'uint32', 'int32', 'int32'], 'mscdecl');
+  nativeAiForceSet = new NativeFunction(kAiForceSet,
+    'int32', ['uint32'], 'mscdecl');
+}
+
+function queueAiDecision(side, checkOnly) {
+  if (side !== 1 || typeof checkOnly !== 'boolean') {
+    throw new Error('Use ai check 1 or ai step 1 (player side only)');
+  }
+  if (!installed) throw new Error('AI experiment requires installed adapter');
+  if (pendingConsoleAction !== null) {
+    throw new Error('A console action is already pending');
+  }
+  prepareAiSelection();
+  const count = handCount(1);
+  if (count > 80) throw new Error('Player hand count exceeds the safe limit');
+  return stageConsoleAction({kind: 'ai_normal', side, checkOnly,
+    expectedHandCount: count});
 }
 
 function cancelPendingConsoleAction() {
@@ -802,6 +909,7 @@ rpc.exports = {
   queuedestroy: queueConsoleDestroy,
   queuesummon: queueConsoleSummon,
   queueset: queueConsoleSet,
+  queueaidecision: queueAiDecision,
   canceldraw: cancelPendingConsoleAction,
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');

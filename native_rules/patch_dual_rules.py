@@ -277,6 +277,7 @@ def show_help(default_side: int) -> None:
           "draw 5 [0|1]; damage <1..9999> <0|1>; "
           "destroy <0|1> <0..4>; summon check 1 <index>; "
           "summon 1 <index>; set check 1 <index>; set 1 <index>; "
+          "ai check 1; ai step 1; "
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
           "trace on [16..20000]; trace prep on|off; trace mark <label>; "
@@ -329,6 +330,16 @@ def handle_command(command: str, api: object, default_side: int,
             print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
                   "trace mark <label> | trace status | trace off | trace dump",
                   flush=True)
+        return True
+    if parts[0] == "ai":
+        if parts in (["ai", "check", "1"], ["ai", "step", "1"]):
+            check_only = parts[1] == "check"
+            pending = api.queueaidecision(1, check_only)
+            print(f"[ai] Request {pending['id']} pending; "
+                  f"mode={'check only' if check_only else 'one placement'}. "
+                  "Press Enter to inspect console.last.", flush=True)
+        else:
+            print("[ai] Usage: ai check 1 | ai step 1", flush=True)
         return True
     if parts[0] == "watch":
         if watcher is None:

@@ -262,6 +262,57 @@ pela DLL. A visualização de mão/campo desta etapa prepara esses testes.
 
 **Após a build da ABI v6, reinicie Joey para carregar a nova DLL.**
 
+## Experimento de IA nativa no lado do jogador (opt-in)
+
+O objetivo é aproveitar a IA original do Joey para
+jogar no **lado 1**, em vez de reimplementar toda a
+escolha de cartas fora do processo. Os primeiros
+comandos são deliberadamente limitados:
+
+```text
+state
+ai check 1
+# Pressione Enter para ver console.last
+ai step 1
+# Pressione Enter; após a resolução:
+diff
+state
+```
+
+`ai check 1` executa `FUN_005B1360(1,0)`
+**na thread do duelo**, após fila/posicionamento
+ociosos, durante o turno do jogador em fase
+principal e com invocação normal ainda disponível.
+O seletor utiliza snapshots do campo e pode
+alterar globais temporários: não é uma função
+puramente read-only, embora o comando não envie
+uma colocação ao motor.
+
+O índice da mão retornado é verificado novamente
+contra regras nativas para invocar/baixar. O modo
+é escolhido por `FUN_005AE270` e pela condição
+de `FUN_00570A70`, que o executor da CPU também
+consulta. O console mostra `selectedInternalIndex`,
+`handIndex`, `selectedKind`, `allowed`,
+`levelClass`, e o motivo de qualquer recusa.
+
+`ai step 1` usa a mesma lógica mas **submete
+no máximo uma invocação/colocação** (monstro
+comum classe 1..4, sem tributos), utilizando
+`FUN_005AD740` e a flag `0x20000`.
+Nenhuma mudança da DLL C++ é necessária.
+O primeiro teste no Windows deve ser
+`ai check 1`, em duelo descartável; só
+tente `ai step 1` se o estado permanecer
+coerente e a seleção parecer plausível.
+
+**Ainda não é autoplay completo:** não
+joga magias/armadilhas, não realiza batalhas,
+não passa fase/turno, não troca decks e
+não reinicia duelos. Essas etapas precisam
+respeitar o fluxo original e serão introduzidas
+depois de validar a decisão no lado 1.
+
 ## Native Command Trace (experimental, passivo)
 
 Esta instrumentação usa Frida `Interceptor.attach` em
