@@ -348,6 +348,41 @@ trace dump
 `trace ai on` instala hooks passivos em
 `FUN_005B1360`, `FUN_005B16C0`,
 `FUN_005B0F40` e `FUN_0056DD30`.
+**Validação dinâmica 2026-11-04:** o usuário confirmou
+que `ai step 1` conseguiu invocar Mystic Tomato
+no lado 1. O `ai check 1` anterior retornou
+`normalPass0=1`, `handIndex=1`, carta interna
+221, `allowed=True` e `selectedKind=summon`.
+Entretanto, com os hooks ativos, `trace status`
+continuou `seen=0` mesmo depois da decisão.
+A observação confirma a execução do seletor, mas
+**não valida os hooks aninhados**.
+
+Para não depender deles, o código agora escreve
+`kind=ai_console` **diretamente no buffer de
+trace**, sem novas chamadas nativas:
+`start`, `select_enter` e `select_leave`
+para cada passe, e `decision` com
+`allowed`, `handIndex`, `internalIndex`,
+`selectedKind`, `selectedSlot` e
+`state` (`checked` ou `submitted`).
+Essas linhas trazem `origin=yugire_console_native_call`,
+`requestId`, `threadId` e são geradas
+**somente** quando `trace on` e `trace ai on`
+estão ativos. `state=submitted` não prova
+sozinho que o campo foi alterado: verifique
+`diff`/`state`.
+
+Os hooks `kind=ai_probe` continuam instalados
+para observar chamadas vindas do próprio jogo.
+Dependendo do contexto do Frida, as chamadas
+nativas iniciadas pelo console podem não
+produzir essas notificações. **Não confundir
+`ai_console` com `ai_probe`**: os primeiros
+confirmam os valores retornados pelo console,
+mas não trazem buffers de combate/stats de
+quatro/doze bytes. Estes continuam a depender
+da observação passiva funcionando.
 Os dois seletores registram entrada e retorno,
 e os demais registram a saída hexadecimal
 de 4 bytes do evento e de 12 bytes de stats,

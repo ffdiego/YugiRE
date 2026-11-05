@@ -365,11 +365,20 @@ function servicePendingConsoleAction() {
       }
       accepted = manualDestroyOnDuelThread(request.side, request.slot, request.expectedWord);
     } else if (request.kind === 'ai_normal') {
+      // Record decisions explicitly: native calls originating in an
+      // Interceptor callback may not produce nested Interceptor callbacks.
+      // This diagnostic path does not cause additional native invocations.
+      recordAiConsoleTrace(request, 'start', {
+        handCountAtRequest: request.expectedHandCount
+      });
       // The AI selector mutates temporary field state; invoke only here on
       // the game's original update thread. No native function calls from RPC.
       const fail = detail => {
-        lastConsoleAction = {...request, allowed: false, 
+        lastConsoleAction = {...request, allowed: false,
           state: request.checkOnly ? 'checked' : 'rejected', detail};
+        recordAiConsoleTrace(request, 'decision', {
+          allowed: false, state: lastConsoleAction.state, detail
+        });
       };
       const phaseByte = kSummonDuelPhase.readU8();
       const phase = (phaseByte >>> 1) & 7;
@@ -394,9 +403,19 @@ function servicePendingConsoleAction() {
       }
       // Mirror original caller at 0x005B73D2: pass=0 first,
       // only try pass=-1 when first result is exactly -1.
+      recordAiConsoleTrace(request, 'select_enter', {selectorPass: 0});
       const firstPass = nativeAiSelectNormal(request.side, 0) | 0;
-      const secondPass = firstPass === -1 ?
-        (nativeAiSelectNormal(request.side, -1) | 0) : null;
+      recordAiConsoleTrace(request, 'select_leave', {
+        selectorPass: 0, selectedHandIndex: firstPass
+      });
+      let secondPass = null;
+      if (firstPass === -1) {
+        recordAiConsoleTrace(request, 'select_enter', {selectorPass: -1});
+        secondPass = nativeAiSelectNormal(request.side, -1) | 0;
+        recordAiConsoleTrace(request, 'select_leave', {
+          selectorPass: -1, selectedHandIndex: secondPass
+        });
+      }
       const handIndex = secondPass === null ? firstPass : secondPass;
       const attempts = {normalPass0: firstPass, tributeFallbackPassMinus1: secondPass};
       if (handIndex < 0) {
@@ -415,12 +434,20 @@ function servicePendingConsoleAction() {
           detail: 'Both native normal-select passes returned no candidate; ' +
             'this does NOT establish that the hand lacks legal summons. ' +
             'Other AI branches use FUN_005B16C0.'};
+        recordAiConsoleTrace(request, 'decision', {
+          ...attempts, allowed: false, state: lastConsoleAction.state,
+          candidateCount: handCandidates.length, detail: lastConsoleAction.detail
+        });
         return;
       }
       if (handIndex >= count) {
         lastConsoleAction = {...request, ...attempts,
           allowed: false, state: request.checkOnly ? 'checked' : 'rejected',
           detail: 'AI returned out-of-bounds hand index ' + handIndex};
+        recordAiConsoleTrace(request, 'decision', {
+          ...attempts, allowed: false, state: lastConsoleAction.state,
+          selectedHandIndex: handIndex, detail: lastConsoleAction.detail
+        });
         return;
       }
       const card = handWord(request.side, handIndex);
@@ -428,6 +455,10 @@ function servicePendingConsoleAction() {
         lastConsoleAction = {...request, ...attempts,
           allowed: false, state: request.checkOnly ? 'checked' : 'rejected',
           detail: 'AI selected an empty hand slot'};
+        recordAiConsoleTrace(request, 'decision', {
+          ...attempts, allowed: false, state: lastConsoleAction.state,
+          selectedHandIndex: handIndex, detail: lastConsoleAction.detail
+        });
         return;
       }
       // Original FUN_005B1360 caller sends modeSelector=0 (summon);
@@ -446,6 +477,12 @@ function servicePendingConsoleAction() {
         lastConsoleAction = {...request, ...choice, ...preflight,
           state: request.checkOnly ? 'checked' : 'rejected',
           detail: 'AI selected ' + kind + '; ' + preflight.detail};
+        recordAiConsoleTrace(request, 'decision', {
+          ...attempts, handIndex, internalIndex: card & 0xFFF,
+          selectedKind: kind, selectedSlot: preflight.selectedSlot ?? null,
+          allowed: preflight.allowed, state: lastConsoleAction.state,
+          detail: lastConsoleAction.detail
+        });
         return;
       }
       const mode = kind === 'set' ? 0 : 1;
@@ -454,6 +491,12 @@ function servicePendingConsoleAction() {
       lastConsoleAction = {...request, ...choice, ...preflight, mode,
         state: 'submitted', detail: 'AI-selected ' + kind +
           ' submitted; verify eventual field resolution with diff'};
+      recordAiConsoleTrace(request, 'decision', {
+        ...attempts, handIndex, internalIndex: card & 0xFFF,
+        selectedKind: kind, selectedSlot: preflight.selectedSlot,
+        allowed: true, state: 'submitted',
+        detail: lastConsoleAction.detail
+      });
       return;
     } else if (request.kind === 'summon' || request.kind === 'set') {
       const preflight = preflightNormalPlacement(request);
@@ -602,6 +645,21 @@ function cancelPendingConsoleAction() {
   lastConsoleAction = {...request, state: 'cancelled',
     detail: 'Cancelled before the duel scheduler accepted it'};
   return lastConsoleAction;
+}
+
+// Record console-driven AI calls separately from passive Interceptor hooks.
+// Frida may suppress nested Interceptor callbacks for native calls from
+// an Interceptor callback. These are verified call-site observations,
+// NOT an explanation of the candidate score or confirmed field resolution.
+function recordAiConsoleTrace(request, phase, details = {}) {
+  if (commandTraceHook === null || aiProbeHooks.length === 0) return;
+  recordTraceEvent({
+    kind: 'ai_console', origin: 'yugire_console_native_call',
+    requestId: request.id, side: request.side,
+    checkOnly: request.checkOnly,
+    phase, threadId: Process.getCurrentThreadId(),
+    ...details
+  });
 }
 
 // Trace records raw producer inputs; their semantics differ by opcode.

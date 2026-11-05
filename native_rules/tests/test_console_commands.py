@@ -318,6 +318,34 @@ class ConsoleCommandTests(unittest.TestCase):
                          [("ai_decision", 1, True), ("ai_decision", 1, False)])
         self.assertIn("Usage: ai check 1", output.getvalue())
 
+    def test_ai_console_decisions_are_exported_without_hook_callbacks(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "ai_console", "origin": "yugire_console_native_call",
+             "requestId": 3, "side": 1, "checkOnly": True,
+             "phase": "start", "handCountAtRequest": 6},
+            {"kind": "ai_console", "requestId": 3, "side": 1,
+             "phase": "select_enter", "selectorPass": 0},
+            {"kind": "ai_console", "requestId": 3, "side": 1,
+             "phase": "select_leave", "selectorPass": 0, "selectedHandIndex": 1},
+            {"kind": "ai_console", "requestId": 3, "side": 1,
+             "phase": "decision", "handIndex": 1, "internalIndex": 221,
+             "selectedKind": "summon", "allowed": True, "state": "checked"},
+        ]
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "ai-console.jsonl"
+            with redirect_stdout(io.StringIO()) as output:
+                save_command_trace(self.api, path)
+            records = [json.loads(row) for row in path.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(records), 5)
+        self.assertEqual(records[-1]["internalIndex"], 221)
+        self.assertEqual(records[-2]["selectedHandIndex"], 1)
+        self.assertIn("Console decision records: ", output.getvalue())
+        self.assertIn("decision=1", output.getvalue())
+        self.assertTrue(self.api.trace_exported)
+
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
         import json

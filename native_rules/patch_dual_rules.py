@@ -202,6 +202,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     counts: Counter[str] = Counter()
     prep_counts: Counter[str] = Counter()
     ai_counts: Counter[str] = Counter()
+    ai_console_counts: Counter[str] = Counter()
     exported = 0
     # Exclusive creation: never silently overwrite earlier recordings.
     with output.open("x", encoding="utf-8") as destination:
@@ -258,6 +259,8 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                         event["cfResourceIdCandidate"] = args[1] & 0xFFFF
                 if event.get("kind") == "ai_probe":
                     ai_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
+                if event.get("kind") == "ai_console":
+                    ai_console_counts[event.get("phase", "unknown")] += 1
                 if event.get("kind") == "summon_prep":
                     prep_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
@@ -274,8 +277,12 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
               ", ".join(f"{name}={n}" for name, n in sorted(prep_counts.items())),
               flush=True)
     if ai_counts:
-        print("[ai] Trace observations: " +
+        print("[ai] Passive hook observations: " +
               ", ".join(f"{name}={n}" for name, n in sorted(ai_counts.items())),
+              flush=True)
+    if ai_console_counts:
+        print("[ai] Console decision records: " +
+              ", ".join(f"{name}={n}" for name, n in sorted(ai_console_counts.items())),
               flush=True)
     api.traceacknowledge(status["session"], status["seen"])
     return output
