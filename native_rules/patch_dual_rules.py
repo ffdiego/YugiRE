@@ -2,7 +2,8 @@
 
 Requirements: pe_preflight.py in this directory and Python with the Frida package.
 The original Joey EXE SHA256 is checked against the *loaded* process module.
-Only the primary callback pointers of resources 342 and 1007 are modified.
+Only the primary callback pointers of resources 342 and 1007 are modified,
+unless --observe-only is used (no DLL loaded and no callback pointers changed).
 Without flags, automatically locates Joey and uses the validated draw-five
 Sparks and damage-plus-draw Raimei effects (400 LP).
 Both pointer slots are restored at the end; the DLL stays loaded until Joey
@@ -54,6 +55,10 @@ def damage_type(raw: str) -> int:
 
 
 def show_counters(state: dict) -> None:
+    if state.get("observerOnly"):
+        print("[dual-rules] Observer-only: no DLL loaded or callbacks replaced. "
+              "Use trace commands to observe native calls.", flush=True)
+        return
     for card in state["entries"]:
         mode = MODE_NAMES.get(card["configuredMode"], card["configuredMode"])
         print(f"[dual-rules] {card['name']}: calls={card['callbackCalls']} "
@@ -524,6 +529,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, default=None,
                         help="Optional PID override when multiple Joey processes exist")
+    parser.add_argument("--observe-only", action="store_true",
+                        help="Observe native calls without DLL load or card patch; "
+                             "disable manual native actions")
     parser.add_argument("--dll", type=Path, default=DEFAULT_DLL,
                         help="32-bit Windows yugire_rules.dll built by Visual Studio")
     parser.add_argument("--sparks", type=damage_type, default=200,
@@ -544,10 +552,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     dll_path = args.dll.resolve()
 
-    try:
-        check_dll(dll_path)
-    except (OSError, ValueError) as exc:
-        parser.error(str(exc))
+    if not args.observe_only:
+        try:
+            check_dll(dll_path)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
     try:
         import frida
     except ImportError:
@@ -576,13 +585,20 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(checks["checks"], indent=2))
             return 2
         print("[dual-rules] Exact loaded Joey EXE SHA256 confirmed.", flush=True)
-        print(f"[dual-rules] Loading {dll_path}", flush=True)
-        state = api.install(str(dll_path), args.sparks, args.raimei,
-                            MODES[args.sparks_mode], MODES[args.raimei_mode])
-        print("[dual-rules] Both primary callback pointers installed.", flush=True)
-        show_counters(state)
-        print(f"[dual-rules] Effects: Sparks={args.sparks_mode}, "
-              f"Raimei={args.raimei_mode}. Play a NORMAL duel.", flush=True)
+        if args.observe_only:
+            state = api.installobserver()
+            print("[dual-rules] OBSERVER ONLY: no DLL load, no card callback "
+                  "replacement; native actions disabled.", flush=True)
+            print("[dual-rules] Demo capture: trace on 20000 / trace ai on / "
+                  "trace demo on / trace mark esperando-demo", flush=True)
+        else:
+            print(f"[dual-rules] Loading {dll_path}", flush=True)
+            state = api.install(str(dll_path), args.sparks, args.raimei,
+                                MODES[args.sparks_mode], MODES[args.raimei_mode])
+            print("[dual-rules] Both primary callback pointers installed.", flush=True)
+            show_counters(state)
+            print(f"[dual-rules] Effects: Sparks={args.sparks_mode}, "
+                  f"Raimei={args.raimei_mode}. Play a NORMAL duel.", flush=True)
         show_help(args.console_side)
         state_cache = {}
         watcher = DuelWatcher(api)

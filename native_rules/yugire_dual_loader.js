@@ -121,6 +121,7 @@ const virtualProtect = new NativeFunction(Module.getGlobalExportByName('VirtualP
 
 let dllBase = null;
 let installed = false;
+let observerOnly = false;
 let getCalls = null;
 let getEmits = null;
 let getDamage = null;
@@ -551,6 +552,7 @@ function stopConsoleHook() {
 }
 
 function stageConsoleAction(action) {
+  if (observerOnly) throw new Error('Observer-only mode: native actions disabled');
   if (!installed || duelUpdateHook === null) {
     throw new Error('Console actions require an installed patch');
   }
@@ -628,6 +630,7 @@ function prepareAiSelection() {
 }
 
 function queueAiDecision(side, checkOnly) {
+  if (observerOnly) throw new Error('Observer-only mode: active AI disabled');
   if (side !== 1 || typeof checkOnly !== 'boolean') {
     throw new Error('Use ai check 1 or ai step 1 (player side only)');
   }
@@ -1139,6 +1142,7 @@ function status() {
   }));
   return {
     installed,
+    observerOnly,
     trace: traceStatus(),
     modulePath: main.path,
     processId: Process.id,
@@ -1175,6 +1179,7 @@ function restore() {
     }
   }
   installed = false;
+  observerOnly = false;
   if (errors.length > 0) throw new Error('Partial restore: ' + errors.join('; '));
   return status();
 }
@@ -1201,6 +1206,15 @@ rpc.exports = {
   queueset: queueConsoleSet,
   queueaidecision: queueAiDecision,
   canceldraw: cancelPendingConsoleAction,
+  // No DLL load, no card callback patch, no duel-update hook.
+  // Only opt-in passive trace hooks are permitted.
+  installobserver() {
+    if (installed) throw new Error('Already installed');
+    verifyBeforeLoading();
+    observerOnly = true;
+    installed = true;
+    return status();
+  },
   install(dllPath, sparksDamage, raimeiDamage, sparksMode, raimeiMode) {
     if (installed) throw new Error('Already installed');
     if (typeof dllPath !== 'string' || !/^[a-zA-Z]:\\/.test(dllPath)) {

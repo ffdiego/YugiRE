@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from patch_dual_rules import handle_command, save_command_trace
+from patch_dual_rules import handle_command, save_command_trace, build_parser
 
 
 class FakeApi:
@@ -360,6 +360,10 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertIn("Console decision records: ", output.getvalue())
         self.assertIn("decision=1", output.getvalue())
         self.assertTrue(self.api.trace_exported)
+
+    def test_observer_only_cli_switch(self):
+        self.assertTrue(build_parser().parse_args(["--observe-only"]).observe_only)
+        self.assertFalse(build_parser().parse_args([]).observe_only)
 
     def test_demo_lifecycle_and_export(self):
         from tempfile import TemporaryDirectory

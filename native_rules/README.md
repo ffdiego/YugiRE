@@ -440,7 +440,23 @@ e, se existir duelo ativo e índice válido,
 não prova que o summon/set foi resolvido.
 
 Com o jogo **ainda no menu principal**, inicie o
-console Python em outro terminal e execute:
+console Python em outro terminal com **modo somente
+observação**, sem carregar DLL nem alterar callbacks:
+
+```powershell
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --observe-only
+```
+
+Nesse modo, o EXE é validado como antes,
+mas `LoadLibrary` não é chamado,
+Sparks/Raimei permanecem originais e
+nenhuma ação manual `draw/damage/destroy/summon/set`
+ou `ai check/step` é permitida.
+Somente os hooks de observação
+`trace on`/`trace ai on`/`trace demo on`
+são instalados, quando solicitados.
+
+Depois execute:
 
 ```text
 trace on 20000
