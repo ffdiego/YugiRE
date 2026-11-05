@@ -279,26 +279,44 @@ diff
 state
 ```
 
-`ai check 1` executa `FUN_005B1360(1,0)`
-**na thread do duelo**, após fila/posicionamento
-ociosos, durante o turno do jogador em fase
-principal e com invocação normal ainda disponível.
+`ai check 1` reproduz os dois passes de seleção
+do callsite `0x005B73D2`: chama primeiro
+`FUN_005B1360(1,0)` e, somente se retornar
+`-1`, tenta `FUN_005B1360(1,-1)`.
+**Ambos são executados na thread do duelo**, após
+fila/posicionamento ociosos, durante o turno do
+jogador em fase principal e com invocação normal
+ainda disponível.
 O seletor utiliza snapshots do campo e pode
 alterar globais temporários: não é uma função
 puramente read-only, embora o comando não envie
 uma colocação ao motor.
 
-O índice da mão retornado é verificado novamente
-contra regras nativas para invocar/baixar. O modo
-é escolhido por `FUN_005AE270` e pela condição
-de `FUN_00570A70`, que o executor da CPU também
-consulta. O console mostra `selectedInternalIndex`,
-`handIndex`, `selectedKind`, `allowed`,
-`levelClass`, e o motivo de qualquer recusa.
+O índice retornado é verificado novamente pelas
+regras de colocação. No **caminho específico
+`FUN_005B1360`**, o chamador original passa
+`modeSelector=0` (normal summon) e o executor
+pode forçar set quando `FUN_00570A70(side)==0`.
+`FUN_005AE270` pertence a **outros caminhos**
+que selecionam via `FUN_005B16C0`; não
+misturamos mais as duas políticas.
+
+O console agora mostra `normalPass0` e
+`tributeFallbackPassMinus1` (nulo quando
+não houve fallback), além de `selectedKind`,
+`allowed`, `levelClass` e motivos de
+recusa. Se ambos os passes retornarem índice
+negativo, mostra `handCandidates`, uma
+lista de classificação das cartas da mão
+**sem afirmar que sejam legalmente jogáveis**.
+Um `-1` não prova que a mão não contém
+monstros aptos a invocar.
 
 `ai step 1` usa a mesma lógica mas **submete
 no máximo uma invocação/colocação** (monstro
-comum classe 1..4, sem tributos), utilizando
+comum classe 1..4, sem tributos). Mesmo quando
+o fallback encontra um monstro de tributo,
+o preflight o rejeita por enquanto. Utiliza
 `FUN_005AD740` e a flag `0x20000`.
 Nenhuma mudança da DLL C++ é necessária.
 O primeiro teste no Windows deve ser

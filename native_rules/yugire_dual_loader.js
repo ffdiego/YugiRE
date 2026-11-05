@@ -74,7 +74,8 @@ const kTraceDefaultCapacity = 8192;
 const kTraceMaxCapacity = 20000;
 // First opt-in player-side native AI experiment. Normal summon/set only.
 const kAiSelectNormal = va('0x005B1360'); // side, pass -> handIndex
-const kAiSelectPosture = va('0x005AE270'); // side, cardIndex, 0, 0 -> mode
+// The observed callsite of FUN_005B1360 passes modeSelector=0
+// directly to FUN_005B6FF0. FUN_005AE270 belongs to OTHER AI branches.
 const kAiForceSet = va('0x00570A70');     // zero forces set in native executor
 // All four probes are optional and side-effect-free Interceptor observers.
 // Selector entry/exit bounds the simulated field evaluation window.
@@ -154,7 +155,6 @@ let traceExportedSeen = -1;
 let summonPrepHooks = [];
 let summonPrepCallSequence = 0;
 let nativeAiSelectNormal = null;
-let nativeAiSelectPosture = null;
 let nativeAiForceSet = null;
 let aiProbeHooks = [];
 let aiProbeCallSequence = 0;
@@ -392,28 +392,53 @@ function servicePendingConsoleAction() {
         fail('Hand size changed before native AI selection');
         return;
       }
-      // First native pass only: no high-level tribute fallback or phase AI yet.
-      const handIndex = nativeAiSelectNormal(request.side, 0) | 0;
+      // Mirror original caller at 0x005B73D2: pass=0 first,
+      // only try pass=-1 when first result is exactly -1.
+      const firstPass = nativeAiSelectNormal(request.side, 0) | 0;
+      const secondPass = firstPass === -1 ?
+        (nativeAiSelectNormal(request.side, -1) | 0) : null;
+      const handIndex = secondPass === null ? firstPass : secondPass;
+      const attempts = {normalPass0: firstPass, tributeFallbackPassMinus1: secondPass};
       if (handIndex < 0) {
-        fail('Native AI found no suitable normal-placement candidate in pass 0');
+        // Explain the result without repeatedly invoking the native
+        // eligibility function, which can have user-visible side effects.
+        const handCandidates = [];
+        for (let i = 0; i < count; i++) {
+          const word = handWord(request.side, i);
+          if ((word & 0xFFF) === 0) continue;
+          const monster = nativeMonsterIdentity(word) !== 0;
+          handCandidates.push({handIndex: i, internalIndex: word & 0xFFF,
+            monster, levelClass: monster ? nativeMonsterLevelClass(word) & 0xFFFF : null});
+        }
+        lastConsoleAction = {...request, ...attempts, handCandidates,
+          allowed: false, state: request.checkOnly ? 'checked' : 'rejected',
+          detail: 'Both native normal-select passes returned no candidate; ' +
+            'this does NOT establish that the hand lacks legal summons. ' +
+            'Other AI branches use FUN_005B16C0.'};
         return;
       }
       if (handIndex >= count) {
-        fail('Native AI returned out-of-bounds index ' + handIndex);
+        lastConsoleAction = {...request, ...attempts,
+          allowed: false, state: request.checkOnly ? 'checked' : 'rejected',
+          detail: 'AI returned out-of-bounds hand index ' + handIndex};
         return;
       }
       const card = handWord(request.side, handIndex);
       if ((card & 0xFFF) === 0) {
-        fail('Native AI selected an empty hand slot');
+        lastConsoleAction = {...request, ...attempts,
+          allowed: false, state: request.checkOnly ? 'checked' : 'rejected',
+          detail: 'AI selected an empty hand slot'};
         return;
       }
-      // Mirror native FUN_005B6FF0 posture choice, not its unvalidated
-      // tribute paths. Final eligibility is checked again below.
-      const postureRaw = nativeAiSelectPosture(request.side, card & 0xFFF, 0, 0) | 0;
+      // Original FUN_005B1360 caller sends modeSelector=0 (summon);
+      // FUN_005B6FF0 overrides to set only if FUN_00570A70 is zero.
+      // Do not mix in FUN_005AE270: it belongs to FUN_005B16C0 paths.
       const forceSetRaw = nativeAiForceSet(request.side) | 0;
-      const kind = postureRaw !== 0 || forceSetRaw === 0 ? 'set' : 'summon';
-      const choice = {handIndex, selectedInternalIndex: card & 0xFFF,
-        postureRaw, forceSetRaw, selectedKind: kind, selectorPass: 0};
+      const kind = forceSetRaw === 0 ? 'set' : 'summon';
+      const choice = {...attempts, handIndex,
+        selectedInternalIndex: card & 0xFFF, modeSelector: 0,
+        forceSetRaw, selectedKind: kind,
+        selectorPass: secondPass === null ? 0 : -1};
       const preflight = preflightNormalPlacement({
         ...request, kind, handIndex, expectedHandCount: count, expectedWord: card
       });
@@ -541,7 +566,7 @@ function queueConsoleSet(side, index, checkOnly = false) {
 
 function prepareAiSelection() {
   if (nativeAiSelectNormal !== null) return;
-  for (const address of [kAiSelectNormal, kAiSelectPosture, kAiForceSet]) {
+  for (const address of [kAiSelectNormal, kAiForceSet]) {
     const range = Process.findRangeByAddress(address);
     if (range === null || !range.protection.includes('x')) {
       throw new Error('AI native function not executable: ' + address);
@@ -551,8 +576,6 @@ function prepareAiSelection() {
   // on the original game update thread inside servicePendingConsoleAction.
   nativeAiSelectNormal = new NativeFunction(kAiSelectNormal,
     'int32', ['uint32', 'int32'], 'mscdecl');
-  nativeAiSelectPosture = new NativeFunction(kAiSelectPosture,
-    'int32', ['uint32', 'uint32', 'int32', 'int32'], 'mscdecl');
   nativeAiForceSet = new NativeFunction(kAiForceSet,
     'int32', ['uint32'], 'mscdecl');
 }
