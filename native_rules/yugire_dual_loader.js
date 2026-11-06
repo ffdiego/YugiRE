@@ -37,6 +37,10 @@ const kSnapshotBytes = kSnapshotPlayerWords * 4 * 2;
 // request is staged here and consumed on the original duel update thread.
 // For the documented EXE only (VA relative to image base 0x00400000).
 const kDuelUpdate = va('0x005BC700');
+// Experimental -speedy setting, only for the verified PE32 fingerprint.
+// FUN_00411B50 writes 60 at 00411CA2; 00411CAC is the NEXT instruction.
+const kSpeedySetting = va('0x005EB618');
+const kSpeedyWriteFinished = va('0x00411CAC');
 // Common command producer. Observer only: no argument/retval replacement.
 const kCommandProducer = va('0x005B9170');
 // Known CE callsite and native placement descriptor.
@@ -162,6 +166,10 @@ let nativeMonsterLevelClass = null;
 let nativeSummonBuilder = null;
 let nativePlayerFlagEmitter = null;
 let duelUpdateHook = null;
+let speedyOverrideHook = null;
+let speedyOverrideValue = null;
+let speedyOverrideApplied = false;
+let speedyOverrideHits = 0;
 let pendingConsoleAction = null;
 let lastConsoleAction = null;
 let consoleSequence = 0;
@@ -186,6 +194,72 @@ let demoExecutorHook = null;
 let demoExecutorCalls = 0;
 let demoSetupHooks = [];
 let demoSetupCalls = 0;
+
+// Changing 60 to 120 is deliberately an experiment, not a claim that
+// this setting controls FPS: static Ghidra xrefs found only its writer.
+function speedStatus() {
+  let value = null;
+  try { value = kSpeedySetting.readU32(); } catch (_) {}
+  return {armed: speedyOverrideHook !== null,
+    requested: speedyOverrideValue,
+    applied: speedyOverrideApplied,
+    writerHits: speedyOverrideHits, value};
+}
+function armSpeedyOverride(value) {
+  if (!installed || !observerOnly || commandTraceHook === null) {
+    throw new Error('Speed override requires observer-only mode and trace on');
+  }
+  if (speedyOverrideHook !== null) throw new Error('Speed override already armed');
+  if (!Number.isInteger(value) || value < 61 || value > 240) {
+    throw new Error('Experimental speed value must be an integer from 61 to 240');
+  }
+  const instructionRange = Process.findRangeByAddress(kSpeedyWriteFinished);
+  const settingRange = Process.findRangeByAddress(kSpeedySetting);
+  if (instructionRange === null || !instructionRange.protection.includes('x') ||
+      settingRange === null || !settingRange.protection.includes('w')) {
+    throw new Error('Speedy writer/setting is not mapped with expected protections');
+  }
+  // Validate the exact MOV [005EB618],0x3C observed in Ghidra. Reject other
+  // binaries/relocations rather than silently patching an unknown instruction.
+  const expected = [0xC7, 0x05, 0x18, 0xB6, 0x5E, 0x00, 0x3C, 0, 0, 0];
+  const actual = new Uint8Array(kSpeedyWriteFinished.sub(10).readByteArray(10));
+  if (actual.length !== expected.length ||
+      actual.some((byte, i) => byte !== expected[i])) {
+    throw new Error('Unexpected -speedy writer bytes; refusing speed experiment');
+  }
+  speedyOverrideValue = value;
+  speedyOverrideApplied = false;
+  speedyOverrideHits = 0;
+  speedyOverrideHook = Interceptor.attach(kSpeedyWriteFinished, {
+    onEnter() {
+      speedyOverrideHits++;
+      if (!speedyOverrideApplied && kSpeedySetting.readU32() === 60) {
+        kSpeedySetting.writeU32(speedyOverrideValue);
+        speedyOverrideApplied = true;
+        recordTraceEvent({kind: 'speedy_override', phase: 'applied',
+          previous: 60, requested: speedyOverrideValue,
+          writerVa: '0x00411CA2'});
+      }
+    }
+  });
+  return speedStatus();
+}
+function stopSpeedyOverride() {
+  if (speedyOverrideHook !== null) {
+    const hook = speedyOverrideHook;
+    speedyOverrideHook = null;
+    hook.detach();
+  }
+  // Preserve a value changed later by Joey or another tool. Only restore our
+  // own value while it still matches what we wrote.
+  let restored = false;
+  if (speedyOverrideApplied && speedyOverrideValue !== null &&
+      kSpeedySetting.readU32() === speedyOverrideValue) {
+    kSpeedySetting.writeU32(60);
+    restored = true;
+  }
+  return {restored, ...speedStatus()};
+}
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -1364,6 +1438,7 @@ function status() {
 // managed to patch the first card. It checks both slots BEFORE changing any.
 function restore() {
   stopCommandTrace();
+  stopSpeedyOverride();
   stopConsoleHook(); // also drops any unserviced command before unpatching
   if (observerOnly) {
     // Observer mode never modifies callbacks. Avoid reading early card records.
@@ -1393,6 +1468,9 @@ function restore() {
 
 rpc.exports = {
   status,
+  speedstatus: speedStatus,
+  armspeedoverride: armSpeedyOverride,
+  stopspeedoverride: stopSpeedyOverride,
   bootstrapinfo() {
     // Safe before the original executable has initialized its card tables.
     return {modulePath: main.path, processId: Process.id};
