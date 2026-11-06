@@ -115,7 +115,17 @@ comandos e eventuais travamentos. A seleção aleatória de decks e as
 ações da IA podem gerar demos de durações diferentes mesmo sem
 mudança de velocidade. **Aumento de 60 para 120 não garante 2×.**
 
-Não há validação em um Joey real desse novo override ainda;
+O limite artificial de `240` foi removido. `--speed-value` agora
+aceita qualquer inteiro positivo representável no campo unsigned
+de 32 bits do Joey (`1` a `4294967295`), sem teto arbitrário
+de FPS definido pelo laboratório; zero e overflow são rejeitados.
+Exemplos de valores experimentais acima de 240: `360`, `480`,
+`1000`. Isso não significa que o jogo consiga renderizar ou
+simular essa quantidade de frames por segundo, nem que valores
+muito altos sejam estáveis. Faça testes progressivos e observe
+travamentos, taxa efetiva, IA, duelos concluídos e perda de eventos.
+
+Não há validação em um Joey real dos valores acima de 240 ainda;
 é uma opção experimental, não um modo de aceleração considerado
 estável. Neste
 primeiro estágio, ele exige `--observe-only`; **não carrega a DLL**
