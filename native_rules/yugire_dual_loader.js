@@ -79,6 +79,11 @@ const kAiSelectNormal = va('0x005B1360'); // side, pass -> handIndex
 const kAiForceSet = va('0x00570A70');     // zero forces set in native executor
 // Opt-in passive hook: CPU's normal-placement executor, not all card actions.
 const kDemoNormalExecutor = va('0x005B6FF0');
+const kDemoSetupTargets = [
+  {name: 'duel_entry', va: '0x005BFEB0', address: va('0x005BFEB0')},
+  {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
+  {name: 'deck_shuffle', va: '0x00568D80', address: va('0x00568D80')}
+];
 // All four probes are optional and side-effect-free Interceptor observers.
 // Selector entry/exit bounds the simulated field evaluation window.
 const kAiProbeTargets = [
@@ -94,6 +99,7 @@ const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
 const kDuelFlags = va('0x00A54E5C');
 const kDeckCountBase = va('0x00A55D69');
+const kDeckWordBase = va('0x00A56574'); // 32-bit cards before/after shuffle
 const kMonsterSlotBase = va('0x00A55D74');
 const kFieldSlotStride = 0x90;
 const kFieldIdentityMask = 0x7F001FFF; // index + owner + occurrence key
@@ -164,6 +170,8 @@ let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
 let demoExecutorHook = null;
 let demoExecutorCalls = 0;
+let demoSetupHooks = [];
+let demoSetupCalls = 0;
 
 function verifyOriginalRecord(card) {
   if (card.record.readU32() !== card.resourceId) {
@@ -680,7 +688,7 @@ function traceStatus() {
     aiActive: aiProbeHooks.length > 0,
     aiHooks: aiProbeHooks.length,
     demoActive: demoExecutorHook !== null,
-    demoHooks: demoExecutorHook === null ? 0 : 1,
+    demoHooks: (demoExecutorHook === null ? 0 : 1) + demoSetupHooks.length,
     session: traceSession,
     producer: kCommandProducer.toString(),
     capacity: traceCapacity,
@@ -929,12 +937,36 @@ function startAiProbe() {
 
 // Passive instrumentation only: never invokes a Joey function or changes
 // native state. A placement executor call alone cannot prove AI control.
-function stopDemoProbe() {
-  if (demoExecutorHook !== null) {
-    const hook = demoExecutorHook;
-    demoExecutorHook = null;
-    hook.detach();
+// Read native deck data without invoking the randomizer or changing memory.
+function readDemoDeck(side) {
+  const count = kDeckCountBase.add(side * kPlayerStride).readU8();
+  if (count > 80) return {side, count, error: 'invalid deck count (>80)'};
+  const words = [], indices = [];
+  for (let i = 0; i < count; i++) {
+    const word = kDeckWordBase.add(side * kPlayerStride + i * 4).readU32();
+    words.push(word >>> 0);
+    indices.push(word & 0xFFF);
   }
+  return {side, count, words, indices};
+}
+function safeDemoDeck(side) {
+  try { return readDemoDeck(side); }
+  catch (error) { return {side, readError: String(error)}; }
+}
+
+function stopDemoProbe() {
+  const hooks = demoSetupHooks;
+  demoSetupHooks = [];
+  const executor = demoExecutorHook;
+  demoExecutorHook = null;
+  let failure = null;
+  for (let i = hooks.length - 1; i >= 0; i--) {
+    try { hooks[i].detach(); } catch (error) { failure = error; }
+  }
+  if (executor !== null) {
+    try { executor.detach(); } catch (error) { failure = error; }
+  }
+  if (failure !== null) throw new Error('Demo probe detach failed: ' + failure);
   return traceStatus();
 }
 
@@ -943,9 +975,13 @@ function startDemoProbe() {
     throw new Error('Start trace on before trace demo on');
   }
   if (demoExecutorHook !== null) throw new Error('Demo executor probe already active');
-  const range = Process.findRangeByAddress(kDemoNormalExecutor);
-  if (range === null || !range.protection.includes('x')) {
-    throw new Error('Demo executor 0x005B6FF0 is not executable');
+  for (const target of [
+    {va: '0x005B6FF0', address: kDemoNormalExecutor}, ...kDemoSetupTargets
+  ]) {
+    const range = Process.findRangeByAddress(target.address);
+    if (range === null || !range.protection.includes('x')) {
+      throw new Error('Demo hook target is not executable: ' + target.va);
+    }
   }
   const hook = Interceptor.attach(kDemoNormalExecutor, {
     onEnter(args) {
@@ -989,8 +1025,62 @@ function startDemoProbe() {
       });
     }
   });
+  // Observe the duel bootstrap and deck *shuffle*, not the unknown
+  // menu idle trigger or the yet-unidentified deck population routine.
+  // Install all-or-nothing; if the newer hooks fail, roll back executor.
+  const setup = [];
+  try {
+    for (const target of kDemoSetupTargets) {
+      setup.push(Interceptor.attach(target.address, {
+        onEnter(args) {
+          this.setupId = ++demoSetupCalls;
+          this.setupThreadId = Process.getCurrentThreadId();
+          this.setupSide = null;
+          const event = {
+            kind: 'demo_init', function: target.name, functionVa: target.va,
+            phase: 'enter', callId: this.setupId,
+            threadId: this.setupThreadId, caller: this.returnAddress.toString()
+          };
+          if (target.name === 'deck_shuffle') {
+            const sideRaw = args[0].toUInt32();
+            this.setupSide = sideRaw;
+            event.sideRaw = sideRaw;
+            event.side = sideRaw < 2 ? sideRaw : null;
+            event.shufflePasses = args[1].toInt32();
+            if (sideRaw < 2) event.deck = safeDemoDeck(sideRaw);
+          } else if (target.name === 'state_reset') {
+            event.decks = [safeDemoDeck(0), safeDemoDeck(1)];
+          }
+          recordTraceEvent(event);
+        },
+        onLeave() {
+          const event = {
+            kind: 'demo_init', function: target.name, functionVa: target.va,
+            phase: 'leave', callId: this.setupId,
+            threadId: this.setupThreadId
+          };
+          if (target.name === 'deck_shuffle' && this.setupSide !== null &&
+              this.setupSide < 2) {
+            event.side = this.setupSide;
+            event.deck = safeDemoDeck(this.setupSide);
+          } else if (target.name === 'state_reset') {
+            event.decks = [safeDemoDeck(0), safeDemoDeck(1)];
+          }
+          recordTraceEvent(event);
+        }
+      }));
+    }
+  } catch (error) {
+    for (let i = setup.length - 1; i >= 0; i--) {
+      try { setup[i].detach(); } catch (_) {}
+    }
+    try { hook.detach(); } catch (_) {}
+    throw new Error('Demo setup hook installation failed; rolled back: ' + error);
+  }
   demoExecutorHook = hook;
+  demoSetupHooks = setup;
   demoExecutorCalls = 0;
+  demoSetupCalls = 0;
   return traceStatus();
 }
 
