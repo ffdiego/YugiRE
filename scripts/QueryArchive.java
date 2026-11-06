@@ -35,7 +35,8 @@ public class QueryArchive extends GhidraScript {
             while(start!=null) {
                 Address hit=currentProgram.getMemory().findBytes(start,currentProgram.getMaxAddress(),pattern,null,true,monitor);
                 if(hit==null)break;
-                out.println("MATCH "+encoding+" "+literal+" @"+hit);
+                out.println("MATCH "+literal+" @"+hit+
+                    (encoding.equals("UTF-16LE")?" [UTF-16LE]":""));
                 ReferenceIterator refs=currentProgram.getReferenceManager().getReferencesTo(hit);
                 while(refs.hasNext()) {
                     Reference ref=refs.next(); Function f=getFunctionContaining(ref.getFromAddress());
