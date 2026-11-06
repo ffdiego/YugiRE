@@ -96,7 +96,7 @@ class StartupLauncherTests(unittest.TestCase):
                 code = native_rules.main(
                     ["--spawn", "--exe", str(exe), "--observe-only"])
             self.assertEqual(code, 0)
-            self.assertEqual(device.program, str(exe))
+            self.assertEqual(device.program, [str(exe), "-speedy"])
             self.assertEqual(device.cwd, str(exe.parent))
             ordered = ["spawn", "attach", "create_script", "load",
                        "bootstrapinfo", "armstartupobserver",
