@@ -210,6 +210,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     ai_counts: Counter[str] = Counter()
     ai_console_counts: Counter[str] = Counter()
     demo_counts: Counter[str] = Counter()
+    demo_init_counts: Counter[str] = Counter()
     exported = 0
     # Exclusive creation: never silently overwrite earlier recordings.
     with output.open("x", encoding="utf-8") as destination:
@@ -272,6 +273,9 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                     side = event.get("side")
                     label = f"side{side}" if side in (0, 1) else "invalid_side"
                     demo_counts[f"{label}/{event.get('phase', 'unknown')}"] += 1
+                if event.get("kind") == "demo_init":
+                    name = event.get("function", "unknown")
+                    demo_init_counts[f"{name}/{event.get('phase', 'unknown')}"] += 1
                 if event.get("kind") == "summon_prep":
                     prep_counts[f"{event.get('function')}/{event.get('phase')}"] += 1
                 destination.write(json.dumps(event, ensure_ascii=False) + "\n")
@@ -298,6 +302,10 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
     if demo_counts:
         print("[demo] Native placement executor: " +
               ", ".join(f"{name}={n}" for name, n in sorted(demo_counts.items())),
+              flush=True)
+    if demo_init_counts:
+        print("[demo] Bootstrap/deck observations: " +
+              ", ".join(f"{name}={n}" for name, n in sorted(demo_init_counts.items())),
               flush=True)
     api.traceacknowledge(status["session"], status["seen"])
     return output

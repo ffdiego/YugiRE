@@ -485,6 +485,39 @@ O console resume as entradas do executor por
 já observa os seletores `FUN_005B1360` e
 `FUN_005B16C0`; `trace on` observa o
 produtor de comandos `FUN_005B9170`.
+
+**Inspeção dos decks e do início (2026-11-05):**
+o mesmo `trace demo on` observa agora mais
+três rotinas conhecidas:
+- `FUN_005BFEB0`, início do bootstrap do
+  duelo (evento `demo_init/duel_entry` com `caller`);
+- `FUN_005B9E50`, reset/inicialização das
+  estruturas (evento `demo_init/state_reset`);
+- `FUN_00568D80(side,passes)`, embaralhamento
+  do deck **já presente na memória**
+  (evento `demo_init/deck_shuffle`).
+
+Os eventos `deck_shuffle/enter|leave` contêm
+`deck.count`, `deck.words` (uint32 de cada
+posição), `deck.indices` (`word & 0xFFF`) e
+o lado da carta. Os eventos de reset contêm
+snapshots dos dois decks. Compare
+`sorted(deck.indices)` entre antes e depois
+para identificar alteração de composição
+versus simples reordenação; compare em
+**duas demonstrações** para distinguir listas
+fixas de pools variáveis. Uma lista vazia
+pode indicar que a rotina ocorreu antes
+de o deck ser preenchido, não que a
+demo esteja sem cartas.
+
+Estes hooks **não demonstram quem escolhe
+a composição**: para isso é necessário
+seguir o chamador do bootstrap e os writers
+dos arrays. Também não identificam o
+temporizador de inatividade do menu.
+São somente leitura, não invocam o RNG
+nem executam o embaralhamento.
 Se `overwritten > 0`, repita com uma
 captura menor. O limite do buffer é 20.000.
 

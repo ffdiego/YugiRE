@@ -399,6 +399,34 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertFalse(self.api.demo_active)
         self.assertFalse(self.api.ai_active)
 
+    def test_demo_deck_shuffle_export(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "demo_init", "function": "duel_entry",
+             "phase": "enter", "callId": 1, "caller": "0x005c0005"},
+            {"kind": "demo_init", "function": "deck_shuffle",
+             "phase": "enter", "callId": 2, "side": 0,
+             "shufflePasses": 8,
+             "deck": {"count": 3, "side": 0, "words": [221, 273, 221],
+                      "indices": [221, 273, 221]}},
+            {"kind": "demo_init", "function": "deck_shuffle",
+             "phase": "leave", "callId": 2, "side": 0,
+             "deck": {"count": 3, "side": 0, "words": [273, 221, 221],
+                      "indices": [273, 221, 221]}},
+        ]
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "demo-deck.jsonl"
+            with redirect_stdout(io.StringIO()) as output:
+                save_command_trace(self.api, path)
+            rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(sorted(rows[2]["deck"]["indices"]),
+                         sorted(rows[3]["deck"]["indices"]))
+        self.assertIn("deck_shuffle/enter=1", output.getvalue())
+        self.assertIn("duel_entry/enter=1", output.getvalue())
+
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
         import json
