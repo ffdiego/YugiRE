@@ -296,6 +296,28 @@ Essas consultas são somente leitura e **ainda não foram executadas**;
 não se deve acelerar o dispatcher ou sobrescrever APIs de tempo
 antes de conhecer o papel dos valores.
 
+## Investigar proteção contra segunda instância
+
+O Joey recusa abrir outro executável enquanto já há uma instância
+rodando. Ainda não foi identificado o mecanismo exato. Com o
+banco Ghidra do executável já analisado:
+
+```powershell
+.\scripts\Run-SingleInstanceRecon.ps1
+```
+
+Consulta estática somente leitura em três grupos: APIs de mutex,
+janelas/eventos e erros/locks. Exporta relatórios em
+`docs/evidence/single-instance-{mutex,windows,locks}.txt`.
+Essas referências servirão para escolher um hook ou patch **opt-in**
+específico do executável, em vez de interceptar indiscriminadamente
+toda sincronização do Windows. A consulta ainda não foi executada
+neste ambiente.
+
+O laboratório de captura sequencial pode funcionar **sem** remover
+esse bloqueio, pois salva o trace e encerra o PID anterior antes do
+novo spawn. [Mais detalhes](../docs/21-batch-capture-and-single-instance.md).
+
 ## Conversões de IDs — quinta rodada
 
 ```powershell
