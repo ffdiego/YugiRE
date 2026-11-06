@@ -1327,7 +1327,8 @@ function duelState() {
 }
 
 function status() {
-  const entries = cards.map(card => ({
+  // During pre-resume observation the callback table may be uninitialized.
+  const entries = observerOnly ? [] : cards.map(card => ({
     name: card.name,
     resourceId: card.resourceId,
     row: card.row,
@@ -1353,7 +1354,7 @@ function status() {
       destroyAttempts: getManualDestroyAttempts === null ? 0 : getManualDestroyAttempts(),
       pending: pendingConsoleAction,
       last: lastConsoleAction,
-      gate: installed ? queueGate() : null
+      gate: installed && !observerOnly ? queueGate() : null
     },
     entries,
   };
@@ -1364,6 +1365,12 @@ function status() {
 function restore() {
   stopCommandTrace();
   stopConsoleHook(); // also drops any unserviced command before unpatching
+  if (observerOnly) {
+    // Observer mode never modifies callbacks. Avoid reading early card records.
+    installed = false;
+    observerOnly = false;
+    return {installed: false, entries: [], trace: traceStatus()};
+  }
   for (const card of cards) {
     const current = card.slot.readPointer();
     if (!current.equals(kPrimaryOriginal) &&
@@ -1386,6 +1393,25 @@ function restore() {
 
 rpc.exports = {
   status,
+  bootstrapinfo() {
+    // Safe before the original executable has initialized its card tables.
+    return {modulePath: main.path, processId: Process.id};
+  },
+  armstartupobserver() {
+    if (installed) throw new Error('Already installed');
+    // Pre-resume: individual trace hooks validate their executable targets.
+    // No DLL load, callback patch, or native mutating call is performed.
+    observerOnly = true;
+    installed = true;
+    return {installed: true, observerOnly: true};
+  },
+  validateruntime() {
+    if (!installed || !observerOnly) {
+      throw new Error('Runtime validation requires an active observer');
+    }
+    verifyBeforeLoading();
+    return {ok: true};
+  },
   duelstate: duelState,
   tracestatus: traceStatus,
   tracestart: startCommandTrace,
