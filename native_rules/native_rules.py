@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 import sys
 
@@ -32,6 +33,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--speed-value", type=int, default=None,
                         help="Experimental pre-boot override of -speedy 60 (e.g. 120 or 1000); "
                              "accepts any positive unsigned 32-bit value")
+    parser.add_argument("--rotate-events", type=int, default=None,
+                        help="Observer-only batch: save trace, kill OWN spawned Joey, "
+                             "and restart at this many events (16..19000)")
+    parser.add_argument("--cycles", type=int, default=None,
+                        help="Number of spawned capture cycles (requires --rotate-events); "
+                             "0 means repeat until interrupted")
     return parser
 
 
@@ -44,6 +51,12 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
         parser.error("--spawn requires --exe PATH")
     if args.speed_value is not None and not 1 <= args.speed_value <= 0xFFFFFFFF:
         parser.error("--speed-value must fit an unsigned 32-bit integer (1..4294967295)")
+    if args.rotate_events is not None and not 16 <= args.rotate_events <= 19000:
+        parser.error("--rotate-events must be 16..19000 (leave space in the trace buffer)")
+    if args.cycles is not None and args.rotate_events is None:
+        parser.error("--cycles requires --rotate-events")
+    if args.cycles is not None and args.cycles < 0:
+        parser.error("--cycles must be >= 0 (0 means unlimited)")
     try:
         exe = args.exe.expanduser().resolve(strict=True)
         if not exe.is_file() or exe.name.casefold() != "joey_pc.exe":
@@ -57,7 +70,9 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
     return exe
 
 
-def run_spawn(exe: Path, console_side: int, speed_value: int | None = None) -> int:
+def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
+              rotate_at_events: int | None = None,
+              poll_seconds: float = 0.25) -> int:
     try:
         import frida
     except ImportError as exc:
@@ -108,27 +123,44 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None) -> i
         resumed = True
         print("[native-rules] Recording from startup. Use 'validate' after the menu "
               "is ready, 'trace dump' to export, or 'stop' to detach.", flush=True)
-        legacy.show_help(console_side)
-        while True:
-            try:
-                raw = input("[native-rules] > ").strip()
-                if raw.casefold() == "validate":
-                    print(f"[native-rules] {api.validateruntime()}", flush=True)
-                    continue
-                if raw.casefold() == "speed status":
-                    print(f"[native-rules] Speed setting: {api.speedstatus()}", flush=True)
-                    continue
-                if raw.casefold() == "speed restore":
-                    print(f"[native-rules] Speed setting: {api.stopspeedoverride()}",
-                          flush=True)
-                    continue
-                if not legacy.handle_command(raw, api, console_side):
+        if rotate_at_events is not None:
+            # The trace is a fixed-size ring buffer (max 20000). Poll well
+            # below its capacity and STOP hooks before exporting. Never
+            # overwrite a previous capture or touch processes we did not spawn.
+            while True:
+                state = api.tracestatus()
+                if state["overwritten"] != 0:
+                    raise RuntimeError(
+                        f"Trace already lost {state['overwritten']} events; "
+                        "cannot safely continue batch")
+                if state["seen"] >= rotate_at_events:
+                    print(f"[lab] Threshold reached: {state['seen']} events; "
+                          "stopping trace before export.", flush=True)
+                    api.tracestop()
                     break
-            except (KeyboardInterrupt, EOFError):
-                print("\n[native-rules] Closing observer.", flush=True)
-                break
-            except Exception as exc:
-                print(f"[console] Command failed: {exc}", flush=True)
+                time.sleep(poll_seconds)
+        else:
+            legacy.show_help(console_side)
+            while True:
+                try:
+                    raw = input("[native-rules] > ").strip()
+                    if raw.casefold() == "validate":
+                        print(f"[native-rules] {api.validateruntime()}", flush=True)
+                        continue
+                    if raw.casefold() == "speed status":
+                        print(f"[native-rules] Speed setting: {api.speedstatus()}", flush=True)
+                        continue
+                    if raw.casefold() == "speed restore":
+                        print(f"[native-rules] Speed setting: {api.stopspeedoverride()}",
+                              flush=True)
+                        continue
+                    if not legacy.handle_command(raw, api, console_side):
+                        break
+                except (KeyboardInterrupt, EOFError):
+                    print("\n[native-rules] Closing observer.", flush=True)
+                    break
+                except Exception as exc:
+                    print(f"[console] Command failed: {exc}", flush=True)
     except Exception as exc:
         exit_code = 2
         print(f"[native-rules] ERROR: {exc}", flush=True)
@@ -159,15 +191,37 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None) -> i
                 session.detach()
             except Exception:
                 pass
-        if pid is not None and not resumed:
-            # A failed early attach must not leave an invisible suspended process.
+        if pid is not None and (not resumed or rotate_at_events is not None):
+            # In interactive mode, leave a resumed game alive. In batch mode,
+            # terminate ONLY the PID returned by this invocation of spawn(),
+            # and only after attempting to save the trace and detaching Frida.
             try:
                 device.kill(pid)
             except Exception as exc:
                 print(f"[native-rules] Failed to kill suspended Joey {pid}: {exc}",
                       flush=True)
-        # Do not kill a resumed game when closing its passive observer.
+        # Do not kill a resumed game when closing its passive interactive observer.
     return exit_code
+
+
+def run_batch(exe: Path, console_side: int, speed_value: int | None,
+              rotate_events: int, cycles: int) -> int:
+    """Run bounded, sequential captures; 0 cycles means until Ctrl+C."""
+    completed = 0
+    try:
+        while cycles == 0 or completed < cycles:
+            print(f"[lab] Starting capture cycle {completed + 1}" +
+                  ("" if cycles == 0 else f"/{cycles}"), flush=True)
+            result = run_spawn(exe, console_side, speed_value,
+                               rotate_at_events=rotate_events)
+            if result != 0:
+                return result  # Never spawn next cycle when export/cleanup failed.
+            completed += 1
+        print(f"[lab] Finished {completed} capture cycles.", flush=True)
+        return 0
+    except KeyboardInterrupt:
+        print(f"\n[lab] Interrupted after {completed} completed cycles.", flush=True)
+        return 130
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -176,13 +230,17 @@ def main(argv: list[str] | None = None) -> int:
     if not original or (not any(a == "--spawn" for a in original)):
         if "--exe" in original:
             parser.error("--exe requires --spawn")
-        if "--speed-value" in original:
-            parser.error("--speed-value requires --spawn")
+        for name in ("--speed-value", "--rotate-events", "--cycles"):
+            if name in original:
+                parser.error(f"{name} requires --spawn")
         return legacy.main(original)
     args, unknown = parser.parse_known_args(original)
     if unknown:
         parser.error("Unrecognized options with --spawn: " + " ".join(unknown))
     exe = preflight_spawn(args, parser)
+    if args.rotate_events is not None:
+        return run_batch(exe, args.console_side, args.speed_value,
+                         args.rotate_events, args.cycles if args.cycles is not None else 1)
     return run_spawn(exe, args.console_side, args.speed_value)
 
 
