@@ -28,7 +28,9 @@ class StartupLauncherTests(unittest.TestCase):
             ["--spawn", "--exe", "joey_pc.exe", "--observe-only",
              "--speed-value", "0"],
             ["--spawn", "--exe", "joey_pc.exe", "--observe-only",
-             "--speed-value", "241"],
+             "--speed-value", "4294967296"],
+            ["--spawn", "--exe", "joey_pc.exe", "--observe-only",
+             "--speed-value", "-1"],
         ]
         for argv in cases:
             with self.subTest(argv=argv), self.assertRaises(SystemExit):
@@ -102,7 +104,7 @@ class StartupLauncherTests(unittest.TestCase):
                  redirect_stdout(io.StringIO()):
                 code = native_rules.main(
                     ["--spawn", "--exe", str(exe), "--observe-only",
-                     "--speed-value", "120"])
+                     "--speed-value", "1000"])
             self.assertEqual(code, 0)
             self.assertEqual(device.program, [str(exe), "-speedy"])
             self.assertEqual(device.cwd, str(exe.parent))
@@ -110,7 +112,7 @@ class StartupLauncherTests(unittest.TestCase):
                        "bootstrapinfo", "armstartupobserver",
                        ("tracestart", 20000), "tracedemostart",
                        ("tracemark", "startup-hooks-armed"),
-                       ("armspeedoverride", 120), "resume"]
+                       ("armspeedoverride", 1000), "resume"]
             self.assertEqual([events.index(entry) for entry in ordered],
                              sorted(events.index(entry) for entry in ordered))
             self.assertIn("restore", events)
