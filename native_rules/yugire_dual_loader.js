@@ -79,6 +79,13 @@ const kAiSelectNormal = va('0x005B1360'); // side, pass -> handIndex
 const kAiForceSet = va('0x00570A70');     // zero forces set in native executor
 // Opt-in passive hook: CPU's normal-placement executor, not all card actions.
 const kDemoNormalExecutor = va('0x005B6FF0');
+// Two pre-duel deck objects (0xE2 bytes each): 80/15/15 ushort
+// card arrays followed by 3 ushort counts at +0xDC/+0xDE/+0xE0.
+// FUN_00569380 copies the main and the +0xBE auxiliary section.
+const kDemoSourceDeck0 = va('0x00A54E60');
+const kDemoSourceDeckStride = 0xE2;
+const kDemoModeWord = va('0x00A54E5C');
+const kDemoSceneMode = va('0x005F3294');
 const kDemoSetupTargets = [
   {name: 'duel_entry', va: '0x005BFEB0', address: va('0x005BFEB0')},
   {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
@@ -939,6 +946,44 @@ function startAiProbe() {
 // Passive instrumentation only: never invokes a Joey function or changes
 // native state. A placement executor call alone cannot prove AI control.
 // Read native deck data without invoking the randomizer or changing memory.
+function readDemoDeckSource(slot) {
+  const base = kDemoSourceDeck0.add(slot * kDemoSourceDeckStride);
+  const mainCount = base.add(0xDC).readU16();
+  const secondCount = base.add(0xDE).readU16();
+  const thirdCount = base.add(0xE0).readU16();
+  if (mainCount > 80 || secondCount > 15 || thirdCount > 15) {
+    return {slot, mainCount, secondCount, thirdCount,
+      error: 'Source deck count exceeds 80/15/15 bounds'};
+  }
+  const readSection = (offset, count) => {
+    const raw = [];
+    for (let i = 0; i < count; i++) {
+      raw.push(base.add(offset + i * 2).readU16());
+    }
+    return raw;
+  };
+  const mainRaw = readSection(0, mainCount);
+  return {
+    slot, mainCount, secondCount, thirdCount,
+    mainIndices: mainRaw.map(v => v & 0xFFF),
+    secondIndices: readSection(0xA0, secondCount).map(v => v & 0xFFF),
+    thirdIndices: readSection(0xBE, thirdCount).map(v => v & 0xFFF)
+  };
+}
+function safeDemoDeckSource(slot) {
+  try { return readDemoDeckSource(slot); }
+  catch (error) { return {slot, readError: String(error)}; }
+}
+function demoSourceConfig() {
+  try {
+    const mode = kDemoModeWord.readU32();
+    return {sceneMode: kDemoSceneMode.readU32(),
+      duelModeWord: mode >>> 0, deckSideBit: mode & 1};
+  } catch (error) {
+    return {readError: String(error)};
+  }
+}
+
 function readDemoDeck(side) {
   const count = kDeckCountBase.add(side * kPlayerStride).readU8();
   if (count > 80) return {side, count, error: 'invalid deck count (>80)'};
@@ -1042,6 +1087,10 @@ function startDemoProbe() {
             phase: 'enter', callId: this.setupId,
             threadId: this.setupThreadId, caller: this.returnAddress.toString()
           };
+          if (target.name === 'duel_entry' || target.name === 'state_reset') {
+            event.config = demoSourceConfig();
+            event.sourceDecks = [safeDemoDeckSource(0), safeDemoDeckSource(1)];
+          }
           if (target.name === 'deck_shuffle' || target.name === 'deck_prepare') {
             const sideRaw = args[0].toUInt32();
             this.setupSide = sideRaw;
@@ -1050,7 +1099,18 @@ function startDemoProbe() {
             if (target.name === 'deck_shuffle') {
               event.shufflePasses = args[1].toInt32();
             }
-            if (sideRaw < 2) event.deck = safeDemoDeck(sideRaw);
+            if (sideRaw < 2) {
+              event.deck = safeDemoDeck(sideRaw);
+              if (target.name === 'deck_prepare') {
+                const config = demoSourceConfig();
+                event.config = config;
+                if (Number.isInteger(config.deckSideBit)) {
+                  const sourceSlot = sideRaw ^ config.deckSideBit;
+                  event.sourceSlot = sourceSlot;
+                  event.sourceDeck = safeDemoDeckSource(sourceSlot);
+                }
+              }
+            }
           } else if (target.name === 'state_reset') {
             event.decks = [safeDemoDeck(0), safeDemoDeck(1)];
           }
@@ -1068,6 +1128,7 @@ function startDemoProbe() {
             event.deck = safeDemoDeck(this.setupSide);
           } else if (target.name === 'state_reset') {
             event.decks = [safeDemoDeck(0), safeDemoDeck(1)];
+            event.config = demoSourceConfig();
           }
           recordTraceEvent(event);
         }
