@@ -14,15 +14,28 @@ public class QueryArchive extends GhidraScript {
         PrintWriter out=new PrintWriter(new File(args[0]));
         out.println("SHA256: "+currentProgram.getExecutableSHA256());
         Set<Function> selected=new LinkedHashSet<>();
-        List<String> searches=new ArrayList<>();
-        if(args.length==1) searches.addAll(Arrays.asList("KCEJYUGI","*.dat"));
-        for(int i=1;i<args.length;i++) if(args[i].startsWith("text:")) searches.add(args[i].substring(5));
-        for(String text : searches) {
+        // Each search is {encoding, literal}; wtext: locates UTF-16LE
+        // command-line option strings without changing the Ghidra database.
+        List<String[]> searches=new ArrayList<>();
+        if(args.length==1) {
+            for(String term : Arrays.asList("KCEJYUGI","*.dat"))
+                searches.add(new String[]{"ASCII",term});
+        }
+        for(int i=1;i<args.length;i++) {
+            if(args[i].startsWith("text:"))
+                searches.add(new String[]{"ASCII",args[i].substring(5)});
+            if(args[i].startsWith("wtext:"))
+                searches.add(new String[]{"UTF-16LE",args[i].substring(6)});
+        }
+        for(String[] search : searches) {
+            String encoding=search[0], literal=search[1];
+            if(literal.isEmpty()) throw new IllegalArgumentException("Empty string query");
+            byte[] pattern=literal.getBytes(encoding);
             Address start=currentProgram.getMinAddress();
             while(start!=null) {
-                Address hit=currentProgram.getMemory().findBytes(start,currentProgram.getMaxAddress(),text.getBytes("US-ASCII"),null,true,monitor);
+                Address hit=currentProgram.getMemory().findBytes(start,currentProgram.getMaxAddress(),pattern,null,true,monitor);
                 if(hit==null)break;
-                out.println("MATCH "+text+" @"+hit);
+                out.println("MATCH "+encoding+" "+literal+" @"+hit);
                 ReferenceIterator refs=currentProgram.getReferenceManager().getReferencesTo(hit);
                 while(refs.hasNext()) {
                     Reference ref=refs.next(); Function f=getFunctionContaining(ref.getFromAddress());
@@ -33,7 +46,25 @@ public class QueryArchive extends GhidraScript {
             }
         }
         for(int i=1;i<args.length;i++) {
-            if(args[i].startsWith("text:"))continue;
+            if(args[i].startsWith("text:") || args[i].startsWith("wtext:")) continue;
+            if(args[i].startsWith("symbol:")) {
+                String name=args[i].substring(7);
+                if(name.isEmpty()) throw new IllegalArgumentException("Empty symbol query");
+                SymbolIterator symbols=currentProgram.getSymbolTable().getSymbols(name);
+                boolean found=false;
+                while(symbols.hasNext()) {
+                    Symbol symbol=symbols.next();
+                    found=true;
+                    out.println("SYMBOL "+symbol.getName(true)+" @"+symbol.getAddress());
+                    for(Reference ref:getReferencesTo(symbol.getAddress())) {
+                        Function owner=getFunctionContaining(ref.getFromAddress());
+                        out.println(" XREF "+ref+" FUNCTION "+(owner==null?"none":owner.getEntryPoint()));
+                        if(owner!=null) selected.add(owner);
+                    }
+                }
+                if(!found)out.println("NOTE symbol not found: "+name);
+                continue;
+            }
             if(args[i].startsWith("ins:") || args[i].startsWith("decode:")) {
                 String[] fields=args[i].split(":");
                 if(fields[0].equals("decode")) {
