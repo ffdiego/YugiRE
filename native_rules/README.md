@@ -493,11 +493,16 @@ três rotinas conhecidas:
   duelo (evento `demo_init/duel_entry` com `caller`);
 - `FUN_005B9E50`, reset/inicialização das
   estruturas (evento `demo_init/state_reset`);
+- `FUN_00569380(side)`, função chamada para
+  ambos os lados **antes** do shuffle
+  (`demo_init/deck_prepare`), ainda sem
+  contrato completo de preparação;
 - `FUN_00568D80(side,passes)`, embaralhamento
   do deck **já presente na memória**
   (evento `demo_init/deck_shuffle`).
 
-Os eventos `deck_shuffle/enter|leave` contêm
+Os eventos `deck_prepare/enter|leave`
+e `deck_shuffle/enter|leave` contêm
 `deck.count`, `deck.words` (uint32 de cada
 posição), `deck.indices` (`word & 0xFFF`) e
 o lado da carta. Os eventos de reset contêm

@@ -82,6 +82,7 @@ const kDemoNormalExecutor = va('0x005B6FF0');
 const kDemoSetupTargets = [
   {name: 'duel_entry', va: '0x005BFEB0', address: va('0x005BFEB0')},
   {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
+  {name: 'deck_prepare', va: '0x00569380', address: va('0x00569380')},
   {name: 'deck_shuffle', va: '0x00568D80', address: va('0x00568D80')}
 ];
 // All four probes are optional and side-effect-free Interceptor observers.
@@ -1041,12 +1042,14 @@ function startDemoProbe() {
             phase: 'enter', callId: this.setupId,
             threadId: this.setupThreadId, caller: this.returnAddress.toString()
           };
-          if (target.name === 'deck_shuffle') {
+          if (target.name === 'deck_shuffle' || target.name === 'deck_prepare') {
             const sideRaw = args[0].toUInt32();
             this.setupSide = sideRaw;
             event.sideRaw = sideRaw;
             event.side = sideRaw < 2 ? sideRaw : null;
-            event.shufflePasses = args[1].toInt32();
+            if (target.name === 'deck_shuffle') {
+              event.shufflePasses = args[1].toInt32();
+            }
             if (sideRaw < 2) event.deck = safeDemoDeck(sideRaw);
           } else if (target.name === 'state_reset') {
             event.decks = [safeDemoDeck(0), safeDemoDeck(1)];
@@ -1059,8 +1062,8 @@ function startDemoProbe() {
             phase: 'leave', callId: this.setupId,
             threadId: this.setupThreadId
           };
-          if (target.name === 'deck_shuffle' && this.setupSide !== null &&
-              this.setupSide < 2) {
+          if ((target.name === 'deck_shuffle' || target.name === 'deck_prepare') &&
+              this.setupSide !== null && this.setupSide < 2) {
             event.side = this.setupSide;
             event.deck = safeDemoDeck(this.setupSide);
           } else if (target.name === 'state_reset') {

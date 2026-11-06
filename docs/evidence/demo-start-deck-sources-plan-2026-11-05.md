@@ -44,6 +44,14 @@ FUN_00568D80((DAT_00A54E5C >> 3) & 1, 8);
 FUN_00568D80(1 - ((DAT_00A54E5C >> 3) & 1), 8);
 ```
 
+**Entre a limpeza de memória e o shuffle,
+`FUN_005B9E50` chama
+`FUN_00569380(0)` e
+`FUN_00569380(1)`.** Essa função
+ainda não foi decompilada na evidência
+atual e é o candidato prioritário
+para identificar a preparação/composição.
+
 O corpo de `FUN_00568D80(side,passes)` em
 `native-deck-to-hand-transfer.txt` lê o
 `deckCount` em `0x00A55D69 + side*0xD44`
@@ -71,6 +79,9 @@ essa distinção à demo sem prova.
 - `demo_init/state_reset`:
   `FUN_005B9E50`, decks de ambos os
   lados antes/depois;
+- `demo_init/deck_prepare`:
+  `FUN_00569380`, snapshots antes/depois
+  para cada lado;
 - `demo_init/deck_shuffle`:
   `FUN_00568D80`, lado, passes e
   arrays `deck.words` (uint32)/
