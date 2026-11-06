@@ -29,6 +29,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--pid", type=int, default=None,
                         help="Only valid when attaching to an existing process")
     parser.add_argument("--console-side", type=int, choices=(0, 1), default=1)
+    parser.add_argument("--speed-value", type=int, default=None,
+                        help="Experimental pre-boot override of -speedy 60 (e.g. 120), "
+                             "only with --spawn --observe-only")
     return parser
 
 
@@ -39,6 +42,8 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
         parser.error("--spawn currently requires --observe-only")
     if args.exe is None:
         parser.error("--spawn requires --exe PATH")
+    if args.speed_value is not None and not 61 <= args.speed_value <= 240:
+        parser.error("--speed-value must be an integer from 61 to 240")
     try:
         exe = args.exe.expanduser().resolve(strict=True)
         if not exe.is_file() or exe.name.casefold() != "joey_pc.exe":
@@ -52,7 +57,7 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
     return exe
 
 
-def run_spawn(exe: Path, console_side: int) -> int:
+def run_spawn(exe: Path, console_side: int, speed_value: int | None = None) -> int:
     try:
         import frida
     except ImportError as exc:
@@ -91,6 +96,13 @@ def run_spawn(exe: Path, console_side: int) -> int:
         api.tracestart(20000)
         api.tracedemostart()
         api.tracemark("startup-hooks-armed")
+        if speed_value is not None:
+            # Arm BEFORE resume: Joey writes 60 early in its argument parser.
+            # The Frida hook runs just after that write and replaces 60
+            # with the requested value while startup is still in progress.
+            state = api.armspeedoverride(speed_value)
+            print(f"[native-rules] Experimental -speedy override armed: "
+                  f"60 -> {speed_value} ({state})", flush=True)
         print("[native-rules] Passive hooks ready; resuming Joey.", flush=True)
         device.resume(pid)
         resumed = True
@@ -102,6 +114,13 @@ def run_spawn(exe: Path, console_side: int) -> int:
                 raw = input("[native-rules] > ").strip()
                 if raw.casefold() == "validate":
                     print(f"[native-rules] {api.validateruntime()}", flush=True)
+                    continue
+                if raw.casefold() == "speed status":
+                    print(f"[native-rules] Speed setting: {api.speedstatus()}", flush=True)
+                    continue
+                if raw.casefold() == "speed restore":
+                    print(f"[native-rules] Speed setting: {api.stopspeedoverride()}",
+                          flush=True)
                     continue
                 if not legacy.handle_command(raw, api, console_side):
                     break
@@ -157,12 +176,14 @@ def main(argv: list[str] | None = None) -> int:
     if not original or (not any(a == "--spawn" for a in original)):
         if "--exe" in original:
             parser.error("--exe requires --spawn")
+        if "--speed-value" in original:
+            parser.error("--speed-value requires --spawn")
         return legacy.main(original)
     args, unknown = parser.parse_known_args(original)
     if unknown:
         parser.error("Unrecognized options with --spawn: " + " ".join(unknown))
     exe = preflight_spawn(args, parser)
-    return run_spawn(exe, args.console_side)
+    return run_spawn(exe, args.console_side, args.speed_value)
 
 
 if __name__ == "__main__":
