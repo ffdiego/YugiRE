@@ -19,6 +19,17 @@ from pe_preflight import probe
 HERE = Path(__file__).resolve().parent
 
 
+def batch_progress_line(seen: int, target: int, cycle: int,
+                        total_cycles: int) -> str:
+    """Human-readable event-based progress, not a percentage of duels."""
+    percent = min(100.0, 100.0 * seen / target)
+    total = (f" | total {100.0 * (cycle - 1 + percent / 100.0) / total_cycles:.1f}%"
+             if total_cycles > 0 else "")
+    return (f"[lab] cycle {cycle}" +
+            (f"/{total_cycles}" if total_cycles > 0 else "/∞") +
+            f": {percent:.1f}% ({seen}/{target} events){total}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spawn", action="store_true",
@@ -72,7 +83,8 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
 
 def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               rotate_at_events: int | None = None,
-              poll_seconds: float = 0.25) -> int:
+              poll_seconds: float = 0.25,
+              cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
         import frida
     except ImportError as exc:
@@ -129,19 +141,33 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             # overwrite a previous capture or touch processes we did not spawn.
             last_seen = -1
             last_progress_at = time.monotonic()
+            last_print_at = 0.0
+            last_print_bucket = -1
             while True:
                 state = api.tracestatus()
+                now = time.monotonic()
                 if state["overwritten"] != 0:
                     raise RuntimeError(
                         f"Trace already lost {state['overwritten']} events; "
                         "cannot safely continue batch")
                 if state["seen"] != last_seen:
                     last_seen = state["seen"]
-                    last_progress_at = time.monotonic()
-                elif time.monotonic() - last_progress_at > 120:
+                    last_progress_at = now
+                elif now - last_progress_at > 120:
                     raise RuntimeError(
                         "No new trace events for 120 seconds; stopping this batch "
                         "instead of waiting forever (Joey may be blocked/exited)")
+
+                # Show percentages every 5% and an unchanged heartbeat
+                # every 5 seconds (e.g. during slow game startup).
+                bucket = min(20, int(state["seen"] * 20 / rotate_at_events))
+                if bucket > last_print_bucket or now - last_print_at >= 5.0:
+                    print(batch_progress_line(state["seen"], rotate_at_events,
+                                              cycle_number, total_cycles),
+                          flush=True)
+                    last_print_at = now
+                    last_print_bucket = bucket
+
                 if state["seen"] >= rotate_at_events:
                     print(f"[lab] Threshold reached: {state['seen']} events; "
                           "stopping trace before export.", flush=True)
@@ -223,7 +249,8 @@ def run_batch(exe: Path, console_side: int, speed_value: int | None,
             print(f"[lab] Starting capture cycle {completed + 1}" +
                   ("" if cycles == 0 else f"/{cycles}"), flush=True)
             result = run_spawn(exe, console_side, speed_value,
-                               rotate_at_events=rotate_events)
+                               rotate_at_events=rotate_events,
+                               cycle_number=completed + 1, total_cycles=cycles)
             if result != 0:
                 return result  # Never spawn next cycle when export/cleanup failed.
             completed += 1
