@@ -87,6 +87,10 @@ const kDemoSourceDeckStride = 0xE2;
 const kDemoModeWord = va('0x00A54E5C');
 const kDemoSceneMode = va('0x005F3294');
 const kDemoSetupTargets = [
+  // Scene mode writer and scene factory are upstream of the duel bootstrap.
+  // The exact menu idle timer/caller is not known yet.
+  {name: 'scene_config', va: '0x0044BEE0', address: va('0x0044BEE0')},
+  {name: 'scene_factory', va: '0x00483500', address: va('0x00483500')},
   {name: 'duel_entry', va: '0x005BFEB0', address: va('0x005BFEB0')},
   {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
   {name: 'deck_prepare', va: '0x00569380', address: va('0x00569380')},
@@ -978,7 +982,11 @@ function demoSourceConfig() {
   try {
     const mode = kDemoModeWord.readU32();
     return {sceneMode: kDemoSceneMode.readU32(),
-      duelModeWord: mode >>> 0, deckSideBit: mode & 1};
+      duelModeWord: mode >>> 0, deckSideBit: mode & 1,
+      launchGlobals: [
+        va('0x005F3288').readU32(), va('0x005F328C').readU32(),
+        va('0x005F3290').readU32()
+      ]};
   } catch (error) {
     return {readError: String(error)};
   }
@@ -1082,11 +1090,22 @@ function startDemoProbe() {
           this.setupId = ++demoSetupCalls;
           this.setupThreadId = Process.getCurrentThreadId();
           this.setupSide = null;
+          this.setupSceneConfig = null;
           const event = {
             kind: 'demo_init', function: target.name, functionVa: target.va,
             phase: 'enter', callId: this.setupId,
             threadId: this.setupThreadId, caller: this.returnAddress.toString()
           };
+          if (target.name === 'scene_config' ||
+              target.name === 'scene_factory') {
+            this.setupSceneConfig = demoSourceConfig();
+            event.config = this.setupSceneConfig;
+            if (target.name === 'scene_factory') {
+              // thiscall ECX is excluded by Frida from stack args.
+              // Treat this as an opaque stack value until its ABI is checked.
+              event.stackArg0Raw = args[0].toUInt32();
+            }
+          }
           if (target.name === 'duel_entry' || target.name === 'state_reset') {
             event.config = demoSourceConfig();
             event.sourceDecks = [safeDemoDeckSource(0), safeDemoDeckSource(1)];
@@ -1122,6 +1141,15 @@ function startDemoProbe() {
             phase: 'leave', callId: this.setupId,
             threadId: this.setupThreadId
           };
+          if (target.name === 'scene_config' ||
+              target.name === 'scene_factory') {
+            event.config = demoSourceConfig();
+            if (this.setupSceneConfig?.sceneMode !== undefined &&
+                event.config.sceneMode !== undefined) {
+              event.sceneModeChanged =
+                event.config.sceneMode !== this.setupSceneConfig.sceneMode;
+            }
+          }
           if ((target.name === 'deck_shuffle' || target.name === 'deck_prepare') &&
               this.setupSide !== null && this.setupSide < 2) {
             event.side = this.setupSide;

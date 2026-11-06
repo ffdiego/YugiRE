@@ -399,6 +399,32 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertFalse(self.api.demo_active)
         self.assertFalse(self.api.ai_active)
 
+    def test_demo_menu_mode_transition_export(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "demo_init", "function": "scene_config",
+             "phase": "enter", "callId": 1,
+             "config": {"sceneMode": 0, "launchGlobals": [1, 2, 3]}},
+            {"kind": "demo_init", "function": "scene_config",
+             "phase": "leave", "callId": 1, "sceneModeChanged": True,
+             "config": {"sceneMode": 7, "launchGlobals": [1, 2, 3]}},
+            {"kind": "demo_init", "function": "scene_factory",
+             "phase": "enter", "callId": 2, "stackArg0Raw": 3,
+             "config": {"sceneMode": 7}}
+        ]
+        with TemporaryDirectory() as directory:
+            target = Path(directory) / "demo-scenes.jsonl"
+            with redirect_stdout(io.StringIO()) as output:
+                save_command_trace(self.api, target)
+            records = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(len(records), 4)
+        self.assertEqual(records[2]["config"]["sceneMode"], 7)
+        self.assertTrue(records[2]["sceneModeChanged"])
+        self.assertIn("scene_factory/enter=1", output.getvalue())
+        self.assertIn("scene_config/leave=1", output.getvalue())
+
     def test_demo_deck_shuffle_export(self):
         from tempfile import TemporaryDirectory
         import json

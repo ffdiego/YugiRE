@@ -486,6 +486,24 @@ já observa os seletores `FUN_005B1360` e
 `FUN_005B16C0`; `trace on` observa o
 produtor de comandos `FUN_005B9170`.
 
+**Observação upstream do menu (2026-11-06):**
+agora `trace demo on` também observa
+`FUN_0044BEE0` (escreve
+`DAT_005F3294`, modo da cena)
+e `FUN_00483500` (fábrica de cenas).
+Eventos `demo_init/scene_config` e
+`demo_init/scene_factory` contêm
+`caller`, configuração antes/depois
+e `sceneModeChanged`; o factory também
+captura `stackArg0Raw`, sem assumir
+a ABI de `__thiscall`.
+O modo 7 já foi observado em uma demo,
+mas o timer do menu continua não
+identificado. Inicie o trace **no menu**
+antes de ocorrer a transição.
+Hooks apenas observam; não chamam
+funções nativas.
+
 **Inspeção dos decks e do início (2026-11-05):**
 o mesmo `trace demo on` observa agora mais
 três rotinas conhecidas:
