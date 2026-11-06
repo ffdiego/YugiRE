@@ -43,7 +43,7 @@ o launcher imprime uma linha com:
 Os dois percentuais significam **proporção de eventos da captura**,
 não andamento de um duelo ou do número de duelos. A porcentagem
 total só é definida para `--cycles > 0`; no modo ilimitado
-aparece apenas `cycle N/∞`.
+aparece apenas `cycle N/unlimited`.
 
 A nova exibição **só funciona em processos iniciados depois de
 atualizar os scripts**; não pode aparecer retroativamente no
