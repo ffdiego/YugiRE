@@ -66,8 +66,8 @@ def run_spawn(exe: Path, console_side: int) -> int:
     observer_armed = False
     exit_code = 0
     try:
-        pid = device.spawn(str(exe), cwd=str(exe.parent))
-        print(f"[native-rules] Spawned suspended Joey PID {pid}", flush=True)
+        pid = device.spawn([str(exe), "-speedy"], cwd=str(exe.parent))
+        print(f"[native-rules] Spawned suspended Joey PID {pid} (-speedy)", flush=True)
         session = device.attach(pid)
         source = (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8")
         script = session.create_script(source)
