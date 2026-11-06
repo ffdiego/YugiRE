@@ -130,7 +130,7 @@ class CaptureRotationTests(unittest.TestCase):
         line = native_rules.batch_progress_line(7500, 15000, 2, 5)
         self.assertIn("cycle 2/5: 50.0% (7500/15000 events)", line)
         self.assertIn("total 30.0%", line)
-        self.assertIn("cycle 1/∞", native_rules.batch_progress_line(0, 15000, 1, 0))
+        self.assertIn("cycle 1/unlimited", native_rules.batch_progress_line(0, 15000, 1, 0))
         self.assertIn("100.0%", native_rules.batch_progress_line(22000, 15000, 1, 1))
         self.assertNotIn("110.0%", native_rules.batch_progress_line(22000, 15000, 1, 1))
 
