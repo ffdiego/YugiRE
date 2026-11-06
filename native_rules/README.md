@@ -69,6 +69,40 @@ py -3 -m venv .venv-frida
 
 A pasta `.venv-frida` e os binários de compilação não são versionados.
 
+## Laboratório automático com rotação de processos
+
+Para preservar capturas longas, o launcher agora possui um modo
+**sequencial e opt-in**, sem console interativo:
+
+```powershell
+# Executar a partir da pasta native_rules
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 60000 --rotate-events 15000 --cycles 5
+```
+
+Quando o trace alcançar ~15.000 eventos, o Python interrompe os hooks,
+grava o JSONL em `scratch/traces`, desanexa o Frida e **mata somente
+o PID que criou**, antes de iniciar o próximo processo. O buffer do agente
+tem 20.000 entradas; o limite de rotação é 19.000 para deixar margem
+a eventos entre polls. O script não mata processos por nome.
+
+`--cycles 5` executa cinco sessões, `--cycles 0` repete até
+`Ctrl+C`, e a ausência da opção executa uma única sessão.
+Ao encerrar uma rodada com erro de exportação ou eventos sobrescritos,
+não inicia a próxima. Um duelo pode ficar incompleto no final
+do JSONL; o trabalho futuro deve rotacionar nas fronteiras
+de `0x0004` e exportar resumos por partida.
+
+Este modo **não remove a restrição a múltiplas instâncias**: os
+processos são executados um depois do outro. Para investigar o
+bloqueio de abertura simultânea, usar
+`scripts/Run-SingleInstanceRecon.ps1` no Ghidra do Windows
+e fornecer os relatórios de mutex, janela e locks. Não foi
+aplicado bypass sem identificar o mecanismo.
+
+[Procedimento e limitações](../docs/21-batch-capture-and-single-instance.md).
+Os testes automatizados usam Frida simulado; ainda falta validar
+a execução em Windows com o jogo real.
+
 ## Iniciar Joey com observação desde o boot (experimental)
 
 O modo `--spawn` utiliza o Frida para iniciar o processo **suspenso**,
