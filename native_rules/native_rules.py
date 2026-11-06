@@ -30,8 +30,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Only valid when attaching to an existing process")
     parser.add_argument("--console-side", type=int, choices=(0, 1), default=1)
     parser.add_argument("--speed-value", type=int, default=None,
-                        help="Experimental pre-boot override of -speedy 60 (e.g. 120), "
-                             "only with --spawn --observe-only")
+                        help="Experimental pre-boot override of -speedy 60 (e.g. 120 or 1000); "
+                             "accepts any positive unsigned 32-bit value")
     return parser
 
 
@@ -42,8 +42,8 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
         parser.error("--spawn currently requires --observe-only")
     if args.exe is None:
         parser.error("--spawn requires --exe PATH")
-    if args.speed_value is not None and not 61 <= args.speed_value <= 240:
-        parser.error("--speed-value must be an integer from 61 to 240")
+    if args.speed_value is not None and not 1 <= args.speed_value <= 0xFFFFFFFF:
+        parser.error("--speed-value must fit an unsigned 32-bit integer (1..4294967295)")
     try:
         exe = args.exe.expanduser().resolve(strict=True)
         if not exe.is_file() or exe.name.casefold() != "joey_pc.exe":
