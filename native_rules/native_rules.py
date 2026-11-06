@@ -26,7 +26,7 @@ def batch_progress_line(seen: int, target: int, cycle: int,
     total = (f" | total {100.0 * (cycle - 1 + percent / 100.0) / total_cycles:.1f}%"
              if total_cycles > 0 else "")
     return (f"[lab] cycle {cycle}" +
-            (f"/{total_cycles}" if total_cycles > 0 else "/∞") +
+            (f"/{total_cycles}" if total_cycles > 0 else "/unlimited") +
             f": {percent:.1f}% ({seen}/{target} events){total}")
 
 
@@ -133,8 +133,13 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         print("[native-rules] Passive hooks ready; resuming Joey.", flush=True)
         device.resume(pid)
         resumed = True
-        print("[native-rules] Recording from startup. Use 'validate' after the menu "
-              "is ready, 'trace dump' to export, or 'stop' to detach.", flush=True)
+        if rotate_at_events is None:
+            print("[native-rules] Recording from startup. Use 'validate' after the menu "
+                  "is ready, 'trace dump' to export, or 'stop' to detach.", flush=True)
+        else:
+            print(f"[lab] Automatic capture to {rotate_at_events} events. "
+                  "No interactive commands in batch mode; Ctrl+C stops the lab.",
+                  flush=True)
         if rotate_at_events is not None:
             # The trace is a fixed-size ring buffer (max 20000). Poll well
             # below its capacity and STOP hooks before exporting. Never
