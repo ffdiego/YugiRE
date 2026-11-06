@@ -63,6 +63,7 @@ def run_spawn(exe: Path, console_side: int) -> int:
     session = None
     script = None
     resumed = False
+    observer_armed = False
     exit_code = 0
     try:
         pid = device.spawn(str(exe), cwd=str(exe.parent))
@@ -86,6 +87,7 @@ def run_spawn(exe: Path, console_side: int) -> int:
             raise RuntimeError("Loaded module path does not match --exe")
 
         api.armstartupobserver()
+        observer_armed = True
         api.tracestart(20000)
         api.tracedemostart()
         api.tracemark("startup-hooks-armed")
@@ -112,7 +114,7 @@ def run_spawn(exe: Path, console_side: int) -> int:
         exit_code = 2
         print(f"[native-rules] ERROR: {exc}", flush=True)
     finally:
-        if script is not None:
+        if script is not None and observer_armed:
             try:
                 api = script.exports_sync
                 status = api.tracestatus()
@@ -128,6 +130,7 @@ def run_spawn(exe: Path, console_side: int) -> int:
             except Exception as exc:
                 exit_code = 2
                 print(f"[native-rules] Restore error: {exc}", flush=True)
+        if script is not None:
             try:
                 script.unload()
             except Exception:
