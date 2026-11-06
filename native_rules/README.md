@@ -72,7 +72,10 @@ A pasta `.venv-frida` e os binários de compilação não são versionados.
 ## Iniciar Joey com observação desde o boot (experimental)
 
 O modo `--spawn` utiliza o Frida para iniciar o processo **suspenso**,
-instalar os hooks de leitura e só então liberar sua execução. Neste
+instalar os hooks de leitura e só então liberar sua execução.
+O launcher passa automaticamente o argumento **`-speedy`** ao
+`joey_pc.exe` durante a criação do processo (não é preciso digitá-lo
+na linha de comando do Python). Neste
 primeiro estágio, ele exige `--observe-only`; **não carrega a DLL**
 nem substitui callbacks de cartas.
 
