@@ -210,8 +210,10 @@ function armSpeedyOverride(value) {
     throw new Error('Speed override requires observer-only mode and trace on');
   }
   if (speedyOverrideHook !== null) throw new Error('Speed override already armed');
-  if (!Number.isInteger(value) || value < 61 || value > 240) {
-    throw new Error('Experimental speed value must be an integer from 61 to 240');
+  // The target uses a 32-bit unsigned DWORD. Do not impose an arbitrary
+  // FPS ceiling, but reject zero, negatives and values that would wrap.
+  if (!Number.isSafeInteger(value) || value < 1 || value > 0xFFFFFFFF) {
+    throw new Error('Experimental speed value must fit an unsigned 32-bit integer (1..4294967295)');
   }
   const instructionRange = Process.findRangeByAddress(kSpeedyWriteFinished);
   const settingRange = Process.findRangeByAddress(kSpeedySetting);
