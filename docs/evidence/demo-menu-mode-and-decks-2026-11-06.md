@@ -185,3 +185,8 @@ e revelar seus callers. Nenhum
 patch do valor 7 ou dos buffers
 de deck foi proposto até
 obtermos esse contexto.
+
+
+## Refinamento: como o case 7 monta o par de decks
+
+A nova análise [`demo-mode7-deck-resource-steps`](demo-mode7-deck-resource-steps-2026-11-06.md) mostra duas chamadas a `FUN_0044A920(1)` em `0x0044BF75` e `0x0044BFD8`, separadas por uma cópia de `0xE2` bytes do buffer 1 para o 0. Depois ocorrem dois sorteios para `DAT_005F3288/8C`. Isso sugere, mas ainda não prova, um primeiro carregamento persistente seguido por um segundo carregamento de adversário. Instrumentamos `deck_resource_step` com snapshots pré/pós para distinguir a origem de cada lista. Os callers de `FUN_0044BEE0` foram identificados estaticamente, mas falta observar qual passa o modo 7 a partir da inatividade do menu.
