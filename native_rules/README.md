@@ -79,6 +79,20 @@ Para preservar capturas longas, o launcher agora possui um modo
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 60000 --rotate-events 15000 --cycles 5
 ```
 
+O batch é **não interativo**: não há prompt para digitar comandos,
+pois o Python monitora continuamente o Frida; use `Ctrl+C` para
+interromper. O progresso é mostrado a cada 5% de eventos ou a cada
+5 segundos (mesmo sem eventos novos), com porcentagem do ciclo e
+do batch completo:
+
+```text
+[lab] cycle 2/5: 50.0% (7500/15000 events) | total 30.0%
+```
+
+A porcentagem refere-se à coleta de eventos, **não** à quantidade
+de duelos. Só é exibida após iniciar uma **nova** execução com o
+launcher atualizado; não altera um processo Python já em execução.
+
 Quando o trace alcançar ~15.000 eventos, o Python interrompe os hooks,
 grava o JSONL em `scratch/traces`, desanexa o Frida e **mata somente
 o PID que criou**, antes de iniciar o próximo processo. O buffer do agente
@@ -95,9 +109,12 @@ de `0x0004` e exportar resumos por partida.
 Este modo **não remove a restrição a múltiplas instâncias**: os
 processos são executados um depois do outro. Para investigar o
 bloqueio de abertura simultânea, usar
-`scripts/Run-SingleInstanceRecon.ps1` no Ghidra do Windows
-e fornecer os relatórios de mutex, janela e locks. Não foi
-aplicado bypass sem identificar o mecanismo.
+`scripts/Run-SingleInstanceRecon.ps1` no Ghidra do Windows.
+Os relatórios recebidos já revelaram `FUN_0054D460`, que chama
+`CreateMutexA` e testa `GetLastError()==0xB7`
+(`ERROR_ALREADY_EXISTS`). A investigação do chamador e nome
+do mutex continua com `scripts/Run-SingleInstanceFlow.ps1`.
+**Não** foi aplicado bypass sem confirmar o fluxo completo.
 
 [Procedimento e limitações](../docs/21-batch-capture-and-single-instance.md).
 Os testes automatizados usam Frida simulado; ainda falta validar
