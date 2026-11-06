@@ -113,20 +113,34 @@ class CaptureRotationTests(unittest.TestCase):
             # Use a real device instance so process IDs increase between cycles.
             device = Device()
             fake_frida.get_local_device = lambda: device
+            output = io.StringIO()
             with patch.dict(sys.modules, {"frida": fake_frida}), \
                  patch.object(native_rules, "probe",
                               return_value={"passed": True, "checks": {}}), \
                  patch.object(native_rules.legacy, "save_command_trace",
                               side_effect=save), \
-                 redirect_stdout(io.StringIO()):
+                 redirect_stdout(output):
                 result = native_rules.run_batch(
                     exe, console_side=1, speed_value=60000,
                     rotate_events=12000, cycles=cycles)
+            self.last_output = output.getvalue()
         return result, events
+
+    def test_event_progress_percentage_and_finite_total(self):
+        line = native_rules.batch_progress_line(7500, 15000, 2, 5)
+        self.assertIn("cycle 2/5: 50.0% (7500/15000 events)", line)
+        self.assertIn("total 30.0%", line)
+        self.assertIn("cycle 1/∞", native_rules.batch_progress_line(0, 15000, 1, 0))
+        self.assertIn("100.0%", native_rules.batch_progress_line(22000, 15000, 1, 1))
+        self.assertNotIn("110.0%", native_rules.batch_progress_line(22000, 15000, 1, 1))
 
     def test_two_cycles_save_and_detach_before_killing_own_pid(self):
         result, events = self._run_synthetic_cycles(2)
         self.assertEqual(result, 0)
+        self.assertIn("cycle 1/2: 100.0%", self.last_output)
+        self.assertIn("total 50.0%", self.last_output)
+        self.assertIn("cycle 2/2: 100.0%", self.last_output)
+        self.assertIn("total 100.0%", self.last_output)
         self.assertEqual([e[1] for e in events if e[0] == "spawn"],
                          [4101, 4102])
         self.assertEqual([e[1] for e in events if e[0] == "kill"],
