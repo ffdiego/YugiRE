@@ -75,7 +75,49 @@ O modo `--spawn` utiliza o Frida para iniciar o processo **suspenso**,
 instalar os hooks de leitura e só então liberar sua execução.
 O launcher passa automaticamente o argumento **`-speedy`** ao
 `joey_pc.exe` durante a criação do processo (não é preciso digitá-lo
-na linha de comando do Python). Neste
+na linha de comando do Python).
+
+### Experimento reversível: trocar 60 por 120
+
+A engenharia reversa encontrou um único escritor direto do valor
+`0x005EB618`: o parser de `-speedy` grava `0x3C` (60) em
+`0x00411CA2`. **Nenhum consumidor direto foi identificado**, então
+o valor ainda não está confirmado como FPS ou multiplicador de velocidade.
+
+Podemos testar a hipótese sem editar o EXE no disco:
+
+```powershell
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "C:\Jogos\Joey\joey_pc.exe" --observe-only --speed-value 120
+```
+
+Esse modo acrescenta um hook à instrução **`0x00411CAC`**,
+imediatamente depois da escrita original. Se encontrar o valor 60,
+substitui-o por 120 **antes da execução normal continuar**, e
+registra um evento `speedy_override` no JSONL do trace.
+A instalação valida os bytes exatos do `MOV` da versão conhecida,
+além do hash PE32, e recusa outras instruções em vez de aplicar
+um patch incerto. O mecanismo usa `Interceptor.attach`, não altera
+o EXE no disco e não muda callbacks ou regras de cartas.
+
+No console, execute `speed status` para conferir `applied: true`,
+`value: 120` e `writerHits`. Se `applied` permanecer `false`,
+o teste **não aplicou** a alteração e não deve ser interpretado como
+um resultado de velocidade. `speed restore` desarma o hook e restaura
+o valor 60 quando ainda estiver igual ao valor escrito pelo experimento;
+`stop` também tenta essa restauração. Isso não desfaz necessariamente
+efeitos já consumidos pela inicialização.
+
+**Comparação sugerida:** duas sessões completas da mesma versão:
+primeiro com apenas `--spawn --observe-only` (60), depois com
+`--speed-value 120`. Comparar a mediana de `0x0001 → 0x0050`,
+quantidade de turnos por minuto, perdas do buffer, sequência de
+comandos e eventuais travamentos. A seleção aleatória de decks e as
+ações da IA podem gerar demos de durações diferentes mesmo sem
+mudança de velocidade. **Aumento de 60 para 120 não garante 2×.**
+
+Não há validação em um Joey real desse novo override ainda;
+é uma opção experimental, não um modo de aceleração considerado
+estável. Neste
 primeiro estágio, ele exige `--observe-only`; **não carrega a DLL**
 nem substitui callbacks de cartas.
 
