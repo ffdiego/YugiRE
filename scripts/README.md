@@ -271,6 +271,31 @@ para executá-las e os scripts ainda precisam ser validados no Windows.
 O passo seguinte é seguir os xrefs encontrados e correlacioná-los com
 os intervalos medidos antes de implementar `speed 2` ou `speed 4`.
 
+### Segunda consulta: consumidores da opção `-speedy`
+
+Os relatórios recebidos em 2026-11-06 confirmaram que
+`FUN_00411B50` interpreta `-speedy` e escreve
+`_DAT_005EB618 = 0x3C` (60 decimal). A função concreta do global
+ainda precisa ser determinada; não foi comprovado que seja um
+limite de FPS. A análise dos imports encontrou uma seleção entre
+`GetTickCount` e `timeGetTime` controlada por `DAT_00A53738`.
+
+Veja [achados e ressalvas](../docs/evidence/speedy-parser-and-timers-findings-2026-11-06.md).
+
+No Ghidra do Windows execute:
+
+```powershell
+.\scripts\Run-SpeedyConsumers.ps1
+```
+
+A consulta salva três relatórios em `docs/evidence`:
+`speedy-consumers-global.txt` (xrefs do global e o escritor do parâmetro),
+`speedy-consumers-clock.txt` (fontes de tempo e suas referências) e
+`speedy-consumers-duel-gates.txt` (guardas que antecedem o avanço do turno).
+Essas consultas são somente leitura e **ainda não foram executadas**;
+não se deve acelerar o dispatcher ou sobrescrever APIs de tempo
+antes de conhecer o papel dos valores.
+
 ## Conversões de IDs — quinta rodada
 
 ```powershell
