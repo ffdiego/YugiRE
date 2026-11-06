@@ -231,6 +231,46 @@ Esperado no relatório de propriedades: entrada 22, 3872 consumidos, 4460 produz
 
 QueryArchive aceita também `text:` para localizar strings e decompilar seus consumidores, `ref:` para consultar referências e `ins:VA:quantidade` para exportar até 100 instruções a partir da instrução contenedora. A consulta mantém limite de 12 funções descompiladas; lista de callers pode ser grande, sem decompilar esses callers.
 
+## Reconhecimento estático de `-speedy` e dos temporizadores
+
+A investigação do laboratório de demos começou com duas capturas **ambas
+com `-speedy`**. As medianas do intervalo de comandos
+`0x0001 -> 0x0050` foram aproximadamente 1.082 ms e 1.081,5 ms.
+Ainda não existe uma medição sem `-speedy` e a origem desse intervalo
+não foi localizada.
+
+Para investigar sem executar nem modificar o Joey, use no Windows,
+com o banco do Ghidra importado:
+
+```powershell
+.\scripts\Run-SpeedyRecon.ps1
+```
+
+Isso executa três consultas somente leitura e gera em `docs/evidence`:
+
+- `speedy-recon-argument-strings.txt`: procura `speedy` e `-speedy`
+  em ASCII e UTF-16LE, mostrando referências e funções consumidoras;
+- `speedy-recon-duel-handlers.txt`: decompila os handlers
+  `0x005A59B0`, `0x005A41C0` e o dispatcher `0x005BC700`,
+  incluindo os sites de emissão `0x005A5A0D` e `0x005A4224`;
+- `speedy-recon-timer-imports.txt`: consulta símbolos importados
+  `Sleep`, `SleepEx`, `timeGetTime`, `GetTickCount`,
+  `GetTickCount64`, `QueryPerformanceCounter`, `SetTimer` e
+  `WaitForSingleObject`, com referências disponíveis.
+
+O `QueryArchive.java` agora suporta `wtext:<literal>` para busca de bytes
+UTF-16LE e `symbol:<nome>` para busca de nomes de símbolo. A busca
+não distingue automaticamente código executado de código não alcançado;
+uma ausência de referência não prova que o recurso não exista.
+O máximo de 12 funções descompiladas por relatório continua valendo,
+embora as referências encontradas sejam listadas.
+
+Os três relatórios são **tarefas de coleta**, não conclusões da
+engenharia reversa: o ambiente atual não inclui o banco Ghidra/EXE
+para executá-las e os scripts ainda precisam ser validados no Windows.
+O passo seguinte é seguir os xrefs encontrados e correlacioná-los com
+os intervalos medidos antes de implementar `speed 2` ou `speed 4`.
+
 ## Conversões de IDs — quinta rodada
 
 ```powershell
