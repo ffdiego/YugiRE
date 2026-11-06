@@ -25,6 +25,10 @@ class StartupLauncherTests(unittest.TestCase):
             ["--spawn", "--observe-only"],
             ["--spawn", "--exe", "joey_pc.exe"],
             ["--spawn", "--exe", "joey_pc.exe", "--observe-only", "--pid", "123"],
+            ["--spawn", "--exe", "joey_pc.exe", "--observe-only",
+             "--speed-value", "0"],
+            ["--spawn", "--exe", "joey_pc.exe", "--observe-only",
+             "--speed-value", "241"],
         ]
         for argv in cases:
             with self.subTest(argv=argv), self.assertRaises(SystemExit):
@@ -48,6 +52,9 @@ class StartupLauncherTests(unittest.TestCase):
                     events.append("tracedemostart")
                 def tracemark(self, label):
                     events.append(("tracemark", label))
+                def armspeedoverride(self, value):
+                    events.append(("armspeedoverride", value))
+                    return {"armed": True, "requested": value}
                 def tracestatus(self):
                     events.append("tracestatus")
                     return {"active": True, "retained": 0, "hasUnsaved": False}
@@ -94,14 +101,16 @@ class StartupLauncherTests(unittest.TestCase):
                  patch("builtins.input", return_value="stop"), \
                  redirect_stdout(io.StringIO()):
                 code = native_rules.main(
-                    ["--spawn", "--exe", str(exe), "--observe-only"])
+                    ["--spawn", "--exe", str(exe), "--observe-only",
+                     "--speed-value", "120"])
             self.assertEqual(code, 0)
             self.assertEqual(device.program, [str(exe), "-speedy"])
             self.assertEqual(device.cwd, str(exe.parent))
             ordered = ["spawn", "attach", "create_script", "load",
                        "bootstrapinfo", "armstartupobserver",
                        ("tracestart", 20000), "tracedemostart",
-                       ("tracemark", "startup-hooks-armed"), "resume"]
+                       ("tracemark", "startup-hooks-armed"),
+                       ("armspeedoverride", 120), "resume"]
             self.assertEqual([events.index(entry) for entry in ordered],
                              sorted(events.index(entry) for entry in ordered))
             self.assertIn("restore", events)
