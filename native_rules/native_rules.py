@@ -127,12 +127,21 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             # The trace is a fixed-size ring buffer (max 20000). Poll well
             # below its capacity and STOP hooks before exporting. Never
             # overwrite a previous capture or touch processes we did not spawn.
+            last_seen = -1
+            last_progress_at = time.monotonic()
             while True:
                 state = api.tracestatus()
                 if state["overwritten"] != 0:
                     raise RuntimeError(
                         f"Trace already lost {state['overwritten']} events; "
                         "cannot safely continue batch")
+                if state["seen"] != last_seen:
+                    last_seen = state["seen"]
+                    last_progress_at = time.monotonic()
+                elif time.monotonic() - last_progress_at > 120:
+                    raise RuntimeError(
+                        "No new trace events for 120 seconds; stopping this batch "
+                        "instead of waiting forever (Joey may be blocked/exited)")
                 if state["seen"] >= rotate_at_events:
                     print(f"[lab] Threshold reached: {state['seen']} events; "
                           "stopping trace before export.", flush=True)
@@ -198,7 +207,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             try:
                 device.kill(pid)
             except Exception as exc:
-                print(f"[native-rules] Failed to kill suspended Joey {pid}: {exc}",
+                exit_code = 2
+                print(f"[native-rules] Failed to kill owned Joey PID {pid}: {exc}",
                       flush=True)
         # Do not kill a resumed game when closing its passive interactive observer.
     return exit_code
