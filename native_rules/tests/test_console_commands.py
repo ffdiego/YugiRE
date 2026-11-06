@@ -399,6 +399,30 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertFalse(self.api.demo_active)
         self.assertFalse(self.api.ai_active)
 
+    def test_demo_resource_step_export(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 1
+        self.api.trace_records = [
+            {"kind": "demo_init", "function": "deck_resource_step",
+             "phase": "enter", "callId": 7,
+             "argument0Raw": 1, "caller": "0x0044BF7A",
+             "sourceDecks": [{"slot": 0, "mainCount": 43},
+                             {"slot": 1, "mainCount": 41}]},
+            {"kind": "demo_init", "function": "deck_resource_step",
+             "phase": "leave", "callId": 7,
+             "sourceDecks": [{"slot": 0, "mainCount": 43},
+                             {"slot": 1, "mainCount": 40}]},
+        ]
+        with TemporaryDirectory() as directory:
+            target = Path(directory) / "source-steps.jsonl"
+            with redirect_stdout(io.StringIO()) as output:
+                save_command_trace(self.api, target)
+            records = [json.loads(line) for line in target.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(records[1]["sourceDecks"][1]["mainCount"], 41)
+        self.assertEqual(records[2]["sourceDecks"][1]["mainCount"], 40)
+        self.assertIn("deck_resource_step/enter=1", output.getvalue())
+
     def test_demo_menu_mode_transition_export(self):
         from tempfile import TemporaryDirectory
         import json

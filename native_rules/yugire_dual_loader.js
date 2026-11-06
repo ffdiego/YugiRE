@@ -90,6 +90,8 @@ const kDemoSetupTargets = [
   // Scene mode writer and scene factory are upstream of the duel bootstrap.
   // The exact menu idle timer/caller is not known yet.
   {name: 'scene_config', va: '0x0044BEE0', address: va('0x0044BEE0')},
+  // Called twice in mode 7, once before and once after source 1 -> 0 copy.
+  {name: 'deck_resource_step', va: '0x0044A920', address: va('0x0044A920')},
   {name: 'scene_factory', va: '0x00483500', address: va('0x00483500')},
   {name: 'duel_entry', va: '0x005BFEB0', address: va('0x005BFEB0')},
   {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
@@ -1097,9 +1099,20 @@ function startDemoProbe() {
             threadId: this.setupThreadId, caller: this.returnAddress.toString()
           };
           if (target.name === 'scene_config' ||
-              target.name === 'scene_factory') {
+              target.name === 'scene_factory' ||
+              target.name === 'deck_resource_step') {
             this.setupSceneConfig = demoSourceConfig();
             event.config = this.setupSceneConfig;
+            if (target.name === 'deck_resource_step') {
+              event.argument0Raw = args[0].toUInt32();
+              // Two small 0xE2-byte source records; capture only at
+              // the boundaries of the existing resource-loader call.
+              event.sourceDecks = [safeDemoDeckSource(0), safeDemoDeckSource(1)];
+            }
+            if (target.name === 'scene_config') {
+              event.requestedSceneMode = args[0].toUInt32();
+              event.sourceDecks = [safeDemoDeckSource(0), safeDemoDeckSource(1)];
+            }
             if (target.name === 'scene_factory') {
               // thiscall ECX is excluded by Frida from stack args.
               // Treat this as an opaque stack value until its ABI is checked.
@@ -1142,8 +1155,13 @@ function startDemoProbe() {
             threadId: this.setupThreadId
           };
           if (target.name === 'scene_config' ||
-              target.name === 'scene_factory') {
+              target.name === 'scene_factory' ||
+              target.name === 'deck_resource_step') {
             event.config = demoSourceConfig();
+            if (target.name === 'deck_resource_step' ||
+                target.name === 'scene_config') {
+              event.sourceDecks = [safeDemoDeckSource(0), safeDemoDeckSource(1)];
+            }
             if (this.setupSceneConfig?.sceneMode !== undefined &&
                 event.config.sceneMode !== undefined) {
               event.sceneModeChanged =

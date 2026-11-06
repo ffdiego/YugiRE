@@ -491,6 +491,19 @@ agora `trace demo on` também observa
 `FUN_0044BEE0` (escreve
 `DAT_005F3294`, modo da cena)
 e `FUN_00483500` (fábrica de cenas).
+O modo 7 chama `FUN_0044A920(1)` duas
+vezes, uma antes e outra depois de
+copiar `0xE2` bytes da origem 1
+para a origem 0. Por isso observamos
+também `FUN_0044A920` com
+`demo_init/deck_resource_step`, capturando
+ambas as estruturas antes/depois da
+chamada e o `caller`. O nome descreve
+a etapa observada: ainda falta entender
+o contrato interno de `FUN_0044A920`.
+`scene_config` agora também registra
+`requestedSceneMode` e buffers de origem
+na entrada/saída.
 Eventos `demo_init/scene_config` e
 `demo_init/scene_factory` contêm
 `caller`, configuração antes/depois
