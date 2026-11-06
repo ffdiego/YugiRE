@@ -16,7 +16,8 @@ native_rules/
   src/cards/{sparks,raimei}.cpp     # callbacks individuais
   src/exports.cpp                   # ABI pública da DLL (versão 6)
   yugire_rules.def                  # exports sem decoração
-  patch_dual_rules.py               # host Python e console
+  native_rules.py                   # launcher e console principal (spawn/attach)
+  patch_dual_rules.py               # host original, mantido para compatibilidade
   pe_preflight.py                   # validação PE + SHA-256 do EXE
   yugire_dual_loader.js             # agente Frida que roda dentro do Joey
   tests/                             # regressões Python / JS / C++
@@ -68,16 +69,65 @@ py -3 -m venv .venv-frida
 
 A pasta `.venv-frida` e os binários de compilação não são versionados.
 
+## Iniciar Joey com observação desde o boot (experimental)
+
+O modo `--spawn` utiliza o Frida para iniciar o processo **suspenso**,
+instalar os hooks de leitura e só então liberar sua execução. Neste
+primeiro estágio, ele exige `--observe-only`; **não carrega a DLL**
+nem substitui callbacks de cartas.
+
+```powershell
+# EXE do Joey validado por hash, PE32 e image base:
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "C:\Jogos\Joey\joey_pc.exe" --observe-only
+```
+
+O caminho é ilustrativo: aponte para a instalação real que corresponda
+ao SHA256 documentado em `pe_preflight.py`. O lançamento exige
+`--exe`, recusa `--pid` e EXEs divergentes.
+
+**Sequência de inicialização:**
+1. Conferir assinatura PE e hash do executável no disco.
+2. `device.spawn(..., cwd=...)`, `attach` e carregar o agente.
+3. Validar identidade do módulo carregado sem acessar tabelas de cartas.
+4. Armar o observador e habilitar `trace on 20000` /
+   `trace demo on`; inserir `startup-hooks-armed`.
+5. Chamar `resume` somente depois de instalar os hooks.
+
+O console oferece `trace status`, `trace mark`, `trace dump`,
+`trace off` e `stop`. Digite **`validate` após aparecer o menu**
+para executar a verificação completa das tabelas, que pode falhar
+antes de o jogo terminar de inicializar. A captura é salva
+automaticamente no encerramento, quando ainda existirem eventos não salvos.
+
+Se a instrumentação falhar antes do `resume`, o launcher tenta
+encerrar apenas o processo suspenso que criou. Após o `resume`,
+`stop` desanexa o observador sem encerrar o jogo.
+
+**Limite:** isso registra chamadas nas rotinas instrumentadas, não
+todas as operações do executável nem eventos anteriores ao momento
+em que os hooks foram armados. O modo não foi validado ainda numa
+execução real do Windows.
+
+Após confirmar pelo menos uma captura bem-sucedida desde a abertura,
+a próxima investigação do laboratório será **medir e acelerar a
+velocidade das demonstrações**. Primeiro mapear as fontes de tempo
+(`Sleep`, temporizador de frames, tick do duelo, loops de animação)
+sem interferência; comparar as sequências de comandos e o resultado
+da demo normal contra versões aceleradas antes de aplicar qualquer
+multiplicador de velocidade. A prioridade é preservar as regras,
+o comportamento da IA e as fontes de aleatoriedade.
+
 ## Executar em um duelo normal
 
 Reinicie o Joey antes de testar uma DLL recém-compilada e aguarde a
 inicialização de um duelo. No diretório `native_rules`, basta:
 
 ```powershell
-.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py
+.\.venv-frida\Scripts\python.exe .\native_rules.py
 ```
 
-Ou `python .\patch_dual_rules.py` se o Python ativo já tiver Frida.
+Ou `python .\native_rules.py` se o Python ativo já tiver Frida.
+O script antigo `patch_dual_rules.py` continua disponível e compatível.
 O script localiza automaticamente **um único processo `joey_pc.exe`**.
 Se Joey não estiver aberto, retorna uma mensagem clara. Se houver mais
 de uma instância, não escolhe aleatoriamente: lista os PIDs e solicita
