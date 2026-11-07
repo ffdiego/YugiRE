@@ -54,6 +54,9 @@ class StartupLauncherTests(unittest.TestCase):
                     events.append("tracedemostart")
                 def tracemark(self, label):
                     events.append(("tracemark", label))
+                def armmultiinstance(self):
+                    events.append("armmultiinstance")
+                    return {"armed": True, "remapped": 0}
                 def armspeedoverride(self, value):
                     events.append(("armspeedoverride", value))
                     return {"armed": True, "requested": value}
@@ -104,7 +107,7 @@ class StartupLauncherTests(unittest.TestCase):
                  redirect_stdout(io.StringIO()):
                 code = native_rules.main(
                     ["--spawn", "--exe", str(exe), "--observe-only",
-                     "--speed-value", "1000"])
+                     "--speed-value", "1000", "--allow-multi-instance"])
             self.assertEqual(code, 0)
             self.assertEqual(device.program, [str(exe), "-speedy"])
             self.assertEqual(device.cwd, str(exe.parent))
@@ -112,7 +115,7 @@ class StartupLauncherTests(unittest.TestCase):
                        "bootstrapinfo", "armstartupobserver",
                        ("tracestart", 20000), "tracedemostart",
                        ("tracemark", "startup-hooks-armed"),
-                       ("armspeedoverride", 1000), "resume"]
+                       "armmultiinstance", ("armspeedoverride", 1000), "resume"]
             self.assertEqual([events.index(entry) for entry in ordered],
                              sorted(events.index(entry) for entry in ordered))
             self.assertIn("restore", events)
