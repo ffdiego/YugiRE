@@ -41,6 +41,10 @@ const kDuelUpdate = va('0x005BC700');
 // FUN_00411B50 writes 60 at 00411CA2; 00411CAC is the NEXT instruction.
 const kSpeedySetting = va('0x005EB618');
 const kSpeedyWriteFinished = va('0x00411CAC');
+// Ghidra: FUN_0054D460 calls CreateMutexA and checks ERROR_ALREADY_EXISTS;
+// FUN_0055DB10 builds the mutex name from GetModuleFileNameA with '\\' -> '+'.
+const kSingletonMutexCtor = va('0x0054D460');
+const kSingletonMutexCtorEnd = va('0x0054D550');
 // Common command producer. Observer only: no argument/retval replacement.
 const kCommandProducer = va('0x005B9170');
 // Known CE callsite and native placement descriptor.
@@ -170,6 +174,11 @@ let speedyOverrideHook = null;
 let speedyOverrideValue = null;
 let speedyOverrideApplied = false;
 let speedyOverrideHits = 0;
+let singletonMutexHook = null;
+let singletonNamePtr = null;
+let singletonName = null;
+let singletonMutexHits = 0;
+let singletonMutexNameMisses = 0;
 let pendingConsoleAction = null;
 let lastConsoleAction = null;
 let consoleSequence = 0;
@@ -261,6 +270,68 @@ function stopSpeedyOverride() {
     restored = true;
   }
   return {restored, ...speedStatus()};
+}
+
+// Per-process mutex name avoids changing Windows synchronization globally
+// or forging GetLastError. We replace only the name passed by Joey's
+// executable-path single-instance constructor, before the game starts.
+function multiInstanceStatus() {
+  return {armed: singletonMutexHook !== null, remapped: singletonMutexHits,
+    skippedUnexpectedName: singletonMutexNameMisses,
+    replacementName: singletonName};
+}
+function armMultiInstance() {
+  if (!installed || !observerOnly || commandTraceHook === null) {
+    throw new Error('Multi-instance experiment requires observer-only startup and trace on');
+  }
+  if (singletonMutexHook !== null) throw new Error('Multi-instance hook already armed');
+  const range = Process.findRangeByAddress(kSingletonMutexCtor);
+  if (range === null || !range.protection.includes('x')) {
+    throw new Error('Singleton constructor address not executable');
+  }
+  const exportAddress = Module.getGlobalExportByName('CreateMutexA');
+  if (exportAddress === null) throw new Error('CreateMutexA export unavailable');
+  // Unique for concurrent Joey processes. Keep NativePointer alive until
+  // the original API call returns and while the hook remains installed.
+  const name = 'YugiRE.Joey.' + Process.id;
+  const namePtr = Memory.allocUtf8String(name);
+  const expected = main.path.replace(/\\/g, '+').toLowerCase();
+  singletonMutexHits = 0;
+  singletonMutexNameMisses = 0;
+  singletonName = name;
+  singletonNamePtr = namePtr;
+  singletonMutexHook = Interceptor.attach(exportAddress, {
+    onEnter(args) {
+      const caller = this.returnAddress;
+      if (caller.compare(kSingletonMutexCtor) < 0 ||
+          caller.compare(kSingletonMutexCtorEnd) >= 0 ||
+          args[2].isNull()) {
+        return; // not the verified executable-path single-instance check
+      }
+      const nameFromGame = args[2].readAnsiString();
+      if (nameFromGame === null ||
+          nameFromGame.toLowerCase() !== expected) {
+        singletonMutexNameMisses++;
+        return; // do not rename unknown/intra-game synchronization mutexes
+      }
+      args[2] = namePtr;
+      singletonMutexHits++;
+      recordTraceEvent({kind: 'singleton_mutex', phase: 'remapped',
+        returnAddress: caller.toString(), replacementName: name});
+    }
+  });
+  return multiInstanceStatus();
+}
+function stopMultiInstance() {
+  if (singletonMutexHook !== null) {
+    const hook = singletonMutexHook;
+    singletonMutexHook = null;
+    hook.detach();
+  }
+  // An already-created Windows mutex lasts until all its handles close.
+  // Disarming the hook does NOT rename or destroy an existing object.
+  singletonNamePtr = null;
+  return multiInstanceStatus();
 }
 
 function verifyOriginalRecord(card) {
@@ -1441,6 +1512,7 @@ function status() {
 function restore() {
   stopCommandTrace();
   stopSpeedyOverride();
+  stopMultiInstance();
   stopConsoleHook(); // also drops any unserviced command before unpatching
   if (observerOnly) {
     // Observer mode never modifies callbacks. Avoid reading early card records.
@@ -1471,6 +1543,9 @@ function restore() {
 rpc.exports = {
   status,
   speedstatus: speedStatus,
+  multistatus: multiInstanceStatus,
+  armmultiinstance: armMultiInstance,
+  stopmultiinstance: stopMultiInstance,
   armspeedoverride: armSpeedyOverride,
   stopspeedoverride: stopSpeedyOverride,
   bootstrapinfo() {
