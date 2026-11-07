@@ -27,7 +27,12 @@ Nas capturas anteriores, para demos modo 7:
   preservadas sem modificações em
   `native_rules/decks/demo-{A,B,C}.json`.
 
-**Ainda não foi feito teste dinâmico de escrita no Joey real.**
+**Validação dinâmica parcial recebida:** o operador executou o launcher
+no Windows com os dois presets (deck A no lado 0, deck B no lado 1),
+velocidade configurada em 240, e registrou o estado abaixo. O log
+demonstra a aplicação e correspondência do deck principal em
+`deck_prepare/leave`, mas não contém um `trace dump` completo
+nem o término de um duelo.
 
 ## Desenho implementado (opt-in)
 
@@ -76,7 +81,36 @@ Essa checagem detecta um ponto de intervenção incorreto,
 em vez de atribuir resultados de IA a decks que não foram
 realmente substituídos.
 
-## Teste recomendado no Windows
+## Resultado da primeira validação real (Windows)
+
+Comando do operador:
+
+```powershell
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json"
+```
+
+O processo foi criado suspenso (PID 19536), os decks foram configurados
+antes do `resume`, e o console mostrou:
+
+```text
+{'configured': [True, True],
+ 'applied': [1, 1],
+ 'verified': [1, 1],
+ 'failed': [0, 0]}
+```
+
+Interpretação restrita:
+- As duas origens foram gravadas e relidas corretamente.
+- O `main` de ambos os decks efetivos correspondeu, em tamanho
+  **e ordem**, aos decks solicitados na saída de `deck_prepare`.
+- Não houve falha detectada nesse primeiro ciclo de preparação.
+- Isso **não comprova ainda** a preservação de `second`/`third`,
+  um duelo completo com esses decks, nem repetição em várias demos.
+
+O aviso `Unable to start idund` apareceu e não impediu a aplicação
+nesta execução.
+
+## Teste de continuidade recomendado no Windows
 
 Em `native_rules`:
 
@@ -103,8 +137,9 @@ Para rotação sequencial de capturas, adicionar
 
 ## Limitações
 
-- **A intervenção ainda é experimental e não foi validada no
-  executável original no Windows.**
+- **A substituição do main já foi validada em uma preparação
+  real no Windows**; o término de duelos e as seções auxiliares
+  ainda requerem validação.
 - O jogo pode usar outros caches/variáveis para cartas extras;
   a verificação pós-`deck_prepare` comprova o main efetivo
   apenas. É necessário comparar outras listas em futuros traces.
