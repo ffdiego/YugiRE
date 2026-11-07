@@ -42,6 +42,9 @@ class StartupLauncherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             exe = Path(directory) / "joey_pc.exe"
             exe.write_bytes(b"synthetic fixture")
+            deck_file = Path(directory) / "deck.json"
+            deck_file.write_text('{"main": [' + ",".join(["42"] * 40) + ']}',
+                                 encoding="utf-8")
             class Api:
                 def bootstrapinfo(self):
                     events.append("bootstrapinfo")
@@ -54,6 +57,9 @@ class StartupLauncherTests(unittest.TestCase):
                     events.append("tracedemostart")
                 def tracemark(self, label):
                     events.append(("tracemark", label))
+                def setdemodecks(self, plans):
+                    events.append(("setdemodecks", plans))
+                    return {"configured": [True, False]}
                 def armmultiinstance(self):
                     events.append("armmultiinstance")
                     return {"armed": True, "remapped": 0}
@@ -107,7 +113,8 @@ class StartupLauncherTests(unittest.TestCase):
                  redirect_stdout(io.StringIO()):
                 code = native_rules.main(
                     ["--spawn", "--exe", str(exe), "--observe-only",
-                     "--speed-value", "1000", "--allow-multi-instance"])
+                     "--speed-value", "1000", "--allow-multi-instance",
+                      "--deck-0", str(deck_file)])
             self.assertEqual(code, 0)
             self.assertEqual(device.program, [str(exe), "-speedy"])
             self.assertEqual(device.cwd, str(exe.parent))
@@ -115,6 +122,8 @@ class StartupLauncherTests(unittest.TestCase):
                        "bootstrapinfo", "armstartupobserver",
                        ("tracestart", 20000), "tracedemostart",
                        ("tracemark", "startup-hooks-armed"),
+                       ("setdemodecks", {"0": {"main": [42] * 40,
+                                              "second": [], "third": []}}),
                        "armmultiinstance", ("armspeedoverride", 1000), "resume"]
             self.assertEqual([events.index(entry) for entry in ordered],
                              sorted(events.index(entry) for entry in ordered))
