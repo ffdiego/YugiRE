@@ -41,6 +41,9 @@ class CaptureRotationTests(unittest.TestCase):
                 def tracemark(self, marker):
                     events.append(("mark", self.pid, marker))
 
+                def setdemodecks(self, plans):
+                    events.append(("deck", self.pid, plans))
+                    return {"configured": [False, True]}
                 def armmultiinstance(self):
                     events.append(("multi", self.pid))
                     return {"armed": True, "remapped": 0}
@@ -127,7 +130,9 @@ class CaptureRotationTests(unittest.TestCase):
                 result = native_rules.run_batch(
                     exe, console_side=1, speed_value=60000,
                     rotate_events=12000, cycles=cycles,
-                    allow_multi_instance=True)
+                    allow_multi_instance=True,
+                    deck_plans={"1": {"main": [101] * 40,
+                                      "second": [], "third": []}})
             self.last_output = output.getvalue()
         return result, events
 
@@ -153,7 +158,7 @@ class CaptureRotationTests(unittest.TestCase):
         for pid in (4101, 4102):
             ids = [e[0] for e in events if e[1] == pid]
             for left, right in [("arm", "resume"), ("start", "resume"),
-                                ("multi", "resume"), ("speed", "resume"),
+                                ("deck", "resume"), ("multi", "resume"), ("speed", "resume"),
                                 ("resume", "stop"),
                                 ("stop", "save"), ("save", "restore"),
                                 ("restore", "unload"), ("unload", "detach"),
