@@ -176,9 +176,15 @@ e evite gravações concorrentes de saves/configurações.
 **Importante:** o hook só escreve se a cena reportar modo 7
 e a origem já contiver um deck válido; caso contrário, recusa
 a alteração, registrando uma falha. Não altera o EXE em disco.
-O timing de escrita foi escolhido com base nos traces e ainda
-**precisa ser validado em um duelo real** antes de confiar em
-estatísticas de IA obtidas com decks personalizados.
+**Primeira validação real (Windows):** com `demo-A` no lado 0 e
+`demo-B` no lado 1, o console registrou `applied=[1,1]`,
+`verified=[1,1]`, `failed=[0,0]`. Portanto, o main
+dos dois decks efetivos coincidiu com os JSONs na saída de
+`deck_prepare`. Ainda falta verificar se ambos permanecem
+corretos após o embaralhamento, se as seções auxiliares
+correspondem e se vários duelos terminam sem regressões.
+O timing de escrita é experimental; não usar estatísticas
+de IA como resultado definitivo antes dessa validação adicional.
 
 [Notas técnicas do experimento](../docs/evidence/demo-deck-override-2026-11-07.md).
 
