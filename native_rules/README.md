@@ -69,6 +69,62 @@ py -3 -m venv .venv-frida
 
 A pasta `.venv-frida` e os binários de compilação não são versionados.
 
+## Laboratório offline: capturar 100 duelos sem perder eventos
+
+Agora há uma alternativa melhor para coletar muitos duelos: **`--duels N`**.
+O Python mantém **um único Joey** executando demos e escreve um JSONL
+**continuamente**, sem esperar o buffer Frida de 20.000 eventos encher.
+Não precisa digitar comandos. O processo que o launcher criou é encerrado
+depois de coletar N comandos terminais `0x0004` (incluindo `0x8004`).
+
+```powershell
+# Execute em native_rules, depois de atualizar a branch:
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 2400 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json" --duels 100
+```
+
+Progresso automático a cada 5% ou até cinco segundos:
+
+```text
+[lab] 45/100 duels (45.0%) | 24392 events saved | 0 buffered | lost 0
+```
+
+O arquivo gerado fica em `scratch/traces/duels-<timestamp>-pid<PID>.jsonl`.
+Ele contém: cabeçalho com configurações e os **decks completos**,
+eventos originais com `seq` contínuo, comandos com `opcodeMasked`,
+dados de preparação da cena, decisões e outros probes ativos e uma
+linha final `kind=capture_summary` com `complete=true` somente
+se os 100 terminais foram contados e nenhum evento foi perdido.
+
+A exportação segue o protocolo `peek → escrita+fsync → acknowledge`:
+o agente mantém os eventos em memória até o Python gravá-los
+duravelmente no arquivo. Cada confirmação libera posições do ring
+buffer, **sem parar os hooks nem reiniciar a partida**. O coletor
+rejeita saltos em `seq` e qualquer `overwritten>0`; não afirma
+que a captura foi completa se houver perda ou erro. O único
+overhead adicional é o tráfego Frida e gravação periódica em disco.
+
+A linha `capture_summary` conta os opcodes de encerramento,
+mas **não identifica o vencedor**. A origem dos índices de cartas
+segue sendo interna ao Joey. Um duelo iniciado após o
+100º comando de término pode surgir como início de uma 101ª demo;
+use a linha de resumo para identificar os 100 resultados completos.
+Se `Ctrl+C` for pressionado, a execução tenta salvar os dados
+parciais e marca `complete=false`.
+
+`--duels` exige `--spawn --observe-only` e não pode ser usado
+com `--rotate-events` ou `--cycles`. `--allow-multi-instance`
+é opcional e útil apenas quando já houver outro Joey aberto.
+O laboratório pode ficar sem eventos enquanto o jogo estiver
+no menu; após 120 segundos sem nenhum evento, encerra a
+rodada como incompleta em vez de esperar para sempre.
+
+**Estado de validação:** código e testes simulados disponíveis;
+a coleta contínua ainda precisa de um teste de integração no
+Windows com o executável original. Recomendamos executar primeiro
+`--duels 3` antes de `--duels 100`.
+
+[Contrato do formato e limitações](../docs/evidence/demo-lab-100-duels-2026-11-07.md).
+
 ## Laboratório automático com rotação de processos
 
 Para preservar capturas longas, o launcher agora possui um modo
