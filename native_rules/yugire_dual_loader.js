@@ -203,6 +203,12 @@ let demoExecutorHook = null;
 let demoExecutorCalls = 0;
 let demoSetupHooks = [];
 let demoSetupCalls = 0;
+// Optional, source-level deck substitution. Plans address duel SIDES,
+// not source slots; mode 7 may swap source mapping via deckSideBit.
+let demoDeckPlans = [null, null];
+let demoDeckApplied = [0, 0];
+let demoDeckVerified = [0, 0];
+let demoDeckFailed = [0, 0];
 
 // Changing 60 to 120 is deliberately an experiment, not a claim that
 // this setting controls FPS: static Ghidra xrefs found only its writer.
@@ -1157,6 +1163,120 @@ function safeDemoDeck(side) {
   catch (error) { return {side, readError: String(error)}; }
 }
 
+// Configure before resume. Input cards are the game's internal 12-bit
+// card indices, NOT external Yu-Gi-Oh! card IDs or resource IDs.
+function validateDeckPlan(deck, side) {
+  if (deck === null || typeof deck !== 'object' || Array.isArray(deck)) {
+    throw new Error('Deck side ' + side + ': expected {main, second, third}');
+  }
+  const check = (label, min, max) => {
+    const list = deck[label] ?? [];
+    if (!Array.isArray(list) || list.length < min || list.length > max ||
+        !list.every(x => Number.isInteger(x) && x >= 1 && x <= 0xFFF)) {
+      throw new Error('Deck side ' + side + ': ' + label +
+        ' must have ' + min + '..' + max + ' internal indices (1..4095)');
+    }
+    return list.slice();
+  };
+  for (const key of Object.keys(deck)) {
+    if (!['main', 'second', 'third'].includes(key)) {
+      throw new Error('Deck side ' + side + ': unknown key ' + key);
+    }
+  }
+  if (!Object.hasOwn(deck, 'main')) {
+    throw new Error('Deck side ' + side + ': main is required');
+  }
+  return {main: check('main', 40, 80),
+    second: check('second', 0, 15),
+    third: check('third', 0, 15)};
+}
+function setDemoDeckPlans(plans) {
+  if (!installed || !observerOnly || commandTraceHook === null ||
+      demoExecutorHook === null) {
+    throw new Error('Deck overrides require observer-only startup and trace demo on');
+  }
+  if (plans === null || typeof plans !== 'object' || Array.isArray(plans)) {
+    throw new Error('Expected object with keys "0" and/or "1"');
+  }
+  if (Object.keys(plans).length === 0 ||
+      Object.keys(plans).some(key => key !== '0' && key !== '1')) {
+    throw new Error('Deck overrides require side key 0 and/or 1');
+  }
+  const next = [null, null];
+  for (const side of [0, 1]) {
+    if (Object.hasOwn(plans, String(side))) {
+      next[side] = validateDeckPlan(plans[String(side)], side);
+    }
+  }
+  demoDeckPlans = next;
+  demoDeckApplied = [0, 0];
+  demoDeckVerified = [0, 0];
+  demoDeckFailed = [0, 0];
+  return demoDeckStatus();
+}
+function demoDeckStatus() {
+  return {configured: demoDeckPlans.map(x => x !== null),
+    applied: demoDeckApplied.slice(), verified: demoDeckVerified.slice(),
+    failed: demoDeckFailed.slice()};
+}
+function applyDeckPlanToSource(side, slot) {
+  const plan = demoDeckPlans[side];
+  if (plan === null) return null;
+  try {
+    const config = demoSourceConfig();
+    if (config.sceneMode !== 7 || slot !== (side ^ config.deckSideBit)) {
+      throw new Error('Not mode 7 or source slot mapping changed');
+    }
+    const current = readDemoDeckSource(slot);
+    if (current.error || current.mainCount < 40) {
+      throw new Error('Source deck not yet populated with a valid main list');
+    }
+    const base = kDemoSourceDeck0.add(slot * kDemoSourceDeckStride);
+    const range = Process.findRangeByAddress(base);
+    if (range === null || !range.protection.includes('w') ||
+        base.add(kDemoSourceDeckStride - 1).compare(range.base.add(range.size)) >= 0) {
+      throw new Error('Source deck memory is not fully writable');
+    }
+    // Atomic in the context of this intercepted game-thread call:
+    // copy current bytes for rollback if any of the writes throw.
+    const previous = new Uint8Array(base.readByteArray(kDemoSourceDeckStride));
+    try {
+      const write = (offset, size, cards) => {
+        for (let i = 0; i < size; i++) {
+          base.add(offset + 2 * i).writeU16(i < cards.length ? cards[i] : 0);
+        }
+      };
+      write(0, 80, plan.main);
+      write(0xA0, 15, plan.second);
+      write(0xBE, 15, plan.third);
+      base.add(0xDC).writeU16(plan.main.length);
+      base.add(0xDE).writeU16(plan.second.length);
+      base.add(0xE0).writeU16(plan.third.length);
+    } catch (error) {
+      base.writeByteArray(previous);
+      throw error;
+    }
+    const after = readDemoDeckSource(slot);
+    const equal = (x, y) => x.length === y.length && x.every((v, i) => v === y[i]);
+    if (!equal(after.mainIndices, plan.main) ||
+        !equal(after.secondIndices, plan.second) ||
+        !equal(after.thirdIndices, plan.third)) {
+      base.writeByteArray(previous);
+      throw new Error('Readback mismatch; restored original source deck');
+    }
+    demoDeckApplied[side]++;
+    recordTraceEvent({kind: 'deck_override', phase: 'applied',
+      side, sourceSlot: slot, mainIndices: plan.main,
+      secondIndices: plan.second, thirdIndices: plan.third});
+    return {applied: true, sourceSlot: slot};
+  } catch (error) {
+    demoDeckFailed[side]++;
+    recordTraceEvent({kind: 'deck_override', phase: 'failed',
+      side, sourceSlot: slot, error: String(error)});
+    return {applied: false, sourceSlot: slot, error: String(error)};
+  }
+}
+
 function stopDemoProbe() {
   const hooks = demoSetupHooks;
   demoSetupHooks = [];
@@ -1287,6 +1407,11 @@ function startDemoProbe() {
                   const sourceSlot = sideRaw ^ config.deckSideBit;
                   event.sourceSlot = sourceSlot;
                   event.sourceDeck = safeDemoDeckSource(sourceSlot);
+                  if (demoDeckPlans[sideRaw] !== null && config.sceneMode === 7) {
+                    const outcome = applyDeckPlanToSource(sideRaw, sourceSlot);
+                    event.deckOverride = outcome;
+                    if (outcome?.applied) this.deckOverridePlan = demoDeckPlans[sideRaw];
+                  }
                 }
               }
             }
@@ -1319,6 +1444,21 @@ function startDemoProbe() {
               this.setupSide !== null && this.setupSide < 2) {
             event.side = this.setupSide;
             event.deck = safeDemoDeck(this.setupSide);
+            if (target.name === 'deck_prepare' && this.deckOverridePlan) {
+              const expected = this.deckOverridePlan.main;
+              const actual = event.deck.indices;
+              const verified = Array.isArray(actual) &&
+                actual.length === expected.length &&
+                actual.every((value, index) => value === expected[index]);
+              if (verified) demoDeckVerified[this.setupSide]++;
+              else demoDeckFailed[this.setupSide]++;
+              event.deckOverrideVerified = verified;
+              recordTraceEvent({kind: 'deck_override',
+                phase: verified ? 'verified' : 'mismatch',
+                side: this.setupSide, expectedMainCount: expected.length,
+                actualMainCount: event.deck.count,
+                actualIndices: actual ?? null});
+            }
           } else if (target.name === 'state_reset') {
             event.decks = [safeDemoDeck(0), safeDemoDeck(1)];
             event.config = demoSourceConfig();
@@ -1513,6 +1653,7 @@ function restore() {
   stopCommandTrace();
   stopSpeedyOverride();
   stopMultiInstance();
+  demoDeckPlans = [null, null];
   stopConsoleHook(); // also drops any unserviced command before unpatching
   if (observerOnly) {
     // Observer mode never modifies callbacks. Avoid reading early card records.
@@ -1543,6 +1684,8 @@ function restore() {
 rpc.exports = {
   status,
   speedstatus: speedStatus,
+  deckstatus: demoDeckStatus,
+  setdemodecks: setDemoDeckPlans,
   multistatus: multiInstanceStatus,
   armmultiinstance: armMultiInstance,
   stopmultiinstance: stopMultiInstance,
