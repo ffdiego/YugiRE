@@ -13,6 +13,7 @@ from pathlib import Path
 import sys
 
 import patch_dual_rules as legacy
+from deck_config import read_deck_file
 from pe_preflight import probe
 
 
@@ -44,6 +45,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--speed-value", type=int, default=None,
                         help="Experimental pre-boot override of -speedy 60 (e.g. 120 or 1000); "
                              "accepts any positive unsigned 32-bit value")
+    parser.add_argument("--deck-0", type=Path,
+                        help="Experimental internal-index JSON deck for duel side 0")
+    parser.add_argument("--deck-1", type=Path,
+                        help="Experimental internal-index JSON deck for duel side 1")
     parser.add_argument("--allow-multi-instance", action="store_true",
                         help="Opt-in per-PID mutex name experiment; install before resume")
     parser.add_argument("--rotate-events", type=int, default=None,
@@ -86,6 +91,7 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
 def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               rotate_at_events: int | None = None,
               allow_multi_instance: bool = False,
+              deck_plans: dict[str, dict[str, list[int]]] | None = None,
               poll_seconds: float = 0.25,
               cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
@@ -126,6 +132,10 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         api.tracestart(20000)
         api.tracedemostart()
         api.tracemark("startup-hooks-armed")
+        if deck_plans:
+            status = api.setdemodecks(deck_plans)
+            print(f"[native-rules] Demo decks configured for sides "
+                  f"{sorted(deck_plans)}: {status}", flush=True)
         if allow_multi_instance:
             multi = api.armmultiinstance()
             print(f"[native-rules] Joey per-process mutex override armed: "
@@ -194,6 +204,10 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                     if raw.casefold() == "validate":
                         print(f"[native-rules] {api.validateruntime()}", flush=True)
                         continue
+                    if raw.casefold() == "deck status":
+                        print(f"[native-rules] Deck override: {api.deckstatus()}",
+                              flush=True)
+                        continue
                     if raw.casefold() == "multi status":
                         print(f"[native-rules] Multi-instance: "
                               f"{api.multistatus()}", flush=True)
@@ -258,7 +272,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
 
 def run_batch(exe: Path, console_side: int, speed_value: int | None,
               rotate_events: int, cycles: int,
-              allow_multi_instance: bool = False) -> int:
+              allow_multi_instance: bool = False,
+              deck_plans: dict[str, dict[str, list[int]]] | None = None) -> int:
     """Run bounded, sequential captures; 0 cycles means until Ctrl+C."""
     completed = 0
     try:
@@ -268,6 +283,7 @@ def run_batch(exe: Path, console_side: int, speed_value: int | None,
             result = run_spawn(exe, console_side, speed_value,
                                rotate_at_events=rotate_events,
                                allow_multi_instance=allow_multi_instance,
+                               deck_plans=deck_plans,
                                cycle_number=completed + 1, total_cycles=cycles)
             if result != 0:
                 return result  # Never spawn next cycle when export/cleanup failed.
@@ -286,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
         if "--exe" in original:
             parser.error("--exe requires --spawn")
         for name in ("--speed-value", "--rotate-events", "--cycles",
-                     "--allow-multi-instance"):
+                     "--allow-multi-instance", "--deck-0", "--deck-1"):
             if name in original:
                 parser.error(f"{name} requires --spawn")
         return legacy.main(original)
@@ -294,12 +310,20 @@ def main(argv: list[str] | None = None) -> int:
     if unknown:
         parser.error("Unrecognized options with --spawn: " + " ".join(unknown))
     exe = preflight_spawn(args, parser)
+    deck_plans = {}
+    for side, path in ((0, args.deck_0), (1, args.deck_1)):
+        if path is not None:
+            try:
+                deck_plans[str(side)] = read_deck_file(path)
+            except ValueError as exc:
+                parser.error(str(exc))
     if args.rotate_events is not None:
         return run_batch(exe, args.console_side, args.speed_value,
                          args.rotate_events, args.cycles if args.cycles is not None else 1,
-                         args.allow_multi_instance)
+                         args.allow_multi_instance, deck_plans)
     return run_spawn(exe, args.console_side, args.speed_value,
-                     allow_multi_instance=args.allow_multi_instance)
+                     allow_multi_instance=args.allow_multi_instance,
+                     deck_plans=deck_plans)
 
 
 if __name__ == "__main__":
