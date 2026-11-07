@@ -1183,7 +1183,7 @@ function validateDeckPlan(deck, side) {
       throw new Error('Deck side ' + side + ': unknown key ' + key);
     }
   }
-  if (!Object.hasOwn(deck, 'main')) {
+  if (!Object.prototype.hasOwnProperty.call(deck, 'main')) {
     throw new Error('Deck side ' + side + ': main is required');
   }
   return {main: check('main', 40, 80),
@@ -1204,7 +1204,7 @@ function setDemoDeckPlans(plans) {
   }
   const next = [null, null];
   for (const side of [0, 1]) {
-    if (Object.hasOwn(plans, String(side))) {
+    if (Object.prototype.hasOwnProperty.call(plans, String(side))) {
       next[side] = validateDeckPlan(plans[String(side)], side);
     }
   }
