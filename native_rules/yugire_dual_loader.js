@@ -189,6 +189,9 @@ let traceBuffer = [];
 let traceHead = 0;
 let traceCapacity = kTraceDefaultCapacity;
 let traceSeen = 0;
+let traceDropped = 0;
+let traceDrained = 0;
+let traceCompletedDuels = 0;
 let traceSession = 0;
 let traceExportedSession = 0;
 let traceExportedSeen = -1;
@@ -861,7 +864,9 @@ function traceStatus() {
     capacity: traceCapacity,
     seen: traceSeen,
     retained: traceBuffer.length,
-    overwritten: traceSeen - traceBuffer.length,
+    overwritten: traceDropped,
+    drained: traceDrained,
+    completedDuels: traceCompletedDuels,
     firstSeq: traceBuffer.length === 0 ? null :
       traceBuffer[traceHead].seq,
     hasUnsaved: traceBuffer.length > 0 &&
@@ -877,6 +882,7 @@ function recordTraceEvent(event) {
   } else {
     traceBuffer[traceHead] = event;
     traceHead = (traceHead + 1) % traceCapacity;
+    traceDropped++;
   }
 }
 
@@ -1500,6 +1506,9 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
       // in FUN_005ABD00 passes only TWO defined arguments; the tail may
       // be caller stack residue, not genuine producer parameters.
       const raw = args[0].toUInt32();
+      // A completed demo emits masked opcode 0x0004 / 0x8004.
+      // Count producer calls independently of the bounded trace buffer.
+      if ((raw & 0x7FFF) === 0x0004) traceCompletedDuels++;
       const event = {
         kind: 'command',
         threadId: Process.getCurrentThreadId(),
@@ -1528,6 +1537,9 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
   traceBuffer = [];
   traceHead = 0;
   traceSeen = 0;
+  traceDropped = 0;
+  traceDrained = 0;
+  traceCompletedDuels = 0;
   traceCapacity = capacity;
   traceSession++;
   commandTraceHook = hook;
@@ -1568,6 +1580,52 @@ function acknowledgeTraceExport(session, seen) {
   traceExportedSession = session;
   traceExportedSeen = seen;
   return traceStatus();
+}
+
+// Live, loss-detecting export: peek oldest events, persist them to disk,
+// then acknowledge the exact seq range to free ring capacity. Unlike
+// traceevents(), these RPCs work with trace hooks still active.
+function traceLivePeek(count = 256) {
+  if (commandTraceHook === null) throw new Error('Live peek requires active command trace');
+  if (!Number.isInteger(count) || count < 1 || count > 256) {
+    throw new Error('Live peek count must be 1..256');
+  }
+  const length = Math.min(count, traceBuffer.length);
+  const events = [];
+  for (let i = 0; i < length; i++) {
+    events.push(traceBuffer[(traceHead + i) % traceBuffer.length]);
+  }
+  return {session: traceSession, events};
+}
+function traceLiveAcknowledge(session, firstSeq, lastSeq) {
+  if (commandTraceHook === null) throw new Error('Live ack requires active command trace');
+  if (!Number.isSafeInteger(session) || session !== traceSession ||
+      !Number.isSafeInteger(firstSeq) || !Number.isSafeInteger(lastSeq) ||
+      firstSeq < 1 || lastSeq < firstSeq ||
+      traceBuffer.length === 0) {
+    throw new Error('Invalid live trace acknowledgment');
+  }
+  const head = traceBuffer[traceHead];
+  if (head.seq !== firstSeq) {
+    throw new Error('Oldest live trace sequence changed before acknowledgment');
+  }
+  const count = lastSeq - firstSeq + 1;
+  if (count > traceBuffer.length) throw new Error('Live ack extends beyond retained events');
+  for (let i = 0; i < count; i++) {
+    const e = traceBuffer[(traceHead + i) % traceBuffer.length];
+    if (e.seq !== firstSeq + i) {
+      throw new Error('Live ack encountered non-contiguous events');
+    }
+  }
+  const remaining = [];
+  for (let i = count; i < traceBuffer.length; i++) {
+    remaining.push(traceBuffer[(traceHead + i) % traceBuffer.length]);
+  }
+  traceBuffer = remaining;
+  traceHead = 0;
+  traceDrained += count;
+  return {acknowledged: count, drained: traceDrained,
+    retained: traceBuffer.length, session: traceSession};
 }
 
 function commandTraceEvents(offset, count = 256) {
@@ -1722,6 +1780,8 @@ rpc.exports = {
   traceprepstop: stopSummonPrepProbe,
   tracemark: markCommandTrace,
   traceevents: commandTraceEvents,
+  tracelivepeek: traceLivePeek,
+  traceliveack: traceLiveAcknowledge,
   traceacknowledge: acknowledgeTraceExport,
   queuedraw: queueConsoleDraw,
   queuedamage: queueConsoleDamage,
