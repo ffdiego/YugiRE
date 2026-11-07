@@ -120,6 +120,37 @@ do mutex continua com `scripts/Run-SingleInstanceFlow.ps1`.
 Os testes automatizados usam Frida simulado; ainda falta validar
 a execução em Windows com o jogo real.
 
+## Múltiplas instâncias do Joey (mutex por PID — experimental)
+
+A análise Ghidra encontrou `FUN_0055DB10`, que constrói um nome
+de mutex a partir do caminho do executável (`\\` → `+`).
+A rotina `FUN_0054D460` cria esse mutex com `CreateMutexA` e
+compara `GetLastError` com `0xB7`
+(`ERROR_ALREADY_EXISTS`).
+
+É possível habilitar um hook **opt-in e localizado** que
+substitui somente esse nome por `YugiRE.Joey.<PID>`:
+
+```powershell
+# Execute em dois terminais separados, na pasta native_rules:
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --allow-multi-instance
+```
+
+No console interativo de cada processo: `multi status`.
+O esperado é `remapped: 1`, sem `skippedUnexpectedName`.
+Se `remapped` permanecer zero, o hook não atingiu a rotina
+e o bypass não foi aplicado. O agente é armado antes do
+`resume` e desanexado quando o script termina. O EXE
+continua intacto.
+
+**Ainda não testado no Joey real com duas instâncias simultâneas.**
+O bypass não isola registro, decks, saves, arquivos ou rede;
+não faça alterações persistentes paralelas até mapear esses
+recursos. Para rotação sequencial de logs, a opção **não é
+necessária**.
+
+[Achados técnicos e limites](../docs/evidence/single-instance-mutex-flow-2026-11-06.md).
+
 ## Iniciar Joey com observação desde o boot (experimental)
 
 O modo `--spawn` utiliza o Frida para iniciar o processo **suspenso**,
