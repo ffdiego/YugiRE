@@ -14,6 +14,7 @@ import sys
 
 import patch_dual_rules as legacy
 from deck_config import read_deck_file
+from duel_capture import LiveDuelCapture, collect_duels
 from pe_preflight import probe
 
 
@@ -51,6 +52,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Experimental internal-index JSON deck for duel side 1")
     parser.add_argument("--allow-multi-instance", action="store_true",
                         help="Opt-in per-PID mutex name experiment; install before resume")
+    parser.add_argument("--duels", type=int, default=None,
+                        help="Capture N completed AI demo duels to one streamed JSONL, "
+                             "then terminate only the spawned Joey")
     parser.add_argument("--rotate-events", type=int, default=None,
                         help="Observer-only batch: save trace, kill OWN spawned Joey, "
                              "and restart at this many events (16..19000)")
@@ -69,6 +73,11 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
         parser.error("--spawn requires --exe PATH")
     if args.speed_value is not None and not 1 <= args.speed_value <= 0xFFFFFFFF:
         parser.error("--speed-value must fit an unsigned 32-bit integer (1..4294967295)")
+    if args.duels is not None and args.duels < 1:
+        parser.error("--duels must be a positive integer")
+    if args.duels is not None and (args.rotate_events is not None or
+                                   args.cycles is not None):
+        parser.error("--duels cannot be combined with --rotate-events or --cycles")
     if args.rotate_events is not None and not 16 <= args.rotate_events <= 19000:
         parser.error("--rotate-events must be 16..19000 (leave space in the trace buffer)")
     if args.cycles is not None and args.rotate_events is None:
@@ -92,6 +101,7 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               rotate_at_events: int | None = None,
               allow_multi_instance: bool = False,
               deck_plans: dict[str, dict[str, list[int]]] | None = None,
+              target_duels: int | None = None,
               poll_seconds: float = 0.25,
               cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
@@ -105,6 +115,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
     script = None
     resumed = False
     observer_armed = False
+    live_capture: LiveDuelCapture | None = None
+    reached_duel_target = False
     exit_code = 0
     try:
         pid = device.spawn([str(exe), "-speedy"], cwd=str(exe.parent))
@@ -140,6 +152,12 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             multi = api.armmultiinstance()
             print(f"[native-rules] Joey per-process mutex override armed: "
                   f"{multi}", flush=True)
+        if target_duels is not None:
+            # Open and fsync the capture header BEFORE the suspended game runs.
+            live_capture = LiveDuelCapture(api, pid, target_duels,
+                                           deck_plans or {}, speed_value)
+            print(f"[lab] Streaming {target_duels} completed demo duels to "
+                  f"{live_capture.path}", flush=True)
         if speed_value is not None:
             # Arm BEFORE resume: Joey writes 60 early in its argument parser.
             # The Frida hook runs just after that write and replaces 60
@@ -150,14 +168,22 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         print("[native-rules] Passive hooks ready; resuming Joey.", flush=True)
         device.resume(pid)
         resumed = True
-        if rotate_at_events is None:
+        if rotate_at_events is None and target_duels is None:
             print("[native-rules] Recording from startup. Use 'validate' after the menu "
                   "is ready, 'trace dump' to export, or 'stop' to detach.", flush=True)
-        else:
+        elif rotate_at_events is not None:
             print(f"[lab] Automatic capture to {rotate_at_events} events. "
                   "No interactive commands in batch mode; Ctrl+C stops the lab.",
                   flush=True)
-        if rotate_at_events is not None:
+        else:
+            print(f"[lab] Collecting {target_duels} completed duels. "
+                  "No interactive commands; Ctrl+C saves a partial capture.",
+                  flush=True)
+        if target_duels is not None:
+            assert live_capture is not None
+            collect_duels(live_capture, poll_seconds=poll_seconds)
+            reached_duel_target = True
+        elif rotate_at_events is not None:
             # The trace is a fixed-size ring buffer (max 20000). Poll well
             # below its capacity and STOP hooks before exporting. Never
             # overwrite a previous capture or touch processes we did not spawn.
@@ -226,6 +252,10 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                     break
                 except Exception as exc:
                     print(f"[console] Command failed: {exc}", flush=True)
+    except KeyboardInterrupt:
+        exit_code = 130
+        print("\n[lab] Interrupted; exporting captured events before cleanup.",
+              flush=True)
     except Exception as exc:
         exit_code = 2
         print(f"[native-rules] ERROR: {exc}", flush=True)
@@ -233,14 +263,24 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         if script is not None and observer_armed:
             try:
                 api = script.exports_sync
-                status = api.tracestatus()
-                if status.get("hasUnsaved", status.get("retained", 0) > 0):
-                    legacy.save_command_trace(api)
-                elif status["active"]:
-                    api.tracestop()
+                if live_capture is not None:
+                    stopped = api.tracestop()
+                    summary = live_capture.finish(stopped, reached_duel_target)
+                    print(f"[lab] Capture finished: {summary['capturedDuels']} duels, "
+                          f"{summary['eventsWritten']} events, "
+                          f"complete={summary['complete']}: {live_capture.path}",
+                          flush=True)
+                else:
+                    status = api.tracestatus()
+                    if status.get("hasUnsaved", status.get("retained", 0) > 0):
+                        legacy.save_command_trace(api)
+                    elif status["active"]:
+                        api.tracestop()
             except Exception as exc:
                 exit_code = 2
-                print(f"[trace] Could not save startup capture: {exc}", flush=True)
+                print(f"[trace] Could not finalize capture: {exc}", flush=True)
+        if live_capture is not None:
+            live_capture.close()
             try:
                 script.exports_sync.restore()
             except Exception as exc:
@@ -256,7 +296,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                 session.detach()
             except Exception:
                 pass
-        if pid is not None and (not resumed or rotate_at_events is not None):
+        if pid is not None and (not resumed or rotate_at_events is not None or
+                                target_duels is not None):
             # In interactive mode, leave a resumed game alive. In batch mode,
             # terminate ONLY the PID returned by this invocation of spawn(),
             # and only after attempting to save the trace and detaching Frida.
@@ -301,7 +342,7 @@ def main(argv: list[str] | None = None) -> int:
     if not original or (not any(a == "--spawn" for a in original)):
         if "--exe" in original:
             parser.error("--exe requires --spawn")
-        for name in ("--speed-value", "--rotate-events", "--cycles",
+        for name in ("--speed-value", "--rotate-events", "--cycles", "--duels",
                      "--allow-multi-instance", "--deck-0", "--deck-1"):
             if name in original:
                 parser.error(f"{name} requires --spawn")
@@ -323,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
                          args.allow_multi_instance, deck_plans)
     return run_spawn(exe, args.console_side, args.speed_value,
                      allow_multi_instance=args.allow_multi_instance,
-                     deck_plans=deck_plans)
+                     deck_plans=deck_plans, target_duels=args.duels)
 
 
 if __name__ == "__main__":
