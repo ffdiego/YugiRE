@@ -44,6 +44,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--speed-value", type=int, default=None,
                         help="Experimental pre-boot override of -speedy 60 (e.g. 120 or 1000); "
                              "accepts any positive unsigned 32-bit value")
+    parser.add_argument("--allow-multi-instance", action="store_true",
+                        help="Opt-in per-PID mutex name experiment; install before resume")
     parser.add_argument("--rotate-events", type=int, default=None,
                         help="Observer-only batch: save trace, kill OWN spawned Joey, "
                              "and restart at this many events (16..19000)")
@@ -83,6 +85,7 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
 
 def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               rotate_at_events: int | None = None,
+              allow_multi_instance: bool = False,
               poll_seconds: float = 0.25,
               cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
@@ -123,6 +126,10 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         api.tracestart(20000)
         api.tracedemostart()
         api.tracemark("startup-hooks-armed")
+        if allow_multi_instance:
+            multi = api.armmultiinstance()
+            print(f"[native-rules] Joey per-process mutex override armed: "
+                  f"{multi}", flush=True)
         if speed_value is not None:
             # Arm BEFORE resume: Joey writes 60 early in its argument parser.
             # The Frida hook runs just after that write and replaces 60
@@ -187,6 +194,10 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                     if raw.casefold() == "validate":
                         print(f"[native-rules] {api.validateruntime()}", flush=True)
                         continue
+                    if raw.casefold() == "multi status":
+                        print(f"[native-rules] Multi-instance: "
+                              f"{api.multistatus()}", flush=True)
+                        continue
                     if raw.casefold() == "speed status":
                         print(f"[native-rules] Speed setting: {api.speedstatus()}", flush=True)
                         continue
@@ -246,7 +257,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
 
 
 def run_batch(exe: Path, console_side: int, speed_value: int | None,
-              rotate_events: int, cycles: int) -> int:
+              rotate_events: int, cycles: int,
+              allow_multi_instance: bool = False) -> int:
     """Run bounded, sequential captures; 0 cycles means until Ctrl+C."""
     completed = 0
     try:
@@ -255,6 +267,7 @@ def run_batch(exe: Path, console_side: int, speed_value: int | None,
                   ("" if cycles == 0 else f"/{cycles}"), flush=True)
             result = run_spawn(exe, console_side, speed_value,
                                rotate_at_events=rotate_events,
+                               allow_multi_instance=allow_multi_instance,
                                cycle_number=completed + 1, total_cycles=cycles)
             if result != 0:
                 return result  # Never spawn next cycle when export/cleanup failed.
@@ -272,7 +285,8 @@ def main(argv: list[str] | None = None) -> int:
     if not original or (not any(a == "--spawn" for a in original)):
         if "--exe" in original:
             parser.error("--exe requires --spawn")
-        for name in ("--speed-value", "--rotate-events", "--cycles"):
+        for name in ("--speed-value", "--rotate-events", "--cycles",
+                     "--allow-multi-instance"):
             if name in original:
                 parser.error(f"{name} requires --spawn")
         return legacy.main(original)
@@ -282,8 +296,10 @@ def main(argv: list[str] | None = None) -> int:
     exe = preflight_spawn(args, parser)
     if args.rotate_events is not None:
         return run_batch(exe, args.console_side, args.speed_value,
-                         args.rotate_events, args.cycles if args.cycles is not None else 1)
-    return run_spawn(exe, args.console_side, args.speed_value)
+                         args.rotate_events, args.cycles if args.cycles is not None else 1,
+                         args.allow_multi_instance)
+    return run_spawn(exe, args.console_side, args.speed_value,
+                     allow_multi_instance=args.allow_multi_instance)
 
 
 if __name__ == "__main__":
