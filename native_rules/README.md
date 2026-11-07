@@ -120,6 +120,68 @@ do mutex continua com `scripts/Run-SingleInstanceFlow.ps1`.
 Os testes automatizados usam Frida simulado; ainda falta validar
 a execução em Windows com o jogo real.
 
+## Decks controlados nas demos (experimental)
+
+O modo 7 seleciona decks automaticamente. Com os dados já observados
+em `demo_init/deck_prepare`, agora podemos substituir opcionalmente
+a composição de cada **lado do duelo** antes de `FUN_00569380(side)`
+preparar o deck efetivo e antes de `FUN_00568D80` embaralhar.
+
+Os arquivos JSON devem usar **índices internos das cartas do Joey**
+(`word & 0xFFF`), **não** IDs públicos nem IDs de recursos. O
+formato corresponde aos buffers de origem `uint16[80/15/15]`:
+
+```json
+{
+  "main": [42, 42, 42],
+  "second": [],
+  "third": []
+}
+```
+
+O exemplo acima ilustra a estrutura, mas **não é um deck válido para
+carregamento**, pois a lista `main` deve ter entre **40 e 80**
+entradas. `second` e `third` são seções auxiliares de 0 a
+15 posições cada e podem ser omitidas. Cada índice deve ser um
+inteiro entre 1 e 4095. O validador estrutural não comprova
+legalidade das cartas nem seus efeitos.
+
+Há três presets reais extraídos de demos anteriores
+(`decks/demo-A.json`, `decks/demo-B.json`,
+`decks/demo-C.json`) para reproduzir confrontos de decks diferentes:
+
+```powershell
+# Execute na pasta native_rules
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json"
+```
+
+No console interativo: `deck status`. Observe:
+`configured=[true,true]`, `applied=[N,N]`,
+`verified=[N,N]`, `failed=[0,0]`.
+As contagens só aumentam quando uma demo realmente chega
+à preparação do deck; se permanecerem zero, não houve
+teste do override. `applied` significa que a origem foi
+escrita e relida; `verified` significa que
+`deck_prepare/leave` refletiu o **main** esperado. Eventos
+`kind=deck_override` com fases `applied`,
+`verified`, `mismatch` ou `failed` ficam no
+JSONL. Verifique também a ausência de novos erros na tela.
+
+Para capturas sequenciais longas, combine as mesmas opções com
+`--rotate-events 15000 --cycles 2`. O Python configura os decks
+novamente em cada novo PID. Com dois workers executados em
+paralelo, utilize também `--allow-multi-instance` em ambos
+e evite gravações concorrentes de saves/configurações.
+
+**Importante:** o hook só escreve se a cena reportar modo 7
+e a origem já contiver um deck válido; caso contrário, recusa
+a alteração, registrando uma falha. Não altera o EXE em disco.
+O timing de escrita foi escolhido com base nos traces e ainda
+**precisa ser validado em um duelo real** antes de confiar em
+estatísticas de IA obtidas com decks personalizados.
+
+[Notas técnicas do experimento](../docs/evidence/demo-deck-override-2026-11-07.md).
+
 ## Múltiplas instâncias do Joey (mutex por PID — experimental)
 
 A análise Ghidra encontrou `FUN_0055DB10`, que constrói um nome
