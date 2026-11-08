@@ -207,6 +207,12 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
             if e.get("opcodeMasked") == "0x00CE"]
     ce_b = [e.get("ceNativeState") for e in commands_b
             if e.get("opcodeMasked") == "0x00CE"]
+    wrapper86_a = [e.get("wrapper86Caller") for e in commands_a
+                   if e.get("opcodeMasked") == "0x0086" and
+                   e.get("caller") == "0x574804"]
+    wrapper86_b = [e.get("wrapper86Caller") for e in commands_b
+                   if e.get("opcodeMasked") == "0x0086" and
+                   e.get("caller") == "0x574804"]
     shape = lambda e: (e.get("kind"), e.get("function"), e.get("phase"))
     same_layout = [shape(e) for e in left] == [shape(e) for e in right]
     same_structure = (len(commands_a) == len(commands_b) and all(
@@ -250,7 +256,9 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
                 examples.append({"seqLeft": a.get("seq"), "seqRight": b.get("seq"),
                                  "opcode": a.get("opcodeMasked"),
                                  "caller": a.get("caller"),
-                                 "argsLeft": av, "argsRight": bv})
+                                 "argsLeft": av, "argsRight": bv,
+                                 "wrapper86CallerLeft": a.get("wrapper86Caller"),
+                                 "wrapper86CallerRight": b.get("wrapper86Caller")})
     if len(commands_a) != len(commands_b):
         raw_equal = low_equal = False
     term_a = [e.get("terminalNativeState") for e in commands_a if _terminal(e)]
@@ -267,6 +275,7 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
         "sameRawCommandArgs": raw_equal,
         "sameTerminalNativeState": terminal_match,
         "sameCeNativeStates": ce_a == ce_b,
+        "same86WrapperCallers": wrapper86_a == wrapper86_b,
         "sameNonEntryReseeds": _reseeds(left) == _reseeds(right),
     }
     observed = all(v for k, v in checks.items() if k != "sameRawCommandArgs")
@@ -283,6 +292,8 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
                    "shufflesLeft": len(sh_a), "shufflesRight": len(sh_b),
                    "ceSnapshotsLeft": sum(x is not None for x in ce_a),
                    "ceSnapshotsRight": sum(x is not None for x in ce_b),
+                   "wrapper86CallersLeft": wrapper86_a,
+                   "wrapper86CallersRight": wrapper86_b,
                    "changedRawCommands": changed_commands,
                    "high16OnlyChangedCommands": high_only_commands,
                    "highWordOrigins": dict(sorted(difference_origins.items())),
