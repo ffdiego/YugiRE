@@ -37,6 +37,27 @@ class YugiLabCliTests(unittest.TestCase):
             "--trace-ai", "--allow-multi-instance",
         ])
 
+    def test_seeded_demo_forwards_base_seed_and_offset(self):
+        with patch.object(yugilab, "_run_native_launcher", return_value=0) as run, \
+             redirect_stdout(io.StringIO()):
+            result = yugilab.main([
+                "--exe", "joey_pc.exe", "--duels", "3",
+                "--seed", "0x3039", "--seed-start-index", "7"])
+        self.assertEqual(result, 0)
+        args = run.call_args.args[0]
+        self.assertEqual(args[args.index("--seed") + 1], "12345")
+        self.assertEqual(args[args.index("--seed-start-index") + 1], "7")
+
+    def test_seed_requires_valid_uint32(self):
+        for value in ["-1", "4294967296", "not-a-number"]:
+            with self.subTest(seed=value), \
+                 patch.object(yugilab, "_run_native_launcher") as run, \
+                 redirect_stderr(io.StringIO()), \
+                 self.assertRaises(SystemExit):
+                yugilab.main(["--exe", "joey_pc.exe",
+                              "--duels", "3", "--seed", value])
+            run.assert_not_called()
+
     def test_rejects_unowned_pid_and_nonpositive_duels(self):
         for arg in [
             ["--exe", "joey_pc.exe", "--duels", "0"],
