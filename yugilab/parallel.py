@@ -147,6 +147,8 @@ def run_parallel(args, output_root: Path) -> int:
         "startedUtc": datetime.now(timezone.utc).isoformat(),
         "speedValue": args.speed_value,
         "traceAi": args.trace_ai,
+        "rngSeedBase": args.seed,
+        "rngSeedStartIndex": args.seed_start_index,
         "complete": False,
     }
     workers: list[Worker] = []
@@ -188,6 +190,10 @@ def run_parallel(args, output_root: Path) -> int:
                 argv += ["--deck-1", str(args.deck_1)]
             if args.trace_ai:
                 argv.append("--trace-ai")
+            if args.seed is not None:
+                global_offset = args.seed_start_index + sum(allocations[:index - 1])
+                argv += ["--seed", str(args.seed),
+                         "--seed-start-index", str(global_offset)]
             kwargs = {}
             if os.name == "nt":
                 kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
