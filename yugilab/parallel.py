@@ -19,6 +19,10 @@ import time
 
 
 PID_PATTERN = re.compile(r"Spawned suspended Joey PID (\d+)")
+VERIFIED_EXIT_PATTERN = re.compile(
+    r"\[yugilab\] Owned Joey PID (\d+) closed "
+    r"\(verified by Windows process handle\)\."
+)
 PROGRESS_PATTERN = re.compile(r"\[lab\] (\d+)/(\d+) duels")
 
 
@@ -59,6 +63,8 @@ def _worker_capture(worker: Worker, captures: Path) -> dict:
     log_content = worker.log.read_text(encoding="utf-8", errors="replace")
     matches = PID_PATTERN.findall(log_content)
     pid = int(matches[-1]) if matches else None
+    verified_exits = {int(value) for value in VERIFIED_EXIT_PATTERN.findall(log_content)}
+    exit_verified = pid is not None and pid in verified_exits
     files = (list(captures.glob(f"duels-*-pid{pid}.jsonl"))
              if pid is not None else [])
     record = {
@@ -66,6 +72,7 @@ def _worker_capture(worker: Worker, captures: Path) -> dict:
         "requestedDuels": worker.requested,
         "processId": pid,
         "exitCode": worker.process.returncode,
+        "processTerminationVerified": exit_verified,
         "log": str(worker.log),
         "capture": str(files[0]) if len(files) == 1 else None,
         "complete": False,
@@ -98,12 +105,15 @@ def _worker_capture(worker: Worker, captures: Path) -> dict:
         record["eventsWritten"] = last.get("eventsWritten", 0)
         record["complete"] = (
             worker.process.returncode == 0 and
+            exit_verified and
             last.get("complete") is True and
             last.get("overwritten") == 0 and
             last.get("capturedDuels") == worker.requested and
             isinstance(last.get("eventsWritten"), int))
         if not record["complete"]:
-            record["error"] = "Worker failed or capture footer is incomplete"
+            record["error"] = ("Joey process exit not independently verified"
+                               if not exit_verified else
+                               "Worker failed or capture footer is incomplete")
     return record
 
 
