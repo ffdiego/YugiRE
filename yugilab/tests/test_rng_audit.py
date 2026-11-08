@@ -119,6 +119,28 @@ class RngAuditTests(unittest.TestCase):
             source["fingerprints"][0]["seedCandidateBeforeScene"]["valueRaw"],
             12345)
 
+    def test_duel_entry_seed_applied_after_scene_not_previous_scene(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "controlled.jsonl"
+            rows = [json.loads(line) for line in
+                    trace(431, [([12, 13], [20, 21])]).splitlines()]
+            rows.insert(2, {
+                "kind": "demo_init", "function": "rng_seed_candidate",
+                "phase": "enter", "seq": 4,
+                "candidateSeedRaw": 5678,
+                "caller": "0x005bfebd", "duelEntrySeedCall": True,
+                "seedOverrideApplied": True,
+                "globalDuelIndex": 7, "effectiveSeedRaw": 4263159843,
+            })
+            path.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                            encoding="utf-8")
+            report = audit_captures([path])
+        sample = report["sources"][0]["fingerprints"][0]
+        self.assertIsNone(sample["seedCandidateBeforeScene"])
+        self.assertEqual(sample["duelEntrySeed"]["valueRaw"], 5678)
+        self.assertEqual(sample["duelEntrySeed"]["globalDuelIndex"], 7)
+        self.assertEqual(sample["duelEntrySeed"]["effectiveSeedRaw"], 4263159843)
+
     def test_partial_shuffles_never_count_as_complete_pair(self):
         with tempfile.TemporaryDirectory() as tmp:
             a = Path(tmp) / "partial.jsonl"
