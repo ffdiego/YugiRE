@@ -217,7 +217,8 @@ def audit_captures(sources: list[Path]) -> dict:
         } for c in scanned],
         "interpretation": "Identical initial permutations may indicate correlated "
         "RNG initialization; this does not prove seeds or full duel equivalence. "
-        "rng_seed_candidate at 0x005C3BF5 is unconfirmed until decompiled.",
+        "The 0x005C3BF5 setter is confirmed by Ghidra; the logged "
+        "candidateSeedRaw is the ORIGINAL argument before any YugiLab override.",
     }
 
 
