@@ -1630,6 +1630,21 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
         args: [raw, args[1].toUInt32(),
                args[2].toUInt32(), args[3].toUInt32()]
       };
+      if ((raw & 0x7FFF) === 0x0086 &&
+          this.returnAddress.equals(va('0x00574804'))) {
+        // FUN_005747E0 (x86) pushes exactly four DWORD parameters,
+        // then CALLs FUN_005B9170. At producer entry, [ESP] is
+        // return 00574804, [ESP+4..16] are four parameters, and
+        // [ESP+20] is the return address into the WRAPPER'S caller.
+        // No second hook, stack unwinding, or mutation is required.
+        try {
+          const stack = this.context.esp || this.context.sp;
+          event.wrapper86Caller = stack.add(20).readPointer().toString();
+          event.wrapper86CallerSource = 'x86_stack_esp_plus_20';
+        } catch (readError) {
+          event.wrapper86CallerReadError = String(readError);
+        }
+      }
       if ((raw & 0x7FFF) === 0x0004 &&
           this.returnAddress.equals(va('0x005BC545'))) {
         // Raw, read-only snapshot at the verified terminal producer callsite.
