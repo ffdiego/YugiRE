@@ -12,7 +12,7 @@ import json
 import os
 from pathlib import Path
 import time
-from typing import Any
+from typing import Any, Callable
 
 
 def enrich(event: dict[str, Any]) -> dict[str, Any]:
@@ -166,13 +166,16 @@ class LiveDuelCapture:
 
 
 def collect_duels(capture: LiveDuelCapture, poll_seconds: float = 0.25,
-                  idle_seconds: float = 120.0) -> None:
+                  idle_seconds: float = 120.0,
+                  should_cancel: Callable[[], bool] | None = None) -> None:
     """Poll until at least target terminal commands, reporting event-based progress."""
     last_events = -1
     last_change = time.monotonic()
     last_print = 0.0
     last_bucket = -1
     while True:
+        if should_cancel is not None and should_cancel():
+            raise KeyboardInterrupt("YugiLab coordinator requested cancellation")
         status = capture.drain()
         now = time.monotonic()
         duels = status["completedDuels"]
