@@ -125,6 +125,20 @@ todos os duelos. [Dados e detalhes da validação](../docs/evidence/demo-lab-100
 A execução contínua está funcionando, mas resultados/vencedores
 ainda não foram decodificados.
 
+**Experimento adicional:** com `--trace-ai`, as entradas dos seletores
+também capturam a mão original (`handCount`, `handWords`,
+`handIndices`) e as saídas registram
+`selectedCardIndexAtEntry` quando o índice retornado está
+dentro da mão. Isso permite analisar a carta selecionada
+**versus as outras cartas presentes**, sem confundir essas
+outras cartas com ações necessariamente legais.
+[Procedimento de validação e análise offline](../docs/evidence/ai-selector-hand-entry-snapshots-2026-11-08.md).
+A instrumentação de snapshot ainda necessita de validação no
+jogo real; primeiro use `--trace-ai --duels 3`.
+O script `scripts/analyze_ai_selector_choices.py` gera CSV
+de escolhas e um resumo JSON sem precisar de Frida no Fedora
+ou Windows.
+
 **Próxima investigação (2026-11-08):** o laboratório aceita
 `--trace-ai` para ativar os probes passivos de seleção e avaliação
 da IA **antes** de o Joey iniciar. O hook de terminal também registra
