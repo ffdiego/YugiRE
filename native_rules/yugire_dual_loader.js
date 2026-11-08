@@ -104,7 +104,11 @@ const kDemoSetupTargets = [
   {name: 'duel_entry', va: '0x005BFEB0', address: va('0x005BFEB0')},
   {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
   {name: 'deck_prepare', va: '0x00569380', address: va('0x00569380')},
-  {name: 'deck_shuffle', va: '0x00568D80', address: va('0x00568D80')}
+  {name: 'deck_shuffle', va: '0x00568D80', address: va('0x00568D80')},
+  // FUN_005C3BF5 is called with an argument immediately before _rand.
+  // Likely the seed setter; record raw arg/caller, WITHOUT overriding it.
+  // Its semantics need confirmation in Ghidra's Run-RngSeedRecon report.
+  {name: 'rng_seed_candidate', va: '0x005C3BF5', address: va('0x005C3BF5')}
 ];
 // All four probes are optional and side-effect-free Interceptor observers.
 // Selector entry/exit bounds the simulated field evaluation window.
@@ -1423,6 +1427,12 @@ function startDemoProbe() {
             phase: 'enter', callId: this.setupId,
             threadId: this.setupThreadId, caller: this.returnAddress.toString()
           };
+          if (target.name === 'rng_seed_candidate') {
+            event.candidateSeedRaw = args[0].toUInt32();
+            event.candidateSeedHex = '0x' + event.candidateSeedRaw.toString(16).padStart(8, '0');
+            // "caller" already records returnAddress. This is a candidate
+            // until the routine/state are confirmed by static analysis.
+          }
           if (target.name === 'scene_config' ||
               target.name === 'scene_factory' ||
               target.name === 'deck_resource_step') {
