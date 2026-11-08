@@ -2,7 +2,7 @@
 
 **Objetivo:** rodar N duelos de IA contra IA no Joey original, guardar um JSONL contínuo e estudar depois comandos, decisões, cartas, bootstrap e eventos de preparação.
 
-**Estado:** implementação experimental disponível na branch `experiment/hybrid-native-probe`; foram adicionados testes simulados. Ainda precisa de **validação no Windows real** para `--duels`.
+**Estado:** validado no Windows real. Um piloto de 3 duelos e uma captura contínua de 100 duelos encerraram com `complete=true`, `overwritten=0` e sequências sem lacunas. [Relatório da validação](demo-lab-100-duels-live-validation-2026-11-08.md).
 
 ## Como usar
 
