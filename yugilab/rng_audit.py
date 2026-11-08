@@ -60,6 +60,8 @@ def _scan_stream(lines, source: str) -> dict:
     pid = None
     started_utc = None
     samples: list[dict] = []
+    candidate_calls: list[dict] = []
+    latest_seed_candidate = None
     scene = None
     scenes = 0
     complete = False
@@ -75,6 +77,17 @@ def _scan_stream(lines, source: str) -> dict:
         if kind == "metadata":
             pid = obj.get("processId")
             started_utc = obj.get("startedUtc")
+        elif (kind == "demo_init" and
+              obj.get("function") == "rng_seed_candidate" and
+              obj.get("phase") == "enter"):
+            raw_seed = obj.get("candidateSeedRaw")
+            if type(raw_seed) is int:
+                latest_seed_candidate = {
+                    "valueRaw": raw_seed,
+                    "caller": obj.get("caller"),
+                    "seq": obj.get("seq"),
+                }
+                candidate_calls.append(latest_seed_candidate)
         elif kind == "capture_summary":
             footer_found = True
             complete = obj.get("complete") is True
@@ -85,7 +98,10 @@ def _scan_stream(lines, source: str) -> dict:
                     obj.get("requestedSceneMode") == 7):
                 scenes += 1
                 scene = {"duel": scenes, "seen": {}, "sceneSeq": obj.get("seq"),
-                         "sceneTimestampMs": obj.get("timestampMs")}
+                         "sceneTimestampMs": obj.get("timestampMs"),
+                         "seedCandidateBeforeScene": (
+                             dict(latest_seed_candidate)
+                             if latest_seed_candidate is not None else None)}
             elif (fn == "deck_shuffle" and phase == "leave" and
                   scene is not None):
                 side = obj.get("side")
@@ -108,6 +124,8 @@ def _scan_stream(lines, source: str) -> dict:
                         "duel": scenes,
                         "sceneSeq": scene["sceneSeq"],
                         "sceneTimestampMs": scene["sceneTimestampMs"],
+                        "seedCandidateBeforeScene": (
+                            scene["seedCandidateBeforeScene"]),
                         "fingerprint": _digest(scene["seen"]),
                         "deckSizes": {"0": len(scene["seen"][0]),
                                       "1": len(scene["seen"][1])},
@@ -118,6 +136,7 @@ def _scan_stream(lines, source: str) -> dict:
         "capturedScenes": scenes,
         "fingerprintedScenes": len(samples),
         "footerFound": footer_found, "captureComplete": complete,
+        "rngSeedCandidateCalls": candidate_calls,
         "samples": samples,
     }
 
@@ -151,6 +170,7 @@ def audit_captures(sources: list[Path]) -> dict:
                 "source": m["source"],
                 "processId": m["processId"], "duel": m["duel"],
                 "sceneTimestampMs": m["sceneTimestampMs"],
+                "seedCandidateBeforeScene": m["seedCandidateBeforeScene"],
             } for m in matches],
         })
     duplicates.sort(key=lambda d: (-d["count"], d["fingerprint"]))
@@ -172,12 +192,15 @@ def audit_captures(sources: list[Path]) -> dict:
             "capturedScenes": c["capturedScenes"],
             "fingerprintedScenes": c["fingerprintedScenes"],
             "captureComplete": c["captureComplete"],
+            "rngSeedCandidateCalls": c["rngSeedCandidateCalls"],
             "fingerprints": [{"duel": s["duel"], "fingerprint": s["fingerprint"],
-                              "sceneTimestampMs": s["sceneTimestampMs"]}
+                              "sceneTimestampMs": s["sceneTimestampMs"],
+                              "seedCandidateBeforeScene": s["seedCandidateBeforeScene"]}
                              for s in c["samples"]]
         } for c in scanned],
         "interpretation": "Identical initial permutations may indicate correlated "
-        "RNG initialization; this does not prove seeds or full duel equivalence.",
+        "RNG initialization; this does not prove seeds or full duel equivalence. "
+        "rng_seed_candidate at 0x005C3BF5 is unconfirmed until decompiled.",
     }
 
 
