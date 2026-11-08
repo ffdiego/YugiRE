@@ -202,6 +202,10 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
     sh_a, sh_b = _shuffles(left), _shuffles(right)
     commands_a = [e for e in left if e.get("kind") == "command"]
     commands_b = [e for e in right if e.get("kind") == "command"]
+    ce_a = [e.get("ceNativeState") for e in commands_a
+            if e.get("opcodeMasked") == "0x00CE"]
+    ce_b = [e.get("ceNativeState") for e in commands_b
+            if e.get("opcodeMasked") == "0x00CE"]
     shape = lambda e: (e.get("kind"), e.get("function"), e.get("phase"))
     same_layout = [shape(e) for e in left] == [shape(e) for e in right]
     same_structure = (len(commands_a) == len(commands_b) and all(
@@ -250,6 +254,7 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
         "sameCommandLow16": low_equal,
         "sameRawCommandArgs": raw_equal,
         "sameTerminalNativeState": terminal_match,
+        "sameCeNativeStates": ce_a == ce_b,
         "sameNonEntryReseeds": _reseeds(left) == _reseeds(right),
     }
     observed = all(v for k, v in checks.items() if k != "sameRawCommandArgs")
@@ -264,6 +269,8 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
                    "aiProbeLeft": len(ai_a), "aiProbeRight": len(ai_b),
                    "commandsLeft": len(commands_a), "commandsRight": len(commands_b),
                    "shufflesLeft": len(sh_a), "shufflesRight": len(sh_b),
+                   "ceSnapshotsLeft": sum(x is not None for x in ce_a),
+                   "ceSnapshotsRight": sum(x is not None for x in ce_b),
                    "changedRawCommands": changed_commands,
                    "high16OnlyChangedCommands": high_only_commands},
         "fingerprints": {"leftShuffles": _stable_hash(sh_a),
