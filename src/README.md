@@ -168,6 +168,37 @@ valores brutos de 32 bits no JSONL para análise forense.
 
 [Assembly e resultados dos 41 pacotes comparados](../docs/evidence/joey-command-highword-origin-2026-11-08.md).
 
+## Primeiro teste diferencial Joey → C# (invocação normal)
+
+O harness `DifferentialNormalSummonTests` lê duas observações
+**reais** do Joey, reconstruídas em fixtures JSON:
+- `console-normal-summon-side1-221.json`: carta interna 221,
+  posição 5 da mão → slot 0, mão 6→5 e LP 8000;
+- `watch-normal-summon-side1-705-slot1.json`: carta interna
+  705, posição 4 da mão → slot 1, mão 5→4.
+  O comando `0xCE` original codifica `0x4103`,
+  que confirma lado 1, mão 4 e slot 1.
+
+O teste usa `DemoDuel.FromPartialObservation` para montar
+somente os campos conhecidos, **executa `DemoDuel.Summon`**
+e verifica mão, slot e LP quando observado. Também possui
+controle negativo para demonstrar que uma carta divergente
+seria detectada. **Não interpreta um replay inteiro** e
+não verifica flags, cemitérios ou efeitos ausentes nas
+capturas. Propriedades/IDs não conhecidos são modelados
+com substitutos sintéticos no setup, documentados no
+[relatório de evidência](../docs/evidence/joey-first-differential-normal-summon-2026-11-08.md).
+
+Para os novos checks, use o mesmo comando existente:
+
+```powershell
+dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj
+```
+
+O usuário confirmou **144 checks** na versão anterior
+a estes dois fixtures. Os novos testes ainda precisam
+de execução no .NET do Windows.
+
 ## Procedência e limites
 
 | Categoria | Uso nesta versão |
