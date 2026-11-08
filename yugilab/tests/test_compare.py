@@ -74,6 +74,9 @@ class CompareTests(unittest.TestCase):
         self.assertFalse(report['rawCommandArgsMatch'])
         self.assertEqual(report['totalChangedRawCommands'], 2)
         self.assertEqual(report['totalHigh16OnlyChangedCommands'], 2)
+        self.assertTrue(report['duels'][0]['checks']['sameDefaultBranchQueuePackets'])
+        self.assertEqual(
+            report['duels'][0]['counts']['defaultBranchQueuePacketsLeft'], 1)
         self.assertEqual(report['totalUnverifiedRawDifferenceCommands'], 0)
         self.assertEqual(report['highWordOrigins'],
                          {'verified_card_id_pointer_residue': 2})
