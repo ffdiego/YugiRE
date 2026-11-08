@@ -1,7 +1,10 @@
 """Prove replay high-word categories are callsite-limited, not global masking."""
 import unittest
 
-from yugilab.command_words import classify_high_word_change as classify
+from yugilab.command_words import (
+    classify_high_word_change as classify,
+    direct_queued_words,
+)
 
 
 class CommandWordOriginTests(unittest.TestCase):
@@ -48,6 +51,29 @@ class CommandWordOriginTests(unittest.TestCase):
         self.assertEqual(classify(
             "0x0037", "0x58cf97", 0, 0x06350037, 0x06470037),
             "unresolved_high16")
+
+    def test_native_queue_words_for_37_61_86_ignore_high_register_residue(self):
+        vectors = [
+            ([0x06350037, 0, 0, 0], [0x06470037, 0, 0, 0],
+             (0x0037, 0, 0, 0)),
+            ([0x05370061, 5, 1, 0], [0x05360061, 5, 1, 0],
+             (0x0061, 5, 1, 0)),
+            ([0x0086, 0x06350445, 0x0101, 12],
+             [0x0086, 0x06470445, 0x0101, 12],
+             (0x0086, 0x0445, 0x0101, 12)),
+        ]
+        for a, b, expected in vectors:
+            with self.subTest(packet=expected):
+                self.assertEqual(direct_queued_words(a), expected)
+                self.assertEqual(direct_queued_words(b), expected)
+
+    def test_other_producer_opcodes_must_be_decoded_separately(self):
+        self.assertIsNone(direct_queued_words([0x00CE, 0xEA02E1, 0, 0]))
+        self.assertIsNone(direct_queued_words([0x0064, 5, 0, 0]))
+        with self.assertRaises(ValueError):
+            direct_queued_words([0x86, 1, 2])
+        with self.assertRaises(ValueError):
+            direct_queued_words([0x86, -1, 2, 3])
 
     def test_never_interprets_low16_differences_as_pointer_residue(self):
         self.assertEqual(classify(
