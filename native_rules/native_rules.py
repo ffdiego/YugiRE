@@ -52,6 +52,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Experimental internal-index JSON deck for duel side 1")
     parser.add_argument("--allow-multi-instance", action="store_true",
                         help="Opt-in per-PID mutex name experiment; install before resume")
+    parser.add_argument("--trace-ai", action="store_true",
+                        help="Opt-in passive AI selector and nested evaluation probes "
+                             "(increases JSONL size)")
     parser.add_argument("--duels", type=int, default=None,
                         help="Capture N completed AI demo duels to one streamed JSONL, "
                              "then terminate only the spawned Joey")
@@ -102,6 +105,7 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               allow_multi_instance: bool = False,
               deck_plans: dict[str, dict[str, list[int]]] | None = None,
               target_duels: int | None = None,
+              trace_ai: bool = False,
               poll_seconds: float = 0.25,
               cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
@@ -143,6 +147,10 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         observer_armed = True
         api.tracestart(20000)
         api.tracedemostart()
+        if trace_ai:
+            ai_state = api.traceaistart()
+            print(f"[lab] Passive AI selector/evaluation probes armed: "
+                  f"{ai_state['aiHooks']} hooks", flush=True)
         api.tracemark("startup-hooks-armed")
         if deck_plans:
             status = api.setdemodecks(deck_plans)
@@ -314,7 +322,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
 def run_batch(exe: Path, console_side: int, speed_value: int | None,
               rotate_events: int, cycles: int,
               allow_multi_instance: bool = False,
-              deck_plans: dict[str, dict[str, list[int]]] | None = None) -> int:
+              deck_plans: dict[str, dict[str, list[int]]] | None = None,
+              trace_ai: bool = False) -> int:
     """Run bounded, sequential captures; 0 cycles means until Ctrl+C."""
     completed = 0
     try:
@@ -325,6 +334,7 @@ def run_batch(exe: Path, console_side: int, speed_value: int | None,
                                rotate_at_events=rotate_events,
                                allow_multi_instance=allow_multi_instance,
                                deck_plans=deck_plans,
+                               trace_ai=trace_ai,
                                cycle_number=completed + 1, total_cycles=cycles)
             if result != 0:
                 return result  # Never spawn next cycle when export/cleanup failed.
@@ -343,7 +353,8 @@ def main(argv: list[str] | None = None) -> int:
         if "--exe" in original:
             parser.error("--exe requires --spawn")
         for name in ("--speed-value", "--rotate-events", "--cycles", "--duels",
-                     "--allow-multi-instance", "--deck-0", "--deck-1"):
+                     "--allow-multi-instance", "--deck-0", "--deck-1",
+                     "--trace-ai"):
             if name in original:
                 parser.error(f"{name} requires --spawn")
         return legacy.main(original)
@@ -361,10 +372,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.rotate_events is not None:
         return run_batch(exe, args.console_side, args.speed_value,
                          args.rotate_events, args.cycles if args.cycles is not None else 1,
-                         args.allow_multi_instance, deck_plans)
+                         args.allow_multi_instance, deck_plans, args.trace_ai)
     return run_spawn(exe, args.console_side, args.speed_value,
                      allow_multi_instance=args.allow_multi_instance,
-                     deck_plans=deck_plans, target_duels=args.duels)
+                     deck_plans=deck_plans, target_duels=args.duels,
+                     trace_ai=args.trace_ai)
 
 
 if __name__ == "__main__":
