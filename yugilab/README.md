@@ -72,6 +72,39 @@ possíveis sementes idênticas de RNG baseadas em relógio.
 comparar partidas entre instâncias é necessário antes de
 tratar resultados como amostras estatisticamente independentes.
 
+### Auditoria de aleatoriedade (novo)
+
+O modo paralelo agora audita automaticamente o **primeiro
+embaralhamento de cada lado em cada duelo**. Ele gera
+`rng-audit.json` na pasta da execução e inclui `rngAudit`
+em `manifest.json`, com os campos:
+`fingerprintedScenes`, `uniqueFingerprints`,
+`duplicateObservations`, `crossProcessDuplicateGroups`.
+
+Se duas instâncias observarem a mesma dupla de ordens
+iniciais, o YugiLab exibirá um aviso. Isso **não prova** que
+as seeds ou os duelos completos sejam iguais, mas indica
+possível correlação entre as amostras. O aviso não torna
+uma captura incompleta; a integridade e a independência
+estatística são critérios separados.
+
+O mesmo detector pode ser executado **offline**, até sobre
+um ZIP antigo, sem Frida ou Joey:
+
+```powershell
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.rng_audit `
+  .\scratch\labs\parallel-EXEMPLO `
+  --output .\scratch\rng-audit.json
+```
+
+Em uma bateria real de dez workers, foram observadas 100
+cenas com shuffle inicial e somente **65 combinações únicas**.
+Veja a [evidência e as limitações](../docs/evidence/yugilab-rng-collision-audit-2026-11-08.md).
+
+Ainda precisamos identificar a função que inicializa o
+RNG original antes de oferecer `--seed`. O script de
+consulta estática `scripts/Run-RngRecon.ps1` foi incluído
+para essa investigação.
 ### Arquivos e validação
 
 Cada execução paralela cria uma pasta exclusiva
