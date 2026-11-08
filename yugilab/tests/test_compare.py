@@ -10,7 +10,7 @@ from yugilab.seed_math import derive_duel_seed
 
 
 def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23,
-               unknown_caller=False):
+               unknown_caller=False, wrapper86=None):
     seed = derive_duel_seed(base, index)
     return [
         {"kind": "demo_init", "function": "scene_config", "phase": "enter", "requestedSceneMode": 7},
@@ -27,6 +27,9 @@ def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23,
          "sideBit15": 0, "caller": ("0x574804" if unknown_caller else "0x5abeab"),
          "args": [0xce, (10 + shift) * 65536 + 23, 0, 0],
          "ceNativeState": {"context": 0x8001, "source": ce_source, "stage": 37}},
+        {"kind": "command", "opcodeMasked": "0x0086", "opcodeRaw": "0x0086",
+         "sideBit15": 0, "caller": "0x574804", "args": [0x86, 0x0445, 0, 0],
+         **({"wrapper86Caller": wrapper86} if wrapper86 is not None else {})},
         {"kind": "command", "opcodeMasked": "0x0004", "opcodeRaw": "0x0004",
          "sideBit15": 0, "caller": "0x5bc545", "args": [0x70004, 1, 0, 0],
          "terminalNativeState": {"life": [0, 7000]}},
@@ -34,14 +37,15 @@ def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23,
 
 
 def write_capture(z, member, indices, base=12345, shift=0, partial=False, ce_source=23,
-                  unknown_caller=False):
+                  unknown_caller=False, wrapper86=None):
     rows = [{"kind": "metadata", "formatVersion": 2,
              "requestedDuels": len(indices), "speedValue": 600, "deckPlans": {"0": {"main": [1]*40}},
              "rngSeedOverride": {"baseSeed": base, "globalDuelStartIndex": indices[0],
                                  "algorithm": "mix32-v1"}}]
     for index in indices:
         rows.extend(events_for(base, index, shift, marker=9 if shift else 8,
-                               ce_source=ce_source, unknown_caller=unknown_caller))
+                               ce_source=ce_source, unknown_caller=unknown_caller,
+                               wrapper86=wrapper86))
     for seq, e in enumerate(rows[1:], 1):
         e["seq"] = seq
         e["timestampMs"] = seq + 1000 + shift
@@ -106,6 +110,26 @@ class CompareTests(unittest.TestCase):
         report=compare_runs(self.a, self.b)
         self.assertEqual(report['totalDuelsCompared'],3)
         self.assertEqual([x['globalDuelIndex'] for x in report['duels']],[0,1,2])
+
+    def test_new_passive_wrapper_86_caller_is_compared_when_recorded(self):
+        with ZipFile(self.a, 'w') as z:
+            write_capture(z, 'a.jsonl', [0, 1], wrapper86="0x5797ad")
+        with ZipFile(self.b, 'w') as z:
+            write_capture(z, 'b.jsonl', [0, 1], shift=10,
+                          wrapper86="0x5b85b0")
+        result = compare_runs(self.a, self.b)
+        self.assertFalse(result['observedMatch'])
+        self.assertFalse(result['duels'][0]['checks']['same86WrapperCallers'])
+        self.assertEqual(result['duels'][0]['counts']['wrapper86CallersLeft'],
+                         ['0x5797ad'])
+        self.assertEqual(result['duels'][0]['counts']['wrapper86CallersRight'],
+                         ['0x5b85b0'])
+
+    def test_backward_compatible_with_old_captures_without_wrapper_caller(self):
+        result = compare_runs(self.a, self.b)
+        self.assertTrue(result['duels'][0]['checks']['same86WrapperCallers'])
+        self.assertEqual(result['duels'][0]['counts']['wrapper86CallersLeft'],
+                         [None])
 
     def test_changed_native_placement_descriptor_is_divergent(self):
         with ZipFile(self.b, 'w') as z:
