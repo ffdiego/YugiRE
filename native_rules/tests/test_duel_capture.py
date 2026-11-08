@@ -131,6 +131,20 @@ class LiveDuelCaptureTests(unittest.TestCase):
             finally:
                 capture.close()
 
+    def test_cancel_before_draining_preserves_partial_capture(self):
+        agent = FakeLiveAgent([command(1, 1)], 0)
+        with tempfile.TemporaryDirectory() as directory:
+            capture = LiveDuelCapture(agent, 558, 3, {}, 2400, Path(directory))
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    collect_duels(capture, should_cancel=lambda: True)
+                # The launcher owns stop + finalize; this function must not
+                # silently claim completion when a coordinator cancels it.
+                self.assertFalse(capture.finished)
+                self.assertEqual(capture.written, 0)
+            finally:
+                capture.close()
+
     def test_terminal_opcode_masks_bit15(self):
         self.assertEqual(enrich(command(1, 0x8004))["opcodeMasked"], "0x0004")
 
