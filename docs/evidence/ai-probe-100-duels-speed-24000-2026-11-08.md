@@ -57,6 +57,6 @@ chamador nativo e produzir um duelo com resultado conhecido.
 ## Próxima investigação
 
 1. No Ghidra, inspecionar o produtor do comando em torno do callsite `0x005BC545`, distinguindo flags de modo e resultado.
-2. Instrumentar snapshot validado da mão antes de `FUN_005B1360` e `FUN_005B16C0`, para correlacionar `selectedHandIndex` com cartas e ações reais.
+2. **Atualização após análise offline:** não precisamos de novo hook apenas para obter a **carta encaminhada ao executor**: 1.299 retornos de seletores foram imediatamente seguidos pela entrada do executor, e 1.200 já traziam `handInternalIndex`. [Correlação e limitações](ai-selector-executor-correlation-100-duels-2026-11-08.md). Um snapshot da mão **na entrada do seletor** continua útil para descobrir quais alternativas foram rejeitadas e por que determinada carta foi escolhida.
 3. Verificar os offsets de `FUN_0056DD30` no decompilador e reproduzir alterações de ATK/DEF controladamente.
 4. Preservar o JSONL bruto. Os resultados compactos por duelo foram exportados em `yugire_100_duels_ai_summary.json` (artefato da conversa), que não substitui os dados originais.
