@@ -252,3 +252,54 @@ inspecionar o evento `0x86` do índice global 0 e
 seu `wrapper86Caller`, ou `wrapper86CallerReadError`
 caso a leitura falhe. O offset x86 precisa ser validado
 na execução real; ainda não foi executado no host Windows.
+
+## Evidência adicional: o comando `0x86` chega à fila como uint16
+
+A descompilação já existente de `FUN_005B9170` em
+`command-highword-placement.txt` apresenta a assinatura
+`(ushort param_1, uint param_2, ushort param_3, undefined2 param_4)`,
+e o enfileiramento em quatro escritas de **dois bytes**:
+
+```c
+local_8 = param_1;
+local_6 = (undefined2)param_2;
+local_4 = param_3;
+local_2 = param_4;
+// Escreve local_8, local_6, local_4, local_2 com store de 16 bits.
+```
+
+O opcode `0x86` segue a ramificação `default` do
+`switch(param_1 & 0xfff)`, sem remapeamento de recurso.
+Isso significa que o produtor recebe `args[1]` como
+uint32, mas **armazena somente seus 16 bits inferiores**
+no pacote do comando. Os opcodes `0x37` e `0x61`
+também percorrem essa ramificação.
+
+Logo, a origem dos bits altos de `0x86` permanece
+uma incógnita de **proveniência**, mas já foi demonstrado
+que `0x06350445` e `0x06470445` enfileiram o MESMO
+uint16 `0x0445`. Isso não prova igualdade de memória
+de toda a engine; somente o pacote que essa função grava.
+
+Nos dois ZIPs reais, existem **41 comandos** desses
+três opcodes nos dois duelos (17 no global 0,
+24 no global 1). Todos os pares produziram os mesmos
+pacotes de 4 x uint16. Isso foi verificado offline
+independentemente dos 119 argumentos brutos alterados.
+
+Foi adicionado o tipo **`NativeDefaultQueuePacket`**
+em `src/Joey.Core` com 5 checks de regressão; não
+interpreta os outros opcodes (alguns passam por
+transformação de IDs e flags). `yugilab/command_words.py`
+passou a expor `direct_queued_words()` apenas
+para os três opcodes verificados, e `yugilab.compare`
+expõe `sameDefaultBranchQueuePackets`.
+
+**Validação:** os seis testes offline anteriores
+do comparador passam e os dois ZIPs reais
+continuam dando `observedMatch=true`.
+Os testes adicionados ao repositório e os checks C#
+ainda precisam de execução completa no Windows.
+O probe `wrapper86Caller` também precisa de validação
+real antes que possamos atribuir a origem dos 16 bits
+altos de `0x86`.
