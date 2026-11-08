@@ -22,6 +22,54 @@ from pe_preflight import probe
 HERE = Path(__file__).resolve().parent
 
 
+def terminate_owned_joey(device, pid: int, owned_process) -> str:
+    """Close the original Frida-spawned Joey and verify actual OS exit.
+
+    First ask Frida to kill WHILE its session is still attached. Then try
+    TerminateProcess through the original, stable Windows HANDLE. Finally
+    try taskkill for the still-running original PID. Never treat a request
+    as proof of termination.
+    """
+    if owned_process is None:
+        device.kill(pid)
+        return "Kill requested via Frida (exit unverified on this platform)"
+
+    if owned_process.wait(0):
+        return "Windows process already exited"
+
+    attempts = []
+    try:
+        device.kill(pid)
+    except Exception as exc:
+        attempts.append(f"Frida kill failed: {exc}")
+    if owned_process.wait(2.0):
+        return "Frida kill confirmed by Windows process handle"
+    attempts.append("Frida kill did not terminate the process within 2 seconds")
+
+    try:
+        if owned_process.terminate_and_verify(seconds=3.0):
+            return "TerminateProcess confirmed by Windows process handle"
+        attempts.append("TerminateProcess timed out after 3 seconds")
+    except Exception as exc:
+        attempts.append(f"TerminateProcess failed: {exc}")
+
+    if owned_process.wait(0):
+        return "Windows process exited during cleanup"
+
+    try:
+        exited, detail = owned_process.taskkill_and_verify(seconds=4.0)
+        if exited:
+            return f"taskkill confirmed by Windows process handle ({detail})"
+        attempts.append(f"taskkill did not terminate the process: {detail}")
+    except Exception as exc:
+        attempts.append(f"taskkill failed: {exc}")
+
+    if owned_process.wait(0):
+        return "Windows process exited during final verification"
+
+    raise RuntimeError("; ".join(attempts))
+
+
 def batch_progress_line(seen: int, target: int, cycle: int,
                         total_cycles: int) -> str:
     """Human-readable event-based progress, not a percentage of duels."""
@@ -321,45 +369,39 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             except Exception as exc:
                 exit_code = 2
                 print(f"[native-rules] Restore error: {exc}", flush=True)
-        if script is not None:
-            try:
-                script.unload()
-            except Exception:
-                pass
-        if session is not None:
-            try:
-                session.detach()
-            except Exception:
-                pass
         should_terminate = (pid is not None and
                             (not resumed or rotate_at_events is not None or
                              target_duels is not None))
         if should_terminate:
-            # Frida device.kill() only reports a successful request; it does
-            # not prove that the Win32 process has exited. On Windows the
-            # stable HANDLE is authoritative and termination is independent
-            # of whether the Frida script/session survived.
+            # IMPORTANT: ask Frida to kill BEFORE unloading/detaching scripts.
+            # On some Frida 17.x Windows builds, unloading an active observer
+            # during process exit can hang. Our Win32 HANDLE independently
+            # verifies the process actually exited.
             try:
+                method = terminate_owned_joey(device, pid, owned_process)
                 if owned_process is not None:
-                    if not owned_process.terminate_and_verify(seconds=5.0):
-                        raise RuntimeError(
-                            f"Joey PID {pid} did not exit within 5 seconds "
-                            "of TerminateProcess")
                     print(f"[yugilab] Owned Joey PID {pid} closed "
-                          "(verified by Windows process handle).", flush=True)
+                          f"(verified by Windows process handle). "
+                          f"Method: {method}", flush=True)
                 else:
-                    # Non-Windows legacy path (e.g. simulated test runner).
-                    # This is NOT equivalent to Win32 process verification.
-                    device.kill(pid)
-                    print(f"[native-rules] Kill requested for owned PID {pid} "
-                          "(exit unverified on this platform).", flush=True)
+                    print(f"[native-rules] Owned PID {pid}: {method}",
+                          flush=True)
             except Exception as exc:
                 exit_code = 2
                 print(f"[yugilab] Failed to verify termination of owned "
                       f"Joey PID {pid}: {exc}", flush=True)
-                if owned_process is None:
-                    # No Windows HANDLE was obtained; Frida is the only
-                    # available best-effort fallback. Do not claim success.
+        else:
+            # Interactive observer: preserve the old behavior and leave a
+            # resumed game running after detaching.
+            if script is not None:
+                try:
+                    script.unload()
+                except Exception:
+                    pass
+            if session is not None:
+                try:
+                    session.detach()
+                except Exception:
                     pass
         if owned_process is not None:
             try:
@@ -368,6 +410,19 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                 exit_code = 2
                 print(f"[yugilab] Could not close owned PID handle {pid}: "
                       f"{exc}", flush=True)
+        if should_terminate:
+            # Allow Frida's own background manager threads to finish.
+            # After a confirmed OS exit it is preferable not to unload
+            # hooks or detach from a dead process, avoiding a Windows
+            # Frida unload/exit race.
+            try:
+                shutdown = getattr(frida, "shutdown", None)
+                if callable(shutdown):
+                    shutdown()
+            except Exception as exc:
+                exit_code = 2
+                print(f"[native-rules] Frida shutdown failed: {exc}",
+                      flush=True)
         # Do not kill a resumed game when closing its passive interactive observer.
     return exit_code
 
