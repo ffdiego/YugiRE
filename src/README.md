@@ -118,6 +118,37 @@ mesma carta, nomes/ilustrações e a segunda lista. Na amostra deste workspace,
 esperamos 42/1/0 e Alligator's Sword Dragon na lista 1. Ao iniciar o demo,
 a mão deve ter cinco cartas e o deck restante 37; Draw muda para seis/36.
 
+## RNG e embaralhamento nativo (módulo isolado)
+
+`Joey.Core/NativeRng.cs` implementa o `rand` do MSVC
+encontrado em `joey_pc.exe` e o caminho de embaralhamento
+utilizado nos duelos de demonstração acelerados.
+Sua saída foi comparada offline com **oito embaralhamentos
+originais** de dois ZIPs independentes, verificando os
+**32 bits de cada palavra de carta**.
+
+Para executar os testes C# do gerador e as demais verificações:
+
+```powershell
+dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj
+```
+
+`NativeRngTests` utiliza duas seeds e hashes SHA256 calculados
+diretamente das capturas do Joey. A documentação está em
+[Joey native shuffle](../docs/evidence/joey-native-shuffle-matching-2026-11-08.md).
+
+O algoritmo utiliza a divisão por `32767` do original,
+que raramente pode gerar um índice fora do deck quando
+`rand()==32767`; nosso código verifica e lança exceção
+em vez de acessar memória inválida. Também não foi
+implementado o outro modo de embaralhamento nativo.
+
+**Importante:** `DemoDuel.FromDecks` ainda utiliza
+`System.Random.Shuffle` como política do protótipo.
+A classe nativa é uma implementação de referência para
+futuras etapas da engine, **não** uma troca automática
+do comportamento existente.
+
 ## Procedência e limites
 
 | Categoria | Uso nesta versão |
