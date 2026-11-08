@@ -1,0 +1,49 @@
+{
+  "schema": "yugire.partial-normal-summon.v1",
+  "id": "watch-normal-summon-side1-705-slot1",
+  "source": "docs/evidence/windows-native-second-monster-slot-and-field-2026-11-04.md",
+  "evidence": "Operator watch + CE trace; non-atomic before hand indices and placement descriptor",
+  "before": {
+    "activeSide": 1,
+    "activeLifePoints": null,
+    "activeHandIndices": [
+      272,
+      1016,
+      261,
+      795,
+      705
+    ],
+    "knownActiveMonsters": [
+      221,
+      null,
+      null,
+      null,
+      null
+    ],
+    "knownOpponentMonsters": null
+  },
+  "action": {
+    "kind": "normalSummon",
+    "side": 1,
+    "handIndex": 4,
+    "fieldSlot": 1,
+    "sourceCardIndex": 705,
+    "nativeLevelClass": null,
+    "nativeEligibility": null,
+    "resourceId": 268,
+    "ceContext": 16643,
+    "ceStage": 37
+  },
+  "after": {
+    "activeHandCount": 4,
+    "activeLifePoints": null,
+    "fieldSlot": 1,
+    "cardIndex": 705
+  },
+  "limitations": [
+    "Card 705 properties/level are not present in trace; harness uses an ordinary-level-4 eligible monster surrogate",
+    "Active side LP and opponent field are not sourced; hydration uses demo defaults and excludes them from checks",
+    "Source was non-atomic 250ms watch, not a complete after snapshot, cannot prove no intermediate actions",
+    "Only hand count, field slot, selected card internal index and CE context are compared"
+  ]
+}
