@@ -20,7 +20,8 @@ import native_rules
 class OwnedPidLifecycleTests(unittest.TestCase):
     def run_fake(self, should_fail: bool = False, kill_fails: bool = False,
                  use_windows_handle: bool = False,
-                 handle_fails: bool = False):
+                 handle_fails: bool = False,
+                 frida_destroyed: bool = False):
         calls = []
         with tempfile.TemporaryDirectory() as work:
             exe = Path(work) / "joey_pc.exe"
@@ -43,10 +44,14 @@ class OwnedPidLifecycleTests(unittest.TestCase):
                             "seen": 0, "retained": 0, "overwritten": 0}
                 def tracestop(self):
                     calls.append("stop")
+                    if frida_destroyed:
+                        raise RuntimeError("script has been destroyed")
                     return {"session": 1, "active": False,
                             "seen": 0, "retained": 0, "overwritten": 0}
                 def restore(self):
                     calls.append("restore")
+                    if frida_destroyed:
+                        raise RuntimeError("script has been destroyed")
 
             class Script:
                 exports_sync = Api()
@@ -182,6 +187,19 @@ class OwnedPidLifecycleTests(unittest.TestCase):
         result, calls, printed = self.run_fake(
             use_windows_handle=True, should_fail=True)
         self.assertEqual(result, 2)
+        self.assertIn(("terminate_handle", 82917), calls)
+        self.assertIn(("close_handle", 82917), calls)
+        self.assertIn("closed (verified by Windows process handle)", printed)
+
+    def test_destroyed_frida_script_still_closes_original_windows_process(self):
+        # Reproduces worker-09 from parallel-usos_27u: session died before
+        # the terminal opcode, so trace finalization and restore both fail.
+        result, calls, printed = self.run_fake(
+            use_windows_handle=True, should_fail=True, frida_destroyed=True)
+        self.assertEqual(result, 2)
+        self.assertIn("Could not finalize capture: script has been destroyed",
+                      printed)
+        self.assertIn("Restore error: script has been destroyed", printed)
         self.assertIn(("terminate_handle", 82917), calls)
         self.assertIn(("close_handle", 82917), calls)
         self.assertIn("closed (verified by Windows process handle)", printed)
