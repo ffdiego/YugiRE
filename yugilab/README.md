@@ -172,21 +172,22 @@ o relatório dirá `observed_match_with_raw_differences`.
 Esse status não comprova identidade integral do estado nativo,
 nem identifica vencedores.
 
-**A análise posterior no Ghidra demonstrou a origem de 117 das
-119 diferenças de bits superiores.** Em 116 casos o conversor
-`FUN_004022E0` devolve o ID da carta em `AX` mas conserva
-os bits superiores do endereço da tabela em `EAX`; um comando
-`0x61` conserva a metade superior de `EDX` ao escrever `DX`.
-Os dois únicos casos sem origem comprovada são
-`0x37/0x0058CF96` e `0x86/0x00574804`.
+**O Ghidra já demonstrou a origem de 118 das 119
+diferenças de bits superiores.** Em 116 casos o conversor
+`FUN_004022E0` devolve o ID em `AX` e conserva os
+bits superiores do ponteiro da tabela em `EAX`. O
+comando `0x61` escreve só `DX`; o `0x37` escreve
+só `AX` após uma chamada anterior ao produtor
+`FUN_005B9170`. O único caso ainda sem origem comprovada
+é `0x86/0x00574804`.
 
 O comparador agora apresenta `highWordOrigins`,
 `verifiedRegisterResidueCommands` e
 `unverifiedRawDifferenceCommands`, sem alterar os valores
 originais. Use `--strict-unverified` para rejeitar **qualquer
 diferença ainda não explicada por instruções nativas**
-(2 neste experimento), ou `--strict-raw` para rejeitar
-qualquer diferença, inclusive as 115 justificadas.
+(1 neste experimento), ou `--strict-raw` para rejeitar
+qualquer diferença, inclusive as 118 justificadas.
 
 [Relatório do Ghidra e classificação completa](../docs/evidence/joey-command-highword-origin-2026-11-08.md).
 
@@ -198,8 +199,14 @@ Nos dois ZIPs reais de 2026-11-08, o resultado foi
 **2/2 duelos equivalentes nos checkpoints**, com
 **119 comandos** contendo diferenças exclusivamente em
 bits superiores. [Evidência](../docs/evidence/joey-rng-seed-reproducibility-two-runs-2026-11-08.md).
-A nova consulta de Ghidra `scripts/Run-CommandHighWordRecon.ps1`
-ajuda a investigar a origem desses bits.
+O script `scripts/Run-FinalHighWordRecon.ps1` recuperou o
+assembly do `0x37`. No evento de `0x86`, o agente
+passou a registrar `wrapper86Caller` lendo, sem alterar,
+o endereço de retorno do wrapper na pilha x86
+(`[ESP+20]` durante a chamada ao produtor).
+O comparador também confronta esse novo campo quando
+ele estiver disponível em execuções futuras.
+Seu comportamento no jogo real ainda depende de validação.
 
 ### Arquivos e validação
 
