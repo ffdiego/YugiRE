@@ -87,7 +87,20 @@ def _scan_stream(lines, source: str) -> dict:
                     "caller": obj.get("caller"),
                     "seq": obj.get("seq"),
                 }
+                latest_seed_candidate["duelEntrySeedCall"] = (
+                    obj.get("duelEntrySeedCall") is True)
+                latest_seed_candidate["overridden"] = (
+                    obj.get("seedOverrideApplied") is True)
+                latest_seed_candidate["effectiveSeedRaw"] = (
+                    obj.get("effectiveSeedRaw"))
+                latest_seed_candidate["globalDuelIndex"] = (
+                    obj.get("globalDuelIndex"))
                 candidate_calls.append(latest_seed_candidate)
+                # The verified FUN_005BFEB0 seed call occurs AFTER
+                # scene_config/enter and BEFORE deck_shuffle. The previous
+                # 'beforeScene' field is historical context, not this seed.
+                if scene is not None and obj.get("duelEntrySeedCall") is True:
+                    scene["duelEntrySeed"] = dict(latest_seed_candidate)
         elif kind == "capture_summary":
             footer_found = True
             complete = obj.get("complete") is True
@@ -99,6 +112,7 @@ def _scan_stream(lines, source: str) -> dict:
                 scenes += 1
                 scene = {"duel": scenes, "seen": {}, "sceneSeq": obj.get("seq"),
                          "sceneTimestampMs": obj.get("timestampMs"),
+                         "duelEntrySeed": None,
                          "seedCandidateBeforeScene": (
                              dict(latest_seed_candidate)
                              if latest_seed_candidate is not None else None)}
@@ -126,6 +140,7 @@ def _scan_stream(lines, source: str) -> dict:
                         "sceneTimestampMs": scene["sceneTimestampMs"],
                         "seedCandidateBeforeScene": (
                             scene["seedCandidateBeforeScene"]),
+                        "duelEntrySeed": scene["duelEntrySeed"],
                         "fingerprint": _digest(scene["seen"]),
                         "deckSizes": {"0": len(scene["seen"][0]),
                                       "1": len(scene["seen"][1])},
@@ -171,6 +186,7 @@ def audit_captures(sources: list[Path]) -> dict:
                 "processId": m["processId"], "duel": m["duel"],
                 "sceneTimestampMs": m["sceneTimestampMs"],
                 "seedCandidateBeforeScene": m["seedCandidateBeforeScene"],
+                "duelEntrySeed": m["duelEntrySeed"],
             } for m in matches],
         })
     duplicates.sort(key=lambda d: (-d["count"], d["fingerprint"]))
@@ -195,7 +211,8 @@ def audit_captures(sources: list[Path]) -> dict:
             "rngSeedCandidateCalls": c["rngSeedCandidateCalls"],
             "fingerprints": [{"duel": s["duel"], "fingerprint": s["fingerprint"],
                               "sceneTimestampMs": s["sceneTimestampMs"],
-                              "seedCandidateBeforeScene": s["seedCandidateBeforeScene"]}
+                              "seedCandidateBeforeScene": s["seedCandidateBeforeScene"],
+                              "duelEntrySeed": s["duelEntrySeed"]}
                              for s in c["samples"]]
         } for c in scanned],
         "interpretation": "Identical initial permutations may indicate correlated "
