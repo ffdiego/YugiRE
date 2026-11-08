@@ -118,10 +118,12 @@ O laboratório pode ficar sem eventos enquanto o jogo estiver
 no menu; após 120 segundos sem nenhum evento, encerra a
 rodada como incompleta em vez de esperar para sempre.
 
-**Estado de validação:** código e testes simulados disponíveis;
-a coleta contínua ainda precisa de um teste de integração no
-Windows com o executável original. Recomendamos executar primeiro
-`--duels 3` antes de `--duels 100`.
+**Validação real concluída no Windows:** uma coleta de 3 e outra
+de 100 duelos terminaram com `complete=true`, `overwritten=0`,
+sequências completas e substituição de main deck verificada em
+todos os duelos. [Dados e detalhes da validação](../docs/evidence/demo-lab-100-duels-live-validation-2026-11-08.md).
+A execução contínua está funcionando, mas resultados/vencedores
+ainda não foram decodificados.
 
 [Contrato do formato e limitações](../docs/evidence/demo-lab-100-duels-2026-11-07.md).
 
