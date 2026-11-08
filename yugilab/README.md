@@ -85,8 +85,9 @@ Cada execução paralela cria uma pasta exclusiva
 
 O coordenador **só marca `complete=true` se todos
 os workers encerraram com sucesso, cada JSONL termina
-com `capture_summary.complete=true` e as contagens
-correspondem exatamente às metas individuais**.
+com `capture_summary.complete=true`, as contagens
+correspondem exatamente às metas individuais e cada
+PID tem `processTerminationVerified=true`**.
 
 Em `Ctrl+C` ou falha de um worker, o coordenador cria
 um sinal de cancelamento observado pelos outros workers.
@@ -133,10 +134,31 @@ de outra instância para encerramento.
 A captura concluída tem uma linha final
 `{"kind":"capture_summary", "complete":true, ...}`.
 Se ocorrer erro de exportação, a captura pode ficar parcial,
-mas o jogo ainda deve ser encerrado. Confirme a mensagem
-`[yugilab] Owned Joey PID ... closed`.
-Uma execução não é considerada bem-sucedida se não concluir
-a captura ou se falhar o encerramento do processo.
+mas o jogo ainda deve ser encerrado.
+
+**Correção de encerramento (2026-11-08):** no Windows, o worker
+agora mantém um *handle* persistente para o processo criado
+pelo Frida. Depois da captura, chama `TerminateProcess`
+**nesse handle**, e `WaitForSingleObject` confirma que o
+processo realmente saiu. O handle continua válido mesmo
+quando o agente Frida gera `script has been destroyed`.
+Também elimina o risco de encerrar um PID reutilizado entre
+criação e limpeza.
+
+A mensagem de sucesso agora é:
+
+```text
+[yugilab] Owned Joey PID 12345 closed (verified by Windows process handle).
+```
+
+Se o encerramento não for confirmado, o worker sai com erro
+e o coordenador grava `processTerminationVerified=false`
+no `manifest.json`. **Não basta mais que
+`device.kill(pid)` retorne sem exceção**.
+Fora do Windows, continua existindo apenas o caminho
+legado por Frida, explicitamente marcado como não verificado.
+A versão anterior registrava `closed` sem esperar o
+término do processo — um falso positivo possível.
 
 ## Compatibilidade
 
