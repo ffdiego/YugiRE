@@ -41,6 +41,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="JSON deck with internal card indices for side 0")
     parser.add_argument("--deck-1", type=Path,
                         help="JSON deck with internal card indices for side 1")
+    parser.add_argument("--seed", type=lambda s: int(s, 0), default=None,
+                        help="Optional uint32 master seed for reproducible AI demo duels")
+    parser.add_argument("--seed-start-index", type=int, default=0,
+                        help=argparse.SUPPRESS)
     parser.add_argument("--trace-ai", action="store_true",
                         help="Also observe AI selectors, evaluations and hand snapshots")
     parser.add_argument("--allow-multi-instance", action="store_true",
@@ -74,6 +78,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--workers cannot exceed --duels")
     if not 0 <= args.stagger_seconds <= 30:
         parser.error("--stagger-seconds must be between 0 and 30")
+    if args.seed is not None:
+        if not 0 <= args.seed <= 0xFFFFFFFF:
+            parser.error("--seed must be an unsigned 32-bit integer")
+        if (args.seed_start_index < 0 or args.seed_start_index > 0xFFFFFFFF or
+                args.seed_start_index + args.duels > 0x100000000):
+            parser.error("--seed-start-index + --duels exceeds uint32 range")
+    elif args.seed_start_index != 0:
+        parser.error("--seed-start-index requires --seed")
 
     if args.workers > 1:
         # Reject bad binaries or decks BEFORE launching several game processes.
@@ -117,6 +129,9 @@ def main(argv: list[str] | None = None) -> int:
             forwarded += [f"--deck-{side}", str(deck)]
     if args.trace_ai:
         forwarded.append("--trace-ai")
+    if args.seed is not None:
+        forwarded += ["--seed", str(args.seed),
+                      "--seed-start-index", str(args.seed_start_index)]
     if args.allow_multi_instance:
         forwarded.append("--allow-multi-instance")
     if args.output_dir is not None:
