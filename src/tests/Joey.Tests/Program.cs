@@ -106,6 +106,7 @@ Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over")
 GraphicsTests.Run(Check, Reject);
 NativeRngTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
+DifferentialNormalSummonTests.Run(Check);
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
