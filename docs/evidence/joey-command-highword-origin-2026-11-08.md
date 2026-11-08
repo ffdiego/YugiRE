@@ -1,12 +1,13 @@
 # YugiRE — origem dos 119 argumentos brutos divergentes
 
-> **Atualização 2026-11-08 — segundo exame do Ghidra:** os arquivos
-> `command-highword-remaining-card-id.txt` e
-> `command-highword-remaining-raw-callers.txt` confirmam **dois**
-> callsites anteriormente candidatos. O total passa a
-> **116 diferenças de ponteiro CARD_ID + 1 escrita parcial
-> em EDX = 117/119 com origem demonstrada**. Restam
-> somente `0x0037/0x0058CF96` e `0x0086/0x00574804`.
+> **Conclusão da terceira rodada (2026-11-08): 118/119 com
+> origem identificada.** São 116 resíduos do ponteiro da
+> tabela `CARD_ID` e 2 resíduos de escritas parciais em
+> registradores (`DX` no opcode `0x61`; `AX` no opcode
+> `0x37`). Resta **somente `0x86`**, cuja origem
+> anterior ao wrapper `FUN_005747E0` ainda não foi provada.
+> Todos os argumentos brutos permanecem preservados.
+> O comparador já classifica as diferenças por callsite.
 
 **Data:** 2026-11-08. **Exe verificado por SHA256:**
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
@@ -61,13 +62,13 @@ de memória do processo, **não** com a seed controlada.
 | `61 / 005BA000` | args[0] | 0 | 1 | `MOV DX` preserva EDX[31:16] |
 | `72 / 005783BC` | args[1] | 1 | 0 | `FUN_004022E0` comprovada no segundo relatório |
 | `E6 / 005ACF72` | args[1] | 0 | 1 | `FUN_004022E0` comprovada no segundo relatório |
-| `37 / 0058CF96` | args[0] | 1 | 0 | Origem ainda desconhecida |
+| `37 / 0058CF96` | args[0] | 1 | 0 | `MOV AX` após `CALL 005B9170` (confirmado) |
 | `86 / 00574804` | args[1] | 1 | 0 | Origem ainda desconhecida |
 
-**Total:** 116 alterações de alta palavra com origem
-confirmada em `FUN_004022E0`; mais 1 (`0x61`)
-confirmada como resíduo de escrita parcial do registrador;
-2 casos ainda desconhecidos.
+**Total atualizado:** 116 alterações de alta palavra com origem
+confirmada em `FUN_004022E0`; mais 2 (`0x61`, `0x37`)
+confirmadas como resíduos de escritas parciais em registradores;
+somente o comando `0x86` ainda não tem a origem comprovada.
 Todas as 119 diferenças preservam a metade baixa do argumento.
 
 ### Por que o opcode `0x61` também contém bits residuais
@@ -89,7 +90,7 @@ código terminal baixo do comando.
 
 ### Limites da conclusão
 
-A origem de 117 altas palavras está demonstrada no assembly.
+A origem de 118 altas palavras está demonstrada no assembly.
 Isso **não prova**, isoladamente, que todos os consumidores
 do protocolo ignoram essas metades altas; a equivalência
 integral do estado interno ainda depende de inspeção adicional.
@@ -99,9 +100,11 @@ transformação destrutiva será aplicada a eles.
 Os dois casos `72/005783BC` e `E6/005ACF72`
 estão confirmados pelo segundo relatório do Ghidra,
 incluindo `CALL FUN_004022E0` e `PUSH EAX`.
-Os `37` e `86` possuem outro valor alto
-(`0x0635` → `0x0647`) e ainda não possuem sua
-origem comprovada.
+O `0x37` foi identificado no terceiro relatório por
+desassemblagem transitória; `0x86` mantém origem
+não comprovada. Ambos compartilham o alto `0x0635` →
+`0x0647`, mas a coincidência não prova que o segundo
+tenha a mesma causa.
 
 ## Implementação adicionada
 
@@ -124,7 +127,7 @@ Para a engine C#, `ushort` é o tipo correto para o
 ID retornado por `FUN_004022E0`. Não modelar um ponteiro
 residual como propriedade da carta.
 
-## Consulta que resolveu dois casos e deixou dois pendentes
+## Segunda consulta que resolveu dois casos, antes do exame final
 
 O novo `scripts/Run-RemainingHighWordRecon.ps1` consulta
 `005783BC`, `005ACF72`, `0058CF96` e
@@ -138,7 +141,7 @@ Execute:
 .\scripts\Run-RemainingHighWordRecon.ps1
 ```
 
-## Evidência adicional para os dois casos restantes
+## Evidência da segunda consulta (antes do exame final)
 
 Os novos relatórios comprovam:
 
@@ -150,8 +153,8 @@ Os novos relatórios comprovam:
   `005ACF6B PUSH EAX`, `005ACF6D CALL 005B9170`.
   A mesma explicação vale para seu `args[1]`.
 
-**Recontagem offline dos ZIPs anteriores:** 116 casos `CARD_ID`,
-1 caso `MOV DX` e **2 desconhecidos**. Os dois desconhecidos
+**Recontagem histórica após o segundo exame:** 116 casos `CARD_ID`,
+1 caso `MOV DX` e 2 então desconhecidos. Esses dois casos
 aparecem apenas no duelo de índice global 0 e compartilham
 uma mesma metade superior em cada execução:
 
@@ -163,10 +166,9 @@ uma mesma metade superior em cada execução:
 Em `FUN_005747E0`, o comando `0x86` simplesmente encaminha
 `param_2` (32 bits) para o produtor `FUN_005B9170`.
 O dado não é mascarado nem construído ali; sua origem
-está em um dos numerosos chamadores. O Ghidra também
-não reconheceu instrução em `0x0058CF90`, começando a
-listagem somente em `0x0058D01E`: **não temos ainda
-assembly do ponto que emite `0x37`**.
+está em um dos numerosos chamadores. O Ghidra ainda não reconhecia instrução em
+`0x0058CF90`. Esse bloqueio foi removido pela consulta
+transitória de bytes do terceiro exame.
 
 A correlação `0x0635` / `0x0647` é sugestiva, mas não
 prova que ambas as diferenças têm o mesmo produtor ou
@@ -193,3 +195,60 @@ Relatórios previstos: `command-highword-final-37.txt` e
 `command-highword-final-86.txt`. A extração ajuda a reconstituir
 o produtor do comando `0x37` e os chamadores que fornecem
 `param_2` ao wrapper do `0x86`; não pressupõe equivalência.
+
+## Terceiro exame: instruções do `0x37` agora recuperadas
+
+Fonte: arquivo fornecido `command-highword-final-37.txt`, que
+reconstituiu o trecho a partir de `0058CF50` sem editar a
+base de dados do Ghidra:
+
+```asm
+0058CF7B CALL 005B9170   ; comando anterior 0x35
+0058CF80 MOV AX,[ESI+2]  ; só os 16 bits baixos de EAX
+0058CF86 SHL AX,0xF
+0058CF8C OR  AL,0x37
+0058CF90 PUSH EAX
+0058CF91 CALL 005B9170   ; comando 0x37
+```
+
+Os bits 16–31 vêm do `EAX` que restou ao retornar
+da emissão do comando `0x35`; o código posterior não
+os inicializa. Não é um ID semântico de 32 bits. A
+função `005B9170` é tratada como `void` pelo decompilador,
+logo não há contrato de retorno de 32 bits a reproduzir
+na engine C#. Não foi identificada a origem mais profunda
+do valor específico do registrador; isso não impede
+de classificar com segurança a preservação como resíduo.
+
+Nova contagem: **116 resíduos `CARD_ID`, 2 escritas parciais
+de registradores e 1 caso não resolvido = 119 diferenças**.
+
+## Terceiro exame: `0x86` ainda requer atribuição ao chamador real
+
+O arquivo `command-highword-final-86.txt` confirma que
+`FUN_005747E0` simplesmente encaminha seu `param_2`
+para `FUN_005B9170`, com opcode `0x86`. Existem muitos
+callers possíveis (`FUN_00579790`, `FUN_0059D370`,
+`FUN_005B8210` etc.). O baixo `0x0445` foi igual nas duas
+capturas, mas o alto diferiu `0x0635` versus `0x0647`.
+Não normalizar nem atribuir esse caso ao `CARD_ID`
+sem observar o caller efetivo.
+
+**Novo probe somente leitura:** o agente Frida, no callback
+já existente de `FUN_005B9170`, registra
+`wrapper86Caller` quando o comando é `0x86` e
+seu return address é `0x00574804`. No prólogo dessa
+função, `FUN_005747E0` empilha quatro parâmetros de
+32 bits e chama o produtor. Logo, no início do produtor
+x86, `[ESP+20]` é o endereço de retorno ao caller do
+wrapper. O acesso está dentro de `try/catch` e não
+altera argumentos ou processo.
+
+O comparador mantém `--strict-unverified`: ele deve
+continuar falhando para as duas capturas antigas, agora
+por **somente um** comando, até o último caso ser explicado.
+Na próxima captura determinística com `--seed 12345`,
+inspecionar o evento `0x86` do índice global 0 e
+seu `wrapper86Caller`, ou `wrapper86CallerReadError`
+caso a leitura falhe. O offset x86 precisa ser validado
+na execução real; ainda não foi executado no host Windows.
