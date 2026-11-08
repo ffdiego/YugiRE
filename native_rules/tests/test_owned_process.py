@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ctypes
 from pathlib import Path
+from types import SimpleNamespace
 import sys
 import unittest
 from unittest.mock import patch
@@ -92,6 +93,36 @@ class OwnedHandleTests(unittest.TestCase):
         handle.close()
         handle.close()
         self.assertEqual(sum(call[0] == "close" for call in dll.calls), 1)
+
+    def test_taskkill_fallback_checks_exit_of_original_handle(self):
+        dll = Kernel32Fake(terminate_succeeds=False)
+        handle = self.create(dll)
+
+        def fake_taskkill(cmd, **kwargs):
+            self.assertEqual(cmd[1:], ["/PID", "53210", "/F"])
+            # Emulate Windows taskkill causing the original HANDLE to signal.
+            dll.exited = True
+            return SimpleNamespace(returncode=0, stdout="SUCCESS", stderr="")
+
+        with patch.object(owned_process.subprocess, "run",
+                          side_effect=fake_taskkill) as run:
+            exited, detail = handle.taskkill_and_verify(seconds=0.5)
+        self.assertTrue(exited)
+        self.assertIn("exitCode=0", detail)
+        self.assertEqual(run.call_count, 1)
+        self.assertIn(("wait", 912345, 500), dll.calls)
+        handle.close()
+
+    def test_taskkill_failure_does_not_fake_process_exit(self):
+        dll = Kernel32Fake(never_exits=True)
+        handle = self.create(dll)
+        with patch.object(owned_process.subprocess, "run",
+                          return_value=SimpleNamespace(
+                              returncode=5, stdout="", stderr="Access denied")):
+            exited, detail = handle.taskkill_and_verify(seconds=0.1)
+        self.assertFalse(exited)
+        self.assertIn("Access denied", detail)
+        handle.close()
 
 
 if __name__ == "__main__":
