@@ -55,6 +55,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trace-ai", action="store_true",
                         help="Opt-in passive AI selector and nested evaluation probes "
                              "(increases JSONL size)")
+    parser.add_argument("--cancel-file", type=Path, default=None,
+                        help=argparse.SUPPRESS)
+    parser.add_argument("--output-dir", type=Path, default=None,
+                        help=argparse.SUPPRESS)
     parser.add_argument("--duels", type=int, default=None,
                         help="Capture N completed AI demo duels to one streamed JSONL, "
                              "then terminate only the spawned Joey")
@@ -76,6 +80,8 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
         parser.error("--spawn requires --exe PATH")
     if args.speed_value is not None and not 1 <= args.speed_value <= 0xFFFFFFFF:
         parser.error("--speed-value must fit an unsigned 32-bit integer (1..4294967295)")
+    if (args.cancel_file is not None or args.output_dir is not None) and args.duels is None:
+        parser.error("--cancel-file and --output-dir require --duels")
     if args.duels is not None and args.duels < 1:
         parser.error("--duels must be a positive integer")
     if args.duels is not None and (args.rotate_events is not None or
@@ -106,6 +112,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               deck_plans: dict[str, dict[str, list[int]]] | None = None,
               target_duels: int | None = None,
               trace_ai: bool = False,
+              cancel_file: Path | None = None,
+              output_dir: Path | None = None,
               poll_seconds: float = 0.25,
               cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
@@ -162,8 +170,13 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                   f"{multi}", flush=True)
         if target_duels is not None:
             # Open and fsync the capture header BEFORE the suspended game runs.
-            live_capture = LiveDuelCapture(api, pid, target_duels,
-                                           deck_plans or {}, speed_value)
+            if output_dir is None:
+                live_capture = LiveDuelCapture(api, pid, target_duels,
+                                               deck_plans or {}, speed_value)
+            else:
+                live_capture = LiveDuelCapture(api, pid, target_duels,
+                                               deck_plans or {}, speed_value,
+                                               output_dir=output_dir)
             print(f"[lab] Streaming {target_duels} completed demo duels to "
                   f"{live_capture.path}", flush=True)
         if speed_value is not None:
@@ -189,7 +202,11 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                   flush=True)
         if target_duels is not None:
             assert live_capture is not None
-            collect_duels(live_capture, poll_seconds=poll_seconds)
+            if cancel_file is None:
+                collect_duels(live_capture, poll_seconds=poll_seconds)
+            else:
+                collect_duels(live_capture, poll_seconds=poll_seconds,
+                              should_cancel=cancel_file.exists)
             reached_duel_target = True
         elif rotate_at_events is not None:
             # The trace is a fixed-size ring buffer (max 20000). Poll well
@@ -356,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--exe requires --spawn")
         for name in ("--speed-value", "--rotate-events", "--cycles", "--duels",
                      "--allow-multi-instance", "--deck-0", "--deck-1",
-                     "--trace-ai"):
+                     "--trace-ai", "--cancel-file", "--output-dir"):
             if name in original:
                 parser.error(f"{name} requires --spawn")
         return legacy.main(original)
@@ -378,7 +395,8 @@ def main(argv: list[str] | None = None) -> int:
     return run_spawn(exe, args.console_side, args.speed_value,
                      allow_multi_instance=args.allow_multi_instance,
                      deck_plans=deck_plans, target_duels=args.duels,
-                     trace_ai=args.trace_ai)
+                     trace_ai=args.trace_ai, cancel_file=args.cancel_file,
+                     output_dir=args.output_dir)
 
 
 if __name__ == "__main__":
