@@ -97,6 +97,28 @@ class RngAuditTests(unittest.TestCase):
         self.assertEqual(report["duplicateObservations"], 1)
         self.assertEqual(report["crossProcessDuplicateGroups"], 0)
 
+    def test_seed_candidate_is_recorded_before_scene_and_correlated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = Path(tmp) / "seed-candidate.jsonl"
+            original = trace(431, [([12, 13], [20, 21])])
+            rows = [json.loads(line) for line in original.splitlines()]
+            rows.insert(1, {
+                "kind": "demo_init", "phase": "enter",
+                "function": "rng_seed_candidate", "candidateSeedRaw": 12345,
+                "candidateSeedHex": "0x00003039",
+                "caller": "0x00408b90", "seq": 0,
+            })
+            a.write_text("\n".join(json.dumps(row) for row in rows) + "\n",
+                         encoding="utf-8")
+            report = audit_captures([a])
+        self.assertEqual(report["fingerprintedScenes"], 1)
+        source = report["sources"][0]
+        self.assertEqual(len(source["rngSeedCandidateCalls"]), 1)
+        self.assertEqual(source["rngSeedCandidateCalls"][0]["valueRaw"], 12345)
+        self.assertEqual(
+            source["fingerprints"][0]["seedCandidateBeforeScene"]["valueRaw"],
+            12345)
+
     def test_partial_shuffles_never_count_as_complete_pair(self):
         with tempfile.TemporaryDirectory() as tmp:
             a = Path(tmp) / "partial.jsonl"
