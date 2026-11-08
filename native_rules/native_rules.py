@@ -311,6 +311,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             # and only after attempting to save the trace and detaching Frida.
             try:
                 device.kill(pid)
+                if target_duels is not None:
+                    print(f"[yugilab] Owned Joey PID {pid} closed.", flush=True)
             except Exception as exc:
                 exit_code = 2
                 print(f"[native-rules] Failed to kill owned Joey PID {pid}: {exc}",
