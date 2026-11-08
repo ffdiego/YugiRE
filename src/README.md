@@ -149,6 +149,25 @@ A classe nativa é uma implementação de referência para
 futuras etapas da engine, **não** uma troca automática
 do comportamento existente.
 
+## Pacotes de comando nativo (primeiro subconjunto)
+
+`Joey.Core/NativeDefaultQueuePacket.cs` modela o pacote
+nativo de **4 palavras uint16** gravado por `FUN_005B9170`
+para os opcodes verificados `0x37`, `0x61` e `0x86`,
+que percorrem o caminho sem remapeamento de parâmetros.
+`NativeDefaultQueuePacketTests` verifica cinco cenários
+usando os argumentos reais das duas capturas com a mesma
+seed. O código original possui outros caminhos que
+modificam os parâmetros antes do enfileiramento; esses
+não são aceitos por `TryFromProducerArguments`.
+
+A classe conserva o bit 15 da primeira palavra como flag
+de lado; os bits 16–31 dos argumentos de entrada não
+fazem parte do pacote desses três opcodes. Preserve os
+valores brutos de 32 bits no JSONL para análise forense.
+
+[Assembly e resultados dos 41 pacotes comparados](../docs/evidence/joey-command-highword-origin-2026-11-08.md).
+
 ## Procedência e limites
 
 | Categoria | Uso nesta versão |
