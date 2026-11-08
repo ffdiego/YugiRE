@@ -1,5 +1,18 @@
 # Identificação preliminar das diferenças nos 16 bits superiores dos comandos
 
+> **Atualização após os três relatórios do Ghidra (2026-11-08):**
+> a causa de **115 das 119 diferenças** está demonstrada em
+> instruções nativas (114 resíduos do ponteiro da tabela CARD_ID
+> após `MOV AX` em `FUN_004022E0`, um resíduo de `EDX`).
+> Dois casos têm o mesmo padrão mas não foram verificados em
+> seus callsites, e outros dois permanecem sem explicação.
+> Leia o relatório posterior
+> [Origem dos high words](joey-command-highword-origin-2026-11-08.md).
+> A hipótese preliminar de que todos os valores superiores
+> representariam identificadores de instâncias de cartas
+> **não deve mais ser adotada**.
+
+
 **Data:** 2026-11-08. Capturas `parallel-mjj1z5ia.zip` e `parallel-a1xf_v2y.zip`, com mesmos decks, master seed 12345 e execução independente ~9 minutos depois.
 
 ## Resultado confirmado pelos JSONL
