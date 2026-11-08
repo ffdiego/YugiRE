@@ -15,6 +15,7 @@ import sys
 import patch_dual_rules as legacy
 from deck_config import read_deck_file
 from duel_capture import LiveDuelCapture, collect_duels
+from owned_process import acquire_owned_process
 from pe_preflight import probe
 
 
@@ -123,6 +124,7 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
 
     device = frida.get_local_device()
     pid = None
+    owned_process = None
     session = None
     script = None
     resumed = False
@@ -133,6 +135,9 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
     try:
         pid = device.spawn([str(exe), "-speedy"], cwd=str(exe.parent))
         print(f"[native-rules] Spawned suspended Joey PID {pid} (-speedy)", flush=True)
+        # Windows: hold a stable process HANDLE before the first resume. This
+        # survives a destroyed Frida script and cannot refer to a reused PID.
+        owned_process = acquire_owned_process(pid)
         session = device.attach(pid)
         source = (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8")
         script = session.create_script(source)
@@ -326,19 +331,43 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                 session.detach()
             except Exception:
                 pass
-        if pid is not None and (not resumed or rotate_at_events is not None or
-                                target_duels is not None):
-            # In interactive mode, leave a resumed game alive. In batch mode,
-            # terminate ONLY the PID returned by this invocation of spawn(),
-            # and only after attempting to save the trace and detaching Frida.
+        should_terminate = (pid is not None and
+                            (not resumed or rotate_at_events is not None or
+                             target_duels is not None))
+        if should_terminate:
+            # Frida device.kill() only reports a successful request; it does
+            # not prove that the Win32 process has exited. On Windows the
+            # stable HANDLE is authoritative and termination is independent
+            # of whether the Frida script/session survived.
             try:
-                device.kill(pid)
-                if target_duels is not None:
-                    print(f"[yugilab] Owned Joey PID {pid} closed.", flush=True)
+                if owned_process is not None:
+                    if not owned_process.terminate_and_verify(seconds=5.0):
+                        raise RuntimeError(
+                            f"Joey PID {pid} did not exit within 5 seconds "
+                            "of TerminateProcess")
+                    print(f"[yugilab] Owned Joey PID {pid} closed "
+                          "(verified by Windows process handle).", flush=True)
+                else:
+                    # Non-Windows legacy path (e.g. simulated test runner).
+                    # This is NOT equivalent to Win32 process verification.
+                    device.kill(pid)
+                    print(f"[native-rules] Kill requested for owned PID {pid} "
+                          "(exit unverified on this platform).", flush=True)
             except Exception as exc:
                 exit_code = 2
-                print(f"[native-rules] Failed to kill owned Joey PID {pid}: {exc}",
-                      flush=True)
+                print(f"[yugilab] Failed to verify termination of owned "
+                      f"Joey PID {pid}: {exc}", flush=True)
+                if owned_process is None:
+                    # No Windows HANDLE was obtained; Frida is the only
+                    # available best-effort fallback. Do not claim success.
+                    pass
+        if owned_process is not None:
+            try:
+                owned_process.close()
+            except Exception as exc:
+                exit_code = 2
+                print(f"[yugilab] Could not close owned PID handle {pid}: "
+                      f"{exc}", flush=True)
         # Do not kill a resumed game when closing its passive interactive observer.
     return exit_code
 
