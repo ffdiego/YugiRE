@@ -45,6 +45,14 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Also observe AI selectors, evaluations and hand snapshots")
     parser.add_argument("--allow-multi-instance", action="store_true",
                         help="Enable the existing per-PID mutex bypass")
+    parser.add_argument("--workers", type=_positive_int, default=1,
+                        help="Run up to 16 independent Joey workers in parallel (default: 1)")
+    parser.add_argument("--stagger-seconds", type=float, default=1.1,
+                        help="Wait between worker launches; default: 1.1s")
+    parser.add_argument("--output-dir", type=Path, default=None,
+                        help="Optional capture directory, or base directory for parallel runs")
+    parser.add_argument("--cancel-file", type=Path, default=None,
+                        help=argparse.SUPPRESS)
     return parser
 
 
@@ -58,7 +66,46 @@ def _run_native_launcher(arguments: list[str]) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.workers > 16:
+        parser.error("--workers must be <= 16 (test 2 or 4 before 10)")
+    if args.workers > args.duels:
+        parser.error("--workers cannot exceed --duels")
+    if not 0 <= args.stagger_seconds <= 30:
+        parser.error("--stagger-seconds must be between 0 and 30")
+
+    if args.workers > 1:
+        # Reject bad binaries or decks BEFORE launching several game processes.
+        if str(BACKEND_DIR) not in sys.path:
+            sys.path.insert(0, str(BACKEND_DIR))
+        from pe_preflight import probe
+        from deck_config import read_deck_file
+        try:
+            args.exe = args.exe.expanduser().resolve(strict=True)
+            if args.exe.name.casefold() != "joey_pc.exe" or not args.exe.is_file():
+                parser.error("--exe must point to an existing joey_pc.exe")
+            if not probe(args.exe)["passed"]:
+                parser.error("Joey PE32/SHA256 preflight failed")
+            for deck in (args.deck_0, args.deck_1):
+                if deck is not None:
+                    read_deck_file(deck)
+            if args.deck_0 is not None:
+                args.deck_0 = args.deck_0.expanduser().resolve(strict=True)
+            if args.deck_1 is not None:
+                args.deck_1 = args.deck_1.expanduser().resolve(strict=True)
+        except (OSError, ValueError) as exc:
+            parser.error(str(exc))
+        if args.cancel_file is not None:
+            parser.error("--cancel-file is only used by internal single workers")
+        from .parallel import run_parallel
+        root = (args.output_dir or
+                (Path(__file__).resolve().parent.parent / "scratch" / "labs"))
+        return run_parallel(args, root.expanduser().resolve())
+
+    if args.cancel_file is not None and args.cancel_file.exists():
+        print("[yugilab] Worker cancelled before spawn.", flush=True)
+        return 130
     forwarded = [
         "--spawn", "--observe-only",
         "--exe", str(args.exe),
@@ -72,6 +119,10 @@ def main(argv: list[str] | None = None) -> int:
         forwarded.append("--trace-ai")
     if args.allow_multi_instance:
         forwarded.append("--allow-multi-instance")
+    if args.output_dir is not None:
+        forwarded += ["--output-dir", str(args.output_dir)]
+    if args.cancel_file is not None:
+        forwarded += ["--cancel-file", str(args.cancel_file)]
     print(f"[yugilab] Capturing {args.duels} duels. "
           "YugiLab will terminate only the Joey PID it spawns.",
           flush=True)
