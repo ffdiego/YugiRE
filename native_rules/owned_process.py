@@ -8,6 +8,8 @@ destroyed Frida session. No extra Python dependencies.
 from __future__ import annotations
 
 import os
+from pathlib import Path
+import subprocess
 
 
 PROCESS_TERMINATE = 0x0001
@@ -66,11 +68,36 @@ class OwnedWindowsProcess:
         if self.wait(0):
             return True
         if not self._dll.TerminateProcess(self._handle, 1):
-            # Another thread/process might have exited the game meanwhile.
+            # Save the error immediately: WaitForSingleObject may change
+            # GetLastError on the same thread.
+            error_code = self._ctypes.get_last_error()
             if self.wait(0):
                 return True
-            raise self._ctypes.WinError(self._ctypes.get_last_error())
+            raise self._ctypes.WinError(error_code)
         return self.wait(seconds)
+
+    def taskkill_and_verify(self, seconds: float = 5.0) -> tuple[bool, str]:
+        """Last resort: Windows taskkill, on PID still owned by our live HANDLE.
+
+        PID reuse is impossible while the original process is running. We
+        check the original handle both before dispatch and after taskkill.
+        """
+        if self.wait(0):
+            return True, "Already exited"
+        root = Path(os.environ.get("SystemRoot", r"C:\Windows"))
+        exe = root / "System32" / "taskkill.exe"
+        if not exe.is_file():
+            exe = Path("taskkill.exe")
+        result = subprocess.run(
+            [str(exe), "/PID", str(self.pid), "/F"],
+            capture_output=True, text=True, errors="replace",
+            timeout=10, check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        exited = self.wait(seconds)
+        detail = (f"taskkill exitCode={result.returncode}; "
+                  f"stdout={result.stdout.strip()!r}; "
+                  f"stderr={result.stderr.strip()!r}")
+        return exited, detail
 
     def close(self) -> None:
         if self._handle is not None:
