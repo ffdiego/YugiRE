@@ -145,6 +145,18 @@ quando o agente Frida gera `script has been destroyed`.
 Também elimina o risco de encerrar um PID reutilizado entre
 criação e limpeza.
 
+**Atualização após teste real com 2 workers:** foi observado
+`WinError 5 (Acesso negado)` em `TerminateProcess`, mesmo após
+ambos os workers concluírem 3/3 e salvarem os JSONL.
+Agora tentamos `device.kill(pid)` **antes de desmontar Frida**,
+verificamos a saída pelo HANDLE, e se necessário tentamos
+`TerminateProcess` e `taskkill /PID ... /F`, sempre verificando
+o mesmo processo. O fluxo de captura em lote evita
+`script.unload()`/`session.detach()` durante o encerramento
+e chama `frida.shutdown()` para finalizar o runtime Python.
+**Esse último ajuste ainda exige validação no Windows.**
+[Diagnóstico do teste e instruções](../docs/evidence/yugilab-two-workers-cleanup-error-2026-11-08.md).
+
 A mensagem de sucesso agora é:
 
 ```text
