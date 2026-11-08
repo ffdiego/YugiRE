@@ -66,6 +66,27 @@ public class QueryArchive extends GhidraScript {
                 if(!found)out.println("NOTE symbol not found: "+name);
                 continue;
             }
+            // Read memory bytes even when Ghidra has no instruction/data
+            // defined at the given address. Unlike decode:, this is strictly
+            // observational and does not alter transient disassembly.
+            if(args[i].startsWith("bytes:")) {
+                String[] fields=args[i].split(":");
+                if(fields.length!=3) throw new IllegalArgumentException(
+                    "bytes requires address and length: bytes:ADDRESS:LENGTH");
+                int size=Integer.parseInt(fields[2]);
+                if(size<1 || size>512) throw new IllegalArgumentException(
+                    "bytes length must be between 1 and 512");
+                Address at=toAddr(fields[1]);
+                byte[] buf=new byte[size];
+                int read=currentProgram.getMemory().getBytes(at,buf);
+                out.print("BYTES "+at+" count="+read+" ");
+                for(int n=0;n<read;n++) {
+                    out.printf("%02X", buf[n] & 0xff);
+                    if(n+1<read)out.print(' ');
+                }
+                out.println();
+                continue;
+            }
             if(args[i].startsWith("ins:") || args[i].startsWith("decode:")) {
                 String[] fields=args[i].split(":");
                 if(fields[0].equals("decode")) {
