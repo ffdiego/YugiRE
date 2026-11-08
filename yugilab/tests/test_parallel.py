@@ -12,13 +12,15 @@ from yugilab.parallel import distribute_duels, run_parallel
 
 
 class ParallelLabTests(unittest.TestCase):
-    def _run(self, total: int, workers: int, broken: int | None = None):
+    def _run(self, total: int, workers: int, broken: int | None = None,
+             seed: int | None = None):
         spawned = []
         with tempfile.TemporaryDirectory() as tmp:
             args = argparse.Namespace(
                 exe=Path("C:/Joey/joey_pc.exe"), duels=total, workers=workers,
                 speed_value=2400, deck_0=Path("A.json"), deck_1=Path("B.json"),
-                trace_ai=True, stagger_seconds=0.0)
+                trace_ai=True, stagger_seconds=0.0,
+                seed=seed, seed_start_index=0)
             class FakePopen:
                 def __init__(self, argv, stdout, stderr, cwd, **kwargs):
                     self.argv = argv
@@ -96,6 +98,19 @@ class ParallelLabTests(unittest.TestCase):
             self.assertIn("--output-dir", args)
             self.assertEqual(args[args.index("--duels") + 1], "10")
             self.assertEqual(args[:3], [args[0], "-m", "yugilab"])
+
+    def test_seeded_workers_use_nonoverlapping_global_duel_ranges(self):
+        result, manifest, launched = self._run(23, 4, seed=12345)
+        self.assertEqual(result, 0)
+        self.assertEqual(manifest["rngSeedBase"], 12345)
+        self.assertEqual([int(a[a.index("--seed") + 1]) for a in launched],
+                         [12345] * 4)
+        self.assertEqual(
+            [int(a[a.index("--seed-start-index") + 1]) for a in launched],
+            [0, 6, 12, 18])
+        self.assertEqual(
+            [int(a[a.index("--duels") + 1]) for a in launched],
+            [6, 6, 6, 5])
 
     def test_failed_worker_keeps_all_data_but_never_claims_success(self):
         code, manifest, launched = self._run(23, 4, broken=2)
