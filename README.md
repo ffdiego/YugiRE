@@ -33,7 +33,7 @@ e **fecha automaticamente somente esse processo** ao alcançar a meta:
 # Na raiz do repositório, com o ambiente Frida existente
 .\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
-  --duels 100 `
+  --duels 100 --workers 10 `
   --deck-0 ".\native_rules\decks\demo-A.json" `
   --deck-1 ".\native_rules\decks\demo-B.json" `
   --trace-ai
@@ -41,3 +41,9 @@ e **fecha automaticamente somente esse processo** ao alcançar a meta:
 
 O `native_rules/` permanece como backend da DLL, hooks e ferramentas de
 engenharia reversa; seus comandos existentes continuam compatíveis.
+
+Para comparar desempenho, comece com `--duels 6 --workers 2` e
+depois experimente 4/10 workers. Cada instância tem PID próprio, captura
+JSONL e encerramento supervisionado. O `manifest.json` de cada rodada
+paralela fica em `scratch/labs/parallel-.../` e **não garante ausência
+de interferências em saves, registro ou replays compartilhados**.
