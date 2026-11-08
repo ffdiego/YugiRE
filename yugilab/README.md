@@ -101,10 +101,22 @@ Em uma bateria real de dez workers, foram observadas 100
 cenas com shuffle inicial e somente **65 combinações únicas**.
 Veja a [evidência e as limitações](../docs/evidence/yugilab-rng-collision-audit-2026-11-08.md).
 
-Ainda precisamos identificar a função que inicializa o
-RNG original antes de oferecer `--seed`. O script de
-consulta estática `scripts/Run-RngRecon.ps1` foi incluído
-para essa investigação.
+Identificamos o caminho estático `FUN_00568D80` →
+`FUN_005BDDB0` → `_rand @0x005C3C02`, e uma função
+**candidata** de reinicialização do RNG em `0x005C3BF5`.
+Os hooks passivos de demo agora registram eventos
+`demo_init/rng_seed_candidate` com o argumento original e
+seu caller, sem alterá-lo. O auditor relaciona o último
+argumento observado antes da entrada da cena com o
+fingerprint de shuffle. Um argumento igual NÃO comprova
+por si só que toda a partida tem o mesmo estado de RNG.
+
+Execute `scripts/Run-RngSeedRecon.ps1` para inspecionar
+o corpo dessa função, `_rand` e os callsites com Ghidra.
+[A análise estática atual](../docs/evidence/joey-rng-static-trace-2026-11-08.md)
+distingue os fatos das hipóteses. Não existe `--seed`
+ainda: precisamos validar primeiro a variável e o contrato
+da função nativa.
 ### Arquivos e validação
 
 Cada execução paralela cria uma pasta exclusiva
