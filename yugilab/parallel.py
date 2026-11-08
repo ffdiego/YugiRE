@@ -17,6 +17,8 @@ import sys
 import tempfile
 import time
 
+from .rng_audit import audit_captures
+
 
 PID_PATTERN = re.compile(r"Spawned suspended Joey PID (\d+)")
 VERIFIED_EXIT_PATTERN = re.compile(
@@ -252,6 +254,32 @@ def run_parallel(args, output_root: Path) -> int:
                   f"{worker.process.returncode}", flush=True)
 
         records = [_worker_capture(worker, captures) for worker in workers]
+
+        # Duplication does NOT invalidate trace completion, but it limits
+        # statistical independence of the experiment. Audit existing
+        # deck_shuffle events without changing the Frida agent/Joey.
+        rng_audit = None
+        rng_audit_error = None
+        try:
+            capture_paths = [Path(record["capture"]) for record in records
+                             if record["capture"] is not None]
+            if capture_paths:
+                rng_audit = audit_captures(capture_paths)
+                if rng_audit["crossProcessDuplicateGroups"]:
+                    print("[yugilab] WARNING: "
+                          f"{rng_audit['crossProcessDuplicateGroups']} groups "
+                          "of identical initial shuffles across workers. "
+                          "These may not be statistically independent.",
+                          flush=True)
+                audit_path = run_dir / "rng-audit.json"
+                audit_path.write_text(json.dumps(rng_audit, indent=2,
+                                                 ensure_ascii=False) + "\n",
+                                      encoding="utf-8")
+        except Exception as exc:
+            rng_audit_error = f"{type(exc).__name__}: {exc}"
+            print(f"[yugilab] RNG audit unavailable: {rng_audit_error}",
+                  flush=True)
+
         succeeded = (not interrupted and not failed and
                      len(records) == args.workers and
                      all(item["complete"] for item in records) and
@@ -266,6 +294,15 @@ def run_parallel(args, output_root: Path) -> int:
             "eventsWritten": sum(item["eventsWritten"] for item in records),
             "error": error,
             "workers": records,
+            "rngAudit": ({
+                "fingerprintedScenes": rng_audit["fingerprintedScenes"],
+                "uniqueFingerprints": rng_audit["uniqueFingerprints"],
+                "duplicateObservations": rng_audit["duplicateObservations"],
+                "crossProcessDuplicateGroups":
+                    rng_audit["crossProcessDuplicateGroups"],
+                "report": str(run_dir / "rng-audit.json"),
+            } if rng_audit is not None else None),
+            "rngAuditError": rng_audit_error,
         })
         manifest = run_dir / "manifest.json"
         manifest.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
