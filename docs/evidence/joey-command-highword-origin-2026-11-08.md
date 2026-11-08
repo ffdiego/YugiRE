@@ -7,9 +7,6 @@
 > **116 diferenças de ponteiro CARD_ID + 1 escrita parcial
 > em EDX = 117/119 com origem demonstrada**. Restam
 > somente `0x0037/0x0058CF96` e `0x0086/0x00574804`.
-> As contagens 114/115 abaixo documentam a etapa anterior;
-> esta atualização prevalece.
-
 
 **Data:** 2026-11-08. **Exe verificado por SHA256:**
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
@@ -62,15 +59,15 @@ de memória do processo, **não** com a seed controlada.
 | `DF / 00595142` | args[1] | 5 | 5 | `FUN_004022E0` comprovada |
 | `75 / 00578459` | args[1] | 2 | 4 | `FUN_004022E0` comprovada |
 | `61 / 005BA000` | args[0] | 0 | 1 | `MOV DX` preserva EDX[31:16] |
-| `72 / 005783BC` | args[1] | 1 | 0 | Padrão da tabela, callsite a confirmar |
-| `E6 / 005ACF72` | args[1] | 0 | 1 | Padrão da tabela, callsite a confirmar |
+| `72 / 005783BC` | args[1] | 1 | 0 | `FUN_004022E0` comprovada no segundo relatório |
+| `E6 / 005ACF72` | args[1] | 0 | 1 | `FUN_004022E0` comprovada no segundo relatório |
 | `37 / 0058CF96` | args[0] | 1 | 0 | Origem ainda desconhecida |
 | `86 / 00574804` | args[1] | 1 | 0 | Origem ainda desconhecida |
 
-**Total:** 114 alterações de alta palavra com origem
+**Total:** 116 alterações de alta palavra com origem
 confirmada em `FUN_004022E0`; mais 1 (`0x61`)
 confirmada como resíduo de escrita parcial do registrador;
-2 casos *candidatos* de `CARD_ID`; 2 casos ainda desconhecidos.
+2 casos ainda desconhecidos.
 Todas as 119 diferenças preservam a metade baixa do argumento.
 
 ### Por que o opcode `0x61` também contém bits residuais
@@ -92,7 +89,7 @@ código terminal baixo do comando.
 
 ### Limites da conclusão
 
-A origem de 115 altas palavras está demonstrada no assembly.
+A origem de 117 altas palavras está demonstrada no assembly.
 Isso **não prova**, isoladamente, que todos os consumidores
 do protocolo ignoram essas metades altas; a equivalência
 integral do estado interno ainda depende de inspeção adicional.
@@ -100,11 +97,11 @@ Os arquivos JSONL preservam os valores completos; nenhuma
 transformação destrutiva será aplicada a eles.
 
 Os dois casos `72/005783BC` e `E6/005ACF72`
-têm alta palavra exatamente igual à herdada de `CARD_ID`
-no mesmo processo, mas precisamos verificar as instruções
-dessas duas rotas. Os `37` e `86` possuem outro valor alto
-(`0x0635` → `0x0647`), e não serão rotulados como IDs
-sem análise de seus chamadores.
+estão confirmados pelo segundo relatório do Ghidra,
+incluindo `CALL FUN_004022E0` e `PUSH EAX`.
+Os `37` e `86` possuem outro valor alto
+(`0x0635` → `0x0647`) e ainda não possuem sua
+origem comprovada.
 
 ## Implementação adicionada
 
@@ -127,7 +124,7 @@ Para a engine C#, `ushort` é o tipo correto para o
 ID retornado por `FUN_004022E0`. Não modelar um ponteiro
 residual como propriedade da carta.
 
-## Próxima etapa (apenas quatro casos restantes)
+## Consulta que resolveu dois casos e deixou dois pendentes
 
 O novo `scripts/Run-RemainingHighWordRecon.ps1` consulta
 `005783BC`, `005ACF72`, `0058CF96` e
@@ -141,7 +138,7 @@ Execute:
 .\scripts\Run-RemainingHighWordRecon.ps1
 ```
 
-## Atualização — investigação direcionada dos dois callsites restantes
+## Evidência adicional para os dois casos restantes
 
 Os novos relatórios comprovam:
 
@@ -180,3 +177,19 @@ foi ajustada: os dois casos antes `candidate` passaram
 para `verified_card_id_pointer_residue`; os outros dois
 permanecem `unresolved_high16` e são preservados em
 `--strict-unverified`.
+
+### Investigação final somente dos dois desconhecidos
+
+O script `scripts/Run-FinalHighWordRecon.ps1` usa uma nova opção
+`bytes:VA:SIZE` em `QueryArchive.java` para ler bytes da região
+que o Ghidra deixou sem instruções definidas. A transação
+é descartada e o projeto é aberto em `-readOnly`.
+
+```powershell
+.\scripts\Run-FinalHighWordRecon.ps1
+```
+
+Relatórios previstos: `command-highword-final-37.txt` e
+`command-highword-final-86.txt`. A extração ajuda a reconstituir
+o produtor do comando `0x37` e os chamadores que fornecem
+`param_2` ao wrapper do `0x86`; não pressupõe equivalência.
