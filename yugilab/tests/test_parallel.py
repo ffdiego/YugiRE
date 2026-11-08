@@ -34,9 +34,23 @@ class ParallelLabTests(unittest.TestCase):
                                "capturedDuels": target,
                                "eventsWritten": target * 40,
                                "complete": True, "overwritten": 0}
-                    capture.write_text(json.dumps(header) + "\n" +
-                                       json.dumps(summary) + "\n",
-                                       encoding="utf-8")
+                    events = [header]
+                    for duel in range(target):
+                        events.extend([
+                            {"kind": "demo_init", "function": "scene_config",
+                             "phase": "enter", "requestedSceneMode": 7,
+                             "seq": duel * 3 + 1},
+                            {"kind": "demo_init", "function": "deck_shuffle",
+                             "phase": "leave", "side": 1,
+                             "deck": {"indices": [10 + duel, 20]}},
+                            {"kind": "demo_init", "function": "deck_shuffle",
+                             "phase": "leave", "side": 0,
+                             "deck": {"indices": [30, 40 + duel]}}
+                        ])
+                    events.append(summary)
+                    capture.write_text(
+                        "\n".join(json.dumps(event) for event in events) + "\n",
+                        encoding="utf-8")
                     stdout.write(f"[native-rules] Spawned suspended Joey PID {self.pid}\n")
                     stdout.write(f"[yugilab] Owned Joey PID {self.pid} closed "
                                  "(verified by Windows process handle).\n")
@@ -71,6 +85,10 @@ class ParallelLabTests(unittest.TestCase):
         self.assertTrue(all(w["processTerminationVerified"] for w in manifest["workers"]))
         self.assertEqual(len(set(row["processId"] for row in manifest["workers"])), 10)
         self.assertEqual(manifest["eventsWritten"], 4000)
+        self.assertEqual(manifest["rngAudit"]["fingerprintedScenes"], 100)
+        self.assertEqual(manifest["rngAudit"]["uniqueFingerprints"], 10)
+        self.assertEqual(manifest["rngAudit"]["duplicateObservations"], 90)
+        self.assertEqual(manifest["rngAudit"]["crossProcessDuplicateGroups"], 10)
         for args in launched:
             self.assertIn("--allow-multi-instance", args)
             self.assertIn("--trace-ai", args)
