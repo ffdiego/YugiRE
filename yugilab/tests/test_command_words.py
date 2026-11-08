@@ -35,14 +35,19 @@ class CommandWordOriginTests(unittest.TestCase):
             "0x00E6", "0x5acf72", 0, 0x00EA02E1, 0x00F402E1),
             "unresolved_high16")
 
-    def test_other_callsites_remain_unknown(self):
-        for opcode, caller, arg in (
-            ("0x0037", "0x58cf96", 0),
-            ("0x0086", "0x574804", 1),
-        ):
-            self.assertEqual(classify(opcode, caller, arg,
-                                      0x06350001, 0x06470001),
-                             "unresolved_high16")
+    def test_recovered_37_proves_stale_eax_high_word(self):
+        self.assertEqual(classify(
+            "0x0037", "0x58cf96", 0, 0x06350037, 0x06470037),
+            "verified_partial_register_write")
+
+    def test_86_source_is_not_yet_proven(self):
+        self.assertEqual(classify(
+            "0x0086", "0x574804", 1, 0x06350445, 0x06470445),
+            "unresolved_high16")
+        # Do not apply a proven 0x37 classification to unrelated callers.
+        self.assertEqual(classify(
+            "0x0037", "0x58cf97", 0, 0x06350037, 0x06470037),
+            "unresolved_high16")
 
     def test_never_interprets_low16_differences_as_pointer_residue(self):
         self.assertEqual(classify(
