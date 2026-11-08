@@ -60,3 +60,24 @@ def classify_high_word_change(opcode: str, caller: str, arg_index: int,
     if key in _PARTIAL_REGISTER_RETURNS:
         return "verified_partial_register_write"
     return "unresolved_high16"
+
+
+# FUN_005B9170 appends four 16-bit words (local_8/local_6/local_4/local_2)
+# to the command queue. These three opcodes take the default switch branch,
+# with NO transformation of the input parameters before writing the words.
+# Other opcodes may remap card IDs, so do not apply this direct-packet
+# reconstruction to every producer call without studying its switch cases.
+_DIRECT_QUEUED_OPCODES = frozenset({0x0037, 0x0061, 0x0086})
+
+
+def direct_queued_words(args: list[int]) -> tuple[int, int, int, int] | None:
+    """Exact 4 x ushort packet for the verified default-branch opcodes.
+
+    Return None for opcodes that require other native queue transformations.
+    """
+    if (not isinstance(args, list) or len(args) != 4 or
+        any(type(v) is not int or not 0 <= v <= 0xFFFFFFFF for v in args)):
+        raise ValueError("Expected four unsigned 32-bit producer arguments")
+    if (args[0] & 0x7FFF) not in _DIRECT_QUEUED_OPCODES:
+        return None
+    return tuple(value & 0xFFFF for value in args)
