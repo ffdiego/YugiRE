@@ -149,7 +149,7 @@ class LiveDuelCaptureTests(unittest.TestCase):
         seed_event = {
             "kind": "demo_init", "function": "rng_seed_candidate",
             "phase": "enter", "seq": 1, "seedOverrideApplied": True,
-            "globalDuelIndex": 7, "effectiveSeedRaw": 3437716590,
+            "globalDuelIndex": 7, "effectiveSeedRaw": 4263159843,
         }
         events = [seed_event, command(2, 4)]
         agent = FakeLiveAgent(events, 1)
