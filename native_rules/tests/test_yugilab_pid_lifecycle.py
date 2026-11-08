@@ -21,6 +21,7 @@ class OwnedPidLifecycleTests(unittest.TestCase):
     def run_fake(self, should_fail: bool = False, kill_fails: bool = False,
                  use_windows_handle: bool = False,
                  handle_fails: bool = False,
+                 taskkill_fails: bool = False,
                  frida_destroyed: bool = False):
         calls = []
         with tempfile.TemporaryDirectory() as work:
@@ -100,14 +101,22 @@ class OwnedPidLifecycleTests(unittest.TestCase):
                 if should_fail:
                     raise RuntimeError("simulated capture error")
 
-            fake_frida = types.SimpleNamespace(get_local_device=lambda: Device())
+            fake_frida = types.SimpleNamespace(
+                get_local_device=lambda: Device(),
+                shutdown=lambda: calls.append("frida_shutdown"))
 
             class Handle:
+                def wait(self, seconds):
+                    calls.append(("wait_handle", seconds))
+                    # Simulate a process still running even after Frida
+                    # reported a successful kill request.
+                    return False
                 def terminate_and_verify(self, seconds):
                     calls.append(("terminate_handle", pid))
-                    if handle_fails:
-                        return False
-                    return True
+                    return not handle_fails
+                def taskkill_and_verify(self, seconds):
+                    calls.append(("taskkill", pid))
+                    return (not taskkill_fails, "simulated taskkill")
                 def close(self):
                     calls.append(("close_handle", pid))
 
@@ -140,15 +149,16 @@ class OwnedPidLifecycleTests(unittest.TestCase):
             ("stop", "finish"),
             ("finish", "capture_close"),
             ("capture_close", "restore"),
-            ("restore", "unload"),
-            ("unload", "detach"),
-            ("detach", "kill"),
+            ("restore", "kill"),
+            ("kill", "frida_shutdown"),
         ]:
             self.assertLess(names.index(left), names.index(right), (left, right))
         self.assertEqual([x for x in calls if isinstance(x, tuple)
                           and x[0] == "kill"], [("kill", 82917)])
         self.assertIn(("finish", True), calls)
-        self.assertIn("Kill requested for owned PID 82917", printed)
+        self.assertIn("Kill requested via Frida", printed)
+        self.assertNotIn("unload", calls)
+        self.assertNotIn("detach", calls)
 
     def test_collection_failure_still_flushes_partial_and_kills_pid(self):
         result, calls, _ = self.run_fake(should_fail=True)
@@ -168,20 +178,33 @@ class OwnedPidLifecycleTests(unittest.TestCase):
         self.assertIn(("acquire_handle", 82917), calls)
         self.assertIn(("terminate_handle", 82917), calls)
         self.assertIn(("close_handle", 82917), calls)
-        self.assertNotIn(("kill", 82917), calls)
+        self.assertIn(("kill", 82917), calls)
         self.assertIn("closed (verified by Windows process handle)", printed)
-        # Cleanup order: Frida detach before terminating by stable HANDLE.
-        self.assertLess(calls.index("detach"),
+        # Frida is asked to kill while attached, BEFORE native fallback.
+        self.assertLess(calls.index(("kill", 82917)),
                         calls.index(("terminate_handle", 82917)))
+        self.assertNotIn("unload", calls)
+        self.assertNotIn("detach", calls)
 
     def test_windows_handle_failed_exit_cannot_claim_success(self):
         result, calls, printed = self.run_fake(
-            use_windows_handle=True, handle_fails=True)
+            use_windows_handle=True, handle_fails=True,
+            taskkill_fails=True)
         self.assertEqual(result, 2)
         self.assertIn(("terminate_handle", 82917), calls)
+        self.assertIn(("taskkill", 82917), calls)
         self.assertIn(("close_handle", 82917), calls)
         self.assertNotIn("closed (verified", printed)
         self.assertIn("Failed to verify termination", printed)
+
+    def test_taskkill_fallback_verifies_exit_after_direct_access_denied(self):
+        result, calls, printed = self.run_fake(
+            use_windows_handle=True, handle_fails=True)
+        self.assertEqual(result, 0)
+        self.assertIn(("kill", 82917), calls)
+        self.assertIn(("terminate_handle", 82917), calls)
+        self.assertIn(("taskkill", 82917), calls)
+        self.assertIn("Method: taskkill confirmed", printed)
 
     def test_windows_handle_closes_even_if_capture_fails(self):
         result, calls, printed = self.run_fake(
