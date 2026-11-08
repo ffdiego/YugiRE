@@ -38,6 +38,8 @@ class ParallelLabTests(unittest.TestCase):
                                        json.dumps(summary) + "\n",
                                        encoding="utf-8")
                     stdout.write(f"[native-rules] Spawned suspended Joey PID {self.pid}\n")
+                    stdout.write(f"[yugilab] Owned Joey PID {self.pid} closed "
+                                 "(verified by Windows process handle).\n")
                     stdout.write(f"[lab] {target}/{target} duels (100.0%)\n")
                     stdout.flush()
                     spawned.append(self)
@@ -66,6 +68,7 @@ class ParallelLabTests(unittest.TestCase):
         self.assertTrue(manifest["complete"])
         self.assertEqual(manifest["capturedDuels"], 100)
         self.assertEqual(len(manifest["workers"]), 10)
+        self.assertTrue(all(w["processTerminationVerified"] for w in manifest["workers"]))
         self.assertEqual(len(set(row["processId"] for row in manifest["workers"])), 10)
         self.assertEqual(manifest["eventsWritten"], 4000)
         for args in launched:
