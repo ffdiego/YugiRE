@@ -9,7 +9,8 @@ from yugilab.compare import compare_runs, main
 from yugilab.seed_math import derive_duel_seed
 
 
-def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23):
+def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23,
+               unknown_caller=False):
     seed = derive_duel_seed(base, index)
     return [
         {"kind": "demo_init", "function": "scene_config", "phase": "enter", "requestedSceneMode": 7},
@@ -23,7 +24,8 @@ def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23):
         {"kind": "ai_probe", "function": "selector", "phase": "leave", "chosen": 1},
         {"kind": "demo_executor", "function": "place", "side": 0, "handIndex": 1},
         {"kind": "command", "opcodeMasked": "0x00CE", "opcodeRaw": "0x00CE",
-         "sideBit15": 0, "caller": "0x5abeab", "args": [0xce, (10 + shift) * 65536 + 23, 0, 0],
+         "sideBit15": 0, "caller": ("0x574804" if unknown_caller else "0x5abeab"),
+         "args": [0xce, (10 + shift) * 65536 + 23, 0, 0],
          "ceNativeState": {"context": 0x8001, "source": ce_source, "stage": 37}},
         {"kind": "command", "opcodeMasked": "0x0004", "opcodeRaw": "0x0004",
          "sideBit15": 0, "caller": "0x5bc545", "args": [0x70004, 1, 0, 0],
@@ -31,13 +33,15 @@ def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23):
     ]
 
 
-def write_capture(z, member, indices, base=12345, shift=0, partial=False, ce_source=23):
+def write_capture(z, member, indices, base=12345, shift=0, partial=False, ce_source=23,
+                  unknown_caller=False):
     rows = [{"kind": "metadata", "formatVersion": 2,
              "requestedDuels": len(indices), "speedValue": 600, "deckPlans": {"0": {"main": [1]*40}},
              "rngSeedOverride": {"baseSeed": base, "globalDuelStartIndex": indices[0],
                                  "algorithm": "mix32-v1"}}]
     for index in indices:
-        rows.extend(events_for(base, index, shift, marker=9 if shift else 8, ce_source=ce_source))
+        rows.extend(events_for(base, index, shift, marker=9 if shift else 8,
+                               ce_source=ce_source, unknown_caller=unknown_caller))
     for seq, e in enumerate(rows[1:], 1):
         e["seq"] = seq
         e["timestampMs"] = seq + 1000 + shift
@@ -66,9 +70,25 @@ class CompareTests(unittest.TestCase):
         self.assertFalse(report['rawCommandArgsMatch'])
         self.assertEqual(report['totalChangedRawCommands'], 2)
         self.assertEqual(report['totalHigh16OnlyChangedCommands'], 2)
+        self.assertEqual(report['totalUnverifiedRawDifferenceCommands'], 0)
+        self.assertEqual(report['highWordOrigins'],
+                         {'verified_card_id_pointer_residue': 2})
         self.assertEqual([x['globalDuelIndex'] for x in report['duels']], [0, 1])
         self.assertEqual(main([str(self.a), str(self.b)]), 0)
         self.assertEqual(main([str(self.a), str(self.b), '--strict-raw']), 1)
+        self.assertEqual(main([str(self.a), str(self.b), '--strict-unverified']), 0)
+
+    def test_strict_unverified_fails_on_same_low_word_at_unknown_callsite(self):
+        with ZipFile(self.a, 'w') as z:
+            write_capture(z, 'a.jsonl', [0, 1], unknown_caller=True)
+        with ZipFile(self.b, 'w') as z:
+            write_capture(z, 'b.jsonl', [0, 1], shift=10,
+                          unknown_caller=True)
+        report = compare_runs(self.a, self.b)
+        self.assertTrue(report['observedMatch'])
+        self.assertEqual(report['totalUnverifiedRawDifferenceCommands'], 2)
+        self.assertEqual(report['highWordOrigins'], {'unresolved_high16': 2})
+        self.assertEqual(main([str(self.a), str(self.b), '--strict-unverified']), 1)
 
     def test_footer_must_be_complete(self):
         with ZipFile(self.b, 'w') as z:
