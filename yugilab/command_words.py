@@ -2,7 +2,8 @@
 
 Source: Joey Ghidra command-highword-{placement,card-commands,other}.txt,
 command-highword-remaining-{card-id,raw-callers}.txt, and
-card-id-instructions.txt, matched to two seeded Windows traces.
+card-id-instructions.txt, command-highword-final-{37,86}.txt,
+and two seeded Windows traces.
 
 This classifies the *origin* of certain high-word differences, not whether
 the original command consumer ignores those 16 bits. Preserve full raw words.
@@ -34,6 +35,11 @@ _CARD_ID_POINTER_RETURNS = frozenset({
 # 005B9FFA PUSH EDX. Writes to DX never clear EDX[31:16].
 _PARTIAL_REGISTER_RETURNS = frozenset({
     ("0x0061", "0x5ba000", 0),
+    # The 0058CF50..0058CF96 code was previously unknown to Ghidra.
+    # 0058CF7B CALL 005B9170 (0x35); 0058CF80 MOV AX,[ESI+2];
+    # 0058CF86 SHL AX,15; 0058CF8C OR AL,0x37;
+    # 0058CF90 PUSH EAX. No instruction clears EAX[31:16].
+    ("0x0037", "0x58cf96", 0),
 })
 
 
