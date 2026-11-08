@@ -72,6 +72,37 @@ possíveis sementes idênticas de RNG baseadas em relógio.
 comparar partidas entre instâncias é necessário antes de
 tratar resultados como amostras estatisticamente independentes.
 
+### Seed controlada e reprodutível (experimento)
+
+**Agora existe `--seed` opcional**, para separar duelos em um
+laboratório paralelo e tentar repetir exatamente as mesmas
+condições iniciais em execuções diferentes.
+
+```powershell
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+  --exe "..\passion2\joey_pc.exe" `
+  --duels 2 --workers 2 --seed 12345 `
+  --deck-0 ".\native_rules\decks\demo-A.json" `
+  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --trace-ai --speed-value 600
+```
+
+Com o mesmo `--seed`, cada índice de duelo global recebe
+a mesma seed, mesmo que a distribuição entre workers ou
+o intervalo de lançamento mude. Duelos diferentes
+recebem seeds diferentes (mixer bijetivo `mix32-v1`),
+e a seed efetiva é registrada em
+`demo_init/rng_seed_candidate` nos JSONL.
+
+**O efeito de `--seed` ainda precisa ser validado no Joey
+real.** O hook é limitado ao `srand` chamado pela entrada
+do duelo em modo demo 7. Reinicializações feitas por
+efeitos de cartas ou outros sistemas permanecem nativas.
+A captura não é considerada concluída se uma aplicação
+de seed esperada estiver ausente. Não é necessário
+passar `--seed`: sem ele, o RNG original não é alterado.
+
+Veja a [evidência estática e protocolo de teste](../docs/evidence/joey-rng-seed-control-2026-11-08.md).
 ### Auditoria de aleatoriedade (novo)
 
 O modo paralelo agora audita automaticamente o **primeiro
