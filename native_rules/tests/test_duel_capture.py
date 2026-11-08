@@ -186,6 +186,26 @@ class LiveDuelCaptureTests(unittest.TestCase):
                 capture.close()
             self.assertFalse(capture.finished)
 
+    def test_partial_seeded_run_keeps_footer_after_operator_cancels(self):
+        agent = FakeLiveAgent([command(1, 4)], 1)
+        with tempfile.TemporaryDirectory() as directory:
+            capture = LiveDuelCapture(
+                agent, 413, 3, {}, 600, Path(directory),
+                rng_seed_base=12345, rng_seed_start_index=0)
+            try:
+                capture.drain()
+                agent.tracestop()
+                summary = capture.finish(agent.tracestatus(), False)
+                self.assertFalse(summary["complete"])
+                self.assertEqual(summary["capturedDuels"], 1)
+                self.assertEqual(summary["rngSeedOverridesApplied"], 0)
+            finally:
+                capture.close()
+            lines = [json.loads(line) for line in
+                     capture.path.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(lines[-1]["kind"], "capture_summary")
+            self.assertFalse(lines[-1]["complete"])
+
     def test_terminal_opcode_masks_bit15(self):
         self.assertEqual(enrich(command(1, 0x8004))["opcodeMasked"], "0x0004")
 
