@@ -1516,6 +1516,25 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
         args: [raw, args[1].toUInt32(),
                args[2].toUInt32(), args[3].toUInt32()]
       };
+      if ((raw & 0x7FFF) === 0x0004 &&
+          this.returnAddress.equals(va('0x005BC545'))) {
+        // Raw, read-only snapshot at the verified terminal producer callsite.
+        // These fields are NOT interpreted as the winning side yet.
+        try {
+          event.terminalNativeState = {
+            duelRunningWord: kDuelRunning.readU16(),
+            duelPhaseByte: kSummonDuelPhase.readU8(),
+            stateWordAtA577FE: va('0x00A577FE').readU16(),
+            duelModeWord: kDemoModeWord.readU32(),
+            sceneMode: kDemoSceneMode.readU32(),
+            playerFlags: [kSummonPlayerFlags.readU32(),
+              kSummonPlayerFlags.add(kPlayerStride).readU32()],
+            queueCount: kQueueCount.readU32()
+          };
+        } catch (readError) {
+          event.terminalNativeReadError = String(readError);
+        }
+      }
       if ((raw & 0x7FFF) === 0xCE &&
           this.returnAddress.equals(kCeCallsiteReturn)) {
         // Sampling these globals at the producer entry preserves the
