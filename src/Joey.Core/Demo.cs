@@ -50,6 +50,43 @@ public sealed class DemoDuel
         }
         return duel;
     }
+    /// <summary>
+    /// Minimal state hydration for differential tests against partially observed
+    /// Joey snapshots. This is NOT a native save/load implementation: unknown
+    /// deck/graveyard/flags/chain state is deliberately left at demo defaults.
+    /// Only use fixtures that explicitly bound which fields are compared.
+    /// </summary>
+    public static DemoDuel FromPartialObservation(
+        int activeSide,
+        IReadOnlyList<Card> activeHand,
+        IReadOnlyList<Card?> side0Monsters,
+        IReadOnlyList<Card?> side1Monsters,
+        int activeLifePoints)
+    {
+        if (activeSide is < 0 or > 1)
+            throw new ArgumentOutOfRangeException(nameof(activeSide));
+        ArgumentNullException.ThrowIfNull(activeHand);
+        ArgumentNullException.ThrowIfNull(side0Monsters);
+        ArgumentNullException.ThrowIfNull(side1Monsters);
+        if (side0Monsters.Count != 5 || side1Monsters.Count != 5)
+            throw new ArgumentException("A partial observation must specify five monster slots per side.");
+        if (activeLifePoints <= 0)
+            throw new ArgumentOutOfRangeException(nameof(activeLifePoints),
+                "This adapter only models an ongoing main phase.");
+        if (activeHand.Any(card => card is null))
+            throw new ArgumentException("Active hand must not contain null cards.", nameof(activeHand));
+
+        var duel = new DemoDuel { Turn = activeSide + 1 };
+        duel.Life[activeSide] = activeLifePoints;
+        duel.hands[activeSide].AddRange(activeHand);
+        for (int slot = 0; slot < 5; slot++)
+        {
+            duel.Monsters[0, slot] = side0Monsters[slot];
+            duel.Monsters[1, slot] = side1Monsters[slot];
+        }
+        return duel;
+    }
+
     public DemoDuel(IEnumerable<Card> cards)
     {
         var all = cards.Where(c => c.Name.Length > 0).ToList();
