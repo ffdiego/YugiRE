@@ -9,7 +9,7 @@ from yugilab.compare import compare_runs, main
 from yugilab.seed_math import derive_duel_seed
 
 
-def events_for(base=12345, index=0, shift=0, marker=0):
+def events_for(base=12345, index=0, shift=0, marker=0, ce_source=23):
     seed = derive_duel_seed(base, index)
     return [
         {"kind": "demo_init", "function": "scene_config", "phase": "enter", "requestedSceneMode": 7},
@@ -23,20 +23,21 @@ def events_for(base=12345, index=0, shift=0, marker=0):
         {"kind": "ai_probe", "function": "selector", "phase": "leave", "chosen": 1},
         {"kind": "demo_executor", "function": "place", "side": 0, "handIndex": 1},
         {"kind": "command", "opcodeMasked": "0x00CE", "opcodeRaw": "0x00CE",
-         "sideBit15": 0, "caller": "0x5abeab", "args": [0xce, (10 + shift) * 65536 + 23, 0, 0]},
+         "sideBit15": 0, "caller": "0x5abeab", "args": [0xce, (10 + shift) * 65536 + 23, 0, 0],
+         "ceNativeState": {"context": 0x8001, "source": ce_source, "stage": 37}},
         {"kind": "command", "opcodeMasked": "0x0004", "opcodeRaw": "0x0004",
          "sideBit15": 0, "caller": "0x5bc545", "args": [0x70004, 1, 0, 0],
          "terminalNativeState": {"life": [0, 7000]}},
     ]
 
 
-def write_capture(z, member, indices, base=12345, shift=0, partial=False):
+def write_capture(z, member, indices, base=12345, shift=0, partial=False, ce_source=23):
     rows = [{"kind": "metadata", "formatVersion": 2,
              "requestedDuels": len(indices), "speedValue": 600, "deckPlans": {"0": {"main": [1]*40}},
              "rngSeedOverride": {"baseSeed": base, "globalDuelStartIndex": indices[0],
                                  "algorithm": "mix32-v1"}}]
     for index in indices:
-        rows.extend(events_for(base, index, shift, marker=9 if shift else 8))
+        rows.extend(events_for(base, index, shift, marker=9 if shift else 8, ce_source=ce_source))
     for seq, e in enumerate(rows[1:], 1):
         e["seq"] = seq
         e["timestampMs"] = seq + 1000 + shift
@@ -85,6 +86,13 @@ class CompareTests(unittest.TestCase):
         report=compare_runs(self.a, self.b)
         self.assertEqual(report['totalDuelsCompared'],3)
         self.assertEqual([x['globalDuelIndex'] for x in report['duels']],[0,1,2])
+
+    def test_changed_native_placement_descriptor_is_divergent(self):
+        with ZipFile(self.b, 'w') as z:
+            write_capture(z, 'capture1.jsonl', [0, 1], shift=10, ce_source=42)
+        result = compare_runs(self.a, self.b)
+        self.assertFalse(result['observedMatch'])
+        self.assertFalse(result['duels'][0]['checks']['sameCeNativeStates'])
 
     def test_incompatible_seed_rejected(self):
         with ZipFile(self.b,'w') as z:
