@@ -68,9 +68,10 @@ recursos gráficos e Frida. Compare a duração real de
 O programa inicia cada worker com ~1,1 s de diferença
 (`--stagger-seconds` pode alterar isso) para reduzir
 possíveis sementes idênticas de RNG baseadas em relógio.
-**Ainda não verificamos como o Joey escolhe sua semente**:
-comparar partidas entre instâncias é necessário antes de
-tratar resultados como amostras estatisticamente independentes.
+O RNG original usa o `srand`/`rand` do MSVC. Execuções
+iniciadas no mesmo segundo podem compartilhar a seed;
+prefira `--seed` para controlar os índices globais
+de cada duelo e audite os resultados em `rng-audit.json`.
 
 ### Seed controlada e reprodutível (experimento)
 
@@ -94,10 +95,12 @@ recebem seeds diferentes (mixer bijetivo `mix32-v1`),
 e a seed efetiva é registrada em
 `demo_init/rng_seed_candidate` nos JSONL.
 
-**O efeito de `--seed` ainda precisa ser validado no Joey
-real.** O hook é limitado ao `srand` chamado pela entrada
-do duelo em modo demo 7. Reinicializações feitas por
-efeitos de cartas ou outros sistemas permanecem nativas.
+O `--seed` foi **validado no Joey real com duas execuções
+independentes**: mesmas ordens de cartas, comandos e avaliações
+da IA. Os argumentos nativos brutos ainda apresentaram
+diferenças em 16 bits superiores, de semântica não decodificada.
+O hook é limitado ao `srand` na entrada do duelo demo 7.
+Reinicializações de efeitos de cartas permanecem nativas.
 A captura não é considerada concluída se uma aplicação
 de seed esperada estiver ausente. Não é necessário
 passar `--seed`: sem ele, o RNG original não é alterado.
@@ -134,20 +137,53 @@ Veja a [evidência e as limitações](../docs/evidence/yugilab-rng-collision-aud
 
 Identificamos o caminho estático `FUN_00568D80` →
 `FUN_005BDDB0` → `_rand @0x005C3C02`, e uma função
-**candidata** de reinicialização do RNG em `0x005C3BF5`.
-Os hooks passivos de demo agora registram eventos
-`demo_init/rng_seed_candidate` com o argumento original e
-seu caller, sem alterá-lo. O auditor relaciona o último
-argumento observado antes da entrada da cena com o
-fingerprint de shuffle. Um argumento igual NÃO comprova
-por si só que toda a partida tem o mesmo estado de RNG.
+confirmada** de seed em `0x005C3BF5`.
+Os hooks registram `demo_init/rng_seed_candidate` com o
+argumento original, o chamador e, quando habilitado, o
+valor efetivamente aplicado. O auditor associa a chamada
+da entrada do duelo ao embaralhamento correspondente.
+[Análise do setter e RNG](../docs/evidence/joey-rng-seed-control-2026-11-08.md).
+### Comparar duelos reproduzidos (novo)
 
-Execute `scripts/Run-RngSeedRecon.ps1` para inspecionar
-o corpo dessa função, `_rand` e os callsites com Ghidra.
-[A análise estática atual](../docs/evidence/joey-rng-static-trace-2026-11-08.md)
-distingue os fatos das hipóteses. Não existe `--seed`
-ainda: precisamos validar primeiro a variável e o contrato
-da função nativa.
+Após duas execuções com os mesmos decks, `--seed` e
+`--speed-value`, compare os ZIPs ou as pastas
+`scratch/labs/parallel-...` **sem executar o Joey**:
+
+```powershell
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.compare `
+  ".\primeira-execucao.zip" ".\segunda-execucao.zip" `
+  --output ".\scratch\comparison.json"
+```
+
+O comparador lê JSONL em streaming por duelo, agrupa
+pelo **índice global da seed**, confere integridade de
+sequência e footer, compatibilidade de configuração e
+a seed efetivamente aplicada.
+
+Ele verifica os embaralhamentos, a sequência de comandos
+(opcodes, chamadores e **16 bits inferiores de cada argumento**),
+eventos de IA, executor de demo, estado terminal capturado e
+reinicializações intermediárias do RNG. Registra os argumentos
+completos diferentes e agrupa seus 16 bits superiores
+separadamente; **não assume que tais bits podem ser descartados**.
+
+Se os checkpoints coincidirem mas valores brutos divergirem,
+o relatório dirá `observed_match_with_raw_differences`.
+Esse status não comprova identidade integral do estado nativo,
+nem identifica vencedores. Para exigir igualdade dos argumentos
+brutos, acrescente `--strict-raw`.
+
+Códigos de saída: 0 = checkpoints observados iguais;
+1 = divergência relevante (ou exigência `--strict-raw`);
+2 = captura inválida/incompleta ou configuração incompatível.
+
+Nos dois ZIPs reais de 2026-11-08, o resultado foi
+**2/2 duelos equivalentes nos checkpoints**, com
+**119 comandos** contendo diferenças exclusivamente em
+bits superiores. [Evidência](../docs/evidence/joey-rng-seed-reproducibility-two-runs-2026-11-08.md).
+A nova consulta de Ghidra `scripts/Run-CommandHighWordRecon.ps1`
+ajuda a investigar a origem desses bits.
+
 ### Arquivos e validação
 
 Cada execução paralela cria uma pasta exclusiva
@@ -213,11 +249,11 @@ Se ocorrer erro de exportação, a captura pode ficar parcial,
 mas o jogo ainda deve ser encerrado.
 
 **Correção de encerramento (2026-11-08):** no Windows, o worker
-agora mantém um *handle* persistente para o processo criado
-pelo Frida. Depois da captura, chama `TerminateProcess`
-**nesse handle**, e `WaitForSingleObject` confirma que o
-processo realmente saiu. O handle continua válido mesmo
-quando o agente Frida gera `script has been destroyed`.
+mantém um *handle* persistente do processo criado pelo Frida.
+Ao terminar, solicita o encerramento pelo Frida e verifica pelo
+handle; se necessário usa `TerminateProcess` e `taskkill`,
+confirmando o encerramento com `WaitForSingleObject`.
+O handle permanece válido após `script has been destroyed`.
 Também elimina o risco de encerrar um PID reutilizado entre
 criação e limpeza.
 
@@ -230,8 +266,9 @@ verificamos a saída pelo HANDLE, e se necessário tentamos
 o mesmo processo. O fluxo de captura em lote evita
 `script.unload()`/`session.detach()` durante o encerramento
 e chama `frida.shutdown()` para finalizar o runtime Python.
-**Esse último ajuste ainda exige validação no Windows.**
-[Diagnóstico do teste e instruções](../docs/evidence/yugilab-two-workers-cleanup-error-2026-11-08.md).
+As duas rodadas reais com `--seed 12345`, dois workers e
+um duelo por worker encerraram os processos corretamente.
+[Diagnóstico da falha original](../docs/evidence/yugilab-two-workers-cleanup-error-2026-11-08.md).
 
 A mensagem de sucesso agora é:
 
