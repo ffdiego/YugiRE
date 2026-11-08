@@ -18,7 +18,9 @@ import native_rules
 
 
 class OwnedPidLifecycleTests(unittest.TestCase):
-    def run_fake(self, should_fail: bool = False, kill_fails: bool = False):
+    def run_fake(self, should_fail: bool = False, kill_fails: bool = False,
+                 use_windows_handle: bool = False,
+                 handle_fails: bool = False):
         calls = []
         with tempfile.TemporaryDirectory() as work:
             exe = Path(work) / "joey_pc.exe"
@@ -94,7 +96,23 @@ class OwnedPidLifecycleTests(unittest.TestCase):
                     raise RuntimeError("simulated capture error")
 
             fake_frida = types.SimpleNamespace(get_local_device=lambda: Device())
+
+            class Handle:
+                def terminate_and_verify(self, seconds):
+                    calls.append(("terminate_handle", pid))
+                    if handle_fails:
+                        return False
+                    return True
+                def close(self):
+                    calls.append(("close_handle", pid))
+
+            def acquire(id):
+                calls.append(("acquire_handle", id))
+                return Handle() if use_windows_handle else None
+
             with patch.dict(sys.modules, {"frida": fake_frida}), \
+                 patch.object(native_rules, "acquire_owned_process",
+                              side_effect=acquire), \
                  patch.object(native_rules, "probe",
                               return_value={"passed": True, "checks": {}}), \
                  patch.object(native_rules, "LiveDuelCapture", Capture), \
@@ -125,7 +143,7 @@ class OwnedPidLifecycleTests(unittest.TestCase):
         self.assertEqual([x for x in calls if isinstance(x, tuple)
                           and x[0] == "kill"], [("kill", 82917)])
         self.assertIn(("finish", True), calls)
-        self.assertIn("Owned Joey PID 82917 closed", printed)
+        self.assertIn("Kill requested for owned PID 82917", printed)
 
     def test_collection_failure_still_flushes_partial_and_kills_pid(self):
         result, calls, _ = self.run_fake(should_fail=True)
@@ -137,7 +155,37 @@ class OwnedPidLifecycleTests(unittest.TestCase):
         result, calls, text = self.run_fake(kill_fails=True)
         self.assertEqual(result, 2)
         self.assertIn(("kill", 82917), calls)
-        self.assertIn("Failed to kill owned Joey PID", text)
+        self.assertIn("Failed to verify termination of owned Joey PID", text)
+
+    def test_windows_handle_is_authoritative_not_frida_pid_lookup(self):
+        result, calls, printed = self.run_fake(use_windows_handle=True)
+        self.assertEqual(result, 0)
+        self.assertIn(("acquire_handle", 82917), calls)
+        self.assertIn(("terminate_handle", 82917), calls)
+        self.assertIn(("close_handle", 82917), calls)
+        self.assertNotIn(("kill", 82917), calls)
+        self.assertIn("closed (verified by Windows process handle)", printed)
+        # Cleanup order: Frida detach before terminating by stable HANDLE.
+        self.assertLess(calls.index("detach"),
+                        calls.index(("terminate_handle", 82917)))
+
+    def test_windows_handle_failed_exit_cannot_claim_success(self):
+        result, calls, printed = self.run_fake(
+            use_windows_handle=True, handle_fails=True)
+        self.assertEqual(result, 2)
+        self.assertIn(("terminate_handle", 82917), calls)
+        self.assertIn(("close_handle", 82917), calls)
+        self.assertNotIn("closed (verified", printed)
+        self.assertIn("Failed to verify termination", printed)
+
+    def test_windows_handle_closes_even_if_capture_fails(self):
+        result, calls, printed = self.run_fake(
+            use_windows_handle=True, should_fail=True)
+        self.assertEqual(result, 2)
+        self.assertIn(("terminate_handle", 82917), calls)
+        self.assertIn(("close_handle", 82917), calls)
+        self.assertIn("closed (verified by Windows process handle)", printed)
+
 
 
 if __name__ == "__main__":
