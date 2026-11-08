@@ -1011,6 +1011,28 @@ function readAiProbeHex(pointer, count) {
   return hex.toUpperCase();
 }
 
+// Read the ORIGINAL hand at selector entry on the intercepted game thread.
+// This captures options present in hand, not all legal or evaluated actions.
+// Sample only while a duel is running; menu buffers can contain stale data.
+// All fields are raw observations; the snapshot is not an atomic game state.
+function readSelectorHandSnapshot(side) {
+  const running = kDuelRunning.readU16() !== 0;
+  if (!running) return {duelRunning: false};
+  if (!Number.isInteger(side) || side < 0 || side > 1) {
+    throw new Error('AI selector side is not 0 or 1');
+  }
+  const count = handCount(side);
+  if (count > 80) {
+    throw new Error('AI selector hand count out of range: ' + count);
+  }
+  const words = [];
+  for (let i = 0; i < count; i++) words.push(handWord(side, i));
+  return {
+    duelRunning: true, count, words,
+    indices: words.map(word => word & 0xFFF)
+  };
+}
+
 // This is a *passive* probe: never invokes FUN_005B0F40 or FUN_0056DD30.
 // Only events nested inside an observed selector are kept to avoid renderer noise.
 function stopAiProbe() {
@@ -1043,18 +1065,34 @@ function startAiProbe() {
         onEnter(args) {
           this.aiThread = Process.getCurrentThreadId();
           this.aiCallId = ++aiProbeCallSequence;
-          this.aiSide = args[0].toUInt32() & 1;
+          this.aiSideRaw = args[0].toUInt32();
+          this.aiSide = this.aiSideRaw & 1;
           this.aiIsSelector = target.kind === 'selector';
           if (this.aiIsSelector) {
             aiSelectorDepth.set(this.aiThread,
               (aiSelectorDepth.get(this.aiThread) || 0) + 1);
-            recordTraceEvent({
+            const event = {
               kind: 'ai_probe', phase: 'enter', function: target.name,
               functionVa: target.va, callId: this.aiCallId,
               threadId: this.aiThread, side: this.aiSide,
+              sideRaw: this.aiSideRaw,
               caller: this.returnAddress.toString(),
               pass: target.name === 'select_normal' ? args[1].toInt32() : null
-            });
+            };
+            this.aiHandSnapshot = null;
+            try {
+              const snapshot = readSelectorHandSnapshot(this.aiSideRaw);
+              event.duelRunning = snapshot.duelRunning;
+              if (snapshot.duelRunning) {
+                this.aiHandSnapshot = snapshot;
+                event.handCount = snapshot.count;
+                event.handWords = snapshot.words;
+                event.handIndices = snapshot.indices;
+              }
+            } catch (error) {
+              event.handReadError = String(error);
+            }
+            recordTraceEvent(event);
           } else {
             this.aiInsideSelection = (aiSelectorDepth.get(this.aiThread) || 0) > 0;
             if (this.aiInsideSelection) {
@@ -1070,12 +1108,26 @@ function startAiProbe() {
             const previous = aiSelectorDepth.get(this.aiThread) || 0;
             if (previous <= 1) aiSelectorDepth.delete(this.aiThread);
             else aiSelectorDepth.set(this.aiThread, previous - 1);
-            recordTraceEvent({
+            const selectedHandIndex = retval.toInt32();
+            const event = {
               kind: 'ai_probe', phase: 'leave', function: target.name,
               functionVa: target.va, callId: this.aiCallId,
               threadId: this.aiThread, side: this.aiSide,
-              returnRaw: retval.toUInt32(), selectedHandIndex: retval.toInt32()
-            });
+              returnRaw: retval.toUInt32(), selectedHandIndex
+            };
+            // Resolve against the ENTRY snapshot, not potentially mutated
+            // hand memory at return. A negative index means no match here.
+            if (this.aiHandSnapshot !== null) {
+              event.handCountAtEntry = this.aiHandSnapshot.count;
+              if (selectedHandIndex >= 0 &&
+                  selectedHandIndex < this.aiHandSnapshot.count) {
+                event.selectedCardWordAtEntry =
+                  this.aiHandSnapshot.words[selectedHandIndex];
+                event.selectedCardIndexAtEntry =
+                  this.aiHandSnapshot.indices[selectedHandIndex];
+              }
+            }
+            recordTraceEvent(event);
             return;
           }
           if (!this.aiInsideSelection) return;
