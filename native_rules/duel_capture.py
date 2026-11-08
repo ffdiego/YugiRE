@@ -55,7 +55,9 @@ class LiveDuelCapture:
 
     def __init__(self, api: object, pid: int, target_duels: int,
                  deck_plans: dict[str, Any], speed_value: int | None,
-                 output_dir: Path | None = None) -> None:
+                 output_dir: Path | None = None,
+                 rng_seed_base: int | None = None,
+                 rng_seed_start_index: int = 0) -> None:
         self.api = api
         self.target_duels = target_duels
         self.written = 0
@@ -74,6 +76,10 @@ class LiveDuelCapture:
             "kind": "metadata", "formatVersion": 2, "mode": "live_duels",
             "processId": pid, "requestedDuels": target_duels,
             "speedValue": speed_value, "deckPlans": deck_plans,
+            "rngSeedOverride": ({"baseSeed": rng_seed_base,
+                                 "globalDuelStartIndex": rng_seed_start_index,
+                                 "algorithm": "mix32-v1"}
+                                if rng_seed_base is not None else None),
             "session": self.session, "startedUtc": datetime.now(timezone.utc).isoformat(),
             "note": "Masked 0x0004 counts terminal commands, not known winners. "
                     "Original command arguments and all passive probes retained."
