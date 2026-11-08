@@ -1,5 +1,6 @@
 using Joey.Core;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 // DIFFERENTIAL PILOT, NOT FULL NATIVE REPLAY.
 // Inputs and expected outputs were transcribed from two operator-observed
@@ -141,12 +142,10 @@ internal static class DifferentialNormalSummonTests
 
             // Negative control: the parity predicate MUST reject a different
             // native-observed card/slot, rather than always reporting success.
-            using JsonDocument mutated = JsonDocument.Parse(expected.GetRawText());
             int wrongCard = expected.GetProperty("cardIndex").GetInt32() + 1;
-            string bad = expected.GetRawText().Replace(
-                "\"cardIndex\": " + expected.GetProperty("cardIndex").GetRawText(),
-                "\"cardIndex\": " + wrongCard);
-            using JsonDocument perturbed = JsonDocument.Parse(bad);
+            JsonObject bad = JsonNode.Parse(expected.GetRawText())!.AsObject();
+            bad["cardIndex"] = wrongCard;
+            using JsonDocument perturbed = JsonDocument.Parse(bad.ToJsonString());
             check(!SameObservedFields(after, perturbed.RootElement, hasLp),
                 name + ": differential comparator rejects a mutated expected card");
         }
