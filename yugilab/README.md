@@ -27,6 +27,94 @@ O script recusa `--duels 0` e não aceita `--pid`:
 `--allow-multi-instance` é opcional para rodar dois
 laboratórios simultâneos (atenção a saves/replays compartilhados).
 
+
+## Vários laboratórios em paralelo
+
+O YugiLab agora divide uma quantidade de duelos entre
+**processos Python/Frida independentes**. Cada worker cria um
+Joey, usa o bypass de mutex por PID e grava seu próprio JSONL.
+Na raiz do repositório:
+
+```powershell
+# Valide primeiro 2 workers / 3 duelos cada
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+  --exe "..\passion2\joey_pc.exe" `
+  --duels 6 --workers 2 `
+  --deck-0 ".\native_rules\decks\demo-A.json" `
+  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --trace-ai
+```
+
+Se funcionar sem erros de instância, decks ou sobregravação:
+
+```powershell
+# Dez workers independentes, dez duelos para cada
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+  --exe "..\passion2\joey_pc.exe" `
+  --duels 100 --workers 10 `
+  --deck-0 ".\native_rules\decks\demo-A.json" `
+  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --trace-ai
+```
+
+Se o total não for divisível pela quantidade de workers,
+os primeiros recebem um duelo a mais: 23 duelos com quatro
+workers distribuem `6 + 6 + 6 + 5`.
+
+O limite atual é **16 workers**, mas quantidade maior
+não significa ganho linear: cada Joey usa CPU, memória,
+recursos gráficos e Frida. Compare a duração real de
+2, 4 e 10 workers antes de definir o ideal.
+O programa inicia cada worker com ~1,1 s de diferença
+(`--stagger-seconds` pode alterar isso) para reduzir
+possíveis sementes idênticas de RNG baseadas em relógio.
+**Ainda não verificamos como o Joey escolhe sua semente**:
+comparar partidas entre instâncias é necessário antes de
+tratar resultados como amostras estatisticamente independentes.
+
+### Arquivos e validação
+
+Cada execução paralela cria uma pasta exclusiva
+`scratch/labs/parallel-.../` com:
+
+- `worker-01.log` etc. (logs isolados, inclusive o PID);
+- `captures/duels-...-pid<PID>.jsonl` para cada worker;
+- `manifest.json` com o total pedido, a distribuição,
+  PIDs, arquivos, status por worker, eventos gravados e
+  `complete`.
+
+O coordenador **só marca `complete=true` se todos
+os workers encerraram com sucesso, cada JSONL termina
+com `capture_summary.complete=true` e as contagens
+correspondem exatamente às metas individuais**.
+
+Em `Ctrl+C` ou falha de um worker, o coordenador cria
+um sinal de cancelamento observado pelos outros workers.
+Eles tentam parar seus hooks, salvar o restante dos dados,
+desanexar Frida e matar apenas seu próprio Joey.
+O coordenador **não mata o processo Python de um worker
+por força**, pois isso poderia deixar um Joey órfão.
+Se o Frida ficar permanentemente travado e o worker não
+responder ao cancelamento, o coordenador pode continuar
+aguardando a limpeza; confira logs e processos manualmente
+nesse cenário.
+
+### Limitação importante de isolamento
+
+O bypass de mutex permite a coexistência dos PIDs,
+mas **não isola arquivos, configurações, registro, saves,
+replays ou outros recursos compartilhados** do jogo.
+As gravações JSONL são exclusivas por worker, mas o
+comportamento do Joey original em concorrência ainda
+não foi validado. Faça o teste curto antes de dez instâncias;
+não deixe saves/replays importantes expostos a risco de
+concorrência, e use cópias de segurança quando pertinente.
+
+No modo `--workers 1`, o comportamento antigo é mantido.
+O `native_rules/` continua existindo e seus comandos
+permanecem compatíveis. O coordenador não aceita `--pid`
+de outra instância para encerramento.
+
 ## Ciclo de vida do PID
 
 1. O Frida cria **um novo processo Joey suspenso**, usando
