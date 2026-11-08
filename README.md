@@ -47,3 +47,26 @@ depois experimente 4/10 workers. Cada instância tem PID próprio, captura
 JSONL e encerramento supervisionado. O `manifest.json` de cada rodada
 paralela fica em `scratch/labs/parallel-.../` e **não garante ausência
 de interferências em saves, registro ou replays compartilhados**.
+
+## Reprodutibilidade por seed e regressão
+
+O laboratório aceita `--seed 12345` para gerar duelos controlados e
+comparar duas capturas independentemente de seus PIDs:
+
+```powershell
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.compare `
+  ".\primeira.zip" ".\segunda.zip" `
+  --output ".\scratch\comparison.json"
+```
+
+A comparação verifica os decks completos, eventos de IA,
+comandos nativos e checkpoints de estado. Diferenças nos bits
+superiores de argumentos são **preservadas e reportadas**.
+Veja [o relatório original](docs/evidence/joey-command-highword-drift-2026-11-08.md)
+e a [documentação do comparador](yugilab/README.md).
+
+Também existe uma primeira implementação isolada do `rand`/shuffle
+nativo em [Joey.Core/NativeRng.cs](src/Joey.Core/NativeRng.cs).
+Seus testes com hashes de decks capturados podem ser executados com
+`dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj`.
+O protótipo `DemoDuel` continua usando seu shuffle próprio.
