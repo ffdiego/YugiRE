@@ -14,6 +14,8 @@ class CommandWordOriginTests(unittest.TestCase):
             ("0x0072", "0x5783f2"),
             ("0x00DF", "0x595142"),
             ("0x0075", "0x578459"),
+            ("0x0072", "0x5783bc"),
+            ("0x00E6", "0x5acf72"),
         ):
             with self.subTest(opcode=opcode, caller=caller):
                 self.assertEqual(
@@ -25,13 +27,13 @@ class CommandWordOriginTests(unittest.TestCase):
             "0x0061", "0x5ba000", 0, 0x05370061, 0x05360061),
             "verified_partial_register_write")
 
-    def test_uninspected_matching_pattern_is_not_declared_proven(self):
+    def test_specific_unrelated_high_words_do_not_inherit_card_id_proof(self):
         self.assertEqual(classify(
-            "0x0072", "0x5783bc", 1, 0x00EA02E1, 0x00F402E1),
-            "candidate_card_id_pointer_residue")
+            "0x0072", "0x5783bd", 1, 0x00EA02E1, 0x00F402E1),
+            "unresolved_high16")
         self.assertEqual(classify(
-            "0x00E6", "0x5acf72", 1, 0x00FC02E1, 0x00DC02E1),
-            "candidate_card_id_pointer_residue")
+            "0x00E6", "0x5acf72", 0, 0x00EA02E1, 0x00F402E1),
+            "unresolved_high16")
 
     def test_other_callsites_remain_unknown(self):
         for opcode, caller, arg in (
