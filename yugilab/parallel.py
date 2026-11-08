@@ -123,6 +123,7 @@ def _stop_workers(cancel_file: Path) -> None:
 def run_parallel(args, output_root: Path) -> int:
     """Spawn independent Python workers, and count only verified footers."""
     allocations = distribute_duels(args.duels, args.workers)
+    start_monotonic = time.monotonic()
     output_root.mkdir(parents=True, exist_ok=True)
     run_dir = Path(tempfile.mkdtemp(prefix="parallel-", dir=output_root))
     captures = run_dir / "captures"
@@ -147,6 +148,14 @@ def run_parallel(args, output_root: Path) -> int:
           f"-> {allocations}; output: {run_dir}", flush=True)
     try:
         for index, target in enumerate(allocations, 1):
+            # Stop launching more Joeys if a prior child failed at startup.
+            broken = next((w for w in workers
+                           if w.process.poll() not in (None, 0)), None)
+            if broken is not None:
+                failed = True
+                error = f"Worker {broken.number} failed during startup"
+                _stop_workers(cancel_file)
+                break
             if cancel_file.exists():
                 interrupted = True
                 break
@@ -242,6 +251,7 @@ def run_parallel(args, output_root: Path) -> int:
             "status": "complete" if succeeded else
                       ("interrupted" if interrupted else "failed"),
             "finishedUtc": datetime.now(timezone.utc).isoformat(),
+            "elapsedSeconds": round(time.monotonic() - start_monotonic, 3),
             "capturedDuels": sum(item["capturedDuels"] for item in records),
             "eventsWritten": sum(item["eventsWritten"] for item in records),
             "error": error,
