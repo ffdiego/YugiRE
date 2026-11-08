@@ -125,6 +125,24 @@ todos os duelos. [Dados e detalhes da validação](../docs/evidence/demo-lab-100
 A execução contínua está funcionando, mas resultados/vencedores
 ainda não foram decodificados.
 
+**Próxima investigação (2026-11-08):** o laboratório aceita
+`--trace-ai` para ativar os probes passivos de seleção e avaliação
+da IA **antes** de o Joey iniciar. O hook de terminal também registra
+`terminalNativeState` somente no comando `0x0004`
+emitido em `0x005BC545`; são valores brutos e não há
+decodificação de vencedor ainda. Valide primeiro três duelos:
+
+```powershell
+.\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 2400 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json" --trace-ai --duels 3
+```
+
+`--trace-ai` tem custo adicional de CPU/armazenamento e é opt-in;
+o modo padrão continua igual. A nova instrumentação está pendente
+de validação com Joey real. [Roteiro e distribuição dos terminais
+na captura antiga](../docs/evidence/terminal-opcode-ai-probe-plan-2026-11-08.md).
+
+
+
 [Contrato do formato e limitações](../docs/evidence/demo-lab-100-duels-2026-11-07.md).
 
 ## Laboratório automático com rotação de processos
