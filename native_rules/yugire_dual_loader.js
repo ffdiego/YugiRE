@@ -94,6 +94,10 @@ const kDemoSourceDeck0 = va('0x00A54E60');
 const kDemoSourceDeckStride = 0xE2;
 const kDemoModeWord = va('0x00A54E5C');
 const kDemoSceneMode = va('0x005F3294');
+// 005BFEB8: CALL FUN_005C3BF5, returns to 005BFEBD.
+// Only this call sets the seed for the upcoming duel; other callers may
+// reseed when resolving card effects and MUST NOT be overridden.
+const kDemoDuelSeedCallerReturn = va('0x005BFEBD');
 const kDemoSetupTargets = [
   // Scene mode writer and scene factory are upstream of the duel bootstrap.
   // The exact menu idle timer/caller is not known yet.
@@ -105,9 +109,7 @@ const kDemoSetupTargets = [
   {name: 'state_reset', va: '0x005B9E50', address: va('0x005B9E50')},
   {name: 'deck_prepare', va: '0x00569380', address: va('0x00569380')},
   {name: 'deck_shuffle', va: '0x00568D80', address: va('0x00568D80')},
-  // FUN_005C3BF5 is called with an argument immediately before _rand.
-  // Likely the seed setter; record raw arg/caller, WITHOUT overriding it.
-  // Its semantics need confirmation in Ghidra's Run-RngSeedRecon report.
+  // Ghidra confirms 005C3BF5 writes RNG state at TLS+0x14, used by _rand.
   {name: 'rng_seed_candidate', va: '0x005C3BF5', address: va('0x005C3BF5')}
 ];
 // All four probes are optional and side-effect-free Interceptor observers.
@@ -210,6 +212,38 @@ let demoExecutorHook = null;
 let demoExecutorCalls = 0;
 let demoSetupHooks = [];
 let demoSetupCalls = 0;
+let demoSeedBase = null;
+let demoSeedStartIndex = 0;
+let demoSeedApplied = 0;
+
+// Bijective 32-bit avalanche mixer. Identical base+global index reproduces
+// the same seed; distinct indices cannot produce duplicate seeds modulo 2^32.
+function mixDuelSeed(base, index) {
+  let value = (base + index) >>> 0;
+  value ^= value >>> 16;
+  value = Math.imul(value, 0x7feb352d) >>> 0;
+  value ^= value >>> 15;
+  value = Math.imul(value, 0x846ca68b) >>> 0;
+  value ^= value >>> 16;
+  return value >>> 0;
+}
+
+function setDemoRngSeedPlan(base, startIndex = 0) {
+  if (!installed || !observerOnly || commandTraceHook === null ||
+      demoExecutorHook === null) {
+    throw new Error('Seed control requires observer-only demo trace hooks');
+  }
+  if (!Number.isSafeInteger(base) || base < 0 || base > 0xFFFFFFFF ||
+      !Number.isSafeInteger(startIndex) || startIndex < 0 ||
+      startIndex > 0xFFFFFFFF) {
+    throw new Error('Seed and global duel offset must be unsigned 32-bit integers');
+  }
+  demoSeedBase = base >>> 0;
+  demoSeedStartIndex = startIndex;
+  demoSeedApplied = 0;
+  return {enabled: true, baseSeed: demoSeedBase,
+    startIndex: demoSeedStartIndex, nextGlobalIndex: demoSeedStartIndex};
+}
 // Optional, source-level deck substitution. Plans address duel SIDES,
 // not source slots; mode 7 may swap source mapping via deckSideBit.
 let demoDeckPlans = [null, null];
@@ -1430,8 +1464,26 @@ function startDemoProbe() {
           if (target.name === 'rng_seed_candidate') {
             event.candidateSeedRaw = args[0].toUInt32();
             event.candidateSeedHex = '0x' + event.candidateSeedRaw.toString(16).padStart(8, '0');
-            // "caller" already records returnAddress. This is a candidate
-            // until the routine/state are confirmed by static analysis.
+            event.duelEntrySeedCall =
+              this.returnAddress.equals(kDemoDuelSeedCallerReturn);
+            event.seedOverrideApplied = false;
+            // A single verified callsite is allowed to replace the initial
+            // demo seed. Mid-duel effect/command reseeds remain untouched.
+            if (event.duelEntrySeedCall && demoSeedBase !== null &&
+                kDemoSceneMode.readU32() === 7) {
+              const globalIndex = demoSeedStartIndex + demoSeedApplied;
+              if (globalIndex > 0xFFFFFFFF) {
+                throw new Error('Global duel seed index exceeded uint32 range');
+              }
+              const effectiveSeed = mixDuelSeed(demoSeedBase, globalIndex);
+              args[0] = ptr(effectiveSeed);
+              event.seedOverrideApplied = true;
+              event.seedBase = demoSeedBase;
+              event.globalDuelIndex = globalIndex;
+              event.effectiveSeedRaw = effectiveSeed;
+              event.effectiveSeedHex = '0x' + effectiveSeed.toString(16).padStart(8, '0');
+              demoSeedApplied++;
+            }
           }
           if (target.name === 'scene_config' ||
               target.name === 'scene_factory' ||
@@ -1825,6 +1877,7 @@ rpc.exports = {
   speedstatus: speedStatus,
   deckstatus: demoDeckStatus,
   setdemodecks: setDemoDeckPlans,
+  setdemoseed: setDemoRngSeedPlan,
   multistatus: multiInstanceStatus,
   armmultiinstance: armMultiInstance,
   stopmultiinstance: stopMultiInstance,
