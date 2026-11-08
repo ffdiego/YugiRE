@@ -1,0 +1,52 @@
+{
+  "schema": "yugire.partial-normal-summon.v1",
+  "id": "console-normal-summon-side1-221",
+  "source": "docs/evidence/console-native-summon-live-2026-11-04.md",
+  "evidence": "Operator console state before/after; non-atomic; only stated fields are asserted",
+  "before": {
+    "activeSide": 1,
+    "activeLifePoints": 8000,
+    "activeHandIndices": [
+      895,
+      467,
+      894,
+      1016,
+      582,
+      221
+    ],
+    "knownActiveMonsters": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "knownOpponentMonsters": [
+      1052,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "action": {
+    "kind": "normalSummon",
+    "side": 1,
+    "handIndex": 5,
+    "fieldSlot": 0,
+    "sourceCardIndex": 221,
+    "nativeLevelClass": 4,
+    "nativeEligibility": 17
+  },
+  "after": {
+    "activeHandCount": 5,
+    "activeLifePoints": 8000,
+    "fieldSlot": 0,
+    "cardIndex": 221
+  },
+  "limitations": [
+    "Other cards have unknown properties/resource IDs; synthetic placeholders are used only to set up state",
+    "Graveyard, full deck, other player hand, flags, phase transitions, command timing are not compared",
+    "Native result is an operator before/after observation, not an atomic replay or full state comparison"
+  ]
+}
