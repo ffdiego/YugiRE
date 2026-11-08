@@ -156,7 +156,7 @@ class LiveDuelCapture:
             raise RuntimeError("Written event count disagrees with agent counters")
         if self.terminals_written != stopped_status["completedDuels"]:
             raise RuntimeError("Duels in trace disagree with the agent's terminal counter")
-        if self.rng_seed_base is not None:
+        if self.rng_seed_base is not None and requested_complete:
             expected = list(range(
                 self.rng_seed_start_index,
                 self.rng_seed_start_index + self.target_duels))
