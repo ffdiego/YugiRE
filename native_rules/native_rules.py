@@ -305,7 +305,12 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
                 exit_code = 2
                 print(f"[trace] Could not finalize capture: {exc}", flush=True)
         if live_capture is not None:
-            live_capture.close()
+            try:
+                live_capture.close()
+            except Exception as exc:
+                exit_code = 2
+                print(f"[trace] Capture close error: {exc}", flush=True)
+        if script is not None and observer_armed:
             try:
                 script.exports_sync.restore()
             except Exception as exc:
