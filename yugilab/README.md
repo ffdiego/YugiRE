@@ -170,8 +170,25 @@ separadamente; **não assume que tais bits podem ser descartados**.
 Se os checkpoints coincidirem mas valores brutos divergirem,
 o relatório dirá `observed_match_with_raw_differences`.
 Esse status não comprova identidade integral do estado nativo,
-nem identifica vencedores. Para exigir igualdade dos argumentos
-brutos, acrescente `--strict-raw`.
+nem identifica vencedores.
+
+**A análise posterior no Ghidra demonstrou a origem de 115 das
+119 diferenças de bits superiores.** Em 114 casos o conversor
+`FUN_004022E0` devolve o ID da carta em `AX` mas conserva os
+bits superiores do endereço da tabela em `EAX`; um comando
+`0x61` conserva a metade superior de `EDX` ao escrever `DX`.
+Outros 2 casos são semelhantes, mas ainda não verificados no
+Ghidra, e 2 continuam desconhecidos.
+
+O comparador agora apresenta `highWordOrigins`,
+`verifiedRegisterResidueCommands` e
+`unverifiedRawDifferenceCommands`, sem alterar os valores
+originais. Use `--strict-unverified` para rejeitar **qualquer
+diferença ainda não explicada por instruções nativas**
+(4 neste experimento), ou `--strict-raw` para rejeitar
+qualquer diferença, inclusive as 115 justificadas.
+
+[Relatório do Ghidra e classificação completa](../docs/evidence/joey-command-highword-origin-2026-11-08.md).
 
 Códigos de saída: 0 = checkpoints observados iguais;
 1 = divergência relevante (ou exigência `--strict-raw`);
