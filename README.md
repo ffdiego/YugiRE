@@ -70,3 +70,21 @@ nativo em [Joey.Core/NativeRng.cs](src/Joey.Core/NativeRng.cs).
 Seus testes com hashes de decks capturados podem ser executados com
 `dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj`.
 O protótipo `DemoDuel` continua usando seu shuffle próprio.
+
+## Primeiro teste diferencial de invocação normal (Joey → C#)
+
+`Joey.Tests` inclui dois fixtures **parciais, obtidos de
+observações do Joey original**, que inicializam `DemoDuel`,
+executam `Summon` e comparam o resultado observado (quantidade
+de cartas na mão, índice interno e slot do monstro, LP quando
+medidos). Uma observação também contém o contexto nativo
+`0xCE/0x4103` para conferir lado/índice/slot.
+
+O executor de fixtures **não reexecuta um duelo completo**:
+estados desconhecidos são deixados como aproximações explícitas;
+não há equivalência de eventos de IA ou de todo o estado nativo.
+Veja [os limites e evidências](docs/evidence/joey-first-differential-normal-summon-2026-11-08.md).
+
+```powershell
+dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj
+```
