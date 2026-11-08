@@ -1,5 +1,12 @@
 # YugiRE Native Rules
 
+> **Execução automatizada por quantidade de duelos:** use a nova
+> [interface YugiLab](../yugilab/README.md) (`python -m yugilab`) na raiz
+> do repositório. Ela cria um PID próprio, grava um JSONL contínuo
+> e encerra somente o Joey iniciado ao concluir N duelos. Este diretório
+> permanece como backend para Frida, DLL nativa e investigações interativas.
+
+
 Implementação híbrida das regras de **Yu-Gi-Oh! Power of Chaos: Joey the Passion**.
 Este diretório contém **todo o código necessário** para os experimentos ativos
 com callbacks em DLL C++ e o console interativo de duelo, além dos testes.
