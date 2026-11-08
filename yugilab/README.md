@@ -208,6 +208,20 @@ O comparador também confronta esse novo campo quando
 ele estiver disponível em execuções futuras.
 Seu comportamento no jogo real ainda depende de validação.
 
+**Novo contrato de fila confirmado:** `FUN_005B9170` armazena
+quatro palavras de 16 bits. Para os opcodes `0x37`, `0x61` e
+`0x86` (sem remapeamentos internos nesse caminho), o
+comparador verifica adicionalmente `sameDefaultBranchQueuePackets`.
+Nos dois ZIPs reproduzidos, **41/41 pacotes são iguais**, mesmo
+com diferenças no alto dos argumentos brutos. Isso resolve a
+**equivalência do pacote** para `0x86`, mas ainda não
+identifica a origem de seus bits altos. Outros opcodes
+podem transformar parâmetros antes de armazená-los.
+
+O módulo `Joey.Core/NativeDefaultQueuePacket.cs` implementa
+somente esses três casos para os testes de regressão C#,
+sem substituir o protocolo completo.
+
 ### Arquivos e validação
 
 Cada execução paralela cria uma pasta exclusiva
