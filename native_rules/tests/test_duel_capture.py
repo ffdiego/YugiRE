@@ -145,6 +145,47 @@ class LiveDuelCaptureTests(unittest.TestCase):
             finally:
                 capture.close()
 
+    def test_controlled_seed_is_verified_before_marking_capture_complete(self):
+        seed_event = {
+            "kind": "demo_init", "function": "rng_seed_candidate",
+            "phase": "enter", "seq": 1, "seedOverrideApplied": True,
+            "globalDuelIndex": 7, "effectiveSeedRaw": 3437716590,
+        }
+        events = [seed_event, command(2, 4)]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as directory:
+            capture = LiveDuelCapture(
+                agent, 411, 1, {}, 600, Path(directory),
+                rng_seed_base=12345, rng_seed_start_index=7)
+            try:
+                capture.drain()
+                agent.tracestop()
+                summary = capture.finish(agent.tracestatus(), True)
+                self.assertTrue(summary["complete"])
+                self.assertEqual(summary["rngSeedOverridesApplied"], 1)
+            finally:
+                capture.close()
+            lines = [json.loads(line) for line in
+                     capture.path.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual(lines[0]["rngSeedOverride"]["baseSeed"], 12345)
+            self.assertEqual(lines[0]["rngSeedOverride"]["globalDuelStartIndex"], 7)
+
+    def test_missing_controlled_seed_is_a_capture_error(self):
+        agent = FakeLiveAgent([command(1, 4)], 1)
+        with tempfile.TemporaryDirectory() as directory:
+            capture = LiveDuelCapture(
+                agent, 412, 1, {}, 600, Path(directory),
+                rng_seed_base=12345, rng_seed_start_index=0)
+            try:
+                capture.drain()
+                agent.tracestop()
+                with self.assertRaisesRegex(RuntimeError,
+                                            "Controlled RNG seed sequence missing"):
+                    capture.finish(agent.tracestatus(), True)
+            finally:
+                capture.close()
+            self.assertFalse(capture.finished)
+
     def test_terminal_opcode_masks_bit15(self):
         self.assertEqual(enrich(command(1, 0x8004))["opcodeMasked"], "0x0004")
 
