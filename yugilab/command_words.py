@@ -1,7 +1,8 @@
 """Evidence-limited classification of changing 16-bit high command words.
 
-Source: Joey Ghidra command-highword-{placement,card-commands,other}.txt
-and card-id-instructions.txt, matched to two seeded Windows traces.
+Source: Joey Ghidra command-highword-{placement,card-commands,other}.txt,
+command-highword-remaining-{card-id,raw-callers}.txt, and
+card-id-instructions.txt, matched to two seeded Windows traces.
 
 This classifies the *origin* of certain high-word differences, not whether
 the original command consumer ignores those 16 bits. Preserve full raw words.
@@ -21,13 +22,11 @@ _CARD_ID_POINTER_RETURNS = frozenset({
     ("0x0072", "0x5783f2", 1),
     ("0x00df", "0x595142", 1),
     ("0x0075", "0x578459", 1),
-})
-
-# These exhibit the same high word as the CARD_ID pointer in the very same
-# process, but the supplied Ghidra report did not cover these specific
-# return addresses. Keep them separate until their callees are inspected.
-_CANDIDATE_POINTER_RETURNS = frozenset({
+    # Confirmed by follow-up 2026-11-08 Ghidra report:
+    # 0057839C CALL 004022E0; 005783AC PUSH EAX; 005783B7 CALL 005B9170.
     ("0x0072", "0x5783bc", 1),
+    # 005ACF57 CALL 004022E0; 005ACF6B PUSH EAX;
+    # 005ACF6D CALL 005B9170.
     ("0x00e6", "0x5acf72", 1),
 })
 
@@ -54,6 +53,4 @@ def classify_high_word_change(opcode: str, caller: str, arg_index: int,
         return "verified_card_id_pointer_residue"
     if key in _PARTIAL_REGISTER_RETURNS:
         return "verified_partial_register_write"
-    if key in _CANDIDATE_POINTER_RETURNS:
-        return "candidate_card_id_pointer_residue"
     return "unresolved_high16"
