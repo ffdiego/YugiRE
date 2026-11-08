@@ -62,6 +62,10 @@ class LiveDuelCapture:
         self.target_duels = target_duels
         self.written = 0
         self.terminals_written = 0
+        self.seed_applied_count = 0
+        self.seed_applied_indices: list[int] = []
+        self.rng_seed_base = rng_seed_base
+        self.rng_seed_start_index = rng_seed_start_index
         self.next_seq = 1
         self.closed = False
         self.finished = False
@@ -100,6 +104,12 @@ class LiveDuelCapture:
                 raise RuntimeError(
                     f"Non-contiguous trace: expected seq {self.next_seq}, found {seq}")
             normalized = enrich(event)
+            if (normalized.get("kind") == "demo_init" and
+                    normalized.get("function") == "rng_seed_candidate" and
+                    normalized.get("phase") == "enter" and
+                    normalized.get("seedOverrideApplied") is True):
+                self.seed_applied_count += 1
+                self.seed_applied_indices.append(normalized.get("globalDuelIndex"))
             self.stream.write(json.dumps(normalized, ensure_ascii=False) + "\n")
             self.next_seq += 1
             self.written += 1
@@ -146,6 +156,14 @@ class LiveDuelCapture:
             raise RuntimeError("Written event count disagrees with agent counters")
         if self.terminals_written != stopped_status["completedDuels"]:
             raise RuntimeError("Duels in trace disagree with the agent's terminal counter")
+        if self.rng_seed_base is not None:
+            expected = list(range(
+                self.rng_seed_start_index,
+                self.rng_seed_start_index + self.target_duels))
+            if self.seed_applied_indices != expected:
+                raise RuntimeError(
+                    "Controlled RNG seed sequence missing or out of order: "
+                    f"expected {expected}, got {self.seed_applied_indices}")
         if stopped_status["overwritten"]:
             raise RuntimeError("Agent discarded events before final export")
         # Existing trace acknowledgement prevents duplicate exports in launcher finally.
@@ -153,6 +171,7 @@ class LiveDuelCapture:
         summary = {
             "kind": "capture_summary", "requestedDuels": self.target_duels,
             "capturedDuels": self.terminals_written, "eventsWritten": self.written,
+            "rngSeedOverridesApplied": self.seed_applied_count,
             "overwritten": stopped_status["overwritten"],
             "complete": requested_complete and
                         self.terminals_written >= self.target_duels,
