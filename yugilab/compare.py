@@ -26,7 +26,7 @@ from typing import Iterator
 from zipfile import ZipFile
 
 from .seed_math import derive_duel_seed
-from .command_words import classify_high_word_change
+from .command_words import classify_high_word_change, direct_queued_words
 
 
 @dataclass(frozen=True)
@@ -213,6 +213,10 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
     wrapper86_b = [e.get("wrapper86Caller") for e in commands_b
                    if e.get("opcodeMasked") == "0x0086" and
                    e.get("caller") == "0x574804"]
+    default_queue_a = [packet for e in commands_a
+                       if (packet := direct_queued_words(e["args"])) is not None]
+    default_queue_b = [packet for e in commands_b
+                       if (packet := direct_queued_words(e["args"])) is not None]
     shape = lambda e: (e.get("kind"), e.get("function"), e.get("phase"))
     same_layout = [shape(e) for e in left] == [shape(e) for e in right]
     same_structure = (len(commands_a) == len(commands_b) and all(
@@ -276,6 +280,8 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
         "sameTerminalNativeState": terminal_match,
         "sameCeNativeStates": ce_a == ce_b,
         "same86WrapperCallers": wrapper86_a == wrapper86_b,
+        "sameDefaultBranchQueuePackets": (
+            default_queue_a == default_queue_b),
         "sameNonEntryReseeds": _reseeds(left) == _reseeds(right),
     }
     observed = all(v for k, v in checks.items() if k != "sameRawCommandArgs")
@@ -294,6 +300,8 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
                    "ceSnapshotsRight": sum(x is not None for x in ce_b),
                    "wrapper86CallersLeft": wrapper86_a,
                    "wrapper86CallersRight": wrapper86_b,
+                   "defaultBranchQueuePacketsLeft": len(default_queue_a),
+                   "defaultBranchQueuePacketsRight": len(default_queue_b),
                    "changedRawCommands": changed_commands,
                    "high16OnlyChangedCommands": high_only_commands,
                    "highWordOrigins": dict(sorted(difference_origins.items())),
