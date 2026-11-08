@@ -55,6 +55,9 @@ class StartupLauncherTests(unittest.TestCase):
                     events.append(("tracestart", capacity))
                 def tracedemostart(self):
                     events.append("tracedemostart")
+                def traceaistart(self):
+                    events.append("traceaistart")
+                    return {"aiHooks": 4, "aiActive": True}
                 def tracemark(self, label):
                     events.append(("tracemark", label))
                 def setdemodecks(self, plans):
@@ -114,13 +117,14 @@ class StartupLauncherTests(unittest.TestCase):
                 code = native_rules.main(
                     ["--spawn", "--exe", str(exe), "--observe-only",
                      "--speed-value", "1000", "--allow-multi-instance",
-                      "--deck-0", str(deck_file)])
+                      "--deck-0", str(deck_file), "--trace-ai"])
             self.assertEqual(code, 0)
             self.assertEqual(device.program, [str(exe), "-speedy"])
             self.assertEqual(device.cwd, str(exe.parent))
             ordered = ["spawn", "attach", "create_script", "load",
                        "bootstrapinfo", "armstartupobserver",
                        ("tracestart", 20000), "tracedemostart",
+                       "traceaistart",
                        ("tracemark", "startup-hooks-armed"),
                        ("setdemodecks", {"0": {"main": [42] * 40,
                                               "second": [], "third": []}}),
