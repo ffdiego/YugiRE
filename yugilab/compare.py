@@ -26,6 +26,7 @@ from typing import Iterator
 from zipfile import ZipFile
 
 from .seed_math import derive_duel_seed
+from .command_words import classify_high_word_change
 
 
 @dataclass(frozen=True)
@@ -214,6 +215,7 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
         for a, b in zip(commands_a, commands_b)))
     low_equal, raw_equal = same_structure, same_structure
     deltas: Counter = Counter()
+    difference_origins: Counter = Counter()
     changed_commands = 0
     high_only_commands = 0
     examples: list[dict] = []
@@ -231,9 +233,19 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
                 high_only_commands += 1
             else:
                 low_equal = False
-            for n, v, w in changed:
+            # Classify the origin of each changed upper word by specific
+            # Ghidra-proven callsite; do not normalize any raw data away.
+            origins = [classify_high_word_change(
+                a.get("opcodeMasked"), a.get("caller"), n, v, w)
+                for n, v, w in changed]
+            if len(origins) == 1:
+                difference_origins[origins[0]] += 1
+            else:
+                difference_origins["multiple:" + "|".join(sorted(origins))] += 1
+            for (n, v, w), origin in zip(changed, origins):
                 deltas[(a.get("opcodeMasked"), a.get("caller"), n,
-                        (v >> 16) & 0xFFFF, (w >> 16) & 0xFFFF)] += 1
+                        (v >> 16) & 0xFFFF, (w >> 16) & 0xFFFF,
+                        origin)] += 1
             if len(examples) < max_examples:
                 examples.append({"seqLeft": a.get("seq"), "seqRight": b.get("seq"),
                                  "opcode": a.get("opcodeMasked"),
@@ -272,20 +284,29 @@ def _compare_duel(index: int, left: list[dict], right: list[dict],
                    "ceSnapshotsLeft": sum(x is not None for x in ce_a),
                    "ceSnapshotsRight": sum(x is not None for x in ce_b),
                    "changedRawCommands": changed_commands,
-                   "high16OnlyChangedCommands": high_only_commands},
+                   "high16OnlyChangedCommands": high_only_commands,
+                   "highWordOrigins": dict(sorted(difference_origins.items())),
+                   "verifiedRegisterResidueCommands": sum(
+                       count for origin, count in difference_origins.items()
+                       if origin.startswith("verified_")),
+                   "unverifiedRawDifferenceCommands": sum(
+                       count for origin, count in difference_origins.items()
+                       if not origin.startswith("verified_"))},
         "fingerprints": {"leftShuffles": _stable_hash(sh_a),
                          "rightShuffles": _stable_hash(sh_b),
                          "leftAi": _stable_hash(ai_a),
                          "rightAi": _stable_hash(ai_b)},
         "rawHighWordDifferences": [
             {"opcode": opcode, "caller": caller, "argIndex": arg,
-             "high16Left": high_a, "high16Right": high_b, "count": count}
-            for (opcode, caller, arg, high_a, high_b), count in
+             "high16Left": high_a, "high16Right": high_b,
+             "origin": origin, "count": count}
+            for (opcode, caller, arg, high_a, high_b, origin), count in
             deltas.most_common(30)],
         "rawDifferenceExamples": examples,
-        "note": ("Raw upper words are NOT normalized away: their semantics "
-                 "remain unknown. Matching observable checks does not "
-                 "establish identical full engine state or winner.")
+        "note": ("Some changed high words are provably leftover pointer/register "
+                 "bits at specific native callsites; others are unresolved. "
+                 "Raw values remain intact. Matching observed checkpoints "
+                 "does not establish identical full engine state or winner.")
     }
 
 
@@ -317,7 +338,9 @@ def compare_runs(left: Path, right: Path, max_examples: int = 8) -> dict:
         duel_results.append(_compare_duel(a[0], a[1], b[1], max_examples))
     good = bool(duel_results) and all(x["observedMatch"] for x in duel_results)
     raw = good and all(x["rawCommandArgsMatch"] for x in duel_results)
-    return {"formatVersion": 1, "mode": "seeded-run-observed-comparison",
+    unverified = sum(d["counts"]["unverifiedRawDifferenceCommands"]
+                     for d in duel_results)
+    return {"formatVersion": 2, "mode": "seeded-run-observed-comparison",
             "left": str(left), "right": str(right),
             "settings": {k: value for k, value in settings(first[0]).items()
                          if k != "deckPlans"},
@@ -328,6 +351,10 @@ def compare_runs(left: Path, right: Path, max_examples: int = 8) -> dict:
                       "observed_match_with_raw_differences",
             "totalChangedRawCommands": sum(d["counts"]["changedRawCommands"]
                                            for d in duel_results),
+            "totalUnverifiedRawDifferenceCommands": unverified,
+            "highWordOrigins": dict(sorted(sum(
+                (Counter(d["counts"]["highWordOrigins"]) for d in duel_results),
+                Counter()).items())),
             "totalHigh16OnlyChangedCommands": sum(
                 d["counts"]["high16OnlyChangedCommands"] for d in duel_results),
             "duels": duel_results,
@@ -344,6 +371,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-examples", type=int, default=8)
     parser.add_argument("--strict-raw", action="store_true",
                         help="Fail when raw command words differ")
+    parser.add_argument("--strict-unverified", action="store_true",
+                        help="Fail if any changed command word has no proven native origin")
     args = parser.parse_args(argv)
     try:
         result = compare_runs(args.left, args.right, args.max_examples)
@@ -354,7 +383,8 @@ def main(argv: list[str] | None = None) -> int:
           f"observedMatch={result['observedMatch']}; "
           f"rawCommandArgsMatch={result['rawCommandArgsMatch']}; "
           f"{result['totalHigh16OnlyChangedCommands']} commands differ "
-          "only in high words")
+          "only in high words; "
+          f"{result['totalUnverifiedRawDifferenceCommands']} unverified")
     for duel in result["duels"]:
         print(f"  globalIndex={duel['globalDuelIndex']}: {duel['status']}; "
               f"rawChanged={duel['counts']['changedRawCommands']}")
@@ -364,7 +394,9 @@ def main(argv: list[str] | None = None) -> int:
                                + "\n", encoding="utf-8")
         print(f"[yugilab.compare] Report: {args.output}")
     return 1 if (not result["observedMatch"] or
-                 (args.strict_raw and not result["rawCommandArgsMatch"])) else 0
+                 (args.strict_raw and not result["rawCommandArgsMatch"]) or
+                 (args.strict_unverified and
+                  result["totalUnverifiedRawDifferenceCommands"] > 0)) else 0
 
 
 if __name__ == "__main__":
