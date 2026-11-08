@@ -30,7 +30,7 @@ internal static class NativeDefaultQueuePacketTests
               "0x61 native queue ignores stale EDX upper word");
 
         bool side = NativeDefaultQueuePacket.TryFromProducerArguments(
-            0x80000086u, 1093u, 257u, 12u, out var p86Side);
+            0x00008086u, 1093u, 257u, 12u, out var p86Side);
         check(side && p86Side.SideBit15 && p86Side.Opcode == 0x86,
               "Native command word preserves bit15 while masking opcode");
 
