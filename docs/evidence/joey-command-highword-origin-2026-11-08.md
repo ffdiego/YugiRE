@@ -1,5 +1,16 @@
 # YugiRE — origem dos 119 argumentos brutos divergentes
 
+> **Atualização 2026-11-08 — segundo exame do Ghidra:** os arquivos
+> `command-highword-remaining-card-id.txt` e
+> `command-highword-remaining-raw-callers.txt` confirmam **dois**
+> callsites anteriormente candidatos. O total passa a
+> **116 diferenças de ponteiro CARD_ID + 1 escrita parcial
+> em EDX = 117/119 com origem demonstrada**. Restam
+> somente `0x0037/0x0058CF96` e `0x0086/0x00574804`.
+> As contagens 114/115 abaixo documentam a etapa anterior;
+> esta atualização prevalece.
+
+
 **Data:** 2026-11-08. **Exe verificado por SHA256:**
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 
@@ -129,3 +140,43 @@ Execute:
 ```powershell
 .\scripts\Run-RemainingHighWordRecon.ps1
 ```
+
+## Atualização — investigação direcionada dos dois callsites restantes
+
+Os novos relatórios comprovam:
+
+- `0x72`, retorno `0x005783BC`: `0057839C CALL 004022E0`,
+  `005783AC PUSH EAX`, `005783B7 CALL 005B9170`.
+  Portanto o `args[1]` contém o `AX` com ID válido e a
+  metade alta do ponteiro `CARD_ID` herdada de `EAX`.
+- `0xE6`, retorno `0x005ACF72`: `005ACF57 CALL 004022E0`,
+  `005ACF6B PUSH EAX`, `005ACF6D CALL 005B9170`.
+  A mesma explicação vale para seu `args[1]`.
+
+**Recontagem offline dos ZIPs anteriores:** 116 casos `CARD_ID`,
+1 caso `MOV DX` e **2 desconhecidos**. Os dois desconhecidos
+aparecem apenas no duelo de índice global 0 e compartilham
+uma mesma metade superior em cada execução:
+
+| Comando | Dado que muda | Execução A | Execução B |
+|---|---|---|---|
+| `0x0037`, retorno `0x0058CF96` | `args[0]` | `0x06350037` | `0x06470037` |
+| `0x0086`, retorno `0x00574804` | `args[1]` | `0x06350445` | `0x06470445` |
+
+Em `FUN_005747E0`, o comando `0x86` simplesmente encaminha
+`param_2` (32 bits) para o produtor `FUN_005B9170`.
+O dado não é mascarado nem construído ali; sua origem
+está em um dos numerosos chamadores. O Ghidra também
+não reconheceu instrução em `0x0058CF90`, começando a
+listagem somente em `0x0058D01E`: **não temos ainda
+assembly do ponto que emite `0x37`**.
+
+A correlação `0x0635` / `0x0647` é sugestiva, mas não
+prova que ambas as diferenças têm o mesmo produtor ou
+que a metade superior seja descartável.
+
+A classificação por callsite de `yugilab/command_words.py`
+foi ajustada: os dois casos antes `candidate` passaram
+para `verified_card_id_pointer_residue`; os outros dois
+permanecem `unresolved_high16` e são preservados em
+`--strict-unverified`.
