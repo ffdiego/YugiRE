@@ -139,7 +139,7 @@ class ExportSummonTests(unittest.TestCase):
         for change in ["context", "flag", "life", "side"]:
             with self.subTest(change=change):
                 event = sample_transition()
-                event["seq"] = 3
+                event["seq"] = 4
                 if change == "context":
                     event["ceContext"] = 0x8105  # set, not normal summon
                 if change == "flag":
@@ -208,7 +208,7 @@ class ExportSummonTests(unittest.TestCase):
 
     def test_empty_hand_after_last_card_is_supported(self):
         event = sample_transition()
-        event["seq"] = 3
+        event["seq"] = 4
         event["handIndex"] = 0
         event["sourceCardIndex"] = 221
         event["ceContext"] = 0x4000 | (2 << 1) | 1
@@ -221,7 +221,7 @@ class ExportSummonTests(unittest.TestCase):
 
     def test_unsupported_transition_method_fails_closed(self):
         event = sample_transition()
-        event["seq"] = 3
+        event["seq"] = 4
         event["evidenceMethod"] = "guessed_from_timestamps"
         with self.assertRaisesRegex(ValueError, "method"):
             fixture_from_transition(event, 0)
