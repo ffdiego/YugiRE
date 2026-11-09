@@ -1291,6 +1291,9 @@ function sameIndexArray(a, b) {
 function sampleDemoSummonTransitions() {
   if (demoSummonCandidates.size === 0) return;
   for (const [side, candidate] of demoSummonCandidates) {
+    // The normal-placement emitter and the state reader must run on the
+    // same native duel thread, not an unrelated UI/worker thread.
+    if (Process.getCurrentThreadId() !== candidate.threadId) continue;
     candidate.ticks++;
     if (candidate.ticks > kDemoSummonMaxTicks) {
       demoSummonCandidates.delete(side);
