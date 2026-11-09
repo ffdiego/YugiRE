@@ -1580,6 +1580,9 @@ function startDemoProbe() {
     for (const target of kDemoSetupTargets) {
       setup.push(Interceptor.attach(target.address, {
         onEnter(args) {
+          if (target.name === 'duel_entry' || target.name === 'state_reset') {
+            demoSummonCandidates.clear();
+          }
           this.setupId = ++demoSetupCalls;
           this.setupThreadId = Process.getCurrentThreadId();
           this.setupSide = null;
@@ -1760,7 +1763,12 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
       const raw = args[0].toUInt32();
       // A completed demo emits masked opcode 0x0004 / 0x8004.
       // Count producer calls independently of the bounded trace buffer.
-      if ((raw & 0x7FFF) === 0x0004) traceCompletedDuels++;
+      if ((raw & 0x7FFF) === 0x0004) {
+        traceCompletedDuels++;
+        // Never allow a partially observed placement to cross the terminal
+        // boundary into another global duel index.
+        demoSummonCandidates.clear();
+      }
       const event = {
         kind: 'command',
         threadId: Process.getCurrentThreadId(),
