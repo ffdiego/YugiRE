@@ -122,18 +122,45 @@ internal static class DifferentialNormalSummonTests
         bool hand = result.HandIndices.Length == expected.GetProperty("activeHandCount").GetInt32();
         bool monster = slot is >= 0 and < 5 && result.MonsterSlots[slot] == target;
         bool life = !hasLp || result.LifePoints == expected.GetProperty("activeLifePoints").GetInt32();
-        return result.ActionAccepted && hand && monster && life;
+        // Auto-generated fixtures have the complete observed hand and five
+        // native field-slot indices. Older hand-authored fixtures intentionally
+        // do not, so keep the checks opt-in per observed property.
+        bool exactHand = !expected.TryGetProperty("activeHandIndices", out var handIndices) ||
+            result.HandIndices.SequenceEqual(CardIndices(handIndices));
+        bool exactField = true;
+        if (expected.TryGetProperty("knownActiveMonsters", out var slots))
+        {
+            if (slots.ValueKind != JsonValueKind.Array || slots.GetArrayLength() != 5)
+                throw new InvalidDataException("Native observed field must contain five slots");
+            var observed = slots.EnumerateArray().Select(slot =>
+                slot.ValueKind == JsonValueKind.Null ? (int?)null : slot.GetInt32());
+            exactField = result.MonsterSlots.SequenceEqual(observed);
+        }
+        return result.ActionAccepted && hand && monster && life && exactHand && exactField;
     }
 
-    public static void Run(Action<bool, string> check)
+    public static void Run(Action<bool, string> check, string? externalFixtureDir = null)
     {
-        foreach (string name in new[]
+        var files = new List<string>
         {
-            "console-normal-summon-side1-221",
-            "watch-normal-summon-side1-705-slot1"
-        })
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", "console-normal-summon-side1-221.json"),
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", "watch-normal-summon-side1-705-slot1.json")
+        };
+        if (!string.IsNullOrWhiteSpace(externalFixtureDir))
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "Fixtures", name + ".json");
+            if (!Directory.Exists(externalFixtureDir))
+                throw new DirectoryNotFoundException(
+                    "Differential fixture directory missing: " + externalFixtureDir);
+            var generated = Directory.GetFiles(externalFixtureDir, "auto-g*.json")
+                .OrderBy(file => file, StringComparer.Ordinal).ToArray();
+            if (generated.Length == 0 || generated.Length > 500)
+                throw new InvalidDataException(
+                    "External directory must contain 1..500 auto-g*.json fixtures");
+            files.AddRange(generated);
+        }
+        foreach (string path in files)
+        {
+            string name = Path.GetFileNameWithoutExtension(path);
             var (before, after, expected, hasLp) = Replay(path);
             check(before.HandIndices.Length == after.HandIndices.Length + 1,
                 name + ": hand lost exactly one card in DemoDuel");
