@@ -56,6 +56,47 @@ def _snapshot(value: object, label: str, side: int) -> dict:
     return value
 
 
+def _validate_event_links(event: dict, event_by_seq: dict[int, dict]) -> None:
+    """Confirm that the declaration points to actual executor and CE records."""
+    enter_seq = _int(event.get("executorEnterSeq"), "executorEnterSeq", 1)
+    ce_seq = _int(event.get("ceProducerSeq"), "ceProducerSeq", 1)
+    end_seq = _int(event.get("seq"), "transition.seq", 1)
+    if not enter_seq < ce_seq < end_seq:
+        raise ValueError("Executor, CE and transition sequence ordering invalid")
+    entry = event_by_seq.get(enter_seq)
+    ce = event_by_seq.get(ce_seq)
+    if entry is None or ce is None:
+        raise ValueError("Referenced executor or CE event not in capture")
+    if (entry.get("kind") != "demo_executor" or
+        entry.get("function") != "normal_placement" or
+        entry.get("phase") != "enter" or
+        entry.get("duelRunning") is not True or
+        entry.get("callId") != event.get("executorCallId") or
+        entry.get("side") != event.get("side") or
+        entry.get("handIndex") != event.get("handIndex") or
+        entry.get("handInternalIndex") != event.get("sourceCardIndex") or
+        entry.get("handCount") != len(event.get("before", {}).get("handIndices", []))):
+        raise ValueError("Native executor entry does not support transition")
+    if (ce.get("kind") != "command" or
+        str(ce.get("opcodeMasked", "")).lower() != "0x00ce" or
+        str(ce.get("caller", "")).lower() != "0x5abeab"):
+        raise ValueError("Referenced native CE command not found")
+    native = ce.get("ceNativeState")
+    args = ce.get("args")
+    if (not isinstance(native, dict) or
+        native.get("context") != event.get("ceContext") or
+        native.get("stage") != event.get("ceStage") or
+        type(native.get("source")) is not int or
+        (native["source"] & 0xFFF) != event.get("sourceCardIndex") or
+        not isinstance(args, list) or len(args) < 2 or
+        type(args[1]) is not int or
+        (args[1] & 0xFFFF) != event.get("ceResourceId")):
+        raise ValueError("Native CE context/resource/source contradict transition")
+    thread_id = _int(event.get("threadId"), "threadId", 1)
+    if entry.get("threadId") != thread_id or ce.get("threadId") != thread_id:
+        raise ValueError("Executor, CE and transition must use same game thread")
+
+
 def fixture_from_transition(event: dict, global_index: int) -> dict:
     """Validate a source observation independently, then project known facts.
 
@@ -69,7 +110,8 @@ def fixture_from_transition(event: dict, global_index: int) -> dict:
     seq = _int(event.get("seq"), "seq", 1)
     call_id = _int(event.get("executorCallId"), "executorCallId", 1)
     ce_seq = _int(event.get("ceProducerSeq"), "ceProducerSeq", 1)
-    if ce_seq >= seq:
+    enter_seq = _int(event.get("executorEnterSeq"), "executorEnterSeq", 1)
+    if not enter_seq < ce_seq or ce_seq >= seq:
         raise ValueError("CE producer event must precede confirmed state transition")
     side = _int(event.get("side"), "side", 0, 1)
     hand_index = _int(event.get("handIndex"), "handIndex", 0, 79)
@@ -140,8 +182,9 @@ def fixture_from_transition(event: dict, global_index: int) -> dict:
         },
         "provenance": {
             "kind": "native_observation", "globalDuelIndex": global_index,
-            "transitionSeq": seq, "ceProducerSeq": ce_seq,
-            "executorCallId": call_id, "ticksAfterExecutor": event["ticksAfterExecutor"],
+            "transitionSeq": seq, "executorEnterSeq": enter_seq,
+            "ceProducerSeq": ce_seq, "executorCallId": call_id,
+            "ticksAfterExecutor": event["ticksAfterExecutor"],
             "method": METHOD
         },
         "limitations": [
@@ -163,11 +206,13 @@ def collect_fixtures(path: Path) -> tuple[list[dict], dict]:
     excluded = []
     seen = set()
     for global_index, events in _stream_duels(sources):
+        event_by_seq = {event.get("seq"): event for event in events}
         for event in events:
             if event.get("kind") != "summon_transition":
                 continue
             total_events += 1
             try:
+                _validate_event_links(event, event_by_seq)
                 fixture = fixture_from_transition(event, global_index)
             except ValueError as exc:
                 excluded.append({"globalDuelIndex": global_index,
