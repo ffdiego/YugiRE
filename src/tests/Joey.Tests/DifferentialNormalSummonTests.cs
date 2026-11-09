@@ -169,6 +169,7 @@ internal static class DifferentialNormalSummonTests
             throw new InvalidDataException(
                 "Original-catalog comparison requires 1..500 generated fixtures");
         var catalog = originalCards.ToDictionary(card => card.Index);
+        var coveredIndices = new Dictionary<int, int>();
         foreach (string file in files)
         {
             string name = Path.GetFileNameWithoutExtension(file);
@@ -189,6 +190,22 @@ internal static class DifferentialNormalSummonTests
             var (_, result, expected, hasLp) = Replay(file, catalog);
             check(SameObservedFields(result, expected, hasLp),
                 $"{name}: original-card C# summon reproduces observed native hand and field");
+            coveredIndices[internalIndex] = coveredIndices.GetValueOrDefault(internalIndex) + 1;
+        }
+        // A *coverage* report, not another assertion or a native inference.
+        // Print only when the operator supplied both fixtures and the real DAT.
+        // We deliberately do not store or publish the proprietary DAT contents.
+        Console.WriteLine(
+            $"[differential] Original-DAT coverage: {files.Length} observed summons; " +
+            $"{coveredIndices.Count} distinct original card indices.");
+        foreach (var (index, frequency) in coveredIndices.OrderBy(pair => pair.Key))
+        {
+            Card card = catalog[index];
+            string safeName = card.Name.Replace('\r', ' ').Replace('\n', ' ');
+            Console.WriteLine(
+                $"[differential] index={index} id={card.Id} " +
+                $"level={card.Level} class={card.ClassCode} " +
+                $"summons={frequency} name={safeName}");
         }
     }
 
