@@ -215,6 +215,10 @@ let demoSetupCalls = 0;
 let demoSeedBase = null;
 let demoSeedStartIndex = 0;
 let demoSeedApplied = 0;
+// Passive summon observations for offline differential fixtures.
+let demoSummonTickHook = null;
+let demoSummonCandidates = new Map();
+const kDemoSummonMaxTicks = 1500;
 
 // Bijective 32-bit avalanche mixer. Identical base+global index reproduces
 // the same seed; distinct indices cannot produce duplicate seeds modulo 2^32.
@@ -1259,6 +1263,104 @@ function safeDemoDeck(side) {
   catch (error) { return {side, readError: String(error)}; }
 }
 
+// Observations only. Hand counts / field slots are bounds-checked; this is
+// not a full native save-state and never reads the game's hidden card effects.
+function readDemoSummonSnapshot(side) {
+  if (side !== 0 && side !== 1) throw new Error('Invalid summon snapshot side');
+  if (kDuelRunning.readU16() === 0) throw new Error('Duel is not running');
+  const count = handCount(side);
+  if (count > 80) throw new Error('Observed hand exceeds 80 cards');
+  const handWords = [];
+  for (let i = 0; i < count; i++) handWords.push(handWord(side, i));
+  const monsters = player => Array.from({length: 5},
+    (_, slot) => monsterWord(player, slot) & 0xFFF);
+  return {
+    side, handIndices: handWords.map(word => word & 0xFFF),
+    handWords, monsters: monsters(side), opponentMonsters: monsters(1 - side),
+    lifePoints: va('0x00A55D64').add(side * kPlayerStride).readU16(),
+    playerFlags: kSummonPlayerFlags.add(side * kPlayerStride).readU32(),
+    duelPhaseRaw: kSummonDuelPhase.readU8()
+  };
+}
+function sameIndexArray(a, b) {
+  return Array.isArray(a) && Array.isArray(b) &&
+    a.length === b.length && a.every((v, i) => v === b[i]);
+}
+// Only a fully observed, unambiguous transition is exported. The after state
+// is sampled on the original duel-update thread, never on a Frida RPC thread.
+function sampleDemoSummonTransitions() {
+  if (demoSummonCandidates.size === 0) return;
+  for (const [side, candidate] of demoSummonCandidates) {
+    candidate.ticks++;
+    if (candidate.ticks > kDemoSummonMaxTicks) {
+      demoSummonCandidates.delete(side);
+      continue;
+    }
+    if (candidate.ce === null) continue;
+    try {
+      const after = readDemoSummonSnapshot(side);
+      const before = candidate.before;
+      const expectedHand = before.handIndices.slice();
+      expectedHand.splice(candidate.handIndex, 1);
+      const expectedField = before.monsters.slice();
+      expectedField[candidate.ce.fieldSlot] = candidate.source;
+      const afterMatches = sameIndexArray(after.handIndices, expectedHand) &&
+        sameIndexArray(after.monsters, expectedField) &&
+        sameIndexArray(after.opponentMonsters, before.opponentMonsters) &&
+        after.lifePoints === before.lifePoints &&
+        (before.playerFlags & 0x20000) === 0 &&
+        (after.playerFlags & 0x20000) !== 0;
+      if (afterMatches) {
+        recordTraceEvent({
+          kind: 'summon_transition', phase: 'confirmed',
+          evidenceMethod: 'executor_enter_ce_producer_update_leave',
+          executorCallId: candidate.callId, side, handIndex: candidate.handIndex,
+          sourceCardIndex: candidate.source, fieldSlot: candidate.ce.fieldSlot,
+          ceContext: candidate.ce.context, ceStage: candidate.ce.stage,
+          ceResourceId: candidate.ce.resourceId, ceProducerSeq: candidate.ce.producerSeq,
+          before, after, ticksAfterExecutor: candidate.ticks,
+          // Only a projection of game state is observed here. No full
+          // turn/stack/animation/cemetery or card-rules equivalence is implied.
+          observationLimit: 'game-thread snapshots at separate instruction boundaries'
+        });
+        demoSummonCandidates.delete(side);
+      } else if (!sameIndexArray(after.opponentMonsters, before.opponentMonsters) ||
+                 after.lifePoints !== before.lifePoints ||
+                 after.handIndices.length < before.handIndices.length - 1) {
+        // Another action/effect was observed; never pretend single-action causality.
+        demoSummonCandidates.delete(side);
+      }
+    } catch (_error) {
+      // Read errors invalidate rather than create optimistic partial evidence.
+      demoSummonCandidates.delete(side);
+    }
+  }
+}
+function rememberDemoSummonCe(event) {
+  const native = event.ceNativeState;
+  if (!native || !Number.isInteger(native.context) ||
+      !Number.isInteger(native.source) || !Number.isInteger(native.stage)) return;
+  const context = native.context >>> 0;
+  const side = context & 1;
+  const candidate = demoSummonCandidates.get(side);
+  if (!candidate) return;
+  const handIndex = (context >>> 6) & 0xFF;
+  const fieldSlot = (context >>> 1) & 0x1F;
+  // 0x4000: ordinary summon path observed in the original CE traces.
+  // 0x8000: set path; 0x02000000: tribute path (excluded from pilot).
+  if (handIndex !== candidate.handIndex ||
+      (native.source & 0xFFF) !== candidate.source ||
+      fieldSlot > 4 || candidate.before.monsters[fieldSlot] !== 0 ||
+      (context & 0x4000) === 0 || (context & 0x8000) !== 0 ||
+      (context & 0x02000000) !== 0 || native.stage !== 37 ||
+      candidate.ce !== null || candidate.threadId !== event.threadId) {
+    demoSummonCandidates.delete(side);
+    return;
+  }
+  candidate.ce = {context, stage: native.stage, fieldSlot,
+    resourceId: event.args[1] & 0xFFFF, producerSeq: traceSeen + 1};
+}
+
 // Configure before resume. Input cards are the game's internal 12-bit
 // card indices, NOT external Yu-Gi-Oh! card IDs or resource IDs.
 function validateDeckPlan(deck, side) {
@@ -1376,11 +1478,17 @@ function applyDeckPlanToSource(side, slot) {
 function stopDemoProbe() {
   const hooks = demoSetupHooks;
   demoSetupHooks = [];
+  demoSummonCandidates.clear();
+  const snapshotHook = demoSummonTickHook;
+  demoSummonTickHook = null;
   const executor = demoExecutorHook;
   demoExecutorHook = null;
   let failure = null;
   for (let i = hooks.length - 1; i >= 0; i--) {
     try { hooks[i].detach(); } catch (error) { failure = error; }
+  }
+  if (snapshotHook !== null) {
+    try { snapshotHook.detach(); } catch (error) { failure = error; }
   }
   if (executor !== null) {
     try { executor.detach(); } catch (error) { failure = error; }
@@ -1395,7 +1503,8 @@ function startDemoProbe() {
   }
   if (demoExecutorHook !== null) throw new Error('Demo executor probe already active');
   for (const target of [
-    {va: '0x005B6FF0', address: kDemoNormalExecutor}, ...kDemoSetupTargets
+    {va: '0x005B6FF0', address: kDemoNormalExecutor},
+    {va: '0x005BC700', address: kDuelUpdate}, ...kDemoSetupTargets
   ]) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
@@ -1430,6 +1539,22 @@ function startDemoProbe() {
         }
       } catch (error) {
         event.readError = String(error);
+      }
+      if (event.duelRunning && sideRaw <= 1 &&
+          event.handInternalIndex !== undefined) {
+        try {
+          const before = readDemoSummonSnapshot(sideRaw);
+          if (before.handIndices[handIndex] === event.handInternalIndex &&
+              demoSummonCandidates.size < 3) {
+            // At most one pending observation per side. Ambiguous/incomplete
+            // predecessors are silently discarded, not exported.
+            demoSummonCandidates.set(sideRaw, {
+              callId: this.demoCallId, threadId: this.demoThreadId,
+              handIndex, side: sideRaw, before,
+              source: event.handInternalIndex, ce: null, ticks: 0
+            });
+          }
+        } catch (error) { event.summonSnapshotReadError = String(error); }
       }
       recordTraceEvent(event);
     },
@@ -1594,6 +1719,16 @@ function startDemoProbe() {
     try { hook.detach(); } catch (_) {}
     throw new Error('Demo setup hook installation failed; rolled back: ' + error);
   }
+  try {
+    demoSummonTickHook = Interceptor.attach(kDuelUpdate, {
+      onLeave() { sampleDemoSummonTransitions(); }
+    });
+  } catch (error) {
+    for (let i = setup.length - 1; i >= 0; i--) setup[i].detach();
+    hook.detach();
+    demoSummonCandidates.clear();
+    throw new Error('Passive summon tick hook failed; rolled back: ' + error);
+  }
   demoExecutorHook = hook;
   demoSetupHooks = setup;
   demoExecutorCalls = 0;
@@ -1675,6 +1810,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
             source: kPlacementSource.readU32(),
             stage: kPlacementStage.readU16()
           };
+          rememberDemoSummonCe(event);
         } catch (readError) {
           event.ceNativeReadError = String(readError);
         }
