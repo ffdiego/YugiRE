@@ -1314,7 +1314,9 @@ function sampleDemoSummonTransitions() {
         recordTraceEvent({
           kind: 'summon_transition', phase: 'confirmed',
           evidenceMethod: 'executor_enter_ce_producer_update_leave',
-          executorCallId: candidate.callId, side, handIndex: candidate.handIndex,
+          executorCallId: candidate.callId, executorEnterSeq: candidate.enterSeq,
+          threadId: candidate.threadId,
+          side, handIndex: candidate.handIndex,
           sourceCardIndex: candidate.source, fieldSlot: candidate.ce.fieldSlot,
           ceContext: candidate.ce.context, ceStage: candidate.ce.stage,
           ceResourceId: candidate.ce.resourceId, ceProducerSeq: candidate.ce.producerSeq,
@@ -1549,7 +1551,8 @@ function startDemoProbe() {
             // At most one pending observation per side. Ambiguous/incomplete
             // predecessors are silently discarded, not exported.
             demoSummonCandidates.set(sideRaw, {
-              callId: this.demoCallId, threadId: this.demoThreadId,
+              callId: this.demoCallId, enterSeq: traceSeen + 1,
+              threadId: this.demoThreadId,
               handIndex, side: sideRaw, before,
               source: event.handInternalIndex, ce: null, ticks: 0
             });
