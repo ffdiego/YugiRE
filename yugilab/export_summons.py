@@ -68,6 +68,9 @@ def _validate_event_links(event: dict, event_by_seq: dict[int, dict]) -> None:
     observed_before = event.get("before")
     if not isinstance(observed_before, dict):
         raise ValueError("Missing before snapshot on native transition")
+    hand_before = observed_before.get("handIndices")
+    if not isinstance(hand_before, list):
+        raise ValueError("Missing before hand identities on native transition")
     if entry is None or ce is None:
         raise ValueError("Referenced executor or CE event not in capture")
     if (entry.get("kind") != "demo_executor" or
@@ -78,7 +81,7 @@ def _validate_event_links(event: dict, event_by_seq: dict[int, dict]) -> None:
         entry.get("side") != event.get("side") or
         entry.get("handIndex") != event.get("handIndex") or
         entry.get("handInternalIndex") != event.get("sourceCardIndex") or
-        entry.get("handCount") != len(observed_before.get("handIndices", []))):
+        entry.get("handCount") != len(hand_before)):
         raise ValueError("Native executor entry does not support transition")
     if (ce.get("kind") != "command" or
         str(ce.get("opcodeMasked", "")).lower() != "0x00ce" or
