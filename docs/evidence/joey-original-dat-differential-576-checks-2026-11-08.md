@@ -65,9 +65,11 @@ em pontos separados da execução, não transações atômicas.
 ### Próxima prioridade técnica
 
 Antes de aumentar o volume de duelos idênticos:
-1. Extrair **um inventário de nomes, níveis e classes**
-   das 18 cartas observadas, usando `data.dat` em vez
-   de inferir propriedades do resource ID.
+1. **Inventário preparado:** `DifferentialNormalSummonTests.RunWithCatalog`
+   agora imprime uma linha `[differential]` por índice interno,
+   com nome, nível, classe e frequência, extraída do `data.dat`.
+   Ainda falta executar a versão atualizada no Windows e examinar
+   o inventário das 18 cartas; não deduzir níveis dos IDs.
 2. Planejar decks que apresentem monstros nível 5–6, 7+
    e cartas com restrições nativas; medir a diversidade
    de comportamentos, não apenas número de checks.
@@ -85,3 +87,20 @@ pelo operador e nos 67 fixtures ZIP fornecidos anteriormente.
 O arquivo `data.dat` não foi enviado e não foi replicado
 nesta sessão; os 201 checks com DAT original são resultados
 reportados pelo `Joey.Tests` no Windows.
+
+## Adição posterior: inventário de cartas observadas
+
+Foi acrescentado ao harness, sem criar novos checks,
+uma impressão de cobertura quando `data.dat` e fixtures
+são fornecidos ao mesmo tempo. Os 576 checks anteriores
+não são alterados, mas a execução imprimirá linhas como:
+
+```text
+[differential] Original-DAT coverage: 67 observed summons; 18 distinct original card indices.
+[differential] index=... id=... level=... class=... summons=... name=...
+```
+
+Esses valores serão lidos do DAT real e **não foram
+preenchidos por inferência** neste relatório. Com eles,
+poderemos projetar um deck com níveis e características
+específicas, visando a investigação dinâmica de tributos.
