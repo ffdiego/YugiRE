@@ -65,6 +65,9 @@ def _validate_event_links(event: dict, event_by_seq: dict[int, dict]) -> None:
         raise ValueError("Executor, CE and transition sequence ordering invalid")
     entry = event_by_seq.get(enter_seq)
     ce = event_by_seq.get(ce_seq)
+    observed_before = event.get("before")
+    if not isinstance(observed_before, dict):
+        raise ValueError("Missing before snapshot on native transition")
     if entry is None or ce is None:
         raise ValueError("Referenced executor or CE event not in capture")
     if (entry.get("kind") != "demo_executor" or
@@ -75,7 +78,7 @@ def _validate_event_links(event: dict, event_by_seq: dict[int, dict]) -> None:
         entry.get("side") != event.get("side") or
         entry.get("handIndex") != event.get("handIndex") or
         entry.get("handInternalIndex") != event.get("sourceCardIndex") or
-        entry.get("handCount") != len(event.get("before", {}).get("handIndices", []))):
+        entry.get("handCount") != len(observed_before.get("handIndices", []))):
         raise ValueError("Native executor entry does not support transition")
     if (ce.get("kind") != "command" or
         str(ce.get("opcodeMasked", "")).lower() != "0x00ce" or
@@ -89,7 +92,8 @@ def _validate_event_links(event: dict, event_by_seq: dict[int, dict]) -> None:
         type(native.get("source")) is not int or
         (native["source"] & 0xFFF) != event.get("sourceCardIndex") or
         not isinstance(args, list) or len(args) < 2 or
-        type(args[1]) is not int or
+        type(args[0]) is not int or type(args[1]) is not int or
+        (args[0] & 0x7FFF) != 0x00CE or
         (args[1] & 0xFFFF) != event.get("ceResourceId")):
         raise ValueError("Native CE context/resource/source contradict transition")
     thread_id = _int(event.get("threadId"), "threadId", 1)
