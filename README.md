@@ -71,6 +71,17 @@ Seus testes com hashes de decks capturados podem ser executados com
 `dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj`.
 O protótipo `DemoDuel` continua usando seu shuffle próprio.
 
+## Fixtures diferenciais automáticos do YugiLab
+
+O YugiLab agora registra de forma passiva transições observadas de
+invocação normal e o exportador `python -m yugilab.export_summons`
+converte capturas novas e completas em JSON de regressão para
+`Joey.Tests`, com confirmação cruzada dos eventos de executor e
+comando `0xCE`. As capturas anteriores não possuem essa informação.
+
+A entrada no C# é opcional via `YUGIRE_DIFFERENTIAL_FIXTURES`.
+[Procedimento e limites](docs/evidence/yugilab-automatic-summon-fixtures-2026-11-08.md).
+
 ## Primeiro teste diferencial de invocação normal (Joey → C#)
 
 `Joey.Tests` inclui dois fixtures **parciais, obtidos de
