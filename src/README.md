@@ -199,6 +199,29 @@ O usuário confirmou **144 checks** na versão anterior
 a estes dois fixtures. Os novos testes ainda precisam
 de execução no .NET do Windows.
 
+### Capturas geradas automaticamente pelo YugiLab
+
+O teste diferencial de invocação também aceita arquivos JSON
+`auto-g*.json` gerados **somente a partir de transições
+nativas confirmadas** por `yugilab.export_summons`.
+Eles usam a mesma interface temporária de
+`DemoDuel.FromPartialObservation`, mas verificam também
+a mão inteira e os cinco slots de monstro quando há
+evidência para esses campos.
+
+```powershell
+$env:YUGIRE_DIFFERENTIAL_FIXTURES = (Resolve-Path ".\scratch\differential-parallel-XXXXX").Path
+try { dotnet run --project .\src\tests\Joey.Tests\Joey.Tests.csproj }
+finally { Remove-Item Env:YUGIRE_DIFFERENTIAL_FIXTURES -ErrorAction SilentlyContinue }
+```
+
+Não há injeção de assembly no código de domínio. O hook
+e os bitmasks permanecem no adaptador de engenharia reversa.
+O setup ainda utiliza uma carta comum nível 4 substituta
+quando o atributo real não foi capturado; portanto apenas
+a **movimentação observada** é validada.
+[Documentação de exportação](../docs/evidence/yugilab-automatic-summon-fixtures-2026-11-08.md).
+
 ## Procedência e limites
 
 | Categoria | Uso nesta versão |
