@@ -27,7 +27,20 @@ internal static class DifferentialNormalSummonTests
             "Observation-only internal card " + index, "", properties);
     }
 
-    private static Card?[] KnownMonsters(JsonElement known, string key)
+    private static Card ResolveCard(int index, bool selected, ushort resourceId,
+        IReadOnlyDictionary<int, Card>? catalog)
+    {
+        if (catalog is null) return Surrogate(index, selected, resourceId);
+        if (!catalog.TryGetValue(index, out Card? card))
+            throw new InvalidDataException("Original DAT catalog is missing internal card index " + index);
+        if (selected && card.Id != resourceId)
+            throw new InvalidDataException(
+                $"Native CE resource ID {resourceId} disagrees with original DAT ID {card.Id} for index {index}");
+        return card;
+    }
+
+    private static Card?[] KnownMonsters(JsonElement known, string key,
+        IReadOnlyDictionary<int, Card>? catalog)
     {
         Card?[] result = new Card?[5];
         if (!known.TryGetProperty(key, out JsonElement source) ||
@@ -40,7 +53,7 @@ internal static class DifferentialNormalSummonTests
         foreach (JsonElement element in source.EnumerateArray())
         {
             if (element.ValueKind != JsonValueKind.Null)
-                result[slot] = Surrogate(element.GetInt32(), false, ushort.MaxValue);
+                result[slot] = ResolveCard(element.GetInt32(), false, ushort.MaxValue, catalog);
             slot++;
         }
         return result;
@@ -55,7 +68,7 @@ internal static class DifferentialNormalSummonTests
             accepted);
 
     private static (PartialOutcome Before, PartialOutcome After, JsonElement Expected, bool HasLp) Replay(
-        string file)
+        string file, IReadOnlyDictionary<int, Card>? catalog = null)
     {
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(file));
         JsonElement root = document.RootElement;
@@ -93,9 +106,10 @@ internal static class DifferentialNormalSummonTests
         ushort resourceId = action.TryGetProperty("resourceId", out JsonElement resource)
             ? resource.GetUInt16() : ushort.MaxValue;
         List<Card> cards = initialHand.Select((idx, i) =>
-            Surrogate(idx, i == handIndex, i == handIndex ? resourceId : ushort.MaxValue)).ToList();
-        Card?[] activeZones = KnownMonsters(input, "knownActiveMonsters");
-        Card?[] opponentZones = KnownMonsters(input, "knownOpponentMonsters");
+            ResolveCard(idx, i == handIndex, i == handIndex ? resourceId : ushort.MaxValue,
+                catalog)).ToList();
+        Card?[] activeZones = KnownMonsters(input, "knownActiveMonsters", catalog);
+        Card?[] opponentZones = KnownMonsters(input, "knownOpponentMonsters", catalog);
         bool hasLp = input.TryGetProperty("activeLifePoints", out JsonElement observedLp) &&
                      observedLp.ValueKind == JsonValueKind.Number;
         int life = hasLp ? observedLp.GetInt32() : 8000; // unobserved default; excluded from parity
@@ -137,6 +151,45 @@ internal static class DifferentialNormalSummonTests
             exactField = result.MonsterSlots.SequenceEqual(observed);
         }
         return result.ActionAccepted && hand && monster && life && exactHand && exactField;
+    }
+
+    /// <summary>
+    /// Optional real-card differential verification. Run only when the original
+    /// DAT is explicitly supplied: the default 150+fixture suite is unchanged.
+    /// Without the DAT, the pilot uses documented synthetic level-4 cards.
+    /// Failures are useful divergences, not reason to weaken native evidence.
+    /// </summary>
+    public static void RunWithCatalog(IReadOnlyList<Card> originalCards,
+        Action<bool, string> check, string? externalFixtureDir)
+    {
+        if (string.IsNullOrWhiteSpace(externalFixtureDir)) return;
+        var files = Directory.GetFiles(externalFixtureDir, "auto-g*.json")
+            .OrderBy(file => file, StringComparer.Ordinal).ToArray();
+        if (files.Length is < 1 or > 500)
+            throw new InvalidDataException(
+                "Original-catalog comparison requires 1..500 generated fixtures");
+        var catalog = originalCards.ToDictionary(card => card.Index);
+        foreach (string file in files)
+        {
+            string name = Path.GetFileNameWithoutExtension(file);
+            using JsonDocument document = JsonDocument.Parse(File.ReadAllText(file));
+            JsonElement action = document.RootElement.GetProperty("action");
+            int internalIndex = action.GetProperty("sourceCardIndex").GetInt32();
+            if (!catalog.TryGetValue(internalIndex, out var original))
+                throw new InvalidDataException(
+                    $"{name}: internal index {internalIndex} missing from original DAT");
+            ushort observedResourceId = action.GetProperty("resourceId").GetUInt16();
+
+            check(original.Id == observedResourceId,
+                $"{name}: native CE resource ID equals original DAT card ID");
+            check(original.IsMonster && original.Level is >= 1 and <= 4 &&
+                  !NormalSummonRules.RequiresSpecialSummon(original),
+                $"{name}: original card properties permit ordinary no-tribute summon");
+
+            var (_, result, expected, hasLp) = Replay(file, catalog);
+            check(SameObservedFields(result, expected, hasLp),
+                $"{name}: original-card C# summon reproduces observed native hand and field");
+        }
     }
 
     public static void Run(Action<bool, string> check, string? externalFixtureDir = null)
