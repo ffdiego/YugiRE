@@ -222,6 +222,42 @@ quando o atributo real não foi capturado; portanto apenas
 a **movimentação observada** é validada.
 [Documentação de exportação](../docs/evidence/yugilab-automatic-summon-fixtures-2026-11-08.md).
 
+### Validação opcional dos atributos reais com `data.dat`
+
+A análise do primeiro ZIP automático encontrou **67 invocações,
+mas somente 18 cartas internas distintas**. Os 67 fixtures
+contêm identidade e posições, mas nenhum contém o nível ou
+a elegibilidade nativa das cartas; sem o catálogo, o harness
+continua usando um substituto nível 4 para a carta invocada.
+
+Agora é possível executar um segundo nível de comparação:
+com `YUGIRE_DIFFERENTIAL_FIXTURES` definido, passe
+o `data.dat` original como argumento de `Joey.Tests`:
+
+```powershell
+$env:YUGIRE_DIFFERENTIAL_FIXTURES = (Resolve-Path ".\scratch\differential-parallel-7yq78u8y").Path
+try {
+    dotnet run --project ".\src\tests\Joey.Tests\Joey.Tests.csproj" -- "..\passion2\data.dat"
+} finally {
+    Remove-Item Env:YUGIRE_DIFFERENTIAL_FIXTURES -ErrorAction SilentlyContinue
+}
+```
+
+O caminho de `data.dat` acima é um exemplo: use o
+arquivo original efetivamente instalado no computador.
+Depois que `Catalog.Load` carregar o DAT, o harness
+realiza três verificações **adicionais por fixture**:
+ID observado no comando CE = ID da carta do catálogo,
+regras básicas de elegibilidade sem tributos para essa
+carta, e resultado de `Summon` usando cartas e atributos
+originais (não substitutos).
+
+Falhas devem ser investigadas; não significa
+automaticamente que o Joey original está errado, pois
+o demo C# ainda não modela todas as exceções e efeitos.
+
+[Distribuição completa das 67 invocações](../docs/evidence/yugilab-67-automatic-summon-fixture-coverage-2026-11-08.md).
+
 ## Procedência e limites
 
 | Categoria | Uso nesta versão |
