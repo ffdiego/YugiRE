@@ -222,6 +222,46 @@ O módulo `Joey.Core/NativeDefaultQueuePacket.cs` implementa
 somente esses três casos para os testes de regressão C#,
 sem substituir o protocolo completo.
 
+### Exportar casos de invocação nativa para os testes C#
+
+A nova instrumentação passiva de `trace demo` observa uma
+transição de invocação em três pontos da thread do Joey:
+entrada de `FUN_005B6FF0`, emissão de `0xCE` e
+retorno posterior de `FUN_005BC700`. Ela só registra
+`summon_transition/confirmed` quando consegue observar
+a remoção de exatamente uma carta da mão, sua colocação em
+uma zona vazia, LP inalterado, campos restantes preservados
+e o uso da flag nativa de invocação. A sequência real dos
+eventos de entrada e `0xCE` é verificada pelo exportador,
+não apenas declarada pelo agente.
+
+Com uma **captura nova e completa que use `--seed`**,
+converta os eventos elegíveis em fixtures locais:
+
+```powershell
+.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.export_summons `
+  ".\scratch\labs\parallel-XXXXX" `
+  --output-dir ".\scratch\differential-parallel-XXXXX"
+
+$env:YUGIRE_DIFFERENTIAL_FIXTURES = (Resolve-Path ".\scratch\differential-parallel-XXXXX").Path
+try { dotnet run --project ".\src\tests\Joey.Tests\Joey.Tests.csproj" }
+finally { Remove-Item Env:YUGIRE_DIFFERENTIAL_FIXTURES -ErrorAction SilentlyContinue }
+```
+
+Os dois fixtures manuais e os 150 checks anteriores
+continuam funcionando sem essa variável. Quando há
+fixtures gerados, o C# compara adicionalmente a
+sequência completa da mão e todas as posições de monstro
+observadas. Nenhum fixture é gerado se a captura não
+tiver provas suficientes. A saída deve permanecer em
+`scratch/`, não ser comitada: revela cartas ocultas.
+
+**Não é replay integral nem validação de efeitos/legitimidade
+da invocação.** Os cards de setup ainda usam propriedades
+sintéticas onde não temos metadados nativos; a nova
+instrumentação necessita validação no Windows.
+[Procedimento completo e limites](../docs/evidence/yugilab-automatic-summon-fixtures-2026-11-08.md).
+
 ### Arquivos e validação
 
 Cada execução paralela cria uma pasta exclusiva
