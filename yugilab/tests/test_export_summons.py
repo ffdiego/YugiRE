@@ -19,7 +19,8 @@ def sample_transition():
     return {
         "kind": "summon_transition", "phase": "confirmed",
         "evidenceMethod": "executor_enter_ce_producer_update_leave",
-        "executorCallId": 9, "ceProducerSeq": 2,
+        "executorCallId": 9, "executorEnterSeq": 2,
+        "ceProducerSeq": 3, "threadId": 1234,
         "side": side, "handIndex": 1, "sourceCardIndex": 221,
         "fieldSlot": 2, "ceContext": context, "ceStage": 37,
         "ceResourceId": 268, "ticksAfterExecutor": 17,
@@ -60,8 +61,21 @@ def make_zip(path, transition=None, *, complete=True, base_seed=12345):
         })
         if transition is not None:
             rows.append({
+                "kind": "demo_executor", "function": "normal_placement",
+                "phase": "enter", "duelRunning": True,
+                "callId": 9, "threadId": 1234, "side": 1,
+                "handIndex": 1, "handInternalIndex": 221,
+                "handCount": 3
+            })
+            rows.append({
                 "kind": "command", "opcodeMasked": "0x00CE",
-                "opcodeRaw": "0x00CE", "args": [0xCE, 268, 0, 0]
+                "opcodeRaw": "0x00CE", "threadId": 1234,
+                "caller": "0x5abeab", "args": [0xCE, 268, 0, 0],
+                "ceNativeState": {
+                    "context": transition["ceContext"],
+                    "source": transition["sourceCardIndex"],
+                    "stage": transition["ceStage"]
+                }
             })
             rows.append(transition)
         rows.append({
@@ -96,7 +110,7 @@ class ExportSummonTests(unittest.TestCase):
         files = list(self.target.glob("auto-g*.json"))
         self.assertEqual(len(files), 1)
         case = json.loads(files[0].read_text(encoding="utf-8"))
-        self.assertEqual(case["id"], "auto-g000000-seq0000003")
+        self.assertEqual(case["id"], "auto-g000000-seq0000004")
         self.assertEqual(case["action"]["ceContext"], 0x4045)
         self.assertEqual(case["before"]["activeHandIndices"], [3, 221, 12])
         self.assertEqual(case["after"]["activeHandIndices"], [3, 12])
@@ -113,7 +127,7 @@ class ExportSummonTests(unittest.TestCase):
         ]:
             with self.subTest(key=key):
                 event = sample_transition()
-                event["seq"] = 3
+                event["seq"] = 4
                 event["after"][key] = replacement
                 if key == "handIndices":
                     event["after"]["handWords"] = [0x1000003, 0x20000DD]
