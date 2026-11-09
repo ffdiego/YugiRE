@@ -151,6 +151,31 @@ class ExportSummonTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     fixture_from_transition(event, 0)
 
+    def test_forged_transition_without_real_ce_provenance_is_rejected(self):
+        with ZipFile(self.capture) as z:
+            member = next(x for x in z.namelist() if x.endswith(".jsonl"))
+            rows = [json.loads(line) for line in z.read(member).splitlines()]
+        ce = next(row for row in rows if row.get("opcodeMasked") == "0x00CE")
+        ce["ceNativeState"]["source"] = 222
+        with ZipFile(self.capture, "w") as z:
+            z.writestr(member, "\n".join(json.dumps(row) for row in rows) + "\n")
+        fixtures, report = collect_fixtures(self.capture)
+        self.assertEqual(fixtures, [])
+        self.assertEqual(report["observedTransitions"], 1)
+        self.assertIn("contradict", report["excluded"][0]["reason"])
+
+    def test_forged_transition_wrong_executor_thread_is_rejected(self):
+        with ZipFile(self.capture) as z:
+            member = next(x for x in z.namelist() if x.endswith(".jsonl"))
+            rows = [json.loads(line) for line in z.read(member).splitlines()]
+        executor = next(row for row in rows if row.get("kind") == "demo_executor")
+        executor["threadId"] = 9000
+        with ZipFile(self.capture, "w") as z:
+            z.writestr(member, "\n".join(json.dumps(row) for row in rows) + "\n")
+        fixtures, report = collect_fixtures(self.capture)
+        self.assertEqual(fixtures, [])
+        self.assertIn("thread", report["excluded"][0]["reason"])
+
     def test_no_old_capture_optimistic_fixtures(self):
         make_zip(self.capture, None)
         with self.assertRaisesRegex(ValueError, "No verified"):
