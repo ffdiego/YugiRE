@@ -50,7 +50,7 @@ def _snapshot(value: object, label: str, side: int) -> dict:
         raise ValueError(f"{label}: handWords do not match card indices")
     _indices(value, "monsters", size=5)
     _indices(value, "opponentMonsters", size=5)
-    _int(value.get("lifePoints"), f"{label}.lifePoints", 1, 8000)
+    _int(value.get("lifePoints"), f"{label}.lifePoints", 1, 65535)
     _int(value.get("playerFlags"), f"{label}.playerFlags")
     _int(value.get("duelPhaseRaw"), f"{label}.duelPhaseRaw", 0, 255)
     return value
