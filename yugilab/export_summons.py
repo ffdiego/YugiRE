@@ -41,7 +41,7 @@ def _snapshot(value: object, label: str, side: int) -> dict:
     if not isinstance(value, dict) or value.get("side") != side:
         raise ValueError(f"{label} has wrong/missing side")
     hand = _indices(value, "handIndices")
-    if not 1 <= len(hand) <= 80 or any(index == 0 for index in hand):
+    if not 0 <= len(hand) <= 80 or any(index == 0 for index in hand):
         raise ValueError(f"{label}: invalid hand identities")
     words = value.get("handWords")
     if (not isinstance(words, list) or len(words) != len(hand) or
