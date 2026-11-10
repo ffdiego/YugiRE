@@ -266,6 +266,8 @@ function speedStatus() {
     writerHits: speedyOverrideHits, value};
 }
 function armSpeedyOverride(value) {
+  if (deckObserver !== null && deckObserver.status().deckActive)
+    throw new Error('Stop trace deck before enabling overrides');
   if (!installed || !observerOnly || commandTraceHook === null) {
     throw new Error('Speed override requires observer-only mode and trace on');
   }
@@ -332,6 +334,8 @@ function multiInstanceStatus() {
     replacementName: singletonName};
 }
 function armMultiInstance() {
+  if (deckObserver !== null && deckObserver.status().deckActive)
+    throw new Error('Stop trace deck before enabling overrides');
   if (!installed || !observerOnly || commandTraceHook === null) {
     throw new Error('Multi-instance experiment requires observer-only startup and trace on');
   }
@@ -892,9 +896,29 @@ function recordAiConsoleTrace(request, phase, details = {}) {
 // Trace records raw producer inputs; their semantics differ by opcode.
 // Calls to 0x005B9170 have been observed with four 32-bit arguments for
 // this exact EXE. Sequence is monotonically increasing within a session.
+let deckObserver = null;
+let deckFingerprint = null;
+function startDeckProbe(captureMt = false) {
+  if (!installed || !observerOnly || commandTraceHook === null)
+    throw new Error('Deck probe requires --observe-only and trace on');
+  if (demoExecutorHook !== null || demoSetupHooks.length || demoSeedBase !== null ||
+      demoDeckPlans.some(x => x !== null) || speedyOverrideValue !== null || singletonMutexHook !== null)
+    throw new Error('Deck probe cannot run with Demo hooks or state overrides');
+  if (typeof createCpuDeckObserver !== 'function') throw new Error('Missing deck observer module');
+  if (deckObserver === null) deckObserver = createCpuDeckObserver({
+    va, main, record:recordTraceEvent, session:() => traceSession});
+  deckObserver.start(captureMt, deckFingerprint);
+  return traceStatus();
+}
+function stopDeckProbe() {
+  if (deckObserver !== null) deckObserver.stop();
+  return traceStatus();
+}
+
 function traceStatus() {
   return {
     active: commandTraceHook !== null,
+    ...(deckObserver === null ? {deckActive:false} : deckObserver.status()),
     prepActive: summonPrepHooks.length > 0,
     prepHooks: summonPrepHooks.length,
     aiActive: aiProbeHooks.length > 0,
@@ -1503,6 +1527,8 @@ function stopDemoProbe() {
 }
 
 function startDemoProbe() {
+  if (deckObserver !== null && deckObserver.status().deckActive)
+    throw new Error('Stop trace deck before trace demo');
   if (!installed || commandTraceHook === null) {
     throw new Error('Start trace on before trace demo on');
   }
@@ -1846,6 +1872,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
 
 function stopCommandTrace() {
   // The probe must stop before anyone can export this bounded buffer.
+  stopDeckProbe();
   stopDemoProbe();
   stopAiProbe();
   stopSummonPrepProbe();
@@ -2074,6 +2101,14 @@ rpc.exports = {
   traceprepstart: startSummonPrepProbe,
   traceaistart: startAiProbe,
   traceaistop: stopAiProbe,
+  authorizedeckobserver(fingerprint) {
+    if (fingerprint !== 'db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de')
+      throw new Error('Unexpected host fingerprint');
+    deckFingerprint = fingerprint;
+    return {verified:true};
+  },
+  tracedeckstart: startDeckProbe,
+  tracedeckstop: stopDeckProbe,
   tracedemostart: startDemoProbe,
   tracedemostop: stopDemoProbe,
   traceprepstop: stopSummonPrepProbe,

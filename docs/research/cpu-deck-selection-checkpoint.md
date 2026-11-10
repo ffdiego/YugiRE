@@ -1,6 +1,11 @@
 # Checkpoint — seleção de decks da CPU
 
 ## Objetivo atual
+Instrumentação passiva em desenvolvimento: attach manual `--observe-only`,
+`trace deck on [mt]`, correlação seletor→cena→loader e comparador offline.
+ABI e bytes confirmados em `../evidence/cpu-deck-observer-abi.txt`.
+Não usar spawn nem carregar DLL; validação Windows ainda pendente.
+
 A seleção normal foi especificada e transcrita em C#. Próxima etapa útil:
 confrontar perfil→roll→caminho→source em um duelo normal no Windows, conforme
 [protocolo](cpu-deck-selection-windows-validation.md). Não repetir a análise
@@ -112,3 +117,17 @@ Não houve push dos commits desta etapa.
   reproduzível `scripts/RenameCpuDeckSelection.java`.
 - `../evidence/joey-star-level-vs-demo-deck-selection-2026-11-09.md`: captura
   histórica, agora ligada aos resultados posteriores.
+
+## Incremento — observador passivo
+- `native_rules/deck_trace.js`: cinco hooks, perfil, EAX uint32, resultado
+  std::string, source1 completo e MT opcional; IDs por sessão/thread.
+- Correlação externa exige caller conhecido, thread, ponteiro e caminho;
+  Demo interno é associado à cena ativa, sem confundir ordem dos dois loads.
+- Host verifica SHA do EXE antes de autorizar o observador; runtime exige
+  base fixa, bytes exatos e regiões legíveis/executáveis antes dos hooks.
+- Mutadores Demo/speed/mutex são incompatíveis; observer não escreve nem
+  chama funções nativas. Buffer/export JSONL existentes preservados.
+- Testes Node simulam ABI, uint32, MT, correlação, thread, count inválido,
+  preflight, rollback e stop; testes console Python incluem novos comandos.
+- Próxima ação: implementar comparador C# usando CpuDeckSelection,
+  NativeDeckRng.FromSnapshot e DeckFile/Catalog, depois protocolo Windows.

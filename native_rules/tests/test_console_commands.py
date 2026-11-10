@@ -106,6 +106,14 @@ class FakeApi:
         self.ai_active = False
         return self.tracestatus()
 
+    def tracedeckstart(self, mt):
+        self.trace_calls.append(("deck_on", mt))
+        return self.tracestatus()
+
+    def tracedeckstop(self):
+        self.trace_calls.append(("deck_off",))
+        return self.tracestatus()
+
     def tracedemostart(self):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
@@ -165,6 +173,13 @@ class FakeApi:
 
 
 class ConsoleCommandTests(unittest.TestCase):
+    def test_deck_trace_console(self):
+        api = FakeApi()
+        for command in ("trace deck on", "trace deck on mt", "trace deck off"):
+            self.assertTrue(handle_command(command, api, 1))
+        self.assertEqual(api.trace_calls, [("deck_on", False), ("deck_on", True), ("deck_off",)])
+
+
     def setUp(self):
         self.api = FakeApi()
 

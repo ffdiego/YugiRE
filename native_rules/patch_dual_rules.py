@@ -189,6 +189,7 @@ def show_trace_status(status: dict) -> None:
           f"prepActive={status.get('prepActive', False)} "
           f"aiActive={status.get('aiActive', False)} "
           f"demoActive={status.get('demoActive', False)} "
+          f"deckActive={status.get('deckActive', False)} "
           f"session={status['session']} "
           f"seen={status['seen']} retained={status['retained']} "
           f"overwritten={status['overwritten']} capacity={status['capacity']}",
@@ -218,6 +219,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                   "session": status["session"], "capacity": status["capacity"],
                   "seen": status["seen"], "retained": status["retained"],
                   "overwritten": status["overwritten"],
+                  "exeSha256": status.get("deckFingerprint"),
                   "note": "Producer inputs and optional passive AI observations. "
                           "AI output buffers may represent hypothetical states."}
         destination.write(json.dumps(header, ensure_ascii=False) + "\n")
@@ -320,7 +322,7 @@ def show_help(default_side: int) -> None:
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
           "trace on [16..20000]; trace prep on|off; trace ai on|off; "
-          "trace demo on|off; "
+          "trace demo on|off; trace deck on [mt]|off; "
           "trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
     print(f"[dual-rules] 'draw 5' defaults to side {default_side}. "
@@ -353,6 +355,10 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.traceaistart())
         elif parts == ["trace", "ai", "off"]:
             show_trace_status(api.traceaistop())
+        elif parts in (["trace", "deck", "on"], ["trace", "deck", "on", "mt"]):
+            show_trace_status(api.tracedeckstart(len(parts) == 4))
+        elif parts == ["trace", "deck", "off"]:
+            show_trace_status(api.tracedeckstop())
         elif parts == ["trace", "demo", "on"]:
             show_trace_status(api.tracedemostart())
         elif parts == ["trace", "demo", "off"]:
@@ -578,7 +584,8 @@ def main(argv: list[str] | None = None) -> int:
         joey_pid = resolve_joey_pid(frida.get_local_device(), args.pid)
         print(f"[dual-rules] Attaching to joey_pc.exe PID {joey_pid}", flush=True)
         session = frida.attach(joey_pid)
-        source = (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8")
+        source = ((HERE / "deck_trace.js").read_text(encoding="utf-8") + "\n" +
+                  (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8"))
         script = session.create_script(source)
         script.on("message", lambda message, data:
                   print(f"[frida] {message}", flush=True)
@@ -594,6 +601,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print("[dual-rules] Exact loaded Joey EXE SHA256 confirmed.", flush=True)
         if args.observe_only:
+            api.authorizedeckobserver(checks["exe_sha256"])
             state = api.installobserver()
             print("[dual-rules] OBSERVER ONLY: no DLL load, no card callback "
                   "replacement; native actions disabled.", flush=True)
