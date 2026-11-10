@@ -147,8 +147,10 @@ de recursos. Sequências de 1250 saídas para seeds 0,1,4357,FFFFFFFF cruzam
 vários twists e conferem com CPython `random.setstate`/`getrandbits(32)`, usando
 as palavras de inicialização construídas pela recorrência nativa acima.
 O seed do `random.Random` do Python não é usado como equivalência de seeding.
-Snapshot/restauração também conferidos. **Não houve execução nativa do Joey**;
-esses testes validam a transcrição matemática e as tabelas.
+Snapshot/restauração também conferidos. **Na fase inicial estática ainda
+não havia execução nativa do Joey**; esses testes validavam somente a
+transcrição matemática e as tabelas. A validação dinâmica posterior
+está descrita abaixo.
 
 Build da solução passou, 221 verificações C# com DAT/deck local passaram
 após a adição dessa unidade. Fixtures dinâmicos opcionais de outras sessões
@@ -157,6 +159,39 @@ dependem das variáveis de ambiente e não são presumidos presentes.
 Evidência adicional: `cpu-deck-rng-initialization.txt`,
 `cpu-deck-rng-vtable-and-progression-gates.txt`, `cpu-deck-rng-seed-method.txt`,
 `cpu-deck-result-counters-and-state.txt` em `../evidence/`.
+
+## Validação dinâmica do seletor e MT no Joey original (2026-11-10)
+
+Depois da análise estática e da correção dos probes internos de RNG em
+`native_rules/deck_trace.js`, duas capturas reais pelo observador
+`--observe-only` validaram no Windows o fluxo completo da **cena normal0**,
+perfil base1/pool0. Não foram executados dois Joeys nem usado `--spawn`.
+
+- Sem MT: `RawRoll=1762370162` (resto 2 por 5), escolha
+  `data/J/file/CPU_002.ydc`, 20 eventos íntegros;
+  `Joey.DeckTrace` retornou `ExitCode=0`, `Issues=[]`.
+- Com MT: estado capturado de 624 uint32, índice624; o
+  `NativeDeckRng.FromSnapshot(...).Next32()` em C# previu a saída
+  `538871612` do RNG nativo (resto2 por5). A escolha foi novamente
+  `CPU_002.ydc`; 35 eventos íntegros;
+  `ExitCode=0`, `MtChecked=true`, `Issues=[]`.
+- Nos dois casos, os IDs **na ordem** do source carregado correspondem
+  ao YDC do DAT fingerprintado (main43, second0, third4); cena e loader
+  estão correlacionados com a seleção pelo caller, thread, ponteiro e caminho.
+
+Antes da correção, a instrumentação havia causado três violações de acesso
+`0xC0000005` no Windows; foram observadas em `0048ADBD` e `00477F0B`.
+Identificou-se uso incorreto de listener de função em instruções internas
+`0044BDA5`/`0044BC84`. Depois de passar para probes de instrução,
+os dois testes reais concluíram sem crash; isso valida os cenários testados,
+não significa que todos os usos do observador sejam seguros.
+
+Os JSONL brutos continuam com o operador e **não foram commitados**.
+Identificadores e fingerprints dos traces e detalhes do incidente constam
+em [checkpoint](cpu-deck-selection-checkpoint.md). Isso comprova duas
+execuções reais da cadeia de seleção para base1/pool0, mas ainda não testa
+outros níveis/pool FUL, seeds, cenas de match/rematch nem a taxa de
+crashes em amostras maiores.
 
 ## Estrelas, persistência e progressão
 
