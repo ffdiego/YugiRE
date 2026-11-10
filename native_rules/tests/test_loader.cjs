@@ -187,6 +187,7 @@ function fixture(options = {}) {
     },
     ptr, rpc:{exports:{}},
   };
+  if (options.deckFactory) context.createCpuDeckObserver = options.deckFactory;
   vm.runInNewContext(source,context,{filename:'yugire_dual_loader.js'});
   return {api:context.rpc.exports, memory, sparks: sparks+4, raimei: raimei+4,
     original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); },
@@ -872,3 +873,35 @@ waitingSet.tick();
 assert.equal(waitingSet.summonBuilders().length,0);
 waitingSet.api.restore();
 console.log('PASS: set preflight failures, unchanged hand and pending cancellation');
+
+// Integration contract: real loader RPC lifecycle with a passive module double.
+let deckStarts=0, deckStops=0, deckEnv;
+const deckFixture=fixture({deckFactory(env) {
+  deckEnv=env; let active=false;
+  return {
+    status(){return {deckActive:active,deckHooks:active?5:0};},
+    start(mt,hash){
+      assert.equal(hash,'db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
+      assert.equal(mt,true); active=true; deckStarts++;
+      env.record({kind:'deck_probe',phase:'on'});
+    },
+    stop(){if(active){deckStops++;env.record({kind:'deck_probe',phase:'off'});} active=false;}
+  };
+}});
+assert.throws(()=>deckFixture.api.tracedeckstart(true),/observe-only/);
+deckFixture.api.installobserver();
+assert.throws(()=>deckFixture.api.tracedeckstart(true),/trace on/);
+assert.throws(()=>deckFixture.api.authorizedeckobserver('wrong'),/fingerprint/);
+deckFixture.api.authorizedeckobserver('db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
+deckFixture.api.tracestart(16);
+assert.equal(deckFixture.api.tracedeckstart(true).deckActive,true);
+assert.equal(deckEnv.session(),1);
+assert.throws(()=>deckFixture.api.tracedemostart(),/Stop trace deck/);
+assert.throws(()=>deckFixture.api.armspeedoverride(240),/Stop trace deck/);
+assert.throws(()=>deckFixture.api.armmultiinstance(),/Stop trace deck/);
+deckFixture.api.tracestop();
+assert.equal(deckFixture.api.tracestatus().deckActive,false);
+assert.equal(deckStarts,1);assert.equal(deckStops,1);
+assert.equal(deckFixture.api.traceevents(0,16).filter(e=>e.kind==='deck_probe').length,2);
+deckFixture.api.restore();
+console.log('PASS: deck console RPC, host attestation, observer/trace gates, mutator exclusion and trace export lifecycle');

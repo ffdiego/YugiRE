@@ -5,22 +5,24 @@ using Joey.Core;
 // Synthetic observations exercise the validator; they are not native captures.
 internal static class DeckTraceChecks
 {
-    public static void Run(Action<bool,string> check)
+    public static void Run(Action<bool,string> check, Archive? archive = null)
     {
         var expected = new[] { new[] {1,2,3}, Array.Empty<int>(), Array.Empty<int>() };
-        JsonArray Trace(byte pool = 0, uint roll = uint.MaxValue)
+        bool useArchive = false;
+        var catalog = archive is null ? null : Catalog.Load(archive);
+        JsonArray Trace(byte pool = 0, uint roll = uint.MaxValue, byte baseValue = 1)
         {
-            string path = CpuDeckSelection.Select(1,pool,roll);
+            string path = CpuDeckSelection.Select(baseValue,pool,roll);
             var result = JsonSerializer.SerializeToNode(new object[] {
                 new {kind="deck_probe",phase="on",schema="joey-cpu-deck-v1",exeSha256=CpuDeckTraceVerifier.ExeSha256,captureMt=false},
-                new {kind="deck_selection",phase="enter",selectionId="1:s:1",threadId=7,caller=0x48ad50,profile=new {baseDifficulty=1,pool}},
+                new {kind="deck_selection",phase="enter",selectionId="1:s:1",threadId=7,caller=0x48ad50,profile=new {baseDifficulty=baseValue,pool}},
                 new {kind="deck_selection",phase="rng",selectionId="1:s:1",threadId=7,site=pool==0?0x44bda5:0x44bc84,rawRoll=roll},
                 new {kind="deck_selection",phase="leave",selectionId="1:s:1",threadId=7,resourcePath=path,resourceDataPointer="0x1000",returnObjectMatches=true},
                 new {kind="deck_scene",phase="enter",selectionId="1:s:1",threadId=7,sceneId="scene",caller=0x48ad71,requestedScene=0,
                     correlationProof="caller+thread+pointer+path",argumentPointer="0x1000",resourcePath=path},
                 new {kind="deck_loader",phase="enter",selectionId="1:s:1",threadId=7,sceneId="scene",loadId="load",caller=0x44c0e8,loaderType=1,resourcePath=path},
                 new {kind="deck_loader",phase="leave",selectionId="1:s:1",threadId=7,sceneId="scene",loadId="load",caller=0x44c0e8,loaderType=1,returnCode=0,
-                    sourceSlot1=new {mainCount=3,main=expected[0],secondCount=0,second=expected[1],thirdCount=0,third=expected[2]}},
+                    sourceSlot1=new {mainCount=expected[0].Length,main=expected[0],secondCount=expected[1].Length,second=expected[1],thirdCount=expected[2].Length,third=expected[2]}},
                 new {kind="deck_scene",phase="leave",selectionId="1:s:1",threadId=7,sceneId="scene"},
                 new {kind="deck_probe",phase="off"}
             })!.AsArray();
@@ -33,7 +35,12 @@ internal static class DeckTraceChecks
                 seen=events.Count,retained=events.Count,overwritten}));
             using var body=JsonDocument.Parse(events.ToJsonString());
             return CpuDeckTraceVerifier.Validate(header.RootElement,body.RootElement.EnumerateArray().ToArray(),
-                _=>expected.Select(x=>(IReadOnlyList<int>)x).ToArray());
+                path => useArchive ? Resolve(path) : expected.Select(x=>(IReadOnlyList<int>)x).ToArray());
+        }
+        IReadOnlyList<IReadOnlyList<int>> Resolve(string path)
+        {
+            var deck = DeckFile.Read(archive!.Read(path[5..].Replace('/', '\\')));
+            return new[] {0,2,1}.Select(group => (IReadOnlyList<int>)deck.Resolve(group,catalog!).Select(c=>c.Index).ToArray()).ToArray();
         }
         check(Verify(Trace()).ExitCode==0,"Deck trace uint32 CPU path and all source lists agree");
         check(Verify(Trace(1)).ExitCode==0,"Deck trace FUL path agrees");
@@ -72,5 +79,21 @@ internal static class DeckTraceChecks
         check(Verify(data).ExitCode==2,"Deck trace unbound normal loader cannot pass");
         data=Trace(); data.RemoveAt(data.Count-1);
         check(Verify(data).ExitCode==2,"Deck trace incomplete stop cannot pass");
+        if (archive is not null)
+        {
+            useArchive = true;
+            var resources = new HashSet<string>();
+            for (byte pool=0;pool<=1;pool++)
+                for (byte baseValue=1;baseValue<=7;baseValue++)
+                    for (uint slot=0;slot<CpuDeckSelection.Options(baseValue,pool).Count;slot++)
+                    {
+                        string path=CpuDeckSelection.Select(baseValue,pool,slot);
+                        expected=Resolve(path).Select(group=>group.ToArray()).ToArray();
+                        check(Verify(Trace(pool,slot,baseValue)).ExitCode==0,
+                            $"Synthetic deck trace resolves DAT source for base {baseValue} pool {pool} slot {slot}");
+                        resources.Add(path);
+                    }
+            check(resources.Count==58,"Synthetic trace validation covers all 58 distinct DAT decks");
+        }
     }
 }

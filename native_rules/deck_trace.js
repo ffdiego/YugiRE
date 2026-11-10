@@ -78,7 +78,7 @@ function createCpuDeckObserver(env) {
     catch (error) { emit(kind, phase, {...details, readError:String(error)}); }
   }
   function start(withMt, fingerprint) {
-    if (active) throw new Error('Deck probe already active');
+    if (active || hooks.length) throw new Error('Deck probe active or detach incomplete');
     if (fingerprint !== hash) throw new Error('Deck probe requires host EXE fingerprint verification');
     if (Process.platform !== 'windows' || Process.arch !== 'ia32' ||
         !env.main.base.equals(ptr(0x400000))) throw new Error('Unsupported Joey image');
@@ -126,7 +126,7 @@ function createCpuDeckObserver(env) {
               emit('deck_error','pending_overflow',{selectionId:waiting[0].selectionId});
               waiting.shift();
             }
-            waiting.push(frame);
+            if (frame.caller !== 0x44bf50) waiting.push(frame);
             const scene = top(scenes,this.deckThread);
             if (scene && scene.requestedScene === 7 && frame.caller === 0x44bf50)
               scene.internalSelectionId = frame.selectionId;
@@ -185,7 +185,7 @@ function createCpuDeckObserver(env) {
             if (caller === 0x44bfdd && scene.requestedScene === 7) selectionId = scene.selectionId;
           }
           this.deckLoad = {loadId:id('load'),threadId,caller,selectionId,
-            sceneId:scene ? scene.sceneId : null};
+            sceneId:scene ? scene.sceneId : null, loaderObject:this.context.ecx.toString()};
           safely('deck_loader','enter',this.deckLoad,() => {
             this.deckLoad.loaderType = checked(this.context.esp.add(4),4).readU32();
             return {...this.deckLoad,...stringObject(this.context.esp.add(8))};
@@ -210,7 +210,7 @@ function createCpuDeckObserver(env) {
     active = false; ++epoch;
     const old = hooks; hooks = [];
     const failures = [];
-    for (const hook of old.reverse()) { try { hook.detach(); } catch (e) { failures.push(String(e)); } }
+    for (const hook of old.reverse()) { try { hook.detach(); } catch (e) { hooks.push(hook); failures.push(String(e)); } }
     selections.clear(); scenes.clear(); pending.clear();
     if (wasActive) emit('deck_probe','off',{schema:'joey-cpu-deck-v1'});
     if (failures.length) throw new Error('Deck detach failed: ' + failures.join('; '));

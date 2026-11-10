@@ -64,6 +64,7 @@ public static class CpuDeckTraceVerifier
                         if (array.Length != 1) throw new InvalidDataException($"Expected one {label}, got {array.Length}");
                         return array[0];
                     }
+                    if (group.Count() != 3) throw new InvalidDataException("Unexpected number of selector stages");
                     var enter = One(group.Where(e => Phase(e) == "enter"),"selector enter");
                     var rng = One(group.Where(e => Phase(e) == "rng"),"RNG");
                     var leave = One(group.Where(e => Phase(e) == "leave"),"selector leave");
@@ -129,11 +130,12 @@ public static class CpuDeckTraceVerifier
                     for (int g = 0; g < 3; g++)
                     {
                         int[] observed = source.GetProperty(names[g]).EnumerateArray().Select(x=>x.GetInt32()).ToArray();
-                        if (Int(source,names[g]+"Count") != observed.Length || !observed.SequenceEqual(expectedGroups[g]))
+                        int recordedCount = Int(source,names[g]+"Count");
+                        if (recordedCount != observed.Length || !observed.SequenceEqual(expectedGroups[g]))
                         {
                             int first = Enumerable.Range(0,Math.Min(observed.Length,expectedGroups[g].Count))
                                 .FirstOrDefault(i => observed[i] != expectedGroups[g][i], -1);
-                            Problem($"{names[g]} differs: DAT count {expectedGroups[g].Count}, observed {observed.Length}, first differing index {first}",id,"mismatch");
+                            Problem($"{names[g]} differs: DAT count {expectedGroups[g].Count}, recorded count {recordedCount}, array length {observed.Length}, first differing index {first}",id,"mismatch");
                         }
                     }
                     results.Add(new(id,actual,roll,Int(source,"mainCount"),mtChecked));
@@ -143,10 +145,14 @@ public static class CpuDeckTraceVerifier
                 { Problem(ex.Message,id); }
             }
             // A loader with no captured selection is useful evidence of an incomplete window.
-            foreach (var load in events.Where(e => Kind(e) == "deck_loader" && Phase(e) == "enter" && Int(e,"caller") == 0x44c0e8))
+            foreach (var load in events.Where(e => Kind(e) == "deck_loader" && Int(e,"caller") == 0x44c0e8))
+            {
+                if (Phase(load) == "leave" && !events.Any(e => Kind(e) == "deck_loader" && Phase(e) == "enter" && Text(e,"loadId") == Text(load,"loadId")))
+                    Problem("Normal loader leave without enter");
                 if (!load.TryGetProperty("selectionId",out var v) || v.ValueKind != JsonValueKind.String ||
                     !selectionEvents.Any(e => Text(e,"selectionId") == v.GetString()))
                     Problem("Normal loader without captured selection");
+            }
         }
         catch (Exception ex) when (ex is InvalidOperationException or KeyNotFoundException or FormatException or OverflowException)
         { Problem("Malformed trace: " + ex.Message); }
