@@ -147,13 +147,15 @@ function createCpuDeckObserver(env) {
           if (frames.pop() !== frame) emit('deck_error','selector_stack',{selectionId:frame.selectionId});
         }
       });
-      for (const site of [0x44bda5,0x44bc84]) attach(site, {
-        onEnter() {
-          if (!live()) return;
-          const threadId = Process.getCurrentThreadId(), frame = top(selections,threadId);
-          emit('deck_selection','rng',{selectionId:frame ? frame.selectionId : null,
-            threadId, site, rawRoll:this.context.eax.toUInt32()});
-        }
+      // These targets are instructions INSIDE the selector, not function
+      // entries. Frida requires a direct probe function here; an object with
+      // onEnter is a function listener and may corrupt return/stack handling.
+      // See frida/frida#2944. Never register onLeave at an interior address.
+      for (const site of [0x44bda5,0x44bc84]) attach(site, function () {
+        if (!live()) return;
+        const threadId = Process.getCurrentThreadId(), frame = top(selections,threadId);
+        emit('deck_selection','rng',{selectionId:frame ? frame.selectionId : null,
+          threadId, site, rawRoll:this.context.eax.toUInt32()});
       });
       attach(0x44bee0, {
         onEnter(args) {
