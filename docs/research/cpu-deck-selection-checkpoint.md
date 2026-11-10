@@ -131,3 +131,21 @@ Não houve push dos commits desta etapa.
   preflight, rollback e stop; testes console Python incluem novos comandos.
 - Próxima ação: implementar comparador C# usando CpuDeckSelection,
   NativeDeckRng.FromSnapshot e DeckFile/Catalog, depois protocolo Windows.
+
+## Incremento — comparador C#
+- Commit `5222a50`: observador e ABI; não houve captura Windows.
+- `CpuDeckTraceVerifier` valida fingerprint, sequência completa sem perda,
+  cadeia no mesmo thread com callers/ponteiros verificados, exatamente um
+  roll e um load normal bem-sucedido, caminho pelo seletor C#, MT opcional
+  e as três listas ordenadas. Demo não satisfaz validação de duelo normal.
+- CLI: `dotnet run --project src/tools/Joey.DeckTrace -- captura.jsonl data.dat`.
+  DAT precisa ter SHA fixado; resolve IDs físicos→índices pelo catálogo real.
+  Exit0=concordância na captura;1=divergência específica;2=incompleto/ilegível.
+- Build solução sem warnings/erros; 360 checks C# passaram (19 novos),
+  incluindo corrupção de caminho/source, threads, RNG ausente/duplicado,
+  perda de buffer e snapshots MT. São testes sintéticos, não prova dinâmica.
+- Suíte native_rules Python:78 testes,1 erro no legado test_capture_rotation
+  que exige detach antes de kill; launcher já usa outro ciclo de término.
+  Código de spawn não foi alterado. Console:33 testes passaram.
+- Próxima ação: endurecer casos Demo/reentrância, verificar CLI com DAT real
+  em fixture explicitamente sintética e atualizar instruções reproduzíveis.

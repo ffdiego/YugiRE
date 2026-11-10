@@ -171,4 +171,5 @@ if (args.Length > 0)
     Check(cards.Single(c => c.Id == 762).Name == "Parasite Paracide", "Known card identity");
     Check(cards.Single(c => c.Id == 0).Attack == 3000 && cards.Single(c => c.Id == 0).Defense == 2500, "Known monster base stats");
 }
+DeckTraceChecks.Run(Check);
 Console.WriteLine($"{passed} checks passed.");
