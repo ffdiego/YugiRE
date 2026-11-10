@@ -320,3 +320,27 @@ para source0 e carrega o caminho externo em `0044BFD8`. A ordem de sorteio
 da configuração de cena não é usado no primeiro carregamento do Demo.
 O mesmo pool/dificuldade alimenta ambos; isso é demonstrado pela cadeia de
 chamadas, não pela quantidade de presets observados.
+
+As 58 composições principais também são distintas como **multiconjuntos de
+IDs**, não apenas por hash de arquivo. O extrator registra hashes canônicos
+dos mains (IDs uint16 ordenados, little-endian), o total distinto e limiares
+de progressão lidos dos offsets nativos. Os testes de progressão usam esses
+limiares extraídos como oráculo, preservando multiplicidades das cartas.
+
+## Anotações no banco persistente
+
+`scripts/RenameCpuDeckSelection.java` nomeou 12 entradas comprovadas no
+projeto `ghidra-projects/Joey.gpr`, sem reimportação ou autoanálise.
+Relatório `../evidence/cpu-deck-ghidra-symbols.txt`; log confirmou
+`Save succeeded for processed file`. O script protege o fingerprint e preserva
+nomes primários manuais preexistentes, criando alias quando necessário.
+Nomes incluem a VA original, como `SelectCpuDeckResourcePath_0044BBE0`
+e `NextUiDeckMtUInt32_0055C140`.
+
+O banco permanece ignorado pelo Git; o script e o relatório permitem repetir
+essas anotações em outra cópia do mesmo programa. Não reaplicar para obter
+pseudocódigo: o wrapper de consultas permanece em modo readOnly.
+`../evidence/cpu-deck-alternate-scene-calls.txt` confirmou depois o símbolo
+persistido e os argumentos de rotas alternativas: rematch2 em `004764EE`,
+cena6 em `0048E389`, cena3 em `0042155B` e cena4 em `0048B1FC`.
+Não são chamadas substitutas dos novos duelos normais em modos0/1.

@@ -15,12 +15,14 @@ static class CpuDeckSelectionTests
         var playableIndices = CardListResources.ForPacks(cards, archive.Read(@"bin#\card_pack.bin"))
             .Select(card => card.Index).ToHashSet();
         int previousEditionCopies = 0;
+        HashSet<string> mainMultisets = [];
         Dictionary<string, DeckFile> decks = [];
         foreach (string path in names)
         {
             var deck = DeckFile.Read(archive.Read(path[5..].Replace('/', '\\')));
             decks[path] = deck;
             var main = deck.Resolve(0, cards);
+            mainMultisets.Add(string.Join(",", deck.Groups[0].Order()));
             check(deck.HasDuelSize && main.All(card => playableIndices.Contains(card.Index)),
                 $"Original CPU resource has valid playable main: {path}");
             int older = main.Count(card => !joeyIndices.Contains(card.Index));
@@ -28,7 +30,7 @@ static class CpuDeckSelectionTests
                 check(older == 0, $"Joey-only CPU resource contains no previous-edition-only cards: {path}");
             else previousEditionCopies += older;
         }
-        check(decks.Count == 58 && previousEditionCopies == 401,
+        check(decks.Count == 58 && mainMultisets.Count == 58 && previousEditionCopies == 401,
             "All 58 selected DAT resources resolve; FUL includes 401 previous-edition main copies in total");
         foreach (var (letter, resource) in new[] { ("A", "0GE1"), ("B", "0VAL"), ("C", "0UMI") })
         {

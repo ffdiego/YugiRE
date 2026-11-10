@@ -56,7 +56,8 @@ def deck_counts(data):
 
 
 def inspect(exe_path, dat_path):
-    rows = read_tables(exe_path.read_bytes())
+    exe = exe_path.read_bytes()
+    rows = read_tables(exe)
     with dat_path.open("rb") as archive:
         if hashlib.file_digest(archive, "sha256").hexdigest() != DAT_SHA256:
             raise ValueError("Unsupported DAT fingerprint")
@@ -78,11 +79,22 @@ def inspect(exe_path, dat_path):
                 raise ValueError(f"Unexpected bounded YDC resource: {name}")
             archive.seek(offset)
             data = archive.read(size)
+            counts = deck_counts(data)
+            main = struct.unpack_from("<" + "H" * counts[0], data, 10)
+            canonical = b"".join(value.to_bytes(2, "little") for value in sorted(main))
             decks[name] = {"offset": offset, "bytes": size, "group_counts": deck_counts(data),
-                           "sha256": hashlib.sha256(data).hexdigest()}
+                           "sha256": hashlib.sha256(data).hexdigest(),
+                           "main_multiset_sha256": hashlib.sha256(canonical).hexdigest()}
     return {"exe_sha256": EXE_SHA256, "dat_sha256": DAT_SHA256,
             "method": "Static EXE tables, pinned DAT index and bounded YDC validation; no game execution",
-            "tables": rows, "unique_resource_count": len(decks), "decks": decks}
+            "tables": rows, "unique_resource_count": len(decks),
+            "unique_main_multiset_count": len({deck["main_multiset_sha256"] for deck in decks.values()}),
+            "progression_thresholds": {
+                "win": {str(level): struct.unpack_from("<I", exe, 0x5DAF40 - 0x400000 + level * 4)[0]
+                        for level in range(1, 9)},
+                "non_win": {str(level): struct.unpack_from("<I", exe, 0x5DAF64 - 0x400000 + level * 4)[0]
+                            for level in range(2, 10)}},
+            "decks": decks}
 
 
 def main():

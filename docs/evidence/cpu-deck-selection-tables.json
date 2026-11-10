@@ -165,6 +165,29 @@
     }
   ],
   "unique_resource_count": 58,
+  "unique_main_multiset_count": 58,
+  "progression_thresholds": {
+    "win": {
+      "1": 3,
+      "2": 4,
+      "3": 5,
+      "4": 5,
+      "5": 5,
+      "6": 6,
+      "7": 6,
+      "8": 7
+    },
+    "non_win": {
+      "2": 3,
+      "3": 4,
+      "4": 4,
+      "5": 4,
+      "6": 4,
+      "7": 3,
+      "8": 2,
+      "9": 2
+    }
+  },
   "decks": {
     "j\\file\\cpu_000.ydc": {
       "offset": 254390191,
@@ -174,7 +197,8 @@
         0,
         0
       ],
-      "sha256": "af5e5068de9c5a5b637ea82b86eaa32c242759aee7fdf55c28d037acd812304b"
+      "sha256": "af5e5068de9c5a5b637ea82b86eaa32c242759aee7fdf55c28d037acd812304b",
+      "main_multiset_sha256": "c8ff32007ac7cbc29b10774d4e03b8388ae93e4228defa0511ade4c0ca0efc4b"
     },
     "j\\file\\cpu_001.ydc": {
       "offset": 254390289,
@@ -184,7 +208,8 @@
         0,
         0
       ],
-      "sha256": "b9e6665667a0053f88b31d495f2008959682ae86df83d32a41bc0e1bcb0a3435"
+      "sha256": "b9e6665667a0053f88b31d495f2008959682ae86df83d32a41bc0e1bcb0a3435",
+      "main_multiset_sha256": "9e1dffde4f6fc5663837b51b555fb4f6217fdf691536573669baf59a531ee30c"
     },
     "j\\file\\cpu_002.ydc": {
       "offset": 254390387,
@@ -194,7 +219,8 @@
         4,
         0
       ],
-      "sha256": "1a1db562e27ba73372c91d88fc571ab8c009075f4e741defcdf8132ac4d45483"
+      "sha256": "1a1db562e27ba73372c91d88fc571ab8c009075f4e741defcdf8132ac4d45483",
+      "main_multiset_sha256": "8a52a75df3f1ec9155e1ec3390f1cf62e65c64bd6d34d29d2bc65659a18ff2a9"
     },
     "j\\file\\cpu_003.ydc": {
       "offset": 254390495,
@@ -204,7 +230,8 @@
         2,
         0
       ],
-      "sha256": "941cbe8b96d7df5cd823fae03b3690677a16ef2beb6cf0187d939d0504f83db8"
+      "sha256": "941cbe8b96d7df5cd823fae03b3690677a16ef2beb6cf0187d939d0504f83db8",
+      "main_multiset_sha256": "cd33f3c465a39ed38712abc00fa1dd33e2afe4b3567f86fd835b2501ade3916c"
     },
     "j\\file\\cpu_004.ydc": {
       "offset": 254390601,
@@ -214,7 +241,8 @@
         0,
         0
       ],
-      "sha256": "c4140edf982130da3e358a42087d8615e4a5983d8f5f853c82d1888215db4948"
+      "sha256": "c4140edf982130da3e358a42087d8615e4a5983d8f5f853c82d1888215db4948",
+      "main_multiset_sha256": "a312c4109756632fa67965a358bc496d6485058a739f2b704ca8546b56b517c7"
     },
     "j\\file\\cpu_010.ydc": {
       "offset": 254390699,
@@ -224,7 +252,8 @@
         0,
         0
       ],
-      "sha256": "af8690ccfe508517b2a5393a27475b57c0c2664496d0770107363cbdffeba9a6"
+      "sha256": "af8690ccfe508517b2a5393a27475b57c0c2664496d0770107363cbdffeba9a6",
+      "main_multiset_sha256": "7254b89588f31b46055d4ac4602c87c824e3b4f85ab26fefb876eaa044dbb3bc"
     },
     "j\\file\\cpu_011.ydc": {
       "offset": 254390795,
@@ -234,7 +263,8 @@
         1,
         0
       ],
-      "sha256": "c2f5abd7568b7b2f6eaf2d0d22a2ab3ff2456c792c7f9e8dbc75674d153174b3"
+      "sha256": "c2f5abd7568b7b2f6eaf2d0d22a2ab3ff2456c792c7f9e8dbc75674d153174b3",
+      "main_multiset_sha256": "507ce11d6a573385ecd557f36e933dc0c53d68d28b053138a1f6dce9d74f4113"
     },
     "j\\file\\cpu_012.ydc": {
       "offset": 254390901,
@@ -244,7 +274,8 @@
         0,
         0
       ],
-      "sha256": "50f498dd5b45f7b1a33ea5aeba87daf00f6790431f5af8e77e3538dd7653cd66"
+      "sha256": "50f498dd5b45f7b1a33ea5aeba87daf00f6790431f5af8e77e3538dd7653cd66",
+      "main_multiset_sha256": "5ee3208350b12777a48c31f9c0cbfdb07cfe62954081d1cf9288a79c7d19c19e"
     },
     "j\\file\\cpu_013.ydc": {
       "offset": 254390997,
@@ -254,7 +285,8 @@
         1,
         0
       ],
-      "sha256": "cca265d2c53200738642b02121e3362796f31616ac524cf338afe958544dc978"
+      "sha256": "cca265d2c53200738642b02121e3362796f31616ac524cf338afe958544dc978",
+      "main_multiset_sha256": "695d9826d40c19356553413d48f663dfb7b5fcda204fe07bcee7f79651683ae8"
     },
     "j\\file\\cpu_014.ydc": {
       "offset": 254391099,
@@ -264,7 +296,8 @@
         1,
         0
       ],
-      "sha256": "70d6179bcf146b81f8e6db8a7856b91486881cb1433ef3abd4f8530b81daec47"
+      "sha256": "70d6179bcf146b81f8e6db8a7856b91486881cb1433ef3abd4f8530b81daec47",
+      "main_multiset_sha256": "e228d7ac9f7e739e18029d125cbbbdc9f5e2aad5f41ba9fd53e36f9a7310edc6"
     },
     "j\\file\\cpu_015.ydc": {
       "offset": 254391201,
@@ -274,7 +307,8 @@
         1,
         0
       ],
-      "sha256": "f8fb11504b8cf921ce034cd5e3870f444e57e12c939d5a02856cb49378d82782"
+      "sha256": "f8fb11504b8cf921ce034cd5e3870f444e57e12c939d5a02856cb49378d82782",
+      "main_multiset_sha256": "46044d9225039a87cce48e9eacebfd2dc2e423ed9be982886f993d16f49fa227"
     },
     "j\\file\\cpu_020.ydc": {
       "offset": 254391301,
@@ -284,7 +318,8 @@
         0,
         0
       ],
-      "sha256": "aa2a4d48228cf117621b2e16174f9e8985269aa6a3a31a79195f2480ab4f6961"
+      "sha256": "aa2a4d48228cf117621b2e16174f9e8985269aa6a3a31a79195f2480ab4f6961",
+      "main_multiset_sha256": "b851739101d1b694f38faf07acc2964e06bbcd88dcbb27e437d30cb483520ef4"
     },
     "j\\file\\cpu_021.ydc": {
       "offset": 254391405,
@@ -294,7 +329,8 @@
         0,
         0
       ],
-      "sha256": "612ccae8ce4e02fed88836b2ccc2a8d808a3da4d7bb2f173a8b5725d7348debc"
+      "sha256": "612ccae8ce4e02fed88836b2ccc2a8d808a3da4d7bb2f173a8b5725d7348debc",
+      "main_multiset_sha256": "61ec6c36e92a074899639ba559502953a2929fd118f92dc8a0d3a0d911cee3cf"
     },
     "j\\file\\cpu_022.ydc": {
       "offset": 254391505,
@@ -304,7 +340,8 @@
         0,
         0
       ],
-      "sha256": "aea932fc881c03a3973341470b4260aa57937e5ea9108b4f43c0d01addec2055"
+      "sha256": "aea932fc881c03a3973341470b4260aa57937e5ea9108b4f43c0d01addec2055",
+      "main_multiset_sha256": "2e233ed12c18abdfc51c2466581daa9f555f58cecc7a8623e1580bcee27adb1c"
     },
     "j\\file\\cpu_023.ydc": {
       "offset": 254391603,
@@ -314,7 +351,8 @@
         0,
         0
       ],
-      "sha256": "64157bc5b5e55918d93ef594894993e64d83d2db8e08576057c72d952f32af9d"
+      "sha256": "64157bc5b5e55918d93ef594894993e64d83d2db8e08576057c72d952f32af9d",
+      "main_multiset_sha256": "e20bffef3b8c6ed925c836991aeeb311a296ea8498f63594c1cd217b0ba28ffb"
     },
     "j\\file\\cpu_024.ydc": {
       "offset": 254391697,
@@ -324,7 +362,8 @@
         2,
         0
       ],
-      "sha256": "1276ff69bdeeb11a45c3e7f2165155084c2428ac80ace68536abc43ff98c9d28"
+      "sha256": "1276ff69bdeeb11a45c3e7f2165155084c2428ac80ace68536abc43ff98c9d28",
+      "main_multiset_sha256": "967299ee21eef67b6b7952e2e90740caf97ad0cfc16288fe2d6e27c2a003770b"
     },
     "j\\file\\cpu_025.ydc": {
       "offset": 254391801,
@@ -334,7 +373,8 @@
         0,
         0
       ],
-      "sha256": "a7daf68483e8faa3d89433cc9eb6c401a92590b554d84e2c46c7ac4e41d63fed"
+      "sha256": "a7daf68483e8faa3d89433cc9eb6c401a92590b554d84e2c46c7ac4e41d63fed",
+      "main_multiset_sha256": "e9603a48e7f68eb72db5b571472d080c978df03e5b40f38d0f2bc460a2280462"
     },
     "j\\file\\cpu_026.ydc": {
       "offset": 254391897,
@@ -344,7 +384,8 @@
         0,
         0
       ],
-      "sha256": "e411317e483db985642a60702c5a5848127cd4fa68c4fdccf8329ce5a76c1811"
+      "sha256": "e411317e483db985642a60702c5a5848127cd4fa68c4fdccf8329ce5a76c1811",
+      "main_multiset_sha256": "f981a4af49096bca11ef187e2552c75b96af5194d30951390b54d92e97914039"
     },
     "j\\file\\cpu_027.ydc": {
       "offset": 254391997,
@@ -354,7 +395,8 @@
         2,
         0
       ],
-      "sha256": "3025717759dcd036085e079e174a861230a5a8f5cbeaf45dafbcc60f3fe3beb7"
+      "sha256": "3025717759dcd036085e079e174a861230a5a8f5cbeaf45dafbcc60f3fe3beb7",
+      "main_multiset_sha256": "8201fa199f39f4229180626878bbd8d133b9cf50868e661826a7785a645c953c"
     },
     "j\\file\\cpu_028.ydc": {
       "offset": 254392101,
@@ -364,7 +406,8 @@
         0,
         0
       ],
-      "sha256": "ce456be030e0ffccc9ece6dbcfee65d142d81e07ecddd5875465589bae9737de"
+      "sha256": "ce456be030e0ffccc9ece6dbcfee65d142d81e07ecddd5875465589bae9737de",
+      "main_multiset_sha256": "8d4f96f97514781bfabe3b1a2c20498cf29c9b8ac00342ad3d61149bdc44ff6b"
     },
     "j\\file\\cpu_029.ydc": {
       "offset": 254392199,
@@ -374,7 +417,8 @@
         0,
         6
       ],
-      "sha256": "0906eaa69ab35babe1e6a7a39ae14f2a2c0f136838ecb985b36c498e1444cfbe"
+      "sha256": "0906eaa69ab35babe1e6a7a39ae14f2a2c0f136838ecb985b36c498e1444cfbe",
+      "main_multiset_sha256": "37646c36bafe8ee9b93c487f0ce57f244d1ca07616e3acc4eac3a9210f41e4f3"
     },
     "j\\file\\ful_0ge1.ydc": {
       "offset": 254393035,
@@ -384,7 +428,8 @@
         9,
         0
       ],
-      "sha256": "8b2fb536b52cc3084b30cfb6787c63926b1055c75e90570bace3f47336a19fca"
+      "sha256": "8b2fb536b52cc3084b30cfb6787c63926b1055c75e90570bace3f47336a19fca",
+      "main_multiset_sha256": "a1efd44b6def48ec3b3f42194f1395d76565edb8b2da814f29a427a3a0a0b658"
     },
     "j\\file\\ful_0umi.ydc": {
       "offset": 254393147,
@@ -394,7 +439,8 @@
         3,
         6
       ],
-      "sha256": "55889247c71c71e97e92c53c704a5f384ec77383c492af465880c3959f16c6cc"
+      "sha256": "55889247c71c71e97e92c53c704a5f384ec77383c492af465880c3959f16c6cc",
+      "main_multiset_sha256": "929a85b96c809591bc835865fdff60dda5170439b83a93906ca9ac51578bac56"
     },
     "j\\file\\ful_0val.ydc": {
       "offset": 254393261,
@@ -404,7 +450,8 @@
         3,
         6
       ],
-      "sha256": "f5431c69b53be5aa5a9a2c246c86526b83110dac8fb622cb1031774c9eac42b0"
+      "sha256": "f5431c69b53be5aa5a9a2c246c86526b83110dac8fb622cb1031774c9eac42b0",
+      "main_multiset_sha256": "e529df9712135b66b06c98b167d14a6af245e65228954c55405277866cf255dc"
     },
     "j\\file\\ful_1dec.ydc": {
       "offset": 254393379,
@@ -414,7 +461,8 @@
         3,
         12
       ],
-      "sha256": "760f35f221e9c2a27e0c808f349dc8af2311928d5557e817995e0b24fccde111"
+      "sha256": "760f35f221e9c2a27e0c808f349dc8af2311928d5557e817995e0b24fccde111",
+      "main_multiset_sha256": "634ef51849db1104c6bcb1c1cd8f25bd5c31eb568dbaed3eaa04875bd158a7b1"
     },
     "j\\file\\ful_1fus.ydc": {
       "offset": 254393507,
@@ -424,7 +472,8 @@
         12,
         15
       ],
-      "sha256": "0ab72407b07fceed78b1666ccb4dc3874b317aad99bdfae4ebd669dd8db3b701"
+      "sha256": "0ab72407b07fceed78b1666ccb4dc3874b317aad99bdfae4ebd669dd8db3b701",
+      "main_multiset_sha256": "f88ae4a9f9597a4892b0a9a707490c056f741d6ac5e8238ecce9b78154f33a80"
     },
     "j\\file\\ful_1gam.ydc": {
       "offset": 254393659,
@@ -434,7 +483,8 @@
         6,
         11
       ],
-      "sha256": "4ed52f91288ac515c65c2babd318b483f1750047e0f6082512fc8945a54b0f4a"
+      "sha256": "4ed52f91288ac515c65c2babd318b483f1750047e0f6082512fc8945a54b0f4a",
+      "main_multiset_sha256": "d6166e288106a90e204960e1878f46ba3ebfe4154c4214a68b0f3cb97dde4586"
     },
     "j\\file\\ful_1ge1.ydc": {
       "offset": 254393791,
@@ -444,7 +494,8 @@
         6,
         11
       ],
-      "sha256": "df30a1a40860ebf504be780d709e50cf7f7b43f24d1d7171f87aac9d600d9f2f"
+      "sha256": "df30a1a40860ebf504be780d709e50cf7f7b43f24d1d7171f87aac9d600d9f2f",
+      "main_multiset_sha256": "c11eefa750f6594974a004776a80cc90741926543687ab7f15213a6fdca4dfe8"
     },
     "j\\file\\ful_1ge2.ydc": {
       "offset": 254393923,
@@ -454,7 +505,8 @@
         6,
         14
       ],
-      "sha256": "8218318c5a5a31b458e33129af81406fb6510392cd7065c26be3fc5a4e6b9f06"
+      "sha256": "8218318c5a5a31b458e33129af81406fb6510392cd7065c26be3fc5a4e6b9f06",
+      "main_multiset_sha256": "c3e448aab1022eb1002dab8ffa866332cdd02e4d089c75efddf0c3fb49ec84ee"
     },
     "j\\file\\ful_1hik.ydc": {
       "offset": 254394063,
@@ -464,7 +516,8 @@
         3,
         3
       ],
-      "sha256": "3f119593207f6a4a3d5f18945ab90de0e5e3ed8652bfb6eba346ce4fb12215cb"
+      "sha256": "3f119593207f6a4a3d5f18945ab90de0e5e3ed8652bfb6eba346ce4fb12215cb",
+      "main_multiset_sha256": "230e5b669aa64287f705c57254d664461f995b640dfb5c8d2f18db173f536c83"
     },
     "j\\file\\ful_1ins.ydc": {
       "offset": 254394171,
@@ -474,7 +527,8 @@
         0,
         12
       ],
-      "sha256": "3dc941c46a2050e7c6d960f56ee12a3f6285cca8635aa4e3d3eafaebc782b075"
+      "sha256": "3dc941c46a2050e7c6d960f56ee12a3f6285cca8635aa4e3d3eafaebc782b075",
+      "main_multiset_sha256": "45e027ef7d9f732fcfca460b996548e705eb507e71ff94192e09f26ff172451e"
     },
     "j\\file\\ful_1mix.ydc": {
       "offset": 254394289,
@@ -484,7 +538,8 @@
         6,
         4
       ],
-      "sha256": "f7f1c9e3dade128fd10511984b9539fa8905b3348e584b8e167fbc1930410d8b"
+      "sha256": "f7f1c9e3dade128fd10511984b9539fa8905b3348e584b8e167fbc1930410d8b",
+      "main_multiset_sha256": "88ba3a2258b1076fede7364291d096bc4d57d536f1a4e95ecdd8d34d8dc6be5c"
     },
     "j\\file\\ful_1red.ydc": {
       "offset": 254394409,
@@ -494,7 +549,8 @@
         0,
         8
       ],
-      "sha256": "b01479c7fb2b26edc4dcbe206faeb9af716b009ad988e1bc287d5e008b52a1ea"
+      "sha256": "b01479c7fb2b26edc4dcbe206faeb9af716b009ad988e1bc287d5e008b52a1ea",
+      "main_multiset_sha256": "1d8fd3407b3b823d811e7b96a8f6474061079636768b0cff5770d129f8f843d5"
     },
     "j\\file\\ful_1too.ydc": {
       "offset": 254394523,
@@ -504,7 +560,8 @@
         0,
         12
       ],
-      "sha256": "e49dde76fb33cbb4fc22d2dc182a4b78d64e3b40c9cf211feac6612ddae0e727"
+      "sha256": "e49dde76fb33cbb4fc22d2dc182a4b78d64e3b40c9cf211feac6612ddae0e727",
+      "main_multiset_sha256": "5d083d0ecb1b9332a94053245d08fe381e4a1fef9541b64b0ca0873053d53602"
     },
     "j\\file\\ful_1uij.ydc": {
       "offset": 254394649,
@@ -514,7 +571,8 @@
         9,
         8
       ],
-      "sha256": "10cba672c0cbd577edec453349eae345dccb44f22b599634b95383b31e66cc91"
+      "sha256": "10cba672c0cbd577edec453349eae345dccb44f22b599634b95383b31e66cc91",
+      "main_multiset_sha256": "51f9f83a8968fd537ccf6dea835eb8bc03a6ad2a68db4309cd0911baf5ab57b7"
     },
     "j\\file\\ful_1umi.ydc": {
       "offset": 254394779,
@@ -524,7 +582,8 @@
         3,
         7
       ],
-      "sha256": "9b8bd0bec87cc68d7aaee7889f5731b40929feb6516278bb55c89eddc39a8906"
+      "sha256": "9b8bd0bec87cc68d7aaee7889f5731b40929feb6516278bb55c89eddc39a8906",
+      "main_multiset_sha256": "4e1d6d0cdb756331e201cfed55efdf8221587d3409f4cdce88d58080f77b48e7"
     },
     "j\\file\\ful_1val.ydc": {
       "offset": 254394897,
@@ -534,7 +593,8 @@
         3,
         7
       ],
-      "sha256": "2f93771a37b68a395864bbae702a57e207fc3e610e2ed27291079b3c39f07a1a"
+      "sha256": "2f93771a37b68a395864bbae702a57e207fc3e610e2ed27291079b3c39f07a1a",
+      "main_multiset_sha256": "c46f0ea3f5071876d8957101443db28cc83f8241e5c0089ae108274227e5d16d"
     },
     "j\\file\\ful_2dec.ydc": {
       "offset": 254395015,
@@ -544,7 +604,8 @@
         3,
         11
       ],
-      "sha256": "02d4d1acf3d0737b66d334faadc540dac061b3d56290b587c165aedd810f925f"
+      "sha256": "02d4d1acf3d0737b66d334faadc540dac061b3d56290b587c165aedd810f925f",
+      "main_multiset_sha256": "5a4c8739001b30fe5eeb2fc1dcd22b2dbac9f12d872a3b40bf0e1b9639f9145d"
     },
     "j\\file\\ful_2fus.ydc": {
       "offset": 254395143,
@@ -554,7 +615,8 @@
         12,
         13
       ],
-      "sha256": "ff902a779d7903cf2eac0303d92c280f662e162ec9d3101c2f0ee4b5957af09d"
+      "sha256": "ff902a779d7903cf2eac0303d92c280f662e162ec9d3101c2f0ee4b5957af09d",
+      "main_multiset_sha256": "7ead80561fdc86dd4648343de497af91954bf12b8bba1db261e5fa3048c05a10"
     },
     "j\\file\\ful_2gam.ydc": {
       "offset": 254395293,
@@ -564,7 +626,8 @@
         6,
         15
       ],
-      "sha256": "1ddd7685f8a6bdf9a104f870497965955d7107bea15f0fefef76a568083f962c"
+      "sha256": "1ddd7685f8a6bdf9a104f870497965955d7107bea15f0fefef76a568083f962c",
+      "main_multiset_sha256": "29c81a4ba8636b7ac0a247afcd10bb4f6992c9fbf82a79a17bec6136482de6f5"
     },
     "j\\file\\ful_2ge1.ydc": {
       "offset": 254395435,
@@ -574,7 +637,8 @@
         6,
         10
       ],
-      "sha256": "36e3e392d18f59043bb4cd84c9e65b5d040517c9eea911a0b2e179f135ea0911"
+      "sha256": "36e3e392d18f59043bb4cd84c9e65b5d040517c9eea911a0b2e179f135ea0911",
+      "main_multiset_sha256": "d9a8c3b7925be3d7f31954bbe0456046afe5eeef4821f4649579d96741f08c5d"
     },
     "j\\file\\ful_2ge2.ydc": {
       "offset": 254395567,
@@ -584,7 +648,8 @@
         6,
         9
       ],
-      "sha256": "fcd8745081324fc9f79c92cad6305b59a392d1b0e6e7ce6d62646ce45d58e03c"
+      "sha256": "fcd8745081324fc9f79c92cad6305b59a392d1b0e6e7ce6d62646ce45d58e03c",
+      "main_multiset_sha256": "1c73081158f9e174341b7f1079980a45a222485b0b8b218f9b742655eabe647c"
     },
     "j\\file\\ful_2hik.ydc": {
       "offset": 254395697,
@@ -594,7 +659,8 @@
         3,
         13
       ],
-      "sha256": "c401ef32ab3cfdc92ad10d1bbb270cc31fae1cc25d7daea92ddefb21d4b15f66"
+      "sha256": "c401ef32ab3cfdc92ad10d1bbb270cc31fae1cc25d7daea92ddefb21d4b15f66",
+      "main_multiset_sha256": "3e03f195d31a2cf5bbb81c6616e4a2eba4a19c4039c384e17aaa738286d63b89"
     },
     "j\\file\\ful_2ins.ydc": {
       "offset": 254395829,
@@ -604,7 +670,8 @@
         0,
         8
       ],
-      "sha256": "247d7101fbd9fba95f7c4e1fbb24937790dc21b4828999f1900a7a51d620c80d"
+      "sha256": "247d7101fbd9fba95f7c4e1fbb24937790dc21b4828999f1900a7a51d620c80d",
+      "main_multiset_sha256": "5a76b4650179b38e9ea7bea7cab24e161dcc193a8ccad9dbee53b71f16dd4cb7"
     },
     "j\\file\\ful_2mix.ydc": {
       "offset": 254395943,
@@ -614,7 +681,8 @@
         6,
         15
       ],
-      "sha256": "e0db1237f5f632171d0e9b3d12e5b61503ea5200b71c5c4874f11ae83d1f88bb"
+      "sha256": "e0db1237f5f632171d0e9b3d12e5b61503ea5200b71c5c4874f11ae83d1f88bb",
+      "main_multiset_sha256": "9e1cbc0b1e88d19c594f423a61857077e848e48f31c5194e5c8eb90c4e09b7e4"
     },
     "j\\file\\ful_2red.ydc": {
       "offset": 254396087,
@@ -624,7 +692,8 @@
         0,
         15
       ],
-      "sha256": "3b9fc47376e8fc6a51cf7ff29b72251d570267bd28e163533b71c86fd6181fd3"
+      "sha256": "3b9fc47376e8fc6a51cf7ff29b72251d570267bd28e163533b71c86fd6181fd3",
+      "main_multiset_sha256": "eae196ce15ecca8cf3665c8c1be5e92dd6c82a8f2601276e84f7f49c0f315daf"
     },
     "j\\file\\ful_2too.ydc": {
       "offset": 254396217,
@@ -634,7 +703,8 @@
         0,
         15
       ],
-      "sha256": "2c21596272e570cb0ec93d21141b7d721c9cf18f137e06343ce63456025a93c6"
+      "sha256": "2c21596272e570cb0ec93d21141b7d721c9cf18f137e06343ce63456025a93c6",
+      "main_multiset_sha256": "3a8cc5a5b5810855210b32a9e795a043f8106134591547cd9274bd25ae97ae73"
     },
     "j\\file\\ful_2uij.ydc": {
       "offset": 254396347,
@@ -644,7 +714,8 @@
         9,
         0
       ],
-      "sha256": "4e913ae3446e575f85c3bc538b9a8e4bc002dbcc73d3a47e869dcdd05aa31aca"
+      "sha256": "4e913ae3446e575f85c3bc538b9a8e4bc002dbcc73d3a47e869dcdd05aa31aca",
+      "main_multiset_sha256": "d51f6ef61aca5a6967a28e8c7d621007023d1e8cdacf3d42724bb27a113a655b"
     },
     "j\\file\\ful_2umi.ydc": {
       "offset": 254396465,
@@ -654,7 +725,8 @@
         3,
         10
       ],
-      "sha256": "0e52faeb1e2cdbdbf660658f1c8ec11a78e1956e46bd64b2a3642869636c811e"
+      "sha256": "0e52faeb1e2cdbdbf660658f1c8ec11a78e1956e46bd64b2a3642869636c811e",
+      "main_multiset_sha256": "9bebb5522231f2de2364637549b8459725b28524a63ab7bfea79cf5ca601af8e"
     },
     "j\\file\\ful_2val.ydc": {
       "offset": 254396589,
@@ -664,7 +736,8 @@
         3,
         9
       ],
-      "sha256": "5a4b575a7e3d728e87c6b9db22def9c4df35eb808d6c4d8b5e3d8f56cf3e7281"
+      "sha256": "5a4b575a7e3d728e87c6b9db22def9c4df35eb808d6c4d8b5e3d8f56cf3e7281",
+      "main_multiset_sha256": "8471417d925cd5312172f8d0e1cf7c55a02f3ea8f3ce509a21e7e6a8c99e8ea7"
     },
     "j\\file\\ful_3all.ydc": {
       "offset": 254396713,
@@ -674,7 +747,8 @@
         3,
         12
       ],
-      "sha256": "3761debedac5f0b6f9a7ddc25fd417b54a83e6ee6cc0a502f375e5528a51f16c"
+      "sha256": "3761debedac5f0b6f9a7ddc25fd417b54a83e6ee6cc0a502f375e5528a51f16c",
+      "main_multiset_sha256": "e79c92b10f752684a21032d9e27283576a4fd568882f4ccaff4e19e8eff871d7"
     },
     "j\\file\\ful_3dec.ydc": {
       "offset": 254396843,
@@ -684,7 +758,8 @@
         3,
         13
       ],
-      "sha256": "1452cc823acddcbff035e7f09634b2ad6e426888b4dc744dd4b3ee0988a25548"
+      "sha256": "1452cc823acddcbff035e7f09634b2ad6e426888b4dc744dd4b3ee0988a25548",
+      "main_multiset_sha256": "12fbc431db3b6682c879f8260d7d718118f096a114d7057a608975f2fbd7d09e"
     },
     "j\\file\\ful_3exo.ydc": {
       "offset": 254396975,
@@ -694,7 +769,8 @@
         0,
         7
       ],
-      "sha256": "a52206a9a6c73715f425be4ee08e6ea33db1a44fc58329d17ba35106e2b82931"
+      "sha256": "a52206a9a6c73715f425be4ee08e6ea33db1a44fc58329d17ba35106e2b82931",
+      "main_multiset_sha256": "813fdf41968fe95e8f8c71595893c005c3e11c14234b673e9fcf78da0064c89e"
     },
     "j\\file\\ful_3fus.ydc": {
       "offset": 254397085,
@@ -704,7 +780,8 @@
         9,
         7
       ],
-      "sha256": "eba48128d444b721efb47dee9d60cdeeb970db020c6a6719a6542277004d3ebf"
+      "sha256": "eba48128d444b721efb47dee9d60cdeeb970db020c6a6719a6542277004d3ebf",
+      "main_multiset_sha256": "63156c37df124bb2ad93cd6f5395dd92cbe96a0e21814e49164d1832748af450"
     },
     "j\\file\\ful_3grv.ydc": {
       "offset": 254397213,
@@ -714,7 +791,8 @@
         0,
         13
       ],
-      "sha256": "366985fc52709c9ed16ebda778f429f58756f1cd1cf0c10f8cfec3eb2b3b5096"
+      "sha256": "366985fc52709c9ed16ebda778f429f58756f1cd1cf0c10f8cfec3eb2b3b5096",
+      "main_multiset_sha256": "0a3a2797924349df4916acf03f2c138be699fe202f4bf57299be7a6c4bb9e84a"
     },
     "j\\file\\ful_3hnd.ydc": {
       "offset": 254397335,
@@ -724,7 +802,8 @@
         0,
         6
       ],
-      "sha256": "f2be5965585f7bb5b56f72a2ebc325191be622340fd43cbac290c320b17a3bff"
+      "sha256": "f2be5965585f7bb5b56f72a2ebc325191be622340fd43cbac290c320b17a3bff",
+      "main_multiset_sha256": "19d98efe036dafad00acedf76f1df6f058004ce0595a65b428a0ac70feff767f"
     },
     "j\\file\\ful_3too.ydc": {
       "offset": 254397443,
@@ -734,7 +813,8 @@
         0,
         11
       ],
-      "sha256": "9621750214b4a2d99891d81d6528e6a454aaa1a5d793eef9ad7ce04452ffb4b1"
+      "sha256": "9621750214b4a2d99891d81d6528e6a454aaa1a5d793eef9ad7ce04452ffb4b1",
+      "main_multiset_sha256": "95f84a1f89f812eebaa04c2bc5132001e471f9848c75ab42440cf69f6eb4e426"
     },
     "j\\file\\ful_3yam.ydc": {
       "offset": 254397563,
@@ -744,7 +824,8 @@
         3,
         1
       ],
-      "sha256": "b8d77a0a4d495709dc52f19109e19d750a7c38d6970b6215b60a40f2899dfd6b"
+      "sha256": "b8d77a0a4d495709dc52f19109e19d750a7c38d6970b6215b60a40f2899dfd6b",
+      "main_multiset_sha256": "eb31287abdd3d25491fc6c053ce8bf849554fade20600a77e2a18bdb471a7769"
     }
   }
 }

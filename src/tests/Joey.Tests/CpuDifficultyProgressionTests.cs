@@ -1,9 +1,12 @@
 using Joey.Core;
+using System.Text.Json;
 
 static class CpuDifficultyProgressionTests
 {
     public static void Run(Action<bool, string> check)
     {
+        using var evidence = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures/cpu-deck-selection-tables.json")));
+        var thresholds = evidence.RootElement.GetProperty("progression_thresholds");
         var fresh = new CpuDifficultyState(1, 0, 0, 0);
         var profile = fresh;
         profile = CpuDifficultyProgression.Apply(profile, 1, true);
@@ -15,21 +18,21 @@ static class CpuDifficultyProgressionTests
             "Third win advances level one and clears the streak");
         foreach (var (pool, first, last) in new[] { (0, 1, 6), (1, 3, 8) })
         {
-            int[] wins = [0, 3, 4, 5, 5, 5, 6, 6, 7, 0];
             for (int level = first; level <= last; level++)
             {
-                var state = new CpuDifficultyState((byte)(level - pool * 2), (byte)pool, 1, (byte)(wins[level] - 2));
+                int required = thresholds.GetProperty("win").GetProperty(level.ToString()).GetInt32();
+                var state = new CpuDifficultyState((byte)(level - pool * 2), (byte)pool, 1, (byte)(required - 2));
                 var before = CpuDifficultyProgression.Apply(state, 1, true);
                 var after = CpuDifficultyProgression.Apply(before, 1, true);
                 check(before.BaseDifficulty == state.BaseDifficulty && after.BaseDifficulty == state.BaseDifficulty + 1 && after.Streak == 0,
                     $"Win threshold boundary level {level}, pool {pool}");
             }
         }
-        int[] losses = [0, 0, 3, 4, 4, 4, 4, 3, 2, 2];
         foreach (int pool in new[] { 0, 1 })
             for (int level = pool * 2 + 2; level <= (pool == 0 ? 7 : 9); level++)
             {
-                var state = new CpuDifficultyState((byte)(level - pool * 2), (byte)pool, 2, (byte)(losses[level] - 2));
+                int required = thresholds.GetProperty("non_win").GetProperty(level.ToString()).GetInt32();
+                var state = new CpuDifficultyState((byte)(level - pool * 2), (byte)pool, 2, (byte)(required - 2));
                 var before = CpuDifficultyProgression.Apply(state, 2, true);
                 var after = CpuDifficultyProgression.Apply(before, 2, true);
                 check(before.BaseDifficulty == state.BaseDifficulty && after.BaseDifficulty == state.BaseDifficulty - 1 && after.Streak == 0,

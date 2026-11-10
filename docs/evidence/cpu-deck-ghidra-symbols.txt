@@ -1,0 +1,15 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+Scope: persistent function names/comments only, no byte patch or autoanalysis.
+FUNCTION 0044bbe0 FUN_0044bbe0 -> SelectCpuDeckResourcePath_0044BBE0
+FUNCTION 0044a920 FUN_0044a920 -> LoadDeckResourceIntoSource_0044A920
+FUNCTION 0044a690 FUN_0044a690 -> ReadCpuSourceDeck_0044A690
+FUNCTION 0055c140 FUN_0055c140 -> NextUiDeckMtUInt32_0055C140
+FUNCTION 0055c0e0 FUN_0055c0e0 -> SeedUiDeckMtLegacy_0055C0E0
+FUNCTION 0040f150 FUN_0040f150 -> InitializeUiDeckMtObject_0040F150
+FUNCTION 0040f180 FUN_0040f180 -> ReadUiDeckMtSnapshot_0040F180
+FUNCTION 005bedd0 FUN_005bedd0 -> ProfileHasPriorEditionCards_005BEDD0
+FUNCTION 005bee30 FUN_005bee30 -> InitializeDifficultyProfile_005BEE30
+FUNCTION 00446df0 FUN_00446df0 -> ApplyProfileDuelResult_00446DF0
+FUNCTION 0044baf0 FUN_0044baf0 -> UpdateMatchResultSummary_0044BAF0
+FUNCTION 005bbf60 FUN_005bbf60 -> GetNativeTerminalResultCode_005BBF60
+Annotated 12 verified function entries.

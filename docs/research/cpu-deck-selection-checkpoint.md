@@ -60,6 +60,9 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 5. Implementar modelo verificável e pseudocódigo C#; preparar falsificadores Windows.
 
 ## Última ação realizada
+Extrator revalidado; build e 341 verificações C# passaram novamente após
+limiares passarem a usar evidência extraída. Símbolos persistentes conferidos
+por `cpu-deck-alternate-scene-calls.txt`. Preparar protocolo Windows final.
 Consultas Ghidra em `cpu-deck-normal-entry.txt`, `cpu-deck-stream-and-callsite.txt`;
 inspeção de instruções do seletor e tabelas no EXE, inventário direcionado do DAT.
 Build e 341 verificações C# passaram, incluindo 58 recursos originais e
@@ -73,7 +76,8 @@ segunda execução usou caminhos absolutos e concluiu. Não repetir sem necessid
 - `5458908`: tabelas extraídas, 58 YDC conferidos e primeiros campos do perfil.
 - `c560b9e`: seletor C# e RNG MT transcritos, 221 verificações.
 - `36399ce`: progressão do perfil, gates e consulta direcionada de escritores.
-- Próxima unidade: correspondência dos presets e confirmação dos pools com DAT.
+- `716802c`: correspondência das três listas dos presets e confirmação dos pools.
+- Unidade atual: nomes persistentes, 58 mains distintos e limiares extraídos como oráculo.
 
 ## Bloqueios
 Nenhum para seguir estaticamente. A captura normal de 1 estrela descrita pelo
