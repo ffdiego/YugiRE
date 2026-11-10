@@ -51,6 +51,31 @@ O [protocolo](cpu-deck-selection-windows-validation.md) contém comandos exatos.
 - [Tabelas, recursos e limiares](../evidence/cpu-deck-selection-tables.json).
 - [Nomes persistentes no Ghidra](../evidence/cpu-deck-ghidra-symbols.txt).
 
+## Incidente Windows — crashes no observador (2026-11-10)
+
+- Uma captura real por attach `--observe-only`, `trace on 20000`,
+  `trace deck on mt` instalou cinco hooks (`deckActive=True`), mas o Joey
+  sofreu acesso inválido `0xC0000005` ao iniciar o duelo. O problema não é
+  o antigo pré-teste de região, que foi ultrapassado.
+- Event Viewer registrou EIP `0048ADBD` (duas vezes; `MOV EAX,[ECX]`)
+  e `00477F0B` (uma vez; `MOV EAX,[EDI]`). Consulta headless do operador
+  `duel-crash-sites.txt` confirmou as instruções; são acessos indiretos
+  posteriores aos hooks, **não** prova direta da causa.
+- Revisão encontrou erro concreto de API Frida em `deck_trace.js`:
+  `Interceptor.attach(site, {onEnter(){...}})` era usado em `0044BDA5`
+  e `0044BC84`, que são instruções internas, não entradas de função.
+  Frida documenta a forma de *instruction probe* com callback direto;
+  um caso semelhante de corrupção de pilha foi relatado em
+  https://github.com/frida/frida/issues/2944.
+- Corrigido para `Interceptor.attach(site, function () {...})` sem onLeave,
+  mantendo os listeners em entradas reais de funções. O teste de simulação
+  agora exige essa distinção. **Não testado ainda no Windows**: tratar como
+  hipótese corretiva, não correção validada.
+- Não repetir duelos com a versão anterior. Após pull e testes locais,
+  testar apenas com backup do save e processo manual; se o crash persistir,
+  suspender os probes internos e reduzir para hooks de entrada/saída
+  previamente conhecidos, isolando a origem com dump/registradores.
+
 ## Hipóteses / questões abertas
 - Nenhum JSONL dinâmico do novo observador foi capturado no Windows ainda.
   Snapshot MT deve prever roll; concorrência entre threads pode interferir.
