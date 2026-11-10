@@ -1,6 +1,9 @@
 # Validação Windows — seleção de decks normais
 
-Complemento dinâmico **ainda não executado nesta investigação**.
+Protocolo utilizado em **duas capturas dinâmicas Windows em 2026-11-10**:
+uma sem MT e outra com snapshot MT. Ambas deram `ExitCode=0`, sem
+divergências; detalhes e hashes em
+[checkpoint](cpu-deck-selection-checkpoint.md).
 Usar o EXE original com SHA256
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 Iniciar manualmente; anexar debugger/probe a um processo existente.
@@ -23,15 +26,18 @@ py -3 -m venv native_rules/.venv-frida
 .\native_rules\.venv-frida\Scripts\python.exe -m pip install frida
 ```
 
-1. Inicie **manualmente** o `joey_pc.exe` original e aguarde o menu.
+1. Inicie **manualmente** o `joey_pc.exe` original e aguarde o menu,
+   de preferência com backup atualizado do save.
 2. Confira o PID com `Get-Process joey_pc`. Se houver mais de um, selecione
    explicitamente o processo desejado. Anexe sem opções de spawn:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe .\native_rules\native_rules.py --observe-only --pid 2240
+.\native_rules\.venv-frida\Scripts\python.exe .\native_rules\native_rules.py --observe-only
 ```
 
-Substitua `2240` pelo PID atual. Não precisa compilar/carregar a DLL nativa.
+Sem `--pid`, o launcher identifica `joey_pc.exe` automaticamente
+quando há uma única instância. Se houver mais de uma, use
+`--pid N` explicitamente. Não precisa compilar/carregar a DLL nativa.
 A abertura do observador exige SHA do arquivo apontado pelo módulo carregado;
 `trace deck on` verifica também base, bytes exatos dos cinco pontos e
 permissões das regiões de memória antes de instalar qualquer hook do deck.
@@ -127,8 +133,29 @@ dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat ../passion/deck
 ```
 
 Testes usam ABI/memória simuladas e fixtures sintéticas, além dos recursos
-reais somente para leitura. Nenhuma captura dinâmica Windows foi feita no
-Fedora. Evidência da ABI: `docs/evidence/cpu-deck-observer-abi.txt`.
+reais somente para leitura. O Joey não foi executado no Fedora; as duas execuções dinâmicas ocorreram
+no Windows do operador após a correção dos probes internos de RNG.
+Evidência da ABI: `docs/evidence/cpu-deck-observer-abi.txt`.
+
+
+### Resultado real de 2026-11-10
+
+O operador exportou duas capturas normais sem perda de eventos e verificou-as
+no Windows, no DAT original: uma registrou 20 eventos e `RawRoll=1762370162`
+sem snapshot MT; outra registrou 35 eventos e `RawRoll=538871612`
+com `MtChecked=true`. Ambas escolheram `CPU_002.ydc`, perfil base1/pool0,
+e as listas carregadas coincidiram em quantidade, ordem e índice com o DAT:
+`main=43, second=0, third=4`. O JSON do comparador retornou
+`ExitCode=0`, `Issues=[]` nas duas capturas. As capturas brutas não estão
+versionadas; os hashes SHA256 estão no [checkpoint](cpu-deck-selection-checkpoint.md).
+
+Os dois pontos de RNG são **instruções internas**. Depois de crashes Windows
+`0xC0000005`, o observador passou a usar
+`Interceptor.attach(site, function () { ... })` (probe de instrução), e não
+`{onEnter(){...}}` (listener de entrada de função), nesses locais.
+Os dois testes reais bem-sucedidos ocorreram após a mudança. Isso não é
+promessa de estabilidade universal; para novos testes preserve backup e,
+se houver crash, evite repetições e colete o contexto da exceção.
 
 ## A. Uma seleção normal inteira — prioridade máxima
 
