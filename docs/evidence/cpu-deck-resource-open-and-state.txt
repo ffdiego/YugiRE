@@ -1,0 +1,953 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00543be0
+TRANSIENT FUNCTION 00488bc0
+TRANSIENT FUNCTION 00488d10
+TRANSIENT FUNCTION 005be160
+REFERENCES TO 00a577fa
+ XREF From: 005759e5 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005759a0
+ XREF From: 00575c11 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00575af0
+ XREF From: 00578513 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005784e0
+ XREF From: 00598590 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00598590
+ XREF From: 005ba324 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005ba310
+ XREF From: 00576996 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00576960
+ XREF From: 00576a2a To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00576960
+ XREF From: 00576ee7 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00576b30
+ XREF From: 00579820 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00579810
+ XREF From: 0057989c To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00579890
+ XREF From: 005b9edd To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION 005b9e50
+ XREF From: 005bc71c To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005bc700
+ XREF From: 005bc7a2 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bc700
+ XREF From: 005b9ca0 To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005b9ca0
+ XREF From: 005b9d3e To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b9ca0
+ XREF From: 005bd3cd To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bd2d0
+ XREF From: 005bd3e2 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bd2d0
+ XREF From: 005bd9e0 To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION 005bd2d0
+ XREF From: 005bdac0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bdac0
+ XREF From: 0056e3e0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0056dd30
+ XREF From: 0056e401 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0056dd30
+ XREF From: 0056e4fa To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0056dd30
+ XREF From: 00573caf To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00573c30
+ XREF From: 00575131 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00574f70
+ XREF From: 00575468 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00575210
+ XREF From: 00578ce0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00578bb0
+ XREF From: 0057e6e1 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0057e650
+ XREF From: 0057e969 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0057e880
+ XREF From: 00585fe4 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00585f50
+ XREF From: 005bccef To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005bccc0
+ XREF From: 004048c0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 004048c0
+ XREF From: 004048d7 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 004048c0
+ XREF From: 004048f7 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 004048c0
+ XREF From: 005b85bd To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b8210
+ XREF From: 005b86fa To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b8210
+ XREF From: 00570df0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00570e3a To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00570e49 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00570e64 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 00570e96 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00570eb6 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 00570ee7 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00570f00 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 00570f45 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00570f81 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 0040495d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00404920
+ XREF From: 00404970 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00404920
+ XREF From: 0040498e To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 00404920
+ XREF From: 00573bd0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a182e To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a1580
+ XREF From: 005a1849 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005a1580
+ XREF From: 005a190b To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a1580
+ XREF From: 005a1924 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005a1580
+ XREF From: 005ad919 To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005ad8c0
+ XREF From: 00402d26 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00402be0
+ XREF From: 005bdada To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bdad0
+ XREF From: 005bdab0 To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION 005bdab0
+ XREF From: 00574a8d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005749b0
+ XREF From: 005b9f55 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b9f75 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005b9fa9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b9fe6 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005ba000 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005bdb2f To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION 005bdb20
+ XREF From: 005bbf60 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bbf60
+ XREF From: 00581a1c To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION none
+ XREF From: 00578823 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005787f0
+ XREF From: 00578a7d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00578860
+ XREF From: 00579627 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00579330
+ XREF From: 00578207 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00578030
+ XREF From: 0058a8f5 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058ab71 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058ab97 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058abba To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0056d42d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0056d3f0
+ XREF From: 0058bedc To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058c572 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058c5ad To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058c7fb To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0058c82f To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00578ff3 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00578d00
+ XREF From: 0059772a To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005976f0
+ XREF From: 005978a5 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005976f0
+ XREF From: 005978b9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005976f0
+ XREF From: 00597fc2 To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 00597e90
+ XREF From: 00597a8d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00597a00
+ XREF From: 005bc050 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc205 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc212 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc246 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc26f To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc27d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc289 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc2a2 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc2ce To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc2da To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc2ef To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc32e To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc33b To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc34a To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc373 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005bc3a4 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005bc050
+ XREF From: 005a0327 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a02a0
+ XREF From: 005a047a To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a02a0
+ XREF From: 005a062c To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a0530
+ XREF From: 005a0ab8 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a08f0
+ XREF From: 005a0af9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a08f0
+ XREF From: 005a1aa2 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a1ab7 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a1c28 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a1c48 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a0f89 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a0f00
+ XREF From: 005a0fa9 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005a0f00
+ XREF From: 005a1182 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a0f00
+ XREF From: 005a11b8 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005a0f00
+ XREF From: 005a2267 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a26e9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a27cb To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005787d5 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00578540
+ XREF From: 0059d099 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d090
+ XREF From: 0059d1dc To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d090
+ XREF From: 0059d1f2 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d090
+ XREF From: 005a3b11 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a3b4e To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a3c37 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a3e83 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a3ee3 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a519b To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a5a67 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a5a91 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a5ade To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a5b9b To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a5bc8 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a5bed To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a4092 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a4090
+ XREF From: 005a40b4 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a4090
+ XREF From: 005a40bb To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a4090
+ XREF From: 005a40dc To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005a4090
+ XREF From: 005a5c6f To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a12ec To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a130d To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a1318 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a133f To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a1353 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a1376 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a13cc To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a13e6 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 00577fe9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 00577cf0
+ XREF From: 005a3ac9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a3ae6 To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a3fbb To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005abc52 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005ac44e To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005ac310
+ XREF From: 005ac640 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005ac310
+ XREF From: 005bb086 To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005bafd0
+ XREF From: 005ba2d0 To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005ba2d0
+ XREF From: 005ba060 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005ba060
+ XREF From: 005ba140 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005ba060
+ XREF From: 005ba1ae To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005ba060
+ XREF From: 0059cbb1 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059cbb0
+ XREF From: 0059cdd2 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059cd70
+ XREF From: 0059cdfa To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059cd70
+ XREF From: 0059cf41 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059cf30
+ XREF From: 0059d601 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d5f0
+ XREF From: 0059d7a1 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d790
+ XREF From: 0059d83b To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d790
+ XREF From: 0059d901 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059d8f0
+ XREF From: 0059dac5 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0059dab0
+ XREF From: 0057f074 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 0057ef90
+ XREF From: 005bab4f To: 00a577fa Type: READ Op: 0 DEFAULT FUNCTION 005baab0
+ XREF From: 005b6e40 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6e5f To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6e79 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6efb To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6f0e To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6f40 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6f66 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6fa8 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b6fc9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b6e40
+ XREF From: 005b72c9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7302 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7318 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7331 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7354 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b736e To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b737b To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7391 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b73aa To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b73c5 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b73e4 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7423 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7446 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7469 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7483 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b74b8 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b74d2 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b74ed To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b752a To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b8eaa To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b8f12 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a4113 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a40f0
+ XREF From: 005a412f To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005a40f0
+ XREF From: 005a414e To: 00a577fa Type: WRITE Op: 0 DEFAULT FUNCTION 005a40f0
+ XREF From: 0057f826 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 0057fac0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00590434 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 00590442 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b62fe To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b69dc To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b6e10 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b75b1 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b75ca To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b75ff To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7615 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b762d To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7663 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b76e2 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7737 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b77a8 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b77ff To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b7858 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b7897 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b78c8 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b78de To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b78f4 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b791b To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION 005b77f0
+ XREF From: 005b799f To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7a10 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7a69 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7a8a To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7aa9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7aca To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7ae6 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7b01 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7b17 To: 00a577fa Type: READ_WRITE Op: 0 DEFAULT FUNCTION none
+ XREF From: 005a41c9 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a5123 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a59b0 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a8097 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005a8a50 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+ XREF From: 005b7b50 To: 00a577fa Type: READ Op: 1 DEFAULT FUNCTION none
+REFERENCES TO 0040f180
+FUNCTION FUN_00543be0 @00543be0
+ CALLER 0055da4e FUN_0055da10
+ CALLER 005da3b0 null
+ CALLER 005da660 null
+ CALLER 005dc828 null
+
+/* WARNING: Removing unreachable block (ram,0x00543c5c) */
+
+int __thiscall FUN_00543be0(int *param_1,int param_2)
+
+{
+  int iVar1;
+  uint uVar2;
+  undefined4 *puVar3;
+  uint uVar4;
+  undefined4 *puVar5;
+  undefined1 uStack00000000;
+  
+  iVar1 = (**(code **)(*param_1 + 0x1c))(param_2);
+  if (iVar1 == 0) {
+    uVar2 = (**(code **)(*param_1 + 0x30))();
+    iVar1 = *(int *)(param_2 + 4);
+    if (iVar1 == 0) {
+      uVar4 = 0;
+    }
+    else {
+      uVar4 = *(int *)(param_2 + 8) - iVar1;
+    }
+    if (uVar4 < uVar2) {
+      if (iVar1 == 0) {
+        iVar1 = 0;
+      }
+      else {
+        iVar1 = *(int *)(param_2 + 8) - iVar1;
+      }
+      FUN_0045bc20(*(undefined4 *)(param_2 + 8),uVar2 - iVar1,&uStack00000000);
+    }
+    else if ((iVar1 != 0) && (uVar2 < (uint)(*(int *)(param_2 + 8) - iVar1))) {
+      *(uint *)(param_2 + 8) = iVar1 + uVar2;
+    }
+    puVar5 = *(undefined4 **)(param_2 + 4);
+    puVar3 = (undefined4 *)(**(code **)(*param_1 + 0x2c))();
+    for (uVar4 = uVar2 >> 2; uVar4 != 0; uVar4 = uVar4 - 1) {
+      *puVar5 = *puVar3;
+      puVar3 = puVar3 + 1;
+      puVar5 = puVar5 + 1;
+    }
+    iVar1 = 0;
+    for (uVar2 = uVar2 & 3; uVar2 != 0; uVar2 = uVar2 - 1) {
+      *(undefined1 *)puVar5 = *(undefined1 *)puVar3;
+      puVar3 = (undefined4 *)((int)puVar3 + 1);
+      puVar5 = (undefined4 *)((int)puVar5 + 1);
+    }
+  }
+  return iVar1;
+}
+
+
+FUNCTION FUN_00488bc0 @00488bc0
+ CALLER 0048a8d6 null
+
+int __fastcall FUN_00488bc0(int param_1)
+
+{
+  int iVar1;
+  int iVar2;
+  undefined4 unaff_EBX;
+  int iVar3;
+  int iVar4;
+  int unaff_ESI;
+  int local_1c;
+  int local_18;
+  int local_14;
+  int local_10;
+  int iStack_c;
+  int local_8;
+  int iStack_4;
+  
+  local_10 = param_1;
+  if (*(char *)(DAT_005f33e4 + 0x40) == '\0') {
+    (**(code **)(*(int *)(*(int *)(param_1 + 0xc) + 0x248) + 4))(&local_18,&local_14);
+  }
+  else {
+    local_18 = *(int *)(DAT_005f33e4 + 0x4c) + *(int *)(DAT_005f33e4 + 0x44);
+    local_14 = *(int *)(DAT_005f33e4 + 0x50) + *(int *)(DAT_005f33e4 + 0x48);
+  }
+  if (*(int *)(param_1 + 0x160) == -1) {
+    return 0;
+  }
+  if (*(int *)(param_1 + 0x160) == 1) {
+    return 1;
+  }
+  iVar3 = 0;
+  iVar4 = param_1;
+  do {
+    iVar1 = iVar3 + 1;
+    local_8 = *(int *)(*(int *)(iVar4 + 0xb8) + 4 + iVar1 * 8);
+    iVar4 = local_8 / 1000;
+    local_8 = local_8 % 1000;
+    local_1c = iVar1;
+    (**(code **)**(undefined4 **)(param_1 + 0x100))(&local_1c);
+    (**(code **)(*(int *)(param_1 + 0xb0) + 8))(unaff_EBX,0xffffffff);
+    *(undefined4 *)(*(int *)(param_1 + 0xd8) + unaff_ESI * 4) = 0;
+    (**(code **)(**(int **)(*(int *)(param_1 + 0x110) + 4 + unaff_ESI * 8) + 0x38))
+              (&local_18,&local_10);
+    if (iVar3 == 5) {
+      iVar2 = FUN_005bedd0();
+      if (iVar2 != 0) goto LAB_00488cbd;
+    }
+    else {
+LAB_00488cbd:
+      if ((iVar4 <= local_18) && (local_18 < iStack_c + iVar4)) {
+        if ((local_8 <= local_14) && (local_14 < iStack_4 + local_8)) {
+          return iVar3 + 2;
+        }
+      }
+    }
+    if (7 < iVar1) {
+      return -1;
+    }
+    iVar3 = iVar1;
+    iVar4 = local_10;
+  } while( true );
+}
+
+
+FUNCTION FUN_00488d10 @00488d10
+ CALLER 00489065 FUN_00488f50
+ CALLER 00489094 FUN_00488f50
+ CALLER 004890c5 FUN_00488f50
+ CALLER 004890ed FUN_00488f50
+ CALLER 00489105 FUN_00488f50
+ CALLER 0048915f FUN_00488f50
+ CALLER 0048a4ae null
+ CALLER 0048a818 null
+ CALLER 0048a896 null
+
+void __thiscall FUN_00488d10(int param_1,int param_2,int param_3)
+
+{
+  int iVar1;
+  int *piVar2;
+  int iVar3;
+  int unaff_retaddr;
+  undefined4 local_4;
+  
+  local_4 = param_1;
+  if ((param_2 == 2) || (param_2 == 3)) {
+    iVar3 = *(int *)(*(int *)(param_1 + 0x2c) + 0xc + ((-(uint)(param_2 != 2) & 7) + 7) * 8);
+    piVar2 = (int *)FUN_00417f40();
+    (**(code **)(*piVar2 + 0x38))(&local_4);
+    local_4 = local_4 / 5;
+    FUN_0047fc80(400,(unaff_retaddr + 1) * local_4 + -1 + iVar3 % 1000);
+  }
+  else {
+    if (param_2 == 8) {
+      if (param_3 < 2) {
+        iVar3 = *(int *)(*(int *)(param_1 + 0xb8) + 0x14 + DAT_005dbda0 * 8);
+        iVar1 = *(int *)(*(int *)(param_1 + 0xb8) + 4 + (param_3 + DAT_005dbda0) * 8);
+        FUN_0047fc80(iVar1 / 1000 + iVar3 / 2000,(iVar3 % 1000) / 2 + iVar1 % 1000);
+        return;
+      }
+      iVar3 = *(int *)(*(int *)(param_1 + 0xb8) + 4 + (param_3 + -1) * 8);
+      piVar2 = (int *)FUN_00417f40();
+      (**(code **)(*piVar2 + 0x38))(&param_3);
+      FUN_0047fc80(iVar3 / 1000 + unaff_retaddr / 2,iVar3 % 1000 + local_4 / 2);
+      return;
+    }
+    if ((param_2 == 4) && (-1 < param_3)) {
+      param_3 = param_3 + 0x23;
+      iVar3 = *(int *)(*(int *)(param_1 + 0x2c) + 4 + param_3 * 8) +
+              *(int *)(*(int *)(param_1 + 0x2c) + 0x114);
+      (**(code **)**(undefined4 **)(param_1 + 0x74))();
+      (**(code **)(*(int *)(param_1 + 0x24) + 8))(4,0xffffffff);
+      *(undefined4 *)(*(int *)(param_1 + 0x4c) + local_4 * 4) = 0;
+      (**(code **)(**(int **)(*(int *)(param_1 + 0x84) + 4 + local_4 * 8) + 0x38))
+                ((int)register0x00000010 + -8,(int)register0x00000010 + -0x10);
+      FUN_0047fc80(iVar3 / 1000 + (int)&param_3 / 2,iVar3 % 1000 + param_2 / 2);
+      return;
+    }
+  }
+  return;
+}
+
+
+FUNCTION FUN_005be160 @005be160
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_005be160(void)
+
+{
+  FUN_005bddf0(&DAT_00a53cc0,0x1188);
+  _DAT_00a53cc8 = 0x10;
+  DAT_00a53cc4._2_2_ = 0xff;
+  _strncpy((char *)0xa54e3a,(char *)0x5efbc0,8);
+  return;
+}
+
+
+FUNCTION FUN_005759a0 @005759a0
+ CALLER 0057598e FUN_00575970
+ CALLER 00575a2f FUN_00575a10
+ CALLER 00578b47 FUN_00578860
+
+void FUN_005759a0(uint param_1,int param_2,uint *param_3,int param_4)
+
+{
+  if (-1 < param_2) {
+    FUN_00575af0(param_1,param_3,param_4 != 0);
+    if (param_1 == (*param_3 >> 0xc & 1)) {
+      FUN_0059ce90(param_1,1);
+    }
+    FUN_0059d240(param_1);
+    FUN_00598590(DAT_00a577f8._2_1_ & 1,0x1e,param_1 & 0xff);
+  }
+  return;
+}
+
+
+FUNCTION FUN_00575af0 @00575af0
+ CALLER 005759c0 FUN_005759a0
+ CALLER 00599753 FUN_005995e0
+ CALLER 00599d25 FUN_005999d0
+ CALLER 0058fe83 null
+ CALLER 0058ff22 null
+ CALLER 00592806 null
+ CALLER 0059f328 FUN_0059df40
+
+void FUN_00575af0(uint param_1,uint *param_2,uint param_3)
+
+{
+  uint uVar1;
+  byte bVar2;
+  ushort uVar3;
+  undefined8 uVar4;
+  
+  uVar4 = FUN_005699c0(0x453);
+  if ((int)uVar4 != 0) {
+    FUN_00575a80(param_1,param_2,param_3);
+    return;
+  }
+  bVar2 = (byte)(*param_2 >> 0xc);
+  FUN_005b9170(0x8e,CONCAT11((char)(*param_2 >> 0x18) * '\x02' + (bVar2 & 1),(char)param_1) & 0xff01
+                    | 0x16,CONCAT31((int3)((ulonglong)uVar4 >> 0x28),bVar2) & 0xffff0001 | 0x11c,
+               param_3);
+  uVar3 = FUN_004022e0((ushort)*param_2 & 0xfff);
+  if (uVar3 < 0x216) {
+    if ((uVar3 == 0x215) || (uVar3 == 0x1ce)) {
+      if (((param_3 & 1) == 0) || ((*param_2 >> 0xc & 1) != param_1)) goto LAB_00575bec;
+    }
+    else if (uVar3 != 0x1de) goto LAB_00575bec;
+  }
+  else if ((uVar3 != 0x412) && (uVar3 != 0x4da)) goto LAB_00575bec;
+  uVar1 = *param_2;
+  FUN_005ba490((uVar1 & 0xfffff7c9) << 0x13 | uVar1 & 0xfff | 0x3e4e0000,
+               (uVar1 >> 0xc & 1) + (uVar1 >> 0x18 & 0x7f) * 2,0);
+LAB_00575bec:
+  FUN_0059d6e0(*param_2 >> 0xc & 1,1);
+  FUN_00598590(DAT_00a577f8._2_1_ & 1,0x1f,
+               (*param_2 >> 0xc & 1) + (*param_2 >> 0x18 & 0x7f) * 2 |
+               (uint)((param_3 & 1) != 0) << 0x10);
+  return;
+}
+
+
+FUNCTION FUN_005784e0 @005784e0
+ CALLER 00575a6d FUN_00575a10
+ CALLER 00584ef5 FUN_00584e60
+ CALLER 00584f0c FUN_00584e60
+ CALLER 00584f28 FUN_00584e60
+ CALLER 00584f4f FUN_00584e60
+ CALLER 00584f6b FUN_00584e60
+ CALLER 00584f98 FUN_00584e60
+ CALLER 00584fb4 FUN_00584e60
+ CALLER 00584fca FUN_00584e60
+ CALLER 00585034 FUN_00584e60
+ CALLER 00585067 FUN_00584e60
+ CALLER 00585083 FUN_00584e60
+ CALLER 005850d7 FUN_00584e60
+ CALLER 005850fc FUN_00584e60
+ CALLER 00585112 FUN_00584e60
+ CALLER 0058381d null
+ CALLER 0058b0ce null
+ CALLER 00591012 null
+ CALLER 005a60e5 null
+ CALLER 005a672e null
+ CALLER 005a6836 null
+ CALLER 005a6956 null
+ CALLER 005a6a76 null
+ CALLER 005a6d87 null
+ CALLER 005a6f3a null
+ CALLER 005787cd FUN_00578540
+ CALLER 0057571e FUN_00575570
+ CALLER 0059cff5 FUN_0059cf30
+ CALLER 0059d875 FUN_0059d790
+ CALLER 0059d8a1 FUN_0059d790
+ CALLER 0059db8c FUN_0059dab0
+ CALLER 005bbb52 FUN_005bb720
+
+void FUN_005784e0(int param_1,uint param_2)
+
+{
+  if (param_2 != 0) {
+    if (0xffff < (int)param_2) {
+      param_2 = 0xffff;
+    }
+    FUN_005b9170(CONCAT31((uint3)(-(uint)(param_1 != 0) >> 8) & 0x80,0x43),param_2,0,1);
+    FUN_00598590(DAT_00a577f8._2_1_ & 1,0x10,param_1 << 0x10 | param_2 & 0xffff);
+  }
+  return;
+}
+
+
+FUNCTION FUN_00598590 @00598590
+ CALLER 005759f8 FUN_005759a0
+ CALLER 00575c33 FUN_00575af0
+ CALLER 00578531 FUN_005784e0
+ CALLER 00576ef3 FUN_00576b30
+ CALLER 00575144 FUN_00574f70
+ CALLER 0057547b FUN_00575210
+ CALLER 00578cee FUN_00578bb0
+ CALLER 005bd6b8 FUN_005bd2d0
+ CALLER 00574aaa FUN_005749b0
+ CALLER 00578843 FUN_005787f0
+ CALLER 00578a8a FUN_00578860
+ CALLER 00579643 FUN_00579330
+ CALLER 00578214 FUN_00578030
+ CALLER 00579001 FUN_00578d00
+ CALLER 005a2280 null
+ CALLER 005a26f5 null
+ CALLER 005a27d6 null
+ CALLER 005787e2 FUN_00578540
+ CALLER 005a3b1e null
+ CALLER 005a432e null
+ CALLER 005a51a8 null
+ CALLER 00577ff6 FUN_00577cf0
+ CALLER 005abc5c null
+
+void FUN_00598590(ushort param_1,undefined2 param_2,undefined4 param_3)
+
+{
+  ushort uVar1;
+  uint uVar2;
+  ushort local_8;
+  undefined2 local_6;
+  undefined2 local_4;
+  undefined2 local_2;
+  
+  if (((DAT_00a577f8._2_1_ & 0x10) != 0) && (((~DAT_00a54e5c ^ DAT_00a577f8._2_1_) & 1) == 0)) {
+    local_6 = param_2;
+    local_4 = (undefined2)param_3;
+    local_8 = param_1;
+    local_2 = (undefined2)((uint)param_3 >> 0x10);
+    FUN_005bd090(0xf057,&local_8,8);
+    return;
+  }
+  if ((DAT_00a55c94 & 0x8000) == 0) {
+    if ((DAT_00a55c94 & 0xff) == 0) {
+      DAT_00a55c94 = CONCAT22(CONCAT11(DAT_00a55c94._3_1_,(undefined1)param_2),(ushort)DAT_00a55c94)
+                     & 0xffff81ff | 0x100;
+      DAT_00a55ca8 = param_3;
+    }
+    else {
+      if (((ushort)DAT_00a55c94 & 0x7f00) < 0xf01) {
+        uVar2 = DAT_00a55c94 >> 8 & 0x7f;
+      }
+      else {
+        uVar2 = 0xf;
+      }
+      *(undefined1 *)((int)&DAT_00a55c94 + uVar2 + 2) = (undefined1)param_2;
+      (&DAT_00a55ca8)[uVar2] = param_3;
+      uVar1 = (ushort)DAT_00a55c94;
+      DAT_00a55c94._0_2_ = uVar1 ^ ((uVar1 & 0xff00) + 0x100 ^ uVar1) & 0x7f00;
+    }
+    DAT_00a55ce8 = CONCAT22(DAT_00a55ce8._2_2_,
+                            ((param_1 & 1 | 2) << 1 | param_1 & 1) << 0xb |
+                            (ushort)DAT_00a55ce8 & 0xa01f);
+  }
+  return;
+}
+
+
+FUNCTION FUN_005ba310 @005ba310
+ CALLER 005ba4b3 FUN_005ba490
+ CALLER 005bd955 FUN_005bd2d0
+ CALLER 005ba631 FUN_005ba4d0
+ CALLER 005ba698 FUN_005ba4d0
+ CALLER 005ba84b FUN_005ba6b0
+ CALLER 005ba86e FUN_005ba860
+
+void FUN_005ba310(int param_1,uint param_2,ushort param_3,undefined4 param_4)
+
+{
+  ushort uVar1;
+  undefined2 uVar2;
+  undefined2 *puVar3;
+  undefined2 local_c;
+  undefined2 local_a;
+  undefined2 local_8;
+  undefined2 local_6;
+  undefined2 local_4;
+  ushort local_2;
+  
+  if ((param_2 & 0xffff) != 0) {
+    uVar2 = (undefined2)((uint)param_4 >> 0x10);
+    if (((DAT_00a577f8._2_1_ & 0x10) != 0) && (((~DAT_00a54e5c ^ DAT_00a577f8._2_1_) & 1) == 0)) {
+      local_c = (undefined2)param_1;
+      local_8 = (undefined2)(param_2 >> 0x10);
+      local_2 = param_3;
+      local_a = (short)param_2;
+      local_6 = (short)param_4;
+      local_4 = uVar2;
+      FUN_005bd090(0xf072,&local_c,0xc);
+      return;
+    }
+    if (param_1 == 0) {
+      puVar3 = (undefined2 *)(&DAT_00a558c0 + (DAT_00a55c84 & 0xffff) * 0x14);
+    }
+    else {
+      puVar3 = &DAT_00a55b40 + (DAT_00a55c80 & 0xffff) * 10;
+    }
+    FUN_005bddf0(puVar3,0x14);
+    *puVar3 = (short)param_2;
+    puVar3[1] = (ushort)(((((param_2 >> 0x18 & 1) << 2 | param_2 >> 0x15 & 3) << 6 |
+                          param_2 >> 0x19 & 0x3f) << 5 | param_2 >> 0x10 & 0x1f) << 1) |
+                ((byte)((byte)(param_2 >> 0x1f) ^ (byte)puVar3[1]) & 1 ^ puVar3[1]) & 0x8001;
+    puVar3[2] = (param_3 & 0xff) << 5 | puVar3[2] & 0xe01f;
+    puVar3[8] = (short)param_4;
+    puVar3[9] = uVar2;
+    if (param_1 == 0) {
+      DAT_00a55c84._0_2_ = (short)DAT_00a55c84 + 1;
+    }
+    else {
+      DAT_00a55c80._0_2_ = (short)DAT_00a55c80 + 1;
+    }
+    uVar1 = puVar3[1];
+    if ((((byte)uVar1 & 0x3e) < 0x15) && ((uVar1 & 0x3000) == 0)) {
+      FUN_00579990(uVar1 & 1,uVar1 >> 1 & 0x1f,1,1);
+    }
+  }
+  return;
+}
+
+
+FUNCTION FUN_00576960 @00576960
+ CALLER 00577b78 FUN_00577b30
+ CALLER 00577829 FUN_005777f0
+ CALLER 0057694e FUN_00576940
+ CALLER 005778cf FUN_005778b0
+ CALLER 00577a1d FUN_005779d0
+ CALLER 00577a7f FUN_00577a60
+ CALLER 00577972 FUN_00577950
+ CALLER 00577a4e FUN_00577a40
+ CALLER 00577aae FUN_00577aa0
+ CALLER 00577bd5 FUN_00577b90
+ CALLER 00577938 FUN_005778f0
+ CALLER 00577c3d FUN_00577bf0
+ CALLER 00577c7f FUN_00577c60
+
+uint FUN_00576960(undefined2 *param_1,uint param_2,int param_3,uint param_4)
+
+{
+  uint uVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  int iVar5;
+  uint uVar6;
+  int iVar7;
+  int iVar8;
+  int local_8;
+  
+  uVar1 = DAT_00a577f0;
+  uVar6 = param_4 >> 1 & 1;
+  uVar2 = FUN_00576300(param_1,param_2,uVar6);
+  param_2 = 0;
+  do {
+    iVar8 = 0;
+    uVar4 = DAT_00a577f8._2_1_ & 1 ^ param_2;
+    iVar7 = uVar4 << 4;
+    do {
+      if ((uVar2 & 1 << ((byte)iVar7 & 0x1f)) != 0) {
+        FUN_00576360(uVar4,iVar8,uVar6,*param_1);
+      }
+      iVar8 = iVar8 + 1;
+      iVar7 = iVar7 + 1;
+    } while (iVar8 < 0xb);
+    param_2 = param_2 + 1;
+  } while ((int)param_2 < 2);
+  if (DAT_00a577f0 != 0) {
+    FUN_00598d70();
+    iVar7 = FUN_005699c0(0x453);
+    if (iVar7 != 0) {
+      param_4 = param_4 | 0x10000;
+    }
+    FUN_00579810();
+    DAT_00a577f0 = uVar2 | uVar1;
+    param_2 = 0;
+    do {
+      iVar7 = 0;
+      uVar6 = DAT_00a577f8._2_1_ & 1 ^ param_2;
+      local_8 = uVar6 << 4;
+      iVar8 = 0;
+      do {
+        uVar4 = 1 << ((byte)local_8 & 0x1f);
+        if ((uVar2 & uVar4) != 0) {
+          iVar3 = FUN_00567ad0(*(ushort *)((int)&DAT_00a55d74 + (uVar6 & 1) * 0xd44 + iVar8) & 0xfff
+                              );
+          iVar5 = param_3;
+          if ((iVar3 != 0) && ((param_3 == 0xb || (param_3 == 0xd)))) {
+            iVar5 = 0xc;
+          }
+          DAT_00a577f0 = DAT_00a577f0 & ~uVar4;
+          FUN_00576b30(uVar6,iVar7,iVar5,
+                       (((ushort)param_1[1] >> 0xe & 1 ^ (ushort)param_1[1] & 1) != uVar6) + param_4
+                       ,*param_1);
+        }
+        iVar7 = iVar7 + 1;
+        iVar8 = iVar8 + 0x90;
+        local_8 = local_8 + 1;
+      } while (iVar8 < 0x5a1);
+      param_2 = param_2 + 1;
+    } while ((int)param_2 < 2);
+    FUN_00579890();
+  }
+  return DAT_00a577f0 ^ uVar1;
+}
+
+
+FUNCTION FUN_00576b30 @00576b30
+ CALLER 00576ad3 FUN_00576960
+ CALLER 00577363 FUN_00577280
+ CALLER 00577464 FUN_00577280
+ CALLER 00577543 FUN_00577280
+ CALLER 0057767b FUN_00577280
+ CALLER 0057778d FUN_00577280
+
+undefined4 FUN_00576b30(uint param_1,uint param_2,uint param_3,uint param_4,undefined4 param_5)
+
+{
+  uint *puVar1;
+  char cVar2;
+  byte bVar3;
+  bool bVar4;
+  short sVar5;
+  ushort uVar6;
+  ushort uVar7;
+  uint uVar8;
+  int iVar9;
+  uint uVar10;
+  byte bVar11;
+  uint uVar12;
+  uint uVar13;
+  uint uVar14;
+  
+  uVar8 = param_1 & 1;
+  puVar1 = &DAT_00a55d74 + uVar8 * 0x351 + param_2 * 0x24;
+  uVar7 = *(ushort *)(&DAT_00a55d74 + uVar8 * 0x351 + param_2 * 0x24) & 0xfff;
+  sVar5 = FUN_004025d0(param_5);
+  if ((((sVar5 == 0x16) && (iVar9 = FUN_0056c460(param_1,param_2), iVar9 != 0)) ||
+      ((param_3 != 0xe &&
+       ((param_3 != 0xf && ((*(byte *)(&DAT_00a55e00 + uVar8 * 0x351 + param_2 * 0x24) & 4) != 0))))
+      )) || (uVar7 == 0)) {
+    return 0;
+  }
+  bVar3 = (byte)param_1;
+  cVar2 = (char)param_2;
+  uVar10 = 1 << (bVar3 * '\x10' + cVar2 & 0x1f);
+  if ((DAT_00a577f0 & uVar10) != 0) {
+    return 0;
+  }
+  if ((param_3 == 0xe) &&
+     ((uVar6 = FUN_004022e0(uVar7), uVar6 < 0x780 || (uVar6 = FUN_004022e0(uVar7), 0x783 < uVar6))))
+  {
+    bVar4 = true;
+  }
+  else {
+    bVar4 = false;
+  }
+  uVar13 = param_4 >> 1 & 1;
+  if ((param_3 == 0xe) && ((param_4 & 0x10000) != 0)) {
+    param_3 = 0xf;
+    bVar4 = false;
+  }
+  uVar14 = (*puVar1 >> 0xc & 1) + (*puVar1 >> 0x18 & 0x7f) * 2 |
+           ((((((((uint)((~param_4 >> 3 & 1) == 0) << 4 | param_3 & 0xf) << 1 |
+                (param_4 & 1 ^ param_1) & 1) << 2 |
+               *(ushort *)(&DAT_00a55d7a + param_2 * 0x90 + uVar8 * 0xd44) & 2) << 1 | uVar13) << 1
+             | *(ushort *)(&DAT_00a55d7a + param_2 * 0x90 + uVar8 * 0xd44) & 1) << 4 | param_2 & 0xf
+            ) << 1 | uVar8) << 8;
+  DAT_00a577f0 = DAT_00a577f0 | uVar10;
+  uVar8 = param_2;
+  if ((param_4 & 0x1000) == 0) {
+    uVar10 = param_4;
+    if (uVar13 == 0) {
+      if ((int)param_3 < 0xb) {
+        uVar8 = -(uint)(param_1 != 0) & 0x8000;
+        FUN_005b9170(CONCAT31((int3)(uVar8 >> 8),0x8d),param_2,1,0);
+        FUN_005b9170(uVar8 | 0x83,CONCAT11(cVar2,bVar3),
+                     CONCAT11((undefined1)param_3,(param_4 & 0x20000) != 0 ^ bVar3),0);
+        goto LAB_00576e92;
+      }
+      uVar6 = FUN_004022e0(uVar7);
+      if ((uVar6 < 0x780) || (uVar6 = FUN_004022e0(uVar7), 0x783 < uVar6)) {
+        bVar11 = 0;
+        uVar12 = (uint)((param_4 & 0x20000) != 0) ^ *puVar1 >> 0xc & 1;
+        iVar9 = param_3 - 0xb;
+        switch(iVar9) {
+        case 0:
+          iVar9 = 0;
+          bVar11 = *(byte *)(&DAT_00a55d68 + uVar12 * 0x6a2);
+          break;
+        case 1:
+        case 3:
+        case 4:
+          bVar11 = 1;
+          break;
+        case 2:
+          bVar11 = 0;
+        }
+        uVar8 = CONCAT31((int3)((uint)iVar9 >> 8),(undefined1)param_3) & 0xffffff7f;
+        uVar6 = (ushort)(uVar8 >> 0x10);
+        uVar8 = CONCAT22(uVar6,(ushort)(byte)uVar8);
+        uVar12 = ((uint)bVar11 << 7 | uVar8) << 1 | uVar12;
+        uVar8 = (CONCAT31((int3)(((uint)uVar6 << 0x10) >> 8),cVar2) & 0xffffff7f) << 1 |
+                CONCAT31((int3)((((uVar8 & 0x7fffffff) >> 0xf) << 0x10) >> 8),bVar3) & 0xffffff01;
+        uVar13 = 0x8f;
+      }
+      else {
+        uVar12 = 1;
+        uVar13 = CONCAT31((uint3)(-(uint)(param_1 != 0) >> 8) & 0x80,0x79);
+        uVar10 = 0;
+      }
+    }
+    else {
+      uVar12 = (-(uint)bVar4 & 0xfffffff1) + 0x10;
+      uVar13 = -(uint)(param_1 != 0) & 0x8000 | 0x79;
+    }
+  }
+  else {
+    uVar12 = (uint)!bVar4;
+    uVar13 = CONCAT31((uint3)(-(uint)(param_1 != 0) >> 8) & 0x80,0x95);
+    uVar10 = 0;
+  }
+  FUN_005b9170(uVar13,uVar8,uVar12,uVar10);
+LAB_00576e92:
+  if (bVar4) {
+    FUN_0059d6e0(*puVar1 >> 0xc & 1,1);
+  }
+  if (10 < (int)param_3) {
+    FUN_00576f40(uVar14,puVar1);
+    uVar6 = FUN_004022e0(uVar7);
+    if ((uVar6 < 0x780) || (uVar7 = FUN_004022e0(uVar7), 0x783 < uVar7)) {
+      FUN_00598590(DAT_00a577f8._2_1_ & 1,0x1c,uVar14);
+    }
+  }
+  FUN_00577280(puVar1,param_1,param_2,param_4);
+  return 1;
+}
+
+
+FUNCTION FUN_00579810 @00579810
+ CALLER 00576a10 FUN_00576960
+ CALLER 005bd6d8 FUN_005bd2d0
+ CALLER 0059163d FUN_005914a0
+ CALLER 0058618e null
+ CALLER 00578a62 FUN_00578860
+ CALLER 00587c62 null
+ CALLER 00587ff2 null
+ CALLER 0058a969 null
+ CALLER 0058b162 null
+ CALLER 0058b490 null
+ CALLER 0058bc7f null
+ CALLER 0058c605 null
+ CALLER 0058e6f1 null
+ CALLER 005a2b3a null
+ CALLER 005a337d null
+ CALLER 0058e327 FUN_0058e2f0
+
+void FUN_00579810(void)
+
+{
+  byte bVar1;
+  byte bVar2;
+  undefined4 local_4;
+  
+  if ((DAT_00a55c94 & 0x8000) == 0) {
+    if (((DAT_00a577f8._2_1_ & 0x10) != 0) && (((DAT_00a54e5c ^ DAT_00a577f8._2_1_) & 1) != 0)) {
+      local_4 = 1;
+      FUN_005bd090(0xf058,&local_4,2);
+      return;
+    }
+    bVar1 = (byte)DAT_00a55c94;
+    bVar2 = (byte)DAT_00a55c94 + 1 ^ (byte)DAT_00a55c94;
+    DAT_00a55c94._0_2_ = (ushort)DAT_00a55c94 ^ bVar2;
+    if (bVar1 == 0) {
+      DAT_00a55c94 = CONCAT22(DAT_00a55c94._2_2_,(ushort)DAT_00a55c94) & 0xffff80ff;
+      DAT_00a55ce8._0_2_ = (ushort)DAT_00a55ce8 & 0xdfff;
+    }
+  }
+  return;
+}
+
+

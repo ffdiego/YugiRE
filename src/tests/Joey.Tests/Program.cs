@@ -106,6 +106,7 @@ Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over")
 GraphicsTests.Run(Check, Reject);
 NativeRngTests.Run(Check);
 CpuDeckSelectionTests.Run(Check);
+CpuDifficultyProgressionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));

@@ -105,6 +105,22 @@ public class QueryArchive extends GhidraScript {
                 }
                 continue;
             }
+            if(args[i].startsWith("writers:")) {
+                Address address=toAddr(args[i].substring(8));
+                out.println("CLASSIFIED WRITERS TO "+address);
+                int count=0;
+                for(Reference ref:getReferencesTo(address)) {
+                    if(!ref.getReferenceType().isWrite()) continue;
+                    Function owner=getFunctionContaining(ref.getFromAddress());
+                    Instruction instruction=currentProgram.getListing().getInstructionContaining(ref.getFromAddress());
+                    out.println(" WRITE "+ref+" FUNCTION "+(owner==null?"none":owner.getEntryPoint())+
+                        " INSTRUCTION "+(instruction==null?"undefined":instruction));
+                    count++;
+                }
+                out.println("WRITER COUNT "+count+
+                    "; classified exact-address references only; excludes indirect/alias stores");
+                continue;
+            }
             if(args[i].startsWith("ref:") || args[i].startsWith("xref:")) {
                 boolean selectOwners=args[i].startsWith("ref:");
                 Address address=toAddr(args[i].substring(selectOwners?4:5));

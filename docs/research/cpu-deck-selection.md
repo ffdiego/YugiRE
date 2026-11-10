@@ -98,8 +98,7 @@ booleano (`opção == 7`); não confundir auto-habilitação e opção seleciona
 `0x00446DF0` modifica `A54DB3` com base em resultados e sequência consecutiva,
 com tabelas de limiares. O gráfico de estrelas em `0x00489490` usa
 `A54DB3 + 2*A54DB4` e uma animação transitória em relação a `A54DB2`.
-O mapeamento completo dos gates, resultado, desenho estável e sequência
-fica para a próxima unidade verificável.
+O mapeamento dos gates e sequência está na seção de progressão abaixo.
 
 ## Evidências
 
@@ -158,3 +157,98 @@ dependem das variáveis de ambiente e não são presumidos presentes.
 Evidência adicional: `cpu-deck-rng-initialization.txt`,
 `cpu-deck-rng-vtable-and-progression-gates.txt`, `cpu-deck-rng-seed-method.txt`,
 `cpu-deck-result-counters-and-state.txt` em `../evidence/`.
+
+## Estrelas, persistência e progressão
+
+| Campo VA | Papel confirmado |
+|---|---|
+| `A54DAF` | Classe do resultado anterior: 1 se resultado nativo=1, senão 2. |
+| `A54DB0` | Comprimento da sequência da mesma classe; satura em 255. |
+| `A54DB1` | Indicador de inicialização do perfil. |
+| `A54DB2` | Dificuldade anterior reconhecida pela apresentação. |
+| `A54DB3` | Dificuldade base corrente usada pelo seletor. |
+| `A54DB4` | Pool booleano; soma dois ao nível efetivo quando habilitado. |
+
+Todos pertencem à imagem de save `0x00A53CC0`, protegida pelo checksum já
+descrito em [save e coleção](../27-save-and-collection.md). `0x004834A0`
+carrega essa imagem e chama o inicializador. A alteração da dificuldade em
+`0x00446FC2` é seguida de escrita via thunk `0x00483490`; não é estado apenas
+volátil do menu. Em `0x0048A767..0x0048A773`, a apresentação reconhece a
+mudança copiando `DB3` para `DB2` e chama o caminho de persistência.
+
+O desenho `0x00489490` usa `DB3 + 2*DB4`, limitado superiormente a 9;
+durante a animação da estrela nova pode desenhar uma a menos. No estado
+normal de perfil (base1..7, pool0/1), isso corresponde a estrelas 1..7 no
+pool Joey e 3..9 no pool completo. Mudar a opção do pool altera em dois
+o nível efetivo sem mudar a base. O seletor faz seus próprios clamps.
+
+`0x005BE160` zera a imagem, incluindo pool e indicador inicializado.
+Assim, em um perfil realmente novo, `0x005BEE30` inicialmente cria base=1;
+depois a posse de cartas antigas pode habilitar pool=1, resultando em
+nível efetivo 3. Não aplicar esse raciocínio a um perfil artificialmente
+desinicializado com `pool` anterior não zero: a subtração tem wrap de byte.
+
+### Atualização em `0x00446DF0`
+
+Depois do carregamento do perfil:
+
+1. Cena 3 retorna antes de atualizar perfil (gate `0x0044B980`).
+2. Com flag `modeword & 0x40`, não conta resultado nem muda dificuldade;
+   apenas zera sequência se a classe anterior era vitória. O escritor
+   `0x00408410` zera LP do lado indicado pelo descritor e ORa `0x240` no
+   modeword, através do comando **0x40** no dispatcher `0x005B9470`.
+   Isso é compatível com desistência/aborto, mas o botão de UI produtor
+   ainda precisa ser identificado antes de dar esse nome definitivo.
+3. Sem a flag, resultado nativo `0x005BBF60()==1` pertence à classe crescente;
+   todos os demais resultados pertencem à outra classe. Incrementa a
+   sequência saturada ou reinicia em 1 quando troca de classe.
+4. Só avalia mudança de dificuldade se resultado agregado `0x005F3254 != 0`.
+5. Vitória: sobe uma base se sequência atinge o limiar e nível efetivo está
+   abaixo de 7 (pool0) ou 9 (pool1). Não vitória: desce se acima de
+   `1+2*pool` e sequência atinge seu limiar. Mudar nível zera a sequência;
+   atingir teto/piso sem mudança não a zera.
+
+| Nível efetivo | Sequência para subir | Sequência não vitória para descer |
+|---|---:|---:|
+| 1 | 3 | — |
+| 2 | 4 | 3 |
+| 3 | 5 | 4 (pool0); piso no pool1 |
+| 4 | 5 | 4 |
+| 5 | 5 | 4 |
+| 6 | 6 | 4 |
+| 7 | 6 (pool1); teto no pool0 | 3 |
+| 8 | 7 | 2 |
+| 9 | teto | 2 |
+
+Tabelas em `0x005DAF40` e `0x005DAF64`; os índices não usados não devem
+ser tratados como limiares válidos. Resultado 3 também entra na classe
+não vitória: o código não contém exceção para empate nessa parte.
+`0x005BC050` produz códigos em bits 6–7 de `A577FA`: 1 favorece o lado
+`modeword&1`, 2 o outro, 3 pode representar empate; no normal source0 é
+o deck do jogador. A transcrição C# aceita o **código nativo bruto**.
+
+`0x0044BAF0` só agrega resultados nas cenas 0,1,3. Na cena0, grava o
+resultado diretamente em `5F3254`. Na cena1 (match), conta resultados1/2;
+diferença ±2 encerra antes de três duelos; com três duelos, diferença±1
+ou zero também encerra. Um match ainda não concluído conserva zero,
+adiando a alteração da base, embora a sequência do perfil já seja atualizada
+por duelo. Empates permanecem na sequência não vitória nesse caminho.
+
+`CpuDifficultyProgression.cs` transcreve apenas esse trecho sobre um perfil
+já carregado, sem simular I/O ou contadores estatísticos. Limita entradas aos
+estados entendidos (base0..7, pool0/1, resultado0..3). Os testes exercitam todos
+os limiares válidos, troca de classe, empate, match incompleto, flag0x40,
+modo3, saturação e pisos/tetos. Build e **255 verificações C#** passaram.
+
+### Consulta direcionada de escritores
+
+`QueryArchive.java` agora aceita `writers:VA`, que retorna somente referências
+classificadas como escrita/RMW, com instrução e função. É uma observação de
+endereços exatos; não prova ausência de escrita por alias ou ponteiro.
+O relatório `cpu-deck-modeword-writers.txt` encontrou 13 escritores do modeword,
+dois da base e dois do pool. Isso isolou o caminho especial 0x40 sem repetir
+decompilações de todos os leitores do estado de duelo.
+
+Evidências desta unidade: `cpu-deck-modeword-writers.txt`,
+`cpu-deck-normal-result-context.txt`, `cpu-deck-resource-backend.txt`,
+`cpu-deck-resource-open-and-state.txt`, `cpu-deck-surrender-and-resource.txt`.

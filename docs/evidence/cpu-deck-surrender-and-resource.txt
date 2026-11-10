@@ -1,0 +1,233 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 00408410
+TRANSIENT FUNCTION 005bc700
+TRANSIENT FUNCTION 00543290
+TRANSIENT DISASSEMBLY 0044bf4b
+INS 0044bf4b CALL 0x0044bbe0
+INS 0044bf50 SUB ESP,0xc
+INS 0044bf53 LEA ECX,[ESP + 0x50]
+INS 0044bf57 MOV ESI,ESP
+INS 0044bf59 MOV dword ptr [ESP + 0x2c],ESP
+INS 0044bf5d PUSH ECX
+INS 0044bf5e MOV ECX,EAX
+INS 0044bf60 MOV dword ptr [ESP + 0x4c],EBX
+INS 0044bf64 CALL 0x0044e050
+INS 0044bf69 PUSH EAX
+INS 0044bf6a MOV ECX,ESI
+INS 0044bf6c CALL 0x0040e960
+INS 0044bf71 PUSH 0x1
+INS 0044bf73 MOV ECX,EBP
+INS 0044bf75 CALL 0x0044a920
+INS 0044bf7a PUSH 0x1
+TRANSIENT DISASSEMBLY 0048ad46
+INS 0048ad46 LEA EAX,[ESP + 0x60]
+INS 0048ad4a PUSH EAX
+INS 0048ad4b CALL 0x0044bbe0
+INS 0048ad50 ADD ESP,0x4
+INS 0048ad53 MOV EAX,dword ptr [EAX + 0x4]
+INS 0048ad56 MOV dword ptr [ESP + 0xb8],0x6
+INS 0048ad61 CMP EAX,EBX
+INS 0048ad63 JNZ 0x0048ad6a
+INS 0048ad65 MOV EAX,0x5da40c
+INS 0048ad6a PUSH EAX
+INS 0048ad6b PUSH EBX
+INS 0048ad6c CALL 0x0044bee0
+INS 0048ad71 ADD ESP,0x8
+INS 0048ad74 LEA ECX,[ESP + 0x60]
+INS 0048ad78 MOV ESI,EAX
+INS 0048ad7a MOV dword ptr [ESP + 0xb8],0xffffffff
+TRANSIENT DISASSEMBLY 0048ae04
+INS 0048ae04 PUSH EAX
+INS 0048ae05 CALL 0x0044bbe0
+INS 0048ae0a ADD ESP,0x4
+INS 0048ae0d MOV EAX,dword ptr [EAX + 0x4]
+INS 0048ae10 MOV EDI,0x7
+INS 0048ae15 CMP EAX,EBX
+INS 0048ae17 MOV dword ptr [ESP + 0xb8],EDI
+INS 0048ae1e JNZ 0x0048ae25
+INS 0048ae20 MOV EAX,0x5da40c
+INS 0048ae25 PUSH EAX
+INS 0048ae26 PUSH 0x1
+INS 0048ae28 CALL 0x0044bee0
+INS 0048ae2d ADD ESP,0x8
+INS 0048ae30 LEA ECX,[ESP + 0x80]
+INS 0048ae37 MOV ESI,EAX
+INS 0048ae39 MOV dword ptr [ESP + 0xb8],0xffffffff
+FUNCTION FUN_00408410 @00408410
+ CALLER 005b9566 FUN_005b9470
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void FUN_00408410(void)
+
+{
+  (&DAT_00a55d64)[((DAT_00a550a0 & 0xffff) >> 0xf) * 0x6a2] = 0;
+  FUN_0047c4d0(0);
+  _DAT_00a54e5c = _DAT_00a54e5c | 0x240;
+  DAT_00a558ac = DAT_00a558ac & 0xffffbfff;
+  return;
+}
+
+
+FUNCTION FUN_005bc700 @005bc700
+ CALLER 005c0005 FUN_005c0000
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005bc700(void)
+
+{
+  int iVar1;
+  
+  if ((&PTR_LAB_005efbb0)[(_DAT_00a577fc & 0xffff) >> 8] == (undefined *)0x0) {
+    _DAT_00a54e5c =
+         CONCAT22(DAT_00a54e5c_2,DAT_00a577f8._2_1_ >> 2 & 0x30 | (ushort)_DAT_00a54e5c & 0xfe4f);
+    return 1;
+  }
+  if (((DAT_00a577f8._2_1_ & 0x10) != 0) && (iVar1 = FUN_005bd2d0(), iVar1 == 0)) {
+    return 1;
+  }
+  iVar1 = FUN_0040ca70();
+  if (iVar1 == 0) {
+    FUN_005aa490();
+  }
+  iVar1 = thunk_FUN_0040cf20();
+  if (((iVar1 == 0) && (iVar1 = FUN_005b9ca0(), iVar1 == 0)) &&
+     (iVar1 = (*(code *)(&PTR_LAB_005efbb0)[(_DAT_00a577fc & 0xffff) >> 8])(), iVar1 != 0)) {
+    _DAT_00a577fc =
+         CONCAT22(_DAT_00a577fe,((ushort)_DAT_00a577fc & 0xff00) + 0x100 ^ (ushort)DAT_00a577fc) &
+         0xffffff;
+  }
+  FUN_00569fc0();
+  return 0;
+}
+
+
+FUNCTION FUN_00543290 @00543290
+ CALLER 00543193 FUN_00543170
+ CALLER 005431ee FUN_00543170
+
+/* WARNING: Removing unreachable block (ram,0x0054343b) */
+
+int FUN_00543290(void)
+
+{
+  byte *pbVar1;
+  byte bVar2;
+  char cVar3;
+  int iVar4;
+  HGLOBAL pvVar5;
+  int *piVar6;
+  int *extraout_ECX;
+  uint uVar7;
+  uint uVar8;
+  undefined4 *puVar9;
+  char *pcVar10;
+  undefined4 *puVar11;
+  undefined1 local_res0;
+  undefined1 uStack00000010;
+  undefined4 *in_stack_00000014;
+  uint in_stack_00000018;
+  void *in_stack_0000d44c;
+  undefined4 in_stack_0000d45c;
+  undefined **local_c;
+  undefined1 *local_8;
+  undefined4 local_4;
+  
+  local_4 = 0xffffffff;
+  local_8 = &LAB_005d87b6;
+  local_c = ExceptionList;
+  ExceptionList = &local_c;
+  FUN_005c3dc0();
+  FUN_00402850(0);
+  uVar7 = 0xffffffff;
+  pcVar10 = &DAT_005ec944;
+  do {
+    if (uVar7 == 0) break;
+    uVar7 = uVar7 - 1;
+    cVar3 = *pcVar10;
+    pcVar10 = pcVar10 + 1;
+  } while (cVar3 != '\0');
+  uVar7 = ~uVar7 - 1;
+  cVar3 = FUN_00402980(uVar7,1);
+  if (cVar3 != '\0') {
+    puVar9 = (undefined4 *)&DAT_005ec944;
+    puVar11 = in_stack_00000014;
+    for (uVar8 = uVar7 >> 2; uVar8 != 0; uVar8 = uVar8 - 1) {
+      *puVar11 = *puVar9;
+      puVar9 = puVar9 + 1;
+      puVar11 = puVar11 + 1;
+    }
+    for (uVar8 = uVar7 & 3; uVar8 != 0; uVar8 = uVar8 - 1) {
+      *(undefined1 *)puVar11 = *(undefined1 *)puVar9;
+      puVar9 = (undefined4 *)((int)puVar9 + 1);
+      puVar11 = (undefined4 *)((int)puVar11 + 1);
+    }
+    *(undefined1 *)((int)in_stack_00000014 + uVar7) = 0;
+    in_stack_00000018 = uVar7;
+  }
+  iVar4 = FUN_005428d0(in_stack_0000d45c,&uStack00000010);
+  FUN_00402850(1);
+  if (iVar4 == 0) {
+    if (*(char *)((int)extraout_ECX + 0x27) == '\0') {
+      pvVar5 = GlobalAlloc(0x10,extraout_ECX[3] + 1);
+      piVar6 = extraout_ECX + 2;
+      *piVar6 = (int)pvVar5;
+      if (pvVar5 == (HGLOBAL)0x0) {
+        (**(code **)(*extraout_ECX + 0xc))();
+        ExceptionList = in_stack_0000d44c;
+        return 3;
+      }
+      *(undefined1 *)(extraout_ECX[3] + (int)pvVar5) = 0;
+      iVar4 = extraout_ECX[10];
+      if (extraout_ECX[3] == iVar4) {
+        (**(code **)(*extraout_ECX + 0x44))(*piVar6,iVar4);
+      }
+      else {
+        local_c = &PTR_FUN_005daf40;
+        local_4 = 0;
+        local_8 = (undefined1 *)0x0;
+        local_8 = (undefined1 *)FUN_0054a1d0(iVar4);
+        local_4 = 1;
+        (**(code **)(*extraout_ECX + 0x44))(local_8,extraout_ECX[10]);
+        FUN_0054a000(local_8,piVar6,extraout_ECX[3],0);
+        local_c = &PTR_FUN_005daf40;
+        if (&local_res0 != (undefined1 *)0xc) {
+          FUN_0054a2d0(local_8);
+        }
+        local_8 = (undefined1 *)0x0;
+        local_c = &PTR_LAB_005daf3c;
+      }
+    }
+    iVar4 = FUN_005428b0();
+    if (iVar4 == 0) {
+      piVar6 = (int *)extraout_ECX[2];
+      if (*piVar6 == 0x314b5059) {
+        uVar7 = 4;
+        *(undefined1 *)(extraout_ECX + 9) = 1;
+        if (4 < (uint)extraout_ECX[3]) {
+          do {
+            pbVar1 = (byte *)(extraout_ECX[2] + uVar7);
+            bVar2 = *(byte *)(extraout_ECX[2] + uVar7);
+            uVar7 = uVar7 + 1;
+            *pbVar1 = bVar2 * '\x10' + (bVar2 >> 4) ^ 0xcc;
+          } while (uVar7 < (uint)extraout_ECX[3]);
+        }
+        piVar6 = (int *)(extraout_ECX[2] + 4);
+      }
+      else {
+        *(undefined1 *)(extraout_ECX + 9) = 0;
+      }
+      extraout_ECX[4] = (int)piVar6;
+      iVar4 = 0;
+    }
+    else {
+      (**(code **)(*extraout_ECX + 0xc))();
+      iVar4 = 5;
+    }
+  }
+  ExceptionList = in_stack_0000d44c;
+  return iVar4;
+}
+
+

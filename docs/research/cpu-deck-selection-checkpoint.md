@@ -1,8 +1,8 @@
 # Checkpoint — seleção de decks da CPU
 
 ## Objetivo atual
-Fechar progressão por resultados, gates de match, limites e apresentação das
-estrelas; depois completar caminhos alternativos e falsificadores Windows.
+Correlacionar presets Demo com recursos FUL, fechar resolução de arquivos,
+snapshot do MT, caminhos alternativos e falsificadores Windows.
 Trabalho exclusivamente estático no Joey; branch `main`.
 
 ## Descobertas confirmadas
@@ -31,6 +31,10 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 - `0x00446DF0` guarda sequência de resultado=1 versus demais em `A54DAF/DB0`;
   muda base só quando `005F3254 != 0`, com limiares `005DAF40/005DAF64`.
   `0x0044B950`: modos 0,1,3; `0x0044B970`: modo1 (match), `0x0044B980`: modo3.
+- Progresso transcrito em `CpuDifficultyProgression.cs`: limiares, agregação de
+  match, saturação, flag40 e modo3. Build e 255 verificações passaram.
+- Escritor da flag40: comando40 → `00408410`, zera LP e seta0x240; semântica
+  provável desistência/aborto, produtor UI ainda não identificado.
 - Condições de progressão e caminhos alternativos ainda não fechados.
 
 ## Caminhos descartados / limites
@@ -42,11 +46,11 @@ Trabalho exclusivamente estático no Joey; branch `main`.
   mais evidência toolchain, devem permanecer fora dos commits desta pesquisa.
 
 ## Próximos passos prioritários
-1. Fechar progresso: `0x00446DF0`, `0x0044BAF0`,
-   `0x005BBF60`, UI `0x00489490` e opções `0x00488F50` / `0x0048AA10`.
-   Limiar win níveis1..8: 3,4,5,5,5,6,6,7; loss níveis2..9:3,4,4,4,4,3,2,2.
-   Gate modeword40 e resultado3 (draw?) exigem cuidado semântico.
-2. Conferir caller `00447056`, resultados `005BBF60` e estado persistido.
+1. Automatizar comparação main dos presets `native_rules/decks/demo-{A,B,C}.json`
+   com DAT. Comparação preliminar por IDs já encontrou FUL_0GE1 / 0VAL / 0UMI,
+   correspondendo exatamente à linha FUL3; confirmar também ordem e listas extras.
+2. Reutilizar `cpu-deck-resource-resolution.txt` e `cpu-deck-surrender-and-resource.txt`:
+   backend `00543170` → `00543290` → `005428D0` (arquivo/arquivo DAT).
 3. Tabelas já extraídas e validadas: 21 CPU + 37 FUL distintos, 58 YDC válidos.
 4. Seguir callers do seletor em cenas 0/1, Demo e rematch.
 5. Implementar modelo verificável e pseudocódigo C#; preparar falsificadores Windows.
@@ -54,15 +58,18 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 ## Última ação realizada
 Consultas Ghidra em `cpu-deck-normal-entry.txt`, `cpu-deck-stream-and-callsite.txt`;
 inspeção de instruções do seletor e tabelas no EXE, inventário direcionado do DAT.
-Build passou; 221 verificações C# passaram. Implementados seletor e MT em
-`CpuDeckSelection.cs` / `NativeDeckRng.cs`, sem ligação ao demo. Quatro testes
-Python do extrator passaram. Última consulta `cpu-deck-result-counters-and-state.txt`
-contém contadores por resultado e loader do perfil; já foi lida.
+Build passou; 255 verificações C# passaram. Parser de tabelas: quatro testes.
+Implementados seletor, MT e progressão sem ligar ao demo. Última consulta
+`cpu-deck-surrender-and-resource.txt`: flag40 e abertura de recurso.
+Inspeção direcionada do dispatcher confirmou opcode40 para00408410.
+Comparação preliminar presets: A=0GE1, B=0VAL, C=0UMI; 21 recursosCPU
+têm só cartas pack4; recursosFUL somam401 cópias de main fora de pack4.
 
 ## Commits relevantes
 - `e1bd36c`: cadeia cena→loader→recurso e seletor anterior, checkpoint inicial.
 - `5458908`: tabelas extraídas, 58 YDC conferidos e primeiros campos do perfil.
-- Próxima unidade: seletor C# e RNG MT transcritos, 221 verificações.
+- `c560b9e`: seletor C# e RNG MT transcritos, 221 verificações.
+- Próxima unidade: progressão do perfil e consulta direcionada de escritores.
 
 ## Bloqueios
 Nenhum para seguir estaticamente. A captura normal de 1 estrela descrita pelo
