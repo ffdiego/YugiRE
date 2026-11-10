@@ -21,11 +21,22 @@ function createCpuDeckObserver(env) {
   const top = (map, thread) => { const a = stack(map, thread); return a[a.length-1]; };
   const id = prefix => env.session() + ':' + prefix + ':' + (++serial);
   function checked(pointer, length, executable = false) {
-    const range = Process.findRangeByAddress(pointer);
-    if (range === null || !range.protection.includes('r') ||
-        (executable && !range.protection.includes('x')) ||
-        pointer.add(length).compare(range.base.add(range.size)) > 0)
-      throw new Error('Unreadable range at ' + pointer + ' length ' + length);
+    // A source deck spans 0xA54F42..0xA55024 and can cross a VirtualQuery
+    // region boundary. Every region must be readable, but a single region
+    // must not be required to contain the whole buffer.
+    const end = pointer.add(length);
+    let cursor = pointer;
+    while (cursor.compare(end) < 0) {
+      const range = Process.findRangeByAddress(cursor);
+      if (range === null || !range.protection.includes('r') ||
+          (executable && !range.protection.includes('x')))
+        throw new Error('Unreadable range at ' + pointer + ' length ' + length +
+          ' (failing at ' + cursor + ')');
+      const regionEnd = range.base.add(range.size);
+      if (regionEnd.compare(cursor) <= 0)
+        throw new Error('Invalid memory range at ' + cursor);
+      cursor = regionEnd.compare(end) < 0 ? regionEnd : end;
+    }
     return pointer;
   }
   function bytes(pointer, length) {
