@@ -25,7 +25,8 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 ## Hipóteses em investigação
 - `A54DB3` representa dificuldade base e `A54DB4` configuração do pool.
   **Semântica ainda não confirmada:** seguir leitores/escritores e UI.
-- `0x0055C140` pode usar estado independente do CRT; seguir implementação.
+- `0x0055C140` é um gerador de estado 624 palavras, twist/tempering estilo MT;
+  global `0x005F25E8`. Seed, inicialização e chamadas indiretas em investigação.
 - Condições de progressão e caminhos alternativos ainda não fechados.
 
 ## Caminhos descartados / limites
@@ -37,21 +38,24 @@ Trabalho exclusivamente estático no Joey; branch `main`.
   mais evidência toolchain, devem permanecer fora dos commits desta pesquisa.
 
 ## Próximos passos prioritários
-1. Ler `evidence/cpu-deck-profile-and-rng.txt` assim que terminar a consulta.
-2. Seguir xrefs de `A54DB3/A54DB4`, fechar getters, progresso e UI das estrelas.
-3. Extrair tabelas com fingerprint e correlacionar cada entrada ao DAT.
+1. Ler `evidence/cpu-deck-rng-seed-method.txt` e `cpu-deck-rng-vtable-and-progression-gates.txt`.
+2. Fechar seed/inicialização do RNG e progresso: `0x00446DF0`, `0x0044BAF0`,
+   `0x005BBF60`, UI `0x00489490` e opções `0x00488F50` / `0x0048AA10`.
+3. Tabelas já extraídas e validadas: 21 CPU + 37 FUL distintos, 58 YDC válidos.
 4. Seguir callers do seletor em cenas 0/1, Demo e rematch.
 5. Implementar modelo verificável e pseudocódigo C#; preparar falsificadores Windows.
 
 ## Última ação realizada
 Consultas Ghidra em `cpu-deck-normal-entry.txt`, `cpu-deck-stream-and-callsite.txt`;
 inspeção de instruções do seletor e tabelas no EXE, inventário direcionado do DAT.
-Consulta de RNG e referências do perfil em execução/recém-finalizada:
-`cpu-deck-profile-and-rng.txt`. **Ler esse resultado antes de outra consulta.**
+Extração completa em `cpu-deck-selection-tables.json`, quatro testes passaram.
+Relatório técnico em `cpu-deck-selection.md`. RNG construtor `0x0040F150`
+coloca índice 625; ainda conferir método virtual `0x0040F180` que pode semear.
+**Ler as duas consultas listadas no próximo passo antes de repeti-las.**
 
 ## Commits relevantes
-Esta primeira unidade registra a cadeia cena→loader→recurso e o seletor anterior.
-Hashes das próximas unidades serão adicionados após os commits.
+- `e1bd36c`: cadeia cena→loader→recurso e seletor anterior, checkpoint inicial.
+- Unidade seguinte: tabelas extraídas, YDC conferidos e primeiros campos do perfil.
 
 ## Bloqueios
 Nenhum para seguir estaticamente. A captura normal de 1 estrela descrita pelo
@@ -64,3 +68,4 @@ experimento Windows passivo com endereço, momento e valores esperados.
 - `../evidence/cpu-deck-normal-entry.txt`
 - `../evidence/cpu-deck-stream-and-callsite.txt`
 - `../evidence/cpu-deck-profile-and-rng.txt`
+- [Relatório técnico](cpu-deck-selection.md) e arquivos de evidência nele referenciados.

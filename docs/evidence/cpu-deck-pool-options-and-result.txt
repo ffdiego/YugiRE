@@ -1,0 +1,247 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 0044baf0
+TRANSIENT FUNCTION 0044b980
+TRANSIENT FUNCTION 005bbf60
+TRANSIENT FUNCTION 00488f50
+REFERENCES TO 005f25e8
+ XREF From: 00402c94 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00402be0
+ XREF From: 00402d4f To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00402be0
+ XREF From: 004032e4 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 004030f0
+ XREF From: 004033aa To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00403310
+ XREF From: 004153e3 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 004152d0
+ XREF From: 00415ebe To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00415c90
+ XREF From: 0044bc7a To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0044bbe0
+ XREF From: 0044bd93 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0044bbe0
+ XREF From: 0044f19d To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0044efd0
+ XREF From: 004559f7 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00454010
+ XREF From: 00455acc To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00454010
+ XREF From: 0045e780 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0045e670
+ XREF From: 0045e826 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0045e670
+ XREF From: 0047ee13 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0047ed50
+ XREF From: 0047ee1f To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0047ed50
+ XREF From: 00486ec3 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00486d80
+ XREF From: 004448e9 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00444870
+ XREF From: 004448fc To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00444870
+ XREF From: 004456ce To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00445640
+ XREF From: 004457cd To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00445640
+ XREF From: 0046124f To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00461210
+ XREF From: 0046129e To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00461210
+ XREF From: 004612bd To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 00461210
+ XREF From: 0046ae98 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0046ae80
+ XREF From: 0046aeb8 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0046ae80
+ XREF From: 0048cc48 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 00446958 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 00446987 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION none
+ XREF From: 0040f162 To: 005f25e8 Type: WRITE Op: 0 ANALYSIS FUNCTION 0040f150
+ XREF From: 0040f160 To: 005f25e8 Type: DATA Op: 0 ANALYSIS FUNCTION 0040f150
+ XREF From: 0040f150 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION 0040f150
+ XREF From: 0040f2c0 To: 005f25e8 Type: DATA Op: 1 ANALYSIS FUNCTION none
+FUNCTION FUN_0044baf0 @0044baf0
+ CALLER 0044b9e5 FUN_0044b9e0
+
+void FUN_0044baf0(undefined4 param_1)
+
+{
+  byte *pbVar1;
+  int iVar2;
+  int iVar3;
+  int local_10 [4];
+  
+  iVar2 = FUN_0044b950();
+  if (iVar2 != 0) {
+    *(char *)((int)&DAT_005f3254 + DAT_005f325b + 3) = (char)param_1;
+    iVar2 = FUN_0044b970();
+    if (iVar2 == 0) {
+      DAT_005f3254 = param_1;
+    }
+    else {
+      iVar3 = 0;
+      local_10[0] = 0;
+      local_10[1] = 0;
+      local_10[2] = 0;
+      local_10[3] = 0;
+      iVar2 = 0;
+      if (DAT_005f325b != 0) {
+        do {
+          pbVar1 = &DAT_005f3258 + iVar3;
+          iVar3 = iVar3 + 1;
+          local_10[*pbVar1 & 3] = local_10[*pbVar1 & 3] + 1;
+        } while (iVar3 < (int)(uint)DAT_005f325b);
+        iVar2 = local_10[1];
+      }
+      switch(iVar2 - local_10[2]) {
+      case 0:
+        if (DAT_005f325b == 3) {
+          DAT_005f3254 = 3;
+          return;
+        }
+        break;
+      case 1:
+        if (DAT_005f325b == 3) {
+          DAT_005f3254 = 1;
+          return;
+        }
+        break;
+      case 2:
+        DAT_005f3254 = 1;
+        return;
+      case -2:
+        DAT_005f3254 = 2;
+        return;
+      case -1:
+        if (DAT_005f325b == 3) {
+          DAT_005f3254 = 2;
+          return;
+        }
+      }
+    }
+  }
+  return;
+}
+
+
+FUNCTION FUN_0044b980 @0044b980
+ CALLER 005b9ed4 FUN_005b9e50
+ CALLER 005aa4e6 FUN_005aa490
+ CALLER 0048dd00 FUN_0048dd00
+ CALLER 0048dd20 FUN_0048dd20
+ CALLER 0045e894 FUN_0045e670
+ CALLER 00403ec9 FUN_00403ec0
+ CALLER 00403d19 FUN_00403d10
+ CALLER 00404680 FUN_00404580
+ CALLER 00403bf9 FUN_00403bf0
+ CALLER 00403e1d FUN_00403e10
+ CALLER 00403dd9 FUN_00403dd0
+ CALLER 00403c89 FUN_00403c80
+ CALLER 00403c29 FUN_00403c20
+ CALLER 00403d49 FUN_00403d40
+ CALLER 00403bc9 FUN_00403bc0
+ CALLER 00403c59 FUN_00403c50
+ CALLER 00403cb9 FUN_00403cb0
+ CALLER 00403f09 FUN_00403f00
+ CALLER 00403ce9 FUN_00403ce0
+ CALLER 00403d79 FUN_00403d70
+ CALLER 00461376 FUN_00461370
+ CALLER 0045f09a FUN_0045e9f0
+ CALLER 00461216 FUN_00461210
+ CALLER 00446e0c FUN_00446df0
+ CALLER 004475eb null
+
+bool FUN_0044b980(void)
+
+{
+  return DAT_005f3294 == 3;
+}
+
+
+FUNCTION FUN_005bbf60 @005bbf60
+ CALLER 00446eaf FUN_00446df0
+ CALLER 00446ee5 FUN_00446df0
+ CALLER 00446f1c FUN_00446df0
+
+byte FUN_005bbf60(void)
+
+{
+  return DAT_00a577f8._2_1_ >> 6;
+}
+
+
+FUNCTION FUN_00488f50 @00488f50
+ CALLER 0048a4c1 null
+ CALLER 0048a618 null
+ CALLER 0048a8e0 null
+ CALLER 0048b9d8 null
+
+void __fastcall FUN_00488f50(int param_1)
+
+{
+  char cVar1;
+  int iVar2;
+  int iVar3;
+  
+  cVar1 = FUN_005664a0(1);
+  if ((((cVar1 == '\0') && (cVar1 = FUN_005664a0(2), cVar1 == '\0')) &&
+      (cVar1 = FUN_005664a0(4), cVar1 == '\0')) && (cVar1 = FUN_005664a0(3), cVar1 == '\0')) {
+    if (-1 < *(int *)(param_1 + 0x20)) {
+      return;
+    }
+    cVar1 = FUN_005664a0(6);
+    if (cVar1 == '\0') {
+      return;
+    }
+  }
+  iVar3 = *(int *)(param_1 + 0x10);
+  if (iVar3 == 2) {
+    iVar3 = *(int *)(param_1 + 0x20);
+  }
+  else {
+    if (iVar3 != 3) {
+      if (iVar3 != 8) {
+        if (iVar3 != 4) {
+          return;
+        }
+        iVar3 = *(int *)(param_1 + 0x20);
+        cVar1 = FUN_005664a0(3);
+        if (cVar1 != '\0') {
+          FUN_00488d10(*(undefined4 *)(param_1 + 0x10),0);
+          return;
+        }
+        cVar1 = FUN_005664a0(4);
+        if (cVar1 != '\0') {
+          FUN_00488d10(*(undefined4 *)(param_1 + 0x10),1);
+          return;
+        }
+        if (iVar3 < 0) {
+          iVar3 = 10;
+        }
+        FUN_00488d10(*(undefined4 *)(param_1 + 0x10),iVar3);
+        return;
+      }
+      iVar3 = *(int *)(param_1 + 0x20);
+      cVar1 = FUN_005664a0(1);
+      if ((cVar1 == '\0') && (cVar1 = FUN_005664a0(3), cVar1 == '\0')) {
+        cVar1 = FUN_005664a0(2);
+        if (((cVar1 != '\0') || (cVar1 = FUN_005664a0(4), cVar1 != '\0')) &&
+           ((iVar3 = iVar3 + (uint)(iVar3 < 9), iVar3 == 7 && (iVar2 = FUN_005bedd0(), iVar2 == 0)))
+           ) {
+          iVar3 = 8;
+        }
+      }
+      else {
+        iVar3 = iVar3 - (uint)(0 < iVar3);
+        if (iVar3 == 7) {
+          iVar2 = FUN_005bedd0();
+          if (iVar2 == 0) {
+            FUN_00488d10(*(undefined4 *)(param_1 + 0x10),6);
+            return;
+          }
+          goto LAB_00489158;
+        }
+      }
+      if (iVar3 < 0) {
+        FUN_00488d10(*(undefined4 *)(param_1 + 0x10),9);
+        return;
+      }
+      goto LAB_00489158;
+    }
+    iVar3 = *(int *)(param_1 + 0x20) + -5;
+  }
+  cVar1 = FUN_005664a0(1);
+  if (cVar1 == '\0') {
+    cVar1 = FUN_005664a0(2);
+    if (cVar1 != '\0') {
+      iVar3 = iVar3 + (uint)(iVar3 < 4);
+    }
+  }
+  else {
+    iVar3 = iVar3 + -1;
+  }
+  if (iVar3 < 0) {
+    iVar3 = 0;
+  }
+LAB_00489158:
+  FUN_00488d10(*(undefined4 *)(param_1 + 0x10),iVar3);
+  return;
+}
+
+

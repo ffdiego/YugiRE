@@ -1,0 +1,750 @@
+{
+  "exe_sha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "dat_sha256": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed",
+  "method": "Static EXE tables, pinned DAT index and bounded YDC validation; no game execution",
+  "tables": [
+    {
+      "pool": "CPU",
+      "effective_level": 1,
+      "resources": [
+        "j\\file\\cpu_000.ydc",
+        "j\\file\\cpu_001.ydc",
+        "j\\file\\cpu_002.ydc",
+        "j\\file\\cpu_003.ydc",
+        "j\\file\\cpu_004.ydc"
+      ]
+    },
+    {
+      "pool": "CPU",
+      "effective_level": 2,
+      "resources": [
+        "j\\file\\cpu_003.ydc",
+        "j\\file\\cpu_004.ydc",
+        "j\\file\\cpu_010.ydc",
+        "j\\file\\cpu_011.ydc",
+        "j\\file\\cpu_012.ydc"
+      ]
+    },
+    {
+      "pool": "CPU",
+      "effective_level": 3,
+      "resources": [
+        "j\\file\\cpu_010.ydc",
+        "j\\file\\cpu_011.ydc",
+        "j\\file\\cpu_012.ydc",
+        "j\\file\\cpu_013.ydc",
+        "j\\file\\cpu_014.ydc"
+      ]
+    },
+    {
+      "pool": "CPU",
+      "effective_level": 4,
+      "resources": [
+        "j\\file\\cpu_013.ydc",
+        "j\\file\\cpu_014.ydc",
+        "j\\file\\cpu_015.ydc",
+        "j\\file\\cpu_020.ydc",
+        "j\\file\\cpu_021.ydc"
+      ]
+    },
+    {
+      "pool": "CPU",
+      "effective_level": 5,
+      "resources": [
+        "j\\file\\cpu_020.ydc",
+        "j\\file\\cpu_021.ydc",
+        "j\\file\\cpu_022.ydc",
+        "j\\file\\cpu_023.ydc",
+        "j\\file\\cpu_024.ydc"
+      ]
+    },
+    {
+      "pool": "CPU",
+      "effective_level": 6,
+      "resources": [
+        "j\\file\\cpu_023.ydc",
+        "j\\file\\cpu_024.ydc",
+        "j\\file\\cpu_025.ydc",
+        "j\\file\\cpu_026.ydc",
+        "j\\file\\cpu_027.ydc"
+      ]
+    },
+    {
+      "pool": "CPU",
+      "effective_level": 7,
+      "resources": [
+        "j\\file\\cpu_025.ydc",
+        "j\\file\\cpu_026.ydc",
+        "j\\file\\cpu_027.ydc",
+        "j\\file\\cpu_028.ydc",
+        "j\\file\\cpu_029.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 3,
+      "resources": [
+        "j\\file\\ful_0ge1.ydc",
+        "j\\file\\ful_0umi.ydc",
+        "j\\file\\ful_0val.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 4,
+      "resources": [
+        "j\\file\\ful_1dec.ydc",
+        "j\\file\\ful_1red.ydc",
+        "j\\file\\ful_1too.ydc",
+        "j\\file\\ful_1ins.ydc",
+        "j\\file\\ful_1uij.ydc",
+        "j\\file\\ful_1umi.ydc",
+        "j\\file\\ful_1val.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 5,
+      "resources": [
+        "j\\file\\ful_1fus.ydc",
+        "j\\file\\ful_1gam.ydc",
+        "j\\file\\ful_1ge1.ydc",
+        "j\\file\\ful_1ge2.ydc",
+        "j\\file\\ful_1hik.ydc",
+        "j\\file\\ful_1mix.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 6,
+      "resources": [
+        "j\\file\\ful_2dec.ydc",
+        "j\\file\\ful_2val.ydc",
+        "j\\file\\ful_2too.ydc",
+        "j\\file\\ful_2ge1.ydc",
+        "j\\file\\ful_2hik.ydc",
+        "j\\file\\ful_2ins.ydc",
+        "j\\file\\ful_2uij.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 7,
+      "resources": [
+        "j\\file\\ful_2fus.ydc",
+        "j\\file\\ful_2gam.ydc",
+        "j\\file\\ful_2ge2.ydc",
+        "j\\file\\ful_2mix.ydc",
+        "j\\file\\ful_2red.ydc",
+        "j\\file\\ful_2umi.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 8,
+      "resources": [
+        "j\\file\\ful_3all.ydc",
+        "j\\file\\ful_3dec.ydc",
+        "j\\file\\ful_3yam.ydc",
+        "j\\file\\ful_3fus.ydc",
+        "j\\file\\ful_3too.ydc",
+        "j\\file\\ful_3hnd.ydc"
+      ]
+    },
+    {
+      "pool": "FUL",
+      "effective_level": 9,
+      "resources": [
+        "j\\file\\ful_3all.ydc",
+        "j\\file\\ful_3dec.ydc",
+        "j\\file\\ful_3exo.ydc",
+        "j\\file\\ful_3fus.ydc",
+        "j\\file\\ful_3grv.ydc",
+        "j\\file\\ful_3hnd.ydc"
+      ]
+    }
+  ],
+  "unique_resource_count": 58,
+  "decks": {
+    "j\\file\\cpu_000.ydc": {
+      "offset": 254390191,
+      "bytes": 98,
+      "group_counts": [
+        42,
+        0,
+        0
+      ],
+      "sha256": "af5e5068de9c5a5b637ea82b86eaa32c242759aee7fdf55c28d037acd812304b"
+    },
+    "j\\file\\cpu_001.ydc": {
+      "offset": 254390289,
+      "bytes": 98,
+      "group_counts": [
+        42,
+        0,
+        0
+      ],
+      "sha256": "b9e6665667a0053f88b31d495f2008959682ae86df83d32a41bc0e1bcb0a3435"
+    },
+    "j\\file\\cpu_002.ydc": {
+      "offset": 254390387,
+      "bytes": 108,
+      "group_counts": [
+        43,
+        4,
+        0
+      ],
+      "sha256": "1a1db562e27ba73372c91d88fc571ab8c009075f4e741defcdf8132ac4d45483"
+    },
+    "j\\file\\cpu_003.ydc": {
+      "offset": 254390495,
+      "bytes": 106,
+      "group_counts": [
+        44,
+        2,
+        0
+      ],
+      "sha256": "941cbe8b96d7df5cd823fae03b3690677a16ef2beb6cf0187d939d0504f83db8"
+    },
+    "j\\file\\cpu_004.ydc": {
+      "offset": 254390601,
+      "bytes": 98,
+      "group_counts": [
+        42,
+        0,
+        0
+      ],
+      "sha256": "c4140edf982130da3e358a42087d8615e4a5983d8f5f853c82d1888215db4948"
+    },
+    "j\\file\\cpu_010.ydc": {
+      "offset": 254390699,
+      "bytes": 96,
+      "group_counts": [
+        41,
+        0,
+        0
+      ],
+      "sha256": "af8690ccfe508517b2a5393a27475b57c0c2664496d0770107363cbdffeba9a6"
+    },
+    "j\\file\\cpu_011.ydc": {
+      "offset": 254390795,
+      "bytes": 106,
+      "group_counts": [
+        45,
+        1,
+        0
+      ],
+      "sha256": "c2f5abd7568b7b2f6eaf2d0d22a2ab3ff2456c792c7f9e8dbc75674d153174b3"
+    },
+    "j\\file\\cpu_012.ydc": {
+      "offset": 254390901,
+      "bytes": 96,
+      "group_counts": [
+        41,
+        0,
+        0
+      ],
+      "sha256": "50f498dd5b45f7b1a33ea5aeba87daf00f6790431f5af8e77e3538dd7653cd66"
+    },
+    "j\\file\\cpu_013.ydc": {
+      "offset": 254390997,
+      "bytes": 102,
+      "group_counts": [
+        43,
+        1,
+        0
+      ],
+      "sha256": "cca265d2c53200738642b02121e3362796f31616ac524cf338afe958544dc978"
+    },
+    "j\\file\\cpu_014.ydc": {
+      "offset": 254391099,
+      "bytes": 102,
+      "group_counts": [
+        43,
+        1,
+        0
+      ],
+      "sha256": "70d6179bcf146b81f8e6db8a7856b91486881cb1433ef3abd4f8530b81daec47"
+    },
+    "j\\file\\cpu_015.ydc": {
+      "offset": 254391201,
+      "bytes": 100,
+      "group_counts": [
+        42,
+        1,
+        0
+      ],
+      "sha256": "f8fb11504b8cf921ce034cd5e3870f444e57e12c939d5a02856cb49378d82782"
+    },
+    "j\\file\\cpu_020.ydc": {
+      "offset": 254391301,
+      "bytes": 104,
+      "group_counts": [
+        45,
+        0,
+        0
+      ],
+      "sha256": "aa2a4d48228cf117621b2e16174f9e8985269aa6a3a31a79195f2480ab4f6961"
+    },
+    "j\\file\\cpu_021.ydc": {
+      "offset": 254391405,
+      "bytes": 100,
+      "group_counts": [
+        43,
+        0,
+        0
+      ],
+      "sha256": "612ccae8ce4e02fed88836b2ccc2a8d808a3da4d7bb2f173a8b5725d7348debc"
+    },
+    "j\\file\\cpu_022.ydc": {
+      "offset": 254391505,
+      "bytes": 98,
+      "group_counts": [
+        42,
+        0,
+        0
+      ],
+      "sha256": "aea932fc881c03a3973341470b4260aa57937e5ea9108b4f43c0d01addec2055"
+    },
+    "j\\file\\cpu_023.ydc": {
+      "offset": 254391603,
+      "bytes": 94,
+      "group_counts": [
+        40,
+        0,
+        0
+      ],
+      "sha256": "64157bc5b5e55918d93ef594894993e64d83d2db8e08576057c72d952f32af9d"
+    },
+    "j\\file\\cpu_024.ydc": {
+      "offset": 254391697,
+      "bytes": 104,
+      "group_counts": [
+        43,
+        2,
+        0
+      ],
+      "sha256": "1276ff69bdeeb11a45c3e7f2165155084c2428ac80ace68536abc43ff98c9d28"
+    },
+    "j\\file\\cpu_025.ydc": {
+      "offset": 254391801,
+      "bytes": 96,
+      "group_counts": [
+        41,
+        0,
+        0
+      ],
+      "sha256": "a7daf68483e8faa3d89433cc9eb6c401a92590b554d84e2c46c7ac4e41d63fed"
+    },
+    "j\\file\\cpu_026.ydc": {
+      "offset": 254391897,
+      "bytes": 100,
+      "group_counts": [
+        43,
+        0,
+        0
+      ],
+      "sha256": "e411317e483db985642a60702c5a5848127cd4fa68c4fdccf8329ce5a76c1811"
+    },
+    "j\\file\\cpu_027.ydc": {
+      "offset": 254391997,
+      "bytes": 104,
+      "group_counts": [
+        43,
+        2,
+        0
+      ],
+      "sha256": "3025717759dcd036085e079e174a861230a5a8f5cbeaf45dafbcc60f3fe3beb7"
+    },
+    "j\\file\\cpu_028.ydc": {
+      "offset": 254392101,
+      "bytes": 98,
+      "group_counts": [
+        42,
+        0,
+        0
+      ],
+      "sha256": "ce456be030e0ffccc9ece6dbcfee65d142d81e07ecddd5875465589bae9737de"
+    },
+    "j\\file\\cpu_029.ydc": {
+      "offset": 254392199,
+      "bytes": 108,
+      "group_counts": [
+        41,
+        0,
+        6
+      ],
+      "sha256": "0906eaa69ab35babe1e6a7a39ae14f2a2c0f136838ecb985b36c498e1444cfbe"
+    },
+    "j\\file\\ful_0ge1.ydc": {
+      "offset": 254393035,
+      "bytes": 112,
+      "group_counts": [
+        40,
+        9,
+        0
+      ],
+      "sha256": "8b2fb536b52cc3084b30cfb6787c63926b1055c75e90570bace3f47336a19fca"
+    },
+    "j\\file\\ful_0umi.ydc": {
+      "offset": 254393147,
+      "bytes": 114,
+      "group_counts": [
+        41,
+        3,
+        6
+      ],
+      "sha256": "55889247c71c71e97e92c53c704a5f384ec77383c492af465880c3959f16c6cc"
+    },
+    "j\\file\\ful_0val.ydc": {
+      "offset": 254393261,
+      "bytes": 118,
+      "group_counts": [
+        43,
+        3,
+        6
+      ],
+      "sha256": "f5431c69b53be5aa5a9a2c246c86526b83110dac8fb622cb1031774c9eac42b0"
+    },
+    "j\\file\\ful_1dec.ydc": {
+      "offset": 254393379,
+      "bytes": 128,
+      "group_counts": [
+        42,
+        3,
+        12
+      ],
+      "sha256": "760f35f221e9c2a27e0c808f349dc8af2311928d5557e817995e0b24fccde111"
+    },
+    "j\\file\\ful_1fus.ydc": {
+      "offset": 254393507,
+      "bytes": 152,
+      "group_counts": [
+        42,
+        12,
+        15
+      ],
+      "sha256": "0ab72407b07fceed78b1666ccb4dc3874b317aad99bdfae4ebd669dd8db3b701"
+    },
+    "j\\file\\ful_1gam.ydc": {
+      "offset": 254393659,
+      "bytes": 132,
+      "group_counts": [
+        42,
+        6,
+        11
+      ],
+      "sha256": "4ed52f91288ac515c65c2babd318b483f1750047e0f6082512fc8945a54b0f4a"
+    },
+    "j\\file\\ful_1ge1.ydc": {
+      "offset": 254393791,
+      "bytes": 132,
+      "group_counts": [
+        42,
+        6,
+        11
+      ],
+      "sha256": "df30a1a40860ebf504be780d709e50cf7f7b43f24d1d7171f87aac9d600d9f2f"
+    },
+    "j\\file\\ful_1ge2.ydc": {
+      "offset": 254393923,
+      "bytes": 140,
+      "group_counts": [
+        43,
+        6,
+        14
+      ],
+      "sha256": "8218318c5a5a31b458e33129af81406fb6510392cd7065c26be3fc5a4e6b9f06"
+    },
+    "j\\file\\ful_1hik.ydc": {
+      "offset": 254394063,
+      "bytes": 108,
+      "group_counts": [
+        41,
+        3,
+        3
+      ],
+      "sha256": "3f119593207f6a4a3d5f18945ab90de0e5e3ed8652bfb6eba346ce4fb12215cb"
+    },
+    "j\\file\\ful_1ins.ydc": {
+      "offset": 254394171,
+      "bytes": 118,
+      "group_counts": [
+        40,
+        0,
+        12
+      ],
+      "sha256": "3dc941c46a2050e7c6d960f56ee12a3f6285cca8635aa4e3d3eafaebc782b075"
+    },
+    "j\\file\\ful_1mix.ydc": {
+      "offset": 254394289,
+      "bytes": 120,
+      "group_counts": [
+        43,
+        6,
+        4
+      ],
+      "sha256": "f7f1c9e3dade128fd10511984b9539fa8905b3348e584b8e167fbc1930410d8b"
+    },
+    "j\\file\\ful_1red.ydc": {
+      "offset": 254394409,
+      "bytes": 114,
+      "group_counts": [
+        42,
+        0,
+        8
+      ],
+      "sha256": "b01479c7fb2b26edc4dcbe206faeb9af716b009ad988e1bc287d5e008b52a1ea"
+    },
+    "j\\file\\ful_1too.ydc": {
+      "offset": 254394523,
+      "bytes": 126,
+      "group_counts": [
+        44,
+        0,
+        12
+      ],
+      "sha256": "e49dde76fb33cbb4fc22d2dc182a4b78d64e3b40c9cf211feac6612ddae0e727"
+    },
+    "j\\file\\ful_1uij.ydc": {
+      "offset": 254394649,
+      "bytes": 130,
+      "group_counts": [
+        41,
+        9,
+        8
+      ],
+      "sha256": "10cba672c0cbd577edec453349eae345dccb44f22b599634b95383b31e66cc91"
+    },
+    "j\\file\\ful_1umi.ydc": {
+      "offset": 254394779,
+      "bytes": 118,
+      "group_counts": [
+        42,
+        3,
+        7
+      ],
+      "sha256": "9b8bd0bec87cc68d7aaee7889f5731b40929feb6516278bb55c89eddc39a8906"
+    },
+    "j\\file\\ful_1val.ydc": {
+      "offset": 254394897,
+      "bytes": 118,
+      "group_counts": [
+        42,
+        3,
+        7
+      ],
+      "sha256": "2f93771a37b68a395864bbae702a57e207fc3e610e2ed27291079b3c39f07a1a"
+    },
+    "j\\file\\ful_2dec.ydc": {
+      "offset": 254395015,
+      "bytes": 128,
+      "group_counts": [
+        43,
+        3,
+        11
+      ],
+      "sha256": "02d4d1acf3d0737b66d334faadc540dac061b3d56290b587c165aedd810f925f"
+    },
+    "j\\file\\ful_2fus.ydc": {
+      "offset": 254395143,
+      "bytes": 150,
+      "group_counts": [
+        43,
+        12,
+        13
+      ],
+      "sha256": "ff902a779d7903cf2eac0303d92c280f662e162ec9d3101c2f0ee4b5957af09d"
+    },
+    "j\\file\\ful_2gam.ydc": {
+      "offset": 254395293,
+      "bytes": 142,
+      "group_counts": [
+        43,
+        6,
+        15
+      ],
+      "sha256": "1ddd7685f8a6bdf9a104f870497965955d7107bea15f0fefef76a568083f962c"
+    },
+    "j\\file\\ful_2ge1.ydc": {
+      "offset": 254395435,
+      "bytes": 132,
+      "group_counts": [
+        43,
+        6,
+        10
+      ],
+      "sha256": "36e3e392d18f59043bb4cd84c9e65b5d040517c9eea911a0b2e179f135ea0911"
+    },
+    "j\\file\\ful_2ge2.ydc": {
+      "offset": 254395567,
+      "bytes": 130,
+      "group_counts": [
+        43,
+        6,
+        9
+      ],
+      "sha256": "fcd8745081324fc9f79c92cad6305b59a392d1b0e6e7ce6d62646ce45d58e03c"
+    },
+    "j\\file\\ful_2hik.ydc": {
+      "offset": 254395697,
+      "bytes": 132,
+      "group_counts": [
+        43,
+        3,
+        13
+      ],
+      "sha256": "c401ef32ab3cfdc92ad10d1bbb270cc31fae1cc25d7daea92ddefb21d4b15f66"
+    },
+    "j\\file\\ful_2ins.ydc": {
+      "offset": 254395829,
+      "bytes": 114,
+      "group_counts": [
+        42,
+        0,
+        8
+      ],
+      "sha256": "247d7101fbd9fba95f7c4e1fbb24937790dc21b4828999f1900a7a51d620c80d"
+    },
+    "j\\file\\ful_2mix.ydc": {
+      "offset": 254395943,
+      "bytes": 144,
+      "group_counts": [
+        44,
+        6,
+        15
+      ],
+      "sha256": "e0db1237f5f632171d0e9b3d12e5b61503ea5200b71c5c4874f11ae83d1f88bb"
+    },
+    "j\\file\\ful_2red.ydc": {
+      "offset": 254396087,
+      "bytes": 130,
+      "group_counts": [
+        43,
+        0,
+        15
+      ],
+      "sha256": "3b9fc47376e8fc6a51cf7ff29b72251d570267bd28e163533b71c86fd6181fd3"
+    },
+    "j\\file\\ful_2too.ydc": {
+      "offset": 254396217,
+      "bytes": 130,
+      "group_counts": [
+        43,
+        0,
+        15
+      ],
+      "sha256": "2c21596272e570cb0ec93d21141b7d721c9cf18f137e06343ce63456025a93c6"
+    },
+    "j\\file\\ful_2uij.ydc": {
+      "offset": 254396347,
+      "bytes": 118,
+      "group_counts": [
+        43,
+        9,
+        0
+      ],
+      "sha256": "4e913ae3446e575f85c3bc538b9a8e4bc002dbcc73d3a47e869dcdd05aa31aca"
+    },
+    "j\\file\\ful_2umi.ydc": {
+      "offset": 254396465,
+      "bytes": 124,
+      "group_counts": [
+        42,
+        3,
+        10
+      ],
+      "sha256": "0e52faeb1e2cdbdbf660658f1c8ec11a78e1956e46bd64b2a3642869636c811e"
+    },
+    "j\\file\\ful_2val.ydc": {
+      "offset": 254396589,
+      "bytes": 124,
+      "group_counts": [
+        43,
+        3,
+        9
+      ],
+      "sha256": "5a4b575a7e3d728e87c6b9db22def9c4df35eb808d6c4d8b5e3d8f56cf3e7281"
+    },
+    "j\\file\\ful_3all.ydc": {
+      "offset": 254396713,
+      "bytes": 130,
+      "group_counts": [
+        43,
+        3,
+        12
+      ],
+      "sha256": "3761debedac5f0b6f9a7ddc25fd417b54a83e6ee6cc0a502f375e5528a51f16c"
+    },
+    "j\\file\\ful_3dec.ydc": {
+      "offset": 254396843,
+      "bytes": 132,
+      "group_counts": [
+        43,
+        3,
+        13
+      ],
+      "sha256": "1452cc823acddcbff035e7f09634b2ad6e426888b4dc744dd4b3ee0988a25548"
+    },
+    "j\\file\\ful_3exo.ydc": {
+      "offset": 254396975,
+      "bytes": 110,
+      "group_counts": [
+        41,
+        0,
+        7
+      ],
+      "sha256": "a52206a9a6c73715f425be4ee08e6ea33db1a44fc58329d17ba35106e2b82931"
+    },
+    "j\\file\\ful_3fus.ydc": {
+      "offset": 254397085,
+      "bytes": 128,
+      "group_counts": [
+        41,
+        9,
+        7
+      ],
+      "sha256": "eba48128d444b721efb47dee9d60cdeeb970db020c6a6719a6542277004d3ebf"
+    },
+    "j\\file\\ful_3grv.ydc": {
+      "offset": 254397213,
+      "bytes": 122,
+      "group_counts": [
+        41,
+        0,
+        13
+      ],
+      "sha256": "366985fc52709c9ed16ebda778f429f58756f1cd1cf0c10f8cfec3eb2b3b5096"
+    },
+    "j\\file\\ful_3hnd.ydc": {
+      "offset": 254397335,
+      "bytes": 108,
+      "group_counts": [
+        41,
+        0,
+        6
+      ],
+      "sha256": "f2be5965585f7bb5b56f72a2ebc325191be622340fd43cbac290c320b17a3bff"
+    },
+    "j\\file\\ful_3too.ydc": {
+      "offset": 254397443,
+      "bytes": 120,
+      "group_counts": [
+        42,
+        0,
+        11
+      ],
+      "sha256": "9621750214b4a2d99891d81d6528e6a454aaa1a5d793eef9ad7ce04452ffb4b1"
+    },
+    "j\\file\\ful_3yam.ydc": {
+      "offset": 254397563,
+      "bytes": 108,
+      "group_counts": [
+        43,
+        3,
+        1
+      ],
+      "sha256": "b8d77a0a4d495709dc52f19109e19d750a7c38d6970b6215b60a40f2899dfd6b"
+    }
+  }
+}
