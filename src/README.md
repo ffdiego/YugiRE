@@ -60,19 +60,24 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   internos, use `dotnet run -- --include-unused` (junto ao caminho DAT, se necessário).
   Esse modo mantém variantes e registros sem nome, sem inferir jogabilidade.
 - Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
-  Draw compra uma carta por turno; selecione um monstro e uma zona própria vazia
-  para invocar uma vez por turno. Níveis 5–6 exigem um tributo; 7+ exigem dois.
-  Selecione os monstros próprios, depois uma zona vazia ou selecionada. Cancel
-  abandona a seleção. É possível liberar uma zona de um campo cheio.
+  Draw compra uma carta por turno. Passe o mouse sobre uma carta para elevá-la
+  e mostrar Summon/Activate; botão direito alterna para Set. Clique na carta
+  ou no balão para confirmar. A colocação usa o primeiro slot livre à esquerda.
+  Níveis 5–6 exigem um tributo; 7+ exigem dois. Clique nos monstros próprios
+  para pagar os tributos; a colocação acontece ao completar a seleção.
+  Cancel abandona a seleção. É possível liberar uma zona de um campo cheio.
   Fusões, Rituais e monstros especiais reconhecidos pelo gate nativo são
   recusados para invocação normal; seus procedimentos especiais não estão implementados.
   Evidência e limites: [invocação normal](../docs/26-normal-summon-tributes.md).
-- Use card ativa Sparks, Ookazi ou Infinite Cards da mão. Infinite Cards ocupa
+- Activate ativa Sparks, Ookazi ou Infinite Cards da mão. Infinite Cards ocupa
   uma zona de magia e elimina o limite da mão de ambos os jogadores enquanto
   estiver no campo; negação e destruição dessa magia ainda não são simuladas.
-  Para Legendary Sword, selecione a carta e clique em um Warrior no campo
+  Set coloca cartas viradas para baixo, sem ativar seus efeitos. Clique em uma
+  magia setada para ativá-la, quando seu efeito já estiver implementado.
+  Para Legendary Sword, use Activate e clique em um Warrior aberto no campo
   de qualquer jogador. Ela ocupa uma zona de magia própria e concede +300/+300.
-  Os demais efeitos são recusados.
+  Os demais efeitos são recusados. A apresentação está pausada; evidências e
+  roteiro para retomar em [duelo e animação da mão](../docs/visual/duel-hand-pause.md).
 - Battle inicia combate após o primeiro turno. Clique em um monstro próprio,
   depois em um monstro inimigo; Direct attack funciona se o adversário não
   tiver monstros. Cada monstro ataca uma vez. Em Main, Cancel e clique num monstro próprio para alternar ataque/defesa
@@ -290,7 +295,7 @@ DAT; isso não significa que tenhamos uma ilustração exclusiva para cada carta
 Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md). Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
 Ativação imediata sem correntes, cemitério, combate, bloqueio de batalha no
 primeiro turno, derrota por deck vazio e vitória por LP são políticas do demo,
-ainda não atribuídas ao motor original. Não há IA, cartas viradas para baixo, efeitos de monstros,
+Ainda não atribuídas ao motor original. Há colocação virada para baixo, mas não há IA, efeitos de monstros,
 armadilhas, compra automática ou multiplayer em rede. Textos de cartas exibidos
 não implicam que seus efeitos estejam implementados.
 

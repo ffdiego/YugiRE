@@ -49,6 +49,7 @@ static partial class Game
     {
         tributeZones.Clear();
         duel = NewDemo(); screen = "duel"; hand = attacker = -1; handPage = 0;
+        ClearDuelSelection(); Array.Clear(handLift);
         message = useImportedDeck ? "Imported main deck for both local players. Only selected effects work in this demo." :
             "Local two-player demo. Draw or summon, then enter battle.";
     }

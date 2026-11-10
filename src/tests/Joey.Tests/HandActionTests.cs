@@ -4,6 +4,12 @@ static class HandActionTests
 {
     public static void Run(Action<bool, string> check)
     {
+        check(HandPresentation.CenterX(0, 6) == 366 && HandPresentation.CenterX(5, 6) == 684,
+            "Native hand span distributes six card centers around x=525");
+        check(HandPresentation.CenterX(0, 1) == 521 && HandPresentation.CenterX(4, 5) == 653,
+            "Native single-card and five-card integer spacing are preserved");
+        check(HandPresentation.Approach(600, 568) == 592 && HandPresentation.Approach(592, 568) == 586,
+            "Native hover advances one quarter of the remaining distance per update");
         var monster = new Card(1, 1, "Monster", "", (1u << 20) | (4u << 25));
         var boss = monster with { Id = 2, Properties = (1u << 20) | (6u << 25) };
         var sparks = new Card(3, 342, "Sparks", "", 21u << 20);

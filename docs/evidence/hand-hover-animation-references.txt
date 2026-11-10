@@ -1,0 +1,143 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+MATCH duel/card/card.txt @005eb870
+ XREF From: 004184f2 To: 005eb870 Type: DATA Op: 0 ANALYSIS FUNCTION 004182e0
+FUNCTION FUN_004182e0 @004182e0
+ CALLER 0041d1c5 FUN_0041d160
+ CALLER 0043a4e6 FUN_0043a060
+ CALLER 0043d0b5 FUN_0043d090
+ CALLER 0044c7ae FUN_0044c730
+ CALLER 0044c849 FUN_0044c730
+ CALLER 0044c8e4 FUN_0044c730
+ CALLER 00440692 null
+
+undefined4 * __thiscall FUN_004182e0(undefined4 *param_1,undefined4 param_2)
+
+{
+  int iVar1;
+  undefined4 *puVar2;
+  bool bVar3;
+  undefined1 local_16;
+  undefined1 local_15;
+  undefined4 *local_14;
+  undefined4 *local_10;
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  local_4 = 0xffffffff;
+  puStack_8 = &LAB_005d0f72;
+  local_c = ExceptionList;
+  ExceptionList = &local_c;
+  local_14 = param_1;
+  FUN_0045cf80(1);
+  local_10 = param_1 + 0x15;
+  local_4 = 0;
+  FUN_00418560();
+  param_1[0x16] = 0xffffffff;
+  param_1[0x18] = 0;
+  param_1[0x17] = &PTR_FUN_005da880;
+  param_1[0x1a] = 0;
+  param_1[0x19] = 0;
+  local_4._0_1_ = 2;
+  FUN_0041a700(0,0);
+  local_4._0_1_ = 3;
+  FUN_0041a700(0,0);
+  local_4._0_1_ = 4;
+  FUN_0041a700(0,0);
+  local_4._0_1_ = 5;
+  FUN_0041a700(0,0);
+  param_1[0x2b] = &PTR_FUN_005da720;
+  iVar1 = DAT_005f33e8 + 1;
+  bVar3 = DAT_005f33e8 == 0;
+  local_4._0_1_ = 6;
+  DAT_005f33e8 = iVar1;
+  if (bVar3) {
+    puVar2 = (undefined4 *)FUN_0054a1d0(0x8c);
+    local_4._0_1_ = 7;
+    local_10 = puVar2;
+    if (puVar2 == (undefined4 *)0x0) {
+      DAT_005f33ec = (undefined4 *)0x0;
+    }
+    else {
+      FUN_00413890();
+      local_4._0_1_ = 8;
+      FUN_00486050(&local_16);
+      *puVar2 = &PTR_FUN_005da45c;
+      DAT_005f33ec = puVar2;
+    }
+    local_4._0_1_ = 6;
+    FUN_00413db0(s_duel_font_number_txt_005eb7d4);
+  }
+  param_1[0x2c] = 0;
+  param_1[0x2d] = 10;
+  *param_1 = &PTR_FUN_005da868;
+  iVar1 = DAT_005f2fd0 + 1;
+  bVar3 = DAT_005f2fd0 == 0;
+  local_4._0_1_ = 9;
+  DAT_005f2fd0 = iVar1;
+  if (bVar3) {
+    iVar1 = FUN_0054a1d0(0x58);
+    local_4._0_1_ = 10;
+    local_10 = (undefined4 *)iVar1;
+    if (iVar1 == 0) {
+      DAT_005f2fd4 = 0;
+    }
+    else {
+      FUN_00418560();
+      local_4._0_1_ = 0xb;
+      *(undefined4 *)(iVar1 + 4) = 0;
+      FUN_0041a700(0,0);
+      local_4._0_1_ = 0xc;
+      FUN_0041a700(0,0);
+      local_4._0_1_ = 0xd;
+      FUN_0041a700(0,0);
+      local_4._0_1_ = 0xe;
+      FUN_0041a700(0,0);
+      local_4._0_1_ = 0xf;
+      FUN_0041a700(0,0);
+      DAT_005f2fd4 = iVar1;
+    }
+    local_4._0_1_ = 9;
+    puVar2 = (undefined4 *)FUN_0054a1d0(0x8c);
+    local_4._0_1_ = 0x10;
+    local_10 = puVar2;
+    if (puVar2 == (undefined4 *)0x0) {
+      DAT_005f2fd8 = (undefined4 *)0x0;
+    }
+    else {
+      FUN_00417f80();
+      local_4._0_1_ = 0x11;
+      FUN_0044c710();
+      *puVar2 = &PTR_FUN_005da4b0;
+      *(undefined1 *)(puVar2 + 0x1b) = 0;
+      puVar2[0x1e] = 0;
+      puVar2[0x1d] = 0;
+      puVar2[0x1c] = 0;
+      local_4._0_1_ = 0x12;
+      FUN_00486050(&local_15);
+      *puVar2 = &PTR_FUN_005da45c;
+      DAT_005f2fd8 = puVar2;
+    }
+    local_4._0_1_ = 9;
+    FUN_00413db0(s_duel_card_card_txt_005eb870);
+  }
+  param_1[0xc] = 0;
+  param_1[0xd] = 0;
+  *(undefined1 *)(param_1 + 8) = 1;
+  *(undefined1 *)((int)param_1 + 0x21) = 0;
+  *(undefined1 *)((int)param_1 + 0x22) = 0;
+  param_1[5] = 0;
+  param_1[6] = 0;
+  param_1[7] = 0;
+  param_1[10] = 0;
+  param_1[0xb] = 0;
+  param_1[0x10] = 0;
+  param_1[0x11] = 0x10000;
+  param_1[0x12] = 0;
+  FUN_00418b10(param_2);
+  param_1[3] = 0x100;
+  ExceptionList = local_c;
+  return param_1;
+}
+
+

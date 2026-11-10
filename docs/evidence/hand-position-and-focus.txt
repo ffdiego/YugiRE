@@ -1,0 +1,176 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 0041e990
+TRANSIENT FUNCTION 0041e360
+TRANSIENT FUNCTION 0040c940
+FUNCTION FUN_0041e990 @0041e990
+ CALLER 0041d25d FUN_0041d160
+ CALLER 0041d9ec FUN_0041d6c0
+ CALLER 0041de0d FUN_0041db40
+ CALLER 0041e22c FUN_0041df00
+
+void __thiscall
+FUN_0041e990(int param_1,undefined **param_2,undefined4 *param_3,undefined4 *param_4,int param_5)
+
+{
+  void *pvVar1;
+  void *local_c;
+  undefined1 *puStack_8;
+  undefined4 local_4;
+  
+  puStack_8 = &LAB_005d14f0;
+  local_c = ExceptionList;
+  local_4 = 0;
+  ExceptionList = &local_c;
+  FUN_0041ea20(*(undefined4 *)(param_1 + 8),1,&param_2);
+  param_2 = &PTR_FUN_005da440;
+  local_4 = 1;
+  if (param_4 != (undefined4 *)0x0) {
+    if ((undefined ***)param_4 == &param_2) {
+      if (param_3 != (undefined4 *)0x0) {
+        pvVar1 = (void *)0x1;
+        (**(code **)*param_3)();
+        ExceptionList = pvVar1;
+        return;
+      }
+    }
+    else {
+      param_4[3] = param_5;
+      *(undefined4 **)(param_5 + 8) = param_4;
+    }
+  }
+  ExceptionList = local_c;
+  return;
+}
+
+
+FUNCTION FUN_0041e360 @0041e360
+ CALLER 0041d264 FUN_0041d160
+ CALLER 0041d809 FUN_0041d6c0
+ CALLER 0041da01 FUN_0041d6c0
+ CALLER 0041dcb5 FUN_0041db40
+ CALLER 0041de23 FUN_0041db40
+ CALLER 0041e049 FUN_0041df00
+ CALLER 0041e241 FUN_0041df00
+ CALLER 0041d4d2 FUN_0041d3f0
+
+void __fastcall FUN_0041e360(int param_1)
+
+{
+  int iVar1;
+  uint uVar2;
+  uint uVar3;
+  int *piVar4;
+  int iVar5;
+  int iVar6;
+  int local_4;
+  
+  piVar4 = (int *)(param_1 + 4);
+  local_4 = 2;
+  do {
+    if (*piVar4 == 0) {
+      iVar6 = 0;
+    }
+    else {
+      iVar6 = piVar4[1] - *piVar4 >> 4;
+    }
+    uVar2 = 0;
+    if (0 < iVar6) {
+      iVar5 = 0;
+      do {
+        uVar3 = uVar2 & 0xff;
+        iVar1 = *(int *)(iVar5 + 4 + *piVar4);
+        iVar5 = iVar5 + 0x10;
+        uVar2 = uVar2 + 1;
+        *(ushort *)(iVar1 + 0x24) = (ushort)(uVar3 << 6) | *(ushort *)(iVar1 + 0x24) & 0xc03f;
+      } while ((int)uVar2 < iVar6);
+    }
+    piVar4 = piVar4 + 0x118;
+    local_4 = local_4 + -1;
+  } while (local_4 != 0);
+  return;
+}
+
+
+FUNCTION FUN_0040c940 @0040c940
+ CALLER 0040c0f3 FUN_0040c090
+ CALLER 005950c7 null
+ CALLER 0057cfc3 null
+ CALLER 005839f5 null
+ CALLER 00583ad8 null
+ CALLER 00583e04 null
+ CALLER 00584868 null
+ CALLER 00587c52 null
+ CALLER 00589747 null
+ CALLER 00589f55 null
+ CALLER 0058ad46 null
+ CALLER 0058aefb null
+ CALLER 0058f257 null
+ CALLER 00590592 null
+ CALLER 00590ac4 null
+ CALLER 00591808 null
+ CALLER 00592285 null
+ CALLER 00595dfd null
+ CALLER 00596106 null
+ CALLER 005981fb FUN_00597e90
+ CALLER 00598911 null
+ CALLER 0059f5d6 FUN_0059df40
+ CALLER 005bad8b FUN_005baab0
+ CALLER 005b90eb null
+ CALLER 005a9fbe FUN_005a9f50
+ CALLER 005aa117 FUN_005aa020
+ CALLER 005a97aa FUN_005a9750
+
+void FUN_0040c940(undefined4 param_1,int param_2,undefined4 param_3,undefined4 param_4)
+
+{
+  int iVar1;
+  int iVar2;
+  undefined4 uVar3;
+  int iVar4;
+  
+  DAT_00a582a0._0_2_ = (short)param_2 * 2 | (ushort)param_1 & 1;
+  DAT_00a582a0._2_2_ = 0;
+  FUN_005bddf0(&DAT_00a582a4,0x200);
+  FUN_005bddf0(&DAT_00a584a4,0x100);
+  if ((param_2 < 6) || (((DAT_00a54e5c >> 1 & 3) >> ((byte)param_1 & 0x1f) & 1) == 0)) {
+    FUN_00599e30(param_1,param_3,param_4);
+    iVar4 = FUN_0054a1d0(0x2b4);
+    if (iVar4 == 0) {
+      iVar4 = 0;
+    }
+    else {
+      iVar4 = FUN_0043a060(param_1,param_2);
+    }
+    iVar2 = DAT_005f3280;
+    iVar1 = DAT_005f3280 + 0x1304;
+    (**(code **)(*(int *)(DAT_005f3280 + 0x1304) + 4))();
+    if (iVar4 != 0) {
+      *(int *)(iVar2 + 0x1308) = iVar4;
+      *(int *)(iVar2 + 0x1310) = iVar1;
+      *(int *)(iVar2 + 0x130c) = iVar1;
+    }
+    return;
+  }
+  if (param_2 == 6) {
+    uVar3 = FUN_00402460(param_3,param_4);
+    FUN_005af5a0(param_1,uVar3);
+    return;
+  }
+  if ((param_2 < 7) || (0x16 < param_2)) {
+    if (param_2 < 0x18) {
+      return;
+    }
+    if (0x27 < param_2) {
+      return;
+    }
+    param_2 = param_2 + -0x17;
+  }
+  else {
+    param_2 = param_2 + -6;
+  }
+  uVar3 = FUN_00402460(param_3,param_4,param_2);
+  FUN_005afe10(param_1,uVar3);
+  return;
+}
+
+
