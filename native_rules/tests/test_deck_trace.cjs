@@ -60,6 +60,12 @@ assert.throws(()=>observer.start(true,hash),/Unreadable range/);
 assert.equal(installed.size,0); // Refuse a gap/unreadable second region.
 sourceTailUnreadable=false;
 observer.start(true,hash); assert.equal(installed.size,5);
+assert.equal(typeof installed.get(0x44bda5), 'function',
+  'CPU site must be an instruction probe, not a function interceptor');
+assert.equal(typeof installed.get(0x44bc84), 'function',
+  'FUL site must be an instruction probe, not a function interceptor');
+assert.equal(typeof installed.get(0x44bbe0), 'object',
+  'Function entry must retain a listener with enter/leave');
 console.log('PASS: source deck crossing two adjacent readable VirtualQuery regions');
 function write(n,x) { memory.writeUInt32LE(x,n); }
 function object(n,data,path) {
@@ -68,7 +74,9 @@ function object(n,data,path) {
 }
 function enter(va,caller,esp=0x2000,args=[]) {
   const invocation={returnAddress:ptr(caller),context:{esp:ptr(esp),eax:ptr(0xffffffff),ecx:ptr(0x5555)}};
-  installed.get(va).onEnter.call(invocation,args);
+  const listener = installed.get(va);
+  if (typeof listener === 'function') listener.call(invocation,args);
+  else listener.onEnter.call(invocation,args);
   return invocation;
 }
 const path='data/J/file/CPU_004.ydc';
