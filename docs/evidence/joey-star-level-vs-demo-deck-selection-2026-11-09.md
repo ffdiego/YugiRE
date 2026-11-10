@@ -1,5 +1,13 @@
 # Decks do Joey por estrelas: separar duelo normal de modo Demo
 
+**Atualização estática posterior:** o seletor `0x0044BBE0`, suas tabelas de
+58 recursos distintos, campos de dificuldade/pool, RNG e progressão foram
+mapeados em [seleção da CPU](../research/cpu-deck-selection.md). Os presets
+Demo A/B/C conferem integralmente, inclusive ordem das listas, com
+FUL_0GE1/0VAL/0UMI da linha FUL3. A análise e o plano abaixo preservam o
+estado histórico da captura; consultar o novo relatório para a especificação
+e [checkpoint](../research/cpu-deck-selection-checkpoint.md) para retomar.
+
 **Data da captura:** 2026-11-09 UTC (20 duelos). **Arquivo recebido:**
 `parallel-4ppi9kaj.zip`. **EXE**:
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.

@@ -5,6 +5,47 @@ using System.Text.Json;
 
 static class CpuDeckSelectionTests
 {
+    public static void RunWithArchive(Archive archive, IReadOnlyList<Card> cards, Action<bool, string> check)
+    {
+        var names = Enumerable.Range(1, 7).SelectMany(level => CpuDeckSelection.Options((byte)level, 0))
+            .Concat(Enumerable.Range(1, 7).SelectMany(level => CpuDeckSelection.Options((byte)level, 1)))
+            .Distinct().ToArray();
+        var joeyIndices = CardListResources.ForPacks(cards, archive.Read(@"bin#\card_pack.bin"), 4)
+            .Select(card => card.Index).ToHashSet();
+        var playableIndices = CardListResources.ForPacks(cards, archive.Read(@"bin#\card_pack.bin"))
+            .Select(card => card.Index).ToHashSet();
+        int previousEditionCopies = 0;
+        Dictionary<string, DeckFile> decks = [];
+        foreach (string path in names)
+        {
+            var deck = DeckFile.Read(archive.Read(path[5..].Replace('/', '\\')));
+            decks[path] = deck;
+            var main = deck.Resolve(0, cards);
+            check(deck.HasDuelSize && main.All(card => playableIndices.Contains(card.Index)),
+                $"Original CPU resource has valid playable main: {path}");
+            int older = main.Count(card => !joeyIndices.Contains(card.Index));
+            if (path.Contains("/CPU_"))
+                check(older == 0, $"Joey-only CPU resource contains no previous-edition-only cards: {path}");
+            else previousEditionCopies += older;
+        }
+        check(decks.Count == 58 && previousEditionCopies == 401,
+            "All 58 selected DAT resources resolve; FUL includes 401 previous-edition main copies in total");
+        foreach (var (letter, resource) in new[] { ("A", "0GE1"), ("B", "0VAL"), ("C", "0UMI") })
+        {
+            using var captured = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"Fixtures/demo-{letter}.json")));
+            var deck = decks[$"data/J/file/FUL_{resource}.ydc"];
+            var main = captured.RootElement.GetProperty("main").EnumerateArray().Select(item => item.GetInt32());
+            check(deck.Resolve(0, cards).Select(card => card.Index).SequenceEqual(main),
+                $"Captured Demo {letter} main matches exact original resource order FUL_{resource}");
+            // Native 00449EF0 maps file list 1 to source +BE/+E0, file list 2 to +A0/+DE.
+            var second = captured.RootElement.GetProperty("second").EnumerateArray().Select(item => item.GetInt32());
+            var third = captured.RootElement.GetProperty("third").EnumerateArray().Select(item => item.GetInt32());
+            check(deck.Resolve(2, cards).Select(card => card.Index).SequenceEqual(second) &&
+                deck.Resolve(1, cards).Select(card => card.Index).SequenceEqual(third),
+                $"Captured Demo {letter} additional source lists match native YDC group reordering");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         using var evidence = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures/cpu-deck-selection-tables.json")));

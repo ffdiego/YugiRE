@@ -252,3 +252,71 @@ decompilações de todos os leitores do estado de duelo.
 Evidências desta unidade: `cpu-deck-modeword-writers.txt`,
 `cpu-deck-normal-result-context.txt`, `cpu-deck-resource-backend.txt`,
 `cpu-deck-resource-open-and-state.txt`, `cpu-deck-surrender-and-resource.txt`.
+
+## Corroboração com capturas existentes e composição dos pools
+
+`CpuDeckSelectionTests.RunWithArchive` lê as 58 referências do DAT original,
+resolve todos os IDs principais e confirma que todos pertencem ao catálogo
+jogável. Nas 21 composições CPU, **nenhuma carta principal está fora do pack4**.
+Nas 37 composições FUL, somam-se **401 cópias principais** que não pertencem
+ao pack4. Isso corrobora concretamente a interpretação dos dois pools.
+As contagens somam recursos distintos, não frequências de sorteio.
+
+Os presets observados anteriores são comparados com os recursos por índice,
+na ordem original, sem supor que tamanho do deck determine a identidade:
+
+| Captura | Recurso exato | Contagens no arquivo YDC (ordem física) |
+|---|---|---|
+| Demo A | `j\file\ful_0ge1.ydc` | 40 / 9 / 0 |
+| Demo B | `j\file\ful_0val.ydc` | 43 / 3 / 6 |
+| Demo C | `j\file\ful_0umi.ydc` | 41 / 3 / 6 |
+
+As três listas de cada captura conferem. O leitor `0x00449EF0` troca a
+ordem das listas adicionais ao preencher o source: arquivo `[main,list1,list2]`
+vira `[main,second=list2,third=list1]`, isto é, list1 em `+0xBE`, count `+0xE0`,
+e list2 em `+0xA0`, count `+0xDE`. Não dar nomes modernos às listas só por isso.
+A documentação anterior preservava as listas físicas sem atribuir papéis;
+a comparação dinâmica torna explícita essa correspondência de offsets.
+
+Esses três recursos constituem exatamente a linha FUL3. Os 20 duelos da
+captura anterior são, portanto, compatíveis com seleção restrita a essa linha,
+e não com um catálogo global de apenas três decks. Não recuperamos os bytes
+brutos de perfil/RNG daquela captura só a partir das composições.
+
+Os testes opcionais contra DAT usam os mesmos presets já versionados em
+`native_rules/decks/`; não exportam recursos originais nem alteram essas capturas.
+Com DAT e deck local, **341 verificações C#** passaram após essa correlação.
+
+## Resolução do recurso e condições que não devem ser confundidas
+
+O nome retornado começa com `data/J/file/`. A entrada correspondente no DAT
+é `j\file\...`; o resolvedor nativo trata caminhos e arquivos/archives, não um
+array C# de composições embutidas. A cadeia do loader é `0055DA10 → 00543BE0`
+→ virtual `00543170` → `00543290` → `005428D0`.
+
+`005428D0` tenta abrir o caminho via CRT (`005C5AEB`) antes do ramo de procura
+em contêineres. Portanto um recurso externo ou uma configuração distinta de
+busca pode alterar **os bytes carregados pelo mesmo nome** sem alterar o
+algoritmo do seletor. A relação de prioridade completa de todos os mounts
+e overlays não foi reimplementada nesta investigação. Os 58 recursos aqui
+conferidos são os do DAT com fingerprint fixado, em instalação original.
+
+`0044A690` não filtra a lista principal por cartas possuídas pelo jogador;
+o principal vem da composição do recurso. Após ler o source, pode retirar
+entradas das listas adicionais cujo `005BE190` resulte em zero, dependendo
+das regras/restrições atuais. Isso não sorteia outra composição principal.
+
+Nos rematches, cena2 em `0044BEE0` muda para cena1, atualiza estado/tempo e
+continua sem chamar novamente o seletor nem o loader CPU. Logo as rodadas
+de um mesmo match reutilizam a composição, ainda que o shuffle mude a ordem.
+Novos duelos/matches iniciados pelos callers `0048AD4B`/`0048AE05` sorteiam
+novamente, antes de configurar cenas0/1 em `0048AD6C`/`0048AE28`.
+
+No Demo7 há **duas escolhas**: o chamador externo escolhe o caminho que será
+usado no segundo carregamento; dentro da configuração, `0044BF4B` chama o
+seletor novamente para o primeiro carregamento (`0044BF75`), copia source1
+para source0 e carrega o caminho externo em `0044BFD8`. A ordem de sorteio
+é, portanto, inversa à ordem dos dois carregamentos. O segundo parâmetro
+da configuração de cena não é usado no primeiro carregamento do Demo.
+O mesmo pool/dificuldade alimenta ambos; isso é demonstrado pela cadeia de
+chamadas, não pela quantidade de presets observados.

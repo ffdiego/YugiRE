@@ -1,8 +1,8 @@
 # Checkpoint — seleção de decks da CPU
 
 ## Objetivo atual
-Correlacionar presets Demo com recursos FUL, fechar resolução de arquivos,
-snapshot do MT, caminhos alternativos e falsificadores Windows.
+Finalizar limites da especificação, anotações persistentes e protocolo Windows
+passivo. Presets, resolução de recursos e caminhos normal/match/Demo já mapeados.
 Trabalho exclusivamente estático no Joey; branch `main`.
 
 ## Descobertas confirmadas
@@ -35,6 +35,11 @@ Trabalho exclusivamente estático no Joey; branch `main`.
   match, saturação, flag40 e modo3. Build e 255 verificações passaram.
 - Escritor da flag40: comando40 → `00408410`, zera LP e seta0x240; semântica
   provável desistência/aborto, produtor UI ainda não identificado.
+- Presets A/B/C conferem **as três listas e ordem** com FUL_0GE1/0VAL/0UMI.
+  As listas adicionais do arquivo trocam ordem no source; 341 checks C# passaram.
+- Rematch cena2 não sorteia/recarrega deck; novos modos0/1 o fazem.
+  Demo7 sorteia dois caminhos, primeiro o externo, depois o interno; carrega
+  interno no source0 e externo no source1 antes da distribuição aos lados.
 - Condições de progressão e caminhos alternativos ainda não fechados.
 
 ## Caminhos descartados / limites
@@ -46,11 +51,10 @@ Trabalho exclusivamente estático no Joey; branch `main`.
   mais evidência toolchain, devem permanecer fora dos commits desta pesquisa.
 
 ## Próximos passos prioritários
-1. Automatizar comparação main dos presets `native_rules/decks/demo-{A,B,C}.json`
-   com DAT. Comparação preliminar por IDs já encontrou FUL_0GE1 / 0VAL / 0UMI,
-   correspondendo exatamente à linha FUL3; confirmar também ordem e listas extras.
-2. Reutilizar `cpu-deck-resource-resolution.txt` e `cpu-deck-surrender-and-resource.txt`:
-   backend `00543170` → `00543290` → `005428D0` (arquivo/arquivo DAT).
+1. Conferir relatório `cpu-deck-ghidra-symbols.txt` e script de renomeação:
+   execução persistente já concluída com Save succeeded e 12 funções nomeadas.
+2. Consolidar protocolo Windows: breakpoint no seletor, MT antes/depois, loader,
+   bytes de perfil e rematch. Não usar spawn nem alterar perfil/save.
 3. Tabelas já extraídas e validadas: 21 CPU + 37 FUL distintos, 58 YDC válidos.
 4. Seguir callers do seletor em cenas 0/1, Demo e rematch.
 5. Implementar modelo verificável e pseudocódigo C#; preparar falsificadores Windows.
@@ -58,18 +62,18 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 ## Última ação realizada
 Consultas Ghidra em `cpu-deck-normal-entry.txt`, `cpu-deck-stream-and-callsite.txt`;
 inspeção de instruções do seletor e tabelas no EXE, inventário direcionado do DAT.
-Build passou; 255 verificações C# passaram. Parser de tabelas: quatro testes.
-Implementados seletor, MT e progressão sem ligar ao demo. Última consulta
-`cpu-deck-surrender-and-resource.txt`: flag40 e abertura de recurso.
-Inspeção direcionada do dispatcher confirmou opcode40 para00408410.
-Comparação preliminar presets: A=0GE1, B=0VAL, C=0UMI; 21 recursosCPU
-têm só cartas pack4; recursosFUL somam401 cópias de main fora de pack4.
+Build e 341 verificações C# passaram, incluindo 58 recursos originais e
+capturas das três listas. Quatro testes Python do extrator passaram.
+`RenameCpuDeckSelection.java` já executado: 12 funções nomeadas no banco,
+Save succeeded. Uma primeira execução falhou por cache path relativo;
+segunda execução usou caminhos absolutos e concluiu. Não repetir sem necessidade.
 
 ## Commits relevantes
 - `e1bd36c`: cadeia cena→loader→recurso e seletor anterior, checkpoint inicial.
 - `5458908`: tabelas extraídas, 58 YDC conferidos e primeiros campos do perfil.
 - `c560b9e`: seletor C# e RNG MT transcritos, 221 verificações.
-- Próxima unidade: progressão do perfil e consulta direcionada de escritores.
+- `36399ce`: progressão do perfil, gates e consulta direcionada de escritores.
+- Próxima unidade: correspondência dos presets e confirmação dos pools com DAT.
 
 ## Bloqueios
 Nenhum para seguir estaticamente. A captura normal de 1 estrela descrita pelo

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup><ItemGroup><ProjectReference Include="../../Joey.Core/Joey.Core.csproj"/></ItemGroup>  <ItemGroup>
     <None Update="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../docs/evidence/cpu-deck-selection-tables.json" Link="Fixtures/cpu-deck-selection-tables.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../native_rules/decks/demo-?.json" Link="Fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
