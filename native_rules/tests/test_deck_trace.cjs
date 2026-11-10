@@ -19,9 +19,17 @@ class Pointer {
 }
 const ptr = n => new Pointer(n);
 let thread = 7, installed = new Map(), detached = 0, failAt = 0, failDetach = 0, unreadable = false, events = [];
+let splitSource = false, sourceTailUnreadable = false;
 const context = {ptr, Map, Array, DataView, Uint8Array, Number, String, Error,
   Process:{platform:'windows',arch:'ia32',getCurrentThreadId:()=>thread,
-    findRangeByAddress:()=>unreadable ? null : ({base:ptr(0),size:memory.length,protection:'rwx'})},
+    findRangeByAddress:p => {
+      if (unreadable) return null;
+      if (splitSource && p.n >= 0xa55000)
+        return {base:ptr(0xa55000),size:memory.length-0xa55000,
+          protection:sourceTailUnreadable ? '---' : 'rwx'};
+      if (splitSource) return {base:ptr(0),size:0xa55000,protection:'rwx'};
+      return {base:ptr(0),size:memory.length,protection:'rwx'};
+    }},
   Interceptor:{attach(p,callbacks) {
     if (p.n === failAt) throw new Error('simulated attach failure');
     installed.set(p.n,callbacks);
@@ -47,7 +55,12 @@ assert.equal(installed.size,0); assert.equal(detached,3); failAt=0;
 unreadable=true;
 assert.throws(()=>observer.start(true,hash),/Unreadable/);
 assert.equal(installed.size,0); unreadable=false;
+splitSource=true; sourceTailUnreadable=true;
+assert.throws(()=>observer.start(true,hash),/Unreadable range/);
+assert.equal(installed.size,0); // Refuse a gap/unreadable second region.
+sourceTailUnreadable=false;
 observer.start(true,hash); assert.equal(installed.size,5);
+console.log('PASS: source deck crossing two adjacent readable VirtualQuery regions');
 function write(n,x) { memory.writeUInt32LE(x,n); }
 function object(n,data,path) {
   write(n+4,data); write(n+8,path.length); write(n+12,path.length);
