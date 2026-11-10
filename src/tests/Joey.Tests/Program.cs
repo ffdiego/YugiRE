@@ -105,6 +105,7 @@ Check(empty.Draw(out _) && empty.Winner == 1, "Drawing from empty deck ends demo
 Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over");
 GraphicsTests.Run(Check, Reject);
 NativeRngTests.Run(Check);
+CpuDeckSelectionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));

@@ -1,0 +1,83 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005bed30
+TRANSIENT FUNCTION 005bed60
+TRANSIENT FUNCTION 005beda0
+TRANSIENT FUNCTION 004834a0
+REFERENCES TO 0040f180
+REFERENCES TO 00446df0
+ XREF From: 00447056 To: 00446df0 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION none
+REFERENCES TO 005bee30
+ XREF From: 004834ae To: 005bee30 Type: UNCONDITIONAL_CALL Op: 0 DEFAULT FUNCTION 004834a0
+REFERENCES TO 0040f140
+ XREF From: 005eb03c To: 0040f140 Type: DATA Op: 0 DEFAULT FUNCTION none
+FUNCTION FUN_005bed30 @005bed30
+ CALLER 00446edd FUN_00446df0
+
+void FUN_005bed30(int param_1)
+
+{
+  uint uVar1;
+  
+  uVar1 = *(uint *)(&DAT_00a54db8 + param_1 * 4);
+  if ((uVar1 & 0x7ff) < 0x7ff) {
+    *(uint *)(&DAT_00a54db8 + param_1 * 4) = (uVar1 + 1 ^ uVar1) & 0x7ff ^ uVar1;
+  }
+  return;
+}
+
+
+FUNCTION FUN_005bed60 @005bed60
+ CALLER 00446ed0 FUN_00446df0
+
+void FUN_005bed60(int param_1)
+
+{
+  uint uVar1;
+  
+  uVar1 = *(uint *)(&DAT_00a54db8 + param_1 * 4);
+  if ((uVar1 & 0x3ff800) < 0x3ff800) {
+    *(uint *)(&DAT_00a54db8 + param_1 * 4) =
+         ((uVar1 & 0xfffff800) + 0x800 ^ uVar1) & 0x3ff800 ^ uVar1;
+  }
+  return;
+}
+
+
+FUNCTION FUN_005beda0 @005beda0
+ CALLER 00446ec3 FUN_00446df0
+
+void FUN_005beda0(int param_1)
+
+{
+  uint uVar1;
+  
+  uVar1 = *(uint *)(&DAT_00a54db8 + param_1 * 4) & 0xffc00000;
+  if (uVar1 < 0xffc00000) {
+    *(uint *)(&DAT_00a54db8 + param_1 * 4) =
+         uVar1 + 0x400000 ^ *(uint *)(&DAT_00a54db8 + param_1 * 4) & 0x3fffff;
+  }
+  return;
+}
+
+
+FUNCTION FUN_004834a0 @004834a0
+ CALLER 004458d9 FUN_00445840
+ CALLER 0046e3e6 FUN_0046e260
+ CALLER 0047db64 FUN_0047daa0
+ CALLER 0047dd6c FUN_0047dce0
+ CALLER 00421d09 null
+ CALLER 0048a762 null
+ CALLER 0048a8a4 null
+ CALLER 00446e8f FUN_00446df0
+
+undefined4 FUN_004834a0(void)
+
+{
+  undefined4 uVar1;
+  
+  uVar1 = FUN_00483440();
+  FUN_005bee30();
+  return uVar1;
+}
+
+

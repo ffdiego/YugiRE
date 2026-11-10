@@ -1,8 +1,8 @@
 # Checkpoint — seleção de decks da CPU
 
 ## Objetivo atual
-Fechar o contrato dos bytes de perfil `0x00A54DB3` e `0x00A54DB4`, o RNG
-de `0x0055C140` e a relação entre suas tabelas e as estrelas exibidas.
+Fechar progressão por resultados, gates de match, limites e apresentação das
+estrelas; depois completar caminhos alternativos e falsificadores Windows.
 Trabalho exclusivamente estático no Joey; branch `main`.
 
 ## Descobertas confirmadas
@@ -25,8 +25,12 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 ## Hipóteses em investigação
 - `A54DB3` representa dificuldade base e `A54DB4` configuração do pool.
   **Semântica ainda não confirmada:** seguir leitores/escritores e UI.
-- `0x0055C140` é um gerador de estado 624 palavras, twist/tempering estilo MT;
-  global `0x005F25E8`. Seed, inicialização e chamadas indiretas em investigação.
+- `0x0055C140` é MT compartilhado UI/deck. Construtor `0x0040F150` põe índice
+  625; primeiro Next usa seed 4357 via `0x0055C0E0` (LCG 69069 duas vezes/palavra).
+  `0x0040F180` é **leitor de snapshot**, não seed; consumidor virtual pendente.
+- `0x00446DF0` guarda sequência de resultado=1 versus demais em `A54DAF/DB0`;
+  muda base só quando `005F3254 != 0`, com limiares `005DAF40/005DAF64`.
+  `0x0044B950`: modos 0,1,3; `0x0044B970`: modo1 (match), `0x0044B980`: modo3.
 - Condições de progressão e caminhos alternativos ainda não fechados.
 
 ## Caminhos descartados / limites
@@ -38,9 +42,11 @@ Trabalho exclusivamente estático no Joey; branch `main`.
   mais evidência toolchain, devem permanecer fora dos commits desta pesquisa.
 
 ## Próximos passos prioritários
-1. Ler `evidence/cpu-deck-rng-seed-method.txt` e `cpu-deck-rng-vtable-and-progression-gates.txt`.
-2. Fechar seed/inicialização do RNG e progresso: `0x00446DF0`, `0x0044BAF0`,
+1. Fechar progresso: `0x00446DF0`, `0x0044BAF0`,
    `0x005BBF60`, UI `0x00489490` e opções `0x00488F50` / `0x0048AA10`.
+   Limiar win níveis1..8: 3,4,5,5,5,6,6,7; loss níveis2..9:3,4,4,4,4,3,2,2.
+   Gate modeword40 e resultado3 (draw?) exigem cuidado semântico.
+2. Conferir caller `00447056`, resultados `005BBF60` e estado persistido.
 3. Tabelas já extraídas e validadas: 21 CPU + 37 FUL distintos, 58 YDC válidos.
 4. Seguir callers do seletor em cenas 0/1, Demo e rematch.
 5. Implementar modelo verificável e pseudocódigo C#; preparar falsificadores Windows.
@@ -48,14 +54,15 @@ Trabalho exclusivamente estático no Joey; branch `main`.
 ## Última ação realizada
 Consultas Ghidra em `cpu-deck-normal-entry.txt`, `cpu-deck-stream-and-callsite.txt`;
 inspeção de instruções do seletor e tabelas no EXE, inventário direcionado do DAT.
-Extração completa em `cpu-deck-selection-tables.json`, quatro testes passaram.
-Relatório técnico em `cpu-deck-selection.md`. RNG construtor `0x0040F150`
-coloca índice 625; ainda conferir método virtual `0x0040F180` que pode semear.
-**Ler as duas consultas listadas no próximo passo antes de repeti-las.**
+Build passou; 221 verificações C# passaram. Implementados seletor e MT em
+`CpuDeckSelection.cs` / `NativeDeckRng.cs`, sem ligação ao demo. Quatro testes
+Python do extrator passaram. Última consulta `cpu-deck-result-counters-and-state.txt`
+contém contadores por resultado e loader do perfil; já foi lida.
 
 ## Commits relevantes
 - `e1bd36c`: cadeia cena→loader→recurso e seletor anterior, checkpoint inicial.
-- Unidade seguinte: tabelas extraídas, YDC conferidos e primeiros campos do perfil.
+- `5458908`: tabelas extraídas, 58 YDC conferidos e primeiros campos do perfil.
+- Próxima unidade: seletor C# e RNG MT transcritos, 221 verificações.
 
 ## Bloqueios
 Nenhum para seguir estaticamente. A captura normal de 1 estrela descrita pelo

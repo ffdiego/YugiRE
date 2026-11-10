@@ -109,3 +109,52 @@ fica para a próxima unidade verificável.
 - `../evidence/cpu-deck-pool-progression.txt`
 - `../evidence/cpu-deck-pool-options-and-result.txt`
 - `../evidence/cpu-deck-selection-tables.json`
+
+## RNG da seleção e implementação C#
+
+`src/Joey.Core/CpuDeckSelection.cs` transcreve o seletor, separado do duelo
+de demonstração. `Select(base,pool,uint)` reproduz a seleção a partir de um
+valor já observado; `SelectNext` consome exatamente uma saída do gerador
+fornecido pelo chamador. Isso permite testar o lookup sem fingir que possuímos
+o histórico inteiro de um processo original.
+
+`src/Joey.Core/NativeDeckRng.cs` transcreve `0x0055C140`, objeto global em
+`0x005F25E8`: 624 palavras de estado, índice em `+0x9C4`, twist com deslocamento
+397 e máscara `0x9908B0DF`, tempering shifts 11/7/15/18. Os masks anteriores
+aos shifts observados equivalem, em uint32, aos masks MT `9D2C5680/EFC60000`.
+Isso é uma instância MT com inicialização antiga, **não** o `NativeRng` CRT.
+
+`0x0040F150`, alcançado pela entrada de inicialização estática `0x005EB03C`
+→ `0x0040F140`, configura o vtable e o índice 625. `0x0055C140`, ao encontrar
+625, chama `0x0055C0E0(4357)`. A inicialização de cada palavra faz:
+
+```text
+high = seed & 0xFFFF0000
+seed = uint32(seed * 69069 + 1)
+state[i] = high | (seed >> 16)
+seed = uint32(seed * 69069 + 1)
+```
+
+O primeiro valor de um gerador recém-construído é `2867219139`; isso não
+afirma que seja o valor consumido ao iniciar um duelo real. UI, seleção de
+cartas e outras rotas também o consomem. Não foi visto reset de RNG dentro
+do seletor. O método virtual `0x0040F180` também pode desserializar as 624
+palavras mais o índice; seus consumidores indiretos ainda precisam ser fechados.
+Portanto a seed padrão explica inicialização limpa, não todos os estados possíveis.
+
+Testes C#: 14 linhas comparadas com JSON extraído do EXE, todos os slots
+atingíveis, clamps de bytes, uint máximo, consumo de uma saída e sobreposição
+de recursos. Sequências de 1250 saídas para seeds 0,1,4357,FFFFFFFF cruzam
+vários twists e conferem com CPython `random.setstate`/`getrandbits(32)`, usando
+as palavras de inicialização construídas pela recorrência nativa acima.
+O seed do `random.Random` do Python não é usado como equivalência de seeding.
+Snapshot/restauração também conferidos. **Não houve execução nativa do Joey**;
+esses testes validam a transcrição matemática e as tabelas.
+
+Build da solução passou, 221 verificações C# com DAT/deck local passaram
+após a adição dessa unidade. Fixtures dinâmicos opcionais de outras sessões
+dependem das variáveis de ambiente e não são presumidos presentes.
+
+Evidência adicional: `cpu-deck-rng-initialization.txt`,
+`cpu-deck-rng-vtable-and-progression-gates.txt`, `cpu-deck-rng-seed-method.txt`,
+`cpu-deck-result-counters-and-state.txt` em `../evidence/`.
