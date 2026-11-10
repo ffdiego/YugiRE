@@ -8,9 +8,127 @@ Não usar `native_rules.py --spawn`, aplicar patches ou editar perfil/save.
 Os duelos e opções usados normalmente pelo operador podem salvar progresso;
 a instrumentação proposta somente observa.
 
-Todos os endereços são VA da base `00400000`; se a base observada diferir,
-usar `base_real + (VA - 00400000)`. Capturas de vários endereços precisam
-ser feitas com o processo pausado para evitar misturar atualizações.
+Todos os endereços são VA da base `00400000`. O observador automatizado
+recusa outra base: este EXE não tem relocations utilizáveis. Os callbacks
+leem no thread interceptado, sem pausar globalmente os demais threads;
+snapshots não são atômicos em relação a consumidores concorrentes do MT.
+
+## Captura automatizada pronta — attach passivo
+
+Executar do diretório raiz do repositório no Windows, com Python + Frida
+(venv já existente pode ser reutilizado) e .NET 10 para a comparação:
+
+```powershell
+py -3 -m venv native_rules/.venv-frida
+.\native_rules\.venv-frida\Scripts\python.exe -m pip install frida
+```
+
+1. Inicie **manualmente** o `joey_pc.exe` original e aguarde o menu.
+2. Confira o PID com `Get-Process joey_pc`. Se houver mais de um, selecione
+   explicitamente o processo desejado. Anexe sem opções de spawn:
+
+```powershell
+.\native_rules\.venv-frida\Scripts\python.exe .\native_rules\native_rules.py --observe-only --pid 2240
+```
+
+Substitua `2240` pelo PID atual. Não precisa compilar/carregar a DLL nativa.
+A abertura do observador exige SHA do arquivo apontado pelo módulo carregado;
+`trace deck on` verifica também base, bytes exatos dos cinco pontos e
+permissões das regiões de memória antes de instalar qualquer hook do deck.
+EXE correto no disco com hook/patch incompatível em memória será recusado.
+
+No console do laboratório, um comando por linha:
+
+```text
+trace on 20000
+trace deck on mt
+trace mark menu-1-estrela-pool-desligado
+```
+
+`mt` é opcional: `trace deck on` captura perfil, roll, caminho e source
+sem ler as 624 palavras do gerador. Não habilite `trace demo`: os conjuntos
+são mutuamente exclusivos. Overrides de seed/deck/speed/mutex são recusados
+junto ao observador de decks. Não há escrita em memória de dados nem chamadas
+nativas pelo novo módulo; Frida instala e remove seus próprios trampolins.
+
+3. Na janela original, entre em um **novo Single Duel** pelo menu e espere
+   aparecer o campo/mão. Não é necessário concluir o duelo ou conseguir uma
+   carta específica. Anote estrelas e opção de cartas permitidas.
+4. No console:
+
+```text
+trace deck off
+trace off
+trace dump
+stop
+```
+
+`trace off` também desativa o observador de decks, caso pule a primeira linha.
+`trace dump` informa o arquivo exclusivo salvo em
+`scratch/traces/commands-<UTC>-pid<PID>.jsonl`. `stop` desanexa do processo
+iniciado manualmente. A instrumentação não acessa saves; o jogo pode salvar
+seu progresso durante ações normais da UI.
+
+Compare, ainda da raiz do repositório:
+
+```powershell
+dotnet run --project .\src\tools\Joey.DeckTrace -- ".\scratch\traces\commands-<arquivo>.jsonl" "..\passion\data.dat"
+$LASTEXITCODE
+```
+
+Use o caminho real do DAT original. O comparador verifica seu SHA, lê os YDC
+sem extraí-los para disco e resolve IDs físicos pelo catálogo do DAT.
+O relatório JSON lista seleções normais e problemas específicos:
+
+| Exit code | Interpretação |
+| --- | --- |
+| 0 | Uma ou mais cadeias normais completas concordam em perfil→roll→caminho→source; MT também concorda quando capturado. |
+| 1 | Divergência encontrada: caminho, site RNG, saída MT ou listas/count/ordem do source. Veja `Issues`; não declarar refutação se também houver lacunas. |
+| 2 | Evidência insuficiente/incompatível: hook tardio, erro de leitura, overflow, cadeia ambígua, load falhou, Demo apenas, arquivo truncado ou fingerprint incorreto. |
+
+Um `ExitCode=0` valida as escolhas registradas, não todas as dificuldades.
+`NormalSelections[].MtChecked=false` significa que o MT não foi comparado.
+Se um YDC externo sobrescrever o recurso do DAT sob o mesmo caminho, a
+comparação do source apontará divergência; investigar a resolução do arquivo
+antes de atribuir isso ao seletor. Não remover nem substituir arquivos para
+este teste. Para novas capturas, iniciar `trace on` novamente e anexar o
+JSONL inteiro, sem cortar a linha de metadata ou eventos de outra espécie.
+
+### Correlação e limites
+
+- `deck_selection`: enter (caller/thread/perfil/cena/MT opcional), rng
+  (EAX uint32 e site), leave (string devolvida). `selectionId` identifica
+  o sorteio em todos os estágios; `sceneId`/`loadId` identificam chamadas.
+- `deck_scene`: caller conhecido + thread + ponteiro do char* + caminho
+  vinculam a seleção externa à cena. O modo global na entrada do seletor
+  pode ser da cena anterior; a classificação usa a cena solicitada.
+- `deck_loader`: tipo e string por valor na entrada; retorno e leitura
+  única de `E2` bytes do source1 na saída, antes de shuffle. O comparador
+  normal exige retorno de chamada `0044C0E8`, tipo1 e resultado0.
+- Demo7 tem seleção externa/interna e ordem de load invertida, preservadas
+  por frames por thread; ele não conta como validação normal. Cena2 pode
+  reutilizar o deck sem seleção: um trace só de rematch é inconclusivo.
+- Eventos compartilham o buffer limitado do trace existente. `overwritten`
+  ou sequências ausentes invalidam um resultado positivo. Erros de leitura
+  são explícitos; não há substituição por arrays vazios ou RNG zero.
+- MT é lido antes do sorteio, na entrada do seletor. Uma divergência isolada
+  do MT também exige verificar consumo concorrente por outro thread.
+
+### Validação local sem executar o Joey
+
+```text
+node native_rules/tests/test_deck_trace.cjs
+node native_rules/tests/test_loader.cjs
+node native_rules/tests/test_demo_rng_seed.cjs
+python -m unittest discover -s native_rules/tests -p test_console_commands.py
+python -m unittest discover -s native_rules/tests -p test_deck_trace_preflight.py
+dotnet build YugiRE.sln
+dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat ../passion/deck.ydc
+```
+
+Testes usam ABI/memória simuladas e fixtures sintéticas, além dos recursos
+reais somente para leitura. Nenhuma captura dinâmica Windows foi feita no
+Fedora. Evidência da ABI: `docs/evidence/cpu-deck-observer-abi.txt`.
 
 ## A. Uma seleção normal inteira — prioridade máxima
 

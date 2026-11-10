@@ -1,5 +1,12 @@
 # YugiRE Native Rules
 
+Para validar a seleção de decks em um processo **iniciado manualmente**,
+use `native_rules.py --observe-only --pid <PID>`, `trace on 20000` e
+`trace deck on mt`. O [protocolo completo](../docs/research/cpu-deck-selection-windows-validation.md)
+inclui exportação JSONL e comparação com o modelo C# e o DAT. Este observador
+não usa spawn, DLL, substituição de decks nem alteração de cartas/saves.
+
+
 > **Execução automatizada por quantidade de duelos:** use a nova
 > [interface YugiLab](../yugilab/README.md) (`python -m yugilab`) na raiz
 > do repositório. Ela cria um PID próprio, grava um JSONL contínuo

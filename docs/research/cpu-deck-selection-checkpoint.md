@@ -87,7 +87,8 @@ são evidência dinâmica. CLI testada separadamente com DAT real e duas cadeias
 sintéticas: exit0; roll alterado:exit1; arquivo truncado:exit2.
 Node: módulo de ABI, loader/RPC e Demo RNG passaram; inclui threads,
 reentrância, Demo com mesmo caminho e loads invertidos, rollback/teardown.
-Console Python:33 testes passaram. Suíte native_rules completa:78 testes,
+Console Python:33 testes passaram. Teste PE real:5 assinaturas conferidas.
+Suíte native_rules completa:79 testes,
 1 erro legado `test_capture_rotation` exige detach antes de kill; reproduzido
 com fonte anterior `e9d0a4b`, sem executar nenhum processo do jogo.
 Suíte Python raiz já tinha2 imports legados (compare_ydr e pe_preflight em
@@ -98,6 +99,7 @@ e os437 checks foram repetidos com sucesso após a mudança. Originais EXE/DAT m
 ## Commits relevantes
 - `5222a50`: observador passivo, ABI, console e primeiras simulações.
 - `2e14eab`: comparador C#/CLI e testes de divergências/incompletude/MT.
+- `89e1a6f`: Demo/reentrância/detach retry, correlação e cobertura58 DAT.
 - Base estática: `e1bd36c`, `5458908`, `c560b9e`, `36399ce`, `716802c`,
   `432b661`; consolidação `e9d0a4b` já estava no origin/main.
 - Novos commits desta tarefa ainda não enviados ao remoto.

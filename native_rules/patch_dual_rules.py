@@ -605,6 +605,8 @@ def main(argv: list[str] | None = None) -> int:
             state = api.installobserver()
             print("[dual-rules] OBSERVER ONLY: no DLL load, no card callback "
                   "replacement; native actions disabled.", flush=True)
+            print("[dual-rules] Normal deck capture: trace on 20000 / trace deck on mt / "
+                  "start a normal duel / trace off / trace dump", flush=True)
             print("[dual-rules] Demo capture: trace on 20000 / trace ai on / "
                   "trace demo on / trace mark esperando-demo", flush=True)
         else:
