@@ -344,3 +344,41 @@ pseudocódigo: o wrapper de consultas permanece em modo readOnly.
 persistido e os argumentos de rotas alternativas: rematch2 em `004764EE`,
 cena6 em `0048E389`, cena3 em `0042155B` e cena4 em `0048B1FC`.
 Não são chamadas substitutas dos novos duelos normais em modos0/1.
+
+## Cobertura das perguntas e limites finais
+
+| Pergunta | Resposta estática / limite |
+|---|---|
+| Onde fica a dificuldade? | Base em A54DB3, pool em A54DB4, ambos persistidos na imagem de system.dat; UI usa soma com offset do pool. |
+| Como vira opções? | Clamp da base/nível efetivo e lookup das tabelas CPU/FUL, conforme matriz acima. |
+| Quantos decks por nível? | CPU:5 por linha1..7; FUL:3,7,6,7,6,6,6 nas linhas3..9. Total58 mains distintos. |
+| Como escolhe? | Uma saída uint32 de MT compartilhado, módulo do número de opções; não há rejeição de repetidos na função. |
+| O que altera a escolha? | Base/progresso, pool, estado MT e novo duelo versus rematch; override de recurso pode alterar o conteúdo carregado. |
+| Como reproduzir? | CpuDeckSelection + NativeDeckRng + CpuDifficultyProgression + leitor DeckFile/Archive existentes. |
+| O que falta observar? | Mesma captura normal contendo perfil, MT/roll, caminho e source; integrações de progresso/empate e identificação da ação que gera comando40. |
+
+Não instanciar um MT novo por duelo para alegar paridade com o original:
+seu objeto é global e outros consumidores avançam a sequência. Uma reprodução
+independente pode escolher sua política de RNG, mas essa política deve ser
+identificada como tal. Nenhuma das novas classes foi ligada ao demo/IA
+automaticamente nesta etapa.
+
+O próximo experimento com poder de refutação está em
+[validação Windows](cpu-deck-selection-windows-validation.md). O caminho
+normal e as tabelas não dependem de capturar 58 duelos: roll e estado coerentes
+numa única chamada permitem confrontar cada elo da previsão. Frequências,
+timing do processo e consumidores indiretos do snapshot MT permanecem limites
+de observação; não foram convertidos em certezas a partir de decompilação.
+
+### Verificações no fechamento
+
+- Build da solução: passou, sem warnings/erros; 341 verificações C# com DAT
+  e deck local passaram. Sem fixtures extras por variável de ambiente.
+- Quatro testes Python novos do extrator: passaram; os 58 recursos e
+  fingerprints foram conferidos novamente. EXE original intacto.
+- Suíte Python geral:104 testes,2 erros de importação,1 skip. Dois testes
+  legados ainda apontam para `experiments/hybrid_probe/compare_ydr.py` e
+  `experiments/hybrid_probe/pe_preflight.py`, removidos/movidos anteriormente
+  na main. Não foram restaurados nem alterados nesta investigação.
+- Nenhuma execução do Joey, alteração de save, patch ou novo teste visual.
+  Banco Ghidra recebeu apenas as anotações explicitadas acima.

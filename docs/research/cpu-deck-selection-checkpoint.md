@@ -1,93 +1,114 @@
 # Checkpoint — seleção de decks da CPU
 
 ## Objetivo atual
-Finalizar limites da especificação, anotações persistentes e protocolo Windows
-passivo. Presets, resolução de recursos e caminhos normal/match/Demo já mapeados.
-Trabalho exclusivamente estático no Joey; branch `main`.
+A seleção normal foi especificada e transcrita em C#. Próxima etapa útil:
+confrontar perfil→roll→caminho→source em um duelo normal no Windows, conforme
+[protocolo](cpu-deck-selection-windows-validation.md). Não repetir a análise
+estática inicial. Trabalho na `main`; gráficos continuam fora desta etapa.
 
 ## Descobertas confirmadas
-- EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
-  Endereços são VA, base `0x00400000`.
-- Cena 0/1 em `0x0044BEE0` carrega deck do jogador por `0x0044AA00`, depois
-  chama `0x0044A920(1, caminho)` em `0x0044C0E3` (retorno `0x0044C0E8`).
-  O caminho vem do segundo argumento da configuração de cena.
-- `0x0044A920` abre o recurso por `0x0055DA10` e encaminha tipo 1 para
-  `0x0044A690`, que desserializa no source slot 1 `0x00A54F42`.
-- **Seletor efetivo: `0x0044BBE0`**, chamado antes da configuração de cena.
-  Byte `A54DB4 == 0`: normaliza `A54DB3` a 1..7, usa cinco posições por nível
-  na tabela `0x005DB158`, nome `data/J/file/CPU_NNN.ydc`.
-  Byte não zero: `clamp(A54DB3 + 2*A54DB4,3,9)`; contagens em `0x005DB080`,
-  matriz de sete posições por linha em `0x005DB0A8`; nome `data/J/file/FUL_*.ydc`.
-- Ambos usam `0x0055C140` e redução por módulo; não é `0x005BDDB0` do shuffle.
-- Recursos CPU/FUL correspondentes existem no DAT. Não é necessário gerar
-  composição procedural para explicar essa rota.
+- Alvo Joey SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
+  Endereços VA, base `00400000`. Não executar o original no Fedora.
+- Seletor: **0044BBE0**, agora `SelectCpuDeckResourcePath_0044BBE0`.
+  Perfil: base byte `A54DB3`, pool booleano `A54DB4`.
+  Pool0: clamp(base,1,7), cinco opções CPU por nível.
+  Pool1: clamp(base+2,3,9), opções FUL por nível: 3,7,6,7,6,6,6.
+- Tabelas: CPU `005DB158` (linha0 inválida), FUL contagens `005DB080`,
+  matriz `005DB0A8`. **21 CPU + 37 FUL = 58 recursos e 58 mains distintos**.
+  Todos existem e são válidos no DAT fixado. CPU contém somente pack4;
+  FUL inclui cartas das edições anteriores. Não é geração procedural.
+- Uma escolha consome um uint32 do **MT global 005F25E8**, `0055C140`,
+  reduzido por módulo. É separado do RNG CRT do shuffle.
+  Construtor `0040F150`: índice625; primeiro Next semeia4357 por `0055C0E0`,
+  inicialização antiga LCG69069 duas vezes/palavra. UI e outros caminhos
+  consomem o mesmo estado: não recriar o gerador a cada duelo.
+- Fonte normal: caller seleciona caminho → configuração `0044BEE0` cena0/1
+  → loader `0044A920` tipo1, caller/retorno `0044C0E3/0044C0E8`
+  → parser `0044A690` → source1 `A54F42` → `00569380` → shuffle `00568D80`.
+- Recurso virtual `data/J/file/...` corresponde a `j\file\...` no DAT.
+  Resolvedor tenta caminho externo antes do fallback em archives. Overrides
+  podem alterar bytes sob o mesmo nome, não o algoritmo de seleção.
+- Estrelas estáveis: base+2*pool, limitado a9 na apresentação. DB2 é base
+  anterior; UI reconhece mudança copiando DB3→DB2. Pool pode habilitar no
+  primeiro perfil pela posse de cartas de edições anteriores (`005BEDD0`)
+  e ser alterado pela opção da UI em `0048AA10`.
+- Progresso: `00446DF0`; DAF=classe anterior, DB0=streak saturado255,
+  DB1=inicializado. Resultado1 aumenta; demais entram na classe não vitória.
+  Gates: cena3 retorna; flag40 bypass; match incompleto adia mudança.
+  Limiares extraídos de `005DAF40/005DAF64`, documentados no relatório.
+- Rematch cena2 reutiliza composição; novos duelos0/1 sorteiam. Demo7 faz
+  duas escolhas: externo é sorteado antes, mas carregado depois do interno.
+- Presets Demo A/B/C correspondem exatamente a FUL_0GE1/0VAL/0UMI, a linha
+  FUL3, nas três listas e na ordem. Arquivo [main,list1,list2] vira source
+  [main,second=list2,third=list1] por `00449EF0`.
+- Implementações isoladas: `CpuDeckSelection.cs`, `NativeDeckRng.cs`,
+  `CpuDifficultyProgression.cs`. Não foram ligadas ao demo nem à IA.
+- 12 funções nomeadas no banco persistente; relatório e script versionados.
+  Original EXE conferido novamente e intacto. Não reimportar/reanalisar.
 
-## Hipóteses em investigação
-- `A54DB3` representa dificuldade base e `A54DB4` configuração do pool.
-  **Semântica ainda não confirmada:** seguir leitores/escritores e UI.
-- `0x0055C140` é MT compartilhado UI/deck. Construtor `0x0040F150` põe índice
-  625; primeiro Next usa seed 4357 via `0x0055C0E0` (LCG 69069 duas vezes/palavra).
-  `0x0040F180` é **leitor de snapshot**, não seed; consumidor virtual pendente.
-- `0x00446DF0` guarda sequência de resultado=1 versus demais em `A54DAF/DB0`;
-  muda base só quando `005F3254 != 0`, com limiares `005DAF40/005DAF64`.
-  `0x0044B950`: modos 0,1,3; `0x0044B970`: modo1 (match), `0x0044B980`: modo3.
-- Progresso transcrito em `CpuDifficultyProgression.cs`: limiares, agregação de
-  match, saturação, flag40 e modo3. Build e 255 verificações passaram.
-- Escritor da flag40: comando40 → `00408410`, zera LP e seta0x240; semântica
-  provável desistência/aborto, produtor UI ainda não identificado.
-- Presets A/B/C conferem **as três listas e ordem** com FUL_0GE1/0VAL/0UMI.
-  As listas adicionais do arquivo trocam ordem no source; 341 checks C# passaram.
-- Rematch cena2 não sorteia/recarrega deck; novos modos0/1 o fazem.
-  Demo7 sorteia dois caminhos, primeiro o externo, depois o interno; carrega
-  interno no source0 e externo no source1 antes da distribuição aos lados.
-- Condições de progressão e caminhos alternativos ainda não fechados.
+## Hipóteses e lacunas restantes
+- Comando40 → `00408410` zera LP e seta0x240. Provável desistência/aborto,
+  mas falta identificar a ação da UI em captura para fechar esse nome.
+- `0040F180` desserializa MT por método virtual; consumidor indireto não
+  identificado. Isso não altera a especificação do seletor dado seu estado.
+- A captura normal de uma estrela relatada pelo operador não contém aqui
+  perfil/roll/caminho correlacionados. Main43 é compatível com CPU_002 na
+  linhaCPU1, mas tamanho sozinho não identifica o deck.
+- Frequências reais e igualdade com snapshots de um processo Windows não
+  foram medidas. Viés residual do módulo foi preservado, sem inventar pesos.
 
-## Caminhos descartados / limites
-- Não deduzir quantidade de decks normais dos três presets observados no Demo.
-- `0x0044A920` carrega um caminho já escolhido; seguir só esse loader perde o seletor.
-- Linha zero da tabela CPU e índices 0..2 de contagens FUL não são linhas válidas.
-- Ghidra 12.2 existente e wrapper funcionais; não reimportar/reanalisar.
-- Alterações locais preexistentes em docs/15, scripts/README e wrapper,
-  mais evidência toolchain, devem permanecer fora dos commits desta pesquisa.
+## Caminhos descartados
+- Três presets Demo não limitam o catálogo normal; agora sua origem é FUL3.
+- Seguir só loader ou shuffle não revela seleção: caminho vem antes.
+- Não chamar DB3 sozinho de estrelas em ambos os pools; somar offset do pool.
+- Não usar a seed CRT do shuffle para prever o MT de seleção.
+- Não tratar linhas inválidas das tabelas como opções ou ponteiros válidos.
+- Não inferir nomes modernos das duas listas adicionais apenas por tamanho.
 
-## Próximos passos prioritários
-1. Conferir relatório `cpu-deck-ghidra-symbols.txt` e script de renomeação:
-   execução persistente já concluída com Save succeeded e 12 funções nomeadas.
-2. Consolidar protocolo Windows: breakpoint no seletor, MT antes/depois, loader,
-   bytes de perfil e rematch. Não usar spawn nem alterar perfil/save.
-3. Tabelas já extraídas e validadas: 21 CPU + 37 FUL distintos, 58 YDC válidos.
-4. Seguir callers do seletor em cenas 0/1, Demo e rematch.
-5. Implementar modelo verificável e pseudocódigo C#; preparar falsificadores Windows.
+## Próximos passos priorizados
+1. Operador Windows: teste A do protocolo, processo manual + attach; observar
+   `0044BBE0`, `0044BDA5` ou `0044BC84`, retorno do loader `0044C0E8`.
+2. Comparar snapshot MT e uint32 com `NativeDeckRng.FromSnapshot`, e caminho
+   com `CpuDeckSelection.Select`; conferir main pelos IDs do DAT.
+3. Se houver divergência, seguir o primeiro elo divergente (perfil, RNG,
+   caminho, resolução do recurso ou parser), sem repetir inventários.
+4. Testar pool, rematch, progressão e comando40 nas condições do protocolo.
+   Não usar spawn, editar saves, aplicar patches ou forçar comandos.
+5. Somente depois integrar o modelo ao futuro motor/orquestrador, se solicitado.
 
 ## Última ação realizada
-Extrator revalidado; build e 341 verificações C# passaram novamente após
-limiares passarem a usar evidência extraída. Símbolos persistentes conferidos
-por `cpu-deck-alternate-scene-calls.txt`. Preparar protocolo Windows final.
-Consultas Ghidra em `cpu-deck-normal-entry.txt`, `cpu-deck-stream-and-callsite.txt`;
-inspeção de instruções do seletor e tabelas no EXE, inventário direcionado do DAT.
-Build e 341 verificações C# passaram, incluindo 58 recursos originais e
-capturas das três listas. Quatro testes Python do extrator passaram.
-`RenameCpuDeckSelection.java` já executado: 12 funções nomeadas no banco,
-Save succeeded. Uma primeira execução falhou por cache path relativo;
-segunda execução usou caminhos absolutos e concluiu. Não repetir sem necessidade.
+Build sem warnings/erros e **341 verificações C# passaram**, incluindo DAT,
+58 decks, três presets completos, RNG e limiares. **4 testes Python novos
+passaram**. Suíte Python geral:104 casos,2 erros de import legados,1 skip:
+`tests/test_joey_compare_ydr.py` espera `experiments/hybrid_probe/compare_ydr.py`,
+`tests/test_joey_hybrid_preflight.py` espera `experiments/hybrid_probe/pe_preflight.py`.
+Arquivos foram removidos/movidos em trabalho anterior da main; não restaurados
+ou alterados nesta etapa. Não confundir essa pendência com falha do seletor.
+`RenameCpuDeckSelection.java` aplicou nomes com Save succeeded; consulta
+`cpu-deck-alternate-scene-calls.txt` confirmou o símbolo persistente.
+Protocolo Windows preparado; nenhum jogo foi executado nesta investigação.
 
 ## Commits relevantes
-- `e1bd36c`: cadeia cena→loader→recurso e seletor anterior, checkpoint inicial.
-- `5458908`: tabelas extraídas, 58 YDC conferidos e primeiros campos do perfil.
-- `c560b9e`: seletor C# e RNG MT transcritos, 221 verificações.
-- `36399ce`: progressão do perfil, gates e consulta direcionada de escritores.
-- `716802c`: correspondência das três listas dos presets e confirmação dos pools.
-- Unidade atual: nomes persistentes, 58 mains distintos e limiares extraídos como oráculo.
+- `e1bd36c`: cadeia normal e checkpoint inicial.
+- `5458908`: tabelas e recursos CPU/FUL; extrator reproduzível.
+- `c560b9e`: seletor C# e MT legado, referência independente.
+- `36399ce`: progressão, match, flag40 e consulta writers:VA.
+- `716802c`: presets completos, pools e caminhos alternativos.
+- `432b661`: nomes persistentes, mains distintos, limiares como oráculo.
+- Fechamento documental: protocolo e checkpoint consolidado nesta versão.
 
-## Bloqueios
-Nenhum para seguir estaticamente. A captura normal de 1 estrela descrita pelo
-operador ainda não foi correlacionada a caminho/estado exatos; não executar
-Joey no Fedora nem usar `native_rules.py --spawn`. Se necessário, definir
-experimento Windows passivo com endereço, momento e valores esperados.
+## Bloqueios / preservação
+Falta ambiente Windows para corroboração dinâmica; não bloqueia o modelo
+estático já entregue. Nenhuma decisão do operador é necessária para entender
+as tabelas. Preservar alterações locais anteriores em docs/15,
+scripts/README, wrapper e evidências toolchain: não pertencem a esta pesquisa.
+Não houve push dos commits desta etapa.
 
-## Evidências a consultar
-- `../evidence/joey-star-level-vs-demo-deck-selection-2026-11-09.md`
-- `../evidence/cpu-deck-normal-entry.txt`
-- `../evidence/cpu-deck-stream-and-callsite.txt`
-- `../evidence/cpu-deck-profile-and-rng.txt`
-- [Relatório técnico](cpu-deck-selection.md) e arquivos de evidência nele referenciados.
+## Documentos de entrada
+- [Especificação, endereços, tabelas e referências de evidência](cpu-deck-selection.md).
+- [Experimentos Windows precisos](cpu-deck-selection-windows-validation.md).
+- `../evidence/cpu-deck-selection-tables.json`: hashes, contagens e limiares.
+- `../evidence/cpu-deck-ghidra-symbols.txt`: aplicação dos nomes; script Java
+  reproduzível `scripts/RenameCpuDeckSelection.java`.
+- `../evidence/joey-star-level-vs-demo-deck-selection-2026-11-09.md`: captura
+  histórica, agora ligada aos resultados posteriores.

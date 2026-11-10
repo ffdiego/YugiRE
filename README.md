@@ -15,6 +15,12 @@ Requer SDK .NET 10 e uma cópia local dos dados do jogo.
 [Execução no Windows, controles e limitações](src/README.md).
 [Documentação da análise](docs/00-overview.md).
 
+Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-deck-selection.md),
+[checkpoint operacional](docs/research/cpu-deck-selection-checkpoint.md) e
+[validação passiva no Windows](docs/research/cpu-deck-selection-windows-validation.md).
+O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
+a comparação dinâmica completa de um duelo normal ainda está pendente.
+
 ## Módulo Native Rules (C++ / DLL x86)
 
 Os efeitos nativos de Sparks e Raimei e o console interativo de duelo estão em
