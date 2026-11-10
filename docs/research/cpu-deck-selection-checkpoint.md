@@ -69,18 +69,81 @@ O [protocolo](cpu-deck-selection-windows-validation.md) contém comandos exatos.
   https://github.com/frida/frida/issues/2944.
 - Corrigido para `Interceptor.attach(site, function () {...})` sem onLeave,
   mantendo os listeners em entradas reais de funções. O teste de simulação
-  agora exige essa distinção. **Não testado ainda no Windows**: tratar como
-  hipótese corretiva, não correção validada.
-- Não repetir duelos com a versão anterior. Após pull e testes locais,
-  testar apenas com backup do save e processo manual; se o crash persistir,
-  suspender os probes internos e reduzir para hooks de entrada/saída
-  previamente conhecidos, isolando a origem com dump/registradores.
+  agora exige essa distinção. **Validado depois em duas capturas Windows
+  sem crash**, uma com snapshot MT, mas não estabelecido como correção
+  universal de qualquer falha futura.
+- Não repetir duelos com a versão anterior. Manter backup de save e
+  processo manual para novas capturas; se o crash reaparecer, isolar probes
+  e recolher dump/registradores.
+
+## Validação dinâmica Windows concluída — 2026-11-10
+
+**Status: duas cadeias normais completas observadas, verificadas contra o DAT e
+reproduzidas pelo C#.** O problema de crash não voltou nas duas capturas após
+a correção do tipo de callback dos probes internos (uma execução sem MT, outra
+com MT). Isso é evidência favorável para a correção, **não** demonstra ausência
+de crashes em outros fluxos nem cobertura de todos os níveis/pools.
+
+Ambas foram capturadas após abrir o Joey manualmente, com
+`native_rules.py --observe-only`, sem carregar DLL ou substituir callbacks.
+O EXE observado tem SHA256
+`db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`
+e o comparador usou `../passion/data.dat` com fingerprint já fixado pelo
+projeto. Os **JSONL brutos não são versionados**: permanecem com o operador
+Windows; abaixo, identificadores, hashes e resumo verificável.
+
+| Captura local | Eventos | Roll nativo | MT | Escolha | Verificador |
+|---|---:|---:|---|---|---|
+| `commands-20261110-044529-224808-pid10332.jsonl` | 20/20, 0 perdas | 1762370162 | não | CPU_002.ydc | ExitCode 0, Issues [] |
+| `commands-20261110-045059-240787-pid9816.jsonl` | 35/35, 0 perdas | 538871612 | 624 palavras, índice 624 | CPU_002.ydc | ExitCode 0, Issues [], MtChecked true |
+
+Hashes SHA256 dos arquivos JSONL, para conferir o material original sem o
+publicar (não são fingerprints do EXE ou DAT):
+
+- Sem MT: `e1fc32f4b16654165a5c4c7de35c74d4e3f6570b87e8a9fa8cf80c05911959f6`.
+- Com MT: `9a4bcf283062d83f78dee4cae243e164a2671c3f8423f7b95780be16d861e6c6`.
+
+Em ambos: perfil `initialized=1`, `baseDifficulty=1`, `pool=0`, cena
+solicitada `0`, site RNG `0x0044BDA5`. A função retorna
+`data/J/file/CPU_002.ydc`: os dois rolls dão resto 2 na divisão sem sinal
+por 5. O loader normal (`caller=0x0044C0E8`, tipo 1) retorna zero e o source
+tem 43 índices no main, 0 no second, 4 no third, todos **na ordem** esperada
+pela resolução do DAT. Há ligação inequívoca entre seleção, cena e loader
+por thread, caller, ponteiro e caminho. O jogador carrega `deck.ydc`
+separadamente (tipo 0).
+
+A segunda captura inclui `mtBefore` (624 uint32, índice 624). O verificador
+`CpuDeckTraceVerifier` construiu `NativeDeckRng.FromSnapshot` e
+`Next32()` produziu a mesma saída observada, 538871612.
+O console Windows registrou:
+
+```json
+{
+  "ExitCode": 0,
+  "NormalSelections": [
+    {
+      "SelectionId": "1:selection:1",
+      "ResourcePath": "data/J/file/CPU_002.ydc",
+      "RawRoll": 538871612,
+      "MainCount": 43,
+      "MtChecked": true
+    }
+  ],
+  "Issues": []
+}
+```
+
+**Escopo rigoroso:** duas seleções de cena0, base1/pool0 e o mesmo recurso;
+uma só previsão de MT contra o jogo; não provar pools FUL, demais
+dificuldades, rematch, progressão, distribuição estatística ou todos os
+caminhos de carregamento. Também não chamar dois sucessos de prova
+universal da estabilidade do Frida.
 
 ## Hipóteses / questões abertas
-- Nenhum JSONL dinâmico do novo observador foi capturado no Windows ainda.
-  Snapshot MT deve prever roll; concorrência entre threads pode interferir.
-- Captura histórica de uma estrela/main43 é compatível com CPU_002, mas
-  sem perfil+roll+caminho não demonstra a cadeia completa.
+- Agora há duas validações dinâmicas em Windows, sendo uma com MT; isso
+  não elimina a ressalva geral sobre snapshots concorrentes entre threads.
+- O antigo indício por tamanho43 foi superado pelas capturas novas com
+  perfil, roll, caminho e composição na ordem exata.
 - Comando40 provavelmente desistência/aborto; ação da UI não confirmada.
 - Desserialização MT0040F180 existe, consumidor indireto ainda não identificado.
   Não impede validar seleção dado snapshot/perfil.
@@ -93,16 +156,23 @@ O [protocolo](cpu-deck-selection-windows-validation.md) contém comandos exatos.
   inverter ordem de carga. Não usar modo global antigo para classificar.
 - Não inferir semântica moderna de listas adicionais só pelo tamanho.
 
-## Próximos passos priorizados
-1. Windows: seguir protocolo automatizado no menu, habilitar deck trace
-   antes de um novo Single Duel, exportar JSONL inteiro e rodar comparador.
-2. Se incompleto, seguir `Issues`: fingerprint/bytes, hook tardio, caller
-   não mapeado, leitura ou perda de buffer. Não tratar como refutação.
-3. Se divergente, investigar primeiro elo: perfil/site/roll/MT/caminho ou
-   recurso externo/parser. Preservar logs e instalação original.
-4. Capturar pool ligado/desligado, várias dificuldades e modo match; rematch
-   sozinho deve ser inconclusivo para nova seleção. Não editar perfil.
-5. Validar comando40/progresso depois, pelos experimentos manuais do protocolo.
+## Próximos passos priorizados — retomada
+
+1. **Próximo foco: IA jogando duelos normais.** Em sessão *separada* do
+   observador de decks, anexar `--observe-only`, executar `trace on 20000`,
+   `trace ai on`, `trace mark inicio-investigacao-ia`, observar dois ou três
+   turnos da CPU, depois `trace ai off`, `trace off`, `trace dump`, `stop`.
+   Validar estabilidade desses hooks no Windows; não ativar comandos mutadores.
+   Cruzar eventos de candidatos/decisão com comandos emitidos e registrar
+   quais observações ainda são hipotéticas.
+2. Objetivo da próxima etapa: explicar **uma decisão concreta da CPU**, desde
+   o estado conhecido até a ação realmente enfileirada, antes de implementar
+   um seletor de ações em C# ou acelerar partidas.
+3. Posteriormente expandir a seleção de decks para base/pool distintos,
+   FUL, rematch/match, progressão e modo40, com capturas próprias. Não editar
+   o perfil nem confundir ausência de nova seleção em rematch com erro.
+4. Persistindo divergências futuras, analisar primeiro perfil/site/roll/MT,
+   caminho e resolução do recurso; preservar `Issues` e JSONL íntegros.
 
 ## Última ação / validação
 Build solução sem warnings/erros. **437 checks C# passaram**, incluindo
@@ -127,11 +197,17 @@ e os437 checks foram repetidos com sucesso após a mudança. Originais EXE/DAT m
 - `89e1a6f`: Demo/reentrância/detach retry, correlação e cobertura58 DAT.
 - Base estática: `e1bd36c`, `5458908`, `c560b9e`, `36399ce`, `716802c`,
   `432b661`; consolidação `e9d0a4b` já estava no origin/main.
-- Novos commits desta tarefa ainda não enviados ao remoto.
+- `2e62e66`, `64e6ee5`: validação de intervalos legíveis atravessando
+  regiões de memória e regressão correspondente.
+- `e7668d4`, `57bb834`: troca dos probes de RNG no interior da função
+  para callbacks diretos e proteção por teste; observados em duas capturas
+  Windows sem crash.
+- `8f39ccd`: diagnóstico inicial dos crashes Windows; este checkpoint
+  complementa-o com o resultado das capturas reais.
 
 ## Bloqueios / preservação
-Não há mais validação dinâmica factível neste Fedora sem contrariar o escopo;
-próxima evidência precisa do operador Windows. Instrumentação está pronta
-para esse teste, não declarada validada no jogo. Banco existente preservado,
-sem reimport/reanalysis. Alterações locais anteriores docs/15, scripts/README,
-wrapper e evidências toolchain não pertencem à tarefa e não foram commitadas.
+A validação dinâmica do seletor foi feita pelo operador no Windows.
+No Fedora, testes e consultas estáticas não substituem execução do Joey.
+Banco Ghidra existente preservado, sem reimport/reanalysis. Nenhum save,
+DAT, EXE ou JSONL bruto é publicado neste checkpoint; observar também
+que a investigação da IA ainda está pendente.
