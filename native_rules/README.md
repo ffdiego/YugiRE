@@ -39,6 +39,20 @@ Este diretório contém **todo o código necessário** para os experimentos ativ
 com callbacks em DLL C++ e o console interativo de duelo, além dos testes.
 Não depende da pasta antiga `experiments/hybrid_probe`.
 
+## Filtros da IA antes da simulação (opt-in; teste Windows pendente)
+
+O comando `trace ai on gates` inclui as métricas de
+`trace ai on detail` e observa os três filtros da seleção normal
+(`005AAB90`, `005AE3E0`, `005AE220`) somente quando chamados
+diretamente pelo seletor da CPU. Os registros `ai_gate` fornecem
+`candidateCardIndex`, `handPositions`, argumentos, retorno e
+`gateVerdict`, para explicar por que algumas cartas nem chegam a
+`simulate_card`. Pede `--observe-only`, e não funciona em paralelo
+com `trace prep`. Implementação testada offline, **não validada ainda
+no Joey real**. Não deduzir legalidade apenas do resultado de um filtro.
+
+[Procedimento seguro para uma decisão](../docs/research/ai-selection-gates-protocol.md).
+
 ## Piloto de pontuação da IA (opt-in; validado no Windows)
 
 Em um Joey iniciado manualmente, o console aceita `trace on 20000`,
