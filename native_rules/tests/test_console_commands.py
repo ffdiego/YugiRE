@@ -77,6 +77,7 @@ class FakeApi:
         return {"active": self.trace_active, "prepActive": self.prep_active,
                 "aiActive": self.ai_active,
                 "aiDetailActive": getattr(self, "ai_detail_active", False),
+                "aiGateActive": getattr(self, "ai_gate_active", False),
                 "demoActive": self.demo_active,
                 "session": self.trace_session,
                 "producer": "0x5B9170", "capacity": 16, "seen": n,
@@ -98,15 +99,19 @@ class FakeApi:
     def traceaistart(self, detailed=False):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
-        self.trace_calls.append(("ai_on_detail",) if detailed else ("ai_on",))
+        call = ("ai_on_gates",) if detailed == "gates" else (
+            ("ai_on_detail",) if detailed else ("ai_on",))
+        self.trace_calls.append(call)
         self.ai_active = True
-        self.ai_detail_active = detailed
+        self.ai_detail_active = bool(detailed)
+        self.ai_gate_active = detailed == "gates"
         return self.tracestatus()
 
     def traceaistop(self):
         self.trace_calls.append(("ai_off",))
         self.ai_active = False
         self.ai_detail_active = False
+        self.ai_gate_active = False
         return self.tracestatus()
 
     def tracedeckstart(self, mt):
@@ -507,6 +512,19 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertIn("aiDetailActive=True", out.getvalue())
         self.assertFalse(self.api.ai_active)
         self.assertFalse(self.api.ai_detail_active)
+
+    def test_trace_ai_gate_mode_is_separate_and_opt_in(self):
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertTrue(handle_command("trace on 20000", self.api, 1))
+            self.assertTrue(handle_command("trace ai on gates", self.api, 1))
+            self.assertTrue(handle_command("trace ai off", self.api, 1))
+            self.assertTrue(handle_command("trace ai on detail", self.api, 1))
+            self.assertTrue(handle_command("trace ai off", self.api, 1))
+        self.assertIn(("ai_on_gates",), self.api.trace_calls)
+        self.assertIn(("ai_on_detail",), self.api.trace_calls)
+        self.assertIn("aiGateActive=True", out.getvalue())
+        self.assertFalse(self.api.ai_active)
+        self.assertFalse(self.api.ai_gate_active)
 
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
