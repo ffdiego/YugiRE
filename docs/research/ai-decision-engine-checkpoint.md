@@ -7,6 +7,22 @@ Seletores, ranking, score e dispatcher foram detalhados; escolha real26→CE30
 Windows, observar métricas/gates de um único caso natural, conforme seção7.
 Somente `main`, sem spawn/jogo no Fedora, saves, patches ou chamadas nativas.
 
+## Piloto instrumentado — próxima captura Windows
+
+O modo `trace ai on detail` (opt-in, só `--observe-only`) adiciona
+cinco hooks **nas entradas reais** de B08B0, B1610, B0A50, B0B90
+e B0950 aos quatro existentes. Eventos `ai_detail` registram baseline,
+hipótese/slot, score assinado, eventos de confronto realmente
+selecionados, AA/AC e máscara antes/depois do restore. Baseline externo
+é distinguido por caller 005B738A, sem forçar um `selectorCallId` fictício.
+O modo normal `trace ai on` mantém o contrato anterior.
+
+A simulação dos hooks, rollback, saída de eventos e teardown passou no
+fixture JS; **ainda não validado no Joey Windows**. O piloto deve capturar
+somente uma decisão natural da CPU, e só depois ampliar a cobertura aos
+gates por candidato. [Protocolo exato](ai-decision-detail-protocol.md).
+Não repetir o teste em caso de crash.
+
 ## Descobertas confirmadas
 - EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`;
   DAT `7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed`.
