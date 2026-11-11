@@ -190,6 +190,15 @@ os buffers de stats e oito incompletos. A captura disponível é
 Um único cenário declarado para todos os14 pares (ataque revelado, nenhum
 modificador externo, seed0) reproduz score e bits calculados0FFA em12:
 25,111,123,131,157,162,179,184,193,310,822,1029. Eventos304/319 divergem.
+As divergências são específicas:
+
+| Evento | C# no cenário declarado | Captura nativa |
+| --- | --- | --- |
+|304:1800 contra2300/0 |00040CFE: perda própria, score-500 |08080000: remoção rival, score0 |
+|319:2000 contra2300/0, atacante slot2 |2004D4FE: perda própria, score-300 |28080000: remoção rival, score0 |
+
+Defesa0 do rival seria uma explicação possível, mas a postura não foi
+capturada; permanece hipótese, não conclusão sobre o duelo observado.
 Não ajustamos a posição/efeitos para fazê-los concordar. **Zero contextos
 completos foram capturados**: isso é compatibilidade condicional, não replay
 integral. Os JSONL recentes de gates/detail não estão locais; seus relatórios

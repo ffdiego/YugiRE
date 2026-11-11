@@ -9,7 +9,8 @@ internal static class AiCombatCorpusChecks
         var root=fixture.RootElement;
         check(root.GetProperty("coverage").GetProperty("fullyObservedContexts").GetInt32()==0,
             "Native corpus does not fabricate any fully observed combat context");
-        var matches=new List<int>();var differences=new List<int>();int missing=0;
+        var matches=new List<int>();var differences=new List<int>();
+        var declaredOutputs=new Dictionary<int,string>();int missing=0;
         foreach(var row in root.GetProperty("events").EnumerateArray())
         {
             if(row.GetProperty("defender").ValueKind==JsonValueKind.Null){missing++;continue;}
@@ -24,11 +25,14 @@ internal static class AiCombatCorpusChecks
                 NativeAiCombatContext.ResolvedNoExternalModifiers).Value!;
             var native=NativeAiCombatEvent.Read(Convert.FromHexString(row.GetProperty("expectedBufferHex").GetString()!));
             int seq=row.GetProperty("eventSeq").GetInt32();
+            declaredOutputs[seq]=Convert.ToHexString(result.ToBytes());
             if(((result.Flags^native.Flags)&0xffa)==0 && result.Score==native.Score) matches.Add(seq);else differences.Add(seq);
         }
         check(matches.SequenceEqual(new[]{25,111,123,131,157,162,179,184,193,310,822,1029}),
             "12 native buffers agree under one declared neutral attack-position scenario; this is conditional, not full-context replay");
         check(differences.SequenceEqual(new[]{304,319}) && missing==8,
             "Two scenario divergences and eight missing numeric contexts remain explicit; no output-fitted context");
+        check(declaredOutputs[304]=="00040CFE" && declaredOutputs[319]=="2004D4FE",
+            "Declared neutral attack scenario predicts -500/-300 own losses where native buffers contain zero-score rival removals; missing inputs remain unresolved");
     }
 }
