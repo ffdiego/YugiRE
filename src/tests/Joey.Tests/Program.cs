@@ -178,4 +178,5 @@ if (args.Length > 0)
 }
 else DeckTraceChecks.Run(Check);
 AiRankingChecks.Run(Check);
+AiCombatChecks.Run(Check);
 Console.WriteLine($"{passed} checks passed.");
