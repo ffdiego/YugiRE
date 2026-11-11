@@ -519,6 +519,37 @@ na mesma thread sem ação interveniente. Diferença só emscratchAA/AC/feedback
 esperado não é falha do rollback. Não executar ensaios volumosos antes do
 primeiro caso íntegro e auditado.
 
+## 7.1. Nova validação de gates até ranking (2026-11-11 UTC)
+
+A captura [ai-gates-full-decision-live-validation](../evidence/ai-gates-full-decision-live-validation-2026-11-11.md)
+já registra os **três filtros iniciais do seletor normal** além dos
+scores, masks e eventos escolhidos: 890 eventos sem perdas,
+sete `select_normal` ativos, 26 posições de mão inspecionadas,
+nove descartes diretos (sete da carta839 pelo `AE220`;
+duas outras cartas pelo `AAB90`), 17 passes de filtros e 15
+candidatos realmente simulados. `AE3E0` não recusou
+nenhuma das 24 verificações dessa amostra.
+
+Com baseline, stats, máscara e summary **lidos do nativo**, a
+transcrição `NativeAiRanking` reproduziu 15/15 decisões de
+aceitar/manter melhor candidato e os 7/7 resultados
+(incluindo `pass=1` retornando -1 seguido de `pass=-1`).
+Seis CE da CPU concordaram com a carta/posição selecionadas.
+A diferença de dois candidatos que passaram os três filtros mas
+não foram simulados no `pass=1` é consistente com a guarda de
+classe do assembly, porém **a classe/branch não foi capturada
+diretamente no trace**. O corpus inclui uma priority anterior
+com `duelRunning=false` durante a transição demo→duelo; não
+usá-la como normal ativo.
+
+Esse avanço fecha **o encadeamento observado dos filtros ao ranking**
+para os sete casos, mas não transforma o C# em uma IA independente:
+os filtros, cálculos de combate, atributos, regras de nível e
+consequências ainda não são todos implementados. O próximo passo
+útil é validar classe/tributos nos pontos nativos naturais e
+testar uma decisão priority, preservando a distinção entre
+`trace de oráculo` e `reimplementação de regras`.
+
 ## 8. Arquitetura C# proposta e limite implementado
 
 Proposta de projeto, não descrição de classes nativas:
