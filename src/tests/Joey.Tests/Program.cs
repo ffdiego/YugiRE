@@ -180,6 +180,7 @@ else DeckTraceChecks.Run(Check);
 AiRankingChecks.Run(Check);
 AiCombatChecks.Run(Check);
 AiAttributeChecks.Run(Check);
+AiSequenceChecks.Run(Check);
 if (args.Length > 0)
 {
     using var attributeArchive = new Archive(args[0]);

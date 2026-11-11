@@ -84,3 +84,57 @@ concordam byte-a-byte combuffers nativos23/24. Isso valida o resultado
 condicionado aomanifesto; não prova que oJoey observou exatamente ocontexto
 vazio naquela captura. Asmáscaras deatributo foram conferidas noassembly:
 byte+3 é lido como parte alta doWORD+2 (ex. atributo5↔0x500).
+
+## Sequência local — B0D90/B0B90/B0A50 e baselineB08B0
+`NativeAiField` contém cinco zonas porlado e faz cópias locais emcada
+remoção/inserção. `NativeAiSequence.Evaluate` produz eventos selecionados,
+scoreint32,actionMask,perdas,sobreviventes e campo hipotético final. Aentrada
+permanece inalterada. `Baseline` prepara posições emcópia antes da sequência.
+
+Ocontrato `NativeAiFieldContext.ResolvedPlain` é deliberadamente fechado:
+- somente AxeRaider004D eGeminiElf0213 ocupados;
+- flags de cada monstro conhecidas, nunca null→zero; bit20000 determina
+  B5A0 e bit40000 determina bloqueio deataque nessa fronteira;
+- ausência declarada deoutras restrições/efeitos de campo,vínculos e tipos;
+- stats jácalculados válidos após remoções e nas posturas usadas (sem
+  modificadores de stats dependentes de campo/visibilidade não representados);
+- LP/flags dejogador explícitos; contexto default desconhecido éunsupported.
+
+Posição de ataque,revelação,máscara jáusada eflags filtram participantes.
+Oselection sort ascendente usa `(classe<<16)|(ATK&0xFFFF)`, comswapnãoestável;
+asclasses de05F3/02F9/0226/02E8 estão disponíveis noprimitivo deordenação,
+mas não fazem essas cartas suportadas pelosgates docampo fechado.
+B0D90 escolhe maior scoreint16; emempate novooculto vence, ou novo
+visível vence só comDEFcalculada maior. Oloop marcaoatacante,aplica remoções
+locais erecalcula apróxima lista. Um atacante inútil inicialmente pode se
+tornar ataqueespecial após outro eliminar oúltimorival.
+
+B05A0 é política distinta delegalidade: quando B5A0permite mudarposição,
+comparaoutrosrivais contraATK+1000. ADE40 usaB7D0,nãoB730: incluiameaças
+emdefesa/ocultas,ignoraactedMask eobedeceLP/flagsdemonstro; aflagglobal de
+bloqueio debatalha dorival não elimina automaticamente essasameaças.
+Asfontes adicionais são`ai-combat-plain-policy.txt`. Oloop score preserva
+osbits altos antigos deAA em`ScoreSummary`; oscontadores desobrevivência
+são empacotados em`RankingSummary`, como no wrapper docandidato, não
+inventados como uma nova saída dobaseline.
+
+PlayerFlags são aorigem autoritativa dasproteções noF40; oseed dodescritor
+nesta rotaé oargumento side0/1 doB0B90/B0D90. Flagsarbitrárias passadas ao
+avaliadorF40escalar não alteram esse contrato doswrappers. Acumulação é
+dos eventos **escolhidos**, nunca desomas depropostas descartadas.
+
+### Executável de demonstração independente
+
+```bash
+dotnet run --project src/tools/Joey.Combat -- \
+  ../passion/data.dat 550 24 attack --declared-neutral
+```
+
+Osnúmeros são **índices internos**, não recursos. OCLI verificaSHAdoDAT,
+calcula atributos apartir docatálogo e imprime resultado escalar e sequência.
+Para550contra24,posturaataque,contextoneutro declarado:0808C800 eevento
+selecionado0C08C800,score200,mask1. Oparâmetro `defense` troca explicitamente
+a postura dorival. `--declared-neutral` é obrigatório: omitir contexto não
+significa ausência deefeitos. OCLI recusa,por exemplo,307/GoblinAttackForce
+porque osatributos/regras intrínsecos completos dessa carta não foramportados.
+Não executaJoey,carregaDLL,replay,save ouwindow raylib.

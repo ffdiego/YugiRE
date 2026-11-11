@@ -33,8 +33,12 @@ public sealed record NativeAiResult<T>
 }
 
 public sealed record NativeAiMonster(NativeAiStats Stats, ushort ResourceId, bool DefensePosition=false,
-    bool FaceUp=true, int Level=4)
+    bool FaceUp=true, int Level=4, bool? PositionChangeAllowed=null, uint? RuleFlags=null)
 {
+    // In the closed plain-field subset all other 0056B5A0 effects are absent.
+    // Explicit predicate inputs remain available for already-resolved contexts.
+    public bool? PositionChangePredicate => PositionChangeAllowed ??
+        (RuleFlags is uint flags ? (flags & 0x20000)==0 : null);
     // 005ADDC0: this models the evaluator's knowledge, not real duel statistics.
     public NativeAiStats OpponentStats => FaceUp ? Stats : new(0,0,0,Level <= 4 ? 1000 : 1900,Level <= 4 ? 1000 : 1900);
     public ushort OpponentResourceId => FaceUp ? ResourceId : ushort.MaxValue;

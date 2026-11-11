@@ -62,3 +62,16 @@ entrada para geraroutroscore. Próximaetapa sequência eattrs.
 Verheadless-feasibility.md:8raízes118nósdepth5;dispatchers409nósdepth3;
 fronteiraB0F40com7serviçosstop=9nós,rootOPEN. PURE não excluiglobais.
 Importsheap/criticalsection viaCARD_IDlazy;semharnessnativo e semWin32stubs.
+
+## Próximo commit B
+Sequência eCLI passaram comcontextoslocais;CandidateSearch jápassou13checks
+mas entraemcommitposterior. Reviewindependente fechouRuleFlagsnullable e
+contradiçãoB5A0, comregressões. Doisvanillas apenas,nãoestenderwhitelist
+poraparência; novasCartas semgatescompletos devemUnsupported.
+
+## Marco B concluído
+Sequência local, baseline e CLI independente: build e 583 checks C# passaram.
+Inclui regressões de flags desconhecidas, política de ameaças, sort não estável,
+empates, remoções e overflow DWORD/int16. Contrato fechado em dois monstros
+comuns; não é replay integral de uma decisão observada. Próximo incremento:
+publicar o fluxo candidato → score calculado → ranking e o corpus diferencial.
