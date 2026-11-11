@@ -117,8 +117,12 @@ class ParallelLabTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertFalse(manifest["complete"])
         self.assertEqual(manifest["status"], "failed")
+        # The mocked worker fails immediately. The coordinator already stops
+        # launching new workers after detecting this startup failure.
         self.assertEqual([int(cmd[cmd.index("--duels") + 1]) for cmd in launched],
-                         [6, 6, 6, 5])
+                         [6, 6])
+        self.assertEqual(len(manifest["workers"]), 2)
+        self.assertEqual(manifest["capturedDuels"], 12)
         self.assertEqual(manifest["workers"][1]["exitCode"], 2)
 
 

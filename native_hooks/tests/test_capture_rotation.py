@@ -144,7 +144,7 @@ class CaptureRotationTests(unittest.TestCase):
         self.assertIn("100.0%", native_rules.batch_progress_line(22000, 15000, 1, 1))
         self.assertNotIn("110.0%", native_rules.batch_progress_line(22000, 15000, 1, 1))
 
-    def test_two_cycles_save_and_detach_before_killing_own_pid(self):
+    def test_two_cycles_save_and_restore_before_killing_attached_own_pid(self):
         result, events = self._run_synthetic_cycles(2)
         self.assertEqual(result, 0)
         self.assertIn("cycle 1/2: 100.0%", self.last_output)
@@ -161,9 +161,12 @@ class CaptureRotationTests(unittest.TestCase):
                                 ("deck", "resume"), ("multi", "resume"), ("speed", "resume"),
                                 ("resume", "stop"),
                                 ("stop", "save"), ("save", "restore"),
-                                ("restore", "unload"), ("unload", "detach"),
-                                ("detach", "kill")]:
+                                ("restore", "kill")]:
                 self.assertLess(ids.index(left), ids.index(right))
+            # Current launcher intentionally kills while attached, avoiding
+            # the documented Windows Frida unload/exit race.
+            self.assertNotIn("unload", ids)
+            self.assertNotIn("detach", ids)
 
     def test_export_failure_stops_batch_and_does_not_start_second_joey(self):
         result, events = self._run_synthetic_cycles(2, fail_export=True)

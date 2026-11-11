@@ -87,3 +87,15 @@ falhas da baseline, sem outras falhas. Três suítes JavaScript e os entrypoints
 `--help` do launcher, yugilab e comparador passaram nos novos caminhos.
 Não há shim no diretório antigo: atualizar comandos para
 `python native_hooks/native_rules.py --observe-only --pid PID`.
+
+## Testes legados corrigidos separadamente
+
+As duas falhas da baseline eram expectativas anteriores ao cleanup atual.
+`test_capture_rotation` agora exige export→restore→kill ainda anexado e
+proíbe unload/detach nesse caminho; o launcher já tinha esse comportamento
+para evitar a race do Frida no Windows. `test_parallel` agora exige que a
+falha imediata do segundo worker impeça lançar o terceiro/quarto, preservando
+os dados e o status de falha. Nenhuma implementação de processo mudou.
+Três novos testes verificam backend/módulo, fixtures .NET e entrypoints
+iniciados por caminhos absolutos a partir de outro diretório.
+Resultado:84 testes native_hooks e49 yugilab passaram no Fedora.
