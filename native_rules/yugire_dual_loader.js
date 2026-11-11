@@ -1060,6 +1060,9 @@ function startSummonPrepProbe() {
     throw new Error('Start trace on before enabling the summon prep probe');
   }
   if (summonPrepHooks.length > 0) throw new Error('Summon prep probe is already active');
+  // AAB90 is also observed by the gate pilot; never stack two listeners
+  // from independent modes at that native function.
+  if (aiGateMode) throw new Error('Stop AI gate trace before trace prep on');
   for (const target of kSummonPrepTargets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
