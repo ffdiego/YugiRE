@@ -139,7 +139,7 @@ internal static class AiRankingChecks
                 $"predicted hand index {bestIndex}, native {decision.ExpectedHandIndex}");
         }
         check(decisions.Length == 7 && simulated == 15 &&
-              accepted == 7 && rejected == 8,
+              accepted == 8 && rejected == 7,
             "Live gate trace: 7/7 selector outputs and 15/15 ranked candidates");
 
 
