@@ -197,9 +197,17 @@ As divergências são específicas:
 |304:1800 contra2300/0 |00040CFE: perda própria, score-500 |08080000: remoção rival, score0 |
 |319:2000 contra2300/0, atacante slot2 |2004D4FE: perda própria, score-300 |28080000: remoção rival, score0 |
 
-Defesa0 do rival seria uma explicação possível, mas a postura não foi
-capturada; permanece hipótese, não conclusão sobre o duelo observado.
-Não ajustamos a posição/efeitos para fazê-los concordar. **Zero contextos
+O usuário identificou o rival comum como Goblin Attack Force (índice307,
+recurso0540,2300/0) e apontou seu efeito de mudar para defesa após atacar.
+Isso oferece uma causa de jogo plausível para a hipótese de postura de defesa.
+Em um experimento offline separado, usando os mesmos stats capturados e
+alterando **apenas a postura declarada** para defesa, o C# produz exatamente
+08080000 e28080000. Dois checks preservam essa previsão condicional.
+
+A postura e a ocorrência do efeito nesses momentos não foram capturadas;
+portanto a hipótese é compatível, não confirmada. O teste não implementa o
+efeito da carta, não altera o fixture e não transforma a cobertura uniforme
+em14/14 replays. **Zero contextos
 completos foram capturados**: isso é compatibilidade condicional, não replay
 integral. Os JSONL recentes de gates/detail não estão locais; seus relatórios
 e fixtures continuam sendo a fonte para a validação anterior do ranking.

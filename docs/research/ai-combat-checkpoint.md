@@ -44,8 +44,12 @@ Corpus `src/tests/Joey.Tests/Fixtures/ai-combat-differential.json`:
 **zero contextos completos**. Sob um único cenário neutro de ataque
 explicitamente declarado,12/14 concordam.304/319 divergem: C# prevê
 perda própria-500/-300, enquanto os buffers nativos indicam remoção rival0.
-Postura de defesa0 é explicação possível, não comprovada; não ajustar inputs
-pelo output. Faltam posições, flags, links e seed antes da escrita.
+O usuário apontou o efeito de Goblin Attack Force (rival307/0540 em ambos)
+que muda sua postura após atacar. Dois experimentos offline separados com
+postura de defesa declarada reproduzem exatamente08080000/28080000. Isso
+sustenta a hipótese, mas não comprova postura nem efeito nesses eventos.
+Manter12/14 no cenário uniforme e zero contextos completos; não alterar o
+fixture. Faltam posições, flags, links e seed antes da escrita.
 
 Captura local:
 `scratch/traces/commands-20261111-022940-355228-pid36348.jsonl`, SHA256
@@ -88,7 +92,7 @@ que ainda usa scores nativos. Não confundir com replay independente da IA.
 ## Última ação e validação
 
 Baseline desta sessão: HEAD22bbd06;454 checks C#,16 Python ai e13 decode.
-Resultado atual:600 checks C#;38 testes Python focados (16+13+8+1).
+Resultado atual:602 checks C#;38 testes Python focados (16+13+8+1).
 Build da solução inteira: zero avisos/erros. Cinco cenários CLI passaram:
 ataque, defesa, reverso, carta não suportada, contexto obrigatório ausente.
 Sem validação visual: nenhuma tela foi alterada ou executada nesta etapa.
@@ -114,7 +118,9 @@ python3 -m unittest discover -s tests -p test_core_boundary_roots.py
 - `0e83b1e`: sequência isolada, baseline e CLI independente.
 - `8ff50e6`: candidato→score→ranking e corpus diferencial com proveniência.
 - `23bef47`: correção da raiz do analisador e teste contra PE original.
-- Commit seguinte: divergências explícitas do corpus e checkpoint consolidado.
+- `571d8fc`: divergências explícitas do corpus e checkpoint consolidado.
+- Incremento atual: hipótese de Goblin Attack Force em defesa, motivada pelo
+  usuário e testada separadamente sem reclassificar a captura.
 
 ## Preservação e bloqueios
 

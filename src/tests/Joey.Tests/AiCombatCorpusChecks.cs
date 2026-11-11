@@ -34,5 +34,24 @@ internal static class AiCombatCorpusChecks
             "Two scenario divergences and eight missing numeric contexts remain explicit; no output-fitted context");
         check(declaredOutputs[304]=="00040CFE" && declaredOutputs[319]=="2004D4FE",
             "Declared neutral attack scenario predicts -500/-300 own losses where native buffers contain zero-score rival removals; missing inputs remain unresolved");
+
+        // Separate counterfactual experiment motivated by the user's observation:
+        // Goblin Attack Force may have switched to defense after attacking.
+        // This does NOT amend the fixture or the uniform-scenario coverage above.
+        foreach(var row in root.GetProperty("events").EnumerateArray())
+        {
+            int seq=row.GetProperty("eventSeq").GetInt32();
+            if(seq is not(304 or 319))continue;
+            NativeAiMonster Observed(JsonElement item,bool defense) => new(
+                NativeAiStats.Read(Convert.FromHexString(item.GetProperty("raw_hex").GetString()!)),
+                item.GetProperty("resource_id").GetUInt16(),DefensePosition:defense,FaceUp:true);
+            var defender=row.GetProperty("defender");
+            var result=NativeAiCombat.Evaluate(Observed(row.GetProperty("attacker"),false),Observed(defender,true),
+                row.GetProperty("attackerSlot").GetInt32(),row.GetProperty("targetSlot").GetInt32(),
+                NativeAiCombatContext.ResolvedNoExternalModifiers).Value!;
+            check(defender.GetProperty("internal_card_index").GetInt32()==307 &&
+                Convert.ToHexString(result.ToBytes())==row.GetProperty("expectedBufferHex").GetString(),
+                $"Hypothesis only: event{seq} exactly agrees if observed Goblin Attack Force stats are evaluated in defense; posture remains uncaptured");
+        }
     }
 }
