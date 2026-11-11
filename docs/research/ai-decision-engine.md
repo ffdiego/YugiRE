@@ -17,8 +17,15 @@ do caller, as três políticas de prioridade, o acumulador/seleção de confront
 o dispatcher de etapas e o contrato limitado de rollback. A escolha550 foi
 correlacionada à execução real e ganhou uma explicação estática plausível,
 mas **a decisão completa ainda não foi reproduzida**: faltam métricas/gates
-por candidato na captura. Isso não autoriza implementar efeitos ou IA faltantes
-por aproximação.
+por candidato naquela captura. O novo teste Windows detalhado
+(`commands-20261111-034109-625866-pid29768.jsonl`) mudou **o alcance
+da validação do comparador**: três candidatos simulados tiveram seus
+ATK, score, máscara e AA registrados e o ranking C# reproduziu as
+três aceitações/rejeições, além dos índices retornados por duas chamadas
+nativas. Os filtros que descartam cartas antes da simulação seguem
+pendentes, portanto isso **não é** reprodução da decisão integral
+a partir do estado inicial. [Evidência nova](../evidence/ai-detail-ranking-live-validation-2026-11-11.md).
+Não implementar efeitos ou IA faltantes por aproximação.
 
 Legenda: **E**=comprovado estaticamente para o EXE fixado; **O**=observado
 na captura identificada; **I**=inferência condicionada; **H**=hipótese aberta.
@@ -38,6 +45,7 @@ Relatórios primários novos, preservados para auditoria:
 | [S8](../evidence/ai-decision-native-phase-tables.txt) | Update principal e postura; ABI do predicado de tributos. |
 | [S9](../evidence/ai-decision-turn-phase-dispatch.txt) | Dispatcher de fase e tabelas, mais offsets do candidato. |
 | [D1](../evidence/normal-duel-lp-ai-live-validation-2026-11-11.md) | Captura normal inteira, LP reais e12 correlações CPU → CE. |
+| [D2](../evidence/ai-detail-ranking-live-validation-2026-11-11.md) | Duas decisões normais com baseline, máscara, score e três avaliações nativas reproduzidas pelo ranking C#. |
 
 Os seis documentos de entrada permanecem como histórico; correções abaixo
 prevalecem sobre seus esboços incompletos, especialmente “sempre passe0→-1”.
