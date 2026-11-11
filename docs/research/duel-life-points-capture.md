@@ -1,7 +1,11 @@
 # Observação passiva dos pontos de vida em duelos normais
 
-Data: 2026-11-10. Estado: instrumentação implementada e verificada
-sintaticamente, **aguardando testes Node e validação no Joey Windows**.
+Implementado em 2026-11-10; **validado dinamicamente no Windows**
+num duelo inteiro capturado em 2026-11-11 UTC.
+Resultado: 29 snapshots reais de LP, zero erros, 14/14 transições
+de dano conferindo com o estado observado e CPU terminando com 0 LP
+contra 300 do jogador. [Evidência e tabela completa](../evidence/normal-duel-lp-ai-live-validation-2026-11-11.md).
+O procedimento abaixo continua útil para novas capturas.
 O agente mantém o mesmo hook passivo de `FUN_005B9170`
 (`trace on`), sem novos trampolins, alterações de memória, DLL nativa ou
 chamadas a funções do jogo. A captura funciona com ou sem `trace ai on`.
@@ -119,6 +123,21 @@ Na captura, conferir:
 4. Se houver divergência com a soma de dano, **investigar**: cura,
    mudanças que não geram `0x0043`, saturação, LP inicial distinto,
    efeitos atrasados ou argumento do produtor que ainda não entendemos.
+
+## Resultado do primeiro teste real
+
+O operador executou o protocolo e enviou
+`commands-20261111-022940-355228-pid36348.jsonl`.
+O arquivo tem 1.120 eventos, sem perda, 649 comandos e
+470 eventos de `ai_probe`. As leituras de LP reais concordam
+em 14/14 pares de alteração de dano, inclusive a saturação no
+golpe final (CPU500 -> 0 diante de comando de dano1000).
+Os 12 comandos `0x00CE` do lado CPU também concordam com o
+índice de carta do último seletor válido observado.
+
+A descrição completa, os números por evento, SHA256 do JSONL
+e ressalvas estão na
+[evidência de validação](../evidence/normal-duel-lp-ai-live-validation-2026-11-11.md).
 
 ## Próxima investigação
 
