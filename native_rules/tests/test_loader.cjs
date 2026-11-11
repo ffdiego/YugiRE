@@ -995,3 +995,78 @@ assert.equal(deckStarts,1);assert.equal(deckStops,1);
 assert.equal(deckFixture.api.traceevents(0,16).filter(e=>e.kind==='deck_probe').length,2);
 deckFixture.api.restore();
 console.log('PASS: deck console RPC, host attestation, observer/trace gates, mutator exclusion and trace export lifecycle');
+
+
+// Detailed CPU decision probe (no Joey execution): baseline before selector,
+// nested candidate/score/event/restore, exact selector ID, and opt-in lifecycle.
+const aiDetail=fixture();
+aiDetail.api.installobserver();
+aiDetail.memory.set(0x00A577F8,1);
+aiDetail.memory.set(0x00A55D68,6);
+for (const [index,card] of [894,359,893,307,364,550].entries())
+  aiDetail.memory.set(0x00A56434+index*4,card);
+aiDetail.api.tracestart(200);
+assert.equal(aiDetail.api.traceaistart(true).aiDetailActive,true);
+assert.equal(aiDetail.aiHookCount(),9);
+assert.throws(()=>aiDetail.api.traceaistart(true),/already active/);
+aiDetail.memory.set(0x00A579AA,8);
+aiDetail.aiCall(0x005B08B0,[0],0,null,0x005B738A); // external baseline
+aiDetail.aiCall(0x005B1360,[0,0xFFFFFFFF],5,()=>{
+  aiDetail.aiCall(0x005B08B0,[0],0,null,0x005B1377);
+  aiDetail.aiCall(0x005B1610,[0,550,0,0],0);
+  aiDetail.memory.set(0x00A55D70,0x1f);
+  aiDetail.memory.set(0x00A579AA,72);
+  aiDetail.aiCall(0x005B0A50,[0],200,()=>{
+    for (const [i,byte] of [0x08,0x08,0xc8,0x00].entries())
+      aiDetail.memory.set(0x00A579A6+i,byte);
+    aiDetail.aiCall(0x005B0B90,[0],1);
+    aiDetail.aiCall(0x005B0B90,[0],0);
+  });
+  aiDetail.aiCall(0x005B0950,[0],0,()=>{
+    aiDetail.memory.set(0x00A55D70,0);
+    aiDetail.memory.set(0x00A579AC,0x1f);
+  });
+});
+aiDetail.api.tracestop();
+assert.equal(aiDetail.aiHookCount(),0);
+assert.equal(aiDetail.api.tracestatus().aiDetailActive,false);
+const aiEvents=aiDetail.api.traceevents(0,200);
+const details=aiEvents.filter(e=>e.kind==='ai_detail');
+assert.equal(details.length,7);
+assert.deepEqual(Array.from(details.map(e=>e.function)),[
+  'baseline','baseline','simulate_card','select_combat_event',
+  'select_combat_event','aggregate_score','restore_field'
+]);
+assert.equal(details[0].selectorCallId,null);
+assert.equal(details[0].caller,'0x5b738a');
+assert.equal(details[1].selectorCallId,1);
+assert.equal(details[2].internalCardIndex,550);
+assert.equal(details[2].returnSigned,0);
+assert.equal(details[3].selectedEventHex,'0808C800');
+assert.equal(details[4].selectedEventHex,undefined);
+assert.equal(details[5].returnSigned,200);
+assert.equal(details[5].summaryRaw,72);
+assert.equal(details[6].actionMaskBeforeRestore,31);
+assert.equal(details[6].actionMaskOutput,31);
+assert.equal(details[6].actionMaskCurrent,0);
+assert.equal(aiEvents.at(-1).selectedCardIndexAtEntry,550);
+aiDetail.api.restore();
+
+const aiSimple=fixture();
+aiSimple.api.installobserver();
+aiSimple.api.tracestart(100);
+assert.equal(aiSimple.api.traceaistart().aiDetailActive,false);
+assert.equal(aiSimple.aiHookCount(),4);
+aiSimple.api.tracestop();
+assert.equal(aiSimple.aiHookCount(),0);
+aiSimple.api.restore();
+
+const aiRollback=fixture({failAiHookAt:0x005B1610});
+aiRollback.api.installobserver();
+aiRollback.api.tracestart(100);
+assert.throws(()=>aiRollback.api.traceaistart(true),/rolled back/);
+assert.equal(aiRollback.api.tracestatus().aiActive,false);
+assert.equal(aiRollback.aiHookCount(),0);
+aiRollback.api.tracestop();
+aiRollback.api.restore();
+console.log('PASS: opt-in AI detail capture, signed score, selected event, masks, teardown and rollback');
