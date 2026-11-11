@@ -39,7 +39,7 @@ Este diretório contém **todo o código necessário** para os experimentos ativ
 com callbacks em DLL C++ e o console interativo de duelo, além dos testes.
 Não depende da pasta antiga `experiments/hybrid_probe`.
 
-## Piloto de pontuação da IA (opt-in; Windows ainda pendente)
+## Piloto de pontuação da IA (opt-in; validado no Windows)
 
 Em um Joey iniciado manualmente, o console aceita `trace on 20000`,
 `trace ai on detail` e `trace mark ai-detail-piloto`. Esse modo adiciona
@@ -48,9 +48,12 @@ registrando baseline, inserção hipotética, score assinado, confrontos
 selecionados e máscara antes/depois da restauração. Não muda os hooks
 padrão se usar somente `trace ai on`.
 
-O modo detalhado é um experimento mínimo para **uma decisão da CPU**,
-sem executar ou substituir funções da engine. A primeira validação real
-ainda é necessária. [Protocolo e limitações](../docs/research/ai-decision-detail-protocol.md).
+O modo detalhado não executa nem substitui funções da engine.
+**Validado em uma sessão real Windows**: duas chamadas `select_normal`,
+três candidatos simulados, os valores do comparator reproduzidos em C# e
+dois índices da mão coincidentes. Não contém todos os gates de seleção.
+[Validação com eventos](../docs/evidence/ai-detail-ranking-live-validation-2026-11-11.md) ·
+[Protocolo e limitações](../docs/research/ai-decision-detail-protocol.md).
 
 ## Organização
 
