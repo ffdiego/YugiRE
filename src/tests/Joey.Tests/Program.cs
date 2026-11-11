@@ -183,6 +183,7 @@ AiAttributeChecks.Run(Check);
 AiSequenceChecks.Run(Check);
 AiCandidateSearchChecks.Run(Check);
 AiCombatCorpusChecks.Run(Check);
+LabCaptureChecks.Run(Check);
 if (args.Length > 0)
 {
     using var attributeArchive = new Archive(args[0]);

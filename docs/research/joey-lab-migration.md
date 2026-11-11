@@ -18,11 +18,56 @@ Não implementar gerenciamento de processos ou Frida em C# nesta etapa.
 
 ## Baseline no Fedora
 
--602 checks .NET passaram antes da reorganização.
--81 testes Python do backend: um erro anterior à migração, em expectativa
+- 602 checks .NET passaram antes da reorganização.
+- 81 testes Python do backend: um erro anterior à migração, em expectativa
   antiga da ordem de cleanup (`test_capture_rotation`).
--49 testes yugilab: uma falha anterior, pois o teste esperava lançar quatro
+- 49 testes yugilab: uma falha anterior, pois o teste esperava lançar quatro
   workers mesmo após o segundo falhar durante startup; o código já para antes.
 
 As falhas serão tratadas separadamente de alterações de caminhos. Nenhum
 Joey foi iniciado e nenhuma DLL carregada para executar os testes.
+
+
+## CLI inicial e formatos
+
+```bash
+dotnet run --project src/Joey.Lab -- summarize capture.jsonl
+dotnet run --project src/Joey.Lab -- summarize capture.jsonl --json \
+  --expected-sha256 HASH
+```
+
+Sem argumentos ou com `--help`, mostra ajuda. Exit0: importação sem erros de
+integridade detectados; exit2: entrada inválida, hash divergente ou erros de
+integridade. Avisos (hash do EXE ausente, captura live sem footer) não se
+transformam em campos fictícios nem em validação do estado do duelo.
+O hash do arquivo é calculado sempre, mesmo quando não é fornecido um hash
+esperado. JSONL é lido sem escrever na captura.
+
+`CaptureReader` preserva campos desconhecidos como JsonElement. Os tipos do
+laboratório referenciam `NativeAiStats`/`NativeAiCombatEvent` de Core, sem
+adicionar dependência reversa. `CaptureAnalyzer` conta kinds, comandos por
+opcode mascarado, outputs, seletores e stats pareados por thread/callId.
+Suporta cabeçalhos de ring buffer e `live_duels` com `capture_summary`.
+A soma de comandos terminais não informa vencedor nem legalidade.
+
+Posições, flags e efeitos não são resolvidos. O relatório não executa uma
+simulação, não calcula score ausente e não converte stats pareados em um
+replay completo. Eventos de instrumentação mais novos permanecem acessíveis
+no Raw, sem decoder especulativo. A primeira versão mantém os eventos em
+memória; ZIP/múltiplos workers/streaming incremental ficam no legado.
+
+### Comparação independente
+
+Captura local real `commands-20261111-022940-355228-pid36348.jsonl`, SHA256
+`dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90`:
+1120 eventos (649command,470ai_probe,1marker),402 stats,22 outputs de combate,
+14 pares de stats,13 seletores normais (7 negativos) e10 prioritários.
+Esses valores coincidem com `scripts/ai_decision_trace_audit.py` e o corpus
+`ai-combat-differential.json`, independentemente da nova implementação C#.
+O EXE SHA está null na captura: o relatório preserva isso e emite aviso.
+
+O fixture portátil `lab-capture-prefix.jsonl` conserva eventos1..30 idênticos
+à captura, ajustando apenas contadores do cabeçalho para30. Proveniência e
+transformação estão explícitas no próprio fixture; ele não é a captura
+completa. Inclui stats Gemini Elf/Axe Raider e output0808C800 no evento25,
+dentro do seletor que retorna550 no evento26.
