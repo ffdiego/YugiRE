@@ -46,13 +46,23 @@ carta interna/posições, argumentos e retorno à seleção,
 diferenciando `continue` e `reject` de cada filtro,
 sem inferir legalidade geral.
 
-**Validação offline:** 17 grupos de testes simulados passaram
-(incluindo rollback, bloqueio com `trace prep`, modos antigos e
-chamadas de outras funções). **Ainda falta validar no Windows**,
-com apenas uma decisão natural. Classes de nível, `pass` e
-tributos ainda não são observados por esse modo; uma carta sem
-simulação nem filtro rejeitante fica indeterminada.
-[Protocolo detalhado](ai-selection-gates-protocol.md).
+**Validação offline:** 17 grupos de testes simulados passaram.
+**Validação Windows 2026-11-11 UTC:** captura
+`commands-20261111-043826-452599-pid23536.jsonl`
+(SHA256 `6c93df404998d8b0807ecfb98831a73db5485d274d0cfb29b5ae876a6d6fc5d3`),
+890 eventos sem perdas, 74 gates, 26 posições de mão:
+7 rejeições de 839/Penguin Soldier no filtro AE220 e
+2 rejeições em AAB90 (851/Backup Soldier, 729/Giant Trunade).
+Todas as 24 chamadas de AE3E0 retornaram0. Dos 17 candidatos
+que passaram filtros, 15 foram simulados, e 2 não no `pass=1`
+(consistente com a política de níveis no assembly, mas classe/branch
+não capturado diretamente). O ranking C# aplicado às **saídas nativas**
+reconstruiu **15/15 avaliações e 7/7 retornos** de seletor normal.
+6 retornos positivos bateram temporalmente com CE da CPU.
+A segunda captura inclui início em demo; a priority inicial com
+`duelRunning=false` ficou fora do corpus de seleções normais.
+[Validação](../evidence/ai-gates-full-decision-live-validation-2026-11-11.md) ·
+[Protocolo](ai-selection-gates-protocol.md).
 
 ## Descobertas confirmadas
 - EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`;
