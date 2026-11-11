@@ -1,8 +1,11 @@
 # Piloto passivo — métricas do seletor normal da CPU
 
-**Estado:** instrumentação implementada em 2026-11-10; testes simulados
-comprovam instalação, correlação, exportação, teardown e rollback.
-**Aguardando validação em execução real do Joey no Windows.**
+**Estado:** instrumentação implementada em 2026-11-10 e **validada em
+execução real no Windows em 2026-11-11 UTC**, com duas decisões completas,
+155 eventos íntegros, 22 eventos detalhados e três comparações de candidato
+reproduzidas pela regra C#. [Evidência](../evidence/ai-detail-ranking-live-validation-2026-11-11.md).
+O restante desta página descreve o protocolo replicável; os gates das cartas
+não simuladas permanecem sem telemetria.
 Alvo fixo: `joey_pc.exe`, SHA256
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 Base de endereços: `0x00400000`.
@@ -116,6 +119,17 @@ isolar hooks; não declarar a causa sem EIP/registradores.
 5. Somente após uma decisão validada ampliar para filtros por candidato,
    outros modos, prioridades e duelos em lote.
 
-Os testes simulados validam **o instrumento**, não a semântica global da
-IA do Joey. Até a primeira captura Windows, qualquer reprodução completa
-da decisão permanece pendente.
+**Resultado da primeira captura Windows:** a observação nativa registrou
+baselines, scores, máscara e summary suficientes para reproduzir em C#
+três avaliações: carta 834 aceita em empate por remoção adversária;
+Karate Man 178 rejeitado por máscara0; e, na decisão seguinte, o mesmo
+Karate Man aceito com score+1000. Os dois índices retornados pelo nativo
+coincidem com o ranking dos candidatos simulados. O teste também registrou
+um `selectedEventHex=0600E803`, da rota especial alvo5, compatível com
+um comando posterior de 1000 de dano ao jogador.
+
+Isso **ainda não reproduz uma decisão a partir da mão completa**:
+os motivos pelos quais outras cartas não chegaram ao helper de simulação
+não foram registrados. O próximo avanço deve observar os filtros por
+candidato em chamadas naturais, mantendo a instrumentação passiva e
+opt-in. [Relatório evento a evento](../evidence/ai-detail-ranking-live-validation-2026-11-11.md).
