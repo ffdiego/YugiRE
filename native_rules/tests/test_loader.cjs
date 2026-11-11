@@ -65,7 +65,12 @@ function fixture(options = {}) {
     toString() { return '0x' + this.n.toString(16); }
     toUInt32() { return this.n >>> 0; }
     readU32() { return memory.get(this.n) ?? 0; }
-    readU16() { return this.readU32() & 0xffff; }
+    readU16() {
+      if (options.failLpRead &&
+          [0x00A55D64, 0x00A55D64 + 0xD44].includes(this.n))
+        throw new Error('simulated unreadable LP memory');
+      return this.readU32() & 0xffff;
+    }
     readU8() { return this.readU32() & 0xff; }
     writeU32(value) { memory.set(this.n, value); }
     readPointer() { return new Pointer(this.readU32()); }
@@ -536,6 +541,71 @@ assert.equal(failedTrace.api.tracestatus().active,false);
 assert.equal(failedTrace.hookActive(),true);
 failedTrace.api.restore();
 console.log('PASS: bounded passive command trace, marker, export pagination, hook rollback and teardown');
+
+
+// Observe actual native LP at producer entry, not a predicted post-damage
+// value. An LP change is recorded on the NEXT producer call after resolution.
+const lpFixture=fixture();
+lpFixture.api.installobserver();
+lpFixture.memory.set(0x00A55D64,8000);
+lpFixture.memory.set(0x00A55D64 + 0xD44,8000);
+lpFixture.api.tracestart(64);
+lpFixture.command(0x61,0,5,0); // First sample of an active duel.
+lpFixture.command(0x61,1,1,0); // No change: no repeated LP payload.
+lpFixture.command(0x43,1900,0,1); // Queued damage: LP not yet changed.
+lpFixture.memory.set(0x00A55D64,6100); // Simulate native resolution.
+lpFixture.command(0x52,0,0,0); // Next command observes the applied damage.
+lpFixture.memory.set(0x00A55D64 + 0xD44,7200); // Simulated LP change on side 1.
+lpFixture.command(0x61,0,1,0);
+lpFixture.command(0x8043,500,0,1); // Queue another change to side 1.
+lpFixture.memory.set(0x00A55D64 + 0xD44,0); // Damage can be lethal.
+lpFixture.command(0x8004,0,0,0,0x005BC545);
+lpFixture.command(0x61,0,1,0); // Terminal reset must mark a new baseline.
+lpFixture.api.tracestop();
+const lpEvents=lpFixture.api.traceevents(0,16);
+assert.equal(lpEvents.length,8);
+assert.deepEqual(Array.from(lpEvents[0].lifePointsObserved.lifePoints),[8000,8000]);
+assert.equal(lpEvents[0].lifePointsObserved.reason,'first_active_sample');
+assert.equal(lpEvents[0].lifePointsObserved.samplePoint,'command_producer_onEnter');
+assert.equal(lpEvents[1].lifePointsObserved,undefined);
+assert.deepEqual(Array.from(lpEvents[2].lifePointsObserved.lifePoints),[8000,8000]);
+assert.equal(lpEvents[2].lifePointsObserved.reason,'lp_command');
+assert.deepEqual(Array.from(lpEvents[3].lifePointsObserved.lifePoints),[6100,8000]);
+assert.equal(lpEvents[3].lifePointsObserved.reason,'changed');
+assert.deepEqual(Array.from(lpEvents[4].lifePointsObserved.lifePoints),[6100,7200]);
+assert.deepEqual(Array.from(lpEvents[5].lifePointsObserved.lifePoints),[6100,7200]);
+assert.equal(lpEvents[5].lifePointsObserved.reason,'lp_command');
+assert.deepEqual(Array.from(lpEvents[6].lifePointsObserved.lifePoints),[6100,0]);
+assert.equal(lpEvents[6].lifePointsObserved.reason,'terminal');
+assert.deepEqual(Array.from(lpEvents[6].terminalNativeState.lifePoints),[6100,0]);
+assert.equal(lpEvents[7].lifePointsObserved.reason,'first_active_sample');
+lpFixture.api.restore();
+
+const lpNoDuel=fixture();
+lpNoDuel.api.installobserver();
+lpNoDuel.api.tracestart(16);
+lpNoDuel.memory.set(0x00A577F8,0);
+lpNoDuel.command(0x61,1,0,0); // No stale/menu sample.
+lpNoDuel.command(0x43,100,0,0); // Forced opcode retains runningWord=0.
+lpNoDuel.api.tracestop();
+const idleLp=lpNoDuel.api.traceevents(0,3);
+assert.equal(idleLp[0].lifePointsObserved,undefined);
+assert.equal(idleLp[1].lifePointsObserved.duelRunningWord,0);
+lpNoDuel.api.restore();
+
+const badLp=fixture({failLpRead:true});
+badLp.api.installobserver();
+badLp.api.tracestart(16);
+badLp.command(0x43,100,0,0);
+badLp.command(0x8004,0,0,0,0x005BC545);
+badLp.api.tracestop();
+const badLpEvents=badLp.api.traceevents(0,3);
+assert.match(badLpEvents[0].lifePointsReadError,/unreadable LP/);
+assert.equal(badLpEvents[0].lifePointsObserved,undefined);
+assert.equal(badLpEvents[1].terminalNativeState.lifePoints,null);
+assert.match(badLpEvents[1].lifePointsReadError,/unreadable LP/);
+badLp.api.restore();
+console.log('PASS: passive LP transitions, enqueue timing, terminal, reset, idle and safe read failure');
 
 
 // Passive high-level probe: eligibility arguments, mode 1 filter, per-call
