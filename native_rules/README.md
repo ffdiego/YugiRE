@@ -14,6 +14,20 @@ não usa spawn, DLL, substituição de decks nem alteração de cartas/saves.
 > permanece como backend para Frida, DLL nativa e investigações interativas.
 
 
+## Captura dos LP no duelo normal (novo; pendente de validação Windows)
+
+Com o hook passivo existente `trace on`, os eventos `command` agora
+contêm `lifePointsObserved` na primeira leitura de duelo, em mudanças de LP,
+em comandos `0x0043` e no terminal `0x0004`. A estrutura registra
+`lifePoints:[cpu, jogador]`, `duelRunningWord`, `samplePoint` e `reason`.
+No terminal também há `terminalNativeState.lifePoints` (ou null em erro).
+
+**Os LP são lidos na entrada do produtor do comando:** podem refletir o
+estado *antes* do dano atual. Mudanças aplicadas só ficam visíveis no próximo
+comando observado. Não é amostragem por frame nem confirmação automática
+de vencedor. O observador utiliza o mesmo hook, sem DLL e sem escrever
+memória. Veja [protocolo e evidência](../docs/research/duel-life-points-capture.md).
+
 Implementação híbrida das regras de **Yu-Gi-Oh! Power of Chaos: Joey the Passion**.
 Este diretório contém **todo o código necessário** para os experimentos ativos
 com callbacks em DLL C++ e o console interativo de duelo, além dos testes.
