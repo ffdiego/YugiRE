@@ -39,7 +39,7 @@ Este diretório contém **todo o código necessário** para os experimentos ativ
 com callbacks em DLL C++ e o console interativo de duelo, além dos testes.
 Não depende da pasta antiga `experiments/hybrid_probe`.
 
-## Filtros da IA antes da simulação (opt-in; teste Windows pendente)
+## Filtros da IA antes da simulação (opt-in; validado no Windows)
 
 O comando `trace ai on gates` inclui as métricas de
 `trace ai on detail` e observa os três filtros da seleção normal
@@ -48,8 +48,12 @@ diretamente pelo seletor da CPU. Os registros `ai_gate` fornecem
 `candidateCardIndex`, `handPositions`, argumentos, retorno e
 `gateVerdict`, para explicar por que algumas cartas nem chegam a
 `simulate_card`. Pede `--observe-only`, e não funciona em paralelo
-com `trace prep`. Implementação testada offline, **não validada ainda
-no Joey real**. Não deduzir legalidade apenas do resultado de um filtro.
+com `trace prep`. Instrumentação **validada em execução real** em 2026-11-11 UTC:
+26 posições de mão nos seletores normais, nove rejeições explícitas,
+quinze simulações e sete retornos reconstruídos usando as métricas
+nativas. Os branches de classe/pass ainda não foram medidos em tempo
+de execução. Não deduzir legalidade apenas do resultado de um filtro.
+[Relatório](../docs/evidence/ai-gates-full-decision-live-validation-2026-11-11.md).
 
 [Procedimento seguro para uma decisão](../docs/research/ai-selection-gates-protocol.md).
 
