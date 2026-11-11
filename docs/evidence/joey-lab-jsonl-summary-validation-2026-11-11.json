@@ -1,0 +1,30 @@
+{
+  "scope": "Offline import comparison, not decision replay or full-context combat validation",
+  "captureSha256": "dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90",
+  "oracles": [
+    "scripts/ai_decision_trace_audit.py",
+    "src/tests/Joey.Tests/Fixtures/ai-combat-differential.json"
+  ],
+  "eventCount": 1120,
+  "computedStatsCount": 402,
+  "combatOutputs": 22,
+  "pairedCombatStats": 14,
+  "normalSelectors": 13,
+  "negativeNormalSelectors": 7,
+  "prioritySelectors": 10,
+  "comparisons": {
+    "captureHash": true,
+    "eventCount": true,
+    "kinds": true,
+    "normalSelectors": true,
+    "negativeNormal": true,
+    "prioritySelectors": true,
+    "stats": true,
+    "combatEvents": true,
+    "pairedStats": true,
+    "exeHashRemainsNull": true,
+    "noIntegrityErrors": true,
+    "allSelectorReturns": true,
+    "allCombatBuffersAndPairedStats": true
+  }
+}

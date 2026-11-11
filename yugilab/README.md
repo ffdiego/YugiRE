@@ -1,3 +1,8 @@
+> Laboratório Python legado preservado durante a migração. O backend agora
+> fica em `native_hooks/`; o módulo do launcher continua `native_rules.py`.
+> Para analisar JSONL sem Frida, use o novo
+> [Joey.Lab em .NET](../docs/research/joey-lab-migration.md).
+
 # YugiLab — laboratório de duelos do Joey
 
 O **YugiLab** é a interface para executar e gravar uma quantidade

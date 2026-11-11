@@ -347,3 +347,20 @@ Conferência posterior por RE: a comparação nativa só destrói ambos em empat
 de ATK **positivo** ([evidência](../docs/22-battle-core.md)). O protótipo foi corrigido para manter ambos em 0 contra 0,
 com teste que falhava antes da correção. Os demais limites do modo de
 demonstração continuam válidos; não foi feita validação visual nesta sessão.
+
+
+## Organização dos projetos
+
+- `Joey.Core`: engine independente, sem Frida/Python ou UI.
+- `Joey.App`: interface raylib-cs, com referência a Core.
+- `Joey.Lab`: CLI de análise offline, também com referência direta a Core.
+
+Da raiz do repositório:
+
+```bash
+dotnet run --project src/Joey.Lab -- summarize caminho/captura.jsonl --json
+```
+
+[Comandos e limites do laboratório](../docs/research/joey-lab-migration.md).
+Instrumentação do processo original permanece em `native_hooks/`;
+`yugilab/` é o laboratório Python legado durante a migração.

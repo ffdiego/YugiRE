@@ -21,7 +21,20 @@ Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-
 O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
 a comparação dinâmica completa de um duelo normal ainda está pendente.
 
-## Módulo Native Rules (C++ / DLL x86)
+## Joey.Lab — análise offline em .NET
+
+```sh
+dotnet run --project src/Joey.Lab -- summarize caminho/captura.jsonl
+# Relatório estruturado e verificação opcional da captura:
+dotnet run --project src/Joey.Lab -- summarize caminho/captura.jsonl --json --expected-sha256 HASH
+```
+
+Não precisa de Frida, Windows ou DAT para importar JSONL. Reutiliza os tipos
+nativos do Core e preserva os valores ausentes como desconhecidos.
+[Arquitetura, formatos, validação e inventário da migração](docs/research/joey-lab-migration.md).
+O laboratório Python continua disponível durante a migração.
+
+## Native Hooks (Frida / DLL C++ x86)
 
 Os efeitos nativos de Sparks e Raimei e o console interativo de duelo estão em
 [native_hooks](native_hooks/README.md). Esse módulo é independente da aplicação

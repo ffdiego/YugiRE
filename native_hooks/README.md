@@ -1,4 +1,11 @@
-# YugiRE Native Rules
+# YugiRE Native Hooks
+
+Este diretório se chamava `native_rules/`. O launcher continua se chamando
+`native_rules.py`, e a DLL continua `yugire_rules.dll`, com a mesma ABI.
+O novo [Joey.Lab](../docs/research/joey-lab-migration.md) analisa JSONL offline;
+Frida, attach, console e experimentos Windows continuam neste backend.
+Se já existia uma venv ou cache CMake no diretório antigo, siga as
+[instruções de migração local](../docs/research/joey-lab-migration.md#windows-e-artefatos-locais).
 
 Para validar a seleção de decks em um processo **iniciado manualmente**,
 use `native_rules.py --observe-only --pid <PID>`, `trace on 20000` e
