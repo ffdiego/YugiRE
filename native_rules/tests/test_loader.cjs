@@ -56,7 +56,8 @@ function fixture(options = {}) {
   const prepHandlers = new Map();
   const aiHandlers = new Map();
   const aiAddresses = [0x005B1360,0x005B16C0,0x005B0F40,0x0056DD30,
-    0x005B08B0,0x005B1610,0x005B0A50,0x005B0B90,0x005B0950];
+    0x005B08B0,0x005B1610,0x005B0A50,0x005B0B90,0x005B0950,
+    0x005AE3E0,0x005AE220];
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -114,7 +115,8 @@ function fixture(options = {}) {
           traceHandler = callbacks.onEnter;
           return {detach(){traceHandler=null;}};
         }
-        if (aiAddresses.includes(address.n)) {
+        if (aiAddresses.includes(address.n) ||
+            (address.n === 0x005AAB90 && aiHandlers.has(0x005B0950))) {
           if (options.failAiHookAt === address.n) throw new Error('Simulated AI detail hook failure');
           assert.equal(aiHandlers.has(address.n),false);
           aiHandlers.set(address.n,callbacks);
@@ -1070,3 +1072,75 @@ assert.equal(aiRollback.aiHookCount(),0);
 aiRollback.api.tracestop();
 aiRollback.api.restore();
 console.log('PASS: opt-in AI detail capture, signed score, selected event, masks, teardown and rollback');
+
+// The gate pilot must never infer outcomes from other callers or detached
+// listeners. AAB90 is intentionally shared with the independent summon-prep
+// observer; the two modes cannot coexist.
+const gateFixture=fixture();
+gateFixture.api.installobserver();
+gateFixture.memory.set(0x00A577F8,1);
+gateFixture.memory.set(0x00A55D68,3);
+[834,375,178].forEach((v,i)=>gateFixture.memory.set(0x00A56434+i*4,v));
+gateFixture.api.tracestart(200);
+assert.equal(gateFixture.api.traceaistart('gates').aiGateActive,true);
+assert.equal(gateFixture.api.tracestatus().aiDetailActive,true);
+assert.equal(gateFixture.aiHookCount(),12);
+assert.throws(()=>gateFixture.api.traceprepstart(),/Stop AI gate trace/);
+gateFixture.aiCall(0x005AAB90,[0,834],0x11,null,0x005B13E5); // outside selector: ignore
+gateFixture.aiCall(0x005B1360,[0,0xFFFFFFFF],0,()=>{
+  gateFixture.aiCall(0x005AAB90,[0,834],0x11,null,0x005B19D9); // wrong caller
+  gateFixture.aiCall(0x005AAB90,[0,834],0x11,null,0x005B13E5);
+  gateFixture.aiCall(0x005AE3E0,[0,2,0x213],0,null,0x005B13FF);
+  gateFixture.aiCall(0x005AE220,[834],0,null,0x005B1418);
+  gateFixture.aiCall(0x005AAB90,[0,375],0,null,0x005B13E5); // reject early
+  gateFixture.aiCall(0x005AAB90,[0,178],0x11,null,0x005B13E5);
+  gateFixture.aiCall(0x005AE3E0,[0,2,1114],1,null,0x005B13FF); // reject policy
+});
+assert.equal(gateFixture.api.tracestatus().aiGateActive,true);
+assert.equal(gateFixture.api.traceaistop().aiGateActive,false);
+assert.equal(gateFixture.aiHookCount(),0);
+gateFixture.api.tracestop();
+const gateEvents=gateFixture.api.traceevents(0,200);
+const gates=gateEvents.filter(e=>e.kind==='ai_gate');
+assert.equal(gates.length,6);
+assert.deepEqual(Array.from(gates.map(e=>e.function)),[
+  'eligibility_mask','resource_policy','special_policy',
+  'eligibility_mask','eligibility_mask','resource_policy'
+]);
+assert.deepEqual(Array.from(gates.map(e=>e.candidateCardIndex)),[834,834,834,375,178,178]);
+assert.deepEqual(Array.from(gates.map(e=>e.gatePassed)),[true,true,true,false,true,false]);
+assert.deepEqual(Array.from(gates.map(e=>e.handPositions[0])),[0,0,0,1,2,2]);
+assert.equal(gates[1].argsRaw[2],0x213);
+assert.equal(gates[2].returnSigned,0);
+assert.ok(gates.every(e=>e.selectorCallId===1 && e.side===0));
+assert.ok(gates.every(e=>e.callsiteReturn.startsWith('0x005B')));
+assert.equal(gateFixture.api.tracestatus().aiGateActive,false);
+gateFixture.api.restore();
+
+const gateSuppressed=fixture();
+gateSuppressed.api.installobserver();
+gateSuppressed.api.tracestart(64);
+gateSuppressed.api.traceprepstart();
+assert.throws(()=>gateSuppressed.api.traceaistart('gates'),/trace prep off/);
+assert.equal(gateSuppressed.aiHookCount(),0);
+gateSuppressed.api.tracestop();
+gateSuppressed.api.restore();
+
+const gateRollback=fixture({failAiHookAt:0x005AE3E0});
+gateRollback.api.installobserver();
+gateRollback.api.tracestart(64);
+assert.throws(()=>gateRollback.api.traceaistart('gates'),/rolled back/);
+assert.equal(gateRollback.aiHookCount(),0);
+assert.equal(gateRollback.api.tracestatus().aiGateActive,false);
+gateRollback.api.tracestop();
+gateRollback.api.restore();
+
+const gateNormalMode=fixture();
+gateNormalMode.api.installobserver();
+gateNormalMode.api.tracestart(64);
+gateNormalMode.api.traceaistart(true);
+assert.equal(gateNormalMode.aiHookCount(),9);
+assert.equal(gateNormalMode.api.tracestatus().aiGateActive,false);
+gateNormalMode.api.tracestop();
+gateNormalMode.api.restore();
+console.log('PASS: CPU AI filter gates, direct callers, candidate identities, mode isolation and hook rollback');
