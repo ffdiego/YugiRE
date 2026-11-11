@@ -17,11 +17,22 @@ selecionados, AA/AC e máscara antes/depois do restore. Baseline externo
 é distinguido por caller 005B738A, sem forçar um `selectorCallId` fictício.
 O modo normal `trace ai on` mantém o contrato anterior.
 
-A simulação dos hooks, rollback, saída de eventos e teardown passou no
-fixture JS; **ainda não validado no Joey Windows**. O piloto deve capturar
-somente uma decisão natural da CPU, e só depois ampliar a cobertura aos
-gates por candidato. [Protocolo exato](ai-decision-detail-protocol.md).
-Não repetir o teste em caso de crash.
+**Validado no Joey Windows** na captura
+`commands-20261111-034109-625866-pid29768.jsonl`, SHA
+`ea1ed03746df2fbd56f4ed9c2fd8abee7f502b2687a683c4597346183f7df449`:
+155 eventos íntegros, 22 `ai_detail`, dois seletores normais e três
+candidatos efetivamente simulados. Candidato 834 foi aceito
+em empate score0 por perda adversária e sobrevivente próprio; Karate Man
+178 foi rejeitado na primeira decisão por máscara0, mas aceito na
+segunda com score1000. **Três testes do comparator e dois índices da mão
+coincidiram com a CPU**. Evento especial `0600E803` selecionado
+também apareceu com score1000.
+
+Ainda faltam os **gates que descartaram os outros índices da mão**,
+logo não declarar reprodução completa de decisão a partir do estado.
+[Validação detalhada](../evidence/ai-detail-ranking-live-validation-2026-11-11.md);
+[protocolo](ai-decision-detail-protocol.md). A próxima captura deve
+observar filtros por candidato em funções naturais, uma decisão por vez.
 
 ## Descobertas confirmadas
 - EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`;
@@ -62,6 +73,15 @@ AxeRaider24. Filtros de Goblin (limiares1900ATK/2000DEF) ePanther (custo/aliado
 maisfraco) são explicação plausível para550; **gates não capturados**.
 Metadata.exeSha256=null: hash do EXE vem dodocumento associado, não atestado
 peloheader do JSONL. Faltam baselines,score agregado,actionMask eAA porhipótese.
+
+### Nova evidência de ranking real (2026-11-11 UTC)
+
+A captura detalhada fecha o elo de **três entradas reais** de
+`NativeAiRanking`, reproduzidas com resultados verdadeiros da CPU.
+Os testes C# agora incluem essas observações. Isso não prova o
+cálculo de todos os atributos, filtros ou custos de tributos.
+Prioridade: capturar a causa individual de descarte das outras cartas
+antes de tentar reimplementação completa do seletor.
 
 ## Hipóteses / limites restantes
 - Primeiro passe direto-1 é consistente com baseline externo0 nas13amostras,
