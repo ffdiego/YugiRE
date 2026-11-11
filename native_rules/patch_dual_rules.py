@@ -189,6 +189,7 @@ def show_trace_status(status: dict) -> None:
           f"prepActive={status.get('prepActive', False)} "
           f"aiActive={status.get('aiActive', False)} "
           f"aiDetailActive={status.get('aiDetailActive', False)} "
+          f"aiGateActive={status.get('aiGateActive', False)} "
           f"demoActive={status.get('demoActive', False)} "
           f"deckActive={status.get('deckActive', False)} "
           f"session={status['session']} "
@@ -322,7 +323,7 @@ def show_help(default_side: int) -> None:
           "ai check 1; ai step 1; "
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
-          "trace on [16..20000]; trace prep on|off; trace ai on [detail]|off; "
+          "trace on [16..20000]; trace prep on|off; trace ai on [detail|gates]|off; "
           "trace demo on|off; trace deck on [mt]|off; "
           "trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
@@ -356,6 +357,8 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.traceaistart())
         elif parts == ["trace", "ai", "on", "detail"]:
             show_trace_status(api.traceaistart(True))
+        elif parts == ["trace", "ai", "on", "gates"]:
+            show_trace_status(api.traceaistart("gates"))
         elif parts == ["trace", "ai", "off"]:
             show_trace_status(api.traceaistop())
         elif parts in (["trace", "deck", "on"], ["trace", "deck", "on", "mt"]):
@@ -386,7 +389,7 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.tracemark(label))
         else:
             print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
-                  "trace ai on [detail]|off | trace demo on|off | "
+                  "trace ai on [detail|gates]|off | trace demo on|off | "
                   "trace mark <label> | trace status | trace off | trace dump",
                   flush=True)
         return True
