@@ -148,6 +148,25 @@ universal da estabilidade do Frida.
 - Desserialização MT0040F180 existe, consumidor indireto ainda não identificado.
   Não impede validar seleção dado snapshot/perfil.
 
+## Seguimento do laboratório — LP e seleção da IA (2026-11-11 UTC)
+
+Captura real de um duelo completo:
+`commands-20261111-022940-355228-pid36348.jsonl`,
+SHA256 `dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90`.
+Foram **1.120 eventos íntegros**, 29 leituras reais de LP,
+14/14 danos `0x0043` conferidos com a leitura do comando seguinte,
+CPU terminando com LP=0 e jogador com LP=300.
+A CPU executou 23 seletores (13 normal, 10 priority) e
+**12/12** comandos `0x00CE` do lado CPU tiveram `source`
+igual à carta escolhida pelo último seletor válido anterior.
+Essas correspondências **não provam** que cada ação se resolveu
+nem explicam a pontuação de candidatos.
+
+O novo trace passivo de LP está, portanto, **validado em um duelo
+real**; próxima etapa é investigar os critérios de
+`select_normal`/`select_priority`, com estado e escolha concretos.
+[Evidência evento a evento](../evidence/normal-duel-lp-ai-live-validation-2026-11-11.md).
+
 ## Caminhos descartados
 - Presets Demo A/B/C não são catálogo normal; equivalem a FUL_0GE1/0VAL/0UMI.
 - Loader/shuffle, tamanho43 ou stars sem pool não identificam escolha.
