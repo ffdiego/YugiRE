@@ -54,6 +54,9 @@ function fixture(options = {}) {
   let tickHandler = null;
   let traceHandler = null;
   const prepHandlers = new Map();
+  const aiHandlers = new Map();
+  const aiAddresses = [0x005B1360,0x005B16C0,0x005B0F40,0x0056DD30,
+    0x005B08B0,0x005B1610,0x005B0A50,0x005B0B90,0x005B0950];
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -64,6 +67,8 @@ function fixture(options = {}) {
     isNull() { return this.n === 0; }
     toString() { return '0x' + this.n.toString(16); }
     toUInt32() { return this.n >>> 0; }
+    toInt32() { return this.n | 0; }
+    compare(p) { return Math.sign(this.n - p.n); }
     readU32() { return memory.get(this.n) ?? 0; }
     readU16() {
       if (options.failLpRead &&
@@ -92,8 +97,8 @@ function fixture(options = {}) {
         p.n === 0x005B9170 ||
         [0x005AAB90,0x005AD740,0x005AB820,0x005ABD00,0x005AC870,
          0x0056A030,0x00569F70,0x00402690,0x004026C0,0x00579930].includes(p.n) ||
-        p.n >= 0x20000000)
-        ? 'r-x' : 'r--'}; },
+        p.n >= 0x20000000 || aiAddresses.includes(p.n))
+         ? 'r-x' : 'r--', base:ptr(0x00A579A0), size:0x1000}; },
     },
     Memory: {
       alloc(){ return ptr(0x30000000+(++allocIndex)*4); },
@@ -108,6 +113,12 @@ function fixture(options = {}) {
           assert.equal(traceHandler, null);
           traceHandler = callbacks.onEnter;
           return {detach(){traceHandler=null;}};
+        }
+        if (aiAddresses.includes(address.n)) {
+          if (options.failAiHookAt === address.n) throw new Error('Simulated AI detail hook failure');
+          assert.equal(aiHandlers.has(address.n),false);
+          aiHandlers.set(address.n,callbacks);
+          return {detach(){aiHandlers.delete(address.n);}};
         }
         if ([0x005AAB90,0x005AD740,0x005AB820,0x005ABD00,0x005AC870].includes(address.n)) {
           if (options.failPrepAttachAt === address.n) throw new Error('Simulated prep attach fault');
@@ -205,6 +216,15 @@ function fixture(options = {}) {
     },
     traceActive(){return traceHandler !== null;},
     prepCount(){return prepHandlers.size;},
+    aiHookCount(){return aiHandlers.size;},
+    aiCall(address,args=[],retval=0,body=null,caller=0x005B1377) {
+      const callbacks=aiHandlers.get(address);
+      if (!callbacks) throw new Error('AI hook not installed at '+address.toString(16));
+      const receiver={returnAddress:ptr(caller)};
+      callbacks.onEnter.call(receiver,args.map(v=>ptr(v)));
+      if(body) body();
+      callbacks.onLeave.call(receiver,ptr(retval));
+    },
     prepCall(address,args=[],retval=1,beforeLeave=null,caller=0x005B1337) {
       const callback=prepHandlers.get(address);
       if(!callback)return;
