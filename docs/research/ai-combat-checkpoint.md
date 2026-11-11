@@ -75,3 +75,11 @@ Inclui regressões de flags desconhecidas, política de ameaças, sort não est�
 empates, remoções e overflow DWORD/int16. Contrato fechado em dois monstros
 comuns; não é replay integral de uma decisão observada. Próximo incremento:
 publicar o fluxo candidato → score calculado → ranking e o corpus diferencial.
+
+## Marco C e corpus
+`0e83b1e` publicou sequência/baseline/CLI. Fluxo candidato→score C#→ranking
+agora passou com mão integral de dois recursos e contratos explícitos.
+599 checks C# passaram, incluindo13 do candidato e três do corpus;
+12/14 pares concordam sob um cenário neutro uniforme, dois divergem e oito
+não têm stats suficientes. Zero contextos reais completos: não declarar
+seletor integralmente reproduzido. Detalhes em ai-combat-engine.md.

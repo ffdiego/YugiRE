@@ -1,0 +1,993 @@
+{
+  "schema": "joey-ai-combat-differential-v1",
+  "sourceCapture": "commands-20261111-022940-355228-pid36348.jsonl",
+  "sourceCaptureSha256": "dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90",
+  "executableSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "executableSha256Provenance": "associated evidence contract; raw metadata hash is reported separately",
+  "metadataExeSha256": null,
+  "datSha256": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed",
+  "scope": "observed computed inputs and independent native output; conditional differential tests only, not complete context replay",
+  "associationEvidence": "same thread, child callId allocated after parent, return before parent, exactly matching DD30 arguments",
+  "sharedUnknownContext": [
+    "defender position word / attack-versus-defense branch",
+    "attacker and defender player flags 0x400000",
+    "eligible Metalmorph link count",
+    "piercing link predicates and source sides",
+    "resource 0x58F / gate 0x14D suppression predicates",
+    "initial descriptor bits preserved by mask 0xF005"
+  ],
+  "expectationProvenance": "native observed buffer; decoded expectations do not supply missing evaluator context",
+  "normalizationContract": {
+    "description": "A consumer may supply an explicit effects-free context and position as a documented scenario. Such a comparison is conditional compatibility, not observation of those assumptions.",
+    "knownBitsOnly": "Compare lowWord with mask 0x0FFA and all 16 highWord bits; F40 preserves initial bits 0xF005 which were not captured on entry.",
+    "forbiddenInference": "Do not choose position, flags or effect counts by searching for the expected output and then call the context observed."
+  },
+  "coverage": {
+    "nativeCombatBuffers": 22,
+    "pairedStats": 14,
+    "missingOrAmbiguousStats": 8,
+    "fullyObservedContexts": 0
+  },
+  "events": [
+    {
+      "eventSeq": 25,
+      "eventCallId": 1610,
+      "threadId": 27920,
+      "selectorCallId": 1597,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 23,
+        "statsCallId": 1611,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "260212056C07000084030000",
+        "internal_card_index": 550,
+        "type_code": 18,
+        "attribute_code": 5,
+        "attack": 1900,
+        "defense": 900,
+        "resource_id": 531
+      },
+      "defender": {
+        "statsSeq": 24,
+        "statsCallId": 1612,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "18000F05A40600007E040000",
+        "internal_card_index": 24,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 1700,
+        "defense": 1150,
+        "resource_id": 77
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "0808C800",
+      "expectedKnownLowWord": 2056,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 200
+    },
+    {
+      "eventSeq": 111,
+      "eventCallId": 8992,
+      "threadId": 27920,
+      "selectorCallId": 8987,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 109,
+        "statsCallId": 8993,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "260212056C07000084030000",
+        "internal_card_index": 550,
+        "type_code": 18,
+        "attribute_code": 5,
+        "attack": 1900,
+        "defense": 900,
+        "resource_id": 531
+      },
+      "defender": {
+        "statsSeq": 110,
+        "statsCallId": 8994,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "000470FE",
+      "expectedKnownLowWord": 1024,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -400
+    },
+    {
+      "eventSeq": 123,
+      "eventCallId": 9004,
+      "threadId": 27920,
+      "selectorCallId": 8987,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 121,
+        "statsCallId": 9005,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "260212056C07000084030000",
+        "internal_card_index": 550,
+        "type_code": 18,
+        "attribute_code": 5,
+        "attack": 1900,
+        "defense": 900,
+        "resource_id": 531
+      },
+      "defender": {
+        "statsSeq": 122,
+        "statsCallId": 9006,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "000470FE",
+      "expectedKnownLowWord": 1024,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -400
+    },
+    {
+      "eventSeq": 131,
+      "eventCallId": 9012,
+      "threadId": 27920,
+      "selectorCallId": 8987,
+      "side": 0,
+      "attackerSlot": 1,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 129,
+        "statsCallId": 9013,
+        "rawArgs": [
+          0,
+          1
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": {
+        "statsSeq": 130,
+        "statsCallId": 9014,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "1004D4FE",
+      "expectedKnownLowWord": 1040,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -300
+    },
+    {
+      "eventSeq": 157,
+      "eventCallId": 9733,
+      "threadId": 27920,
+      "selectorCallId": 9724,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 155,
+        "statsCallId": 9734,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "260212056C07000084030000",
+        "internal_card_index": 550,
+        "type_code": 18,
+        "attribute_code": 5,
+        "attack": 1900,
+        "defense": 900,
+        "resource_id": 531
+      },
+      "defender": {
+        "statsSeq": 156,
+        "statsCallId": 9735,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "000470FE",
+      "expectedKnownLowWord": 1024,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -400
+    },
+    {
+      "eventSeq": 162,
+      "eventCallId": 9738,
+      "threadId": 27920,
+      "selectorCallId": 9724,
+      "side": 0,
+      "attackerSlot": 1,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 160,
+        "statsCallId": 9739,
+        "rawArgs": [
+          0,
+          1
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defender": {
+        "statsSeq": 161,
+        "statsCallId": 9740,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "100C0000",
+      "expectedKnownLowWord": 3088,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 179,
+      "eventCallId": 9755,
+      "threadId": 27920,
+      "selectorCallId": 9724,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 177,
+        "statsCallId": 9756,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "260212056C07000084030000",
+        "internal_card_index": 550,
+        "type_code": 18,
+        "attribute_code": 5,
+        "attack": 1900,
+        "defense": 900,
+        "resource_id": 531
+      },
+      "defender": {
+        "statsSeq": 178,
+        "statsCallId": 9757,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "000470FE",
+      "expectedKnownLowWord": 1024,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -400
+    },
+    {
+      "eventSeq": 184,
+      "eventCallId": 9760,
+      "threadId": 27920,
+      "selectorCallId": 9724,
+      "side": 0,
+      "attackerSlot": 1,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 182,
+        "statsCallId": 9761,
+        "rawArgs": [
+          0,
+          1
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defender": {
+        "statsSeq": 183,
+        "statsCallId": 9762,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "100C0000",
+      "expectedKnownLowWord": 3088,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 193,
+      "eventCallId": 9769,
+      "threadId": 27920,
+      "selectorCallId": 9724,
+      "side": 0,
+      "attackerSlot": 2,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 191,
+        "statsCallId": 9770,
+        "rawArgs": [
+          0,
+          2
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": {
+        "statsSeq": 192,
+        "statsCallId": 9771,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "2004D4FE",
+      "expectedKnownLowWord": 1056,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -300
+    },
+    {
+      "eventSeq": 304,
+      "eventCallId": 31839,
+      "threadId": 27920,
+      "selectorCallId": 31826,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 302,
+        "statsCallId": 31840,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "B10210060807000058020000",
+        "internal_card_index": 689,
+        "type_code": 16,
+        "attribute_code": 6,
+        "attack": 1800,
+        "defense": 600,
+        "resource_id": 1174
+      },
+      "defender": {
+        "statsSeq": 303,
+        "statsCallId": 31841,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "08080000",
+      "expectedKnownLowWord": 2056,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 310,
+      "eventCallId": 31845,
+      "threadId": 27920,
+      "selectorCallId": 31826,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 1,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 308,
+        "statsCallId": 31846,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "B10210060807000058020000",
+        "internal_card_index": 689,
+        "type_code": 16,
+        "attribute_code": 6,
+        "attack": 1800,
+        "defense": 600,
+        "resource_id": 1174
+      },
+      "defender": {
+        "statsSeq": 309,
+        "statsCallId": 31847,
+        "rawArgs": [
+          1,
+          1
+        ],
+        "raw_hex": "0D020C05140500004C040000",
+        "internal_card_index": 525,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 1300,
+        "defense": 1100,
+        "resource_id": 63
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "8808F401",
+      "expectedKnownLowWord": 2184,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 500
+    },
+    {
+      "eventSeq": 319,
+      "eventCallId": 31854,
+      "threadId": 27920,
+      "selectorCallId": 31826,
+      "side": 0,
+      "attackerSlot": 2,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 317,
+        "statsCallId": 31855,
+        "rawArgs": [
+          0,
+          2
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": {
+        "statsSeq": 318,
+        "statsCallId": 31856,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "33010F05FC08000000000000",
+        "internal_card_index": 307,
+        "type_code": 15,
+        "attribute_code": 5,
+        "attack": 2300,
+        "defense": 0,
+        "resource_id": 1344
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "28080000",
+      "expectedKnownLowWord": 2088,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 499,
+      "eventCallId": 40631,
+      "threadId": 27920,
+      "selectorCallId": 40623,
+      "side": 0,
+      "attackerSlot": 2,
+      "targetSlot": 0,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 498,
+        "statsCallId": 40632,
+        "rawArgs": [
+          0,
+          2
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "28080000",
+      "expectedKnownLowWord": 2088,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 510,
+      "eventCallId": 40642,
+      "threadId": 27920,
+      "selectorCallId": 40623,
+      "side": 0,
+      "attackerSlot": 1,
+      "targetSlot": 0,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 509,
+        "statsCallId": 40643,
+        "rawArgs": [
+          0,
+          1
+        ],
+        "raw_hex": "42030106B0040000BC020000",
+        "internal_card_index": 834,
+        "type_code": 1,
+        "attribute_code": 6,
+        "attack": 1200,
+        "defense": 700,
+        "resource_id": 3
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "18080000",
+      "expectedKnownLowWord": 2072,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 644,
+      "eventCallId": 47932,
+      "threadId": 27920,
+      "selectorCallId": 47923,
+      "side": 0,
+      "attackerSlot": 2,
+      "targetSlot": 0,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 643,
+        "statsCallId": 47933,
+        "rawArgs": [
+          0,
+          2
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "28080000",
+      "expectedKnownLowWord": 2088,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 651,
+      "eventCallId": 47939,
+      "threadId": 27920,
+      "selectorCallId": 47923,
+      "side": 0,
+      "attackerSlot": 2,
+      "targetSlot": 1,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 650,
+        "statsCallId": 47940,
+        "rawArgs": [
+          0,
+          2
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "A8080000",
+      "expectedKnownLowWord": 2216,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 663,
+      "eventCallId": 47951,
+      "threadId": 27920,
+      "selectorCallId": 47923,
+      "side": 0,
+      "attackerSlot": 1,
+      "targetSlot": 0,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 662,
+        "statsCallId": 47952,
+        "rawArgs": [
+          0,
+          1
+        ],
+        "raw_hex": "0D020C05140500004C040000",
+        "internal_card_index": 525,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 1300,
+        "defense": 1100,
+        "resource_id": 63
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "18080000",
+      "expectedKnownLowWord": 2072,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 667,
+      "eventCallId": 47955,
+      "threadId": 27920,
+      "selectorCallId": 47923,
+      "side": 0,
+      "attackerSlot": 1,
+      "targetSlot": 1,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 666,
+        "statsCallId": 47956,
+        "rawArgs": [
+          0,
+          1
+        ],
+        "raw_hex": "0D020C05140500004C040000",
+        "internal_card_index": 525,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 1300,
+        "defense": 1100,
+        "resource_id": 63
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "98080000",
+      "expectedKnownLowWord": 2200,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 676,
+      "eventCallId": 47964,
+      "threadId": 27920,
+      "selectorCallId": 47923,
+      "side": 0,
+      "attackerSlot": 2,
+      "targetSlot": 0,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 675,
+        "statsCallId": 47965,
+        "rawArgs": [
+          0,
+          2
+        ],
+        "raw_hex": "6C010C05D007000040060000",
+        "internal_card_index": 364,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 2000,
+        "defense": 1600,
+        "resource_id": 744
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "28080000",
+      "expectedKnownLowWord": 2088,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 749,
+      "eventCallId": 53019,
+      "threadId": 27920,
+      "selectorCallId": 53011,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "incomplete_computed_stats",
+      "attacker": {
+        "statsSeq": 748,
+        "statsCallId": 53020,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "0D020C05140500004C040000",
+        "internal_card_index": 525,
+        "type_code": 12,
+        "attribute_code": 5,
+        "attack": 1300,
+        "defense": 1100,
+        "resource_id": 63
+      },
+      "defender": null,
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [
+        "defender evaluation stats; absent DD30 may be hidden-card heuristic but does not prove it"
+      ],
+      "expectedBufferHex": "08080000",
+      "expectedKnownLowWord": 2056,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": 0
+    },
+    {
+      "eventSeq": 822,
+      "eventCallId": 58457,
+      "threadId": 27920,
+      "selectorCallId": 58448,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 820,
+        "statsCallId": 58458,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "76021201F401000090010000",
+        "internal_card_index": 630,
+        "type_code": 18,
+        "attribute_code": 1,
+        "attack": 500,
+        "defense": 400,
+        "resource_id": 15
+      },
+      "defender": {
+        "statsSeq": 821,
+        "statsCallId": 58459,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "370304043408000008070000",
+        "internal_card_index": 823,
+        "type_code": 4,
+        "attribute_code": 4,
+        "attack": 2100,
+        "defense": 1800,
+        "resource_id": 528
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "0004C0F9",
+      "expectedKnownLowWord": 1024,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -1600
+    },
+    {
+      "eventSeq": 1029,
+      "eventCallId": 73174,
+      "threadId": 27920,
+      "selectorCallId": 73146,
+      "side": 0,
+      "attackerSlot": 0,
+      "targetSlot": 0,
+      "pairing": "paired_computed_stats",
+      "attacker": {
+        "statsSeq": 1027,
+        "statsCallId": 73175,
+        "rawArgs": [
+          0,
+          0
+        ],
+        "raw_hex": "C5010B05E803000064000000",
+        "internal_card_index": 453,
+        "type_code": 11,
+        "attribute_code": 5,
+        "attack": 1000,
+        "defense": 100,
+        "resource_id": 1115
+      },
+      "defender": {
+        "statsSeq": 1028,
+        "statsCallId": 73176,
+        "rawArgs": [
+          1,
+          0
+        ],
+        "raw_hex": "370304043408000008070000",
+        "internal_card_index": 823,
+        "type_code": 4,
+        "attribute_code": 4,
+        "attack": 2100,
+        "defense": 1800,
+        "resource_id": 528
+      },
+      "defenderPosition": null,
+      "initialDescriptorLowWord": null,
+      "fullyObservedContext": false,
+      "additionalUnknownContext": [],
+      "expectedBufferHex": "0004B4FB",
+      "expectedKnownLowWord": 1024,
+      "knownLowWordComparisonMask": 4090,
+      "expectedSignedScore": -1100
+    }
+  ]
+}
