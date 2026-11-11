@@ -1,0 +1,467 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT DISASSEMBLY 0056fd40
+INS 0056fd40 MOV EAX,dword ptr [ESP + 0x8]
+INS 0056fd44 PUSH EBX
+INS 0056fd45 PUSH ESI
+INS 0056fd46 PUSH EDI
+INS 0056fd47 PUSH EAX
+INS 0056fd48 XOR ESI,ESI
+INS 0056fd4a XOR EDI,EDI
+INS 0056fd4c CALL 0x004022e0
+INS 0056fd51 AND EAX,0xffff
+INS 0056fd56 ADD ESP,0x4
+INS 0056fd59 CMP EAX,0x28a
+INS 0056fd5e JG 0x0056ff1f
+INS 0056fd64 JZ 0x0056fea6
+INS 0056fd6a ADD EAX,0xfffffed4
+INS 0056fd6f CMP EAX,0x1b
+INS 0056fd72 JA 0x00570066
+INS 0056fd78 JMP dword ptr [EAX*0x4 + 0x570080]
+INS 0056fd7f MOV ECX,dword ptr [ESP + 0x10]
+INS 0056fd83 CMP byte ptr [ECX + 0x2],0xf
+INS 0056fd87 JMP 0x0056ff0d
+INS 0056fd8c MOV EDX,dword ptr [ESP + 0x10]
+INS 0056fd90 MOV AX,word ptr [EDX + 0x2]
+INS 0056fd94 AND EAX,0xff00
+INS 0056fd99 CMP EAX,0x200
+INS 0056fd9e JMP 0x0056ffda
+INS 0056fda3 MOV ECX,dword ptr [ESP + 0x10]
+INS 0056fda7 CMP byte ptr [ECX + 0x2],0x3
+INS 0056fdab JMP 0x0056ff0d
+INS 0056fdb0 MOV ESI,0x3e8
+INS 0056fdb5 JMP 0x00570066
+INS 0056fdba MOV EDX,dword ptr [ESP + 0x10]
+INS 0056fdbe CMP byte ptr [EDX + 0x2],0xa
+INS 0056fdc2 JMP 0x0056ff0d
+INS 0056fdc7 MOV EAX,dword ptr [ESP + 0x10]
+INS 0056fdcb CMP byte ptr [EAX + 0x2],0xa
+INS 0056fdcf JNZ 0x00570066
+INS 0056fdd5 MOV ESI,0x2bc
+INS 0056fdda JMP 0x00570066
+INS 0056fddf MOV ECX,dword ptr [ESP + 0x10]
+INS 0056fde3 MOV DX,word ptr [ECX + 0x2]
+INS 0056fde7 AND EDX,0xff00
+INS 0056fded CMP EDX,0x100
+INS 0056fdf3 JMP 0x0056ffda
+INS 0056fdf8 MOV EAX,dword ptr [ESP + 0x10]
+INS 0056fdfc CMP byte ptr [EAX + 0x2],0xb
+INS 0056fe00 JMP 0x0056ff0d
+INS 0056fe05 MOV ECX,dword ptr [ESP + 0x10]
+INS 0056fe09 MOV DX,word ptr [ECX + 0x2]
+INS 0056fe0d AND EDX,0xff00
+INS 0056fe13 CMP EDX,0x300
+INS 0056fe19 JMP 0x0056ffda
+INS 0056fe1e MOV EAX,dword ptr [ESP + 0x10]
+INS 0056fe22 CMP byte ptr [EAX + 0x2],0xd
+INS 0056fe26 JMP 0x0056ff0d
+INS 0056fe2b MOV ECX,dword ptr [ESP + 0x10]
+INS 0056fe2f CMP byte ptr [ECX + 0x2],0x11
+INS 0056fe33 JMP 0x0056ff0d
+INS 0056fe38 MOV EDI,0x320
+INS 0056fe3d JMP 0x00570066
+INS 0056fe42 MOV ESI,0x2bc
+INS 0056fe47 MOV EDI,ESI
+INS 0056fe49 JMP 0x00570066
+INS 0056fe4e MOV EDX,dword ptr [ESP + 0x10]
+INS 0056fe52 CMP byte ptr [EDX + 0x2],0x1
+INS 0056fe56 JMP 0x0056ff0d
+INS 0056fe5b MOV EAX,dword ptr [ESP + 0x10]
+INS 0056fe5f CMP byte ptr [EAX + 0x2],0x13
+INS 0056fe63 JMP 0x0056ff0d
+INS 0056fe68 MOV EBX,dword ptr [ESP + 0x10]
+INS 0056fe6c MOV CX,word ptr [EBX]
+INS 0056fe6f PUSH ECX
+INS 0056fe70 CALL 0x004022e0
+INS 0056fe75 ADD ESP,0x4
+INS 0056fe78 CMP AX,0x3d
+INS 0056fe7c JZ 0x0056fea6
+INS 0056fe7e MOV DX,word ptr [EBX]
+INS 0056fe81 PUSH EDX
+INS 0056fe82 CALL 0x004022e0
+INS 0056fe87 ADD ESP,0x4
+INS 0056fe8a CMP AX,0x3e
+INS 0056fe8e JZ 0x0056fea6
+INS 0056fe90 MOV AX,word ptr [EBX]
+INS 0056fe93 PUSH EAX
+INS 0056fe94 CALL 0x004022e0
+INS 0056fe99 ADD ESP,0x4
+INS 0056fe9c CMP AX,0x4e1
+INS 0056fea0 JNZ 0x00570066
+INS 0056fea6 MOV ESI,0x1f4
+INS 0056feab JMP 0x00570066
+INS 0056feb0 MOV ECX,dword ptr [ESP + 0x10]
+INS 0056feb4 CMP byte ptr [ECX + 0x2],0xc
+INS 0056feb8 JMP 0x0056ff0d
+INS 0056feba MOV EDX,dword ptr [ESP + 0x10]
+INS 0056febe CMP byte ptr [EDX + 0x2],0x2
+INS 0056fec2 JMP 0x0056ff0d
+INS 0056fec4 MOV EAX,dword ptr [ESP + 0x10]
+INS 0056fec8 CMP byte ptr [EAX + 0x2],0x12
+INS 0056fecc JMP 0x0056ff0d
+INS 0056fece MOV ECX,dword ptr [ESP + 0x10]
+INS 0056fed2 MOV DX,word ptr [ECX + 0x2]
+TRANSIENT DISASSEMBLY 0056f1d0
+INS 0056f1d0 JNS 0x0056f1d7
+INS 0056f1d2 DEC EAX
+INS 0056f1d3 OR EAX,0xfffffffe
+INS 0056f1d6 INC EAX
+INS 0056f1d7 JZ 0x0056f1e5
+INS 0056f1d9 MOV EAX,dword ptr [EBP + 0x4]
+INS 0056f1dc MOV ECX,dword ptr [EBP + 0x8]
+INS 0056f1df MOV dword ptr [EBP + 0x4],ECX
+INS 0056f1e2 MOV dword ptr [EBP + 0x8],EAX
+INS 0056f1e5 MOV EAX,[0x00a577ec]
+INS 0056f1ea MOV EDX,dword ptr [ESP + 0x10]
+INS 0056f1ee TEST EAX,0x100000
+INS 0056f1f3 JZ 0x0056f21c
+INS 0056f1f5 MOV ECX,dword ptr [ESP + 0x14]
+INS 0056f1f9 MOV EAX,dword ptr [EBP + 0x4]
+INS 0056f1fc ADD EBX,EDX
+INS 0056f1fe MOV EDX,dword ptr [ESP + 0x28]
+INS 0056f202 ADD EBX,ECX
+INS 0056f204 MOV ECX,dword ptr [ESP + 0x20]
+INS 0056f208 SUB EAX,EBX
+INS 0056f20a MOV dword ptr [EBP + 0x4],EAX
+INS 0056f20d MOV EAX,dword ptr [ESP + 0x18]
+INS 0056f211 ADD EAX,ECX
+INS 0056f213 MOV ECX,dword ptr [EBP + 0x8]
+INS 0056f216 ADD EAX,EDX
+INS 0056f218 SUB ECX,EAX
+INS 0056f21a JMP 0x0056f241
+INS 0056f21c MOV ECX,dword ptr [ESP + 0x14]
+INS 0056f220 MOV EAX,dword ptr [EBP + 0x4]
+INS 0056f223 ADD EBX,EDX
+INS 0056f225 MOV EDX,dword ptr [ESP + 0x28]
+INS 0056f229 ADD EBX,ECX
+INS 0056f22b MOV ECX,dword ptr [ESP + 0x20]
+INS 0056f22f ADD EAX,EBX
+INS 0056f231 MOV dword ptr [EBP + 0x4],EAX
+INS 0056f234 MOV EAX,dword ptr [ESP + 0x18]
+INS 0056f238 ADD EAX,ECX
+INS 0056f23a MOV ECX,dword ptr [EBP + 0x8]
+INS 0056f23d ADD EAX,EDX
+INS 0056f23f ADD ECX,EAX
+INS 0056f241 MOV dword ptr [EBP + 0x8],ECX
+INS 0056f244 MOV ECX,dword ptr [EBP + 0x4]
+INS 0056f247 XOR EAX,EAX
+INS 0056f249 CMP ECX,EAX
+INS 0056f24b JGE 0x0056f250
+INS 0056f24d MOV dword ptr [EBP + 0x4],EAX
+INS 0056f250 CMP dword ptr [EBP + 0x8],EAX
+INS 0056f253 JGE 0x0056f258
+INS 0056f255 MOV dword ptr [EBP + 0x8],EAX
+INS 0056f258 PUSH 0x44b
+INS 0056f25d PUSH ESI
+INS 0056f25e PUSH EDI
+INS 0056f25f CALL 0x0056d740
+INS 0056f264 ADD ESP,0xc
+INS 0056f267 DEC EAX
+INS 0056f268 JS 0x0056f27f
+INS 0056f26a LEA ESI,[EAX + 0x1]
+INS 0056f26d MOV EDX,dword ptr [EBP + 0x4]
+INS 0056f270 PUSH EDX
+INS 0056f271 CALL 0x005be050
+INS 0056f276 ADD ESP,0x4
+INS 0056f279 DEC ESI
+INS 0056f27a MOV dword ptr [EBP + 0x4],EAX
+INS 0056f27d JNZ 0x0056f26d
+INS 0056f27f POP EDI
+INS 0056f280 POP ESI
+INS 0056f281 POP EBP
+INS 0056f282 POP EBX
+INS 0056f283 ADD ESP,0x30
+INS 0056f286 RET
+INS 0056f430 PUSH EBX
+INS 0056f431 PUSH EBP
+INS 0056f432 PUSH ESI
+INS 0056f433 PUSH EDI
+INS 0056f434 MOV EDI,dword ptr [ESP + 0x14]
+FUNCTION FUN_0056fd40 @0056fd40
+ CALLER 0056ef80 FUN_0056dd30
+
+void FUN_0056fd40(undefined2 *param_1,undefined4 param_2,int *param_3,int *param_4)
+
+{
+  ushort uVar1;
+  short sVar2;
+  undefined2 extraout_var;
+  undefined2 extraout_var_00;
+  undefined2 extraout_var_01;
+  int iVar3;
+  int iVar4;
+  bool bVar5;
+  
+  iVar3 = 0;
+  iVar4 = 0;
+  uVar1 = FUN_004022e0(param_2);
+  if (0x28a < uVar1) {
+    if (0x422 < uVar1) {
+      if (0x58c < uVar1) {
+        if (uVar1 == 0x58e) {
+          if (*(char *)(param_1 + 1) == '\x0f') {
+            iVar3 = 800;
+          }
+        }
+        else if ((uVar1 == 0x604) &&
+                (sVar2 = FUN_004022e0(CONCAT22(extraout_var_00,*param_1)), sVar2 == 0x53b)) {
+          iVar3 = 300;
+        }
+        goto switchD_0056fd78_caseD_13d;
+      }
+      if (uVar1 == 0x58c) {
+        iVar3 = 1000;
+        iVar4 = -1000;
+        goto switchD_0056fd78_caseD_13d;
+      }
+      if (uVar1 != 0x49e) {
+        if (uVar1 == 0x4da) {
+          iVar3 = -500;
+        }
+        goto switchD_0056fd78_caseD_13d;
+      }
+      if (*(char *)(param_1 + 1) != '\x0f') goto switchD_0056fd78_caseD_13d;
+switchD_0056fd78_caseD_140:
+      iVar3 = 700;
+      goto switchD_0056fd78_caseD_13d;
+    }
+    if (uVar1 == 0x422) {
+      iVar3 = -500;
+      iVar4 = -500;
+      goto switchD_0056fd78_caseD_13d;
+    }
+    if (0x3f4 < uVar1) {
+      if (uVar1 != 0x3f5) {
+        if (uVar1 == 0x412) {
+          iVar3 = 500;
+          iVar4 = 500;
+        }
+        goto switchD_0056fd78_caseD_13d;
+      }
+      bVar5 = (param_1[1] & 0xff00) == 0x600;
+      goto LAB_0056ffda;
+    }
+    if (uVar1 == 0x3f4) {
+      bVar5 = (param_1[1] & 0xff00) == 0x400;
+      goto LAB_0056ffda;
+    }
+    if (uVar1 == 0x28d) {
+      if ((param_1[1] & 0xff00) == 0x400) {
+        iVar3 = 700;
+      }
+      goto switchD_0056fd78_caseD_13d;
+    }
+    if (uVar1 != 0x291) {
+      if ((uVar1 == 0x29b) && ((param_1[1] & 0xff00) == 0x100)) {
+        iVar3 = 700;
+      }
+      goto switchD_0056fd78_caseD_13d;
+    }
+    goto LAB_0056ff13;
+  }
+  if (uVar1 == 0x28a) goto switchD_0056fd78_caseD_136;
+  switch(uVar1) {
+  case 300:
+    bVar5 = *(char *)(param_1 + 1) == '\x0f';
+    break;
+  case 0x12d:
+    bVar5 = (param_1[1] & 0xff00) == 0x200;
+    goto LAB_0056ffda;
+  case 0x12e:
+    bVar5 = *(char *)(param_1 + 1) == '\x03';
+    break;
+  case 0x12f:
+    iVar3 = 1000;
+    goto switchD_0056fd78_caseD_13d;
+  case 0x130:
+    bVar5 = *(char *)(param_1 + 1) == '\n';
+    break;
+  case 0x131:
+    if (*(char *)(param_1 + 1) == '\n') {
+      iVar3 = 700;
+    }
+    goto switchD_0056fd78_caseD_13d;
+  case 0x132:
+    bVar5 = (param_1[1] & 0xff00) == 0x100;
+    goto LAB_0056ffda;
+  case 0x133:
+    bVar5 = *(char *)(param_1 + 1) == '\v';
+    break;
+  case 0x134:
+    bVar5 = (param_1[1] & 0xff00) == 0x300;
+    goto LAB_0056ffda;
+  case 0x135:
+    bVar5 = *(char *)(param_1 + 1) == '\r';
+    break;
+  case 0x136:
+    goto switchD_0056fd78_caseD_136;
+  case 0x137:
+    bVar5 = *(char *)(param_1 + 1) == '\x11';
+    break;
+  case 0x138:
+    iVar4 = 800;
+    goto switchD_0056fd78_caseD_13d;
+  case 0x139:
+    iVar3 = 700;
+    iVar4 = 700;
+    goto switchD_0056fd78_caseD_13d;
+  case 0x13a:
+    bVar5 = *(char *)(param_1 + 1) == '\x01';
+    break;
+  case 0x13b:
+    bVar5 = *(char *)(param_1 + 1) == '\x13';
+    break;
+  case 0x13c:
+    sVar2 = FUN_004022e0(CONCAT22(extraout_var,*param_1));
+    if (((sVar2 != 0x3d) &&
+        (sVar2 = FUN_004022e0(CONCAT22(extraout_var_01,*param_1)), sVar2 != 0x3e)) &&
+       (sVar2 = FUN_004022e0(*param_1), sVar2 != 0x4e1)) goto switchD_0056fd78_caseD_13d;
+    goto switchD_0056fd78_caseD_136;
+  default:
+    goto switchD_0056fd78_caseD_13d;
+  case 0x13e:
+    bVar5 = *(char *)(param_1 + 1) == '\f';
+    break;
+  case 0x140:
+    goto switchD_0056fd78_caseD_140;
+  case 0x141:
+    bVar5 = *(char *)(param_1 + 1) == '\x02';
+    break;
+  case 0x142:
+    bVar5 = *(char *)(param_1 + 1) == '\x12';
+    break;
+  case 0x143:
+    bVar5 = (param_1[1] & 0xff00) == 0x500;
+LAB_0056ffda:
+    if (bVar5) {
+      iVar3 = 400;
+      iVar4 = -200;
+    }
+    goto switchD_0056fd78_caseD_13d;
+  case 0x144:
+    bVar5 = *(char *)(param_1 + 1) == '\a';
+    break;
+  case 0x145:
+    bVar5 = *(char *)(param_1 + 1) == '\t';
+    break;
+  case 0x146:
+    bVar5 = *(char *)(param_1 + 1) == '\x10';
+    break;
+  case 0x147:
+    bVar5 = *(char *)(param_1 + 1) == '\x0e';
+  }
+  if (bVar5) {
+LAB_0056ff13:
+    iVar3 = 300;
+    iVar4 = 300;
+  }
+switchD_0056fd78_caseD_13d:
+  *param_3 = *param_3 + iVar3;
+  *param_4 = *param_4 + iVar4;
+  return;
+switchD_0056fd78_caseD_136:
+  iVar3 = 500;
+  goto switchD_0056fd78_caseD_13d;
+}
+
+
+FUNCTION FUN_005674e0 @005674e0
+ CALLER 0056b53a FUN_0056b440
+ CALLER 0059d470 FUN_0059d370
+ CALLER 0056ab1d FUN_0056aa70
+ CALLER 0057921c FUN_005791d0
+ CALLER 0059bf2c FUN_00599e30
+ CALLER 0057907b FUN_00579020
+ CALLER 00579141 FUN_00579020
+ CALLER 0058399b null
+ CALLER 0058d06b null
+ CALLER 0058d10a null
+ CALLER 0058d17a null
+ CALLER 00578d93 FUN_00578d00
+ CALLER 00578edd FUN_00578d00
+
+undefined4 FUN_005674e0(undefined4 param_1,undefined4 param_2)
+
+{
+  ushort uVar1;
+  ushort uVar2;
+  bool bVar3;
+  
+  uVar1 = FUN_004022e0(param_1);
+  uVar2 = FUN_004022e0(param_2);
+  if (1999 < uVar1) {
+    uVar1 = uVar1 - 2000;
+  }
+  if (1999 < uVar2) {
+    uVar2 = uVar2 - 2000;
+  }
+  if (uVar1 == uVar2) {
+    return 1;
+  }
+  if (uVar1 < 0x4bb) {
+    if (uVar1 != 0x4ba) {
+      if (0x3d < uVar1) {
+        if ((uVar1 != 0x3eb) && (uVar1 != 0x40a)) {
+          return 0;
+        }
+        if (uVar2 == 0x3eb) {
+          return 1;
+        }
+        if (uVar2 == 0x40a) {
+          return 1;
+        }
+        return 0;
+      }
+      if (uVar1 == 0x3d) {
+LAB_00567588:
+        if (uVar2 == 0x3d) {
+          return 1;
+        }
+        bVar3 = uVar2 == 0x4e1;
+        goto LAB_00567592;
+      }
+      if (uVar1 != 0x22) {
+        if (uVar1 != 0x39) {
+          return 0;
+        }
+        goto LAB_0056759b;
+      }
+    }
+    if (uVar2 != 0x22) {
+      if (uVar2 == 0x4ba) {
+        return 1;
+      }
+      return 0;
+    }
+  }
+  else {
+    if (uVar1 < 0x76e) {
+      if (uVar1 == 0x76d) {
+LAB_0056759b:
+        if (uVar2 == 0x39) {
+          return 1;
+        }
+        bVar3 = uVar2 == 0x76d;
+LAB_00567592:
+        if (bVar3) {
+          return 1;
+        }
+        return 0;
+      }
+      if (uVar1 != 0x4dd) {
+        if (uVar1 != 0x4e1) {
+          return 0;
+        }
+        goto LAB_00567588;
+      }
+    }
+    else if (uVar1 != 0x76e) {
+      return 0;
+    }
+    if ((uVar2 != 0x4dd) && (uVar2 != 0x76e)) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+

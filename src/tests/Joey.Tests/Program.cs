@@ -179,4 +179,10 @@ if (args.Length > 0)
 else DeckTraceChecks.Run(Check);
 AiRankingChecks.Run(Check);
 AiCombatChecks.Run(Check);
+AiAttributeChecks.Run(Check);
+if (args.Length > 0)
+{
+    using var attributeArchive = new Archive(args[0]);
+    AiAttributeChecks.RunCatalog(Check,attributeArchive);
+}
 Console.WriteLine($"{passed} checks passed.");

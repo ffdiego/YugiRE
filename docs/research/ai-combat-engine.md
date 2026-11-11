@@ -57,3 +57,30 @@ sortnãoestável,máscara/remoções/soma; hipótese de candidato seguida dorank
 Cada etapa deve propagarunsupported e manter osdados nativos capturados
 separados decontextos sintéticos declarados. Ver
 [checkpoint operacional](ai-combat-checkpoint.md).
+
+## Atributos independentes no subconjunto fechado
+`NativeAiAttributes.FromPlainCard` lê propriedades do catálogo DAT para
+AxeRaider004D eGeminiElf0213:ATK/DEF,código detipo e atributo-base. Ogetter
+00402650 usa `propertyWord>>29` para monstros (tipos21/22 são exceções para
+magias/armadilhas, fora desse subconjunto). Asfontes primárias estão em
+`ai-combat-base-stat-metadata.txt`, `ai-combat-base-attribute.txt` e
+`ai-combat-equipment-deltas.txt`. Não há atributo computado peloJoey como
+entrada dessa sobrecarga.
+
+Omanifesto de modificadores deve estar explicitamente resolvido. Inclui
+contribuições conhecidas de equipamentos,supressão/sinal já resolvidos,
+paridadeShield&Sword e contagemMirrorWall. Aordem DD30 é swap→deltas
+int32→clamp0→halves repetidos. Não se introduz clamp depois doshalves;
+overflow deinteiro é preservado até mesmo nos testes sintéticos extremos.
+Normalização/aliases674E0 também foram portados. Equipamento ou recurso
+intrínseco não suportado rejeita o cálculo inteiro, sem delta inventado0.
+A elegibilidade devínculos e a ausência de outrosmodificadores continuam
+sendo contrato do caller, não descoberta automática dessa classe.
+
+Diferenciais comhelpersPython existentes:70casos de contribuição deFD40 e
+28vetores dehalf, todos passados; são oráculos sintéticos de lógicaestática.
+Osblocos calculados doDAT para asduas cartas, sob contexto vazio declarado,
+concordam byte-a-byte combuffers nativos23/24. Isso valida o resultado
+condicionado aomanifesto; não prova que oJoey observou exatamente ocontexto
+vazio naquela captura. Asmáscaras deatributo foram conferidas noassembly:
+byte+3 é lido como parte alta doWORD+2 (ex. atributo5↔0x500).

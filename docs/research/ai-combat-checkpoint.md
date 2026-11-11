@@ -47,3 +47,13 @@ EXE SHA esperado db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6d
 EtapaA validada com vetores debranches e22buffers nativos deformat/utilidade.
 Contextos reais incompletos explicitados; nenhum scorecapturado usado como
 entrada para geraroutroscore. Próximaetapa sequência eattrs.
+
+## Marcos adicionais
+- `e8646c7`: confrontoA puro,531checks.
+- Atributos:FromPlainCard jáderivaATK/DEF/type/attributo doDATpara2recursos;
+  overloadcomatributoexplícito preservado para entradas resolvidas.
+  21checksattrs(70deltas/28half+DAT2buffers)passaram;componenteattrs elevou531→552 checks
+  Headless003relatórios delimitadossemvantagem demostrada sobreC#,
+  selftestMinGWnãoexecutável. Relatóriocompletoheadless-feasibility.md.
+- SequênciaB compilaepassou20checks novos(total572)antesúltimapropriedadederivada;
+  próximaqueryvalidoupolíticaADE40 eoverloadatributo. Fecharcommitseparado.
