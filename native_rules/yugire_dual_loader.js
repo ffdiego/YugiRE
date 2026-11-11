@@ -898,6 +898,43 @@ function recordAiConsoleTrace(request, phase, details = {}) {
 // this exact EXE. Sequence is monotonically increasing within a session.
 let deckObserver = null;
 let deckFingerprint = null;
+let lastTraceLifePoints = null;
+
+// Every observation is taken on the original producer's onEnter, before
+// that command is queued, NOT after the command's effects have resolved.
+// Compare successive producer entries to detect native LP changes without
+// adding another hook or predicting damage from command arguments.
+function sampleTraceLifePoints(event, opcode) {
+  const forced = opcode === 0x0043 || opcode === 0x0004;
+  try {
+    const duelRunningWord = kDuelRunning.readU16();
+    if (duelRunningWord === 0 && !forced) {
+      lastTraceLifePoints = null;
+      return;
+    }
+    const lifePoints = [
+      va('0x00A55D64').readU16(),
+      va('0x00A55D64').add(kPlayerStride).readU16()
+    ];
+    const first = lastTraceLifePoints === null;
+    const changed = !first && lifePoints.some((lp, side) =>
+      lp !== lastTraceLifePoints[side]);
+    if (first || changed || forced) {
+      event.lifePointsObserved = {
+        lifePoints, duelRunningWord, samplePoint: 'command_producer_onEnter',
+        reason: opcode === 0x0004 ? 'terminal' :
+          opcode === 0x0043 ? 'lp_command' :
+          first ? 'first_active_sample' : 'changed'
+      };
+    }
+    // Cache every valid sampling point, not just the ones emitted.
+    lastTraceLifePoints = duelRunningWord === 0 ? null : lifePoints;
+    if (opcode === 0x0004) lastTraceLifePoints = null;
+  } catch (error) {
+    lastTraceLifePoints = null;
+    if (forced) event.lifePointsReadError = String(error);
+  }
+}
 function startDeckProbe(captureMt = false) {
   if (!installed || !observerOnly || commandTraceHook === null)
     throw new Error('Deck probe requires --observe-only and trace on');
@@ -1805,6 +1842,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
         args: [raw, args[1].toUInt32(),
                args[2].toUInt32(), args[3].toUInt32()]
       };
+      sampleTraceLifePoints(event, raw & 0x7FFF);
       if ((raw & 0x7FFF) === 0x0086 &&
           this.returnAddress.equals(va('0x00574804'))) {
         // FUN_005747E0 (x86) pushes exactly four DWORD parameters,
@@ -1831,6 +1869,9 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
             stateWordAtA577FE: va('0x00A577FE').readU16(),
             duelModeWord: kDemoModeWord.readU32(),
             sceneMode: kDemoSceneMode.readU32(),
+            // Same producer-entry instant as lifePointsObserved, not a
+            // post-resolution or decoded winner state.
+            lifePoints: event.lifePointsObserved?.lifePoints ?? null,
             playerFlags: [kSummonPlayerFlags.readU32(),
               kSummonPlayerFlags.add(kPlayerStride).readU32()],
             queueCount: kQueueCount.readU32()
@@ -1864,6 +1905,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
   traceDropped = 0;
   traceDrained = 0;
   traceCompletedDuels = 0;
+  lastTraceLifePoints = null;
   traceCapacity = capacity;
   traceSession++;
   commandTraceHook = hook;
@@ -1872,6 +1914,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
 
 function stopCommandTrace() {
   // The probe must stop before anyone can export this bounded buffer.
+  lastTraceLifePoints = null;
   stopDeckProbe();
   stopDemoProbe();
   stopAiProbe();
