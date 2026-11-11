@@ -156,6 +156,25 @@ universal da estabilidade do Frida.
   inverter ordem de carga. Não usar modo global antigo para classificar.
 - Não inferir semântica moderna de listas adicionais só pelo tamanho.
 
+## Nova evidência de IA/LP (2026-11-10)
+
+O operador capturou um duelo normal inteiro em
+`commands-20261111-015433-637065-pid41940.jsonl` (SHA256
+`b24e67fccbb79e23df446eb3f36e24c3d57107003691e6ae4ea89561f260bba7`):
+1.583 eventos íntegros, com probes IA, 496 comandos e um terminal
+`0x8004`. O jogador informou vitória. Nove comandos `0x0043`
+permitem reconstruir uma curva hipotética de dano consistente com
+CPU chegando a zero, mas **não eram leituras reais de LP**.
+
+Para fechar essa lacuna, o hook existente `trace on` agora mede LP
+uint16 em `A55D64 + side*0xD44` quando a primeira amostra aparece,
+os LP mudam, há comando `0x0043` ou terminal `0x0004`.
+A leitura é no produtor **antes da fila**, e a alteração pode
+aparecer somente no próximo comando. Sem novo hook/patch, sem dados
+escritos. O teste simulado do agente verificou transições de LP,
+encerramento, reset e falhas de leitura; **validação Windows pendente**.
+[Detalhes e protocolo](duel-life-points-capture.md).
+
 ## Próximos passos priorizados — retomada
 
 1. **Próximo foco: IA jogando duelos normais.** Em sessão *separada* do
