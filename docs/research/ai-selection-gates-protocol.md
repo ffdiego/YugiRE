@@ -1,8 +1,11 @@
 # Piloto Windows — filtros que descartam cartas na IA normal
 
-**Estado:** implementado em 2026-11-10, validação offline em fixtures
-JavaScript (17 grupos de testes); **ainda não testado em Joey real no
-Windows**. Executar um duelo curto, não o laboratório em lote.
+**Estado:** implementado em 2026-11-10 e **validado dinamicamente no
+Joey Windows em 2026-11-11 UTC**, usando um duelo de 890 eventos e sete
+seleções normais. Foram observados 26 candidatos, nove rejeições explícitas
+em gates, quinze simulações e sete índices reconstruídos com os scores
+nativos. O procedimento continua sendo um piloto curto, não o laboratório
+em lote. [Evidência evento a evento](../evidence/ai-gates-full-decision-live-validation-2026-11-11.md).
 
 Objetivo: explicar por que as cartas de uma mão podem não chegar a
 `FUN_005B1610` (simulação de summon), mesmo quando parecem
