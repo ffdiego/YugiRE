@@ -76,6 +76,7 @@ class FakeApi:
         n = len(self.trace_records)
         return {"active": self.trace_active, "prepActive": self.prep_active,
                 "aiActive": self.ai_active,
+                "aiDetailActive": getattr(self, "ai_detail_active", False),
                 "demoActive": self.demo_active,
                 "session": self.trace_session,
                 "producer": "0x5B9170", "capacity": 16, "seen": n,
@@ -94,16 +95,18 @@ class FakeApi:
         self.trace_calls.append(("ai_decision", side, check_only))
         return {"id": 77, "state": "pending", "side": side, "checkOnly": check_only}
 
-    def traceaistart(self):
+    def traceaistart(self, detailed=False):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
-        self.trace_calls.append(("ai_on",))
+        self.trace_calls.append(("ai_on_detail",) if detailed else ("ai_on",))
         self.ai_active = True
+        self.ai_detail_active = detailed
         return self.tracestatus()
 
     def traceaistop(self):
         self.trace_calls.append(("ai_off",))
         self.ai_active = False
+        self.ai_detail_active = False
         return self.tracestatus()
 
     def tracedeckstart(self, mt):
@@ -491,6 +494,19 @@ class ConsoleCommandTests(unittest.TestCase):
                          sorted(rows[3]["deck"]["indices"]))
         self.assertIn("deck_shuffle/enter=1", output.getvalue())
         self.assertIn("duel_entry/enter=1", output.getvalue())
+
+    def test_trace_ai_detail_is_opt_in_and_uses_boolean_rpc_flag(self):
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertTrue(handle_command("trace on 20000", self.api, 1))
+            self.assertTrue(handle_command("trace ai on detail", self.api, 1))
+            self.assertTrue(handle_command("trace ai off", self.api, 1))
+            self.assertTrue(handle_command("trace ai on", self.api, 1))
+            self.assertTrue(handle_command("trace ai off", self.api, 1))
+        self.assertIn(("ai_on_detail",), self.api.trace_calls)
+        self.assertIn(("ai_on",), self.api.trace_calls)
+        self.assertIn("aiDetailActive=True", out.getvalue())
+        self.assertFalse(self.api.ai_active)
+        self.assertFalse(self.api.ai_detail_active)
 
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
