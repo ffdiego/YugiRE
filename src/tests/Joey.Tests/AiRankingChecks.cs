@@ -2,6 +2,14 @@ using Joey.Core;
 
 internal static class AiRankingChecks
 {
+    // Observed candidates and metrics, not a complete native legality model.
+    private readonly record struct LiveCandidate(
+        int HandIndex, int CardIndex, int Attack, int Score, int Slot,
+        ushort ActionMask, ushort Summary);
+    private readonly record struct LiveDecision(
+        int CallId, int Pass, int Baseline, int InitialOpponentLosses,
+        int ExpectedHandIndex, LiveCandidate[] Candidates);
+
     public static void Run(Action<bool,string> check)
     {
         // Independent branch-oriented oracle: CMP/JL, TEST/JZ, CMP/JLE,
@@ -60,6 +68,80 @@ internal static class AiRankingChecks
             0, 0, 1000, 1000, 0, 1, 64);
         check(accepted178Second,
             "Live selector 3379: score +1000 selects Karate Man at hand index 1");
+
+        // Full native gate trace: SHA256 6c93df404998d8b0807ecfb98831a73db5485d274d0cfb29b5ae876a6d6fc5d3
+        // See docs/evidence/ai-gates-full-decision-live-validation-2026-11-11.md.
+        // AAB90/AE3E0/AE220 filtered 9 entries, pass=1 filtered 2 more;
+        // the following table contains the FIFTEEN candidates actually
+        // simulated by the original executable. Inputs are native outputs,
+        // not C# computations of combat, stats or legality.
+        LiveDecision[] decisions =
+        {
+            new(2954, -1, 0, 0, 0, new LiveCandidate[]
+            {
+                new(0, 24, 1700, 2300, 1, 3, 136),
+                new(1, 857, 1700, 2300, 1, 3, 136),
+                new(3, 550, 1900, 2300, 1, 3, 136),
+            }),
+            new(12651, 0, 2500, 1, 2, new LiveCandidate[]
+            {
+                new(0, 857, 1700, 4200, 2, 7, 200),
+                new(2, 550, 1900, 4400, 2, 7, 200),
+                new(3, 261, 1100, 3600, 2, 7, 200),
+            }),
+            new(31727, -1, 0, 0, 0, new LiveCandidate[]
+            {
+                new(0, 857, 1700, 1700, 0, 1, 64),
+                new(2, 261, 1100, 1100, 0, 1, 64),
+                new(3, 380, 1100, 1100, 0, 1, 64),
+            }),
+            new(33504, -1, 0, 1, 1, new LiveCandidate[]
+            {
+                new(1, 261, 1100, 1700, 1, 3, 136),
+                new(2, 380, 1100, 1700, 1, 3, 136),
+            }),
+            new(37786, 1, 2800, 0, -1, Array.Empty<LiveCandidate>()),
+            new(37800, -1, 2800, 0, 2, new LiveCandidate[]
+            {
+                new(1, 380, 1100, 3900, 2, 7, 192),
+                new(2, 550, 1900, 4700, 2, 7, 192),
+            }),
+            new(39379, -1, 0, 0, 1, new LiveCandidate[]
+            {
+                new(1, 380, 1100, 1100, 0, 1, 64),
+                new(2, 515, 2100, 0, 0, 0, 64),
+            }),
+        };
+
+        int simulated = 0, accepted = 0, rejected = 0;
+        foreach (var decision in decisions)
+        {
+            int bestIndex = -1;
+            int bestScore = decision.Baseline;
+            int bestLosses = decision.InitialOpponentLosses;
+            foreach (var candidate in decision.Candidates)
+            {
+                bool take = NativeAiRanking.AcceptNormalCandidate(
+                    bestScore, bestLosses, candidate.Score, candidate.Attack,
+                    candidate.Slot, candidate.ActionMask, candidate.Summary);
+                simulated++;
+                if (take)
+                {
+                    accepted++;
+                    bestIndex = candidate.HandIndex;
+                    bestScore = candidate.Score;
+                    bestLosses = (candidate.Summary >> 3) & 7;
+                }
+                else rejected++;
+            }
+            check(bestIndex == decision.ExpectedHandIndex,
+                $"Live gate trace selector {decision.CallId}, pass {decision.Pass}: " +
+                $"predicted hand index {bestIndex}, native {decision.ExpectedHandIndex}");
+        }
+        check(decisions.Length == 7 && simulated == 15 &&
+              accepted == 7 && rejected == 8,
+            "Live gate trace: 7/7 selector outputs and 15/15 ranked candidates");
+
 
     }
 }
