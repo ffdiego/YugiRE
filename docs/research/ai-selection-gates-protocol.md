@@ -71,7 +71,7 @@ Faça backup do save e sincronize:
 ```powershell
 git pull --ff-only
 node .\native_rules\tests\test_loader.cjs
-python -m unittest native_rules.tests.test_console_commands
+python -m unittest discover -s native_rules/tests -p test_console_commands.py
 ```
 
 Abra `joey_pc.exe` manualmente, depois anexe:
