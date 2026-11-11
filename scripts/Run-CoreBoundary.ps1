@@ -1,6 +1,6 @@
 # Runs CoreBoundaryReach.java headless on the analyzed Joey project (read-only).
 # Examples:
-#   .\scripts\Run-CoreBoundary.ps1                                  # defaults: 005BC700, 005B726C, table 005EFBB0
+#   .\scripts\Run-CoreBoundary.ps1                                  # defaults: 005BC700, 005B7B50, table 005EFBB0
 #   .\scripts\Run-CoreBoundary.ps1 core-no-ai.txt -Addresses 005BC700,'stop:005B1360','stop:005B16C0'
 #   .\scripts\Run-CoreBoundary.ps1 core-depth.txt -Addresses 005BC700,'table:005EFBB0','depth:6'
 # Tokens: VA | root:VA | stop:VA | table:VA[:count] | depth:N | addr:follow

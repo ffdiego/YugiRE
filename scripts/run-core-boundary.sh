@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs CoreBoundaryReach.java headless on the analyzed Joey project (read-only).
 # Usage: bash scripts/run-core-boundary.sh report.txt [VA|root:VA|stop:VA|table:VA[:count]|depth:N|addr:follow ...]
-# With no tokens the defaults apply: 005BC700, 005B726C and table 005EFBB0.
+# With no tokens the defaults apply: 005BC700, 005B7B50 and table 005EFBB0.
 # Writes docs/evidence/<report> and docs/evidence/<report>.functions.csv
 set -euo pipefail
 

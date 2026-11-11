@@ -58,7 +58,11 @@ não descreve todas as lacunas do nó.
    [S4/S5 do estudo da IA](ai-decision-engine.md)). `ensureFunction` aceita a
    função continente. Portanto usar as entradas exatas **`005B7B50` e
    `005BC700`**, como nas consultas abaixo, evita uma raiz default enganosa.
-   O script original foi preservado nesta avaliação.
+   O default foi corrigido para005B7B50 nesta sessão, com os comentários
+   dos wrappers atualizados. A regressão `test_core_boundary_roots.py` verifica
+   a entrada contra o ponteiro real em005EFB84 do PE fixado e o prólogo nativo,
+   sem executar código do alvo. Uma consulta `depth:1` confirmou o default
+   corrigido. O self-test sintético MinGW continua separado e não executado.
 
 ## Self-test: dependência ausente, não validado nesta máquina
 
@@ -202,3 +206,15 @@ bash scripts/run-core-boundary.sh ai-combat-boundary-explicit-services.txt \
 
 Nenhum `addr:follow` foi usado para evitar expandir callbacks por mera tomada
 de endereço. Nenhuma fronteira aberta foi marcada como funcionalmente isolada.
+
+## Regressão adicional da raiz default
+
+```bash
+python3 -m unittest discover -s tests -p test_core_boundary_roots.py -v
+GHIDRA_INSTALL_DIR=/home/diego/apps/ghidra_12.2_PUBLIC \
+  bash scripts/run-core-boundary.sh ai-combat-boundary-default-roots.txt depth:1
+```
+
+O teste PE passou; a consulta delimitada usa a raiz005B7B50 corrigida.
+Isso valida essa correção específica, não substitui o self-test MinGW nem
+elimina as fronteiras abertas de qualquer grafo.

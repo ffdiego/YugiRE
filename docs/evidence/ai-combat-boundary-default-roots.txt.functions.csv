@@ -1,0 +1,26 @@
+va,name,depth,parent_va,origin,instructions,callee_count,class,direct_imports,trans_stub_categories,indirect_sites,stop
+"005bc700","FUN_005bc700",0,"","root",47,6,"INDIRECT","","","005bc761 CALL dword ptr [ECX*0x4 + 0x5efbb0]",false
+"005b7b50","FUN_005b7b50",0,"","root",30,0,"INDIRECT","","","005b7b8b CALL EAX",false
+"005b9f50","FUN_005b9f50",0,"","table:005efbb0[0]",72,2,"OPEN","","","",false
+"005bc620","FUN_005bc620",0,"","table:005efbb0[1]",73,10,"OPEN","","","",false
+"005bc3c0","FUN_005bc3c0",0,"","table:005efbb0[2]",138,3,"OPEN","","","",false
+"005bd2d0","FUN_005bd2d0",1,"005bc700","call",0,0,"LIMIT","","","",false
+"0040ca70","FUN_0040ca70",1,"005bc700","call",0,0,"LIMIT","","","",false
+"005aa490","FUN_005aa490",1,"005bc700","call",0,0,"LIMIT","","","",false
+"0040cf20","FUN_0040cf20",1,"005bc700","call",0,0,"LIMIT","","","",false
+"005b9ca0","FUN_005b9ca0",1,"005bc700","call",0,0,"LIMIT","","","",false
+"00569fc0","FUN_00569fc0",1,"005bc700","call",0,0,"LIMIT","","","",false
+"005bc580","FUN_005bc580",1,"005b9f50","call",0,0,"LIMIT","","","",false
+"005b9170","FUN_005b9170",1,"005b9f50","call",0,0,"LIMIT","","","",false
+"005bf9c0","FUN_005bf9c0",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005bc9b0","FUN_005bc9b0",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005ab820","FUN_005ab820",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005b8c00","FUN_005b8c00",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005bbe40","FUN_005bbe40",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005ba060","FUN_005ba060",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005bc050","FUN_005bc050",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005b7bd0","FUN_005b7bd0",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005a8e00","FUN_005a8e00",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005bc5d0","FUN_005bc5d0",1,"005bc620","call",0,0,"LIMIT","","","",false
+"005bd050","FUN_005bd050",1,"005bc3c0","call",0,0,"LIMIT","","","",false
+"0044b9e0","FUN_0044b9e0",1,"005bc3c0","call",0,0,"LIMIT","","","",false

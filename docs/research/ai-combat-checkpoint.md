@@ -83,3 +83,10 @@ agora passou com mão integral de dois recursos e contratos explícitos.
 12/14 pares concordam sob um cenário neutro uniforme, dois divergem e oito
 não têm stats suficientes. Zero contextos reais completos: não declarar
 seletor integralmente reproduzido. Detalhes em ai-combat-engine.md.
+
+
+## Correção da ferramenta de fronteiras
+A raiz default005B726C era interior ao executor005B6FF0, não o scheduler.
+Corrigida para a entrada005B7B50, confirmada pelo ponteiro PE005EFB84,
+prólogo nativo e consulta Ghidra depth1. Um teste offline passou; o self-test
+MinGW continua indisponível por falta de compilador. Ver headless-feasibility.md.

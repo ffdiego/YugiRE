@@ -12,7 +12,7 @@
 //   addr:follow     also follow functions whose address is taken by code
 //                   (push offset / mov [x], offset); default: list only
 // Without roots or tables the defaults are used: 005BC700 (duel state
-// dispatcher), 005B726C (CPU scheduler) and the dispatcher state table 005EFBB0.
+// dispatcher), 005B7B50 (CPU stage dispatcher) and the dispatcher state table 005EFBB0.
 //
 // Output: <report.txt> and <report.txt>.functions.csv. Functions that Ghidra has
 // not defined yet (LAB_ targets) are disassembled and created inside a transient
@@ -56,7 +56,7 @@ import java.util.TreeSet;
 public class CoreBoundaryReach extends GhidraScript {
     private static final String EXPECTED_SHA =
         "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de";
-    private static final long[] DEFAULT_ROOTS = {0x005BC700L, 0x005B726CL};
+    private static final long[] DEFAULT_ROOTS = {0x005BC700L, 0x005B7B50L};
     private static final long DEFAULT_TABLE = 0x005EFBB0L;
     private static final int TABLE_AUTO_MAX = 512;
     private static final int TOP_BOUNDARY = 80;
