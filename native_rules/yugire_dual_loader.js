@@ -122,6 +122,20 @@ const kAiProbeTargets = [
   {name: 'computed_stats', va: '0x0056DD30', address: va('0x0056DD30'),
     kind: 'output', outputIndex: 2, outputSize: 12}
 ];
+// Additional FUNCTION-ENTRY listeners only, enabled explicitly by
+// 'trace ai on detail'. No mid-instruction probes or native calls.
+const kAiDetailTargets = [
+  {name:'baseline', va:'0x005B08B0', address:va('0x005B08B0')},
+  {name:'simulate_card', va:'0x005B1610', address:va('0x005B1610')},
+  {name:'aggregate_score', va:'0x005B0A50', address:va('0x005B0A50')},
+  {name:'select_combat_event', va:'0x005B0B90', address:va('0x005B0B90')},
+  {name:'restore_field', va:'0x005B0950', address:va('0x005B0950')}
+];
+const kAiSummary = va('0x00A579AA');
+const kAiActionMaskOutput = va('0x00A579AC');
+const kAiChosenEvent = va('0x00A579A6');
+const kAiActionMaskBySide = va('0x00A55D70');
+const kAiOuterBaselineCaller = va('0x005B738A');
 const kQueueCount = va('0x00A558A8');
 const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
@@ -206,8 +220,10 @@ let summonPrepCallSequence = 0;
 let nativeAiSelectNormal = null;
 let nativeAiForceSet = null;
 let aiProbeHooks = [];
+let aiDetailMode = false;
 let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
+let aiSelectorStack = new Map();
 let demoExecutorHook = null;
 let demoExecutorCalls = 0;
 let demoSetupHooks = [];
@@ -959,6 +975,7 @@ function traceStatus() {
     prepActive: summonPrepHooks.length > 0,
     prepHooks: summonPrepHooks.length,
     aiActive: aiProbeHooks.length > 0,
+    aiDetailActive: aiDetailMode,
     aiHooks: aiProbeHooks.length,
     demoActive: demoExecutorHook !== null,
     demoHooks: (demoExecutorHook === null ? 0 : 1) + demoSetupHooks.length,
@@ -1141,7 +1158,9 @@ function readSelectorHandSnapshot(side) {
 function stopAiProbe() {
   const hooks = aiProbeHooks;
   aiProbeHooks = [];
+  aiDetailMode = false;
   aiSelectorDepth = new Map();
+  aiSelectorStack = new Map();
   let failure = null;
   for (let i = hooks.length - 1; i >= 0; i--) {
     try { hooks[i].detach(); } catch (error) { failure = error; }
@@ -1150,12 +1169,13 @@ function stopAiProbe() {
   return traceStatus();
 }
 
-function startAiProbe() {
+function startAiProbe(detailed = false) {
+  if (typeof detailed !== 'boolean') throw new Error('AI detail flag must be boolean');
   if (!installed || commandTraceHook === null) {
     throw new Error('Start trace on before trace ai on');
   }
   if (aiProbeHooks.length > 0) throw new Error('AI probe is already active');
-  for (const target of kAiProbeTargets) {
+  for (const target of (detailed ? kAiProbeTargets.concat(kAiDetailTargets) : kAiProbeTargets)) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
       throw new Error('AI probe function not executable: ' + target.va);
@@ -1174,6 +1194,9 @@ function startAiProbe() {
           if (this.aiIsSelector) {
             aiSelectorDepth.set(this.aiThread,
               (aiSelectorDepth.get(this.aiThread) || 0) + 1);
+            const stack = aiSelectorStack.get(this.aiThread) || [];
+            stack.push({id:this.aiCallId, name:target.name, side:this.aiSide});
+            aiSelectorStack.set(this.aiThread, stack);
             const event = {
               kind: 'ai_probe', phase: 'enter', function: target.name,
               functionVa: target.va, callId: this.aiCallId,
@@ -1211,6 +1234,9 @@ function startAiProbe() {
             const previous = aiSelectorDepth.get(this.aiThread) || 0;
             if (previous <= 1) aiSelectorDepth.delete(this.aiThread);
             else aiSelectorDepth.set(this.aiThread, previous - 1);
+            const stack = aiSelectorStack.get(this.aiThread) || [];
+            stack.pop();
+            if (stack.length === 0) aiSelectorStack.delete(this.aiThread);
             const selectedHandIndex = retval.toInt32();
             const event = {
               kind: 'ai_probe', phase: 'leave', function: target.name,
@@ -1251,6 +1277,76 @@ function startAiProbe() {
       });
       hooks.push(hook);
     }
+    if (detailed) {
+      for (const target of kAiDetailTargets) {
+        const hook = Interceptor.attach(target.address, {
+          onEnter(args) {
+            this.detailThread = Process.getCurrentThreadId();
+            this.detailCaller = this.returnAddress.toString();
+            this.detailSideRaw = args[0].toUInt32();
+            this.detailSide = this.detailSideRaw & 1;
+            const stack = aiSelectorStack.get(this.detailThread) || [];
+            const active = stack.length > 0 ? stack[stack.length - 1] : null;
+            // Only CPU decisions. Capture the baseline invoked by the
+            // caller before the selector, plus helpers INSIDE a normal selector.
+            const insideNormal = active !== null &&
+              active.name === 'select_normal' && active.side === 0;
+            const outerBaseline = target.name === 'baseline' &&
+              this.returnAddress.equals(kAiOuterBaselineCaller);
+            this.detailObserve = this.detailSideRaw === 0 &&
+              (insideNormal || outerBaseline) && kDuelRunning.readU16() !== 0;
+            if (!this.detailObserve) return;
+            this.detailSelectorId = insideNormal ? active.id : null;
+            this.detailInput = {};
+            try {
+              if (target.name === 'simulate_card') {
+                this.detailInput = {
+                  internalCardIndex:args[1].toUInt32() & 0xFFF,
+                  tributeCount:args[2].toUInt32()
+                  // Do NOT dereference args[3] until tribute ABI is verified.
+                };
+              }
+              if (target.name === 'restore_field') {
+                this.detailInput.actionMaskBeforeRestore =
+                  kAiActionMaskBySide.readU16();
+              }
+            } catch (error) {
+              this.detailInput.readError = String(error);
+            }
+          },
+          onLeave(retval) {
+            if (!this.detailObserve) return;
+            const event = {
+              kind:'ai_detail', phase:'leave', function:target.name,
+              functionVa:target.va, threadId:this.detailThread,
+              side:this.detailSide, caller:this.detailCaller,
+              selectorCallId:this.detailSelectorId,
+              returnRaw:retval.toUInt32(), returnSigned:retval.toInt32(),
+              ...this.detailInput
+            };
+            try {
+              if (target.name === 'baseline' ||
+                  target.name === 'aggregate_score' ||
+                  target.name === 'restore_field') {
+                event.summaryRaw = kAiSummary.readU16();
+                event.actionMaskOutput = kAiActionMaskOutput.readU16();
+              }
+              if (target.name === 'aggregate_score' ||
+                  target.name === 'restore_field') {
+                event.actionMaskCurrent = kAiActionMaskBySide.readU16();
+              }
+              if (target.name === 'select_combat_event' && retval.toInt32() !== 0) {
+                event.selectedEventHex = readAiProbeHex(kAiChosenEvent, 4);
+              }
+              // Every entry, including B0B90 returning zero, is logged:
+              // that final failure may clear scratch and end the score loop.
+            } catch (error) { event.readError = String(error); }
+            recordTraceEvent(event);
+          }
+        });
+        hooks.push(hook);
+      }
+    }
   } catch (error) {
     for (let i = hooks.length - 1; i >= 0; i--) {
       try { hooks[i].detach(); } catch (_) { /* best effort rollback */ }
@@ -1258,8 +1354,10 @@ function startAiProbe() {
     throw new Error('AI probe installation failed; rolled back: ' + error);
   }
   aiProbeHooks = hooks;
+  aiDetailMode = detailed;
   aiProbeCallSequence = 0;
   aiSelectorDepth = new Map();
+  aiSelectorStack = new Map();
   return traceStatus();
 }
 
