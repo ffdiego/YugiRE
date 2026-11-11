@@ -68,7 +68,7 @@ a carta 221 no slot 0. A captura não incluiu um
 `console.last` posterior ao pedido ativo nem
 prova equivalência em outros níveis/efeitos.
 Ver [validação funcional](evidence/console-native-summon-live-2026-11-04.md)
-e [README native](../native_rules/README.md).
+e [README native](../native_hooks/README.md).
 
 ## Predicado de disponibilidade de slot confirmado
 

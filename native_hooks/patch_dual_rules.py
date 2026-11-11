@@ -29,7 +29,7 @@ MODE_NAMES = {value: name for name, value in MODES.items()}
 
 def check_dll(dll: Path) -> None:
     if not dll.is_file():
-        raise ValueError(f"DLL not found: {dll}\nBuild native_rules or pass --dll")
+        raise ValueError(f"DLL not found: {dll}\nBuild native_hooks or pass --dll")
     data = dll.read_bytes()
     try:
         details = parse_pe(data)
@@ -580,7 +580,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         import frida
     except ImportError:
-        parser.error("Frida not installed; use native_rules/.venv-frida")
+        parser.error("Frida not installed; use native_hooks/.venv-frida")
 
     session = None
     script = None

@@ -41,7 +41,7 @@ capacidade de controlar o destino do Joey.
 
 ## Correção aplicada
 
-Novo `native_rules/owned_process.py`, sem dependências externas:
+Novo `native_hooks/owned_process.py`, sem dependências externas:
 
 1. Imediatamente após `frida.device.spawn()`, adquirir com
    `OpenProcess` um HANDLE persistente do **PID recém-criado**.
@@ -73,11 +73,11 @@ verificação de término**.
 Atualize a branch e comece com um teste **2 workers / 3 duelos cada**:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 6 --workers 2 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai
 ```
 

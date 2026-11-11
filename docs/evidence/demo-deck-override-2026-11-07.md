@@ -25,7 +25,7 @@ Nas capturas anteriores, para demos modo 7:
   na saída.
 - Três composições completas distintas foram registradas,
   preservadas sem modificações em
-  `native_rules/decks/demo-{A,B,C}.json`.
+  `native_hooks/decks/demo-{A,B,C}.json`.
 
 **Validação dinâmica parcial recebida:** o operador executou o launcher
 no Windows com os dois presets (deck A no lado 0, deck B no lado 1),
@@ -112,7 +112,7 @@ nesta execução.
 
 ## Teste de continuidade recomendado no Windows
 
-Em `native_rules`:
+Em `native_hooks`:
 
 ```powershell
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json"

@@ -19,7 +19,7 @@ duelos pelo executável não precisa ser reimplementada.
 
 ## Captura sequencial com rotação (experimental)
 
-Em `native_rules`:
+Em `native_hooks`:
 
 ```powershell
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 60000 --rotate-events 15000 --cycles 5

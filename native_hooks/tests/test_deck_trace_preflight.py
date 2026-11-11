@@ -21,7 +21,7 @@ class DeckTracePreflightTests(unittest.TestCase):
         raw = executable.read_bytes()
         self.assertEqual(hashlib.sha256(raw).hexdigest(), EXPECTED_SHA256)
         info = parse_pe(raw)
-        source = (root / "native_rules" / "deck_trace.js").read_text()
+        source = (root / "native_hooks" / "deck_trace.js").read_text()
         targets = re.findall(r"\[(0x[0-9a-f]+), '([0-9a-f]+)'\]", source)
         self.assertEqual(len(targets), 5)
         for address, encoded in targets:

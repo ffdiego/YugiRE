@@ -38,7 +38,7 @@ Send the three reports generated as `rng-seed-core.txt`, `rng-seed-callers.txt`,
 
 ## Minimal passive dynamic follow-up
 
-`native_rules/yugire_dual_loader.js` now adds an observational probe
+`native_hooks/yugire_dual_loader.js` now adds an observational probe
 `demo_init/rng_seed_candidate` at `0x005C3BF5`, logging
 `candidateSeedRaw`, `candidateSeedHex`, `caller`, `seq`, and `threadId`.
 This does **not** call/replace the function, patch its arguments or override the RNG.

@@ -61,7 +61,7 @@ retornos, memória ou decisões.
 ## Primeiro teste recomendado: 3 duelos
 
 Atualize `experiment/hybrid-native-probe`, abra PowerShell em
-`native_rules` e execute:
+`native_hooks` e execute:
 
 ```powershell
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 2400 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json" --trace-ai --duels 3

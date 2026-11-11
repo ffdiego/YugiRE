@@ -16,7 +16,7 @@ Evidence: `rng-seed-core.txt`, `rng-seed-callers.txt`, `rng-seed-init.txt` provi
 
 Pass `--seed N` to `python -m yugilab`; zero is valid, max is `0xFFFFFFFF`. Without `--seed`, original calls and output remain unchanged.
 
-In `native_rules/yugire_dual_loader.js`, `setdemoseed(base,startIndex)` is an RPC invoked **before process resume**. The attached `FUN_005C3BF5` observer changes `args[0]` ONLY when the caller's verified return address is `0x005BFEBD` AND the scene mode is 7. All other `FUN_005C3BF5` callers remain untouched.
+In `native_hooks/yugire_dual_loader.js`, `setdemoseed(base,startIndex)` is an RPC invoked **before process resume**. The attached `FUN_005C3BF5` observer changes `args[0]` ONLY when the caller's verified return address is `0x005BFEBD` AND the scene mode is 7. All other `FUN_005C3BF5` callers remain untouched.
 
 For each new duel, `globalIndex = startIndex + localDuelOrdinal`. The effective seed is `mix32-v1((base + globalIndex) mod 2**32)`, a bijective avalanche mix using unsigned shifts and two odd multipliers (`0x7FEB352D`, `0x846CA68B`). Distinct indices across a run produce distinct 32-bit seeds; *this alone does not prove statistical independence of the resulting game outcomes*.
 
@@ -32,11 +32,11 @@ From project root:
 
 ```powershell
 git pull
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 2 --workers 2 --seed 12345 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai --speed-value 600
 ```
 

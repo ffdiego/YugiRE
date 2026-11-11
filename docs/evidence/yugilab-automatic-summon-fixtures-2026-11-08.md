@@ -28,10 +28,10 @@ A suíte agora compara, quando disponíveis, **a sequência completa dos índice
 
 ~~~powershell
 git pull
-$py = ".\native_rules\.venv-frida\Scripts\python.exe"
+$py = ".\native_hooks\.venv-frida\Scripts\python.exe"
 
 # Exige uma captura NOVA para conter os snapshots adicionais.
-& $py -m yugilab --exe "..\passion2\joey_pc.exe" --duels 10 --workers 2 --seed 12345 --deck-0 ".\native_rules\decks\demo-A.json" --deck-1 ".\native_rules\decks\demo-B.json" --trace-ai --speed-value 600
+& $py -m yugilab --exe "..\passion2\joey_pc.exe" --duels 10 --workers 2 --seed 12345 --deck-0 ".\native_hooks\decks\demo-A.json" --deck-1 ".\native_hooks\decks\demo-B.json" --trace-ai --speed-value 600
 
 $run = Get-ChildItem ".\scratch\labs" -Directory -Filter "parallel-*" |
   Sort-Object LastWriteTime -Descending | Select-Object -First 1

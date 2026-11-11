@@ -76,7 +76,7 @@ dois índices da mão coincidentes. Não contém todos os gates de seleção.
 ## Organização
 
 ```text
-native_rules/
+native_hooks/
   CMakeLists.txt                    # build Windows Win32 / x86
   include/yugire/                   # CardRequest, EffectContext, API do motor
   src/engine.cpp                    # funções nativas de dano e compra do Joey
@@ -113,13 +113,13 @@ Use **Developer PowerShell for Visual Studio 2026** na raiz do repositório:
 ```powershell
 cd Z:\YugiRE\yugire
 git pull
-cmake -S native_rules -B native_rules\build-vs2026 -G "Visual Studio 18 2026" -A Win32
-cmake --build native_rules\build-vs2026 --config Release
-ctest --test-dir native_rules\build-vs2026 -C Release --output-on-failure
+cmake -S native_hooks -B native_hooks\build-vs2026 -G "Visual Studio 18 2026" -A Win32
+cmake --build native_hooks\build-vs2026 --config Release
+ctest --test-dir native_hooks\build-vs2026 -C Release --output-on-failure
 ```
 
 A DLL será gerada em
-`native_rules\build-vs2026\Release\yugire_rules.dll`.
+`native_hooks\build-vs2026\Release\yugire_rules.dll`.
 Essa DLL deve ser **x86**, não x64.
 
 ### Python/Frida
@@ -130,7 +130,7 @@ usado temporariamente apontando para o novo `patch_dual_rules.py`.
 Para deixar tudo autônomo e poder remover a pasta antiga por completo:
 
 ```powershell
-cd Z:\YugiRE\yugire\native_rules
+cd Z:\YugiRE\yugire\native_hooks
 py -3 -m venv .venv-frida
 .\.venv-frida\Scripts\python.exe -m pip install frida
 ```
@@ -146,7 +146,7 @@ Não precisa digitar comandos. O processo que o launcher criou é encerrado
 depois de coletar N comandos terminais `0x0004` (incluindo `0x8004`).
 
 ```powershell
-# Execute em native_rules, depois de atualizar a branch:
+# Execute em native_hooks, depois de atualizar a branch:
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 2400 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json" --duels 100
 ```
 
@@ -233,7 +233,7 @@ Para preservar capturas longas, o launcher agora possui um modo
 **sequencial e opt-in**, sem console interativo:
 
 ```powershell
-# Executar a partir da pasta native_rules
+# Executar a partir da pasta native_hooks
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 60000 --rotate-events 15000 --cycles 5
 ```
 
@@ -309,7 +309,7 @@ Há três presets reais extraídos de demos anteriores
 `decks/demo-C.json`) para reproduzir confrontos de decks diferentes:
 
 ```powershell
-# Execute na pasta native_rules
+# Execute na pasta native_hooks
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json"
 ```
 
@@ -358,7 +358,7 @@ compara `GetLastError` com `0xB7`
 substitui somente esse nome por `YugiRE.Joey.<PID>`:
 
 ```powershell
-# Execute em dois terminais separados, na pasta native_rules:
+# Execute em dois terminais separados, na pasta native_hooks:
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --allow-multi-instance
 ```
 
@@ -483,7 +483,7 @@ o comportamento da IA e as fontes de aleatoriedade.
 ## Executar em um duelo normal
 
 Reinicie o Joey antes de testar uma DLL recém-compilada e aguarde a
-inicialização de um duelo. No diretório `native_rules`, basta:
+inicialização de um duelo. No diretório `native_hooks`, basta:
 
 ```powershell
 .\.venv-frida\Scripts\python.exe .\native_rules.py
@@ -1245,7 +1245,7 @@ sem validar execução direta de comandos. Ver
 
 ## Testes offline
 
-Execute a partir de `native_rules`:
+Execute a partir de `native_hooks`:
 
 ```powershell
 python .\tests\test_catalog.py

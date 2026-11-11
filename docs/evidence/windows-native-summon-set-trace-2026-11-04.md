@@ -1,7 +1,7 @@
 # Duas capturas de comandos: invocação normal versus monstro baixado
 
 Estudo dinâmico fornecido pelo operador em 2026-11-04, usando o
-`native_rules` na branch `experiment/hybrid-native-probe`.
+`native_hooks` na branch `experiment/hybrid-native-probe`.
 O operador identificou o **primeiro** arquivo como invocação normal
 (`summon`) e o **segundo** como colocação virada para baixo (`set`).
 Ambos os traces vieram do mesmo processo do jogo e produtor

@@ -34,7 +34,7 @@ O [protocolo](cpu-deck-selection-windows-validation.md) contém comandos exatos.
   [especificação](cpu-deck-selection.md). Não repetir investigação inicial.
 
 ## Implementação e evidências
-- `native_rules/deck_trace.js`: cinco hooks observacionais, IDs selection/
+- `native_hooks/deck_trace.js`: cinco hooks observacionais, IDs selection/
   scene/load, perfil, roll, string, source1 e MT opcional. Sem write APIs,
   NativeFunction, alterações de args/retval ou acesso a saves.
 - `native_rules.py --observe-only --pid N` anexa processo manual. `trace on
@@ -221,7 +221,7 @@ sintéticas: exit0; roll alterado:exit1; arquivo truncado:exit2.
 Node: módulo de ABI, loader/RPC e Demo RNG passaram; inclui threads,
 reentrância, Demo com mesmo caminho e loads invertidos, rollback/teardown.
 Console Python:33 testes passaram. Teste PE real:5 assinaturas conferidas.
-Suíte native_rules completa:79 testes,
+Suíte native_hooks completa:79 testes,
 1 erro legado `test_capture_rotation` exige detach antes de kill; reproduzido
 com fonte anterior `e9d0a4b`, sem executar nenhum processo do jogo.
 Suíte Python raiz já tinha2 imports legados (compare_ydr e pe_preflight em

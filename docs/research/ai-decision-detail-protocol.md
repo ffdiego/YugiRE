@@ -70,8 +70,8 @@ Antes, faça backup do save e sincronize o repositório:
 
 ```powershell
 git pull --ff-only
-node .\native_rules\tests\test_loader.cjs
-.\native_rules\.venv-frida\Scripts\python.exe .\native_rules\native_rules.py --observe-only
+node .\native_hooks\tests\test_loader.cjs
+.\native_hooks\.venv-frida\Scripts\python.exe .\native_hooks\native_rules.py --observe-only
 ```
 
 Abra o Joey **manualmente** e aguarde o menu; o Python detecta o PID

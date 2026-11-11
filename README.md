@@ -24,7 +24,7 @@ a comparação dinâmica completa de um duelo normal ainda está pendente.
 ## Módulo Native Rules (C++ / DLL x86)
 
 Os efeitos nativos de Sparks e Raimei e o console interativo de duelo estão em
-[native_rules](native_rules/README.md). Esse módulo é independente da aplicação
+[native_hooks](native_hooks/README.md). Esse módulo é independente da aplicação
 .NET e pode ser compilado como DLL Win32 pelo CMake/Visual Studio. O host em
 Python usa Frida para carregar a DLL no Joey e instalar os callbacks.
 
@@ -37,15 +37,15 @@ e **fecha automaticamente somente esse processo** ao alcançar a meta:
 
 ```powershell
 # Na raiz do repositório, com o ambiente Frida existente
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 100 --workers 10 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai
 ```
 
-O `native_rules/` permanece como backend da DLL, hooks e ferramentas de
+O `native_hooks/` permanece como backend da DLL, hooks e ferramentas de
 engenharia reversa; seus comandos existentes continuam compatíveis.
 
 Para comparar desempenho, comece com `--duels 6 --workers 2` e
@@ -60,7 +60,7 @@ O laboratório aceita `--seed 12345` para gerar duelos controlados e
 comparar duas capturas independentemente de seus PIDs:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.compare `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab.compare `
   ".\primeira.zip" ".\segunda.zip" `
   --output ".\scratch\comparison.json"
 ```

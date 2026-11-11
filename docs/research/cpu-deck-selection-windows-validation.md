@@ -22,8 +22,8 @@ Executar do diretório raiz do repositório no Windows, com Python + Frida
 (venv já existente pode ser reutilizado) e .NET 10 para a comparação:
 
 ```powershell
-py -3 -m venv native_rules/.venv-frida
-.\native_rules\.venv-frida\Scripts\python.exe -m pip install frida
+py -3 -m venv native_hooks/.venv-frida
+.\native_hooks\.venv-frida\Scripts\python.exe -m pip install frida
 ```
 
 1. Inicie **manualmente** o `joey_pc.exe` original e aguarde o menu,
@@ -32,7 +32,7 @@ py -3 -m venv native_rules/.venv-frida
    explicitamente o processo desejado. Anexe sem opções de spawn:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe .\native_rules\native_rules.py --observe-only
+.\native_hooks\.venv-frida\Scripts\python.exe .\native_hooks\native_rules.py --observe-only
 ```
 
 Sem `--pid`, o launcher identifica `joey_pc.exe` automaticamente
@@ -123,11 +123,11 @@ JSONL inteiro, sem cortar a linha de metadata ou eventos de outra espécie.
 ### Validação local sem executar o Joey
 
 ```text
-node native_rules/tests/test_deck_trace.cjs
-node native_rules/tests/test_loader.cjs
-node native_rules/tests/test_demo_rng_seed.cjs
-python -m unittest discover -s native_rules/tests -p test_console_commands.py
-python -m unittest discover -s native_rules/tests -p test_deck_trace_preflight.py
+node native_hooks/tests/test_deck_trace.cjs
+node native_hooks/tests/test_loader.cjs
+node native_hooks/tests/test_demo_rng_seed.cjs
+python -m unittest discover -s native_hooks/tests -p test_console_commands.py
+python -m unittest discover -s native_hooks/tests -p test_deck_trace_preflight.py
 dotnet build YugiRE.sln
 dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat ../passion/deck.ydc
 ```

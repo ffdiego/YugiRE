@@ -1,6 +1,6 @@
 """Verify Sparks/Raimei rows against the already-versioned YugiRE card catalogue.
 
-Run from native_rules:
+Run from native_hooks:
     python tests/test_catalog.py
 """
 from __future__ import annotations

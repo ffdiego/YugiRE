@@ -73,14 +73,14 @@ Faça backup do save e sincronize:
 
 ```powershell
 git pull --ff-only
-node .\native_rules\tests\test_loader.cjs
-python -m unittest discover -s native_rules/tests -p test_console_commands.py
+node .\native_hooks\tests\test_loader.cjs
+python -m unittest discover -s native_hooks/tests -p test_console_commands.py
 ```
 
 Abra `joey_pc.exe` manualmente, depois anexe:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe .\native_rules\native_rules.py --observe-only
+.\native_hooks\.venv-frida\Scripts\python.exe .\native_hooks\native_rules.py --observe-only
 ```
 
 No console:

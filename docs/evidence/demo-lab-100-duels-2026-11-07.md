@@ -6,7 +6,7 @@
 
 ## Como usar
 
-A partir de `native_rules`:
+A partir de `native_hooks`:
 
 ```powershell
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 2400 --deck-0 ".\decks\demo-A.json" --deck-1 ".\decks\demo-B.json" --duels 3

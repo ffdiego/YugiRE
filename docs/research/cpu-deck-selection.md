@@ -163,7 +163,7 @@ Evidência adicional: `cpu-deck-rng-initialization.txt`,
 ## Validação dinâmica do seletor e MT no Joey original (2026-11-10)
 
 Depois da análise estática e da correção dos probes internos de RNG em
-`native_rules/deck_trace.js`, duas capturas reais pelo observador
+`native_hooks/deck_trace.js`, duas capturas reais pelo observador
 `--observe-only` validaram no Windows o fluxo completo da **cena normal0**,
 perfil base1/pool0. Não foram executados dois Joeys nem usado `--spawn`.
 
@@ -319,7 +319,7 @@ e não com um catálogo global de apenas três decks. Não recuperamos os bytes
 brutos de perfil/RNG daquela captura só a partir das composições.
 
 Os testes opcionais contra DAT usam os mesmos presets já versionados em
-`native_rules/decks/`; não exportam recursos originais nem alteram essas capturas.
+`native_hooks/decks/`; não exportam recursos originais nem alteram essas capturas.
 Com DAT e deck local, **341 verificações C#** passaram após essa correlação.
 
 ## Resolução do recurso e condições que não devem ser confundidas

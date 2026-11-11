@@ -1,5 +1,5 @@
 // Offline deterministic tests for Frida table adapter, without running Joey.
-// Run: node tests/test_loader.cjs (from native_rules).
+// Run: node tests/test_loader.cjs (from native_hooks).
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
@@ -249,7 +249,7 @@ function fixture(options = {}) {
 
 const normal=fixture();
 assert.equal(normal.api.status().installed,false);
-let status=normal.api.install('Z:\\YugiRE\\native_rules\\build-vs2026\\Release\\yugire_rules.dll',300,400,1,1);
+let status=normal.api.install('Z:\\YugiRE\\native_hooks\\build-vs2026\\Release\\yugire_rules.dll',300,400,1,1);
 assert.equal(status.installed,true);
 assert.equal(status.entries[0].configuredDamage,300);
 assert.equal(status.entries[1].configuredDamage,400);

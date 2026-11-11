@@ -12,7 +12,7 @@ from pathlib import Path
 import sys
 
 
-BACKEND_DIR = Path(__file__).resolve().parent.parent / "native_rules"
+BACKEND_DIR = Path(__file__).resolve().parent.parent / "native_hooks"
 
 
 def _positive_int(raw: str) -> int:

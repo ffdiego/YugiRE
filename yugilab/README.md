@@ -3,20 +3,20 @@
 O **YugiLab** é a interface para executar e gravar uma quantidade
 determinada de duelos automaticamente. O código de hooking, DLL C++,
 instrumentação Frida e experimentos nativos continua em
-[`native_rules/`](../native_rules/README.md). Assim, não precisamos
+[`native_hooks/`](../native_hooks/README.md). Assim, não precisamos
 mover arquivos internos ou alterar as rotinas já validadas.
 
 ## Executar
 
 No **diretório raiz do repositório**, usando o mesmo ambiente Python
-com Frida já instalado em `native_rules/.venv-frida`:
+com Frida já instalado em `native_hooks/.venv-frida`:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 100 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai
 ```
 
@@ -37,11 +37,11 @@ Na raiz do repositório:
 
 ```powershell
 # Valide primeiro 2 workers / 3 duelos cada
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 6 --workers 2 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai
 ```
 
@@ -49,11 +49,11 @@ Se funcionar sem erros de instância, decks ou sobregravação:
 
 ```powershell
 # Dez workers independentes, dez duelos para cada
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 100 --workers 10 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai
 ```
 
@@ -80,11 +80,11 @@ laboratório paralelo e tentar repetir exatamente as mesmas
 condições iniciais em execuções diferentes.
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
   --exe "..\passion2\joey_pc.exe" `
   --duels 2 --workers 2 --seed 12345 `
-  --deck-0 ".\native_rules\decks\demo-A.json" `
-  --deck-1 ".\native_rules\decks\demo-B.json" `
+  --deck-0 ".\native_hooks\decks\demo-A.json" `
+  --deck-1 ".\native_hooks\decks\demo-B.json" `
   --trace-ai --speed-value 600
 ```
 
@@ -126,7 +126,7 @@ O mesmo detector pode ser executado **offline**, até sobre
 um ZIP antigo, sem Frida ou Joey:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.rng_audit `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab.rng_audit `
   .\scratch\labs\parallel-EXEMPLO `
   --output .\scratch\rng-audit.json
 ```
@@ -150,7 +150,7 @@ Após duas execuções com os mesmos decks, `--seed` e
 `scratch/labs/parallel-...` **sem executar o Joey**:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.compare `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab.compare `
   ".\primeira-execucao.zip" ".\segunda-execucao.zip" `
   --output ".\scratch\comparison.json"
 ```
@@ -239,7 +239,7 @@ Com uma **captura nova e completa que use `--seed`**,
 converta os eventos elegíveis em fixtures locais:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.export_summons `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab.export_summons `
   ".\scratch\labs\parallel-XXXXX" `
   --output-dir ".\scratch\differential-parallel-XXXXX"
 
@@ -302,7 +302,7 @@ não deixe saves/replays importantes expostos a risco de
 concorrência, e use cópias de segurança quando pertinente.
 
 No modo `--workers 1`, o comportamento antigo é mantido.
-O `native_rules/` continua existindo e seus comandos
+O `native_hooks/` continua existindo e seus comandos
 permanecem compatíveis. O coordenador não aceita `--pid`
 de outra instância para encerramento.
 
@@ -365,7 +365,7 @@ término do processo — um falso positivo possível.
 
 ## Compatibilidade
 
-As formas antigas (`native_rules/native_rules.py --spawn ...`)
+As formas antigas (`native_hooks/native_rules.py --spawn ...`)
 continuam funcionando, inclusive console e DLL nativa.
 O YugiLab usa as mesmas verificações de PE/SHA256,
 o mesmo buffer de eventos e a mesma implementação de hooks.

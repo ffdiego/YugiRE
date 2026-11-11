@@ -27,7 +27,7 @@ Na bateria de dez workers, houve também fingerprints idênticos em posições d
 O comando `python -m yugilab.rng_audit` lê diretórios, arquivos JSONL ou ZIPs sem extrair tudo na memória:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab.rng_audit `
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab.rng_audit `
   .\scratch\labs\parallel-EXEMPLO `
   --output .\scratch\rng-audit-example.json
 ```

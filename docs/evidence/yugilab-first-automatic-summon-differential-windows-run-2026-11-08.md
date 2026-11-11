@@ -7,7 +7,7 @@
 Comando informado:
 
 ```powershell
-.\native_rules\.venv-frida\Scripts\python.exe -m yugilab --exe "..\passion2\joey_pc.exe" --duels 10 --workers 2 --seed 12345 --deck-0 ".\native_rules\decks\demo-A.json" --deck-1 ".\native_rules\decks\demo-B.json" --trace-ai --speed-value 600
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab --exe "..\passion2\joey_pc.exe" --duels 10 --workers 2 --seed 12345 --deck-0 ".\native_hooks\decks\demo-A.json" --deck-1 ".\native_hooks\decks\demo-B.json" --trace-ai --speed-value 600
 ```
 
 - Execução paralela: **10 duelos / 2 workers**, partição **[5,5]**.

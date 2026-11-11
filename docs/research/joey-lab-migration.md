@@ -71,3 +71,19 @@ O fixture portátil `lab-capture-prefix.jsonl` conserva eventos1..30 idênticos
 transformação estão explícitas no próprio fixture; ele não é a captura
 completa. Inclui stats Gemini Elf/Axe Raider e output0808C800 no evento25,
 dentro do seletor que retorna550 no evento26.
+
+## Renomeação isolada
+
+`native_rules/` foi movido para `native_hooks/`. O módulo legado continua
+`native_rules.py`; o yugilab aponta seu BACKEND_DIR para o novo diretório.
+DLL `yugire_rules.dll`, CMake, exports, headers, fonte C++, launcher e os dois
+agentes JavaScript foram comparados byte a byte com o commit anterior:
+nenhuma mudança. Apenas caminhos em documentação/testes, backend do yugilab
+e mensagens de instalação foram ajustados. Os comandos reproduzíveis dos
+relatórios históricos usam agora o nome novo; buffers capturados não mudaram.
+
+A execução dos testes Python após a renomeação reproduziu exatamente as duas
+falhas da baseline, sem outras falhas. Três suítes JavaScript e os entrypoints
+`--help` do launcher, yugilab e comparador passaram nos novos caminhos.
+Não há shim no diretório antigo: atualizar comandos para
+`python native_hooks/native_rules.py --observe-only --pid PID`.

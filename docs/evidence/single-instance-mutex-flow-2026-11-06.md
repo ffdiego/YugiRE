@@ -73,7 +73,7 @@ inicialização em que o hook foi armado mas não acionado.
 ## Como testar duas instâncias sem modificar o EXE
 
 Abrir uma instância em cada um de dois terminais PowerShell,
-a partir de `native_rules`:
+a partir de `native_hooks`:
 
 ```powershell
 .\.venv-frida\Scripts\python.exe .\native_rules.py --spawn --exe "..\..\passion2\joey_pc.exe" --observe-only --speed-value 240 --allow-multi-instance
