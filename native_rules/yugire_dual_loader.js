@@ -136,6 +136,17 @@ const kAiActionMaskOutput = va('0x00A579AC');
 const kAiChosenEvent = va('0x00A579A6');
 const kAiActionMaskBySide = va('0x00A55D70');
 const kAiOuterBaselineCaller = va('0x005B738A');
+// Direct CALL sites in FUN_005B1360 (near CALL E8 occupies five bytes).
+// The return address filter excludes effects/callbacks invoking the same
+// functions inside hypothetical combat or unrelated UI paths.
+const kAiGateTargets = [
+  {name:'eligibility_mask', va:'0x005AAB90', address:va('0x005AAB90'),
+    returnVa:'0x005B13E5', returnAddress:va('0x005B13E5')},
+  {name:'resource_policy', va:'0x005AE3E0', address:va('0x005AE3E0'),
+    returnVa:'0x005B13FF', returnAddress:va('0x005B13FF')},
+  {name:'special_policy', va:'0x005AE220', address:va('0x005AE220'),
+    returnVa:'0x005B1418', returnAddress:va('0x005B1418')}
+];
 const kQueueCount = va('0x00A558A8');
 const kQueueFlags = va('0x00A558AC');
 const kCommandStage = va('0x00A5780E');
@@ -221,6 +232,7 @@ let nativeAiSelectNormal = null;
 let nativeAiForceSet = null;
 let aiProbeHooks = [];
 let aiDetailMode = false;
+let aiGateMode = false;
 let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
 let aiSelectorStack = new Map();
@@ -976,6 +988,7 @@ function traceStatus() {
     prepHooks: summonPrepHooks.length,
     aiActive: aiProbeHooks.length > 0,
     aiDetailActive: aiDetailMode,
+    aiGateActive: aiGateMode,
     aiHooks: aiProbeHooks.length,
     demoActive: demoExecutorHook !== null,
     demoHooks: (demoExecutorHook === null ? 0 : 1) + demoSetupHooks.length,
@@ -1159,6 +1172,7 @@ function stopAiProbe() {
   const hooks = aiProbeHooks;
   aiProbeHooks = [];
   aiDetailMode = false;
+  aiGateMode = false;
   aiSelectorDepth = new Map();
   aiSelectorStack = new Map();
   let failure = null;
@@ -1169,13 +1183,22 @@ function stopAiProbe() {
   return traceStatus();
 }
 
-function startAiProbe(detailed = false) {
-  if (typeof detailed !== 'boolean') throw new Error('AI detail flag must be boolean');
+function startAiProbe(mode = false) {
+  // Backward compatible: false -> 4 default hooks, true -> 9 detail hooks.
+  // 'gates' -> 9 detail hooks + 3 direct-call selector gate hooks.
+  if (mode !== false && mode !== true && mode !== 'gates')
+    throw new Error('AI trace mode must be false, true or gates');
+  const detailed = mode === true || mode === 'gates';
+  const withGates = mode === 'gates';
   if (!installed || commandTraceHook === null) {
     throw new Error('Start trace on before trace ai on');
   }
   if (aiProbeHooks.length > 0) throw new Error('AI probe is already active');
-  for (const target of (detailed ? kAiProbeTargets.concat(kAiDetailTargets) : kAiProbeTargets)) {
+  if (withGates && (!observerOnly || summonPrepHooks.length > 0))
+    throw new Error('AI gate trace requires --observe-only and trace prep off');
+  const targets = kAiProbeTargets.concat(
+    detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : []);
+  for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
       throw new Error('AI probe function not executable: ' + target.va);
@@ -1211,6 +1234,7 @@ function startAiProbe(detailed = false) {
               event.duelRunning = snapshot.duelRunning;
               if (snapshot.duelRunning) {
                 this.aiHandSnapshot = snapshot;
+                stack[stack.length - 1].handIndices = snapshot.indices;
                 event.handCount = snapshot.count;
                 event.handWords = snapshot.words;
                 event.handIndices = snapshot.indices;
@@ -1347,6 +1371,71 @@ function startAiProbe(detailed = false) {
         hooks.push(hook);
       }
     }
+    if (withGates) {
+      for (const target of kAiGateTargets) {
+        const hook = Interceptor.attach(target.address, {
+          onEnter(args) {
+            this.gateObserve = false;
+            const threadId = Process.getCurrentThreadId();
+            // Do not even examine arguments for unrelated callers.
+            if (!this.returnAddress.equals(target.returnAddress)) return;
+            const stack = aiSelectorStack.get(threadId) || [];
+            const active = stack.length ? stack[stack.length - 1] : null;
+            if (active === null || active.name !== 'select_normal' ||
+                active.side !== 0) return;
+            try {
+              if (kDuelRunning.readU16() === 0) return;
+              const rawArgs = target.name === 'special_policy'
+                ? [args[0].toUInt32()]
+                : target.name === 'resource_policy'
+                  ? [args[0].toUInt32(),args[1].toUInt32(),args[2].toUInt32()]
+                  : [args[0].toUInt32(),args[1].toUInt32()];
+              if (target.name !== 'special_policy' && rawArgs[0] !== 0)
+                return;
+              const cardIndex = target.name === 'eligibility_mask' ?
+                rawArgs[1] & 0xFFF :
+                target.name === 'special_policy' ? rawArgs[0] & 0xFFF :
+                active.lastGateCardIndex ?? null;
+              if (target.name === 'eligibility_mask')
+                active.lastGateCardIndex = cardIndex;
+              this.gateDetails = {
+                kind:'ai_gate', phase:'leave', function:target.name,
+                functionVa:target.va, callsiteReturn:target.returnVa,
+                threadId, selectorCallId:active.id, side:0,
+                caller:this.returnAddress.toString(), argsRaw:rawArgs,
+                candidateCardIndex:cardIndex,
+                handPositions:cardIndex === null ? [] :
+                  (active.handIndices || []).flatMap((v,i) =>
+                    v === cardIndex ? [i] : [])
+              };
+              this.gateObserve = true;
+            } catch (error) {
+              // Invalid/unknown ABI never affects native execution.
+              this.gateDetails = {
+                kind:'ai_gate', phase:'leave', function:target.name,
+                functionVa:target.va, callsiteReturn:target.returnVa,
+                threadId, selectorCallId:active.id, side:0,
+                readError:String(error)
+              };
+              this.gateObserve = true;
+            }
+          },
+          onLeave(retval) {
+            if (!this.gateObserve) return;
+            const result = {...this.gateDetails,
+              returnRaw:retval.toUInt32(), returnSigned:retval.toInt32()};
+            if (result.readError === undefined) {
+              const passed = target.name === 'eligibility_mask' ?
+                result.returnRaw !== 0 : result.returnRaw === 0;
+              result.gatePassed = passed;
+              result.gateVerdict = passed ? 'continue' : 'reject';
+            }
+            recordTraceEvent(result);
+          }
+        });
+        hooks.push(hook);
+      }
+    }
   } catch (error) {
     for (let i = hooks.length - 1; i >= 0; i--) {
       try { hooks[i].detach(); } catch (_) { /* best effort rollback */ }
@@ -1355,6 +1444,7 @@ function startAiProbe(detailed = false) {
   }
   aiProbeHooks = hooks;
   aiDetailMode = detailed;
+  aiGateMode = withGates;
   aiProbeCallSequence = 0;
   aiSelectorDepth = new Map();
   aiSelectorStack = new Map();
