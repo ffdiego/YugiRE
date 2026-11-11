@@ -57,3 +57,8 @@ entrada para geraroutroscore. Próximaetapa sequência eattrs.
   selftestMinGWnãoexecutável. Relatóriocompletoheadless-feasibility.md.
 - SequênciaB compilaepassou20checks novos(total572)antesúltimapropriedadederivada;
   próximaqueryvalidoupolíticaADE40 eoverloadatributo. Fecharcommitseparado.
+
+## Headless delimitado concluído
+Verheadless-feasibility.md:8raízes118nósdepth5;dispatchers409nósdepth3;
+fronteiraB0F40com7serviçosstop=9nós,rootOPEN. PURE não excluiglobais.
+Importsheap/criticalsection viaCARD_IDlazy;semharnessnativo e semWin32stubs.

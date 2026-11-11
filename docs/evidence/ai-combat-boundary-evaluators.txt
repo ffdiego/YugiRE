@@ -1,0 +1,62 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+Core boundary reach (static call graph, read-only; nothing saved)
+  root 005b0f40
+  root 005b0d90
+  root 005b0b90
+  root 005b0a50
+  root 005b08b0
+  root 005add60
+  root 005addc0
+  root 0056dd30
+  max depth: 5; follow address-taken: false
+
+== SUMMARY ==
+reachable functions: 118  (functions created transiently: 0)
+  INDIRECT         67   56.8%
+  LIMIT            22   18.6%
+  OPEN             13   11.0%
+  PURE             14   11.9%
+  RUNTIME_ONLY      2    1.7%
+unresolved indirect call sites (reachable code): 4; call/jump targets that are not functions: 0
+address-taken functions not in the graph: 10
+classes: PURE = no imports and no unresolved indirect calls below; RUNTIME_ONLY = only memory/thread/misc imports; INDIRECT = unresolved indirect calls below, no stub imports seen; OPEN = reaches a STOP/LIMIT node, so absence of imports is not proof; NEEDS_STUB = reaches ui/gdi/audio/com/file/time/net/registry/dynload; STOP/LIMIT = not expanded.
+
+== IMPORTS REACHED (by category) ==
+category  import  directFrom  affectedFunctions  shortest chain
+memory    KERNEL32!HeapFree  direct=1  affected=75
+          FUN_005b0f40 > FUN_004022e0 > FUN_00402340 > FUN_0054a2d0 > FUN_005c50aa > [KERNEL32!HeapFree]
+memory    KERNEL32!GlobalAlloc  direct=1  affected=67
+          FUN_005b0f40 > FUN_004022e0 > FUN_00402340 > FUN_00543170 > FUN_00543290 > [KERNEL32!GlobalAlloc]
+memory    KERNEL32!HeapAlloc  direct=1  affected=67
+          FUN_005b0f40 > FUN_004022e0 > FUN_005c387c > FUN_005c37fe > FUN_005c7124 > [KERNEL32!HeapAlloc]
+memory    KERNEL32!HeapReAlloc  direct=1  affected=67
+          FUN_005b0f40 > FUN_004022e0 > FUN_005c387c > FUN_005c37fe > FUN_005c7124 > [KERNEL32!HeapReAlloc]
+memory    KERNEL32!HeapSize  direct=1  affected=67
+          FUN_005b0f40 > FUN_004022e0 > FUN_005c387c > FUN_005c37fe > FUN_005c725c > [KERNEL32!HeapSize]
+thread    KERNEL32!EnterCriticalSection  direct=1  affected=72
+          FUN_005b0f40 > FUN_004022e0 > FUN_00402340 > FUN_0054a2d0 > FUN_00496670 > [KERNEL32!EnterCriticalSection]
+thread    KERNEL32!LeaveCriticalSection  direct=1  affected=72
+          FUN_005b0f40 > FUN_004022e0 > FUN_00402340 > FUN_0054a2d0 > FUN_00496680 > [KERNEL32!LeaveCriticalSection]
+
+== STUB BOUNDARY (functions calling stub-category imports directly) ==
+sorted by how many reachable functions depend on them (ancestors, itself included)
+
+== UNRESOLVED INDIRECT CALLS (reachable functions) ==
+00543290  FUN_00543290           sites=4
+    00543376 CALL dword ptr [EDX + 0xc]
+    005433f2 CALL dword ptr [EDX + 0x44]
+    00543470 CALL dword ptr [EDX + 0x44]
+
+== ADDRESS-TAKEN FUNCTIONS NOT IN THE GRAPH (possible callbacks) ==
+00402450  taken by FUN_004022e0 @00402303 (not yet a Ghidra function)
+005cff60  taken by FUN_00402340 @00402342 (not yet a Ghidra function)
+004024d0  taken by FUN_00402460 @00402483 (not yet a Ghidra function)
+00402640  taken by FUN_004025f0 @00402613 (not yet a Ghidra function)
+005d8790  taken by FUN_00543170 @00543178 (not yet a Ghidra function)
+005d99bc  taken by FUN_005c1ad6 @005c1ad6 (not yet a Ghidra function)
+005cff70  taken by FUN_00402aa0 @00402aa5 (not yet a Ghidra function)
+005d87b6  taken by FUN_00543290 @00543298 (not yet a Ghidra function)
+005d87f8  taken by FUN_005443b0 @005443b2 (not yet a Ghidra function)
+005d0148  taken by FUN_0040eed0 @0040eed2 (not yet a Ghidra function)
+
+Note: APIs resolved at runtime (GetProcAddress/COM) and vtable calls are invisible to this graph; use the dynload category and the indirect-call list as leads.

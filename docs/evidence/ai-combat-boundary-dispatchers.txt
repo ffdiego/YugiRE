@@ -1,0 +1,44 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+Core boundary reach (static call graph, read-only; nothing saved)
+  root 005bc700
+  root 005b7b50
+  table 005efb50: 8 code pointer(s)
+  max depth: 3; follow address-taken: false
+
+== SUMMARY ==
+reachable functions: 409  (functions created transiently: 67)
+  INDIRECT         14    3.4%
+  LIMIT           238   58.2%
+  OPEN            139   34.0%
+  PURE             18    4.4%
+unresolved indirect call sites (reachable code): 7; call/jump targets that are not functions: 0
+address-taken functions not in the graph: 4
+classes: PURE = no imports and no unresolved indirect calls below; RUNTIME_ONLY = only memory/thread/misc imports; INDIRECT = unresolved indirect calls below, no stub imports seen; OPEN = reaches a STOP/LIMIT node, so absence of imports is not proof; NEEDS_STUB = reaches ui/gdi/audio/com/file/time/net/registry/dynload; STOP/LIMIT = not expanded.
+
+== IMPORTS REACHED (by category) ==
+category  import  directFrom  affectedFunctions  shortest chain
+
+== STUB BOUNDARY (functions calling stub-category imports directly) ==
+sorted by how many reachable functions depend on them (ancestors, itself included)
+
+== UNRESOLVED INDIRECT CALLS (reachable functions) ==
+005b5e00  FUN_005b5e00           sites=3
+    005b5f08 CALL dword ptr [ECX + 0x4]
+    005b60ae CALL dword ptr [EDX + 0x4]
+    005b619c CALL dword ptr [EDX + 0x4]
+005bc700  FUN_005bc700           sites=1
+    005bc761 CALL dword ptr [ECX*0x4 + 0x5efbb0]
+005b7b50  FUN_005b7b50           sites=1
+    005b7b8b CALL EAX
+0040ca70  FUN_0040ca70           sites=1
+    0040ca81 CALL dword ptr [EAX + 0x4]
+005a4090  FUN_005a4090           sites=1
+    005a40ab CALL EAX
+
+== ADDRESS-TAKEN FUNCTIONS NOT IN THE GRAPH (possible callbacks) ==
+004024d0  taken by FUN_00402460 @00402483 (not yet a Ghidra function)
+00402450  taken by FUN_004022e0 @00402303 (not yet a Ghidra function)
+005cff60  taken by FUN_00402340 @00402342 (not yet a Ghidra function)
+00402640  taken by FUN_004025f0 @00402613 (not yet a Ghidra function)
+
+Note: APIs resolved at runtime (GetProcAddress/COM) and vtable calls are invisible to this graph; use the dynload category and the indirect-call list as leads.

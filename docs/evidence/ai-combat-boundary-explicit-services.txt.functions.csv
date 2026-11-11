@@ -1,0 +1,10 @@
+va,name,depth,parent_va,origin,instructions,callee_count,class,direct_imports,trans_stub_categories,indirect_sites,stop
+"005b0f40","FUN_005b0f40",0,"","root",294,8,"OPEN","","","",false
+"005add60","FUN_005add60",1,"005b0f40","call",0,0,"STOP","","","",true
+"005addc0","FUN_005addc0",1,"005b0f40","call",0,0,"STOP","","","",true
+"004022e0","FUN_004022e0",1,"005b0f40","call",0,0,"STOP","","","",true
+"005be050","FUN_005be050",1,"005b0f40","call",10,0,"PURE","","","",false
+"0056d790","FUN_0056d790",1,"005b0f40","call",0,0,"STOP","","","",true
+"0056d8d0","FUN_0056d8d0",1,"005b0f40","call",0,0,"STOP","","","",true
+"005699a0","FUN_005699a0",1,"005b0f40","call",0,0,"STOP","","","",true
+"0056b220","FUN_0056b220",1,"005b0f40","call",0,0,"STOP","","","",true
