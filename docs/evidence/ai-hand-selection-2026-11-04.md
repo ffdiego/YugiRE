@@ -1,5 +1,11 @@
 # Como o Joey escolhe monstros na mão: seletores e modo (2026-11-04)
 
+> Atualização da investigação: o [estudo consolidado do motor](../research/ai-decision-engine.md)
+> reconstrói os callers completos e corrige o esboço dos passes abaixo.
+> O caller pode iniciar com passe1, passe0 ou diretamente-1; não chama sempre0→-1.
+> Também especifica o desempate e os limites da reprodução da escolha real26.
+
+
 **Fonte:** `ai-hand-selectors.txt`, 457 linhas fornecidas
 pelo operador, extração Ghidra para EXE SHA-256
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.

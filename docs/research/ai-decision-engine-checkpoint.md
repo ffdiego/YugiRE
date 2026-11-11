@@ -1,85 +1,97 @@
 # Checkpoint — motor de decisões da IA
 
-## Objetivo
-Reconstruir seletores005B1360/005B16C0, score005B0A50/baseline005B08B0,
-snapshot/restore e correlacionar evento26→CE30 da captura normal real.
-Somente main, Ghidra read-only, sem executar jogo, saves, patches ou helpers.
+## Objetivo e estado atual
+Investigação estática consolidada em [ai-decision-engine.md](ai-decision-engine.md).
+Seletores, ranking, score e dispatcher foram detalhados; escolha real26→CE30
+**correlacionada, não reproduzida integralmente**. Próximo avanço prioritário:
+Windows, observar métricas/gates de um único caso natural, conforme seção7.
+Somente `main`, sem spawn/jogo no Fedora, saves, patches ou chamadas nativas.
 
-## Estado e evidências já obtidas
-- Lidos os seis documentos solicitados e complementos ai-combat-*.md.
-- EXE/DAT SHA conferidos: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de / 7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed.
-- Quatro consultas completas, sem reanalysis/import ou persistir símbolos:
-  `../evidence/ai-decision-selectors-deep.txt` (seletores/snapshot/comparador),
-  `ai-decision-combat-deep.txt` (score/eventos/atributos),
-  `ai-decision-control-flow.txt` (assembly decisivo e tributos),
-  `ai-decision-dispatch-and-scratch.txt` (callers temporários e scratch).
-- Caller005B72A0 (ponteiro005EFB58), subestado byteA579A2: caso0 consulta
-  AE9C0(side,-1,1). Se>=0 chama normal(side,1); senão calcula baseline08B0
-  em7385: se!=0 chama normal(side,0), se==0 pula diretamente para -1.
-  Se normal(1/0)==-1 também tenta -1. Corrige docs antigos 'sempre0depois-1'.
-- Caso4 do mesmo caller usa priority e só executa modo0; caller005B75A0
-  (ponteiro005EFB64) aceita resultado de AE270 diretamente. Explica rotas
-  distintas de priority, mas dispatcher externo ainda precisa rastreamento.
-- Comparador normal: ATK>=900, bit(slot) emAC.lo, score>best; empate aceita
-  perdas rivaisAA[3..5] maiores e sobreviventes própriosAA[6..8]!=0.
-  Empate integral mantém anterior. AA[0..2]=perdas próprias, [9..11]=rivais
-  sobreviventes após candidato; baseline só computa perdas, preserva altos.
-- Score0A50 soma int16 com MOVSX em005B0B5E; usa máscara açõesA55D70,
-  eventos4bytesA579A6/A8 e altera campos hipotéticos até não haver combate.
-- Snapshot só monstros2x720bytes e words própriosA55D6E/A55D70; A579AA/AC,
-  scratch/evento/backups persistem. Determinar outros writes transientes.
+## Descobertas confirmadas
+- EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`;
+  DAT `7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed`.
+- Política do caller 005B72A0: AE9C0>=0→normal(pass 1); caso contrário,
+  baseline externo!=0→pass 0; baseline0→direto-1. Falha1/0→-1.
+  Corrige esboço antigo “sempre0depois-1”.
+- Ranking 005B154B..15AF: ATK>=900, bit(slot) em AC.low, score>best ou empate
+  com mais perdas rivaisAA[3..5] e sobreviventes própriosAA[6..8]!=0.
+  Empate integral mantém anterior; perdas própriasAA[0..2] não desempataram.
+- Priority 005B16C0: retornos imediatos por ID (sem os filtros gerais), depois
+  máximo de ATK/DEF base contra thresholds, com exceção de tributo que pode
+  reduzir o threshold, depois primeiro nível<5 com filtro modo1/2 porpressão.
+- Score 005B0A50 soma int16/MOVSX de eventos **escolhidos** porB0B90.
+  Não somar propostasB0F40 capturadas indiscriminadamente. Máscara deações
+  impede repetir atacante e limita a sequência a cinco sobcontrato normal.
+- B0B90: selection sort crescente classe/ATK16; não estável emempates.
+  B0D90: empate dealvo substitui por novo oculto, ou por DEF maior do novo
+  visível. B0F40: score=ganho−perda truncado16; útil sepositivo ou mata
+  rival sem perder atacante; exceções porrecursos/vínculos emS2.
+- Snapshot2x720bytes demonstros ewords próprios6E/70. AA/AC,eventos,
+  backups persistem como métricas/scratch. Feedback 005EBEE4 é escrito por
+  0045E240 emhelpers e **fica fora do restore**. Não prova isolamento total.
+- Dispatcher:005BC700→005BC620→005B7BD0→fase3/tabela 005EFB78→005B7B50.
+  Tabela 005EFB50: estágio 2=005B72A0,4=005B7A50(ataques),5=005B75A0.
+  Retorno1 avançaestágio e zera subestados. Duas priority podem ser etapas
+  diferentes; não fallback direto/recursivo do normal.
 
-## Captura dinâmica existente
-`scratch/traces/commands-20261111-022940-355228-pid36348.jsonl`, SHA
-`dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90`.
-1120eventos;13normal(pass=-1 todas,7retornos-1),10priority;12CE_CPU coincidem.
-Evento10: normal side0 passe-1 caller5B73BA, mão894,359,893,307,364,550.
-Evento26: retornaíndice5→550; evento30 CE source550. Stats capturados incluem
-307ATK2300,364ATK2000,550ATK1900 e rival24ATK1700/DEF1150. Evento25
-0808C800=remoção rival,score200, compatível1900−1700. Falta baseline/gates/
-score agregado/máscaras por candidato: **decisão ainda não reproduzida**.
+## Evidência dinâmica disponível / inferências abertas
+Original emscratch/traces/commands-20261111-022940-355228-pid36348.jsonl,
+SHA `dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90`.
+1120eventos íntegros;13normal(pass-1 todas,7negativos),10priority,12CE_CPU
+com source igual à última seleção válida no mesmo lado/thread.
+Caso enter10→leave26→CE30: mão894,359,893,307,364,550; retornaíndice5=550.
+307=GoblinAttackForce/0540,364=PantherWarrior/02E8,550=GeminiElf/0213.
+Evento25=0808C800 (score 200, remove rival) compatível1900−1700 contra
+AxeRaider24. Filtros de Goblin (limiares1900ATK/2000DEF) ePanther (custo/aliado
+maisfraco) são explicação plausível para550; **gates não capturados**.
+Metadata.exeSha256=null: hash do EXE vem dodocumento associado, não atestado
+peloheader do JSONL. Faltam baselines,score agregado,actionMask eAA porhipótese.
 
-## Arquivos em desenvolvimento após interrupção do servidor
-- `scripts/ai_decision_trace_audit.py` + tests/test_ai_decision_trace_audit.py:
-  autor live_case informou7 testes passados; root ainda deve revisar/rodar.
-- Fixture22eventos: src/tests/Joey.Tests/Fixtures/ai-live-combat-events.json
-  e tests/test_ai_live_combat_math.py; revisar conteúdo/testar.
-- Agentes anteriores interrompidos pelo restart; sem outros agentes ativos.
-  Notas ai-combat-math-notes.md e ai-live-case-notes.md ainda não existem.
+## Hipóteses / limites restantes
+- Primeiro passe direto-1 é consistente com baseline externo0 nas13amostras,
+  mas baseline interno pode ser outra avaliação; capturar ambos.
+- Rota especial target5 compatível comataque direto, semamostra nofixture22.
+- Reentrância/isolamento transitivo econsumoRNG não provados; só buffers
+  globais compartilhados egates/efeitos explícitos foram auditados.
+- Cálculo de todos osefeitos/etapas mágicas anteriores não foi portado.
 
-## Próximos passos
-1. Seguir tabela005EFB58/64 até dispatcher005B7Bxx e update005BC700;
-   confirmar ordem/fallback sem inventar estado de carta legal.
-2. Auditar writes diretos e limites de restore; tratar demais helpers como
-   fronteira ainda não provada, sem declarar isolamento total.
-3. Finalizar docs/research/ai-decision-engine.md com pseudocódigo detalhado,
-   tabela/confiança, cadeia da captura, lacunas/experimentos mínimos e
-   arquitetura C# proposta; transcrever só funções puras demonstradas.
-4. Rodar testes offline scripts/fixture; commits pequenos e checkpoint.
-5. Conferir hash originais, main e preservação de dirty files alheios.
+## Caminhos descartados
+- MaiorATK não explica a decisão26; legalidade não implica preferência.
+- Não chamar helpers no duelo para“ver resultados”. Não ler estado durante
+  hipótese como campo real; não chamar feedback não restaurado de corrupção.
+- Propostas combat_event não são escolhasB0B90; A579A8 é zerado pela última
+  tentativa semevento. Ler só depois deB0A50 não reconstrói a sequência.
+- Relatórios ai-*.txt históricos citados nos MD não estavam no repo: nove
+  relatórios novos preservam fontes primárias. ConsultarS1..S9 no documento.
+- Tempfunc5B7B40/5B6C20 falharam por endereço estimado. Entradas corretas
+  do dispatcher5B7B50 e5B7BD0 já resolvidas; não repetir guesses.
 
-## Preservação
-Dirty anteriores: docs/15-rea-integration-todo.md, scripts/README.md,
-scripts/run-archive-query.sh, docs/evidence/duel-crash-sites.txt e toolchain.
-Não incluir nos commits desta pesquisa. Commit01152e4 preserva os quatro primeiros relatórios e este checkpoint.
+## Próximos passos priorizados
+1. Captura mínima natural: B08B0/B0A50 retornos, B1610 args/slot,
+   AAB90/AE3E0/AE220/AECE0 retornos, B0B90 eventos escolhidos, AA eAC
+   emB0950 antes/depois. Ver tabela de momentos/endereço na seção7.
+2. Confrontar primeiro elo divergente antes de ampliar corpus. Valores só
+   emstack/registers: debugger separado no Windows; evitar midfunction Frida.
+3. Auditar hashes/diffs de campos ewords antesB08E0/depoisB0950 sem escrever.
+4. Capturar priority commodo/estágios, empate, alvo oculto,trib while mantendo
+   os motivos de rejeição separados de legalidade. Só depois portar maisIA.
 
-## Avanço após retomada
-- `ai-decision-outer-dispatch.txt` e `ai-decision-dispatch-table.txt`:
-  dispatcher005B7B50 usa tabela005EFB50 e byteA579A0 (0..7+sentinela).
-  índice2=005B72A0, índice4=005B7A50 (ataques), índice5=005B75A0.
-  Retorno1 avança estágio e zera substagesA579A1/A2. Priority repetido
-  pode vir dos estágios2 e5, não invocações redundantes sem contexto.
-- 0045E240 apenas escreve005EBEE4; AAB90 e B7D0 podem chamá-la.
-  **Global de feedback realmente fora do restore**, não só hipótese.
-- DAT identifica307=GoblinAttackForce/0x540;364=PantherWarrior/0x2E8;
-  550=GeminiElf/0x213;24=AxeRaider/0x4D. Filtro5B05A0 rejeita Goblin
-  contra alvo oculto ou ATK<1900 ou DEF<2000; Panther tem filtros de custo
-  e aliado mais fraco. Compatível com escolha26, sem causa dinâmica provada.
-- NativeAiRanking transcreve somente gate final;25.344 combinações contra
-  oráculo de branches;444 checks C# passaram. Nenhuma IA ligada ao demo.
--11 testes Python novos e5 anteriores de ai* passaram; auditoria real12/12CE
-  CPU,13normalpass-1,10priority,0errosleitura. Fixture22combates rastreável
-  aoSHAoriginal, incluindo1900−1700=200 e score0útil vs score0mútuo inútil.
-- Duas consultas tempfunc falharam por entrada estimada incorreta (5B7B40,
-  5B6C20); refazer só após identificar prólogo. Entrada correta dispatcher
-  5B7B50 já resolvida. Não repetir guesses nem alterar banco persistente.
+## Última ação / validação
+Nove relatórios headless read-only concluídos. Build solução semwarnings/erros;
+444checks C# passaram, incluindo7 novos e25344 combinações do comparator
+contra oráculo debranches estáticos. `NativeAiRanking` é predicado puro,
+isolado, sem IA ligada ao demo. TestesPython:16 ai* +13 decode_ai*, todosOK.
+Auditor JSONL:12/12CE_CPU,0erros leitura. Fixture reduzido22eventos+2stats
+conferido contraSHA/linhas originais; igualdade deutility/layout, não replayIA.
+Nenhum Joey executado, banco semsave/reanalysis/import, EXE/DAT preservados.
+
+## Commits relevantes
+- `01152e4`: quatro relatórios, ranking e política depasses corrigida.
+- `5b66125`: dispatcher/feedback, auditor/corpus real, predicadoC# e testes.
+- Consolidação documental incluiS8/S9, pseudocódigos, casos e arquitetura.
+
+## Preservação / bloqueios
+Sóvalidação dinâmica faltante requer operadorWindows; não há decisão de
+produto pendente. Dirty anteriores mantidos fora doscommits: docs/15,
+scripts/README.md, scripts/run-archive-query.sh, duel-crash-sites.txt e
+arquivos toolchain. Novos commits desta tarefa ainda sempush.

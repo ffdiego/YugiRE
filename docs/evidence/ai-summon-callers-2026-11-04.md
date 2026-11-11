@@ -1,5 +1,11 @@
 # Três chamadores da colocação automatizada de monstros (2026-11-04)
 
+> Atualização da investigação: o [estudo consolidado do motor](../research/ai-decision-engine.md)
+> reconstrói os callers completos e corrige o esboço dos passes abaixo.
+> O caller pode iniciar com passe1, passe0 ou diretamente-1; não chama sempre0→-1.
+> Também especifica o desempate e os limites da reprodução da escolha real26.
+
+
 Fonte primária: `ai-summon-callers.txt`, extração Ghidra
 fornecida pelo operador com 246 linhas de instruções, para
 o EXE SHA256
