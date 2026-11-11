@@ -34,6 +34,26 @@ logo não declarar reprodução completa de decisão a partir do estado.
 [protocolo](ai-decision-detail-protocol.md). A próxima captura deve
 observar filtros por candidato em funções naturais, uma decisão por vez.
 
+## Instrumentação de filtros (2026-11-10)
+
+Novo comando opt-in: `trace ai on gates`, exclusivamente em
+`--observe-only`. Inclui o trace detalhado de score e três
+hooks **em entradas** de `FUN_005AAB90`, `FUN_005AE3E0` e
+`FUN_005AE220`. Filtra os callers diretos de `FUN_005B1360`
+(retornos `005B13E5`, `005B13FF`, `005B1418`) na mesma
+thread de `select_normal` lado0. Eventos `ai_gate` ligam
+carta interna/posições, argumentos e retorno à seleção,
+diferenciando `continue` e `reject` de cada filtro,
+sem inferir legalidade geral.
+
+**Validação offline:** 17 grupos de testes simulados passaram
+(incluindo rollback, bloqueio com `trace prep`, modos antigos e
+chamadas de outras funções). **Ainda falta validar no Windows**,
+com apenas uma decisão natural. Classes de nível, `pass` e
+tributos ainda não são observados por esse modo; uma carta sem
+simulação nem filtro rejeitante fica indeterminada.
+[Protocolo detalhado](ai-selection-gates-protocol.md).
+
 ## Descobertas confirmadas
 - EXE SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`;
   DAT `7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed`.
