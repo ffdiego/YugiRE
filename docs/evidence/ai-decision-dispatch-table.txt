@@ -1,0 +1,575 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+TRANSIENT FUNCTION 005b7b50
+TRANSIENT FUNCTION 005b7a50
+BYTES 005efbb0 count=160 50 9F 5B 00 20 C6 5B 00 C0 C3 5B 00 00 00 00 00 59 55 47 49 4F 48 30 31 01 00 00 00 52 04 00 00 2F 04 00 00 39 04 00 00 03 04 00 00 50 01 00 00 9F 02 00 00 82 04 00 00 DA 01 01 00 2F 00 01 00 3D 02 01 00 EF 02 01 00 14 00 01 00 11 00 01 00 13 00 01 00 10 00 01 00 12 00 01 00 2E 04 01 00 25 04 01 00 35 04 01 00 2C 04 01 00 F2 03 01 00 F0 03 01 00 A9 05 01 00 C5 04 01 00 C8 03 01 00 29 04 01 00 88 04 01 00 5B 01 01 00 4F 01 01 00 AA 05 01 00 20 04 01 00 7E 04 01 00 AB 03 01 00
+REFERENCES TO 005b7b50
+ XREF From: 005efb84 To: 005b7b50 Type: DATA Op: 0 DEFAULT FUNCTION none
+REFERENCES TO 005b7a50
+ XREF From: 005efb60 To: 005b7a50 Type: DATA Op: 0 DEFAULT FUNCTION none
+TRANSIENT DISASSEMBLY 005b05a0
+INS 005b05a0 PUSH ECX
+INS 005b05a1 PUSH EBX
+INS 005b05a2 MOV EBX,dword ptr [ESP + 0xc]
+INS 005b05a6 PUSH EBP
+INS 005b05a7 PUSH ESI
+INS 005b05a8 MOV ESI,dword ptr [ESP + 0x1c]
+INS 005b05ac PUSH EDI
+INS 005b05ad MOV EDI,0x1
+INS 005b05b2 XOR EAX,EAX
+INS 005b05b4 SUB EDI,EBX
+INS 005b05b6 CMP ESI,0x4
+INS 005b05b9 SETG AL
+INS 005b05bc MOV dword ptr [ESP + 0x18],EAX
+INS 005b05c0 MOV EAX,EBX
+INS 005b05c2 AND EAX,0x1
+INS 005b05c5 MOV EBP,dword ptr [ESP + 0x1c]
+INS 005b05c9 LEA ECX,[EAX + EAX*0x2]
+INS 005b05cc LEA ESI,[ECX + ECX*0x8]
+INS 005b05cf LEA ECX,[EBP + EBP*0x8]
+INS 005b05d3 SHL ESI,0x1
+INS 005b05d5 SUB ESI,EAX
+INS 005b05d7 SHL ESI,0x4
+INS 005b05da ADD ESI,EAX
+INS 005b05dc SHL ESI,0x2
+INS 005b05df SHL ECX,0x4
+INS 005b05e2 MOV DX,word ptr [ECX + ESI*0x1 + 0xa55d74]
+INS 005b05ea AND EDX,0xfff
+INS 005b05f0 PUSH EDX
+INS 005b05f1 CALL 0x004022e0
+INS 005b05f6 AND EAX,0xffff
+INS 005b05fb ADD ESP,0x4
+INS 005b05fe CMP EAX,0x2f9
+INS 005b0603 JG 0x005b06e3
+INS 005b0609 JZ 0x005b067f
+INS 005b060b CMP EAX,0x16e
+INS 005b0610 JZ 0x005b061e
+INS 005b0612 CMP EAX,0x2e8
+INS 005b0617 JZ 0x005b067f
+INS 005b0619 JMP 0x005b075c
+INS 005b061e PUSH EBP
+INS 005b061f PUSH EBX
+INS 005b0620 CALL 0x0056bf20
+INS 005b0625 ADD ESP,0x8
+INS 005b0628 TEST EAX,EAX
+INS 005b062a JZ 0x005b065c
+INS 005b062c PUSH EBP
+INS 005b062d PUSH EBX
+INS 005b062e CALL 0x0056f690
+INS 005b0633 MOV ECX,EDI
+INS 005b0635 ADD ESP,0x8
+INS 005b0638 AND ECX,0x1
+INS 005b063b LEA EDX,[ECX + ECX*0x2]
+INS 005b063e LEA EDX,[EDX + EDX*0x8]
+INS 005b0641 SHL EDX,0x1
+INS 005b0643 SUB EDX,ECX
+INS 005b0645 SHL EDX,0x4
+INS 005b0648 ADD EDX,ECX
+INS 005b064a XOR ECX,ECX
+INS 005b064c MOV CX,word ptr [EDX*0x4 + 0xa55d64]
+INS 005b0654 CMP EAX,ECX
+INS 005b0656 JGE 0x005b075c
+INS 005b065c MOV EAX,dword ptr [ESP + 0x24]
+INS 005b0660 TEST EAX,EAX
+INS 005b0662 JZ 0x005b075c
+INS 005b0668 CMP word ptr [ESI + 0xa55d64],0xfa0
+INS 005b0671 JBE 0x005b075c
+INS 005b0677 POP EDI
+INS 005b0678 POP ESI
+INS 005b0679 POP EBP
+INS 005b067a XOR EAX,EAX
+INS 005b067c POP EBX
+INS 005b067d POP ECX
+INS 005b067e RET
+INS 005b067f MOV EAX,dword ptr [ESP + 0x24]
+INS 005b0683 TEST EAX,EAX
+INS 005b0685 JZ 0x005b075c
+INS 005b068b PUSH EBP
+INS 005b068c PUSH EBX
+INS 005b068d CALL 0x0056f690
+INS 005b0692 ADD ESP,0x8
+INS 005b0695 XOR EBP,EBP
+INS 005b0697 MOV dword ptr [ESP + 0x10],EAX
+INS 005b069b MOV dword ptr [ESP + 0x24],EBP
+INS 005b069f LEA ESI,[ESI + 0xa55d74]
+INS 005b06a5 TEST dword ptr [ESI],0xfff
+INS 005b06ab JZ 0x005b06c7
+INS 005b06ad PUSH EBP
+INS 005b06ae PUSH EBX
+INS 005b06af CALL 0x0056f690
+INS 005b06b4 MOV ECX,dword ptr [ESP + 0x18]
+INS 005b06b8 ADD ESP,0x8
+INS 005b06bb CMP EAX,ECX
+INS 005b06bd JGE 0x005b06c7
+INS 005b06bf MOV dword ptr [ESP + 0x24],0x1
+INS 005b06c7 INC EBP
+INS 005b06c8 ADD ESI,0x90
+INS 005b06ce CMP EBP,0x5
+INS 005b06d1 JL 0x005b06a5
+INS 005b06d3 MOV EAX,dword ptr [ESP + 0x24]
+INS 005b06d7 TEST EAX,EAX
+TRANSIENT DISASSEMBLY 005b06e0
+INS 005b06e0 POP EBX
+INS 005b06e1 POP ECX
+INS 005b06e2 RET
+INS 005b06e3 CMP EAX,0x540
+INS 005b06e8 JNZ 0x005b075c
+INS 005b06ea MOV EAX,dword ptr [ESP + 0x18]
+INS 005b06ee TEST EAX,EAX
+INS 005b06f0 JNZ 0x005b0829
+INS 005b06f6 MOV EAX,EDI
+INS 005b06f8 AND EAX,0x1
+INS 005b06fb LEA ECX,[EAX + EAX*0x2]
+INS 005b06fe LEA EDX,[ECX + ECX*0x8]
+INS 005b0701 MOV ECX,dword ptr [ESP + 0x20]
+INS 005b0705 SHL EDX,0x1
+INS 005b0707 SUB EDX,EAX
+INS 005b0709 SHL EDX,0x4
+INS 005b070c ADD EDX,EAX
+INS 005b070e LEA EAX,[ECX + ECX*0x8]
+INS 005b0711 SHL EAX,0x4
+INS 005b0714 MOV AX,word ptr [EAX + EDX*0x4 + 0xa55d7a]
+INS 005b071c TEST AL,0x2
+INS 005b071e JZ 0x005b0892
+INS 005b0724 TEST AL,0x1
+INS 005b0726 PUSH ECX
+INS 005b0727 PUSH EDI
+INS 005b0728 JZ 0x005b0741
+INS 005b072a CALL 0x0056f6b0
+INS 005b072f ADD ESP,0x8
+INS 005b0732 CMP EAX,0x7d0
+INS 005b0737 JGE 0x005b0768
+INS 005b0739 POP EDI
+INS 005b073a POP ESI
+INS 005b073b POP EBP
+INS 005b073c XOR EAX,EAX
+INS 005b073e POP EBX
+INS 005b073f POP ECX
+INS 005b0740 RET
+INS 005b0741 CALL 0x0056f690
+INS 005b0746 ADD ESP,0x8
+INS 005b0749 CMP EAX,0x76c
+INS 005b074e JGE 0x005b0768
+INS 005b0750 POP EDI
+INS 005b0751 POP ESI
+INS 005b0752 POP EBP
+INS 005b0753 XOR EAX,EAX
+INS 005b0755 POP EBX
+INS 005b0756 POP ECX
+INS 005b0757 RET
+INS 005b0758 MOV EBP,dword ptr [ESP + 0x1c]
+INS 005b075c MOV EAX,dword ptr [ESP + 0x18]
+INS 005b0760 TEST EAX,EAX
+INS 005b0762 JNZ 0x005b0829
+INS 005b0768 MOV EAX,EDI
+INS 005b076a AND EAX,0x1
+INS 005b076d LEA ESI,[EAX + EAX*0x2]
+INS 005b0770 LEA ESI,[ESI + ESI*0x8]
+INS 005b0773 SHL ESI,0x1
+INS 005b0775 SUB ESI,EAX
+INS 005b0777 SHL ESI,0x4
+INS 005b077a ADD ESI,EAX
+INS 005b077c MOV EAX,dword ptr [ESP + 0x20]
+INS 005b0780 SHL ESI,0x2
+INS 005b0783 LEA ECX,[EAX + EAX*0x8]
+INS 005b0786 SHL ECX,0x4
+INS 005b0789 LEA EAX,[ECX + ESI*0x1]
+FUNCTION FUN_005b7b50 @005b7b50
+ CALLER 005efb84 null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005b7b50(void)
+
+{
+  byte bVar1;
+  int iVar2;
+  
+  if (((*(uint *)(&DAT_00a56430 + (DAT_00a577f8._2_1_ & 1) * 0xd44) & 0x800000) != 0) ||
+     ((code *)(&PTR_LAB_005efb50)[_DAT_00a579a0 & 0xff] == (code *)0x0)) {
+    return 1;
+  }
+  iVar2 = (*(code *)(&PTR_LAB_005efb50)[_DAT_00a579a0 & 0xff])();
+  if (iVar2 != 0) {
+    _DAT_00a579a0 = _DAT_00a579a0 & 0xff0000ff;
+    bVar1 = DAT_00a579a0 + 1 ^ DAT_00a579a0;
+    _DAT_00a579a0 = _DAT_00a579a0 ^ bVar1;
+  }
+  return 0;
+}
+
+
+FUNCTION FUN_005b7a50 @005b7a50
+ CALLER 005efb60 null
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 FUN_005b7a50(void)
+
+{
+  int iVar1;
+  
+  if (DAT_00a579a2 == '\0') {
+    *(undefined2 *)(&DAT_00a55d70 + (DAT_00a577f8._2_1_ & 1) * 0xd44) = 0;
+    iVar1 = FUN_005a0dd0(DAT_00a577f8._2_1_ & 1);
+    if (iVar1 == 0) {
+      return 1;
+    }
+    iVar1 = FUN_005b1310(DAT_00a577f8._2_1_ & 1);
+    if (iVar1 == 0) {
+      return 1;
+    }
+    iVar1 = FUN_005b6660(DAT_00a577f8._2_1_ & 1);
+    if (iVar1 != 0) {
+      return 0;
+    }
+    DAT_00a577f8._2_2_ = DAT_00a577f8._2_2_ & 0xff;
+    _DAT_00a577fc = _DAT_00a577fc & 0xff00;
+  }
+  else {
+    if (DAT_00a579a2 != '\x01') {
+      if (DAT_00a579a2 == '\x02') {
+        FUN_005b9170(DAT_00a577f8._2_2_ << 0xf | 0x54,0,0,0);
+        return 1;
+      }
+      return 0;
+    }
+    iVar1 = FUN_005a4090(DAT_00a577f8._2_1_ & 1);
+    if (iVar1 == 0) {
+      return 0;
+    }
+  }
+  _DAT_00a579a2 = _DAT_00a579a2 ^ (byte)(DAT_00a579a2 + 1 ^ DAT_00a579a2);
+  return 0;
+}
+
+
+FUNCTION FUN_0056bf20 @0056bf20
+ CALLER 005b0da0 FUN_005b0d90
+ CALLER 005b0620 FUN_005b05a0
+ CALLER 005a15d4 FUN_005a1580
+ CALLER 005a1068 FUN_005a0f00
+
+bool FUN_0056bf20(uint param_1,int param_2)
+
+{
+  short sVar1;
+  int iVar2;
+  byte *pbVar3;
+  int iVar4;
+  
+  iVar4 = 0;
+  pbVar3 = &DAT_00a55d7a + (-param_1 - 1 & 1) * 0xd44;
+  do {
+    if ((*(uint *)(pbVar3 + -6) & 0xfff) != 0) {
+      sVar1 = FUN_004022e0(*(uint *)(pbVar3 + -6) & 0xfff);
+      if (sVar1 != 0x52e) {
+        return false;
+      }
+      iVar2 = FUN_0056b220(0x14d);
+      if (iVar2 == 0) {
+        return false;
+      }
+      if ((*pbVar3 & 2) == 0) {
+        return false;
+      }
+    }
+    iVar4 = iVar4 + 1;
+    pbVar3 = pbVar3 + 0x90;
+    if (4 < iVar4) {
+      sVar1 = FUN_004022e0(*(ushort *)(&DAT_00a55d74 + param_2 * 0x24 + (param_1 & 1) * 0x351) &
+                           0xfff);
+      return sVar1 != 0x5f3;
+    }
+  } while( true );
+}
+
+
+FUNCTION FUN_0056bfd0 @0056bfd0
+ CALLER 005b0db2 FUN_005b0d90
+ CALLER 005a16e6 FUN_005a1580
+ CALLER 005a108f FUN_005a0f00
+
+uint FUN_0056bfd0(uint param_1,int param_2)
+
+{
+  ushort uVar1;
+  int iVar2;
+  uint uVar3;
+  
+  uVar3 = (&DAT_00a55d74)[param_2 * 0x24 + (param_1 & 1) * 0x351];
+  iVar2 = FUN_0056b440(uVar3 & 0xfff,(uVar3 >> 0xc & 1) + (uVar3 >> 0x18 & 0x7f) * 2);
+  if (iVar2 == 0) {
+    uVar1 = FUN_004022e0(uVar3 & 0xfff);
+    if (uVar1 < 0x27b) {
+      if (uVar1 == 0x27a) {
+switchD_0056c04b_caseD_182:
+        return 1;
+      }
+      switch(uVar1) {
+      case 0x182:
+      case 0x18c:
+      case 0x18d:
+      case 0x1a5:
+      case 0x1e7:
+        goto switchD_0056c04b_caseD_182;
+      default:
+        goto switchD_0056c04b_caseD_183;
+      }
+    }
+    switch(uVar1) {
+    case 0x2d6:
+    case 0x2d7:
+    case 0x2d8:
+    case 0x2fe:
+      iVar2 = FUN_0056a780(1 - param_1);
+      return (uint)(iVar2 == 0);
+    case 0x32c:
+      uVar3 = FUN_0056a810(1 - param_1);
+      return uVar3;
+    }
+  }
+switchD_0056c04b_caseD_183:
+  return 0;
+}
+
+
+FUNCTION FUN_00570a70 @00570a70
+ CALLER 005aac4b FUN_005aab90
+ CALLER 005a0728 FUN_005a0530
+ CALLER 005b09fa FUN_005b09c0
+ CALLER 005b6e69 FUN_005b6e40
+ CALLER 005b730c null
+ CALLER 00570ad6 FUN_00570ac0
+ CALLER 005b7024 FUN_005b6ff0
+ CALLER 005b6713 FUN_005b6690
+ CALLER 005b74ac null
+ CALLER 005b75f3 null
+ CALLER 005b7887 FUN_005b77f0
+
+bool FUN_00570a70(uint param_1)
+
+{
+  int iVar1;
+  
+  if ((*(uint *)(&DAT_00a56430 + (param_1 & 1) * 0xd44) & 0x100000) != 0) {
+    return false;
+  }
+  iVar1 = FUN_005699a0(param_1,0x592);
+  if (iVar1 == 0) {
+    iVar1 = FUN_005699c0(0x5f6);
+    return iVar1 == 0;
+  }
+  return false;
+}
+
+
+FUNCTION FUN_00570ac0 @00570ac0
+ CALLER 005b7321 null
+ CALLER 005b74c2 null
+ CALLER 005b7609 null
+
+undefined4 FUN_00570ac0(undefined4 param_1)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  
+  iVar1 = FUN_005699c0(0x47f);
+  if (iVar1 == 0) {
+    return 1;
+  }
+  uVar2 = FUN_00570a70(param_1);
+  return uVar2;
+}
+
+
+FUNCTION FUN_00567620 @00567620
+ CALLER 0057eb71 FUN_0057eac0
+ CALLER 00598c64 FUN_00598c40
+ CALLER 00575078 FUN_00574f70
+ CALLER 00575402 FUN_00575210
+ CALLER 00588fab FUN_00588d90
+ CALLER 005b2266 FUN_005b2160
+ CALLER 0058c1ac FUN_0058c080
+ CALLER 005a30fa null
+ CALLER 005ae228 FUN_005ae220
+ CALLER 005acd5f FUN_005ac990
+ CALLER 0056c2e1 FUN_0056c210
+ CALLER 005bb86d FUN_005bb720
+ CALLER 005b0a0e FUN_005b09c0
+ CALLER 005b6eb3 FUN_005b6e40
+ CALLER 005ae015 FUN_005adec0
+
+bool FUN_00567620(undefined4 param_1,int param_2)
+
+{
+  uint uVar1;
+  int iVar2;
+  
+  uVar1 = FUN_004022e0(param_1);
+  uVar1 = uVar1 & 0xffff;
+  if (uVar1 < 0x263) {
+    if (uVar1 == 0x262) {
+      return true;
+    }
+    if (0x1d4 < uVar1) {
+      switch(uVar1) {
+      case 0x1e9:
+      case 500:
+      case 0x21b:
+      case 0x21c:
+      case 0x231:
+      case 0x246:
+      case 0x249:
+      case 0x24e:
+      case 0x259:
+        return true;
+      default:
+        return false;
+      }
+    }
+    if (uVar1 == 0x1d4) {
+      return true;
+    }
+    if (uVar1 < 0xe0) {
+      if (uVar1 == 0xdf) {
+        return true;
+      }
+      switch(uVar1) {
+      case 0x27:
+      case 0x52:
+      case 0x53:
+      case 0x65:
+      case 0xaa:
+        return true;
+      default:
+        return false;
+      }
+    }
+    if (uVar1 == 0x109) {
+      return true;
+    }
+    if (uVar1 == 0x1ab) {
+      return true;
+    }
+    iVar2 = uVar1 - 0x1cd;
+  }
+  else {
+    if (0x4e8 < uVar1) {
+      switch(uVar1) {
+      case 0x51b:
+      case 0x532:
+      case 0x539:
+      case 0x53a:
+      case 0x59b:
+      case 0x59c:
+      case 0x5e8:
+      case 0x5f1:
+      case 0x5f4:
+        goto switchD_0056766b_caseD_27;
+      default:
+        return false;
+      }
+    }
+    if (0x4e5 < uVar1) {
+      return true;
+    }
+    if (uVar1 < 0x419) {
+      if (uVar1 == 0x418) {
+        return true;
+      }
+      switch(uVar1) {
+      case 0x280:
+        return param_2 != 1;
+      default:
+        return false;
+      case 0x2d9:
+      case 0x2db:
+      case 0x2fa:
+        return true;
+      }
+    }
+    if (uVar1 == 0x452) {
+      return true;
+    }
+    if (uVar1 == 0x45c) {
+      return true;
+    }
+    iVar2 = uVar1 - 0x48b;
+  }
+  if (iVar2 == 0) {
+switchD_0056766b_caseD_27:
+    return true;
+  }
+  return false;
+}
+
+
+FUNCTION FUN_0056a000 @0056a000
+ CALLER 0057f446 FUN_0057f360
+ CALLER 005aaf6c FUN_005aae00
+ CALLER 005ab107 FUN_005aae00
+ CALLER 005ab152 FUN_005aae00
+ CALLER 005ab208 FUN_005ab1a0
+ CALLER 005ab231 FUN_005ab1a0
+ CALLER 00579b61 FUN_00579a00
+ CALLER 005ab28c FUN_005ab280
+ CALLER 005ab3fc FUN_005ab3f0
+ CALLER 005ab67d FUN_005ab640
+ CALLER 005aafd6 FUN_005aae00
+ CALLER 005915ad FUN_005914a0
+ CALLER 0058370a null
+ CALLER 0057f661 FUN_0057f640
+ CALLER 0058036e FUN_00580360
+ CALLER 005896a5 null
+ CALLER 0058aa54 null
+ CALLER 0058ac48 null
+ CALLER 0058b0e9 null
+ CALLER 0058b16e null
+ CALLER 0058b49e null
+ CALLER 0058bd48 null
+ CALLER 0058bd55 null
+ CALLER 0058c709 null
+ CALLER 0058e6a3 null
+ CALLER 0058e6fd null
+ CALLER 0058f203 null
+ CALLER 005829e7 FUN_005829d0
+ CALLER 005904fa null
+ CALLER 00595b07 null
+ CALLER 0059e538 FUN_0059df40
+ CALLER 0059e8c9 FUN_0059df40
+ CALLER 0059ed1a FUN_0059df40
+ CALLER 0059f003 FUN_0059df40
+ CALLER 0059f382 FUN_0059df40
+ CALLER 0059faee FUN_0059df40
+ CALLER 0059e2a7 FUN_0059df40
+ CALLER 005a73bf null
+ CALLER 005a7881 null
+ CALLER 005aacb1 FUN_005aab90
+ CALLER 005aace8 FUN_005aab90
+ CALLER 005b16ef FUN_005b16c0
+ CALLER 005b1a29 FUN_005b16c0
+ CALLER 005b1a87 FUN_005b16c0
+ CALLER 005af3b1 FUN_005af370
+ CALLER 0058e339 FUN_0058e2f0
+
+int FUN_0056a000(undefined4 param_1)
+
+{
+  int iVar1;
+  int iVar2;
+  int iVar3;
+  
+  iVar3 = 0;
+  iVar2 = 0;
+  do {
+    iVar1 = FUN_00569f70(param_1,iVar2);
+    if (iVar1 != 0) {
+      iVar3 = iVar3 + 1;
+    }
+    iVar2 = iVar2 + 1;
+  } while (iVar2 < 5);
+  return iVar3;
+}
+
+

@@ -1,0 +1,380 @@
+{
+  "sourceCapture": "commands-20261111-022940-355228-pid36348.jsonl",
+  "sourceCaptureSha256": "dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90",
+  "executableSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "scope": "Real passive output buffers of FUN_005B0F40; expectedSignedScore is signed interpretation of the observed high word, not a new simulation. All 22 events in source capture retained.",
+  "events": [
+    {
+      "seq": 25,
+      "callId": 1610,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "0808C800",
+      "expectedSignedScore": 200
+    },
+    {
+      "seq": 111,
+      "callId": 8992,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "000470FE",
+      "expectedSignedScore": -400
+    },
+    {
+      "seq": 123,
+      "callId": 9004,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "000470FE",
+      "expectedSignedScore": -400
+    },
+    {
+      "seq": 131,
+      "callId": 9012,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        1,
+        0
+      ],
+      "outputHex": "1004D4FE",
+      "expectedSignedScore": -300
+    },
+    {
+      "seq": 157,
+      "callId": 9733,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "000470FE",
+      "expectedSignedScore": -400
+    },
+    {
+      "seq": 162,
+      "callId": 9738,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        1,
+        0
+      ],
+      "outputHex": "100C0000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 179,
+      "callId": 9755,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "000470FE",
+      "expectedSignedScore": -400
+    },
+    {
+      "seq": 184,
+      "callId": 9760,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        1,
+        0
+      ],
+      "outputHex": "100C0000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 193,
+      "callId": 9769,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        2,
+        0
+      ],
+      "outputHex": "2004D4FE",
+      "expectedSignedScore": -300
+    },
+    {
+      "seq": 304,
+      "callId": 31839,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "08080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 310,
+      "callId": 31845,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        1
+      ],
+      "outputHex": "8808F401",
+      "expectedSignedScore": 500
+    },
+    {
+      "seq": 319,
+      "callId": 31854,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        2,
+        0
+      ],
+      "outputHex": "28080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 499,
+      "callId": 40631,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        2,
+        0
+      ],
+      "outputHex": "28080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 510,
+      "callId": 40642,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        1,
+        0
+      ],
+      "outputHex": "18080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 644,
+      "callId": 47932,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        2,
+        0
+      ],
+      "outputHex": "28080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 651,
+      "callId": 47939,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        2,
+        1
+      ],
+      "outputHex": "A8080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 663,
+      "callId": 47951,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        1,
+        0
+      ],
+      "outputHex": "18080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 667,
+      "callId": 47955,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        1,
+        1
+      ],
+      "outputHex": "98080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 676,
+      "callId": 47964,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        2,
+        0
+      ],
+      "outputHex": "28080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 749,
+      "callId": 53019,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "08080000",
+      "expectedSignedScore": 0
+    },
+    {
+      "seq": 822,
+      "callId": 58457,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "0004C0F9",
+      "expectedSignedScore": -1600
+    },
+    {
+      "seq": 1029,
+      "callId": 73174,
+      "threadId": 27920,
+      "side": 0,
+      "function": "combat_event",
+      "rawArgs": [
+        0,
+        0,
+        0
+      ],
+      "outputHex": "0004B4FB",
+      "expectedSignedScore": -1100
+    }
+  ],
+  "event25PrecedingComputedStats": [
+    {
+      "seq": 23,
+      "callId": 1611,
+      "threadId": 27920,
+      "side": 0,
+      "function": "computed_stats",
+      "rawArgs": [
+        0,
+        0
+      ],
+      "outputHex": "260212056C07000084030000"
+    },
+    {
+      "seq": 24,
+      "callId": 1612,
+      "threadId": 27920,
+      "side": 1,
+      "function": "computed_stats",
+      "rawArgs": [
+        1,
+        0
+      ],
+      "outputHex": "18000F05A40600007E040000"
+    }
+  ],
+  "executableSha256Provenance": "Fingerprint reported in associated evidence document; original JSONL metadata.exeSha256 is null, not an automatic attestation.",
+  "case26StaticCardIdentities": {
+    "provenance": "Catalog.Load of pinned data.dat; base values are static, not live computed values. Non-monster attack fields are not meaningful here.",
+    "cards": [
+      {
+        "Index": 24,
+        "Id": 77,
+        "Name": "Axe Raider",
+        "Attack": 1700,
+        "Defense": 1150,
+        "Level": 4
+      },
+      {
+        "Index": 307,
+        "Id": 1344,
+        "Name": "Goblin Attack Force",
+        "Attack": 2300,
+        "Defense": 0,
+        "Level": 4
+      },
+      {
+        "Index": 364,
+        "Id": 744,
+        "Name": "Panther Warrior",
+        "Attack": 2000,
+        "Defense": 1600,
+        "Level": 4
+      },
+      {
+        "Index": 550,
+        "Id": 531,
+        "Name": "Gemini Elf",
+        "Attack": 1900,
+        "Defense": 900,
+        "Level": 4
+      }
+    ]
+  }
+}

@@ -61,4 +61,25 @@ score agregado/máscaras por candidato: **decisão ainda não reproduzida**.
 ## Preservação
 Dirty anteriores: docs/15-rea-integration-todo.md, scripts/README.md,
 scripts/run-archive-query.sh, docs/evidence/duel-crash-sites.txt e toolchain.
-Não incluir nos commits desta pesquisa. Nenhum commit desta etapa feito ainda.
+Não incluir nos commits desta pesquisa. Commit01152e4 preserva os quatro primeiros relatórios e este checkpoint.
+
+## Avanço após retomada
+- `ai-decision-outer-dispatch.txt` e `ai-decision-dispatch-table.txt`:
+  dispatcher005B7B50 usa tabela005EFB50 e byteA579A0 (0..7+sentinela).
+  índice2=005B72A0, índice4=005B7A50 (ataques), índice5=005B75A0.
+  Retorno1 avança estágio e zera substagesA579A1/A2. Priority repetido
+  pode vir dos estágios2 e5, não invocações redundantes sem contexto.
+- 0045E240 apenas escreve005EBEE4; AAB90 e B7D0 podem chamá-la.
+  **Global de feedback realmente fora do restore**, não só hipótese.
+- DAT identifica307=GoblinAttackForce/0x540;364=PantherWarrior/0x2E8;
+  550=GeminiElf/0x213;24=AxeRaider/0x4D. Filtro5B05A0 rejeita Goblin
+  contra alvo oculto ou ATK<1900 ou DEF<2000; Panther tem filtros de custo
+  e aliado mais fraco. Compatível com escolha26, sem causa dinâmica provada.
+- NativeAiRanking transcreve somente gate final;25.344 combinações contra
+  oráculo de branches;444 checks C# passaram. Nenhuma IA ligada ao demo.
+-11 testes Python novos e5 anteriores de ai* passaram; auditoria real12/12CE
+  CPU,13normalpass-1,10priority,0errosleitura. Fixture22combates rastreável
+  aoSHAoriginal, incluindo1900−1700=200 e score0útil vs score0mútuo inútil.
+- Duas consultas tempfunc falharam por entrada estimada incorreta (5B7B40,
+  5B6C20); refazer só após identificar prólogo. Entrada correta dispatcher
+  5B7B50 já resolvida. Não repetir guesses nem alterar banco persistente.
