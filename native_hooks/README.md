@@ -1289,10 +1289,20 @@ removidos pode ser recuperado no Git. Arquivos históricos relevantes:
 [ABI e testes híbridos](../docs/evidence/hybrid-native-abi-findings.md) e
 [baseline do Jam Breeding](../docs/evidence/hybrid-jam-baseline.md).
 
-## Piloto S2: contexto passivo de combate (preparado offline)
+## Contexto passivo de combate — mitigação após crash Windows
 
-`trace ai on combat-context` é opt-in e ainda **não foi validado no Windows**.
-Usa o [contrato v1](../docs/research/ai-combat-observation-contract.md).
+**Atenção:** a instrumentação v2 com nove pontos internos provocou, ou esteve
+associada a, um APPCRASH `0xC0000005` em `joey_pc.exe+0x001B1195`
+(VA preferida `0x005B1195`), antes do testemunho `defender_flags_consumed`
+em `0x005B119B`. Não há prova definitiva da causa sem analisar o dump WER.
+**Não repetir o piloto com todos os pontos internos ligados.**
+
+Como proteção, `trace ai on combat-context` agora mantém somente as dez
+interceptações de entrada das funções do modo anterior (schemaVersion=1).
+Nenhum dos nove novos pontos de instrução é instalado por esse comando.
+A revisão v2 e os critérios de completude continuam no
+[contrato](../docs/research/ai-combat-observation-contract.md), mas exigem
+investigação antes de outra execução com instrumentação interna.
 Revisar a implementação antes da ativação, conforme M3 de `PLANS.md`.
 Não executar Joey no Fedora. O piloto deve ocorrer no processo próprio do operador.
 
@@ -1334,15 +1344,27 @@ comportamento anormal, retorno normal do jogo). Ausência de sintomas não prova
 que o overhead do hook seja zero. O host já exporta fingerprint e contadores;
 conferir que estejam realmente presentes, não completar pelo nome do arquivo.
 
-O modo adiciona dez listeners de entrada de função: dois seletores, F40 e sete
-serviços; DD30 isolado não é usado. Somente chamadas dentro de um seletor são
+O modo padrão instala dez listeners de entrada de função: dois seletores, F40
+e sete serviços; DD30 isolado não é usado. Um único ponto interno adicional
+pode ser escolhido para diagnóstico isolado, após a inspeção do dump:
+`trace ai on combat-context-point <nome_do_ponto>` (desarmar antes de trocar de
+ponto). O status mostra `combatReadPoints` e `combatSchema`.
+A combinação de todos os pontos internos está **proibida no piloto Windows**;
+o modo `combat-context-all-unsafe` existe somente para testes sintéticos do JS. Somente chamadas dentro de um seletor são
 capturadas. Máximo de 64 confrontos por ativação e 24 filhos por confronto.
 `combat_context_limit` marca o limite; depois dele não há leitura de contexto.
 Os listeners continuam instalados até `trace ai off`/`trace off`; o trace de
 comandos e os eventos de seletor continuam sujeitos ao buffer global limitado.
 `combatContextCount` conta entradas observadas, inclusive as com erros.
 
-Registros `kind=combat_context`, `schemaVersion=1`:
+Registros `kind=combat_context` usam `schemaVersion=1` no modo padrão e
+`schemaVersion=2` quando um ponto interno específico estiver armado.
+Um esquema parcial v2 não torna a avaliação completa (leitores podem retornar Unsupported):
+
+O [handoff v2](../docs/research/handoffs/native-combat-context-v2-pilot.md) detalha
+os pontos internos, checklist de completude, cenário Axe Raider/Gemini Elf e
+a interface proposta para o Terra. Metadata inclui PID, caminho do módulo e
+hash atestado; esses campos ausentes permanecem null.
 
 - `enter/combat_event`: argumentos, caller, seed de quatro bytes, snapshots dos
   dois slots e erros por campo. `resourceId` no snapshot fica null; consultar os

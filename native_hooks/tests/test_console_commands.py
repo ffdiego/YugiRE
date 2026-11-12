@@ -99,9 +99,11 @@ class FakeApi:
     def traceaistart(self, detailed):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
-        call = {"combat-context": ("ai_on_combat_context",),
-                "gates": ("ai_on_gates",)}.get(
-                    detailed, ("ai_on_detail",) if detailed else ("ai_on",))
+        call = (("ai_on_combat_point", detailed.split(":", 1)[1])
+                if isinstance(detailed, str) and detailed.startswith("combat-context-point:")
+                else {"combat-context": ("ai_on_combat_context",),
+                      "gates": ("ai_on_gates",)}.get(
+                    detailed, ("ai_on_detail",) if detailed else ("ai_on",)))
         self.trace_calls.append(call)
         self.ai_active = True
         self.ai_detail_active = bool(detailed)
@@ -533,6 +535,13 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertTrue(handle_command("trace ai on combat-context", self.api, 1))
         self.assertIn(("ai_on_combat_context",), self.api.trace_calls)
 
+    def test_trace_ai_single_interior_point_is_explicit(self):
+        with redirect_stdout(io.StringIO()):
+            self.assertTrue(handle_command("trace on 20000", self.api, 1))
+            self.assertTrue(handle_command("trace ai on combat-context-point defender_flags_consumed", self.api, 1))
+        self.assertIn(("ai_on_combat_point", "defender_flags_consumed"), self.api.trace_calls)
+
+
     def test_export_keeps_host_attestation_without_deck_probe(self):
         from tempfile import TemporaryDirectory
         import json
@@ -545,6 +554,24 @@ class ConsoleCommandTests(unittest.TestCase):
             save_command_trace(self.api, target)
             header = json.loads(target.read_text().splitlines()[0])
         self.assertEqual(header["exeSha256"], expected)
+        self.assertIsNone(header["processId"])
+        self.assertIsNone(header["modulePath"])
+
+    def test_export_binds_loaded_module_identity_to_session(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 7
+        original_stop = self.api.tracestop
+        self.api.tracestop = lambda: {**original_stop(), "processId": 10848,
+                                     "modulePath": "C:/Joey/joey_pc.exe"}
+        with TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = Path(directory) / "identity.jsonl"
+            save_command_trace(self.api, target)
+            header = json.loads(target.read_text().splitlines()[0])
+        self.assertEqual(header["session"], 7)
+        self.assertEqual(header["processId"], 10848)
+        self.assertEqual(header["modulePath"], "C:/Joey/joey_pc.exe")
+        self.assertIsNone(header["exeSha256"])
 
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
