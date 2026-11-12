@@ -14,8 +14,17 @@ public static class Program
             output.WriteLine("Usage: dotnet run --project src/Joey.Lab -- summarize capture.jsonl [--json] [--expected-sha256 HASH]");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- compare LEFT RIGHT [--strict-raw] [--strict-unverified]");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- combat-contexts capture.jsonl [--expected-sha256 HASH]");
-            output.WriteLine("Reads ring-buffer and live_duels JSONL. Does not launch Joey, load Frida or evaluate missing game context.");
+            output.WriteLine("       dotnet run --project src/Joey.Lab -- experiment --exe PATH --duels N [--workers N] [--python PATH] [--trace-ai]");
+            output.WriteLine("Reads ring-buffer and live_duels JSONL. Analysis does not evaluate missing game context; experiment delegates execution to yugilab.");
             return 0;
+        }
+        if (args[0] == "experiment")
+        {
+            using var cancellation = new CancellationTokenSource();
+            ConsoleCancelEventHandler handler = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+            Console.CancelKeyPress += handler;
+            try { return Experiment.Run(args[1..], output, error, cancellation.Token); }
+            finally { Console.CancelKeyPress -= handler; }
         }
         if (args[0] == "compare") return RunCompare(args, output, error);
         if (args[0] == "combat-contexts") return RunCombatContexts(args, output, error);
