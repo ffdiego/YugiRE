@@ -99,8 +99,9 @@ class FakeApi:
     def traceaistart(self, detailed=False):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
-        call = ("ai_on_gates",) if detailed == "gates" else (
-            ("ai_on_detail",) if detailed else ("ai_on",))
+        call = {"combat-context": ("ai_on_combat_context",),
+                "gates": ("ai_on_gates",)}.get(
+                    detailed, ("ai_on_detail",) if detailed else ("ai_on",))
         self.trace_calls.append(call)
         self.ai_active = True
         self.ai_detail_active = bool(detailed)
@@ -525,6 +526,12 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertIn("aiGateActive=True", out.getvalue())
         self.assertFalse(self.api.ai_active)
         self.assertFalse(self.api.ai_gate_active)
+
+    def test_trace_ai_combat_context_is_opt_in(self):
+        with redirect_stdout(io.StringIO()):
+            self.assertTrue(handle_command("trace on 20000", self.api, 1))
+            self.assertTrue(handle_command("trace ai on combat-context", self.api, 1))
+        self.assertIn(("ai_on_combat_context",), self.api.trace_calls)
 
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory

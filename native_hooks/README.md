@@ -1288,3 +1288,85 @@ independentemente deste projeto compilável. O histórico dos protótipos
 removidos pode ser recuperado no Git. Arquivos históricos relevantes:
 [ABI e testes híbridos](../docs/evidence/hybrid-native-abi-findings.md) e
 [baseline do Jam Breeding](../docs/evidence/hybrid-jam-baseline.md).
+
+## Piloto S2: contexto passivo de combate (preparado offline)
+
+`trace ai on combat-context` é opt-in e ainda **não foi validado no Windows**.
+Usa o [contrato v1](../docs/research/ai-combat-observation-contract.md).
+Revisar a implementação antes da ativação, conforme M3 de `PLANS.md`.
+Não executar Joey no Fedora. O piloto deve ocorrer no processo próprio do operador.
+
+Depois da revisão, no Windows, com um Joey normal já aberto e executável original:
+
+```powershell
+# Na pasta native_hooks, usando o ambiente Frida já existente:
+.\.venv-frida\Scripts\python.exe .\patch_dual_rules.py --observe-only --pid <PID>
+```
+
+O host confere o hash do módulo antes de armar o observador. No console:
+
+```text
+trace on 20000
+trace ai on combat-context
+trace mark combat-context-pilot-start
+trace status
+```
+
+Jogar um duelo natural curto, permitindo à CPU chegar à avaliação de monstros.
+Capturar primeiro **um** duelo; se íntegro e sem anomalias, repetir até três.
+Usar velocidade normal, sem seed/deck overrides, sem DLL de regras, sem `trace
+prep`, sem `trace demo` e sem comandos que chamem a engine. Não usar o launcher
+Demo para este piloto: ele arma hooks Demo incompatíveis com esse modo.
+
+Ao terminar, ou no primeiro erro/anomalia:
+
+```text
+trace off
+trace status
+trace dump
+stop
+```
+
+Preservar o JSONL original e seu SHA256 local, sem editá-lo nem versionar o trace
+bruto. Enviar ao investigador a captura por canal privado, o hash, o atestado
+`exe_sha256`, o resultado de integridade e o relato do operador (travamento,
+comportamento anormal, retorno normal do jogo). Ausência de sintomas não prova
+que o overhead do hook seja zero. O host já exporta fingerprint e contadores;
+conferir que estejam realmente presentes, não completar pelo nome do arquivo.
+
+O modo adiciona dez listeners de entrada de função: dois seletores, F40 e sete
+serviços; DD30 isolado não é usado. Somente chamadas dentro de um seletor são
+capturadas. Máximo de 64 confrontos por ativação e 24 filhos por confronto.
+`combat_context_limit` marca o limite; depois dele não há leitura de contexto.
+Os listeners continuam instalados até `trace ai off`/`trace off`; o trace de
+comandos e os eventos de seletor continuam sujeitos ao buffer global limitado.
+`combatContextCount` conta entradas observadas, inclusive as com erros.
+
+Registros `kind=combat_context`, `schemaVersion=1`:
+
+- `enter/combat_event`: argumentos, caller, seed de quatro bytes, snapshots dos
+  dois slots e erros por campo. `resourceId` no snapshot fica null; consultar os
+  registros `resource` correlacionados, com input e retorno naturais.
+- `leave/own_stats` e `leave/opponent_stats`: os 12 bytes efetivamente produzidos
+  por ADD60/ADDC0; o adversário oculto também é observado sem precisar de DD30.
+- `leave/equipment_count`, `context_count`, `field_query`, `phase_query`,
+  `resource`: argumentos e retorno somente dos callsites diretos da F40.
+- `leave/combat_event`: saída de quatro bytes, quantidade de filhos e indicação
+  de overflow. `combatCallId`, `selectorCallId`, `threadId` e `session` permitem
+  reconstruir o par; cada filho tem seu `callId` próprio. IDs não reiniciam ao
+  rearmar o modo no mesmo agente.
+
+`stateKind=selector-window` identifica uma janela potencialmente hipotética;
+nenhum desses snapshots é declarado estado real completo. Erros de leitura
+preservam null, com detalhes. Falta de chamada por curto circuito não vira zero.
+A lista bruta de vínculos não é copiada; o piloto observa as contagens filtradas
+retornadas naturalmente. Isso permite investigar a fórmula escalar sem provar
+que o laboratório já calcula os efeitos independentemente.
+
+Para aceitar o piloto, auditar sequência contígua e `overwritten=0`, sem perdas,
+readErrors, `readError`, `correlationError` ou `childOverflow`; cada entrada F40
+precisa de saída e dos dois buffers de stats, com argumentos/callers compatíveis.
+O marcador de limite não é perda de transporte, mas delimita cobertura: comparar
+somente pares completos anteriores a ele. Um confronto incompleto não serve para
+provar equivalência. Nenhuma validação Windows ou novo par completo observado
+foi produzido pela preparação offline. S3 aguarda o operador.

@@ -233,6 +233,25 @@ let nativeAiForceSet = null;
 let aiProbeHooks = [];
 let aiDetailMode = false;
 let aiGateMode = false;
+let combatContextMode = false;
+let combatContextCount = 0;
+let combatContextLimitReported = false;
+let combatContextGeneration = 0;
+let combatContextStacks = new Map();
+const kCombatContextLimit = 64;
+// Function entries only. Return VAs exclude calls nested inside stat producers.
+const kCombatContextTargets = [
+  ['own_stats', '0x005ADD60', 3, ['0x005B0F97'], 12],
+  ['opponent_stats', '0x005ADDC0', 3, ['0x005B0FAE'], 12],
+  ['equipment_count', '0x0056D790', 3, ['0x005B1060']],
+  ['context_count', '0x0056D8D0', 4, ['0x005B1117','0x005B112F','0x005B1153','0x005B116F']],
+  ['field_query', '0x005699A0', 2, ['0x005B11F4','0x005B1227']],
+  ['phase_query', '0x0056B220', 1, ['0x005B1205','0x005B1238']],
+  ['resource', '0x004022E0', 1, ['0x005B0FB8','0x005B1009','0x005B10FD','0x005B1251']]
+].map(([name, address, argCount, returns, outputSize]) => ({
+  name, va:address, address:va(address), argCount, outputSize,
+  returns:returns.map(address => va(address))
+}));
 let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
 let aiSelectorStack = new Map();
@@ -294,6 +313,7 @@ function speedStatus() {
     writerHits: speedyOverrideHits, value};
 }
 function armSpeedyOverride(value) {
+  if (combatContextMode) throw new Error('Stop combat-context before enabling overrides');
   if (deckObserver !== null && deckObserver.status().deckActive)
     throw new Error('Stop trace deck before enabling overrides');
   if (!installed || !observerOnly || commandTraceHook === null) {
@@ -362,6 +382,7 @@ function multiInstanceStatus() {
     replacementName: singletonName};
 }
 function armMultiInstance() {
+  if (combatContextMode) throw new Error('Stop combat-context before enabling overrides');
   if (deckObserver !== null && deckObserver.status().deckActive)
     throw new Error('Stop trace deck before enabling overrides');
   if (!installed || !observerOnly || commandTraceHook === null) {
@@ -989,6 +1010,9 @@ function traceStatus() {
     aiActive: aiProbeHooks.length > 0,
     aiDetailActive: aiDetailMode,
     aiGateActive: aiGateMode,
+    combatContextActive: combatContextMode,
+    combatContextCount,
+    combatContextLimit: kCombatContextLimit,
     aiHooks: aiProbeHooks.length,
     demoActive: demoExecutorHook !== null,
     demoHooks: (demoExecutorHook === null ? 0 : 1) + demoSetupHooks.length,
@@ -1056,6 +1080,7 @@ function stopSummonPrepProbe() {
 }
 
 function startSummonPrepProbe() {
+  if (combatContextMode) throw new Error('Stop combat-context before trace prep on');
   if (!installed || commandTraceHook === null) {
     throw new Error('Start trace on before enabling the summon prep probe');
   }
@@ -1171,11 +1196,88 @@ function readSelectorHandSnapshot(side) {
 
 // This is a *passive* probe: never invokes FUN_005B0F40 or FUN_0056DD30.
 // Only events nested inside an observed selector are kept to avoid renderer noise.
+function combatContextIdentity(frame) {
+  return {kind:'combat_context', schemaVersion:1, session:frame.session,
+    threadId:frame.threadId, combatCallId:frame.callId,
+    selectorCallId:frame.selectorCallId, stateKind:'selector-window'};
+}
+
+function enterCombatContext(invocation, args) {
+  const threadId = invocation.aiThread;
+  const stack = combatContextStacks.get(threadId) || [];
+  const frame = {threadId, callId:invocation.aiCallId, children:0,
+    session:traceSession, generation:combatContextGeneration};
+  stack.push(frame);
+  combatContextStacks.set(threadId, stack);
+  // Push a sentinel even after the limit, so nested calls cannot be attributed
+  // to an outer observed combat. No game memory is read after the limit.
+  if (combatContextCount >= kCombatContextLimit) {
+    frame.suppressed = true;
+    if (!combatContextLimitReported) {
+      combatContextLimitReported = true;
+      recordTraceEvent({kind:'combat_context_limit', schemaVersion:1,
+        session:traceSession, limit:kCombatContextLimit});
+    }
+    return frame;
+  }
+  combatContextCount++;
+  const selectors = aiSelectorStack.get(threadId) || [];
+  frame.selectorCallId = selectors.length ? selectors[selectors.length - 1].id : null;
+  const event = {...combatContextIdentity(frame), phase:'enter',
+    function:'combat_event', functionVa:'0x005B0F40', callId:frame.callId,
+    caller:invocation.returnAddress.toString(), argsRaw:invocation.aiArguments,
+    seedHex:null, attacker:null, defender:null, readErrors:[]};
+  function read(name, action) {
+    try { return action(); }
+    catch (error) { event.readErrors.push({field:name, error:String(error)}); return null; }
+  }
+  const [side, attackerSlot, targetSlot] = invocation.aiArguments;
+  event.seedHex = read('seedHex', () => readAiProbeHex(args[3], 4));
+  if ((side !== 0 && side !== 1) || attackerSlot > 4 || targetSlot > 4) {
+    event.readErrors.push({field:'argsRaw', error:'Unsupported side or monster slot'});
+  } else {
+    for (const [role, fieldSide, slot] of [
+      ['attacker',side,attackerSlot], ['defender',1-side,targetSlot]]) {
+      const record = kMonsterSlotBase.add(fieldSide*kPlayerStride + slot*kFieldSlotStride);
+      const identityRaw = read(role+'.identityRaw', () => record.readU32());
+      const positionRaw = read(role+'.positionRaw', () => record.add(6).readU16());
+      event[role] = {side:fieldSide, slot, identityRaw,
+        internalCardIndex:identityRaw === null ? null : identityRaw & 0xFFF,
+        resourceId:null, positionRaw,
+        defensePosition:positionRaw === null ? null : (positionRaw & 1) !== 0,
+        faceUp:positionRaw === null ? null : (positionRaw & 2) !== 0,
+        monsterFlagsRaw:read(role+'.monsterFlagsRaw', () => record.add(0x8C).readU32()),
+        playerFlagsRaw:read(role+'.playerFlagsRaw', () => kSummonPlayerFlags.add(fieldSide*kPlayerStride).readU32()),
+        lifePoints:read(role+'.lifePoints', () => va('0x00A55D64').add(fieldSide*kPlayerStride).readU16())};
+    }
+  }
+  recordTraceEvent(event);
+  return frame;
+}
+
+function leaveCombatContext(frame, output) {
+  if (!combatContextMode || frame.generation !== combatContextGeneration) return;
+  const stack = combatContextStacks.get(frame.threadId) || [];
+  const top = stack.pop();
+  if (!stack.length) combatContextStacks.delete(frame.threadId);
+  if (frame.suppressed) return;
+  const event = {...combatContextIdentity(frame), phase:'leave',
+    function:'combat_event', functionVa:'0x005B0F40', callId:frame.callId,
+    outputHex:null, childCount:frame.children, childOverflow:!!frame.childOverflow};
+  if (top !== frame) event.correlationError = 'Combat stack mismatch';
+  try { event.outputHex = readAiProbeHex(output, 4); }
+  catch (error) { event.readError = String(error); }
+  recordTraceEvent(event);
+}
+
 function stopAiProbe() {
   const hooks = aiProbeHooks;
   aiProbeHooks = [];
   aiDetailMode = false;
   aiGateMode = false;
+  combatContextMode = false;
+  combatContextGeneration++;
+  combatContextStacks = new Map();
   aiSelectorDepth = new Map();
   aiSelectorStack = new Map();
   let failure = null;
@@ -1189,8 +1291,9 @@ function stopAiProbe() {
 function startAiProbe(mode = false) {
   // Backward compatible: false -> 4 default hooks, true -> 9 detail hooks.
   // 'gates' -> 9 detail hooks + 3 direct-call selector gate hooks.
-  if (mode !== false && mode !== true && mode !== 'gates')
-    throw new Error('AI trace mode must be false, true or gates');
+  if (mode !== false && mode !== true && mode !== 'gates' && mode !== 'combat-context')
+    throw new Error('AI trace mode must be false, true, gates or combat-context');
+  const withCombat = mode === 'combat-context';
   const detailed = mode === true || mode === 'gates';
   const withGates = mode === 'gates';
   if (!installed || commandTraceHook === null) {
@@ -1199,8 +1302,13 @@ function startAiProbe(mode = false) {
   if (aiProbeHooks.length > 0) throw new Error('AI probe is already active');
   if (withGates && (!observerOnly || summonPrepHooks.length > 0))
     throw new Error('AI gate trace requires --observe-only and trace prep off');
+  if (withCombat && (!observerOnly || summonPrepHooks.length > 0 ||
+      demoExecutorHook !== null || demoSetupHooks.length || demoSeedBase !== null ||
+      demoDeckPlans.some(x => x !== null) || speedyOverrideValue !== null || singletonMutexHook !== null))
+    throw new Error('combat-context requires --observe-only, trace prep/demo off and no overrides');
   const targets = kAiProbeTargets.concat(
-    detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : []);
+    detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : [],
+    withCombat ? kCombatContextTargets : []);
   for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
@@ -1209,7 +1317,7 @@ function startAiProbe(mode = false) {
   }
   const hooks = [];
   try {
-    for (const target of kAiProbeTargets) {
+    for (const target of kAiProbeTargets.filter(t => !withCombat || t.name !== 'computed_stats')) {
       const hook = Interceptor.attach(target.address, {
         onEnter(args) {
           this.aiThread = Process.getCurrentThreadId();
@@ -1253,6 +1361,8 @@ function startAiProbe(mode = false) {
               this.aiArguments = target.name === 'combat_event' ?
                 [args[0].toUInt32(), args[1].toUInt32(), args[2].toUInt32()] :
                 [args[0].toUInt32(), args[1].toUInt32()];
+              if (withCombat && target.name === 'combat_event')
+                this.combatFrame = enterCombatContext(this, args);
             }
           }
         },
@@ -1287,6 +1397,10 @@ function startAiProbe(mode = false) {
             return;
           }
           if (!this.aiInsideSelection) return;
+          if (this.combatFrame) {
+            leaveCombatContext(this.combatFrame, this.aiBuffer);
+            return;
+          }
           const event = {
             kind: 'ai_probe', phase: 'leave', function: target.name,
             functionVa: target.va, callId: this.aiCallId,
@@ -1303,6 +1417,45 @@ function startAiProbe(mode = false) {
         }
       });
       hooks.push(hook);
+    }
+    if (withCombat) {
+      for (const target of kCombatContextTargets) {
+        hooks.push(Interceptor.attach(target.address, {
+          onEnter(args) {
+            const threadId = Process.getCurrentThreadId();
+            const stack = combatContextStacks.get(threadId) || [];
+            const frame = stack.length ? stack[stack.length - 1] : null;
+            if (frame === null || frame.suppressed || !target.returns.some(p => p.equals(this.returnAddress))) return;
+            if (++frame.children > 24) {
+              frame.childOverflow = true;
+              return;
+            }
+            this.combatChild = {
+              ...combatContextIdentity(frame), phase:'leave', function:target.name,
+              functionVa:target.va, callId:++aiProbeCallSequence,
+              caller:this.returnAddress.toString(),
+              argsRaw:Array.from({length:target.argCount}, (_, i) => args[i].toUInt32())
+            };
+            this.combatGeneration = combatContextGeneration;
+            if (target.outputSize) this.combatOutput = args[2];
+          },
+          onLeave(retval) {
+            if (!this.combatChild || !combatContextMode ||
+                this.combatGeneration !== combatContextGeneration) return;
+            const event = this.combatChild;
+            if (target.outputSize) {
+              event.outputHex = null;
+              try { event.outputHex = readAiProbeHex(this.combatOutput, target.outputSize); }
+              catch (error) { event.readError = String(error); }
+            } else {
+              event.returnRaw = retval.toUInt32();
+              event.returnSigned = retval.toInt32();
+              if (target.name === 'resource') event.resourceId = event.returnRaw & 0xFFFF;
+            }
+            recordTraceEvent(event);
+          }
+        }));
+      }
     }
     if (detailed) {
       for (const target of kAiDetailTargets) {
@@ -1448,7 +1601,11 @@ function startAiProbe(mode = false) {
   aiProbeHooks = hooks;
   aiDetailMode = detailed;
   aiGateMode = withGates;
-  aiProbeCallSequence = 0;
+  combatContextMode = withCombat;
+  combatContextGeneration++;
+  combatContextCount = 0;
+  combatContextLimitReported = false;
+  combatContextStacks = new Map();
   aiSelectorDepth = new Map();
   aiSelectorStack = new Map();
   return traceStatus();
@@ -1755,6 +1912,7 @@ function stopDemoProbe() {
 }
 
 function startDemoProbe() {
+  if (combatContextMode) throw new Error('Stop combat-context before trace demo on');
   if (deckObserver !== null && deckObserver.status().deckActive)
     throw new Error('Stop trace deck before trace demo');
   if (!installed || commandTraceHook === null) {
