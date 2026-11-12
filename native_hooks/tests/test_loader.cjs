@@ -1170,7 +1170,9 @@ assert.equal(combat.api.tracestatus().processId,123);
 assert.equal(combat.api.tracestatus().modulePath,'Z:\\passion\\joey_pc.exe');
 combat.api.tracestart(2000);
 assert.equal(combat.api.traceaistart('combat-context').combatContextActive,true);
-assert.equal(combat.aiHookCount(),19);
+assert.equal(combat.aiHookCount(),10);
+assert.equal(combat.api.tracestatus().combatContextSchemaVersion,1);
+assert.deepEqual(combat.api.tracestatus().combatReadPointsArmed,[]);
 assert.throws(()=>combat.api.traceprepstart(),/combat-context/);
 assert.throws(()=>combat.api.tracedemostart(),/combat-context/);
 const buffer=0x00A579A6, own=buffer+16, rival=buffer+32;
@@ -1223,7 +1225,7 @@ assert.equal(contexts.find(e=>e.function==='equipment_count').returnSigned,2);
 assert.equal(contexts.find(e=>e.function==='resource').resourceId,0x4D);
 assert.equal(contexts.filter(e=>e.function==='own_stats')[0].outputHex.length,24);
 assert.equal(contexts.filter(e=>e.function==='opponent_stats')[0].outputHex.length,24);
-assert.ok(contexts.every(e=>e.schemaVersion===2 && e.threadId===778 && e.seq>0 && e.timestampMs>0));
+assert.ok(contexts.every(e=>e.schemaVersion===1 && e.threadId===778 && e.seq>0 && e.timestampMs>0));
 const allCombatEvents=combat.api.traceevents(0,256);
 assert.equal(allCombatEvents.filter(e=>e.kind==='combat_context_limit').length,1);
 contexts=allCombatEvents.filter(e=>e.kind==='combat_context' && e.phase==='enter');
@@ -1295,7 +1297,9 @@ console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls,
 // Instruction witnesses are synthetic CPU contexts, not dynamic validation.
 const points=fixture();
 points.api.installobserver(); points.api.tracestart(2000);
-points.api.traceaistart('combat-context');
+points.api.traceaistart('combat-context-all-unsafe');
+assert.equal(points.aiHookCount(),19);
+assert.equal(points.api.tracestatus().combatContextSchemaVersion,2);
 points.aiCall(0x005B1360,[0,0],0,()=>{
   points.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
     points.aiCall(0x005ADD60,[0,0,own],0,()=>{
@@ -1336,17 +1340,22 @@ assert.equal(missingRegister.valueRaw,null); assert.ok(missingRegister.readError
 points.api.tracestop(); points.api.restore();
 const badSignature=fixture(); badSignature.api.installobserver(); badSignature.api.tracestart(100);
 badSignature.memory.set(0x005B11C6,0);
-assert.throws(()=>badSignature.api.traceaistart('combat-context'),/signature mismatch/);
+assert.throws(()=>badSignature.api.traceaistart('combat-context-point:attacker_flags_sample'),/signature mismatch/);
 assert.equal(badSignature.aiHookCount(),0);
 badSignature.api.restore();
 const pointRollback=fixture({failAiHookAt:0x005B11DD});
 pointRollback.api.installobserver(); pointRollback.api.tracestart(100);
-assert.throws(()=>pointRollback.api.traceaistart('combat-context'),/rolled back/);
+assert.throws(()=>pointRollback.api.traceaistart('combat-context-point:attacker_flags_consumed'),/rolled back/);
 assert.equal(pointRollback.aiHookCount(),0); pointRollback.api.restore();
 console.log('PASS: consumed register/branch witnesses, thread and reentrant isolation, unknowns and instruction preflight');
+// A single diagnostic point is the only mode offered by the operator console.
+const invalidPoint=fixture(); invalidPoint.api.installobserver(); invalidPoint.api.tracestart(100);
+assert.throws(()=>invalidPoint.api.traceaistart('combat-context-point:not_a_point'),/Unknown combat-context observation point/);
+assert.equal(invalidPoint.aiHookCount(),0);
+invalidPoint.api.restore();
 
 const pointLoss=fixture(); pointLoss.api.installobserver(); pointLoss.api.tracestart(16);
-pointLoss.api.traceaistart('combat-context');
+pointLoss.api.traceaistart('combat-context-all-unsafe');
 const pointLossBefore=new Map(pointLoss.memory);
 pointLoss.aiCall(0x005B1360,[0,0],0,()=>{
   pointLoss.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
@@ -1361,7 +1370,9 @@ assert.ok(pointLoss.api.tracestatus().overwritten>0);
 assert.equal(pointLoss.api.traceevents(0,16).find(e=>e.function==='combat_event').childOverflow,true);
 pointLoss.api.restore();
 const missingTest=fixture(); missingTest.api.installobserver(); missingTest.api.tracestart(100);
-missingTest.api.traceaistart('combat-context');
+missingTest.api.traceaistart('combat-context-point:attacker_flags_consumed');
+assert.equal(missingTest.aiHookCount(),11);
+assert.deepEqual(missingTest.api.tracestatus().combatReadPointsArmed,['attacker_flags_consumed']);
 missingTest.aiCall(0x005B1360,[0,0],0,()=>{
   missingTest.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>missingTest.instruction(0x005B11DD));
 });
