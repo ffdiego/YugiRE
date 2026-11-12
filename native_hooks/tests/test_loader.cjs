@@ -1343,6 +1343,14 @@ badSignature.memory.set(0x005B11C6,0);
 assert.throws(()=>badSignature.api.traceaistart('combat-context-point:attacker_flags_sample'),/signature mismatch/);
 assert.equal(badSignature.aiHookCount(),0);
 badSignature.api.restore();
+// The legacy observer must not validate or install a v2 point at all.
+const legacyFallback=fixture(); legacyFallback.api.installobserver(); legacyFallback.api.tracestart(100);
+legacyFallback.memory.set(0x005B11C6,0);
+legacyFallback.api.traceaistart('combat-context');
+assert.equal(legacyFallback.aiHookCount(),10);
+assert.deepEqual(legacyFallback.api.tracestatus().combatReadPointsArmed,[]);
+assert.equal(legacyFallback.api.tracestatus().combatContextSchemaVersion,1);
+legacyFallback.api.tracestop(); legacyFallback.api.restore();
 const pointRollback=fixture({failAiHookAt:0x005B11DD});
 pointRollback.api.installobserver(); pointRollback.api.tracestart(100);
 assert.throws(()=>pointRollback.api.traceaistart('combat-context-point:attacker_flags_consumed'),/rolled back/);
