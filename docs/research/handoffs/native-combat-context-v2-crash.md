@@ -51,3 +51,77 @@ exceção e bytes/desmontagem efetiva. Correlacionar com stdout do observador,
 `trace status` e eventual JSONL parcial. Não inferir ESI a partir apenas do
 endereço de falha. Se o dump não existir, parar no gate de evidência e planejar
 uma coleta diagnóstica controlada antes de reabilitar hooks internos.
+
+## Análise do minidump original (evidência adicional)
+
+O operador recuperou o dump do PID **23328** e forneceu-o privadamente.
+SHA256 do arquivo: `362f5f51a577783e4a64672e26c3fe0734a92a2c86f43905e6d22ab23f05476a`.
+Ele é um MiniDump Windows de cerca de 5,7 MiB, criado em 2026-11-12
+04:09:16 UTC, com 13 streams. **Não versionar ou publicar o dump bruto:**
+contém memória do processo.
+
+O stream `Exception` reporta thread **15384** (`0x3C18`),
+`ExceptionCode=0xC0000005`, `ExceptionAddress=0x005B1195`, dois parâmetros:
+`ExceptionInformation[0]=0` (**READ**) e
+`ExceptionInformation[1]=0x0916763F` (endereço lido).
+O contexto x86 de exceção registra:
+
+| Registro | Valor |
+|---|---|
+| EIP | `0x005B1195` |
+| ESI | `0x0871120F` |
+| EDI | `0x00000000` |
+| EBX | `0x00000001` |
+| EAX | `0x00000000` |
+| ECX | `0x00000000` |
+| EDX | `0x00000000` |
+| ESP | `0x001AE9A8` |
+| EBP | `0x001AEA08` |
+| EFLAGS | `0x00210202` |
+
+Os seis bytes **presentes no dump** em `0x005B1195` são
+`8B 86 30 64 A5 00`, ou `mov eax, dword ptr [esi+0x00A56430]`.
+A soma `0x0871120F + 0x00A56430 = 0x0916763F` reproduz
+exatamente o endereço inválido do stream Exception.
+Pela inicialização estática de ESI na F40 e `EDI=0`, o offset de lado
+rival esperado nesse ponto seria `0xD44`, não `0x0871120F`.
+**Causa imediata demonstrada: ESI inválido ao consumir flags rivais.**
+A origem dessa alteração de registrador não é demonstrada por este dump.
+
+O dump inclui 256 bytes do código original **já interceptado** em
+`0x005B1115..0x005B1215`. Nas instruções abaixo há desvios `E9` para
+endereços próximos, compatíveis com trampolines do Frida:
+
+| Hook instalado | Desvio observado |
+|---|---|
+| `0x005B119B` | `0x08711C04` |
+| `0x005B11C6` | `0x08711E04` |
+| `0x005B11CF` | `0x08712004` |
+| `0x005B11DD` | `0x08712204` |
+
+Extrapolando condicionalmente o incremento `0x200` por instalação
+para os cinco pontos anteriores, o primeiro hook interno ficaria em
+`0x08711204`. O ESI corrompido é `0x0871120F`, isto é,
+**11 bytes após esse endereço inferido**. O primeiro ponto registrado
+pela v2 foi `own_visibility_consumed` em `0x005ADD8D`; essa correspondência
+é um **indício forte**, não prova de que esse hook foi o responsável.
+As páginas dos trampolines em `0x0871....` não constam dos segmentos
+de memória preservados no minidump e, portanto, não podem ser desmontadas
+nem inspecionadas diretamente aqui. O dump não demonstra a ordem exata de
+execução dos callbacks, nem se houve erro de relocação, preservação de registro
+ou outra interferência. Como a exceção foi em `0x005B1195`, o hook na
+instrução seguinte `0x005B119B` não é por si só evidência de que ele havia
+sido chamado na avaliação que falhou.
+
+A contenção agora também **rejeita** `combat-context-all-unsafe` dentro
+de um processo Windows, mesmo via RPC direto; sua execução combinada fica
+reservada aos mocks sintéticos. Testes de regressão foram ajustados, mas
+**não executados neste ambiente**. O modo de função-entrada v1 e os
+modos diagnósticos de um ponto não foram revalidados em execução real após
+o incidente.
+
+Próxima investigação: comparar a região `005ADD8D` e o epílogo do wrapper
+`005ADD60` contra a preservação de ESI e considerar uma abordagem de
+observação que não reescreva instruções internas. Não provocar novamente o
+crash com todos os hooks; caso um piloto futuro seja aprovado, usar dump
+persistente e isolamento de mudanças, interrompendo no primeiro sintoma.
