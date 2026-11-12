@@ -97,7 +97,7 @@ function fixture(options = {}) {
   let allocIndex=0;
   const context = {
     Process: {
-      platform: options.platform || 'windows', arch: 'ia32', id: 123,
+      platform: 'windows', arch: 'ia32', id: 123,
       getCurrentThreadId(){return currentThread;},
       mainModule:{name:'joey_pc.exe',path:'Z:\\passion\\joey_pc.exe',base:ptr(0x400000)},
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
@@ -214,6 +214,10 @@ function fixture(options = {}) {
   };
   if (options.deckFactory) context.createCpuDeckObserver = options.deckFactory;
   vm.runInNewContext(source,context,{filename:'yugire_dual_loader.js'});
+  // The agent correctly requires Windows at load time. Synthetic fixtures may
+  // change the mocked runtime platform after loading solely to exercise the
+  // guard against combined live Windows interception.
+  if (options.platform) context.Process.platform = options.platform;
   return {api:context.rpc.exports, memory, sparks: sparks+4, raimei: raimei+4,
     original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); },
     tick(){ if(tickHandler !== null) tickHandler(); },
