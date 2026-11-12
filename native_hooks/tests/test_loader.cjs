@@ -1176,7 +1176,7 @@ combat.api.tracestart(2000);
 assert.equal(combat.api.traceaistart('combat-context').combatContextActive,true);
 assert.equal(combat.aiHookCount(),10);
 assert.equal(combat.api.tracestatus().combatContextSchemaVersion,1);
-assert.deepEqual(combat.api.tracestatus().combatReadPointsArmed,[]);
+assert.deepEqual(Array.from(combat.api.tracestatus().combatReadPointsArmed),[]);
 assert.throws(()=>combat.api.traceprepstart(),/combat-context/);
 assert.throws(()=>combat.api.tracedemostart(),/combat-context/);
 const buffer=0x00A579A6, own=buffer+16, rival=buffer+32;
@@ -1358,7 +1358,7 @@ const legacyFallback=fixture(); legacyFallback.api.installobserver(); legacyFall
 legacyFallback.memory.set(0x005B11C6,0);
 legacyFallback.api.traceaistart('combat-context');
 assert.equal(legacyFallback.aiHookCount(),10);
-assert.deepEqual(legacyFallback.api.tracestatus().combatReadPointsArmed,[]);
+assert.deepEqual(Array.from(legacyFallback.api.tracestatus().combatReadPointsArmed),[]);
 assert.equal(legacyFallback.api.tracestatus().combatContextSchemaVersion,1);
 legacyFallback.api.tracestop(); legacyFallback.api.restore();
 const pointRollback=fixture({failAiHookAt:0x005B11DD});
@@ -1390,7 +1390,7 @@ pointLoss.api.restore();
 const missingTest=fixture(); missingTest.api.installobserver(); missingTest.api.tracestart(100);
 missingTest.api.traceaistart('combat-context-point:attacker_flags_consumed');
 assert.equal(missingTest.aiHookCount(),11);
-assert.deepEqual(missingTest.api.tracestatus().combatReadPointsArmed,['attacker_flags_consumed']);
+assert.deepEqual(Array.from(missingTest.api.tracestatus().combatReadPointsArmed),['attacker_flags_consumed']);
 missingTest.aiCall(0x005B1360,[0,0],0,()=>{
   missingTest.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>missingTest.instruction(0x005B11DD));
 });
