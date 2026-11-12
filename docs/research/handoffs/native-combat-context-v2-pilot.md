@@ -1,5 +1,14 @@
 # Handoff nativo — consumo F40 v2 e próximo piloto
 
+> **PILOTO SUSPENSO por falha nativa no Windows.** Este procedimento foi escrito
+> antes do APPCRASH 0xC0000005 em `joey_pc.exe+0x001B1195`.
+> A investigação e a mitigação estão em
+> [native-combat-context-v2-crash.md](native-combat-context-v2-crash.md).
+> Na branch corrigida, `trace ai on combat-context` arma **somente o modo v1**
+> com dez listeners de entrada (nenhum ponto interno). Portanto, os passos
+> abaixo **não** produzirão os novos testemunhos v2; não repetir o piloto
+> anterior até revisar o dump ou estabelecer uma alternativa segura.
+
 Branch `feat/native-combat-context-v2`. Implementação: commit `8227f4c`
 (`Observe consumed flags, posture and seed in combat context v2`). Contrato,
 procedimento e handoff estão no commit documental subsequente desta branch.
