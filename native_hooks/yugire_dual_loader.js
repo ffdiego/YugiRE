@@ -252,6 +252,19 @@ const kCombatContextTargets = [
   name, va:address, address:va(address), argCount, outputSize,
   returns:returns.map(address => va(address))
 }));
+// Interior observation points: minimum complete instruction spans (>=5 bytes).
+// Callbacks only read context/memory; no onLeave at a mid-function address.
+const kCombatReadPoints = [
+  ['own_visibility_consumed', '0x005ADD8D', 'A802751B0C02'],
+  ['opponent_visible_taken', '0x005ADE2C', '8B4C240C51'],
+  ['opponent_hidden_taken', '0x005ADDF0', '668B91745DA500'],
+  ['target_position_consumed', '0x005B0F7B', '33C089442440'],
+  ['descriptor_seed_consumed', '0x005B108A', '0BD9C1E304'],
+  ['defender_flags_consumed', '0x005B119B', 'BA00004000'],
+  ['attacker_flags_sample', '0x005B11C6', '85148D3064A500'],
+  ['attacker_protection_taken', '0x005B11CF', '66816500FFFB'],
+  ['attacker_flags_consumed', '0x005B11DD', '8B44243485C0']
+].map(([name,address,bytes]) => ({name, va:address, address:va(address), bytes}));
 let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
 let aiSelectorStack = new Map();
@@ -1006,6 +1019,7 @@ function traceStatus() {
     active: commandTraceHook !== null,
     // Host attestation exists independently of whether deck tracing was armed.
     hostAttestedExeSha256: deckFingerprint,
+    processId: Process.id, modulePath: main.path,
     ...(deckObserver === null ? {deckActive:false} : deckObserver.status()),
     prepActive: summonPrepHooks.length > 0,
     prepHooks: summonPrepHooks.length,
@@ -1199,7 +1213,7 @@ function readSelectorHandSnapshot(side) {
 // This is a *passive* probe: never invokes FUN_005B0F40 or FUN_0056DD30.
 // Only events nested inside an observed selector are kept to avoid renderer noise.
 function combatContextIdentity(frame) {
-  return {kind:'combat_context', schemaVersion:1, session:frame.session,
+  return {kind:'combat_context', schemaVersion:2, session:frame.session,
     threadId:frame.threadId, combatCallId:frame.callId,
     selectorCallId:frame.selectorCallId, stateKind:'selector-window'};
 }
@@ -1208,7 +1222,7 @@ function enterCombatContext(invocation, args) {
   const threadId = invocation.aiThread;
   const stack = combatContextStacks.get(threadId) || [];
   const frame = {threadId, callId:invocation.aiCallId, children:0,
-    session:traceSession, generation:combatContextGeneration};
+    session:traceSession, generation:combatContextGeneration, argsRaw:invocation.aiArguments};
   stack.push(frame);
   combatContextStacks.set(threadId, stack);
   // Push a sentinel even after the limit, so nested calls cannot be attributed
@@ -1217,7 +1231,7 @@ function enterCombatContext(invocation, args) {
     frame.suppressed = true;
     if (!combatContextLimitReported) {
       combatContextLimitReported = true;
-      recordTraceEvent({kind:'combat_context_limit', schemaVersion:1,
+      recordTraceEvent({kind:'combat_context_limit', schemaVersion:2,
         session:traceSession, limit:kCombatContextLimit});
     }
     return frame;
@@ -1250,6 +1264,7 @@ function enterCombatContext(invocation, args) {
         faceUp:positionRaw === null ? null : (positionRaw & 2) !== 0,
         monsterFlagsRaw:read(role+'.monsterFlagsRaw', () => record.add(0x8C).readU32()),
         playerFlagsRaw:read(role+'.playerFlagsRaw', () => kSummonPlayerFlags.add(fieldSide*kPlayerStride).readU32()),
+        linkCountRaw:read(role+'.linkCountRaw', () => record.add(0xA).readU16()),
         lifePoints:read(role+'.lifePoints', () => va('0x00A55D64').add(fieldSide*kPlayerStride).readU16())};
     }
   }
@@ -1310,11 +1325,17 @@ function startAiProbe(mode = false) {
     throw new Error('combat-context requires --observe-only, trace prep/demo off and no overrides');
   const targets = kAiProbeTargets.concat(
     detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : [],
-    withCombat ? kCombatContextTargets : []);
+    withCombat ? kCombatContextTargets.concat(kCombatReadPoints) : []);
   for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
       throw new Error('AI probe function not executable: ' + target.va);
+    }
+  }
+  if (withCombat) {
+    for (const point of kCombatReadPoints) {
+      if (readAiProbeHex(point.address, point.bytes.length / 2) !== point.bytes)
+        throw new Error('Combat instruction signature mismatch: ' + point.va);
     }
   }
   const hooks = [];
@@ -1421,6 +1442,52 @@ function startAiProbe(mode = false) {
       hooks.push(hook);
     }
     if (withCombat) {
+      for (const point of kCombatReadPoints) {
+        hooks.push(Interceptor.attach(point.address, {onEnter() {
+          const stack = combatContextStacks.get(Process.getCurrentThreadId()) || [];
+          const frame = stack.length ? stack[stack.length - 1] : null;
+          if (!frame || frame.suppressed) return;
+          if ((point.name.startsWith('own_visibility') || point.name.startsWith('opponent_')) && !frame.statsArgs) return;
+          if (++frame.children > 24) { frame.childOverflow = true; return; }
+          const event = {...combatContextIdentity(frame), phase:'leave',
+            function:point.name, functionVa:point.va, callId:++aiProbeCallSequence,
+            valueRaw:null};
+          try {
+            const c = this.context;
+            if (point.name === 'own_visibility_consumed') event.valueRaw = c.eax.toUInt32() & 0xFFFF;
+            if (point.name.startsWith('opponent_')) event.faceUpConsumed = point.name === 'opponent_visible_taken';
+            if (frame.statsArgs) event.wrapperArgsRaw = frame.statsArgs;
+            if (point.name === 'target_position_consumed') event.valueRaw = c.ecx.toUInt32() & 0xFF;
+            if (point.name === 'descriptor_seed_consumed') {
+              event.valueRaw = c.edx.toUInt32() & 0xFFFF;
+              event.preservedMaskRaw = event.valueRaw & 0xF005;
+            }
+            if (point.name === 'defender_flags_consumed') {
+              event.valueRaw = c.eax.toUInt32();
+              event.playerOffsetRaw = c.esi.toUInt32();
+              if (frame.argsRaw[0] > 1 || event.playerOffsetRaw !== (1-frame.argsRaw[0])*kPlayerStride)
+                throw new Error('Unexpected defender flag offset');
+              event.protectionConsumed = (event.valueRaw & 0x400000) !== 0;
+            }
+            if (point.name === 'attacker_flags_sample') {
+              frame.attackerProtectionTaken = false;
+              frame.attackerFlagsSampled = true;
+              event.playerOffsetRaw = c.ecx.toUInt32() * 4;
+              if (frame.argsRaw[0] > 1 || event.playerOffsetRaw !== frame.argsRaw[0]*kPlayerStride)
+                throw new Error('Unexpected player flag offset');
+              event.valueRaw = va('0x00A56430').add(event.playerOffsetRaw).readU32();
+              // This memory sample precedes TEST. The branch witnesses below
+              // establish the consumed bit, even if another thread writes it.
+            }
+            if (point.name === 'attacker_protection_taken') frame.attackerProtectionTaken = true;
+            if (point.name === 'attacker_flags_consumed') {
+              event.protectionConsumed = frame.attackerFlagsSampled ? frame.attackerProtectionTaken : null;
+              if (!frame.attackerFlagsSampled) event.correlationError = 'Missing attacker TEST sample';
+            }
+          } catch (error) { event.readError = String(error); }
+          recordTraceEvent(event);
+        }}));
+      }
       for (const target of kCombatContextTargets) {
         hooks.push(Interceptor.attach(target.address, {
           onEnter(args) {
@@ -1439,7 +1506,19 @@ function startAiProbe(mode = false) {
               argsRaw:Array.from({length:target.argCount}, (_, i) => args[i].toUInt32())
             };
             this.combatGeneration = combatContextGeneration;
-            if (target.outputSize) this.combatOutput = args[2];
+            if (target.outputSize) {
+              this.combatOutput = args[2];
+              frame.statsArgs = this.combatChild.argsRaw;
+              this.combatParentFrame = frame;
+              const [side,slot] = this.combatChild.argsRaw;
+              this.combatPosition = (side <= 1 && slot <= 4) ?
+                kMonsterSlotBase.add(side*kPlayerStride + slot*kFieldSlotStride + 6) : null;
+              this.combatChild.positionBeforeRaw = null;
+              try {
+                if (this.combatPosition === null) throw new Error('Unsupported wrapper slot');
+                this.combatChild.positionBeforeRaw = this.combatPosition.readU16();
+              } catch (error) { this.combatChild.readError = String(error); }
+            }
           },
           onLeave(retval) {
             if (!this.combatChild || !combatContextMode ||
@@ -1447,7 +1526,11 @@ function startAiProbe(mode = false) {
             const event = this.combatChild;
             if (target.outputSize) {
               event.outputHex = null;
-              try { event.outputHex = readAiProbeHex(this.combatOutput, target.outputSize); }
+              this.combatParentFrame.statsArgs = null;
+              try {
+                event.outputHex = readAiProbeHex(this.combatOutput, target.outputSize);
+                event.positionAfterRaw = this.combatPosition.readU16();
+              }
               catch (error) { event.readError = String(error); }
             } else {
               event.returnRaw = retval.toUInt32();

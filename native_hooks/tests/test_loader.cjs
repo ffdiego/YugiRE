@@ -59,7 +59,12 @@ function fixture(options = {}) {
   const aiAddresses = [0x005B1360,0x005B16C0,0x005B0F40,0x0056DD30,
     0x005B08B0,0x005B1610,0x005B0A50,0x005B0B90,0x005B0950,
     0x005AE3E0,0x005AE220,0x005ADD60,0x005ADDC0,0x0056D790,
-    0x0056D8D0,0x005699A0,0x0056B220,0x004022E0];
+    0x0056D8D0,0x005699A0,0x0056B220,0x004022E0,
+    0x005ADD8D,0x005ADE2C,0x005ADDF0,0x005B0F7B,0x005B108A,0x005B119B,0x005B11C6,0x005B11CF,0x005B11DD];
+  for (const [address,hex] of [[0x005ADD8D,"A802751B0C02"],[0x005ADE2C,"8B4C240C51"],[0x005ADDF0,"668B91745DA500"],[0x005B0F7B,"33C089442440"],[0x005B108A,"0BD9C1E304"],
+    [0x005B119B,"BA00004000"],[0x005B11C6,"85148D3064A500"],
+    [0x005B11CF,"66816500FFFB"],[0x005B11DD,"8B44243485C0"]])
+    Buffer.from(hex,"hex").forEach((b,i)=>memory.set(address+i,b));
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -228,7 +233,12 @@ function fixture(options = {}) {
       const receiver={returnAddress:ptr(caller)};
       callbacks.onEnter.call(receiver,args.map(v=>ptr(v)));
       if(body) body();
-      callbacks.onLeave.call(receiver,ptr(retval));
+      if (callbacks.onLeave) callbacks.onLeave.call(receiver,ptr(retval));
+    },
+    instruction(address, registers={}) {
+      const callbacks=aiHandlers.get(address);
+      if (!callbacks) throw new Error('Instruction hook not installed');
+      callbacks.onEnter.call({context:Object.fromEntries(Object.entries(registers).map(([k,v])=>[k,ptr(v)]))});
     },
     prepCall(address,args=[],retval=1,beforeLeave=null,caller=0x005B1337) {
       const callback=prepHandlers.get(address);
@@ -1156,9 +1166,11 @@ combat.api.authorizedeckobserver('db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52
 assert.equal(combat.api.tracestatus().hostAttestedExeSha256,
   'db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
 assert.equal(combat.api.tracestatus().deckActive,false);
+assert.equal(combat.api.tracestatus().processId,123);
+assert.equal(combat.api.tracestatus().modulePath,'Z:\\passion\\joey_pc.exe');
 combat.api.tracestart(2000);
 assert.equal(combat.api.traceaistart('combat-context').combatContextActive,true);
-assert.equal(combat.aiHookCount(),10);
+assert.equal(combat.aiHookCount(),19);
 assert.throws(()=>combat.api.traceprepstart(),/combat-context/);
 assert.throws(()=>combat.api.tracedemostart(),/combat-context/);
 const buffer=0x00A579A6, own=buffer+16, rival=buffer+32;
@@ -1211,7 +1223,7 @@ assert.equal(contexts.find(e=>e.function==='equipment_count').returnSigned,2);
 assert.equal(contexts.find(e=>e.function==='resource').resourceId,0x4D);
 assert.equal(contexts.filter(e=>e.function==='own_stats')[0].outputHex.length,24);
 assert.equal(contexts.filter(e=>e.function==='opponent_stats')[0].outputHex.length,24);
-assert.ok(contexts.every(e=>e.schemaVersion===1 && e.threadId===778 && e.seq>0 && e.timestampMs>0));
+assert.ok(contexts.every(e=>e.schemaVersion===2 && e.threadId===778 && e.seq>0 && e.timestampMs>0));
 const allCombatEvents=combat.api.traceevents(0,256);
 assert.equal(allCombatEvents.filter(e=>e.kind==='combat_context_limit').length,1);
 contexts=allCombatEvents.filter(e=>e.kind==='combat_context' && e.phase==='enter');
@@ -1279,3 +1291,82 @@ combatStopped.api.tracestop();
 assert.equal(combatStopped.api.traceevents(0,100).filter(e=>e.kind==='combat_context').length,1);
 combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
+
+// Instruction witnesses are synthetic CPU contexts, not dynamic validation.
+const points=fixture();
+points.api.installobserver(); points.api.tracestart(2000);
+points.api.traceaistart('combat-context');
+points.aiCall(0x005B1360,[0,0],0,()=>{
+  points.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+    points.aiCall(0x005ADD60,[0,0,own],0,()=>{
+      points.instruction(0x005ADD8D,{eax:0xAB02});
+    },0x005B0F97);
+    points.aiCall(0x005ADDC0,[1,1,rival],0,()=>{
+      points.instruction(0x005ADE2C);
+    },0x005B0FAE);
+    points.instruction(0x005B0F7B,{ecx:0xABCDEF03});
+    points.instruction(0x005B108A,{edx:0x1234F005});
+    points.instruction(0x005B119B,{eax:0x400123,esi:0xD44});
+    points.instruction(0x005B11C6,{ecx:0});
+    points.setThread(779); // cannot attach a branch to the other thread's frame
+    points.instruction(0x005B11CF);
+    points.setThread(778);
+    points.aiCall(0x005B0F40,[1,0,1,buffer],0,()=>{
+      points.instruction(0x005B11C6,{ecx:0x351});
+      points.instruction(0x005B11CF);
+      points.instruction(0x005B11DD);
+    });
+    points.instruction(0x005B11DD);
+    points.instruction(0x005B119B,{}); // failed register read remains null
+  });
+});
+points.api.tracestop();
+const witnesses=points.api.traceevents(0,256).filter(e=>e.kind==='combat_context');
+assert.equal(witnesses.find(e=>e.function==='own_visibility_consumed').valueRaw,0xAB02);
+assert.equal(witnesses.find(e=>e.function==='opponent_visible_taken').faceUpConsumed,true);
+assert.equal(witnesses.find(e=>e.function==='own_stats').positionBeforeRaw,0);
+assert.equal(witnesses.find(e=>e.function==='own_stats').positionAfterRaw,0);
+assert.equal(witnesses.find(e=>e.function==='target_position_consumed').valueRaw,3);
+assert.equal(witnesses.find(e=>e.function==='descriptor_seed_consumed').preservedMaskRaw,0xF005);
+assert.equal(witnesses.find(e=>e.function==='defender_flags_consumed').valueRaw,0x400123);
+assert.equal(JSON.stringify(witnesses.filter(e=>e.function==='attacker_flags_consumed').map(e=>e.protectionConsumed)),'[true,false]');
+assert.equal(witnesses.filter(e=>e.function==='attacker_protection_taken').length,1);
+const missingRegister=witnesses.filter(e=>e.function==='defender_flags_consumed').at(-1);
+assert.equal(missingRegister.valueRaw,null); assert.ok(missingRegister.readError);
+points.api.tracestop(); points.api.restore();
+const badSignature=fixture(); badSignature.api.installobserver(); badSignature.api.tracestart(100);
+badSignature.memory.set(0x005B11C6,0);
+assert.throws(()=>badSignature.api.traceaistart('combat-context'),/signature mismatch/);
+assert.equal(badSignature.aiHookCount(),0);
+badSignature.api.restore();
+const pointRollback=fixture({failAiHookAt:0x005B11DD});
+pointRollback.api.installobserver(); pointRollback.api.tracestart(100);
+assert.throws(()=>pointRollback.api.traceaistart('combat-context'),/rolled back/);
+assert.equal(pointRollback.aiHookCount(),0); pointRollback.api.restore();
+console.log('PASS: consumed register/branch witnesses, thread and reentrant isolation, unknowns and instruction preflight');
+
+const pointLoss=fixture(); pointLoss.api.installobserver(); pointLoss.api.tracestart(16);
+pointLoss.api.traceaistart('combat-context');
+const pointLossBefore=new Map(pointLoss.memory);
+pointLoss.aiCall(0x005B1360,[0,0],0,()=>{
+  pointLoss.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+    // Missing TEST cannot produce a false bit at the join.
+    pointLoss.instruction(0x005B11DD);
+    for(let i=0;i<30;i++) pointLoss.instruction(0x005B108A,{edx:i});
+  });
+});
+pointLoss.api.tracestop();
+assert.deepEqual(pointLoss.memory,pointLossBefore);
+assert.ok(pointLoss.api.tracestatus().overwritten>0);
+assert.equal(pointLoss.api.traceevents(0,16).find(e=>e.function==='combat_event').childOverflow,true);
+pointLoss.api.restore();
+const missingTest=fixture(); missingTest.api.installobserver(); missingTest.api.tracestart(100);
+missingTest.api.traceaistart('combat-context');
+missingTest.aiCall(0x005B1360,[0,0],0,()=>{
+  missingTest.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>missingTest.instruction(0x005B11DD));
+});
+missingTest.api.tracestop();
+const unknownBit=missingTest.api.traceevents(0,100).find(e=>e.function==='attacker_flags_consumed');
+assert.equal(unknownBit.protectionConsumed,null); assert.ok(unknownBit.correlationError);
+missingTest.api.restore();
+console.log('PASS: point event loss and overflow remain explicit, missing TEST stays unknown, no observer game writes');

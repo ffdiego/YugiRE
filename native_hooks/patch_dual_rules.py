@@ -224,6 +224,8 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                   "seen": status["seen"], "retained": status["retained"],
                   "overwritten": status["overwritten"],
                   "exeSha256": status.get("hostAttestedExeSha256") or status.get("deckFingerprint"),
+                  "processId": status.get("processId"),
+                  "modulePath": status.get("modulePath"),
                   "note": "Producer inputs and optional passive AI observations. "
                           "AI output buffers may represent hypothetical states."}
         destination.write(json.dumps(header, ensure_ascii=False) + "\n")
@@ -609,7 +611,8 @@ def main(argv: list[str] | None = None) -> int:
             print("[dual-rules] Loaded Joey EXE did not pass fingerprint checks.")
             print(json.dumps(checks["checks"], indent=2))
             return 2
-        print("[dual-rules] Exact loaded Joey EXE SHA256 confirmed.", flush=True)
+        print(f"[dual-rules] Loaded module preflight: PID={joey_pid} "
+              f"path={module_path} SHA256={checks['exe_sha256']}", flush=True)
         if args.observe_only:
             api.authorizedeckobserver(checks["exe_sha256"])
             state = api.installobserver()

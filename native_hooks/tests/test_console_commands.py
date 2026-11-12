@@ -545,6 +545,24 @@ class ConsoleCommandTests(unittest.TestCase):
             save_command_trace(self.api, target)
             header = json.loads(target.read_text().splitlines()[0])
         self.assertEqual(header["exeSha256"], expected)
+        self.assertIsNone(header["processId"])
+        self.assertIsNone(header["modulePath"])
+
+    def test_export_binds_loaded_module_identity_to_session(self):
+        from tempfile import TemporaryDirectory
+        import json
+        self.api.trace_session = 7
+        original_stop = self.api.tracestop
+        self.api.tracestop = lambda: {**original_stop(), "processId": 10848,
+                                     "modulePath": "C:/Joey/joey_pc.exe"}
+        with TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = Path(directory) / "identity.jsonl"
+            save_command_trace(self.api, target)
+            header = json.loads(target.read_text().splitlines()[0])
+        self.assertEqual(header["session"], 7)
+        self.assertEqual(header["processId"], 10848)
+        self.assertEqual(header["modulePath"], "C:/Joey/joey_pc.exe")
+        self.assertIsNone(header["exeSha256"])
 
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
