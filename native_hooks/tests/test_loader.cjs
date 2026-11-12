@@ -7,6 +7,7 @@ const path = require('node:path');
 const source = fs.readFileSync(path.resolve(__dirname, '../yugire_dual_loader.js'), 'utf8');
 
 function fixture(options = {}) {
+  let currentThread = 778;
   const memory = new Map();
   const sparks = 0x005ED0A8 + 66*24;
   const raimei = 0x005ED0A8 + 172*24;
@@ -57,7 +58,8 @@ function fixture(options = {}) {
   const aiHandlers = new Map();
   const aiAddresses = [0x005B1360,0x005B16C0,0x005B0F40,0x0056DD30,
     0x005B08B0,0x005B1610,0x005B0A50,0x005B0B90,0x005B0950,
-    0x005AE3E0,0x005AE220];
+    0x005AE3E0,0x005AE220,0x005ADD60,0x005ADDC0,0x0056D790,
+    0x0056D8D0,0x005699A0,0x0056B220,0x004022E0];
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -91,7 +93,7 @@ function fixture(options = {}) {
   const context = {
     Process: {
       platform: 'windows', arch: 'ia32', id: 123,
-      getCurrentThreadId(){return 778;},
+      getCurrentThreadId(){return currentThread;},
       mainModule:{name:'joey_pc.exe',path:'Z:\\passion\\joey_pc.exe',base:ptr(0x400000)},
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
         p.n === 0x005BC700 || p.n === 0x00576960 ||
@@ -219,6 +221,7 @@ function fixture(options = {}) {
     traceActive(){return traceHandler !== null;},
     prepCount(){return prepHandlers.size;},
     aiHookCount(){return aiHandlers.size;},
+    setThread(id){currentThread=id;},
     aiCall(address,args=[],retval=0,body=null,caller=0x005B1377) {
       const callbacks=aiHandlers.get(address);
       if (!callbacks) throw new Error('AI hook not installed at '+address.toString(16));
@@ -1144,3 +1147,135 @@ assert.equal(gateNormalMode.api.tracestatus().aiGateActive,false);
 gateNormalMode.api.tracestop();
 gateNormalMode.api.restore();
 console.log('PASS: CPU AI filter gates, direct callers, candidate identities, mode isolation and hook rollback');
+
+// Synthetic call trees only: these tests do not execute or emulate Joey rules.
+const combat=fixture();
+combat.api.installobserver();
+assert.equal(combat.api.tracestatus().hostAttestedExeSha256,null);
+combat.api.authorizedeckobserver('db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
+assert.equal(combat.api.tracestatus().hostAttestedExeSha256,
+  'db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
+assert.equal(combat.api.tracestatus().deckActive,false);
+combat.api.tracestart(2000);
+assert.equal(combat.api.traceaistart('combat-context').combatContextActive,true);
+assert.equal(combat.aiHookCount(),10);
+assert.throws(()=>combat.api.traceprepstart(),/combat-context/);
+assert.throws(()=>combat.api.tracedemostart(),/combat-context/);
+const buffer=0x00A579A6, own=buffer+16, rival=buffer+32;
+for (const [offset,byte] of [5,0xf0,0xaa,0xbb].entries()) combat.memory.set(buffer+offset,byte);
+combat.memory.set(0x00A55D7A,2);
+combat.memory.set(0x00A55D7A+0xD44+3*0x90,1); // hypothetical defense, face-down
+const beforeCombat=new Map(combat.memory);
+combat.aiCall(0x005B1360,[0,0],0,()=>{
+  combat.aiCall(0x005B0F40,[0,0,3,buffer],0,()=>{
+    combat.aiCall(0x005ADD60,[0,0,own],0,null,0x005B0F97);
+    combat.aiCall(0x005ADDC0,[1,3,rival],0,null,0x005B0FAE);
+    combat.aiCall(0x0056D790,[0,0,0x291],2,null,0x005B1060);
+    combat.aiCall(0x0056D790,[0,0,0x291],99,null,0x0056DD90); // nested stats: ignore
+    combat.setThread(779);
+    combat.aiCall(0x0056D790,[0,0,0x291],99,null,0x005B1060); // other thread: ignore
+    combat.setThread(778);
+    combat.aiCall(0x004022E0,[24],0x004D,null,0x005B0FB8);
+    combat.aiCall(0x005B0F40,[0,1,2,buffer],0,()=>{
+      combat.aiCall(0x0056B220,[0x14D],1,null,0x005B1205);
+    });
+    combat.aiCall(0x005699A0,[1,0x58F],1,null,0x005B11F4);
+  });
+});
+assert.deepEqual(combat.memory,beforeCombat); // observer made no mock game writes
+// Bound observation and make truncation explicit; unknown args never index memory.
+combat.aiCall(0x005B1360,[0,0],0,()=>{
+  for (let i=0; i<70; i++) combat.aiCall(0x005B0F40,[2,99,5,buffer],0);
+});
+assert.equal(combat.api.tracestatus().combatContextCount,64);
+combat.api.tracestop();
+const capturedContexts=combat.api.traceevents(0,256).filter(e=>e.kind==='combat_context');
+const initialIds=new Set(capturedContexts.filter(e=>e.phase==='enter').slice(0,2).map(e=>e.combatCallId));
+let contexts=capturedContexts.filter(e=>initialIds.has(e.combatCallId));
+const entries=contexts.filter(e=>e.phase==='enter');
+const leaves=contexts.filter(e=>e.phase==='leave' && e.function==='combat_event');
+assert.equal(entries.length,2);
+assert.equal(leaves.length,2);
+assert.equal(entries[0].seedHex,'05F0AABB');
+assert.equal(entries[0].defender.defensePosition,true);
+assert.equal(entries[0].defender.faceUp,false);
+assert.equal(entries[0].defender.slot,3);
+assert.equal(entries[0].defender.resourceId,null);
+assert.equal(entries[0].stateKind,'selector-window');
+assert.equal(entries[0].selectorCallId,1);
+assert.equal(leaves[1].combatCallId,entries[0].combatCallId);
+assert.equal(contexts.find(e=>e.function==='phase_query').combatCallId,entries[1].combatCallId);
+assert.equal(contexts.find(e=>e.function==='field_query').combatCallId,entries[0].combatCallId);
+assert.equal(contexts.filter(e=>e.function==='equipment_count').length,1);
+assert.equal(contexts.find(e=>e.function==='equipment_count').returnSigned,2);
+assert.equal(contexts.find(e=>e.function==='resource').resourceId,0x4D);
+assert.equal(contexts.filter(e=>e.function==='own_stats')[0].outputHex.length,24);
+assert.equal(contexts.filter(e=>e.function==='opponent_stats')[0].outputHex.length,24);
+assert.ok(contexts.every(e=>e.schemaVersion===1 && e.threadId===778 && e.seq>0 && e.timestampMs>0));
+const allCombatEvents=combat.api.traceevents(0,256);
+assert.equal(allCombatEvents.filter(e=>e.kind==='combat_context_limit').length,1);
+contexts=allCombatEvents.filter(e=>e.kind==='combat_context' && e.phase==='enter');
+assert.equal(contexts.length,64);
+assert.equal(contexts.at(-1).attacker,null);
+assert.equal(contexts.at(-1).readErrors[0].field,'argsRaw');
+combat.api.traceaistop();
+assert.equal(combat.aiHookCount(),0);
+assert.equal(combat.api.tracestatus().combatContextActive,false);
+combat.api.restore();
+
+const combatReadError=fixture({failLpRead:true});
+combatReadError.api.installobserver();
+combatReadError.api.tracestart(100);
+combatReadError.api.traceaistart('combat-context');
+combatReadError.aiCall(0x005B1360,[0,0],0,()=>{
+  combatReadError.aiCall(0x005B0F40,[0,0,1,0],0);
+});
+combatReadError.api.tracestop();
+const failedCombat=combatReadError.api.traceevents(0,100).filter(e=>e.kind==='combat_context');
+assert.equal(failedCombat[0].attacker.lifePoints,null);
+assert.equal(failedCombat[0].seedHex,null);
+assert.equal(failedCombat[0].readErrors.length,3);
+assert.equal(failedCombat[1].outputHex,null);
+assert.match(failedCombat[1].readError,/null output/);
+combatReadError.api.restore();
+
+const combatRollback=fixture({failAiHookAt:0x0056D790});
+combatRollback.api.installobserver();
+combatRollback.api.tracestart(100);
+assert.throws(()=>combatRollback.api.traceaistart('combat-context'),/rolled back/);
+assert.equal(combatRollback.aiHookCount(),0);
+assert.equal(combatRollback.api.tracestatus().combatContextActive,false);
+combatRollback.api.restore();
+const combatActive=fixture();
+combatActive.api.install('Z:\\YugiRE\\rules.dll',300,400,1,1);
+combatActive.api.tracestart(100);
+assert.throws(()=>combatActive.api.traceaistart('combat-context'),/observe-only/);
+combatActive.api.restore();
+const combatOverflow=fixture();
+combatOverflow.api.installobserver();
+combatOverflow.api.tracestart(100);
+combatOverflow.api.traceaistart('combat-context');
+combatOverflow.aiCall(0x005B1360,[0,0],0,()=>{
+  combatOverflow.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+    for (let i=0; i<25; i++)
+      combatOverflow.aiCall(0x0056D790,[0,0,0x291],0,null,0x005B1060);
+  });
+});
+combatOverflow.api.tracestop();
+assert.equal(combatOverflow.api.traceevents(0,100).find(e=>e.childOverflow).childCount,25);
+combatOverflow.api.restore();
+const combatStopped=fixture();
+combatStopped.api.installobserver();
+combatStopped.api.tracestart(100);
+combatStopped.api.traceaistart('combat-context');
+combatStopped.aiCall(0x005B1360,[0,0],0,()=>{
+  combatStopped.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+    combatStopped.aiCall(0x005ADD60,[0,0,own],0,()=>{
+      combatStopped.api.traceaistop();
+    },0x005B0F97);
+  });
+});
+combatStopped.api.tracestop();
+assert.equal(combatStopped.api.traceevents(0,100).filter(e=>e.kind==='combat_context').length,1);
+combatStopped.api.restore();
+console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');

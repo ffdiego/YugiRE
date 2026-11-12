@@ -1,0 +1,489 @@
+{
+  "captureSha256": "424cb09a6d990dbfb0e8795cf97d0260f644f0c2349980937e0b96d14831213f",
+  "scope": "path-sensitive diagnostic with observed native stats/predicates; entry flags assumed stable",
+  "metadataExeSha256": null,
+  "exeAttestedInJsonl": false,
+  "events": 1285,
+  "sequenceIntegrity": "contiguous; metadata counts agree; no recorded errors",
+  "selectorPairs": 22,
+  "functions": {
+    "combat_event": 128,
+    "own_stats": 64,
+    "opponent_stats": 64,
+    "resource": 210,
+    "equipment_count": 64,
+    "field_query": 45,
+    "context_count": 72
+  },
+  "limits": [
+    971
+  ],
+  "pairs": 64,
+  "diagnosticMatches": 64,
+  "hiddenEstimates": 57,
+  "independentAttributeComputations": 0,
+  "strictSemanticComplete": 0,
+  "strictSemanticIncomplete": 64,
+  "semanticLimitations": [
+    "player flags sampled before native consumption",
+    "native attribute and effect outputs are supplied inputs",
+    "JSONL fingerprint attestation must be checked separately"
+  ],
+  "pathDecisions": {
+    "pierce:branch-not-evaluated": 46,
+    "gain:nonpositive;field-and-phase-not-evaluated": 62,
+    "loss:field-nonpositive;phase-not-evaluated": 43,
+    "gain:field-nonpositive;phase-not-evaluated": 2,
+    "loss:nonpositive;field-and-phase-not-evaluated": 21
+  },
+  "caseReferences": [
+    {
+      "combatCallId": 2,
+      "selectorCallId": 1,
+      "enterSeq": 29,
+      "leaveSeq": 37,
+      "match": true
+    },
+    {
+      "combatCallId": 10,
+      "selectorCallId": 1,
+      "enterSeq": 38,
+      "leaveSeq": 46,
+      "match": true
+    },
+    {
+      "combatCallId": 18,
+      "selectorCallId": 1,
+      "enterSeq": 47,
+      "leaveSeq": 55,
+      "match": true
+    },
+    {
+      "combatCallId": 26,
+      "selectorCallId": 1,
+      "enterSeq": 56,
+      "leaveSeq": 64,
+      "match": true
+    },
+    {
+      "combatCallId": 44,
+      "selectorCallId": 43,
+      "enterSeq": 134,
+      "leaveSeq": 141,
+      "match": true
+    },
+    {
+      "combatCallId": 51,
+      "selectorCallId": 43,
+      "enterSeq": 142,
+      "leaveSeq": 150,
+      "match": true
+    },
+    {
+      "combatCallId": 59,
+      "selectorCallId": 43,
+      "enterSeq": 151,
+      "leaveSeq": 159,
+      "match": true
+    },
+    {
+      "combatCallId": 78,
+      "selectorCallId": 77,
+      "enterSeq": 202,
+      "leaveSeq": 214,
+      "match": true
+    },
+    {
+      "combatCallId": 90,
+      "selectorCallId": 77,
+      "enterSeq": 215,
+      "leaveSeq": 227,
+      "match": true
+    },
+    {
+      "combatCallId": 102,
+      "selectorCallId": 77,
+      "enterSeq": 228,
+      "leaveSeq": 236,
+      "match": true
+    },
+    {
+      "combatCallId": 110,
+      "selectorCallId": 77,
+      "enterSeq": 237,
+      "leaveSeq": 249,
+      "match": true
+    },
+    {
+      "combatCallId": 122,
+      "selectorCallId": 77,
+      "enterSeq": 250,
+      "leaveSeq": 258,
+      "match": true
+    },
+    {
+      "combatCallId": 130,
+      "selectorCallId": 77,
+      "enterSeq": 259,
+      "leaveSeq": 271,
+      "match": true
+    },
+    {
+      "combatCallId": 153,
+      "selectorCallId": 152,
+      "enterSeq": 347,
+      "leaveSeq": 355,
+      "match": true
+    },
+    {
+      "combatCallId": 161,
+      "selectorCallId": 152,
+      "enterSeq": 356,
+      "leaveSeq": 364,
+      "match": true
+    },
+    {
+      "combatCallId": 169,
+      "selectorCallId": 152,
+      "enterSeq": 365,
+      "leaveSeq": 373,
+      "match": true
+    },
+    {
+      "combatCallId": 177,
+      "selectorCallId": 152,
+      "enterSeq": 374,
+      "leaveSeq": 382,
+      "match": true
+    },
+    {
+      "combatCallId": 185,
+      "selectorCallId": 152,
+      "enterSeq": 383,
+      "leaveSeq": 391,
+      "match": true
+    },
+    {
+      "combatCallId": 207,
+      "selectorCallId": 206,
+      "enterSeq": 428,
+      "leaveSeq": 436,
+      "match": true
+    },
+    {
+      "combatCallId": 215,
+      "selectorCallId": 206,
+      "enterSeq": 437,
+      "leaveSeq": 445,
+      "match": true
+    },
+    {
+      "combatCallId": 223,
+      "selectorCallId": 206,
+      "enterSeq": 446,
+      "leaveSeq": 458,
+      "match": true
+    },
+    {
+      "combatCallId": 235,
+      "selectorCallId": 206,
+      "enterSeq": 459,
+      "leaveSeq": 471,
+      "match": true
+    },
+    {
+      "combatCallId": 247,
+      "selectorCallId": 206,
+      "enterSeq": 472,
+      "leaveSeq": 480,
+      "match": true
+    },
+    {
+      "combatCallId": 255,
+      "selectorCallId": 206,
+      "enterSeq": 481,
+      "leaveSeq": 489,
+      "match": true
+    },
+    {
+      "combatCallId": 263,
+      "selectorCallId": 206,
+      "enterSeq": 490,
+      "leaveSeq": 498,
+      "match": true
+    },
+    {
+      "combatCallId": 271,
+      "selectorCallId": 206,
+      "enterSeq": 499,
+      "leaveSeq": 507,
+      "match": true
+    },
+    {
+      "combatCallId": 279,
+      "selectorCallId": 206,
+      "enterSeq": 508,
+      "leaveSeq": 516,
+      "match": true
+    },
+    {
+      "combatCallId": 287,
+      "selectorCallId": 206,
+      "enterSeq": 517,
+      "leaveSeq": 529,
+      "match": true
+    },
+    {
+      "combatCallId": 299,
+      "selectorCallId": 206,
+      "enterSeq": 530,
+      "leaveSeq": 542,
+      "match": true
+    },
+    {
+      "combatCallId": 311,
+      "selectorCallId": 206,
+      "enterSeq": 543,
+      "leaveSeq": 551,
+      "match": true
+    },
+    {
+      "combatCallId": 319,
+      "selectorCallId": 206,
+      "enterSeq": 552,
+      "leaveSeq": 560,
+      "match": true
+    },
+    {
+      "combatCallId": 327,
+      "selectorCallId": 206,
+      "enterSeq": 561,
+      "leaveSeq": 569,
+      "match": true
+    },
+    {
+      "combatCallId": 335,
+      "selectorCallId": 206,
+      "enterSeq": 570,
+      "leaveSeq": 578,
+      "match": true
+    },
+    {
+      "combatCallId": 343,
+      "selectorCallId": 206,
+      "enterSeq": 579,
+      "leaveSeq": 587,
+      "match": true
+    },
+    {
+      "combatCallId": 351,
+      "selectorCallId": 206,
+      "enterSeq": 588,
+      "leaveSeq": 596,
+      "match": true
+    },
+    {
+      "combatCallId": 359,
+      "selectorCallId": 206,
+      "enterSeq": 597,
+      "leaveSeq": 609,
+      "match": true
+    },
+    {
+      "combatCallId": 371,
+      "selectorCallId": 206,
+      "enterSeq": 610,
+      "leaveSeq": 622,
+      "match": true
+    },
+    {
+      "combatCallId": 383,
+      "selectorCallId": 206,
+      "enterSeq": 623,
+      "leaveSeq": 631,
+      "match": true
+    },
+    {
+      "combatCallId": 391,
+      "selectorCallId": 206,
+      "enterSeq": 632,
+      "leaveSeq": 640,
+      "match": true
+    },
+    {
+      "combatCallId": 481,
+      "selectorCallId": 480,
+      "enterSeq": 698,
+      "leaveSeq": 706,
+      "match": true
+    },
+    {
+      "combatCallId": 489,
+      "selectorCallId": 480,
+      "enterSeq": 707,
+      "leaveSeq": 715,
+      "match": true
+    },
+    {
+      "combatCallId": 497,
+      "selectorCallId": 480,
+      "enterSeq": 716,
+      "leaveSeq": 724,
+      "match": true
+    },
+    {
+      "combatCallId": 505,
+      "selectorCallId": 480,
+      "enterSeq": 725,
+      "leaveSeq": 733,
+      "match": true
+    },
+    {
+      "combatCallId": 513,
+      "selectorCallId": 480,
+      "enterSeq": 734,
+      "leaveSeq": 746,
+      "match": true
+    },
+    {
+      "combatCallId": 525,
+      "selectorCallId": 480,
+      "enterSeq": 747,
+      "leaveSeq": 759,
+      "match": true
+    },
+    {
+      "combatCallId": 537,
+      "selectorCallId": 480,
+      "enterSeq": 760,
+      "leaveSeq": 768,
+      "match": true
+    },
+    {
+      "combatCallId": 545,
+      "selectorCallId": 480,
+      "enterSeq": 769,
+      "leaveSeq": 777,
+      "match": true
+    },
+    {
+      "combatCallId": 553,
+      "selectorCallId": 480,
+      "enterSeq": 778,
+      "leaveSeq": 786,
+      "match": true
+    },
+    {
+      "combatCallId": 561,
+      "selectorCallId": 480,
+      "enterSeq": 787,
+      "leaveSeq": 795,
+      "match": true
+    },
+    {
+      "combatCallId": 569,
+      "selectorCallId": 480,
+      "enterSeq": 796,
+      "leaveSeq": 804,
+      "match": true
+    },
+    {
+      "combatCallId": 577,
+      "selectorCallId": 480,
+      "enterSeq": 805,
+      "leaveSeq": 813,
+      "match": true
+    },
+    {
+      "combatCallId": 585,
+      "selectorCallId": 480,
+      "enterSeq": 814,
+      "leaveSeq": 822,
+      "match": true
+    },
+    {
+      "combatCallId": 593,
+      "selectorCallId": 480,
+      "enterSeq": 823,
+      "leaveSeq": 831,
+      "match": true
+    },
+    {
+      "combatCallId": 601,
+      "selectorCallId": 480,
+      "enterSeq": 832,
+      "leaveSeq": 844,
+      "match": true
+    },
+    {
+      "combatCallId": 613,
+      "selectorCallId": 480,
+      "enterSeq": 845,
+      "leaveSeq": 857,
+      "match": true
+    },
+    {
+      "combatCallId": 625,
+      "selectorCallId": 480,
+      "enterSeq": 858,
+      "leaveSeq": 866,
+      "match": true
+    },
+    {
+      "combatCallId": 633,
+      "selectorCallId": 480,
+      "enterSeq": 867,
+      "leaveSeq": 875,
+      "match": true
+    },
+    {
+      "combatCallId": 641,
+      "selectorCallId": 480,
+      "enterSeq": 876,
+      "leaveSeq": 884,
+      "match": true
+    },
+    {
+      "combatCallId": 663,
+      "selectorCallId": 662,
+      "enterSeq": 899,
+      "leaveSeq": 911,
+      "match": true
+    },
+    {
+      "combatCallId": 675,
+      "selectorCallId": 662,
+      "enterSeq": 912,
+      "leaveSeq": 924,
+      "match": true
+    },
+    {
+      "combatCallId": 687,
+      "selectorCallId": 662,
+      "enterSeq": 925,
+      "leaveSeq": 933,
+      "match": true
+    },
+    {
+      "combatCallId": 695,
+      "selectorCallId": 662,
+      "enterSeq": 934,
+      "leaveSeq": 942,
+      "match": true
+    },
+    {
+      "combatCallId": 703,
+      "selectorCallId": 662,
+      "enterSeq": 943,
+      "leaveSeq": 955,
+      "match": true
+    },
+    {
+      "combatCallId": 716,
+      "selectorCallId": 715,
+      "enterSeq": 958,
+      "leaveSeq": 970,
+      "match": true
+    }
+  ]
+}
