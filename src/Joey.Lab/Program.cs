@@ -13,10 +13,12 @@ public static class Program
             output.WriteLine("Joey.Lab — offline JSONL analysis (.NET 10)");
             output.WriteLine("Usage: dotnet run --project src/Joey.Lab -- summarize capture.jsonl [--json] [--expected-sha256 HASH]");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- compare LEFT RIGHT [--strict-raw] [--strict-unverified]");
+            output.WriteLine("       dotnet run --project src/Joey.Lab -- combat-contexts capture.jsonl [--expected-sha256 HASH]");
             output.WriteLine("Reads ring-buffer and live_duels JSONL. Does not launch Joey, load Frida or evaluate missing game context.");
             return 0;
         }
         if (args[0] == "compare") return RunCompare(args, output, error);
+        if (args[0] == "combat-contexts") return RunCombatContexts(args, output, error);
         if (args.Length < 2 || args[0] != "summarize") { error.WriteLine("Expected summarize capture.jsonl; use --help"); return 2; }
         bool json = false; string? hash = null;
         for (int i = 2; i < args.Length; i++)
@@ -46,6 +48,20 @@ public static class Program
             return report.HasIntegrityErrors ? 2 : 0;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or InvalidOperationException or FormatException or OverflowException or ArgumentException)
+        { error.WriteLine("Invalid/unsupported capture: " + ex.Message); return 2; }
+    }
+
+    private static int RunCombatContexts(string[] args, TextWriter output, TextWriter error)
+    {
+        if (args.Length != 2 && !(args.Length == 4 && args[2] == "--expected-sha256" && args[3].Length == 64 && args[3].All(Uri.IsHexDigit)))
+        { error.WriteLine("Expected combat-contexts capture.jsonl [--expected-sha256 HASH]"); return 2; }
+        try
+        {
+            var report = CombatContextReader.Read(CaptureReader.Read(args[1], args.Length == 4 ? args[3] : null));
+            output.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+            return report.Issues.Count == 0 ? 0 : 2;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentException or InvalidOperationException or OverflowException or FormatException)
         { error.WriteLine("Invalid/unsupported capture: " + ex.Message); return 2; }
     }
 
