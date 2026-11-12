@@ -20,6 +20,15 @@ internal static class LabCombatContextChecks
         }
         var result = Read(selector, entry, own, rival, leave, end);
         var context = result.Contexts.Single();
+        var captureSummary = CaptureAnalyzer.Analyze(CaptureReader.Read(new StringReader("{\"kind\":\"metadata\",\"seen\":0,\"retained\":0,\"overwritten\":0}"), "synthetic", "hash"));
+        var overview = ExperimentSummary.Create(1, 1, [new("synthetic", false, captureSummary, result, null)]);
+        check(overview.CoreComparison["Incomplete"] == 1 && overview.CoreEvaluated == 0 && overview.CoreComparison["Match"] == 0 && overview.ComparisonGaps.ContainsKey("player flags at consumption not observed"),
+            "Experiment reports incomplete contexts and reasons without claiming Core evaluation");
+        var partial = ExperimentSummary.Create(3, 1, [new("partial", false, captureSummary, result, null)]);
+        check(partial.ObservedTerminalDuels == 0 && partial.UnconfirmedDuels == 3, "Experiment distinguishes observed terminals from unconfirmed targets");
+        var corrupt = captureSummary with { Issues = [new CaptureIssue("error", null, "sequence gap")] };
+        var invalid = ExperimentSummary.Create(3, 1, [new("corrupt", false, corrupt, result, null)]);
+        check(invalid.ObservedTerminalDuels is null && invalid.UnconfirmedDuels is null && invalid.Issues.Any(x => x.Contains("sequence gap")), "Experiment does not certify duel totals with integrity errors");
         check(result.Issues.Count == 0 && context.Status == "Incomplete" && context.Provenance.CombatCallId == 2 && context.Services.Count == 2,
             "Combat contexts correlate selector, F40 and services by thread and call ID");
         check(context.Attacker?.ResourceId is null && context.Attacker?.LifePoints is null && context.Attacker?.Raw.GetProperty("future").GetInt32() == 99 &&
@@ -36,6 +45,8 @@ internal static class LabCombatContextChecks
         result = Read(selector, entry.Replace("\"schemaVersion\":1", "\"schemaVersion\":2"), own, rival, leave, end);
         check(result.Contexts.Single().Status == "Unsupported" && result.Contexts.Single().EnterRaw is not null,
             "Combat contexts preserve unsupported schema raw input");
+        overview = ExperimentSummary.Create(1, 1, [new("synthetic", false, captureSummary, result, null)]);
+        check(overview.CoreComparison["Unsupported"] == 1 && overview.CoreComparison["Incomplete"] == 0, "Experiment keeps unsupported schemas distinct from incomplete contexts");
         result = Read(selector, entry.Replace("\"faceUp\":true", "\"faceUp\":false"), own, rival, leave, end);
         check(result.Contexts.Single().MissingOrInvalid.Contains("attacker snapshot inconsistent"), "Combat contexts detect conflicting raw posture and decoded flag");
         result = Read(selector, entry, own.Replace("\"outputHex\":", "\"readError\":\"failed\",\"outputHex\":"), rival, leave, end);

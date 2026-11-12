@@ -69,6 +69,9 @@ internal static class LabCaptureChecks
         finally { File.Delete(damaged); }
         var document = CaptureReader.Read(fixture);
         var prefix = CaptureAnalyzer.Analyze(document);
+        var overview = ExperimentSummary.Create(1, 1, [new("fixture", false, prefix, CombatContextReader.Read(document), null)]);
+        check(overview.CombatAssessments == 1 && overview.CoreComparison["Incomplete"] == 1 && overview.CoreEvaluated == 0 && overview.ComparisonGaps.Count > 0,
+            "Experiment classifies observed combat without inventing Core inputs");
         check(!prefix.HasIntegrityErrors && prefix.EventCount == 30 && prefix.ComputedStatsCount == 14 && prefix.CombatAssessments.Count == 1,
             "Lab imports unchanged events1..30 from the historical capture with adjusted fixture metadata");
         var first = prefix.CombatAssessments.Single();

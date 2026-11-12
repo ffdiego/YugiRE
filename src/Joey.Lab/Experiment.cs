@@ -75,7 +75,7 @@ public static class Experiment
         }
         logWriter.Dispose(); // Windows disallows reopening the log while StreamWriter owns it.
         var captures = Directory.GetFiles(backend, "*.jsonl", SearchOption.AllDirectories).Order().ToArray();
-        var reports = new List<object>(); var documents = new Dictionary<string, CaptureDocument>(); bool capturesComplete = captures.Length == workers;
+        var reports = new List<ExperimentCaptureAnalysis>(); var documents = new Dictionary<string, CaptureDocument>(); bool capturesComplete = captures.Length == workers;
         foreach (string capture in captures)
         {
             try
@@ -84,10 +84,10 @@ public static class Experiment
                 documents[capture] = document;
                 bool complete = report.LiveCaptureComplete == true && !report.HasIntegrityErrors;
                 capturesComplete &= complete;
-                reports.Add(new { capture = Path.GetRelativePath(run, capture), complete, summary = report, combatContexts = CombatContextReader.Read(document) });
+                reports.Add(new(Path.GetRelativePath(run, capture), complete, report, CombatContextReader.Read(document), null));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or JsonException or ArgumentException or InvalidOperationException or FormatException or OverflowException)
-            { capturesComplete = false; reports.Add(new { capture = Path.GetRelativePath(run, capture), complete = false, error = ex.Message }); }
+            { capturesComplete = false; reports.Add(new(Path.GetRelativePath(run, capture), false, null, null, ex.Message)); }
         }
         bool backendVerified = false;
         if (workers == 1)
@@ -106,9 +106,12 @@ public static class Experiment
             if (manifests.Length == 1) { using var m = JsonDocument.Parse(File.ReadAllText(manifests[0])); backendVerified = Fields.Bool(m.RootElement, "complete") == true && Fields.Int(m.RootElement, "capturedDuels") == duels; }
         }
         bool completeRun = !cancelled && exitCode == 0 && launchError is null && capturesComplete && backendVerified;
-        File.WriteAllText(Path.Combine(run, "report.json"), JsonSerializer.Serialize(new { complete = completeRun, captures = reports }, JsonOptions));
+        var overview = ExperimentSummary.Create(duels, workers, reports);
+        File.WriteAllText(Path.Combine(run, "report.json"), JsonSerializer.Serialize(new { complete = completeRun, overview, captures = reports }, JsonOptions));
         File.WriteAllText(Path.Combine(run, "manifest.json"), JsonSerializer.Serialize(new { complete = completeRun, cancelled, exitCode, launchError, requestedDuels = duels, workers, speedValue = speed, seed, traceAi = trace, executable = exe, exeSha256 = exeHash, deck0 = options.GetValueOrDefault("--deck-0"), deck1 = options.GetValueOrDefault("--deck-1"), captureCount = captures.Length, capturesComplete, backendVerified, report = "report.json", backendLog = "backend.log" }, JsonOptions));
         output.WriteLine($"Experiment complete={completeRun}; results: {run}");
+        output.WriteLine($"Backend exit={exitCode}; capture integrity={capturesComplete}; owned process and targets verified={backendVerified}; report: {Path.Combine(run, "report.json")}");
+        ExperimentSummary.Write(overview, output);
         return cancelled ? 130 : completeRun ? 0 : exitCode != 0 ? exitCode : 2;
     }
 }

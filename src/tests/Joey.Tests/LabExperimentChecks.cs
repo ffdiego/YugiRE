@@ -45,6 +45,11 @@ echo '[yugilab] Owned Joey PID 123 closed (verified by Windows process handle).'
             string run = Directory.GetDirectories(results).Single();
             using (var manifest = JsonDocument.Parse(File.ReadAllText(Path.Combine(run, "manifest.json"))))
                 check(manifest.RootElement.GetProperty("complete").GetBoolean() && File.ReadAllText(Path.Combine(run, "report.json")).Contains("future_probe"), "Experiment discovers capture and preserves unknown event in analysis");
+            using (var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(run, "report.json"))))
+            {
+                var overview = report.RootElement.GetProperty("overview");
+                check(overview.GetProperty("observedTerminalDuels").GetInt32() == 1 && overview.GetProperty("unconfirmedDuels").GetInt32() == 0 && overview.GetProperty("events").GetInt32() == 2 && output.ToString().Contains("Duels: 1/1"), "Experiment writes consolidated counts and terminal summary");
+            }
             string fail = Path.Combine(root, "fail"); File.WriteAllText(fail, ""); Environment.SetEnvironmentVariable("TEST_FAIL", fail);
             check(Experiment.Run(args, new StringWriter(), new StringWriter(), expectedExeHash: hash) == 7, "Experiment propagates backend error");
             var failureManifest = Directory.GetFiles(results, "manifest.json", SearchOption.AllDirectories)
@@ -52,6 +57,8 @@ echo '[yugilab] Owned Joey PID 123 closed (verified by Windows process handle).'
                 .Single(doc => doc.RootElement.GetProperty("exitCode").GetInt32() == 7);
             using (failureManifest)
                 check(!failureManifest.RootElement.GetProperty("complete").GetBoolean(), "Experiment writes an incomplete manifest after backend startup failure");
+            var missing = ExperimentSummary.Create(2, 1, []);
+            check(missing.ObservedTerminalDuels is null && missing.UnconfirmedDuels is null && missing.UnreadableOrMissingCaptures == 1 && missing.Issues.Count > 0, "Missing capture leaves duel totals unknown");
             Environment.SetEnvironmentVariable("TEST_FAIL", null);
             string wait = Path.Combine(root, "wait"); File.WriteAllText(wait, ""); Environment.SetEnvironmentVariable("TEST_WAIT", wait);
             using var cancel = new CancellationTokenSource(); cancel.CancelAfter(500);
