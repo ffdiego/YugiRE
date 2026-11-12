@@ -97,7 +97,7 @@ function fixture(options = {}) {
   let allocIndex=0;
   const context = {
     Process: {
-      platform: 'windows', arch: 'ia32', id: 123,
+      platform: options.platform || 'windows', arch: 'ia32', id: 123,
       getCurrentThreadId(){return currentThread;},
       mainModule:{name:'joey_pc.exe',path:'Z:\\passion\\joey_pc.exe',base:ptr(0x400000)},
       findRangeByAddress(p){ return {protection: (p.n === 0x005784E0 || p.n === 0x00578B60 ||
@@ -1295,7 +1295,13 @@ combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
 
 // Instruction witnesses are synthetic CPU contexts, not dynamic validation.
-const points=fixture();
+// The combined set is prohibited in live Windows; only explicit synthetic
+// fixtures can run it as a JS-correlation regression test.
+const blockedCombined=fixture(); blockedCombined.api.installobserver(); blockedCombined.api.tracestart(100);
+assert.throws(()=>blockedCombined.api.traceaistart('combat-context-all-unsafe'),/disabled on Windows/);
+assert.equal(blockedCombined.aiHookCount(),0);
+blockedCombined.api.restore();
+const points=fixture({platform:'synthetic'});
 points.api.installobserver(); points.api.tracestart(2000);
 points.api.traceaistart('combat-context-all-unsafe');
 assert.equal(points.aiHookCount(),19);
@@ -1362,7 +1368,7 @@ assert.throws(()=>invalidPoint.api.traceaistart('combat-context-point:not_a_poin
 assert.equal(invalidPoint.aiHookCount(),0);
 invalidPoint.api.restore();
 
-const pointLoss=fixture(); pointLoss.api.installobserver(); pointLoss.api.tracestart(16);
+const pointLoss=fixture({platform:'synthetic'}); pointLoss.api.installobserver(); pointLoss.api.tracestart(16);
 pointLoss.api.traceaistart('combat-context-all-unsafe');
 const pointLossBefore=new Map(pointLoss.memory);
 pointLoss.aiCall(0x005B1360,[0,0],0,()=>{
