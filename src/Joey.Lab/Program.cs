@@ -12,9 +12,11 @@ public static class Program
         {
             output.WriteLine("Joey.Lab — offline JSONL analysis (.NET 10)");
             output.WriteLine("Usage: dotnet run --project src/Joey.Lab -- summarize capture.jsonl [--json] [--expected-sha256 HASH]");
+            output.WriteLine("       dotnet run --project src/Joey.Lab -- compare LEFT RIGHT [--strict-raw] [--strict-unverified]");
             output.WriteLine("Reads ring-buffer and live_duels JSONL. Does not launch Joey, load Frida or evaluate missing game context.");
             return 0;
         }
+        if (args[0] == "compare") return RunCompare(args, output, error);
         if (args.Length < 2 || args[0] != "summarize") { error.WriteLine("Expected summarize capture.jsonl; use --help"); return 2; }
         bool json = false; string? hash = null;
         for (int i = 2; i < args.Length; i++)
@@ -44,6 +46,21 @@ public static class Program
             return report.HasIntegrityErrors ? 2 : 0;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or InvalidOperationException or FormatException or OverflowException or ArgumentException)
+        { error.WriteLine("Invalid/unsupported capture: " + ex.Message); return 2; }
+    }
+
+    private static int RunCompare(string[] args, TextWriter output, TextWriter error)
+    {
+        if (args.Length < 3 || args.Skip(3).Any(x => x != "--strict-raw" && x != "--strict-unverified"))
+        { error.WriteLine("Expected compare LEFT RIGHT [--strict-raw] [--strict-unverified]"); return 2; }
+        try
+        {
+            var report = RunComparison.Compare(args[1], args[2]);
+            output.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+            return !report.ObservedMatch || (args.Contains("--strict-raw") && !report.RawCommandArgsMatch) ||
+                (args.Contains("--strict-unverified") && report.UnverifiedRawDifferences > 0) ? 1 : 0;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentException or InvalidOperationException or OverflowException)
         { error.WriteLine("Invalid/unsupported capture: " + ex.Message); return 2; }
     }
 }
