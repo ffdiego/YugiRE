@@ -125,3 +125,23 @@ Próxima investigação: comparar a região `005ADD8D` e o epílogo do wrapper
 observação que não reescreva instruções internas. Não provocar novamente o
 crash com todos os hooks; caso um piloto futuro seja aprovado, usar dump
 persistente e isolamento de mudanças, interrompendo no primeiro sintoma.
+
+## Reteste Windows com hooks internos desativados
+
+Após atualizar a branch contendo a mitigação de modo padrão e correções de
+asserções dos testes (commit `a10402c`), o operador informou que
+**concluiu um duelo inteiro sem problemas** utilizando o procedimento de
+`trace ai on combat-context` (modo padrão reduzido, sem pontos internos v2).
+É um relato de validação funcional em jogo real, não uma medição independente
+da integridade da captura; os arquivos de `trace dump`, contadores
+`combatReadPointsArmed`, `overwritten`, erros de leitura e SHA256 do JSONL
+não foram fornecidos nesta atualização. Nenhum número de contextos completos,
+Match ou Mismatch deve ser inferido desse relato.
+
+Esse resultado é consistente com a suspeita de que um dos pontos internos
+ativados na execução anterior participou da corrupção de ESI, mas não
+demonstra qual foi nem exclui diferenças entre partidas. A correção da causa
+raiz e a validação individual de hooks internos continuam pendentes.
+Manter o conjunto completo bloqueado no Windows. Próxima etapa recomendada:
+preservar/inspecionar a captura do reteste e investigar estaticamente os
+trampolines e alternativas de observação sem hooks internos simultâneos.
