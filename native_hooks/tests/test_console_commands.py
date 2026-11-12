@@ -96,7 +96,7 @@ class FakeApi:
         self.trace_calls.append(("ai_decision", side, check_only))
         return {"id": 77, "state": "pending", "side": side, "checkOnly": check_only}
 
-    def traceaistart(self, detailed=False):
+    def traceaistart(self, detailed):
         if not self.trace_active:
             raise RuntimeError("Start trace first")
         call = {"combat-context": ("ai_on_combat_context",),

@@ -356,7 +356,7 @@ def handle_command(command: str, api: object, default_side: int,
         if parts == ["trace", "status"] or parts == ["trace"]:
             show_trace_status(api.tracestatus())
         elif parts == ["trace", "ai", "on"]:
-            show_trace_status(api.traceaistart())
+            show_trace_status(api.traceaistart(False))
         elif parts == ["trace", "ai", "on", "detail"]:
             show_trace_status(api.traceaistart(True))
         elif parts == ["trace", "ai", "on", "gates"]:

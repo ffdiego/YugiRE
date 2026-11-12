@@ -55,8 +55,8 @@ class StartupLauncherTests(unittest.TestCase):
                     events.append(("tracestart", capacity))
                 def tracedemostart(self):
                     events.append("tracedemostart")
-                def traceaistart(self):
-                    events.append("traceaistart")
+                def traceaistart(self, mode):
+                    events.append(("traceaistart", mode))
                     return {"aiHooks": 4, "aiActive": True}
                 def tracemark(self, label):
                     events.append(("tracemark", label))
@@ -124,7 +124,7 @@ class StartupLauncherTests(unittest.TestCase):
             ordered = ["spawn", "attach", "create_script", "load",
                        "bootstrapinfo", "armstartupobserver",
                        ("tracestart", 20000), "tracedemostart",
-                       "traceaistart",
+                       ("traceaistart", False),
                        ("tracemark", "startup-hooks-armed"),
                        ("setdemodecks", {"0": {"main": [42] * 40,
                                               "second": [], "third": []}}),

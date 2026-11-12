@@ -228,7 +228,7 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             configured = api.setdemoseed(seed, seed_start_index)
             print(f"[yugilab] Controlled duel RNG: {configured}", flush=True)
         if trace_ai:
-            ai_state = api.traceaistart()
+            ai_state = api.traceaistart(False)
             print(f"[lab] Passive AI selector/evaluation probes armed: "
                   f"{ai_state['aiHooks']} hooks", flush=True)
         api.tracemark("startup-hooks-armed")
