@@ -40,6 +40,10 @@ public static class Experiment
         string repo = Path.GetFullPath(options.GetValueOrDefault("--repo", Directory.GetCurrentDirectory()));
         if (!File.Exists(Path.Combine(repo, "yugilab", "__main__.py"))) throw new ArgumentException("--repo must point to the repository root");
         string root = Path.GetFullPath(options.GetValueOrDefault("--output-dir", Path.Combine(repo, "scratch", "experiments")));
+        string relativeRoot = Path.GetRelativePath(repo, root);
+        if (!Path.IsPathRooted(relativeRoot) && relativeRoot != ".." && !relativeRoot.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) &&
+            relativeRoot != "scratch" && !relativeRoot.StartsWith("scratch" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            throw new ArgumentException("Results inside the repository must be under ignored scratch/");
         Directory.CreateDirectory(root);
         string run = Path.Combine(root, "experiment-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(run);
