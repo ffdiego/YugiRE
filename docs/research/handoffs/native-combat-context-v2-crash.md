@@ -145,3 +145,29 @@ raiz e a validação individual de hooks internos continuam pendentes.
 Manter o conjunto completo bloqueado no Windows. Próxima etapa recomendada:
 preservar/inspecionar a captura do reteste e investigar estaticamente os
 trampolines e alternativas de observação sem hooks internos simultâneos.
+
+## Análise estática adicional do ponto 005ADD8D
+
+A assinatura esperada do primeiro ponto interno, registrada em
+`kCombatReadPoints`, é `A8 02 75 1B 0C 02`. Decodificação x86 de
+acordo com a posição inicial:
+
+| VA | Bytes | Instrução |
+| --- | --- | --- |
+| `0x005ADD8D` | `A8 02` | `test al, 0x02` |
+| `0x005ADD8F` | `75 1B` | `jne 0x005ADDAC` |
+| `0x005ADD91` | `0C 02` | `or al, 0x02` |
+
+O `Interceptor.attach(0x005ADD8D)` precisa preservar a semântica de um
+salto **condicional curto** incluído na região movida para o trampoline.
+O preflight de assinatura atual só confere os bytes originais; **não testa
+relocação, salto reescrito nem preservação de registradores**. O salto tem
+destino fora dos seis bytes sobrepostos. Este fato aumenta a prioridade
+de analisar o trampoline associado àquele hook, mas não prova erro no Frida.
+
+Próximo avanço sem risco de executar o jogo: inspecionar em Ghidra o
+controle de fluxo de `FUN_005ADD60` por volta de `0x005ADD8D`, os caminhos
+de retorno, a preservação de ESI e a sequência de chamadas/uso de ESI na
+`FUN_005B0F40`. Priorizar observação em entradas/saídas de função
+existentes ou snapshots passivos antes de reabilitar instruções internas.
+Manter `main` e os hooks combinados intactos até haver nova evidência.
