@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "purpose": "minimal native observations for parser/correlation and conditional scalar diagnostics; not independent attribute fixtures",
+  "captureFile": "commands-20261112-015214-332209-pid10848.jsonl",
+  "captureSha256": "424cb09a6d990dbfb0e8795cf97d0260f644f0c2349980937e0b96d14831213f",
+  "metadataExeSha256": null,
+  "expectedBuildSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "cases": [
+    {
+      "source": {
+        "session": 1,
+        "threadId": 22400,
+        "combatCallId": 2,
+        "selectorCallId": 1,
+        "enterSeq": 29,
+        "leaveSeq": 37
+      },
+      "qualification": "diagnostic-only; strict differential incomplete",
+      "stateKind": "selector-window",
+      "slotsAndSide": [
+        0,
+        0,
+        0
+      ],
+      "seedHex": "00000000",
+      "entrySnapshots": {
+        "attacker": {
+          "side": 0,
+          "slot": 0,
+          "identityRaw": 24,
+          "internalCardIndex": 24,
+          "resourceId": null,
+          "positionRaw": 2,
+          "defensePosition": false,
+          "faceUp": true,
+          "monsterFlagsRaw": 0,
+          "playerFlagsRaw": 0,
+          "lifePoints": 8000
+        },
+        "defender": {
+          "side": 1,
+          "slot": 0,
+          "identityRaw": 67113510,
+          "internalCardIndex": 550,
+          "resourceId": null,
+          "positionRaw": 514,
+          "defensePosition": false,
+          "faceUp": true,
+          "monsterFlagsRaw": 0,
+          "playerFlagsRaw": 0,
+          "lifePoints": 8000
+        }
+      },
+      "observedServices": [
+        {
+          "seq": 30,
+          "function": "own_stats",
+          "returnVa": "0x5b0f97",
+          "statsHex": "18000F05A40600007E040000",
+          "sideAndSlot": [
+            0,
+            0
+          ]
+        },
+        {
+          "seq": 31,
+          "function": "opponent_stats",
+          "returnVa": "0x5b0fae",
+          "statsHex": "260212056C07000084030000",
+          "sideAndSlot": [
+            1,
+            0
+          ]
+        },
+        {
+          "seq": 32,
+          "function": "resource",
+          "returnVa": "0x5b0fb8",
+          "argsRaw": [
+            84869144
+          ],
+          "returnRaw": 14483533,
+          "returnSigned": 14483533
+        },
+        {
+          "seq": 33,
+          "function": "resource",
+          "returnVa": "0x5b1009",
+          "argsRaw": [
+            85066278
+          ],
+          "returnRaw": 14483987,
+          "returnSigned": 14483987
+        },
+        {
+          "seq": 34,
+          "function": "equipment_count",
+          "returnVa": "0x5b1060",
+          "argsRaw": [
+            0,
+            0,
+            657
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 35,
+          "function": "field_query",
+          "returnVa": "0x5b1227",
+          "argsRaw": [
+            0,
+            1423
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 36,
+          "function": "resource",
+          "returnVa": "0x5b1251",
+          "argsRaw": [
+            84869144
+          ],
+          "returnRaw": 14483533,
+          "returnSigned": 14483533
+        }
+      ],
+      "pathDecisions": [
+        "pierce:branch-not-evaluated",
+        "gain:nonpositive;field-and-phase-not-evaluated",
+        "loss:field-nonpositive;phase-not-evaluated"
+      ],
+      "expectedNativeHex": "000438FF",
+      "requiredUnknowns": {
+        "exeSha256Attestation": null,
+        "playerFlagsAtConsumption": null,
+        "attributeModifierManifest": null
+      }
+    },
+    {
+      "source": {
+        "session": 1,
+        "threadId": 22400,
+        "combatCallId": 26,
+        "selectorCallId": 1,
+        "enterSeq": 56,
+        "leaveSeq": 64
+      },
+      "qualification": "diagnostic-only; strict differential incomplete",
+      "stateKind": "selector-window",
+      "slotsAndSide": [
+        0,
+        0,
+        0
+      ],
+      "seedHex": "00000000",
+      "entrySnapshots": {
+        "attacker": {
+          "side": 0,
+          "slot": 0,
+          "identityRaw": 515,
+          "internalCardIndex": 515,
+          "resourceId": null,
+          "positionRaw": 2,
+          "defensePosition": false,
+          "faceUp": true,
+          "monsterFlagsRaw": 0,
+          "playerFlagsRaw": 0,
+          "lifePoints": 8000
+        },
+        "defender": {
+          "side": 1,
+          "slot": 0,
+          "identityRaw": 67113510,
+          "internalCardIndex": 550,
+          "resourceId": null,
+          "positionRaw": 514,
+          "defensePosition": false,
+          "faceUp": true,
+          "monsterFlagsRaw": 0,
+          "playerFlagsRaw": 0,
+          "lifePoints": 8000
+        }
+      },
+      "observedServices": [
+        {
+          "seq": 57,
+          "function": "own_stats",
+          "returnVa": "0x5b0f97",
+          "statsHex": "03020F0234080000F4010000",
+          "sideAndSlot": [
+            0,
+            0
+          ]
+        },
+        {
+          "seq": 58,
+          "function": "opponent_stats",
+          "returnVa": "0x5b0fae",
+          "statsHex": "260212056C07000084030000",
+          "sideAndSlot": [
+            1,
+            0
+          ]
+        },
+        {
+          "seq": 59,
+          "function": "resource",
+          "returnVa": "0x5b0fb8",
+          "argsRaw": [
+            34537987
+          ],
+          "returnRaw": 14484979,
+          "returnSigned": 14484979
+        },
+        {
+          "seq": 60,
+          "function": "resource",
+          "returnVa": "0x5b1009",
+          "argsRaw": [
+            85066278
+          ],
+          "returnRaw": 14483987,
+          "returnSigned": 14483987
+        },
+        {
+          "seq": 61,
+          "function": "equipment_count",
+          "returnVa": "0x5b1060",
+          "argsRaw": [
+            0,
+            0,
+            657
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 62,
+          "function": "field_query",
+          "returnVa": "0x5b11f4",
+          "argsRaw": [
+            1,
+            1423
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 63,
+          "function": "resource",
+          "returnVa": "0x5b1251",
+          "argsRaw": [
+            34537987
+          ],
+          "returnRaw": 14484979,
+          "returnSigned": 14484979
+        }
+      ],
+      "pathDecisions": [
+        "pierce:branch-not-evaluated",
+        "gain:field-nonpositive;phase-not-evaluated",
+        "loss:nonpositive;field-and-phase-not-evaluated"
+      ],
+      "expectedNativeHex": "0808C800",
+      "requiredUnknowns": {
+        "exeSha256Attestation": null,
+        "playerFlagsAtConsumption": null,
+        "attributeModifierManifest": null
+      }
+    },
+    {
+      "source": {
+        "session": 1,
+        "threadId": 22400,
+        "combatCallId": 78,
+        "selectorCallId": 77,
+        "enterSeq": 202,
+        "leaveSeq": 214
+      },
+      "qualification": "diagnostic-only; strict differential incomplete",
+      "stateKind": "selector-window",
+      "slotsAndSide": [
+        0,
+        0,
+        0
+      ],
+      "seedHex": "00000000",
+      "entrySnapshots": {
+        "attacker": {
+          "side": 0,
+          "slot": 0,
+          "identityRaw": 251658831,
+          "internalCardIndex": 591,
+          "resourceId": null,
+          "positionRaw": 514,
+          "defensePosition": false,
+          "faceUp": true,
+          "monsterFlagsRaw": 0,
+          "playerFlagsRaw": 0,
+          "lifePoints": 6300
+        },
+        "defender": {
+          "side": 1,
+          "slot": 0,
+          "identityRaw": 419434642,
+          "internalCardIndex": 146,
+          "resourceId": null,
+          "positionRaw": 513,
+          "defensePosition": true,
+          "faceUp": false,
+          "monsterFlagsRaw": 0,
+          "playerFlagsRaw": 0,
+          "lifePoints": 7700
+        }
+      },
+      "observedServices": [
+        {
+          "seq": 203,
+          "function": "own_stats",
+          "returnVa": "0x5b0f97",
+          "statsHex": "4F020F050807000040060000",
+          "sideAndSlot": [
+            0,
+            0
+          ]
+        },
+        {
+          "seq": 204,
+          "function": "opponent_stats",
+          "returnVa": "0x5b0fae",
+          "statsHex": "00000000E8030000E8030000",
+          "sideAndSlot": [
+            1,
+            0
+          ]
+        },
+        {
+          "seq": 205,
+          "function": "resource",
+          "returnVa": "0x5b0fb8",
+          "argsRaw": [
+            84869711
+          ],
+          "returnRaw": 14484807,
+          "returnSigned": 14484807
+        },
+        {
+          "seq": 206,
+          "function": "resource",
+          "returnVa": "0x5b1009",
+          "argsRaw": [
+            0
+          ],
+          "returnRaw": 14548991,
+          "returnSigned": 14548991
+        },
+        {
+          "seq": 207,
+          "function": "equipment_count",
+          "returnVa": "0x5b1060",
+          "argsRaw": [
+            0,
+            0,
+            657
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 208,
+          "function": "resource",
+          "returnVa": "0x5b10fd",
+          "argsRaw": [
+            84869711
+          ],
+          "returnRaw": 14484807,
+          "returnSigned": 14484807
+        },
+        {
+          "seq": 209,
+          "function": "context_count",
+          "returnVa": "0x5b1117",
+          "argsRaw": [
+            0,
+            0,
+            1313,
+            0
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 210,
+          "function": "context_count",
+          "returnVa": "0x5b112f",
+          "argsRaw": [
+            0,
+            0,
+            1540,
+            0
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 211,
+          "function": "context_count",
+          "returnVa": "0x5b1153",
+          "argsRaw": [
+            0,
+            0,
+            1313,
+            1
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 212,
+          "function": "context_count",
+          "returnVa": "0x5b116f",
+          "argsRaw": [
+            0,
+            0,
+            1540,
+            1
+          ],
+          "returnRaw": 0,
+          "returnSigned": 0
+        },
+        {
+          "seq": 213,
+          "function": "resource",
+          "returnVa": "0x5b1251",
+          "argsRaw": [
+            84869711
+          ],
+          "returnRaw": 14484807,
+          "returnSigned": 14484807
+        }
+      ],
+      "pathDecisions": [
+        "gain:nonpositive;field-and-phase-not-evaluated",
+        "loss:nonpositive;field-and-phase-not-evaluated"
+      ],
+      "expectedNativeHex": "08080000",
+      "requiredUnknowns": {
+        "exeSha256Attestation": null,
+        "playerFlagsAtConsumption": null,
+        "attributeModifierManifest": null
+      }
+    }
+  ]
+}

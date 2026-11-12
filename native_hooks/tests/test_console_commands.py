@@ -533,6 +533,19 @@ class ConsoleCommandTests(unittest.TestCase):
             self.assertTrue(handle_command("trace ai on combat-context", self.api, 1))
         self.assertIn(("ai_on_combat_context",), self.api.trace_calls)
 
+    def test_export_keeps_host_attestation_without_deck_probe(self):
+        from tempfile import TemporaryDirectory
+        import json
+        expected = "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de"
+        self.api.trace_session = 1
+        original_stop = self.api.tracestop
+        self.api.tracestop = lambda: {**original_stop(), "hostAttestedExeSha256": expected}
+        with TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
+            target = Path(directory) / "attested.jsonl"
+            save_command_trace(self.api, target)
+            header = json.loads(target.read_text().splitlines()[0])
+        self.assertEqual(header["exeSha256"], expected)
+
     def test_trace_ai_probe_captures_native_output_buffers(self):
         from tempfile import TemporaryDirectory
         import json

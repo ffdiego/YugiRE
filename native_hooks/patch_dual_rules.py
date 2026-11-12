@@ -223,7 +223,7 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                   "session": status["session"], "capacity": status["capacity"],
                   "seen": status["seen"], "retained": status["retained"],
                   "overwritten": status["overwritten"],
-                  "exeSha256": status.get("deckFingerprint"),
+                  "exeSha256": status.get("hostAttestedExeSha256") or status.get("deckFingerprint"),
                   "note": "Producer inputs and optional passive AI observations. "
                           "AI output buffers may represent hypothetical states."}
         destination.write(json.dumps(header, ensure_ascii=False) + "\n")

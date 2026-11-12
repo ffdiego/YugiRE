@@ -116,3 +116,28 @@ readError/perda. Sem isso, contagem de confrontos completos observados neste
 marco é **0**. Não há evidência nova discriminante para Goblin Attack Force.
 S2 pode preparar esses pontos offline; S3 depende do JSONL Windows original com
 atestado de hash e integridade. S4 fica bloqueada até observação discriminante.
+
+## Revisão S3 — primeira captura, 2026-11-12
+
+Ver [auditoria S3](../evidence/combat-context-pilot-2026-11-12.md). O piloto
+forneceu 64 pares estruturalmente íntegros e 64 correspondências diagnósticas da
+fórmula usando outputs nativos como inputs. Isso não elimina as lacunas temporais
+ou valida o cálculo independente de atributos descritos acima.
+
+Correções de interpretação da v1:
+
+- A ABI semântica de 004022E0 é `ushort`; a stack contém o DWORD completo do
+  cabeçalho de stats, e somente low16 de EAX é recurso. Não decodificar `argsRaw`
+  inteiro como índice. O recurso efetivo FFFF do rival oculto não identifica sua carta.
+- `resourceId:null` no snapshot e um retorno `resource` observado têm proveniências
+  diferentes; não sobrescrever o recurso real do slot com o recurso efetivo estimado.
+- Ausência de predicado exige reconstrução do caminho; registrar `NotEvaluated`
+  com razão. Uma expressão composta pode estar determinada sem todos os seus
+  termos, mas os termos ausentes continuam desconhecidos.
+- Flags de jogador em enter F40 não são uma observação das leituras em 005B1195/
+  005B11C6. Estabilidade ainda precisa de prova; saída coincidente não a fornece.
+- Adaptação escalar de stats `AfterADDC0` não pode usar classe/Level default para
+  reestimar ocultos. Separar atributos reais, estimativa observada e input efetivo.
+- O primeiro JSONL tem `exeSha256:null`; a correção do exportador preserva atestado
+  em capturas futuras, sem preencher o original. Exigir proveniência externa para
+  qualificá-lo como build atestado.

@@ -1004,6 +1004,8 @@ function stopDeckProbe() {
 function traceStatus() {
   return {
     active: commandTraceHook !== null,
+    // Host attestation exists independently of whether deck tracing was armed.
+    hostAttestedExeSha256: deckFingerprint,
     ...(deckObserver === null ? {deckActive:false} : deckObserver.status()),
     prepActive: summonPrepHooks.length > 0,
     prepHooks: summonPrepHooks.length,

@@ -1151,6 +1151,11 @@ console.log('PASS: CPU AI filter gates, direct callers, candidate identities, mo
 // Synthetic call trees only: these tests do not execute or emulate Joey rules.
 const combat=fixture();
 combat.api.installobserver();
+assert.equal(combat.api.tracestatus().hostAttestedExeSha256,null);
+combat.api.authorizedeckobserver('db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
+assert.equal(combat.api.tracestatus().hostAttestedExeSha256,
+  'db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
+assert.equal(combat.api.tracestatus().deckActive,false);
 combat.api.tracestart(2000);
 assert.equal(combat.api.traceaistart('combat-context').combatContextActive,true);
 assert.equal(combat.aiHookCount(),10);
