@@ -5,6 +5,8 @@ internal static class LabCaptureChecks
 {
     public static void Run(Action<bool, string> check)
     {
+        LabCompareChecks.Run(check);
+        LabCombatContextChecks.Run(check);
         CaptureReport Analyze(string text) => CaptureAnalyzer.Analyze(CaptureReader.Read(new StringReader(text), "synthetic", "unhashed-test-input"));
         void Reject(string text, string name)
         {
@@ -48,6 +50,22 @@ internal static class LabCaptureChecks
             "Lab CLI rejects malformed fingerprint before opening a file");
 
         string fixture = Path.Combine(AppContext.BaseDirectory, "Fixtures", "lab-capture-prefix.jsonl");
+        string left = Path.Combine(AppContext.BaseDirectory, "Fixtures", "compare-synthetic-left.jsonl");
+        string right = Path.Combine(AppContext.BaseDirectory, "Fixtures", "compare-synthetic-right.jsonl");
+        var comparison = RunComparison.Compare(left, right);
+        check(comparison.ObservedMatch && !comparison.RawCommandArgsMatch && comparison.Duels.Count == 2 &&
+            comparison.Duels.All(d => d.Differences.Single().Origin == "verified_card_id_pointer_residue"),
+            "Lab compare agrees with Python synthetic high-word fixture without hiding raw differences");
+        check(Joey.Lab.Program.Run(["compare", left, right, "--strict-raw"], new StringWriter(), new StringWriter()) == 1,
+            "Lab compare strict raw detects differing words");
+        string damaged = Path.Combine(Path.GetTempPath(), $"joey-compare-{Guid.NewGuid()}.jsonl");
+        try
+        {
+            File.WriteAllText(damaged, File.ReadAllText(right).Replace("\"complete\": true", "\"complete\": false"));
+            check(Joey.Lab.Program.Run(["compare", left, damaged], new StringWriter(), new StringWriter()) == 2,
+                "Lab compare rejects incomplete footer");
+        }
+        finally { File.Delete(damaged); }
         var document = CaptureReader.Read(fixture);
         var prefix = CaptureAnalyzer.Analyze(document);
         check(!prefix.HasIntegrityErrors && prefix.EventCount == 30 && prefix.ComputedStatsCount == 14 && prefix.CombatAssessments.Count == 1,

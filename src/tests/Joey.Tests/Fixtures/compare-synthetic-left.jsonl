@@ -1,0 +1,20 @@
+{"kind": "metadata", "formatVersion": 2, "requestedDuels": 2, "speedValue": 600, "deckPlans": {"0": {"main": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}}, "rngSeedOverride": {"baseSeed": 12345, "globalDuelStartIndex": 0, "algorithm": "mix32-v1"}}
+{"kind": "demo_init", "function": "scene_config", "phase": "enter", "requestedSceneMode": 7, "seq": 1, "timestampMs": 1001, "threadId": 200}
+{"kind": "demo_init", "function": "rng_seed_candidate", "phase": "enter", "duelEntrySeedCall": true, "candidateSeedRaw": 8, "seedOverrideApplied": true, "effectiveSeedRaw": 2435775735, "globalDuelIndex": 0, "seq": 2, "timestampMs": 1002, "threadId": 200}
+{"kind": "demo_init", "function": "deck_shuffle", "phase": "leave", "side": 0, "deck": {"indices": [1, 2], "words": [65537, 131074]}, "seq": 3, "timestampMs": 1003, "threadId": 200}
+{"kind": "demo_init", "function": "deck_shuffle", "phase": "leave", "side": 1, "deck": {"indices": [4, 5], "words": [65540, 131077]}, "seq": 4, "timestampMs": 1004, "threadId": 200}
+{"kind": "ai_probe", "function": "selector", "phase": "leave", "chosen": 1, "seq": 5, "timestampMs": 1005, "threadId": 200}
+{"kind": "demo_executor", "function": "place", "side": 0, "handIndex": 1, "seq": 6, "timestampMs": 1006, "threadId": 200}
+{"kind": "command", "opcodeMasked": "0x00CE", "opcodeRaw": "0x00CE", "sideBit15": 0, "caller": "0x5abeab", "args": [206, 655383, 0, 0], "ceNativeState": {"context": 32769, "source": 23, "stage": 37}, "seq": 7, "timestampMs": 1007, "threadId": 200}
+{"kind": "command", "opcodeMasked": "0x0086", "opcodeRaw": "0x0086", "sideBit15": 0, "caller": "0x574804", "args": [134, 1093, 0, 0], "seq": 8, "timestampMs": 1008, "threadId": 200}
+{"kind": "command", "opcodeMasked": "0x0004", "opcodeRaw": "0x0004", "sideBit15": 0, "caller": "0x5bc545", "args": [458756, 1, 0, 0], "terminalNativeState": {"life": [0, 7000]}, "seq": 9, "timestampMs": 1009, "threadId": 200}
+{"kind": "demo_init", "function": "scene_config", "phase": "enter", "requestedSceneMode": 7, "seq": 10, "timestampMs": 1010, "threadId": 200}
+{"kind": "demo_init", "function": "rng_seed_candidate", "phase": "enter", "duelEntrySeedCall": true, "candidateSeedRaw": 8, "seedOverrideApplied": true, "effectiveSeedRaw": 4228375765, "globalDuelIndex": 1, "seq": 11, "timestampMs": 1011, "threadId": 200}
+{"kind": "demo_init", "function": "deck_shuffle", "phase": "leave", "side": 0, "deck": {"indices": [2, 2], "words": [65538, 131074]}, "seq": 12, "timestampMs": 1012, "threadId": 200}
+{"kind": "demo_init", "function": "deck_shuffle", "phase": "leave", "side": 1, "deck": {"indices": [4, 5], "words": [65540, 131077]}, "seq": 13, "timestampMs": 1013, "threadId": 200}
+{"kind": "ai_probe", "function": "selector", "phase": "leave", "chosen": 1, "seq": 14, "timestampMs": 1014, "threadId": 200}
+{"kind": "demo_executor", "function": "place", "side": 0, "handIndex": 1, "seq": 15, "timestampMs": 1015, "threadId": 200}
+{"kind": "command", "opcodeMasked": "0x00CE", "opcodeRaw": "0x00CE", "sideBit15": 0, "caller": "0x5abeab", "args": [206, 655383, 0, 0], "ceNativeState": {"context": 32769, "source": 23, "stage": 37}, "seq": 16, "timestampMs": 1016, "threadId": 200}
+{"kind": "command", "opcodeMasked": "0x0086", "opcodeRaw": "0x0086", "sideBit15": 0, "caller": "0x574804", "args": [134, 1093, 0, 0], "seq": 17, "timestampMs": 1017, "threadId": 200}
+{"kind": "command", "opcodeMasked": "0x0004", "opcodeRaw": "0x0004", "sideBit15": 0, "caller": "0x5bc545", "args": [458756, 1, 0, 0], "terminalNativeState": {"life": [0, 7000]}, "seq": 18, "timestampMs": 1018, "threadId": 200}
+{"kind": "capture_summary", "complete": true, "overwritten": 0, "capturedDuels": 2, "eventsWritten": 18, "rngSeedOverridesApplied": 2}
