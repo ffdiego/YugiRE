@@ -257,7 +257,9 @@ const kCombatContextTargets = [
 // Interior hooks are NOT armed by default after the Windows access violation
 // at 005B1195. Each can be explicitly selected for supervised diagnostics.
 // A combined mode exists only for offline synthetic tests; do not use it in Joey.
-// Minimum complete instruction spans (>=5 bytes); no interior onLeave.
+// Minimum complete instruction spans (>=5 bytes). Interior listeners MUST use
+// the bare function probe overload: a JS {onEnter} call listener can still trap
+// returns internally and replace [ESP], which here may hold a saved register.
 const kCombatReadPoints = [
   ['own_visibility_consumed', '0x005ADD8D', 'A802751B0C02'],
   ['opponent_visible_taken', '0x005ADE2C', '8B4C240C51'],
@@ -1464,7 +1466,7 @@ function startAiProbe(mode = false) {
     }
     if (withCombat) {
       for (const point of readPoints) {
-        hooks.push(Interceptor.attach(point.address, {onEnter() {
+        hooks.push(Interceptor.attach(point.address, function () {
           const stack = combatContextStacks.get(Process.getCurrentThreadId()) || [];
           const frame = stack.length ? stack[stack.length - 1] : null;
           if (!frame || frame.suppressed) return;
@@ -1507,7 +1509,7 @@ function startAiProbe(mode = false) {
             }
           } catch (error) { event.readError = String(error); }
           recordTraceEvent(event);
-        }}));
+        }));
       }
       for (const target of kCombatContextTargets) {
         hooks.push(Interceptor.attach(target.address, {

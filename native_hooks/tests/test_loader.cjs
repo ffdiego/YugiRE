@@ -6,6 +6,19 @@ const vm = require('node:vm');
 const path = require('node:path');
 const source = fs.readFileSync(path.resolve(__dirname, '../yugire_dual_loader.js'), 'utf8');
 
+// Bounded model of Gum's JS call-listener vs probe-listener distinction.
+// Models only the post-callback return-slot write, NOT x86 or Frida relocation.
+// Source: frida-gum/17.0.0 gumquickinterceptor.c + guminterceptor.c.
+function syntheticInstructionHit(callbacks, receiver, leaveTrampoline) {
+  if (typeof callbacks === 'function') {
+    callbacks.call(receiver);
+  } else {
+    callbacks.onEnter.call(receiver);
+    // A JS call listener has a native on_leave even without a JS onLeave.
+    if (receiver.context.esp) receiver.context.esp.writeU32(leaveTrampoline);
+  }
+}
+
 function fixture(options = {}) {
   let currentThread = 778;
   const memory = new Map();
@@ -242,7 +255,8 @@ function fixture(options = {}) {
     instruction(address, registers={}) {
       const callbacks=aiHandlers.get(address);
       if (!callbacks) throw new Error('Instruction hook not installed');
-      callbacks.onEnter.call({context:Object.fromEntries(Object.entries(registers).map(([k,v])=>[k,ptr(v)]))});
+      syntheticInstructionHit(callbacks, {context:Object.freeze(
+        Object.fromEntries(Object.entries(registers).map(([k,v])=>[k,ptr(v)])))}, 0x0871120F);
     },
     prepCall(address,args=[],retval=1,beforeLeave=null,caller=0x005B1337) {
       const callback=prepHandlers.get(address);
@@ -1299,6 +1313,32 @@ combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
 
 // Instruction witnesses are synthetic CPU contexts, not dynamic validation.
+// Negative control: the former object shape overwrites a synthetic saved ESI
+// even when its onEnter returns immediately and there is no JS onLeave.
+let modeledSavedEsi=0xD44;
+syntheticInstructionHit({onEnter() {}},
+  {context:{esp:{writeU32(value){modeledSavedEsi=value;}}}},0x0871120F);
+assert.equal(modeledSavedEsi,0x0871120F);
+for (const position of [0,2]) {
+  const probe=fixture(); probe.api.installobserver(); probe.api.tracestart(100);
+  probe.api.traceaistart('combat-context-point:own_visibility_consumed');
+  const stackSlot=0x001AE970;
+  probe.memory.set(stackSlot,0xD44); // ADD60 PUSH ESI: caller's rival offset
+  probe.memory.set(stackSlot+4,0x005B0F97); // real wrapper return slot
+  const before=new Map(probe.memory);
+  probe.aiCall(0x005B1360,[0,0],0,()=>{
+    probe.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+      probe.aiCall(0x005ADD60,[0,0,own],0,()=>{
+        probe.instruction(0x005ADD8D,{eax:position,esi:0x00A55D7A,esp:stackSlot});
+      },0x005B0F97);
+    });
+  });
+  // Suppressed/orphan hits must also leave the stack intact.
+  probe.instruction(0x005ADD8D,{esp:stackSlot});
+  assert.deepEqual(probe.memory,before);
+  probe.api.tracestop(); probe.api.restore();
+}
+console.log('PASS: instruction probes preserve synthetic saved ESI and return slot; object-listener negative control detects overwrite');
 // The combined set is prohibited in live Windows; only explicit synthetic
 // fixtures can run it as a JS-correlation regression test.
 const blockedCombined=fixture(); blockedCombined.api.installobserver(); blockedCombined.api.tracestart(100);
