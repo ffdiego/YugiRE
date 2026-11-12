@@ -1321,6 +1321,10 @@ function startAiProbe(mode = false) {
   const pointName = typeof mode === 'string' && mode.startsWith(pointPrefix)
     ? mode.slice(pointPrefix.length) : null;
   const allUnsafe = mode === 'combat-context-all-unsafe';
+  // The nine-point combination coincided with a live Windows register-corruption
+  // crash; block it even if a caller bypasses the Python console and calls RPC.
+  if (allUnsafe && Process.platform === 'windows')
+    throw new Error('Combined interior combat-context hooks disabled on Windows after access violation');
   const withCombat = mode === 'combat-context' || allUnsafe || pointName !== null;
   if (pointName !== null && !kCombatReadPoints.some(point => point.name === pointName))
     throw new Error('Unknown combat-context observation point: ' + pointName);
