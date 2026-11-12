@@ -5,6 +5,7 @@ internal static class LabCaptureChecks
 {
     public static void Run(Action<bool, string> check)
     {
+        LabCompareChecks.Run(check);
         CaptureReport Analyze(string text) => CaptureAnalyzer.Analyze(CaptureReader.Read(new StringReader(text), "synthetic", "unhashed-test-input"));
         void Reject(string text, string name)
         {

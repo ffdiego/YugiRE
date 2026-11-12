@@ -60,7 +60,7 @@ public static class Program
             return !report.ObservedMatch || (args.Contains("--strict-raw") && !report.RawCommandArgsMatch) ||
                 (args.Contains("--strict-unverified") && report.UnverifiedRawDifferences > 0) ? 1 : 0;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentException or InvalidOperationException or OverflowException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidDataException or ArgumentException or InvalidOperationException or OverflowException or FormatException)
         { error.WriteLine("Invalid/unsupported capture: " + ex.Message); return 2; }
     }
 }
