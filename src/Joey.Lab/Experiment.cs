@@ -73,7 +73,7 @@ public static class Experiment
             }
             catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException) { launchError = ex.Message; Record("Backend error: " + ex.Message); }
         }
-        logWriter.Flush();
+        logWriter.Dispose(); // Windows disallows reopening the log while StreamWriter owns it.
         var captures = Directory.GetFiles(backend, "*.jsonl", SearchOption.AllDirectories).Order().ToArray();
         var reports = new List<object>(); var documents = new Dictionary<string, CaptureDocument>(); bool capturesComplete = captures.Length == workers;
         foreach (string capture in captures)

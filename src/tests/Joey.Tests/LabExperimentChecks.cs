@@ -47,6 +47,11 @@ echo '[yugilab] Owned Joey PID 123 closed (verified by Windows process handle).'
                 check(manifest.RootElement.GetProperty("complete").GetBoolean() && File.ReadAllText(Path.Combine(run, "report.json")).Contains("future_probe"), "Experiment discovers capture and preserves unknown event in analysis");
             string fail = Path.Combine(root, "fail"); File.WriteAllText(fail, ""); Environment.SetEnvironmentVariable("TEST_FAIL", fail);
             check(Experiment.Run(args, new StringWriter(), new StringWriter(), expectedExeHash: hash) == 7, "Experiment propagates backend error");
+            var failureManifest = Directory.GetFiles(results, "manifest.json", SearchOption.AllDirectories)
+                .Select(path => JsonDocument.Parse(File.ReadAllText(path)))
+                .Single(doc => doc.RootElement.GetProperty("exitCode").GetInt32() == 7);
+            using (failureManifest)
+                check(!failureManifest.RootElement.GetProperty("complete").GetBoolean(), "Experiment writes an incomplete manifest after backend startup failure");
             Environment.SetEnvironmentVariable("TEST_FAIL", null);
             string wait = Path.Combine(root, "wait"); File.WriteAllText(wait, ""); Environment.SetEnvironmentVariable("TEST_WAIT", wait);
             using var cancel = new CancellationTokenSource(); cancel.CancelAfter(500);

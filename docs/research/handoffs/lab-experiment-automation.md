@@ -26,3 +26,9 @@ Ajustar o caminho do EXE e dos decks ao ambiente local. O processo exibe a pasta
 ## Evidência offline e próximo passo
 
 Fedora: build da solução sem restore, 675 checks .NET com DAT/deck locais, suítes Python `native_hooks` e `yugilab`, e três testes JS do backend. Os testes .NET usam processos shell simulados para sucesso, erro, cancelamento e descoberta de JSONL; o teste Python cobre cancelamento externo antes do spawn. Não foram executados Joey, Frida ou o piloto Windows. O próximo passo é executar o comando acima no Windows e inspecionar os artefatos e o encerramento do PID; até então a integração real permanece não validada.
+
+## Falha observada no primeiro piloto e correção offline
+
+O operador executou o piloto de três duelos no Windows. O backend criou o PID 16916 suspenso, mas não chegou ao `resume`: o RPC de trace de IA rejeitou o modo recebido. O próprio backend registrou o encerramento desse PID pelo handle Windows; não há duelos observados nesse piloto. Em seguida, o Joey.Lab falhou ao reabrir `backend.log` ainda aberto para escrita, impedindo a geração do manifesto de falha. A mensagem `Unable to start idund` também apareceu; seu impacto permanece desconhecido.
+
+O host agora passa `False` explicitamente ao RPC para selecionar os quatro hooks padrão, inclusive no console legado. Isso evita depender da interpretação de um argumento omitido pelo transporte Frida; não modifica hooks. Os mocks exigem o argumento explícito. O Joey.Lab fecha o log antes de relê-lo e o teste de falha exige manifesto incompleto. Essas correções foram verificadas offline; não provam que o transporte real ou o restante do startup funcionem no Windows. Próximo passo: atualizar a branch no Windows e repetir exatamente o piloto acima, preservando o log e o manifesto se houver nova falha.
