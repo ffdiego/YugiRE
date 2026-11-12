@@ -1292,7 +1292,7 @@ removidos pode ser recuperado no Git. Arquivos históricos relevantes:
 ## Piloto S2: contexto passivo de combate (preparado offline)
 
 `trace ai on combat-context` é opt-in e ainda **não foi validado no Windows**.
-Usa o [contrato v1](../docs/research/ai-combat-observation-contract.md).
+A revisão atual usa o [contrato v2](../docs/research/ai-combat-observation-contract.md).
 Revisar a implementação antes da ativação, conforme M3 de `PLANS.md`.
 Não executar Joey no Fedora. O piloto deve ocorrer no processo próprio do operador.
 
@@ -1334,7 +1334,7 @@ comportamento anormal, retorno normal do jogo). Ausência de sintomas não prova
 que o overhead do hook seja zero. O host já exporta fingerprint e contadores;
 conferir que estejam realmente presentes, não completar pelo nome do arquivo.
 
-O modo adiciona dez listeners de entrada de função: dois seletores, F40 e sete
+O modo adiciona nove pontos internos de consumo e dez listeners de entrada de função: dois seletores, F40 e sete
 serviços; DD30 isolado não é usado. Somente chamadas dentro de um seletor são
 capturadas. Máximo de 64 confrontos por ativação e 24 filhos por confronto.
 `combat_context_limit` marca o limite; depois dele não há leitura de contexto.
@@ -1342,7 +1342,12 @@ Os listeners continuam instalados até `trace ai off`/`trace off`; o trace de
 comandos e os eventos de seletor continuam sujeitos ao buffer global limitado.
 `combatContextCount` conta entradas observadas, inclusive as com erros.
 
-Registros `kind=combat_context`, `schemaVersion=1`:
+Registros `kind=combat_context`, `schemaVersion=2` (leitores v1 podem retornar Unsupported):
+
+O [handoff v2](../docs/research/handoffs/native-combat-context-v2-pilot.md) detalha
+os pontos internos, checklist de completude, cenário Axe Raider/Gemini Elf e
+a interface proposta para o Terra. Metadata inclui PID, caminho do módulo e
+hash atestado; esses campos ausentes permanecem null.
 
 - `enter/combat_event`: argumentos, caller, seed de quatro bytes, snapshots dos
   dois slots e erros por campo. `resourceId` no snapshot fica null; consultar os
