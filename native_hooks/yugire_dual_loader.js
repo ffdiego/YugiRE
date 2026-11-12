@@ -237,6 +237,8 @@ let combatContextMode = false;
 let combatContextCount = 0;
 let combatContextLimitReported = false;
 let combatContextGeneration = 0;
+let combatContextSchemaVersion = 1;
+let combatReadPointsArmed = [];
 let combatContextStacks = new Map();
 const kCombatContextLimit = 64;
 // Function entries only. Return VAs exclude calls nested inside stat producers.
@@ -252,8 +254,10 @@ const kCombatContextTargets = [
   name, va:address, address:va(address), argCount, outputSize,
   returns:returns.map(address => va(address))
 }));
-// Interior observation points: minimum complete instruction spans (>=5 bytes).
-// Callbacks only read context/memory; no onLeave at a mid-function address.
+// Interior hooks are NOT armed by default after the Windows access violation
+// at 005B1195. Each can be explicitly selected for supervised diagnostics.
+// A combined mode exists only for offline synthetic tests; do not use it in Joey.
+// Minimum complete instruction spans (>=5 bytes); no interior onLeave.
 const kCombatReadPoints = [
   ['own_visibility_consumed', '0x005ADD8D', 'A802751B0C02'],
   ['opponent_visible_taken', '0x005ADE2C', '8B4C240C51'],
@@ -1029,6 +1033,8 @@ function traceStatus() {
     combatContextActive: combatContextMode,
     combatContextCount,
     combatContextLimit: kCombatContextLimit,
+    combatContextSchemaVersion,
+    combatReadPointsArmed: combatReadPointsArmed.slice(),
     aiHooks: aiProbeHooks.length,
     demoActive: demoExecutorHook !== null,
     demoHooks: (demoExecutorHook === null ? 0 : 1) + demoSetupHooks.length,
@@ -1213,7 +1219,7 @@ function readSelectorHandSnapshot(side) {
 // This is a *passive* probe: never invokes FUN_005B0F40 or FUN_0056DD30.
 // Only events nested inside an observed selector are kept to avoid renderer noise.
 function combatContextIdentity(frame) {
-  return {kind:'combat_context', schemaVersion:2, session:frame.session,
+  return {kind:'combat_context', schemaVersion:combatContextSchemaVersion, session:frame.session,
     threadId:frame.threadId, combatCallId:frame.callId,
     selectorCallId:frame.selectorCallId, stateKind:'selector-window'};
 }
@@ -1231,7 +1237,7 @@ function enterCombatContext(invocation, args) {
     frame.suppressed = true;
     if (!combatContextLimitReported) {
       combatContextLimitReported = true;
-      recordTraceEvent({kind:'combat_context_limit', schemaVersion:2,
+      recordTraceEvent({kind:'combat_context_limit', schemaVersion:combatContextSchemaVersion,
         session:traceSession, limit:kCombatContextLimit});
     }
     return frame;
@@ -1293,6 +1299,8 @@ function stopAiProbe() {
   aiDetailMode = false;
   aiGateMode = false;
   combatContextMode = false;
+  combatContextSchemaVersion = 1;
+  combatReadPointsArmed = [];
   combatContextGeneration++;
   combatContextStacks = new Map();
   aiSelectorDepth = new Map();
@@ -1306,11 +1314,20 @@ function stopAiProbe() {
 }
 
 function startAiProbe(mode = false) {
-  // Backward compatible: false -> 4 default hooks, true -> 9 detail hooks.
-  // 'gates' -> 9 detail hooks + 3 direct-call selector gate hooks.
-  if (mode !== false && mode !== true && mode !== 'gates' && mode !== 'combat-context')
+  // Fail closed after Windows AV at 0x005B1195: the regular combat-context
+  // mode enables function-entry hooks only. Request one interior point by its
+  // exact name for supervised diagnosis. Never use the all-points mode in Joey.
+  const pointPrefix = 'combat-context-point:';
+  const pointName = typeof mode === 'string' && mode.startsWith(pointPrefix)
+    ? mode.slice(pointPrefix.length) : null;
+  const allUnsafe = mode === 'combat-context-all-unsafe';
+  const withCombat = mode === 'combat-context' || allUnsafe || pointName !== null;
+  if (pointName !== null && !kCombatReadPoints.some(point => point.name === pointName))
+    throw new Error('Unknown combat-context observation point: ' + pointName);
+  if (mode !== false && mode !== true && mode !== 'gates' && !withCombat)
     throw new Error('AI trace mode must be false, true, gates or combat-context');
-  const withCombat = mode === 'combat-context';
+  const readPoints = allUnsafe ? kCombatReadPoints :
+    pointName !== null ? kCombatReadPoints.filter(point => point.name === pointName) : [];
   const detailed = mode === true || mode === 'gates';
   const withGates = mode === 'gates';
   if (!installed || commandTraceHook === null) {
@@ -1325,7 +1342,7 @@ function startAiProbe(mode = false) {
     throw new Error('combat-context requires --observe-only, trace prep/demo off and no overrides');
   const targets = kAiProbeTargets.concat(
     detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : [],
-    withCombat ? kCombatContextTargets.concat(kCombatReadPoints) : []);
+    withCombat ? kCombatContextTargets.concat(readPoints) : []);
   for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
@@ -1333,7 +1350,7 @@ function startAiProbe(mode = false) {
     }
   }
   if (withCombat) {
-    for (const point of kCombatReadPoints) {
+    for (const point of readPoints) {
       if (readAiProbeHex(point.address, point.bytes.length / 2) !== point.bytes)
         throw new Error('Combat instruction signature mismatch: ' + point.va);
     }
@@ -1442,7 +1459,7 @@ function startAiProbe(mode = false) {
       hooks.push(hook);
     }
     if (withCombat) {
-      for (const point of kCombatReadPoints) {
+      for (const point of readPoints) {
         hooks.push(Interceptor.attach(point.address, {onEnter() {
           const stack = combatContextStacks.get(Process.getCurrentThreadId()) || [];
           const frame = stack.length ? stack[stack.length - 1] : null;
@@ -1687,6 +1704,8 @@ function startAiProbe(mode = false) {
   aiDetailMode = detailed;
   aiGateMode = withGates;
   combatContextMode = withCombat;
+  combatContextSchemaVersion = readPoints.length ? 2 : 1;
+  combatReadPointsArmed = readPoints.map(point => point.name);
   combatContextGeneration++;
   combatContextCount = 0;
   combatContextLimitReported = false;
