@@ -108,8 +108,6 @@ def main(argv: list[str] | None = None) -> int:
                 args.deck_1 = args.deck_1.expanduser().resolve(strict=True)
         except (OSError, ValueError) as exc:
             parser.error(str(exc))
-        if args.cancel_file is not None:
-            parser.error("--cancel-file is only used by internal single workers")
         from .parallel import run_parallel
         root = (args.output_dir or
                 (Path(__file__).resolve().parent.parent / "scratch" / "labs"))

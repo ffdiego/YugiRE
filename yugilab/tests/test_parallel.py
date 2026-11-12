@@ -12,6 +12,20 @@ from yugilab.parallel import distribute_duels, run_parallel
 
 
 class ParallelLabTests(unittest.TestCase):
+    def test_external_cancel_before_start_does_not_spawn(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stop = Path(tmp) / "external-stop"
+            stop.write_text("stop", encoding="utf-8")
+            args = argparse.Namespace(duels=2, workers=2, speed_value=2400,
+                                      trace_ai=False, seed=None, seed_start_index=0,
+                                      cancel_file=stop)
+            with patch("yugilab.parallel.subprocess.Popen") as spawn:
+                self.assertEqual(run_parallel(args, Path(tmp)), 130)
+                spawn.assert_not_called()
+            manifest = json.loads(next(Path(tmp).glob("parallel-*/manifest.json")).read_text())
+            self.assertFalse(manifest["complete"])
+            self.assertEqual(manifest["status"], "interrupted")
+
     def _run(self, total: int, workers: int, broken: int | None = None,
              seed: int | None = None):
         spawned = []

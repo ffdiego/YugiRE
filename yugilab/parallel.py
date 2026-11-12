@@ -134,6 +134,7 @@ def _stop_workers(cancel_file: Path) -> None:
 
 def run_parallel(args, output_root: Path) -> int:
     """Spawn independent Python workers, and count only verified footers."""
+    external_cancel = getattr(args, "cancel_file", None)
     allocations = distribute_duels(args.duels, args.workers)
     start_monotonic = time.monotonic()
     output_root.mkdir(parents=True, exist_ok=True)
@@ -170,8 +171,9 @@ def run_parallel(args, output_root: Path) -> int:
                 error = f"Worker {broken.number} failed during startup"
                 _stop_workers(cancel_file)
                 break
-            if cancel_file.exists():
+            if cancel_file.exists() or (external_cancel is not None and external_cancel.exists()):
                 interrupted = True
+                _stop_workers(cancel_file)
                 break
             log = run_dir / f"worker-{index:02d}.log"
             argv = [
@@ -212,6 +214,11 @@ def run_parallel(args, output_root: Path) -> int:
 
         last_status = 0.0
         while any(worker.process.poll() is None for worker in workers):
+            if external_cancel is not None and external_cancel.exists() and not interrupted:
+                interrupted = True
+                error = "Interrupted by operator"
+                _stop_workers(cancel_file)
+                print("[yugilab] Cancellation requested; allowing workers to clean up.", flush=True)
             if not failed:
                 for worker in workers:
                     rc = worker.process.poll()
