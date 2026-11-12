@@ -1303,6 +1303,13 @@ Nenhum dos nove novos pontos de instrução é instalado por esse comando.
 A revisão v2 e os critérios de completude continuam no
 [contrato](../docs/research/ai-combat-observation-contract.md), mas exigem
 investigação antes de outra execução com instrumentação interna.
+Na [investigação estática de ESI](../docs/research/handoffs/native-esi-crash-static-analysis.md),
+foi identificado que o objeto JS `{onEnter}` pode armar retorno nativo e
+sobrescrever um registrador salvo na stack de um ponto interno. Esses pontos
+diagnósticos agora usam o overload de função direta (probe). A correção tem
+testes sintéticos; não confirma a causa histórica nem valida os probes no Windows.
+O relatório propõe v3 por fronteiras de função e especifica o próximo experimento
+em alvo x86 sintético, antes de qualquer novo diagnóstico interno no Joey.
 Revisar a implementação antes da ativação, conforme M3 de `PLANS.md`.
 Não executar Joey no Fedora. O piloto deve ocorrer no processo próprio do operador.
 

@@ -184,8 +184,12 @@ Esses pontos não provam atomicidade de todo o estado DD30 contra outros threads
 O hook usa nove pontos internos além das dez entradas já existentes. Assinaturas
 cobrem instruções inteiras de no mínimo cinco bytes e são verificadas antes de
 instalar qualquer listener; falha de instalação desfaz os listeners desta tentativa.
-Não há onLeave nos pontos internos, chamadas NativeFunction, escrita em contexto,
-registro, buffer do duelo ou arquivo do jogo. Interceptor altera o código em memória
+Os pontos internos não declaravam onLeave JavaScript, mas usavam objetos
+`{onEnter}`: isso pode armar retorno nativo e sobrescrever a stack. A
+[investigação de ESI](handoffs/native-esi-crash-static-analysis.md) registra o
+mecanismo, a correção para probes de função direta e os limites da conclusão.
+Não há chamadas NativeFunction nesses callbacks nem atribuição explícita a
+contexto, registro, buffer do duelo ou arquivo do jogo. Interceptor altera o código em memória
 para interceptar e pode afetar timing: relocação x86 e retorno normal exigem piloto.
 Limites continuam 64 avaliações por ativação e 24 filhos por avaliação (incluindo
 pontos); overflow é explícito. Não aumentar limites para perseguir casos incompletos.
