@@ -10,57 +10,96 @@ internal static class CombatAttributeTriageChecks
         bool corruptedEsi = false, bool changedDefender = false, bool wrongSchema = false,
         bool missingEsi = false)
     {
-        string own = "18000F05A40600007E040000";
-        string rival = hidden ? "00000000E8030000E8030000" :
-            changedDefender ? "260212057007000084030000" : "260212056C07000084030000";
-        int position = hidden ? 1 : 2;
+        // Build fixed JSON records, then change typed JsonNode fields.
+        // No interpolated raw strings: adjacent JSON closing braces are literal.
         var rows = new List<JsonNode>
         {
-            JsonNode.Parse("""{"kind":"ai_probe","function":"select_normal","phase":"enter","threadId":7,"callId":1,"side":0}""")!,
-            JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
-             "combatCallId":2,"selectorCallId":1,"callId":2,"function":"combat_event",
-             "phase":"enter","stateKind":"selector-window","argsRaw":[0,0,0],"seedHex":"00000000",
-             "provenance":"F40-entry-snapshot","consumedPositionRaw":null,
-             "consumedDescriptorSeedRaw":null,"consumedFlagsRaw":null,"readErrors":[],
-             "attacker":{"side":0,"slot":0,"identityRaw":24,"internalCardIndex":24,
-               "positionRaw":2,"defensePosition":false,"faceUp":true,
-               "linkCountRaw":{{links}},"monsterFlagsRaw":0,"playerFlagsRaw":0},
-             "defender":{"side":1,"slot":0,"identityRaw":550,"internalCardIndex":550,
-               "positionRaw":{{position}},"defensePosition":{{(hidden ? "true" : "false")}},
-               "faceUp":{{(hidden ? "false" : "true")}},
-               "linkCountRaw":0,"monsterFlagsRaw":0,"playerFlagsRaw":0}}
-            """)!,
-            JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
-             "combatCallId":2,"selectorCallId":1,"callId":3,"function":"own_stats",
-             "phase":"leave","argsRaw":[0,0,100],"caller":"0x5b0f97","outputHex":"{{own}}",
-             "provenance":"wrapper-boundary-snapshot",
-             "esiExpectedRaw":3396,"esiAtEnterRaw":3396,"esiAtLeaveRaw":{{(corruptedEsi ? 141603343 : 3396)}},
-             "espAtEnterRaw":4096,"espAtLeaveRaw":4096,"esiPreserved":{{(corruptedEsi ? "false" : "true")}},
-             "positionBeforeRaw":2,"positionAfterRaw":2}
-            """)!,
-            JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
-             "combatCallId":2,"selectorCallId":1,"callId":4,"function":"opponent_stats",
-             "phase":"leave","argsRaw":[1,0,104],"caller":"0x5b0fae","outputHex":"{{rival}}",
-             "provenance":"wrapper-boundary-snapshot",
-             "esiExpectedRaw":3396,"esiAtEnterRaw":3396,"esiAtLeaveRaw":3396,
-             "espAtEnterRaw":4100,"espAtLeaveRaw":4100,"esiPreserved":true,
-             "positionBeforeRaw":{{position}},"positionAfterRaw":{{position}}}
-            """)!,
-            JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
-             "combatCallId":2,"selectorCallId":1,"callId":2,"function":"combat_event",
-             "phase":"leave","childCount":2,"childOverflow":false,"outputHex":"0808C800"}
-            """)!,
-            JsonNode.Parse("""{"kind":"ai_probe","function":"select_normal","phase":"leave","threadId":7,"callId":1,"side":0,"selectedHandIndex":-1}""")!
+            JsonNode.Parse("""
+                {"kind":"ai_probe","function":"select_normal","phase":"enter",
+                 "threadId":7,"callId":1,"side":0}
+                """)!,
+            JsonNode.Parse("""
+                {"kind":"combat_context","schemaVersion":3,"session":1,"threadId":7,
+                 "combatCallId":2,"selectorCallId":1,"callId":2,"function":"combat_event",
+                 "phase":"enter","stateKind":"selector-window","argsRaw":[0,0,0],
+                 "seedHex":"00000000","provenance":"F40-entry-snapshot",
+                 "consumedPositionRaw":null,"consumedDescriptorSeedRaw":null,
+                 "consumedFlagsRaw":null,"readErrors":[],
+                 "attacker":{"side":0,"slot":0,"identityRaw":24,"internalCardIndex":24,
+                   "positionRaw":2,"defensePosition":false,"faceUp":true,
+                   "linkCountRaw":0,"monsterFlagsRaw":0,"playerFlagsRaw":0},
+                 "defender":{"side":1,"slot":0,"identityRaw":550,"internalCardIndex":550,
+                   "positionRaw":2,"defensePosition":false,"faceUp":true,
+                   "linkCountRaw":0,"monsterFlagsRaw":0,"playerFlagsRaw":0}}
+                """)!,
+            JsonNode.Parse("""
+                {"kind":"combat_context","schemaVersion":3,"session":1,"threadId":7,
+                 "combatCallId":2,"selectorCallId":1,"callId":3,"function":"own_stats",
+                 "phase":"leave","argsRaw":[0,0,100],"caller":"0x5b0f97",
+                 "outputHex":"18000F05A40600007E040000",
+                 "provenance":"wrapper-boundary-snapshot",
+                 "esiExpectedRaw":3396,"esiAtEnterRaw":3396,"esiAtLeaveRaw":3396,
+                 "espAtEnterRaw":4096,"espAtLeaveRaw":4096,"esiPreserved":true,
+                 "positionBeforeRaw":2,"positionAfterRaw":2}
+                """)!,
+            JsonNode.Parse("""
+                {"kind":"combat_context","schemaVersion":3,"session":1,"threadId":7,
+                 "combatCallId":2,"selectorCallId":1,"callId":4,"function":"opponent_stats",
+                 "phase":"leave","argsRaw":[1,0,104],"caller":"0x5b0fae",
+                 "outputHex":"260212056C07000084030000",
+                 "provenance":"wrapper-boundary-snapshot",
+                 "esiExpectedRaw":3396,"esiAtEnterRaw":3396,"esiAtLeaveRaw":3396,
+                 "espAtEnterRaw":4100,"espAtLeaveRaw":4100,"esiPreserved":true,
+                 "positionBeforeRaw":2,"positionAfterRaw":2}
+                """)!,
+            JsonNode.Parse("""
+                {"kind":"combat_context","schemaVersion":3,"session":1,"threadId":7,
+                 "combatCallId":2,"selectorCallId":1,"callId":2,"function":"combat_event",
+                 "phase":"leave","childCount":2,"childOverflow":false,"outputHex":"0808C800"}
+                """)!,
+            JsonNode.Parse("""
+                {"kind":"ai_probe","function":"select_normal","phase":"leave",
+                 "threadId":7,"callId":1,"side":0,"selectedHandIndex":-1}
+                """)!
         };
-        if (missingEsi) rows[2].AsObject().Remove("esiAtEnterRaw");
-        var serialized = rows.Select((node, i) => { node["seq"] = i + 1; return node.ToJsonString(); });
-        string header = $$"""{"kind":"metadata","session":1,"seen":6,"retained":6,"overwritten":0,"exeSha256":"{{PinnedExeSha256}}"}""";
-        return CaptureReader.Read(new StringReader(header + "\n" + string.Join("\n", serialized)),
-            "synthetic-v3", "synthetic-sha");
+
+        if (wrongSchema)
+            foreach (var row in rows.Where(row => row["kind"]!.GetValue<string>() == "combat_context"))
+                row["schemaVersion"] = 2;
+
+        rows[1]["attacker"]!["linkCountRaw"] = links;
+        if (hidden)
+        {
+            var defender = rows[1]["defender"]!;
+            defender["positionRaw"] = 1;
+            defender["defensePosition"] = true;
+            defender["faceUp"] = false;
+            rows[3]["outputHex"] = "00000000E8030000E8030000";
+            rows[3]["positionBeforeRaw"] = 1;
+            rows[3]["positionAfterRaw"] = 1;
+        }
+        else if (changedDefender)
+            rows[3]["outputHex"] = "260212057007000084030000";
+
+        if (corruptedEsi)
+        {
+            rows[2]["esiAtLeaveRaw"] = 141603343;
+            rows[2]["esiPreserved"] = false;
+        }
+        if (missingEsi)
+            rows[2].AsObject().Remove("esiAtEnterRaw");
+
+        var serialized = rows.Select((node, i) =>
+        {
+            node["seq"] = i + 1;
+            return node.ToJsonString();
+        });
+        var header = JsonNode.Parse("""
+            {"kind":"metadata","session":1,"seen":6,"retained":6,"overwritten":0}
+            """)!;
+        header["exeSha256"] = PinnedExeSha256;
+        return CaptureReader.Read(new StringReader(header.ToJsonString() + "\n" +
+            string.Join("\n", serialized)), "synthetic-v3", "synthetic-sha");
     }
 
     private static IReadOnlyList<Card> CatalogCards() =>
