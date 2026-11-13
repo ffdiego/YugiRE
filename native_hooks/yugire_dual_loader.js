@@ -1578,7 +1578,11 @@ function startAiProbe(mode = false) {
               try {
                 if (this.combatPosition === null) throw new Error('Unsupported wrapper slot');
                 this.combatChild.positionBeforeRaw = this.combatPosition.readU16();
-              } catch (error) { this.combatChild.readError = String(error); }
+              } catch (error) {
+                const detail = String(error);
+                this.combatChild.readError = this.combatChild.readError ?
+                  this.combatChild.readError + '; ' + detail : detail;
+              }
             }
           },
           onLeave(retval) {
@@ -1592,7 +1596,11 @@ function startAiProbe(mode = false) {
                 event.outputHex = readAiProbeHex(this.combatOutput, target.outputSize);
                 event.positionAfterRaw = this.combatPosition.readU16();
               }
-              catch (error) { event.readError = String(error); }
+              catch (error) {
+                const detail = String(error);
+                event.readError = event.readError ?
+                  event.readError + '; ' + detail : detail;
+              }
               if (boundariesV3) {
                 try {
                   event.esiAtLeaveRaw = this.context.esi.toUInt32();
