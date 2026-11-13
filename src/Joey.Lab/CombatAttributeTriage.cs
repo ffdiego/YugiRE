@@ -142,6 +142,13 @@ public static class CombatAttributeTriage
             var own = frame.Services[0]; var rival = frame.Services[1];
             RequireWrapper(frame, own, "own_stats");
             RequireWrapper(frame, rival, "opponent_stats");
+            var args = frame.ArgsRaw;
+            if (args is not { Length: 3 } || args[0] > 1 ||
+                own.ArgsRaw![0] != args[0] || own.ArgsRaw[1] != args[1] ||
+                rival.ArgsRaw![0] != 1u - args[0] || rival.ArgsRaw[1] != args[2] ||
+                Fields.Int(own.Raw, "esiExpectedRaw") != (int)((1u - args[0]) * 0xD44) ||
+                Fields.Int(rival.Raw, "esiExpectedRaw") != (int)((1u - args[0]) * 0xD44))
+                throw new InvalidDataException("Wrapper ABI, side/slot or ESI offset differs from F40 frame");
             bool neutral = Neutral(frame.Attacker) && Neutral(frame.Defender);
             int attackerIndex = frame.Attacker.InternalCardIndex!.Value;
             int defenderIndex = frame.Defender.InternalCardIndex!.Value;
