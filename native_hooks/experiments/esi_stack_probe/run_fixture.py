@@ -97,6 +97,21 @@ def classify(mode: str, exit_code: int | None, result: dict | None) -> str:
     return 'pass' if result['reportedHealthy'] and exit_code == 0 else 'fail'
 
 
+def same_pointer_address(observed: str, expected: str) -> bool:
+    """Compare 32-bit x86 pointers by value, not NativePointer formatting.
+
+    The fixture prints eight hexadecimal digits (0x005A1234), while Frida's
+    NativePointer.toString() may omit leading zeroes (0x5a1234).
+    """
+    def parse(value):
+        if not isinstance(value, str) or re.fullmatch(r'0[xX][0-9a-fA-F]{1,8}', value) is None:
+            return None
+        return int(value, 16)
+
+    left, right = parse(observed), parse(expected)
+    return left is not None and right is not None and left == right
+
+
 def inspect_hit(hit: dict, result: dict, probe: str) -> dict:
     """Check that instrumentation observed the intended instruction/stack."""
     esi = int(hit['esi'], 0)
@@ -191,7 +206,14 @@ def run(args) -> tuple[dict, int]:
                 report['registerChecks'] = inspect_hit(hit, report['result'], probe)
                 if not report['registerChecks']['consistent']:
                     report['verdict'] = 'inconclusive_register_invariant'
-            if report['result'] is not None and not any(e.get('kind') == 'armed' and e.get('target', '').lower() == probe.lower() for e in report['fridaMessages']):
+            matching_armed = any(
+                e.get('kind') == 'armed' and e.get('mode') == args.mode and
+                same_pointer_address(e.get('target'), probe)
+                for e in report['fridaMessages']
+            )
+            report['armedAddressMatched'] = matching_armed
+            if not matching_armed and report['verdict'] in {
+                    'pass', 'object_overwrote_saved_esi', 'object_not_reproduced', 'fail'}:
                 report['verdict'] = 'inconclusive_hook_address_mismatch'
     except Exception as exc:
         report['failure'] = f'{type(exc).__name__}: {exc}'
