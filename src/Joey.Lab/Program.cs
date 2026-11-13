@@ -83,7 +83,7 @@ public static class Program
             IReadOnlyList<Card>? catalog = null;
             if (dat is not null)
             {
-                const string pinnedDatSha256 = "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed";
+                const string pinnedDatSha256 = CpuDeckTraceVerifier.DatSha256;
                 using (var source = File.OpenRead(dat))
                 {
                     string actual = Convert.ToHexString(SHA256.HashData(source));
