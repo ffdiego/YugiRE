@@ -102,6 +102,7 @@ class FakeApi:
         call = (("ai_on_combat_point", detailed.split(":", 1)[1])
                 if isinstance(detailed, str) and detailed.startswith("combat-context-point:")
                 else {"combat-context": ("ai_on_combat_context",),
+                      "combat-context-v3": ("ai_on_combat_context_v3",),
                       "gates": ("ai_on_gates",)}.get(
                     detailed, ("ai_on_detail",) if detailed else ("ai_on",)))
         self.trace_calls.append(call)
@@ -528,6 +529,15 @@ class ConsoleCommandTests(unittest.TestCase):
         self.assertIn("aiGateActive=True", out.getvalue())
         self.assertFalse(self.api.ai_active)
         self.assertFalse(self.api.ai_gate_active)
+
+    def test_trace_ai_combat_context_v3_has_separate_console_dispatch(self):
+        with redirect_stdout(io.StringIO()):
+            self.assertTrue(handle_command("trace on 20000", self.api, 1))
+            self.assertTrue(handle_command("trace ai on combat-context-v3", self.api, 1))
+            self.assertTrue(handle_command("trace ai off", self.api, 1))
+        self.assertIn(("ai_on_combat_context_v3",), self.api.trace_calls)
+        self.assertNotIn(("ai_on_combat_context",), self.api.trace_calls)
+        self.assertNotIn(("ai_on_detail",), self.api.trace_calls)
 
     def test_trace_ai_combat_context_is_opt_in(self):
         with redirect_stdout(io.StringIO()):
