@@ -104,6 +104,19 @@ public static class Program
                 output.WriteLine($"Neutral defender visible: {report.NeutralVisibleDefenders}; hidden heuristic: {report.HiddenDefendersInNeutral}");
                 output.WriteLine($"Pinned DAT supplied: {report.CatalogProvided}");
                 output.WriteLine($"Conditional Core matches/mismatches: {report.ConditionalMatches}/{report.ConditionalMismatches}; independently validated contexts: 0");
+                output.WriteLine("Index summary (native stats are observations, never Core inputs):");
+                var participants = report.Cases.Where(c => c.NeutralLocalSnapshot)
+                    .SelectMany(c => new[] { (Role: "attacker", Card: c.Attacker), (Role: "defender", Card: c.Defender) });
+                foreach (var group in participants
+                    .GroupBy(p => (p.Role, p.Card.InternalCardIndex))
+                    .OrderBy(g => g.Key.Role).ThenByDescending(g => g.Count()).ThenBy(g => g.Key.InternalCardIndex))
+                {
+                    var card = group.First().Card;
+                    var resource = card.ResourceId is int id ? $"0x{id:X4}" : "?";
+                    output.WriteLine($"  {group.Key.Role} index={group.Key.InternalCardIndex} count={group.Count()} " +
+                        $"resource={resource} name={card.CardName ?? "?"} status={card.Status} " +
+                        $"sampleNativeHex={card.ObservedNativeHex ?? "?"}");
+                }
                 foreach (var row in report.Cases.Where(c => c.NeutralLocalSnapshot))
                     output.WriteLine($"  seq={row.EnterSequence} call={row.CombatCallId} indices={row.AttackerIndex}/{row.DefenderIndex} " +
                         $"attacker={row.Attacker.Status} defender={row.Defender.Status}");
