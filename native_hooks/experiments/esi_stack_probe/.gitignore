@@ -1,0 +1,8 @@
+esi_fixture_x86.exe
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.json
+*.exp
+*.lib
