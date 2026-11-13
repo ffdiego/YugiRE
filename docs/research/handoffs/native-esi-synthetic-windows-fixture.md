@@ -87,3 +87,27 @@ não prova a ordem exata de execução do processo Joey que caiu.
 Não alterar a main nem reativar os nove pontos internos. Após resultados
 reais, revisar se a instrumentação v3 deve permanecer apenas nas fronteiras
 de função ou se um probe individual será admissível em piloto próprio.
+
+## Primeiro piloto Windows — false negative por formato de endereço
+
+Em 2026-11-12 (horário local), o operador compilou com MSVC x86 e executou
+baseline AL=0 e AL=2: ambos `verdict=pass exit=0`.
+Os dois testes `probe` terminaram com `exit=0`, mas o runner reportou
+`inconclusive_hook_address_mismatch`. O aviso opcional
+`Unable to start idund` apareceu nos dois testes com Frida.
+
+Na revisão estática do runner, foi encontrado um bug inequívoco de
+comparação **textual** do alvo: o fixture imprime endereço com 8 dígitos,
+enquanto `NativePointer.toString()` pode omitir zeros à esquerda.
+O runner agora normaliza ambos como inteiros x86, verifica também o modo
+no evento `armed` e preserva uma eventual falha anterior de invariantes
+de registradores em vez de sobrescrevê-la pelo diagnóstico de endereço.
+Foi adicionado teste de regressão para endereço com e sem padding e
+para valores inválidos. O helper isolado passou 7 casos locais, mas a
+suíte integral do runner e o reteste Windows após a correção ainda não
+foram executados nesta atualização.
+
+O `exit=0` não é sozinho prova de instrumentação íntegra: é necessário
+confirmar um `armed` compatível, um `hit` e as invariantes de ESI/EIP/ESP.
+Não iniciar o controle negativo `object` antes de ambos os probes
+resultarem em `pass` no Windows.
