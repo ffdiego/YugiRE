@@ -1251,6 +1251,13 @@ function enterCombatContext(invocation, args) {
     function:'combat_event', functionVa:'0x005B0F40', callId:frame.callId,
     caller:invocation.returnAddress.toString(), argsRaw:invocation.aiArguments,
     seedHex:null, attacker:null, defender:null, readErrors:[]};
+  if (combatContextSchemaVersion === 3) {
+    // V3 samples are not witnesses of consumption by interior instructions.
+    event.provenance = 'F40-entry-snapshot';
+    event.consumedPositionRaw = null;
+    event.consumedDescriptorSeedRaw = null;
+    event.consumedFlagsRaw = null;
+  }
   function read(name, action) {
     try { return action(); }
     catch (error) { event.readErrors.push({field:name, error:String(error)}); return null; }
@@ -1327,11 +1334,12 @@ function startAiProbe(mode = false) {
   // crash; block it even if a caller bypasses the Python console and calls RPC.
   if (allUnsafe && Process.platform === 'windows')
     throw new Error('Combined interior combat-context hooks disabled on Windows after access violation');
-  const withCombat = mode === 'combat-context' || allUnsafe || pointName !== null;
+  const boundariesV3 = mode === 'combat-context-v3';
+  const withCombat = boundariesV3 || mode === 'combat-context' || allUnsafe || pointName !== null;
   if (pointName !== null && !kCombatReadPoints.some(point => point.name === pointName))
     throw new Error('Unknown combat-context observation point: ' + pointName);
   if (mode !== false && mode !== true && mode !== 'gates' && !withCombat)
-    throw new Error('AI trace mode must be false, true, gates or combat-context');
+    throw new Error('AI trace mode must be false, true, gates, combat-context, or combat-context-v3');
   const readPoints = allUnsafe ? kCombatReadPoints :
     pointName !== null ? kCombatReadPoints.filter(point => point.name === pointName) : [];
   const detailed = mode === true || mode === 'gates';
@@ -1346,9 +1354,16 @@ function startAiProbe(mode = false) {
       demoExecutorHook !== null || demoSetupHooks.length || demoSeedBase !== null ||
       demoDeckPlans.some(x => x !== null) || speedyOverrideValue !== null || singletonMutexHook !== null))
     throw new Error('combat-context requires --observe-only, trace prep/demo off and no overrides');
-  const targets = kAiProbeTargets.concat(
+  // v3 is strictly FIVE function-boundary listeners: two selectors, F40,
+  // ADD60 and ADDC0. No instruction interception or DD30/helper hooks.
+  // Preserve legacy v1/v2 target selection exactly.
+  const aiTargets = kAiProbeTargets.filter(t => !withCombat || t.name !== 'computed_stats');
+  const combatTargets = boundariesV3 ?
+    kCombatContextTargets.filter(t => t.name === 'own_stats' || t.name === 'opponent_stats') :
+    kCombatContextTargets;
+  const targets = aiTargets.concat(
     detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : [],
-    withCombat ? kCombatContextTargets.concat(readPoints) : []);
+    withCombat ? combatTargets.concat(readPoints) : []);
   for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
@@ -1363,7 +1378,7 @@ function startAiProbe(mode = false) {
   }
   const hooks = [];
   try {
-    for (const target of kAiProbeTargets.filter(t => !withCombat || t.name !== 'computed_stats')) {
+    for (const target of aiTargets) {
       const hook = Interceptor.attach(target.address, {
         onEnter(args) {
           this.aiThread = Process.getCurrentThreadId();
@@ -1511,7 +1526,7 @@ function startAiProbe(mode = false) {
           recordTraceEvent(event);
         }));
       }
-      for (const target of kCombatContextTargets) {
+      for (const target of combatTargets) {
         hooks.push(Interceptor.attach(target.address, {
           onEnter(args) {
             const threadId = Process.getCurrentThreadId();
@@ -1529,6 +1544,29 @@ function startAiProbe(mode = false) {
               argsRaw:Array.from({length:target.argCount}, (_, i) => args[i].toUInt32())
             };
             this.combatGeneration = combatContextGeneration;
+            if (boundariesV3 && target.outputSize) {
+              // A wrapper is entered by a direct CALL from F40, with the
+              // rival-side ESI offset alive. F40's own entry/leave ESI is
+              // caller-owned and must NOT be compared to this offset.
+              const side = frame.argsRaw[0];
+              const expected = (side === 0 || side === 1) ?
+                (1 - side) * kPlayerStride : null;
+              this.combatChild.esiExpectedRaw = expected;
+              this.combatChild.esiAtEnterRaw = null;
+              this.combatChild.espAtEnterRaw = null;
+              this.combatChild.esiAtLeaveRaw = null;
+              this.combatChild.espAtLeaveRaw = null;
+              this.combatChild.esiPreserved = null;
+              this.combatChild.provenance = 'wrapper-boundary-snapshot';
+              try {
+                this.combatChild.esiAtEnterRaw = this.context.esi.toUInt32();
+                this.combatChild.espAtEnterRaw = this.context.esp.toUInt32();
+                if (expected === null || this.combatChild.esiAtEnterRaw !== expected)
+                  this.combatChild.correlationError = 'Unexpected ESI at wrapper entry';
+              } catch (error) {
+                this.combatChild.readError = 'Wrapper entry register read: ' + error;
+              }
+            }
             if (target.outputSize) {
               this.combatOutput = args[2];
               frame.statsArgs = this.combatChild.argsRaw;
@@ -1555,6 +1593,26 @@ function startAiProbe(mode = false) {
                 event.positionAfterRaw = this.combatPosition.readU16();
               }
               catch (error) { event.readError = String(error); }
+              if (boundariesV3) {
+                try {
+                  event.esiAtLeaveRaw = this.context.esi.toUInt32();
+                  event.espAtLeaveRaw = this.context.esp.toUInt32();
+                  if (event.esiAtEnterRaw !== null) {
+                    event.esiPreserved = event.esiAtEnterRaw === event.esiAtLeaveRaw;
+                  }
+                  if (event.esiExpectedRaw === null ||
+                      event.esiAtLeaveRaw !== event.esiExpectedRaw ||
+                      event.esiPreserved !== true) {
+                    event.correlationError = event.correlationError ?
+                      event.correlationError + '; Unexpected ESI at wrapper leave' :
+                      'Unexpected ESI at wrapper leave';
+                  }
+                } catch (error) {
+                  event.readError = event.readError ?
+                    event.readError + '; Wrapper leave register read: ' + error :
+                    'Wrapper leave register read: ' + error;
+                }
+              }
             } else {
               event.returnRaw = retval.toUInt32();
               event.returnSigned = retval.toInt32();
@@ -1710,7 +1768,7 @@ function startAiProbe(mode = false) {
   aiDetailMode = detailed;
   aiGateMode = withGates;
   combatContextMode = withCombat;
-  combatContextSchemaVersion = readPoints.length ? 2 : 1;
+  combatContextSchemaVersion = boundariesV3 ? 3 : readPoints.length ? 2 : 1;
   combatReadPointsArmed = readPoints.map(point => point.name);
   combatContextGeneration++;
   combatContextCount = 0;
