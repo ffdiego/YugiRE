@@ -7,7 +7,8 @@ internal static class CombatAttributeTriageChecks
     private const string PinnedExeSha256 = "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de";
 
     private static CaptureDocument Capture(bool hidden = false, int links = 0,
-        bool corruptedEsi = false, bool changedDefender = false, bool wrongSchema = false)
+        bool corruptedEsi = false, bool changedDefender = false, bool wrongSchema = false,
+        bool missingEsi = false)
     {
         string own = "18000F05A40600007E040000";
         string rival = hidden ? "00000000E8030000E8030000" :
@@ -55,6 +56,7 @@ internal static class CombatAttributeTriageChecks
             """)!,
             JsonNode.Parse("""{"kind":"ai_probe","function":"select_normal","phase":"leave","threadId":7,"callId":1,"side":0,"selectedHandIndex":-1}""")!
         };
+        if (missingEsi) rows[2].AsObject().Remove("esiAtEnterRaw");
         var serialized = rows.Select((node, i) => { node["seq"] = i + 1; return node.ToJsonString(); });
         string header = $$"""{"kind":"metadata","session":1,"seen":6,"retained":6,"overwritten":0,"exeSha256":"{{PinnedExeSha256}}"}""";
         return CaptureReader.Read(new StringReader(header + "\n" + string.Join("\n", serialized)),
@@ -114,7 +116,8 @@ internal static class CombatAttributeTriageChecks
             catch (InvalidDataException) { return true; }
         }
         check(Rejected(() => CombatAttributeTriage.Analyze(Capture(corruptedEsi:true),CatalogCards())) &&
-            Rejected(() => CombatAttributeTriage.Analyze(Capture(wrongSchema:true),CatalogCards())),
-            "V3 triage rejects corrupt wrapper ESI and unsupported schema instead of reporting matches");
+            Rejected(() => CombatAttributeTriage.Analyze(Capture(wrongSchema:true),CatalogCards())) &&
+            Rejected(() => CombatAttributeTriage.Analyze(Capture(missingEsi:true),CatalogCards())),
+            "V3 triage rejects corrupt or absent wrapper ESI and unsupported schema instead of reporting matches");
     }
 }
