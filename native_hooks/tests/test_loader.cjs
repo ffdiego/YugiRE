@@ -1355,6 +1355,8 @@ boundaries.aiCall(0x005B16C0,[1,0],0,()=>{
       {esi:0,esp:0x00121010});
   });
 });
+assert.equal(boundaries.api.tracestatus().aiHooks,5);
+boundaries.api.tracestop();
 const boundaryEvents=boundaries.api.traceevents(0,200).filter(e=>e.kind==='combat_context');
 const boundaryEntries=boundaryEvents.filter(e=>e.function==='combat_event' && e.phase==='enter');
 const boundaryLeaves=boundaryEvents.filter(e=>e.function==='combat_event' && e.phase==='leave');
@@ -1377,9 +1379,8 @@ assert.equal(boundaryEntries[0].seedHex.length,8);
 assert.ok(boundaryLeaves.every(e=>e.outputHex.length===8));
 assert.ok(boundaryWrappers.every(e=>e.outputHex.length===24));
 assert.ok(boundaryEvents.every(e=>!e.correlationError && !e.readError));
-assert.equal(boundaries.api.traceaistop().aiHooks,0);
+assert.equal(boundaries.api.tracestatus().aiHooks,0);
 assert.equal(boundaries.api.tracestatus().combatContextSchemaVersion,1);
-boundaries.api.tracestop();
 boundaries.api.restore();
 
 // ESI corruption is detected and preserved raw; the observer never repairs it.
