@@ -87,3 +87,41 @@ in this handoff. The C# source and tests were authored remotely,
 but could not run under the actual .NET SDK in this environment
 (dotnet unavailable). Windows execution and tests are the next gate.
 Main is unchanged; no new game instrumentation was performed.
+
+## Windows verification and next catalog inspection
+
+User executed the real Windows .NET 10 `Joey.Tests` suite against
+`Z:\YugiRE\passion\data.dat`: **675 checks passed**, after the
+raw-string fixture was replaced with static JSON plus typed `JsonNode`
+mutations in commit `c9826c5`. This is a genuine Windows test result
+reported by the operator, not a test run on the assistant's host.
+
+The operator also executed `combat-attribute-triage` with the pinned
+original DAT. Output verified: 50 F40 frames, 29 neutral-looking
+snapshots, 14 revealed defenders, 15 hidden defender estimates, 2
+conditional matches (Gemini Elf at seq 70/74), 0 conditional
+mismatches and 0 fully independent contexts.
+
+### Next four attacker candidates (from the existing private v3 JSONL)
+
+| Internal index | Local-neutral frames | Native observed own ATK / DEF | Interpretation |
+| --- | ---: | ---: | --- |
+| 733 | 8 | 2400 / 2000 | native wrapper output only |
+| 261 | 6 | 1100 / 1200 | native wrapper output only |
+| 453 | 5 | 1000 / 100 | native wrapper output only |
+| 364 | 3 | 2000 / 1600 | native wrapper output only |
+
+**No resource IDs/card names are inferred from the numeric wrapper
+outputs.** The input JSONL snapshots contain internal indexes but
+`resourceId=null`; identification must come from the SHA256-pinned
+`data.dat`. A new compact index summary in Joey.Lab prints the
+`resource`, `name`, `count`, role and one native buffer per
+distinct index when `--dat` is provided. This summary enhancement
+was committed **after** the operator's 675-check run, so must be
+compiled/verified in the next Windows checkout.
+
+The current label `UnsupportedIntrinsicPolicy` means only that
+`FromPlainCard` does not implement the identity's intrinsic-stat
+policy **in its closed two-resource subset**. It does not by itself
+establish that any such card has a dynamic effect or that its
+base ATK/DEF cannot eventually be modeled independently.
