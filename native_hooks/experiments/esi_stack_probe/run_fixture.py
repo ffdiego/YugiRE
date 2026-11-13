@@ -97,6 +97,17 @@ def classify(mode: str, exit_code: int | None, result: dict | None) -> str:
     return 'pass' if result['reportedHealthy'] and exit_code == 0 else 'fail'
 
 
+def inspect_hit(hit: dict, result: dict, probe: str) -> dict:
+    """Check that instrumentation observed the intended instruction/stack."""
+    esi = int(hit['esi'], 0)
+    esp = int(hit['esp'], 0)
+    eip = int(hit['eip'], 0)
+    delta = (result['espAfterFirstPop'] - esp) & 0xFFFFFFFF
+    return {'esiAtInstruction': esi, 'espAtInstruction': esp,
+            'espAfterFirstPopDelta': delta, 'eipMatchesTarget': eip == int(probe, 16),
+            'consistent': esi == EXPECTED_ESI and delta == 4 and eip == int(probe, 16)}
+
+
 def read_line_with_timeout(stream, timeout: float) -> str:
     response = queue.Queue(maxsize=1)
     threading.Thread(target=lambda: response.put(stream.readline()), daemon=True).start()
@@ -175,6 +186,11 @@ def run(args) -> tuple[dict, int]:
             kinds = [e.get('kind') for e in report['fridaMessages']]
             if kinds.count('hit') != 1 or 'frida_error' in kinds:
                 report['verdict'] = 'inconclusive_unobserved_or_invalid_hook'
+            elif report['result'] is not None:
+                hit = next(e for e in report['fridaMessages'] if e.get('kind') == 'hit')
+                report['registerChecks'] = inspect_hit(hit, report['result'], probe)
+                if not report['registerChecks']['consistent']:
+                    report['verdict'] = 'inconclusive_register_invariant'
             if report['result'] is not None and not any(e.get('kind') == 'armed' and e.get('target', '').lower() == probe.lower() for e in report['fridaMessages']):
                 report['verdict'] = 'inconclusive_hook_address_mismatch'
     except Exception as exc:
