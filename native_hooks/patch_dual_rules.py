@@ -188,6 +188,7 @@ def show_trace_status(status: dict) -> None:
     print(f"[trace] active={status['active']} "
           f"prepActive={status.get('prepActive', False)} "
           f"aiActive={status.get('aiActive', False)} "
+          f"aiHooks={status.get('aiHooks', 0)} "
           f"aiDetailActive={status.get('aiDetailActive', False)} "
           f"aiGateActive={status.get('aiGateActive', False)} "
           f"combatContextActive={status.get('combatContextActive', False)} "
