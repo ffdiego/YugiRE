@@ -132,15 +132,22 @@ public static class NativeAiAttributes
         return workingStats with {Attack=attack,Defense=defense};
     }
 
-    /// <summary>Small complete plain-monster subset: Axe Raider and Gemini Elf.
-    /// The caller supplies a resolved manifest; no native metrics or score are needed.
-    /// Other monster resources are explicitly unsupported, even when they look vanilla.</summary>
+    /// <summary>Explicitly verified Normal Monsters from the original DAT / card rules.
+    /// Intrinsic ATK/DEF use the catalog's base values only; external modifiers still
+    /// require a caller-resolved, independently evidenced manifest.
+    /// Other monsters, including Witch/Momonga/Panther/Zombyra, remain unsupported.
+    /// No native stats, event score or result buffer enter this calculation.</summary>
     public static NativeAiResult<NativeAiStats> FromResolvedContext(ushort monsterResourceId,
         NativeAiStats baseStats, NativeAiAttributeContext? context = null)
     {
         if (context is null || !context.IsResolved)
             return NativeAiResult<NativeAiStats>.Unsupported("Attribute/effect context has not been resolved");
-        if (monsterResourceId is not (0x004d or 0x0213))
+        // Axe Raider, Gemini Elf, Amphibian Beast, Darkfire Soldier #2,
+        // Gross Ghost of Fled Dreams, Island Turtle, Tiger Axe, Alligator's Sword.
+        // This is a CLOSED per-resource contract, not a generic "looks normal"
+        // heuristic. The hashed DAT supplies the actual identity and stats.
+        if (monsterResourceId is not (0x004d or 0x0213 or
+            0x057f or 0x0491 or 0x05de or 0x0541 or 0x003f or 0x02f8))
             return NativeAiResult<NativeAiStats>.Unsupported($"Intrinsic stat policy for resource 0x{monsterResourceId:X4} is not implemented");
         if (baseStats.CardIndex == 0 || baseStats.CardIndex > 0xfff)
             return NativeAiResult<NativeAiStats>.Unsupported("Expected an occupied internal monster index in 1..4095");
@@ -158,7 +165,8 @@ public static class NativeAiAttributes
     }
 
     /// <summary>00402650 base monster attribute is propertyWord >>29 (type21/22
-    /// exceptions are excluded by this plain-monster subset). No native stat input.</summary>
+    /// exceptions are excluded by the closed Normal Monster subset).
+    /// No native stat input; valid source is the independent catalog.</summary>
     public static NativeAiResult<NativeAiStats> FromPlainCard(Card card,
         NativeAiAttributeContext? context = null) =>
         FromPlainCard(card,(byte)(card.Properties >> 29),context);
