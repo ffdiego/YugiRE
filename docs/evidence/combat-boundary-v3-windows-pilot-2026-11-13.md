@@ -68,6 +68,22 @@ pareamento, ruptura da sequência ou saturação no limite de 64
 nesta execução. A declaração do operador de término normal
 complementa os controles estruturais.
 
+## Seleção preliminar para o próximo trabalho no Joey.Core
+
+Na captura v3 existem **7 índices internos distintos de atacante** e
+**9 índices de defensor**. Em **29/50** snapshots, ambos os participantes
+têm `linkCountRaw=0`, `monsterFlagsRaw=0` e
+`playerFlagsRaw=0`; são candidatos úteis para examinar primeiro
+a reconstrução independente dos stats, não confrontos já comprovados
+sem efeitos. Outros 10 snapshots contêm
+`linkCountRaw=1` no atacante; os flags de jogador também variam em
+11 snapshots. Nenhum desses zeros comprova inexistência de efeitos
+temporários, de campo ou globais.
+
+A nova triagem pode priorizar os 29 candidatos para documentar quais
+identidades/efeitos já estão suportados no catálogo independente.
+A lista de pendências do contrato de observação permanece válida.
+
 ## Inferências que **não** fazemos
 
 - Um duelo concluído não prova que todos os caminhos de execução ou
