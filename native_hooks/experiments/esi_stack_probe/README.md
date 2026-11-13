@@ -10,7 +10,12 @@ ESI para uma estrutura de saída; ela nunca desreferencia o ESI corrompido.
 
 ## Compilar
 
-No Windows, abra o **x86 Native Tools Command Prompt for Visual Studio**.
+No Windows, abra o Developer PowerShell ou Developer Command Prompt do Visual Studio.
+O `build.cmd` agora tenta inicializar o toolchain MSVC com alvo **x86**
+automaticamente, inclusive se o terminal atual for x64, por meio de
+`VsDevCmd.bat -arch=x86 -host_arch=x64`. A troca ocorre somente dentro do
+script; não altera a configuração permanente do terminal. Em instalações
+sem o componente MSVC x86, o script falha com mensagem explícita.
 Dentro desta pasta, execute:
 
 ~~~cmd
