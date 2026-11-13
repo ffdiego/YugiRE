@@ -1364,6 +1364,14 @@ function startAiProbe(mode = false) {
   const targets = aiTargets.concat(
     detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : [],
     withCombat ? combatTargets.concat(readPoints) : []);
+  if (boundariesV3) {
+    // Fail closed if future refactors silently broaden the instrumented set.
+    const expected = ['select_normal','select_priority','combat_event',
+      'own_stats','opponent_stats'];
+    if (targets.length !== expected.length ||
+        targets.some((target,i) => target.name !== expected[i]))
+      throw new Error('combat-context-v3 requires exactly five verified function boundaries');
+  }
   for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
