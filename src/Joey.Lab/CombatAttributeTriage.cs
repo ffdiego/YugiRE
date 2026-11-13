@@ -53,10 +53,15 @@ public static class CombatAttributeTriage
             service.ArgsRaw is not { Length: 3 })
             throw new InvalidDataException($"Incomplete {function} output at call {frame.Provenance.CombatCallId}");
         var raw = service.Raw;
+        int? esiIn = Fields.Int(raw, "esiAtEnterRaw");
+        int? esiOut = Fields.Int(raw, "esiAtLeaveRaw");
+        int? esiExpected = Fields.Int(raw, "esiExpectedRaw");
+        int? espIn = Fields.Int(raw, "espAtEnterRaw");
+        int? espOut = Fields.Int(raw, "espAtLeaveRaw");
         if (Fields.Bool(raw, "esiPreserved") != true ||
-            Fields.Int(raw, "esiAtEnterRaw") != Fields.Int(raw, "esiAtLeaveRaw") ||
-            Fields.Int(raw, "esiAtEnterRaw") != Fields.Int(raw, "esiExpectedRaw") ||
-            Fields.Int(raw, "espAtEnterRaw") != Fields.Int(raw, "espAtLeaveRaw"))
+            esiIn is null || esiOut is null || esiExpected is null ||
+            espIn is null || espOut is null ||
+            esiIn != esiOut || esiIn != esiExpected || espIn != espOut)
             throw new InvalidDataException($"Unverified wrapper ESI/ESP at call {frame.Provenance.CombatCallId}");
         if (Fields.String(raw, "provenance") != "wrapper-boundary-snapshot")
             throw new InvalidDataException("Wrapper provenance mismatch");
