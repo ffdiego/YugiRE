@@ -66,6 +66,16 @@ class FixtureGuardTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'health verdict'):
                 runner.parse_result(f'{runner.MAGIC} RESULT al={al} esi=0x00000D44 route={route} esp=0x00123456 healthy=0',al)
 
+    def test_instruction_register_and_stack_invariants(self):
+        probe = '0x005A1234'
+        raw = {'esi': '0xd44', 'esp': '0x00120000', 'eip': probe}
+        outcome = {'espAfterFirstPop': 0x00120004}
+        self.assertTrue(runner.inspect_hit(raw, outcome, probe)['consistent'])
+        self.assertEqual(runner.inspect_hit(raw, outcome, probe)['espAfterFirstPopDelta'], 4)
+        bad = dict(raw, esi='0x0871120F')
+        self.assertFalse(runner.inspect_hit(bad, outcome, probe)['consistent'])
+        self.assertFalse(runner.inspect_hit(raw, {'espAfterFirstPop':0x00120008},probe)['consistent'])
+
     def test_no_result_is_inconclusive(self):
         self.assertEqual(runner.classify('object',-1,None),'inconclusive_crash_or_missing_result')
 
