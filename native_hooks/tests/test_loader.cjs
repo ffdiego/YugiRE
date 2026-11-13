@@ -244,13 +244,23 @@ function fixture(options = {}) {
     prepCount(){return prepHandlers.size;},
     aiHookCount(){return aiHandlers.size;},
     setThread(id){currentThread=id;},
-    aiCall(address,args=[],retval=0,body=null,caller=0x005B1377) {
+    aiCall(address,args=[],retval=0,body=null,caller=0x005B1377,registers=null) {
       const callbacks=aiHandlers.get(address);
       if (!callbacks) throw new Error('AI hook not installed at '+address.toString(16));
       const receiver={returnAddress:ptr(caller)};
+      if (registers !== null) {
+        // Frida invocation.context is sampled at entry and again at leave.
+        // Simulated x86 registers support ESI corruption on return, but this
+        // fixture does NOT emulate x86 instructions or Frida's trampolines.
+        receiver.context={esi:ptr(registers.esi),esp:ptr(registers.esp)};
+      }
       callbacks.onEnter.call(receiver,args.map(v=>ptr(v)));
       if(body) body();
-      if (callbacks.onLeave) callbacks.onLeave.call(receiver,ptr(retval));
+      if (callbacks.onLeave) {
+        if (registers !== null && registers.leaveEsi !== undefined)
+          receiver.context.esi=ptr(registers.leaveEsi);
+        callbacks.onLeave.call(receiver,ptr(retval));
+      }
     },
     instruction(address, registers={}) {
       const callbacks=aiHandlers.get(address);
@@ -1311,6 +1321,99 @@ combatStopped.api.tracestop();
 assert.equal(combatStopped.api.traceevents(0,100).filter(e=>e.kind==='combat_context').length,1);
 combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
+
+// v3 is deliberately smaller than the entry-only v1 and the single-probe v2:
+// 2 selectors + F40 + ADD60 + ADDC0; no hooks inside functions.
+const boundaries=fixture();
+boundaries.api.installobserver();
+boundaries.api.tracestart(200);
+let boundaryStatus=boundaries.api.traceaistart('combat-context-v3');
+assert.equal(boundaryStatus.aiHooks,5);
+assert.equal(boundaries.aiHookCount(),5);
+assert.equal(boundaryStatus.combatContextSchemaVersion,3);
+assert.equal(boundaryStatus.combatContextActive,true);
+assert.deepEqual(Array.from(boundaryStatus.combatReadPointsArmed),[]);
+assert.throws(()=>boundaries.instruction(0x005ADD8D,{eax:2}),/not installed/);
+assert.throws(()=>boundaries.aiCall(0x0056D790,[0,0,1]),/not installed/);
+const v3Buf=0x00A579A6, v3Own=v3Buf+16, v3Rival=v3Buf+32;
+boundaries.aiCall(0x005B1360,[0,0],0,()=>{
+  boundaries.aiCall(0x005B0F40,[0,0,3,v3Buf],0,()=>{
+    // A wrapper called from an unrelated site must not create an event.
+    boundaries.aiCall(0x005ADD60,[0,0,v3Own],0,null,0x00561234,
+      {esi:0x12345678,esp:0x00120000});
+    boundaries.aiCall(0x005ADD60,[0,0,v3Own],0,null,0x005B0F97,
+      {esi:0xD44,esp:0x00120000});
+    boundaries.aiCall(0x005ADDC0,[1,3,v3Rival],0,null,0x005B0FAE,
+      {esi:0xD44,esp:0x00120010});
+  });
+});
+boundaries.aiCall(0x005B16C0,[1,0],0,()=>{
+  boundaries.aiCall(0x005B0F40,[1,0,0,v3Buf],0,()=>{
+    boundaries.aiCall(0x005ADD60,[1,0,v3Own],0,null,0x005B0F97,
+      {esi:0,esp:0x00121000});
+    boundaries.aiCall(0x005ADDC0,[0,0,v3Rival],0,null,0x005B0FAE,
+      {esi:0,esp:0x00121010});
+  });
+});
+const boundaryEvents=boundaries.api.traceevents(0,200).filter(e=>e.kind==='combat_context');
+const boundaryEntries=boundaryEvents.filter(e=>e.function==='combat_event' && e.phase==='enter');
+const boundaryLeaves=boundaryEvents.filter(e=>e.function==='combat_event' && e.phase==='leave');
+const boundaryWrappers=boundaryEvents.filter(e=>e.function==='own_stats' || e.function==='opponent_stats');
+assert.equal(boundaryEntries.length,2);
+assert.equal(boundaryLeaves.length,2);
+assert.equal(boundaryWrappers.length,4);
+assert.ok(boundaryEvents.every(e=>e.schemaVersion===3));
+assert.ok(boundaryWrappers.every(e=>e.provenance==='wrapper-boundary-snapshot'));
+assert.ok(boundaryWrappers.every(e=>e.esiPreserved===true &&
+  e.esiAtEnterRaw===e.esiExpectedRaw && e.esiAtLeaveRaw===e.esiExpectedRaw &&
+  e.espAtEnterRaw !== null && e.espAtLeaveRaw !== null && !e.correlationError));
+assert.equal(boundaryWrappers[0].esiExpectedRaw,0xD44);
+assert.equal(boundaryWrappers[2].esiExpectedRaw,0);
+assert.equal(boundaryEntries[0].provenance,'F40-entry-snapshot');
+assert.equal(boundaryEntries[0].consumedPositionRaw,null);
+assert.equal(boundaryEntries[0].consumedDescriptorSeedRaw,null);
+assert.equal(boundaryEntries[0].consumedFlagsRaw,null);
+assert.equal(boundaryEntries[0].seedHex.length,8);
+assert.ok(boundaryLeaves.every(e=>e.outputHex.length===8));
+assert.ok(boundaryWrappers.every(e=>e.outputHex.length===24));
+assert.ok(boundaryEvents.every(e=>!e.correlationError && !e.readError));
+assert.equal(boundaries.api.traceaistop().aiHooks,0);
+assert.equal(boundaries.api.tracestatus().combatContextSchemaVersion,1);
+boundaries.api.tracestop();
+boundaries.api.restore();
+
+// ESI corruption is detected and preserved raw; the observer never repairs it.
+const v3Invalid=fixture();
+v3Invalid.api.installobserver(); v3Invalid.api.tracestart(100);
+v3Invalid.api.traceaistart('combat-context-v3');
+v3Invalid.aiCall(0x005B1360,[0,0],0,()=>{
+  v3Invalid.aiCall(0x005B0F40,[0,0,1,v3Buf],0,()=>{
+    v3Invalid.aiCall(0x005ADD60,[0,0,v3Own],0,null,0x005B0F97,
+      {esi:0xD44,esp:0x00120000,leaveEsi:0x0871120F});
+  });
+});
+v3Invalid.api.tracestop();
+const invalidWrapper=v3Invalid.api.traceevents(0,100).find(e=>e.function==='own_stats');
+assert.equal(invalidWrapper.esiExpectedRaw,0xD44);
+assert.equal(invalidWrapper.esiAtEnterRaw,0xD44);
+assert.equal(invalidWrapper.esiAtLeaveRaw,0x0871120F);
+assert.equal(invalidWrapper.esiPreserved,false);
+assert.match(invalidWrapper.correlationError,/Unexpected ESI at wrapper leave/);
+v3Invalid.api.restore();
+
+const v3Rollback=fixture({failAiHookAt:0x005ADDC0});
+v3Rollback.api.installobserver(); v3Rollback.api.tracestart(100);
+assert.throws(()=>v3Rollback.api.traceaistart('combat-context-v3'),/rolled back/);
+assert.equal(v3Rollback.aiHookCount(),0);
+assert.equal(v3Rollback.api.tracestatus().combatContextActive,false);
+v3Rollback.api.restore();
+
+const v3Mutating=fixture();
+v3Mutating.api.install('Z:\\YugiRE\\rules.dll',300,400,1,1);
+v3Mutating.api.tracestart(100);
+assert.throws(()=>v3Mutating.api.traceaistart('combat-context-v3'),/observe-only/);
+v3Mutating.api.restore();
+console.log('PASS: opt-in five-boundary v3, raw ESI entry/leave, nulls, correlation, rollback and safety gates');
 
 // Instruction witnesses are synthetic CPU contexts, not dynamic validation.
 // Negative control: the former object shape overwrites a synthetic saved ESI
