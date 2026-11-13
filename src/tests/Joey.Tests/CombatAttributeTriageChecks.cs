@@ -80,7 +80,7 @@ internal static class CombatAttributeTriageChecks
             "V3 triage preserves candidate without inferring resources or copying native stats");
 
         var withDat = CombatAttributeTriage.Analyze(capture,CatalogCards());
-        check(withDat.PinnedCatalogProvided && withDat.ConditionalMatches == 2 &&
+        check(withDat.CatalogProvided && withDat.ConditionalMatches == 2 &&
             withDat.ConditionalMismatches == 0 &&
             withDat.Cases[0].Attacker.ConditionalCoreHex == "18000F05A40600007E040000" &&
             withDat.Cases[0].Defender.ConditionalCoreHex == "260212056C07000084030000" &&
