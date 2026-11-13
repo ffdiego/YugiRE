@@ -20,7 +20,7 @@ public sealed record CombatAttributeTriageCase(
 
 public sealed record CombatAttributeTriageReport(
     string Scope, string SourceCapture, string CaptureSha256, string? ExeSha256,
-    bool PinnedCatalogProvided, int TotalFrames, int NeutralCandidates,
+    bool CatalogProvided, int TotalFrames, int NeutralCandidates,
     int HiddenDefendersInNeutral, int NeutralVisibleDefenders,
     int ConditionalMatches, int ConditionalMismatches, int ValidatedIndependentContexts,
     IReadOnlyList<CombatAttributeTriageCase> Cases);
