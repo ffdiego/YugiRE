@@ -111,3 +111,40 @@ O `exit=0` não é sozinho prova de instrumentação íntegra: é necessário
 confirmar um `armed` compatível, um `hit` e as invariantes de ESI/EIP/ESP.
 Não iniciar o controle negativo `object` antes de ambos os probes
 resultarem em `pass` no Windows.
+
+## Resultado do piloto sintético Windows — mecanismo reproduzido
+
+Em 2026-11-12 no horário local (arquivos de relatório com timestamp UTC
+2026-11-13), o operador comunicou os seguintes resultados do executável
+descartável Windows x86 compilado com MSVC:
+
+| Modo | AL | Saída reportada |
+| --- | --- | --- |
+| baseline | 0 | \`verdict=pass exit=0\` |
+| baseline | 2 | \`verdict=pass exit=0\` |
+| probe (callback função) | 0 | \`verdict=pass exit=0\` |
+| probe (callback função) | 2 | \`verdict=pass exit=0\` |
+| object (listener \`{onEnter}\`) | 0 | **\`verdict=object_overwrote_saved_esi exit=20\`** |
+
+O modo object foi executado somente na fixture, com
+\`--allow-unsafe-object-control\`. Relatório privado informado pelo
+operador: \`scratch/esi_stack_probe/esi-20261113T034044533004Z-object-al0.json\`.
+O programa detectou um valor de ESI diferente de \`0xD44\`, e o runner
+classificou o resultado como substituição da palavra salva. O processo
+retornou 20 intencionalmente nessa condição. Nos modos baseline e probe,
+ambos os caminhos passaram após corrigir a comparação textual do endereço
+do hook.
+
+**Alcance:** esse resultado é reprodução funcional no alvo sintético do
+mecanismo esperado da API Frida; ele fortalece substancialmente a hipótese
+de sobrescrita do save de ESI no incidente histórico. **Não prova** que
+o valor escrito no piloto corresponda a um trampoline específico sem
+conferir os campos brutos do JSON; tampouco reconstitui a execução do
+PID 23328 no Joey. Versão exata/runtime do Frida e valores raw de
+\`restoredEsi\`, \`probeAddress\` e \`fridaMessages\` ainda não foram
+auditados neste relatório (somente a saída resumida foi fornecida).
+
+Próxima ação: examinar o JSON privado em busca do valor raw de ESI,
+runtime Frida, endereço observado e evento \`hit\`, sem publicar dump nem
+fazer outra injeção. Registrar conclusão discriminante e então elaborar
+piloto mínimo separado para Joey; não executar hooks combinados da v2.
