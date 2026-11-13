@@ -176,3 +176,59 @@ sem outros patches, em sessão curta e supervisionada. A captura deve
 ter status com exatamente um \`combatReadPointsArmed\`, integridade sem
 perdas/erros e comportamento normal; não reativar o conjunto completo
 nem afirmar contextos completos só por sucesso desse teste.
+
+## Piloto Joey Windows com um probe corrigido — auditoria de contadores
+
+Relato do operador em 2026-11-12 (horário local) sobre a branch
+\`research/esi-crash\`, após correção do overload de instrução.
+Joey original anexado com \`patch_dual_rules.py --observe-only\`, sem DLL
+de regras. SHA256 de executável informado pelo preflight:
+\`db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de\`.
+
+Comandos usados:
+\`trace on 20000\`;
+\`trace ai on combat-context-point own_visibility_consumed\`;
+\`trace mark esi-single-probe-pilot\`;
+\`trace status\`;
+\`trace off\`;
+\`trace dump\`;
+\`stop\`.
+
+O status **antes do duelo** confirmou \`combatSchema=2\` e
+\`combatReadPoints=['own_visibility_consumed']\` (apenas um ponto de
+instrução armado). Ao interromper, o console mostrou
+\`combatContextCount=64\`, \`seen=1452\`, \`retained=1452\`,
+\`overwritten=0\`. Exportação local reportada:
+\`scratch/traces/commands-20261113-035632-190340-pid2760.jsonl\`.
+A execução do \`stop\` concluiu sem erro de restauração reportado.
+
+Uma contagem local PowerShell, excluindo a linha de metadados,
+encontrou **1452 eventos**, **64 testemunhos**
+\`combat_context/function=own_visibility_consumed\`,
+**1 evento \`combat_context_limit\`** e **0 eventos** com
+\`readError\`, \`correlationError\`, \`childOverflow=true\` ou
+\`readErrors\` não vazio. Os primeiros valores raw reportados:
+2, 2, 514, 514, 514, associados aos \`combatCallId\` 3, 14, 33,
+42 e 60. A primeira contagem de erros (1389) era um falso positivo
+provocado por \`@($_.readErrors).Count\` no PowerShell quando
+\`readErrors\` era \`null\`; foi corrigida pela verificação explícita
+de null.
+
+**Interpretação limitada:** o único probe interno corrigido produziu
+64 observações sem erros estruturais detectados nos campos verificados,
+sem sobrescrita do buffer de trace e sem crash apresentado no log do
+observador. O limite de 64 truncou deliberadamente a cobertura de
+contextos de combate, mas não é \`traceDropped\`. A conclusão do
+duelo pelo jogo e a auditoria de pares completos F40/filhos,
+sequência e conteúdo integral do JSONL permanecem **pendentes**;
+o arquivo bruto não foi anexado nem auditado diretamente neste
+relatório. Não inferir 64 contextos completos, paridade com C# ou
+segurança dos outros oito probes.
+
+**Próxima etapa:** auditar o JSONL local preservado, agrupando por
+\`combatCallId\` e correlacionando os eventos de entrada/saída de
+\`combat_event\` com cada \`own_visibility_consumed\`; identificar
+ausência de pares, qualquer sequência perdida e os campos que
+continuam desconhecidos. Uma segunda coleta ou ativação de outro
+ponto só depois dessa auditoria e da confirmação de comportamento
+normal do jogo.
