@@ -102,7 +102,7 @@ public static class Program
                 output.WriteLine($"Capture SHA256: {report.CaptureSha256}");
                 output.WriteLine($"V3 F40 frames: {report.TotalFrames}; neutral local snapshots: {report.NeutralCandidates}");
                 output.WriteLine($"Neutral defender visible: {report.NeutralVisibleDefenders}; hidden heuristic: {report.HiddenDefendersInNeutral}");
-                output.WriteLine($"Pinned DAT supplied: {report.PinnedCatalogProvided}");
+                output.WriteLine($"Pinned DAT supplied: {report.CatalogProvided}");
                 output.WriteLine($"Conditional Core matches/mismatches: {report.ConditionalMatches}/{report.ConditionalMismatches}; independently validated contexts: 0");
                 foreach (var row in report.Cases.Where(c => c.NeutralLocalSnapshot))
                     output.WriteLine($"  seq={row.EnterSequence} call={row.CombatCallId} indices={row.AttackerIndex}/{row.DefenderIndex} " +
