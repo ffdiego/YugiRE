@@ -66,6 +66,15 @@ class FixtureGuardTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'health verdict'):
                 runner.parse_result(f'{runner.MAGIC} RESULT al={al} esi=0x00000D44 route={route} esp=0x00123456 healthy=0',al)
 
+    def test_frida_pointer_matches_even_if_leading_zeroes_are_omitted(self):
+        self.assertTrue(runner.same_pointer_address('0x5a1234', '0x005A1234'))
+        self.assertTrue(runner.same_pointer_address('0X005a1234', '0x5A1234'))
+        self.assertTrue(runner.same_pointer_address('0x00000000', '0x0'))
+        self.assertFalse(runner.same_pointer_address('0x5a1235', '0x005A1234'))
+        self.assertFalse(runner.same_pointer_address('not-a-pointer', '0x005A1234'))
+        self.assertFalse(runner.same_pointer_address('0x100000000', '0x00000000'))
+        self.assertFalse(runner.same_pointer_address(None, '0x005A1234'))
+
     def test_instruction_register_and_stack_invariants(self):
         probe = '0x005A1234'
         raw = {'esi': '0xd44', 'esp': '0x00120000', 'eip': probe}
