@@ -329,7 +329,7 @@ def show_help(default_side: int) -> None:
           "ai check 1; ai step 1; "
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
-          "trace on [16..20000]; trace prep on|off; trace ai on [detail|gates|combat-context|combat-context-point <name>]|off; "
+          "trace on [16..20000]; trace prep on|off; trace ai on [detail|gates|combat-context|combat-context-v3|combat-context-point <name>]|off; "
           "trace demo on|off; trace deck on [mt]|off; "
           "trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
@@ -368,6 +368,9 @@ def handle_command(command: str, api: object, default_side: int,
         elif parts == ["trace", "ai", "on", "combat-context"]:
             # Entry-only baseline until the Windows v2 access violation is diagnosed.
             show_trace_status(api.traceaistart("combat-context"))
+        elif parts == ["trace", "ai", "on", "combat-context-v3"]:
+            # Five function-boundary listeners; no instruction probes.
+            show_trace_status(api.traceaistart("combat-context-v3"))
         elif len(parts) == 5 and parts[:4] == ["trace", "ai", "on", "combat-context-point"]:
             # One interior observation address, never the complete unsafe set.
             show_trace_status(api.traceaistart("combat-context-point:" + parts[4]))
@@ -401,7 +404,7 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.tracemark(label))
         else:
             print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
-                  "trace ai on [detail|gates|combat-context|combat-context-point <name>]|off | trace demo on|off | "
+                  "trace ai on [detail|gates|combat-context|combat-context-v3|combat-context-point <name>]|off | trace demo on|off | "
                   "trace mark <label> | trace status | trace off | trace dump",
                   flush=True)
         return True
