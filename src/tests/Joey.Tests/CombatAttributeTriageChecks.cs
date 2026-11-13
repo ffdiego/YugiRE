@@ -18,7 +18,7 @@ internal static class CombatAttributeTriageChecks
         {
             JsonNode.Parse("""{"kind":"ai_probe","function":"select_normal","phase":"enter","threadId":7,"callId":1,"side":0}""")!,
             JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{wrongSchema ? 2 : 3}},"session":1,"threadId":7,
+            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
              "combatCallId":2,"selectorCallId":1,"callId":2,"function":"combat_event",
              "phase":"enter","stateKind":"selector-window","argsRaw":[0,0,0],"seedHex":"00000000",
              "provenance":"F40-entry-snapshot","consumedPositionRaw":null,
@@ -27,21 +27,21 @@ internal static class CombatAttributeTriageChecks
                "positionRaw":2,"defensePosition":false,"faceUp":true,
                "linkCountRaw":{{links}},"monsterFlagsRaw":0,"playerFlagsRaw":0},
              "defender":{"side":1,"slot":0,"identityRaw":550,"internalCardIndex":550,
-               "positionRaw":{{position}},"defensePosition":{{hidden ? "true" : "false"}},
-               "faceUp":{{hidden ? "false" : "true"}},
+               "positionRaw":{{position}},"defensePosition":{{(hidden ? "true" : "false")}},
+               "faceUp":{{(hidden ? "false" : "true")}},
                "linkCountRaw":0,"monsterFlagsRaw":0,"playerFlagsRaw":0}}
             """)!,
             JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{wrongSchema ? 2 : 3}},"session":1,"threadId":7,
+            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
              "combatCallId":2,"selectorCallId":1,"callId":3,"function":"own_stats",
              "phase":"leave","argsRaw":[0,0,100],"caller":"0x5b0f97","outputHex":"{{own}}",
              "provenance":"wrapper-boundary-snapshot",
-             "esiExpectedRaw":3396,"esiAtEnterRaw":3396,"esiAtLeaveRaw":{{corruptedEsi ? 141603343 : 3396}},
-             "espAtEnterRaw":4096,"espAtLeaveRaw":4096,"esiPreserved":{{corruptedEsi ? "false" : "true"}},
+             "esiExpectedRaw":3396,"esiAtEnterRaw":3396,"esiAtLeaveRaw":{{(corruptedEsi ? 141603343 : 3396)}},
+             "espAtEnterRaw":4096,"espAtLeaveRaw":4096,"esiPreserved":{{(corruptedEsi ? "false" : "true")}},
              "positionBeforeRaw":2,"positionAfterRaw":2}
             """)!,
             JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{wrongSchema ? 2 : 3}},"session":1,"threadId":7,
+            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
              "combatCallId":2,"selectorCallId":1,"callId":4,"function":"opponent_stats",
              "phase":"leave","argsRaw":[1,0,104],"caller":"0x5b0fae","outputHex":"{{rival}}",
              "provenance":"wrapper-boundary-snapshot",
@@ -50,7 +50,7 @@ internal static class CombatAttributeTriageChecks
              "positionBeforeRaw":{{position}},"positionAfterRaw":{{position}}}
             """)!,
             JsonNode.Parse($$"""
-            {"kind":"combat_context","schemaVersion":{{wrongSchema ? 2 : 3}},"session":1,"threadId":7,
+            {"kind":"combat_context","schemaVersion":{{(wrongSchema ? 2 : 3)}},"session":1,"threadId":7,
              "combatCallId":2,"selectorCallId":1,"callId":2,"function":"combat_event",
              "phase":"leave","childCount":2,"childOverflow":false,"outputHex":"0808C800"}
             """)!,
