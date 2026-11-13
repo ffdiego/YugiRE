@@ -1289,6 +1289,64 @@ removidos pode ser recuperado no Git. Arquivos históricos relevantes:
 [ABI e testes híbridos](../docs/evidence/hybrid-native-abi-findings.md) e
 [baseline do Jam Breeding](../docs/evidence/hybrid-jam-baseline.md).
 
+## Combat-context v3 — modo mínimo de fronteiras (offline, NÃO validado no Joey)
+
+A branch \`research/esi-crash\` oferece o comando opt-in
+\`trace ai on combat-context-v3\`. **Este modo ainda precisa de piloto
+Windows próprio; não o confundir com a validação do probe único v2.**
+
+O modo instala **exatamente cinco listeners de entrada/saída de função**:
+\`select_normal\`, \`select_priority\`, \`combat_event (F40)\`,
+\`own_stats (ADD60)\`, \`opponent_stats (ADDC0)\`. Não instala nenhum dos
+nove probes internos de instrução, \`computed_stats (DD30)\`, ou os
+cinco helpers adicionais do \`combat-context\` v1. A infraestrutura de
+trace de comandos continua separada.
+
+Nos dois wrappers, a v3 registra \`esiAtEnterRaw\`, \`esiAtLeaveRaw\`,
+\`esiExpectedRaw\`, \`esiPreserved\`, \`espAtEnterRaw\`,
+\`espAtLeaveRaw\` e \`provenance=wrapper-boundary-snapshot\`, dentro
+do mesmo \`threadId/combatCallId\` do F40 pai. Espera-se
+\`ESI=(1-sideF40)*0xD44\` nas duas fronteiras de cada wrapper; valores
+divergentes produzem \`correlationError\` e **não são reparados**. O
+registro F40 de entrada informa \`provenance=F40-entry-snapshot\` e mantém
+\`consumedPositionRaw\`, \`consumedDescriptorSeedRaw\` e
+\`consumedFlagsRaw\` como \`null\`. Mesmo com buffers nativos presentes,
+essas amostras **não equivalem a um contexto de combate consumido
+completo**, e não autorizam comparação independente com Joey.Core.
+
+O status antes do duelo deve mostrar:
+\`combatContextActive=True\`, \`combatSchema=3\`,
+\`aiHooks=5\`, \`combatReadPoints=[]\`,
+\`overwritten=0\`. Se surgir \`correlationError\`, \`readError\`,
+perda, falha de hash ou sintoma no jogo, interromper o piloto e
+preservar o JSONL; não tentar forçar um ESI esperado em tempo real.
+Limite atual: 64 contextos F40, até 24 filhos por contexto.
+
+**Somente após revisão dos testes e aprovação do piloto**, executar um
+único duelo normal Windows, sem outras injeções, overrides ou aceleração:
+
+\`\`\`text
+trace on 20000
+trace ai on combat-context-v3
+trace mark combat-boundaries-v3
+trace status
+# Um duelo natural
+trace off
+trace status
+trace dump
+stop
+\`\`\`
+
+Requisitos: \`patch_dual_rules.py --observe-only\` no EXE original
+validado por SHA256, e nenhuma DLL de regras, \`trace prep\` ou
+\`trace demo\` ativa. O modo antigo \`combat-context\` continua emitindo
+schema 1 (dez listeners); \`combat-context-point <nome>\` continua
+permitindo um único probe corrigido (schema 2); a combinação de nove
+permanece bloqueada no Windows. Evidências e limites no
+[handoff v3](../docs/research/handoffs/native-combat-boundary-v3.md).
+
+---
+
 ## Contexto passivo de combate — mitigação após crash Windows
 
 **Atenção:** a instrumentação v2 com nove pontos internos provocou, ou esteve
