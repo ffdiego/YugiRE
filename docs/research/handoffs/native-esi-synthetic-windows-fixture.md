@@ -148,3 +148,31 @@ Próxima ação: examinar o JSON privado em busca do valor raw de ESI,
 runtime Frida, endereço observado e evento \`hit\`, sem publicar dump nem
 fazer outra injeção. Registrar conclusão discriminante e então elaborar
 piloto mínimo separado para Joey; não executar hooks combinados da v2.
+
+## Evidência raw adicional — fixture x86 / objeto
+
+O operador consultou o JSON do piloto \`object --al 0\` e apresentou:
+
+- Frida Python: \`17.25.2\`; runtime do agente: \`QJS\`; arquitetura: \`ia32\`.
+- Endereço do ponto de instrução: \`0x00837290\` (o Frida apresentou \`0x837290\`).
+- Evento \`hit\`: \`ESI=0xD44\`, \`EIP=0x837290\`,
+  \`ESP=0xF6FAA4\`, \`EAX=0\`, um único hit.
+- Saída da fixture: \`restoredEsi=22021647\` = \`0x0150060F\`,
+  \`fallthroughMarker=1\`, \`reportedHealthy=false\`, código \`20\`.
+- \`espAfterFirstPop=16186024\`; diferença de \`+4\` com o ESP do hook.
+
+A diferença \`0x0150060F - 0x0B = 0x01500604\` fornece um **candidato**
+para o trampoline de saída nesta execução sintética. O ESI do crash
+histórico (\`0x0871120F\`) também termina em \`+0x0B\` relativamente à
+entrada candidata \`0x08711204\`. Esses endereços de base **não foram
+desmontados ou confirmados como trampolines reais** aqui; o que está
+comprovado é a substituição do ESI salvo no executável sintético por
+um valor incorreto. A semelhança do offset fortalece a hipótese
+mecânica, sem reconstituir o evento histórico dentro do Joey.
+
+Próximo gate: testar **um** probe de instrução da branch corrigida
+no Joey com \`--observe-only\`, hash validado, limite de eventos,
+sem outros patches, em sessão curta e supervisionada. A captura deve
+ter status com exatamente um \`combatReadPointsArmed\`, integridade sem
+perdas/erros e comportamento normal; não reativar o conjunto completo
+nem afirmar contextos completos só por sucesso desse teste.
