@@ -37,7 +37,7 @@ Saídas UTF-8/LF, sem BOM, caminhos de entrada ou horário:
   disponibilidade explícita true/false, quatro estados Unknown. Ponteiros null
   explícitos permanecem no JSON normativo, não são projetados no CSV.
 
-O relatório Markdown agregado fica para a próxima tarefa. Não versionar saídas reais
+Os relatórios Markdown são opcionais; veja entrega 4 abaixo. Não versionar saídas reais
 em massa; somente os golden sintéticos entram no repositório. As descrições
 consumidas por Catalog.Load nunca saem do processo C#.
 
@@ -67,10 +67,9 @@ python3 scripts/generate_card_coverage.py --dat ../passion/data.dat --exe ../pas
 mesmos bytes; são acrescentados `registry.json` (schema v1 completo) e
 `registry.csv` (mesmas colunas do CSV bruto, estados explicitamente anotados).
 O resumo de `attributes.json` e stdout continua descrevendo **o inventário
-bruto**, inclusive seus Unknown, não o registry anotado. Não há relatório
-Markdown agregado nem ranking nesta entrega. Use diretórios distintos se
-precisar manter gerações de conjuntos de anotações diferentes; o comando não
-remove arquivos de execuções anteriores.
+bruto**, inclusive seus Unknown, não o registry anotado. Relatórios Markdown e fila de investigações são opções da entrega 4, abaixo.
+Use diretórios distintos para manter gerações de conjuntos de anotações
+diferentes; a execução atual retira saídas conhecidas que deixaram de ser pedidas.
 
 ### Formato separado
 
@@ -159,3 +158,104 @@ Os três estados listados nos vínculos são compreensão/implementação/valida
 identificação é Identified salvo a pergunta de Zombyra. Os IDs das evidências
 resolvem para commit, caminho, localizador e hash no próprio JSON de anotações.
 Todas as cinco cartas têm validação integral Unknown.
+
+## Relatórios e priorização (entrega 4)
+
+Geração integrada, com ou sem `--annotations`:
+
+```bash
+python3 scripts/generate_card_coverage.py --dat ../passion/data.dat --exe ../passion/joey_pc.exe --output /tmp/yugire-reports --annotations docs/coverage/card-coverage.annotations.json --coverage-report --investigation-priorities
+```
+
+A partir dos JSONs já gerados, sem DAT/EXE ou build .NET:
+
+```bash
+python3 scripts/report_card_coverage.py --registry /tmp/yugire-reports/registry.json --attributes /tmp/yugire-reports/attributes.json --output /tmp/yugire-reports --coverage-report --investigation-priorities
+```
+
+Sem anotações, passe `inventory.json` como `--registry`. As duas opções são
+independentes; a CLI de relatórios exige pelo menos uma. Os nomes são fixos:
+`coverage-report.md` e `investigation-priorities.md`. Todas as entradas são
+validadas antes da publicação. A CLI separada confere os blobs de evidência
+por Git, sem rede, como o importador. Os renderizadores puros validam forma,
+referências e consistência das entradas; não dependem de Git para testes
+sintéticos. Nenhuma classificação é escrita de volta nos JSONs.
+
+A geração integrada administra os sete nomes conhecidos (cinco JSON/CSV e dois
+Markdown): após gerar e validar todos os bytes, publica por substituição de
+arquivo temporário e retira nomes conhecidos que não pertencem à execução atual.
+Assim, desligar anotações retira registry.json/registry.csv e desligar relatórios
+retira seus Markdown antigos. A CLI separada administra somente os dois nomes
+Markdown, preservando JSON/CSV. Arquivos com outros nomes não são removidos.
+A publicação é atômica por arquivo, não uma transação do diretório; uma falha de
+I/O durante a publicação deve ser resolvida repetindo o comando antes de usar o
+conjunto de saídas. Falha na validação não publica resultados novos.
+
+### Fontes por seção
+
+| Seção | Campos usados |
+|---|---|
+| Baseline, seleção e fingerprints | registry.baselineCommit, catalogScope, fingerprints; attributes.packSha256 |
+| Universos e disponibilidade | registry.cards.identity; attributes.cards.cardRef, pack e availability; registry.callbacks |
+| Histogramas dos quatro eixos | registry.cards.coverage; nunca attributes.summary.coverage |
+| Inventários e callbacks | registry.cards.mechanicInventory e callbackLookup |
+| Mecânicas por domínio/eixo/estado | registry.mechanics.domain e coverage |
+| Vínculos (denominador separado) | registry.cards.mechanics[].coverage |
+| Cartas, classificações e lacunas | identity, coverage por eixo, mechanics por vínculo, openQuestions e limitations |
+| Definições e dependências | registry.mechanics, dependencies, openQuestions, coverage |
+| Evidências de cada classificação | evidenceRefs dos eixos/vínculos e ledger: kind, claim, location (commit/path/locator/SHA256), limitations e capture |
+| Candidatos estruturais | callback.profileId e cinco slots; cards.callbackLookup.callbackRefs; identidades distintas por internalIndex |
+| Disponibilidade dos candidatos | junção exata por cardRef com attributes.cards.availability e pack & 7 |
+| Contexto e lacunas dos candidatos | refs explícitas de cartas/vínculos/mecânicas; mecânicas registradas; estados de compreensão/implementação; perguntas abertas |
+
+`attributes.summary` tem denominadores conferidos contra as linhas originais,
+mas seus histogramas brutos não alimentam a cobertura anotada. Fingerprints,
+versão, refs e conjuntos de cartas devem coincidir. Duplicatas de atributos,
+decodificação inconsistente, disponibilidade incompatível com pack, denominador
+incorreto, busca contraditória e profile com assinaturas diferentes são erros.
+
+### Política conservadora da fila
+
+Cada candidato `profile:Pxxx` representa somente igualdade dos cinco slots
+na versão pinada. Todos os profiles, inclusive órfãos e all-null, são listados.
+Cartas anotadas sem callback entram como candidatos individuais (Axe Raider e
+Zombyra no piloto). Cartas sem callback e sem mecânicas registradas são um pool
+de auditoria contado à parte, sem fabricar centenas de hipóteses.
+
+Não há score composto nem ganho garantido. A ordenação é lexicográfica:
+
+1. Profiles com pelo menos um ponteiro não nulo conhecido primeiro.
+2. Quantidade de cartas distintas por índice e registros de callback, em ordem
+   decrescente; somente para profiles com ponteiros conhecidos.
+3. Alcance na união dos packs e quantidade de versões representadas.
+4. Quantidade de refs semânticas explícitas e mecânicas registradas, como
+   desempates de contexto disponível, sem avaliação automática da qualidade.
+5. Cartas a esclarecer: questões abertas ou compreensão/implementação Unknown,
+   Partial, Conflicting ou NotImplemented. É demanda de investigação, não
+   prova de comportamento ausente. Usa-se apenas o número de linhas que
+   satisfazem esse predicado explícito, sem pesos para estados diferentes.
+6. ID ordinal como desempate final.
+
+Potencial estrutural é o alcance observado da triagem, não probabilidade de
+reutilização de regras. Para all-null ou carta sem callback, ele é Unknown.
+Ganho futuro comprovável, esforço/custo e adequação científica das evidências
+ficam Unknown: nenhum desses valores pode ser deduzido do tamanho do grupo.
+Os estados existentes aparecem separadamente; não são promovidos por ranking.
+A fila favorece grupos amplos por uma política explícita e pode deixar questões
+estreitas importantes abaixo deles. Uma decisão humana pode escolher outra
+ordem sem alterar a cobertura.
+
+### Verificação dos relatórios
+
+```bash
+python3 -m unittest discover -s tests -p 'test_card_coverage*.py' -q
+YUGIRE_COVERAGE_DAT=../passion/data.dat YUGIRE_COVERAGE_EXE=../passion/joey_pc.exe python3 -m unittest discover -s tests -p 'test_card_coverage*.py' -q
+python3 -m unittest discover -s tests -p 'test_card_callback_catalog.py' -q
+```
+
+Golden Markdown bruto/anotado é exclusivamente sintético. Testes comparam bytes
+sob permutação de entidades/refs e preservação dos inputs; verificam Unknown,
+aliases/duplicatas, packs sobrepostos, ausência de propagação semântica, entradas
+inconsistentes e retirada de arquivos residuais conhecidos. A integração opcional
+real compara todas as saídas em duas gerações e entre CLI integrada e CLI de
+JSONs existentes; depois desliga as opções e confere bytes brutos e limpeza.
