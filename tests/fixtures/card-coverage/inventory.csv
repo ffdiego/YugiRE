@@ -1,0 +1,6 @@
+cardRef,internalIndex,resourceId,name,properties,classCode,attack,defense,level,pack,Yugi,Kaiba,Joey,callbackLookup,identification,understanding,implementation,validation
+card:0,0,0,,0,0,0,0,0,0,false,false,false,AbsentInTable,Unknown,Unknown,Unknown,Unknown
+card:2,2,77,"A, ""é""
+B",0,0,0,0,0,3,true,true,false,Present,Unknown,Unknown,Unknown,Unknown
+card:5,5,77,Duplicate,0,0,0,0,0,4,false,false,true,Present,Unknown,Unknown,Unknown,Unknown
+card:9,9,2077,Variant,0,0,0,0,0,0,false,false,false,AbsentInTable,Unknown,Unknown,Unknown,Unknown
