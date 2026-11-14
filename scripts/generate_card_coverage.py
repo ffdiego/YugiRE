@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproducible read-only inventory. No semantic annotations are imported."""
+"""Reproducible inventory with optional, separate reviewed semantic overlays."""
 import argparse
 import csv
 import hashlib
@@ -129,12 +129,24 @@ def csv_bytes(snapshot, auxiliary):
     return stream.getvalue().encode('utf-8')
 
 
+def artifacts(snapshot, auxiliary, annotations=()):
+    """Raw artifacts never depend on annotations; merged output has separate names."""
+    outputs = {'inventory.json': canonical(snapshot), 'attributes.json': canonical(auxiliary),
+               'inventory.csv': csv_bytes(snapshot, auxiliary)}
+    if annotations:
+        from scripts.coverage.annotations import merge_annotations
+        registry = merge_annotations(snapshot, annotations, ROOT)
+        outputs.update({'registry.json': canonical(registry), 'registry.csv': csv_bytes(registry, auxiliary)})
+    return outputs
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dat', required=True, type=Path)
     parser.add_argument('--exe', required=True, type=Path, help='Read only, SHA256 verification; never executed')
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--standard-schema', action='store_true', help='Also validate with preinstalled jsonschema Draft202012Validator; never installs packages')
+    parser.add_argument('--annotations', action='append', type=Path, default=[], help='Reviewed v1 overlay; repeatable, conflicts fail')
     args = parser.parse_args()
     if (ROOT / 'src/Joey.Core/Archive.cs').read_bytes() != blob('src/Joey.Core/Archive.cs') or (ROOT / 'src/Joey.Core/NativeAiAttributes.cs').read_bytes() != blob('src/Joey.Core/NativeAiAttributes.cs'):
         raise ValueError('Core source differs from pinned extraction baseline; review required')
@@ -147,12 +159,14 @@ def main():
               evidence('extraction', 'src/Joey.Core/Archive.cs', 'SourceInspection', 'Catalog.Load identity and attribute decoding; input fingerprints recorded separately.'),
               evidence('pack', 'docs/24-dat-graphics.md', 'StaticAnalysis', 'card_pack bits 1/2/4 denote game availability, not full catalog.')]
     snapshot, auxiliary = generate(extracted, catalog, SOURCE_COMMIT, ledger)
+    annotations = [json.loads(path.read_text(encoding='utf-8')) for path in args.annotations]
+    outputs = artifacts(snapshot, auxiliary, annotations)
     if args.standard_schema:
         from jsonschema import Draft202012Validator
         Draft202012Validator.check_schema(SCHEMA)
         Draft202012Validator(SCHEMA).validate(snapshot)
-    outputs = {'inventory.json': canonical(snapshot), 'attributes.json': canonical(auxiliary),
-               'inventory.csv': csv_bytes(snapshot, auxiliary)}
+        if 'registry.json' in outputs:
+            Draft202012Validator(SCHEMA).validate(json.loads(outputs['registry.json']))
     args.output.mkdir(parents=True, exist_ok=True)
     for name, data in outputs.items():
         (args.output / name).write_bytes(data)

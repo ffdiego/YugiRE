@@ -1,0 +1,1199 @@
+{
+  "annotationVersion": 1,
+  "baselineCommit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+  "cards": [
+    {
+      "cardRef": "card:24",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "archive",
+            "identities"
+          ],
+          "limitations": [
+            "Ausência de registro nesta tabela não prova ausência de efeitos.",
+            "Igualdade de buffer sob manifesto declarado não valida a carta inteira."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "attributes"
+          ],
+          "limitations": [
+            "Ausência de registro nesta tabela não prova ausência de efeitos.",
+            "Igualdade de buffer sob manifesto declarado não valida a carta inteira."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "attributes"
+          ],
+          "limitations": [
+            "Ausência de registro nesta tabela não prova ausência de efeitos.",
+            "Igualdade de buffer sob manifesto declarado não valida a carta inteira."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Ausência de registro nesta tabela não prova ausência de efeitos.",
+            "Igualdade de buffer sob manifesto declarado não valida a carta inteira."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 24,
+        "name": "Axe Raider",
+        "resourceId": 77
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "attributes"
+              ],
+              "limitations": [
+                "Manifesto real de modificadores não observado independentemente."
+              ],
+              "scope": "Axe Raider (24/77): NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "attributes"
+              ],
+              "limitations": [
+                "Manifesto real de modificadores não observado independentemente."
+              ],
+              "scope": "Axe Raider (24/77): NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "attributes"
+              ],
+              "limitations": [
+                "Manifesto real de modificadores não observado independentemente."
+              ],
+              "scope": "Axe Raider (24/77): NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "attribute-tests",
+                "axe-buffer"
+              ],
+              "limitations": [
+                "Manifesto real de modificadores não observado independentemente."
+              ],
+              "scope": "Axe Raider (24/77): NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+              "state": "ConditionalMatch"
+            }
+          },
+          "evidenceRefs": [
+            "attribute-tests",
+            "attributes"
+          ],
+          "mechanicRef": "ai.stats.closed-plain",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Ausência de registro nesta tabela não prova ausência de efeitos.",
+        "Igualdade de buffer sob manifesto declarado não valida a carta inteira."
+      ]
+    },
+    {
+      "cardRef": "card:261",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "catalog",
+            "identities"
+          ],
+          "limitations": [
+            "P006/primary 0x00583d20 não fecha a semântica do gatilho ou busca.",
+            "FromResolvedContext rejeita este recurso no baseline; demais mecanismos não auditados."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "P006/primary 0x00583d20 não fecha a semântica do gatilho ou busca.",
+            "FromResolvedContext rejeita este recurso no baseline; demais mecanismos não auditados."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "P006/primary 0x00583d20 não fecha a semântica do gatilho ou busca.",
+            "FromResolvedContext rejeita este recurso no baseline; demais mecanismos não auditados."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "P006/primary 0x00583d20 não fecha a semântica do gatilho ou busca.",
+            "FromResolvedContext rejeita este recurso no baseline; demais mecanismos não auditados."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 261,
+        "name": "Witch of the Black Forest",
+        "resourceId": 573
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:100"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "witch-observation"
+              ],
+              "limitations": [
+                "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+              ],
+              "scope": "Witch of the Black Forest (261/573): Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [],
+              "limitations": [
+                "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+              ],
+              "scope": "Witch of the Black Forest (261/573): Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+              "state": "Unknown"
+            },
+            "understanding": {
+              "evidenceRefs": [],
+              "limitations": [
+                "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+              ],
+              "scope": "Witch of the Black Forest (261/573): Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+              "state": "Unknown"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "witch-observation"
+              ],
+              "limitations": [
+                "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+              ],
+              "scope": "Witch of the Black Forest (261/573): Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+              "state": "ObservedOnly"
+            }
+          },
+          "evidenceRefs": [
+            "witch-observation"
+          ],
+          "mechanicRef": "rules.search.witch-candidate",
+          "relation": "Candidate"
+        }
+      ],
+      "openQuestions": [
+        "P006/primary 0x00583d20 não fecha a semântica do gatilho ou busca.",
+        "FromResolvedContext rejeita este recurso no baseline; demais mecanismos não auditados."
+      ]
+    },
+    {
+      "cardRef": "card:515",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "identities"
+          ],
+          "limitations": [
+            "Sem registro na tabela auditada; não classificar como vanilla.",
+            "Política intrínseca da API fechada não implementada para 1523; cobertura global permanece desconhecida."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Sem registro na tabela auditada; não classificar como vanilla.",
+            "Política intrínseca da API fechada não implementada para 1523; cobertura global permanece desconhecida."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Sem registro na tabela auditada; não classificar como vanilla.",
+            "Política intrínseca da API fechada não implementada para 1523; cobertura global permanece desconhecida."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Sem registro na tabela auditada; não classificar como vanilla.",
+            "Política intrínseca da API fechada não implementada para 1523; cobertura global permanece desconhecida."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 515,
+        "name": "Zombyra the Dark",
+        "resourceId": 1523
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [],
+              "limitations": [
+                "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+              ],
+              "scope": "Zombyra the Dark (515/1523): Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+              "state": "Unknown"
+            },
+            "implementation": {
+              "evidenceRefs": [],
+              "limitations": [
+                "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+              ],
+              "scope": "Zombyra the Dark (515/1523): Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+              "state": "Unknown"
+            },
+            "understanding": {
+              "evidenceRefs": [],
+              "limitations": [
+                "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+              ],
+              "scope": "Zombyra the Dark (515/1523): Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+              "state": "Unknown"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [],
+              "limitations": [
+                "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+              ],
+              "scope": "Zombyra the Dark (515/1523): Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+              "state": "Unknown"
+            }
+          },
+          "evidenceRefs": [
+            "identities",
+            "research-policy"
+          ],
+          "mechanicRef": "rules.intrinsic.zombyra-candidate",
+          "relation": "Candidate"
+        }
+      ],
+      "openQuestions": [
+        "Sem registro na tabela auditada; não classificar como vanilla.",
+        "Política intrínseca da API fechada não implementada para 1523; cobertura global permanece desconhecida."
+      ]
+    },
+    {
+      "cardRef": "card:614",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "catalog",
+            "sword-static"
+          ],
+          "limitations": [
+            "Bônus aritmético implementado não fecha ativação, vínculos, supressão e timing."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "attributes",
+            "demo"
+          ],
+          "limitations": [
+            "Bônus aritmético implementado não fecha ativação, vínculos, supressão e timing."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "cleanup-static",
+            "sword-static"
+          ],
+          "limitations": [
+            "Bônus aritmético implementado não fecha ativação, vínculos, supressão e timing."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Bônus aritmético implementado não fecha ativação, vínculos, supressão e timing."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 614,
+        "name": "Legendary Sword",
+        "resourceId": 300
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "attributes",
+                "sword-static"
+              ],
+              "limitations": [
+                "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+              ],
+              "scope": "Legendary Sword (614/300): EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "attributes"
+              ],
+              "limitations": [
+                "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+              ],
+              "scope": "Legendary Sword (614/300): EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "attributes",
+                "sword-static"
+              ],
+              "limitations": [
+                "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+              ],
+              "scope": "Legendary Sword (614/300): EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "attribute-tests"
+              ],
+              "limitations": [
+                "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+              ],
+              "scope": "Legendary Sword (614/300): EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "attributes",
+            "sword-static"
+          ],
+          "mechanicRef": "ai.stats.sword-delta",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [
+            "callback:24"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "cleanup-static",
+                "sword-static"
+              ],
+              "limitations": [
+                "Revalidação dinâmica, supressão e demais movimentos pendentes."
+              ],
+              "scope": "Legendary Sword (614/300): ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "demo"
+              ],
+              "limitations": [
+                "Revalidação dinâmica, supressão e demais movimentos pendentes."
+              ],
+              "scope": "Legendary Sword (614/300): ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "cleanup-static",
+                "sword-static"
+              ],
+              "limitations": [
+                "Revalidação dinâmica, supressão e demais movimentos pendentes."
+              ],
+              "scope": "Legendary Sword (614/300): ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "demo-tests"
+              ],
+              "limitations": [
+                "Revalidação dinâmica, supressão e demais movimentos pendentes."
+              ],
+              "scope": "Legendary Sword (614/300): ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "cleanup-static",
+            "sword-static"
+          ],
+          "mechanicRef": "rules.equip.sword",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Bônus aritmético implementado não fecha ativação, vínculos, supressão e timing."
+      ]
+    },
+    {
+      "cardRef": "card:755",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "catalog",
+            "sparks-static"
+          ],
+          "limitations": [
+            "P045 compartilhado com Ookazi não prova equivalência; constantes diferentes por ID.",
+            "Faltam casos nativos completos de ativação e interações."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "demo"
+          ],
+          "limitations": [
+            "P045 compartilhado com Ookazi não prova equivalência; constantes diferentes por ID.",
+            "Faltam casos nativos completos de ativação e interações."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "sparks-static"
+          ],
+          "limitations": [
+            "P045 compartilhado com Ookazi não prova equivalência; constantes diferentes por ID.",
+            "Faltam casos nativos completos de ativação e interações."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "P045 compartilhado com Ookazi não prova equivalência; constantes diferentes por ID.",
+            "Faltam casos nativos completos de ativação e interações."
+          ],
+          "scope": "Carta inteira no baseline main; inventário de mecanismos ainda aberto",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 755,
+        "name": "Sparks",
+        "resourceId": 342
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:66"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "sparks-static"
+              ],
+              "limitations": [
+                "Timing, bloqueio por pedido+4 e interações não fechados."
+              ],
+              "scope": "Sparks (755/342): ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "demo"
+              ],
+              "limitations": [
+                "Timing, bloqueio por pedido+4 e interações não fechados."
+              ],
+              "scope": "Sparks (755/342): ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "sparks-static"
+              ],
+              "limitations": [
+                "Timing, bloqueio por pedido+4 e interações não fechados."
+              ],
+              "scope": "Sparks (755/342): ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "demo-tests"
+              ],
+              "limitations": [
+                "Timing, bloqueio por pedido+4 e interações não fechados."
+              ],
+              "scope": "Sparks (755/342): ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "demo",
+            "sparks-static"
+          ],
+          "mechanicRef": "rules.lp.sparks",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "P045 compartilhado com Ookazi não prova equivalência; constantes diferentes por ID.",
+        "Faltam casos nativos completos de ativação e interações."
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "capture": null,
+      "claim": "Catalog.Load preserva o índice original, ignora FFFF e mantém ID zero.",
+      "id": "archive",
+      "kind": "SourceInspection",
+      "limitations": [
+        "ClassCode/IsMonster não distinguem monstro normal de monstro com efeitos.",
+        "Fonte reconferida byte a byte no baseline 7e5ca13; não transfere suporte de branches experimentais."
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "Card; Catalog.Load",
+        "path": "src/Joey.Core/Archive.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "f0144dd08cf7c1659a42391a9810190db7938d55f804e6d5f97884aab08e872b"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Testes existentes incluem rejeição de contexto desconhecido e comparação de Axe Raider sob contexto declarado.",
+      "id": "attribute-tests",
+      "kind": "SyntheticTest",
+      "limitations": [
+        "Fonte de teste inspecionada; não executada novamente nesta entrega.",
+        "Comparação condicionada não prova paridade nem inventário de efeitos fechado."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Run; RunCatalog; caso Axe Raider event24",
+        "path": "src/tests/Joey.Tests/AiAttributeChecks.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "9cd37ca805dc551e5861d608c29667e094783fa5e6ad3f12214f4209a767388c"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Na main, política fechada 77/531; contribuição 300 depende de TypeCode 15; contexto Unknown é rejeitado.",
+      "id": "attributes",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Contexto resolvido é declaração do chamador; contribuição não resolve ativação ou vínculos.",
+        "Fonte reconferida byte a byte no baseline 7e5ca13; não transfere suporte de branches experimentais."
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "FromResolvedContext; EquipmentDelta; NormalizeResource; EquivalentResources",
+        "path": "src/Joey.Core/NativeAiAttributes.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "9529db8428b6a9b5c5aa8da7a2e5c1a798e84cd34529cb647f7041211ed2ca95"
+      }
+    },
+    {
+      "capture": {
+        "attestation": "Unknown",
+        "completeness": "Incomplete",
+        "eventLocator": "event24 / event25PrecedingComputedStats",
+        "exeSha256": null,
+        "sha256": "dd2029e8397d22401b7790ce3f007c9353cef94d5e6a9c14dbe1690d20206a90"
+      },
+      "claim": "Buffer nativo reduzido de Axe Raider usado pelos testes existentes.",
+      "id": "axe-buffer",
+      "kind": "NativeObservation",
+      "limitations": [
+        "Fixture registra outputs; contexto de modificadores não foi observado de forma completa.",
+        "Hash do EXE rotulado na fixture não é atestado independente da captura nesta revisão."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "/event25PrecedingComputedStats; event24",
+        "path": "src/tests/Joey.Tests/Fixtures/ai-live-combat-events.json",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "bdb8b72d8242e9ce952194988e33c8fe226ef191a33e5d02eb917e2771e3c2e1"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Inventário fechado desta tabela: 443 registros; ponteiros agrupados, sem equivalência semântica.",
+      "id": "catalog",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Fora da tabela podem existir regras globais e por ID."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "/records; /profiles; /table",
+        "path": "docs/evidence/card-callback-catalog.json",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "1415e325e13aa5b0fa60f40b9dba957d45bfec56ae33a71d8b21cc53d22df90c"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Há análise estática da retirada comum e compactação de vínculos.",
+      "id": "cleanup-static",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Não cobre todas as rotas de movimento."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Limpeza comum de equipamento/monstro",
+        "path": "docs/cards/equipment-cleanup.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "a71db3aab82314ef283c6c020ceb5b0a60d992f80cc3ace937a2a0edf4f5c76f"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "DemoDuel implementa dano Sparks e equipamento Legendary Sword em um subconjunto.",
+      "id": "demo",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Demo não é implementação integral da engine nativa.",
+        "Fonte reconferida byte a byte no baseline 7e5ca13; não transfere suporte de branches experimentais."
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "Play; ResolvePendingActivation; Equip",
+        "path": "src/Joey.Core/Demo.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "fa7c6a5a041b48015c3af7e09974cf443d8a1adfaf1ded58d2616f8a9b4c7533"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Existem testes sintéticos de dano, alvo Warrior, bônus e limpeza do equipamento.",
+      "id": "demo-tests",
+      "kind": "SyntheticTest",
+      "limitations": [
+        "Fonte inspecionada; não é prova diferencial de timing/estado nativo."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Sparks damages opponent; Sword grants Warrior; Destroyed target cleans",
+        "path": "src/tests/Joey.Tests/Program.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "480299d4029caac506ab9794b608001ec8bf86a1cb496ff4a97ca74acb9d95c7"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Mapeamento de índice interno para ID de recurso e nome no DAT atestado.",
+      "id": "identities",
+      "kind": "ResourceIdentity",
+      "limitations": [
+        "Não identifica uma ocorrência em campo nem comprova mecânica."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Identidades indexadas de Axe Raider (24/77), Witch (261/573) e Zombyra (515/1523).",
+        "path": "docs/evidence/deck-name-validation.json",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "5013ec4bd5fc79224e2e6c83b6883e59150e615790050f38886670c09cfe1488"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Outputs nativos como entradas só permitem comparação escalar; flags e hash requerem proveniência própria.",
+      "id": "observation-contract",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Contrato de observação não atesta uma captura concreta."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Estado hipotético; Revisão S3",
+        "path": "docs/research/ai-combat-observation-contract.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "de4a7458b6f0cd02e8e20126107c6e60deaffbf0b872e9446dc9f577799178ca"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Branch research amplia política normal fechada, mas Witch e Zombyra continuam fora dela.",
+      "id": "research-policy",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Não transferir suporte dessa branch para o baseline main.",
+        "Unsupported nesta API não comprova ausência de implementação em todo o projeto."
+      ],
+      "location": {
+        "commit": "a7de8c016af3d4c9c857b4be8c8bb6a6b1af9bfb",
+        "locator": "FromResolvedContext; comentário e whitelist",
+        "path": "src/Joey.Core/NativeAiAttributes.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "8b7114743400faa9a03f93d2ceebc01c49ac742603196e85712a1bcc46f6831f"
+      }
+    },
+    {
+      "capture": {
+        "attestation": "Unknown",
+        "completeness": "Incomplete",
+        "eventLocator": "F40 seq 70/74; relatório agregado",
+        "exeSha256": null,
+        "sha256": "c7a8b618418061f68665c7c3e59574371a2061e23eb1d55965ac456fa0aaf80a"
+      },
+      "claim": "Relato da branch: 50 frames, 29 candidatos locais, 2 matches condicionais Gemini Elf, 0 contextos independentes.",
+      "id": "research-v3",
+      "kind": "NativeObservation",
+      "limitations": [
+        "Fonte adicional consultada sem merge; não é resultado novo desta sessão.",
+        "Zero em flags/links não demonstra ausência de efeitos; Axe Raider não é atacante nessa captura."
+      ],
+      "location": {
+        "commit": "a7de8c016af3d4c9c857b4be8c8bb6a6b1af9bfb",
+        "locator": "Windows verification and next catalog inspection",
+        "path": "docs/research/handoffs/native-v3-attribute-triage.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "5b027f8d8320d7b47a085fddaaab4d6cc38135896abcaebcc19d6cc434d3968b"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Ramo Sparks prepara oponente e solicita dano 200; Ookazi usa 800 mesmo com P045.",
+      "id": "sparks-static",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Bit pedido+4 & 4, timing, interações e negação não fechados dinamicamente."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Destinatário e resolução; ID 342",
+        "path": "docs/cards/sparks-ookazi.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "0819310e2f307e1c1195beb2cec2a30a4ab6125545b6dde56030cda996534c5c"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "ID 300: alvo com tipo dinâmico 15, vínculo tipo 1 e contribuição 300/300 no caminho estudado.",
+      "id": "sword-static",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Supressão, mudanças de tipo e ordem completa dos modificadores permanecem abertas."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Seleção e revalidação; Escrita do vínculo; Recálculo dos atributos",
+        "path": "docs/cards/legendary-sword.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "cfb1a558549557b2737f57fe71480198087e2ad440d461f50964a22cf0fad259"
+      }
+    },
+    {
+      "capture": {
+        "attestation": "Unknown",
+        "completeness": "Incomplete",
+        "eventLocator": "012243 seq 35/43/55/58/59/69",
+        "exeSha256": null,
+        "sha256": null
+      },
+      "claim": "Retirada do índice 261 e incrementos da mão são compatíveis com o relato do operador.",
+      "id": "witch-observation",
+      "kind": "NativeObservation",
+      "limitations": [
+        "Compra de turno é confundidor; IDs buscados e causalidade não observados.",
+        "Relatório não fornece SHA256 individual desta captura; nenhum hash foi inventado."
+      ],
+      "location": {
+        "commit": "e0ae044bbd9994c33c66630e4a74f8c95ef15831",
+        "locator": "Witch of the Black Forest / Spear Cretin; captura 012243 seq 35/43/55/58/59/69",
+        "path": "docs/31-joeytrace-duel-evidence.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "71149180a71d9ec3a71d9a5028a6a55b96b89daabfbb60f7cdc906fc7e1ff831"
+      }
+    }
+  ],
+  "fingerprints": {
+    "cardIdSha256": "a36cde2192fa85d9ccbcdb0ddb8ba8494a5199ea31d11a50a70b5fd32bf5879c",
+    "datSha256": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed",
+    "exeSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+    "namesSha256": "74848d0b2cd7d5fac7a767075bd5b01e0366183ce934afa6070ce24394a24032",
+    "propertiesSha256": "1a772642a04d86a2cfcebba2d0f4ff40a1737761296d0ea6a2645f5ed2bf0b9e"
+  },
+  "mechanics": [
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "attributes"
+          ],
+          "limitations": [
+            "Manifesto real de modificadores não observado independentemente."
+          ],
+          "scope": "NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "attributes"
+          ],
+          "limitations": [
+            "Manifesto real de modificadores não observado independentemente."
+          ],
+          "scope": "NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+          "state": "ImplementedInScope"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "attributes"
+          ],
+          "limitations": [
+            "Manifesto real de modificadores não observado independentemente."
+          ],
+          "scope": "NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+          "state": "UnderstoodInScope"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "attribute-tests",
+            "axe-buffer"
+          ],
+          "limitations": [
+            "Manifesto real de modificadores não observado independentemente."
+          ],
+          "scope": "NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+          "state": "ConditionalMatch"
+        }
+      },
+      "dependencies": [],
+      "domain": "AiStats",
+      "id": "ai.stats.closed-plain",
+      "openQuestions": [
+        "Manifesto real de modificadores não observado independentemente."
+      ],
+      "scope": "NativeAiAttributes.FromPlainCard, recursos 77/531, sob manifesto resolvido",
+      "title": "Atributos de monstro no subconjunto fechado"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "attributes",
+            "sword-static"
+          ],
+          "limitations": [
+            "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+          ],
+          "scope": "EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "attributes"
+          ],
+          "limitations": [
+            "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+          ],
+          "scope": "EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+          "state": "ImplementedInScope"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "attributes",
+            "sword-static"
+          ],
+          "limitations": [
+            "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+          ],
+          "scope": "EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+          "state": "UnderstoodInScope"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "attribute-tests"
+          ],
+          "limitations": [
+            "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+          ],
+          "scope": "EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+          "state": "SyntheticOnly"
+        }
+      },
+      "dependencies": [],
+      "domain": "AiStats",
+      "id": "ai.stats.sword-delta",
+      "openQuestions": [
+        "Não resolve elegibilidade, tipo dinâmico, supressão ou links reais."
+      ],
+      "scope": "EquipmentDelta(300): +300/+300 quando TypeCode == 15, contribuição zero nos demais tipos; elegibilidade previamente resolvida",
+      "title": "Contribuição aritmética de Legendary Sword"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "cleanup-static",
+            "sword-static"
+          ],
+          "limitations": [
+            "Revalidação dinâmica, supressão e demais movimentos pendentes."
+          ],
+          "scope": "ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "demo"
+          ],
+          "limitations": [
+            "Revalidação dinâmica, supressão e demais movimentos pendentes."
+          ],
+          "scope": "ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "cleanup-static",
+            "sword-static"
+          ],
+          "limitations": [
+            "Revalidação dinâmica, supressão e demais movimentos pendentes."
+          ],
+          "scope": "ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "demo-tests"
+          ],
+          "limitations": [
+            "Revalidação dinâmica, supressão e demais movimentos pendentes."
+          ],
+          "scope": "ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+          "state": "SyntheticOnly"
+        }
+      },
+      "dependencies": [
+        "ai.stats.sword-delta"
+      ],
+      "domain": "Rules",
+      "id": "rules.equip.sword",
+      "openQuestions": [
+        "Revalidação dinâmica, supressão e demais movimentos pendentes."
+      ],
+      "scope": "ID 300: ciclo de equipamento nos caminhos estáticos e demo examinados",
+      "title": "Seleção, vínculo e retirada de Legendary Sword"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+          ],
+          "scope": "Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+          "state": "Unknown"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+          ],
+          "scope": "Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+          ],
+          "scope": "Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+          ],
+          "scope": "Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+          "state": "Unknown"
+        }
+      },
+      "dependencies": [],
+      "domain": "Rules",
+      "id": "rules.intrinsic.zombyra-candidate",
+      "openQuestions": [
+        "Investigar condições por ID e regras fora da tabela antes de classificar os efeitos."
+      ],
+      "scope": "Pergunta de pesquisa para ID 1523; nenhuma regra específica é afirmada neste exemplo",
+      "title": "Política intrínseca e de ataque de Zombyra a investigar"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "sparks-static"
+          ],
+          "limitations": [
+            "Timing, bloqueio por pedido+4 e interações não fechados."
+          ],
+          "scope": "ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "demo"
+          ],
+          "limitations": [
+            "Timing, bloqueio por pedido+4 e interações não fechados."
+          ],
+          "scope": "ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "sparks-static"
+          ],
+          "limitations": [
+            "Timing, bloqueio por pedido+4 e interações não fechados."
+          ],
+          "scope": "ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "demo-tests"
+          ],
+          "limitations": [
+            "Timing, bloqueio por pedido+4 e interações não fechados."
+          ],
+          "scope": "ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+          "state": "SyntheticOnly"
+        }
+      },
+      "dependencies": [],
+      "domain": "Rules",
+      "id": "rules.lp.sparks",
+      "openQuestions": [
+        "Timing, bloqueio por pedido+4 e interações não fechados."
+      ],
+      "scope": "ID 342: destinatário oponente e delta de LP 200 no caminho estudado",
+      "title": "Dano do ramo Sparks"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "witch-observation"
+          ],
+          "limitations": [
+            "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+          ],
+          "scope": "Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+          ],
+          "scope": "Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+          ],
+          "scope": "Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "witch-observation"
+          ],
+          "limitations": [
+            "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+          ],
+          "scope": "Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+          "state": "ObservedOnly"
+        }
+      },
+      "dependencies": [],
+      "domain": "Rules",
+      "id": "rules.search.witch-candidate",
+      "openQuestions": [
+        "Correlacionar saída, evento, IDs buscados e alteração do deck; não atribuir compras por proximidade."
+      ],
+      "scope": "Candidato a gatilho/busca após saída de campo; condições e causalidade pendentes",
+      "title": "Hipótese de busca associada a Witch"
+    }
+  ]
+}
