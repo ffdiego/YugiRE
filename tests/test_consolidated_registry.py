@@ -1,5 +1,6 @@
 """Reviewed union; historical overlays remain immutable and cannot auto-migrate."""
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -61,7 +62,7 @@ class ConsolidationTests(unittest.TestCase):
         for name,data in artifacts(raw,aux).items():self.assertEqual(data,expected[name])
         self.assertEqual((raw,aux,doc),before)
 
-    def test_current_source_and_historical_provenance(self):
+    def test_reviewed_baseline_and_historical_provenance(self):
         _,_,doc=fixture()
         for e in doc['evidence']:verify_evidence(e,ROOT)
         reviews=[e for e in doc['evidence'] if e['id'].startswith('review-')]
@@ -69,7 +70,7 @@ class ConsolidationTests(unittest.TestCase):
         for e in reviews:
             location=e['location']
             pinned=subprocess.check_output(['git','show',f"{doc['baselineCommit']}:{location['path']}"],cwd=ROOT)
-            self.assertEqual(pinned,(ROOT/location['path']).read_bytes())
+            self.assertEqual(hashlib.sha256(pinned).hexdigest(),location['sha256'])
             self.assertEqual(location['commit'],doc['baselineCommit'])
         for name in ('card-coverage.annotations.json','p045.annotations.json'):
             self.assertEqual((ROOT/'docs/coverage'/name).read_bytes(),subprocess.check_output(['git','show',f"{doc['baselineCommit']}:docs/coverage/{name}"],cwd=ROOT))
