@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import unittest
 
-from scripts.generate_card_coverage import generate, canonical, csv_bytes, SOURCE_COMMIT, ROOT
+from scripts.generate_card_coverage import generate, canonical, csv_bytes, artifacts, SOURCE_COMMIT, ROOT
 from scripts.coverage.validation import validate
 
 GOLDEN = Path(__file__).parent / 'fixtures/card-coverage'
@@ -44,7 +44,8 @@ class GeneratorTests(unittest.TestCase):
         args[0]['cards'].reverse()
         args[1]['records'].reverse()
         args[3].reverse()
-        self.assertEqual(canonical(expected), canonical(generate(*args)))
+        actual = generate(*args)
+        self.assertEqual(artifacts(*expected), artifacts(*actual))
 
     def test_identity_alias_orphan_denominators_and_unknown(self):
         s, a = generate(*inputs())
@@ -119,6 +120,18 @@ class GeneratorTests(unittest.TestCase):
             self.assertEqual(len(s['cards']), 1114)
             self.assertEqual(len(s['callbacks']), 443)
             self.assertEqual(json.loads(first['attributes.json'])['summary']['packUnionRows'], 771)
+            annotated_cmd = cmd + ['--annotations', str(ROOT / 'docs/coverage/card-coverage.annotations.json')]
+            subprocess.check_output(annotated_cmd, cwd=ROOT)
+            annotated = {p.name: p.read_bytes() for p in Path(directory).iterdir()}
+            for name, data in first.items():
+                self.assertEqual(data, annotated[name], name)
+            subprocess.check_output(annotated_cmd, cwd=ROOT)
+            self.assertEqual(annotated, {p.name: p.read_bytes() for p in Path(directory).iterdir()})
+            merged = json.loads(annotated['registry.json'])
+            self.assertEqual(len(merged['cards']), 1114)
+            self.assertEqual(len(merged['mechanics']), 6)
+            self.assertEqual(sum(c['coverage']['identification']['state'] == 'Unknown' for c in merged['cards']), 1109)
+
 
 
 if __name__ == '__main__':
