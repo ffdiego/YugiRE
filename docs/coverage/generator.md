@@ -259,3 +259,34 @@ aliases/duplicatas, packs sobrepostos, ausência de propagação semântica, ent
 inconsistentes e retirada de arquivos residuais conhecidos. A integração opcional
 real compara todas as saídas em duas gerações e entre CLI integrada e CLI de
 JSONs existentes; depois desliga as opções e confere bytes brutos e limpeza.
+
+## Fase 2: baseline explícito do piloto P045
+
+O padrão da CLI permanece 7e5ca13 para reproduzir a Fase 1. A opção
+`--baseline-commit` aceita somente um commit completo existente localmente;
+Archive.cs e NativeAiAttributes.cs nesse commit precisam ser idênticos às
+fontes pinadas da extração. Não troca fingerprints, tabela de callbacks ou
+fontes de extração. Não migra anotações nem altera evidências automaticamente.
+
+O piloto novo tem anotações separadas para as cinco cartas P045, avaliadas em
+`0a9b4434dd7d185b5c44c20680b11258f7f6e164` (implementação e testes C#):
+
+```bash
+dotnet build src/Joey.Coverage --no-restore
+python3 scripts/generate_card_coverage.py --dat ../passion/data.dat --exe ../passion/joey_pc.exe --output /tmp/p045-registry --baseline-commit 0a9b4434dd7d185b5c44c20680b11258f7f6e164 --annotations docs/coverage/p045.annotations.json --coverage-report --investigation-priorities
+```
+
+Não combinar esse documento com o piloto da Fase 1, que continua atestado no
+baseline anterior. No novo snapshot, as cartas fora de P045 permanecem Unknown
+porque não foram reavaliadas neste baseline; isso não afirma remoção de código
+ou regressão das cartas históricas. As anotações antigas permanecem reproduzíveis
+com o comando anterior, sem a opção de baseline. A futura revisão conjunta
+exige reavaliar explicitamente suas fontes, sem trocar commits por conveniência.
+
+P045 tem três mecânicas estreitas, separadas: projeção do comando LP, preparação
+escalar do oponente e integração no demo. A integração depende das duas primeiras;
+não herda sua cobertura. Quinze vínculos explícitos sustentam cinco cartas com
+compreensão/implementação Partial e validação integral Unknown. As duas funções
+escalares são ImplementedInScope/SyntheticOnly, não paridade integral. O ganho
+verificável no demo é suporte a três IDs novos: Hinotama, Final Flame e Raimei;
+Sparks e Ookazi conservam os valores anteriores.

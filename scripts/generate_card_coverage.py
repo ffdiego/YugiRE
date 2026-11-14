@@ -5,6 +5,7 @@ import csv
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -155,7 +156,16 @@ def main():
     parser.add_argument('--annotations', action='append', type=Path, default=[], help='Reviewed v1 overlay; repeatable, conflicts fail')
     parser.add_argument('--coverage-report', action='store_true')
     parser.add_argument('--investigation-priorities', action='store_true')
+    parser.add_argument('--baseline-commit', default=SOURCE_COMMIT, help='Explicit reviewed implementation baseline (full commit); extraction sources remain pinned')
     args = parser.parse_args()
+    if not re.fullmatch(r'[0-9a-f]{40}', args.baseline_commit):
+        parser.error('--baseline-commit requires a full lowercase commit hash')
+    if subprocess.check_output(['git', 'cat-file', '-t', args.baseline_commit], cwd=ROOT).strip() != b'commit':
+        raise ValueError('Baseline must be a commit')
+    for source in ('src/Joey.Core/Archive.cs', 'src/Joey.Core/NativeAiAttributes.cs'):
+        baseline_blob = subprocess.check_output(['git', 'show', f'{args.baseline_commit}:{source}'], cwd=ROOT)
+        if baseline_blob != blob(source):
+            raise ValueError('Baseline changes pinned extraction/helper sources; explicit source review required')
     if (ROOT / 'src/Joey.Core/Archive.cs').read_bytes() != blob('src/Joey.Core/Archive.cs') or (ROOT / 'src/Joey.Core/NativeAiAttributes.cs').read_bytes() != blob('src/Joey.Core/NativeAiAttributes.cs'):
         raise ValueError('Core source differs from pinned extraction baseline; review required')
     catalog = json.loads(blob(CALLBACK_PATH))
@@ -166,7 +176,7 @@ def main():
     ledger = [evidence('helper', 'src/Joey.Core/NativeAiAttributes.cs', 'SourceInspection', 'Helper-only alias comparisons; original identities retained.'), evidence('callbacks', CALLBACK_PATH, 'StaticAnalysis', 'Closed callback table for the attested executable.'),
               evidence('extraction', 'src/Joey.Core/Archive.cs', 'SourceInspection', 'Catalog.Load identity and attribute decoding; input fingerprints recorded separately.'),
               evidence('pack', 'docs/24-dat-graphics.md', 'StaticAnalysis', 'card_pack bits 1/2/4 denote game availability, not full catalog.')]
-    snapshot, auxiliary = generate(extracted, catalog, SOURCE_COMMIT, ledger)
+    snapshot, auxiliary = generate(extracted, catalog, args.baseline_commit, ledger)
     annotations = [json.loads(path.read_text(encoding='utf-8')) for path in args.annotations]
     outputs = artifacts(snapshot, auxiliary, annotations, args.coverage_report, args.investigation_priorities)
     if args.standard_schema:
