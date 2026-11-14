@@ -1,0 +1,1188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ffdiego/YugiRE/blob/feature/card-coverage-registry/docs/coverage/card-coverage.schema.json",
+  "title": "YugiRE Card and Mechanic Coverage Registry v1",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Example",
+        "Inventory"
+      ]
+    },
+    "baselineCommit": {
+      "$ref": "#/$defs/commit"
+    },
+    "fingerprints": {
+      "$ref": "#/$defs/fingerprints"
+    },
+    "catalogScope": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ExampleSubset",
+            "AllNonSentinelRows",
+            "ExplicitSubset"
+          ]
+        },
+        "expectedCardCount": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "selection": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "kind",
+        "expectedCardCount",
+        "selection"
+      ],
+      "additionalProperties": false
+    },
+    "cards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/card"
+      }
+    },
+    "callbacks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/callback"
+      }
+    },
+    "mechanics": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mechanic"
+      }
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/alias"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "baselineCommit",
+    "fingerprints",
+    "catalogScope",
+    "cards",
+    "callbacks",
+    "mechanics",
+    "aliases",
+    "evidence"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "address": {
+      "type": "string",
+      "pattern": "^0x[0-9a-f]{8}$"
+    },
+    "identification": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Identified",
+            "Conflicting"
+          ],
+          "default": "Unknown"
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "scope",
+        "evidenceRefs",
+        "limitations"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "Unknown"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "understanding": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Partial",
+            "UnderstoodInScope",
+            "Conflicting"
+          ],
+          "default": "Unknown"
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "scope",
+        "evidenceRefs",
+        "limitations"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "Unknown"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "implementation": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "NotImplemented",
+            "Partial",
+            "ImplementedInScope"
+          ],
+          "default": "Unknown"
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "scope",
+        "evidenceRefs",
+        "limitations"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "Unknown"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "SyntheticOnly",
+            "ObservedOnly",
+            "ConditionalMatch",
+            "Incomplete",
+            "Failed",
+            "ValidatedInScope"
+          ],
+          "default": "Unknown"
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "acceptance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/acceptance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "scope",
+        "evidenceRefs",
+        "limitations",
+        "acceptance"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "Unknown"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "ValidatedInScope"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptance": {
+                "$ref": "#/$defs/acceptance"
+              },
+              "limitations": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "not": {
+                  "const": "ValidatedInScope"
+                }
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptance": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "acceptance": {
+      "type": "object",
+      "properties": {
+        "matrixEvidenceRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nativeEvidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "testEvidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "reviewEvidenceRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "independentInputs": {
+          "const": true
+        },
+        "completeContext": {
+          "const": true
+        },
+        "allRequiredCasesPassed": {
+          "const": true
+        }
+      },
+      "required": [
+        "matrixEvidenceRef",
+        "nativeEvidenceRefs",
+        "testEvidenceRefs",
+        "reviewEvidenceRef",
+        "independentInputs",
+        "completeContext",
+        "allRequiredCasesPassed"
+      ],
+      "additionalProperties": false
+    },
+    "fingerprints": {
+      "type": "object",
+      "properties": {
+        "exeSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "datSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "cardIdSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "namesSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "propertiesSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "required": [
+        "exeSha256",
+        "datSha256",
+        "cardIdSha256",
+        "namesSha256",
+        "propertiesSha256"
+      ],
+      "additionalProperties": false
+    },
+    "location": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "const": "ffdiego/YugiRE"
+        },
+        "commit": {
+          "$ref": "#/$defs/commit"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "required": [
+        "repository",
+        "commit",
+        "path",
+        "locator",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "capture": {
+      "type": "object",
+      "properties": {
+        "sha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exeSha256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attestation": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Header",
+            "External"
+          ]
+        },
+        "completeness": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Incomplete",
+            "Complete"
+          ]
+        },
+        "eventLocator": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "sha256",
+        "exeSha256",
+        "attestation",
+        "completeness",
+        "eventLocator"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "ResourceIdentity",
+            "StaticAnalysis",
+            "SourceInspection",
+            "SyntheticTest",
+            "NativeObservation",
+            "Inference",
+            "DeclaredContext",
+            "Review",
+            "ValidationMatrix"
+          ]
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "capture": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/capture"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "location",
+        "claim",
+        "limitations",
+        "capture"
+      ],
+      "additionalProperties": false
+    },
+    "callback": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resourceId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rowVa": {
+          "$ref": "#/$defs/address"
+        },
+        "profileId": {
+          "type": "string",
+          "pattern": "^P[0-9]{3}$"
+        },
+        "slots": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/address"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "candidate": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/address"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "availability": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/address"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "preparation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/address"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target_preparation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/address"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "primary",
+            "candidate",
+            "availability",
+            "preparation",
+            "target_preparation"
+          ],
+          "additionalProperties": false
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "resourceId",
+        "row",
+        "rowVa",
+        "profileId",
+        "slots",
+        "evidenceRefs"
+      ],
+      "additionalProperties": false
+    },
+    "callbackLookup": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Present",
+            "AbsentInTable"
+          ],
+          "default": "Unknown"
+        },
+        "callbackRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "state",
+        "callbackRefs",
+        "evidenceRefs"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "Present"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "callbackRefs": {
+                "minItems": 1
+              },
+              "evidenceRefs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "AbsentInTable"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "callbackRefs": {
+                "maxItems": 0
+              },
+              "evidenceRefs": {
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "Unknown"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "properties": {
+              "callbackRefs": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "internalIndex": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "resourceId": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65534
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "internalIndex",
+        "resourceId",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "alias": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "leftCardRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rightCardRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "SameResourceId",
+            "Plus2000Variant",
+            "NativeHelperAlias"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "leftCardRef",
+        "rightCardRef",
+        "relation",
+        "scope",
+        "evidenceRefs"
+      ],
+      "additionalProperties": false
+    },
+    "coverage": {
+      "type": "object",
+      "properties": {
+        "identification": {
+          "$ref": "#/$defs/identification"
+        },
+        "understanding": {
+          "$ref": "#/$defs/understanding"
+        },
+        "implementation": {
+          "$ref": "#/$defs/implementation"
+        },
+        "validation": {
+          "$ref": "#/$defs/validation"
+        }
+      },
+      "required": [
+        "identification",
+        "understanding",
+        "implementation",
+        "validation"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "validation": {
+                "properties": {
+                  "state": {
+                    "const": "ValidatedInScope"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              }
+            },
+            "required": [
+              "validation"
+            ]
+          },
+          "then": {
+            "properties": {
+              "identification": {
+                "properties": {
+                  "state": {
+                    "const": "Identified"
+                  }
+                }
+              },
+              "understanding": {
+                "properties": {
+                  "state": {
+                    "const": "UnderstoodInScope"
+                  }
+                }
+              },
+              "implementation": {
+                "properties": {
+                  "state": {
+                    "const": "ImplementedInScope"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "mechanic": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "domain": {
+          "type": "string",
+          "enum": [
+            "Rules",
+            "AiStats",
+            "AiDecision"
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "openQuestions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "domain",
+        "scope",
+        "coverage",
+        "dependencies",
+        "openQuestions"
+      ],
+      "additionalProperties": false
+    },
+    "binding": {
+      "type": "object",
+      "properties": {
+        "mechanicRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relation": {
+          "type": "string",
+          "enum": [
+            "Candidate",
+            "Established"
+          ]
+        },
+        "callbackRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        }
+      },
+      "required": [
+        "mechanicRef",
+        "relation",
+        "callbackRefs",
+        "evidenceRefs",
+        "coverage"
+      ],
+      "additionalProperties": false
+    },
+    "card": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "callbackLookup": {
+          "$ref": "#/$defs/callbackLookup"
+        },
+        "mechanicInventory": {
+          "type": "string",
+          "enum": [
+            "Unknown",
+            "Open",
+            "Closed"
+          ],
+          "default": "Unknown"
+        },
+        "mechanics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "openQuestions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "identity",
+        "coverage",
+        "callbackLookup",
+        "mechanicInventory",
+        "mechanics",
+        "openQuestions"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "coverage": {
+                "properties": {
+                  "validation": {
+                    "properties": {
+                      "state": {
+                        "const": "ValidatedInScope"
+                      }
+                    },
+                    "required": [
+                      "state"
+                    ]
+                  }
+                },
+                "required": [
+                  "validation"
+                ]
+              }
+            },
+            "required": [
+              "coverage"
+            ]
+          },
+          "then": {
+            "properties": {
+              "mechanicInventory": {
+                "const": "Closed"
+              },
+              "openQuestions": {
+                "maxItems": 0
+              },
+              "mechanics": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

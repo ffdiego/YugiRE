@@ -177,6 +177,9 @@ if (args.Length > 0)
     DeckTraceChecks.Run(Check,traceArchive);
 }
 else DeckTraceChecks.Run(Check);
+DirectDamageChecks.Run(Check);
+EquipmentChecks.Run(Check);
+EffectPilotChecks.Run(Check);
 AiRankingChecks.Run(Check);
 AiCombatChecks.Run(Check);
 AiAttributeChecks.Run(Check);

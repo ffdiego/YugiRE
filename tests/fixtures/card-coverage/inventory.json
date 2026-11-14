@@ -1,0 +1,362 @@
+{
+  "aliases": [
+    {
+      "evidenceRefs": [
+        "extraction"
+      ],
+      "id": "alias:2:5",
+      "leftCardRef": "card:2",
+      "relation": "SameResourceId",
+      "rightCardRef": "card:5",
+      "scope": "Numeric resource relationship only; no semantic equivalence."
+    },
+    {
+      "evidenceRefs": [
+        "extraction"
+      ],
+      "id": "alias:2:9",
+      "leftCardRef": "card:2",
+      "relation": "Plus2000Variant",
+      "rightCardRef": "card:9",
+      "scope": "Numeric resource relationship only; no semantic equivalence."
+    },
+    {
+      "evidenceRefs": [
+        "extraction"
+      ],
+      "id": "alias:5:9",
+      "leftCardRef": "card:5",
+      "relation": "Plus2000Variant",
+      "rightCardRef": "card:9",
+      "scope": "Numeric resource relationship only; no semantic equivalence."
+    }
+  ],
+  "baselineCommit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+  "callbacks": [
+    {
+      "evidenceRefs": [
+        "callbacks"
+      ],
+      "id": "callback:0",
+      "profileId": "P001",
+      "resourceId": 77,
+      "row": 0,
+      "rowVa": "0x005ed0a8",
+      "slots": {
+        "availability": null,
+        "candidate": null,
+        "preparation": null,
+        "primary": "0x00584e60",
+        "target_preparation": null
+      }
+    },
+    {
+      "evidenceRefs": [
+        "callbacks"
+      ],
+      "id": "callback:1",
+      "profileId": "P001",
+      "resourceId": 1245,
+      "row": 1,
+      "rowVa": "0x005ed0c0",
+      "slots": {
+        "availability": null,
+        "candidate": null,
+        "preparation": null,
+        "primary": "0x00584e60",
+        "target_preparation": null
+      }
+    }
+  ],
+  "cards": [
+    {
+      "callbackLookup": {
+        "callbackRefs": [],
+        "evidenceRefs": [
+          "callbacks"
+        ],
+        "state": "AbsentInTable"
+      },
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        }
+      },
+      "id": "card:0",
+      "identity": {
+        "internalIndex": 0,
+        "name": "",
+        "resourceId": 0
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [],
+      "openQuestions": [
+        "Effect inventory unaudited, including rules outside callback table."
+      ]
+    },
+    {
+      "callbackLookup": {
+        "callbackRefs": [
+          "callback:0"
+        ],
+        "evidenceRefs": [
+          "callbacks"
+        ],
+        "state": "Present"
+      },
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        }
+      },
+      "id": "card:2",
+      "identity": {
+        "internalIndex": 2,
+        "name": "A, \"é\"\nB",
+        "resourceId": 77
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [],
+      "openQuestions": [
+        "Effect inventory unaudited, including rules outside callback table."
+      ]
+    },
+    {
+      "callbackLookup": {
+        "callbackRefs": [
+          "callback:0"
+        ],
+        "evidenceRefs": [
+          "callbacks"
+        ],
+        "state": "Present"
+      },
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        }
+      },
+      "id": "card:5",
+      "identity": {
+        "internalIndex": 5,
+        "name": "Duplicate",
+        "resourceId": 77
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [],
+      "openQuestions": [
+        "Effect inventory unaudited, including rules outside callback table."
+      ]
+    },
+    {
+      "callbackLookup": {
+        "callbackRefs": [],
+        "evidenceRefs": [
+          "callbacks"
+        ],
+        "state": "AbsentInTable"
+      },
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "implementation": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "understanding": {
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "Automatic extraction does not establish coverage."
+          ],
+          "scope": "Whole card; semantics unaudited",
+          "state": "Unknown"
+        }
+      },
+      "id": "card:9",
+      "identity": {
+        "internalIndex": 9,
+        "name": "Variant",
+        "resourceId": 2077
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [],
+      "openQuestions": [
+        "Effect inventory unaudited, including rules outside callback table."
+      ]
+    }
+  ],
+  "catalogScope": {
+    "expectedCardCount": 4,
+    "kind": "AllNonSentinelRows",
+    "selection": "All rows returned by Catalog.Load; no card_pack filter"
+  },
+  "evidence": [
+    {
+      "capture": null,
+      "claim": "Synthetic fixture only",
+      "id": "callbacks",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Not native evidence"
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "inputs()",
+        "path": "tests/test_card_coverage_generator.py",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Synthetic fixture only",
+      "id": "extraction",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Not native evidence"
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "inputs()",
+        "path": "tests/test_card_coverage_generator.py",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Synthetic fixture only",
+      "id": "pack",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Not native evidence"
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "inputs()",
+        "path": "tests/test_card_coverage_generator.py",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    }
+  ],
+  "fingerprints": {
+    "cardIdSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "datSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exeSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "namesSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "propertiesSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "kind": "Inventory",
+  "mechanics": [],
+  "schemaVersion": 1
+}

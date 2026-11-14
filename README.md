@@ -21,6 +21,41 @@ Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-
 O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
 a comparação dinâmica completa de um duelo normal ainda está pendente.
 
+## Progresso da reimplementação
+
+Estado do [Card Coverage Registry](docs/coverage/integration-report.md), no baseline
+revisado `12f560f` (preservado nesta integração):
+
+| Medida | Cartas |
+| --- | ---: |
+| Catalogadas (todos os registros não sentinela) | 1.114 |
+| Com anotações revisadas | 11 |
+| Com implementação parcial documentada | 9 |
+| Dos pilotos com efeitos específicos disponíveis no demo | 8 |
+| Integralmente validadas | 0 |
+
+As oito cartas dos pilotos são cinco magias P045 — Sparks, Hinotama, Final Flame,
+Ookazi e Raimei — e três equipamentos P025 — Legendary Sword, Beast Fangs e Sword
+of Dark Destruction. Axe Raider completa as nove implementações parciais por seu
+escopo de atributos de IA; Witch of the Black Forest e Zombyra the Dark conservam
+implementação desconhecida. O comportamento legado de Infinite Cards no demo
+fica fora desse conjunto de pilotos revisados.
+
+**Cartas e mecânicas são contagens diferentes:** o snapshot registra nove mecânicas
+e 27 vínculos entre cartas e mecânicas. Uma primitiva aritmética implementada não
+fecha ativação, seleção de alvo, vínculo, retirada e interações da carta inteira.
+Os pilotos têm cobertura **sintética** em escopos limitados; isso não demonstra
+**paridade nativa**. Todos os inventários de cartas permanecem `Open` e a validação
+integral permanece `Unknown`, sem promoção automática pelo comparador diferencial.
+
+- [Relatório de cobertura e validação da integração](docs/coverage/integration-report.md).
+- [Geração do snapshot atual e dos relatórios completos](docs/coverage/integration-report.md#reproduzir-o-snapshot-e-os-relatorios)
+  e [contrato do gerador](docs/coverage/generator.md).
+- [Prioridades estruturais de investigação e seus limites](docs/coverage/integration-report.md#prioridades-de-investigacao).
+- [Escopo P045](docs/cards/p045-direct-damage.md),
+  [escopo P025](docs/cards/p025-implementation.md) e
+  [piloto diferencial Sparks/Legendary Sword](docs/research/handoffs/native-sparks-sword-pilot.md).
+
 ## Joey.Lab — análise offline em .NET
 
 ```sh

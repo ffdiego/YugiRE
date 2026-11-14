@@ -1,0 +1,108 @@
+{
+  "cards": [
+    {
+      "attack": 0,
+      "availability": {
+        "Joey": false,
+        "Kaiba": false,
+        "Yugi": false
+      },
+      "cardRef": "card:0",
+      "classCode": 0,
+      "defense": 0,
+      "level": 0,
+      "pack": 0,
+      "properties": 0
+    },
+    {
+      "attack": 0,
+      "availability": {
+        "Joey": false,
+        "Kaiba": true,
+        "Yugi": true
+      },
+      "cardRef": "card:2",
+      "classCode": 0,
+      "defense": 0,
+      "level": 0,
+      "pack": 3,
+      "properties": 0
+    },
+    {
+      "attack": 0,
+      "availability": {
+        "Joey": true,
+        "Kaiba": false,
+        "Yugi": false
+      },
+      "cardRef": "card:5",
+      "classCode": 0,
+      "defense": 0,
+      "level": 0,
+      "pack": 4,
+      "properties": 0
+    },
+    {
+      "attack": 0,
+      "availability": {
+        "Joey": false,
+        "Kaiba": false,
+        "Yugi": false
+      },
+      "cardRef": "card:9",
+      "classCode": 0,
+      "defense": 0,
+      "level": 0,
+      "pack": 0,
+      "properties": 0
+    }
+  ],
+  "evidenceRefs": [
+    "extraction",
+    "pack"
+  ],
+  "fingerprints": {
+    "cardIdSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "datSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "exeSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "namesSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "propertiesSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "kind": "ExtractedAttributes",
+  "packSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "registryVersion": 1,
+  "summary": {
+    "availabilityRows": {
+      "Joey": 1,
+      "Kaiba": 1,
+      "Yugi": 1
+    },
+    "callbackLookup": {
+      "AbsentInTable": 2,
+      "Present": 2,
+      "Unknown": 0
+    },
+    "callbackRows": 2,
+    "catalogRows": 4,
+    "coverage": {
+      "identification": {
+        "Unknown": 4
+      },
+      "implementation": {
+        "Unknown": 4
+      },
+      "understanding": {
+        "Unknown": 4
+      },
+      "validation": {
+        "Unknown": 4
+      }
+    },
+    "distinctResources": 3,
+    "knownMechanics": 0,
+    "orphanCallbacks": [
+      "callback:1"
+    ],
+    "packUnionRows": 2
+  }
+}
