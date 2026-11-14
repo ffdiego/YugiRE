@@ -114,7 +114,7 @@ public sealed class DemoDuel
         ? CanSummonFromHand(index)
         : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 && FirstFreeSpellZone() >= 0);
     public bool CanActivateFromHand(int index) => Winner == null && Phase == DemoPhase.Main &&
-        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && Hand[index].Id is 300 or 342 or 345 or 0x593;
+        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && (Hand[index].Id is 300 or 0x593 || DirectDamageRules.Amount(Hand[index].Id).HasValue);
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
     public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
         Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
@@ -165,7 +165,7 @@ public sealed class DemoDuel
     }
     public bool Play(int index, out string message)
     {
-        message = "Use Sparks, Ookazi or Infinite Cards; select a Warrior on the field for Legendary Sword.";
+        message = "Use a supported direct damage spell or Infinite Cards; select a Warrior on the field for Legendary Sword.";
         if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
         if (Hand[index].Id == 0x593)
@@ -176,12 +176,15 @@ public sealed class DemoDuel
             message = "Infinite Cards active: neither player has an end-turn hand limit.";
             return true;
         }
-        // Proven RE effect amount and opponent targeting: docs/cards/sparks-ookazi.md.
-        // Immediate activation and graveyard movement here are demo orchestration, no chains.
-        int damage = Hand[index].Id switch { 342 => 200, 345 => 800, _ => 0 };
-        if (damage == 0) return false;
+        // Demo policy: flags=0 and the usual opponent preparation, not an observed native request.
+        // Immediate activation and graveyard movement remain demo orchestration, without chains.
+        var resolution = DirectDamageRules.Resolve(Hand[index].Id, 0,
+            (byte?)DirectDamageRules.PrepareTarget((byte)ActivePlayer));
+        if (resolution.Status != DirectDamageStatus.Command) return false;
+        var effect = resolution.Command!;
+        int damage = effect.Amount;
         var card = Hand[index]; hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
-        Damage(1 - ActivePlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
+        Damage(effect.TargetPlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
     }
     public bool ActivateSetSpell(int zone, out string message)
     {
@@ -194,10 +197,13 @@ public sealed class DemoDuel
             SpellFaceDown[p, zone] = false;
             message = "Infinite Cards activated."; return true;
         }
-        int damage = card.Id switch { 342 => 200, 345 => 800, _ => 0 };
-        if (damage == 0) return false;
+        // Same bounded plan as hand activation; native suppression is not modeled by the demo.
+        var resolution = DirectDamageRules.Resolve(card.Id, 0, (byte?)DirectDamageRules.PrepareTarget((byte)p));
+        if (resolution.Status != DirectDamageStatus.Command) return false;
+        var effect = resolution.Command!;
+        int damage = effect.Amount;
         Spells[p, zone] = null; SpellFaceDown[p, zone] = false; graves[p].Add(card);
-        Damage(1 - p, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
+        Damage(effect.TargetPlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
     }
     public int AttackValue(int p, int z) => (Monsters[p, z]?.Attack ?? 0) + Bonus(p, z);
     public int DefenseValue(int p, int z) => (Monsters[p, z]?.Defense ?? 0) + Bonus(p, z);
