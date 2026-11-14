@@ -43,11 +43,11 @@ def percent(count, total):
 
 def markdown(registry):
     s = summarize(registry)
-    esc = lambda value: str(value).replace("|", "\\|").replace("\n", " ")
+    esc = lambda value: str(value).replace("|", "&#124;").replace("\n", " ")
     lines = [
         "# Progresso da reimplementação — Card Coverage Registry", "",
         "![Barras de cobertura por carta](progress.svg)", "",
-        f"**Baseline auditado:** \\u0060{registry['baselineCommit']}\\u0060.".replace("\\u0060", "`"),
+        f"**Baseline auditado:** `{registry['baselineCommit']}`.",
         "Dados calculados a partir do `registry.json` gerado com o overlay revisado.",
         "**Não é uma porcentagem de jogabilidade nem de equivalência com Joey.**", "",
         "## Cartas", "",
@@ -105,9 +105,6 @@ def svg(registry):
     ]
     for i, (label, value) in enumerate(items):
         y = 86 + i * 58
-        fill = (value / s["total"]) * 440
-        if value:
-            fill = max(1, fill)  # show a subpixel nonzero value; exact number stays in label
         lines.extend([
             f'<text x="24" y="{y}" fill="#0f172a" font-family="Arial,sans-serif" font-size="14">{html.escape(label)}</text>',
             f'<text x="646" y="{y}" fill="#0f172a" font-family="Arial,sans-serif" font-size="14" text-anchor="end">{value} / {s["total"]} ({percent(value, s["total"])})</text>',
