@@ -129,14 +129,20 @@ def csv_bytes(snapshot, auxiliary):
     return stream.getvalue().encode('utf-8')
 
 
-def artifacts(snapshot, auxiliary, annotations=()):
+def artifacts(snapshot, auxiliary, annotations=(), coverage=False, priorities=False):
     """Raw artifacts never depend on annotations; merged output has separate names."""
     outputs = {'inventory.json': canonical(snapshot), 'attributes.json': canonical(auxiliary),
                'inventory.csv': csv_bytes(snapshot, auxiliary)}
+    registry = snapshot
     if annotations:
         from scripts.coverage.annotations import merge_annotations
         registry = merge_annotations(snapshot, annotations, ROOT)
         outputs.update({'registry.json': canonical(registry), 'registry.csv': csv_bytes(registry, auxiliary)})
+    from scripts.coverage.reports import coverage_report, priorities_report
+    if coverage:
+        outputs['coverage-report.md'] = coverage_report(registry, auxiliary)
+    if priorities:
+        outputs['investigation-priorities.md'] = priorities_report(registry, auxiliary)
     return outputs
 
 
@@ -147,6 +153,8 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--standard-schema', action='store_true', help='Also validate with preinstalled jsonschema Draft202012Validator; never installs packages')
     parser.add_argument('--annotations', action='append', type=Path, default=[], help='Reviewed v1 overlay; repeatable, conflicts fail')
+    parser.add_argument('--coverage-report', action='store_true')
+    parser.add_argument('--investigation-priorities', action='store_true')
     args = parser.parse_args()
     if (ROOT / 'src/Joey.Core/Archive.cs').read_bytes() != blob('src/Joey.Core/Archive.cs') or (ROOT / 'src/Joey.Core/NativeAiAttributes.cs').read_bytes() != blob('src/Joey.Core/NativeAiAttributes.cs'):
         raise ValueError('Core source differs from pinned extraction baseline; review required')
@@ -160,16 +168,15 @@ def main():
               evidence('pack', 'docs/24-dat-graphics.md', 'StaticAnalysis', 'card_pack bits 1/2/4 denote game availability, not full catalog.')]
     snapshot, auxiliary = generate(extracted, catalog, SOURCE_COMMIT, ledger)
     annotations = [json.loads(path.read_text(encoding='utf-8')) for path in args.annotations]
-    outputs = artifacts(snapshot, auxiliary, annotations)
+    outputs = artifacts(snapshot, auxiliary, annotations, args.coverage_report, args.investigation_priorities)
     if args.standard_schema:
         from jsonschema import Draft202012Validator
         Draft202012Validator.check_schema(SCHEMA)
         Draft202012Validator(SCHEMA).validate(snapshot)
         if 'registry.json' in outputs:
             Draft202012Validator(SCHEMA).validate(json.loads(outputs['registry.json']))
-    args.output.mkdir(parents=True, exist_ok=True)
-    for name, data in outputs.items():
-        (args.output / name).write_bytes(data)
+    from scripts.coverage.output import publish
+    publish(args.output, outputs)
     print(canonical(auxiliary['summary']).decode(), end='')
 
 
