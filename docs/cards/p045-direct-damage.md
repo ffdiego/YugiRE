@@ -90,3 +90,32 @@ interações. Atestar EXE/captura, registrar eventos sem perda e entradas
 independentes. Nome da flag, legalidade completa, cadeias, modificadores,
 redirecionamento e animação permanecem lacunas. Análise estática é suficiente
 para este plano escalar; não justifica execução de hooks nesta sessão.
+
+## Resultado implementado
+
+`DirectDamageRules.Amount/PrepareTarget/Resolve` em Joey.Core produz plano de
+comando, SkippedByRequestFlag ou Unsupported. Flags/target nulos não viram zero.
+Demo.Play/ActivateSetSpell consomem o plano com flags=0 declaradas como política.
+CanActivateFromHand reconhece os cinco IDs; o fixture inicial não foi ampliado.
+
+Baseline da implementação e dos testes:
+`0a9b4434dd7d185b5c44c20680b11258f7f6e164`.
+O registry novo em docs/coverage/p045.annotations.json registra três mecanismos
+estreitos e quinze vínculos, com fontes e testes pinados nesse commit. Os
+inventários de carta ficam Open; validação integral Unknown. Não há promoção
+por P045 nem reinterpretação de evidências das branches experimentais.
+
+| Carta | Quantidade/destinatário/guarda | C# | Validação | Lacunas |
+|---|---|---|---|---|
+| Sparks | 200, +6 & 1, skip se +4 & 4 | Plano escalar e demo | SyntheticOnly no vínculo; carta Unknown | Contexto nativo e ciclo completo |
+| Hinotama | 500, +6 & 1, mesma guarda comprovada | Novo ID no demo e plano | SyntheticOnly no vínculo; carta Unknown | Timing, flags, interações |
+| Final Flame | 600, +6 & 1, mesma guarda comprovada | Novo ID no demo e plano | SyntheticOnly no vínculo; carta Unknown | Timing, flags, interações |
+| Ookazi | 800, +6 & 1, mesma guarda comprovada | Plano escalar e demo | SyntheticOnly no vínculo; carta Unknown | Contexto nativo e ciclo completo |
+| Raimei | 300, +6 & 1, mesma guarda comprovada | Novo ID no demo e plano | SyntheticOnly no vínculo; carta Unknown | Timing, flags, interações |
+
+Testes sintéticos: todas as 256 combinações de byte flags por 256 bytes de alvo
+para cada ID (327680 combinações ao todo), fontes dos dois lados, contexto
+incompleto, LP abaixo/igual/acima do dano, ativação de mão/carta setada, repetição,
+fase, jogo encerrado, zonas cheias, índices inválidos e IDs não auditados
+(inclusive outros com primary compartilhado e variantes +2000). A validação
+estática usa o EXE legítimo em leitura e não constitui oráculo dinâmico.

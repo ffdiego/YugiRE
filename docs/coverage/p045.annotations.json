@@ -1,0 +1,1378 @@
+{
+  "annotationVersion": 1,
+  "baselineCommit": "0a9b4434dd7d185b5c44c20680b11258f7f6e164",
+  "cards": [
+    {
+      "cardRef": "card:557",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 345 at reviewed C# baseline; effect inventory open",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-demo"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 345 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 345 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 345 at reviewed C# baseline; effect inventory open",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 557,
+        "name": "Ookazi",
+        "resourceId": 345
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:69"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-command",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-demo"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-demo",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [
+            "callback:69"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "345: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-target",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Independent native inputs and command/LP sequence not captured.",
+        "Request flag mask 4 meaning, target-buffer count, timing, legality and interactions remain open."
+      ]
+    },
+    {
+      "cardRef": "card:738",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 344 at reviewed C# baseline; effect inventory open",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-demo"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 344 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 344 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 344 at reviewed C# baseline; effect inventory open",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 738,
+        "name": "Final Flame",
+        "resourceId": 344
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:68"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-command",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-demo"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-demo",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [
+            "callback:68"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "344: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-target",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Independent native inputs and command/LP sequence not captured.",
+        "Request flag mask 4 meaning, target-buffer count, timing, legality and interactions remain open."
+      ]
+    },
+    {
+      "cardRef": "card:755",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 342 at reviewed C# baseline; effect inventory open",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-demo"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 342 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 342 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 342 at reviewed C# baseline; effect inventory open",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 755,
+        "name": "Sparks",
+        "resourceId": 342
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:66"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-command",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-demo"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-demo",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [
+            "callback:66"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "342: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-target",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Independent native inputs and command/LP sequence not captured.",
+        "Request flag mask 4 meaning, target-buffer count, timing, legality and interactions remain open."
+      ]
+    },
+    {
+      "cardRef": "card:769",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 343 at reviewed C# baseline; effect inventory open",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-demo"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 343 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 343 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 343 at reviewed C# baseline; effect inventory open",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 769,
+        "name": "Hinotama",
+        "resourceId": 343
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:67"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-command",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-demo"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-demo",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [
+            "callback:67"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "343: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-target",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Independent native inputs and command/LP sequence not captured.",
+        "Request flag mask 4 meaning, target-buffer count, timing, legality and interactions remain open."
+      ]
+    },
+    {
+      "cardRef": "card:1049",
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 1007 at reviewed C# baseline; effect inventory open",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-demo"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 1007 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 1007 at reviewed C# baseline; effect inventory open",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Whole card 1007 at reviewed C# baseline; effect inventory open",
+          "state": "Unknown"
+        }
+      },
+      "identity": {
+        "internalIndex": 1049,
+        "name": "Raimei",
+        "resourceId": 1007
+      },
+      "mechanicInventory": "Open",
+      "mechanics": [
+        {
+          "callbackRefs": [
+            "callback:172"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-command",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-demo"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "Partial"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-demo",
+          "relation": "Established"
+        },
+        {
+          "callbackRefs": [
+            "callback:172"
+          ],
+          "coverage": {
+            "identification": {
+              "evidenceRefs": [
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "Identified"
+            },
+            "implementation": {
+              "evidenceRefs": [
+                "p045-core"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "ImplementedInScope"
+            },
+            "understanding": {
+              "evidenceRefs": [
+                "p045-consumer",
+                "p045-static"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "UnderstoodInScope"
+            },
+            "validation": {
+              "acceptance": null,
+              "evidenceRefs": [
+                "p045-tests"
+              ],
+              "limitations": [
+                "No native differential proof; activation, interactions and complete card inventory remain open."
+              ],
+              "scope": "1007: 00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+              "state": "SyntheticOnly"
+            }
+          },
+          "evidenceRefs": [
+            "p045-bytes",
+            "p045-static"
+          ],
+          "mechanicRef": "rules.lp.p045-target",
+          "relation": "Established"
+        }
+      ],
+      "openQuestions": [
+        "Independent native inputs and command/LP sequence not captured.",
+        "Request flag mask 4 meaning, target-buffer count, timing, legality and interactions remain open."
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "capture": null,
+      "claim": "Exact byte checks for five registrations, immediates and relative calls.",
+      "id": "p045-bytes",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Static or synthetic scope only; not independent native validation."
+      ],
+      "location": {
+        "commit": "420bdb9245b6372e3c901ba70f142f7a07a97849",
+        "locator": "/cards",
+        "path": "docs/evidence/p045-static-checks.json",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "6e9d877293d91e56140ac39cb0b99983710abf9786b1e9bd078cbb3f32d816da"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Historical command consumer and saturating LP path, reused only as common helper evidence.",
+      "id": "p045-consumer",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Static or synthetic scope only; not independent native validation."
+      ],
+      "location": {
+        "commit": "7e5ca132f7185bd2c3df4c9782e080fb95a135f5",
+        "locator": "5. Perda de 1000 LP",
+        "path": "docs/cards/parasite-paracide.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "0d88e2b6193597bbfc60e802c35f69bef38a1691eec5d55661f4f85c0e6dd86e"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Bounded pure scalar plan, whitelist, request guard and nullable unknown context.",
+      "id": "p045-core",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Static or synthetic scope only; not independent native validation."
+      ],
+      "location": {
+        "commit": "0a9b4434dd7d185b5c44c20680b11258f7f6e164",
+        "locator": "DirectDamageRules.Resolve; Amount; PrepareTarget",
+        "path": "src/Joey.Core/DirectDamageRules.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "322793bbe1a09e268a2157b6dc3ab5bcb01f59e49442cdf323afba8e901df7d9"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Demo consumes scalar command for five IDs; activation and cleanup remain demo policy.",
+      "id": "p045-demo",
+      "kind": "SourceInspection",
+      "limitations": [
+        "Static or synthetic scope only; not independent native validation."
+      ],
+      "location": {
+        "commit": "0a9b4434dd7d185b5c44c20680b11258f7f6e164",
+        "locator": "DemoDuel.Play; ActivateSetSpell; CanActivateFromHand",
+        "path": "src/Joey.Core/Demo.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "9c575d3b5c1d163ca2a1df14ce9c032fd93a0431b7fe0417cff4ca094c636874"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Five independently inspected ID branches and shared request guard, target and command semantics.",
+      "id": "p045-static",
+      "kind": "StaticAnalysis",
+      "limitations": [
+        "Static or synthetic scope only; not independent native validation."
+      ],
+      "location": {
+        "commit": "420bdb9245b6372e3c901ba70f142f7a07a97849",
+        "locator": "Fatos estáticos; five-card table",
+        "path": "docs/cards/p045-direct-damage.md",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "731c54912e2a6698f5955150f712412ad409efcc2ae7f61581631659f89c71db"
+      }
+    },
+    {
+      "capture": null,
+      "claim": "Synthetic exhaustive flag/target combinations and demo LP/rejection regressions; no native oracle.",
+      "id": "p045-tests",
+      "kind": "SyntheticTest",
+      "limitations": [
+        "Static or synthetic scope only; not independent native validation."
+      ],
+      "location": {
+        "commit": "0a9b4434dd7d185b5c44c20680b11258f7f6e164",
+        "locator": "DirectDamageChecks.Run",
+        "path": "src/tests/Joey.Tests/DirectDamageChecks.cs",
+        "repository": "ffdiego/YugiRE",
+        "sha256": "038348072ed6268d6e1863b370dd31bc3b26e26b924d16138efdd61194fde1d9"
+      }
+    }
+  ],
+  "fingerprints": {
+    "cardIdSha256": "a36cde2192fa85d9ccbcdb0ddb8ba8494a5199ea31d11a50a70b5fd32bf5879c",
+    "datSha256": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed",
+    "exeSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+    "namesSha256": "74848d0b2cd7d5fac7a767075bd5b01e0366183ce934afa6070ce24394a24032",
+    "propertiesSha256": "1a772642a04d86a2cfcebba2d0f4ff40a1737761296d0ea6a2645f5ed2bf0b9e"
+  },
+  "mechanics": [
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-core"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+          "state": "ImplementedInScope"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+          "state": "UnderstoodInScope"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "p045-tests"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+          "state": "SyntheticOnly"
+        }
+      },
+      "dependencies": [],
+      "domain": "Rules",
+      "id": "rules.lp.p045-command",
+      "openQuestions": [
+        "Native timing, legality, suppression semantics, interactions and presentation remain outside the implementation."
+      ],
+      "scope": "Only the LP command projection for known resourceId, request +4 flags and explicitly prepared +6 target; no queue or animations",
+      "title": "Five audited fixed-damage ID branches"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-demo"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+          "state": "Partial"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+          "state": "Partial"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "p045-tests"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+          "state": "SyntheticOnly"
+        }
+      },
+      "dependencies": [
+        "rules.lp.p045-command",
+        "rules.lp.p045-target"
+      ],
+      "domain": "Rules",
+      "id": "rules.lp.p045-demo",
+      "openQuestions": [
+        "Native timing, legality, suppression semantics, interactions and presentation remain outside the implementation."
+      ],
+      "scope": "Immediate hand/set activation in demo, assumes flags=0 and usual opponent preparation; native lifecycle incomplete",
+      "title": "Bounded demo direct damage integration"
+    },
+    {
+      "coverage": {
+        "identification": {
+          "evidenceRefs": [
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+          "state": "Identified"
+        },
+        "implementation": {
+          "evidenceRefs": [
+            "p045-core"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+          "state": "ImplementedInScope"
+        },
+        "understanding": {
+          "evidenceRefs": [
+            "p045-consumer",
+            "p045-static"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+          "state": "UnderstoodInScope"
+        },
+        "validation": {
+          "acceptance": null,
+          "evidenceRefs": [
+            "p045-tests"
+          ],
+          "limitations": [
+            "No native differential proof; activation, interactions and complete card inventory remain open."
+          ],
+          "scope": "00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+          "state": "SyntheticOnly"
+        }
+      },
+      "dependencies": [],
+      "domain": "Rules",
+      "id": "rules.lp.p045-target",
+      "openQuestions": [
+        "Native timing, legality, suppression semantics, interactions and presentation remain outside the implementation."
+      ],
+      "scope": "00593CC0 scalar 1-(sourceByte & 1); excludes request buffer/counter mutation",
+      "title": "Opponent scalar preparation"
+    }
+  ]
+}
