@@ -54,10 +54,10 @@ static partial class Game
         {
             if (duel.SetFromHand(index, out message)) ClearDuelSelection();
         }
-        else if (card.Id == 300 && duel.CanActivateFromHand(index))
+        else if (EquipmentRules.Supports(card.Id) && duel.CanActivateFromHand(index))
         {
             choosingEquip = true;
-            message = "Choose a face-up Warrior for Legendary Sword.";
+            message = $"Choose a compatible face-up monster for {card.Name}.";
         }
         else if (duel.Play(index, out message)) ClearDuelSelection();
     }

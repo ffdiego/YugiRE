@@ -9,7 +9,7 @@ public sealed class DemoDuel
     private readonly List<Card>[] hands = [[], []];
     private readonly Queue<Card>[] decks = [new(), new()];
     private readonly List<Card>[] graves = [[], []];
-    public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone);
+    public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
     private readonly bool[,] attacked = new bool[2, 5];
@@ -18,6 +18,7 @@ public sealed class DemoDuel
     public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
     public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
+    private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> Graveyard(int player) => graves[player].AsReadOnly();
     public int DeckCount(int player) => decks[player].Count;
@@ -54,14 +55,16 @@ public sealed class DemoDuel
     /// Minimal state hydration for differential tests against partially observed
     /// Joey snapshots. This is NOT a native save/load implementation: unknown
     /// deck/graveyard/flags/chain state is deliberately left at demo defaults.
-    /// Only use fixtures that explicitly bound which fields are compared.
+    /// Only use fixtures that explicitly bound which fields are compared. Equipment
+    /// context stays unknown unless the caller explicitly opts into closed sandbox policy.
     /// </summary>
     public static DemoDuel FromPartialObservation(
         int activeSide,
         IReadOnlyList<Card> activeHand,
         IReadOnlyList<Card?> side0Monsters,
         IReadOnlyList<Card?> side1Monsters,
-        int activeLifePoints)
+        int activeLifePoints,
+        bool equipmentContextResolved = false)
     {
         if (activeSide is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(activeSide));
@@ -76,7 +79,7 @@ public sealed class DemoDuel
         if (activeHand.Any(card => card is null))
             throw new ArgumentException("Active hand must not contain null cards.", nameof(activeHand));
 
-        var duel = new DemoDuel { Turn = activeSide + 1 };
+        var duel = new DemoDuel { Turn = activeSide + 1, equipmentContextResolved = equipmentContextResolved };
         duel.Life[activeSide] = activeLifePoints;
         duel.hands[activeSide].AddRange(activeHand);
         for (int slot = 0; slot < 5; slot++)
@@ -93,7 +96,7 @@ public sealed class DemoDuel
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
         var warrior = all.FirstOrDefault(c => c.ClassCode == 15);
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
-        var spells = all.Where(c => c.Id is 300 or 342 or 345).OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
+        var spells = all.Where(c => EquipmentRules.Supports(c.Id) || c.Id is 342 or 345).OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
         {
@@ -114,7 +117,7 @@ public sealed class DemoDuel
         ? CanSummonFromHand(index)
         : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 && FirstFreeSpellZone() >= 0);
     public bool CanActivateFromHand(int index) => Winner == null && Phase == DemoPhase.Main &&
-        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && (Hand[index].Id is 300 or 0x593 || DirectDamageRules.Amount(Hand[index].Id).HasValue);
+        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) || Hand[index].Id == 0x593 || DirectDamageRules.Amount(Hand[index].Id).HasValue);
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
     public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
         Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
@@ -165,7 +168,7 @@ public sealed class DemoDuel
     }
     public bool Play(int index, out string message)
     {
-        message = "Use a supported direct damage spell or Infinite Cards; select a Warrior on the field for Legendary Sword.";
+        message = "Use a supported direct damage spell or Infinite Cards; select a compatible face-up monster for a supported equipment.";
         if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
         if (Hand[index].Id == 0x593)
@@ -205,20 +208,73 @@ public sealed class DemoDuel
         Spells[p, zone] = null; SpellFaceDown[p, zone] = false; graves[p].Add(card);
         Damage(effect.TargetPlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
     }
-    public int AttackValue(int p, int z) => (Monsters[p, z]?.Attack ?? 0) + Bonus(p, z);
-    public int DefenseValue(int p, int z) => (Monsters[p, z]?.Defense ?? 0) + Bonus(p, z);
-    private int Bonus(int p, int z) => Monsters[p, z]?.ClassCode == 15 ? equipment.Count(e => e.TargetPlayer == p && e.TargetZone == z) * 300 : 0;
+    public int AttackValue(int p, int z) => EquipmentStats(p, z).Attack;
+    public int DefenseValue(int p, int z) => EquipmentStats(p, z).Defense;
+    private NativeAiStats EquipmentStats(int p, int z)
+    {
+        if (Monsters[p, z] is not Card monster) return default;
+        // Demo policy: no intrinsic, field, type/attribute-changing or suppression effects.
+        var stats = new NativeAiStats((ushort)monster.Index, (byte)monster.ClassCode,
+            (byte)(monster.Properties >> 29), monster.Attack, monster.Defense);
+        if (MonsterFaceDown[p, z]) return stats; // Native calculation returns before equipment deltas.
+        var sum = new NativeAiAttributeDelta();
+        foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z))
+        {
+            // A sandbox identity check, not a reconstruction of the native selection key.
+            if (!ReferenceEquals(e.TargetCard, monster) || !ReferenceEquals(Spells[e.Owner, e.SourceZone], e.Card) ||
+                SpellFaceDown[e.Owner, e.SourceZone]) continue;
+            var delta = NativeAiAttributes.EquipmentDelta(e.Card.Id, stats, monster.Id);
+            if (!delta.IsSupported) throw new InvalidOperationException("Unsupported equipment in demo link list");
+            sum = new(unchecked(sum.Attack + delta.Value.Attack), unchecked(sum.Defense + delta.Value.Defense));
+        }
+        // Accumulate all deltas first; add to base and clamp once. Other tail stages are absent in this sandbox.
+        return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
+    }
+    private EquipmentTargetContext DemoEquipmentTarget(int player, int zone)
+    {
+        if (player is < 0 or > 1 || zone is < 0 or >= 5)
+            return new(Player: player, Zone: zone);
+        var card = Monsters[player, zone];
+        return new(player, zone, card?.Index ?? 0, card?.Id ?? 0, !MonsterFaceDown[player, zone],
+            equipmentContextResolved ? (byte)(card?.ClassCode ?? 0) : null,
+            equipmentContextResolved ? (byte)((card?.Properties ?? 0) >> 29) : null,
+            equipmentContextResolved ? true : null);
+    }
+    public NativeAiResult<bool> EquipmentEligibility(int index, int targetPlayer, int targetZone)
+    {
+        if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count ||
+            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0)
+            return NativeAiResult<bool>.Supported(false);
+        return EquipmentRules.Eligibility(Hand[index].Id, DemoEquipmentTarget(targetPlayer, targetZone));
+    }
     public bool Equip(int index, int targetPlayer, int targetZone, out string message)
     {
-        message = "Legendary Sword needs a face-up Warrior and a free own spell zone.";
-        if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count || Hand[index].Id != 300 || targetPlayer < 0 || targetPlayer > 1 || targetZone < 0 || targetZone >= 5 || Monsters[targetPlayer, targetZone]?.ClassCode != 15 || MonsterFaceDown[targetPlayer, targetZone]) return false;
-        int sourceZone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
-        if (sourceZone < 0) return false;
-        // RE: docs/cards/legendary-sword.md. Target may be on either side, +300/+300.
-        // Demo substitutes static class for dynamic type; no type-changing effects exist here.
-        equipment.Add(new(Hand[index], ActivePlayer, sourceZone, targetPlayer, targetZone));
-        Spells[ActivePlayer, sourceZone] = Hand[index]; SpellFaceDown[ActivePlayer, sourceZone] = false; hands[ActivePlayer].RemoveAt(index);
-        message = "Legendary Sword equipped: +300 ATK / +300 DEF."; return true;
+        message = "Equipment needs a compatible face-up monster and a free own spell zone.";
+        // Re-read the live target and hand at resolution, after UI selection. No mutation before validation.
+        var eligibility = EquipmentEligibility(index, targetPlayer, targetZone);
+        if (!eligibility.IsSupported) { message = string.Join("; ", eligibility.UnsupportedReasons); return false; }
+        if (!eligibility.Value) return false;
+        int sourceZone = FirstFreeSpellZone();
+        var card = Hand[index];
+        equipment.Add(new(card, ActivePlayer, sourceZone, targetPlayer, targetZone, Monsters[targetPlayer, targetZone]!));
+        Spells[ActivePlayer, sourceZone] = card; SpellFaceDown[ActivePlayer, sourceZone] = false;
+        hands[ActivePlayer].RemoveAt(index);
+        message = $"{card.Name} equipped."; return true;
+    }
+    /// <summary>Explicit sandbox removal, not an activation, native movement rule or trigger.</summary>
+    public bool RemoveEquipment(int owner, int sourceZone)
+    {
+        if (owner is < 0 or > 1 || sourceZone is < 0 or >= 5) return false;
+        var e = equipment.SingleOrDefault(e => e.Owner == owner && e.SourceZone == sourceZone);
+        if (e is null) return false;
+        equipment.Remove(e);
+        // Preserve an unrelated occupant if a caller directly replaced a public fixture slot.
+        if (ReferenceEquals(Spells[owner, sourceZone], e.Card))
+        {
+            Spells[owner, sourceZone] = null; SpellFaceDown[owner, sourceZone] = false;
+        }
+        graves[owner].Add(e.Card);
+        return true;
     }
     public bool ChangePosition(int zone, out string message)
     {
@@ -276,7 +332,7 @@ public sealed class DemoDuel
         graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
         // Common cleanup only: no Banisher/token/trigger exceptions in this sandbox.
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
-        { graves[e.Owner].Add(e.Card); Spells[e.Owner, e.SourceZone] = null; SpellFaceDown[e.Owner, e.SourceZone] = false; equipment.Remove(e); }
+        RemoveEquipment(e.Owner, e.SourceZone);
     }
     private void Damage(int p, int value) { Life[p] = Math.Max(0, Life[p] - value); if (Life[p] == 0) Winner = 1 - p; }
     public void NextTurn() => EndTurn(out _);
