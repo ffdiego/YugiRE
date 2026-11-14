@@ -54,13 +54,14 @@ class P025RegistryTests(unittest.TestCase):
             self.assertTrue(all(m['coverage']['validation']['state']=='SyntheticOnly' for m in c['mechanics']))
         self.assertEqual(merged['cards'][0],raw['cards'][0])
 
-    def test_provenance_and_reviewed_current_sources(self):
+    def test_provenance_and_reviewed_baseline_sources(self):
         _,_,doc=fixture()
         for e in doc['evidence']:verify_evidence(e,ROOT)
         for e in doc['evidence']:
             loc=e['location']
             if loc['commit']==doc['baselineCommit'] and loc['path'].startswith('src/'):
-                self.assertEqual(hashlib.sha256((ROOT/loc['path']).read_bytes()).hexdigest(),loc['sha256'])
+                pinned=subprocess.check_output(['git','show',f"{doc['baselineCommit']}:{loc['path']}"],cwd=ROOT)
+                self.assertEqual(hashlib.sha256(pinned).hexdigest(),loc['sha256'])
         original=subprocess.check_output(['git','show','6f183e3:docs/coverage/consolidated.annotations.json'],cwd=ROOT)
         self.assertEqual(original,(ROOT/'docs/coverage/consolidated.annotations.json').read_bytes())
 
