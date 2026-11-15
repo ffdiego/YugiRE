@@ -13,7 +13,8 @@ public static class SandboxPoolCandidates
     public static IReadOnlyList<Card> Suggest(IEnumerable<Card> cards, int count) =>
         cards.Where(card => card.Name.Length > 0 && card.IsMonster &&
                            card.Level is >= 1 and <= 4 &&
-                           card.Attack > 0 && !NormalSummonRules.RequiresSpecialSummon(card))
+                           card.Attack > 0 && NormalSummonRules.Category(card) == 0 &&
+                           !NormalSummonRules.RequiresSpecialSummon(card))
             .OrderBy(card => card.Index).Take(count).ToArray();
 
     public static int Run(string[] args, TextWriter output, TextWriter error)
@@ -53,7 +54,7 @@ public static class SandboxPoolCandidates
             {
                 schemaVersion = 1,
                 mode = "UnreviewedCandidates",
-                notes = "Candidates only: class/level/attack gates DO NOT prove absence of effects. Inspect each card manually, document the sandbox policy, then change mode to SandboxPartialOnly.",
+                notes = "Candidates only: native category 0, class/level/attack and special summon gates filter obvious effect monsters, but DO NOT prove entire effect absence or parity. Inspect cards manually, then change mode to SandboxPartialOnly.",
                 selectionGame = game,
                 requestedCount = count,
                 availableCandidates = selected.Count,
