@@ -31,12 +31,16 @@ Validação requerida no Windows (pelo operador):
 git fetch origin
 git switch feature/headless-duel-sandbox-v1
 dotnet build .\YugiRE.sln -m:1
-dotnet run --project .\src\tests\Joey.Tests --no-build -- ..\passion\data.dat ..\passion\deck.ydc
+dotnet run --project .\src\tests\Joey.Tests --no-build -- ..\passion\data.dat
 dotnet run --project .\src\Joey.Lab --no-build -- duel-sim --fixture --duels 10 --seed 12345 --output .\scratch\sandbox-10-a.jsonl
 dotnet run --project .\src\Joey.Lab --no-build -- duel-sim --fixture --duels 10 --seed 12345 --output .\scratch\sandbox-10-b.jsonl
 Get-FileHash -Algorithm SHA256 .\scratch\sandbox-10-a.jsonl, .\scratch\sandbox-10-b.jsonl
 dotnet run --project .\src\Joey.Lab --no-build -- pool-candidates --dat ..\passion\data.dat --count 100 --output .\scratch\pool-candidates-100.json
 ```
+
+**Nota sobre deck de referência:** `DeckTests.Original` espera exclusivamente uma fixture YDC de contagens `42 / 1 / 0` e IDs fixos. Não usar um `deck.ydc` arbitrário no comando de testes: passar apenas `data.dat` mantém os testes de catálogo e os novos testes do runner sem essa fixture específica.
+
+**Primeira execução reportada pelo operador:** 320 checks passaram antes de a suite parar em `Reference YDC counts are 42 / 1 / 0` ao fornecer um deck não correspondente. Não é ainda evidência de que os testes do runner passaram; repetir sem o argumento YDC.
 
 Os hashes dos dois JSONL sintéticos devem coincidir. O arquivo de candidatos tem `mode=UnreviewedCandidates` e notas vazias, e **deve falhar** se passado diretamente a `duel-sim --manifest`. Duelos reais com pool revisado ainda não foram executados.
 
