@@ -58,6 +58,7 @@ public static class SandboxDuelRunner
             List<Card> deck0, deck1;
             string source;
             int poolCount;
+            string? datSha256 = null, manifestSha256 = null;
             if (fixture)
             {
                 (deck0, deck1) = SyntheticFixture();
@@ -67,6 +68,9 @@ public static class SandboxDuelRunner
             else
             {
                 string dat = options["--dat"];
+                using (var stream = File.OpenRead(dat))
+                    datSha256 = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+                manifestSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(options["--manifest"]))).ToLowerInvariant();
                 using var archive = new Archive(dat);
                 var catalog = Catalog.Load(archive);
                 var manifest = JsonSerializer.Deserialize<SandboxPoolManifest>(
@@ -84,7 +88,8 @@ public static class SandboxDuelRunner
 
             using (var events = new StreamWriter(new FileStream(destination, FileMode.CreateNew, FileAccess.Write)))
             {
-                var totals = Simulate(deck0, deck1, duels, seed, maxTurns, events, source, poolCount);
+                var totals = Simulate(deck0, deck1, duels, seed, maxTurns, events, source, poolCount,
+                    datSha256, manifestSha256);
                 output.WriteLine($"Sandbox duels: {totals.Count}; winners 0/1: " +
                     $"{totals.Count(x => x.Winner == 0)}/{totals.Count(x => x.Winner == 1)}; " +
                     $"turn-limit: {totals.Count(x => x.Status == "TurnLimit")}; " +
@@ -133,6 +138,8 @@ public static class SandboxDuelRunner
         {
             if (indices.Count is < 40 or > 80)
                 throw new InvalidDataException($"{side} must contain 40..80 main-deck cards");
+            if (indices.GroupBy(index => index).Any(group => group.Count() > 3))
+                throw new InvalidDataException($"{side} exceeds three copies of one internal index");
             var deck = new List<Card>(indices.Count);
             foreach (int index in indices)
             {
@@ -169,7 +176,8 @@ public static class SandboxDuelRunner
 
     public static IReadOnlyList<SandboxDuelOutcome> Simulate(
         IReadOnlyList<Card> deck0, IReadOnlyList<Card> deck1, int duels, int seed,
-        int maxTurns, TextWriter events, string source = "SyntheticFixture", int poolCount = 0)
+        int maxTurns, TextWriter events, string source = "SyntheticFixture", int poolCount = 0,
+        string? datSha256 = null, string? manifestSha256 = null)
     {
         if (duels is < 1 or > 500 || maxTurns is < 2 or > 1000)
             throw new ArgumentOutOfRangeException(nameof(duels), "Bounded duels and turns required");
@@ -178,7 +186,7 @@ public static class SandboxDuelRunner
         events.WriteLine(JsonSerializer.Serialize(new
         {
             kind = "sandbox_run", schemaVersion = 1, origin = source,
-            nativeParity = false, seed, duels, maxTurns, poolCount,
+            nativeParity = false, seed, duels, maxTurns, poolCount, datSha256, manifestSha256,
             deck0Indices = deck0.Select(c => c.Index).ToArray(),
             deck1Indices = deck1.Select(c => c.Index).ToArray()
         }));
