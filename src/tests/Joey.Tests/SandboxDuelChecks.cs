@@ -12,6 +12,16 @@ internal static class SandboxDuelChecks
         var catalog = Enumerable.Range(0, 40)
             .Select(i => Monster(i + 1, (ushort)(100 + i), 100 + i)).ToList();
         var spark = new Card(755, 342, "Sparks", "", 21u << 20);
+        // Category 1 contains ordinary-summonable effect monsters: those must not
+        // enter the plain-stat-only candidate pool or its execution whitelist.
+        var effect = Monster(800, 801, 140) with { Properties =
+            (1u << 20) | (4u << 25) | (1u << 18) | (140u << 9) | 80u };
+        check(NormalSummonRules.Category(effect) == 1 &&
+              !NormalSummonRules.RequiresSpecialSummon(effect) &&
+              !SandboxPoolCandidates.Suggest(catalog.Append(effect), 100)
+                  .Any(x => x.Index == effect.Index),
+            "Pool candidates exclude ordinary-summonable native effect category 1");
+
         var candidates = SandboxPoolCandidates.Suggest(catalog.Append(spark), 100);
         check(candidates.Count == 40 && candidates.All(x => x.IsMonster) &&
               candidates.All(x => x.Level <= 4),
@@ -73,6 +83,11 @@ internal static class SandboxDuelChecks
         Reject(manifest with { Cards = reviewed.Select((entry, i) =>
             i == 0 ? entry with { Policy = "Unknown" } : entry).ToList() },
             "Sandbox rejects unknown effect policy");
+        Reject(manifest with { Cards = [.. reviewed, new SandboxCardEntry(
+            effect.Index, effect.Id, "BaseMonsterSandbox",
+            "Cannot activate unknown effect as normal-only")],
+            Deck0 = [.. deckIndices.Take(39), effect.Index] },
+            "Sandbox rejects effect-category cards even with operator note");
         Reject(manifest with { Deck0 = Enumerable.Repeat(1, 40).ToList() },
             "Sandbox rejects more than three copies of a card");
         Reject(manifest with { Deck0 = deckIndices.Take(20).ToList() },
