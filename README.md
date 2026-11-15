@@ -58,6 +58,15 @@ integral permanece `Unknown`, sem promoção automática pelo comparador diferen
   [escopo P025](docs/cards/p025-implementation.md) e
   [piloto diferencial Sparks/Legendary Sword](docs/research/handoffs/native-sparks-sword-pilot.md).
 
+## Duelos headless no protótipo C# (novo piloto)
+
+O `Joey.Lab duel-sim` executa partidas automáticas e determinísticas **no sandbox C#**, 
+com snapshots antes/depois e JSONL marcado `nativeParity:false`. Para começar
+sem DAT, use `--fixture`; para construir o pool de 100 cartas, 
+`pool-candidates` oferece somente uma lista **não revisada** a partir do DAT.
+Nenhuma carta recebe validação nativa pela execução do runner.
+[Procedimento, limites e revisão do pool](docs/research/headless-sandbox-duels-v1.md).
+
 ## Joey.Lab — análise offline em .NET
 
 ```sh
