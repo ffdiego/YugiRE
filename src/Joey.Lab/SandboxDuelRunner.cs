@@ -70,11 +70,12 @@ public static class SandboxDuelRunner
                 string dat = options["--dat"];
                 using (var stream = File.OpenRead(dat))
                     datSha256 = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
-                manifestSha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(options["--manifest"]))).ToLowerInvariant();
+                byte[] manifestBytes = File.ReadAllBytes(options["--manifest"]);
+                manifestSha256 = Convert.ToHexString(SHA256.HashData(manifestBytes)).ToLowerInvariant();
                 using var archive = new Archive(dat);
                 var catalog = Catalog.Load(archive);
                 var manifest = JsonSerializer.Deserialize<SandboxPoolManifest>(
-                    File.ReadAllText(options["--manifest"]), JsonOptions)
+                    manifestBytes, JsonOptions)
                     ?? throw new InvalidDataException("Empty sandbox manifest");
                 (deck0, deck1, poolCount) = ResolveManifest(catalog, manifest);
                 source = "OperatorDeclaredSandboxPool";
@@ -198,6 +199,7 @@ public static class SandboxDuelRunner
             int sequence = 0;
             object Snapshot() => new
             {
+                turn = duel.Turn, activeSide = duel.ActivePlayer, phase = duel.Phase.ToString(),
                 life = duel.Life.ToArray(),
                 decks = new[] { duel.DeckCount(0), duel.DeckCount(1) },
                 handCountActive = duel.Hand.Count,
