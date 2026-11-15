@@ -12,6 +12,10 @@ internal static class SandboxDuelChecks
         var catalog = Enumerable.Range(0, 40)
             .Select(i => Monster(i + 1, (ushort)(100 + i), 100 + i)).ToList();
         var spark = new Card(755, 342, "Sparks", "", 21u << 20);
+        var candidates = SandboxPoolCandidates.Suggest(catalog.Append(spark), 100);
+        check(candidates.Count == 40 && candidates.All(x => x.IsMonster) &&
+              candidates.All(x => x.Level <= 4),
+            "Pool candidate discovery lists basic summon shapes but never grants native parity");
         catalog.Add(spark);
         List<SandboxCardEntry> reviewed = catalog.Select(card => new SandboxCardEntry(
             card.Index, card.Id,
@@ -69,6 +73,8 @@ internal static class SandboxDuelChecks
         Reject(manifest with { Cards = reviewed.Select((entry, i) =>
             i == 0 ? entry with { Policy = "Unknown" } : entry).ToList() },
             "Sandbox rejects unknown effect policy");
+        Reject(manifest with { Deck0 = Enumerable.Repeat(1, 40).ToList() },
+            "Sandbox rejects more than three copies of a card");
         Reject(manifest with { Deck0 = deckIndices.Take(20).ToList() },
             "Sandbox rejects incomplete main deck");
         Reject(manifest with { Mode = "NativeValidated" },
