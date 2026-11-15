@@ -126,6 +126,7 @@ public static class SandboxDuelRunner
             bool accepted = item.Policy switch
             {
                 "BaseMonsterSandbox" => card.IsMonster && card.Level is >= 1 and <= 4 &&
+                    NormalSummonRules.Category(card) == 0 &&
                     !NormalSummonRules.RequiresSpecialSummon(card) && card.Attack > 0,
                 "DirectDamageSandbox" => !card.IsMonster && DirectDamageRules.Amount(card.Id).HasValue,
                 _ => false
