@@ -83,11 +83,22 @@ internal static class SandboxDuelChecks
         Reject(manifest with { Cards = reviewed.Select((entry, i) =>
             i == 0 ? entry with { Policy = "Unknown" } : entry).ToList() },
             "Sandbox rejects unknown effect policy");
-        Reject(manifest with { Cards = [.. reviewed, new SandboxCardEntry(
-            effect.Index, effect.Id, "BaseMonsterSandbox",
-            "Cannot activate unknown effect as normal-only")],
-            Deck0 = [.. deckIndices.Take(39), effect.Index] },
-            "Sandbox rejects effect-category cards even with operator note");
+        bool blockedEffect = false;
+        try
+        {
+            SandboxDuelRunner.ResolveManifest(catalog.Append(effect).ToList(), manifest with
+            {
+                Cards = [.. reviewed, new SandboxCardEntry(
+                    effect.Index, effect.Id, "BaseMonsterSandbox",
+                    "Explicitly scoped to plain monster stats only")],
+                Deck0 = [.. deckIndices.Take(39), effect.Index]
+            });
+        }
+        catch (InvalidDataException exception)
+        {
+            blockedEffect = exception.Message.Contains("Unsupported sandbox card/policy");
+        }
+        check(blockedEffect, "Sandbox rejects effect-category card even when its identity resolves");
         Reject(manifest with { Deck0 = Enumerable.Repeat(1, 40).ToList() },
             "Sandbox rejects more than three copies of a card");
         Reject(manifest with { Deck0 = deckIndices.Take(20).ToList() },
