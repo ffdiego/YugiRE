@@ -33,7 +33,7 @@ O fixture cria dois decks de 40 cartas com 38 monstros de atributos inventados e
 dotnet run --project .\src\Joey.Lab --no-build -- pool-candidates --dat ..\passion\data.dat --game all --count 100 --output .\scratch\pool-candidates-100.json
 ```
 
-`--game joey` restringe ao pack do Joey (sem reproduzir unlocks); `all` é a união dos três jogos. O filtro estrutural seleciona nome não vazio, classe monstro, nível 1–4, ATK positivo e ausência de invocação especial conhecida.
+`--game joey` restringe ao pack do Joey (sem reproduzir unlocks); `all` é a união dos três jogos. O filtro estrutural seleciona nome não vazio, classe monstro, nível 1–4, ATK positivo, **categoria nativa 0 (normal)** e ausência de invocação especial conhecida.
 
 **Esses filtros não comprovam ausência de efeitos.** O resultado ainda pode incluir monstros de efeito ou exceções não implementadas no demo. Os candidatos saem com `mode: "UnreviewedCandidates"` e `note` vazio: o runner se recusa a executá-los automaticamente. Se menos de 100 passarem pelo filtro, o programa informa a contagem efetiva.
 
