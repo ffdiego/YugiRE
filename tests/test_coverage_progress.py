@@ -33,7 +33,7 @@ class ProgressTests(unittest.TestCase):
                          (3, 2, 1, 0, 1, 1))
         self.assertEqual(registry, original)
         text = markdown(registry)
-        self.assertIn("2 /", "2 / 3")  # values are not silently converted to playable count
+        self.assertIn("| Identificadas/anotadas | 2 |", text)
         self.assertIn("66.67%", text)
         self.assertIn("33.33%", text)
         self.assertIn("Witch &#124; unaudited", text)
