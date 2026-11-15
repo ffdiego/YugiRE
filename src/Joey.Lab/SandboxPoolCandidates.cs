@@ -64,8 +64,8 @@ public static class SandboxPoolCandidates
                     levelForReview = c.Level, attackForReview = c.Attack,
                     defenseForReview = c.Defense
                 }).ToArray(),
-                deck0 = selected.Count >= 80 ? selected.Take(40).Select(c => c.Index).ToArray() : [],
-                deck1 = selected.Count >= 80 ? selected.Skip(40).Take(40).Select(c => c.Index).ToArray() : []
+                deck0 = selected.Count >= 80 ? selected.Take(40).Select(c => c.Index).ToArray() : Array.Empty<int>(),
+                deck1 = selected.Count >= 80 ? selected.Skip(40).Take(40).Select(c => c.Index).ToArray() : Array.Empty<int>()
             };
             destination = Path.GetFullPath(destination);
             if (File.Exists(destination)) throw new IOException("Output already exists: " + destination);
