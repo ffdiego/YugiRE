@@ -11,7 +11,7 @@ Snapshot auditado no commit `12f560fc1eb270aa0ed28b8cab9982524ea2c5bc`, usando [
 | Cartas com implementação parcial documentada | 9 | 0,81% |
 | Cartas com validação integral comprovada | 0 | 0% |
 
-As **nove cartas parcialmente implementadas** incluem cinco magias P045 (Sparks, Hinotama, Final Flame, Ookazi e Raimei), três equipamentos P025 (Legendary Sword, Beast Fangs e Sword of Dark Destruction) e Axe Raider (cálculo de atributos da IA). A oitava família de efeito ou a nona carta não deve ser inferida automaticamente: **Infinite Cards** é um comportamento legado no demo fora deste registro auditado.
+As **nove cartas parcialmente implementadas** incluem cinco magias P045 (Sparks, Hinotama, Final Flame, Ookazi e Raimei), três equipamentos P025 (Legendary Sword, Beast Fangs e Sword of Dark Destruction) e Axe Raider (cálculo de atributos da IA). **Infinite Cards** é um comportamento legado no demo, fora deste registro auditado.
 
 | Dimensão independente | Quantidade |
 | --- | ---: |
