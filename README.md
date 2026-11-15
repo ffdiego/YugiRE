@@ -48,6 +48,8 @@ Os pilotos têm cobertura **sintética** em escopos limitados; isso não demonst
 **paridade nativa**. Todos os inventários de cartas permanecem `Open` e a validação
 integral permanece `Unknown`, sem promoção automática pelo comparador diferencial.
 
+- [Painel visual de progresso por carta](docs/coverage/progress.md) — snapshot auditado, independente de validação nativa.
+- [Observação passiva e limitada de Sparks (14/11/2026)](docs/evidence/sparks-2026-11-14-passive-observation.md) — hashes/cronologia, sem captura bruta versionada e sem promoção de cobertura.
 - [Relatório de cobertura e validação da integração](docs/coverage/integration-report.md).
 - [Geração do snapshot atual e dos relatórios completos](docs/coverage/integration-report.md#reproduzir-o-snapshot-e-os-relatorios)
   e [contrato do gerador](docs/coverage/generator.md).
