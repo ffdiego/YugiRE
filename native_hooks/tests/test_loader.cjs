@@ -59,7 +59,12 @@ function fixture(options = {}) {
   const aiAddresses = [0x005B1360,0x005B16C0,0x005B0F40,0x0056DD30,
     0x005B08B0,0x005B1610,0x005B0A50,0x005B0B90,0x005B0950,
     0x005AE3E0,0x005AE220,0x005ADD60,0x005ADDC0,0x0056D790,
-    0x0056D8D0,0x005699A0,0x0056B220,0x004022E0];
+    0x0056D8D0,0x005699A0,0x0056B220,0x004022E0,
+    0x005ADD8D,0x005ADE2C,0x005ADDF0,0x005B0F7B,0x005B108A,0x005B119B,0x005B11C6,0x005B11CF,0x005B11DD];
+  for (const [address,hex] of [[0x005ADD8D,"A802751B0C02"],[0x005ADE2C,"8B4C240C51"],[0x005ADDF0,"668B91745DA500"],[0x005B0F7B,"33C089442440"],[0x005B108A,"0BD9C1E304"],
+    [0x005B119B,"BA00004000"],[0x005B11C6,"85148D3064A500"],
+    [0x005B11CF,"66816500FFFB"],[0x005B11DD,"8B44243485C0"]])
+    Buffer.from(hex,"hex").forEach((b,i)=>memory.set(address+i,b));
   let modes = [1,1];
   let failRaimeiWrite = Boolean(options.failRaimeiWrite);
   class Pointer {
@@ -209,6 +214,10 @@ function fixture(options = {}) {
   };
   if (options.deckFactory) context.createCpuDeckObserver = options.deckFactory;
   vm.runInNewContext(source,context,{filename:'yugire_dual_loader.js'});
+  // The agent correctly requires Windows at load time. Synthetic fixtures may
+  // change the mocked runtime platform after loading solely to exercise the
+  // guard against combined live Windows interception.
+  if (options.platform) context.Process.platform = options.platform;
   return {api:context.rpc.exports, memory, sparks: sparks+4, raimei: raimei+4,
     original, exports: addrExport, setFault(value){ failRaimeiWrite=Boolean(value); },
     tick(){ if(tickHandler !== null) tickHandler(); },
@@ -228,7 +237,12 @@ function fixture(options = {}) {
       const receiver={returnAddress:ptr(caller)};
       callbacks.onEnter.call(receiver,args.map(v=>ptr(v)));
       if(body) body();
-      callbacks.onLeave.call(receiver,ptr(retval));
+      if (callbacks.onLeave) callbacks.onLeave.call(receiver,ptr(retval));
+    },
+    instruction(address, registers={}) {
+      const callbacks=aiHandlers.get(address);
+      if (!callbacks) throw new Error('Instruction hook not installed');
+      callbacks.onEnter.call({context:Object.fromEntries(Object.entries(registers).map(([k,v])=>[k,ptr(v)]))});
     },
     prepCall(address,args=[],retval=1,beforeLeave=null,caller=0x005B1337) {
       const callback=prepHandlers.get(address);
@@ -1156,9 +1170,13 @@ combat.api.authorizedeckobserver('db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52
 assert.equal(combat.api.tracestatus().hostAttestedExeSha256,
   'db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de');
 assert.equal(combat.api.tracestatus().deckActive,false);
+assert.equal(combat.api.tracestatus().processId,123);
+assert.equal(combat.api.tracestatus().modulePath,'Z:\\passion\\joey_pc.exe');
 combat.api.tracestart(2000);
 assert.equal(combat.api.traceaistart('combat-context').combatContextActive,true);
 assert.equal(combat.aiHookCount(),10);
+assert.equal(combat.api.tracestatus().combatContextSchemaVersion,1);
+assert.deepEqual(Array.from(combat.api.tracestatus().combatReadPointsArmed),[]);
 assert.throws(()=>combat.api.traceprepstart(),/combat-context/);
 assert.throws(()=>combat.api.tracedemostart(),/combat-context/);
 const buffer=0x00A579A6, own=buffer+16, rival=buffer+32;
@@ -1279,3 +1297,105 @@ combatStopped.api.tracestop();
 assert.equal(combatStopped.api.traceevents(0,100).filter(e=>e.kind==='combat_context').length,1);
 combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
+
+// Instruction witnesses are synthetic CPU contexts, not dynamic validation.
+// The combined set is prohibited in live Windows; only explicit synthetic
+// fixtures can run it as a JS-correlation regression test.
+const blockedCombined=fixture(); blockedCombined.api.installobserver(); blockedCombined.api.tracestart(100);
+assert.throws(()=>blockedCombined.api.traceaistart('combat-context-all-unsafe'),/disabled on Windows/);
+assert.equal(blockedCombined.aiHookCount(),0);
+blockedCombined.api.restore();
+const points=fixture({platform:'synthetic'});
+points.api.installobserver(); points.api.tracestart(2000);
+points.api.traceaistart('combat-context-all-unsafe');
+assert.equal(points.aiHookCount(),19);
+assert.equal(points.api.tracestatus().combatContextSchemaVersion,2);
+points.aiCall(0x005B1360,[0,0],0,()=>{
+  points.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+    points.aiCall(0x005ADD60,[0,0,own],0,()=>{
+      points.instruction(0x005ADD8D,{eax:0xAB02});
+    },0x005B0F97);
+    points.aiCall(0x005ADDC0,[1,1,rival],0,()=>{
+      points.instruction(0x005ADE2C);
+    },0x005B0FAE);
+    points.instruction(0x005B0F7B,{ecx:0xABCDEF03});
+    points.instruction(0x005B108A,{edx:0x1234F005});
+    points.instruction(0x005B119B,{eax:0x400123,esi:0xD44});
+    points.instruction(0x005B11C6,{ecx:0});
+    points.setThread(779); // cannot attach a branch to the other thread's frame
+    points.instruction(0x005B11CF);
+    points.setThread(778);
+    points.aiCall(0x005B0F40,[1,0,1,buffer],0,()=>{
+      points.instruction(0x005B11C6,{ecx:0x351});
+      points.instruction(0x005B11CF);
+      points.instruction(0x005B11DD);
+    });
+    points.instruction(0x005B11DD);
+    points.instruction(0x005B119B,{}); // failed register read remains null
+  });
+});
+points.api.tracestop();
+const witnesses=points.api.traceevents(0,256).filter(e=>e.kind==='combat_context');
+assert.equal(witnesses.find(e=>e.function==='own_visibility_consumed').valueRaw,0xAB02);
+assert.equal(witnesses.find(e=>e.function==='opponent_visible_taken').faceUpConsumed,true);
+assert.equal(witnesses.find(e=>e.function==='own_stats').positionBeforeRaw,0);
+assert.equal(witnesses.find(e=>e.function==='own_stats').positionAfterRaw,0);
+assert.equal(witnesses.find(e=>e.function==='target_position_consumed').valueRaw,3);
+assert.equal(witnesses.find(e=>e.function==='descriptor_seed_consumed').preservedMaskRaw,0xF005);
+assert.equal(witnesses.find(e=>e.function==='defender_flags_consumed').valueRaw,0x400123);
+assert.equal(JSON.stringify(witnesses.filter(e=>e.function==='attacker_flags_consumed').map(e=>e.protectionConsumed)),'[true,false]');
+assert.equal(witnesses.filter(e=>e.function==='attacker_protection_taken').length,1);
+const missingRegister=witnesses.filter(e=>e.function==='defender_flags_consumed').at(-1);
+assert.equal(missingRegister.valueRaw,null); assert.ok(missingRegister.readError);
+points.api.tracestop(); points.api.restore();
+const badSignature=fixture(); badSignature.api.installobserver(); badSignature.api.tracestart(100);
+badSignature.memory.set(0x005B11C6,0);
+assert.throws(()=>badSignature.api.traceaistart('combat-context-point:attacker_flags_sample'),/signature mismatch/);
+assert.equal(badSignature.aiHookCount(),0);
+badSignature.api.restore();
+// The legacy observer must not validate or install a v2 point at all.
+const legacyFallback=fixture(); legacyFallback.api.installobserver(); legacyFallback.api.tracestart(100);
+legacyFallback.memory.set(0x005B11C6,0);
+legacyFallback.api.traceaistart('combat-context');
+assert.equal(legacyFallback.aiHookCount(),10);
+assert.deepEqual(Array.from(legacyFallback.api.tracestatus().combatReadPointsArmed),[]);
+assert.equal(legacyFallback.api.tracestatus().combatContextSchemaVersion,1);
+legacyFallback.api.tracestop(); legacyFallback.api.restore();
+const pointRollback=fixture({failAiHookAt:0x005B11DD});
+pointRollback.api.installobserver(); pointRollback.api.tracestart(100);
+assert.throws(()=>pointRollback.api.traceaistart('combat-context-point:attacker_flags_consumed'),/rolled back/);
+assert.equal(pointRollback.aiHookCount(),0); pointRollback.api.restore();
+console.log('PASS: consumed register/branch witnesses, thread and reentrant isolation, unknowns and instruction preflight');
+// A single diagnostic point is the only mode offered by the operator console.
+const invalidPoint=fixture(); invalidPoint.api.installobserver(); invalidPoint.api.tracestart(100);
+assert.throws(()=>invalidPoint.api.traceaistart('combat-context-point:not_a_point'),/Unknown combat-context observation point/);
+assert.equal(invalidPoint.aiHookCount(),0);
+invalidPoint.api.restore();
+
+const pointLoss=fixture({platform:'synthetic'}); pointLoss.api.installobserver(); pointLoss.api.tracestart(16);
+pointLoss.api.traceaistart('combat-context-all-unsafe');
+const pointLossBefore=new Map(pointLoss.memory);
+pointLoss.aiCall(0x005B1360,[0,0],0,()=>{
+  pointLoss.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>{
+    // Missing TEST cannot produce a false bit at the join.
+    pointLoss.instruction(0x005B11DD);
+    for(let i=0;i<30;i++) pointLoss.instruction(0x005B108A,{edx:i});
+  });
+});
+pointLoss.api.tracestop();
+assert.deepEqual(pointLoss.memory,pointLossBefore);
+assert.ok(pointLoss.api.tracestatus().overwritten>0);
+assert.equal(pointLoss.api.traceevents(0,16).find(e=>e.function==='combat_event').childOverflow,true);
+pointLoss.api.restore();
+const missingTest=fixture(); missingTest.api.installobserver(); missingTest.api.tracestart(100);
+missingTest.api.traceaistart('combat-context-point:attacker_flags_consumed');
+assert.equal(missingTest.aiHookCount(),11);
+assert.deepEqual(Array.from(missingTest.api.tracestatus().combatReadPointsArmed),['attacker_flags_consumed']);
+missingTest.aiCall(0x005B1360,[0,0],0,()=>{
+  missingTest.aiCall(0x005B0F40,[0,0,1,buffer],0,()=>missingTest.instruction(0x005B11DD));
+});
+missingTest.api.tracestop();
+const unknownBit=missingTest.api.traceevents(0,100).find(e=>e.function==='attacker_flags_consumed');
+assert.equal(unknownBit.protectionConsumed,null); assert.ok(unknownBit.correlationError);
+missingTest.api.restore();
+console.log('PASS: point event loss and overflow remain explicit, missing TEST stays unknown, no observer game writes');

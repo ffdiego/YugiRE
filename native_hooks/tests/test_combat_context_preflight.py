@@ -1,5 +1,6 @@
 """Validate passive F40 callsite ABI against the pinned local PE, without execution."""
 import hashlib
+import re
 from pathlib import Path
 import struct
 import sys
@@ -24,6 +25,14 @@ class CombatContextPreflightTests(unittest.TestCase):
                            if s["rva"] <= rva and rva + size <= s["rva"] + s["raw_size"])
             offset = section["file_offset"] + rva - section["rva"]
             return raw[offset:offset + size]
+
+        loader = (Path(__file__).resolve().parents[1] / "yugire_dual_loader.js").read_text()
+        points = re.findall(r"\['[a-z_]+', '(0x[0-9A-F]+)', '([0-9A-F]+)'\]", loader)
+        self.assertEqual(len(points), 9)
+        for address, signature in points:
+            expected = bytes.fromhex(signature)
+            self.assertGreaterEqual(len(expected), 5)
+            self.assertEqual(read(int(address, 16), len(expected)), expected, address)
 
         # Return VAs from F40's assembly, not inferred proximity in a trace.
         services = {

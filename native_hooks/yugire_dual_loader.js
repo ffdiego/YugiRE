@@ -237,6 +237,8 @@ let combatContextMode = false;
 let combatContextCount = 0;
 let combatContextLimitReported = false;
 let combatContextGeneration = 0;
+let combatContextSchemaVersion = 1;
+let combatReadPointsArmed = [];
 let combatContextStacks = new Map();
 const kCombatContextLimit = 64;
 // Function entries only. Return VAs exclude calls nested inside stat producers.
@@ -252,6 +254,21 @@ const kCombatContextTargets = [
   name, va:address, address:va(address), argCount, outputSize,
   returns:returns.map(address => va(address))
 }));
+// Interior hooks are NOT armed by default after the Windows access violation
+// at 005B1195. Each can be explicitly selected for supervised diagnostics.
+// A combined mode exists only for offline synthetic tests; do not use it in Joey.
+// Minimum complete instruction spans (>=5 bytes); no interior onLeave.
+const kCombatReadPoints = [
+  ['own_visibility_consumed', '0x005ADD8D', 'A802751B0C02'],
+  ['opponent_visible_taken', '0x005ADE2C', '8B4C240C51'],
+  ['opponent_hidden_taken', '0x005ADDF0', '668B91745DA500'],
+  ['target_position_consumed', '0x005B0F7B', '33C089442440'],
+  ['descriptor_seed_consumed', '0x005B108A', '0BD9C1E304'],
+  ['defender_flags_consumed', '0x005B119B', 'BA00004000'],
+  ['attacker_flags_sample', '0x005B11C6', '85148D3064A500'],
+  ['attacker_protection_taken', '0x005B11CF', '66816500FFFB'],
+  ['attacker_flags_consumed', '0x005B11DD', '8B44243485C0']
+].map(([name,address,bytes]) => ({name, va:address, address:va(address), bytes}));
 let aiProbeCallSequence = 0;
 let aiSelectorDepth = new Map();
 let aiSelectorStack = new Map();
@@ -1006,6 +1023,7 @@ function traceStatus() {
     active: commandTraceHook !== null,
     // Host attestation exists independently of whether deck tracing was armed.
     hostAttestedExeSha256: deckFingerprint,
+    processId: Process.id, modulePath: main.path,
     ...(deckObserver === null ? {deckActive:false} : deckObserver.status()),
     prepActive: summonPrepHooks.length > 0,
     prepHooks: summonPrepHooks.length,
@@ -1015,6 +1033,8 @@ function traceStatus() {
     combatContextActive: combatContextMode,
     combatContextCount,
     combatContextLimit: kCombatContextLimit,
+    combatContextSchemaVersion,
+    combatReadPointsArmed: combatReadPointsArmed.slice(),
     aiHooks: aiProbeHooks.length,
     demoActive: demoExecutorHook !== null,
     demoHooks: (demoExecutorHook === null ? 0 : 1) + demoSetupHooks.length,
@@ -1199,7 +1219,7 @@ function readSelectorHandSnapshot(side) {
 // This is a *passive* probe: never invokes FUN_005B0F40 or FUN_0056DD30.
 // Only events nested inside an observed selector are kept to avoid renderer noise.
 function combatContextIdentity(frame) {
-  return {kind:'combat_context', schemaVersion:1, session:frame.session,
+  return {kind:'combat_context', schemaVersion:combatContextSchemaVersion, session:frame.session,
     threadId:frame.threadId, combatCallId:frame.callId,
     selectorCallId:frame.selectorCallId, stateKind:'selector-window'};
 }
@@ -1208,7 +1228,7 @@ function enterCombatContext(invocation, args) {
   const threadId = invocation.aiThread;
   const stack = combatContextStacks.get(threadId) || [];
   const frame = {threadId, callId:invocation.aiCallId, children:0,
-    session:traceSession, generation:combatContextGeneration};
+    session:traceSession, generation:combatContextGeneration, argsRaw:invocation.aiArguments};
   stack.push(frame);
   combatContextStacks.set(threadId, stack);
   // Push a sentinel even after the limit, so nested calls cannot be attributed
@@ -1217,7 +1237,7 @@ function enterCombatContext(invocation, args) {
     frame.suppressed = true;
     if (!combatContextLimitReported) {
       combatContextLimitReported = true;
-      recordTraceEvent({kind:'combat_context_limit', schemaVersion:1,
+      recordTraceEvent({kind:'combat_context_limit', schemaVersion:combatContextSchemaVersion,
         session:traceSession, limit:kCombatContextLimit});
     }
     return frame;
@@ -1250,6 +1270,7 @@ function enterCombatContext(invocation, args) {
         faceUp:positionRaw === null ? null : (positionRaw & 2) !== 0,
         monsterFlagsRaw:read(role+'.monsterFlagsRaw', () => record.add(0x8C).readU32()),
         playerFlagsRaw:read(role+'.playerFlagsRaw', () => kSummonPlayerFlags.add(fieldSide*kPlayerStride).readU32()),
+        linkCountRaw:read(role+'.linkCountRaw', () => record.add(0xA).readU16()),
         lifePoints:read(role+'.lifePoints', () => va('0x00A55D64').add(fieldSide*kPlayerStride).readU16())};
     }
   }
@@ -1278,6 +1299,8 @@ function stopAiProbe() {
   aiDetailMode = false;
   aiGateMode = false;
   combatContextMode = false;
+  combatContextSchemaVersion = 1;
+  combatReadPointsArmed = [];
   combatContextGeneration++;
   combatContextStacks = new Map();
   aiSelectorDepth = new Map();
@@ -1291,11 +1314,24 @@ function stopAiProbe() {
 }
 
 function startAiProbe(mode = false) {
-  // Backward compatible: false -> 4 default hooks, true -> 9 detail hooks.
-  // 'gates' -> 9 detail hooks + 3 direct-call selector gate hooks.
-  if (mode !== false && mode !== true && mode !== 'gates' && mode !== 'combat-context')
+  // Fail closed after Windows AV at 0x005B1195: the regular combat-context
+  // mode enables function-entry hooks only. Request one interior point by its
+  // exact name for supervised diagnosis. Never use the all-points mode in Joey.
+  const pointPrefix = 'combat-context-point:';
+  const pointName = typeof mode === 'string' && mode.startsWith(pointPrefix)
+    ? mode.slice(pointPrefix.length) : null;
+  const allUnsafe = mode === 'combat-context-all-unsafe';
+  // The nine-point combination coincided with a live Windows register-corruption
+  // crash; block it even if a caller bypasses the Python console and calls RPC.
+  if (allUnsafe && Process.platform === 'windows')
+    throw new Error('Combined interior combat-context hooks disabled on Windows after access violation');
+  const withCombat = mode === 'combat-context' || allUnsafe || pointName !== null;
+  if (pointName !== null && !kCombatReadPoints.some(point => point.name === pointName))
+    throw new Error('Unknown combat-context observation point: ' + pointName);
+  if (mode !== false && mode !== true && mode !== 'gates' && !withCombat)
     throw new Error('AI trace mode must be false, true, gates or combat-context');
-  const withCombat = mode === 'combat-context';
+  const readPoints = allUnsafe ? kCombatReadPoints :
+    pointName !== null ? kCombatReadPoints.filter(point => point.name === pointName) : [];
   const detailed = mode === true || mode === 'gates';
   const withGates = mode === 'gates';
   if (!installed || commandTraceHook === null) {
@@ -1310,11 +1346,17 @@ function startAiProbe(mode = false) {
     throw new Error('combat-context requires --observe-only, trace prep/demo off and no overrides');
   const targets = kAiProbeTargets.concat(
     detailed ? kAiDetailTargets : [], withGates ? kAiGateTargets : [],
-    withCombat ? kCombatContextTargets : []);
+    withCombat ? kCombatContextTargets.concat(readPoints) : []);
   for (const target of targets) {
     const range = Process.findRangeByAddress(target.address);
     if (range === null || !range.protection.includes('x')) {
       throw new Error('AI probe function not executable: ' + target.va);
+    }
+  }
+  if (withCombat) {
+    for (const point of readPoints) {
+      if (readAiProbeHex(point.address, point.bytes.length / 2) !== point.bytes)
+        throw new Error('Combat instruction signature mismatch: ' + point.va);
     }
   }
   const hooks = [];
@@ -1421,6 +1463,52 @@ function startAiProbe(mode = false) {
       hooks.push(hook);
     }
     if (withCombat) {
+      for (const point of readPoints) {
+        hooks.push(Interceptor.attach(point.address, {onEnter() {
+          const stack = combatContextStacks.get(Process.getCurrentThreadId()) || [];
+          const frame = stack.length ? stack[stack.length - 1] : null;
+          if (!frame || frame.suppressed) return;
+          if ((point.name.startsWith('own_visibility') || point.name.startsWith('opponent_')) && !frame.statsArgs) return;
+          if (++frame.children > 24) { frame.childOverflow = true; return; }
+          const event = {...combatContextIdentity(frame), phase:'leave',
+            function:point.name, functionVa:point.va, callId:++aiProbeCallSequence,
+            valueRaw:null};
+          try {
+            const c = this.context;
+            if (point.name === 'own_visibility_consumed') event.valueRaw = c.eax.toUInt32() & 0xFFFF;
+            if (point.name.startsWith('opponent_')) event.faceUpConsumed = point.name === 'opponent_visible_taken';
+            if (frame.statsArgs) event.wrapperArgsRaw = frame.statsArgs;
+            if (point.name === 'target_position_consumed') event.valueRaw = c.ecx.toUInt32() & 0xFF;
+            if (point.name === 'descriptor_seed_consumed') {
+              event.valueRaw = c.edx.toUInt32() & 0xFFFF;
+              event.preservedMaskRaw = event.valueRaw & 0xF005;
+            }
+            if (point.name === 'defender_flags_consumed') {
+              event.valueRaw = c.eax.toUInt32();
+              event.playerOffsetRaw = c.esi.toUInt32();
+              if (frame.argsRaw[0] > 1 || event.playerOffsetRaw !== (1-frame.argsRaw[0])*kPlayerStride)
+                throw new Error('Unexpected defender flag offset');
+              event.protectionConsumed = (event.valueRaw & 0x400000) !== 0;
+            }
+            if (point.name === 'attacker_flags_sample') {
+              frame.attackerProtectionTaken = false;
+              frame.attackerFlagsSampled = true;
+              event.playerOffsetRaw = c.ecx.toUInt32() * 4;
+              if (frame.argsRaw[0] > 1 || event.playerOffsetRaw !== frame.argsRaw[0]*kPlayerStride)
+                throw new Error('Unexpected player flag offset');
+              event.valueRaw = va('0x00A56430').add(event.playerOffsetRaw).readU32();
+              // This memory sample precedes TEST. The branch witnesses below
+              // establish the consumed bit, even if another thread writes it.
+            }
+            if (point.name === 'attacker_protection_taken') frame.attackerProtectionTaken = true;
+            if (point.name === 'attacker_flags_consumed') {
+              event.protectionConsumed = frame.attackerFlagsSampled ? frame.attackerProtectionTaken : null;
+              if (!frame.attackerFlagsSampled) event.correlationError = 'Missing attacker TEST sample';
+            }
+          } catch (error) { event.readError = String(error); }
+          recordTraceEvent(event);
+        }}));
+      }
       for (const target of kCombatContextTargets) {
         hooks.push(Interceptor.attach(target.address, {
           onEnter(args) {
@@ -1439,7 +1527,19 @@ function startAiProbe(mode = false) {
               argsRaw:Array.from({length:target.argCount}, (_, i) => args[i].toUInt32())
             };
             this.combatGeneration = combatContextGeneration;
-            if (target.outputSize) this.combatOutput = args[2];
+            if (target.outputSize) {
+              this.combatOutput = args[2];
+              frame.statsArgs = this.combatChild.argsRaw;
+              this.combatParentFrame = frame;
+              const [side,slot] = this.combatChild.argsRaw;
+              this.combatPosition = (side <= 1 && slot <= 4) ?
+                kMonsterSlotBase.add(side*kPlayerStride + slot*kFieldSlotStride + 6) : null;
+              this.combatChild.positionBeforeRaw = null;
+              try {
+                if (this.combatPosition === null) throw new Error('Unsupported wrapper slot');
+                this.combatChild.positionBeforeRaw = this.combatPosition.readU16();
+              } catch (error) { this.combatChild.readError = String(error); }
+            }
           },
           onLeave(retval) {
             if (!this.combatChild || !combatContextMode ||
@@ -1447,7 +1547,11 @@ function startAiProbe(mode = false) {
             const event = this.combatChild;
             if (target.outputSize) {
               event.outputHex = null;
-              try { event.outputHex = readAiProbeHex(this.combatOutput, target.outputSize); }
+              this.combatParentFrame.statsArgs = null;
+              try {
+                event.outputHex = readAiProbeHex(this.combatOutput, target.outputSize);
+                event.positionAfterRaw = this.combatPosition.readU16();
+              }
               catch (error) { event.readError = String(error); }
             } else {
               event.returnRaw = retval.toUInt32();
@@ -1604,6 +1708,8 @@ function startAiProbe(mode = false) {
   aiDetailMode = detailed;
   aiGateMode = withGates;
   combatContextMode = withCombat;
+  combatContextSchemaVersion = readPoints.length ? 2 : 1;
+  combatReadPointsArmed = readPoints.map(point => point.name);
   combatContextGeneration++;
   combatContextCount = 0;
   combatContextLimitReported = false;
