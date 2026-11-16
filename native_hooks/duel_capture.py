@@ -57,11 +57,17 @@ class LiveDuelCapture:
                  deck_plans: dict[str, Any], speed_value: int | None,
                  output_dir: Path | None = None,
                  rng_seed_base: int | None = None,
-                 rng_seed_start_index: int = 0) -> None:
+                 rng_seed_start_index: int = 0,
+                 trace_state: bool = False) -> None:
         self.api = api
         self.target_duels = target_duels
         self.written = 0
         self.terminals_written = 0
+        self.trace_state = trace_state
+        self.state_samples = 0
+        self.state_baselines = 0
+        self.state_deltas = 0
+        self.state_read_errors = 0
         self.seed_applied_count = 0
         self.seed_applied_indices: list[int] = []
         self.rng_seed_base = rng_seed_base
@@ -85,6 +91,11 @@ class LiveDuelCapture:
                                  "algorithm": "mix32-v1"}
                                 if rng_seed_base is not None else None),
             "session": self.session, "startedUtc": datetime.now(timezone.utc).isoformat(),
+            **({"stateTrace": {"schema": "joey-command-entry-state-delta-v1",
+                                "enabled": True,
+                                "samplingPoint": "command_producer_onEnter",
+                                "nonAtomic": True}}
+               if trace_state else {}),
             "note": "Masked 0x0004 counts terminal commands, not known winners. "
                     "Original command arguments and all passive probes retained."
         }
@@ -113,6 +124,17 @@ class LiveDuelCapture:
             self.stream.write(json.dumps(normalized, ensure_ascii=False) + "\n")
             self.next_seq += 1
             self.written += 1
+            if self.trace_state and normalized.get("kind") == "command":
+                if normalized.get("stateSampled") is True:
+                    self.state_samples += 1
+                observation = normalized.get("stateObservation")
+                if isinstance(observation, dict):
+                    if observation.get("kind") == "baseline":
+                        self.state_baselines += 1
+                    elif observation.get("kind") == "delta":
+                        self.state_deltas += 1
+                if normalized.get("stateReadError") is not None:
+                    self.state_read_errors += 1
             if normalized.get("kind") == "command" and (
                     normalized.get("opcodeMasked") == "0x0004"):
                 self.terminals_written += 1
@@ -166,6 +188,10 @@ class LiveDuelCapture:
                     f"expected {expected}, got {self.seed_applied_indices}")
         if stopped_status["overwritten"]:
             raise RuntimeError("Agent discarded events before final export")
+        if self.trace_state and requested_complete and (
+                self.state_baselines < self.target_duels or self.state_samples == 0):
+            raise RuntimeError("Command-entry state trace lacks a baseline for "
+                               "each completed duel; refusing complete capture")
         # Existing trace acknowledgement prevents duplicate exports in launcher finally.
         self.api.traceacknowledge(self.session, stopped_status["seen"])
         summary = {
@@ -176,6 +202,11 @@ class LiveDuelCapture:
             "complete": requested_complete and
                         self.terminals_written >= self.target_duels,
             "finishedUtc": datetime.now(timezone.utc).isoformat(),
+            **({"stateTrace": {"samples": self.state_samples,
+                                "baselines": self.state_baselines,
+                                "deltas": self.state_deltas,
+                                "readErrors": self.state_read_errors}}
+               if self.trace_state else {}),
             "note": "Completed duels counted by terminal opcode 0x0004/0x8004. "
                     "Winner and card legality not decoded."
         }
