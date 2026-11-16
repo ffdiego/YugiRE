@@ -41,7 +41,9 @@ class RainWindowEvidenceTests(unittest.TestCase):
         self.assertEqual(case["pairCommandSeq"],[338,339])
         self.assertEqual(case["commandsBetweenPreviousSampleAndCf"],21)
         self.assertNotIn("Skull",str(found))
-        self.assertIn("not",case["limitation"])
+        # The evidence must preserve uncertainty about both activation and causality.
+        self.assertIn("neither full card activation nor independent causality",
+                      case["limitation"])
 
     def test_rejects_provenance_mismatch_and_forged_cf(self):
         altered=copy.deepcopy(self.windows)
