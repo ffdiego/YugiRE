@@ -76,8 +76,16 @@ def prepare(pool: dict, registry: dict, attributes: dict) -> dict[str, object]:
         # Only use cards in Joey pack, never silently place prior-game-only
         # resources in the Joey demo.
         if a["availability"]["Joey"]:
-            if a["classCode"] != 21:
-                raise ValueError(f"Expected regular spell class 21: {index}/{rid}")
+            # DAT class codes 21..23 are non-monster card categories handled
+            # by DemoDuel's spell/trap zone; a numeric category alone does
+            # not prove a full native spell/activation contract.
+            native_class = a["classCode"]
+            if native_class not in (21, 22, 23) or ((a["properties"] >> 20) & 31) != native_class:
+                raise ValueError(
+                    f"Unsupported P045 non-monster class {native_class} for "
+                    f"{name} {index}/{rid}; expected one of 21, 22, 23 "
+                    "matching the raw properties"
+                )
             effects.append((index, rid, name))
     if not effects:
         raise ValueError("No audited P045 spell available in the Joey pack")
@@ -109,7 +117,8 @@ def prepare(pool: dict, registry: dict, attributes: dict) -> dict[str, object]:
                    deck0=mains[0], deck1=mains[1])
     plan = dict(schema="yugire-effect-pilot-v1", nativeParity=False,
                 scope="P045 fixed-damage candidate commands only; no proof of activation",
-                effects=[dict(internalIndex=i, resourceId=rid, name=name, copiesPerDeck=2)
+                effects=[dict(internalIndex=i, resourceId=rid, name=name,
+                              nativeClassCode=by_attr[i]["classCode"], copiesPerDeck=2)
                          for i, rid, name in effects],
                 unavailableJoeyEffects=[
                     dict(internalIndex=i, resourceId=rid, name=name)
