@@ -15,6 +15,7 @@ import random
 
 from .effect_report import _candidate, _opcode, gather, link_fixed_damage_deltas
 from .card_text_expectations import validate_expectations, temporal_candidates
+from .lp_window_evidence import correlate_rain_lp_windows
 
 # Preserved from NormalSummonRules.RequiresSpecialSummon; this list is an
 # additional conservative native-demo candidate gate, not a rules model.
@@ -228,7 +229,8 @@ def _capture_summary(path: Path) -> tuple[dict, Counter, Counter, dict, dict]:
 
 
 def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
-            limit: int = 100, references: dict | None = None) -> dict:
+            limit: int = 100, references: dict | None = None,
+            native_lp_windows: dict | None = None) -> dict:
     cards = catalog(registry, attributes)
     text_by_index, hypotheses = validate_expectations(references, cards) if references else ({}, [])
     capture_files = gather(inputs)
@@ -242,6 +244,8 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
         for rid, items in this_examples.items():
             if len(examples[rid]) < 6:
                 examples[rid].extend(items[:6-len(examples[rid])])
+    observed_lp_cases = correlate_rain_lp_windows(
+        native_lp_windows, captures, examples) if native_lp_windows else {}
     by_rid = defaultdict(list)
     for c in cards:
         by_rid[c["resourceId"]].append(c["internalIndex"])
@@ -250,6 +254,7 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
         rid, idx = card["resourceId"], card["internalIndex"]
         cf, ce = commands[("CF", rid)], commands[("CE", rid)]
         confirmed, mismatched = linked[(rid, True)], linked[(rid, False)]
+        lp_gain_cases = observed_lp_cases.get(rid, [])
         if not card["joeyAvailable"] or (
             card["group"] in ("normalControl", "outOfPilotScope") and
             not (cf or ce or verified[idx])):
@@ -258,6 +263,9 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
         if confirmed and not ambiguous:
             evidence = "ObservedFixedLpDeltaInScope"
             next_action = "Compare exact P045 command context with C#; do not infer full activation"
+        elif lp_gain_cases and not ambiguous:
+            evidence = "ObservedPairedLpCommandsAndMatchingNetGainInScope"
+            next_action = "Investigate source field/graveyard context; net LP increase is not full activation proof"
         elif cf or ce:
             evidence = "ResourceAssociatedCommandsOnly"
             next_action = "Inspect native context and changes around recorded seq; CE can be placement"
@@ -271,7 +279,7 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
         score = (100 if interesting and cf else 50 if interesting and ce else
                  20 if interesting and verified[idx] else 0)
         score += min(20, cf * 3) + min(10, ce) + (12 if card["callbackLookup"] == "Present" else 0)
-        score += (10 if confirmed else 0)
+        score += (10 if confirmed else 0) + (10 if lp_gain_cases else 0)
         text_ref = text_by_index.get(idx)
         rows.append(dict(**card, externalCardTextExpectation=(dict(
                              summaryPt=text_ref["summaryPt"],
@@ -281,6 +289,8 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
                              if text_ref else None), cfCommands=cf, ceCommands=ce,
                          verifiedDeckBatches=verified[idx],
                          lpDeltaExactCases=confirmed, lpDeltaMismatches=mismatched,
+                         pairedLpNetGainCases=len(lp_gain_cases),
+                         pairedLpNetGainObservations=lp_gain_cases,
                          sharedResourceIndices=by_rid[rid] if ambiguous else [],
                          evidence=evidence, readyForFullCsharpComparison=False,
                          nextAction=next_action, priorityScore=score,
@@ -297,6 +307,7 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
                 "P045 fixed LP changes are scoped native observations, not full card parity.",
                 captures=captures,
                 externalCardTextReferences=len(text_by_index),
+                boundedLpGainObservations=sum(len(v) for v in observed_lp_cases.values()),
                 textBasedInteractionHypotheses=joined,
                 terminalCommands=sum(x["terminalCommands"] for x in captures),
                 observedResourceIds=len({r for (_kind, r) in commands}),
@@ -327,6 +338,12 @@ def _summary_markdown(result: dict, *, max_rows: int = 25) -> str:
             lines.append("- Duelo " + str(candidate["duelIndex"] + 1) +
                          ": CF primeira carta seq " + str(candidate["cardASeq"]) +
                          ", segunda carta seq " + str(candidate["cardBSeq"]))
+        lines.append("")
+    if result.get("boundedLpGainObservations"):
+        lines.append("Correlações delimitadas de LP (+1000/+1000) validadas com janelas: "
+                     + str(result["boundedLpGainObservations"]))
+        lines.append("Esses deltas são entre amostras e não demonstram ativação completa, "
+                     "cemitério ou gatilho de Skull Invitation.")
         lines.append("")
     if result.get("externalCardTextReferences"):
         lines.append("Textos externos são expectativas TCG atuais, não evidência do Joey original.")
@@ -383,6 +400,8 @@ def main(argv: list[str] | None = None) -> int:
     prep.add_argument("--nonmonsters", type=int, default=12)
     ana.add_argument("--input", nargs="+", required=True, type=Path)
     ana.add_argument("--limit", type=int, default=100)
+    ana.add_argument("--lp-windows", type=Path, default=None,
+                     help="Previously extracted, provenance-bound native LP windows JSON")
     ana.add_argument("--card-text-expectations", type=Path, default=None,
                      help="Reviewed reference overlay; modern text is not Joey native evidence")
     args = parser.parse_args(argv)
@@ -409,7 +428,12 @@ def main(argv: list[str] | None = None) -> int:
             if args.limit < 1 or args.limit > 1000:
                 raise ValueError("--limit must be 1..1000")
             reference_data = _json(args.card_text_expectations) if args.card_text_expectations else None
-            result = analyze(reg, attrs, args.input, limit=args.limit, references=reference_data)
+            lp_windows = _json(args.lp_windows) if args.lp_windows else None
+            result = analyze(reg, attrs, args.input, limit=args.limit,
+                             references=reference_data, native_lp_windows=lp_windows)
+            if args.lp_windows:
+                source_hashes["nativeLpWindows"] = hashlib.sha256(
+                    args.lp_windows.read_bytes()).hexdigest()
             if args.card_text_expectations:
                 source_hashes["cardTextExpectations"] = hashlib.sha256(
                     args.card_text_expectations.read_bytes()).hexdigest()
