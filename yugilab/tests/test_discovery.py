@@ -61,7 +61,7 @@ class NativeEffectDiscoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unreviewed or non-normal"):
             prepare(self.reg, self.attr, bad)
         bad = copy.deepcopy(self.attr)
-        bad["cards"][-1]["properties"] = 1 << 20
+        bad["cards"][-1]["properties"] = 31 << 20
         with self.assertRaisesRegex(ValueError, "Class mismatches"):
             catalog(self.reg, bad)
         with self.assertRaisesRegex(ValueError, "Need 34"):
