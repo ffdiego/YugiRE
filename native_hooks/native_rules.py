@@ -105,6 +105,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Optional base seed (uint32, decimal/0x hex) for Joey demo duel RNG")
     parser.add_argument("--seed-start-index", type=int, default=0,
                         help=argparse.SUPPRESS)
+    parser.add_argument("--trace-state", action="store_true",
+                        help="Opt-in read-only state baselines/deltas on native command entry "
+                             "(--spawn --duels only; no extra interceptors)")
     parser.add_argument("--trace-ai", action="store_true",
                         help="Opt-in passive AI selector and nested evaluation probes "
                              "(increases JSONL size)")
@@ -135,6 +138,8 @@ def preflight_spawn(args: argparse.Namespace, parser: argparse.ArgumentParser) -
         parser.error("--speed-value must fit an unsigned 32-bit integer (1..4294967295)")
     if (args.cancel_file is not None or args.output_dir is not None) and args.duels is None:
         parser.error("--cancel-file and --output-dir require --duels")
+    if args.trace_state and args.duels is None:
+        parser.error("--trace-state requires --duels")
     if args.duels is not None and args.duels < 1:
         parser.error("--duels must be a positive integer")
     if args.seed is not None:
@@ -175,6 +180,7 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               deck_plans: dict[str, dict[str, list[int]]] | None = None,
               target_duels: int | None = None,
               trace_ai: bool = False,
+              trace_state: bool = False,
               seed: int | None = None,
               seed_start_index: int = 0,
               cancel_file: Path | None = None,
@@ -203,7 +209,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         # survives a destroyed Frida script and cannot refer to a reused PID.
         owned_process = acquire_owned_process(pid)
         session = device.attach(pid)
-        source = (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8")
+        source = ((HERE / "native_state_sampler.js").read_text(encoding="utf-8") +
+                  "\n" + (HERE / "yugire_dual_loader.js").read_text(encoding="utf-8"))
         script = session.create_script(source)
         script.on("message", lambda msg, data:
                   print(f"[frida] {msg}", flush=True)
@@ -224,6 +231,12 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
         observer_armed = True
         api.tracestart(20000)
         api.tracedemostart()
+        if trace_state:
+            state_observer = api.tracestateon()
+            if not state_observer.get("stateActive"):
+                raise RuntimeError("State observer not armed before resume")
+            print("[lab] Passive command-entry state baselines/deltas armed "
+                  "(read-only, non-atomic)", flush=True)
         if seed is not None:
             configured = api.setdemoseed(seed, seed_start_index)
             print(f"[yugilab] Controlled duel RNG: {configured}", flush=True)
@@ -245,6 +258,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             capture_kwargs = {}
             if output_dir is not None:
                 capture_kwargs["output_dir"] = output_dir
+            if trace_state:
+                capture_kwargs["trace_state"] = True
             if seed is not None:
                 capture_kwargs["rng_seed_base"] = seed
                 capture_kwargs["rng_seed_start_index"] = seed_start_index
@@ -483,7 +498,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--exe requires --spawn")
         for name in ("--speed-value", "--rotate-events", "--cycles", "--duels",
                      "--allow-multi-instance", "--deck-0", "--deck-1",
-                     "--trace-ai", "--cancel-file", "--output-dir",
+                     "--trace-ai", "--trace-state", "--cancel-file", "--output-dir",
                      "--seed", "--seed-start-index"):
             if name in original:
                 parser.error(f"{name} requires --spawn")
@@ -506,7 +521,8 @@ def main(argv: list[str] | None = None) -> int:
     return run_spawn(exe, args.console_side, args.speed_value,
                      allow_multi_instance=args.allow_multi_instance,
                      deck_plans=deck_plans, target_duels=args.duels,
-                     trace_ai=args.trace_ai, cancel_file=args.cancel_file,
+                     trace_ai=args.trace_ai, trace_state=args.trace_state,
+                     cancel_file=args.cancel_file,
                      output_dir=args.output_dir, seed=args.seed,
                      seed_start_index=args.seed_start_index)
 
