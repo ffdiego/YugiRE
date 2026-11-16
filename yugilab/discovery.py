@@ -318,8 +318,6 @@ def _summary_markdown(result: dict, *, max_rows: int = 25) -> str:
         "Mudanças P045 de LP são observações restritas; não validam a carta inteira. "
         "A pontuação é uma prioridade heurística para pesquisa.",
         "",
-        "| Índice | Recurso | Carta | Grupo | CF | CE | Casos LP P045 | Evidência |",
-        "|---:|---:|---|---|---:|---:|---:|---|",
     ]
     for hypothesis in result.get("textBasedInteractionHypotheses", []):
         lines.append("Hipótese textual (NÃO validada): " + hypothesis["summaryPt"])
@@ -333,6 +331,8 @@ def _summary_markdown(result: dict, *, max_rows: int = 25) -> str:
     if result.get("externalCardTextReferences"):
         lines.append("Textos externos são expectativas TCG atuais, não evidência do Joey original.")
         lines.append("")
+    lines.extend(["| Índice | Recurso | Carta | Grupo | CF | CE | Casos LP P045 | Evidência |",
+                  "|---:|---:|---|---|---:|---:|---:|---|"])
     for row in result["rankedQueue"][:max_rows]:
         name = row["name"].replace("|", r"\|").replace("\n", " ").replace("\r", " ")
         lines.append(
