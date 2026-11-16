@@ -1,0 +1,261 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+Evidence: static Ghidra 12.2, disposable project, -noanalysis -readOnly.
+Selected function bodies; caller lists omitted. Decompiler types/signatures may be inaccurate.
+
+INS 004974ba MOV ECX,EDI
+INS 004974bc CALL 0x00497810
+INS 004974c1 MOV ECX,dword ptr [ESI + 0x10]
+INS 004974c4 PUSH EBX
+INS 004974c5 LEA EDX,[ESP + 0x10]
+INS 004974c9 PUSH ECX
+INS 004974ca ADD ESI,0x18
+INS 004974cd PUSH EDX
+INS 004974ce PUSH ESI
+INS 004974cf LEA ECX,[ESP + 0x50]
+INS 004974d3 MOV dword ptr [ESP + 0x1c],EAX
+INS 004974d7 CALL 0x0054a000
+INS 004974dc TEST EAX,EAX
+INS 004974de JZ 0x00497489
+INS 004974e0 LEA ECX,[ESP + 0x10]
+INS 004974e4 MOV byte ptr [ESP + 0xd474],BL
+INS 004974eb CALL 0x00540e80
+INS 004974f0 MOV ECX,dword ptr [ESP + 0xd480]
+INS 004974f7 CMP ECX,EBX
+INS 004974f9 JZ 0x0049751c
+INS 004974fb MOV AL,byte ptr [ECX + -0x1]
+INS 004974fe CMP AL,BL
+INS 00497500 JZ 0x00497512
+INS 00497502 CMP AL,0xff
+INS 00497504 JZ 0x00497512
+INS 00497506 DEC AL
+INS 00497508 MOV byte ptr [ECX + -0x1],AL
+INS 0049750b MOV EAX,0x3
+INS 00497510 JMP 0x0049752f
+INS 00497512 DEC ECX
+FUNCTION FUN_00497360 @00497360
+
+undefined4 FUN_00497360(void)
+
+{
+  char cVar1;
+  int iVar2;
+  undefined4 uVar3;
+  int iVar4;
+  undefined4 *puVar5;
+  uint uVar6;
+  uint uVar7;
+  undefined4 *puVar8;
+  void *in_stack_0000d454;
+  int in_stack_0000d468;
+  void *local_c;
+  undefined1 *local_8;
+  undefined4 uStack_4;
+
+  uStack_4 = 0xffffffff;
+  local_8 = &LAB_005d8043;
+  local_c = ExceptionList;
+  ExceptionList = &local_c;
+  FUN_005c3dc0();
+  FUN_00540e20();
+  iVar2 = FUN_00543170();
+  if (iVar2 == 0) {
+    iVar2 = FUN_00542220();
+    iVar4 = FUN_00496ab0();
+    if (iVar4 == 0) {
+      if (*(int *)(iVar2 + 0xc) == 0) {
+        uVar7 = *(uint *)(iVar2 + 0x10);
+        puVar5 = (undefined4 *)FUN_00497810();
+        puVar8 = (undefined4 *)(iVar2 + 0x18);
+        for (uVar6 = uVar7 >> 2; uVar6 != 0; uVar6 = uVar6 - 1) {
+          *puVar5 = *puVar8;
+          puVar8 = puVar8 + 1;
+          puVar5 = puVar5 + 1;
+        }
+        for (uVar7 = uVar7 & 3; uVar7 != 0; uVar7 = uVar7 - 1) {
+          *(undefined1 *)puVar5 = *(undefined1 *)puVar8;
+          puVar8 = (undefined4 *)((int)puVar8 + 1);
+          puVar5 = (undefined4 *)((int)puVar5 + 1);
+        }
+      }
+      else {
+        local_c = (void *)FUN_00497810();
+        iVar2 = FUN_0054a000();
+        if (iVar2 != 0) {
+          FUN_00540e80();
+          if (in_stack_0000d468 != 0) {
+            cVar1 = *(char *)(in_stack_0000d468 + -1);
+            if ((cVar1 != '\0') && (cVar1 != -1)) {
+              *(char *)(in_stack_0000d468 + -1) = cVar1 + -1;
+              ExceptionList = in_stack_0000d454;
+              return 3;
+            }
+            FUN_0054a2d0();
+          }
+          ExceptionList = in_stack_0000d454;
+          return 3;
+        }
+      }
+      FUN_00540e80();
+      if (in_stack_0000d468 != 0) {
+        cVar1 = *(char *)(in_stack_0000d468 + -1);
+        if ((cVar1 == '\0') || (cVar1 == -1)) {
+          FUN_0054a2d0();
+        }
+        else {
+          *(char *)(in_stack_0000d468 + -1) = cVar1 + -1;
+        }
+      }
+      uVar3 = 0;
+    }
+    else {
+      FUN_00540e80();
+      if (in_stack_0000d468 != 0) {
+        cVar1 = *(char *)(in_stack_0000d468 + -1);
+        if ((cVar1 != '\0') && (cVar1 != -1)) {
+          *(char *)(in_stack_0000d468 + -1) = cVar1 + -1;
+          ExceptionList = in_stack_0000d454;
+          return 2;
+        }
+        FUN_0054a2d0();
+      }
+      uVar3 = 2;
+    }
+  }
+  else {
+    FUN_00540e80();
+    if (in_stack_0000d468 != 0) {
+      cVar1 = *(char *)(in_stack_0000d468 + -1);
+      if ((cVar1 != '\0') && (cVar1 != -1)) {
+        *(char *)(in_stack_0000d468 + -1) = cVar1 + -1;
+        ExceptionList = in_stack_0000d454;
+        return 1;
+      }
+      FUN_0054a2d0();
+    }
+    uVar3 = 1;
+  }
+  ExceptionList = in_stack_0000d454;
+  return uVar3;
+}
+
+
+FUNCTION FUN_00496ab0 @00496ab0
+
+undefined4 __thiscall FUN_00496ab0(int param_1,int param_2,int param_3)
+
+{
+  HDC pHVar1;
+  HBITMAP pHVar2;
+  int iVar3;
+  int iVar4;
+  BITMAPINFO local_2c;
+
+  FUN_00497550();
+  if ((param_2 < 1) || (param_3 < 1)) {
+    return 1;
+  }
+  if (*(char *)(param_1 + 0x58) == '\0') {
+    iVar3 = FUN_0054a1d0(param_2 * param_3 * 4 + 7);
+    *(int *)(param_1 + 4) = iVar3;
+    *(uint *)(param_1 + 8) = iVar3 + 7U & 0xfffffff8;
+  }
+  else {
+    local_2c.bmiHeader.biWidth = param_2;
+    local_2c.bmiHeader.biHeight = -param_3;
+    local_2c.bmiHeader.biSize = 0x28;
+    local_2c.bmiHeader.biPlanes = 1;
+    local_2c.bmiHeader.biBitCount = 0x20;
+    local_2c.bmiHeader.biCompression = 0;
+    pHVar1 = GetDC((HWND)0x0);
+    pHVar2 = CreateDIBSection(pHVar1,&local_2c,0,(void **)(param_1 + 8),(HANDLE)0x0,0);
+    *(HBITMAP *)(param_1 + 0x5c) = pHVar2;
+    ReleaseDC((HWND)0x0,pHVar1);
+    if (*(int *)(param_1 + 0x5c) == 0) {
+      return 1;
+    }
+    pHVar1 = CreateCompatibleDC((HDC)0x0);
+    *(HDC *)(param_1 + 0x60) = pHVar1;
+    SelectObject(pHVar1,*(HGDIOBJ *)(param_1 + 0x5c));
+  }
+  SetRect((LPRECT)(param_1 + 0xc),0,0,param_2,param_3);
+  *(int *)(param_1 + 0x28) = *(int *)(param_1 + 0x14) << 2;
+  FUN_0047f8d0(param_3);
+  iVar3 = *(int *)(param_1 + 8);
+  iVar4 = 0;
+  if (0 < param_3) {
+    do {
+      *(int *)(*(int *)(param_1 + 0x20) + iVar4 * 4) = iVar3;
+      iVar3 = iVar3 + *(int *)(param_1 + 0x28);
+      iVar4 = iVar4 + 1;
+    } while (iVar4 < param_3);
+  }
+  *(int *)(param_1 + 0x30) = *(int *)(param_1 + 8);
+  *(undefined4 *)(param_1 + 0x34) = *(undefined4 *)(param_1 + 0x28);
+  *(LONG *)(param_1 + 0x38) = ((LPRECT)(param_1 + 0xc))->left;
+  *(undefined4 *)(param_1 + 0x3c) = *(undefined4 *)(param_1 + 0x10);
+  *(undefined4 *)(param_1 + 0x40) = *(undefined4 *)(param_1 + 0x14);
+  *(undefined1 *)(param_1 + 0x2c) = 1;
+  *(undefined4 *)(param_1 + 0x4c) = 0;
+  *(undefined4 *)(param_1 + 0x44) = *(undefined4 *)(param_1 + 0x18);
+  return 0;
+}
+
+
+FUNCTION FUN_00497310 @00497310
+
+void FUN_00497310(void)
+
+{
+  uint *puVar1;
+  int iVar2;
+  int iVar3;
+
+  puVar1 = (uint *)FUN_00497810();
+  iVar2 = FUN_00496c00();
+  iVar3 = FUN_00496c00();
+  iVar2 = *(int *)(iVar2 + 0xc) * *(int *)(iVar3 + 8);
+  if (iVar2 != 0) {
+    do {
+      iVar2 = iVar2 + -1;
+      *puVar1 = *puVar1 & 0xffffff;
+      puVar1 = puVar1 + 1;
+    } while (iVar2 != 0);
+  }
+  return;
+}
+
+
+FUNCTION FUN_00497550 @00497550
+
+void __fastcall FUN_00497550(int param_1)
+
+{
+  if (*(HDC *)(param_1 + 0x60) != (HDC)0x0) {
+    DeleteDC(*(HDC *)(param_1 + 0x60));
+    *(undefined4 *)(param_1 + 0x60) = 0;
+  }
+  if (*(HGDIOBJ *)(param_1 + 0x5c) == (HGDIOBJ)0x0) {
+    if (*(int *)(param_1 + 4) == 0) goto LAB_0049758d;
+    FUN_0054a2d0(*(int *)(param_1 + 4));
+  }
+  else {
+    DeleteObject(*(HGDIOBJ *)(param_1 + 0x5c));
+    *(undefined4 *)(param_1 + 0x5c) = 0;
+  }
+  *(undefined4 *)(param_1 + 4) = 0;
+LAB_0049758d:
+  *(undefined4 *)(param_1 + 8) = 0;
+  if ((*(int *)(param_1 + 0x20) != 0) && (*(char *)(param_1 + 0x24) != '\0')) {
+    FUN_0054a2d0(*(int *)(param_1 + 0x20));
+    *(undefined1 *)(param_1 + 0x24) = 0;
+  }
+  *(undefined4 *)(param_1 + 0x20) = 0;
+  *(undefined1 *)(param_1 + 100) = 0;
+  *(undefined1 *)(param_1 + 0xad) = 0;
+  *(undefined1 *)(param_1 + 0x2c) = 0;
+  *(undefined4 *)(param_1 + 0xc) = 0;
+  *(undefined4 *)(param_1 + 0x10) = 0;
+  *(undefined4 *)(param_1 + 0x14) = 0;
+  *(undefined4 *)(param_1 + 0x18) = 0;
+  return;
+}

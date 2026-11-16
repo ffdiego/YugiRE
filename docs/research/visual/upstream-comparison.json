@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/derplayer/YuGiOh-PoC-ModTools",
+  "commit": "b689dfbfc593916e7e20ea4873ce92ef81c9fc0d",
+  "license": "MIT; copyright 2023 derplayer & philyeahz",
+  "method": "Unmodified upstream LZSS classes compiled with local .NET 10; own harness reads YGA members and compares decoded SHA256 with Python inventory.",
+  "source_files": [
+    {
+      "path": "YuGiOh_PoC_Patcher/YuGi/YuGiBuffer.cs",
+      "sha256": "60cb702ef6e357964d7bcc6c53a2801675f245317e747437e6c5b9ad05fb5cb9"
+    },
+    {
+      "path": "YuGiOh_PoC_Patcher/YuGi/YuGiCompressedWord.cs",
+      "sha256": "bef1b1b7c6b4e5f7a3ea17fe610810ebf437e430017ee6b3495339bc180bd86c"
+    },
+    {
+      "path": "YuGiOh_PoC_Patcher/YuGi/YuGiLZSS.cs",
+      "sha256": "1bb41b1a294e2060ffaa950e3822a867e08e89d0b543380f43114c5236efa910"
+    }
+  ],
+  "yga_count": 537,
+  "pixel_hash_matches": 537,
+  "exact_decoded_lengths": 537,
+  "native_execution": false
+}

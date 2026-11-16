@@ -1,0 +1,158 @@
+{
+  "evidence_type": "offline resource validation; static loader corroboration documented separately",
+  "native_execution": false,
+  "before": {
+    "exe": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+    "dat": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed"
+  },
+  "after": {
+    "exe": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+    "dat": "7e8841ceb015861dacf898d4a62a909e399da14bb7d69c40de3afa3a4610e1ed"
+  },
+  "count": 3568,
+  "extensions": {
+    ".bin": 41,
+    ".bmp": 2763,
+    ".txt": 167,
+    ".sue": 2,
+    ".yga": 537,
+    ".ydc": 58
+  },
+  "yga_decoded": 537,
+  "yga_modes": {
+    "1": 537
+  },
+  "bmp_depths": {
+    "24": 2760,
+    "1": 2,
+    "8": 1
+  },
+  "samples": [
+    {
+      "name": "cursor\\cursor_e_summon.yga",
+      "dat_offset": 137341554,
+      "resource_size": 4632,
+      "resource_sha256": "9f166ae0cba16481f729dab142dfc0f94bc02dce8a9880d33b844d44be6e7959",
+      "width": 64,
+      "height": 64,
+      "mode": 1,
+      "decoded_size": 16384,
+      "compressed_size": 4608,
+      "pixel_sha256": "462355516124f68ebc12b08182914940ee5f11b6c8429240e52ae49f39b557be"
+    },
+    {
+      "name": "j\\duel\\effect\\coin_sha.yga",
+      "dat_offset": 213789198,
+      "resource_size": 3523,
+      "resource_sha256": "fd7d56a9a1a814b39bd4ab1274172b9581f1cf05d2767883feb8ce92de87ab74",
+      "width": 168,
+      "height": 42,
+      "mode": 1,
+      "decoded_size": 28224,
+      "compressed_size": 3499,
+      "pixel_sha256": "48438563c3b482ce240804870848d8c2e11c8c825b2aefbb2635dc9944636ea0"
+    },
+    {
+      "name": "j\\duel\\effect\\dice_shadow.yga",
+      "dat_offset": 214356680,
+      "resource_size": 7685,
+      "resource_sha256": "6d939c7e29e7f81b8b83240e9aaa5edd7388def36d3b16891b2a5d41fdc23ef5",
+      "width": 288,
+      "height": 48,
+      "mode": 1,
+      "decoded_size": 55296,
+      "compressed_size": 7661,
+      "pixel_sha256": "ce52ddefd22d26d0463ee9fe20ad2a3cc41547cffc742403acbcaf185bda4347"
+    },
+    {
+      "name": "j\\duel\\effect\\vija_smoke.yga",
+      "dat_offset": 217665464,
+      "resource_size": 25044,
+      "resource_sha256": "8fbe42c2c1d53a15233842045427b6a439d61b99dbf4da8816af528d87873ec2",
+      "width": 400,
+      "height": 80,
+      "mode": 1,
+      "decoded_size": 128000,
+      "compressed_size": 25020,
+      "pixel_sha256": "9737f407fa02680222d851be92b659500888676612bf99f86b77684916d3e34b"
+    },
+    {
+      "name": "j\\duel\\effect\\kouka_ue_b.yga",
+      "dat_offset": 217399920,
+      "resource_size": 39739,
+      "resource_sha256": "94d45e083853458ebe923688478f157c2b433369972ba702b61a88d0cdbf265f",
+      "width": 164,
+      "height": 164,
+      "mode": 1,
+      "decoded_size": 107584,
+      "compressed_size": 39715,
+      "pixel_sha256": "e9792bee6af872765bd423d187db48f97ac97bbc24551d6a1b7b8b60b9fe2398"
+    },
+    {
+      "name": "j\\duel\\effect\\expl1.yga",
+      "dat_offset": 216774575,
+      "resource_size": 19846,
+      "resource_sha256": "9512af7d1c38a143e1828e2ad93b04191a2e01bd2716e4a3814fdbddf08eabd3",
+      "width": 164,
+      "height": 164,
+      "mode": 1,
+      "decoded_size": 107584,
+      "compressed_size": 19822,
+      "pixel_sha256": "f973f2642376bff3a0c3a5b3b652afddd9abad7ed0788f6f47f06c86bd0b133f"
+    },
+    {
+      "name": "j\\title\\mask.yga",
+      "dat_offset": 281140037,
+      "resource_size": 66515,
+      "resource_sha256": "f71501f33fb38c0d0407ef8eb9b0ca299673dcf10bbd07b4ca500c4444224afc",
+      "width": 440,
+      "height": 320,
+      "mode": 1,
+      "decoded_size": 563200,
+      "compressed_size": 66491,
+      "pixel_sha256": "539e72aa523e61dc240cf2ee813b1a96e63854b28080cee841221bba0d92eb07"
+    }
+  ],
+  "strip_checks": [
+    {
+      "manifest": "j\\duel\\effect\\coin.txt",
+      "resource": "coin_sha.yga",
+      "parameter": 4,
+      "divisions": 4,
+      "frame_width": 42,
+      "frame_height": 42
+    },
+    {
+      "manifest": "j\\duel\\effect\\coin.txt",
+      "resource": "coin_kirari.yga",
+      "parameter": 4,
+      "divisions": 4,
+      "frame_width": 14,
+      "frame_height": 14
+    },
+    {
+      "manifest": "j\\duel\\effect\\dice.txt",
+      "resource": "dice_shadow.yga",
+      "parameter": 6,
+      "divisions": 6,
+      "frame_width": 48,
+      "frame_height": 48
+    },
+    {
+      "manifest": "j\\duel\\effect\\vija.txt",
+      "resource": "vija_smoke.yga",
+      "parameter": 5004,
+      "divisions": 5,
+      "frame_width": 80,
+      "frame_height": 80
+    },
+    {
+      "manifest": "j\\duel\\effect\\vija.txt",
+      "resource": "vija_moji_smo.yga",
+      "parameter": 8031,
+      "divisions": 8,
+      "frame_width": 32,
+      "frame_height": 37
+    }
+  ]
+}
