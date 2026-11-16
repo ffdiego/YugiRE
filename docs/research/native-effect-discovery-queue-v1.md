@@ -1,5 +1,58 @@
 # Descoberta de efeitos por cobertura — laboratório nativo v1
 
+## Validação da camada textual e vínculo com LP nativo (16/11/2026)
+
+O operador forneceu `discovery-report(1).json` e `discovery-summary(1).md`
+da mesma captura de três duelos (SHA256 do JSONL original
+`179bab9f66660e1c546a66e717ad37c1a2575784e0551e71fb1d82ebba8292a0`).
+O relatório inclui `externalCardTextReferences=2`,
+`integrityOk=true`, `terminalCommands=3`, 2.159 eventos,
+e hipótese `RainToGraveyardWhileSkullActive` com
+`conclusion=Unverified`, `observationClass=CFTemporalCooccurrenceOnly`.
+CF de Skull precedem os de Rain nos duelos 1 e 2.
+
+Problema remanescente na versão inicial: Rain de 2 ocorrências continuava
+`ResourceAssociatedCommandsOnly` porque o analisador só promovia
+transições de dano P045, e não recebia janelas de LP do extrator.
+
+A versão seguinte permite importar **opcionalmente** as janelas nativas
+de Rain de `rain-of-mercy-windows-v2/windows.json`, verificando
+fingerprint da captura e correspondência CF + comandos `0x42` +
+amostras LP com net +1000/+1000. Isso anota
+`ObservedPairedLpCommandsAndMatchingNetGainInScope` e
+`pairedLpNetGainCases=2`, mantendo
+`readyForFullCsharpComparison=false`. Esse estado não valida
+ativação completa, movimento ao Cemitério ou Skull Invitation.
+
+Executar primeiro os novos testes e somente então regenerar a saída
+em diretório novo:
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_lp_window_evidence.py -v
+python -m unittest discover -s yugilab/tests -p test_card_text_expectations.py -v
+python -m yugilab.discovery analyze `
+  --registry .\scratch\coverage-current\registry.json `
+  --attributes .\scratch\coverage-current\attributes.json `
+  --input .\scratch\native-discovery-round01-3 `
+  --card-text-expectations .\docs\research\card-text-expectations.v1.json `
+  --lp-windows .\scratch\rain-of-mercy-windows-v2\windows.json `
+  --output-dir .\scratch\native-discovery-text-lp-v1
+```
+
+Verificar `boundedLpGainObservations=2`, Rain com
+`pairedLpNetGainCases=2`, `netLpDeltaBetweenSamples`
+com +1000/+1000 nos dois duelos e a hipótese Skull ainda
+`conclusion=Unverified`. Testes dessa revisão não foram executados
+no Windows até o momento desta mudança.
+
+Para avançar de hipótese para causalidade de Skull, precisamos
+observar **Skull Invitation presente e ativa na zona de armadilhas**
+no instante do efeito e **Rain of Mercy indo ao Cemitério**
+com identidade, dono e sequência temporal; o dano -300 do lado 0
+é compatível com o texto oficial, mas não prova o gatilho.
+
+
 ## Resultado da primeira rodada Windows e próximo alvo (16/11/2026)
 
 A captura de round-01 (um worker; sem trace-ai) contém **2.159 eventos**
