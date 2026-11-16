@@ -77,3 +77,5 @@ Para provar a resolução precisamos observar LP/campo/mão antes/depois
 com contexto causal independente e depois confrontar a engine C#.
 Não commitar EXE, DAT, capturas completas, saves nem decks com dados sensíveis.
 Os artefatos locais ficam em `scratch/`.
+
+O preparador permite classCode 21/22/23 para as cinco identidades P045 auditadas, preservando o código observado no plano; não infere que categorias inteiras tenham efeito implementado.
