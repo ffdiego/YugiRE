@@ -42,6 +42,79 @@ def changes(commands: list[dict]) -> list[dict]:
     return deltas
 
 
+
+def lp_sample(entry: dict) -> list[int] | None:
+    lp = entry.get("lifePointsObserved")
+    return lp if (isinstance(lp, list) and len(lp) == 2 and
+                  all(type(x) is int for x in lp)) else None
+
+
+def paired_lp42_candidate(commands: list[dict], index: int) -> dict | None:
+    """Recognize the exact CF +3/+4 pair observed for Rain of Mercy.
+
+    The pair is command-level evidence, not a proven heal applied to LP.
+    The prior sample may be stale: preserve its distance and avoid asserting
+    causality for net deltas across other native actions.
+    """
+    cf = commands[index]
+    seq = cf["seq"]
+    duel = cf["duelIndex"]
+    nearby = {c["seq"]: c for c in commands[index + 1:index + 12]
+              if c["duelIndex"] == duel}
+    pair = [nearby.get(seq + 3), nearby.get(seq + 4)]
+    if any(e is None for e in pair):
+        return None
+    if any(e["opcode"] != "0x0042" or e["caller"] != "0x578823" or
+           e["threadId"] != cf["threadId"] or len(e["argsHex"]) != 4
+           for e in pair):
+        return None
+    words = [int(e["argsHex"][0], 16) for e in pair]
+    targets = [(word >> 15) & 1 for word in words]
+    amounts = [int(e["argsHex"][1], 16) for e in pair]
+    if set(targets) != {0, 1} or amounts[0] != amounts[1] or amounts[0] <= 0:
+        return None
+
+    before = None
+    before_index = None
+    for k in range(index - 1, -1, -1):
+        if commands[k]["duelIndex"] != duel:
+            break
+        lp = lp_sample(commands[k])
+        if lp is not None:
+            before_index = k
+            before = dict(seq=commands[k]["seq"], lifePoints=lp,
+                          commandsBetween=k and index - k - 1 or index - k - 1)
+            break
+
+    last_seq = pair[1]["seq"]
+    after = None
+    post_index = None
+    for k in range(index + 1, len(commands)):
+        entry = commands[k]
+        if entry["duelIndex"] != duel:
+            break
+        if entry["seq"] > last_seq and lp_sample(entry) is not None:
+            post_index = k
+            after = dict(seq=entry["seq"], lifePoints=lp_sample(entry))
+            break
+    net = None if before is None or after is None else [
+        after["lifePoints"][side] - before["lifePoints"][side] for side in (0, 1)
+    ]
+    interfering = []
+    if before_index is not None and post_index is not None:
+        interfering = [e["seq"] for e in commands[before_index + 1:post_index]
+                       if e["duelIndex"] == duel and e["seq"] not in (seq + 3, seq + 4)
+                       and e["opcode"] in ("0x0042", "0x0043")]
+    return dict(kind="PairedNative0x42Commands", commandSeq=[e["seq"] for e in pair],
+                caller="0x578823", targetSides=targets, amounts=amounts,
+                beforeCfLpSample=before, firstLpSampleAfterPair=after,
+                netLpDeltaBetweenSamples=net,
+                otherLpCommandsBetweenSamples=interfering,
+                interpretationLimit="Paired +1,000-like LP commands are observed, "
+                                    "not verified healing outcomes. A previous LP sample "
+                                    "may be stale; other effects and timing are unknown.")
+
+
 def extract(inputs: list[Path], resource_ids: set[int], *,
             before: int = 12, after: int = 16) -> dict:
     if not resource_ids or any(type(i) is not int or i < 1 or i > 65535 for i in resource_ids):
@@ -77,6 +150,7 @@ def extract(inputs: list[Path], resource_ids: set[int], *,
             windows.append(dict(capture=path.name, sourceSha256=checked["sha256"],
                                 resourceId=candidate["resourceId"], cfSeq=event["seq"],
                                 duelIndex=event["duelIndex"], commands=nearby,
+                                pairedLp42Candidate=paired_lp42_candidate(commands, i),
                                 lpChangesWithinWindow=changes(nearby)))
     return dict(schema="yugire-native-cf-windows-v1",
                 interpretationLimit="CF and LP changes are adjacent observations, "
@@ -92,6 +166,17 @@ def markdown(data: dict) -> str:
         lines += [f"## Resource {window['resourceId']}, duel {window['duelIndex']+1}, "
                   f"CF seq {window['cfSeq']}", "",
                   "Observed LP changes (not attributed to the card):", ""]
+        pair = window.get("pairedLp42Candidate")
+        if pair:
+            lines.append("Paired native 0x42 commands: "
+                         + str(list(zip(pair["commandSeq"], pair["targetSides"], pair["amounts"]))))
+            lines.append("Last earlier LP sample: " + str(pair["beforeCfLpSample"]))
+            lines.append("First later LP sample: " + str(pair["firstLpSampleAfterPair"]))
+            lines.append("Net change across samples, NOT proven effect: "
+                         + str(pair["netLpDeltaBetweenSamples"]))
+            lines.append("Other LP commands between samples: "
+                         + str(pair["otherLpCommandsBetweenSamples"]))
+            lines.append("")
         for change in window["lpChangesWithinWindow"]:
             lines.append(f"- Seq {change['beforeSeq']} -> {change['afterSeq']}: "
                          f"{change['lifeBefore']} -> {change['lifeAfter']}; "
