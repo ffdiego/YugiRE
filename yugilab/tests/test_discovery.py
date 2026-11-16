@@ -64,9 +64,9 @@ class NativeEffectDiscoveryTests(unittest.TestCase):
         bad["cards"][-1]["properties"] = 1 << 20
         with self.assertRaisesRegex(ValueError, "Class mismatches"):
             catalog(self.reg, bad)
-        with self.assertRaisesRegex(ValueError, "Need 30"):
-            prepare(self.reg, self.attr, self.pool, normal_count=30,
-                    effect_count=6, nonmonster_count=4)
+        with self.assertRaisesRegex(ValueError, "Need 34"):
+            prepare(self.reg, self.attr, self.pool, normal_count=34,
+                    effect_count=6, nonmonster_count=0)
 
     def make_native_capture(self, path: Path, *, broken=False):
         deck = prepare(self.reg, self.attr, self.pool, rounds=1)["decks"]
