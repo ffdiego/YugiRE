@@ -348,14 +348,14 @@ def _summary_markdown(result: dict, *, max_rows: int = 25) -> str:
     if result.get("externalCardTextReferences"):
         lines.append("Textos externos são expectativas TCG atuais, não evidência do Joey original.")
         lines.append("")
-    lines.extend(["| Índice | Recurso | Carta | Grupo | CF | CE | Casos LP P045 | Evidência |",
-                  "|---:|---:|---|---|---:|---:|---:|---|"])
+    lines.extend(["| Índice | Recurso | Carta | Grupo | CF | CE | Casos LP P045 | Ganho LP pareado | Evidência |",
+                  "|---:|---:|---|---|---:|---:|---:|---:|---|"])
     for row in result["rankedQueue"][:max_rows]:
         name = row["name"].replace("|", r"\|").replace("\n", " ").replace("\r", " ")
         lines.append(
             f"| {row['internalIndex']} | {row['resourceId']} | {name} | "
             f"{row['group']} | {row['cfCommands']} | {row['ceCommands']} | "
-            f"{row['lpDeltaExactCases']} | {row['evidence']} |"
+            f"{row['lpDeltaExactCases']} | {row['pairedLpNetGainCases']} | {row['evidence']} |"
         )
     lines.extend([
         "",
