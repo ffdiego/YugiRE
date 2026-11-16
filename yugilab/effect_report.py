@@ -85,6 +85,7 @@ def link_fixed_damage_deltas(path: Path, ids: set[int] = P045_IDS) -> list[dict]
                         **pending_damage, "afterSeq": seq,
                         "lifeAfter": after, "observedLoss": loss,
                         "exactLpDelta": loss == expected,
+                        "oppositeSourceSide": target != pending_damage["sourceSideBit15"],
                         "evidenceScope": "Native command + subsequent LP observation; "
                                          "not full card activation or legal target proof"
                     })
@@ -103,7 +104,7 @@ def link_fixed_damage_deltas(path: Path, ids: set[int] = P045_IDS) -> list[dict]
             if (opcode == 0x43 and event.get("caller", "").lower() == "0x578513"):
                 if (pending_cf is not None and seq == pending_cf["cfSeq"] + 3 and
                     event.get("threadId") == pending_cf["threadId"] and
-                    event["args"][1] == P045_AMOUNTS[pending_cf["sourceResourceId"]]):
+                    event["args"][1] == P045_AMOUNTS.get(pending_cf["sourceResourceId"])):
                     observation = event.get("lifePointsObserved")
                     before = observation.get("lifePoints") if isinstance(observation, dict) else None
                     if (isinstance(before, list) and len(before) == 2 and
