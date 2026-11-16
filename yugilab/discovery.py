@@ -281,6 +281,46 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *, limit: int 
                 perCard=rows)
 
 
+
+def _summary_markdown(result: dict, *, max_rows: int = 25) -> str:
+    lines = [
+        "# Fila de investigação nativa — relatório exploratório",
+        "",
+        f"- Integridade das capturas: **{result['integrityOk']}**",
+        f"- Comandos terminais: **{result['terminalCommands']}**",
+        f"- Resource IDs associados a CF/CE: **{result['observedResourceIds']}**",
+        f"- Candidatos no catálogo Joey: **{result['catalogCandidates']}**",
+        "",
+        "CF/CE indica associação a recurso, não ativação de efeito. "
+        "Mudanças P045 de LP são observações restritas; não validam a carta inteira. "
+        "A pontuação é uma prioridade heurística para pesquisa.",
+        "",
+        "| Índice | Recurso | Carta | Grupo | CF | CE | Casos LP P045 | Evidência |",
+        "|---:|---:|---|---|---:|---:|---:|---|",
+    ]
+    for row in result["rankedQueue"][:max_rows]:
+        name = row["name"].replace("|", r"\|").replace("\n", " ").replace("\r", " ")
+        lines.append(
+            f"| {row['internalIndex']} | {row['resourceId']} | {name} | "
+            f"{row['group']} | {row['cfCommands']} | {row['ceCommands']} | "
+            f"{row['lpDeltaExactCases']} | {row['evidence']} |"
+        )
+    lines.extend([
+        "",
+        "## Próximas verificações",
+        "",
+        "1. Examinar captures[].issues; qualquer perda invalida a campanha.",
+        "2. Para cartas CF/CE sem LP correlacionado, inspecionar examples[].seq "
+        "e estado nativo independente; CE pode ser apenas invocação/posicionamento.",
+        "3. Para cartas com DeckVerifiedNoResourceCommand, medir se foram "
+        "compradas ou apresentadas à IA antes de concluir qualquer ausência.",
+        "4. Nunca comparar frequência/resultado com C# como se fossem os "
+        "mesmos duelos. Guardar capturas e catálogo originais fora do Git.",
+        "",
+    ])
+    return "\n".join(lines)
+
+
 def _write_new(directory: Path, outputs: dict[str, object]) -> None:
     if directory.exists():
         raise ValueError(f"Output directory already exists: {directory}")
@@ -334,6 +374,8 @@ def main(argv: list[str] | None = None) -> int:
             result = analyze(reg, attrs, args.input, limit=args.limit)
             result["inputHashes"] = source_hashes
             _write_new(args.output_dir, {"discovery-report.json": result})
+            (args.output_dir / "discovery-summary.md").write_text(
+                _summary_markdown(result), encoding="utf-8", newline="\n")
             print(f"Native captures {len(result['captures'])}; terminals "
                   f"{result['terminalCommands']}; candidate resource IDs "
                   f"{result['observedResourceIds']}; integrity={result['integrityOk']}")
