@@ -145,7 +145,7 @@ def prepare(registry: dict, attributes: dict, normals: dict, *,
 
 def _capture_summary(path: Path) -> tuple[dict, Counter, Counter, dict, dict]:
     """Stream JSONL, preserve resource identities and check verified deck injections."""
-    counts, verified, examples = Counter(), Counter(), defaultdict(list)
+    counts, verified, verified_sides, examples = Counter(), Counter(), Counter(), defaultdict(list)
     issues, seq_expected, events, terminals, footer, header = [], 1, 0, 0, None, None
     sha = hashlib.sha256()
     with path.open("rb") as source:
@@ -182,6 +182,7 @@ def _capture_summary(path: Path) -> tuple[dict, Counter, Counter, dict, dict]:
                     if not isinstance(actual, list) or not isinstance(planned, list) or Counter(actual) != Counter(planned):
                         issues.append(f"Deck verification disagree for side {side} at seq {seq}")
                     else:
+                        verified_sides[side] += 1
                         for idx in set(actual):
                             verified[idx] += 1
             opcode = _opcode(e)
@@ -204,12 +205,19 @@ def _capture_summary(path: Path) -> tuple[dict, Counter, Counter, dict, dict]:
             issues.append("Capture events overwritten or unknown")
     if header is None or header.get("mode") != "live_duels":
         issues.append("Not a live_duels capture")
+    elif isinstance(header.get("deckPlans"), dict):
+        for side, plan in header["deckPlans"].items():
+            if isinstance(plan, dict) and isinstance(plan.get("main"), list):
+                if verified_sides[side] != terminals:
+                    issues.append(f"Side {side} verified deck batches "
+                                  f"{verified_sides[side]} != terminal duels {terminals}")
     # Four verification records might mean 2 repeated decks; the absence
     # of a card in a command never implies it was not drawn.
     linked = link_fixed_damage_deltas(path)
     summary = dict(file=path.name, sha256=sha.hexdigest(), events=events,
                    terminalCommands=terminals, integrityOk=not issues, issues=issues,
                    verifiedDeckCardIdentities=len(verified),
+                   verifiedDeckBatchesBySide=dict(verified_sides),
                    linkedP045Cases=len(linked),
                    exactP045LpDeltas=sum(c["exactLpDelta"] for c in linked))
     return summary, counts, verified, dict(examples), Counter(
