@@ -79,6 +79,56 @@ a nova revisão sobre a captura completa. Analisar `windows.json`
 sem supor que uma diferença de +1000 por lado é automaticamente
 causal: conferir distância, outras ações e lacunas da amostragem.
 
+## Descrições das cartas como expectativas, não oráculo nativo (16/11/2026)
+
+Até aqui o YugiLab não utilizava textos das cartas no ranking: apenas
+identidade (índice interno / resource ID), propriedades, callbacks e eventos.
+A primeira revisão de `docs/research/card-text-expectations.v1.json` adiciona
+duas **paráfrases revisadas** com links oficiais do TCG contemporâneo:
+
+- **Rain of Mercy (internal 969, resource 1315):** aumento de 1.000 LP
+  para cada jogador quando o efeito resolve.
+- **Skull Invitation (internal 414, resource 1306):** armadilha contínua
+  que, enquanto ativa, inflige 300 ao dono de cada carta enviada ao Cemitério.
+
+Os textos do TCG atual são **hipóteses externas**; o Joey original pode
+ter regras/timing próprios. Não são material da engine nem evidência dinâmica.
+O vínculo exige coincidência exata de índice interno, resource ID, nome
+e presença no pack Joey. O relatório novo pode incorporar as descrições
+e mostrar a hipótese Rain→cemitério→Skull como possível interação
+sem confundir CF anterior com confirmação de permanência em campo.
+
+Na captura anterior, Skull Invitation tem CF seq 66 e 510, e
+Rain of Mercy tem CF seq 335 e 1191 nos mesmos duelos. Rain
+mostra pares nativos de comandos +1000 para cada lado, com LP
+líquidos +1000/+1000 entre amostras 21–22 comandos separadas.
+Depois ocorre -300 LP no lado 0 nas duas janelas. **Ainda falta observar**
+que Skull estava ativa e Rain foi para o cemitério.
+
+Para alimentar o relatório de descoberta com as descrições revisadas:
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_card_text_expectations.py -v
+python -m unittest discover -s yugilab/tests -p test_discovery.py -v
+python -m yugilab.discovery analyze `
+  --registry .\scratch\coverage-current\registry.json `
+  --attributes .\scratch\coverage-current\attributes.json `
+  --input .\scratch\native-discovery-round01-3 `
+  --card-text-expectations .\docs\research\card-text-expectations.v1.json `
+  --output-dir .\scratch\native-discovery-text-v1
+```
+
+Verifique `textBasedInteractionHypotheses`,
+`externalCardTextReferences` e `perCard[].externalCardTextExpectation`
+no novo `discovery-report.json`. `discovery-summary.md` mostrará
+o **pareamento temporal** de CF por duelo, não prova causal.
+Os novos testes ainda precisam ser executados no Windows.
+Para estender a outras cartas, adicionar referências externas revisadas
+com links, texto resumido, gatilhos/efeitos esperados e questões abertas.
+Priorizar futuramente a versão do texto efetivamente presente no jogo,
+se conseguirmos extraí-la e verificar sua procedência.
+
 Este experimento é **nativo e exploratório**. A seleção por propriedades do
 DAT e a presença na tabela de callbacks não estabelecem ativação nem
 implementação no Core C#. O modo Demo pode se comportar de maneira
