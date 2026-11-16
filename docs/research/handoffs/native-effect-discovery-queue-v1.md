@@ -1,0 +1,55 @@
+# Handoff — native effect discovery queue v1
+
+Branch: `feature/native-effect-discovery-queue-v1`.
+Stacked on PR #5 (`feature/effect-lab-pilot-v1`) which depends on PR #4.
+Do **not merge** ahead of dependencies or change unrelated native hooks.
+
+## Work completed
+
+- `yugilab/discovery.py`: pure Python, offline catalog selection and JSONL
+  streaming. `prepare` composes rounds of 40-card demo decks using 16 already
+  reviewed normal controls, 12 level-1..4 effect-category monsters (excluding
+  the known special-summon restriction list), and 12 nonmonster class 21–23
+  candidates. Different pairs rotate. No C# gameplay manifest is created
+  for unknown effect cards.
+- `analyze`: cross-references native resource-associated CF/CE and existing
+  scoped P045 LP-delta linker with Joey card identities, reported callback
+  availability and verified native deck overrides. Outputs JSON/Markdown
+  ranked queue, hashes, examples with seq, and identity ambiguity warnings.
+  All full-C#-comparison readiness remains false until causality/context
+  is independently proven.
+- `yugilab/tests/test_discovery.py`: synthetic deck rotation, fingerprint
+  gates, provenance, 300-LP positive case, CE-only case, incomplete footer,
+  and missing deck verification negative case.
+- `docs/research/native-effect-discovery-queue-v1.md`: Windows operator
+  commands, one-worker three-duel stop gate, and strict evidence taxonomy.
+
+## Evidence and validation
+
+- Actual original-game Raimei capture previously observed: 3/3 native
+  duels, 99,429 events, 0 lost, nine resource-linked 300-LP deltas.
+  This prior evidence is source data, **not** execution of new discovery code.
+- Existing `yugilab.effect_report` v2 output was 9/9 exact LP deltas
+  in the operator's Windows environment.
+- **New `test_discovery.py` and `discovery.py` have not been executed**
+  in this environment. The Windows operator must run offline unit tests
+  before using the deck files; no DAT/EXE or native Joey executed here.
+
+## Next action
+
+1. Run `python -m unittest discover -s yugilab/tests -p test_discovery.py -v`.
+2. Run `python -m yugilab.discovery analyze` on previous Raimei capture
+   and check three complete duels, original nine bounded LP cases, and
+   verified-deck batches (three on each side).
+3. Generate three rounds of exploratory decks from local registry/attributes
+   and reviewed normals. Inspect the plan for weird or illegal-looking cards.
+4. Run *only* the first three-duel pair in a Windows backup/safe worktree,
+   without `--trace-ai`; check JSONL footer, PID cleanup and deck overrides.
+5. Analyze new report; prioritize first non-P045 associated resource with
+   observable state context. Do not automatically scale to 100 duels.
+
+Risks: DAT class bits do not guarantee correct card mechanics or
+normal playable status; `CE` is often a placement command; a missing
+command does not establish absent effect. An ambiguous resource ID may
+map to multiple internal indices. Native demo rules differ from
+normal game and from C#. No evidence registry promotion.
