@@ -61,3 +61,12 @@ normal game and from C#. No evidence registry promotion.
 - Distinção após analisar `discovery-report.json`/`.md`: 23 comandos CF em 14 identidades (13 cartas novas além de Raimei) e 54 CE em 38 identidades, incluindo 24 controles normais e 14 monstros com bits de categoria de efeito. `CE` não comprova efeito.
 - Primeiro alvo: Rain of Mercy (internal 969 / resource 1315, CF seq 335 e 1191); verificar mudanças de LP independentes nos dois lados antes de qualquer claim. Segundo alvo: Tribute to The Doomed (internal 363 / resource 1023, CF seq 95, 1065, 1673), que exige campo/mão.
 - Novo `yugilab.inspect_effect_windows` exporta apenas janelas de comandos e amostras LP do JSONL local, com teste sintético. Ainda **não executado no Windows**; executar testes e extrair `windows.md` e `windows.json` conforme protocolo. Não exigir ou versionar a captura completa.
+
+## Texto de cartas e observação Rain+Skull (16/11/2026)
+
+- Fonte oficial moderna: Skull Invitation é armadilha contínua; para cada carta enviada ao Cemitério, causa 300 de dano ao **dono daquela carta**. Rain of Mercy aumenta LP de ambos em 1000. Estes textos são **hipóteses externas, não contratos nativos do Joey**.
+- Novos `windows(1).json`/`.md` com a captura nativa íntegra existente mostram Rain seq CF 335 e 1191, pares `0x42` de +1000 por lado, e deltas observados entre amostras `[+1000,+1000]` em ambos os casos. As amostras anteriores estão 21/22 comandos antes do CF. Um dano de 300 no lado 0 ocorre depois; sem campo/cemitério observados, a causa permanece **não atribuída**.
+- Adicionado `docs/research/card-text-expectations.v1.json` com regras esperadas em paráfrase/fonte oficial e interação `Unverified`, 
+  `yugilab/card_text_expectations.py` que valida identidades e cruza somente CFs temporalmente, e opção `yugilab.discovery analyze --card-text-expectations ...` para enriquecer relatório sem alterar engine ou inferir ativação.
+- Testes sintéticos `yugilab/tests/test_card_text_expectations.py`; **não executados neste ambiente** por ausência de checkout acessível. Rodar no Windows, conferir identidade 969/1315 e 414/1306 e gerar relatório novo sem sobrescrever o antigo.
+- Próximo trabalho da trilha nativa: comprovar presença ativa de Skull Invitation e movimento específico de Rain ao Cemitério antes de atribuir dano. Priorizar referência textual da versão realmente embutida no jogo se obtida e verificada.
