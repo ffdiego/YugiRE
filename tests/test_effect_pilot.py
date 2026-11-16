@@ -49,6 +49,29 @@ class EffectPilotPreparationTests(unittest.TestCase):
         self.assertEqual(len(files["effect-pilot-plan.json"]["effects"]), 5)
         self.assertEqual(files, prepare(self.pool, self.registry, self.attrs))
 
+    def test_p045_accepts_known_nonmonster_classes_21_22_23(self):
+        # Class 22 or 23 does not change the identity-validated P045
+        # damage-branch whitelist. The category is preserved for review.
+        for cls in (21, 22, 23):
+            with self.subTest(native_class=cls):
+                attrs = copy.deepcopy(self.attrs)
+                attrs["cards"][-1]["classCode"] = cls
+                attrs["cards"][-1]["properties"] = cls << 20
+                result = prepare(self.pool, self.registry, attrs)
+                self.assertEqual(
+                    result["effect-pilot-plan.json"]["effects"][-1]["nativeClassCode"], cls)
+                self.assertIn(BURN[-1][0], result["native-effect-A.json"]["main"])
+
+    def test_rejects_unknown_p045_class_even_with_known_id(self):
+        bad = copy.deepcopy(self.attrs)
+        bad["cards"][-1]["classCode"] = 24
+        bad["cards"][-1]["properties"] = 24 << 20
+        with self.assertRaisesRegex(ValueError, "Unsupported P045 non-monster class 24"):
+            prepare(self.pool, self.registry, bad)
+        bad["cards"][-1]["classCode"] = 22
+        with self.assertRaisesRegex(ValueError, "matching the raw properties"):
+            prepare(self.pool, self.registry, bad)
+
     def test_only_available_spells_used(self):
         self.attrs["cards"][-1]["availability"]["Joey"] = False
         files = prepare(self.pool, self.registry, self.attrs)
