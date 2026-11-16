@@ -14,6 +14,7 @@ from pathlib import Path
 import random
 
 from .effect_report import _candidate, _opcode, gather, link_fixed_damage_deltas
+from .card_text_expectations import validate_expectations, temporal_candidates
 
 # Preserved from NormalSummonRules.RequiresSpecialSummon; this list is an
 # additional conservative native-demo candidate gate, not a rules model.
@@ -226,8 +227,10 @@ def _capture_summary(path: Path) -> tuple[dict, Counter, Counter, dict, dict]:
         (c["sourceResourceId"], bool(c["exactLpDelta"])) for c in linked)
 
 
-def analyze(registry: dict, attributes: dict, inputs: list[Path], *, limit: int = 100) -> dict:
+def analyze(registry: dict, attributes: dict, inputs: list[Path], *,
+            limit: int = 100, references: dict | None = None) -> dict:
     cards = catalog(registry, attributes)
+    text_by_index, hypotheses = validate_expectations(references, cards) if references else ({}, [])
     capture_files = gather(inputs)
     captures, commands, verified, examples, linked = [], Counter(), Counter(), defaultdict(list), Counter()
     for path in capture_files:
@@ -269,7 +272,13 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *, limit: int 
                  20 if interesting and verified[idx] else 0)
         score += min(20, cf * 3) + min(10, ce) + (12 if card["callbackLookup"] == "Present" else 0)
         score += (10 if confirmed else 0)
-        rows.append(dict(**card, cfCommands=cf, ceCommands=ce,
+        text_ref = text_by_index.get(idx)
+        rows.append(dict(**card, externalCardTextExpectation=(dict(
+                             summaryPt=text_ref["summaryPt"],
+                             expectedMechanics=text_ref["expectedMechanics"],
+                             source=text_ref["source"],
+                             provenanceClass="ModernOfficialTCGNotVerifiedInJoey")
+                             if text_ref else None), cfCommands=cf, ceCommands=ce,
                          verifiedDeckBatches=verified[idx],
                          lpDeltaExactCases=confirmed, lpDeltaMismatches=mismatched,
                          sharedResourceIndices=by_rid[rid] if ambiguous else [],
@@ -280,12 +289,16 @@ def analyze(registry: dict, attributes: dict, inputs: list[Path], *, limit: int 
     queue = [r for r in rows if r["group"] not in ("normalControl", "outOfPilotScope")]
     queue.sort(key=lambda r: (-r["priorityScore"], -r["cfCommands"],
                                -r["ceCommands"], r["internalIndex"]))
+    joined = temporal_candidates(hypotheses, text_by_index, examples)
     return dict(schema="yugire-native-effect-discovery-report-v1",
                 integrityOk=all(x["integrityOk"] for x in captures),
                 interpretationLimit="Resource-associated CF/CE commands and callback table are "
                 "not proof of effect activation. Unseen commands cannot prove a card unused. "
                 "P045 fixed LP changes are scoped native observations, not full card parity.",
-                captures=captures, terminalCommands=sum(x["terminalCommands"] for x in captures),
+                captures=captures,
+                externalCardTextReferences=len(text_by_index),
+                textBasedInteractionHypotheses=joined,
+                terminalCommands=sum(x["terminalCommands"] for x in captures),
                 observedResourceIds=len({r for (_kind, r) in commands}),
                 catalogCandidates=len(queue), rankedQueue=queue[:limit],
                 perCard=rows)
@@ -308,6 +321,18 @@ def _summary_markdown(result: dict, *, max_rows: int = 25) -> str:
         "| Índice | Recurso | Carta | Grupo | CF | CE | Casos LP P045 | Evidência |",
         "|---:|---:|---|---|---:|---:|---:|---|",
     ]
+    for hypothesis in result.get("textBasedInteractionHypotheses", []):
+        lines.append("Hipótese textual (NÃO validada): " + hypothesis["summaryPt"])
+        lines.append("Estado: " + hypothesis["observationClass"] +
+                     "; CF no mesmo duelo não confirma gatilho nem permanência no campo.")
+        for candidate in hypothesis["candidatePairs"][:8]:
+            lines.append("- Duelo " + str(candidate["duelIndex"] + 1) +
+                         ": CF primeira carta seq " + str(candidate["cardASeq"]) +
+                         ", segunda carta seq " + str(candidate["cardBSeq"]))
+        lines.append("")
+    if result.get("externalCardTextReferences"):
+        lines.append("Textos externos são expectativas TCG atuais, não evidência do Joey original.")
+        lines.append("")
     for row in result["rankedQueue"][:max_rows]:
         name = row["name"].replace("|", r"\|").replace("\n", " ").replace("\r", " ")
         lines.append(
@@ -358,6 +383,8 @@ def main(argv: list[str] | None = None) -> int:
     prep.add_argument("--nonmonsters", type=int, default=12)
     ana.add_argument("--input", nargs="+", required=True, type=Path)
     ana.add_argument("--limit", type=int, default=100)
+    ana.add_argument("--card-text-expectations", type=Path, default=None,
+                     help="Reviewed reference overlay; modern text is not Joey native evidence")
     args = parser.parse_args(argv)
     try:
         if args.output_dir.exists():
@@ -381,7 +408,11 @@ def main(argv: list[str] | None = None) -> int:
         else:
             if args.limit < 1 or args.limit > 1000:
                 raise ValueError("--limit must be 1..1000")
-            result = analyze(reg, attrs, args.input, limit=args.limit)
+            reference_data = _json(args.card_text_expectations) if args.card_text_expectations else None
+            result = analyze(reg, attrs, args.input, limit=args.limit, references=reference_data)
+            if args.card_text_expectations:
+                source_hashes["cardTextExpectations"] = hashlib.sha256(
+                    args.card_text_expectations.read_bytes()).hexdigest()
             result["inputHashes"] = source_hashes
             _write_new(args.output_dir, {"discovery-report.json": result})
             (args.output_dir / "discovery-summary.md").write_text(
