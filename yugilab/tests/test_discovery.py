@@ -118,6 +118,19 @@ class NativeEffectDiscoveryTests(unittest.TestCase):
             self.assertEqual(monster["evidence"], "ResourceAssociatedCommandsOnly")
             self.assertEqual(monster["lpDeltaExactCases"], 0)
 
+    def test_missing_verified_deck_batch_fails_integrity(self):
+        with tempfile.TemporaryDirectory() as td:
+            f = Path(td) / "duels-test.jsonl"
+            self.make_native_capture(f)
+            records = [json.loads(line) for line in f.read_text(encoding="utf-8").splitlines()]
+            records[2]["phase"] = "applied"
+            f.write_text("\n".join(json.dumps(x) for x in records) + "\n",
+                         encoding="utf-8")
+            result = analyze(self.reg, self.attr, [f])
+            self.assertFalse(result["integrityOk"])
+            self.assertTrue(any("Side 1 verified deck batches" in issue
+                                for issue in result["captures"][0]["issues"]))
+
     def test_incomplete_capture_not_accepted(self):
         with tempfile.TemporaryDirectory() as td:
             f = Path(td) / "duels-test.jsonl"
