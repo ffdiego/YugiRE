@@ -38,6 +38,29 @@ exatamente 300 LP. **Não atribuir esse dano à Rain of Mercy, Raimei
 ou a outra carta** até reconstruir contexto independente. Pode haver
 gatilho ou efeito de outra carta; isso permanece hipótese.
 
+## Revisão com o extrator v2: LP anterior recuperado
+
+O operador enviou `windows(1).json` e `windows(1).md`, agora incluindo a
+última amostra anterior ao CF de cada ocorrência:
+
+| Duelo | LP anteriores (seq) | Primeira leitura após 0x42 (seq) | Δ líquido |
+|---:|---|---|---|
+| 1 | `[6600,2600]` (311) | `[7600,3600]` (340) | `[+1000,+1000]` |
+| 2 | `[2950,1900]` (1161) | `[3950,2900]` (1196) | `[+1000,+1000]` |
+
+Os intervalos incluem **21 e 22 outros comandos** anteriores ao CF,
+respectivamente; o extrator não identificou outros comandos LP `0x42/0x43`
+entre as amostras. A combinação dos dois comandos nativos `0x42` de
+1000 para os lados opostos e dos deltas observados é **forte evidência**
+de recuperação +1000/+1000 nessas duas ocasiões, mas o estado completo
+e a atribuição causal ainda não estão provados.
+
+Depois, ambos os casos mostram `0x43` de 300 e `[-300,0]` na leitura
+seguinte. Isso é **compatível com** a regra textual de Skull Invitation
+(300 por carta enviada ao Cemitério, debitado do seu dono), mas a captura
+não mostra diretamente Skull ativa nem movimento de Rain ao Cemitério.
+Manter essa interação como hipótese a verificar.
+
 ## Critérios para o próximo experimento
 
 1. Buscar no JSONL original a última leitura de LP antes de cada CF,
