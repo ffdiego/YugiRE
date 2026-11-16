@@ -20,14 +20,11 @@ function createNativeStateSampler(readU8, readU16, readU32) {
       lifePoints: readU16(p), handCount,
       deckCount: readU8(p + 5),
       graveyardCount: readU8(p + 6),
-      // At +8 there is also a terminal flag word; do not claim banish semantics.
-      banishedCountCandidate: readU8(p + 8),
+      // Byte +8 overlaps the terminal word; preserve it as raw observed data.
+      rawPlayerStatusByte8: readU8(p + 8),
       terminalFlags: readU16(p + 8) & 0x700,
       fieldSlots: [], handIndices: []
     };
-    // Distinguish a candidate byte from a fully mapped state field.
-    delete result.banishedCountCandidate;
-    result.rawPlayerStatusByte8 = readU8(p + 8);
     for (let slot = 0; slot < fieldSlots; slot++) {
       const address = p + firstSlot + slot * slotStride;
       const count = readU16(address + 0x0A);
