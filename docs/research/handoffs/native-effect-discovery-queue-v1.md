@@ -53,3 +53,11 @@ normal playable status; `CE` is often a placement command; a missing
 command does not establish absent effect. An ambiguous resource ID may
 map to multiple internal indices. Native demo rules differ from
 normal game and from C#. No evidence registry promotion.
+
+## Primeira rodada nativa verificada pelo operador (16/11/2026)
+
+- Capture file: `duels-20261116-041556-587954-pid22896.jsonl`; SHA256 `179bab9f66660e1c546a66e717ad37c1a2575784e0551e71fb1d82ebba8292a0`.
+- 3 duelos, 2.159 eventos, integridade true, issues [], 80 identidades em decks verificados, 3 verificações por lado, 52 resource IDs CF/CE; 1 delta P045 exato observado de Raimei.
+- Distinção após analisar `discovery-report.json`/`.md`: 23 comandos CF em 14 identidades (13 cartas novas além de Raimei) e 54 CE em 38 identidades, incluindo 24 controles normais e 14 monstros com bits de categoria de efeito. `CE` não comprova efeito.
+- Primeiro alvo: Rain of Mercy (internal 969 / resource 1315, CF seq 335 e 1191); verificar mudanças de LP independentes nos dois lados antes de qualquer claim. Segundo alvo: Tribute to The Doomed (internal 363 / resource 1023, CF seq 95, 1065, 1673), que exige campo/mão.
+- Novo `yugilab.inspect_effect_windows` exporta apenas janelas de comandos e amostras LP do JSONL local, com teste sintético. Ainda **não executado no Windows**; executar testes e extrair `windows.md` e `windows.json` conforme protocolo. Não exigir ou versionar a captura completa.
