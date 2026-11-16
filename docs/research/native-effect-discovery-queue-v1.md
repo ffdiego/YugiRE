@@ -1,5 +1,41 @@
 # Descoberta de efeitos por cobertura — laboratório nativo v1
 
+## Resultado da primeira rodada Windows e próximo alvo (16/11/2026)
+
+A captura de round-01 (um worker; sem trace-ai) contém **2.159 eventos**
+e **3 terminais íntegros**, com **0 problemas** de integridade.
+Ambos os decks foram verificados 3/3 vezes; **80 identidades** verificadas.
+O relatório classificou **52 resource IDs com comandos CF/CE**:
+**14 identidades CF**, 38 identidades CE (estes últimos podem ser
+simples posicionamentos). Há 23 ocorrências CF e 54 CE no catálogo
+observado. Foram recuperados 1 caso de Raimei com delta LP P045 exato.
+
+**Próxima pergunta de pesquisa:** Rain of Mercy, índice interno 969,
+resource ID 1315, com 2 CF (`seq` 335 no duelo 1 e 1191 no duelo 2).
+A regra textual TCG afirma +1.000 LP para os dois lados, mas a
+implementação do Joey original precisa ser **observada independentemente**.
+Como o relatório não contém comandos vizinhos nem snapshots de LP, não
+promover o efeito; executar o extrator OFFLINE sobre a captura já salva:
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_inspect_effect_windows.py -v
+python -m yugilab.inspect_effect_windows `
+  --input .\scratch\native-discovery-round01-3 `
+  --resource-ids 1315 --before 12 --after 16 `
+  --output-dir .\scratch\rain-of-mercy-windows-v1
+```
+
+Enviar somente `windows.md` e `windows.json` para análise do caso;
+não é necessário carregar o EXE, DAT ou JSONL inteiro. O extrator
+verifica integridade com o auditor existente, não altera captura nem
+liga hooks. Reporta mudanças entre amostras observadas **sem assumir
+que foram causadas por Rain of Mercy**. Se nenhuma mudança explicável
+aparecer, investigação nativa de callback/guardas e novas capturas
+controladas vêm antes de alegar implementação. A segunda prioridade
+é Tribute to The Doomed (índice 363, resource ID 1023, 3 CF);
+esse efeito exige observar campo e descarte, não apenas LP.
+
 Este experimento é **nativo e exploratório**. A seleção por propriedades do
 DAT e a presença na tabela de callbacks não estabelecem ativação nem
 implementação no Core C#. O modo Demo pode se comportar de maneira
