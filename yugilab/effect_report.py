@@ -40,6 +40,89 @@ def _candidate(event: dict, opcode: int) -> tuple[str, int] | None:
     return None
 
 
+
+# Confirmed from bounded static P045 dispatch; full activation remains open.
+P045_AMOUNTS = {342: 200, 343: 500, 344: 600, 345: 800, 1007: 300}
+
+
+def link_fixed_damage_deltas(path: Path, ids: set[int] = P045_IDS) -> list[dict]:
+    """Conservative, observed CF -> +3 LP command -> +1 LP snapshot signature.
+
+    Does not infer entire card activation, targeting rules, or native parity.
+    Only preserves cases with explicit source ID, expected fixed damage,
+    thread continuity, and independently observed two-sided LP readings.
+    """
+    cases: list[dict] = []
+    pending_cf: dict | None = None
+    pending_damage: dict | None = None
+    duel_index = 0
+    with path.open(encoding="utf-8") as source:
+        for raw in source:
+            if not raw.strip():
+                continue
+            event = json.loads(raw)
+            if event.get("kind") != "command":
+                continue
+            seq = event.get("seq")
+            opcode = _opcode(event)
+            if type(seq) is not int or opcode is None:
+                continue
+            if pending_damage is not None and seq > pending_damage["damageSeq"]:
+                # The native capture currently snapshots post-command LP on
+                # the *next* command producer. Do not invent later state.
+                observed = event.get("lifePointsObserved")
+                after = observed.get("lifePoints") if isinstance(observed, dict) else None
+                if (seq == pending_damage["damageSeq"] + 1 and
+                    event.get("threadId") == pending_damage["threadId"] and
+                    isinstance(after, list) and len(after) == 2 and
+                    all(type(value) is int for value in after)):
+                    before = pending_damage["lifeBefore"]
+                    loss = [before[i] - after[i] for i in (0, 1)]
+                    target = pending_damage["targetLifeIndex"]
+                    expected = [0, 0]
+                    expected[target] = pending_damage["damageAmount"]
+                    cases.append({
+                        **pending_damage, "afterSeq": seq,
+                        "lifeAfter": after, "observedLoss": loss,
+                        "exactLpDelta": loss == expected,
+                        "evidenceScope": "Native command + subsequent LP observation; "
+                                         "not full card activation or legal target proof"
+                    })
+                pending_damage = None
+
+            candidate = _candidate(event, opcode)
+            if candidate is not None and candidate[0] == "CF" and candidate[1] in ids:
+                pending_cf = {
+                    "duelIndex": duel_index,
+                    "cfSeq": seq,
+                    "sourceResourceId": candidate[1],
+                    "sourceSideBit15": (event["args"][0] >> 15) & 1,
+                    "threadId": event.get("threadId"),
+                }
+
+            if (opcode == 0x43 and event.get("caller", "").lower() == "0x578513"):
+                if (pending_cf is not None and seq == pending_cf["cfSeq"] + 3 and
+                    event.get("threadId") == pending_cf["threadId"] and
+                    event["args"][1] == P045_AMOUNTS[pending_cf["sourceResourceId"]]):
+                    observation = event.get("lifePointsObserved")
+                    before = observation.get("lifePoints") if isinstance(observation, dict) else None
+                    if (isinstance(before, list) and len(before) == 2 and
+                        all(type(value) is int for value in before)):
+                        pending_damage = {
+                            **pending_cf,
+                            "damageSeq": seq,
+                            "damageAmount": event["args"][1],
+                            "targetLifeIndex": (event["args"][0] >> 15) & 1,
+                            "lifeBefore": before,
+                        }
+                pending_cf = None
+            if opcode == 4:
+                duel_index += 1
+                pending_cf = None
+                pending_damage = None
+    return cases
+
+
 def analyze_capture(path: Path, ids: set[int] = P045_IDS) -> dict:
     sha = hashlib.sha256()
     header, footer = None, None
@@ -106,9 +189,12 @@ def analyze_capture(path: Path, ids: set[int] = P045_IDS) -> dict:
             integrity.append("Footer capturedDuels disagrees with terminal opcode 4")
         if header.get("mode") != "live_duels":
             integrity.append("Not a live_duels capture")
+    linked = link_fixed_damage_deltas(path, ids)
     return dict(file=path.name, sha256=sha.hexdigest(), integrityOk=not integrity,
                 issues=integrity, events=count, terminalCommands=terminals,
                 lpCommandCount=lp_commands,
+                linkedLpCases=linked,
+                linkedLpCasesExact=sum(case["exactLpDelta"] for case in linked),
                 commandCandidates={k: hits[k] for k in sorted(hits)},
                 examples={k: examples[k] for k in sorted(examples)},
                 perDuel=[dict(duelIndex=i, lpCommands=by_duel[i].get("LPCommand", 0),
@@ -148,6 +234,8 @@ def report(inputs: list[Path], ids: set[int] = P045_IDS) -> dict:
                 terminalCommands=sum(x["terminalCommands"] for x in sources),
                 events=sum(x["events"] for x in sources),
                 lpCommandCount=sum(x["lpCommandCount"] for x in sources),
+                linkedLpCases=sum(len(x["linkedLpCases"]) for x in sources),
+                linkedLpCasesExact=sum(x["linkedLpCasesExact"] for x in sources),
                 inspectedResourceIds=sorted(ids),
                 candidateCommands={k: totals[k] for k in sorted(totals)},
                 sources=sources)
@@ -169,7 +257,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Native captures {audit['captureCount']}; terminals "
               f"{audit['terminalCommands']}; effect-related command candidates "
               f"{sum(audit['candidateCommands'].values())}; integrity={audit['integrityOk']}")
-        print("CF/CE candidates and LP commands are NOT confirmed effect activations.")
+        print(f"Linked native CF->LP->snapshot cases: "
+              f"{audit['linkedLpCasesExact']}/{audit['linkedLpCases']} exact LP deltas")
+        print("Linked commands/LP changes are observations; full card activation is not proven.")
         print(f"Report: {args.output}")
         return 0 if audit["integrityOk"] else 2
     except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
