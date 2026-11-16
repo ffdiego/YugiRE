@@ -66,9 +66,11 @@ def catalog(registry: dict, attributes: dict) -> list[dict]:
             group = f"nonMonsterClass{cls}"
         else:
             group = "outOfPilotScope"
+        callback = item.get("callbackLookup", {})
         cards.append(dict(internalIndex=index, resourceId=rid, name=identity["name"],
                           group=group, nativeClass=cls, categoryBits=category,
-                          callbackLookup=item.get("callbackLookup", {}).get("state", "Unknown"),
+                          callbackLookup=callback.get("state", "Unknown"),
+                          callbackRefs=callback.get("callbackRefs", []),
                           joeyAvailable=bool(a["availability"]["Joey"])))
     if len(cards) != len(attr_by_index):
         raise ValueError("Registry/attributes card counts disagree")
