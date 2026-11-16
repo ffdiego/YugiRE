@@ -1,5 +1,24 @@
 # Piloto de efeitos P045 — YugiRE
 
+## Resultado do piloto Windows (15/11/2026)
+
+O operador executou a preparação e os nove testes Python anteriores, todos com êxito. O gerador exportou dois decks de 40 cartas: 38 monstros normais + duas cópias de Raimei (índice 1049 / recurso 1007) por lado. Das cinco cartas P045 conhecidas, somente Raimei está disponível no pack Joey usado.
+
+O sandbox C# concluiu **10/10 duelos**, 418 ações e **6 ações `FixedDamage` de Raimei**. São observações do protótipo, não prova de equivalência nativa.
+
+O YugiLab nativo concluiu **3/3 duelos**, 99.429 eventos sem perda, três seeds aplicadas, decks verificados e PID próprio encerrado. Na captura, nove comandos `CF` da Raimei foram seguidos por nove comandos do emissor LP com valor 300, e o próximo snapshot de cada um confirma perda exata de 300 no lado correspondente. A evidência restrita e o SHA256 da fonte estão em [raimei-native-3-duel-lp-delta-2026-11-15.md](../evidence/raimei-native-3-duel-lp-delta-2026-11-15.md).
+
+O auditor foi estendido após este piloto para distinguir `commandCandidates` de `linkedLpCases`, verificar valor nativo + estado pós-comando e registrar `exactLpDelta`. **A revisão do auditor e seus dois novos testes sintéticos aguardam execução no Windows**:
+
+~~~powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_effect_report.py -v
+python -m yugilab.effect_report --input .\scratch\effect-pilot-native-3 --output .\scratch\effect-report-native-3-v2.json
+~~~
+
+Esperado para a captura fornecida: `linkedLpCasesExact=9`, `linkedLpCases=9` e `integrityOk=true`. Não sobrescrever a análise anterior. Para futuras campanhas **focadas somente em P045**, omita `--trace-ai` para evitar a produção de dezenas de milhares de `ai_probe` irrelevantes ao efeito; os hooks de comando do YugiLab continuam independentes. Faça novo piloto curto sem esse flag antes de qualquer ampliação.
+
+
 Esta etapa prepara **os mesmos decks** para `Joey.Lab duel-sim` (C#) e YugiLab Demo (Joey nativo).
 Ela não compara seed, shuffle, decisões ou estado como se fossem equivalentes.
 **Não reativa os hooks internos do PR #1.**
