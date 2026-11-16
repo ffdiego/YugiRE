@@ -83,7 +83,7 @@ def paired_lp42_candidate(commands: list[dict], index: int) -> dict | None:
         if lp is not None:
             before_index = k
             before = dict(seq=commands[k]["seq"], lifePoints=lp,
-                          commandsBetween=k and index - k - 1 or index - k - 1)
+                          commandsBetween=index - k - 1)
             break
 
     last_seq = pair[1]["seq"]
