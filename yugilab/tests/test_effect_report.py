@@ -45,6 +45,63 @@ class NativeEffectCommandAuditTests(unittest.TestCase):
             self.assertEqual(all_data["captureCount"], 1)
             self.assertIn("NOT proven", all_data["interpretationLimit"])
 
+    def test_raimei_command_then_exact_observed_lp_decrease(self):
+        def native_event(seq, opcode, caller, life=None, resource=0):
+            entry = command(seq, opcode, caller=caller, rid=resource)
+            entry["threadId"] = 8440
+            if life is not None:
+                entry["lifePointsObserved"] = {
+                    "lifePoints": life, "samplePoint": "command_producer_onEnter"
+                }
+            return entry
+        events = [
+            native_event(1, 0xCF, "0x57977f", resource=1007),
+            native_event(2, 0x0D, "0x579984"),
+            native_event(3, 0x72, "0x5783f2"),
+            native_event(4, 0x8043, "0x578513", [8000, 8000], 300),
+            native_event(5, 0x0E, "0x5799ef", [8000, 7700]),
+            native_event(6, 0x0004, "0x5bc545"),
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            capture = Path(temp) / "duels-native-p045.jsonl"
+            records = [
+                dict(kind="metadata", mode="live_duels", requestedDuels=1),
+                *events,
+                dict(kind="capture_summary", complete=True, overwritten=0,
+                     capturedDuels=1, eventsWritten=6)
+            ]
+            capture.write_text("\n".join(json.dumps(x) for x in records) + "\n",
+                               encoding="utf-8")
+            item = analyze_capture(capture)
+            self.assertTrue(item["integrityOk"])
+            self.assertEqual(item["linkedLpCasesExact"], 1)
+            self.assertEqual(len(item["linkedLpCases"]), 1)
+            matched = item["linkedLpCases"][0]
+            self.assertEqual((matched["cfSeq"], matched["damageSeq"], matched["afterSeq"]),
+                             (1, 4, 5))
+            self.assertEqual(matched["sourceResourceId"], 1007)
+            self.assertEqual(matched["targetLifeIndex"], 1)
+            self.assertEqual(matched["observedLoss"], [0, 300])
+            self.assertTrue(matched["exactLpDelta"])
+            self.assertEqual(report([capture])["linkedLpCasesExact"], 1)
+
+            # Distinct observation: matching command without LP loss must
+            # remain a mismatch, never a confirmed observed delta.
+            events[4]["lifePointsObserved"]["lifePoints"] = [8000, 8000]
+            capture.write_text("\n".join(json.dumps(x) for x in records) + "\n",
+                               encoding="utf-8")
+            item = analyze_capture(capture)
+            self.assertEqual(item["linkedLpCasesExact"], 0)
+            self.assertEqual(item["linkedLpCases"][0]["observedLoss"], [0, 0])
+            self.assertFalse(item["linkedLpCases"][0]["exactLpDelta"])
+
+    def test_unrelated_lp_producer_does_not_link_raimei(self):
+        with tempfile.TemporaryDirectory() as temp:
+            capture = Path(temp) / "duels-test.jsonl"
+            self.write_capture(capture)
+            result = analyze_capture(capture)
+            self.assertEqual(result["linkedLpCases"], [])
+
     def test_missing_sequence_rejected_even_when_footer_says_complete(self):
         with tempfile.TemporaryDirectory() as temp:
             capture = Path(temp) / "duels-broken.jsonl"
