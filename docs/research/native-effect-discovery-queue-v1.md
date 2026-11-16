@@ -36,6 +36,49 @@ controladas vêm antes de alegar implementação. A segunda prioridade
 é Tribute to The Doomed (índice 363, resource ID 1023, 3 CF);
 esse efeito exige observar campo e descarte, não apenas LP.
 
+## Análise das janelas Rain of Mercy — 16/11/2026
+
+O operador enviou `windows.json`/`windows.md` da captura íntegra
+`179bab9f66660e1c546a66e717ad37c1a2575784e0551e71fb1d82ebba8292a0`.
+Duas ocorrências CF do resource ID 1315 (seq 335 e 1191) exibem
+**dois comandos 0x42** em seq CF+3 e CF+4, de caller `0x578823`,
+um para lado 0 e outro para lado 1, cada um com `amount=1000`.
+Isso confirma a emissão de comandos de aumento de LP por lado,
+mas **não comprova aplicação de +1000 nos LP**: as janelas originais
+não continham amostra anterior ao par de comandos.
+
+Após cada sequência há um comando `0x0043` com valor 300 e queda
+exata observada de 300 LP no lado 0. Não atribuir esse dano à Rain.
+Uma hipótese testável é Skull Invitation (resource ID 1306, CF
+seq 66 no duelo 1 e 510 no duelo 2), cuja regra textual TCG
+causa 300 por carta enviada ao cemitério. Não há prova nativa
+de que a armadilha permanecia ativa ou de que o dano foi
+produzido por ela. Ver evidência: 
+`docs/evidence/rain-of-mercy-native-paired-lp42-2026-11-16.md`.
+
+**Nova revisão offline do extrator**: reconhece pares de comandos
+`0x42` com mesmo caller e thread, recolhe a última amostra de LP
+anterior ao `CF` em todo o duelo e a primeira posterior ao par.
+Exibe diferença entre amostras, distância e comandos LP intercalados,
+sem atribuir causalidade. Rodar testes sintéticos e produzir
+**um diretório novo**:
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_inspect_effect_windows.py -v
+python -m yugilab.inspect_effect_windows `
+  --input .\scratch\native-discovery-round01-3 `
+  --resource-ids 1315 --before 12 --after 16 `
+  --output-dir .\scratch\rain-of-mercy-windows-v2
+```
+
+Esperamos duas `pairedLp42Candidate` com `commandSeq` iguais a
+`[338,339]` e `[1194,1195]`. Os campos `beforeCfLpSample` e
+`netLpDeltaBetweenSamples` são **desconhecidos até executar**
+a nova revisão sobre a captura completa. Analisar `windows.json`
+sem supor que uma diferença de +1000 por lado é automaticamente
+causal: conferir distância, outras ações e lacunas da amostragem.
+
 Este experimento é **nativo e exploratório**. A seleção por propriedades do
 DAT e a presença na tabela de callbacks não estabelecem ativação nem
 implementação no Core C#. O modo Demo pode se comportar de maneira
