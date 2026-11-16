@@ -68,3 +68,13 @@ Esta entrega fecha um marco de formatos e arquitetura parcial. Não declara
 reprodução completa das animações nem equivalência visual dinâmica. A aplicação,
 engine e hooks não receberam implementação desta investigação. As fontes
 proprietárias e PNGs permanecem fora do Git, com hashes preservados.
+
+## Integração solicitada durante a missão
+
+`origin/main` em `b89f228` foi integrada sem conflitos pelo merge local `c717130`,
+após salvar a investigação em `54fd13e`. A solução compilou sem avisos/erros e
+passou em 1.051 verificações C#. Passaram ainda 87 testes dos hooks, 50 do
+laboratório Python e o teste JS do loader. A suíte Python geral listou 176 testes,
+com nove skips e dois erros de import por arquivos ausentes em
+`experiments/hybrid_probe/`; ela **não está integralmente verde**.
+Detalhes e comandos no [handoff](../handoffs/native-visual-yga.md).

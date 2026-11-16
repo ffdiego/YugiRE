@@ -6,15 +6,15 @@
   "source_files": [
     {
       "path": "YuGiOh_PoC_Patcher/YuGi/YuGiBuffer.cs",
-      "sha256": "60cb702ef6e357964d7bcc6c53a2801675f245317e747437e6c5b9ad05fb5cb9"
+      "sha256": "c1d15d026789bdeb5094721a540c0ccc53d5e933b39d704a69c679ea87cd49be"
     },
     {
       "path": "YuGiOh_PoC_Patcher/YuGi/YuGiCompressedWord.cs",
-      "sha256": "bef1b1b7c6b4e5f7a3ea17fe610810ebf437e430017ee6b3495339bc180bd86c"
+      "sha256": "b7d03beb66a518e1455e330b371aafc30baf0f6bedc39c878a294f6a22e8cebb"
     },
     {
       "path": "YuGiOh_PoC_Patcher/YuGi/YuGiLZSS.cs",
-      "sha256": "1bb41b1a294e2060ffaa950e3822a867e08e89d0b543380f43114c5236efa910"
+      "sha256": "767f8d51e3025a13d5dc2867e537b6398ad3638ff203bef976cb20e67c204258"
     }
   ],
   "yga_count": 537,
