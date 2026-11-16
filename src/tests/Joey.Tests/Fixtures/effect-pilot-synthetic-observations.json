@@ -1,0 +1,64 @@
+{
+  "dataOrigin": "Synthetic",
+  "exeSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "windowIsolated": true,
+  "mismatchAmount": 201,
+  "mismatchDefense": 1200,
+  "sparks": {
+    "inputs": {
+      "sourceResourceId": 342,
+      "sourceInternalIndex": 755,
+      "sourcePlayer": 1,
+      "requestFlags": 0,
+      "preparedTarget": 0,
+      "lifeBefore0": 8000,
+      "lifeBefore1": 7000,
+      "sandboxApplicable": true
+    },
+    "observed": {
+      "preparedTarget": 0,
+      "commandTarget": 0,
+      "damageAmount": 200,
+      "activationAccepted": true,
+      "lifeAfter0": 7800,
+      "lifeAfter1": 7000,
+      "sourceInHandAfter": false,
+      "sourceInGraveyardAfter": true
+    }
+  },
+  "sword": {
+    "inputs": {
+      "sourceResourceId": 300,
+      "sourceInternalIndex": 614,
+      "sourcePlayer": 1,
+      "targetPlayer": 0,
+      "targetZone": 2,
+      "targetInternalIndex": 24,
+      "targetResourceId": 77,
+      "faceUp": true,
+      "dynamicType": 15,
+      "dynamicAttribute": 2,
+      "genericGuardsSatisfied": true,
+      "attackBefore": 1700,
+      "defenseBefore": 1000,
+      "noOtherModifiers": true,
+      "sandboxApplicable": true,
+      "equipmentRemovalConfirmed": true
+    },
+    "observed": {
+      "targetEligible": true,
+      "activationAccepted": true,
+      "attackAfter": 2000,
+      "defenseAfter": 1300,
+      "linkCountAfter": 1,
+      "linkOwner": 1,
+      "linkSourceZone": 0,
+      "linkTargetPlayer": 0,
+      "linkTargetZone": 2,
+      "equipmentPresentAfter": true,
+      "linkCountAfterRemoval": 0,
+      "equipmentPresentAfterRemoval": false,
+      "equipmentInGraveyardAfterRemoval": true
+    }
+  }
+}
