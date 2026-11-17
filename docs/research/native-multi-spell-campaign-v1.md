@@ -73,7 +73,7 @@ python -m yugilab.state_interactions `
   --output-dir .\scratch\multi-spell-states-r01-v1
 
 $r = Get-Content .\scratch\multi-spell-queue-r01-v1\discovery-report.json -Raw | ConvertFrom-Json
-$r.perCard | Where-Object { $_.group -eq 'nonMonsterClass21' -and $_.verifiedDeckBatches -gt 0 } |
+$r.perCard | Where-Object { $_.group -eq 'nonMonsterClass22' -and $_.verifiedDeckBatches -gt 0 } |
   Select-Object name, internalIndex, resourceId, verifiedDeckBatches, cfCommands, ceCommands, evidence |
   Format-Table -AutoSize
 ```
@@ -123,6 +123,66 @@ transições ligadas a LP, slots e Cemitério para Raimei, Rain,
 Mystic Box, Burning Land e Forest. Se não houver transições no
 recorte, isso só significa que a amostragem não as observou naquele
 intervalo. Manter `Unverified` até capturas e controles independentes.
+
+## Detecção genérica de padrões estruturais a partir de state-report.json
+
+**Sem novo duelo e sem alterar a instrumentação Frida.** O comando abaixo
+consome apenas o relatório validado `yugilab.state_interactions`,
+reconhecendo transições **não atômicas**. Não infere o executor do efeito,
+nem valida mudança de ATK/DEF, fase do turno ou identidade do Cemitério.
+
+```powershell
+git pull --ff-only
+
+python -m unittest discover -s yugilab/tests -p test_state_patterns.py -v
+
+python -m yugilab.state_patterns `
+  --state-report .\scratch\multi-spell-states-r01-v1\state-report.json `
+  --output-dir .\scratch\multi-spell-patterns-r01-v1
+
+Get-Content .\scratch\multi-spell-patterns-r01-v1\patterns.md
+```
+
+Gera `patterns.json` e `patterns.md`, com SHA256 da captura original
+**copiado do relatório de origem**, chaves do duelo e evidência detalhada.
+O detector **não verifica novamente os bytes do JSONL original**.
+Três assinaturas conservadoras:
+
+1. `CrossSideSameOccurrenceMonsterMove`: mesmo `cardIndex` e
+   `occurrenceWord` **não zero**, uma única saída e entrada em
+   slots de monstro (0–4), lados opostos e mesma amostra
+   (`seq` + `previousSampleSeq`). Exclui duplicidades.
+2. `SharedRawAssociationAddedAcrossSides`: mesma dupla
+   `referenceWord, metadataWord` recém-inserida no slot de
+   monstro dos dois jogadores na mesma amostra, com
+   `associationCountValid=true`; ainda não é modificação de ATK/DEF.
+3. `AlternatingEqualLpLosses`: pelo menos quatro perdas idênticas,
+   com lados alternando em toda a sequência observada. Inclui
+   **todas** as cartas que possuem entrada de campo observada antes
+   da primeira perda e nenhuma saída observada até a última, em
+   slots 5–10. É uma lista de **coincidências de permanência no
+   campo**, não atribuição de dano/ativação à carta.
+
+O detector deliberadamente não vê cartas que só aparecem na baseline,
+alterações transitórias entre amostras, nem o timing de cada fase.
+Uma carta com residência observada pode não estar ativada ou pode
+não ser a causa. Ausência de associação não é prova de ausência
+de efeitos contínuos. O padrão de LP exige alternância estrita;
+outros efeitos periódicos podem não ser detectados.
+
+**Validação local do primeiro relatório** (captura
+`duels-20261117-035345-497597-pid8400.jsonl`, hash reportado
+`403ee790bea2661456ec721d722a3dc9d451d37ae324ef646b99d9ce73d04a52`):
+- 1 transferência: índice **1038**, ocorrência **21**,
+  lado1/slot1 → lado0/slot1, seq428.
+- 1 associação compartilhada: **`0x0A01`, metadata 8**,
+  monstros 24 (lado0) e 887 (lado1), seq411.
+- 1 padrão LP: **12 × −500 LP**, seq224–584, lados alternados.
+  Única carta com residência observada durante *toda* essa sequência:
+  **Burning Land 987**, lado1 slot5. Isso NÃO é causalidade isolada.
+
+Para aumentar cobertura, processar outras rodadas via `state_patterns`
+sobre seus próprios relatórios, respeitando arquivos e hashes de captura.
 
 ## Meta de cobertura
 
