@@ -46,6 +46,87 @@ python -m yugilab.state_interactions `
 300 LP e uma queda sem pareamento (seq455, lado1).
 Analisar o caso extra antes de atribuir tudo a Skull.
 
+## Controle negativo sem Skull Invitation — após validação do relatório v2
+
+O operador confirmou via PowerShell o novo relatório v2: **13 incrementos
+unitários de Cemitério, 14 quedas de -300 LP, 13 pares e uma perda
+sem pareamento na seq455 (lado1)**. Os testes de correlação
+`test_temporal_correlations.py` (4/4) e `test_state_interactions.py`
+(6/6) passaram no Windows. Valores reportados pelo operador, não
+reexecutados por este agente. PR segue Draft.
+
+Objetivo seguinte: controle negativo com os mesmos dois decks
+de origem, mas **sem índice interno 414 (Skull Invitation)**
+em qualquer zona dos decks, sem alterar as demais cartas.
+O gerador usa a identidade revisada no registro e escolhe um
+monstro normal de nível 1–4, presente no mesmo deck original,
+quando disponível. Caso não exista, **falha** e pede um índice
+substituto normal validado via `--replacement-index`: não
+escolher um ID por adivinhação. Mantém tamanho, ordem de
+todas as cartas não-Skull, e salva SHA256 e todas as mudanças.
+
+Primeiro faça somente a preparação offline:
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_prepare_skull_negative.py -v
+python -m unittest discover -s yugilab/tests -p test_state_interactions.py -v
+
+python -m yugilab.prepare_skull_negative `
+  --registry .\scratch\coverage-current\registry.json `
+  --attributes .\scratch\coverage-current\attributes.json `
+  --deck-0 .\scratch\native-discovery-decks-v1\round-01-A.json `
+  --deck-1 .\scratch\native-discovery-decks-v1\round-01-B.json `
+  --output-dir .\scratch\skull-negative-decks-v1
+
+Get-Content .\scratch\skull-negative-decks-v1\control-manifest.json
+```
+
+Confirmar que pelo menos um 414 foi substituído, todas as
+substituições selecionadas têm `normalControl` no catálogo,
+e nenhum outro índice foi alterado. Falha de qualquer teste
+ou erro de preparação = não executar Joey.
+
+Somente após conferência, executar **um** duelo comparativo,
+mesma semente base e velocidade que o piloto anterior:
+
+```powershell
+.\native_hooks\.venv-frida\Scripts\python.exe -m yugilab `
+  --exe ..\passion\joey_pc.exe `
+  --duels 1 --workers 1 --trace-state `
+  --deck-0 .\scratch\skull-negative-decks-v1\negative-side-0.json `
+  --deck-1 .\scratch\skull-negative-decks-v1\negative-side-1.json `
+  --seed 12345 --speed-value 600 `
+  --output-dir .\scratch\native-state-skull-negative-v1
+
+python -m yugilab.state_interactions `
+  --input .\scratch\native-state-skull-negative-v1 `
+  --output-dir .\scratch\native-state-skull-negative-report-v1
+```
+
+Validação de resultado:
+
+```powershell
+$r = Get-Content .\scratch\native-state-skull-negative-report-v1\state-report.json -Raw | ConvertFrom-Json
+$r.captures | Select-Object file, integrityOk, terminalCommands, skullFieldPresence
+$r.graveyardLp300TemporalCorrelations |
+  Select-Object unitGraveyardIncreases, lpLoss300Count, pairedCount, unpairedLpLoss300
+```
+
+`skullFieldPresence.presentSamples` deve ser zero, com amostras
+observadas suficientes; se não, **controle inválido**.
+Se não ocorrer nenhuma ida ao Cemitério, não é controle informativo.
+Contrastar **taxa de -300 por incrementos unitários** e
+distribuição dos pares, não apenas o total de dano LP.
+
+**Limitações:** decks diferentes alteram o RNG efetivo/decisões da
+IA mesmo sob mesma seed. Uma ausência de -300 em apenas um
+duelo sem Skull é evidência a favor, mas não demonstra
+necessidade/suficiência causal do efeito. O controle ainda
+precisa de repetição e eventualmente intervenção direta de
+ativação/supressão em cenário pareado. Não comparar sequências
+CF como se fossem trajetórias idênticas.
+
 ## Objetivo
 
 Substituir o ciclo 'um hook novo por carta' por um observador genérico
