@@ -1,11 +1,19 @@
 # Campanha nativa multi-magia v1 — laboratório por lotes
 
-Status: PR empilhado sobre a captura de estado do PR #7. **Não requer merge na main para começar**, mas testes offline obrigatórios antes de executar Joey. Este recurso é um gerador de **candidatas DAT classe 21 disponíveis no pack Joey**, não um motor de regras.
+Status: PR empilhado sobre a captura de estado do PR #7. **Não requer merge na main para começar**, mas testes offline obrigatórios antes de executar Joey. Este recurso é um gerador de **candidatas DAT classe 22 disponíveis no pack Joey**, não um motor de regras.
+
+## Correção da classificação (observações reais)
+O relatório de descoberta nativa já enviado pelo operador confirma:
+- **Rain of Mercy:** `internalIndex=969`, `resourceId=1315`, `nativeClass=22`, `categoryBits=0`, disponível no pack Joey.
+- **Raimei:** `internalIndex=1049`, `resourceId=1007`, `nativeClass=22`, `categoryBits=0`, disponível.
+- **Skull Invitation:** `internalIndex=414`, `resourceId=1306`, `nativeClass=21`, `categoryBits=2` — é **armadilha**, não magia.
+
+A primeira versão do gerador usava erroneamente classe 21 e rejeitava os focos [969,1049]. A correção usa classe 22, preserva `categoryBits` no manifesto (tipos diferentes de magia) e valida o caso Rain/Raimei em teste de regressão. A classe 21 continua fora do lote. O `categoryBits` por si só não comprova o efeito da carta nem a ativação.
 
 ## Por que não usar o antigo piloto P045
 O script histórico `scripts/prepare_effect_pilot.py` conhece cinco magias de dano: Sparks, Hinotama, Final Flame, Ookazi, Raimei. O runbook original `docs/research/native-effect-pilot-v1.md` confirma que **somente Raimei estava disponível no pack Joey** daquele ensaio. Não presumir que cartas do Yugi/Kaiba aparecem no Joey.
 
-A seleção atual filtra o registry/attributes pelo fingerprint dos arquivos do jogo, exige `Joey=true`, `nonMonsterClass21` e resource IDs **unívocos**. Um mesmo resource ID compartilhado por índices diferentes impede atribuição individual de CF/CE; ambas as identidades são excluídas automaticamente e listadas no plano.
+A seleção atual filtra o registry/attributes pelo fingerprint dos arquivos do jogo, exige `Joey=true`, `nonMonsterClass22` e resource IDs **unívocos**. Um mesmo resource ID compartilhado por índices diferentes impede atribuição individual de CF/CE; ambas as identidades são excluídas automaticamente e listadas no plano.
 
 ## Preparar campanha offline
 
@@ -32,7 +40,7 @@ python -m yugilab.prepare_spell_batch `
 Get-Content .\scratch\multi-spell-decks-v1\spell-batch-plan.json
 ```
 
-O gerador verifica **duas cópias de dez índices distintos por lado, vinte monstros normais revisados**: 40 cartas, nenhum índice repetido mais de três vezes. Na primeira rodada, Rain of Mercy (`969`) e Raimei (`1049`) serão fixas nos dois decks; as outras oito candidatas de classe 21 são rotacionadas por lado/rodada, com nomes e resource IDs listados em `spell-batch-plan.json`. Não executar o jogo se qualquer ID obrigatório não for elegível no catálogo, se faltar pool normal, ou se houver ambiguidade. Ajustar os índices de foco **somente após conferir o catálogo**.
+O gerador verifica **duas cópias de dez índices distintos por lado, vinte monstros normais revisados**: 40 cartas, nenhum índice repetido mais de três vezes. Na primeira rodada, Rain of Mercy (`969`) e Raimei (`1049`) serão fixas nos dois decks; as outras oito candidatas de classe 22 são rotacionadas por lado/rodada, com nomes e resource IDs listados em `spell-batch-plan.json`. Não executar o jogo se qualquer ID obrigatório não for elegível no catálogo, se faltar pool normal, ou se houver ambiguidade. Ajustar os índices de foco **somente após conferir o catálogo**.
 
 ## Piloto de 1 duelo
 
