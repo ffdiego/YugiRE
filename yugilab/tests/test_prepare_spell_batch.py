@@ -87,12 +87,17 @@ class SpellBatchTests(unittest.TestCase):
             prepare(cards,normals,spells_per_deck=10,
                     exclude_indices=list(range(300,338)))
 
-    def test_duplicate_resource_ids_do_not_allow_ambiguous_native_evidence(self):
+    def test_duplicate_resource_ids_excluded_and_cannot_be_focus(self):
         cards,normals=fixtures()
         duplicate=copy.deepcopy(cards)
         next(c for c in duplicate if c["internalIndex"]==301)["resourceId"]=2300
-        with self.assertRaisesRegex(ValueError,"share resource IDs"):
-            prepare(duplicate,normals)
+        plan = prepare(duplicate,normals)
+        self.assertEqual(plan["excludedAmbiguousSpellIndices"],[300,301])
+        for deck in plan["decks"].values():
+            self.assertNotIn(300,deck["main"])
+            self.assertNotIn(301,deck["main"])
+        with self.assertRaisesRegex(ValueError,"spell candidate"):
+            prepare(duplicate,normals,focus_indices=[300])
 
 
 if __name__=="__main__":
