@@ -1,6 +1,6 @@
 """Prepare fingerprinted multi-spell native discovery decks for Joey.
 
-Conservative filter: Joey-available DAT class 21 spell CANDIDATES only.
+Conservative filter: Joey-available DAT class 22 spell CANDIDATES only.
 No claim that every selected card will be played, or that class membership
 constitutes behavioral/legality parity. Native EXE and DAT remain untouched.
 """
@@ -56,7 +56,7 @@ def prepare(
         raise ValueError("Duplicate catalog internal indices")
     candidate_pool = [
         c for c in cards
-        if c["joeyAvailable"] and c["group"] == "nonMonsterClass21"
+        if c["joeyAvailable"] and c["group"] == "nonMonsterClass22"
         and c["internalIndex"] not in exclude
     ]
     counts_by_resource = Counter(c["resourceId"] for c in candidate_pool)
@@ -73,7 +73,7 @@ def prepare(
     by_spell_id = {c["internalIndex"]:c for c in spell_pool}
     missing_focus = [x for x in focus if x not in by_spell_id]
     if missing_focus:
-        raise ValueError("Focus is not a Joey-available DAT class 21 "
+        raise ValueError("Focus is not a Joey-available DAT class 22 "
                          f"spell candidate: {missing_focus}")
     extras = sorted(
         (c for c in spell_pool if c["internalIndex"] not in focus),
@@ -126,7 +126,8 @@ def prepare(
                 round=round_index+1, side=side, file=filename,
                 spellIdentities=[dict(
                     internalIndex=i, resourceId=by_spell_id[i]["resourceId"],
-                    name=by_spell_id[i]["name"], nativeClass=21,
+                    name=by_spell_id[i]["name"], nativeClass=by_spell_id[i]["nativeClass"],
+                    categoryBits=by_spell_id[i]["categoryBits"],
                     copies=copies_per_spell,
                     callbackLookup=by_spell_id[i]["callbackLookup"])
                     for i in spell_ids],
@@ -136,7 +137,7 @@ def prepare(
     return dict(
         schema="yugire-native-multi-spell-decks-v1",
         nativeParity=False,
-        selectionClass="Joey-available DAT class 21 spell candidates",
+        selectionClass="Joey-available DAT class 22 spell candidates",
         interpretationLimit="Inventory/coverage does not prove activation, "
             "effect resolution, valid targets or native rule parity. "
             "Duel RNG and AI may not play every selected spell. "
@@ -204,7 +205,7 @@ def main(argv: list[str] | None = None) -> int:
               f"{plan['normalsPerDeck']} normal monsters.")
         print(f"Unique spell candidates across decks: "
               f"{plan['distinctSpellIndicesAcrossDecks']}; "
-              f"available in Joey class 21: {plan['spellCandidatesInJoey']}.")
+              f"available in Joey class 22: {plan['spellCandidatesInJoey']}.")
         for entry in plan["deckPlan"][:2]:
             print("Round 1, side",entry["side"],":",
                   ", ".join(x["name"] for x in entry["spellIdentities"]))
