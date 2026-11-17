@@ -58,12 +58,16 @@ class LiveDuelCapture:
                  output_dir: Path | None = None,
                  rng_seed_base: int | None = None,
                  rng_seed_start_index: int = 0,
-                 trace_state: bool = False) -> None:
+                 trace_state: bool = False,
+                 trace_battle_attributes: bool = False) -> None:
         self.api = api
         self.target_duels = target_duels
         self.written = 0
         self.terminals_written = 0
         self.trace_state = trace_state
+        self.trace_battle_attributes = trace_battle_attributes
+        self.battle_attribute_samples = 0
+        self.battle_attribute_read_errors = 0
         self.state_samples = 0
         self.state_baselines = 0
         self.state_deltas = 0
@@ -96,6 +100,11 @@ class LiveDuelCapture:
                                 "samplingPoint": "command_producer_onEnter",
                                 "nonAtomic": True}}
                if trace_state else {}),
+            **({"battleAttributesTrace": {"schema": "joey-command-entry-battle-attributes-v1",
+                                          "enabled": True,
+                                          "samplePoint": "command_producer_onEnter_0x31",
+                                          "nonAtomic": True}}
+               if trace_battle_attributes else {}),
             "note": "Masked 0x0004 counts terminal commands, not known winners. "
                     "Original command arguments and all passive probes retained."
         }
@@ -135,6 +144,11 @@ class LiveDuelCapture:
                         self.state_deltas += 1
                 if normalized.get("stateReadError") is not None:
                     self.state_read_errors += 1
+            if self.trace_battle_attributes and normalized.get("kind") == "command":
+                if normalized.get("battleAttributesObservation") is not None:
+                    self.battle_attribute_samples += 1
+                if normalized.get("battleAttributesReadError") is not None:
+                    self.battle_attribute_read_errors += 1
             if normalized.get("kind") == "command" and (
                     normalized.get("opcodeMasked") == "0x0004"):
                 self.terminals_written += 1
@@ -207,6 +221,9 @@ class LiveDuelCapture:
                                 "deltas": self.state_deltas,
                                 "readErrors": self.state_read_errors}}
                if self.trace_state else {}),
+            **({"battleAttributesTrace": {"samples": self.battle_attribute_samples,
+                                          "readErrors": self.battle_attribute_read_errors}}
+               if self.trace_battle_attributes else {}),
             "note": "Completed duels counted by terminal opcode 0x0004/0x8004. "
                     "Winner and card legality not decoded."
         }
