@@ -58,4 +58,25 @@ node .\native_hooks\tests\test_loader.cjs
 
 Validação mínima: `complete=true`, `overwritten=0`, `stateTrace.readErrors=0`; confirmar `battleAttributesTrace.samples>0`, `battleAttributesTrace.readErrors=0`, e se `cardIndexWord` bate com identidades observadas. Anexar JSONL e rodar comparação de blocos com Sogen em campo, associações `0x0A00` e atributos-base extraídos em `scratch/coverage-current/attributes.json`.
 
+### Extrair atributos calculados versus atributos-base
+
+Após um piloto íntegro, executar o analisador de modo somente leitura
+sobre a captura JSONL e os dados DAT que já foram extraídos no Windows:
+
+```powershell
+python -m yugilab.battle_attribute_audit `
+  --input .\scratch\native-battle-sogen-r03-v1 `
+  --attributes .\scratch\coverage-current\attributes.json `
+  --field-spell-index 490 `
+  --output-dir .\scratch\native-battle-sogen-audit-r03-v1
+```
+
+Gera `battle-attributes.json` e `battle-attributes.md`. As saídas são
+fingerprintadas por SHA256 do JSONL e do arquivo de atributos, e cada bloco
+contém `baseAttack/baseDefense`, `calculatedMinusBaseAttack/Defense`,
+`fieldMatches` e os estados brutos de associação `0x0A00/0x0A01`.
+**Uma diferença +200 não prova Sogen**: outras cartas, efeitos
+temporários, postura e mecanismos não isolados podem ter contribuído;
+até o papel dos blocos requer uma primeira validação dinâmica.
+
 **Controle futuro:** criar deck sem Sogen, mantendo 40 cartas e até 3 cópias por índice, de preferência substituindo as duas cópias por monstros normais revisados. Executar com seed e configuração documentadas. Os duelos podem divergir após a alteração do deck; não tratar como uma comparação contrafactual perfeita. O único controle forte é comparar mesmos monstros em estados equiparáveis e/ou validar a escrita do modificador.
