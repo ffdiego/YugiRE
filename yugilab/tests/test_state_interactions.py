@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from yugilab.state_interactions import analyze_capture, summarize
+from yugilab.state_interactions import _state_changes, analyze_capture, summarize
 
 
 def player(side, lp, grave, *, skull=False, rain=False):
@@ -75,6 +75,18 @@ class NativeStateInteractionsTests(unittest.TestCase):
         f.write_text("\n".join(json.dumps(e) for e in records) + "\n",
                      encoding="utf-8")
         return f
+
+    def test_unchanged_command_entry_needs_no_state_observation(self):
+        # Valid command samples without stateObservation are expected:
+        # the native sampler records only baseline/deltas on change.
+        command = native(2, 0xCF, rid=1315)
+        self.assertTrue(command["stateSampled"])
+        self.assertNotIn("stateObservation", command)
+        self.assertEqual(_state_changes(command, 0), [])
+        self.assertEqual(_state_changes(
+            native(1, 0x0D, state=observation(
+                "baseline", sides=[player(0, 8000, 0),
+                                   player(1, 8000, 0)])), 0), [])
 
     def test_event_deltas_and_hypothesis_not_causality(self):
         with tempfile.TemporaryDirectory() as td:
