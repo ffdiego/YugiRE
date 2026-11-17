@@ -82,6 +82,48 @@ Esse relatório identifica **exposição no deck**, **comandos associados** e **
 
 Somente depois de analisar essa captura de 1 duelo: até **3 duelos por lote, 1 worker**, em diretório novo, respeitando o limite atual de `--trace-state`. Rodadas 2 e 3 utilizam `spell-round-02-A/B.json` e `spell-round-03-A/B.json` para aumentar diversidade. Não elevar worker count nem instalar hooks por carta.
 
+## Primeira rodada recebida: 18 magias, cinco com CF
+
+Relato do operador após a primeira captura:
+- 18 identidades de magia verificadas nos decks (duas compartilhadas);
+  5 com CF, total **6 comandos**.
+- `Raimei` índice 1049: 2 CF, `ObservedFixedLpDeltaInScope`.
+- `Rain of Mercy` índice 969: 1 CF; sem `--lp-windows` nesta
+  análise, portanto aparece `ResourceAssociatedCommandsOnly`;
+  isso não apaga as capturas de +1000 anteriores.
+- `Mystic Box` índice 370, `Burning Land` índice 987,
+  `Forest` índice 990: 1 CF cada, sem atribuição causal.
+- 13 outras magias `DeckVerifiedNoResourceCommand`: significa
+  exposição nos decks, não prova de que foram compradas/utilizadas.
+
+**Não é necessário outro duelo para entender melhor essa rodada.**
+O `inspect_effect_windows` agora pode juntar janelas de comandos CF
+aos deltas de LP/mão/campo/Cemitério **se o state-report.json for do
+mesmo JSONL (SHA256 idêntico)**. Cada mudança é temporal e não
+automaticamente causada pelo CF.
+
+```powershell
+$r = Get-Content .\scratch\multi-spell-queue-r01-v1\discovery-report.json -Raw | ConvertFrom-Json
+$ids = @($r.perCard |
+  Where-Object { $_.group -eq 'nonMonsterClass22' -and $_.cfCommands -gt 0 } |
+  ForEach-Object { [int]$_.resourceId } | Sort-Object -Unique)
+$ids
+
+python -m yugilab.inspect_effect_windows `
+  --input .\scratch\native-multi-spell-r01-one-v1 `
+  --resource-ids $ids `
+  --before 12 --after 32 `
+  --state-report .\scratch\multi-spell-states-r01-v1\state-report.json `
+  --output-dir .\scratch\multi-spell-cf-context-r01-v1
+```
+
+Saídas `windows.md` e `windows.json` têm contextos por CF e
+`stateChangesWithinWindow` (não atômicos). Revisar especialmente
+transições ligadas a LP, slots e Cemitério para Raimei, Rain,
+Mystic Box, Burning Land e Forest. Se não houver transições no
+recorte, isso só significa que a amostragem não as observou naquele
+intervalo. Manter `Unverified` até capturas e controles independentes.
+
 ## Meta de cobertura
 
 Investigação exploratória de até 18 identidades de magia por rodada (2 focos em ambos os lados, mais 8 rotacionados por lado, se houver candidatas suficientes) e mais nas rodadas seguintes. O número real de identidades distintas está no plano (`distinctSpellIndicesAcrossDecks`). Comparar famílias: LP/dano/cura, movimentação ao Cemitério, campo contínuo, seleção de alvo. **Nenhuma carta é automaticamente considerada validada em C#**.
