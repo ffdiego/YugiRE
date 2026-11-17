@@ -94,6 +94,42 @@ class LiveDuelCaptureTests(unittest.TestCase):
             finally:
                 capture.close()
 
+    def test_opt_in_battle_stats_metadata_and_footer_counters(self):
+        events = [
+            {**command(1, 0x0031), "stateSampled": True,
+             "stateObservation": {"kind": "baseline",
+                                  "samplePoint": "command_producer_onEnter",
+                                  "nonAtomic": True,
+                                  "sides": [{"side": 0}, {"side": 1}]},
+             "battleAttributesObservation": {
+                 "schema": "joey-command-entry-battle-attributes-v1",
+                 "samplePoint": "command_producer_onEnter_0x31",
+                 "nonAtomic": True, "selectorWord": 0,
+                 "blocks": [{"cardIndexWord": 124, "calculatedAttack": 1400},
+                            {"cardIndexWord": 169, "calculatedAttack": 1500}]}},
+            {**command(2, 0x0031), "stateSampled": True,
+             "battleAttributesReadError": "synthetic read failure"},
+            {**command(3, 0x0004), "stateSampled": True},
+        ]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 1001, 1, {}, 600, Path(td),
+                                      trace_state=True, trace_battle_attributes=True)
+            try:
+                capture.drain()
+                summary = capture.finish(agent.tracestop(), True)
+                self.assertEqual(summary["battleAttributesTrace"],
+                                 {"samples": 1, "readErrors": 1})
+                rows = [json.loads(line) for line
+                        in capture.path.read_text(encoding="utf-8").splitlines()]
+                self.assertEqual(rows[0]["battleAttributesTrace"]["schema"],
+                                 "joey-command-entry-battle-attributes-v1")
+                self.assertEqual(rows[1]["battleAttributesObservation"]
+                                 ["blocks"][0]["cardIndexWord"], 124)
+                self.assertEqual(rows[-1]["battleAttributesTrace"]["readErrors"], 1)
+            finally:
+                capture.close()
+
     def test_state_trace_rejects_capture_without_baseline(self):
         events = [{**command(1, 0x0004), "stateSampled": True,
                    "stateReadError": "simulated unreadable memory"}]
