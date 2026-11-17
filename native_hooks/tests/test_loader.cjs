@@ -1339,7 +1339,7 @@ batt.memory.set(combatBase + 0x18, 800);
 batt.memory.set(combatBase + 0x1C, 200);
 batt.command(0x30, 0, 0, 0);
 batt.command(0x31, 0, 200, 0);
-let battles = batt.api.traceevents(0,20).filter(x=>x.kind === 'command');
+let battles = batt.api.tracelivepeek(20).events.filter(x=>x.kind === 'command');
 assert.equal(battles.length, 2);
 assert.equal(battles[0].battleAttributesObservation, undefined);
 assert.equal(battles[1].battleAttributesObservation.blocks[0].cardIndexWord, 124);
@@ -1348,7 +1348,7 @@ assert.equal(battles[1].battleAttributesObservation.blocks[1].calculatedDefense,
 assert.equal(batt.api.tracestatus().battleAttributeSamples, 1);
 batt.memory.set(combatBase + 4, 1000001);
 batt.command(0x31, 0, 200, 0);
-battles = batt.api.traceevents(0,20).filter(x=>x.kind === 'command');
+battles = batt.api.tracelivepeek(20).events.filter(x=>x.kind === 'command');
 assert.match(battles[2].battleAttributesReadError, /Invalid battle attribute block/);
 assert.equal(batt.api.tracestatus().battleAttributeReadFailures, 1);
 assert.equal(batt.api.tracestatus().battleAttributeSamples, 1);
