@@ -25,6 +25,7 @@ public static class Checks
         byte[] background=Effect.Checkerboard();
         Check(Effect.Render(new(0,400,300,54,78),raster,raster,background,table).SequenceEqual(background),"Initial frame unchanged");
         Check(Effect.Render(new(256,400,300,54,78),raster,raster,background,table).SequenceEqual(background),"Final zero-amplitude frame unchanged");
+        Check(Effect.Render(new(128,525,600,54,78),raster,raster,background,table)[(580*800+525)*4]==19,"Off-canvas hand center clips scratch and darkens visible checker texel from 38 to 19");
         try { Effect.Render(new(272,400,300,54,78),raster,raster,background,table);throw new Exception("Accepted dead effect"); }
         catch(InvalidDataException) {count++;}
         Console.WriteLine($"{count} synthetic checks passed; no native execution or pixel-fidelity claim.");

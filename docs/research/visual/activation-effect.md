@@ -117,7 +117,7 @@ Seu replay usa os draws e timestamps QPC medidos, inclusive contadores repetidos
 - [Protocolo de captura natural Windows](activation-windows-capture.md).
 - Coletor/analisador em `tools/visual/capture/`, com hashes, sequência, limites e desmontagem.
 
-Nesta sessão: build do executável sem avisos/erros; **14 checks C# sintéticos**;
+Nesta sessão: build do executável sem avisos/erros; **15 checks C# sintéticos**;
 **15 testes Python** (dez de recursos, cinco de integridade da captura); mocks JS
 para seleção/ABI de leitura/rollback/limite; renderização offline dos 17 contadores
 usando os dois YGAs reais; PNG inspecionado e CRC/inflação verificados por Python.

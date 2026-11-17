@@ -21,7 +21,7 @@ dotnet run --no-build --project tools/visual/ActivationViewer -- --self-test
 dotnet run --no-build --project tools/visual/ActivationViewer -- --dat "$VISUAL_DAT" --card-size 54,78 --check
 ```
 
-`--self-test` executa 14 verificações sintéticas sem DAT/raylib/janela.
+`--self-test` executa 15 verificações sintéticas sem DAT/raylib/janela.
 `--check` lê os dois YGAs do DAT de SHA fixado e renderiza os 17 contadores
 0,16,…,256. O tamanho 54×78 acima é **contexto declarado para teste**, não medição
 Windows. O visualizador exige tamanho declarado ou replay; não preenche um

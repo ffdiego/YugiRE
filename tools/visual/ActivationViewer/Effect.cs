@@ -99,7 +99,7 @@ public static class Effect
     public static byte[] Render(EffectFrame frame,Raster lower,Raster upper,byte[] background,int[] table)
     {
         if(frame.Counter is <0 or >256 || table.Length!=512 || background.Length!=Width*Height*4 ||
-           frame.CardWidth is <1 or >512 || frame.CardHeight is <1 or >512 || frame.X is <0 or >=Width || frame.Y is <0 or >=Height)
+           frame.CardWidth is <1 or >512 || frame.CardHeight is <1 or >512 || frame.X is <-512 or >1312 || frame.Y is <-512 or >1112)
             throw new InvalidDataException("Frame outside supported activation contract");
         var output=(byte[])background.Clone();
         int scale=table[(frame.Counter-128)&511];

@@ -186,5 +186,6 @@ static (byte[],string) Difference(byte[] candidate,byte[] reference,int cx,int c
         }
         heat[at+3]=255;if(roi && different)changed++;
     }
+    if(count==0) return (heat,"ROI outside canvas; pixel metric withheld");
     return (heat,$"ROI around effect: mean absolute RGB={total/(double)count:F4}/255; max={maximum}; differing pixels={changed}. Alignment/background must match.");
 }
