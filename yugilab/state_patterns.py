@@ -214,8 +214,7 @@ def markdown(report: dict) -> str:
              "**Observação temporal, não validação causal de carta.**", ""]
     for run in report["runs"]:
         lines.extend([f"## {run['file']} — duelo {run['duelIndex'] + 1}", "",
-                      f"- SHA256 da fonte: "])
-        lines[-1] = f"- SHA256 da fonte: \`{run['sourceSha256']}\`"
+                      f"- SHA256 da fonte: `{run['sourceSha256']}`"])
         lines.extend([
             f"- Transferências entre lados: **{run['counts']['crossSideTransfers']}**",
             f"- Associações brutas compartilhadas: **{run['counts']['sharedAssociations']}**",
