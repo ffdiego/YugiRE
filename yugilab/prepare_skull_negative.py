@@ -15,7 +15,6 @@ import json
 from pathlib import Path
 
 from .discovery import _json, catalog
-from .temporal_correlations import correlate_graveyard_lp300
 
 SKULL_INDEX = 414
 ZONES = ("main", "second", "third")
