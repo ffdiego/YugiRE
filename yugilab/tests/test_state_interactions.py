@@ -94,6 +94,12 @@ class NativeStateInteractionsTests(unittest.TestCase):
             result = summarize([path])
             self.assertEqual(len(result["captures"]),1)
             self.assertEqual(result["captures"][0]["stateTrace"]["samples"],7)
+            temporal = result["graveyardLp300TemporalCorrelations"][0]
+            self.assertEqual(temporal["unitGraveyardIncreases"], 1)
+            self.assertEqual(temporal["pairedCount"], 1)
+            self.assertEqual(temporal["pairs"][0]["graveyardSeq"], 4)
+            self.assertEqual(temporal["pairs"][0]["lossSeq"], 6)
+            self.assertEqual(temporal["pairs"][0]["conclusion"], "TemporalCorrelationOnly")
             cases=result["rainSkullCases"]
             self.assertEqual(len(cases),1)
             case=cases[0]
