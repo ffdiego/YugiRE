@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from yugilab.inspect_effect_windows import extract, markdown
+from yugilab.inspect_effect_windows import attach_state_report, extract, markdown
 
 
 def command(seq, code, *, caller="0x123456", rid=0, lp=None):
@@ -100,6 +100,51 @@ class EffectWindowsTests(unittest.TestCase):
             write()
             self.assertIsNone(
                 extract([path], {1315})["windows"][0]["pairedLp42Candidate"])
+
+    def test_join_state_report_by_hash_and_native_command_seq(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "duels-test.jsonl"
+            self.make_capture(path)
+            extracted = extract([path], {1315}, before=1, after=3)
+            source = extracted["captures"][0]
+            report = dict(
+                schema="yugire-native-state-interactions-report-v1",
+                captures=[dict(file=source["file"], sha256=source["sha256"],
+                               integrityOk=True)],
+                transitions=[
+                    dict(file=source["file"], sourceSha256=source["sha256"],
+                         duelIndex=0, seq=2, side=0, kind="graveyardCount",
+                         before=1, after=2, delta=1),
+                    dict(file=source["file"], sourceSha256=source["sha256"],
+                         duelIndex=0, seq=3, side=0, kind="fieldSlot",
+                         slot=6,cardBefore=969,cardAfter=0),
+                    # Different duel and outside CF window: must not leak.
+                    dict(file=source["file"], sourceSha256=source["sha256"],
+                         duelIndex=1, seq=6, side=1, kind="lifePoints",
+                         before=8000, after=7000, delta=-1000)])
+            joined = attach_state_report(extracted, report)
+            self.assertEqual(len(joined["windows"][0]["stateChangesWithinWindow"]), 2)
+            self.assertEqual(
+                [x["seq"] for x in joined["windows"][0]["stateChangesWithinWindow"]],
+                [2, 3])
+            self.assertTrue(joined["windows"][0]["stateObservationsAreNonAtomic"])
+            self.assertIn("NOT attributed to CF", markdown(joined))
+            self.assertIn("non-atomic", joined["stateEvidenceInterpretationLimit"])
+            self.assertNotIn("stateChangesWithinWindow", extracted["windows"][0])
+
+            invalid = dict(report, captures=[
+                dict(file=source["file"], sha256="0"*64, integrityOk=True)])
+            with self.assertRaisesRegex(ValueError, "SHA256/file mismatch"):
+                attach_state_report(extracted, invalid)
+            invalid_transition = dict(report, transitions=[
+                dict(report["transitions"][0], sourceSha256="a"*64)])
+            with self.assertRaisesRegex(ValueError, "source/sequence mismatch"):
+                attach_state_report(extracted, invalid_transition)
+            incomplete = dict(report, captures=[
+                dict(file=source["file"], sha256=source["sha256"],
+                     integrityOk=False)])
+            with self.assertRaisesRegex(ValueError, "integrity"):
+                attach_state_report(extracted, incomplete)
 
     def test_rejects_broken_capture_and_invalid_options(self):
         with tempfile.TemporaryDirectory() as td:
