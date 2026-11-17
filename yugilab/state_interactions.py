@@ -68,8 +68,8 @@ def _apply_delta(sides: list[dict], changes: list[dict]) -> list[dict]:
 
 
 def _state_changes(event: dict, duel_index: int) -> list[dict]:
-    observation = event["stateObservation"]
-    if observation.get("kind") != "delta":
+    observation = event.get("stateObservation")
+    if not isinstance(observation, dict) or observation.get("kind") != "delta":
         return []
     results = []
     for side in observation["changes"]:
