@@ -4,6 +4,48 @@ Status: piloto opt-in, sem prova de causalidade de efeitos. Empilhado na
 branch `feature/native-state-diff-capture-v1` sobre a pesquisa de efeitos
 `feature/native-effect-discovery-queue-v1` (PR #6), sem merge em main.
 
+## Primeiro duelo validado — evidência recebida (16/11/2026 horário local)
+
+O operador enviou somente `state-report.json` e `state-summary.md`.
+Captura original reportada: `duels-20261117-020520-485960-pid20416.jsonl`,
+SHA256 `e76d67678a3843d14541fed5ec5d94aabbca603a129554ab2f46f69e27919994`.
+O JSONL original permanece no Windows; **não revalidamos o hash do bruto**
+nesta sessão. Auditoria do relatório: 1 terminal íntegro, 382 amostras,
+1 baseline, 108 deltas, 0 readErrors, 18 comandos sem amostra e
+178 transições individuais.
+
+Rain (índice 969) tem CF seq335; Skull Invitation (índice 414)
+já aparece no slot 5 do lado 0. Rain entra no slot 7 na seq336,
+LP de ambos aumentam +1000 na seq340, Rain sai do campo
+na seq344 simultaneamente a +1 no contador do Cemitério do
+lado 0, e há comando de 300 e delta -300 no lado 0 em seq346–348.
+
+De maior valor para investigação por lotes: **13 incrementos unitários**
+do contador de Cemitério tiveram perda de 300 LP do mesmo lado
+em até 3–5 seq, mas houve **14 perdas de -300** no total,
+incluindo uma sem pareamento direto na seq455. É evidência temporal
+forte, não mecanismo/causalidade confirmado. Skull permaneceu
+observada no slot 5 após sua colocação na seq67.
+Ver `docs/evidence/native-skull-graveyard-lp300-correlation-2026-11-17.md`.
+
+Nova análise genérica (implementada **depois** do primeiro relatório)
+quantifica essas correlações sem duplicar perdas e gera campos
+`graveyardLp300TemporalCorrelations`. Precisa dos testes e de
+reprocessar **o mesmo JSONL**, sem executar novo duelo:
+
+```powershell
+git pull --ff-only
+python -m unittest discover -s yugilab/tests -p test_temporal_correlations.py -v
+python -m unittest discover -s yugilab/tests -p test_state_interactions.py -v
+python -m yugilab.state_interactions `
+  --input .\scratch\native-state-round01-one-v1 `
+  --output-dir .\scratch\native-state-report-one-v2
+```
+
+**Esperado, a confirmar:** 13 pares temporais, 14 quedas de
+300 LP e uma queda sem pareamento (seq455, lado1).
+Analisar o caso extra antes de atribuir tudo a Skull.
+
 ## Objetivo
 
 Substituir o ciclo 'um hook novo por carta' por um observador genérico
