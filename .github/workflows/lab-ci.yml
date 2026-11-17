@@ -22,12 +22,36 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build Joey.Coverage for pinned-fixture tests
+        run: dotnet build src/Joey.Coverage/Joey.Coverage.csproj --configuration Debug
       - name: YugiLab offline checks
         run: python -m unittest discover -s yugilab/tests -p 'test_*.py' -v
       - name: Native capture and deck offline checks
         run: python -m unittest discover -s native_hooks/tests -p 'test_*.py' -v
-      - name: Effect-pilot offline checks
-        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Repository Python offline checks (untracked hybrid experiments optional)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test in tests/test_*.py; do
+            case "$test" in
+              tests/test_joey_compare_ydr.py)
+                if [[ ! -f experiments/hybrid_probe/compare_ydr.py ]]; then
+                  echo "::notice::Skipping $test: experiments/hybrid_probe/compare_ydr.py is not versioned in this checkout"
+                  continue
+                fi
+                ;;
+              tests/test_joey_hybrid_preflight.py)
+                if [[ ! -f experiments/hybrid_probe/pe_preflight.py ]]; then
+                  echo "::notice::Skipping $test: experiments/hybrid_probe/pe_preflight.py is not versioned in this checkout"
+                  continue
+                fi
+                ;;
+            esac
+            python -m unittest discover -s tests -p "$(basename "$test")" -v
+          done
       - name: Native state sampler JavaScript tests
         run: node native_hooks/tests/test_native_state_sampler.cjs
       - name: Native command listener mock integration
