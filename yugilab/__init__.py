@@ -48,6 +48,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trace-state", action="store_true",
                         help="Opt-in read-only state baselines/deltas per native command "
                              "(pilot: 1 worker, <=3 duels, no AI trace)")
+    parser.add_argument("--trace-battle-attributes", action="store_true",
+                        help="Opt-in read-only calculated ATK/DEF at native 0x31; "
+                             "requires --trace-state, 1 worker and <=3 duels")
     parser.add_argument("--trace-ai", action="store_true",
                         help="Also observe AI selectors, evaluations and hand snapshots")
     parser.add_argument("--allow-multi-instance", action="store_true",
@@ -75,6 +78,8 @@ def _run_native_launcher(arguments: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.trace_battle_attributes and not args.trace_state:
+        parser.error("--trace-battle-attributes requires --trace-state")
     if args.trace_state:
         if args.workers != 1:
             parser.error("--trace-state pilot requires --workers 1")
@@ -139,6 +144,8 @@ def main(argv: list[str] | None = None) -> int:
         forwarded.append("--trace-ai")
     if args.trace_state:
         forwarded.append("--trace-state")
+    if args.trace_battle_attributes:
+        forwarded.append("--trace-battle-attributes")
     if args.seed is not None:
         forwarded += ["--seed", str(args.seed),
                       "--seed-start-index", str(args.seed_start_index)]
