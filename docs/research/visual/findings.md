@@ -78,3 +78,11 @@ laboratório Python e o teste JS do loader. A suíte Python geral listou 176 tes
 com nove skips e dois erros de import por arquivos ausentes em
 `experiments/hybrid_probe/`; ela **não está integralmente verde**.
 Detalhes e comandos no [handoff](../handoffs/native-visual-yga.md).
+
+## Marco seguinte: uma ativação azul
+
+[activation-effect.md](activation-effect.md) documenta agora os três passes da
+ativação, incluindo o scratch preto central, rotação/escala em ponto fixo e
+mistura inteira por duas tabelas. Há um visualizador raylib-cs isolado e um
+coletor limitado em `tools/visual/capture/`. A captura Windows foi explicitamente
+adiada pelo usuário; fidelidade visual/temporal continua sem validação dinâmica.

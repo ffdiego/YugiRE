@@ -1,0 +1,539 @@
+SHA256: db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de
+Static Ghidra 12.2; -noanalysis -readOnly, disposable project.
+Selected assembly and decompilation excerpts. Types from damaged stack recovery are not ABI evidence.
+
+SOURCE REPORT activation-blend.txt
+INS 004505d0 SUB ESP,0x10
+INS 004505d3 LEA EDX,[ESP + 0x8]
+INS 004505d7 PUSH EBX
+INS 004505d8 PUSH EBP
+INS 004505d9 PUSH ESI
+INS 004505da MOV ESI,ECX
+INS 004505dc PUSH EDI
+INS 004505dd PUSH EDX
+INS 004505de MOV EAX,dword ptr [ESI + 0xac]
+INS 004505e4 LEA ECX,[ESI + 0xac]
+INS 004505ea LEA EDX,[ESP + 0x20]
+INS 004505ee PUSH EDX
+INS 004505ef CALL dword ptr [EAX + 0x38]
+INS 004505f2 MOV EAX,dword ptr [ESI + 0x10]
+INS 004505f5 SUB EAX,0x80
+INS 004505fa AND EAX,0x1ff
+INS 004505ff MOV EBX,dword ptr [EAX*0x4 + 0xa52ee8]
+INS 00450606 MOV ECX,EBX
+INS 00450608 AND CL,0x0
+INS 0045060b CMP ECX,0x10000
+INS 00450611 JL 0x0045061d
+INS 00450613 MOV dword ptr [ESP + 0x14],0xff
+INS 0045061b JMP 0x00450626
+INS 0045061d MOV EAX,EBX
+INS 0045061f SAR EAX,0x8
+INS 00450622 MOV dword ptr [ESP + 0x14],EAX
+INS 00450626 MOV ECX,dword ptr [ESI + 0x70]
+INS 00450629 XOR EDX,EDX
+INS 0045062b MOV DL,byte ptr [ESI + 0x1c]
+INS 0045062e LEA EDI,[ESI + 0x20]
+INS 00450631 LEA EAX,[EDX + EDX*0x1 + 0x1]
+INS 00450635 MOV dword ptr [ESP + 0x10],EAX
+INS 00450639 MOV EDX,dword ptr [ECX]
+INS 0045063b LEA EAX,[ESP + 0x10]
+INS 0045063f PUSH EAX
+INS 00450640 CALL dword ptr [EDX]
+INS 00450642 MOV EAX,dword ptr [ESP + 0x10]
+INS 00450646 MOV EDX,dword ptr [EDI]
+INS 00450648 PUSH -0x1
+INS 0045064a PUSH EAX
+INS 0045064b MOV ECX,EDI
+INS 0045064d CALL dword ptr [EDX + 0x8]
+INS 00450650 MOV ECX,dword ptr [EDI + 0x28]
+INS 00450653 MOV EDX,dword ptr [ESP + 0x10]
+INS 00450657 MOV EAX,dword ptr [ESP + 0x14]
+INS 0045065b MOV EBP,dword ptr [ESP + 0x24]
+INS 0045065f MOV dword ptr [ECX + EDX*0x4],0x0
+INS 00450666 PUSH EAX
+INS 00450667 MOV EAX,dword ptr [ESI + 0x10]
+INS 0045066a MOV ECX,dword ptr [ESI + 0x18]
+INS 0045066d CDQ
+INS 0045066e SUB EAX,EDX
+INS 00450670 MOV EDX,dword ptr [ESI + 0x14]
+INS 00450673 PUSH EBX
+INS 00450674 PUSH EBX
+INS 00450675 SAR EAX,0x1
+INS 00450677 PUSH EAX
+INS 00450678 MOV EAX,dword ptr [EDI + 0x60]
+INS 0045067b PUSH ECX
+INS 0045067c MOV ECX,dword ptr [ESP + 0x24]
+INS 00450680 PUSH EDX
+INS 00450681 MOV EDX,dword ptr [EAX + ECX*0x8 + 0x4]
+INS 00450685 PUSH EDX
+INS 00450686 PUSH EBP
+INS 00450687 CALL 0x00422c00
+INS 0045068c ADD ESP,0x20
+INS 0045068f MOV EAX,EBX
+INS 00450691 SAR EAX,0x9
+INS 00450694 PUSH 0x0
+INS 00450696 PUSH 0x0
+INS 00450698 PUSH 0x0
+INS 0045069a PUSH EAX
+INS 0045069b MOV EAX,dword ptr [ESP + 0x28]
+INS 0045069f MOV ECX,dword ptr [EBP]
+INS 004506a2 CDQ
+INS 004506a3 SUB EAX,EDX
+INS 004506a5 MOV EDX,dword ptr [ESI + 0x18]
+INS 004506a8 SAR EAX,0x1
+INS 004506aa SUB EDX,EAX
+INS 004506ac MOV EAX,dword ptr [ESP + 0x2c]
+INS 004506b0 PUSH EDX
+INS 004506b1 CDQ
+INS 004506b2 SUB EAX,EDX
+INS 004506b4 MOV EDX,dword ptr [ESI + 0x14]
+INS 004506b7 SAR EAX,0x1
+INS 004506b9 SUB EDX,EAX
+INS 004506bb LEA EAX,[ESI + 0xac]
+INS 004506c1 PUSH EDX
+INS 004506c2 PUSH EAX
+INS 004506c3 MOV EAX,ECX
+INS 004506c5 MOV ECX,EBP
+INS 004506c7 CALL dword ptr [EAX + 0x48]
+INS 004506ca XOR ECX,ECX
+INS 004506cc LEA EAX,[ESP + 0x24]
+INS 004506d0 MOV CL,byte ptr [ESI + 0x1c]
+INS 004506d3 PUSH EAX
+INS 004506d4 SHL ECX,0x1
+INS 004506d6 MOV dword ptr [ESP + 0x28],ECX
+INS 004506da MOV ECX,dword ptr [EDI + 0x50]
+INS 004506dd MOV EDX,dword ptr [ECX]
+SOURCE REPORT activation-raster.txt
+INS 004506ca XOR ECX,ECX
+INS 004506cc LEA EAX,[ESP + 0x24]
+INS 004506d0 MOV CL,byte ptr [ESI + 0x1c]
+INS 004506d3 PUSH EAX
+INS 004506d4 SHL ECX,0x1
+INS 004506d6 MOV dword ptr [ESP + 0x28],ECX
+INS 004506da MOV ECX,dword ptr [EDI + 0x50]
+INS 004506dd MOV EDX,dword ptr [ECX]
+INS 004506df CALL dword ptr [EDX]
+INS 004506e1 MOV EAX,dword ptr [ESP + 0x24]
+INS 004506e5 MOV EDX,dword ptr [EDI]
+INS 004506e7 PUSH -0x1
+INS 004506e9 PUSH EAX
+INS 004506ea MOV ECX,EDI
+INS 004506ec CALL dword ptr [EDX + 0x8]
+INS 004506ef MOV ECX,dword ptr [EDI + 0x28]
+INS 004506f2 MOV EDX,dword ptr [ESP + 0x24]
+INS 004506f6 MOV EAX,dword ptr [ESP + 0x14]
+INS 004506fa MOV dword ptr [ECX + EDX*0x4],0x0
+INS 00450701 MOV ECX,dword ptr [ESI + 0x10]
+INS 00450704 MOV EDX,dword ptr [ESI + 0x18]
+INS 00450707 PUSH EAX
+INS 00450708 MOV EAX,dword ptr [ESI + 0x14]
+INS 0045070b PUSH EBX
+INS 0045070c PUSH EBX
+INS 0045070d PUSH ECX
+INS 0045070e MOV ECX,dword ptr [EDI + 0x60]
+INS 00450711 PUSH EDX
+INS 00450712 MOV EDX,dword ptr [ESP + 0x38]
+INS 00450716 PUSH EAX
+INS 00450717 MOV EAX,dword ptr [ECX + EDX*0x8 + 0x4]
+INS 0045071b PUSH EAX
+INS 0045071c PUSH EBP
+INS 0045071d CALL 0x00422c00
+INS 00450722 ADD ESP,0x20
+INS 00422d10 NEG EBX
+INS 00422d12 NEG ECX
+INS 00422d14 MOV EDX,EBX
+INS 00422d16 MOV EAX,ECX
+INS 00422d18 IMUL EDX,EDI
+INS 00422d1b IMUL EAX,ESI
+INS 00422d1e SUB EDX,EAX
+INS 00422d20 MOV EAX,dword ptr [ESP + 0x64]
+INS 00422d24 SAR EDX,0x10
+INS 00422d27 ADD EDX,EAX
+INS 00422d29 MOV EAX,EBX
+INS 00422d2b MOV dword ptr [ESP + 0x18],EDX
+INS 00422d2f MOV EDX,ECX
+INS 00422d31 IMUL EDX,EDI
+INS 00422d34 IMUL EAX,ESI
+INS 00422d37 ADD EDX,EAX
+INS 00422e09 PUSH EDX
+INS 00422e0a PUSH EAX
+INS 00422e0b CALL 0x00422e30
+INS 00422e10 ADD ESP,0x20
+INS 00422e13 POP EDI
+INS 00422e14 POP ESI
+INS 00422e15 POP EBP
+INS 00422e16 POP EBX
+INS 00422e17 ADD ESP,0x48
+INS 00422e1a RET
+SOURCE REPORT activation-abi.txt
+INS 00422c00 MOV EAX,dword ptr [ESP + 0x20]
+INS 00422c04 SUB ESP,0x48
+INS 00422c07 CMP EAX,0x100
+INS 00422c0c PUSH EBX
+INS 00422c0d PUSH EBP
+INS 00422c0e PUSH ESI
+INS 00422c0f PUSH EDI
+INS 00422c10 JL 0x00422c47
+INS 00422c12 MOV EAX,dword ptr [ESP + 0x74]
+INS 00422c16 MOV ECX,dword ptr [ESP + 0x70]
+INS 00422c1a MOV EDX,dword ptr [ESP + 0x6c]
+INS 00422c1e PUSH 0x0
+INS 00422c20 PUSH EAX
+INS 00422c21 MOV EAX,dword ptr [ESP + 0x70]
+INS 00422c25 PUSH ECX
+INS 00422c26 MOV ECX,dword ptr [ESP + 0x70]
+INS 00422c2a PUSH EDX
+INS 00422c2b MOV EDX,dword ptr [ESP + 0x70]
+INS 00422c2f PUSH EAX
+INS 00422c30 MOV EAX,dword ptr [ESP + 0x70]
+INS 00422c34 PUSH ECX
+INS 00422c35 PUSH EDX
+INS 00422c36 PUSH EAX
+INS 00422c37 CALL 0x00422840
+INS 00422c3c ADD ESP,0x20
+INS 00422c3f POP EDI
+INS 00422c40 POP ESI
+INS 00422c41 POP EBP
+INS 00422c42 POP EBX
+INS 00422c43 ADD ESP,0x48
+INS 00422c46 RET
+INS 00422c47 MOV ESI,dword ptr [ESP + 0x60]
+INS 00422c4b LEA EAX,[ESP + 0x14]
+INS 00422c4f LEA ECX,[ESP + 0x10]
+INS 00422c53 PUSH EAX
+INS 00422c54 MOV EDX,dword ptr [ESI]
+INS 00422c56 PUSH ECX
+INS 00422c57 MOV ECX,ESI
+INS 00422c59 CALL dword ptr [EDX + 0x38]
+INS 00422c5c MOV EAX,dword ptr [ESP + 0x70]
+INS 00422c60 TEST EAX,EAX
+INS 00422c62 JZ 0x00422e1b
+INS 00422c68 MOV EBX,dword ptr [ESP + 0x74]
+INS 00422c6c TEST EBX,EBX
+INS 00422c6e JZ 0x00422e1b
+INS 00422c74 MOV EDX,dword ptr [ESP + 0x10]
+INS 00422c78 MOV EDI,dword ptr [0x005da1e0]
+INS 00422c7e PUSH 0x10000
+INS 00422c83 DEC EDX
+INS 00422c84 PUSH EAX
+INS 00422c85 PUSH EDX
+INS 00422c86 CALL EDI
+INS 00422c88 MOV EBP,EAX
+INS 00422c8a MOV EAX,dword ptr [ESP + 0x14]
+INS 00422c8e PUSH 0x10000
+INS 00422c93 DEC EAX
+INS 00422c94 PUSH EBX
+INS 00422c95 PUSH EAX
+INS 00422c96 CALL EDI
+INS 00422c98 TEST EBP,EBP
+INS 00422c9a MOV dword ptr [ESP + 0x70],EAX
+INS 00422c9e JZ 0x00422e1b
+INS 00422ca4 TEST EAX,EAX
+INS 00422ca6 JZ 0x00422e1b
+INS 00422cac MOV EAX,dword ptr [ESI + 0x18]
+INS 00422caf MOV ECX,dword ptr [ESI + 0x1c]
+INS 00422cb2 MOV EDX,dword ptr [ESI + 0x20]
+INS 00422cb5 MOV ESI,dword ptr [ESI + 0x24]
+INS 00422cb8 MOV dword ptr [ESP + 0x38],EAX
+INS 00422cbc MOV dword ptr [ESP + 0x3c],ECX
+INS 00422cc0 MOV dword ptr [ESP + 0x44],ECX
+INS 00422cc4 MOV dword ptr [ESP + 0x50],EAX
+INS 00422cc8 MOV EAX,dword ptr [ESP + 0x6c]
+INS 00422ccc LEA ECX,[ESI + -0x1]
+INS 00422ccf MOV dword ptr [ESP + 0x4c],ECX
+INS 00422cd3 MOV dword ptr [ESP + 0x54],ECX
+INS 00422cd7 LEA ECX,[EAX + -0x80]
+INS 00422cda AND EAX,0x1ff
+INS 00422cdf DEC EDX
+INS 00422ce0 AND ECX,0x1ff
+INS 00422ce6 MOV EDI,dword ptr [EAX*0x4 + 0xa52ee8]
+INS 00422ced MOV EAX,EBP
+INS 00422cef MOV dword ptr [ESP + 0x40],EDX
+INS 00422cf3 MOV dword ptr [ESP + 0x48],EDX
+INS 00422cf7 CDQ
+INS 00422cf8 SUB EAX,EDX
+INS 00422cfa MOV ESI,dword ptr [ECX*0x4 + 0xa52ee8]
+SOURCE REPORT activation-formats.txt
+BYTES 005dccb0 count=16 00 00 00 00 00 00 70 3F 40 C4 55 00 C0 C5 55 00
+BYTES 005dccf8 count=8 18 2D 44 54 FB 21 09 40
+INS 0055dcf0 PUSH ECX
+INS 0055dcf1 MOV AL,[0x00a536e8]
+INS 0055dcf6 PUSH EDI
+INS 0055dcf7 TEST AL,AL
+INS 0055dcf9 MOV EDI,ECX
+INS 0055dcfb JNZ 0x0055dd4b
+INS 0055dcfd PUSH ESI
+INS 0055dcfe MOV dword ptr [ESP + 0x8],0x0
+INS 0055dd06 MOV ESI,0xa52ee8
+INS 0055dd0b FILD dword ptr [ESP + 0x8]
+INS 0055dd0f FMUL double ptr [0x005dccf8]
+INS 0055dd15 FMUL double ptr [0x005dccb0]
+INS 0055dd1b FCOS
+INS 0055dd1d FMUL double ptr [0x005dcd00]
+INS 0055dd23 CALL 0x005c3e40
+INS 0055dd28 MOV EDX,dword ptr [ESP + 0x8]
+INS 0055dd2c MOV dword ptr [ESI],EAX
+INS 0055dd2e ADD ESI,0x4
+INS 0055dd31 INC EDX
+INS 0055dd32 CMP ESI,0xa536e8
+INS 0055dd38 MOV dword ptr [ESP + 0x8],EDX
+INS 0055dd3c JL 0x0055dd0b
+INS 0055dd3e MOV EAX,EDI
+INS 0055dd40 POP ESI
+INS 0055dd41 MOV byte ptr [0x00a536e8],0x1
+INS 0055dd48 POP EDI
+INS 0055dd49 POP ECX
+INS 0055dd4a RET
+INS 0055dd4b MOV EAX,EDI
+INS 0055dd4d POP EDI
+INS 0055dd4e POP ECX
+INS 0055dd4f RET
+INS 0055dd50 MOV CL,byte ptr [0x00a585a8]
+INS 0055dd56 MOV AL,0x1
+INS 0055dd58 TEST AL,CL
+INS 0055dd5a JNZ 0x0055dd64
+SOURCE REPORT activation-alpha-tables.txt
+BYTES 005dcd00 count=8 00 00 00 00 00 00 F0 40
+SOURCE REPORT activation-raster.txt
+FUNCTION FUN_0055dcf0 @0055dcf0
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+undefined4 __fastcall FUN_0055dcf0(undefined4 param_1)
+
+{
+  undefined4 uVar1;
+  undefined4 *puVar2;
+  int local_4;
+
+  if (DAT_00a536e8 != '\0') {
+    return param_1;
+  }
+  local_4 = 0;
+  puVar2 = &DAT_00a52ee8;
+  do {
+    fcos((float10)local_4 * (float10)_DAT_005dccf8 * (float10)_DAT_005dccb0);
+    uVar1 = __ftol();
+    *puVar2 = uVar1;
+    puVar2 = puVar2 + 1;
+    local_4 = local_4 + 1;
+  } while ((int)puVar2 < 0xa536e8);
+  DAT_00a536e8 = 1;
+  return param_1;
+}
+
+
+SOURCE REPORT activation-alpha-tables.txt
+FUNCTION FUN_00546d70 @00546d70
+
+void FUN_00546d70(void)
+
+{
+  byte bVar1;
+  undefined1 uVar2;
+  int iVar3;
+  int iVar4;
+  byte *pbVar5;
+  short *psVar6;
+  short sVar7;
+  undefined1 *puVar8;
+  int iVar9;
+  short *psVar10;
+  int local_18;
+  short *local_14;
+  int local_10;
+  int local_c;
+  int local_8;
+
+  local_18 = 0;
+  local_10 = 0;
+  local_14 = (short *)0x0;
+  do {
+    iVar4 = 0;
+    local_c = 0x100;
+    puVar8 = &DAT_0060ef03 + local_18;
+    iVar9 = local_10;
+    iVar3 = local_18;
+    do {
+      uVar2 = (undefined1)(iVar4 / 0xff);
+      (&DAT_00a2ee04)[iVar3] = uVar2;
+      *puVar8 = uVar2;
+      (&DAT_005f6e04)[iVar3] = (char)(iVar9 / 0xff);
+      iVar9 = iVar9 + (int)local_14;
+      iVar4 = iVar4 + local_18;
+      local_c = local_c + -1;
+      puVar8 = puVar8 + 0x200;
+      iVar3 = iVar3 + 0x100;
+    } while (local_c != 0);
+    local_18 = local_18 + 1;
+    local_14 = (short *)((int)local_14 + -1);
+    local_10 = local_10 + 0xff;
+  } while (-0x100 < (int)local_14);
+  iVar9 = 1;
+  do {
+    iVar3 = 0;
+    pbVar5 = &DAT_00a2ee04 + iVar9;
+    do {
+      bVar1 = *pbVar5;
+      iVar4 = iVar3 - iVar9;
+      iVar3 = iVar3 + 0x200;
+      pbVar5 = pbVar5 + 0x100;
+      (&DAT_0060ef03)[iVar4] = ~bVar1 + 1;
+    } while (iVar3 < 0x20000);
+    iVar9 = iVar9 + 1;
+  } while (iVar9 < 0x100);
+[remaining function omitted]
+SOURCE REPORT activation-pixels.txt
+FUNCTION FUN_004276f0 @004276f0
+[polygon setup/edge walk omitted; this is a pixel-loop excerpt]
+LAB_004282c4:
+        if (iVar8 <= iVar4) {
+          local_74 = (iVar4 - iVar8) + 1;
+          pbVar10 = (byte *)(local_90 + 1 + iVar8 * 4);
+          do {
+            if (((param_5 ^ *puVar18) & 0xffffff) != 0) {
+              iVar8 = (uint)(byte)(&DAT_00a2ee04)
+                                  [param_6 + (uint)*(byte *)((int)puVar18 + 3) * 0x100] * 0x200;
+              pbVar10[1] = (&DAT_0060ef03)
+                           [iVar8 + ((uint)*(byte *)((int)puVar18 + 2) - (uint)pbVar10[1])] +
+                           pbVar10[1];
+              *pbVar10 = (&DAT_0060ef03)
+                         [iVar8 + ((uint)*(byte *)((int)puVar18 + 1) - (uint)*pbVar10)] + *pbVar10;
+              pbVar10[-1] = (&DAT_0060ef03)[iVar8 + ((uint)(byte)*puVar18 - (uint)pbVar10[-1])] +
+                            pbVar10[-1];
+              pbVar10[2] = 0;
+              piVar15 = local_64;
+            }
+            iVar9 = iVar9 + local_24;
+            local_68 = local_68 + local_60;
+            pbVar10 = pbVar10 + 4;
+            local_74 = local_74 + -1;
+            puVar18 = (uint *)((int)puVar17 + (iVar9 >> 0x14) * 4 + (local_68 >> 0x14) * iVar12);
+          } while (local_74 != 0);
+        }
+      }
+      else if ((local_84 <= local_20) && (local_10 <= local_80)) {
+        if (local_84 < local_10) {
+          iVar9 = local_10 - local_84 >> 0x14;
+          local_68 = iVar9 * local_60;
+          iVar9 = iVar9 * local_24;
+          iVar8 = *param_9;
+          puVar18 = (uint *)((int)puVar17 + (iVar9 >> 0x14) * 4 + (local_68 >> 0x14) * iVar12);
+        }
+        if (local_20 < local_80) {
+          iVar4 = param_9[2] + -1;
+        }
+        goto LAB_004282c4;
+      }
+SOURCE REPORT activation-shade-kernel.txt
+FUNCTION FUN_004d71c0 @004d71c0
+
+undefined4
+FUN_004d71c0(undefined4 param_1,int param_2,undefined4 param_3,int param_4,int param_5,int param_6,
+            undefined4 param_7,undefined4 param_8,undefined4 param_9,undefined4 param_10,
+            undefined4 param_11)
+
+{
+  char cVar1;
+  int iVar2;
+  int iVar3;
+  uint uVar4;
+  int iVar5;
+  byte *pbVar6;
+  byte *pbVar7;
+  int iVar8;
+  uint uVar9;
+  byte *pbVar10;
+  byte *local_90;
+  byte *local_8c;
+  int local_88;
+  uint local_84;
+  uint local_80;
+  int local_7c;
+  int local_78;
+  char local_54 [4];
+  int local_50;
+  int local_4c;
+  int local_48;
+  int local_40;
+  int local_3c;
+  int local_38;
+  int local_34;
+  int local_20;
+  int local_1c;
+  int local_18;
+  int local_14;
+  int local_10;
+  int local_c;
+  int local_8;
+  int local_4;
+
+  iVar3 = FUN_00547180(param_4,param_2,param_7,param_8,local_54,param_9,param_10,param_11);
+  if (iVar3 != 0) {
+    return 1;
+  }
+  iVar3 = *(int *)(param_2 + 8);
+  iVar2 = *(int *)(param_4 + 8);
+  uVar4 = local_38 - local_40;
+  local_7c = local_34 - local_3c;
+  pbVar6 = (byte *)(local_4c * iVar3 + local_50 * 4 + *(int *)(param_2 + 4));
+  local_8c = (byte *)(local_3c * iVar2 + local_40 * 4 + *(int *)(param_4 + 4));
+  if (local_54[0] == '\0') {
+    local_88 = local_10;
+    if (0 < local_7c) {
+      local_8c = (byte *)((int)local_8c + 1);
+      local_78 = local_7c;
+      do {
+        local_88 = local_88 + local_c;
+        if (-1 < local_88) {
+          pbVar6 = pbVar6 + iVar3;
+          local_88 = local_88 - local_8;
+        }
+        if (0 < (int)uVar4) {
+          pbVar10 = local_8c;
+          pbVar7 = pbVar6;
+          iVar5 = local_20;
+          local_80 = uVar4;
+          do {
+            iVar5 = iVar5 + local_1c;
+            if (-1 < iVar5) {
+              pbVar7 = pbVar7 + 4;
+              iVar5 = iVar5 - local_18;
+            }
+            if (*(int *)pbVar7 != param_5) {
+              iVar8 = param_6 * 0x200;
+              pbVar10[1] = (&DAT_0060ef03)[iVar8 + ((uint)pbVar7[2] - (uint)pbVar10[1])] +
+                           pbVar10[1];
+              *pbVar10 = (&DAT_0060ef03)[iVar8 + ((uint)pbVar7[1] - (uint)*pbVar10)] + *pbVar10;
+              cVar1 = (&DAT_0060ef03)[iVar8 + ((uint)*pbVar7 - (uint)pbVar10[-1])];
+              pbVar10[2] = 0;
+              pbVar10[-1] = cVar1 + pbVar10[-1];
+            }
+            pbVar7 = pbVar7 + local_14 * 4;
+            pbVar10 = pbVar10 + 4;
+            local_80 = local_80 - 1;
+          } while (local_80 != 0);
+        }
+        local_8c = local_8c + iVar2;
+        pbVar6 = pbVar6 + iVar3 * local_4;
+        local_78 = local_78 + -1;
+      } while (local_78 != 0);
+    }
+  }
+[remaining function omitted]
+SOURCE REPORT activation-black-blit.txt
+FUNCTION FUN_004ac1b0 @004ac1b0
+
+uint __thiscall FUN_004ac1b0(int param_1,undefined4 param_2)
+
+{
+  int iVar1;
+
+  if (*(int *)(param_1 + 4) == 0) {
+    return 0xffffffff;
+  }
+  *(undefined4 *)(param_1 + 0x6c) = param_2;
+  iVar1 = FUN_004aa8d0(param_2);
+  *(int *)(param_1 + 0x70) = iVar1;
+  return (uint)(iVar1 == -1);
+}

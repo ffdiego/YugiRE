@@ -68,3 +68,11 @@ bash tools/visual/query.sh "$VISUAL_GHIDRA" "$PWD/scratch/visual/ghidra" "$PWD/s
 ```
 
 Artefatos extraídos e fontes externos não entram no versionamento.
+
+## Ativação azul: visualizador e captura preparados
+
+A etapa seguinte está em [ActivationViewer/README.md](ActivationViewer/README.md):
+executável raylib-cs isolado, composição CPU de três passes, avanço manual e
+comparação de referência/diferença. A [análise específica](../../docs/research/visual/activation-effect.md)
+fecha os oito argumentos de `00422C00`, as escalas/ângulos e as tabelas de alpha.
+`capture/` prepara uma captura natural limitada no Windows, ainda não executada.
