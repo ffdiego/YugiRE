@@ -59,3 +59,13 @@ Não fazer merge isolado nem modificar `Joey.Core`.
    state-summary.md. Revisar custos temporais e estado observado.
 4. Caso apareça Rain, verificar persistência de Skull em campo e
    mudanças de grave-count/LP, **sem ainda atribuir gatilho**.
+
+## Primeiro piloto nativo e investigação temporal (16/11/2026)
+
+O operador informou que todos os testes offline anteriores passaram e enviou os relatórios gerados por 1 duelo de `--trace-state`. Relatório aponta captura original `duels-20261117-020520-485960-pid20416.jsonl`, SHA256 `e76d67678a3843d14541fed5ec5d94aabbca603a129554ab2f46f69e27919994`, com 1 terminal, integridade true, 382 amostras, 1 baseline, 108 deltas, 0 erros, 18 comandos não amostrados e 178 transições. Os bytes do JSONL original **não foram compartilhados nesta etapa**.
+
+Rain CF seq335, Skull Invitation índice414 no slot5 do lado0, Rain índice969 no slot7 seq336, LP +1000/+1000 na seq340, Rain slot7→vazio junto com incremento de Cemitério do lado0 na seq344, comando de dano 300 seq346 e perda real de 300 seq348. Observação **consistente** com o texto da armadilha, sem prova causal ou destino individual da carta.
+
+Há **13 incrementos unitários de graveyardCount** em todo o duelo e **14 quedas de 300 LP**. Os 13 incrementos têm perda correspondente do mesmo lado após 3–5 seq, sem reutilizar perdas; queda extra seq455 do lado1 (antes de incremento seq457) está sem pareamento causal. Evidência curada em `docs/evidence/native-skull-graveyard-lp300-correlation-2026-11-17.md`.
+
+Adicionado `yugilab/temporal_correlations.py` com correlação genérica temporal não causal e `yugilab/tests/test_temporal_correlations.py`; incluído resultado `graveyardLp300TemporalCorrelations` no relatório de `yugilab.state_interactions` e teste de integração. **Essas mudanças adicionais de pós-análise ainda não foram executadas no Windows**. Testar os dois arquivos e reprocessar o mesmo JSONL em output v2; não é necessário novo duelo. Depois, planejar controle negativo Skull ausente e controle positivo Skull confirmada face-up, mais prova de movimento real ao Cemitério.
