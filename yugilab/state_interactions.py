@@ -111,6 +111,9 @@ def analyze_capture(path: Path, *, span: int = 48) -> dict:
         "unsampledCommandEntries":0
     }
     transitions, cases, pending = [], [], []
+    skull_presence = dict(presentSamples=0, absentSamples=0,
+                          unobservedCommandEntries=0,
+                          observation="Skull index 414 visible in any physical field slot at command entry")
     header, footer = None, None
     previous_seq = 0
     with path.open(encoding="utf-8") as stream:
@@ -166,6 +169,14 @@ def analyze_capture(path: Path, *, span: int = 48) -> dict:
             else:
                 counts["unsampledCommandEntries"] += 1
                 state, last_sample_seq = None, None
+
+            # Count only actually sampled state, not inferred trap activation.
+            if event.get("stateSampled") is True and state is not None:
+                visible = any(slot["cardIndex"] == SKULL_INDEX
+                              for player in state for slot in player["fieldSlots"])
+                skull_presence["presentSamples" if visible else "absentSamples"] += 1
+            else:
+                skull_presence["unobservedCommandEntries"] += 1
 
             # A candidate is only a native CF link, not proof of card
             # resolution. The current snapshot is BEFORE this command.
@@ -224,6 +235,7 @@ def analyze_capture(path: Path, *, span: int = 48) -> dict:
         raise ValueError("Missing state baseline for a completed duel")
     return dict(file=path.name, sha256=sha, integrityOk=summary["integrityOk"],
                 terminalCommands=duel, stateTrace=counts,
+                skullFieldPresence=skull_presence,
                 transitions=transitions, rainSkullCases=cases,
                 interpretationLimit="Command-entry snapshots are non-atomic and may miss "
                                     "transient states between commands. Field exits and "
@@ -258,6 +270,10 @@ def _markdown(result: dict) -> str:
              "Snapshots na entrada do produtor (não atômicos): não são "
              "consequências atribuídas automaticamente ao comando.", ""]
     for capture in result.get("graveyardLp300TemporalCorrelations", []):
+        capture["skullFieldPresence"] = next(
+            (source["skullFieldPresence"] for source in result["captures"]
+             if source["file"] == capture["file"]),
+            dict(presentSamples=0, absentSamples=0, unobservedCommandEntries=0))
         lines.append("## Correlação temporal genérica: Cemitério e −300 LP")
         lines.append("")
         lines.append(
@@ -269,6 +285,12 @@ def _markdown(result: dict) -> str:
         lines.append("- Intervalo pós-hoc: até "
                      + str(capture["maxSeqGap"]) + " sequências nativas, "
                      "mesmo lado, sem reutilizar perdas.")
+        lines.append("- Presença de Skull no campo (amostras): " +
+                     str(capture["skullFieldPresence"]["presentSamples"]) +
+                     "; ausência observada: " +
+                     str(capture["skullFieldPresence"]["absentSamples"]) +
+                     "; entradas sem amostra: " +
+                     str(capture["skullFieldPresence"]["unobservedCommandEntries"]))
         lines.append("- Perdas de 300 sem pareamento: "
                      + str(capture["unpairedLpLoss300"]))
         lines.append("- **É correlação, não atribuição causal a Skull Invitation.**")
