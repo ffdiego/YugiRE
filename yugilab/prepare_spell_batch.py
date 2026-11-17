@@ -54,10 +54,21 @@ def prepare(
     cards_by_index = {x["internalIndex"]: x for x in cards}
     if len(cards_by_index) != len(cards):
         raise ValueError("Duplicate catalog internal indices")
-    spell_pool = [
+    candidate_pool = [
         c for c in cards
         if c["joeyAvailable"] and c["group"] == "nonMonsterClass21"
         and c["internalIndex"] not in exclude
+    ]
+    counts_by_resource = Counter(c["resourceId"] for c in candidate_pool)
+    # Some historical records can alias a resource ID. Exclude those from
+    # automated per-card attribution instead of rejecting an entire cohort.
+    ambiguous_indices = [
+        c["internalIndex"] for c in candidate_pool
+        if counts_by_resource[c["resourceId"]] != 1
+    ]
+    spell_pool = [
+        c for c in candidate_pool
+        if counts_by_resource[c["resourceId"]] == 1
     ]
     by_spell_id = {c["internalIndex"]:c for c in spell_pool}
     missing_focus = [x for x in focus if x not in by_spell_id]
@@ -75,11 +86,7 @@ def prepare(
     rng.shuffle(extras)
     normals = sorted(reviewed_normals, key=lambda c:c["internalIndex"])
     rng.shuffle(normals)
-    if len(set(c["resourceId"] for c in spell_pool)) != len(spell_pool):
-        # Shared RIDs cannot be attributed to an individual source card in
-        # the CF/CE observer; fail rather than generate misleading identity.
-        raise ValueError("Multiple spell candidates share resource IDs; "
-                         "review before attributing native effects")
+
 
     deck_files = {}
     planned = []
@@ -136,7 +143,9 @@ def prepare(
             "Do not classify absence of CF as a negative effect result.",
         seed=seed, rounds=rounds, spellsPerDeck=spells_per_deck,
         copiesPerSpell=copies_per_spell, normalsPerDeck=normal_count,
-        spellCandidatesInJoey=len(spell_pool),
+        spellCandidatesInJoey=len(candidate_pool),
+        uniqueResourceSpellCandidates=len(spell_pool),
+        excludedAmbiguousSpellIndices=ambiguous_indices,
         focusIndices=focus, excludedIndices=exclude,
         distinctSpellIndicesAcrossDecks=len(selected),
         deckPlan=planned, decks=deck_files)
