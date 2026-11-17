@@ -158,6 +158,51 @@ def extract(inputs: list[Path], resource_ids: set[int], *,
                 resourceIds=sorted(resource_ids), captures=captures, windows=windows)
 
 
+def attach_state_report(data: dict, state_report: dict) -> dict:
+    """Join CF windows to command-entry state deltas by exact capture hash.
+
+    A change observed at command N is NOT automatically caused by CF N.
+    """
+    if state_report.get("schema") != "yugire-native-state-interactions-report-v1":
+        raise ValueError("Expected native state interactions report v1")
+    sources = state_report.get("captures")
+    transitions = state_report.get("transitions")
+    if not isinstance(sources, list) or not isinstance(transitions, list):
+        raise ValueError("State report missing captures or transitions")
+    expected = {(x["file"], x["sha256"]) for x in data["captures"]}
+    actual = {(x.get("file"), x.get("sha256")) for x in sources
+              if isinstance(x, dict) and x.get("integrityOk") is True}
+    if expected != actual or len(sources) != len(expected):
+        raise ValueError("State report capture SHA256/file mismatch or invalid integrity")
+    changes_by_source: dict[tuple[str, str, int], list[dict]] = {}
+    for change in transitions:
+        if not isinstance(change, dict):
+            raise ValueError("Invalid state transition shape")
+        origin = (change.get("file"), change.get("sourceSha256"))
+        duel = change.get("duelIndex")
+        seq = change.get("seq")
+        if (origin not in expected or type(duel) is not int or duel < 0
+            or type(seq) is not int or seq < 1):
+            raise ValueError("State transition source/sequence mismatch")
+        changes_by_source.setdefault((*origin, duel), []).append(change)
+    import copy
+    merged = copy.deepcopy(data)
+    merged["stateEvidenceAttached"] = True
+    merged["stateEvidenceInterpretationLimit"] = (
+        "State snapshots are non-atomic, observed at the command producer entry. "
+        "Changes are temporal context, not effects attributed to the CF; "
+        "a graveyard count increase does not prove which card moved.")
+    for window in merged["windows"]:
+        key = (window["capture"], window["sourceSha256"], window["duelIndex"])
+        seqs = {entry["seq"] for entry in window["commands"]}
+        window["stateChangesWithinWindow"] = sorted(
+            (change for change in changes_by_source.get(key, [])
+             if change["seq"] in seqs),
+            key=lambda change: (change["seq"], change["side"], change["kind"]))
+        window["stateObservationsAreNonAtomic"] = True
+    return merged
+
+
 def markdown(data: dict) -> str:
     lines = ["# Native CF command windows", "",
              f"Captures: {len(data['captures'])}; CF windows: {len(data['windows'])}.",
@@ -181,6 +226,20 @@ def markdown(data: dict) -> str:
             lines.append(f"- Seq {change['beforeSeq']} -> {change['afterSeq']}: "
                          f"{change['lifeBefore']} -> {change['lifeAfter']}; "
                          f"delta {change['delta']}")
+        if "stateChangesWithinWindow" in window:
+            lines.extend(["", "Command-entry state changes (NOT attributed to CF):"])
+            for change in window["stateChangesWithinWindow"]:
+                kind = change["kind"]
+                if kind == "fieldSlot":
+                    label = (f"slot {change['slot']}: index "
+                             f"{change['cardBefore']} -> {change['cardAfter']}")
+                else:
+                    label = f"{change.get('before')} -> {change.get('after')}"
+                lines.append(f"- Seq {change['seq']}, side {change['side']}, "
+                             f"{kind}: {label}")
+            if not window["stateChangesWithinWindow"]:
+                lines.append("- No state change observed at these command entries.")
+            lines.append("Sampling is non-atomic; do not assign changes to CF.")
         lines += ["", "| Seq | Caller | Opcode | Args | LP |",
                   "|---:|---|---|---|---|"]
         for e in window["commands"]:
@@ -196,12 +255,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resource-ids", nargs="+", type=int, required=True)
     parser.add_argument("--before", type=int, default=12)
     parser.add_argument("--after", type=int, default=16)
+    parser.add_argument("--state-report", type=Path,
+                        help="Optional matching state-report.json (SHA256 validated)")
     parser.add_argument("--output-dir", type=Path, required=True)
     a = parser.parse_args(argv)
     try:
         if a.output_dir.exists():
             raise ValueError(f"Output directory exists: {a.output_dir}")
         result = extract(a.input, set(a.resource_ids), before=a.before, after=a.after)
+        if a.state_report is not None:
+            state = json.loads(a.state_report.read_text(encoding="utf-8"))
+            result = attach_state_report(result, state)
         a.output_dir.mkdir(parents=True)
         (a.output_dir / "windows.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2) + "\n",
