@@ -270,7 +270,7 @@ def _markdown(result: dict) -> str:
              "Snapshots na entrada do produtor (não atômicos): não são "
              "consequências atribuídas automaticamente ao comando.", ""]
     for capture in result.get("graveyardLp300TemporalCorrelations", []):
-        capture["skullFieldPresence"] = next(
+        presence = next(
             (source["skullFieldPresence"] for source in result["captures"]
              if source["file"] == capture["file"]),
             dict(presentSamples=0, absentSamples=0, unobservedCommandEntries=0))
@@ -286,11 +286,11 @@ def _markdown(result: dict) -> str:
                      + str(capture["maxSeqGap"]) + " sequências nativas, "
                      "mesmo lado, sem reutilizar perdas.")
         lines.append("- Presença de Skull no campo (amostras): " +
-                     str(capture["skullFieldPresence"]["presentSamples"]) +
+                     str(presence["presentSamples"]) +
                      "; ausência observada: " +
-                     str(capture["skullFieldPresence"]["absentSamples"]) +
+                     str(presence["absentSamples"]) +
                      "; entradas sem amostra: " +
-                     str(capture["skullFieldPresence"]["unobservedCommandEntries"]))
+                     str(presence["unobservedCommandEntries"]))
         lines.append("- Perdas de 300 sem pareamento: "
                      + str(capture["unpairedLpLoss300"]))
         lines.append("- **É correlação, não atribuição causal a Skull Invitation.**")
