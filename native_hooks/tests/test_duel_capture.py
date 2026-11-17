@@ -62,6 +62,52 @@ class FakeLiveAgent:
 
 
 class LiveDuelCaptureTests(unittest.TestCase):
+    def test_state_trace_footer_and_no_extra_seq_numbers(self):
+        events = [
+            {**command(1, 0xCF), "stateSampled": True,
+             "stateObservation": {"kind": "baseline", "nonAtomic": True,
+                                  "samplePoint": "command_producer_onEnter",
+                                  "sides": [{"side": 0}, {"side": 1}]}},
+            {**command(2, 0x0042), "stateSampled": True,
+             "stateObservation": {"kind": "delta", "nonAtomic": True,
+                                  "previousSampleSeq": 1,
+                                  "changes": [{"side": 0, "graveyardCount":
+                                               {"before": 0, "after": 1}}]}},
+            {**command(3, 0x0004), "stateSampled": True},
+        ]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 4001, 1, {}, 2400,
+                                      Path(td), trace_state=True)
+            try:
+                capture.drain()
+                summary = capture.finish(agent.tracestop(), True)
+                self.assertTrue(summary["complete"])
+                self.assertEqual(summary["eventsWritten"], 3)
+                self.assertEqual(summary["stateTrace"],
+                                 {"samples": 3, "baselines": 1, "deltas": 1,
+                                  "readErrors": 0})
+                lines = [json.loads(line)
+                         for line in capture.path.read_text(encoding="utf-8").splitlines()]
+                self.assertTrue(lines[0]["stateTrace"]["enabled"])
+                self.assertEqual([e["seq"] for e in lines[1:-1]], [1, 2, 3])
+            finally:
+                capture.close()
+
+    def test_state_trace_rejects_capture_without_baseline(self):
+        events = [{**command(1, 0x0004), "stateSampled": True,
+                   "stateReadError": "simulated unreadable memory"}]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 4001, 1, {}, 2400,
+                                      Path(td), trace_state=True)
+            try:
+                capture.drain()
+                with self.assertRaisesRegex(RuntimeError, "lacks a baseline"):
+                    capture.finish(agent.tracestop(), True)
+            finally:
+                capture.close()
+
     def test_live_drain_then_finalize_preserves_exact_event_order(self):
         events = [command(i, 0x0004 if i in (13, 45, 74) else 0x0001)
                   for i in range(1, 75)]

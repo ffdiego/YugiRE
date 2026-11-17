@@ -45,6 +45,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Optional uint32 master seed for reproducible AI demo duels")
     parser.add_argument("--seed-start-index", type=int, default=0,
                         help=argparse.SUPPRESS)
+    parser.add_argument("--trace-state", action="store_true",
+                        help="Opt-in read-only state baselines/deltas per native command "
+                             "(pilot: 1 worker, <=3 duels, no AI trace)")
     parser.add_argument("--trace-ai", action="store_true",
                         help="Also observe AI selectors, evaluations and hand snapshots")
     parser.add_argument("--allow-multi-instance", action="store_true",
@@ -72,6 +75,13 @@ def _run_native_launcher(arguments: list[str]) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.trace_state:
+        if args.workers != 1:
+            parser.error("--trace-state pilot requires --workers 1")
+        if args.duels > 3:
+            parser.error("--trace-state pilot is limited to at most 3 duels")
+        if args.trace_ai:
+            parser.error("--trace-state pilot must run without --trace-ai")
     if args.workers > 16:
         parser.error("--workers must be <= 16 (test 2 or 4 before 10)")
     if args.workers > args.duels:
@@ -127,6 +137,8 @@ def main(argv: list[str] | None = None) -> int:
             forwarded += [f"--deck-{side}", str(deck)]
     if args.trace_ai:
         forwarded.append("--trace-ai")
+    if args.trace_state:
+        forwarded.append("--trace-state")
     if args.seed is not None:
         forwarded += ["--seed", str(args.seed),
                       "--seed-start-index", str(args.seed_start_index)]

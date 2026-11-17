@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-const source = fs.readFileSync(path.resolve(__dirname, '../yugire_dual_loader.js'), 'utf8');
+const source = fs.readFileSync(path.resolve(__dirname, '../native_state_sampler.js'), 'utf8')
+  + '\n' + fs.readFileSync(path.resolve(__dirname, '../yugire_dual_loader.js'), 'utf8');
 
 function fixture(options = {}) {
   let currentThread = 778;
@@ -1279,3 +1280,36 @@ combatStopped.api.tracestop();
 assert.equal(combatStopped.api.traceevents(0,100).filter(e=>e.kind==='combat_context').length,1);
 combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
+
+
+// Opt-in command-entry state instrumentation uses the EXISTING producer
+// listener, and must not perturb sequence numbers or the default trace.
+const stateTrace = fixture();
+stateTrace.api.armstartupobserver();
+stateTrace.api.tracestart(64);
+assert.equal(stateTrace.api.tracestatus().stateActive, false);
+assert.equal(stateTrace.api.tracestateon().stateActive, true);
+stateTrace.command(0xCF, 0x00000523, 0, 0, 0x57977F);
+const field5 = 0x00A55D64 + 0x10 + 5 * 0x90;
+stateTrace.memory.set(field5, 414);
+stateTrace.memory.set(0x00A55D64 + 6, 1);
+stateTrace.command(0x42, 1000, 0, 1, 0x578823);
+stateTrace.command(0x04, 0, 0, 0, 0x5bc545);
+const traceStatus = stateTrace.api.tracestatus();
+assert.equal(traceStatus.stateSamples, 3);
+assert.equal(traceStatus.stateBaselines, 1);
+assert.ok(traceStatus.stateDeltas >= 1);
+assert.equal(traceStatus.completedDuels, 1);
+stateTrace.api.tracestop();
+const stateEvents = stateTrace.api.traceevents(0,32);
+const stateCommands = stateEvents.filter(x => x.kind === 'command');
+assert.equal(stateCommands.length, 3);
+assert.equal(stateCommands[0].stateObservation.kind, 'baseline');
+assert.equal(stateCommands[1].stateObservation.kind, 'delta');
+assert.equal(stateCommands[1].stateObservation.previousSampleSeq, stateCommands[0].seq);
+assert.equal(stateCommands[1].stateObservation.changes[0].graveyardCount.after, 1);
+assert.equal(stateCommands[1].stateObservation.changes[0].fieldSlots[0].after.cardIndex, 414);
+assert.equal(stateCommands[2].stateSampled, true);
+assert.equal(stateTrace.api.tracestatus().stateActive, false);
+stateTrace.api.restore();
+console.log('PASS: opt-in state baseline/deltas preserve command seq and terminate with trace');
