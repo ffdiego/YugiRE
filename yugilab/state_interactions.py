@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .discovery import _capture_summary
 from .effect_report import _candidate, _opcode, gather
+from .temporal_correlations import correlate_graveyard_lp300
 
 SCALARS = ("lifePoints", "handCount", "deckCount", "graveyardCount",
            "terminalFlags", "rawPlayerStatusByte8")
@@ -240,6 +241,10 @@ def summarize(inputs: list[Path], *, span: int = 48) -> dict:
                           for c in captures],
                 transitions=[dict(file=c["file"], sourceSha256=c["sha256"], **t)
                              for c in captures for t in c["transitions"]],
+                graveyardLp300TemporalCorrelations=[
+                    dict(file=c["file"], sourceSha256=c["sha256"],
+                         **correlate_graveyard_lp300(c["transitions"]))
+                    for c in captures],
                 rainSkullCases=[case for c in captures for case in c["rainSkullCases"]],
                 interpretationLimit="Temporal association is not causal validation of "
                                     "a card's effect or true graveyard card identity.")
@@ -252,6 +257,22 @@ def _markdown(result: dict) -> str:
              f"{len(result['rainSkullCases'])}.", "",
              "Snapshots na entrada do produtor (não atômicos): não são "
              "consequências atribuídas automaticamente ao comando.", ""]
+    for capture in result.get("graveyardLp300TemporalCorrelations", []):
+        lines.append("## Correlação temporal genérica: Cemitério e −300 LP")
+        lines.append("")
+        lines.append(
+            f"- Captura: `{capture['file']}`; aumentos unitários de "
+            f"Cemitério: **{capture['unitGraveyardIncreases']}**; "
+            f"perdas de 300 LP: **{capture['lpLoss300Count']}**; "
+            f"pares temporais: **{capture['pairedCount']}**."
+        )
+        lines.append("- Intervalo pós-hoc: até "
+                     + str(capture["maxSeqGap"]) + " sequências nativas, "
+                     "mesmo lado, sem reutilizar perdas.")
+        lines.append("- Perdas de 300 sem pareamento: "
+                     + str(capture["unpairedLpLoss300"]))
+        lines.append("- **É correlação, não atribuição causal a Skull Invitation.**")
+        lines.append("")
     for case in result["rainSkullCases"]:
         lines.extend([
             f"## Rain CF seq {case['rainCfSeq']} — duelo {case['duelIndex']+1}", "",
