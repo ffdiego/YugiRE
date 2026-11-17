@@ -27,7 +27,7 @@ Sogen **internalIndex=490**, `resourceId=332`, CF observado nas seq **421** (due
 
 **Controle interno relevante:** monstro **147** no **duelo 2, seq943**, quando Sogen **não** foi observada no campo, tem **800/800** (sem delta). Assim, para a mesma identidade, os snapshots mostram 800/800 sem campo versus 1000/1000 com campo, com +200 nas duas dimensões.
 
-**Tabela agregada por tipo/campo, sem duplicar snapshots:** classe15 com Sogen **6/6 snapshots com +200/+200**; classe15 sem Sogen **1/1 sem alteração**; nos **demais 94 snapshots de monstro** enquanto Sogen esteve presente, o delta ATK/DEF é **0/0**, inclusive múltiplas classes não elegíveis. Essa segunda contagem deve ser revalidada mecanicamente se for usada como métrica formal; o resultado básico (todos os não-15 com campo sem delta) foi calculado no relatório. Não afirmamos ainda que o código 15 mapeia exaustivamente todos os tipos elegíveis a Sogen. A documentação já associa o tipo15 à elegibilidade para Legendary Sword (Warrior), enquanto o texto da carta Sogen também contempla Beast-Warrior. **Não foi isolado um Beast-Warrior nesta campanha.**
+**Tabela agregada por tipo/campo, sem duplicar snapshots:** classe15 com Sogen **6/6 snapshots com +200/+200**; classe15 sem Sogen **1/1 sem alteração**; nos **outros 75 snapshots de monstros de classe distinta de 15** enquanto Sogen esteve presente, o delta ATK/DEF é **0/0** (contagem recalculada diretamente do JSON do audit, ignorando os blocos de índice 0). Não afirmamos ainda que o código 15 mapeia exaustivamente todos os tipos elegíveis a Sogen. A documentação já associa o tipo15 à elegibilidade para Legendary Sword (Warrior), enquanto o texto da carta Sogen também contempla Beast-Warrior. **Não foi isolado um Beast-Warrior nesta campanha.**
 
 **Associações brutas:** nas seq **507** e **1337**, há `referenceWord=0x0A00` com `metadataWord=8`, porém nos monstros **550** e **886**, respectivamente, e **não** nos monstros beneficiados 147. Nos outros quatro snapshots +200/+200 não aparece nenhuma associação de campo candidata `0x0A00/0x0A01` nos monstros presentes. Logo, **não é necessário observar essa associação no beneficiado para medir +200/+200 no cálculo**. Não concluir que os marcadores de campo não participam de alguma etapa; seu significado ainda precisa de RE.
 
@@ -47,7 +47,7 @@ Todos os cinco incluem `0x31` com valor 200, `0x43` emitindo 200 e LP do lado ad
 
 ## Conclusões em camadas
 
-**Observado diretamente:** a leitura opt-in de ambos os blocos de 16 bytes é funcional, o pareamento cardIndex/ATK/DEF com o catálogo tem consistência, e o bônus exato +200/+200 está presente para a classe15 em duas batalhas/duelos diferentes (6 snapshots), ausente para o índice147 sem Sogen. Os cinco danos antigos passam por batalhas com ATK diferença200 sem buffs observados nos respectivos pares.
+**Observado diretamente:** a leitura opt-in de ambos os blocos de 16 bytes é funcional, o pareamento cardIndex/ATK/DEF com o catálogo tem consistência, e o bônus exato +200/+200 está presente para a classe15 nos duelos 1 e 3 (6 snapshots), ausente para o índice147 sem Sogen. Os cinco danos antigos passam por batalhas com ATK diferença200 sem buffs observados nos respectivos pares.
 
 **Hipótese fortemente apoiada:** o bônus dinâmico de Sogen para monstros elegíveis está sendo aplicado pelo cálculo de atributos de batalha, mesmo quando não há `0x0A00` associado diretamente ao monstro beneficiado.
 
