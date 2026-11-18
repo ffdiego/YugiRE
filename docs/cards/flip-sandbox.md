@@ -8,6 +8,7 @@ Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib
 | Man-Eater Bug | 500 (pack Yugi) | FLIP: destrói um monstro selecionado |
 | Morphing Jar | 590 (pack Kaiba) | FLIP: descarta as mãos dos dois jogadores e cada um compra 5 |
 | Penguin Soldier | 601 (pack Joey) | FLIP: devolve **até dois** monstros à mão de seus donos |
+| Hane-Hane | 540 (pack Yugi) | FLIP: devolve **exatamente um** monstro à mão do dono, se existir alvo válido |
 
 **Morphing Jar #2** (`1163`) é carta distinta e permanece `Pending`.
 
@@ -36,6 +37,22 @@ monstros por outro jogador e regras do Extra Deck não existem aqui). Alvos
 são únicos e validados no momento da resolução; equipamentos associados
 vão ao cemitério do dono. Não é permitido retornar qualquer outro monstro
 também marcado para destruição no mesmo combate.
+
+### Hane-Hane
+
+Hane-Hane (`resourceId=540`, perfil nativo `P080`, pack Yugi)
+compartilha o mecanismo de retorno à mão com Penguin Soldier, mas exige
+**um único alvo legal**, em vez de permitir 0–2. Ao selecioná-lo, a
+resolução acontece automaticamente, sem botão Done. Se nenhum alvo legal
+existir (por exemplo, todos os monstros restantes já estão marcados
+para destruição por batalha), o FLIP não abre uma seleção impossível.
+
+Pode devolver a si mesmo quando não está marcado para destruição,
+inclusive após Flip Summon ou ao sobreviver a uma batalha; não pode
+devolver a si mesmo quando vai ser destruído naquele combate.
+A limpeza de equipamento e o envio à mão utilizam o mesmo caminho
+da infraestrutura de Penguin Soldier. A verificação original de
+`P080` no Windows ainda está pendente; `Done` mede somente o sandbox.
 
 ### Man-Eater Bug e Morphing Jar
 
@@ -66,7 +83,7 @@ insuficientes geram `IsDraw`. Não afirmar paridade histórica dessa política.
 
 Correntes, efeitos que negam FLIP, controle de monstros, cartas de fusão
 retornando ao Extra Deck, substituição de destruição e validação de timing
-contra o executável original. Os três recursos são `Done` apenas no escopo
+contra o executável original. Os quatro recursos são `Done` apenas no escopo
 de sandbox; nenhum vira `Verified`.
 
 Referências:

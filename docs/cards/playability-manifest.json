@@ -448,21 +448,24 @@
         "Draw five",
         "Battle continuation",
         "Return up to two monsters to owner's hand",
-        "Battle destruction determination before FLIP"
+        "Battle destruction determination before FLIP",
+        "Hane-Hane mandatory single-target return, with no-legal-target fallback"
       ],
       "status": "Done",
       "resourceIds": [
         500,
+        540,
         590,
         601
       ],
       "evidence": [
         "src/Joey.Core/FlipEffectRules.cs",
         "src/Joey.Core/Demo.cs",
-        "src/tests/Joey.Tests/FlipMonsterChecks.cs"
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "src/tests/Joey.Tests/HaneHaneChecks.cs"
       ],
       "limitations": [
-        "Done in the bounded C# sandbox: 3 FLIP monsters reveal by Flip Summon, battle or explicit effect; Penguin Soldier chooses 0-2 targets and excludes battle-destroyed monsters from returning.",
+        "Done only in the bounded C# sandbox: four FLIP monsters reveal on Flip Summon, battle or explicit effect; Penguin Soldier allows 0-2 returns; Hane-Hane requires one legal return target when available and excludes monsters marked for battle destruction.",
         "Damage calculation precedes FLIP; marked monsters remain on field during resolution and leave at end of this simplified Damage Step.",
         "Chains, suppression, effect redirection, fusion returns, card ownership changes and full native 2004 timing remain unsupported.",
         "Morphing Jar's both-decks-short policy is a sandbox draw, not certified Joey behavior."

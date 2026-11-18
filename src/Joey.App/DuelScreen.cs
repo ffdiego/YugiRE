@@ -162,7 +162,8 @@ static partial class Game
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, tributeZones.Contains(zone) ? Color.Red : Color.White);
                 if (duel.SelectedFlipTargets.Any(t => t.Player == player && t.Zone == zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 4, Color.SkyBlue);
-                if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+                if (duel.PendingFlipTarget is
+                    { Effect: DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne } &&
                     duel.IsMarkedForBattleDestruction(player, zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
                 if (duel.Spells[player, zone] is Card spell)
@@ -264,9 +265,14 @@ static partial class Game
         DrawSpellActivation(frameElapsed);
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
-            string help = flip.Effect == DemoFlipEffect.ReturnUpToTwo
-                ? $"P{flip.Owner + 1} Penguin: {duel.SelectedFlipTargets.Count}/2, select or Done"
-                : $"P{flip.Owner + 1} FLIP: choose any monster on the field";
+            string help = flip.Effect switch
+            {
+                DemoFlipEffect.ReturnUpToTwo =>
+                    $"P{flip.Owner + 1} Penguin: {duel.SelectedFlipTargets.Count}/2, select or Done",
+                DemoFlipEffect.ReturnOne =>
+                    $"P{flip.Owner + 1} Hane-Hane: choose ONE eligible monster",
+                _ => $"P{flip.Owner + 1} FLIP: choose any monster on the field"
+            };
             Label(help, 248, 78, 13, Gold);
         }
         if (message != previousDuelMessage)

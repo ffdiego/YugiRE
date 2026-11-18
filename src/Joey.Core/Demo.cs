@@ -128,8 +128,9 @@ public sealed class DemoDuel
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
         var warrior = all.FirstOrDefault(c => c.ClassCode == 15);
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
-        // Put both featured FLIP monsters in the first hand of the local demo.
-        foreach (ushort id in new ushort[] { FlipEffectRules.PenguinSoldier, FlipEffectRules.MorphingJar, FlipEffectRules.ManEaterBug })
+        // Prioritize featured FLIP monsters in the local demo's opening hand.
+        foreach (ushort id in new ushort[] { FlipEffectRules.PenguinSoldier, FlipEffectRules.MorphingJar,
+                                             FlipEffectRules.ManEaterBug, FlipEffectRules.HaneHane })
         {
             var flip = all.FirstOrDefault(c => c.Id == id);
             if (flip is null) continue;
@@ -559,6 +560,22 @@ public sealed class DemoDuel
                 flipSelections.Clear();
                 message = $"{card.Name} FLIP (P{owner + 1}): choose up to two monsters to return to hand, then Done.";
                 break;
+            case DemoFlipEffect.ReturnOne:
+                // An obligatory single-target effect only starts target selection
+                // when a monster can legally return. Both battle-destroyed
+                // combatants may still occupy the field during the Damage Step.
+                bool anyEligible = Enumerable.Range(0, 2).Any(p =>
+                    Enumerable.Range(0, 5).Any(z =>
+                        Monsters[p, z] is not null && !IsMarkedForBattleDestruction(p, z)));
+                if (!anyEligible)
+                {
+                    message = $"{card.Name} FLIP: no eligible monster remains to return.";
+                    break;
+                }
+                PendingFlipTarget = new(owner, zone, card, DemoFlipEffect.ReturnOne);
+                flipSelections.Clear();
+                message = $"{card.Name} FLIP (P{owner + 1}): choose exactly one monster to return to its owner's hand.";
+                break;
             case DemoFlipEffect.ReplaceHands:
                 for (int p = 0; p < 2; p++)
                 {
@@ -580,9 +597,9 @@ public sealed class DemoDuel
     }
 
     /// <summary>
-    /// Select a FLIP target. Penguin Soldier allows 0, 1, or 2 monsters,
-    /// and selection alone does not remove anything until FinishFlipTargets.
-    /// Battle-destroyed monsters still on the field are ineligible for return.
+    /// Select a FLIP target. Penguin Soldier accepts 0-2 optional targets;
+    /// Hane-Hane requires exactly one if any target is eligible. A monster
+    /// already marked for battle destruction cannot be returned to hand.
     /// </summary>
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
@@ -591,7 +608,7 @@ public sealed class DemoDuel
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
             Monsters[targetPlayer, targetZone] is not Card target) return false;
 
-        if (pending.Effect == DemoFlipEffect.ReturnUpToTwo)
+        if (pending.Effect is DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne)
         {
             if (IsMarkedForBattleDestruction(targetPlayer, targetZone))
             {
@@ -604,6 +621,8 @@ public sealed class DemoDuel
                 return false;
             }
             flipSelections.Add(new(targetPlayer, targetZone, target));
+            if (pending.Effect == DemoFlipEffect.ReturnOne)
+                return CompleteReturnTargets(out message);
             message = $"{pending.SourceCard.Name}: selected {flipSelections.Count}/2 target(s). Choose another or Done.";
             if (flipSelections.Count == 2)
                 return FinishFlipTargets(out message);
@@ -621,7 +640,17 @@ public sealed class DemoDuel
     public bool FinishFlipTargets(out string message)
     {
         message = "No optional FLIP target selection is pending.";
-        if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnUpToTwo } pending) return false;
+        if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnUpToTwo }) return false;
+        return CompleteReturnTargets(out message);
+    }
+
+    private bool CompleteReturnTargets(out string message)
+    {
+        message = "No return-target FLIP effect is pending.";
+        if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo } pending)
+            return false;
+        if (pending.Effect == DemoFlipEffect.ReturnOne && flipSelections.Count != 1)
+            return false;
         // Clear the pending interaction before cleaning up equipped monsters.
         var targets = flipSelections.ToArray();
         flipSelections.Clear();

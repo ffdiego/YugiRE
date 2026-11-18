@@ -49,7 +49,8 @@
 - [ ] Primitivos de compra, descarte, destruição e movimentação entre zonas.
 - [x] Primeira família `OnFlip` jogável: Man-Eater Bug e Morphing Jar, com flip summon, revelação durante batalha, seleção de alvo, suspensão/continuação de combate, descarte e compra das duas mãos; testes + UI local.
 - [x] Implementar Penguin Soldier (601, pack Joey): 0–2 alvos, auto-retorno apenas se não marcado para destruição em batalha, danos antes do FLIP, hook de revelação por efeito, interface e testes.
-- [ ] Expandir FLIP com Morphing Jar #2, Hane-Hane e mais cartas; manter gatilhos e tipos específicos.
+- [x] Implementar Hane-Hane (540, pack Yugi): seleção obrigatória de um único alvo, fallback sem alvos, auto-retorno após Flip Summon/sobrevivência, e restrição na destruição de batalha; regressões e UI.
+- [ ] Próxima fatia: Morphing Jar #2 (1163, pack Joey): embaralhar monstros nos decks dos donos, escavar até quota, special summon face-down dos de nível 4 ou inferior; investigar diferenças de texto de 2004, limites de zona, fusão, deck-out e sementes antes de marcar Done.
 - [ ] Refinar resolução FLIP: janelas de resposta, negadores, deck-out nativo e mais gatilhos sob demanda.
 - [ ] Gatilhos do cemitério/batalha, depois armadilhas comuns (Trap Hole, Mirror Force) e correntes/respostas, sem fingir que uma fila simples cobre todos os casos.
 

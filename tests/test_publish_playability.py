@@ -12,13 +12,13 @@ class PublishedPlayabilityTests(unittest.TestCase):
         all_cards = counts(cards, status, subtypes, 7)
         joey = counts(cards, status, subtypes, 4)
         self.assertEqual((len(cards), all_cards["total"], joey["total"]), (771, 771, 350))
-        self.assertEqual((all_cards["done"], all_cards["pct"]), (290, 37.61))
+        self.assertEqual((all_cards["done"], all_cards["pct"]), (291, 37.74))
         self.assertEqual((joey["done"], joey["pct"]), (84, 24.0))
         self.assertEqual(all_cards["bykind"]["Monster"]["total"], 499)
         self.assertEqual(all_cards["bykind"]["Spell"]["total"], 172)
         self.assertEqual(all_cards["bykind"]["Trap"]["total"], 100)
         self.assertEqual(all_cards["bykind"]["Spell"]["Partial"], 3)
-        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 267)
+        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 268)
 
     def test_public_subtypes_are_explicit_not_playability(self):
         cards, status, subtypes, sources = load()
@@ -30,6 +30,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(status.get(500), "Done")  # Man-Eater Bug FLIP playable in sandbox
         self.assertEqual(status.get(590), "Done")  # Morphing Jar FLIP playable in sandbox
         self.assertEqual(status.get(601), "Done")  # Penguin Soldier FLIP target return
+        self.assertEqual(status.get(540), "Done")  # Hane-Hane mandatory single return
         self.assertEqual(status.get(332), "Done")
         self.assertEqual(len(sources), 6)
 
@@ -43,7 +44,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         one = json.loads(next(content for path, content in files.items()
                               if path.name == "all-packs.json"))
         self.assertEqual(one["schemaVersion"], 1)
-        self.assertEqual(one["message"], "290/771 (37.61%)")
+        self.assertEqual(one["message"], "291/771 (37.74%)")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
         card = {"internalIndex": 91, "resourceId": 1163,
