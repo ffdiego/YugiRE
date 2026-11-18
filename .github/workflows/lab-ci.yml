@@ -54,6 +54,8 @@ jobs:
           done
       - name: Native state sampler JavaScript tests
         run: node native_hooks/tests/test_native_state_sampler.cjs
+      - name: Native computed battle attributes JavaScript tests
+        run: node native_hooks/tests/test_native_battle_attributes.cjs
       - name: Native command listener mock integration
         run: node native_hooks/tests/test_loader.cjs
 
