@@ -24,6 +24,13 @@ public sealed class DemoDuel
     public int DeckCount(int player) => decks[player].Count;
     public Card?[,] Monsters { get; } = new Card?[2, 5];
     public Card?[,] Spells { get; } = new Card?[2, 5];
+    // One dedicated field-spell zone per player; at most one is face-up.
+    // These arrays are also writable by bounded sandbox fixtures, like Spells.
+    public Card?[] FieldSpells { get; } = new Card?[2];
+    public bool[] FieldSpellFaceDown { get; } = new bool[2];
+    public Card? ActiveFieldSpell => Enumerable.Range(0, 2)
+        .Where(p => !FieldSpellFaceDown[p])
+        .Select(p => FieldSpells[p]).FirstOrDefault(card => card is not null);
     public int[] Life { get; } = [8000, 8000];
     public int Turn { get; private set; } = 1;
     public int ActivePlayer => (Turn - 1) % 2;
@@ -96,7 +103,9 @@ public sealed class DemoDuel
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
         var warrior = all.FirstOrDefault(c => c.ClassCode == 15);
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
-        var spells = all.Where(c => EquipmentRules.Supports(c.Id) || LifePointSpellRules.Supports(c.Id)).OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
+        var spells = all.Where(c => EquipmentRules.Supports(c.Id) ||
+            LifePointSpellRules.Supports(c.Id) || FieldSpellRules.Supports(c.Id))
+            .OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
         {
@@ -115,9 +124,13 @@ public sealed class DemoDuel
     public int FirstFreeSpellZone() => Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
     public bool CanSetFromHand(int index) => index >= 0 && index < Hand.Count && (Hand[index].IsMonster
         ? CanSummonFromHand(index)
-        : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 && FirstFreeSpellZone() >= 0);
+        : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 &&
+          (FieldSpellRules.Supports(Hand[index].Id) ? FieldSpells[ActivePlayer] is null : FirstFreeSpellZone() >= 0));
     public bool CanActivateFromHand(int index) => Winner == null && Phase == DemoPhase.Main &&
-        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) || Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id));
+        index >= 0 && index < Hand.Count &&
+        (FieldSpellRules.Supports(Hand[index].Id) ||
+        (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
+            Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
     public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
         Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
@@ -126,6 +139,15 @@ public sealed class DemoDuel
         message = "Set unavailable: choose a card in main phase with a free matching zone.";
         if (!CanSetFromHand(index)) return false;
         if (Hand[index].IsMonster) return SummonLeftmost(index, true, out message, tributes);
+        if (FieldSpellRules.Supports(Hand[index].Id))
+        {
+            // Setting a new field spell does not replace the opponent's active one.
+            FieldSpells[ActivePlayer] = Hand[index];
+            FieldSpellFaceDown[ActivePlayer] = true;
+            hands[ActivePlayer].RemoveAt(index);
+            message = "Field Spell set face-down in its dedicated zone.";
+            return true;
+        }
         int zone = FirstFreeSpellZone();
         Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = true;
         hands[ActivePlayer].RemoveAt(index);
@@ -168,8 +190,21 @@ public sealed class DemoDuel
     }
     public bool Play(int index, out string message)
     {
-        message = "Use a supported direct damage spell or Infinite Cards; select a compatible face-up monster for a supported equipment.";
+        message = "Choose a supported LP, Field or continuous spell; equipment needs a compatible face-up monster.";
         if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
+        if (FieldSpellRules.Supports(Hand[index].Id))
+        {
+            Card field = Hand[index];
+            // A face-up Field Spell on either side is replaced; a set card on
+            // the opponent's side remains face-down until they activate it.
+            ReplaceActiveFields();
+            if (FieldSpells[ActivePlayer] is not null) SendFieldSpellToGraveyard(ActivePlayer);
+            FieldSpells[ActivePlayer] = field;
+            FieldSpellFaceDown[ActivePlayer] = false;
+            hands[ActivePlayer].RemoveAt(index);
+            message = $"{field.Name}: active Field Spell (Warriors gain +200 ATK/DEF).";
+            return true;
+        }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
         if (Hand[index].Id == 0x593)
         {
@@ -208,6 +243,43 @@ public sealed class DemoDuel
         message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
         return true;
     }
+    public bool ActivateSetFieldSpell(out string message)
+    {
+        message = "Only a set Field Spell in your own zone can activate during Main Phase.";
+        int owner = ActivePlayer;
+        if (Winner != null || Phase != DemoPhase.Main ||
+            FieldSpells[owner] is not Card field || !FieldSpellFaceDown[owner] ||
+            !FieldSpellRules.Supports(field.Id)) return false;
+        ReplaceActiveFields();
+        FieldSpellFaceDown[owner] = false;
+        message = $"{field.Name}: active Field Spell (Warriors gain +200 ATK/DEF).";
+        return true;
+    }
+
+    private void ReplaceActiveFields()
+    {
+        // One active Field Spell globally in this 2004-style demo.
+        for (int p = 0; p < 2; p++)
+            if (FieldSpells[p] is not null && !FieldSpellFaceDown[p])
+                SendFieldSpellToGraveyard(p);
+    }
+
+    private void SendFieldSpellToGraveyard(int owner)
+    {
+        if (FieldSpells[owner] is not Card field) return;
+        graves[owner].Add(field);
+        FieldSpells[owner] = null;
+        FieldSpellFaceDown[owner] = false;
+    }
+
+    /// <summary>Sandbox removal hook; not a claim about native destruction timing.</summary>
+    public bool RemoveFieldSpell(int owner)
+    {
+        if (owner is < 0 or > 1 || FieldSpells[owner] is null) return false;
+        SendFieldSpellToGraveyard(owner);
+        return true;
+    }
+
     private void ApplyLifePointSpell(LifePointSpellChange change)
     {
         ChangeLife(ActivePlayer, change.CasterDelta);
@@ -224,7 +296,8 @@ public sealed class DemoDuel
     private NativeAiStats EquipmentStats(int p, int z)
     {
         if (Monsters[p, z] is not Card monster) return default;
-        // Demo policy: no intrinsic, field, type/attribute-changing or suppression effects.
+        // Demo policy: no intrinsic/type-changing or suppression effects. Field
+        // contributions are added on demand to equipment before the final clamp.
         var stats = new NativeAiStats((ushort)monster.Index, (byte)monster.ClassCode,
             (byte)(monster.Properties >> 29), monster.Attack, monster.Defense);
         if (MonsterFaceDown[p, z]) return stats; // Native calculation returns before equipment deltas.
@@ -238,7 +311,14 @@ public sealed class DemoDuel
             if (!delta.IsSupported) throw new InvalidOperationException("Unsupported equipment in demo link list");
             sum = new(unchecked(sum.Attack + delta.Value.Attack), unchecked(sum.Defense + delta.Value.Defense));
         }
-        // Accumulate all deltas first; add to base and clamp once. Other tail stages are absent in this sandbox.
+        // Field Spell is a separate global modifier, not an equipment link.
+        // Do not cache: activation, replacement or removal changes stats immediately.
+        if (ActiveFieldSpell is Card field)
+        {
+            var bonus = FieldSpellRules.Bonus(field.Id, monster.ClassCode);
+            sum = new(sum.Attack + bonus.Attack, sum.Defense + bonus.Defense);
+        }
+        // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
     }
     private EquipmentTargetContext DemoEquipmentTarget(int player, int zone)

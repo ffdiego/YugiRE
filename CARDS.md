@@ -17,7 +17,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Equipamentos `P025` | **Partial** (3 IDs) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo | Faltam demais famílias, supressões e interações |
-| Magias de campo `P036` | **Pending** em C# | Evidência nativa para Sogen em `docs/evidence/` | Zona/cálculo de campo ainda inexistentes no demo |
+| Magias de campo `P036` | **Partial** (Sogen Warrior jogável) | `FieldSpellRules.cs`, zona exclusiva, ativação da mão/set, substituição, batalha, UI e `FieldSpellChecks.cs` | Beast-Warrior e outras magias `P036` ainda não implementados; timing/negação sem paridade nativa |
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Falta ciclo de resolução/gatilhos |
 
@@ -37,6 +37,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | 340 | Soul of the Pure | Done (sandbox) | Recupera 800 LP do ativador |
 | 341 | Dian Keto the Cure Master | Done (sandbox) | Recupera 1000 LP do ativador |
 | 1315 | Rain of Mercy | Done (sandbox) | Recupera 1000 LP dos dois duelistas |
+| 332 | Sogen | Done (sandbox, Warrior somente) | Zona de campo, +200/+200 para classe 15 em ambos os lados, retirada/substituição dinâmica; Beast-Warrior pendente |
 | 300 | Legendary Sword | Partial | `P025`, Warrior tipo 15, +300/+300 sob condições suportadas |
 | 301 | Sword of Dark Destruction | Partial | `P025`, atributo DARK, +400/-200 sob condições suportadas |
 | 307 | Beast Fangs | Partial | `P025`, Beast tipo 11, +300/+300 sob condições suportadas |
@@ -46,11 +47,15 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 
 | Resource ID | Carta / família | Estado do conhecimento |
 | ---: | --- | --- |
-| 332 | Sogen | 69 snapshots de atributos de batalha no piloto; 6 ocorrências classe15 com +200/+200, sem controle causal isolado e sem Beast-Warrior |
+| 332 | Sogen | 69 snapshots de atributos de batalha no piloto; 6 ocorrências classe15 com +200/+200. Agora jogável **para Warrior** no sandbox, sem controle causal isolado, classe Beast-Warrior ou equivalência nativa geral |
 | 1315 | Rain of Mercy | Aumento de 1000 LP observado em captura do original; efeito simples agora jogável no sandbox, sem paridade completa |
 | 1306 | Skull Invitation | Correlação de perdas de 300 LP e controle negativo observacional |
 | 1353 | Burning Land | Ticks de 500 LP relatados em evidência, ainda sem regra C# completa |
 | — | Rituais `P269` | Dados de rituais em `docs/evidence/ritual-rules-catalog.json`; falta jogabilidade |
+
+## Primeiro cenário de magia de campo
+
+A zona de campo é independente dos cinco slots de magia/armadilha. O efeito de Sogen é calculado sob demanda para ambos os lados, sem modificar ATK/DEF-base, e combina com equipamentos antes da saturação final. Cartas setadas não aplicam bônus; ativar uma nova magia de campo remove a anterior para o cemitério de seu dono. O jogador pode ativar o Sogen setado clicando na zona **FIELD** na interface local. Essa é uma política de sandbox com suporte explícito a **Warrior / classCode 15**; ainda faltam Beast-Warrior, outras magias de campo, gatilhos e supressões.
 
 ## Próxima lacuna concreta
 

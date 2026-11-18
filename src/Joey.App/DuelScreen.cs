@@ -120,6 +120,17 @@ static partial class Game
         for (int player = 0; player < 2; player++)
         {
             bool own = player == duel.ActivePlayer;
+            // Dedicated field zone, independent of the five ordinary spell slots.
+            var fieldRect = new Rectangle(248, own ? 416 : 96, 66, 88);
+            Raylib.DrawRectangleLinesEx(fieldRect, 1, own ? Gold : Color.Gray);
+            Label("FIELD", (int)fieldRect.X + 7, (int)fieldRect.Y - 15, 11, Gold);
+            if (duel.FieldSpells[player] is Card fieldCard)
+            {
+                DrawFieldCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
+                if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
+                    Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect))
+                    duel.ActivateSetFieldSpell(out message);
+            }
             for (int zone = 0; zone < 5; zone++)
             {
                 int x = 336 + (own ? zone : 4 - zone) * 78;
