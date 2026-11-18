@@ -25,7 +25,7 @@ def fixture():
         row(2, 332, 22, 7),    # Sogen Done
         row(3, 300, 22, 4),    # Legendary Sword Partial
         row(4, 1056, 21, 4),   # Mirror Force Trap Pending
-        row(5, 11, 15, 1),     # Generic Monster Pending
+        row(5, 3999, 15, 1),     # Generic Monster Pending
         row(6, 1427, 22, 0),  # Infinite Cards implemented, outside the scope
     ], "fingerprints": {"datSha256": "a" * 64}}
 
@@ -63,7 +63,7 @@ class CardPlayabilityTests(unittest.TestCase):
         self.assertEqual(union["genericMonsterBasics"], 1)
         self.assertEqual(union["unclassifiedSubtypes"], 2)
         self.assertEqual(next(r for r in rows if r["resourceId"] == 300)["callbackProfile"], "P025")
-        self.assertTrue(next(r for r in rows if r["resourceId"] == 11)["basicMonsterMechanics"])
+        self.assertTrue(next(r for r in rows if r["resourceId"] == 3999)["basicMonsterMechanics"])
         self.assertNotIn("1427", [str(r["resourceId"]) for r in rows if r["packMask"] & 7])
 
     def test_report_and_csv_are_readable_without_original_dat(self):
