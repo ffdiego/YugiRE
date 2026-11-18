@@ -180,6 +180,7 @@ else DeckTraceChecks.Run(Check);
 DirectDamageChecks.Run(Check);
 LifePointSpellChecks.Run(Check);
 FieldSpellChecks.Run(Check);
+AttributeFieldSpellChecks.Run(Check);
 EquipmentChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);

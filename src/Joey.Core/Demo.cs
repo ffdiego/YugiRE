@@ -202,7 +202,7 @@ public sealed class DemoDuel
             FieldSpells[ActivePlayer] = field;
             FieldSpellFaceDown[ActivePlayer] = false;
             hands[ActivePlayer].RemoveAt(index);
-            message = $"{field.Name}: active Field Spell (Warriors gain +200 ATK/DEF).";
+            message = $"{field.Name}: {FieldSpellRules.EffectSummary(field.Id)}";
             return true;
         }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
@@ -252,7 +252,7 @@ public sealed class DemoDuel
             !FieldSpellRules.Supports(field.Id)) return false;
         ReplaceActiveFields();
         FieldSpellFaceDown[owner] = false;
-        message = $"{field.Name}: active Field Spell (Warriors gain +200 ATK/DEF).";
+        message = $"{field.Name}: {FieldSpellRules.EffectSummary(field.Id)}";
         return true;
     }
 
@@ -315,7 +315,7 @@ public sealed class DemoDuel
         // Do not cache: activation, replacement or removal changes stats immediately.
         if (ActiveFieldSpell is Card field)
         {
-            var bonus = FieldSpellRules.Bonus(field.Id, monster.ClassCode);
+            var bonus = FieldSpellRules.Bonus(field.Id, monster.ClassCode, (byte)(monster.Properties >> 29));
             sum = new(sum.Attack + bonus.Attack, sum.Defense + bonus.Defense);
         }
         // Accumulate all contributions and clamp once. Other native stages are absent.

@@ -17,13 +17,13 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Equipamentos `P025` | **Partial** (3 IDs) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo | Faltam demais famílias, supressões e interações |
-| Magias de campo `P036` | **Partial** (Sogen Warrior jogável) | `FieldSpellRules.cs`, zona exclusiva, ativação da mão/set, substituição, batalha, UI e `FieldSpellChecks.cs` | Beast-Warrior e outras magias `P036` ainda não implementados; timing/negação sem paridade nativa |
+| Magias de campo `P036` | **Partial** (7 IDs jogáveis) | Sogen (Warrior) + seis magias por atributo, `FieldSpellRules.cs`, zona exclusiva, substituição, batalha, UI e testes de cenário | Beast-Warrior em Sogen, outras seis cartas `P036`, interações/negação e paridade nativa ainda não implementados |
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Falta ciclo de resolução/gatilhos |
 
 **Não usar os totais estimados do rascunho (~650 normais, ~180 magias, ~225 outras) como contagens verificadas.** Para totais precisos, consultar o DAT legítimo local; para `Done`, exigir comportamento/testes.
 
-## Magias de LP jogáveis no sandbox
+## Cartas e magias jogáveis no sandbox (escopos delimitados)
 
 | Resource ID | Carta | Status | Referência / escopo |
 | ---: | --- | --- | --- |
@@ -38,6 +38,12 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | 341 | Dian Keto the Cure Master | Done (sandbox) | Recupera 1000 LP do ativador |
 | 1315 | Rain of Mercy | Done (sandbox) | Recupera 1000 LP dos dois duelistas |
 | 332 | Sogen | Done (sandbox, Warrior somente) | Zona de campo, +200/+200 para classe 15 em ambos os lados, retirada/substituição dinâmica; Beast-Warrior pendente |
+| 1125 | Gaia Power | Done (sandbox) | EARTH (attributeCode 5), +500 ATK/-400 DEF |
+| 1126 | Umiiruka | Done (sandbox) | WATER (attributeCode 3), +500 ATK/-400 DEF |
+| 1127 | Molten Destruction | Done (sandbox) | FIRE (attributeCode 4), +500 ATK/-400 DEF |
+| 1128 | Rising Air Current | Done (sandbox) | WIND (attributeCode 6), +500 ATK/-400 DEF |
+| 1129 | Luminous Spark | Done (sandbox) | LIGHT (attributeCode 1), +500 ATK/-400 DEF |
+| 1130 | Mystic Plasma Zone | Done (sandbox) | DARK (attributeCode 2), +500 ATK/-400 DEF |
 | 300 | Legendary Sword | Partial | `P025`, Warrior tipo 15, +300/+300 sob condições suportadas |
 | 301 | Sword of Dark Destruction | Partial | `P025`, atributo DARK, +400/-200 sob condições suportadas |
 | 307 | Beast Fangs | Partial | `P025`, Beast tipo 11, +300/+300 sob condições suportadas |
@@ -55,7 +61,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 
 ## Primeiro cenário de magia de campo
 
-A zona de campo é independente dos cinco slots de magia/armadilha. O efeito de Sogen é calculado sob demanda para ambos os lados, sem modificar ATK/DEF-base, e combina com equipamentos antes da saturação final. Cartas setadas não aplicam bônus; ativar uma nova magia de campo remove a anterior para o cemitério de seu dono. O jogador pode ativar o Sogen setado clicando na zona **FIELD** na interface local. Essa é uma política de sandbox com suporte explícito a **Warrior / classCode 15**; ainda faltam Beast-Warrior, outras magias de campo, gatilhos e supressões.
+A zona de campo é independente dos cinco slots de magia/armadilha. Sogen e as seis magias por atributo são calculados sob demanda para ambos os lados, sem modificar ATK/DEF-base, e combinam com equipamentos antes da saturação final. Cartas setadas não aplicam bônus; ativar uma nova magia de campo remove a anterior para o cemitério de seu dono. O jogador pode ativar a carta setada clicando na zona **FIELD** na interface local. As seis magias elementais usam `Properties >>29` e as descrições das cartas, não um novo teste nativo. Detalhes e limitações em `docs/cards/p036-field-spells-sandbox.md`. Faltam Beast-Warrior para Sogen, seis outras cartas `P036`, gatilhos e supressões.
 
 ## Próxima lacuna concreta
 

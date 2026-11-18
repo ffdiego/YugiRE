@@ -24,7 +24,8 @@
 
 - [x] Integrar os cinco IDs de dano direto (`P045`) e cinco magias de recuperação de LP (338–341, 1315) em um fluxo único de ativação da mão/set; testes sintéticos para ambos os lados, LP, descarte e falhas atômicas. Escopo: **sandbox C#**, sem correntes/negação nativa.
 - [x] Introduzir zona de Field Spell e **Sogen para Warrior (classe 15)** no sandbox, com ativação da mão/set, troca de magia ativa, recálculo de ATK/DEF nos dois lados, composição com equipamento, UI e testes. **Escopo parcial da carta:** Beast-Warrior e paridade nativa geral ainda pendentes.
-- [ ] Expandir `P036` para outras magias e elegibilidade Beast-Warrior após identificar o `classCode` correto no DAT local; evitar inferência de códigos e não bloquear evolução do restante da engine.
+- [x] Expandir `P036` com as seis magias por atributo (Gaia Power, Umiiruka, Molten Destruction, Rising Air Current, Luminous Spark, Mystic Plasma Zone), compartilhando a regra declarativa +500 ATK/-400 DEF, integração na zona FIELD e testes de combate/equipamento.
+- [ ] Completar os seis campos restantes de `P036` (Forest, Wasteland, Mountain, Umi, Yami, Chorus of Sanctuary) e Beast-Warrior para Sogen; primeiro mapear com segurança os tipos nativos necessários, usando DAT local/indícios existentes sem bloquear outras famílias.
 - [ ] Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos atualmente modelados. O perfil `P025` tem 41 callbacks catalogados; **não assumir** que 41 equipamentos já tenham a mesma regra.
 - [ ] Incorporar curas/danos adicionais em tabelas de efeitos, sem prometer tamanho de lote antes de confirmar o catálogo original.
 
