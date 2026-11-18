@@ -20,7 +20,7 @@ internal static class HaneHaneChecks
 
         check(FlipEffectRules.Effect(FlipEffectRules.HaneHane) == DemoFlipEffect.ReturnOne &&
               FlipEffectRules.Supports(540) &&
-              FlipEffectRules.Effect(1163) == DemoFlipEffect.None &&
+              FlipEffectRules.Effect(1163) == DemoFlipEffect.ShuffleAndExcavate &&
               FlipEffectRules.Effect(601) == DemoFlipEffect.ReturnUpToTwo,
               "Hane-Hane: exact resource ID 540 has mandatory single return, not Penguin or Morphing Jar #2");
 
