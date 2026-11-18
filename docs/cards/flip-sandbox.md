@@ -1,4 +1,4 @@
-# FLIP jogável — Man-Eater Bug, Morphing Jar e Penguin Soldier
+# FLIP jogável — cinco monstros (incluindo Morphing Jar #2)
 
 Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib.
 **Não** equivale a callbacks nativos idênticos, nem modela correntes e negação.
@@ -9,8 +9,9 @@ Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib
 | Morphing Jar | 590 (pack Kaiba) | FLIP: descarta as mãos dos dois jogadores e cada um compra 5 |
 | Penguin Soldier | 601 (pack Joey) | FLIP: devolve **até dois** monstros à mão de seus donos |
 | Hane-Hane | 540 (pack Yugi) | FLIP: devolve **exatamente um** monstro à mão do dono, se existir alvo válido |
+| Morphing Jar #2 | 1163 (pack Joey) | FLIP: embaralha monstros nos Main Decks, escava até quota e coloca elegíveis face-down |
 
-**Morphing Jar #2** (`1163`) é carta distinta e permanece `Pending`.
+**Morphing Jar #2** (`1163`) é distinta de **Morphing Jar** (`590`); agora as duas têm resolvers separados no sandbox.
 
 ## Três fontes de revelação
 
@@ -54,6 +55,44 @@ A limpeza de equipamento e o envio à mão utilizam o mesmo caminho
 da infraestrutura de Penguin Soldier. A verificação original de
 `P080` no Windows ainda está pendente; `Done` mede somente o sandbox.
 
+### Morphing Jar #2 (P182)
+
+O novo resolver `DemoDuel.ResolveMorphingJar2` movimenta monstros entre
+campo e deck, com quotas independentes para cada lado, sem reutilizar
+`Morphing Jar`:
+
+1. Durante o Damage Step, o cálculo de dano determina quais combatentes
+   já estão **marcados para destruição**. Esses não voltam ao deck.
+2. Os demais monstros são removidos do campo e devolvidos ao **Main Deck**
+   daquele jogador, com embaralhamento sintético reproduzível por seed.
+3. Cada jogador escava cartas do topo até revelar tantas **cartas de
+   monstro** quanto a quantidade que devolveu ao Main Deck. Isto não é
+   uma compra; cartas de magia/armadilha encontradas não contam para a quota.
+4. Todos os monstros elegíveis de nível 4 ou inferior e sem exigência
+   de outra invocação são colocados em defesa face-down. Monstros
+   de nível superior, restritos e demais cartas escavadas vão para o
+   cemitério. Encontrar um monstro de nível 7 conta para a quota, mesmo
+   quando ele não é colocado no campo.
+5. Os combatentes ainda marcados são enviados ao cemitério ao encerrar
+   a fase de dano simplificada.
+
+Os resultados auditáveis ficam em `DemoDuel.LastMorphingJar2` por jogador,
+e `DeckSnapshot(player)` permite à suíte inspecionar as cartas remanescentes
+sem alterá-las. A UI raylib aciona o efeito automaticamente quando revelado;
+não há janela de seleção de cartas nessa escavação.
+
+**Limites:** sem Extra Deck/Fusion, tokens, mudança de controlador/dono,
+cadeia de respostas, efeitos contínuos ou escolha de invocações quando mais
+de cinco cartas forem elegíveis. O embaralhamento e a seed são uma política
+do sandbox, não um algoritmo recuperado do Joey original. O cenário de
+monstro destruído em combate segue o entendimento histórico de 2003;
+não declarar `Verified` sem um replay nativo equivalente.
+
+Fontes:
+- https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=4969&ope=2
+- https://www.goatformat.com/rulings5.html
+- https://edisonrul.ing/cards/m/morphing-jar-2.html
+
 ### Man-Eater Bug e Morphing Jar
 
 Man-Eater Bug requer um alvo ocupado. Mesmo que seja destruído em batalha,
@@ -73,6 +112,7 @@ insuficientes geram `IsDraw`. Não afirmar paridade histórica dessa política.
   os combatentes marcados ao cemitério se ainda ocuparem a mesma zona.
 - `ResolveFlipTarget` seleciona monstros; `FinishFlipTargets` conclui
   Penguin com 0 ou 1 escolhido; não duplica eventos.
+- `MorphingJar2Checks`: deck shuffle, quotas, dano de batalha, deck-out, restrições, determinismo e conservação de cartas.
 - `FlipMonsterChecks`: cenários de Flip Summon, por ataque, por efeito externo,
   mãos, cemitério, targets inválidos, dano antecipado, auto-retorno permitido e
   negado e consumo único. A interface visual precisa de teste manual no Windows.
@@ -83,7 +123,7 @@ insuficientes geram `IsDraw`. Não afirmar paridade histórica dessa política.
 
 Correntes, efeitos que negam FLIP, controle de monstros, cartas de fusão
 retornando ao Extra Deck, substituição de destruição e validação de timing
-contra o executável original. Os quatro recursos são `Done` apenas no escopo
+contra o executável original. Os cinco recursos são `Done` apenas no escopo
 de sandbox; nenhum vira `Verified`.
 
 Referências:

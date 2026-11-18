@@ -19,7 +19,7 @@ internal static class FlipMonsterChecks
     {
         check(FlipEffectRules.Effect(500) == DemoFlipEffect.DestroyMonster &&
               FlipEffectRules.Effect(590) == DemoFlipEffect.ReplaceHands &&
-              FlipEffectRules.Effect(1163) == DemoFlipEffect.None &&
+              FlipEffectRules.Effect(1163) == DemoFlipEffect.ShuffleAndExcavate &&
               !FlipEffectRules.Supports(0),
               "FLIP: exact Man-Eater Bug and Morphing Jar resource IDs, not internal indices");
 
@@ -230,12 +230,12 @@ internal static class FlipMonsterChecks
               "FLIP: external effect reveal triggers once without changing defense position");
 
         var noEffect = DemoDuel.FromPartialObservation(1, [],
-            Slots(Monster(1163, 146)), Slots(enemy), 8000);
+            Slots(Monster(1164, 146)), Slots(enemy), 8000);
         noEffect.MonsterFaceDown[0, 0] = true;
         noEffect.DefensePosition[0, 0] = true;
         check(noEffect.BeginBattle(out _) && noEffect.Attack(0, 0, out _) &&
               noEffect.PendingFlipTarget is null && noEffect.Graveyard(0).Count == 1 &&
               noEffect.Life.SequenceEqual([8000, 8000]),
-              "FLIP: Morphing Jar #2 must not silently reuse Morphing Jar behavior");
+              "FLIP: unsupported monster does not inherit other FLIP effects");
     }
 }

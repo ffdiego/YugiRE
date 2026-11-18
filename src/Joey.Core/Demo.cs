@@ -8,6 +8,11 @@ public sealed class DemoDuel
 {
     private readonly List<Card>[] hands = [[], []];
     private readonly Queue<Card>[] decks = [new(), new()];
+    // Seeded sandbox-only effect shuffling; separate from initial deck randomization.
+    private Random effectRandom = new(1979);
+    public IReadOnlyList<DemoExcavationResult> LastMorphingJar2 { get; private set; } = [];
+    public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
+        ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
@@ -72,7 +77,7 @@ public sealed class DemoDuel
     {
         if (first.Count is < 40 or > 80 || second.Count is < 40 or > 80)
             throw new ArgumentException("Imported main decks must contain 40 to 80 cards");
-        var duel = new DemoDuel();
+        var duel = new DemoDuel { effectRandom = new Random(unchecked(seed ^ 0x4D4A3220)) };
         var random = new Random(seed);
         for (int player = 0; player < 2; player++)
         {
@@ -130,7 +135,8 @@ public sealed class DemoDuel
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
         // Prioritize featured FLIP monsters in the local demo's opening hand.
         foreach (ushort id in new ushort[] { FlipEffectRules.PenguinSoldier, FlipEffectRules.MorphingJar,
-                                             FlipEffectRules.ManEaterBug, FlipEffectRules.HaneHane })
+                                             FlipEffectRules.ManEaterBug, FlipEffectRules.HaneHane,
+                                             FlipEffectRules.MorphingJar2 })
         {
             var flip = all.FirstOrDefault(c => c.Id == id);
             if (flip is null) continue;
@@ -576,6 +582,9 @@ public sealed class DemoDuel
                 flipSelections.Clear();
                 message = $"{card.Name} FLIP (P{owner + 1}): choose exactly one monster to return to its owner's hand.";
                 break;
+            case DemoFlipEffect.ShuffleAndExcavate:
+                ResolveMorphingJar2(out message);
+                break;
             case DemoFlipEffect.ReplaceHands:
                 for (int p = 0; p < 2; p++)
                 {
@@ -594,6 +603,84 @@ public sealed class DemoDuel
                     : $"{card.Name} FLIP: both discard their hands and draw 5.";
                 break;
         }
+    }
+
+    /// <summary>
+    /// Morphing Jar #2 (PSV-era sandbox): return unmarked Main Deck monsters,
+    /// independently shuffle each owner's deck, then excavate until that side
+    /// has found as many monsters as it returned. High-level/special-only
+    /// monsters and non-monsters are sent to the graveyard. Fusion, tokens,
+    /// field control changes and chain windows require a richer duel model.
+    /// </summary>
+    private void ResolveMorphingJar2(out string message)
+    {
+        int[] returned = [0, 0];
+        LastMorphingJar2 = [];
+
+        // Move all eligible monsters before shuffling either deck. A monster
+        // already marked to die in the Damage Step remains for burial later.
+        for (int p = 0; p < 2; p++)
+        {
+            var additions = new List<Card>();
+            for (int z = 0; z < 5; z++)
+            {
+                if (Monsters[p, z] is not Card card || IsMarkedForBattleDestruction(p, z))
+                    continue;
+                additions.Add(card);
+                Monsters[p, z] = null;
+                MonsterFaceDown[p, z] = DefensePosition[p, z] = false;
+                changedPosition[p, z] = attacked[p, z] = false;
+                foreach (var equip in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
+                    RemoveEquipmentCore(equip.Owner, equip.SourceZone);
+            }
+            returned[p] = additions.Count;
+            // A player whose field sent no monsters back keeps the deck's order.
+            if (additions.Count == 0) continue;
+            var shuffled = decks[p].Concat(additions).ToArray();
+            effectRandom.Shuffle(shuffled);
+            decks[p].Clear();
+            foreach (var card in shuffled) decks[p].Enqueue(card);
+        }
+
+        var results = new List<DemoExcavationResult>(2);
+        for (int p = 0; p < 2; p++)
+        {
+            int found = 0;
+            var excavated = new List<Card>();
+            while (found < returned[p] && decks[p].TryDequeue(out Card? card))
+            {
+                excavated.Add(card);
+                if (card.IsMonster) found++;
+            }
+            int summoned = 0, sent = 0;
+            foreach (var card in excavated)
+            {
+                int zone = Enumerable.Range(0, 5)
+                    .FirstOrDefault(z => Monsters[p, z] is null, -1);
+                // Summons from excavation are not Normal Summons: no tributes,
+                // but level >4 and cards requiring a different summon cannot go.
+                if (card.IsMonster && card.Level is >= 1 and <= 4 &&
+                    !NormalSummonRules.RequiresSpecialSummon(card) && zone >= 0)
+                {
+                    Monsters[p, zone] = card;
+                    MonsterFaceDown[p, zone] = DefensePosition[p, zone] = true;
+                    changedPosition[p, zone] = true;
+                    attacked[p, zone] = false;
+                    summoned++;
+                }
+                else
+                {
+                    graves[p].Add(card);
+                    sent++;
+                }
+            }
+            results.Add(new(p, returned[p], excavated.Count, found, summoned,
+                sent, found < returned[p]));
+        }
+        LastMorphingJar2 = results.AsReadOnly();
+        message = $"Morphing Jar #2 FLIP: returned {returned[0]}/{returned[1]} " +
+            $"monsters to decks; excavated {results[0].Excavated}/{results[1].Excavated}; " +
+            $"set {results[0].SpecialSummoned}/{results[1].SpecialSummoned} face-down.";
     }
 
     /// <summary>

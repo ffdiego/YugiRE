@@ -4,7 +4,7 @@ namespace Joey.Core;
 /// Reusable sandbox FLIP dispatch, independent of animation timing.
 /// Resource IDs are original card IDs, not internal DAT indexes.
 /// </summary>
-public enum DemoFlipEffect { None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne }
+public enum DemoFlipEffect { None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate }
 
 public static class FlipEffectRules
 {
@@ -12,6 +12,7 @@ public static class FlipEffectRules
     public const ushort MorphingJar = 590;
     public const ushort PenguinSoldier = 601;
     public const ushort HaneHane = 540;
+    public const ushort MorphingJar2 = 1163;
 
     public static DemoFlipEffect Effect(ushort resourceId) => resourceId switch
     {
@@ -19,6 +20,7 @@ public static class FlipEffectRules
         MorphingJar => DemoFlipEffect.ReplaceHands,
         PenguinSoldier => DemoFlipEffect.ReturnUpToTwo,
         HaneHane => DemoFlipEffect.ReturnOne,
+        MorphingJar2 => DemoFlipEffect.ShuffleAndExcavate,
         _ => DemoFlipEffect.None
     };
     public static bool Supports(ushort resourceId) => Effect(resourceId) != DemoFlipEffect.None;
@@ -33,3 +35,13 @@ public sealed record DemoFlipTarget(int Owner, int SourceZone, Card SourceCard,
                                      DemoFlipEffect Effect = DemoFlipEffect.DestroyMonster);
 
 public sealed record DemoSelectedMonster(int Player, int Zone, Card Card);
+
+    
+/// <summary>
+/// Audit of a Morphing Jar #2 sandbox effect: counts are per player's own Main Deck.
+/// Excavate is not drawing, so deck exhaustion here does not automatically lose LP.
+/// Extra Deck, tokens and control changes are not modeled.
+/// </summary>
+public sealed record DemoExcavationResult(
+    int Player, int ReturnedToDeck, int Excavated, int MonstersFound,
+    int SpecialSummoned, int SentToGraveyard, bool DeckExhausted);

@@ -449,26 +449,30 @@
         "Battle continuation",
         "Return up to two monsters to owner's hand",
         "Battle destruction determination before FLIP",
-        "Hane-Hane mandatory single-target return, with no-legal-target fallback"
+        "Hane-Hane mandatory single-target return, with no-legal-target fallback",
+        "Morphing Jar #2: reshuffle field monsters into owner's Main Deck and excavate monsters quota",
+        "Excavated Level 4-or-lower monster Set by effect; high-level or unsupported cards sent to graveyard"
       ],
       "status": "Done",
       "resourceIds": [
         500,
         540,
         590,
-        601
+        601,
+        1163
       ],
       "evidence": [
         "src/Joey.Core/FlipEffectRules.cs",
         "src/Joey.Core/Demo.cs",
         "src/tests/Joey.Tests/FlipMonsterChecks.cs",
-        "src/tests/Joey.Tests/HaneHaneChecks.cs"
+        "src/tests/Joey.Tests/HaneHaneChecks.cs",
+        "src/tests/Joey.Tests/MorphingJar2Checks.cs"
       ],
       "limitations": [
-        "Done only in the bounded C# sandbox: four FLIP monsters reveal on Flip Summon, battle or explicit effect; Penguin Soldier allows 0-2 returns; Hane-Hane requires one legal return target when available and excludes monsters marked for battle destruction.",
-        "Damage calculation precedes FLIP; marked monsters remain on field during resolution and leave at end of this simplified Damage Step.",
-        "Chains, suppression, effect redirection, fusion returns, card ownership changes and full native 2004 timing remain unsupported.",
-        "Morphing Jar's both-decks-short policy is a sandbox draw, not certified Joey behavior."
+        "Done is scoped to the C# sandbox: five FLIP monsters. Morphing Jar #2 returns eligible Main Deck monsters from each player's field, shuffles deterministically, excavates up to its monster quota, Sets eligible Level 4-or-lower monsters and sends other excavated cards to graveyards.",
+        "Battle-destroyed combatants are excluded from shuffle; damage is calculated before FLIP and marked cards go to graveyard at the end of the simplified Damage Step.",
+        "No Extra Deck/Fusion returns, tokens, foreign-controlled ownership, chained responses, replacement effects or full 2004 native parity; no separate card selection UI for Morphing Jar #2 excavation.",
+        "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior."
       ]
     }
   ]

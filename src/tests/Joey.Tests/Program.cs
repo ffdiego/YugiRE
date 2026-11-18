@@ -116,6 +116,7 @@ SummonTests.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
 HaneHaneChecks.Run(Check);
+MorphingJar2Checks.Run(Check);
 LookAndFeelChecks.Run(Check);
 NativePresentationChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
