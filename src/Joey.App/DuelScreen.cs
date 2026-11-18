@@ -1,3 +1,4 @@
+using Joey.LookAndFeel;
 using Joey.Core;
 using Raylib_cs;
 using System.Numerics;
@@ -147,6 +148,11 @@ static partial class Game
                 }
                 if (own && (attacker == zone || tributeZones.Contains(zone)))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, tributeZones.Contains(zone) ? Color.Red : Color.White);
+                if (duel.SelectedFlipTargets.Any(t => t.Player == player && t.Zone == zone))
+                    Raylib.DrawRectangleLinesEx(monsterRect, 4, Color.SkyBlue);
+                if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+                    duel.IsMarkedForBattleDestruction(player, zone))
+                    Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
                 if (duel.Spells[player, zone] is Card spell)
                     DrawFieldCard(spell, spellRect, duel.SpellFaceDown[player, zone]);
                 if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
@@ -205,13 +211,20 @@ static partial class Game
     }
     static void DrawDuel()
     {
+        presentation.Advance(TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1)));
         Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
         if (Button("< Menu", 8, 8, 85, 30)) screen = "menu";
-        Label("LOCAL DEMO", 105, 16, 16, Gold);
+        Label($"LOCAL DEMO · {presentation.Style.Name}", 105, 16, 13, Gold);
         if (Button("Draw", 240, 8, 80, 30)) { duel.Draw(out message); ClearDuelSelection(); }
         if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); ClearDuelSelection(); }
         if (Button("End turn", 412, 8, 105, 30)) { duel.EndTurn(out message); ClearDuelSelection(); handPage = 0; }
         if (Button("Reset", 523, 8, 75, 30)) StartDemo();
+        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+            Button("Done FLIP", 605, 8, 125, 30))
+        {
+            duel.FinishFlipTargets(out message);
+            ClearDuelSelection();
+        }
         Label(duel.IsDraw ? "DRAW — both decks exhausted" :
             duel.Winner is int winner ? $"PLAYER {winner + 1} WINS" :
             $"Turn {duel.Turn} P{duel.ActivePlayer + 1}: {duel.Phase}", 8, 50, 16, Gold);
@@ -229,9 +242,24 @@ static partial class Game
         DrawDuelField(handInput);
         DrawDuelHand();
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
-            Label($"P{flip.Owner + 1} FLIP: choose any monster on the field", 248, 78, 13, Gold);
+        {
+            string help = flip.Effect == DemoFlipEffect.ReturnUpToTwo
+                ? $"P{flip.Owner + 1} Penguin: {duel.SelectedFlipTargets.Count}/2, select or Done"
+                : $"P{flip.Owner + 1} FLIP: choose any monster on the field";
+            Label(help, 248, 78, 13, Gold);
+        }
+        if (message != previousDuelMessage)
+        {
+            DuelPresentationCue cue = message.Contains("FLIP", StringComparison.OrdinalIgnoreCase)
+                ? DuelPresentationCue.FlipEffect
+                : message.Contains("battle", StringComparison.OrdinalIgnoreCase)
+                    ? DuelPresentationCue.Battle
+                    : DuelPresentationCue.CardMove;
+            presentation.Show(cue);
+            previousDuelMessage = message;
+        }
         var lines = TextLines(message, 205, 14);
-        for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, Gold);
+        for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, presentation.Busy ? Color.White : Gold);
         Label($"Deck {duel.DeckCount(0)}/{duel.DeckCount(1)} Grave {duel.Graveyard(0).Count}/{duel.Graveyard(1).Count}", 8, 568, 13);
         Label("Local demo | Right-click: Set", 8, 587, 12, Gold);
     }

@@ -70,14 +70,16 @@ internal static class FlipMonsterChecks
         check(defend.BeginBattle(out _) && defend.Attack(0, 0, out _) &&
               defend.Monsters[0, 0] == bug && !defend.MonsterFaceDown[0, 0] &&
               defend.PendingFlipTarget is { Owner: 0 } &&
+              defend.IsMarkedForBattleDestruction(0, 0) &&
               defend.Life.SequenceEqual([8000, 8000]) &&
               !defend.Attack(0, 0, out _),
-              "Man-Eater Bug: being attacked reveals it and pauses battle before damage");
+              "Man-Eater Bug: after damage calculation it remains on the field until FLIP resolves");
         check(defend.ResolveFlipTarget(1, 0, out _) &&
-              defend.Monsters[1, 0] is null && defend.Monsters[0, 0] == bug &&
+              defend.Monsters[1, 0] is null && defend.Monsters[0, 0] is null &&
+              defend.Graveyard(0).Single() == bug &&
               defend.Graveyard(1).Single() == enemy && defend.Life.SequenceEqual([8000, 8000]) &&
               !defend.Attack(0, 0, out _),
-              "Man-Eater Bug: destroying attacker cancels battle damage, attack remains spent");
+              "Man-Eater Bug: destroys attacker after damage calculation but still dies by battle");
 
         var third = Monster(111, 115, 900, 800);
         var continueBattle = DemoDuel.FromPartialObservation(1, [],
@@ -137,6 +139,95 @@ internal static class FlipMonsterChecks
               empty.Graveyard(0).Count == 2 &&
               !empty.Draw(out _) && !empty.EndTurn(out _),
               "Morphing Jar: both empty decks end the bounded sandbox in a draw");
+
+        var penguin = Monster(601, 604, 750, 500);
+        check(FlipEffectRules.Effect(601) == DemoFlipEffect.ReturnUpToTwo &&
+              FlipEffectRules.Supports(601),
+              "Penguin Soldier: the exact Joey resource ID has optional multi-target return");
+
+        var penguinSummon = DemoDuel.FromPartialObservation(0, [penguin],
+            Slots(), Slots(enemy), 8000);
+        check(penguinSummon.SetFromHand(0, out _),
+              "Penguin Soldier: set on opening turn");
+        penguinSummon.NextTurn(); penguinSummon.NextTurn();
+        check(penguinSummon.ChangePosition(0, out _) &&
+              penguinSummon.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo, Owner: 0 } &&
+              penguinSummon.ResolveFlipTarget(0, 0, out _) &&
+              penguinSummon.SelectedFlipTargets.Count == 1 &&
+              penguinSummon.FinishFlipTargets(out _) &&
+              penguinSummon.Monsters[0, 0] is null &&
+              penguinSummon.HandFor(0).Single() == penguin &&
+              penguinSummon.Graveyard(0).Count == 0,
+              "Penguin Soldier: Flip Summon may return itself to owner's hand");
+
+        var two = DemoDuel.FromPartialObservation(0, [penguin],
+            Slots(), Slots(enemy), 8000);
+        two.SetFromHand(0, out _); two.NextTurn(); two.NextTurn();
+        check(two.ChangePosition(0, out _) &&
+              two.ResolveFlipTarget(1, 0, out _) &&
+              two.SelectedFlipTargets.Count == 1 &&
+              !two.ResolveFlipTarget(1, 0, out _) &&
+              two.SelectedFlipTargets.Count == 1 &&
+              two.ResolveFlipTarget(0, 0, out _) &&
+              two.PendingFlipTarget is null && two.SelectedFlipTargets.Count == 0 &&
+              two.Monsters[0, 0] is null && two.Monsters[1, 0] is null &&
+              two.HandFor(0).Single() == penguin &&
+              two.HandFor(1).Single() == enemy,
+              "Penguin Soldier: two distinct targets automatically return to their owners");
+
+        var zero = DemoDuel.FromPartialObservation(0, [penguin],
+            Slots(), Slots(enemy), 8000);
+        zero.SetFromHand(0, out _); zero.NextTurn(); zero.NextTurn();
+        check(zero.ChangePosition(0, out _) && zero.FinishFlipTargets(out _) &&
+              zero.PendingFlipTarget is null && zero.Monsters[0, 0] == penguin &&
+              zero.Monsters[1, 0] == enemy && zero.HandFor(0).Count == 0,
+              "Penguin Soldier: optional effect may resolve with zero targets");
+
+        // Attack deals damage and determines destruction BEFORE FLIP resolution.
+        var destroyedPenguin = DemoDuel.FromPartialObservation(1, [],
+            Slots(penguin), Slots(enemy), 8000);
+        destroyedPenguin.MonsterFaceDown[0, 0] = true;
+        destroyedPenguin.DefensePosition[0, 0] = true;
+        check(destroyedPenguin.BeginBattle(out _) &&
+              destroyedPenguin.Attack(0, 0, out _) &&
+              destroyedPenguin.IsMarkedForBattleDestruction(0, 0) &&
+              destroyedPenguin.Monsters[0, 0] == penguin &&
+              destroyedPenguin.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+              !destroyedPenguin.ResolveFlipTarget(0, 0, out _) &&
+              destroyedPenguin.SelectedFlipTargets.Count == 0 &&
+              destroyedPenguin.ResolveFlipTarget(1, 0, out _) &&
+              destroyedPenguin.FinishFlipTargets(out _) &&
+              destroyedPenguin.Monsters[0, 0] is null &&
+              destroyedPenguin.Graveyard(0).Single() == penguin &&
+              !destroyedPenguin.HandFor(0).Contains(penguin) &&
+              destroyedPenguin.Monsters[1, 0] is null &&
+              destroyedPenguin.HandFor(1).Single() == enemy,
+              "Penguin Soldier: cannot target itself if destroyed by attacking monster");
+
+        var survived = DemoDuel.FromPartialObservation(1, [],
+            Slots(penguin), Slots(Monster(125, 126, 400, 200)), 8000);
+        survived.MonsterFaceDown[0, 0] = true;
+        survived.DefensePosition[0, 0] = true;
+        check(survived.BeginBattle(out _) && survived.Attack(0, 0, out _) &&
+              !survived.IsMarkedForBattleDestruction(0, 0) &&
+              survived.Life[1] == 7900 &&
+              survived.ResolveFlipTarget(0, 0, out _) &&
+              survived.FinishFlipTargets(out _) &&
+              survived.HandFor(0).Single() == penguin &&
+              survived.Monsters[0, 0] is null &&
+              survived.Life[1] == 7900,
+              "Penguin Soldier: when it survives battle it can return itself after 100 battle damage");
+
+        var revealedByEffect = DemoDuel.FromPartialObservation(0, [],
+            Slots(penguin), Slots(), 8000);
+        revealedByEffect.MonsterFaceDown[0, 0] = true;
+        revealedByEffect.DefensePosition[0, 0] = true;
+        check(revealedByEffect.RevealMonsterByEffect(0, 0, out _) &&
+              revealedByEffect.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+              revealedByEffect.DefensePosition[0, 0] &&
+              revealedByEffect.FinishFlipTargets(out _) &&
+              !revealedByEffect.RevealMonsterByEffect(0, 0, out _),
+              "FLIP: external effect reveal triggers once without changing defense position");
 
         var noEffect = DemoDuel.FromPartialObservation(1, [],
             Slots(Monster(1163, 146)), Slots(enemy), 8000);

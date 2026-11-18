@@ -115,6 +115,7 @@ EndTurnTests.Run(Check);
 SummonTests.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
+LookAndFeelChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 if (args.Length > 0)

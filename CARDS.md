@@ -23,7 +23,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Equipamentos `P025` | **Partial** (3 IDs) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo | Faltam demais famílias, supressões e interações |
 | Magias de campo `P036` | **Done** (13 IDs no sandbox) | Seis magias por tipo, seis por atributo e Chorus of Sanctuary; zona FIELD, ativação/set, substituição, bônus/penalidades e combate | Regras baseadas em texto, não paridade nativa integral; Sea Serpent classCode 5 ainda é inferido |
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
-| Monstros de efeito FLIP (Man-Eater Bug, Morphing Jar) | **Done** (2 IDs no sandbox) | `FlipEffectRules.cs`, `DemoDuel`, `FlipMonsterChecks.cs`, seleção na interface | Sem chains/negações; deck-out duplo do Morphing Jar é política simplificada |
+| Monstros de efeito FLIP (Man-Eater Bug, Morphing Jar, Penguin Soldier) | **Done** (3 IDs no sandbox) | `FlipEffectRules.cs`, `DemoDuel`, `FlipMonsterChecks.cs`, seleção na interface | Sem chains/negações; deck-out duplo do Morphing Jar é política simplificada |
 | Outras armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Restante das famílias e das janelas de resposta ainda pendente |
 
 **Todos os 499 monstros da união dos packs possuem classificação de referência:** 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` **somente para o ciclo básico (invocação/tributos/set/batalha) no sandbox C#**, sem alegar reproduzir o jogo original. Efeitos de monstros, fusões e rituais permanecem `Pending`. A classificação de cartas foi cruzada por fontes públicas, e os bits de categoria originais devem ser conferidos com o DAT no Windows.
@@ -36,9 +36,11 @@ Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `mon
 
 - **Man-Eater Bug** (`resourceId=500`): ao revelar por Flip Summon ou ataque, seleciona e destrói um monstro de qualquer lado. Se foi atacado, o combate espera a escolha e só prossegue se os dois combatentes permanecerem.
 - **Morphing Jar** (`resourceId=590`): descarta ambas as mãos para o cemitério e cada duelista compra cinco. O caso de ambos os decks insuficientes é um empate simplificado do sandbox.
+- **Penguin Soldier** (`resourceId=601`): retorna até dois monstros para as mãos dos donos. Pode escolher a si mesmo após Flip Summon ou sobreviver ao ataque; se estiver marcado para destruição por batalha, não pode devolver a si mesmo.
+- O cálculo de dano vem **antes** dos efeitos FLIP de combate; monstros já marcados para destruição ainda permanecem no campo até o fim da etapa, mas não podem ser retornados à mão.
 - Os testes de cenário e os prompts de seleção estão descritos em [`docs/cards/flip-sandbox.md`](docs/cards/flip-sandbox.md). **Morphing Jar #2 (`1163`) não está implementado**.
 
-Essas cartas pertencem à união dos packs, mas não ao pack exclusivo Joey (máscaras 1 e 2). Logo o numerador de Joey continua inalterado.
+Man-Eater Bug e Morphing Jar pertencem aos packs Yugi e Kaiba. Penguin Soldier pertence ao pack Joey (mask 4), portanto **ambas** as badges aumentam uma carta nesta iteração.
 
 ## Cartas e magias jogáveis no sandbox (escopos delimitados)
 
@@ -46,6 +48,7 @@ Essas cartas pertencem à união dos packs, mas não ao pack exclusivo Joey (má
 | ---: | --- | --- | --- |
 | 500 | Man-Eater Bug | Done (sandbox) | FLIP destrói monstro selecionado, incluindo fase de batalha; sem cadeia/negação |
 | 590 | Morphing Jar | Done (sandbox) | FLIP descarta as duas mãos e compra 5 por lado; deck-out simplificado |
+| 601 | Penguin Soldier | Done (sandbox) | FLIP retorna até dois monstros, exceto marcados para destruição por batalha |
 | 342 | Sparks | Done (sandbox) | `P045`, 200 de dano direto na rota simples |
 | 343 | Hinotama | Done (sandbox) | `P045`, 500 de dano direto |
 | 344 | Final Flame | Done (sandbox) | `P045`, 600 de dano direto |

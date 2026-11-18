@@ -48,7 +48,8 @@
 
 - [ ] Primitivos de compra, descarte, destruição e movimentação entre zonas.
 - [x] Primeira família `OnFlip` jogável: Man-Eater Bug e Morphing Jar, com flip summon, revelação durante batalha, seleção de alvo, suspensão/continuação de combate, descarte e compra das duas mãos; testes + UI local.
-- [ ] Expandir FLIP com Penguin Soldier (601, pack Joey): devolução à mão e seleção de até dois alvos; depois Morphing Jar #2 e Hane-Hane sem compartilhar efeitos por suposição.
+- [x] Implementar Penguin Soldier (601, pack Joey): 0–2 alvos, auto-retorno apenas se não marcado para destruição em batalha, danos antes do FLIP, hook de revelação por efeito, interface e testes.
+- [ ] Expandir FLIP com Morphing Jar #2, Hane-Hane e mais cartas; manter gatilhos e tipos específicos.
 - [ ] Refinar resolução FLIP: janelas de resposta, negadores, deck-out nativo e mais gatilhos sob demanda.
 - [ ] Gatilhos do cemitério/batalha, depois armadilhas comuns (Trap Hole, Mirror Force) e correntes/respostas, sem fingir que uma fila simples cobre todos os casos.
 
@@ -60,8 +61,9 @@
 
 ### Iteração D — aparência e experiência
 
-- [ ] Eventos de apresentação, tempos configuráveis, flip de cartas, transições, efeitos de batalha e LP animado.
-- [ ] Áudio/vozes e arte lidos dos arquivos locais do usuário, preservando a disposição visual de Joey.
+- [x] Criar `Joey.LookAndFeel` independente do Core e raylib, com perfis Classic/Fast/Silent/Instant, clock não bloqueante, overrides e integração inicial de realce de texto no `Joey.App`.
+- [ ] Adicionar eventos de apresentação tipados do Core, timeline de animações de cartas, transições e LP animado, sem acoplar regras ao tempo de tela.
+- [ ] Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política, pois ainda não existe player de voz), preservando a apresentação clássica.
 
 ## Como validar com pouco atrito
 

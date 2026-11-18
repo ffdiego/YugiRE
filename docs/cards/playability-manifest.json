@@ -446,12 +446,15 @@
         "Targeted destruction",
         "Hand discard",
         "Draw five",
-        "Battle continuation"
+        "Battle continuation",
+        "Return up to two monsters to owner's hand",
+        "Battle destruction determination before FLIP"
       ],
       "status": "Done",
       "resourceIds": [
         500,
-        590
+        590,
+        601
       ],
       "evidence": [
         "src/Joey.Core/FlipEffectRules.cs",
@@ -459,8 +462,10 @@
         "src/tests/Joey.Tests/FlipMonsterChecks.cs"
       ],
       "limitations": [
-        "Sandbox supports Flip Summon and reveal by combat, with pending target selection, action locking, discard/draw and a simple battle continuation; chains, responses, suppression and native callback parity remain unsupported.",
-        "Morphing Jar's both-decks-short policy is a sandbox draw (not certified Joey original behavior)."
+        "Done in the bounded C# sandbox: 3 FLIP monsters reveal by Flip Summon, battle or explicit effect; Penguin Soldier chooses 0-2 targets and excludes battle-destroyed monsters from returning.",
+        "Damage calculation precedes FLIP; marked monsters remain on field during resolution and leave at end of this simplified Damage Step.",
+        "Chains, suppression, effect redirection, fusion returns, card ownership changes and full native 2004 timing remain unsupported.",
+        "Morphing Jar's both-decks-short policy is a sandbox draw, not certified Joey behavior."
       ]
     }
   ]

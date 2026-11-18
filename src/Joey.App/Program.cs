@@ -1,3 +1,4 @@
+using Joey.LookAndFeel;
 using Joey.Core;
 using Raylib_cs;
 using System.Numerics;
@@ -15,11 +16,18 @@ static partial class Game
     static DemoDuel duel = null!;
     static DatGraphics graphics = null!;
     static bool includeUnused;
+    static readonly DuelPresentationClock presentation = new(new DuelLookAndFeel());
+    static string previousDuelMessage = "";
     public static int Run(string[] args)
     {
         using var resources = new DatGraphics();
         graphics = resources;
         includeUnused = args.Contains("--include-unused");
+        DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
+            : args.Contains("--fast") ? new FastLookAndFeel()
+            : args.Contains("--mute-joey") ? new SilentLookAndFeel()
+            : new DuelLookAndFeel();
+        presentation.SetStyle(style);
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));

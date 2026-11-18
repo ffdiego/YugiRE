@@ -36,7 +36,7 @@ class CardPlayabilityTests(unittest.TestCase):
         self.callbacks = read_callbacks(CATALOG)
 
     def test_catalog_evidence_is_source_limited_and_unique(self):
-        self.assertEqual(len(self.manifest), 293)
+        self.assertEqual(len(self.manifest), 294)
         self.assertEqual(len({v["id"] for v in self.manifest.values()}), 9)
         self.assertEqual(self.manifest[332]["subtype"], "Field")
         self.assertEqual(self.manifest[300]["status"], "Partial")

@@ -19,9 +19,25 @@ public sealed class DemoDuel
     public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
     private sealed record BattleContinuation(int AttackerSide, int AttackerZone, Card Attacker,
-                                              int DefenderSide, int DefenderZone, Card Defender);
+                                              int DefenderSide, int DefenderZone, Card Defender,
+                                              bool DestroyAttacker, bool DestroyDefender);
     private BattleContinuation? deferredBattle;
+    private readonly List<DemoSelectedMonster> flipSelections = [];
+    public IReadOnlyList<DemoSelectedMonster> SelectedFlipTargets => flipSelections.AsReadOnly();
     public DemoFlipTarget? PendingFlipTarget { get; private set; }
+    /// <summary>
+    /// Determined destroyed at damage calculation, but still present during FLIP resolution.
+    /// Such monsters cannot be returned to the hand by Penguin Soldier.
+    /// </summary>
+    public bool IsMarkedForBattleDestruction(int player, int zone)
+    {
+        var battle = deferredBattle;
+        return battle is not null && (battle.DestroyAttacker &&
+            player == battle.AttackerSide && zone == battle.AttackerZone &&
+            ReferenceEquals(Monsters[player, zone], battle.Attacker) ||
+            battle.DestroyDefender && player == battle.DefenderSide && zone == battle.DefenderZone &&
+            ReferenceEquals(Monsters[player, zone], battle.Defender));
+    }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null;
@@ -113,7 +129,7 @@ public sealed class DemoDuel
         var warrior = all.FirstOrDefault(c => c.ClassCode == 15);
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
         // Put both featured FLIP monsters in the first hand of the local demo.
-        foreach (ushort id in new ushort[] { FlipEffectRules.MorphingJar, FlipEffectRules.ManEaterBug })
+        foreach (ushort id in new ushort[] { FlipEffectRules.PenguinSoldier, FlipEffectRules.MorphingJar, FlipEffectRules.ManEaterBug })
         {
             var flip = all.FirstOrDefault(c => c.Id == id);
             if (flip is null) continue;
@@ -370,9 +386,14 @@ public sealed class DemoDuel
         message = $"{card.Name} equipped."; return true;
     }
     /// <summary>Explicit sandbox removal, not an activation, native movement rule or trigger.</summary>
-    public bool RemoveEquipment(int owner, int sourceZone)
+    public bool RemoveEquipment(int owner, int sourceZone) =>
+        !ActionsBlocked && RemoveEquipmentCore(owner, sourceZone);
+
+    // Cleanup from combat/returns is mandatory even while a duel is ending
+    // or a FLIP is pending. Only external actions use the interaction guard.
+    private bool RemoveEquipmentCore(int owner, int sourceZone)
     {
-        if (ActionsBlocked || owner is < 0 or > 1 || sourceZone is < 0 or >= 5) return false;
+        if (owner is < 0 or > 1 || sourceZone is < 0 or >= 5) return false;
         var e = equipment.SingleOrDefault(e => e.Owner == owner && e.SourceZone == sourceZone);
         if (e is null) return false;
         equipment.Remove(e);
@@ -384,6 +405,22 @@ public sealed class DemoDuel
         graves[owner].Add(e.Card);
         return true;
     }
+    /// <summary>
+    /// Sandbox hook for cards that reveal a monster by an external effect.
+    /// It does not impose a Flip Summon or change its battle position.
+    /// </summary>
+    public bool RevealMonsterByEffect(int player, int zone, out string message)
+    {
+        message = "The monster must be face-down on the field.";
+        if (ActionsBlocked || player is < 0 or > 1 || zone is < 0 or >= 5 ||
+            Monsters[player, zone] is not Card monster || !MonsterFaceDown[player, zone])
+            return false;
+        MonsterFaceDown[player, zone] = false;
+        TriggerFlip(player, zone, monster, out message);
+        if (message.Length == 0) message = "Monster revealed by an effect (no supported FLIP).";
+        return true;
+    }
+
     public bool ChangePosition(int zone, out string message)
     {
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
@@ -430,56 +467,81 @@ public sealed class DemoDuel
         attacked[p, source] = true;
         bool wasFaceDown = MonsterFaceDown[enemy, target];
         MonsterFaceDown[enemy, target] = false;
-        if (wasFaceDown)
+        if (!wasFaceDown)
+            return ResolveBattleOutcome(p, source, enemy, target, out message);
+
+        // Damage calculation happens before FLIP effects resolve. Mark but do
+        // not yet send destroyed monsters to the graveyard (end Damage Step).
+        var battle = CalculateBattle(p, source, attacker, enemy, target, defender, out string damageMessage);
+        deferredBattle = battle;
+        TriggerFlip(enemy, target, defender, out string flipMessage);
+        if (PendingFlipTarget is not null)
         {
-            TriggerFlip(enemy, target, defender, out string flipMessage);
-            if (PendingFlipTarget is not null)
-            {
-                deferredBattle = new(p, source, attacker, enemy, target, defender);
-                message = flipMessage;
-                return true;
-            }
-            if (GameOver)
-            {
-                message = flipMessage;
-                return true;
-            }
-            ResolveBattleOutcome(p, source, enemy, target, out string battleMessage);
-            message = flipMessage.Length > 0 ? flipMessage + " " + battleMessage : battleMessage;
+            message = $"{damageMessage} {flipMessage}";
             return true;
         }
-        return ResolveBattleOutcome(p, source, enemy, target, out message);
+        FinishDeferredBattle();
+        message = flipMessage.Length == 0 ? damageMessage : damageMessage + " " + flipMessage;
+        return true;
     }
 
-    private bool ResolveBattleOutcome(int attackerSide, int source, int defenderSide, int target,
-                                      out string message)
+    private BattleContinuation CalculateBattle(int attackerSide, int source, Card attacker,
+                                                int defenderSide, int target, Card defender,
+                                                out string message)
     {
-        message = "Battle stopped: a combatant left the field.";
-        if (GameOver || Monsters[attackerSide, source] is not Card ||
-            Monsters[defenderSide, target] is not Card) return false;
+        bool destroyAttacker = false, destroyDefender = false;
+        int attack = AttackValue(attackerSide, source);
         if (DefensePosition[defenderSide, target])
         {
-            int difference = AttackValue(attackerSide, source) - DefenseValue(defenderSide, target);
-            if (difference > 0) RemoveMonster(defenderSide, target);
-            else if (difference < 0) Damage(attackerSide, -difference);
-            message = difference > 0 ? "Defense overcome: defender destroyed, no LP damage." :
-                difference == 0 ? "Equal ATK/DEF: no destruction or damage." :
-                $"Defense holds: attacker takes {-difference} damage, neither destroyed.";
-            return true;
+            int delta = attack - DefenseValue(defenderSide, target);
+            destroyDefender = delta > 0;
+            if (delta < 0) Damage(attackerSide, -delta);
+            message = delta > 0 ? "Battle: defender marked for destruction." :
+                delta == 0 ? "Battle: equal ATK/DEF." :
+                $"Battle: attacker takes {-delta} damage.";
         }
-        int delta = AttackValue(attackerSide, source) - AttackValue(defenderSide, target);
-        // Equal ATK above zero destroys both; zero/zero tie leaves both.
-        if (delta == 0 && AttackValue(attackerSide, source) == 0)
+        else
         {
-            message = "Zero ATK tie: neither monster destroyed, no damage.";
-            return true;
+            int delta = attack - AttackValue(defenderSide, target);
+            if (delta != 0 || attack > 0)
+            {
+                destroyDefender = delta >= 0;
+                destroyAttacker = delta <= 0;
+            }
+            if (delta > 0) Damage(defenderSide, delta);
+            if (delta < 0) Damage(attackerSide, -delta);
+            message = delta == 0 ? "Battle: equal ATK, no LP damage." :
+                $"Battle: {Math.Abs(delta)} LP damage.";
         }
-        if (delta >= 0) RemoveMonster(defenderSide, target);
-        if (delta <= 0) RemoveMonster(attackerSide, source);
-        if (delta > 0) Damage(defenderSide, delta);
-        if (delta < 0) Damage(attackerSide, -delta);
-        message = delta == 0 ? "Equal ATK: both monsters destroyed, no damage." :
-            $"Battle: {Math.Abs(delta)} damage; weaker monster destroyed.";
+        return new(attackerSide, source, attacker, defenderSide, target, defender,
+                   destroyAttacker, destroyDefender);
+    }
+
+    private void FinishDeferredBattle()
+    {
+        BattleContinuation? battle = deferredBattle;
+        if (battle is null) return;
+        deferredBattle = null;
+        // An effect may already have removed a combatant. Never destroy an
+        // unrelated monster which later occupies the same slot.
+        if (battle.DestroyAttacker &&
+            ReferenceEquals(Monsters[battle.AttackerSide, battle.AttackerZone], battle.Attacker))
+            RemoveMonster(battle.AttackerSide, battle.AttackerZone);
+        if (battle.DestroyDefender &&
+            ReferenceEquals(Monsters[battle.DefenderSide, battle.DefenderZone], battle.Defender))
+            RemoveMonster(battle.DefenderSide, battle.DefenderZone);
+    }
+
+    // Immediate resolution for face-up combat with no FLIP transition.
+    private bool ResolveBattleOutcome(int attackerSide, int source, int defenderSide,
+                                      int target, out string message)
+    {
+        if (Monsters[attackerSide, source] is not Card attacker ||
+            Monsters[defenderSide, target] is not Card defender)
+        { message = "Battle stopped: a combatant left the field."; return false; }
+        deferredBattle = CalculateBattle(attackerSide, source, attacker, defenderSide, target,
+                                         defender, out message);
+        FinishDeferredBattle();
         return true;
     }
 
@@ -489,8 +551,13 @@ public sealed class DemoDuel
         switch (FlipEffectRules.Effect(card.Id))
         {
             case DemoFlipEffect.DestroyMonster:
-                PendingFlipTarget = new(owner, zone, card);
+                PendingFlipTarget = new(owner, zone, card, DemoFlipEffect.DestroyMonster);
                 message = $"{card.Name} FLIP (P{owner + 1}): choose a monster on either side to destroy.";
+                break;
+            case DemoFlipEffect.ReturnUpToTwo:
+                PendingFlipTarget = new(owner, zone, card, DemoFlipEffect.ReturnUpToTwo);
+                flipSelections.Clear();
+                message = $"{card.Name} FLIP (P{owner + 1}): choose up to two monsters to return to hand, then Done.";
                 break;
             case DemoFlipEffect.ReplaceHands:
                 for (int p = 0; p < 2; p++)
@@ -513,39 +580,87 @@ public sealed class DemoDuel
     }
 
     /// <summary>
-    /// Resolve target selection and resume an interrupted battle only if
-    /// the same attacker and defender still occupy their original zones.
+    /// Select a FLIP target. Penguin Soldier allows 0, 1, or 2 monsters,
+    /// and selection alone does not remove anything until FinishFlipTargets.
+    /// Battle-destroyed monsters still on the field are ineligible for return.
     /// </summary>
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
-        message = "Select an occupied monster on either side to resolve the FLIP effect.";
+        message = "Choose an eligible monster in either monster zone.";
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
             Monsters[targetPlayer, targetZone] is not Card target) return false;
-        PendingFlipTarget = null;
-        BattleContinuation? resume = deferredBattle;
-        deferredBattle = null;
-        RemoveMonster(targetPlayer, targetZone);
-        message = $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
-        if (resume is null) return true;
-        if (!ReferenceEquals(Monsters[resume.AttackerSide, resume.AttackerZone], resume.Attacker) ||
-            !ReferenceEquals(Monsters[resume.DefenderSide, resume.DefenderZone], resume.Defender))
+
+        if (pending.Effect == DemoFlipEffect.ReturnUpToTwo)
         {
-            message += " Battle stopped because a combatant left the field.";
+            if (IsMarkedForBattleDestruction(targetPlayer, targetZone))
+            {
+                message = "Battle-destroyed monsters cannot return to hand.";
+                return false;
+            }
+            if (flipSelections.Any(x => x.Player == targetPlayer && x.Zone == targetZone))
+            {
+                message = "Choose distinct targets.";
+                return false;
+            }
+            flipSelections.Add(new(targetPlayer, targetZone, target));
+            message = $"{pending.SourceCard.Name}: selected {flipSelections.Count}/2 target(s). Choose another or Done.";
+            if (flipSelections.Count == 2)
+                return FinishFlipTargets(out message);
             return true;
         }
-        ResolveBattleOutcome(resume.AttackerSide, resume.AttackerZone,
-                             resume.DefenderSide, resume.DefenderZone, out string battleMessage);
-        message += " " + battleMessage;
+
+        PendingFlipTarget = null;
+        RemoveMonster(targetPlayer, targetZone);
+        message = $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
+        FinishDeferredBattle();
+        return true;
+    }
+
+    /// <summary>Finish Penguin Soldier with zero or one selected target.</summary>
+    public bool FinishFlipTargets(out string message)
+    {
+        message = "No optional FLIP target selection is pending.";
+        if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnUpToTwo } pending) return false;
+        // Clear the pending interaction before cleaning up equipped monsters.
+        var targets = flipSelections.ToArray();
+        flipSelections.Clear();
+        PendingFlipTarget = null;
+        int returned = 0;
+        foreach (var target in targets)
+        {
+            if (ReferenceEquals(Monsters[target.Player, target.Zone], target.Card) &&
+                !IsMarkedForBattleDestruction(target.Player, target.Zone))
+            {
+                ReturnMonsterToHand(target.Player, target.Zone);
+                returned++;
+            }
+        }
+        FinishDeferredBattle();
+        message = $"{pending.SourceCard.Name} FLIP: returned {returned} monster(s) to their owners' hands.";
         return true;
     }
 
     private void RemoveMonster(int p, int z)
     {
-        graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
+        graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null;
+        DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
+        changedPosition[p, z] = attacked[p, z] = false;
         // Common cleanup only: no Banisher/token/trigger exceptions in this sandbox.
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
-        RemoveEquipment(e.Owner, e.SourceZone);
+            RemoveEquipmentCore(e.Owner, e.SourceZone);
+    }
+
+    private void ReturnMonsterToHand(int player, int zone)
+    {
+        Card card = Monsters[player, zone]!;
+        Monsters[player, zone] = null;
+        DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
+        changedPosition[player, zone] = attacked[player, zone] = false;
+        // Equip cards do not return with the monster; they go to the owner's graveyard.
+        foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
+            RemoveEquipmentCore(e.Owner, e.SourceZone);
+        hands[player].Add(card);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
     public void NextTurn() => EndTurn(out _);
