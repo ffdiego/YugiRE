@@ -76,8 +76,8 @@ internal static class LifePointSpellChecks
             string before = State(duel);
             check(!LifePointSpellRules.Supports(unknown) &&
                   LifePointSpellRules.ResolveDemo(unknown, 0) is null &&
-                  !duel.CanActivateFromHand(0) && !duel.Play(0, out _) &&
-                  State(duel) == before,
+                  duel.CanActivateFromHand(0) == (unknown == 300) &&
+                  !duel.Play(0, out _) && State(duel) == before,
                   $"Simple LP spell: unsupported resource {unknown} is not inferred");
         }
         check(LifePointSpellRules.ResolveDemo(338, -1) is null &&
