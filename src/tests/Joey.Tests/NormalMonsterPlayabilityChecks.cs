@@ -80,6 +80,9 @@ internal static class NormalMonsterPlayabilityChecks
               duel.AttackValue(0, zone) == card.Attack &&
               duel.DefenseValue(0, zone) == card.Defense,
               $"{label}: normal summon, tributes, and original base attributes");
+        // DemoDuel intentionally disallows Battle Phase on turn 1.
+        duel.NextTurn();
+        duel.NextTurn();
         check(duel.BeginBattle(out _) && duel.Attack(zone, -1, out _) &&
               duel.Life[1] == 8000 - card.Attack && duel.Monsters[0, zone] == card,
               $"{label}: normal monster can declare a direct attack");
