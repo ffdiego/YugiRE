@@ -17,7 +17,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 
 | Família / mecânica | Estado atual | Evidência de implementação | Limitação principal |
 | --- | --- | --- | --- |
-| Monstros normais — mecânicas genéricas | **Partial** (suporte de base) | `Demo.cs`: invocação comum, tributos por nível, set, mudança de posição e confronto básico | Não representa ~650 cartas individualmente validadas; faltam interações, exceções e cobertura por identidade |
+| Monstros normais (264 IDs do catálogo dos packs) | **Done** (ações básicas no sandbox) | `NormalMonsterPlayabilityChecks.cs` exercita cada ID em invocação, tributo, set e ataque; `DemoDuel` e `NormalSummonRules` | Ainda sem interações completas de magias/armadilhas, efeitos externos e paridade nativa; teste integral com metadados reais do DAT disponível como validação opcional |
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Equipamentos `P025` | **Partial** (3 IDs) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo | Faltam demais famílias, supressões e interações |
@@ -25,7 +25,11 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Falta ciclo de resolução/gatilhos |
 
-**Não usar os totais estimados do rascunho (~650 normais, ~180 magias, ~225 outras) como contagens verificadas.** Para totais precisos, consultar o DAT legítimo local; para `Done`, exigir comportamento/testes.
+**Todos os 499 monstros da união dos packs possuem classificação de referência:** 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` **somente para o ciclo básico (invocação/tributos/set/batalha) no sandbox C#**, sem alegar reproduzir o jogo original. Efeitos de monstros, fusões e rituais permanecem `Pending`. A classificação de cartas foi cruzada por fontes públicas, e os bits de categoria originais devem ser conferidos com o DAT no Windows.
+
+## Monstros normais compartilhando uma implementação
+
+Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `monster.normal`, e cada um é exercitado por `NormalMonsterPlayabilityChecks.Run` com propriedades sintéticas representativas dos níveis 1–8. No Windows, `Joey.Tests` com o `data.dat` também executa `RunWithCatalog`, usando nível, ATK/DEF e categoria **reais** de cada carta; essa última verificação não foi executada no CI sem DAT. Isso valida o escopo de sandbox, **não** 264 implementações de efeitos individuais ou paridade nativa. Identidades Normal históricas podem mudar entre edições, então divergências do DAT ainda devem ser revisadas.
 
 ## Cartas e magias jogáveis no sandbox (escopos delimitados)
 

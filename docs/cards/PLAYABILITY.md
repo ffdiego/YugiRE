@@ -2,18 +2,18 @@
 
 Métrica de cartas jogáveis no sandbox C#, não paridade com o executável original.
 
-- **Trilogia:** 23/771 = 2.98%
-- **Joey:** 9/350 = 2.57%
+- **Trilogia:** 287/771 = 37.22%
+- **Joey:** 83/350 = 23.71%
 - **Partial:** 3; **Verified:** 0 (trilogia).
 
 ## Por categoria
 
 | Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Trilogia | Monster | 499 | 0 | 0 | 499 | 0 | 0.00% |
+| Trilogia | Monster | 499 | 264 | 0 | 235 | 0 | 52.91% |
 | Trilogia | Spell | 172 | 23 | 3 | 146 | 0 | 13.37% |
 | Trilogia | Trap | 100 | 0 | 0 | 100 | 0 | 0.00% |
-| Joey | Monster | 194 | 0 | 0 | 194 | 0 | 0.00% |
+| Joey | Monster | 194 | 74 | 0 | 120 | 0 | 38.14% |
 | Joey | Spell | 84 | 9 | 0 | 75 | 0 | 10.71% |
 | Joey | Trap | 72 | 0 | 0 | 72 | 0 | 0.00% |
 
@@ -21,11 +21,11 @@ Métrica de cartas jogáveis no sandbox C#, não paridade com o executável orig
 
 | Subtipo | Trilogia | Joey |
 | --- | ---: | ---: |
-| Normal | 222 | 63 |
-| Effect | 154 | 81 |
-| Fusion | 30 | 9 |
-| Ritual | 6 | 2 |
-| ToReview | 87 | 39 |
+| Normal | 264 | 74 |
+| Effect | 193 | 109 |
+| Fusion | 34 | 9 |
+| Ritual | 8 | 2 |
+| ToReview | 0 | 0 |
 
 ## Como interpretar
 
@@ -39,3 +39,7 @@ Métrica de cartas jogáveis no sandbox C#, não paridade com o executável orig
 
 - https://github.com/omar39/yugioh-dataanalysis/blob/main/card_data.csv
 - https://github.com/mahinb/yugioh-card-data-analysis/blob/main/card_data_small.csv
+- https://github.com/maxDepa/YGOllama/tree/main/DataSet/Cards
+- https://www.db.yugioh-card.com/yugiohdb/
+- https://www.yugioh.com/cards
+- https://ftp.yugipedia.com/wiki/

@@ -54,10 +54,12 @@ e código Monster/Spell/Trap, extraídos do DAT original sem textos ou imagens.
 
 ## Subtipos de monstros
 
-A tabela `docs/cards/monster-subtypes.json` classifica **412 dos 499 monstros
-dos packs** por correspondência de nome exata/normalizada em bases públicas:
-222 Normal, 154 Effect, 30 Fusion e 6 Ritual. Os outros **87 são ToReview**,
-não classificados por falta de correspondência inequívoca. Nenhuma dessas
+A tabela `docs/cards/monster-subtypes.json` classifica **499 dos 499 monstros**
+por correspondência de nomes públicos e aliases históricos: **264 Normal,
+193 Effect, 34 Fusion e 8 Ritual**. Nenhum permanece ToReview na referência.
+Os 87 antigos desconhecidos foram resolvidos usando mais uma base pública e
+renomeações documentadas (ex.: Frog the Jam → Slime Toad, Harpie's Brother →
+Sky Scout e Kinetic Soldier → Cipher Soldier). Nenhuma dessas
 fontes atesta que a engine C# implemente os efeitos ou que o tipo no jogo
 original seja necessariamente igual ao catálogo moderno. O CSV local agora
 separa `subtype` de `subtypeSource` para evitar essas confusões.
@@ -65,14 +67,21 @@ separa `subtype` de `subtypeSource` para evitar essas confusões.
 Fontes de classificação:
 - https://github.com/omar39/yugioh-dataanalysis/blob/main/card_data.csv
 - https://github.com/mahinb/yugioh-card-data-analysis/blob/main/card_data_small.csv
+- https://github.com/maxDepa/YGOllama/tree/main/DataSet/Cards
+- https://www.db.yugioh-card.com/yugiohdb/
+- https://www.yugioh.com/cards
+- https://ftp.yugipedia.com/wiki/
 
-Para completar os 87 casos com segurança, confrontar as descrições e flags
-do DAT local e documentar divergências históricas. Ausência de callback não
-significa monstro normal.
+Para conferir a classificação com o formato histórico, execute no Windows a
+suíte `Joey.Tests` apontando para `../passion/data.dat`. O teste
+`NormalMonsterPlayabilityChecks.RunWithCatalog` compara os 264 registros Normal
+com sua categoria nativa, nível e regras de invocação usando as propriedades
+reais. Essa etapa é opcional para o desenvolvimento rápido do sandbox e ainda
+precisa de execução manual. Ausência de callback **não** significa Normal.
 
 ## Categorias e progresso
 
-A classe nativa vem de `(Properties >>20)&31`. Âncoras no catálogo de callback confirmam classe **21 = Trap** (Mirror Force, Trap Hole) e **22 = Spell** (Sparks, Sogen). Classes **1..20 = Monster**; classes especiais 0/23/24 ficam **Other** até revisão. A classificação de efeito/natureza exata para monstros e magias não anotados é **ToReview** — não se inventam subtipos a partir de bits 18–19, cujo significado está em aberto.
+A classe nativa vem de `(Properties >>20)&31`. Âncoras no catálogo de callback confirmam classe **21 = Trap** (Mirror Force, Trap Hole) e **22 = Spell** (Sparks, Sogen). Classes **1..20 = Monster**; classes especiais 0/23/24 ficam **Other** até revisão. Subtipos dos monstros foram associados a referências externas; bits 18–19 de propriedades entram nas regras de categoria de invocação já implementadas em `NormalSummonRules`, mas divergências entre as fontes públicas e o DAT devem ser auditadas. Outros subtipos de magias/armadilhas ainda podem aparecer como `ToReview`.
 
 O estado se baseia em `docs/cards/playability-manifest.json`, com resource IDs explícitos e evidência do código/testes:
 
@@ -81,7 +90,7 @@ O estado se baseia em `docs/cards/playability-manifest.json`, com resource IDs e
 - **Done:** efeito básico acionável no `DemoDuel`, coberto por testes no escopo documentado.
 - **Verified:** carta inteira comparada com o Joey original em cenário equivalente. **Nenhum caso é promovido automaticamente**.
 
-A porcentagem de conclusão usa `(Done+Verified)/total`, e não o número de checks unitários. O CSV também diferencia a infraestrutura de monstro normal do comportamento específico da carta: suporte a invocação e combate não prova que centenas de monstros de efeito estejam prontos.
+A porcentagem de conclusão usa `(Done+Verified)/total`, e não o número de checks unitários. O CSV diferencia classificação da carta e cobertura: **264 Normals estão Done somente no escopo de ações básicas testadas**; isso não prova que os 193 monstros de efeito, fusões e rituais estejam implementados.
 
 ### Taxonomia para a próxima revisão
 

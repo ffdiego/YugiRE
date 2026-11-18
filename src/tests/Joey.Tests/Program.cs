@@ -113,6 +113,7 @@ DifferentialNormalSummonTests.Run(Check,
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
+NormalMonsterPlayabilityChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 if (args.Length > 0)
@@ -129,6 +130,7 @@ if (args.Length > 0)
     DifferentialNormalSummonTests.RunWithCatalog(cards, Check,
         Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
     SummonTests.OperatorTribute(cards, Check);
+    NormalMonsterPlayabilityChecks.RunWithCatalog(cards, Check);
     Check(NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 812)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 363)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 56)) &&

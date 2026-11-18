@@ -40,9 +40,11 @@ python scripts/card_playability.py --dat ../passion/data.dat
 
 [Painel atualizado automaticamente](docs/cards/PLAYABILITY.md),
 [procedimento e critérios](docs/cards/playability-progress.md) e
-[inventário de funcionalidades](CARDS.md). Monstros não recebem `Done` apenas
-porque invocação e combate genéricos já funcionam. `Done` em C# não significa
-paridade nativa com Joey.
+[inventário de funcionalidades](CARDS.md). Os 264 monstros classificados como
+Normal foram testados em cenários de invocação, set, tributos e ataque como uma
+família compartilhada; monstros de efeito, rituais e fusões não ganham `Done`
+por essa infraestrutura. A verificação de cada registro real do `data.dat`
+continua disponível na suíte com DAT. `Done` em C# não significa paridade nativa.
 
 ## Histórico de cobertura por engenharia reversa (snapshot antigo)
 
