@@ -22,7 +22,7 @@
 
 ### Iteração A — tornar magias e equipamentos jogáveis
 
-- [ ] Integrar a família já parcialmente implementada de dano direto (`P045`) no fluxo comum de ativação/sets, com testes de alvos, LP, cemitério e restrições conhecidas.
+- [x] Integrar os cinco IDs de dano direto (`P045`) e cinco magias de recuperação de LP (338–341, 1315) em um fluxo único de ativação da mão/set; testes sintéticos para ambos os lados, LP, descarte e falhas atômicas. Escopo: **sandbox C#**, sem correntes/negação nativa.
 - [ ] Introduzir **zona de magia de campo** e cálculo dinâmico de stats. Começar por **Sogen** (o trace já observou +200/+200 para tipo nativo 15), depois ampliar a família `P036` com catálogo DAT local e testes. Ainda falta validar Beast-Warrior e interações com outras cartas.
 - [ ] Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos atualmente modelados. O perfil `P025` tem 41 callbacks catalogados; **não assumir** que 41 equipamentos já tenham a mesma regra.
 - [ ] Incorporar curas/danos adicionais em tabelas de efeitos, sem prometer tamanho de lote antes de confirmar o catálogo original.

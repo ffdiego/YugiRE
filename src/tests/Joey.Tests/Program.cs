@@ -178,6 +178,7 @@ if (args.Length > 0)
 }
 else DeckTraceChecks.Run(Check);
 DirectDamageChecks.Run(Check);
+LifePointSpellChecks.Run(Check);
 EquipmentChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);

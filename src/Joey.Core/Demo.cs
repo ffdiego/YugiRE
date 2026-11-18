@@ -96,7 +96,7 @@ public sealed class DemoDuel
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
         var warrior = all.FirstOrDefault(c => c.ClassCode == 15);
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
-        var spells = all.Where(c => EquipmentRules.Supports(c.Id) || c.Id is 342 or 345).OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
+        var spells = all.Where(c => EquipmentRules.Supports(c.Id) || LifePointSpellRules.Supports(c.Id)).OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
         {
@@ -117,7 +117,7 @@ public sealed class DemoDuel
         ? CanSummonFromHand(index)
         : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 && FirstFreeSpellZone() >= 0);
     public bool CanActivateFromHand(int index) => Winner == null && Phase == DemoPhase.Main &&
-        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) || Hand[index].Id == 0x593 || DirectDamageRules.Amount(Hand[index].Id).HasValue);
+        index >= 0 && index < Hand.Count && FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) || Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
     public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
         Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
@@ -179,15 +179,15 @@ public sealed class DemoDuel
             message = "Infinite Cards active: neither player has an end-turn hand limit.";
             return true;
         }
-        // Demo policy: flags=0 and the usual opponent preparation, not an observed native request.
-        // Immediate activation and graveyard movement remain demo orchestration, without chains.
-        var resolution = DirectDamageRules.Resolve(Hand[index].Id, 0,
-            (byte?)DirectDamageRules.PrepareTarget((byte)ActivePlayer));
-        if (resolution.Status != DirectDamageStatus.Command) return false;
-        var effect = resolution.Command!;
-        int damage = effect.Amount;
-        var card = Hand[index]; hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
-        Damage(effect.TargetPlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
+        // Demo policy: immediate LP effect and graveyard movement, without chains.
+        // Resolve before spending the card, so unsupported spells are atomic.
+        var card = Hand[index];
+        var change = LifePointSpellRules.ResolveDemo(card.Id, ActivePlayer);
+        if (change is null) return false;
+        hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
+        ApplyLifePointSpell(change.Value);
+        message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
+        return true;
     }
     public bool ActivateSetSpell(int zone, out string message)
     {
@@ -200,13 +200,24 @@ public sealed class DemoDuel
             SpellFaceDown[p, zone] = false;
             message = "Infinite Cards activated."; return true;
         }
-        // Same bounded plan as hand activation; native suppression is not modeled by the demo.
-        var resolution = DirectDamageRules.Resolve(card.Id, 0, (byte?)DirectDamageRules.PrepareTarget((byte)p));
-        if (resolution.Status != DirectDamageStatus.Command) return false;
-        var effect = resolution.Command!;
-        int damage = effect.Amount;
+        // Same bounded plan as hand activation; native suppression is not modeled.
+        var change = LifePointSpellRules.ResolveDemo(card.Id, p);
+        if (change is null) return false;
         Spells[p, zone] = null; SpellFaceDown[p, zone] = false; graves[p].Add(card);
-        Damage(effect.TargetPlayer, damage); message = $"{card.Name}: {damage} damage to opponent."; return true;
+        ApplyLifePointSpell(change.Value);
+        message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
+        return true;
+    }
+    private void ApplyLifePointSpell(LifePointSpellChange change)
+    {
+        ChangeLife(ActivePlayer, change.CasterDelta);
+        ChangeLife(1 - ActivePlayer, change.OpponentDelta);
+    }
+    private void ChangeLife(int player, int delta)
+    {
+        // Demo policy: LP cannot be negative; safe int ceiling for repeated healing.
+        Life[player] = (int)Math.Clamp((long)Life[player] + delta, 0L, int.MaxValue);
+        if (Life[player] == 0 && delta < 0) Winner = 1 - player;
     }
     public int AttackValue(int p, int z) => EquipmentStats(p, z).Attack;
     public int DefenseValue(int p, int z) => EquipmentStats(p, z).Defense;
@@ -334,7 +345,7 @@ public sealed class DemoDuel
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
         RemoveEquipment(e.Owner, e.SourceZone);
     }
-    private void Damage(int p, int value) { Life[p] = Math.Max(0, Life[p] - value); if (Life[p] == 0) Winner = 1 - p; }
+    private void Damage(int p, int value) => ChangeLife(p, -value);
     public void NextTurn() => EndTurn(out _);
     public bool EndTurn(out string message)
     {
