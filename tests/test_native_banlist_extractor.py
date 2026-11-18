@@ -12,7 +12,7 @@ def pe_fixture(entries=((47, 1), (573, 2), (500, 0))):
     data = bytearray(0x600)
     data[:2] = b"MZ"
     struct.pack_into("<I", data, 0x3C, 0x80)
-    data[0x80:0x84] = b"PE\\0\\0"
+    data[0x80:0x84] = (b"PE" + bytes(2))
     struct.pack_into("<H", data, 0x86, 1)
     struct.pack_into("<H", data, 0x94, 0xE0)
     struct.pack_into("<H", data, 0x98, 0x10B)
