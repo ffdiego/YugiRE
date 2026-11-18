@@ -1,4 +1,5 @@
 using Joey.Core;
+using Joey.LookAndFeel;
 using Raylib_cs;
 
 // GPU resources are owned here; originals stay in the archive and are never written out.
@@ -31,16 +32,39 @@ sealed class DatGraphics : IDisposable
     public Texture2D Texture(string name)
     {
         if (textures.TryGetValue(name, out var cached)) return cached;
-        var image = ReadImage(name);
         Texture2D texture;
-        try { texture = Raylib.LoadTextureFromImage(image); }
-        finally { Raylib.UnloadImage(image); }
+        if (name.EndsWith(".yga", StringComparison.OrdinalIgnoreCase))
+        {
+            var sprite = NativeYgaSprite.Decode(
+                (archive ?? throw new InvalidOperationException("No DAT open")).Read(name),
+                static (data, size) => Archive.Decode(data, size));
+            texture = UploadYga(sprite);
+        }
+        else
+        {
+            var image = ReadImage(name);
+            try { texture = Raylib.LoadTextureFromImage(image); }
+            finally { Raylib.UnloadImage(image); }
+        }
         if (texture.Id == 0) throw new InvalidDataException($"Cannot upload texture {name}");
         Raylib.SetTextureFilter(texture, TextureFilter.Point);
         textures.Add(name, texture);
         loaded.Enqueue(name);
         return texture;
     }
+    private static unsafe Texture2D UploadYga(NativeYgaSprite sprite)
+    {
+        fixed (byte* pixels = sprite.Rgba)
+        {
+            var image = new Image
+            {
+                Data = pixels, Width = sprite.Width, Height = sprite.Height,
+                Mipmaps = 1, Format = PixelFormat.UncompressedR8G8B8A8
+            };
+            return Raylib.LoadTextureFromImage(image);
+        }
+    }
+
     Image ReadImage(string name)
     {
         byte[] bytes = (archive ?? throw new InvalidOperationException("No DAT open")).Read(name);
@@ -78,7 +102,17 @@ sealed class DatGraphics : IDisposable
             finally { Raylib.UnloadImage(image); }
             count++;
         }
-        Console.WriteLine($"Decoded {count} BMP resources, including card artwork; {Artwork.Count} card mappings.");
+        // Also validate actual original activation sprites, with no GPU/window
+        // required. The paths and 164px dimensions come from visual RE.
+        foreach (string name in ActivationSpriteNames.All)
+        {
+            var sprite = NativeYgaSprite.Decode(archive.Read(name),
+                static (data, size) => Archive.Decode(data, size));
+            if (sprite.Width != 164 || sprite.Height != 164)
+                throw new InvalidDataException($"Activation YGA dimensions differ: {name}");
+            count++;
+        }
+        Console.WriteLine($"Decoded {count} BMP/YGA resources, including four activation sprites; {Artwork.Count} card mappings.");
     }
     public void Dispose()
     {

@@ -57,6 +57,17 @@ public sealed class MyQuickJoey : FastLookAndFeel
 }
 ```
 
+## Prévia de ativação com sprites do DAT
+
+A primeira integração desenhável está documentada em
+[`activation-preview.md`](activation-preview.md). `NativeYgaSprite`
+decodifica pixels BGRA dos YGAs originais com LZSS fornecido pelo chamador;
+`ActivationEffectPlayback` executa os 17 updates lógicos do nativo, usando
+uma frequência de atualização **escolhida pelo cliente**. O app raylib
+desenha os dois sprites e o scratch intermediário. A fidelidade de mistura,
+tabela de cosseno e temporização com o original **não foi demonstrada**.
+A animação fica congelada nesta fatia e a prioridade volta às cartas.
+
 ## Separação pretendida
 
 ```text

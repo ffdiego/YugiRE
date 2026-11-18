@@ -117,6 +117,7 @@ NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
 LookAndFeelChecks.Run(Check);
 NativePresentationChecks.Run(Check);
+ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 if (args.Length > 0)

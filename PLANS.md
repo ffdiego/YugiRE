@@ -63,6 +63,8 @@
 
 - [x] Criar `Joey.LookAndFeel` independente do Core e raylib, com perfis Classic/Fast/Silent/Instant, clock não bloqueante, overrides e integração inicial de realce de texto no `Joey.App`.
 - [x] Consolidar os achados estáticos da `analise-visual` em `Joey.LookAndFeel`: mão/hover, posições espelhadas, update de ativação e explosão, passes/alpha e critérios de despacho, com testes e ligação parcial à raylib.
+- [x] Prévia visual de ativação jogável em raylib com os quatro YGAs originais carregados do DAT local, modelo nativo de três passes, clock de protótipo e perfis Classic/Fast/Instant; testes C# e verificação opcional de assets.
+- [x] **Pausar a trilha visual após a prévia de ativação**; voltar à Iteração B (comportamento de cartas FLIP, Hane-Hane/Morphing Jar #2).
 - [ ] Confirmar cadência nativa de update/draw, tabela de cossenos x16.16 e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
 - [ ] Adicionar eventos de apresentação tipados do Core, timeline de animações de cartas, transições e LP animado, sem acoplar regras ao tempo de tela.
 - [ ] Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política, pois ainda não existe player de voz), preservando a apresentação clássica.

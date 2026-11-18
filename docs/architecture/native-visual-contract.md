@@ -116,6 +116,17 @@ evidência mostra que **draw também altera estado** para essa classe.
 Não se afirmou duração de animação em segundos, FPS de 60 do nativo nem
 contagem fixa de imagens exibidas.
 
+## Primeira prévia em raylib (posterior à análise estática)
+
+A aplicação agora carrega os sprites de ativação `kouka_ue/sita_b/y.yga`
+do DAT original por `NativeYgaSprite` e desenha os três passes via
+`DuelActivationScreen.cs` quando uma magia suportada é realmente ativada.
+A política temporal `ActivationEffectPlayback` segue os 17 updates do
+contador, mas usa **60 atualizações/s como escolha do cliente**, não
+medição do EXE. As transformações usam tabela gerada com `Math.Cos`
+e GPU blending da raylib; isto é uma **prévia**, não replay pixel-perfect.
+[Instruções, limitações e pausa da trilha](activation-preview.md).
+
 ## Validação, limites e próximos trabalhos
 
 `NativePresentationChecks` valida fórmulas e contadores sintéticos,

@@ -60,7 +60,12 @@ static partial class Game
             choosingEquip = true;
             message = $"Choose a compatible face-up monster for {card.Name}.";
         }
-        else if (duel.Play(index, out message)) ClearDuelSelection();
+        else if (duel.Play(index, out message))
+        {
+            if (card.ClassCode == 22)
+                BeginSpellActivation(525, 460); // Preview center: free spell region.
+            ClearDuelSelection();
+        }
     }
     static string HandActionCaption(int index) => duel.PendingEndDiscards > 0 ? "Discard" :
         setHandAction ? "Set" : duel.Hand[index].IsMonster ? "Summon" : "Activate";
@@ -129,8 +134,10 @@ static partial class Game
             {
                 DrawFieldCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
-                    Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect))
-                    duel.ActivateSetFieldSpell(out message);
+                    Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
+                    duel.ActivateSetFieldSpell(out message))
+                    BeginSpellActivation((int)(fieldRect.X + fieldRect.Width / 2),
+                                         (int)(fieldRect.Y + fieldRect.Height / 2));
             }
             for (int zone = 0; zone < 5; zone++)
             {
@@ -178,7 +185,12 @@ static partial class Game
                     }
                     else if (choosingEquip && monster != null)
                     {
-                        if (duel.Equip(hand, player, zone, out message)) ClearDuelSelection();
+                        if (duel.Equip(hand, player, zone, out message))
+                        {
+                            var center = NativeDuelLayout.MonsterCenter(zone, own);
+                            BeginSpellActivation(center.X, center.Y);
+                            ClearDuelSelection();
+                        }
                     }
                     else if (duel.Phase == DemoPhase.Battle)
                     {
@@ -187,8 +199,10 @@ static partial class Game
                     }
                     else if (own && monster != null) duel.ChangePosition(zone, out message);
                 }
-                else if (own && Hit(spellRect) && duel.Spells[player, zone] != null)
-                    duel.ActivateSetSpell(zone, out message);
+                else if (own && Hit(spellRect) && duel.Spells[player, zone] != null &&
+                         duel.ActivateSetSpell(zone, out message))
+                    BeginSpellActivation((int)(spellRect.X + spellRect.Width / 2),
+                                         (int)(spellRect.Y + spellRect.Height / 2));
             }
         }
     }
@@ -216,7 +230,8 @@ static partial class Game
     }
     static void DrawDuel()
     {
-        presentation.Advance(TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1)));
+        TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
+        presentation.Advance(frameElapsed);
         Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
         if (Button("< Menu", 8, 8, 85, 30)) screen = "menu";
         Label($"LOCAL DEMO · {presentation.Style.Name}", 105, 16, 13, Gold);
@@ -246,6 +261,7 @@ static partial class Game
         else Wrap("Hover a hand card. Right-click switches Summon/Activate to Set.", 12, 95, 195, 18);
         DrawDuelField(handInput);
         DrawDuelHand();
+        DrawSpellActivation(frameElapsed);
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
             string help = flip.Effect == DemoFlipEffect.ReturnUpToTwo
