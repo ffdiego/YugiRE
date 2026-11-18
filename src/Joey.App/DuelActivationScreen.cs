@@ -31,7 +31,7 @@ static partial class Game
         // Its size is currently a declared zone-size approximation.
         var scratch = spellActivation.ScratchBounds;
         Raylib.DrawRectangle(scratch.X, scratch.Y, scratch.Width, scratch.Height,
-            new Color(0, 0, 0, (byte)Math.Clamp(frame.Scratch.Opacity, 0, 255)));
+            new Color(0, 0, 0, Math.Clamp(frame.Scratch.Opacity, 0, 255)));
 
         DrawActivationSprite(frame.Upper);
     }
@@ -47,7 +47,7 @@ static partial class Game
             new Rectangle(spellActivation.Center.X, spellActivation.Center.Y, width, height),
             new Vector2(width / 2, height / 2),
             pass.RotationIndex * (360.0f / 512.0f),
-            new Color(255, 255, 255, (byte)Math.Clamp(pass.Opacity, 0, 255)));
+            new Color(255, 255, 255, Math.Clamp(pass.Opacity, 0, 255)));
         // Raylib's alpha blend differs from the original CPU raster's two
         // integer divisions and color-key semantics. Visual parity unverified.
     }
