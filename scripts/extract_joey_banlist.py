@@ -36,7 +36,7 @@ def va_to_file_offset(data: bytes, va: int, size: int) -> int:
     if len(data) < 0x40 or data[:2] != b"MZ":
         raise ValueError("Not a PE DOS executable")
     pe = _u32(data, 0x3C)
-    if pe + 24 > len(data) or data[pe:pe + 4] != b"PE\\0\\0":
+    if pe + 24 > len(data) or data[pe:pe + 4] != (b"PE" + bytes(2)):
         raise ValueError("Invalid PE header")
     section_count = _u16(data, pe + 6)
     optional_length = _u16(data, pe + 20)
