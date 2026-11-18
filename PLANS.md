@@ -20,6 +20,14 @@
 
 ## Entregas sugeridas
 
+### Inventário e porcentagem de jogabilidade
+
+- [x] Criar manifest por resource ID com status e famílias de efeito, separado do registry legado de RE.
+- [x] Criar `scripts/card_playability.py` para ler `data.dat` com Joey.Coverage, filtrar as 771 cartas dos três packs ou 350 de Joey, separar Monster/Spell/Trap e produzir CSV/JSON/Markdown com porcentagens.
+- [ ] Executar no DAT original local e conferir o total e os subtipos; revisar famílias e efeitos ainda sem classificação sem copiar recursos proprietários ao Git.
+- [ ] Expandir a taxonomia para Normal/Effect/Fusion/Ritual, compra, destruição, FLIP, cemitério, negação e afins a partir dos textos locais, sem marcar como Done por inferência.
+- [ ] Atualizar o manifest após cada implementação, com evidência e testes de cenário.
+
 ### Iteração A — tornar magias e equipamentos jogáveis
 
 - [x] Integrar os cinco IDs de dano direto (`P045`) e cinco magias de recuperação de LP (338–341, 1315) em um fluxo único de ativação da mão/set; testes sintéticos para ambos os lados, LP, descarte e falhas atômicas. Escopo: **sandbox C#**, sem correntes/negação nativa.

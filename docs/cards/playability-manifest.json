@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "description": "Playability in Joey.Core/DemoDuel, NOT native RE parity. Resource IDs are exact and are not normalized.",
+  "statuses": [
+    "Pending",
+    "Partial",
+    "Done",
+    "Verified"
+  ],
+  "groups": [
+    {
+      "id": "lp.damage",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "LP damage"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        342,
+        343,
+        344,
+        345,
+        1007
+      ],
+      "evidence": [
+        "src/Joey.Core/LifePointSpellRules.cs",
+        "src/tests/Joey.Tests/LifePointSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "lp.heal",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "LP recovery"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        338,
+        339,
+        340,
+        341,
+        1315
+      ],
+      "evidence": [
+        "src/Joey.Core/LifePointSpellRules.cs",
+        "src/tests/Joey.Tests/LifePointSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "field.type",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Field modifier",
+        "Monster type"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        329,
+        330,
+        331,
+        332,
+        333,
+        334
+      ],
+      "evidence": [
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
+      ],
+      "limitations": [
+        "Native timing and eligibility are not fully verified; Sea Serpent native type code 5 is provisional."
+      ]
+    },
+    {
+      "id": "field.attribute",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Field modifier",
+        "Attribute"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1125,
+        1126,
+        1127,
+        1128,
+        1129,
+        1130
+      ],
+      "evidence": [
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/tests/Joey.Tests/AttributeFieldSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "field.position",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Field modifier",
+        "Battle position"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1069
+      ],
+      "evidence": [
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "equipment",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Equip",
+        "ATK/DEF modifier"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        300,
+        301,
+        307
+      ],
+      "evidence": [
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/tests/Joey.Tests/EquipmentChecks.cs"
+      ],
+      "limitations": [
+        "Only selected equipment eligibility and lifecycle cases in the sandbox; not full native interactions."
+      ]
+    },
+    {
+      "id": "hand.limit",
+      "kind": "Spell",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Hand limit"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1427
+      ],
+      "evidence": [
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/InfiniteCardsTests.cs"
+      ]
+    }
+  ]
+}

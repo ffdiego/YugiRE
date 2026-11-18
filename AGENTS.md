@@ -19,13 +19,15 @@ Projeto: reimplementar **Yu-Gi-Oh! Power of Chaos: Joey the Passion** em C# / .N
 - `src/tests/Joey.Tests/`: testes rápidos de cenários jogáveis e regressões, com fixtures mínimos.
 - `src/Joey.Lab/`: análise e simulação offline; comandos existentes não devem ser anunciados como implementados sem conferir o CLI.
 - `yugilab/` + `native_hooks/`: captura do executável original, com preflight e gerenciamento do PID próprio. Preservar o ferramental; usá-lo para esclarecer dúvidas, não para atrasar o C#.
-- `PLANS.md`: prioridades vivas. `CARDS.md`: estado de funcionalidade por mecânica/carta, sem contagens inventadas.
+- `PLANS.md`: prioridades vivas. `CARDS.md`: estado funcional. `docs/cards/playability-manifest.json`: fonte versionada de status por resource ID. `scripts/card_playability.py`: métricas pelo DAT local sem dados proprietários no Git.
 
 ## Definição prática de pronto
 
 - **Pending:** sem regra implementada. **Partial:** primitivo ou integração parcial. **Done:** comportamento completo **no escopo anunciado** em `Joey.Core`, exercitável no duelo e coberto por testes C#. **Verified:** adicionalmente comparado com observação do Joey original. Um teste sintético não vira `Verified`.
 - Marque as limitações de escopo (por exemplo, ausência de correntes, efeitos globais ou interação com outras cartas); não declare todo o catálogo de monstros pronto apenas porque a invocação e o combate básicos funcionam.
 - Prefira fatias menores que deixem o jogo melhor no fim da sessão. Um número grande de cartas listadas sem ativação jogável não é progresso funcional.
+- A cada carta nova, atualizar `CARDS.md` e `docs/cards/playability-manifest.json` com resource ID exato, família, status e evidência de teste. Não declarar Done por catálogo/callback ou invocação genérica de monstros.
+- Para medir porcentagem: `python scripts/card_playability.py --dat ../passion/data.dat`. Denominador é a união de packs (771 registros) ou Joey (350), não os 1.114 registros nem o número de callbacks. Sem DAT local, não inventar percentuais.
 
 ## Git e trabalho entre máquinas
 

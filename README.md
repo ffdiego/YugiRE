@@ -21,7 +21,25 @@ Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-
 O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
 a comparação dinâmica completa de um duelo normal ainda está pendente.
 
-## Progresso da reimplementação
+## Progresso jogável (novo indicador)
+
+O objetivo atual é medir **cartas jogáveis em Joey.Core**, por categoria, a partir da
+união dos packs (771 registros) ou apenas Joey (350). O manifest versionado
+`docs/cards/playability-manifest.json` lista as implementações documentadas;
+o gerador cruza resource IDs e catálogo do DAT local, sem versionar dados do jogo.
+
+```powershell
+python scripts/card_playability.py --dat ../passion/data.dat
+# Relatório: scratch/card-playability/PROGRESS.md
+# Inventário: scratch/card-playability/cards.csv
+```
+
+[Procedimento e critérios](docs/cards/playability-progress.md) e
+[Inventário de funcionalidades](CARDS.md). Monstros não recebem `Done` apenas
+porque invocação e combate genéricos já funcionam. `Done` em C# não significa
+paridade nativa com Joey.
+
+## Histórico de cobertura por engenharia reversa (snapshot antigo)
 
 Estado do [Card Coverage Registry](docs/coverage/integration-report.md), no baseline
 revisado `12f560f` (preservado nesta integração):
