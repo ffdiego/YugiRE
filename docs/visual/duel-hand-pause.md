@@ -45,7 +45,7 @@ Em `0x005DB560`: monstros próprios em X `369,447,525,603,681`, Y `352`,
 e adversários na ordem inversa, Y `248`. O BMP original de campo mede 570×600
 e é desenhado a partir de X=230 no protótipo.
 
-`HandPresentation.cs` usa as fórmulas e elevação já identificadas; dimensões
+`Joey.LookAndFeel/HandPresentation.cs` usa as fórmulas e elevação já identificadas; dimensões
 108×153 foram escolhidas a partir do recurso `card_waku#l.bmp`. A ligação
 exata entre essas dimensões e os globais de tamanho do renderer ainda não foi
 fechada. Frequência de atualização, paginação em seis cartas, desenho do balão,

@@ -7,6 +7,14 @@ alterar resultados, disparar compras ou introduzir delays em testes automatizado
 
 ## Componentes
 
+A consolidação da análise estática da branch `analise-visual` foi organizada
+em [**contrato visual nativo**](native-visual-contract.md). As fórmulas de mão,
+centros do campo, contadores de ativação/explosão e despacho de objetos
+agora residem em `Joey.LookAndFeel` e não em `Joey.Core`.
+O port modela **updates e parâmetros**, sem atribuir FPS ou milissegundos
+nativos ainda não medidos.
+
+
 - `DuelPresentationCue`: `CardMove`, `FlipReveal`, `FlipEffect`, `Battle`,
   `LifePoints` e `JoeySpeech`. São **pontos de extensão**, não uma reprodução
   já comprovada dos tempos nativos.
@@ -15,13 +23,23 @@ alterar resultados, disparar compras ou introduzir delays em testes automatizado
 - `FastLookAndFeel`: 2x os tempos do preset clássico.
 - `SilentLookAndFeel`: desativa cues de voz, mas mantém animação.
 - `InstantLookAndFeel`: sem delays de animação nem de fala.
+- `HandPresentation` e `NativeDuelLayout`: mão, movimento, posições e
+  retângulos sem dependências da engine ou da raylib.
+- `NativeActivationTimeline` / `NativeActivationFrame`: contadores e três
+  passes, consumindo tabela de cosseno x16.16 fornecida pelo chamador.
+- `NativeExplosionTimeline`: update e draw separados para preservar
+  as janelas de desenho da análise estática.
+- `NativeVisualDispatch`: máscaras e ordenação dos objetos nativos.
 - `DuelPresentationClock`: relógio de frame não bloqueante com `Show`,
   `Advance`, `SetStyle` e `Clear`. Não chama `Sleep`, `Task.Delay` ou
   qualquer método de `Joey.Core`.
 
 No `Joey.App` atual, os argumentos `--fast`, `--instant` e `--mute-joey`
 selecionam o preset ao iniciar, e a janela mostra o nome. A duração do cue
-controla apenas o realce do **texto de feedback**. A camada de áudio/vozes do
+controla apenas o realce do **texto de feedback**. O perfil também altera
+a suavização de movimento da mão: Classic = 1 passo nativo por render,
+Fast = 2, Instant = posicionamento imediato. Esta política por frame ainda
+não corresponde a um FPS nativo confirmado. A camada de áudio/vozes do
 Joey ainda **não existe**, portanto `--mute-joey` é uma política preparada
 para futuras falas, **não** a desativação de um player de áudio já integrado.
 Não confundir o timing inicial do demo com valores medidos no executável.

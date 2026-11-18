@@ -21,6 +21,13 @@ public class DuelLookAndFeel
     public virtual bool PlayAnimations => true;
     public virtual bool PlayJoeyVoice => true;
 
+    /// <summary>
+    /// One native hand-motion update per client render call by default.
+    /// This is not a claim about the original game's update frequency.
+    /// </summary>
+    public virtual int MoveCardAxis(int current, int target) =>
+        HandPresentation.Approach(current, target);
+
     /// <summary>Nominal sandbox timing, not reverse-engineered native timing.</summary>
     protected virtual TimeSpan BaseDuration(DuelPresentationCue cue) => cue switch
     {
@@ -50,6 +57,10 @@ public class FastLookAndFeel : DuelLookAndFeel
 {
     public override string Name => "Fast";
     public override double Speed => 2.0;
+
+    /// <summary>Two native motion steps per client render call.</summary>
+    public override int MoveCardAxis(int current, int target) =>
+        base.MoveCardAxis(base.MoveCardAxis(current, target), target);
 }
 
 /// <summary>Visual effects without character voice cues (voice playback is future UI integration).</summary>
@@ -65,6 +76,7 @@ public class InstantLookAndFeel : DuelLookAndFeel
     public override string Name => "Instant";
     public override bool PlayAnimations => false;
     public override bool PlayJoeyVoice => false;
+    public override int MoveCardAxis(int current, int target) => target;
 }
 
 /// <summary>

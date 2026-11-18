@@ -41,6 +41,7 @@ python scripts/card_playability.py --dat ../passion/data.dat
 [Painel atualizado automaticamente](docs/cards/PLAYABILITY.md),
 [efeitos FLIP jogáveis](docs/cards/flip-sandbox.md),
 [arquitetura Joey.LookAndFeel](docs/architecture/look-and-feel.md),
+[contrato visual recuperado via Ghidra](docs/architecture/native-visual-contract.md),
 [procedimento e critérios](docs/cards/playability-progress.md) e
 [inventário de funcionalidades](CARDS.md). Os 264 monstros classificados como
 Normal foram testados em cenários de invocação, set, tributos e ataque como uma

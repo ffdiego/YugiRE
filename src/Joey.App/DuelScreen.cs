@@ -93,7 +93,7 @@ static partial class Game
         for (int slot = 0; slot < 6; slot++)
         {
             int target = hoverHand == handPage * 6 + slot ? HandPresentation.HoverOffset : 0;
-            handLift[slot] = HandPresentation.Approach(handLift[slot], target);
+            handLift[slot] = presentation.Style.MoveCardAxis(handLift[slot], target);
         }
         if (hoverHand < 0) return overHand;
         hand = hoverHand; attacker = -1;
@@ -134,9 +134,14 @@ static partial class Game
             }
             for (int zone = 0; zone < 5; zone++)
             {
-                int x = 336 + (own ? zone : 4 - zone) * 78;
-                var monsterRect = new Rectangle(x, own ? 308 : 204, 66, 88);
-                var spellRect = new Rectangle(x, own ? 416 : 96, 66, 88);
+                var nativeBounds = NativeDuelLayout.MonsterBounds(zone, own);
+                int x = nativeBounds.X;
+                var monsterRect = new Rectangle(nativeBounds.X, nativeBounds.Y,
+                    nativeBounds.Width, nativeBounds.Height);
+                // Spell/field vertical placement remains a client-specific choice;
+                // only monster centers are native-coordinate evidence.
+                var spellRect = new Rectangle(nativeBounds.X, own ? 416 : 96,
+                    nativeBounds.Width, nativeBounds.Height);
                 var monster = duel.Monsters[player, zone];
                 Raylib.DrawRectangleLinesEx(monsterRect, 1, own ? Gold : Color.Gray);
                 Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
