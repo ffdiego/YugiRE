@@ -1,30 +1,47 @@
-# Orientações para agentes no YugiRE
+# AGENTS.md — orientações para agentes do YugiRE
 
-Projeto: engenharia reversa de **Yu-Gi-Oh! Power of Chaos: Joey the Passion** e reimplementação de regras/IA em C#/.NET 10, com raylib-cs na interface. **Joey.Lab** é o laboratório .NET; `native_hooks/` contém o backend Frida/DLL; `yugilab/` é o laboratório Python legado, preservado durante a migração.
+Projeto: reimplementar **Yu-Gi-Oh! Power of Chaos: Joey the Passion** em C# / .NET 10, com **Joey.Core** para regras e **Joey.App (raylib-cs)** para a experiência visual clássica.
 
-## Como escolher trabalho
+## Prioridade de trabalho
 
-- O plano operacional, a fila de tarefas, os proprietários e os pontos de parada estão em [PLANS.md](PLANS.md).
-- Quando o usuário pedir para continuar **a trilha nativa** ou **a trilha laboratório**, escolha a primeira tarefa desbloqueada da sua trilha. Não assuma controle da outra.
-- Em trabalhos pontuais explicitamente solicitados, cumpra o pedido, sem iniciar o roadmap automaticamente.
-- Releia apenas os documentos relevantes à tarefa. Não reanalise todo o repositório a cada turno.
-- **Sol / investigação nativa**: `docs/research/` (contratos e evidências), scripts Ghidra e, quando necessário, instrumentação passiva em `native_hooks/`. **Terra / implementação do laboratório**: `src/Joey.Lab/`, testes/fixtures correspondentes e código C# apoiado em contratos já estabelecidos. Um agente não altera arquivos sob responsabilidade do outro sem coordenação.
-- `PLANS.md` e este arquivo pertencem ao coordenador/usuário: os dois agentes propõem ajustes via handoffs, sem editar ambos os arquivos enquanto trabalham em paralelo.
+**Funcionalidade jogável e manutenção simples têm prioridade sobre paridade interna de assembly.** Não tente reproduzir opcodes, callbacks, buffers e arquitetura da engine original quando uma regra de domínio C# for suficiente. Preserve a engenharia reversa existente como referência, não como bloqueio geral.
 
-## Princípios de engenharia
+- Implemente **verticalmente**: regra → integração em `DemoDuel`/motor → teste → UI se aplicável → atualização de `CARDS.md`.
+- Para efeitos claros, use `Card.Description` do DAT **local**, regras da época de Joey, perfis de callback (`docs/evidence/card-callback-catalog.json`) e evidências já documentadas. Não exija captura Windows para começar uma implementação simples.
+- Agrupe cartas por mecânica; prefira tabelas declarativas e primitivos reutilizáveis a um `if` espalhado por cada ID.
+- Se houver ambiguidade material (timing, custos, alvo, cadeia, comportamento exclusivo de Joey), escolha uma implementação conservadora e testável, registre a hipótese no teste/`CARDS.md` e use o executável original como oráculo **sob demanda**.
+- Não transforme uma hipótese em resultado verificado. Diferencie explicitamente *implementado no sandbox*, *testado em C#*, *observado no Joey* e *inferido*. Índice interno, resource ID e slot são distintos.
 
-- Diferencie **assembly/decompilação**, **captura nativa observada**, **inferência**, **contexto declarado** e **teste sintético**. Nunca afirme equivalência dinâmica com base somente em oráculos gerados do mesmo pseudocódigo.
-- Em observações, desconhecido permanece `null`/`Unsupported`, nunca vira 0, false, ataque ou ausência de efeitos. Preserve índice interno, ID de recurso e slot como campos distintos.
-- Valide o SHA256 do executável quando o artefato local estiver disponível: `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`. Ausência de hash no JSONL não é atestado implícito.
-- Não execute Joey no Fedora, não altere EXE/DAT/saves/replays nem grave alterações no projeto Ghidra persistente. Consultas Ghidra com `-readOnly`/`-noanalysis` quando aplicável. Não invoque helpers nativos para obter respostas sem investigação de efeitos colaterais.
-- Não versionar dados proprietários extraídos em massa, descrições integrais de cartas, saves ou traces brutos sensíveis; prefira metadados, hashes, resumos, fixtures mínimos e proveniência.
-- Mantenha `Joey.Core` independente de Frida/Windows/Python; não use o modelo da engine para representar estado parcialmente observado sem um adaptador que valide a completude.
-- Não remova `yugilab/`, `native_hooks/` ou código legado até passar os critérios de equivalência do plano e obter aprovação explícita. Não instale dependências grandes sem necessidade comprovada.
+## Arquitetura
 
-## Concorrência, validação e entrega
+- `src/Joey.Core/`: catálogo, estado de duelo, cartas, atributos, efeitos e IA; **sem dependência de Frida/Windows/Python**.
+- `src/Joey.App/`: raylib, UI, assets locais, sons e timings; animações **não** determinam as regras.
+- `src/tests/Joey.Tests/`: testes rápidos de cenários jogáveis e regressões, com fixtures mínimos.
+- `src/Joey.Lab/`: análise e simulação offline; comandos existentes não devem ser anunciados como implementados sem conferir o CLI.
+- `yugilab/` + `native_hooks/`: captura do executável original, com preflight e gerenciamento do PID próprio. Preservar o ferramental; usá-lo para esclarecer dúvidas, não para atrasar o C#.
+- `PLANS.md`: prioridades vivas. `CARDS.md`: estado de funcionalidade por mecânica/carta, sem contagens inventadas.
 
-- Para trabalhos paralelos com escrita, use **worktrees e branches diferentes**. Nunca dois agentes escrevendo no mesmo checkout. Não faça force-push ou push automático em `main`.
-- Commits pequenos com testes e evidências; prefira enviar a branch própria para revisão quando autorizado. Não integre branches concorrentes sem verificar conflitos e rodar regressões.
-- Testes típicos: `dotnet build YugiRE.sln --no-restore`; `dotnet run --project src/tests/Joey.Tests --no-build -- ../passion/data.dat ../passion/deck.ydc`; `python3 -m unittest discover -s native_hooks/tests`; `python3 -m unittest discover -s yugilab/tests`; e os testes JS relevantes em `native_hooks/tests/`. Explique dependências locais ausentes em vez de afirmar PASS.
-- Ao concluir uma unidade de trabalho, registre commit, testes realmente executados, evidência, incerteza e próximo passo em um handoff próprio da trilha, conforme `PLANS.md`.
-- **Pare com justificativa** quando precisar de uma captura Windows, decisão do usuário, novo contrato da outra trilha, permissão, artefato ausente ou quando não houver tarefa segura e útil desbloqueada. Não invente resultados para continuar consumindo franquia. Não prometa execução automática depois que o turno terminar.
+## Definição prática de pronto
+
+- **Pending:** sem regra implementada. **Partial:** primitivo ou integração parcial. **Done:** comportamento completo **no escopo anunciado** em `Joey.Core`, exercitável no duelo e coberto por testes C#. **Verified:** adicionalmente comparado com observação do Joey original. Um teste sintético não vira `Verified`.
+- Marque as limitações de escopo (por exemplo, ausência de correntes, efeitos globais ou interação com outras cartas); não declare todo o catálogo de monstros pronto apenas porque a invocação e o combate básicos funcionam.
+- Prefira fatias menores que deixem o jogo melhor no fim da sessão. Um número grande de cartas listadas sem ativação jogável não é progresso funcional.
+
+## Git e trabalho entre máquinas
+
+**Fluxo preferencial para um agente escritor:** atualizar `main` com `git pull --ff-only`, implementar uma unidade pequena, executar testes, commitar e fazer push para `origin/main`. Assim, outra máquina pode continuar com um pull simples. Não fazer force-push nem publicar código sabidamente quebrado.
+
+**Concorrência:** apenas **um escritor por vez na `main`**. Agentes em paralelo podem pesquisar ou trabalhar em branches/worktrees isoladas; integrar sequencialmente após revisar conflitos. Não permitir que duas sessões independentes façam push concorrente para a mesma `main` sem coordenação. PRs continuam úteis para mudanças arriscadas, grandes ou não validadas.
+
+## Validação proporcional
+
+- Regras C#: `dotnet build YugiRE.sln` e `dotnet run --project src/tests/Joey.Tests`.
+- Backend alterado: `python -m unittest discover -s native_hooks/tests`, `python -m unittest discover -s yugilab/tests` e testes Node pertinentes.
+- Não afirme que um comando passou sem executá-lo. Se faltarem .NET, DAT original ou Windows, explique qual validação ficou pendente; não invente resultados.
+- Para capturas simples no Windows, prefira `python scripts/duelos.py` (ou `--battle-attributes`). O modo `--trace-state` atual limita a 3 duelos/1 worker; para lotes maiores use `--no-state`, sem fingir equivalência de cobertura.
+
+## Restrições
+
+Não versionar EXE/DAT/saves, dumps proprietários integrais ou traces brutos; use `scratch/` ignorado pelo Git. Não alterar o executável original nem encerrar PIDs não criados pelo laboratório. Continue a proteger a integridade de capturas (eventos perdidos, footer, hashes quando necessários). A segurança e procedência do laboratório permanecem mesmo com o desenvolvimento mais ágil.
+
+Ao concluir, relatar de forma curta: comportamento entregue, testes executados, limitações reais, commit e próximo passo útil.

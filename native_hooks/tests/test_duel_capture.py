@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from duel_capture import LiveDuelCapture, collect_duels, enrich
+from duel_capture import LiveDuelCapture, collect_duels, enrich, capture_filename
 
 
 def command(seq: int, opcode: int) -> dict:
@@ -62,6 +62,28 @@ class FakeLiveAgent:
 
 
 class LiveDuelCaptureTests(unittest.TestCase):
+    def test_named_capture_keeps_stems_and_envelope_version(self):
+        from datetime import datetime, timezone
+        name = capture_filename({"0": "spell-round-03-A", "1": "My Deck!"},
+                                datetime(2026, 11, 17, 20, 30, 15, 123456,
+                                         tzinfo=timezone.utc))
+        self.assertEqual(name, "spell-round-03-A_My-Deck_203015123456-20261117_v2.jsonl")
+        self.assertNotIn("/", capture_filename({"0": "../oops", "1": "B"}))
+
+    def test_named_file_keeps_pid_in_metadata(self):
+        agent = FakeLiveAgent([], 0)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 789, 1, {}, 600, Path(td),
+                                      deck_labels={"0": "A", "1": "B"})
+            try:
+                self.assertTrue(capture.path.name.startswith("A_B_"))
+                self.assertTrue(capture.path.name.endswith("_v2.jsonl"))
+                header = json.loads(capture.path.read_text().splitlines()[0])
+                self.assertEqual(header["processId"], 789)
+                self.assertEqual(header["formatVersion"], 2)
+            finally:
+                capture.close()
+
     def test_state_trace_footer_and_no_extra_seq_numbers(self):
         events = [
             {**command(1, 0xCF), "stateSampled": True,

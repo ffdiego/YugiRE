@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import os
+import re
 from pathlib import Path
 import time
 from typing import Any, Callable
@@ -50,6 +51,22 @@ def enrich(event: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+CAPTURE_FORMAT_VERSION = 2  # JSONL envelope, not the observation schemas.
+
+
+def capture_filename(deck_labels: dict[str, str] | None = None,
+                     at: datetime | None = None) -> str:
+    """Readable local time plus micros to avoid worker collisions; PID stays in metadata."""
+    labels = deck_labels or {}
+    def safe(value: str) -> str:
+        name = re.sub(r"[^A-Za-z0-9-]", "-", value).strip("-")[:40]
+        return name or "default"
+    now = at or datetime.now().astimezone()
+    timestamp = now.strftime("%H%M%S%f-%Y%m%d")
+    return (f"{safe(labels.get('0', 'deck0'))}_"
+            f"{safe(labels.get('1', 'deck1'))}_{timestamp}_v{CAPTURE_FORMAT_VERSION}.jsonl")
+
+
 class LiveDuelCapture:
     """Trace file is created before game resumes and remains open until cleanup."""
 
@@ -59,7 +76,8 @@ class LiveDuelCapture:
                  rng_seed_base: int | None = None,
                  rng_seed_start_index: int = 0,
                  trace_state: bool = False,
-                 trace_battle_attributes: bool = False) -> None:
+                 trace_battle_attributes: bool = False,
+                 deck_labels: dict[str, str] | None = None) -> None:
         self.api = api
         self.target_duels = target_duels
         self.written = 0
@@ -82,12 +100,11 @@ class LiveDuelCapture:
         self.output_dir = (output_dir or
                            Path(__file__).resolve().parent.parent / "scratch" / "traces")
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        now = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
-        self.path = self.output_dir / f"duels-{now}-pid{pid}.jsonl"
+        self.path = self.output_dir / capture_filename(deck_labels)
         self.stream = self.path.open("x", encoding="utf-8")
         self.session = self.api.tracestatus()["session"]
         header = {
-            "kind": "metadata", "formatVersion": 2, "mode": "live_duels",
+            "kind": "metadata", "formatVersion": CAPTURE_FORMAT_VERSION, "mode": "live_duels",
             "processId": pid, "requestedDuels": target_duels,
             "speedValue": speed_value, "deckPlans": deck_plans,
             "rngSeedOverride": ({"baseSeed": rng_seed_base,

@@ -191,6 +191,7 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
               seed_start_index: int = 0,
               cancel_file: Path | None = None,
               output_dir: Path | None = None,
+              deck_labels: dict[str, str] | None = None,
               poll_seconds: float = 0.25,
               cycle_number: int = 1, total_cycles: int = 1) -> int:
     try:
@@ -271,6 +272,8 @@ def run_spawn(exe: Path, console_side: int, speed_value: int | None = None,
             capture_kwargs = {}
             if output_dir is not None:
                 capture_kwargs["output_dir"] = output_dir
+            if deck_labels is not None:
+                capture_kwargs["deck_labels"] = deck_labels
             if trace_state:
                 capture_kwargs["trace_state"] = True
             if trace_battle_attributes:
@@ -541,7 +544,10 @@ def main(argv: list[str] | None = None) -> int:
                      trace_battle_attributes=args.trace_battle_attributes,
                      cancel_file=args.cancel_file,
                      output_dir=args.output_dir, seed=args.seed,
-                     seed_start_index=args.seed_start_index)
+                     seed_start_index=args.seed_start_index,
+                     deck_labels={str(side): path.stem for side, path in
+                                  ((0, args.deck_0), (1, args.deck_1))
+                                  if path is not None})
 
 
 if __name__ == "__main__":
