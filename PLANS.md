@@ -24,7 +24,10 @@
 
 - [x] Criar manifest por resource ID com status e famílias de efeito, separado do registry legado de RE.
 - [x] Criar `scripts/card_playability.py` para ler `data.dat` com Joey.Coverage, filtrar as 771 cartas dos três packs ou 350 de Joey, separar Monster/Spell/Trap e produzir CSV/JSON/Markdown com porcentagens.
-- [ ] Executar no DAT original local e conferir o total e os subtipos; revisar famílias e efeitos ainda sem classificação sem copiar recursos proprietários ao Git.
+- [x] Executar no DAT original local: 771 registros nos packs, 350 apenas Joey. Snapshot de grupos e badges sem texto/arte original versionados.
+- [x] Cruzar monstros por nome com bases públicas para classificar 412 de 499 (222 Normal, 154 Effect, 30 Fusion, 6 Ritual); 87 permanecem ToReview.
+- [x] Publicar badge da trilogia e do Joey no README e relatório de porcentagens atualizados pelo GitHub Actions após edições do manifest.
+- [ ] Revisar os 87 monstros ToReview usando as propriedades/descrições do DAT local e resolver divergências históricas sem inferir efeitos do callback.
 - [ ] Expandir a taxonomia para Normal/Effect/Fusion/Ritual, compra, destruição, FLIP, cemitério, negação e afins a partir dos textos locais, sem marcar como Done por inferência.
 - [ ] Atualizar o manifest após cada implementação, com evidência e testes de cenário.
 

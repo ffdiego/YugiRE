@@ -1,0 +1,47 @@
+name: Publish playability badges
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/cards/playability-manifest.json'
+      - 'docs/cards/pack-index.json'
+      - 'docs/cards/monster-subtypes.json'
+      - 'scripts/publish_playability.py'
+      - '.github/workflows/playability-badges.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yugire-playability-badges
+  cancel-in-progress: false
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recompute sandbox progress
+        run: python scripts/publish_playability.py
+      - name: Publish updated progress files if changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/cards/PLAYABILITY.md docs/cards/badges/
+          if git diff --cached --quiet; then
+            echo "Badge counts already up-to-date"
+            exit 0
+          fi
+          git commit -m "docs(cards): refresh playability badges [skip ci]"
+          git push origin HEAD:main

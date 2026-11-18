@@ -21,6 +21,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "docs/cards/playability-manifest.json"
+SUBTYPES = ROOT / "docs/cards/monster-subtypes.json"
 CATALOG = ROOT / "docs/evidence/card-callback-catalog.json"
 DEFAULT_OUTPUT = ROOT / "scratch/card-playability"
 KINDS = ("Monster", "Spell", "Trap", "Other")
@@ -98,8 +99,20 @@ def extract_with_dotnet(dat: Path) -> dict:
         raise ValueError("Joey.Coverage produced no valid JSON; check .NET build output") from exc
 
 
+def read_subtypes(path: Path = SUBTYPES) -> dict[int, str]:
+    source = json.loads(path.read_text(encoding="utf-8"))
+    if source.get("schemaVersion") != 1:
+        raise ValueError("Unexpected monster subtype catalog version")
+    result = {int(key): value for key, value in source["subtypes"].items()}
+    if any(value not in ("Normal", "Effect", "Fusion", "Ritual") for value in result.values()):
+        raise ValueError("Invalid public-reference monster subtype")
+    return result
+
+
 def build(extracted: dict, manifest: dict[int, dict],
-          callbacks: dict[int, str]) -> tuple[list[dict], dict]:
+          callbacks: dict[int, str], monster_subtypes: dict[int, str] | None = None
+          ) -> tuple[list[dict], dict]:
+    monster_subtypes = read_subtypes() if monster_subtypes is None else monster_subtypes
     raw = extracted.get("cards")
     if not isinstance(raw, list):
         raise ValueError("Expected cards list from Joey.Coverage")
@@ -125,6 +138,12 @@ def build(extracted: dict, manifest: dict[int, dict],
         spec = manifest.get(rid)
         if spec is not None and kind != spec["kind"]:
             raise ValueError(f"Manifest kind mismatch for resource {rid}: {kind} != {spec['kind']}")
+        if kind == "Monster":
+            subtype = monster_subtypes.get(rid, "ToReview")
+            subtype_source = "public-reference" if subtype != "ToReview" else "unclassified"
+        else:
+            subtype = spec["subtype"] if spec else "ToReview"
+            subtype_source = "implemented-scope" if spec else "unclassified"
         entries.append({
             "internalIndex": idx,
             "resourceId": rid,
@@ -135,7 +154,8 @@ def build(extracted: dict, manifest: dict[int, dict],
             "Kaiba": bool(pack & 2),
             "Joey": bool(pack & 4),
             "kind": kind,
-            "subtype": spec["subtype"] if spec else "ToReview",
+            "subtype": subtype,
+            "subtypeSource": subtype_source,
             "status": spec["status"] if spec else "Pending",
             "mechanics": spec["mechanics"] if spec else [],
             "group": spec["id"] if spec else None,
@@ -157,7 +177,8 @@ def build(extracted: dict, manifest: dict[int, dict],
             by_kind[kind] = dict(total=len(rows), **{s: ct[s] for s in STATUSES},
                                  completePct=round(100 * (ct["Done"] + ct["Verified"]) / len(rows), 2)
                                  if rows else 0.0,
-                                 unclassifiedSubtypes=sum(r["subtype"] == "ToReview" for r in rows))
+                                 unclassifiedSubtypes=sum(r["subtype"] == "ToReview" for r in rows),
+                                 monsterSubtypes=dict(Counter(r["subtype"] for r in rows)) if kind == "Monster" else {})
         total = len(subset)
         complete = status["Done"] + status["Verified"]
         by_scope[scope] = dict(total=total, complete=complete, completePct=round(100 * complete / total, 2) if total else 0.0,
@@ -173,6 +194,7 @@ def build(extracted: dict, manifest: dict[int, dict],
         "totalUnfiltered": len(entries),
         "manifestEntries": len(manifest),
         "manifestIdsNotInDat": missing,
+        "monsterReferenceEntries": len(monster_subtypes),
         "fingerprints": extracted.get("fingerprints", {}),
         "byScope": by_scope,
         "trackedMechanics": sorted(set(m for row in entries if row["packMask"] & 7 for m in row["mechanics"])),
@@ -204,12 +226,22 @@ def report_markdown(summary: dict) -> str:
         lines.append(f"| {TYPE_LABELS[key]} | {row['total']} | {row['Done']} | {row['Verified']} | {row['Partial']} | {row['Pending']} | {row['completePct']:.2f}% |")
     lines += [
         "",
+        "## Subtipos de monstros (referências públicas)", "",
+        "| Subtipo | Trilogia | Joey |", "| --- | ---: | ---: |"
+    ]
+    for subtype in ("Normal", "Effect", "Fusion", "Ritual", "ToReview"):
+        a = u["byKind"]["Monster"]["monsterSubtypes"].get(subtype, 0)
+        jcount = j["byKind"]["Monster"]["monsterSubtypes"].get(subtype, 0)
+        lines.append(f"| {subtype} | {a} | {jcount} |")
+    lines += [
+        "",
         "### Como ler este resultado",
         "",
         "- **Done** = efeito acionável, testado em C# no escopo indicado; não exige reversão de todo o EXE.",
         "- **Verified** = jogo original confrontado com a mesma funcionalidade inteira; nenhuma promoção é automática.",
         "- **Partial** = integração limitada por carta (ex.: três equipamentos).",
         "- **Pending** = ainda sem registro de implementação; isso não comprova ausência de qualquer primitivo genérico.",
+        "- **Normal/Effect/Fusion/Ritual** = classificação por referências públicas, independente de Done. ToReview ainda requer revisão.",
         "- **ToReview** no CSV = subtipo/efeito ainda não revisado. Perfil de callback é um agrupamento técnico e não é classificação semântica.",
         "- O total considera a união dos packs (bits 1/2/4). O filtro Joey isolado aparece separadamente.",
         "- Duplicatas de resource ID em índices internos diferentes não são normalizadas; a contagem é por registro de carta.",
@@ -223,7 +255,7 @@ def save(output: Path, rows: list[dict], summary: dict) -> None:
     (output / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (output / "PROGRESS.md").write_text(report_markdown(summary), encoding="utf-8")
     fields = ["internalIndex", "resourceId", "name", "classCode", "packMask", "Yugi", "Kaiba", "Joey",
-              "kind", "subtype", "status", "group", "mechanics", "callbackProfile", "basicMonsterMechanics"]
+              "kind", "subtype", "subtypeSource", "status", "group", "mechanics", "callbackProfile", "basicMonsterMechanics"]
     with (output / "cards.csv").open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
         writer.writeheader()
@@ -239,10 +271,11 @@ def main(argv: list[str] | None = None) -> int:
     source.add_argument("--extracted", type=Path, help="Existing Joey.Coverage raw extraction JSON (or fixture)")
     parser.add_argument("--manifest", type=Path, default=MANIFEST)
     parser.add_argument("--callbacks", type=Path, default=CATALOG)
+    parser.add_argument("--subtypes", type=Path, default=SUBTYPES)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args(argv)
     extracted = json.loads(args.extracted.read_text(encoding="utf-8")) if args.extracted else extract_with_dotnet(args.dat)
-    cards, summary = build(extracted, read_manifest(args.manifest), read_callbacks(args.callbacks))
+    cards, summary = build(extracted, read_manifest(args.manifest), read_callbacks(args.callbacks), read_subtypes(args.subtypes))
     save(args.output, cards, summary)
     union, joey = summary["byScope"]["all-packs"], summary["byScope"]["joey"]
     print(f"Sandbox Done/Verified: all packs {union['complete']}/{union['total']} ({union['completePct']:.2f}%); "

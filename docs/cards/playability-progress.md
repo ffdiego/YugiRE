@@ -32,6 +32,44 @@ python scripts/card_playability.py --extracted scratch/coverage-current/extracte
 
 Não usar `attributes.json` no lugar de `extracted.json`: o primeiro não contém nomes no formato de entrada. Para gerar o bruto sem rodar o programa inteiro, o bridge `Joey.Coverage` produz JSON e também pode ser redirecionado para um arquivo local.
 
+## Badges visíveis no GitHub
+
+O README mostra duas badges dinâmicas via Shields.io, alimentadas pelos arquivos
+`docs/cards/badges/all-packs.json` (771) e `docs/cards/badges/joey.json` (350).
+O relatório público `docs/cards/PLAYABILITY.md` mostra as categorias e os
+subtipos de monstros. Os valores são reproduzidos pelo comando:
+
+```powershell
+python scripts/publish_playability.py
+python scripts/publish_playability.py --check
+```
+
+O workflow `.github/workflows/playability-badges.yml` recalcula e publica os
+arquivos derivados quando o manifest, a classificação ou o script são alterados
+na `main`. O workflow precisa de permissão de escrita do GitHub Actions;
+o código e os artefatos derivados também são mantidos no repositório.
+**Mudar a classificação não aumenta Done.** O denominador vem de
+`docs/cards/pack-index.json`, que contém apenas resource IDs, mask de pack
+e código Monster/Spell/Trap, extraídos do DAT original sem textos ou imagens.
+
+## Subtipos de monstros
+
+A tabela `docs/cards/monster-subtypes.json` classifica **412 dos 499 monstros
+dos packs** por correspondência de nome exata/normalizada em bases públicas:
+222 Normal, 154 Effect, 30 Fusion e 6 Ritual. Os outros **87 são ToReview**,
+não classificados por falta de correspondência inequívoca. Nenhuma dessas
+fontes atesta que a engine C# implemente os efeitos ou que o tipo no jogo
+original seja necessariamente igual ao catálogo moderno. O CSV local agora
+separa `subtype` de `subtypeSource` para evitar essas confusões.
+
+Fontes de classificação:
+- https://github.com/omar39/yugioh-dataanalysis/blob/main/card_data.csv
+- https://github.com/mahinb/yugioh-card-data-analysis/blob/main/card_data_small.csv
+
+Para completar os 87 casos com segurança, confrontar as descrições e flags
+do DAT local e documentar divergências históricas. Ausência de callback não
+significa monstro normal.
+
 ## Categorias e progresso
 
 A classe nativa vem de `(Properties >>20)&31`. Âncoras no catálogo de callback confirmam classe **21 = Trap** (Mirror Force, Trap Hole) e **22 = Spell** (Sparks, Sogen). Classes **1..20 = Monster**; classes especiais 0/23/24 ficam **Other** até revisão. A classificação de efeito/natureza exata para monstros e magias não anotados é **ToReview** — não se inventam subtipos a partir de bits 18–19, cujo significado está em aberto.

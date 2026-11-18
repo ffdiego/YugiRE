@@ -1,5 +1,9 @@
 # YugiRE
 
+[![Cartas jogáveis](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fall-packs.json)](docs/cards/PLAYABILITY.md)
+[![Joey jogável](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fjoey.json)](docs/cards/PLAYABILITY.md)
+
+
 Engenharia reversa e protótipo de Yu-Gi-Oh! Power of Chaos: Joey the Passion.
 
 Abra `YugiRE.sln` no Visual Studio e escolha `Joey.App` como projeto de
@@ -34,8 +38,9 @@ python scripts/card_playability.py --dat ../passion/data.dat
 # Inventário: scratch/card-playability/cards.csv
 ```
 
-[Procedimento e critérios](docs/cards/playability-progress.md) e
-[Inventário de funcionalidades](CARDS.md). Monstros não recebem `Done` apenas
+[Painel atualizado automaticamente](docs/cards/PLAYABILITY.md),
+[procedimento e critérios](docs/cards/playability-progress.md) e
+[inventário de funcionalidades](CARDS.md). Monstros não recebem `Done` apenas
 porque invocação e combate genéricos já funcionam. `Done` em C# não significa
 paridade nativa com Joey.
 
