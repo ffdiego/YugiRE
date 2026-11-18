@@ -12,13 +12,13 @@ class PublishedPlayabilityTests(unittest.TestCase):
         all_cards = counts(cards, status, subtypes, 7)
         joey = counts(cards, status, subtypes, 4)
         self.assertEqual((len(cards), all_cards["total"], joey["total"]), (771, 771, 350))
-        self.assertEqual((all_cards["done"], all_cards["pct"]), (287, 37.22))
+        self.assertEqual((all_cards["done"], all_cards["pct"]), (289, 37.48))
         self.assertEqual((joey["done"], joey["pct"]), (83, 23.71))
         self.assertEqual(all_cards["bykind"]["Monster"]["total"], 499)
         self.assertEqual(all_cards["bykind"]["Spell"]["total"], 172)
         self.assertEqual(all_cards["bykind"]["Trap"]["total"], 100)
         self.assertEqual(all_cards["bykind"]["Spell"]["Partial"], 3)
-        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 264)
+        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 266)
 
     def test_public_subtypes_are_explicit_not_playability(self):
         cards, status, subtypes, sources = load()
@@ -27,7 +27,9 @@ class PublishedPlayabilityTests(unittest.TestCase):
             "Normal": 264, "Effect": 193, "Fusion": 34, "Ritual": 8, "ToReview": 0
         })
         self.assertEqual(sum(all_cards["bysubtype"].values()), 499)
-        self.assertEqual(status.get(500), None)  # Man-Eater Bug isn't implemented yet
+        self.assertEqual(status.get(500), "Done")  # Man-Eater Bug FLIP playable in sandbox
+        self.assertEqual(status.get(590), "Done")  # Morphing Jar FLIP playable in sandbox
+        self.assertEqual(status.get(601), None)    # Penguin Soldier not yet implemented
         self.assertEqual(status.get(332), "Done")
         self.assertEqual(len(sources), 6)
 
@@ -41,11 +43,11 @@ class PublishedPlayabilityTests(unittest.TestCase):
         one = json.loads(next(content for path, content in files.items()
                               if path.name == "all-packs.json"))
         self.assertEqual(one["schemaVersion"], 1)
-        self.assertEqual(one["message"], "287/771 (37.22%)")
+        self.assertEqual(one["message"], "289/771 (37.48%)")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
-        card = {"internalIndex": 91, "resourceId": 500,
-                "name": "Man-Eater Bug", "classCode": 10,
+        card = {"internalIndex": 91, "resourceId": 1163,
+                "name": "Morphing Jar #2", "classCode": 6,
                 "properties": 10 << 20, "pack": 4}
         rows, summary = build({"cards": [card]}, read_manifest(MANIFEST),
                               read_callbacks(CATALOG), read_subtypes())

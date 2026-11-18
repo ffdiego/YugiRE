@@ -18,8 +18,17 @@ public sealed class DemoDuel
     public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
     public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
+    private sealed record BattleContinuation(int AttackerSide, int AttackerZone, Card Attacker,
+                                              int DefenderSide, int DefenderZone, Card Defender);
+    private BattleContinuation? deferredBattle;
+    public DemoFlipTarget? PendingFlipTarget { get; private set; }
+    public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
+    public bool GameOver => Winner is not null || IsDraw;
+    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
+    public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
+        ? hands[player].AsReadOnly() : throw new ArgumentOutOfRangeException(nameof(player));
     public IReadOnlyList<Card> Graveyard(int player) => graves[player].AsReadOnly();
     public int DeckCount(int player) => decks[player].Count;
     public Card?[,] Monsters { get; } = new Card?[2, 5];
@@ -103,6 +112,14 @@ public sealed class DemoDuel
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
         var warrior = all.FirstOrDefault(c => c.ClassCode == 15);
         if (warrior != null && !monsters.Take(3).Contains(warrior)) monsters.Insert(0, warrior);
+        // Put both featured FLIP monsters in the first hand of the local demo.
+        foreach (ushort id in new ushort[] { FlipEffectRules.MorphingJar, FlipEffectRules.ManEaterBug })
+        {
+            var flip = all.FirstOrDefault(c => c.Id == id);
+            if (flip is null) continue;
+            monsters.Remove(flip);
+            monsters.Insert(0, flip);
+        }
         var spells = all.Where(c => EquipmentRules.Supports(c.Id) ||
             LifePointSpellRules.Supports(c.Id) || FieldSpellRules.Supports(c.Id))
             .OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
@@ -114,7 +131,7 @@ public sealed class DemoDuel
         }
     }
     public static int NormalTributes(Card card) => card.Level <= 4 ? 0 : card.Level <= 6 ? 1 : 2;
-    public bool CanSummonFromHand(int index) => Winner == null && Phase == DemoPhase.Main && !summoned &&
+    public bool CanSummonFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main && !summoned &&
         index >= 0 && index < Hand.Count && Hand[index].IsMonster &&
         !NormalSummonRules.RequiresSpecialSummon(Hand[index]) &&
         Enumerable.Range(0, 5).Count(z => Monsters[ActivePlayer, z] != null) >= NormalTributes(Hand[index]) &&
@@ -124,9 +141,9 @@ public sealed class DemoDuel
     public int FirstFreeSpellZone() => Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
     public bool CanSetFromHand(int index) => index >= 0 && index < Hand.Count && (Hand[index].IsMonster
         ? CanSummonFromHand(index)
-        : Winner == null && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 &&
+        : !ActionsBlocked && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 &&
           (FieldSpellRules.Supports(Hand[index].Id) ? FieldSpells[ActivePlayer] is null : FirstFreeSpellZone() >= 0));
-    public bool CanActivateFromHand(int index) => Winner == null && Phase == DemoPhase.Main &&
+    public bool CanActivateFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main &&
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
@@ -157,7 +174,7 @@ public sealed class DemoDuel
     public bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null, bool faceDown = false)
     {
         message = "Choose an empty monster zone on the active player's side.";
-        if (Winner != null || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
+        if (ActionsBlocked || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
         if (index < 0 || index >= Hand.Count || player != ActivePlayer || zone < 0 || zone >= 5 || !monsterZone) return false;
         if (!Hand[index].IsMonster) { message = "Only monsters can be summoned here."; return false; }
         if (NormalSummonRules.RequiresSpecialSummon(Hand[index]))
@@ -183,7 +200,7 @@ public sealed class DemoDuel
     public bool Draw(out string message)
     {
         message = "Draw available once per turn in main phase.";
-        if (Winner != null || Phase != DemoPhase.Main || drawn) return false;
+        if (ActionsBlocked || Phase != DemoPhase.Main || drawn) return false;
         if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
         hands[ActivePlayer].Add(decks[ActivePlayer].Dequeue()); drawn = true;
         message = "Drew one card."; return true;
@@ -191,7 +208,7 @@ public sealed class DemoDuel
     public bool Play(int index, out string message)
     {
         message = "Choose a supported LP, Field or continuous spell; equipment needs a compatible face-up monster.";
-        if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
+        if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
         if (FieldSpellRules.Supports(Hand[index].Id))
         {
             Card field = Hand[index];
@@ -228,7 +245,7 @@ public sealed class DemoDuel
     {
         message = "This set card's activation is not implemented in the demo.";
         int p = ActivePlayer;
-        if (Winner != null || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
+        if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
         if (card.Id == 0x593)
         {
@@ -247,7 +264,7 @@ public sealed class DemoDuel
     {
         message = "Only a set Field Spell in your own zone can activate during Main Phase.";
         int owner = ActivePlayer;
-        if (Winner != null || Phase != DemoPhase.Main ||
+        if (ActionsBlocked || Phase != DemoPhase.Main ||
             FieldSpells[owner] is not Card field || !FieldSpellFaceDown[owner] ||
             !FieldSpellRules.Supports(field.Id)) return false;
         ReplaceActiveFields();
@@ -275,7 +292,7 @@ public sealed class DemoDuel
     /// <summary>Sandbox removal hook; not a claim about native destruction timing.</summary>
     public bool RemoveFieldSpell(int owner)
     {
-        if (owner is < 0 or > 1 || FieldSpells[owner] is null) return false;
+        if (ActionsBlocked || owner is < 0 or > 1 || FieldSpells[owner] is null) return false;
         SendFieldSpellToGraveyard(owner);
         return true;
     }
@@ -333,7 +350,7 @@ public sealed class DemoDuel
     }
     public NativeAiResult<bool> EquipmentEligibility(int index, int targetPlayer, int targetZone)
     {
-        if (Winner != null || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count ||
+        if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0)
             return NativeAiResult<bool>.Supported(false);
         return EquipmentRules.Eligibility(Hand[index].Id, DemoEquipmentTarget(targetPlayer, targetZone));
@@ -355,7 +372,7 @@ public sealed class DemoDuel
     /// <summary>Explicit sandbox removal, not an activation, native movement rule or trigger.</summary>
     public bool RemoveEquipment(int owner, int sourceZone)
     {
-        if (owner is < 0 or > 1 || sourceZone is < 0 or >= 5) return false;
+        if (ActionsBlocked || owner is < 0 or > 1 || sourceZone is < 0 or >= 5) return false;
         var e = equipment.SingleOrDefault(e => e.Owner == owner && e.SourceZone == sourceZone);
         if (e is null) return false;
         equipment.Remove(e);
@@ -370,54 +387,159 @@ public sealed class DemoDuel
     public bool ChangePosition(int zone, out string message)
     {
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
-        if (Winner != null || Phase != DemoPhase.Main || zone < 0 || zone >= 5 || Monsters[ActivePlayer, zone] == null || changedPosition[ActivePlayer, zone]) return false;
-        DefensePosition[ActivePlayer, zone] = !DefensePosition[ActivePlayer, zone];
-        MonsterFaceDown[ActivePlayer, zone] = false;
-        changedPosition[ActivePlayer, zone] = true;
-        message = DefensePosition[ActivePlayer, zone] ? "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
+        int owner = ActivePlayer;
+        if (ActionsBlocked || Phase != DemoPhase.Main || zone is < 0 or >= 5 ||
+            Monsters[owner, zone] is not Card monster || changedPosition[owner, zone]) return false;
+        bool flipped = MonsterFaceDown[owner, zone];
+        DefensePosition[owner, zone] = !DefensePosition[owner, zone];
+        MonsterFaceDown[owner, zone] = false;
+        changedPosition[owner, zone] = true;
+        if (flipped)
+        {
+            TriggerFlip(owner, zone, monster, out message);
+            if (message.Length == 0) message = "Flip Summon: face-up attack position.";
+        }
+        else message = DefensePosition[owner, zone] ?
+            "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
         return true;
     }
     public bool BeginBattle(out string message)
     {
         message = "Battle unavailable on the opening turn or after game over.";
-        if (Winner != null || Turn == 1 || Phase != DemoPhase.Main) return false;
+        if (ActionsBlocked || Turn == 1 || Phase != DemoPhase.Main) return false;
         Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
     }
     public bool Attack(int source, int target, out string message)
     {
         message = "Select an unused attacker and a valid enemy target in battle phase.";
         int p = ActivePlayer, enemy = 1 - p;
-        if (Winner != null || Phase != DemoPhase.Battle || source < 0 || source >= 5 || Monsters[p, source] is not Card attacker || attacked[p, source] || DefensePosition[p, source]) return false;
+        if (ActionsBlocked || Phase != DemoPhase.Battle || source is < 0 or >= 5 ||
+            Monsters[p, source] is not Card attacker || attacked[p, source] ||
+            DefensePosition[p, source]) return false;
         if (target == -1)
         {
-            if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] != null)) { message = "Enemy monsters block direct attacks."; return false; }
-            attacked[p, source] = true; Damage(enemy, AttackValue(p, source)); message = $"Direct attack: {AttackValue(p, source)} damage."; return true;
-        }
-        if (target < 0 || target >= 5 || Monsters[enemy, target] is not Card defender) return false;
-        attacked[p, source] = true;
-        MonsterFaceDown[enemy, target] = false;
-        if (DefensePosition[enemy, target])
-        {
-            int difference = AttackValue(p, source) - DefenseValue(enemy, target);
-            if (difference > 0) RemoveMonster(enemy, target);
-            else if (difference < 0) Damage(p, -difference);
-            message = difference > 0 ? "Defense overcome: defender destroyed, no LP damage." : difference == 0 ? "Equal ATK/DEF: no destruction or damage." : $"Defense holds: attacker takes {-difference} damage, neither destroyed.";
+            if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] is not null))
+            { message = "Enemy monsters block direct attacks."; return false; }
+            attacked[p, source] = true;
+            int damage = AttackValue(p, source);
+            Damage(enemy, damage);
+            message = $"Direct attack: {damage} damage.";
             return true;
         }
-        int delta = AttackValue(p, source) - AttackValue(enemy, target);
-        // RE: docs/22-battle-core.md, 0x005B82EC..0x005B82EE: equal ATK destroys only above zero.
-        if (delta == 0 && AttackValue(p, source) == 0)
+        if (target is < 0 or >= 5 || Monsters[enemy, target] is not Card defender) return false;
+        attacked[p, source] = true;
+        bool wasFaceDown = MonsterFaceDown[enemy, target];
+        MonsterFaceDown[enemy, target] = false;
+        if (wasFaceDown)
+        {
+            TriggerFlip(enemy, target, defender, out string flipMessage);
+            if (PendingFlipTarget is not null)
+            {
+                deferredBattle = new(p, source, attacker, enemy, target, defender);
+                message = flipMessage;
+                return true;
+            }
+            if (GameOver)
+            {
+                message = flipMessage;
+                return true;
+            }
+            ResolveBattleOutcome(p, source, enemy, target, out string battleMessage);
+            message = flipMessage.Length > 0 ? flipMessage + " " + battleMessage : battleMessage;
+            return true;
+        }
+        return ResolveBattleOutcome(p, source, enemy, target, out message);
+    }
+
+    private bool ResolveBattleOutcome(int attackerSide, int source, int defenderSide, int target,
+                                      out string message)
+    {
+        message = "Battle stopped: a combatant left the field.";
+        if (GameOver || Monsters[attackerSide, source] is not Card ||
+            Monsters[defenderSide, target] is not Card) return false;
+        if (DefensePosition[defenderSide, target])
+        {
+            int difference = AttackValue(attackerSide, source) - DefenseValue(defenderSide, target);
+            if (difference > 0) RemoveMonster(defenderSide, target);
+            else if (difference < 0) Damage(attackerSide, -difference);
+            message = difference > 0 ? "Defense overcome: defender destroyed, no LP damage." :
+                difference == 0 ? "Equal ATK/DEF: no destruction or damage." :
+                $"Defense holds: attacker takes {-difference} damage, neither destroyed.";
+            return true;
+        }
+        int delta = AttackValue(attackerSide, source) - AttackValue(defenderSide, target);
+        // Equal ATK above zero destroys both; zero/zero tie leaves both.
+        if (delta == 0 && AttackValue(attackerSide, source) == 0)
         {
             message = "Zero ATK tie: neither monster destroyed, no damage.";
             return true;
         }
-        if (delta >= 0) RemoveMonster(enemy, target);
-        if (delta <= 0) RemoveMonster(p, source);
-        if (delta > 0) Damage(enemy, delta);
-        if (delta < 0) Damage(p, -delta);
-        message = delta == 0 ? "Equal ATK: both monsters destroyed, no damage." : $"Battle: {Math.Abs(delta)} damage; weaker monster destroyed.";
+        if (delta >= 0) RemoveMonster(defenderSide, target);
+        if (delta <= 0) RemoveMonster(attackerSide, source);
+        if (delta > 0) Damage(defenderSide, delta);
+        if (delta < 0) Damage(attackerSide, -delta);
+        message = delta == 0 ? "Equal ATK: both monsters destroyed, no damage." :
+            $"Battle: {Math.Abs(delta)} damage; weaker monster destroyed.";
         return true;
     }
+
+    private void TriggerFlip(int owner, int zone, Card card, out string message)
+    {
+        message = "";
+        switch (FlipEffectRules.Effect(card.Id))
+        {
+            case DemoFlipEffect.DestroyMonster:
+                PendingFlipTarget = new(owner, zone, card);
+                message = $"{card.Name} FLIP (P{owner + 1}): select a monster on either side to destroy.";
+                break;
+            case DemoFlipEffect.ReplaceHands:
+                for (int p = 0; p < 2; p++)
+                {
+                    graves[p].AddRange(hands[p]);
+                    hands[p].Clear();
+                }
+                bool[] deckOut = [decks[0].Count < 5, decks[1].Count < 5];
+                for (int p = 0; p < 2; p++)
+                    for (int i = 0; i < 5 && decks[p].Count > 0; i++)
+                        hands[p].Add(decks[p].Dequeue());
+                if (deckOut[0] && deckOut[1]) IsDraw = true;
+                else if (deckOut[0]) Winner = 1;
+                else if (deckOut[1]) Winner = 0;
+                message = deckOut[0] || deckOut[1]
+                    ? $"{card.Name} FLIP: both discard and draw; insufficient deck cards end the demo duel."
+                    : $"{card.Name} FLIP: both discard their hands and draw 5.";
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Resolve target selection and resume an interrupted battle only if
+    /// the same attacker and defender still occupy their original zones.
+    /// </summary>
+    public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
+    {
+        message = "Select an occupied monster on either side to resolve the FLIP effect.";
+        if (PendingFlipTarget is not DemoFlipTarget pending ||
+            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
+            Monsters[targetPlayer, targetZone] is not Card target) return false;
+        PendingFlipTarget = null;
+        BattleContinuation? resume = deferredBattle;
+        deferredBattle = null;
+        RemoveMonster(targetPlayer, targetZone);
+        message = $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
+        if (resume is null) return true;
+        if (!ReferenceEquals(Monsters[resume.AttackerSide, resume.AttackerZone], resume.Attacker) ||
+            !ReferenceEquals(Monsters[resume.DefenderSide, resume.DefenderZone], resume.Defender))
+        {
+            message += " Battle stopped because a combatant left the field.";
+            return true;
+        }
+        ResolveBattleOutcome(resume.AttackerSide, resume.AttackerZone,
+                             resume.DefenderSide, resume.DefenderZone, out string battleMessage);
+        message += " " + battleMessage;
+        return true;
+    }
+
     private void RemoveMonster(int p, int z)
     {
         graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null; DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
@@ -430,7 +552,7 @@ public sealed class DemoDuel
     public bool EndTurn(out string message)
     {
         message = "The duel has ended.";
-        if (Winner != null) return false;
+        if (ActionsBlocked) return false;
         // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
         if (!HandLimitDisabled && Hand.Count > EndTurnHandLimit)
         {
@@ -444,7 +566,7 @@ public sealed class DemoDuel
     public bool DiscardForEndTurn(int index, out string message)
     {
         message = "Select a hand card while resolving the end-phase hand limit.";
-        if (Winner != null || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
+        if (ActionsBlocked || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
         var card = hands[ActivePlayer][index];
         hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
         if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";

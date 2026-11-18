@@ -29,6 +29,7 @@ Projeto: reimplementar **Yu-Gi-Oh! Power of Chaos: Joey the Passion** em C# / .N
 - A cada carta nova, atualizar `CARDS.md` e `docs/cards/playability-manifest.json` com resource ID exato, família, status e evidência de teste. As badges do README e o relatório `docs/cards/PLAYABILITY.md` são recalculados pelo workflow `playability-badges.yml` em pushes na `main`. Nunca editar manualmente os percentuais.
 - Os 264 recursos classificados como `Normal` são `Done` apenas para a mecânica básica de invocação/set/tributos/batalha testada em C#. Isso **não** torna efeito, fusão ou ritual completos nem confere `Verified`. Se o DAT real divergir da classificação de referência, revisar o inventário antes de confiar na badge. Não declarar Done por catálogo/callback ou invocação genérica de monstros.
 - Para medir porcentagem: `python scripts/card_playability.py --dat ../passion/data.dat`. Denominador é a união de packs (771 registros) ou Joey (350), não os 1.114 registros nem o número de callbacks. Sem DAT local, não inventar percentuais.
+- Efeitos FLIP no sandbox passam por `FlipEffectRules` e pelo gatilho em `DemoDuel` (Flip Summon/revelação no combate). Alvos pendentes bloqueiam ações e retomam o combate somente após resolução. Não confundir Morphing Jar (590) com Morphing Jar #2 (1163).
 
 ## Git e trabalho entre máquinas
 

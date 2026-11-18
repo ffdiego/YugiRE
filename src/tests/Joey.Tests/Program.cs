@@ -114,6 +114,7 @@ DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
+FlipMonsterChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 if (args.Length > 0)

@@ -47,7 +47,9 @@
 ### Iteração B — eventos e interações
 
 - [ ] Primitivos de compra, descarte, destruição e movimentação entre zonas.
-- [ ] Sistema de `OnFlip` + efeitos exemplares (Man-Eater Bug, Morphing Jar), com seleção de alvo e consequências observáveis.
+- [x] Primeira família `OnFlip` jogável: Man-Eater Bug e Morphing Jar, com flip summon, revelação durante batalha, seleção de alvo, suspensão/continuação de combate, descarte e compra das duas mãos; testes + UI local.
+- [ ] Expandir FLIP com Penguin Soldier (601, pack Joey): devolução à mão e seleção de até dois alvos; depois Morphing Jar #2 e Hane-Hane sem compartilhar efeitos por suposição.
+- [ ] Refinar resolução FLIP: janelas de resposta, negadores, deck-out nativo e mais gatilhos sob demanda.
 - [ ] Gatilhos do cemitério/batalha, depois armadilhas comuns (Trap Hole, Mirror Force) e correntes/respostas, sem fingir que uma fila simples cobre todos os casos.
 
 ### Iteração C — rituais, fusões, casos especiais

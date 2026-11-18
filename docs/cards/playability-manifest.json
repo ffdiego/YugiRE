@@ -436,6 +436,32 @@
         "Done means playable in the bounded C# sandbox: normal monsters have no individual activated effects. Native engine parity, responses, complex interactions and exact historical card type flags are not verified.",
         "Classified by public card identity; optional RunWithCatalog against original data.dat checks each resource's category, level, and basic actions."
       ]
+    },
+    {
+      "id": "monster.flip.basic",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP reveal",
+        "Targeted destruction",
+        "Hand discard",
+        "Draw five",
+        "Battle continuation"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        500,
+        590
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs"
+      ],
+      "limitations": [
+        "Sandbox supports Flip Summon and reveal by combat, with pending target selection, action locking, discard/draw and a simple battle continuation; chains, responses, suppression and native callback parity remain unsupported.",
+        "Morphing Jar's both-decks-short policy is a sandbox draw (not certified Joey original behavior)."
+      ]
     }
   ]
 }
