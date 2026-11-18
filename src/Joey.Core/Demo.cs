@@ -490,7 +490,7 @@ public sealed class DemoDuel
         {
             case DemoFlipEffect.DestroyMonster:
                 PendingFlipTarget = new(owner, zone, card);
-                message = $"{card.Name} FLIP (P{owner + 1}): select a monster on either side to destroy.";
+                message = $"{card.Name} FLIP (P{owner + 1}): choose a monster on either side to destroy.";
                 break;
             case DemoFlipEffect.ReplaceHands:
                 for (int p = 0; p < 2; p++)

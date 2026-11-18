@@ -48,7 +48,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
         card = {"internalIndex": 91, "resourceId": 1163,
                 "name": "Morphing Jar #2", "classCode": 6,
-                "properties": 10 << 20, "pack": 4}
+                "properties": 6 << 20, "pack": 4}
         rows, summary = build({"cards": [card]}, read_manifest(MANIFEST),
                               read_callbacks(CATALOG), read_subtypes())
         self.assertEqual(rows[0]["subtype"], "Effect")
