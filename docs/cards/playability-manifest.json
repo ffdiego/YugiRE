@@ -474,6 +474,32 @@
         "No Extra Deck/Fusion returns, tokens, foreign-controlled ownership, chained responses, replacement effects or full 2004 native parity; no separate card selection UI for Morphing Jar #2 excavation.",
         "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior."
       ]
+    },
+    {
+      "id": "monster.flip.graveyard-recovery",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP reveal",
+        "Select Spell or Trap from own Graveyard",
+        "Return selected card to hand",
+        "Deferred battle continuation"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        101,
+        427
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/CardSelectionScreen.cs",
+        "src/tests/Joey.Tests/CardSelectionChecks.cs"
+      ],
+      "limitations": [
+        "Sandbox only: no chain/negation or verified native visual timing.",
+        "Deck search and field summon not yet implemented."
+      ]
     }
   ]
 }
