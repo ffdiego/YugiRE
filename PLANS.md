@@ -23,9 +23,10 @@
 ### Iteração A — tornar magias e equipamentos jogáveis
 
 - [x] Integrar os cinco IDs de dano direto (`P045`) e cinco magias de recuperação de LP (338–341, 1315) em um fluxo único de ativação da mão/set; testes sintéticos para ambos os lados, LP, descarte e falhas atômicas. Escopo: **sandbox C#**, sem correntes/negação nativa.
-- [x] Introduzir zona de Field Spell e **Sogen para Warrior (classe 15)** no sandbox, com ativação da mão/set, troca de magia ativa, recálculo de ATK/DEF nos dois lados, composição com equipamento, UI e testes. **Escopo parcial da carta:** Beast-Warrior e paridade nativa geral ainda pendentes.
+- [x] Introduzir zona FIELD e Sogen para Warrior (classe15), depois estender a Beast-Warrior (classe12, hipótese textual), com ativação mão/set, troca de campo, stats dinâmicos, equipamento, UI e testes. Paridade nativa geral permanece pendente.
 - [x] Expandir `P036` com as seis magias por atributo (Gaia Power, Umiiruka, Molten Destruction, Rising Air Current, Luminous Spark, Mystic Plasma Zone), compartilhando a regra declarativa +500 ATK/-400 DEF, integração na zona FIELD e testes de combate/equipamento.
-- [ ] Completar os seis campos restantes de `P036` (Forest, Wasteland, Mountain, Umi, Yami, Chorus of Sanctuary) e Beast-Warrior para Sogen; primeiro mapear com segurança os tipos nativos necessários, usando DAT local/indícios existentes sem bloquear outras famílias.
+- [x] Completar Forest, Wasteland, Mountain, Umi, Yami e Chorus of Sanctuary em P036, com tabela por tipos (incluindo bônus negativos), regra por posição e testes de duelos; seis nomes/typeCode documentados. Sogen agora contempla Beast-Warrior no sandbox.
+- [ ] Confirmar Sea Serpent classCode=5 com o DAT completo e testar manualmente a interface/um duelo real no Windows. Não promover P036 a Verified sem comparação nativa.
 - [ ] Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos atualmente modelados. O perfil `P025` tem 41 callbacks catalogados; **não assumir** que 41 equipamentos já tenham a mesma regra.
 - [ ] Incorporar curas/danos adicionais em tabelas de efeitos, sem prometer tamanho de lote antes de confirmar o catálogo original.
 

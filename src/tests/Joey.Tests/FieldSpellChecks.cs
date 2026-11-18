@@ -25,7 +25,7 @@ internal static class FieldSpellChecks
 
     public static void Run(Action<bool, string> check)
     {
-        check(FieldSpellRules.Supports(332) && !FieldSpellRules.Supports(333) &&
+        check(FieldSpellRules.Supports(332) && !FieldSpellRules.Supports(335) &&
               !FieldSpellRules.Supports(0) && !FieldSpellRules.Supports(2332),
               "Field Spell: support requires the exact Sogen resource ID");
         check(FieldSpellRules.Bonus(332, 15) == new NativeAiAttributeDelta(200, 200) &&
@@ -152,7 +152,7 @@ internal static class FieldSpellChecks
               !invalid.ActivateSetFieldSpell(out _) && State(invalid) == before,
               "Sogen: invalid field removal and empty activation do not mutate state");
 
-        var unsupported = Duel(0, new Card(491, 333, "Unknown field", "", 22u << 20));
+        var unsupported = Duel(0, new Card(491, 335, "Unknown field", "", 22u << 20));
         before = State(unsupported);
         check(!unsupported.CanActivateFromHand(0) && !unsupported.Play(0, out _) &&
               State(unsupported) == before,

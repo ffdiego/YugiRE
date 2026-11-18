@@ -315,7 +315,7 @@ public sealed class DemoDuel
         // Do not cache: activation, replacement or removal changes stats immediately.
         if (ActiveFieldSpell is Card field)
         {
-            var bonus = FieldSpellRules.Bonus(field.Id, monster.ClassCode, (byte)(monster.Properties >> 29));
+            var bonus = FieldSpellRules.Bonus(field.Id, monster.ClassCode, (byte)(monster.Properties >> 29), DefensePosition[p, z]);
             sum = new(sum.Attack + bonus.Attack, sum.Defense + bonus.Defense);
         }
         // Accumulate all contributions and clamp once. Other native stages are absent.

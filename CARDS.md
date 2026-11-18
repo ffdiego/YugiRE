@@ -17,7 +17,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Equipamentos `P025` | **Partial** (3 IDs) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo | Faltam demais famílias, supressões e interações |
-| Magias de campo `P036` | **Partial** (7 IDs jogáveis) | Sogen (Warrior) + seis magias por atributo, `FieldSpellRules.cs`, zona exclusiva, substituição, batalha, UI e testes de cenário | Beast-Warrior em Sogen, outras seis cartas `P036`, interações/negação e paridade nativa ainda não implementados |
+| Magias de campo `P036` | **Done** (13 IDs no sandbox) | Seis magias por tipo, seis por atributo e Chorus of Sanctuary; zona FIELD, ativação/set, substituição, bônus/penalidades e combate | Regras baseadas em texto, não paridade nativa integral; Sea Serpent classCode 5 ainda é inferido |
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Falta ciclo de resolução/gatilhos |
 
@@ -37,7 +37,13 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | 340 | Soul of the Pure | Done (sandbox) | Recupera 800 LP do ativador |
 | 341 | Dian Keto the Cure Master | Done (sandbox) | Recupera 1000 LP do ativador |
 | 1315 | Rain of Mercy | Done (sandbox) | Recupera 1000 LP dos dois duelistas |
-| 332 | Sogen | Done (sandbox, Warrior somente) | Zona de campo, +200/+200 para classe 15 em ambos os lados, retirada/substituição dinâmica; Beast-Warrior pendente |
+| 332 | Sogen | Done (sandbox) | Warrior classe 15 e Beast-Warrior classe 12: +200 ATK/DEF; apenas Warrior observado nativamente |
+| 329 | Forest | Done (sandbox) | Insect 10, Beast 11, Beast-Warrior 12, Plant 13: +200 ATK/DEF |
+| 330 | Wasteland | Done (sandbox) | Dinosaur 9, Zombie 2, Rock 6: +200 ATK/DEF |
+| 331 | Mountain | Done (sandbox) | Dragon 1, Winged Beast 16, Thunder 19: +200 ATK/DEF |
+| 333 | Umi | Done (sandbox) | Fish 8, Sea Serpent 5 (inferido), Thunder 19, Aqua 14: +200 ATK/DEF; Machine 7, Pyro 4: -200/-200 |
+| 334 | Yami | Done (sandbox) | Fiend 3, Spellcaster 18: +200 ATK/DEF; Fairy 17: -200/-200 |
+| 1069 | Chorus of Sanctuary | Done (sandbox) | +500 DEF somente para monstros face-up em posição de defesa |
 | 1125 | Gaia Power | Done (sandbox) | EARTH (attributeCode 5), +500 ATK/-400 DEF |
 | 1126 | Umiiruka | Done (sandbox) | WATER (attributeCode 3), +500 ATK/-400 DEF |
 | 1127 | Molten Destruction | Done (sandbox) | FIRE (attributeCode 4), +500 ATK/-400 DEF |
@@ -53,7 +59,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 
 | Resource ID | Carta / família | Estado do conhecimento |
 | ---: | --- | --- |
-| 332 | Sogen | 69 snapshots de atributos de batalha no piloto; 6 ocorrências classe15 com +200/+200. Agora jogável **para Warrior** no sandbox, sem controle causal isolado, classe Beast-Warrior ou equivalência nativa geral |
+| 332 | Sogen | 69 snapshots de atributos de batalha no piloto; 6 ocorrências classe15 com +200/+200. No sandbox, também inclui Beast-Warrior (classe12) conforme descrição, mas **sem comparação dinâmica nativa dessa classe** |
 | 1315 | Rain of Mercy | Aumento de 1000 LP observado em captura do original; efeito simples agora jogável no sandbox, sem paridade completa |
 | 1306 | Skull Invitation | Correlação de perdas de 300 LP e controle negativo observacional |
 | 1353 | Burning Land | Ticks de 500 LP relatados em evidência, ainda sem regra C# completa |
@@ -61,7 +67,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 
 ## Primeiro cenário de magia de campo
 
-A zona de campo é independente dos cinco slots de magia/armadilha. Sogen e as seis magias por atributo são calculados sob demanda para ambos os lados, sem modificar ATK/DEF-base, e combinam com equipamentos antes da saturação final. Cartas setadas não aplicam bônus; ativar uma nova magia de campo remove a anterior para o cemitério de seu dono. O jogador pode ativar a carta setada clicando na zona **FIELD** na interface local. As seis magias elementais usam `Properties >>29` e as descrições das cartas, não um novo teste nativo. Detalhes e limitações em `docs/cards/p036-field-spells-sandbox.md`. Faltam Beast-Warrior para Sogen, seis outras cartas `P036`, gatilhos e supressões.
+Todas as 13 magias de campo identificadas em P036 agora possuem efeitos básicos jogáveis no sandbox, reutilizando a zona FIELD e o mesmo cálculo dinâmico. Seis dependem de tipos, seis de atributos e Chorus depende da posição de defesa; Sogen se aplica a Warrior e Beast-Warrior. Os efeitos alcançam os dois lados do campo, e substituições removem os anteriores ao cemitério de seu dono. A interface existente aceita ativação da mão ou de carta setada. Para fontes e limites, consulte `docs/cards/p036-field-spells-sandbox.md`. Ainda não há paridade completa de interações/negação, e o mapeamento Sea Serpent = classe 5 precisa de conferência no DAT completo.
 
 ## Próxima lacuna concreta
 
