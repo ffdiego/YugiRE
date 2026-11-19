@@ -30,6 +30,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | P164 (seis recrutadores de atributo) | **Done** (6 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleRecruiterChecks.cs`, UI raylib | Destruição em batalha, escolha opcional Deck → campo; paridade nativa ainda não verificada |
 | P168 (Nimble Momonga e Giant Germ) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleGraveyardEffectChecks.cs` | LP após destruição em batalha, invoca 0–2 cartas do mesmo nome; UI provisória |
 | P169 (Spear Cretin) | **Done** (1 ID no sandbox) | `DemoDuel.MonsterWasFlipped`, `BattleGraveyardEffectChecks.cs` | FLIP diferido no envio ao cemitério, seleção para cada jogador; sem paridade nativa |
+| P165 (Sonic Bird, Senju of the Thousand Hands) | **Done** (2 IDs no sandbox) | `RitualSearchRules.cs`, `DemoDuel`, `RitualSearcherChecks.cs`, UI raylib | Busca opcional por Magia/Monstro de Ritual no Normal/Flip Summon; não na revelação em batalha |
 | Outras armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Restante das famílias e das janelas de resposta ainda pendente |
 
 **Todos os 499 monstros da união dos packs possuem classificação de referência:** 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` **somente para o ciclo básico (invocação/tributos/set/batalha) no sandbox C#**, sem alegar reproduzir o jogo original. Efeitos de monstros, fusões e rituais permanecem `Pending`. A classificação de cartas foi cruzada por fontes públicas, e os bits de categoria originais devem ser conferidos com o DAT no Windows.
@@ -47,6 +48,8 @@ Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `mon
 - **Hane-Hane** (`resourceId=540`, `P080`): retorna exatamente um monstro para a mão de seu dono. Compartilha o resolver com Penguin, mas não permite encerrar com zero escolhas se houver alvo legal; não pode selecionar um monstro marcado para destruição por batalha.
 - O cálculo de dano vem **antes** dos efeitos FLIP de combate; monstros já marcados para destruição ainda permanecem no campo até o fim da etapa, mas não podem ser retornados à mão.
 - Os testes de cenário e os prompts de seleção estão descritos em [`docs/cards/flip-sandbox.md`](docs/cards/flip-sandbox.md). **Morphing Jar #2 (`1163`) possui agora um resolver próprio**, independente de Morphing Jar (590).
+
+P165 compartilha o seletor `Deck → Hand` com P006, mas só é acionado por Normal/Flip Summon (não por simples revelação). Os filtros Ritual são baseados nos 16 pares nativos P269, com escolha opcional e nenhuma alteração ao deck no Skip. Consulte [`docs/cards/p165-ritual-search-sandbox.md`](docs/cards/p165-ritual-search-sandbox.md).
 
 P018 usa `PendingCardSelection`: índice de ocorrência na zona, filtro DAT e revalidação no Core; modal raylib provisório. Sem candidatos, não abre seleção. Em combate, a destruição ocorre após a escolha; testes em `CardSelectionChecks.cs`. Deck → mão foi implementado para P006 em sandbox; Deck → campo foi implementado no sandbox para P164, com seleção opcional e invocação em ataque; UI nativa segue pendente.
 
@@ -75,6 +78,8 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 1116 | Spear Cretin | Done (sandbox) | Após ser virado, ao ir ao cemitério cada lado revive 1 monstro do próprio cemitério |
 | 561 | Needle Worm | Done (sandbox) | FLIP: envia até 5 cartas do topo do deck oponente ao seu cemitério |
 | 610 | Hiro's Shadow Scout | Done (sandbox) | FLIP: adversário compra até 3 cartas e descarta as magias recém-compradas; deck-out na compra obrigatória insuficiente (política do sandbox) |
+| 1122 | Sonic Bird | Done (sandbox) | No Normal ou Flip Summon pode buscar 1 Magia de Ritual do próprio Main Deck para a mão |
+| 1109 | Senju of the Thousand Hands | Done (sandbox) | No Normal ou Flip Summon pode buscar 1 Monstro de Ritual do próprio Main Deck para a mão |
 | 1163 | Morphing Jar #2 | Done (sandbox) | FLIP devolve monstros ao Main Deck e escava quota; sem suporte a Extra Deck, tokens ou controle alterado |
 | 342 | Sparks | Done (sandbox) | `P045`, 200 de dano direto na rota simples |
 | 343 | Hinotama | Done (sandbox) | `P045`, 500 de dano direto |

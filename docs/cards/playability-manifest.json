@@ -529,6 +529,33 @@
       ]
     },
     {
+      "id": "monster.effect.ritual-on-summon-search",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Trigger on Normal Summon face-up or Flip Summon (not battle/effect reveal)",
+        "Optional Deck to Hand selection of Ritual Spell or Ritual Monster",
+        "Filter by 16 original ritual spell/monster pairs and matching DAT class",
+        "Source-position validation; shuffle Main Deck only on successful choice"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1109,
+        1122
+      ],
+      "evidence": [
+        "src/Joey.Core/RitualSearchRules.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/RitualSearcherChecks.cs",
+        "docs/cards/p165-ritual-search-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox rules, not replay-verified against Joey's native callback P165.",
+        "Does not implement Ritual Summoning, chains, negation, modified selection restrictions or native shuffle/timing parity."
+      ]
+    },
+    {
       "id": "monster.effect.field-to-graveyard-search",
       "kind": "Monster",
       "subtype": "Effect",
