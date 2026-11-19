@@ -20,6 +20,7 @@ internal static class DeckSearcherChecks
         var nonMonster = Spell(342, 5);
         var attacker = Monster(1100, 6, 2200, 2000);
         var big = Monster(777, 7, 2300, 1900, level: 7);
+        var oneTribute = Monster(778, 8, 2300, 1900, level: 6);
 
         check(CardSelectionRules.OnFieldToGraveyardFilter(47) == CardSelectionFilter.MonsterAttackAtMost1500 &&
               CardSelectionRules.OnFieldToGraveyardFilter(573) == CardSelectionFilter.MonsterDefenseAtMost1500 &&
@@ -55,14 +56,14 @@ internal static class DeckSearcherChecks
               !duel.ResolveCardSelection(4, out _) && duel.HandFor(1).Count == 0,
               "Sangan: selected occurrence moves to defender's hand and search resolves once");
 
-        var witchDuel = DemoDuel.FromPartialObservation(0, [big], Slots(witch), Slots(), 8000,
+        var witchDuel = DemoDuel.FromPartialObservation(0, [oneTribute], Slots(witch), Slots(), 8000,
             side0Deck: [strong, lowAtk, lowDef, nonMonster, weak]);
         check(witchDuel.Summon(0, 0, 0, true, out _, [0]) &&
               witchDuel.PendingCardSelection is { Owner: 0,
                   Filter: CardSelectionFilter.MonsterDefenseAtMost1500,
                   EffectResourceId: 573 } &&
               witchDuel.PendingCardSelection.EligibleCards.Select(c => c.SourceIndex).SequenceEqual([2, 4]) &&
-              witchDuel.Graveyard(0).Single() == witch && witchDuel.Monsters[0, 0] == big &&
+              witchDuel.Graveyard(0).Single() == witch && witchDuel.Monsters[0, 0] == oneTribute &&
               witchDuel.Hand.Count == 0 && !witchDuel.EndTurn(out _),
               "Witch: normal tribute payment triggers even when replacement is summoned");
         check(witchDuel.ResolveCardSelection(2, out _) &&
@@ -70,7 +71,7 @@ internal static class DeckSearcherChecks
               witchDuel.DeckCount(0) == 4 && witchDuel.PendingCardSelection is null,
               "Witch: DEF<=1500 monster from deck to hand; high ATK is allowed");
 
-        var noTarget = DemoDuel.FromPartialObservation(0, [big], Slots(sangan), Slots(), 8000,
+        var noTarget = DemoDuel.FromPartialObservation(0, [oneTribute], Slots(sangan), Slots(), 8000,
             side0Deck: [strong, nonMonster]);
         check(noTarget.Summon(0, 0, 0, true, out _, [0]) &&
               noTarget.PendingCardSelection is null && noTarget.Graveyard(0).Single() == sangan &&
@@ -78,7 +79,7 @@ internal static class DeckSearcherChecks
               noTarget.EndTurn(out _),
               "Sangan: no eligible cards does not open a selection or mutate deck");
 
-        var badTribute = DemoDuel.FromPartialObservation(0, [big], Slots(sangan), Slots(), 8000,
+        var badTribute = DemoDuel.FromPartialObservation(0, [oneTribute], Slots(sangan), Slots(), 8000,
             side0Deck: [weak]);
         check(!badTribute.Summon(0, 0, 0, true, out _, [0, 0]) &&
               badTribute.PendingCardSelection is null &&
@@ -132,9 +133,9 @@ internal static class DeckSearcherChecks
               two.Monsters[0, 0] == big,
               "Double tribute searches resolve serially with no duplicate or missing cards");
 
-        var repeatA = DemoDuel.FromPartialObservation(0, [big], Slots(sangan), Slots(), 8000,
+        var repeatA = DemoDuel.FromPartialObservation(0, [oneTribute], Slots(sangan), Slots(), 8000,
             side0Deck: [lowAtk, lowDef, weak, strong], effectShuffleSeed: 71);
-        var repeatB = DemoDuel.FromPartialObservation(0, [big], Slots(sangan), Slots(), 8000,
+        var repeatB = DemoDuel.FromPartialObservation(0, [oneTribute], Slots(sangan), Slots(), 8000,
             side0Deck: [lowAtk, lowDef, weak, strong], effectShuffleSeed: 71);
         repeatA.Summon(0, 0, 0, true, out _, [0]);
         repeatB.Summon(0, 0, 0, true, out _, [0]);
