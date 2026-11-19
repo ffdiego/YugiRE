@@ -132,6 +132,34 @@
       ]
     },
     {
+      "id": "trap.attack-damage-negation",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Magic Cylinder: negate opponent-declared attack and inflict current attacker ATK as reflected effect damage",
+        "Negate Attack: negate declared attack and end current Battle Phase",
+        "Both activate as previously Set Traps in attack declaration response window",
+        "Other attackers may attack after Magic Cylinder but not after Negate Attack",
+        "Only one Trap choice or Pass in bounded sandbox window"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        960,
+        1214
+      ],
+      "evidence": [
+        "src/Joey.Core/AttackTrapRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/AttackNegationTrapChecks.cs",
+        "docs/cards/p200-p192-attack-traps-sandbox.md",
+        "docs/research/native-attack-response-pilot.md"
+      ],
+      "limitations": [
+        "Sandbox only, no chain/priority/Counter Trap negation, attack replay or targeting invalidation.",
+        "P200 and P192 card text corresponds to historical/official rules, not differential native effect capture."
+      ]
+    },
+    {
       "id": "field.type",
       "kind": "Spell",
       "subtype": "Field",
