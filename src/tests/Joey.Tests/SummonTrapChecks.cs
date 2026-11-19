@@ -202,7 +202,10 @@ internal static class SummonTrapChecks
         // A special summon during battle is deliberately NOT given a Main
         // Phase Normal/Flip response; that would create an invalid trap window.
         var tomato = Monster(1123, 300, 1400, 1100);
-        var dark = Monster(90, 301, 1000, 900);
+        var dark = Monster(90, 301, 1000, 900) with
+        {
+            Properties = Monster(90, 301, 1000, 900).Properties | (2u << 29)
+        };
         var battle = DemoDuel.FromPartialObservation(1, [], Slots(tomato),
             Slots(strong), 8000, side0Deck: [dark]);
         battle.Spells[1, 0] = torrential;
