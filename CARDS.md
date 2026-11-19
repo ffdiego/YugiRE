@@ -33,6 +33,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | P165 (Sonic Bird, Senju of the Thousand Hands) | **Done** (2 IDs no sandbox) | `RitualSearchRules.cs`, `DemoDuel`, `RitualSearcherChecks.cs`, UI raylib | Busca opcional por Magia/Monstro de Ritual no Normal/Flip Summon; não na revelação em batalha |
 | P037/P039 (Dark Hole, Raigeki) | **Done** (2 magias no sandbox) | `MonsterWipeRules.cs`, `DemoDuel`, `MonsterWipeChecks.cs` | Destruição em massa sem alvo, enfileira buscas de Sangan/Witch e ressurreição de Spear Cretin; sem chains/negação |
 | P196/P038 (Trap Hole, Torrential Tribute) | **Done** (2 armadilhas no sandbox) | `SummonTrapRules.cs`, `DemoDuel`, `SummonTrapChecks.cs`, UI raylib | Resposta opcional a Normal/Flip Summon, sem cadeias ou paridade nativa; Special Summon pendente |
+| P201 (Mirror Force) | **Done** (1 armadilha no sandbox) | `AttackTrapRules.cs`, `DemoDuel`, `AttackTrapChecks.cs`, UI raylib | Resposta à declaração de ataque antes do dano/FLIP, destruição dos monstros em ATK; sem chains ou replay nativo |
 | Outras armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Restante das famílias e das janelas de resposta ainda pendente |
 
 **Todos os 499 monstros da união dos packs possuem classificação de referência:** 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` **somente para o ciclo básico (invocação/tributos/set/batalha) no sandbox C#**, sem alegar reproduzir o jogo original. Efeitos de monstros, fusões e rituais permanecem `Pending`. A classificação de cartas foi cruzada por fontes públicas, e os bits de categoria originais devem ser conferidos com o DAT no Windows.
@@ -50,6 +51,8 @@ Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `mon
 - **Hane-Hane** (`resourceId=540`, `P080`): retorna exatamente um monstro para a mão de seu dono. Compartilha o resolver com Penguin, mas não permite encerrar com zero escolhas se houver alvo legal; não pode selecionar um monstro marcado para destruição por batalha.
 - O cálculo de dano vem **antes** dos efeitos FLIP de combate; monstros já marcados para destruição ainda permanecem no campo até o fim da etapa, mas não podem ser retornados à mão.
 - Os testes de cenário e os prompts de seleção estão descritos em [`docs/cards/flip-sandbox.md`](docs/cards/flip-sandbox.md). **Morphing Jar #2 (`1163`) possui agora um resolver próprio**, independente de Morphing Jar (590).
+
+Mirror Force (P201) introduz janela de resposta à **declaração de ataque**, separada do cálculo de dano e da revelação do defensor. `Pass` retoma a mesma tentativa de ataque sem duplicá-la; a ativação usa destruição em massa apenas dos monstros adversários em posição de ataque. A engine completa de correntes permanece pendente. Consulte [`docs/cards/p201-mirror-force-attack-response-sandbox.md`](docs/cards/p201-mirror-force-attack-response-sandbox.md) e [`docs/research/chain-event-engine-boundaries.md`](docs/research/chain-event-engine-boundaries.md).
 
 Trap Hole (P196) e Torrential Tribute (P038) introduzem a primeira janela explícita de resposta a invocação, exigindo armadilha Set num turno anterior e decisão Pass/Activate. O evento registra Normal/Flip Summon, sem se confundir com a revelação durante ataque. Respostas a Special Summon, chains e prioridade permanecem pendentes. Consulte [`docs/cards/p196-p038-summon-trap-reactions-sandbox.md`](docs/cards/p196-p038-summon-trap-reactions-sandbox.md).
 
@@ -90,6 +93,7 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 336 | Raigeki | Done (sandbox) | Destrói todos os monstros do adversário; ignora a posição sem selecionar alvos |
 | 1002 | Trap Hole | Done (sandbox) | Armadilha previamente Set reage a Normal/Flip Summon adversária com ATK atual ≥1000 e destrói o monstro |
 | 1425 | Torrential Tribute | Done (sandbox) | Armadilha previamente Set reage a Normal/Flip Summon e destrói todos os monstros; resposta a Special Summon pendente |
+| 1056 | Mirror Force | Done (sandbox) | Armadilha Set responde à declaração de ataque adversária, destruindo todos os monstros ATK desse lado; uma resposta sem chain |
 | 1163 | Morphing Jar #2 | Done (sandbox) | FLIP devolve monstros ao Main Deck e escava quota; sem suporte a Extra Deck, tokens ou controle alterado |
 | 342 | Sparks | Done (sandbox) | `P045`, 200 de dano direto na rota simples |
 | 343 | Hinotama | Done (sandbox) | `P045`, 500 de dano direto |
