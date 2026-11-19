@@ -21,6 +21,8 @@ public sealed class DemoDuel
     private readonly int[,] spellSetTurn = new int[2, 5];
     public DemoSummonResponse? PendingSummonResponse { get; private set; }
     public DemoSummonTrapResult? LastSummonTrap { get; private set; }
+    public DemoAttackResponse? PendingAttackResponse { get; private set; }
+    public DemoAttackTrapResult? LastAttackTrap { get; private set; }
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
@@ -67,7 +69,8 @@ public sealed class DemoDuel
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
-        PendingCardSelection is not null || PendingSummonResponse is not null;
+        PendingCardSelection is not null || PendingSummonResponse is not null ||
+        PendingAttackResponse is not null;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
@@ -562,34 +565,156 @@ public sealed class DemoDuel
         if (ActionsBlocked || Turn == 1 || Phase != DemoPhase.Main) return false;
         Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
     }
+    /// <summary>
+    /// Attack declaration and Battle Step response are distinct from damage
+    /// calculation and the following Damage Step FLIP resolution.
+    /// </summary>
     public bool Attack(int source, int target, out string message)
     {
         message = "Select an unused attacker and a valid enemy target in battle phase.";
         int p = ActivePlayer, enemy = 1 - p;
         if (ActionsBlocked || Phase != DemoPhase.Battle || source is < 0 or >= 5 ||
             Monsters[p, source] is not Card attacker || attacked[p, source] ||
-            DefensePosition[p, source]) return false;
+            DefensePosition[p, source] || MonsterFaceDown[p, source])
+            return false;
+
+        Card? defender = null;
         if (target == -1)
         {
             if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] is not null))
-            { message = "Enemy monsters block direct attacks."; return false; }
-            attacked[p, source] = true;
+            {
+                message = "Enemy monsters block direct attacks.";
+                return false;
+            }
+        }
+        else
+        {
+            if (target is < 0 or >= 5 || Monsters[enemy, target] is not Card targetCard)
+                return false;
+            defender = targetCard;
+        }
+
+        // An attack declaration consumes the attack regardless of whether
+        // Mirror Force destroys the attacker in the response window.
+        attacked[p, source] = true;
+        var declaration = new DemoAttackDeclaration(p, source, attacker, target, defender);
+        BeginAttackResponse(declaration);
+        if (PendingAttackResponse is not null)
+        {
+            message = $"Attack declared by {attacker.Name}: choose a set Trap or Pass before damage.";
+            return true;
+        }
+        return ResolveDeclaredAttack(declaration, out message);
+    }
+
+    private void BeginAttackResponse(DemoAttackDeclaration attack)
+    {
+        int defender = 1 - attack.AttackingPlayer;
+        var eligible = new List<DemoAttackTrapOption>();
+        for (int z = 0; z < 5; z++)
+        {
+            if (Spells[defender, z] is not Card trap || !SpellFaceDown[defender, z] ||
+                spellSetTurn[defender, z] >= Turn ||
+                !AttackTrapRules.IsEligible(trap, defender, attack))
+                continue;
+            eligible.Add(new(defender, z, trap));
+        }
+        if (eligible.Count > 0)
+            PendingAttackResponse = new(attack, eligible.AsReadOnly());
+    }
+
+    /// <summary>
+    /// Continue the *same* declared attack after Pass. Do not re-declare,
+    /// consume a second attack or reopen the Mirror Force window.
+    /// </summary>
+    public bool PassAttackResponse(out string message)
+    {
+        message = "No attack declaration is awaiting a response.";
+        if (PendingAttackResponse is not DemoAttackResponse pending)
+            return false;
+        PendingAttackResponse = null;
+        return ResolveDeclaredAttack(pending.Attack, out message);
+    }
+
+    public bool ActivateAttackTrap(int owner, int zone, out string message)
+    {
+        message = "Choose an eligible set Trap in the attack response.";
+        if (PendingAttackResponse is not DemoAttackResponse pending ||
+            owner is < 0 or > 1 || zone is < 0 or >= 5 ||
+            !pending.EligibleTraps.Any(option => option.Owner == owner &&
+                option.Zone == zone && ReferenceEquals(option.Trap, Spells[owner, zone])) ||
+            Spells[owner, zone] is not Card trap || !SpellFaceDown[owner, zone] ||
+            spellSetTurn[owner, zone] >= Turn ||
+            !AttackTrapRules.IsEligible(trap, owner, pending.Attack))
+            return false;
+
+        var attack = pending.Attack;
+        if (!ReferenceEquals(Monsters[attack.AttackingPlayer, attack.AttackerZone],
+            attack.Attacker) || (attack.TargetZone >= 0 &&
+            !ReferenceEquals(Monsters[owner, attack.TargetZone], attack.Defender)))
+            return false;
+
+        var targets = MonsterWipeRules.AttackPositionTargets(
+            attack.AttackingPlayer, Monsters, MonsterFaceDown, DefensePosition);
+        if (targets.Count == 0) return false;
+        Spells[owner, zone] = null;
+        SpellFaceDown[owner, zone] = false;
+        spellSetTurn[owner, zone] = 0;
+        graves[owner].Add(trap);
+        PendingAttackResponse = null;
+
+        // Card-effect destruction (NOT battle destruction): recruiters do not
+        // trigger, no FLIP has occurred yet, and queued GY searches wait
+        // until the full snapshot has been moved to Graveyards.
+        LastMonsterWipe = ResolveMonsterWipe(
+            trap.Id, owner, explicitTargets: targets);
+        LastAttackTrap = new(trap.Id, owner, attack.AttackingPlayer,
+            LastMonsterWipe.TotalDestroyed, AttackContinued: false);
+        message = $"{trap.Name}: destroyed {LastMonsterWipe.TotalDestroyed} attack-position monster(s); attack canceled.";
+        return true;
+    }
+
+    private bool ResolveDeclaredAttack(DemoAttackDeclaration attack, out string message)
+    {
+        int p = attack.AttackingPlayer, enemy = 1 - p;
+        int source = attack.AttackerZone, target = attack.TargetZone;
+        if (GameOver || Phase != DemoPhase.Battle ||
+            !ReferenceEquals(Monsters[p, source], attack.Attacker) ||
+            MonsterFaceDown[p, source] || DefensePosition[p, source])
+        {
+            message = "Attack canceled: the declared attacker is no longer available.";
+            return true;
+        }
+
+        if (attack.DirectAttack)
+        {
+            if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] is not null))
+            {
+                message = "Attack canceled: direct attack no longer has a clear field.";
+                return true;
+            }
             int damage = AttackValue(p, source);
             Damage(enemy, damage);
             message = $"Direct attack: {damage} damage.";
             return true;
         }
-        if (target is < 0 or >= 5 || Monsters[enemy, target] is not Card defender) return false;
-        attacked[p, source] = true;
+
+        if (!ReferenceEquals(Monsters[enemy, target], attack.Defender))
+        {
+            message = "Attack canceled: the declared target left its zone.";
+            return true;
+        }
+        var defender = attack.Defender!;
         bool wasFaceDown = MonsterFaceDown[enemy, target];
         MonsterFaceDown[enemy, target] = false;
         if (wasFaceDown) MonsterWasFlipped[enemy, target] = true;
         if (!wasFaceDown)
             return ResolveBattleOutcome(p, source, enemy, target, out message);
 
-        // Damage calculation happens before FLIP effects resolve. Mark but do
-        // not yet send destroyed monsters to the graveyard (end Damage Step).
-        var battle = CalculateBattle(p, source, attacker, enemy, target, defender, out string damageMessage);
+        // Damage calculation precedes FLIP effects, but both occur only after
+        // the declaration window has resolved with no cancelling response.
+        var battle = CalculateBattle(p, source, attack.Attacker, enemy, target,
+            defender, out string damageMessage);
         deferredBattle = battle;
         TriggerFlip(enemy, target, defender, out string flipMessage);
         if (PendingFlipTarget is not null || PendingCardSelection is not null)
@@ -1281,11 +1406,12 @@ public sealed class DemoDuel
     /// triggers cannot prompt midway through the wipe.
     /// </summary>
     private MonsterWipeResult ResolveMonsterWipe(ushort resourceId, int caster,
-        MonsterWipeScope? overrideScope = null)
+        MonsterWipeScope? overrideScope = null,
+        IReadOnlyList<MonsterWipeTarget>? explicitTargets = null)
     {
-        var targets = overrideScope is MonsterWipeScope scope
+        var targets = explicitTargets ?? (overrideScope is MonsterWipeScope scope
             ? MonsterWipeRules.TargetsForScope(scope, caster, Monsters, MonsterFaceDown)
-            : MonsterWipeRules.Targets(resourceId, caster, Monsters, MonsterFaceDown);
+            : MonsterWipeRules.Targets(resourceId, caster, Monsters, MonsterFaceDown));
         int[] counts = [0, 0];
         int faceDownDestroyed = 0;
         resolvingBoardWipe = true;
