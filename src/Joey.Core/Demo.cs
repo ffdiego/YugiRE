@@ -209,7 +209,8 @@ public sealed class DemoDuel
         (FieldSpellRules.Supports(Hand[index].Id) ||
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
-            (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
+            (Hand[index].ClassCode == 22 && MonsterWipeRules.IsNormalSpell(Hand[index].Id) &&
+              MonsterWipeRules.Targets(
                 Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
     public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
@@ -307,7 +308,7 @@ public sealed class DemoDuel
         }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
         if (Hand[index].ClassCode == 22 &&
-            MonsterWipeRules.Scope(Hand[index].Id) is not null)
+            MonsterWipeRules.IsNormalSpell(Hand[index].Id))
         {
             Card spell = Hand[index];
             if (MonsterWipeRules.Targets(spell.Id, ActivePlayer, Monsters,
@@ -349,7 +350,7 @@ public sealed class DemoDuel
         int p = ActivePlayer;
         if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
-        if (card.ClassCode == 22 && MonsterWipeRules.Scope(card.Id) is not null)
+        if (card.ClassCode == 22 && MonsterWipeRules.IsNormalSpell(card.Id))
         {
             if (MonsterWipeRules.Targets(card.Id, p, Monsters, MonsterFaceDown).Count == 0)
             {
