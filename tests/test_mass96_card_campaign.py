@@ -115,25 +115,52 @@ class Native96CardCampaignTests(unittest.TestCase):
             self.assertIn("--trace-state", out.getvalue())
             self.assertFalse(target.exists())
 
-    def test_footer_auditor_rejects_partial_captures(self):
+    def test_footer_auditor_requires_verified_decks_on_both_sides(self):
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
             self.assertFalse(inspect_capture(folder, 3)["complete"])
             file = folder / "capture.jsonl"
-            header = dict(kind="metadata", requestedDuels=3)
+            header = dict(kind="metadata", requestedDuels=3,
+                          deckPlans={
+                              "0": {"main": [101, 102, 102]},
+                              "1": {"main": [201, 202, 202]},
+                          })
+            verified = [
+                dict(kind="deck_override", phase="verified",
+                     side=side, actualIndices=header["deckPlans"][str(side)]["main"])
+                for _ in range(3) for side in (0, 1)
+            ]
             complete = dict(kind="capture_summary", complete=True,
                             capturedDuels=3, overwritten=0,
-                            stateTrace=dict(samples=20, baselines=2, readErrors=0))
-            file.write_text(json.dumps(header)+"\n"+json.dumps(complete)+"\n",
-                            encoding="utf-8")
-            self.assertTrue(inspect_capture(folder, 3)["complete"])
+                            stateTrace=dict(samples=20, baselines=3, readErrors=0))
+
+            def write(events=verified, footer=complete):
+                file.write_text("\\n".join(json.dumps(item) for item in
+                    [header, *events, footer])+"\\n", encoding="utf-8")
+
+            write()
+            valid = inspect_capture(folder, 3)
+            self.assertTrue(valid["complete"])
+            self.assertEqual(valid["verifiedDeckOverrides"], {"0": 3, "1": 3})
             for altered in ({"overwritten": 2}, {"capturedDuels": 2},
-                            {"complete": False}, {"stateTrace": {"samples": 0}}):
+                            {"complete": False}, {"stateTrace": {"samples": 0}},
+                            {"stateTrace": {"samples": 20, "baselines": 2,
+                                            "readErrors": 0}}):
                 with self.subTest(altered=altered):
-                    broken = dict(complete, **altered)
-                    file.write_text(json.dumps(header)+"\n"+
-                                    json.dumps(broken)+"\n", encoding="utf-8")
+                    write(footer=dict(complete, **altered))
                     self.assertFalse(inspect_capture(folder, 3)["complete"])
+
+            write(events=verified[:-1])
+            self.assertFalse(inspect_capture(folder, 3)["complete"],
+                             "Missing side 1 verification must abort")
+            failed = dict(kind="deck_override", phase="failed", side=0)
+            write(events=verified+[failed])
+            self.assertFalse(inspect_capture(folder, 3)["complete"],
+                             "Native override failure must abort")
+            mismatch = dict(verified[0], actualIndices=[999, 102, 102])
+            write(events=[mismatch, *verified[1:]])
+            self.assertFalse(inspect_capture(folder, 3)["complete"],
+                             "Wrong actual deck contents must abort")
 
 
 if __name__ == "__main__":
