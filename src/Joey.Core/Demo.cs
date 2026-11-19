@@ -975,14 +975,14 @@ public sealed class DemoDuel
             {
                 var summonFilter = RitualSearchRules.OnNormalOrFlipSummon(source.Id);
                 if (summonFilter is null) continue;
-                var eligible = CardSelectionRules.Candidates(
+                var ritualCandidates = CardSelectionRules.Candidates(
                     decks[owner].ToArray(), summonFilter.Value);
-                if (eligible.Count == 0) continue;
+                if (ritualCandidates.Count == 0) continue;
                 // The search is optional in the historical card text.
                 // There is no effect or shuffle when declined or no targets exist.
                 selectedBatchIndices.Clear();
                 PendingCardSelection = new(owner, CardSelectionSource.Deck,
-                    CardSelectionDestination.Hand, summonFilter.Value, eligible,
+                    CardSelectionDestination.Hand, summonFilter.Value, ritualCandidates,
                     0, 1, source.Id);
                 return;
             }
