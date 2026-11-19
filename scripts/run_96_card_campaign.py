@@ -7,6 +7,7 @@ No EXE patching and no arbitrary PID termination; YugiLab owns its processes.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -94,6 +95,37 @@ def inspect_capture(folder: Path, expected_duels: int) -> dict:
     except (OSError, ValueError, StopIteration, UnicodeDecodeError) as exc:
         return {"complete": False, "reason": f"Unreadable capture: {exc}"}
     state = last.get("stateTrace", {}) if isinstance(last, dict) else {}
+    plans = first.get("deckPlans", {}) if isinstance(first, dict) else {}
+    verified = {"0": 0, "1": 0}
+    override_errors = []
+    # Inspect only deck_override event lines. This avoids parsing hundreds
+    # of thousands of unrelated native command/state events a second time.
+    try:
+        with source.open("rb") as stream:
+            for raw in stream:
+                if b"deck_override" not in raw:
+                    continue
+                item = json.loads(raw)
+                if item.get("kind") != "deck_override":
+                    continue
+                phase = item.get("phase")
+                side = str(item.get("side"))
+                if phase in ("failed", "mismatch"):
+                    override_errors.append(f"Native deck override {phase}, side {side}")
+                if phase != "verified":
+                    continue
+                planned = (plans.get(side) or {}).get("main")
+                actual = item.get("actualIndices")
+                if (side not in verified or not isinstance(planned, list)
+                    or not isinstance(actual, list)
+                    or Counter(planned) != Counter(actual)):
+                    override_errors.append(f"Deck identity mismatch, side {side}")
+                else:
+                    verified[side] += 1
+    except (OSError, ValueError, UnicodeDecodeError) as exc:
+        override_errors.append(f"Could not inspect deck overrides: {exc}")
+    deck_ok = not override_errors and all(
+        verified[str(side)] >= expected_duels for side in (0, 1))
     ok = (
         isinstance(first, dict) and first.get("kind") == "metadata" and
         isinstance(last, dict) and last.get("kind") == "capture_summary" and
@@ -101,15 +133,17 @@ def inspect_capture(folder: Path, expected_duels: int) -> dict:
         last.get("complete") is True and
         last.get("capturedDuels") == expected_duels and
         last.get("overwritten") == 0 and isinstance(state, dict) and
-        state.get("samples", 0) > 0 and state.get("baselines", 0) > 0 and
-        state.get("readErrors", 0) == 0
+        state.get("samples", 0) > 0 and state.get("baselines", 0) >= expected_duels and
+        state.get("readErrors", 0) == 0 and deck_ok
     )
     return {
         "complete": ok, "source": str(source),
         "capturedDuels": last.get("capturedDuels"),
         "eventsWritten": last.get("eventsWritten"),
         "stateTrace": state,
-        "reason": None if ok else "Footer, state trace or baseline integrity gate failed",
+        "verifiedDeckOverrides": verified, "deckOverrideErrors": override_errors,
+        "reason": None if ok else
+            "Footer, state trace, native deck identity or baseline gate failed",
     }
 
 
