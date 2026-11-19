@@ -76,6 +76,34 @@
       ]
     },
     {
+      "id": "trap.summon-response",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Trap Hole: respond to opponent Normal/Flip Summon (visible ATK >= 1000) and destroy summoned occurrence",
+        "Torrential Tribute: respond to Normal/Flip Summon of either player and destroy all field monsters",
+        "Activate/Pass explicit pending summon window; Set Traps cannot activate in their Set turn",
+        "Queue field-to-graveyard search effects after full wipe; no battle-only recruiters"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1002,
+        1425
+      ],
+      "evidence": [
+        "src/Joey.Core/SummonTrapRules.cs",
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/SummonResponseScreen.cs",
+        "src/tests/Joey.Tests/SummonTrapChecks.cs",
+        "docs/cards/p196-p038-summon-response-traps-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only; no native differential validation of P196/P038 response timing.",
+        "No chains, negation, multiple trap responses in one window, Special Summon windows or fully integrated concurrent FLIP choices."
+      ]
+    },
+    {
       "id": "field.type",
       "kind": "Spell",
       "subtype": "Field",
