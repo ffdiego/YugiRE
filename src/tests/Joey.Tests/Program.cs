@@ -118,6 +118,7 @@ FlipMonsterChecks.Run(Check);
 FlipDeckFlowChecks.Run(Check);
 RitualSearcherChecks.Run(Check);
 MonsterWipeChecks.Run(Check);
+SummonTrapChecks.Run(Check);
 CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
