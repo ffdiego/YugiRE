@@ -1,6 +1,6 @@
 # Próxima família: seleção de cartas por efeito — reutilizar a UI do Joey
 
-Status: **P018 e P006 implementados no sandbox; P164 pendente.**
+Status: **P018, P006, P164, P168 e P169 implementados no sandbox**; validação diferencial nativa pendente.
 A etapa anterior foi Morphing Jar #2 (`1163`), que exige escavação automática
 do deck e **não** uma escolha do jogador.
 
@@ -82,3 +82,7 @@ Spell tem classe DAT 22; Trap tem classe 21. A seleção de uma carta é obrigat
 ## Experimento P006 — Sangan / Witch
 
 O callback nativo P006 (`0x00583D20`) tem os IDs 47 (Sangan) e 573 (Witch of the Black Forest) catalogados em `docs/evidence/card-callback-catalog.json`. O sandbox implementa eventos `campo -> cemitério` em `RemoveMonster`, inclusive tributos, destruição por batalha e efeitos, **não** retorno à mão, descarte da mão ou embaralhamento de monstros no deck. Seleção `Deck -> Hand` usa o mesmo `PendingCardSelection` de P018; Sangan filtra monstros com ATK até 1500, Witch DEF até 1500 (limites inclusivos), e a escolha embaralha o restante do Main Deck. Cada remoção elegível é enfileirada, evitando perda de múltiplos gatilhos no mesmo tributo/batalha. No sandbox, controlador = dono; sem cadeia, negação, substituição de envio ao cemitério ou paridade nativa de shuffle. Banlist rege montagem do deck, nunca a elegibilidade do buscador. Testes em `DeckSearcherChecks.cs`; os perfis nativos ainda exigem captura/diferencial.
+
+## P168/P169: escolhas e histórico de FLIP
+
+P168 acrescenta `SameNameMonster` e o fluxo de seleção de até duas cartas do mesmo nome numa resolução atômica, com `Done` e `Skip`. Nimble Momonga invoca em defesa face-down; Giant Germ em ataque face-up. P169 acrescenta `AnyMonster` do cemitério, com opção de posição para Spear Cretin. A ativação de P169 depende de `MonsterWasFlipped` no **envio posterior ao cemitério**, não no momento do FLIP, e exclui a própria ocorrência de Spear. Consulte [P168/P169](p168-p169-battle-graveyard-sandbox.md) e `BattleGraveyardEffectChecks.cs`.
