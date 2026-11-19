@@ -117,6 +117,7 @@ NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
 CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
+BattleRecruiterChecks.Run(Check);
 HaneHaneChecks.Run(Check);
 MorphingJar2Checks.Run(Check);
 LookAndFeelChecks.Run(Check);
