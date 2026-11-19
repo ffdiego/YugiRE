@@ -135,8 +135,8 @@ class Native96CardCampaignTests(unittest.TestCase):
                             stateTrace=dict(samples=20, baselines=3, readErrors=0))
 
             def write(events=verified, footer=complete):
-                file.write_text("\\n".join(json.dumps(item) for item in
-                    [header, *events, footer])+"\\n", encoding="utf-8")
+                file.write_text("\n".join(json.dumps(item) for item in
+                    [header, *events, footer])+"\n", encoding="utf-8")
 
             write()
             valid = inspect_capture(folder, 3)
