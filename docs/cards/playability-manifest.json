@@ -527,6 +527,37 @@
         "Done applies to the C# sandbox only; native callback P006 is catalogued but not yet differentially validated.",
         "No chain, negation, replaced destination, controller/owner separation, or original deck RNG parity. Banlist affects deck construction, not search eligibility."
       ]
+    },
+    {
+      "id": "monster.effect.battle-attribute-recruiter",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Sent to Graveyard after battle destruction",
+        "Optional search of Main Deck for same Attribute monster ATK <=1500",
+        "Special Summon selected monster to free field slot in face-up attack",
+        "May decline selection without shuffling",
+        "Serializes simultaneous battle triggers"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1108,
+        1110,
+        1117,
+        1119,
+        1120,
+        1123
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/BattleRecruiterChecks.cs",
+        "docs/cards/p164-battle-recruiters-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only; native callback P164 catalogued, differential effects not confirmed",
+        "No chain/negation, altered control, replaced graveyard destination, intrinsic special summon restrictions or native RNG/visual parity"
+      ]
     }
   ]
 }
