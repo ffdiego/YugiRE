@@ -49,6 +49,33 @@
       ]
     },
     {
+      "id": "spell.monster-wipe-nontargeting",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Dark Hole: destroy all monsters on both fields",
+        "Raigeki: destroy all opponent monsters",
+        "Destroy face-up and face-down monsters without FLIP reveal",
+        "Trigger monster field-to-GY effects only after the full non-targeting wipe resolves",
+        "Activate from hand or from own set Spell/Trap zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        335,
+        336
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/MonsterWipeChecks.cs",
+        "docs/cards/p037-p039-monster-wipe-sandbox.md"
+      ],
+      "limitations": [
+        "C# sandbox only: no chain, negation, immunity or target replacement.",
+        "Exact native callback P037/P039 timing, graveyard trigger ordering and visual parity not verified."
+      ]
+    },
+    {
       "id": "field.type",
       "kind": "Spell",
       "subtype": "Field",
