@@ -4,7 +4,7 @@ namespace Joey.Core;
 /// Reusable sandbox FLIP dispatch, independent of animation timing.
 /// Resource IDs are original card IDs, not internal DAT indexes.
 /// </summary>
-public enum DemoFlipEffect { None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate, RecoverFromGraveyard }
+public enum DemoFlipEffect { None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate, RecoverFromGraveyard, MillOpponentDeck, DrawAndDiscardOpponentSpells }
 
 public static class FlipEffectRules
 {
@@ -15,6 +15,8 @@ public static class FlipEffectRules
     public const ushort MorphingJar2 = 1163;
     public const ushort MagicianOfFaith = 427;
     public const ushort MaskOfDarkness = 101;
+    public const ushort NeedleWorm = 561;
+    public const ushort HirosShadowScout = 610;
 
     public static DemoFlipEffect Effect(ushort resourceId) => resourceId switch
     {
@@ -24,6 +26,8 @@ public static class FlipEffectRules
         HaneHane => DemoFlipEffect.ReturnOne,
         MorphingJar2 => DemoFlipEffect.ShuffleAndExcavate,
         MagicianOfFaith or MaskOfDarkness => DemoFlipEffect.RecoverFromGraveyard,
+        NeedleWorm => DemoFlipEffect.MillOpponentDeck,
+        HirosShadowScout => DemoFlipEffect.DrawAndDiscardOpponentSpells,
         _ => DemoFlipEffect.None
     };
     public static bool Supports(ushort resourceId) => Effect(resourceId) != DemoFlipEffect.None;
