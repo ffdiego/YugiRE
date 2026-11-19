@@ -752,8 +752,7 @@ public sealed class DemoDuel
         {
             // The chosen card leaves the Main Deck, then the remainder shuffles.
             // This seed is only a reproducible sandbox policy, not native RNG parity.
-            var remaining = deckSnapshot.ToList();
-            remaining.RemoveAt(sourceIndex);
+            var remaining = deckSnapshot.Where((_, index) => index != sourceIndex).ToArray();
             effectRandom.Shuffle(remaining);
             decks[owner].Clear();
             foreach (var card in remaining) decks[owner].Enqueue(card);
