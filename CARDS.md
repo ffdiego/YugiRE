@@ -27,6 +27,8 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | FLIP P018 (Magician of Faith e Mask of Darkness) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `CardSelectionChecks.cs`, UI raylib | Cemitério → mão; sem chains/negação ou UI nativa verificada |
 | P006 (Sangan, Witch of the Black Forest) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `DeckSearcherChecks.cs` | Campo → cemitério, busca Deck → mão; não modela chains, controle alterado nem RNG nativo |
 | P164 (seis recrutadores de atributo) | **Done** (6 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleRecruiterChecks.cs`, UI raylib | Destruição em batalha, escolha opcional Deck → campo; paridade nativa ainda não verificada |
+| P168 (Nimble Momonga e Giant Germ) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleGraveyardEffectChecks.cs` | LP após destruição em batalha, invoca 0–2 cartas do mesmo nome; UI provisória |
+| P169 (Spear Cretin) | **Done** (1 ID no sandbox) | `DemoDuel.MonsterWasFlipped`, `BattleGraveyardEffectChecks.cs` | FLIP diferido no envio ao cemitério, seleção para cada jogador; sem paridade nativa |
 | Outras armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Restante das famílias e das janelas de resposta ainda pendente |
 
 **Todos os 499 monstros da união dos packs possuem classificação de referência:** 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` **somente para o ciclo básico (invocação/tributos/set/batalha) no sandbox C#**, sem alegar reproduzir o jogo original. Efeitos de monstros, fusões e rituais permanecem `Pending`. A classificação de cartas foi cruzada por fontes públicas, e os bits de categoria originais devem ser conferidos com o DAT no Windows.
@@ -67,6 +69,9 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 1110 | UFO Turtle | Done (sandbox) | Recruta FIRE ATK ≤1500 após destruição em batalha |
 | 1119 | Mother Grizzly | Done (sandbox) | Recruta WATER ATK ≤1500 após destruição em batalha |
 | 1120 | Flying Kamakiri #1 | Done (sandbox) | Recruta WIND ATK ≤1500 após destruição em batalha |
+| 1115 | Nimble Momonga | Done (sandbox) | Quando destruída em batalha, cura 1000 LP; invoca até 2 cópias do deck em defesa oculta |
+| 1114 | Giant Germ | Done (sandbox) | Quando destruído em batalha, causa 500 dano; invoca até 2 cópias em ataque |
+| 1116 | Spear Cretin | Done (sandbox) | Após ser virado, ao ir ao cemitério cada lado revive 1 monstro do próprio cemitério |
 | 1163 | Morphing Jar #2 | Done (sandbox) | FLIP devolve monstros ao Main Deck e escava quota; sem suporte a Extra Deck, tokens ou controle alterado |
 | 342 | Sparks | Done (sandbox) | `P045`, 200 de dano direto na rota simples |
 | 343 | Hinotama | Done (sandbox) | `P045`, 500 de dano direto |
