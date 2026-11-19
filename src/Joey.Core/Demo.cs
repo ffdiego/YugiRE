@@ -11,6 +11,8 @@ public sealed class DemoDuel
     // Seeded sandbox-only effect shuffling; separate from initial deck randomization.
     private Random effectRandom = new(1979);
     public IReadOnlyList<DemoExcavationResult> LastMorphingJar2 { get; private set; } = [];
+    /// <summary>Last P082/P088 deck-effect audit (sandbox, not native transcript).</summary>
+    public DemoDeckFlowResult? LastDeckFlow { get; private set; }
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
@@ -622,6 +624,29 @@ public sealed class DemoDuel
                 PendingCardSelection = new(owner, CardSelectionSource.Graveyard,
                     CardSelectionDestination.Hand, filter.Value, candidates, 1, 1, card.Id);
                 message = $"{card.Name} FLIP (P{owner + 1}): choose one {filter.Value} from your graveyard.";
+                break;
+            case DemoFlipEffect.MillOpponentDeck:
+                // P082: sending cards straight from deck to GY is not a draw.
+                // Missing cards simply end the mill; deck-out is checked on draw.
+                LastDeckFlow = DeckFlowRules.SendTopToGraveyard(
+                    card.Id, owner, 1 - owner, decks[1 - owner], graves[1 - owner], 5);
+                message = $"{card.Name} FLIP: sent {LastDeckFlow.MovedFromDeck} " +
+                    $"of 5 top cards from P{2 - owner}'s Deck to their Graveyard.";
+                break;
+            case DemoFlipEffect.DrawAndDiscardOpponentSpells:
+                // P088: draw exactly three (if available), then discard only
+                // Spells among those just drawn. Existing hand cards are untouched.
+                LastDeckFlow = DeckFlowRules.DrawThenDiscardNewSpells(
+                    card.Id, owner, 1 - owner, decks[1 - owner],
+                    hands[1 - owner], graves[1 - owner], 3);
+                // Bounded demo policy, not an observed native deck-out sequence:
+                // a forced draw shortfall is a loss for the drawing player.
+                if (LastDeckFlow.DrawFailed && Winner is null)
+                    Winner = owner;
+                message = $"{card.Name} FLIP: P{2 - owner} drew " +
+                    $"{LastDeckFlow.MovedFromDeck}/3, discarded " +
+                    $"{LastDeckFlow.NewlyDrawnSpellsDiscarded} newly drawn Spells." +
+                    (LastDeckFlow.DrawFailed ? " Forced draw failed: duel ended (sandbox)." : "");
                 break;
             case DemoFlipEffect.ShuffleAndExcavate:
                 ResolveMorphingJar2(out message);
