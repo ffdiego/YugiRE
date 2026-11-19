@@ -1,4 +1,4 @@
-# FLIP jogável — sete monstros (incluindo Morphing Jar #2 e P018)
+# FLIP jogável — nove monstros (incluindo P018, P082/P088)
 
 Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib.
 **Não** equivale a callbacks nativos idênticos, nem modela correntes e negação.
@@ -10,11 +10,12 @@ Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib
 | Penguin Soldier | 601 (pack Joey) | FLIP: devolve **até dois** monstros à mão de seus donos |
 | Hane-Hane | 540 (pack Yugi) | FLIP: devolve **exatamente um** monstro à mão do dono, se existir alvo válido |
 | Morphing Jar #2 | 1163 (pack Joey) | FLIP: embaralha monstros nos Main Decks, escava até quota e coloca elegíveis face-down |
-
-**Morphing Jar #2** (`1163`) é distinta de **Morphing Jar** (`590`); agora as duas têm resolvers separados no sandbox.
-
 | Magician of Faith | 427 (P018) | FLIP: escolhe uma magia no próprio cemitério e a devolve à mão |
 | Mask of Darkness | 101 (P018) | FLIP: escolhe uma armadilha no próprio cemitério e a devolve à mão |
+| Needle Worm | 561 (P082, pack Kaiba) | FLIP: envia as cinco primeiras cartas do deck adversário ao seu cemitério |
+| Hiro's Shadow Scout | 610 (P088, pack Kaiba) | FLIP: adversário compra três cartas e descarta apenas as magias recém-compradas |
+
+**Morphing Jar #2** (`1163`) é distinta de **Morphing Jar** (`590`); agora as duas têm resolvers separados no sandbox.
 
 ## Três fontes de revelação
 
@@ -137,3 +138,7 @@ Referências:
 ### Recuperação P018
 
 A seleção do cemitério usa `PendingCardSelection`, com índice por ocorrência, revalidação da carta e entrega à mão. Sem candidatos, o FLIP não abre modal. No combate, a marcação de destruição precede o efeito, mas a remoção acontece depois da decisão. A UI raylib é provisória; sem chains/negação nem timings nativos verificados. Testes: `CardSelectionChecks.cs`.
+
+### Manipulação automática de Deck (P082/P088)
+
+Needle Worm envia cartas do topo do Main Deck adversário ao seu cemitério sem contá-las como compras; deck vazio pelo efeito não encerra automaticamente o duelo. Hiro's Shadow Scout exige compra de três, seguida do descarte das **magias recém-compradas** (classe DAT 22). O sandbox trata falta de cartas para a compra como derrota do jogador que compraria. A ordem/timing nativo de deck-out e triggers reativos a compras ainda não foi medida. Consultar [P082/P088](p082-p088-flip-deck-flow-sandbox.md) e `FlipDeckFlowChecks.cs`.
