@@ -162,7 +162,7 @@ internal static class AttackNegationTrapChecks
         check(options.BeginBattle(out _) && options.Attack(0, 0, out _) &&
               options.PendingAttackResponse is { EligibleTraps.Count: 3 } &&
               options.PendingAttackResponse.EligibleTraps
-                  .Select(x => x.Trap.Id).SequenceEqual([1214, 960, 1056]) &&
+                  .Select(x => x.Trap.Id).SequenceEqual(new ushort[] { 1214, 960, 1056 }) &&
               options.ActivateAttackTrap(0, 1, out _) &&
               options.Spells[0, 0] == cylinder && options.Spells[0, 1] is null &&
               options.Spells[0, 2] == mirror &&
