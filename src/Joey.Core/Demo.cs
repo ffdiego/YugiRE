@@ -16,9 +16,11 @@ public sealed class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
-    // P006, P164, P168 and P169 share a serial queue of post-graveyard
-    // effects; retain battle provenance and Spear Cretin's prior FLIP state.
-    private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle, bool GraveyardRevival)> queuedDeckSearches = new();
+    // Serial choice resolution shared by post-graveyard effects and P165
+    // Normal/Flip Summon triggers. Preserve provenance: battle and Graveyard
+    // events must not be interpreted as a Summon, or vice versa.
+    private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle,
+        bool GraveyardRevival, bool NormalOrFlipSummon)> queuedDeckSearches = new();
     private readonly List<int> selectedBatchIndices = [];
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
@@ -245,7 +247,15 @@ public sealed class DemoDuel
         MonsterWasFlipped[player, zone] = false;
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
-        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s)."; return true;
+        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
+        if (!faceDown)
+        {
+            QueueRitualSummonSearch(player, Monsters[player, zone]!);
+            if (PendingCardSelection is { Owner: var searchOwner, EffectResourceId: var effectId } &&
+                searchOwner == player && effectId == Monsters[player, zone]!.Id)
+                message += " Choose a Ritual card from your Deck, or Skip.";
+        }
+        return true;
     }
     public bool Draw(out string message)
     {
@@ -470,7 +480,14 @@ public sealed class DemoDuel
         if (flipped)
         {
             TriggerFlip(owner, zone, monster, out message);
-            if (message.Length == 0) message = "Flip Summon: face-up attack position.";
+            // This route is a real Flip Summon, unlike an attack reveal or
+            // RevealMonsterByEffect. P165 searches must only use this path.
+            QueueRitualSummonSearch(owner, monster);
+            if (PendingCardSelection is { Owner: var searchOwner, EffectResourceId: var effectId } &&
+                searchOwner == owner && effectId == monster.Id)
+                message = $"{monster.Name} Flip Summoned: choose a Ritual card or Skip.";
+            else if (message.Length == 0)
+                message = "Flip Summon: face-up attack position.";
         }
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
@@ -936,13 +953,38 @@ public sealed class DemoDuel
         return true;
     }
 
+    private void QueueRitualSummonSearch(int owner, Card card)
+    {
+        if (RitualSearchRules.OnNormalOrFlipSummon(card.Id) is null) return;
+        queuedDeckSearches.Enqueue((owner, card, false, false, true));
+        BeginNextQueuedDeckSearch();
+    }
+
     private void BeginNextQueuedDeckSearch()
     {
         if (PendingCardSelection is not null || PendingFlipTarget is not null || GameOver)
             return;
         while (queuedDeckSearches.Count > 0)
         {
-            var (owner, source, destroyedByBattle, graveyardRevival) = queuedDeckSearches.Dequeue();
+            var (owner, source, destroyedByBattle, graveyardRevival,
+                normalOrFlipSummon) = queuedDeckSearches.Dequeue();
+
+            if (normalOrFlipSummon)
+            {
+                var summonFilter = RitualSearchRules.OnNormalOrFlipSummon(source.Id);
+                if (summonFilter is null) continue;
+                var eligible = CardSelectionRules.Candidates(
+                    decks[owner].ToArray(), summonFilter.Value);
+                if (eligible.Count == 0) continue;
+                // The search is optional in the historical card text.
+                // There is no effect or shuffle when declined or no targets exist.
+                selectedBatchIndices.Clear();
+                PendingCardSelection = new(owner, CardSelectionSource.Deck,
+                    CardSelectionDestination.Hand, summonFilter.Value, eligible,
+                    0, 1, source.Id);
+                return;
+            }
+
             int empty = Enumerable.Range(0, 5).Count(z => Monsters[owner, z] is null);
             if (graveyardRevival)
             {
@@ -1102,15 +1144,15 @@ public sealed class DemoDuel
         if (CardSelectionRules.OnFieldToGraveyardFilter(removed.Id) is not null ||
             destroyedByBattle && (CardSelectionRules.BattleRecruitAttribute(removed.Id) is not null ||
                                   CardSelectionRules.BattleSameNameRecruiter(removed.Id)))
-            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, false));
+            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, false, false));
 
         // Spear Cretin's FLIP does not resolve on revelation. After it has
         // been flipped, its later trip to the graveyard allows each player to
         // revive from their own graveyard. The source itself is ineligible.
         if (removed.Id == CardSelectionRules.SpearCretin && previouslyFlipped)
         {
-            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true));
-            queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true));
+            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true, false));
+            queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true, false));
         }
         BeginNextQueuedDeckSearch();
     }
