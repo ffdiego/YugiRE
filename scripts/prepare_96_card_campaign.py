@@ -11,10 +11,12 @@ import argparse
 from collections import Counter
 import json
 from pathlib import Path
-
-from native_hooks.deck_config import validate_deck
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from native_hooks.deck_config import validate_deck
 SEED = 20261119
 COPIES = 3
 CONTROLS = (151, 241, 525, 834, 885, 886, 887, 1052)
