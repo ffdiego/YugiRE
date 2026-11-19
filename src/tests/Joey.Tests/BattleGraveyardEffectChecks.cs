@@ -171,7 +171,7 @@ internal static class BattleGraveyardEffectChecks
               flipThenRemoved.ResolveCardSelection(0, null, false, out _) &&
               flipThenRemoved.Monsters[1, 1] == enemyGrave &&
               flipThenRemoved.PendingCardSelection is null &&
-              flipThenRemoved.Graveyard(0).Single() == spear,
+              flipThenRemoved.Graveyard(0).SequenceEqual([ally, spear]),
               "Spear Cretin: both owners choose separately; allow set DEF and attack; no self-revive");
 
         var unflipped = DemoDuel.FromPartialObservation(0, [],
