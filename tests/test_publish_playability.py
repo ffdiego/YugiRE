@@ -48,9 +48,9 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(one["message"], "305/771 (39.56%)")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
-        card = {"internalIndex": 91, "resourceId": 1116,
-                "name": "Spear Cretin", "classCode": 3,
-                "properties": 3 << 20, "pack": 4}
+        card = {"internalIndex": 1060, "resourceId": 1405,
+                "name": "Revival Jam", "classCode": 14,
+                "properties": 14 << 20, "pack": 4}
         rows, summary = build({"cards": [card]}, read_manifest(MANIFEST),
                               read_callbacks(CATALOG), read_subtypes())
         self.assertEqual(rows[0]["subtype"], "Effect")
