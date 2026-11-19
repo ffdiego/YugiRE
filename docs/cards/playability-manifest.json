@@ -500,6 +500,33 @@
         "Sandbox only: no chain/negation or verified native visual timing.",
         "Deck search and field summon not yet implemented."
       ]
+    },
+    {
+      "id": "monster.effect.field-to-graveyard-search",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Field-to-Graveyard trigger (battle, effect or tribute)",
+        "Deck search for monster ATK <=1500 or DEF <=1500",
+        "Return selected card to owner's hand",
+        "Seeded deterministic sandbox deck shuffle",
+        "Queued multiple simultaneous search triggers"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        47,
+        573
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DeckSearcherChecks.cs",
+        "docs/cards/p006-deck-search-sandbox.md"
+      ],
+      "limitations": [
+        "Done applies to the C# sandbox only; native callback P006 is catalogued but not yet differentially validated.",
+        "No chain, negation, replaced destination, controller/owner separation, or original deck RNG parity. Banlist affects deck construction, not search eligibility."
+      ]
     }
   ]
 }

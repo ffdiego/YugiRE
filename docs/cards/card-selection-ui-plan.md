@@ -1,6 +1,6 @@
 # Próxima família: seleção de cartas por efeito — reutilizar a UI do Joey
 
-Status: **P018 implementado no sandbox; P006 proposto em branch independente empilhada, P164 pendente**.
+Status: **P018 e P006 implementados no sandbox; P164 pendente.**
 A etapa anterior foi Morphing Jar #2 (`1163`), que exige escavação automática
 do deck e **não** uma escolha do jogador.
 
