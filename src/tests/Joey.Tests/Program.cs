@@ -120,6 +120,7 @@ RitualSearcherChecks.Run(Check);
 MonsterWipeChecks.Run(Check);
 SummonTrapChecks.Run(Check);
 AttackTrapChecks.Run(Check);
+AttackNegationTrapChecks.Run(Check);
 CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
