@@ -17,6 +17,11 @@ public sealed class DemoDuel
     // During a simultaneous board wipe, queue trigger effects but never
     // begin resolving their choices before all affected monsters have left.
     private bool resolvingBoardWipe;
+    private bool resolvingNormalSummon;
+    // The original has response priority and chains; this is one explicit
+    // opt-in response decision before pending normal/flip summon effects.
+    public PendingSummonResponse? PendingSummonResponse { get; private set; }
+    private readonly int[,] setCardTurn = new int[2, 5];
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
@@ -62,7 +67,8 @@ public sealed class DemoDuel
     }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
-    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null || PendingCardSelection is not null;
+    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
+        PendingCardSelection is not null || PendingSummonResponse is not null;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
@@ -224,6 +230,7 @@ public sealed class DemoDuel
         }
         int zone = FirstFreeSpellZone();
         Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = true;
+        setCardTurn[ActivePlayer, zone] = Turn;
         hands[ActivePlayer].RemoveAt(index);
         message = "Card set face-down in the leftmost free spell/trap zone.";
         return true;
@@ -246,8 +253,13 @@ public sealed class DemoDuel
         { message = "Choose an empty zone or one of the selected tribute zones."; return false; }
         // RE base count: 0x005AAB90. All validation precedes payment in this compact demo transaction.
         // Special summon restrictions, Soul Exchange and token-specific restrictions remain unsupported.
-        foreach (int tribute in tributes) RemoveMonster(player, tribute);
-        Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
+        resolvingNormalSummon = true;
+        try
+        {
+            foreach (int tribute in tributes) RemoveMonster(player, tribute);
+            Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
+        }
+        finally { resolvingNormalSummon = false; }
         DefensePosition[player, zone] = faceDown;
         MonsterFaceDown[player, zone] = faceDown;
         MonsterWasFlipped[player, zone] = false;
@@ -256,11 +268,16 @@ public sealed class DemoDuel
         message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
         if (!faceDown)
         {
+            TryOpenSummonResponse(new(player, zone, Monsters[player, zone]!,
+                SummonTriggerKind.Normal));
             QueueRitualSummonSearch(player, Monsters[player, zone]!);
-            if (PendingCardSelection is { Owner: var searchOwner, EffectResourceId: var effectId } &&
+            if (PendingSummonResponse is not null)
+                message += " Opponent / player may respond with a Set Trap, or Pass.";
+            else if (PendingCardSelection is { Owner: var searchOwner, EffectResourceId: var effectId } &&
                 searchOwner == player && effectId == Monsters[player, zone]!.Id)
                 message += " Choose a Ritual card from your Deck, or Skip.";
         }
+        BeginNextQueuedDeckSearch();
         return true;
     }
     public bool Draw(out string message)
@@ -519,10 +536,15 @@ public sealed class DemoDuel
         if (flipped)
         {
             TriggerFlip(owner, zone, monster, out message);
-            // This route is a real Flip Summon, unlike an attack reveal or
-            // RevealMonsterByEffect. P165 searches must only use this path.
+            // Only a voluntary Flip Summon is eligible, not battle/effect
+            // revelation. A FLIP effect already pending a decision is not yet
+            // integrated with chain windows in this bounded implementation.
+            if (PendingFlipTarget is null && PendingCardSelection is null)
+                TryOpenSummonResponse(new(owner, zone, monster, SummonTriggerKind.Flip));
             QueueRitualSummonSearch(owner, monster);
-            if (PendingCardSelection is { Owner: var searchOwner, EffectResourceId: var effectId } &&
+            if (PendingSummonResponse is not null)
+                message = $"{monster.Name} Flip Summoned: Set Trap response or Pass.";
+            else if (PendingCardSelection is { Owner: var searchOwner, EffectResourceId: var effectId } &&
                 searchOwner == owner && effectId == monster.Id)
                 message = $"{monster.Name} Flip Summoned: choose a Ritual card or Skip.";
             else if (message.Length == 0)
@@ -1003,7 +1025,8 @@ public sealed class DemoDuel
 
     private void BeginNextQueuedDeckSearch()
     {
-        if (PendingCardSelection is not null || PendingFlipTarget is not null || GameOver)
+        if (PendingCardSelection is not null || PendingFlipTarget is not null ||
+            PendingSummonResponse is not null || resolvingNormalSummon || GameOver)
             return;
         while (queuedDeckSearches.Count > 0)
         {
@@ -1164,6 +1187,92 @@ public sealed class DemoDuel
     }
 
     /// <summary>
+    /// Snapshot eligible Set Traps at the moment of a successful Normal or
+    /// Flip Summon. Only one response may be chosen or declined; chains and
+    /// multiple activations per window are a deliberate sandbox limitation.
+    /// </summary>
+    private void TryOpenSummonResponse(DemoSummonEvent summon)
+    {
+        if (GameOver || PendingSummonResponse is not null ||
+            PendingCardSelection is not null || PendingFlipTarget is not null ||
+            summon.Zone is < 0 or >= 5 ||
+            !ReferenceEquals(Monsters[summon.Summoner, summon.Zone], summon.Monster))
+            return;
+
+        var candidates = new List<SummonTrapOption>();
+        int attack = AttackValue(summon.Summoner, summon.Zone);
+        for (int player = 0; player < 2; player++)
+        for (int z = 0; z < 5; z++)
+        {
+            if (Spells[player, z] is not Card trap || !SpellFaceDown[player, z] ||
+                // Set cards must survive one turn transition before activation.
+                // A fixture-injected card with no set-turn is considered pre-set.
+                setCardTurn[player, z] >= Turn ||
+                !SummonTrapRules.CanActivate(trap, player, summon, attack))
+                continue;
+            candidates.Add(new(player, z, trap));
+        }
+        if (candidates.Count != 0)
+            PendingSummonResponse = new(summon, candidates.AsReadOnly());
+    }
+
+    /// <summary>Decline the currently available response, then resume queued effects.</summary>
+    public bool PassSummonResponse(out string message)
+    {
+        message = "No summon response window is pending.";
+        if (PendingSummonResponse is null) return false;
+        PendingSummonResponse = null;
+        BeginNextQueuedDeckSearch();
+        message = "Summon response declined; queued effects may now resolve.";
+        return true;
+    }
+
+    /// <summary>
+    /// Select one Set Trap from the responding player's zones.
+    /// No mutation occurs before revalidating card identity, age and the
+    /// summoned monster occurrence. Trap Hole destroys only that monster;
+    /// Torrential destroys all field monsters via the wipe resolver.
+    /// </summary>
+    public bool ActivateSummonTrap(int owner, int spellZone, out string message)
+    {
+        message = "Choose a valid Set Trap during a summon response.";
+        if (PendingSummonResponse is not PendingSummonResponse pending ||
+            owner is < 0 or > 1 || spellZone is < 0 or >= 5 ||
+            !pending.Options.Any(c => c.Owner == owner && c.SpellZone == spellZone &&
+                ReferenceEquals(c.Card, Spells[owner, spellZone])) ||
+            !SpellFaceDown[owner, spellZone] || setCardTurn[owner, spellZone] >= Turn ||
+            Spells[owner, spellZone] is not Card trap)
+            return false;
+        var ev = pending.Summon;
+        if (ev.Summoner is < 0 or > 1 || ev.Zone is < 0 or >= 5 ||
+            !ReferenceEquals(Monsters[ev.Summoner, ev.Zone], ev.Monster) ||
+            !SummonTrapRules.CanActivate(trap, owner, ev, AttackValue(ev.Summoner, ev.Zone)))
+            return false;
+
+        PendingSummonResponse = null;
+        Spells[owner, spellZone] = null;
+        SpellFaceDown[owner, spellZone] = false;
+        setCardTurn[owner, spellZone] = 0;
+        graves[owner].Add(trap);
+
+        if (trap.Id == SummonTrapRules.TrapHole)
+        {
+            // Do not drain the on-summon and on-graveyard triggers mid-removal.
+            resolvingBoardWipe = true;
+            try { RemoveMonster(ev.Summoner, ev.Zone); }
+            finally { resolvingBoardWipe = false; }
+            BeginNextQueuedDeckSearch();
+            message = $"{trap.Name} destroyed {ev.Monster.Name} summoned by P{ev.Summoner + 1}.";
+        }
+        else
+        {
+            LastMonsterWipe = ResolveMonsterWipe(trap.Id, owner);
+            message = $"{trap.Name} destroyed {LastMonsterWipe.TotalDestroyed} monsters.";
+        }
+        return true;
+    }
+
+    /// <summary>
     /// Destroy a snapshot of all matching monster occurrences. Processing
     /// is all-at-once from the player's perspective: deferred graveyard
     /// triggers cannot prompt midway through the wipe.
@@ -1226,7 +1335,7 @@ public sealed class DemoDuel
             queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true, false));
             queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true, false));
         }
-        if (!resolvingBoardWipe)
+        if (!resolvingBoardWipe && !resolvingNormalSummon)
             BeginNextQueuedDeckSearch();
     }
 
