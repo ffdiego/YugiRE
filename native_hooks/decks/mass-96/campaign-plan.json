@@ -1,0 +1,1135 @@
+{
+  "schema": "yugire-native-96-card-exposure-v1",
+  "seed": 20261119,
+  "distinctTargetCards": 96,
+  "cohortsCount": 12,
+  "cohortComposition": {
+    "monster": 3,
+    "spell": 3,
+    "trap": 2
+  },
+  "deckSize": 40,
+  "copiesPerTargetOnEachSide": 3,
+  "historicalControlIndices": [
+    151,
+    241,
+    525,
+    834,
+    885,
+    886,
+    887,
+    1052
+  ],
+  "copiesPerControl": 2,
+  "pilotDuelsPerCohort": 3,
+  "totalPilotDuels": 36,
+  "originalExeModified": false,
+  "evidenceStatus": "PlannedDeckExposureOnly",
+  "caution": "Joystick/AI use, activation and effects are NOT verified by deck inclusion. Controls come from previous demo decks, not an independently certified normal-monster catalog. Three copies may violate normal deck restrictions.",
+  "cohorts": [
+    {
+      "number": 1,
+      "name": "cohort-01",
+      "decks": {
+        "A": "cohort-01-A.json",
+        "B": "cohort-01-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 248,
+          "resourceId": 47,
+          "name": "Sangan",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P006",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 261,
+          "resourceId": 573,
+          "name": "Witch of the Black Forest",
+          "cardClass": 18,
+          "family": "monster",
+          "callbackProfile": "P006",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 221,
+          "resourceId": 1123,
+          "name": "Mystic Tomato",
+          "cardClass": 13,
+          "family": "monster",
+          "callbackProfile": "P164",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1049,
+          "resourceId": 1007,
+          "name": "Raimei",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P045",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 969,
+          "resourceId": 1315,
+          "name": "Rain of Mercy",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P042",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 359,
+          "resourceId": 1008,
+          "name": "Monster Reborn",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P117",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 894,
+          "resourceId": 1214,
+          "name": "Magic Cylinder",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P200",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 272,
+          "resourceId": 1425,
+          "name": "Torrential Tribute",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P038",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 2,
+      "name": "cohort-02",
+      "decks": {
+        "A": "cohort-02-A.json",
+        "B": "cohort-02-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 218,
+          "resourceId": 1108,
+          "name": "Giant Rat",
+          "cardClass": 11,
+          "family": "monster",
+          "callbackProfile": "P164",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 385,
+          "resourceId": 1117,
+          "name": "Shining Angel",
+          "cardClass": 17,
+          "family": "monster",
+          "callbackProfile": "P164",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 383,
+          "resourceId": 1114,
+          "name": "Giant Germ",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P168",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 363,
+          "resourceId": 1023,
+          "name": "Tribute to The Doomed",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P074",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 539,
+          "resourceId": 1024,
+          "name": "Soul Release",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P121",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 300,
+          "resourceId": 1027,
+          "name": "Change of Heart",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P133",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 629,
+          "resourceId": 1090,
+          "name": "Time Seal",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P154",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 703,
+          "resourceId": 1091,
+          "name": "Graverobber",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P155",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 3,
+      "name": "cohort-03",
+      "decks": {
+        "A": "cohort-03-A.json",
+        "B": "cohort-03-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 453,
+          "resourceId": 1115,
+          "name": "Nimble Momonga",
+          "cardClass": 11,
+          "family": "monster",
+          "callbackProfile": "P168",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 516,
+          "resourceId": 1116,
+          "name": "Spear Cretin",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P169",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 146,
+          "resourceId": 1163,
+          "name": "Morphing Jar #2",
+          "cardClass": 6,
+          "family": "monster",
+          "callbackProfile": "P182",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 316,
+          "resourceId": 1079,
+          "name": "Mystical Space Typhoon",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P075",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 729,
+          "resourceId": 1080,
+          "name": "Giant Trunade",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P152",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 906,
+          "resourceId": 1157,
+          "name": "Nobleman of Crossout",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P178",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 843,
+          "resourceId": 1092,
+          "name": "Gift of The Mystical Elf",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P156",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 332,
+          "resourceId": 1094,
+          "name": "Dust Tornado",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P158",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 4,
+      "name": "cohort-04",
+      "decks": {
+        "A": "cohort-04-A.json",
+        "B": "cohort-04-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 839,
+          "resourceId": 601,
+          "name": "Penguin Soldier",
+          "cardClass": 14,
+          "family": "monster",
+          "callbackProfile": "P087",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 497,
+          "resourceId": 1122,
+          "name": "Sonic Bird",
+          "cardClass": 16,
+          "family": "monster",
+          "callbackProfile": "P165",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1030,
+          "resourceId": 1110,
+          "name": "UFO Turtle",
+          "cardClass": 7,
+          "family": "monster",
+          "callbackProfile": "P164",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 850,
+          "resourceId": 1158,
+          "name": "Nobleman of Extermination",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P179",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 726,
+          "resourceId": 1160,
+          "name": "Premature Burial",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P160",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 275,
+          "resourceId": 1161,
+          "name": "Inspection",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P180",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1061,
+          "resourceId": 1095,
+          "name": "Call Of The Haunted",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P159",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 552,
+          "resourceId": 1097,
+          "name": "Earthshaker",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P162",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 5,
+      "name": "cohort-05",
+      "decks": {
+        "A": "cohort-05-A.json",
+        "B": "cohort-05-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 247,
+          "resourceId": 1119,
+          "name": "Mother Grizzly",
+          "cardClass": 12,
+          "family": "monster",
+          "callbackProfile": "P164",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 653,
+          "resourceId": 1120,
+          "name": "Flying Kamakiri #1",
+          "cardClass": 10,
+          "family": "monster",
+          "callbackProfile": "P164",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 588,
+          "resourceId": 1307,
+          "name": "Bubonic Vermin",
+          "cardClass": 11,
+          "family": "monster",
+          "callbackProfile": "P168",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 229,
+          "resourceId": 1162,
+          "name": "Prohibition",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P181",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 783,
+          "resourceId": 1181,
+          "name": "Riryoku",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P184",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 210,
+          "resourceId": 1183,
+          "name": "Seal of the Ancients",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P137",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 845,
+          "resourceId": 1098,
+          "name": "Enchanted Javelin",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P200",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 232,
+          "resourceId": 1099,
+          "name": "Mirror Wall",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P203",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 6,
+      "name": "cohort-06",
+      "decks": {
+        "A": "cohort-06-A.json",
+        "B": "cohort-06-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 630,
+          "resourceId": 15,
+          "name": "Time Wizard",
+          "cardClass": 18,
+          "family": "monster",
+          "callbackProfile": "P004",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 440,
+          "resourceId": 539,
+          "name": "Skelengel",
+          "cardClass": 17,
+          "family": "monster",
+          "callbackProfile": "P118",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 721,
+          "resourceId": 579,
+          "name": "Patrol Robo",
+          "cardClass": 7,
+          "family": "monster",
+          "callbackProfile": "P083",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 610,
+          "resourceId": 1203,
+          "name": "Graceful Dice",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P185",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 370,
+          "resourceId": 1213,
+          "name": "Mystic Box",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P213",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 879,
+          "resourceId": 1248,
+          "name": "Makiu",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P223",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 212,
+          "resourceId": 1142,
+          "name": "Forced Requisition",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P174",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 851,
+          "resourceId": 1147,
+          "name": "Backup Soldier",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P175",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 7,
+      "name": "cohort-07",
+      "decks": {
+        "A": "cohort-07-A.json",
+        "B": "cohort-07-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 638,
+          "resourceId": 585,
+          "name": "Greenkappa",
+          "cardClass": 15,
+          "family": "monster",
+          "callbackProfile": "P085",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 455,
+          "resourceId": 735,
+          "name": "Blast Sphere",
+          "cardClass": 7,
+          "family": "monster",
+          "callbackProfile": "P190",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 428,
+          "resourceId": 751,
+          "name": "Jinzo",
+          "cardClass": 7,
+          "family": "monster",
+          "callbackProfile": "P102",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 987,
+          "resourceId": 1311,
+          "name": "Burning Land",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P229",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 527,
+          "resourceId": 1312,
+          "name": "Cold Wave",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P230",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 978,
+          "resourceId": 1313,
+          "name": "Fairy Meteor Crush",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P025",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 577,
+          "resourceId": 1150,
+          "name": "Ceasefire",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P177",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 109,
+          "resourceId": 1154,
+          "name": "Imperial Order",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P102",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 8,
+      "name": "cohort-08",
+      "decks": {
+        "A": "cohort-08-A.json",
+        "B": "cohort-08-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 37,
+          "resourceId": 1242,
+          "name": "Beast of Gilfer",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P219",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 989,
+          "resourceId": 1246,
+          "name": "Copycat",
+          "cardClass": 18,
+          "family": "monster",
+          "callbackProfile": "P221",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 678,
+          "resourceId": 1254,
+          "name": "Slate Warrior",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P166",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1063,
+          "resourceId": 1314,
+          "name": "Limiter Removal",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P231",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 786,
+          "resourceId": 1318,
+          "name": "Insect Imitation",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P234",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1096,
+          "resourceId": 1319,
+          "name": "Dimensionhole",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P235",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 49,
+          "resourceId": 1177,
+          "name": "Windstorm of Etaqua",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P183",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 913,
+          "resourceId": 1180,
+          "name": "Anti-Spell Fragrance",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P007",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 9,
+      "name": "cohort-09",
+      "decks": {
+        "A": "cohort-09-A.json",
+        "B": "cohort-09-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 1057,
+          "resourceId": 1256,
+          "name": "Rigras Leever",
+          "cardClass": 13,
+          "family": "monster",
+          "callbackProfile": "P225",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 7,
+          "resourceId": 1330,
+          "name": "Bite Shoes",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P240",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 727,
+          "resourceId": 1336,
+          "name": "Hayabusa Knight",
+          "cardClass": 15,
+          "family": "monster",
+          "callbackProfile": "P001",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 376,
+          "resourceId": 1320,
+          "name": "Ground Collapse",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P236",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 403,
+          "resourceId": 1419,
+          "name": "Mask of the Accursed",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P025",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 213,
+          "resourceId": 1420,
+          "name": "Mask of Brutality",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P025",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 16,
+          "resourceId": 1204,
+          "name": "Skull Dice",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P186",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 938,
+          "resourceId": 1301,
+          "name": "Michizure",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P073",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 10,
+      "name": "cohort-10",
+      "decks": {
+        "A": "cohort-10-A.json",
+        "B": "cohort-10-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 375,
+          "resourceId": 1338,
+          "name": "4-Starred Ladybug of Doom",
+          "cardClass": 10,
+          "family": "monster",
+          "callbackProfile": "P242",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 772,
+          "resourceId": 1340,
+          "name": "Red-Moon Baby",
+          "cardClass": 2,
+          "family": "monster",
+          "callbackProfile": "P243",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 984,
+          "resourceId": 1341,
+          "name": "Mad Sword Beast",
+          "cardClass": 9,
+          "family": "monster",
+          "callbackProfile": "P001",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 361,
+          "resourceId": 1421,
+          "name": "Return of the Doomed",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P247",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 54,
+          "resourceId": 1422,
+          "name": "Lightning Blade",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P025",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 457,
+          "resourceId": 1426,
+          "name": "Jam Breeding Machine",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P007",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 414,
+          "resourceId": 1306,
+          "name": "Skull Invitation",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P007",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 379,
+          "resourceId": 1317,
+          "name": "Shift",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P233",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 11,
+      "name": "cohort-11",
+      "decks": {
+        "A": "cohort-11-A.json",
+        "B": "cohort-11-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 307,
+          "resourceId": 1344,
+          "name": "Goblin Attack Force",
+          "cardClass": 15,
+          "family": "monster",
+          "callbackProfile": "P001",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1060,
+          "resourceId": 1405,
+          "name": "Revival Jam",
+          "cardClass": 14,
+          "family": "monster",
+          "callbackProfile": "P002",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 258,
+          "resourceId": 1433,
+          "name": "Crimson Sentry",
+          "cardClass": 15,
+          "family": "monster",
+          "callbackProfile": "P248",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 543,
+          "resourceId": 1449,
+          "name": "United We Stand",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P025",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 910,
+          "resourceId": 1450,
+          "name": "Mage Power",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P025",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 362,
+          "resourceId": 1451,
+          "name": "Offerings to the Doomed",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P105",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 895,
+          "resourceId": 1321,
+          "name": "Magic Drain",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P237",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 244,
+          "resourceId": 1323,
+          "name": "Gravity Bind",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P007",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    },
+    {
+      "number": 12,
+      "name": "cohort-12",
+      "decks": {
+        "A": "cohort-12-A.json",
+        "B": "cohort-12-B.json"
+      },
+      "targets": [
+        {
+          "internalIndex": 855,
+          "resourceId": 1435,
+          "name": "Lady Assailant of Flames",
+          "cardClass": 4,
+          "family": "monster",
+          "callbackProfile": "P051",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 767,
+          "resourceId": 1436,
+          "name": "Fire Sorcerer",
+          "cardClass": 18,
+          "family": "monster",
+          "callbackProfile": "P052",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 537,
+          "resourceId": 1446,
+          "name": "Marie the Fallen One",
+          "cardClass": 3,
+          "family": "monster",
+          "callbackProfile": "P001",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 1106,
+          "resourceId": 1902,
+          "name": "Scapegoat",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P220",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 287,
+          "resourceId": 330,
+          "name": "Wasteland",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P036",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 490,
+          "resourceId": 332,
+          "name": "Sogen",
+          "cardClass": 22,
+          "family": "spell",
+          "callbackProfile": "P036",
+          "doneSandbox": true,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 999,
+          "resourceId": 1424,
+          "name": "Fairy Box",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P208",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        },
+        {
+          "internalIndex": 290,
+          "resourceId": 1447,
+          "name": "Jar of Greed",
+          "cardClass": 21,
+          "family": "trap",
+          "callbackProfile": "P119",
+          "doneSandbox": false,
+          "copiesPerSide": 3
+        }
+      ],
+      "focusCardsPerDeck": 8,
+      "targetCopiesPerSide": 3
+    }
+  ]
+}
