@@ -25,6 +25,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Monstros de efeito FLIP (Man-Eater Bug, Morphing Jar, Penguin Soldier, Hane-Hane, Morphing Jar #2) | **Done** (5 IDs no sandbox) | `FlipEffectRules.cs`, `DemoDuel`, `FlipMonsterChecks.cs`, seleção na interface | Sem chains/negações; deck-out duplo do Morphing Jar é política simplificada |
 | FLIP P018 (Magician of Faith e Mask of Darkness) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `CardSelectionChecks.cs`, UI raylib | Cemitério → mão; sem chains/negação ou UI nativa verificada |
+| P082/P088 (Needle Worm, Hiro's Shadow Scout) | **Done** (2 IDs no sandbox) | `DeckFlowRules.cs`, `DemoDuel`, `FlipDeckFlowChecks.cs` | Descarte do topo do deck e compra com descarte de magias; sem paridade nativa |
 | P006 (Sangan, Witch of the Black Forest) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `DeckSearcherChecks.cs` | Campo → cemitério, busca Deck → mão; não modela chains, controle alterado nem RNG nativo |
 | P164 (seis recrutadores de atributo) | **Done** (6 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleRecruiterChecks.cs`, UI raylib | Destruição em batalha, escolha opcional Deck → campo; paridade nativa ainda não verificada |
 | P168 (Nimble Momonga e Giant Germ) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleGraveyardEffectChecks.cs` | LP após destruição em batalha, invoca 0–2 cartas do mesmo nome; UI provisória |
@@ -72,6 +73,8 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 1115 | Nimble Momonga | Done (sandbox) | Quando destruída em batalha, cura 1000 LP; invoca até 2 cópias do deck em defesa oculta |
 | 1114 | Giant Germ | Done (sandbox) | Quando destruído em batalha, causa 500 dano; invoca até 2 cópias em ataque |
 | 1116 | Spear Cretin | Done (sandbox) | Após ser virado, ao ir ao cemitério cada lado revive 1 monstro do próprio cemitério |
+| 561 | Needle Worm | Done (sandbox) | FLIP: envia até 5 cartas do topo do deck oponente ao seu cemitério |
+| 610 | Hiro's Shadow Scout | Done (sandbox) | FLIP: adversário compra até 3 cartas e descarta as magias recém-compradas; deck-out na compra obrigatória insuficiente (política do sandbox) |
 | 1163 | Morphing Jar #2 | Done (sandbox) | FLIP devolve monstros ao Main Deck e escava quota; sem suporte a Extra Deck, tokens ou controle alterado |
 | 342 | Sparks | Done (sandbox) | `P045`, 200 de dano direto na rota simples |
 | 343 | Hinotama | Done (sandbox) | `P045`, 500 de dano direto |
