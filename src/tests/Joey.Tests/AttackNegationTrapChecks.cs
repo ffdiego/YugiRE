@@ -67,8 +67,10 @@ internal static class AttackNegationTrapChecks
               !cylinderDuel.Attack(0, 0, out _),
               "Magic Cylinder: negate attack, reflect current ATK to attacking player, preserve both monsters and Battle Phase");
         check(cylinderDuel.Attack(1, 0, out _) &&
-              cylinderDuel.Monsters[0, 0] == defender,
-              "Magic Cylinder: next independent monster can still attack in the Battle Phase");
+              cylinderDuel.Monsters[0, 0] is null &&
+              cylinderDuel.Monsters[1, 1] == secondAttacker &&
+              cylinderDuel.Life.SequenceEqual([7800, 6000]),
+              "Magic Cylinder: a different monster can attack afterward in the same Battle Phase");
 
         var direct = DemoDuel.FromPartialObservation(0, [cylinder],
             Slots(), Slots(attacker), 8000);
@@ -174,7 +176,7 @@ internal static class AttackNegationTrapChecks
         passed.SetFromHand(0, out _); passed.NextTurn();
         check(passed.BeginBattle(out _) && passed.Attack(0, 0, out _) &&
               passed.PassAttackResponse(out _) &&
-              passed.Life.SequenceEqual([8000, 7400]) &&
+              passed.Life.SequenceEqual([7400, 8000]) &&
               passed.Spells[0, 0] == cylinder &&
               passed.PendingAttackResponse is null &&
               !passed.Attack(0, 0, out _),
