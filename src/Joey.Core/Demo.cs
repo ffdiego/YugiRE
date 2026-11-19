@@ -14,9 +14,10 @@ public sealed class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
-    // P006 field->grave and P164 battle-destruction triggers share a pending
-    // queue. The battle provenance must not be lost when the monster is removed.
-    private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle)> queuedDeckSearches = new();
+    // P006, P164, P168 and P169 share a serial queue of post-graveyard
+    // effects; retain battle provenance and Spear Cretin's prior FLIP state.
+    private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle, bool GraveyardRevival)> queuedDeckSearches = new();
+    private readonly List<int> selectedBatchIndices = [];
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
@@ -24,6 +25,10 @@ public sealed class DemoDuel
     private readonly bool[,] changedPosition = new bool[2, 5];
     public bool[,] DefensePosition { get; } = new bool[2, 5];
     public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
+    /// <summary>Whether the current occupant has previously been flipped face-up.
+    /// Cleared whenever an occupant leaves or a new monster is placed.</summary>
+    public bool[,] MonsterWasFlipped { get; } = new bool[2, 5];
+    public IReadOnlyList<int> SelectedBatchIndices => selectedBatchIndices.AsReadOnly();
     public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
     private sealed record BattleContinuation(int AttackerSide, int AttackerZone, Card Attacker,
@@ -235,6 +240,7 @@ public sealed class DemoDuel
         Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
         DefensePosition[player, zone] = faceDown;
         MonsterFaceDown[player, zone] = faceDown;
+        MonsterWasFlipped[player, zone] = false;
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
         message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s)."; return true;
@@ -442,6 +448,7 @@ public sealed class DemoDuel
             Monsters[player, zone] is not Card monster || !MonsterFaceDown[player, zone])
             return false;
         MonsterFaceDown[player, zone] = false;
+        MonsterWasFlipped[player, zone] = true;
         TriggerFlip(player, zone, monster, out message);
         if (message.Length == 0) message = "Monster revealed by an effect (no supported FLIP).";
         return true;
@@ -457,6 +464,7 @@ public sealed class DemoDuel
         DefensePosition[owner, zone] = !DefensePosition[owner, zone];
         MonsterFaceDown[owner, zone] = false;
         changedPosition[owner, zone] = true;
+        if (flipped) MonsterWasFlipped[owner, zone] = true;
         if (flipped)
         {
             TriggerFlip(owner, zone, monster, out message);
@@ -493,6 +501,7 @@ public sealed class DemoDuel
         attacked[p, source] = true;
         bool wasFaceDown = MonsterFaceDown[enemy, target];
         MonsterFaceDown[enemy, target] = false;
+        if (wasFaceDown) MonsterWasFlipped[enemy, target] = true;
         if (!wasFaceDown)
             return ResolveBattleOutcome(p, source, enemy, target, out message);
 
@@ -660,6 +669,7 @@ public sealed class DemoDuel
                     continue;
                 additions.Add(card);
                 Monsters[p, z] = null;
+                MonsterWasFlipped[p, z] = false;
                 MonsterFaceDown[p, z] = DefensePosition[p, z] = false;
                 changedPosition[p, z] = attacked[p, z] = false;
                 foreach (var equip in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
@@ -695,6 +705,7 @@ public sealed class DemoDuel
                     !NormalSummonRules.RequiresSpecialSummon(card) && zone >= 0)
                 {
                     Monsters[p, zone] = card;
+                    MonsterWasFlipped[p, zone] = false;
                     MonsterFaceDown[p, zone] = DefensePosition[p, zone] = true;
                     changedPosition[p, zone] = true;
                     attacked[p, zone] = false;
@@ -932,8 +943,10 @@ public sealed class DemoDuel
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false)
     {
         Card removed = Monsters[p, z]!;
+        bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
         Monsters[p, z] = null;
+        MonsterWasFlipped[p, z] = false;
         DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
         changedPosition[p, z] = attacked[p, z] = false;
         // Attached equipment goes to its owner's graveyard, but only the monster
@@ -941,12 +954,25 @@ public sealed class DemoDuel
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
             RemoveEquipmentCore(e.Owner, e.SourceZone);
 
+        if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
+            ChangeLife(p, 1000);
+        else if (destroyedByBattle && removed.Id == CardSelectionRules.GiantGerm)
+            ChangeLife(1 - p, -500);
+
         if (CardSelectionRules.OnFieldToGraveyardFilter(removed.Id) is not null ||
-            destroyedByBattle && CardSelectionRules.BattleRecruitAttribute(removed.Id) is not null)
+            destroyedByBattle && (CardSelectionRules.BattleRecruitAttribute(removed.Id) is not null ||
+                                  CardSelectionRules.BattleSameNameRecruiter(removed.Id)))
+            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, false));
+
+        // Spear Cretin's FLIP does not resolve on revelation. After it has
+        // been flipped, its later trip to the graveyard allows each player to
+        // revive from their own graveyard. The source itself is ineligible.
+        if (removed.Id == CardSelectionRules.SpearCretin && previouslyFlipped)
         {
-            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle));
-            BeginNextQueuedDeckSearch();
+            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true));
+            queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true));
         }
+        BeginNextQueuedDeckSearch();
     }
 
     private void ReturnMonsterToHand(int player, int zone)
@@ -954,6 +980,7 @@ public sealed class DemoDuel
         Card card = Monsters[player, zone]!;
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
+        MonsterWasFlipped[player, zone] = false;
         changedPosition[player, zone] = attacked[player, zone] = false;
         // Equip cards do not return with the monster; they go to the owner's graveyard.
         foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
