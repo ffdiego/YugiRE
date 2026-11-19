@@ -136,8 +136,9 @@ internal static class SummonTrapChecks
         var wipe = DemoDuel.FromPartialObservation(0, [torrential],
             Slots(sangan), Slots(witch), 8000,
             side0Deck: [eligibleSangan], side1Deck: [strong, eligibleWitch]);
-        check(wipe.SetFromHand(0, out _) && wipe.NextTurn() /* turn 2 */ &&
-              wipe.Draw(out _) && wipe.SummonLeftmost(0, false, out _) &&
+        check(wipe.SetFromHand(0, out _), "Torrential: set card before opponent turn");
+        wipe.NextTurn();
+        check(wipe.Draw(out _) && wipe.SummonLeftmost(0, false, out _) &&
               wipe.PendingSummonResponse is { Summon: { Player: 1 } } &&
               wipe.PendingSummonResponse.EligibleTraps.Single().Trap == torrential &&
               wipe.ActivateSummonTrap(0, 0, out _) &&
