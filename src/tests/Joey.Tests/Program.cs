@@ -115,6 +115,7 @@ EndTurnTests.Run(Check);
 SummonTests.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
+FlipDeckFlowChecks.Run(Check);
 CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
