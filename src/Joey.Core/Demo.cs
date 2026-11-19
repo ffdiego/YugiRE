@@ -948,7 +948,9 @@ public sealed class DemoDuel
         selectedBatchIndices.Clear();
         FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
-        message = $"P{pending.Owner + 1} declined optional Special Summon; deck unchanged.";
+        message = pending.Destination == CardSelectionDestination.Hand
+            ? $"P{pending.Owner + 1} declined optional card search; deck unchanged."
+            : $"P{pending.Owner + 1} declined optional Special Summon; deck unchanged.";
         if (PendingCardSelection is not null) message += " Another card selection is pending.";
         return true;
     }
