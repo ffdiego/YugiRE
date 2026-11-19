@@ -152,7 +152,7 @@ internal static class FieldSpellChecks
               !invalid.ActivateSetFieldSpell(out _) && State(invalid) == before,
               "Sogen: invalid field removal and empty activation do not mutate state");
 
-        var unsupported = Duel(0, new Card(491, 335, "Unknown field", "", 22u << 20));
+        var unsupported = Duel(0, new Card(491, 1999, "Unknown field", "", 22u << 20));
         before = State(unsupported);
         check(!unsupported.CanActivateFromHand(0) && !unsupported.Play(0, out _) &&
               State(unsupported) == before,
