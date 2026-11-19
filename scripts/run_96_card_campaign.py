@@ -15,6 +15,9 @@ import shlex
 import subprocess
 import sys
 
+ROOT_PATH = Path(__file__).resolve().parents[1]
+if str(ROOT_PATH) not in sys.path:
+    sys.path.insert(0, str(ROOT_PATH))
 from scripts.prepare_96_card_campaign import ROOT, prepare
 
 EXPECTED_JOEY_SHA256 = (
