@@ -19,10 +19,13 @@ public static class MonsterWipeRules
 {
     public const ushort DarkHole = 335;
     public const ushort Raigeki = 336;
+    /// <summary>Trap wipe: eligible only through a summon response, never hand activation.</summary>
+    public const ushort TorrentialTribute = 1425;
+    public static bool IsNormalSpell(ushort resourceId) => resourceId is DarkHole or Raigeki;
 
     public static MonsterWipeScope? Scope(ushort resourceId) => resourceId switch
     {
-        DarkHole => MonsterWipeScope.BothPlayers,
+        DarkHole or TorrentialTribute => MonsterWipeScope.BothPlayers,
         Raigeki => MonsterWipeScope.OpponentOnly,
         _ => null
     };
