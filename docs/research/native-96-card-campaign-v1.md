@@ -94,10 +94,11 @@ python scripts/run_96_card_campaign.py `
 `complete`, 3 terminais, `overwritten=0`, amostras sem baseline,
 ou injeção de deck não verificada para os dois lados. O executor
 confere automaticamente o SHA256 do EXE, o plano/arquivo de decks,
-footer de captura e estado; confirmar **separadamente** a presença
-dos registros `deck_override` `verified` por lado/duelo no
-JSONL (o campo não é contabilizado na checagem automática de
-footer deste recorte). O EXE esperado tem SHA256
+footer de captura, estado e registros nativos
+`deck_override` com fase `verified` **para ambos os lados em cada
+duelo**. Compara `actualIndices` com os baralhos esperados em
+`metadata.deckPlans` e interrompe ao observar `mismatch`, `failed`
+ou verificação ausente. O EXE esperado tem SHA256
 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 
 ### 2. Piloto completo: 36 duelos de 12 confrontos
