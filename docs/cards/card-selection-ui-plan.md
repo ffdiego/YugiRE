@@ -1,6 +1,6 @@
 # Próxima família: seleção de cartas por efeito — reutilizar a UI do Joey
 
-Status: **P018 implementado no sandbox com seletor raylib provisório**; P006 e P164 pendentes.
+Status: **P018 e P006 implementados no sandbox; P164 pendente.**
 A etapa anterior foi Morphing Jar #2 (`1163`), que exige escavação automática
 do deck e **não** uma escolha do jogador.
 
@@ -78,3 +78,7 @@ para cumprir os efeitos de cartas.
 ## Estado P018
 
 Spell tem classe DAT 22; Trap tem classe 21. A seleção de uma carta é obrigatória se houver elegíveis. O Core revalida identidade e filtro antes da transferência; ações normais ficam bloqueadas até a decisão. Se o FLIP ocorre em combate, a destruição já calculada fica diferida até a escolha, inclusive para um defensor destruído. A interface raylib é um overlay paginado provisório, não a UI nativa verificada. Testes: `src/tests/Joey.Tests/CardSelectionChecks.cs`.
+
+## Experimento P006 — Sangan / Witch
+
+O callback nativo P006 (`0x00583D20`) tem os IDs 47 (Sangan) e 573 (Witch of the Black Forest) catalogados em `docs/evidence/card-callback-catalog.json`. O sandbox implementa eventos `campo -> cemitério` em `RemoveMonster`, inclusive tributos, destruição por batalha e efeitos, **não** retorno à mão, descarte da mão ou embaralhamento de monstros no deck. Seleção `Deck -> Hand` usa o mesmo `PendingCardSelection` de P018; Sangan filtra monstros com ATK até 1500, Witch DEF até 1500 (limites inclusivos), e a escolha embaralha o restante do Main Deck. Cada remoção elegível é enfileirada, evitando perda de múltiplos gatilhos no mesmo tributo/batalha. No sandbox, controlador = dono; sem cadeia, negação, substituição de envio ao cemitério ou paridade nativa de shuffle. Banlist rege montagem do deck, nunca a elegibilidade do buscador. Testes em `DeckSearcherChecks.cs`; os perfis nativos ainda exigem captura/diferencial.

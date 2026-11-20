@@ -14,6 +14,9 @@ public sealed class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
+    // P006 searches are queued by the field -> graveyard transition, not by FLIP
+    // or a generic hand discard. Multiple tributes/battle deaths resolve in order.
+    private readonly Queue<(int Owner, Card Source)> queuedDeckSearches = new();
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
@@ -104,7 +107,10 @@ public sealed class DemoDuel
         int activeLifePoints,
         bool equipmentContextResolved = false,
         IReadOnlyList<Card>? side0Graveyard = null,
-        IReadOnlyList<Card>? side1Graveyard = null)
+        IReadOnlyList<Card>? side1Graveyard = null,
+        IReadOnlyList<Card>? side0Deck = null,
+        IReadOnlyList<Card>? side1Deck = null,
+        int effectShuffleSeed = 1979)
     {
         if (activeSide is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(activeSide));
@@ -119,11 +125,18 @@ public sealed class DemoDuel
         if (activeHand.Any(card => card is null))
             throw new ArgumentException("Active hand must not contain null cards.", nameof(activeHand));
 
-        var duel = new DemoDuel { Turn = activeSide + 1, equipmentContextResolved = equipmentContextResolved };
+        var duel = new DemoDuel
+        {
+            Turn = activeSide + 1,
+            equipmentContextResolved = equipmentContextResolved,
+            effectRandom = new Random(effectShuffleSeed)
+        };
         duel.Life[activeSide] = activeLifePoints;
         duel.hands[activeSide].AddRange(activeHand);
         if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard);
         if (side1Graveyard is not null) duel.graves[1].AddRange(side1Graveyard);
+        if (side0Deck is not null) foreach (var c in side0Deck) duel.decks[0].Enqueue(c);
+        if (side1Deck is not null) foreach (var c in side1Deck) duel.decks[1].Enqueue(c);
         for (int slot = 0; slot < 5; slot++)
         {
             duel.Monsters[0, slot] = side0Monsters[slot];
@@ -702,30 +715,74 @@ public sealed class DemoDuel
             $"set {results[0].SpecialSummoned}/{results[1].SpecialSummoned} face-down.";
     }
 
-    /// <summary>Resolve a pending graveyard selection by source zone position.</summary>
+    /// <summary>
+    /// Resolve either P018 graveyard recovery or P006 deck search to hand.
+    /// Selection indices are positions inside the source-zone snapshot;
+    /// validate the live instance and filter before committing any mutation.
+    /// </summary>
     public bool ResolveCardSelection(int sourceIndex, out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
-        if (PendingCardSelection is not { Source: CardSelectionSource.Graveyard,
-                Destination: CardSelectionDestination.Hand, MinSelections: 1, MaxSelections: 1 } pending)
+        if (PendingCardSelection is not { Destination: CardSelectionDestination.Hand,
+                MinSelections: 1, MaxSelections: 1 } pending)
             return false;
+        if (pending.Owner is < 0 or > 1) return false;
 
         int owner = pending.Owner;
-        var candidate = pending.EligibleCards.FirstOrDefault(option => option.SourceIndex == sourceIndex);
-        if (owner is < 0 or > 1 || candidate is null ||
-            sourceIndex < 0 || sourceIndex >= graves[owner].Count ||
-            !ReferenceEquals(graves[owner][sourceIndex], candidate.Card) ||
+        Card[] deckSnapshot = pending.Source == CardSelectionSource.Deck
+            ? decks[owner].ToArray() : [];
+        IReadOnlyList<Card> source = pending.Source switch
+        {
+            CardSelectionSource.Graveyard => graves[owner],
+            CardSelectionSource.Deck => deckSnapshot,
+            _ => []
+        };
+        var candidate = pending.EligibleCards.FirstOrDefault(c => c.SourceIndex == sourceIndex);
+        if (candidate is null || sourceIndex < 0 || sourceIndex >= source.Count ||
+            !ReferenceEquals(source[sourceIndex], candidate.Card) ||
             !CardSelectionRules.IsEligible(candidate.Card, pending.Filter))
         {
-            message = "The chosen card is no longer eligible in that graveyard.";
+            message = "The selected card is no longer eligible in its source zone.";
             return false;
         }
-        graves[owner].RemoveAt(sourceIndex);
+
+        if (pending.Source == CardSelectionSource.Graveyard)
+            graves[owner].RemoveAt(sourceIndex);
+        else
+        {
+            // The chosen card leaves the Main Deck, then the remainder shuffles.
+            // This seed is only a reproducible sandbox policy, not native RNG parity.
+            var remaining = deckSnapshot.Where((_, index) => index != sourceIndex).ToArray();
+            effectRandom.Shuffle(remaining);
+            decks[owner].Clear();
+            foreach (var card in remaining) decks[owner].Enqueue(card);
+        }
         hands[owner].Add(candidate.Card);
         PendingCardSelection = null;
         FinishDeferredBattle();
-        message = $"{candidate.Card.Name} returned from P{owner + 1}'s graveyard to hand.";
+        BeginNextQueuedDeckSearch();
+        message = pending.Source == CardSelectionSource.Deck
+            ? $"{candidate.Card.Name} added from P{owner + 1}'s deck to hand; deck shuffled."
+            : $"{candidate.Card.Name} returned from P{owner + 1}'s graveyard to hand.";
+        if (PendingCardSelection is not null)
+            message += " Another card selection is pending.";
         return true;
+    }
+
+    private void BeginNextQueuedDeckSearch()
+    {
+        if (PendingCardSelection is not null || PendingFlipTarget is not null) return;
+        while (queuedDeckSearches.Count > 0)
+        {
+            var (owner, source) = queuedDeckSearches.Dequeue();
+            var filter = CardSelectionRules.OnFieldToGraveyardFilter(source.Id);
+            if (filter is null) continue;
+            var eligible = CardSelectionRules.Candidates(decks[owner].ToArray(), filter.Value);
+            if (eligible.Count == 0) continue;
+            PendingCardSelection = new(owner, CardSelectionSource.Deck,
+                CardSelectionDestination.Hand, filter.Value, eligible, 1, 1, source.Id);
+            return;
+        }
     }
 
     /// <summary>
@@ -804,12 +861,21 @@ public sealed class DemoDuel
 
     private void RemoveMonster(int p, int z)
     {
-        graves[p].Add(Monsters[p, z]!); Monsters[p, z] = null;
+        Card removed = Monsters[p, z]!;
+        graves[p].Add(removed);
+        Monsters[p, z] = null;
         DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
         changedPosition[p, z] = attacked[p, z] = false;
-        // Common cleanup only: no Banisher/token/trigger exceptions in this sandbox.
+        // Attached equipment goes to its owner's graveyard, but only the monster
+        // sent from the field may activate a P006 search.
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
             RemoveEquipmentCore(e.Owner, e.SourceZone);
+
+        if (CardSelectionRules.OnFieldToGraveyardFilter(removed.Id) is not null)
+        {
+            queuedDeckSearches.Enqueue((p, removed));
+            BeginNextQueuedDeckSearch();
+        }
     }
 
     private void ReturnMonsterToHand(int player, int zone)
