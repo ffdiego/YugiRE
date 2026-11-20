@@ -35,6 +35,13 @@ public sealed class DemoDuel
     private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle,
         bool GraveyardRevival, bool NormalOrFlipSummon)> queuedDeckSearches = new();
     private readonly List<int> selectedBatchIndices = [];
+    private readonly Queue<PendingEffectDecision> queuedEffectDecisions = new();
+    private readonly List<PendingDelayedRevival> delayedRevivals = [];
+    private readonly List<EffectDecisionResolution> effectDecisionHistory = [];
+    private long nextEffectDecisionId;
+    public PendingEffectDecision? PendingEffectDecision { get; private set; }
+    public IReadOnlyList<PendingDelayedRevival> PendingDelayedRevivals => delayedRevivals.AsReadOnly();
+    public IReadOnlyList<EffectDecisionResolution> EffectDecisionHistory => effectDecisionHistory.AsReadOnly();
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
@@ -73,7 +80,7 @@ public sealed class DemoDuel
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
-        PendingAttackResponse is not null;
+        PendingAttackResponse is not null || PendingEffectDecision is not null;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
@@ -1284,8 +1291,11 @@ public sealed class DemoDuel
     private void BeginNextQueuedDeckSearch()
     {
         if (PendingCardSelection is not null || PendingFlipTarget is not null ||
-            PendingSummonResponse is not null || resolvingSummon || GameOver)
+            PendingSummonResponse is not null || PendingAttackResponse is not null ||
+            resolvingSummon || GameOver)
             return;
+        BeginNextEffectDecision();
+        if (PendingEffectDecision is not null) return;
         while (queuedDeckSearches.Count > 0)
         {
             var (owner, source, destroyedByBattle, graveyardRevival,
@@ -1510,8 +1520,21 @@ public sealed class DemoDuel
             queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true, false));
             queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true, false));
         }
+        if (destroyedByBattle && removed.Id == RevivalJamRules.ResourceId &&
+            !GameOver && RevivalJamRules.MayPay(Life[p]))
+        {
+            // Joey's exact optional-prompt routing (human vs demo/AI) is
+            // still under native investigation. This is sandbox policy.
+            queuedEffectDecisions.Enqueue(new(++nextEffectDecisionId, p, removed,
+                EffectDecisionKind.PayLifePointsForRevival,
+                RevivalJamRules.LifePointCost, Turn));
+        }
+
         if (!resolvingBoardWipe)
+        {
+            BeginNextEffectDecision();
             BeginNextQueuedDeckSearch();
+        }
     }
 
     private void ReturnMonsterToHand(int player, int zone)
@@ -1557,5 +1580,73 @@ public sealed class DemoDuel
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
         battlePhaseEndedThisTurn = false;
         Array.Clear(attacked); Array.Clear(changedPosition);
+        // The demo exposes Main/Battle/End only. This internal turn-start event
+        // is a bounded Standby hook, not a full native phase scheduler.
+        ResolveStartOfTurnEffects();
+    }
+
+    private void ResolveStartOfTurnEffects()
+    {
+        for (int i = delayedRevivals.Count - 1; i >= 0; i--)
+        {
+            var effect = delayedRevivals[i];
+            if (effect.Owner != ActivePlayer || Turn < effect.DueTurn) continue;
+            delayedRevivals.RemoveAt(i);
+            int graveIndex = graves[effect.Owner].FindIndex(
+                c => ReferenceEquals(c, effect.Source));
+            int zone = Enumerable.Range(0, 5).FirstOrDefault(
+                z => Monsters[effect.Owner, z] is null, -1);
+            if (GameOver || graveIndex < 0 || zone < 0) continue;
+            // A consumed promise does not refund the LP, even if the monster
+            // is no longer in the GY or cannot be placed on the field.
+            graves[effect.Owner].RemoveAt(graveIndex);
+            PlaceSelectedMonster(effect.Owner, zone, effect.Source, false);
+            DefensePosition[effect.Owner, zone] = true;
+        }
+    }
+
+    private void BeginNextEffectDecision()
+    {
+        if (PendingEffectDecision is not null || PendingCardSelection is not null ||
+            PendingFlipTarget is not null || PendingSummonResponse is not null ||
+            PendingAttackResponse is not null || GameOver)
+            return;
+        if (queuedEffectDecisions.TryDequeue(out var request))
+            PendingEffectDecision = request;
+    }
+
+    /// <summary>
+    /// Consumes one optional cost request by stable ID; no UI dependency and no
+    /// mutation on a stale request or invalid payment.
+    /// </summary>
+    public bool ResolveEffectDecision(long id, EffectDecisionAnswer answer, out string message)
+    {
+        message = "No matching optional effect decision is pending.";
+        if (PendingEffectDecision is not { } request || request.Id != id ||
+            !Enum.IsDefined(answer) || GameOver) return false;
+        if (answer == EffectDecisionAnswer.Accept &&
+            (!RevivalJamRules.MayPay(Life[request.Owner]) ||
+             !graves[request.Owner].Any(c => ReferenceEquals(c, request.Source))))
+        {
+            message = "Cannot pay: the source left the graveyard or LP are insufficient.";
+            return false;
+        }
+
+        int before = Life[request.Owner];
+        PendingEffectDecision = null;
+        if (answer == EffectDecisionAnswer.Accept)
+        {
+            ChangeLife(request.Owner, -request.LifePointCost);
+            int dueTurn = Turn + (ActivePlayer == request.Owner ? 2 : 1);
+            delayedRevivals.Add(new(request.Id, request.Owner, request.Source, dueTurn));
+        }
+        effectDecisionHistory.Add(new(request.Id, request.Owner, request.Kind,
+            answer, Turn, before, Life[request.Owner]));
+        message = answer == EffectDecisionAnswer.Accept
+            ? $"P{request.Owner + 1} paid {request.LifePointCost} LP; Revival Jam scheduled."
+            : $"P{request.Owner + 1} declined Revival Jam's optional cost.";
+        BeginNextEffectDecision();
+        BeginNextQueuedDeckSearch();
+        return true;
     }
 }
