@@ -3,13 +3,16 @@ namespace Joey.Core;
 /// <summary>Position in the source zone (not the DAT catalog index) identifies each copy.</summary>
 public enum CardSelectionSource { Deck, Graveyard }
 public enum CardSelectionDestination { Hand, Field }
-public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500 }
+public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500, SameNameMonster, AnyMonster }
+public enum CardSelectionPosition { FaceUpAttack, FaceDownDefense }
 public sealed record CardSelectionCandidate(int SourceIndex, Card Card);
 
 public sealed record PendingCardSelection(
     int Owner, CardSelectionSource Source, CardSelectionDestination Destination,
     CardSelectionFilter Filter, IReadOnlyList<CardSelectionCandidate> EligibleCards,
-    int MinSelections, int MaxSelections, ushort EffectResourceId, byte? RequiredAttributeCode = null);
+    int MinSelections, int MaxSelections, ushort EffectResourceId, byte? RequiredAttributeCode = null,
+    ushort? RequiredResourceId = null, bool MaySelectFaceDownDefense = false,
+    CardSelectionPosition SummonPosition = CardSelectionPosition.FaceUpAttack);
 
 /// <summary>
 /// Shared selection contract: currently resolves Graveyard -> Hand (P018)
@@ -47,8 +50,16 @@ public static class CardSelectionRules
         _ => null
     };
 
+    public const ushort NimbleMomonga = 1115;
+    public const ushort GiantGerm = 1114;
+    public const ushort SpearCretin = 1116;
+
+    // Catalogued callback family P168; both effects are battle-destruction only.
+    public static bool BattleSameNameRecruiter(ushort resourceId) =>
+        resourceId is NimbleMomonga or GiantGerm;
+
     // Original DAT: class 22 = Spell, 21 = Trap (not the reverse).
-    public static bool IsEligible(Card card, CardSelectionFilter filter, byte? requiredAttributeCode = null) => filter switch
+    public static bool IsEligible(Card card, CardSelectionFilter filter, byte? requiredAttributeCode = null, ushort? requiredResourceId = null) => filter switch
     {
         CardSelectionFilter.Spell => card.ClassCode == 22,
         CardSelectionFilter.Trap => card.ClassCode == 21,
@@ -58,11 +69,15 @@ public static class CardSelectionRules
             card.IsMonster && card.Attack <= 1500 &&
             requiredAttributeCode is >= 1 and <= 6 &&
             (byte)(card.Properties >> 29 & 7) == requiredAttributeCode,
+        CardSelectionFilter.SameNameMonster => card.IsMonster &&
+            requiredResourceId is ushort id && card.Id == id,
+        CardSelectionFilter.AnyMonster => card.IsMonster,
         _ => false
     };
 
     public static IReadOnlyList<CardSelectionCandidate> Candidates(
-        IReadOnlyList<Card> source, CardSelectionFilter filter, byte? requiredAttributeCode = null) =>
+        IReadOnlyList<Card> source, CardSelectionFilter filter, byte? requiredAttributeCode = null,
+        ushort? requiredResourceId = null) =>
         Array.AsReadOnly(source.Select((card, index) => new CardSelectionCandidate(index, card))
-            .Where(option => IsEligible(option.Card, filter, requiredAttributeCode)).ToArray());
+            .Where(option => IsEligible(option.Card, filter, requiredAttributeCode, requiredResourceId)).ToArray());
 }

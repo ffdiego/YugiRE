@@ -12,13 +12,13 @@ class PublishedPlayabilityTests(unittest.TestCase):
         all_cards = counts(cards, status, subtypes, 7)
         joey = counts(cards, status, subtypes, 4)
         self.assertEqual((len(cards), all_cards["total"], joey["total"]), (771, 771, 350))
-        self.assertEqual((all_cards["done"], all_cards["pct"]), (302, 39.17))
-        self.assertEqual((joey["done"], joey["pct"]), (93, 26.57))
+        self.assertEqual((all_cards["done"], all_cards["pct"]), (305, 39.56))
+        self.assertEqual((joey["done"], joey["pct"]), (96, 27.43))
         self.assertEqual(all_cards["bykind"]["Monster"]["total"], 499)
         self.assertEqual(all_cards["bykind"]["Spell"]["total"], 172)
         self.assertEqual(all_cards["bykind"]["Trap"]["total"], 100)
         self.assertEqual(all_cards["bykind"]["Spell"]["Partial"], 3)
-        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 279)
+        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 282)
 
     def test_public_subtypes_are_explicit_not_playability(self):
         cards, status, subtypes, sources = load()
@@ -45,12 +45,12 @@ class PublishedPlayabilityTests(unittest.TestCase):
         one = json.loads(next(content for path, content in files.items()
                               if path.name == "all-packs.json"))
         self.assertEqual(one["schemaVersion"], 1)
-        self.assertEqual(one["message"], "302/771 (39.17%)")
+        self.assertEqual(one["message"], "305/771 (39.56%)")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
-        card = {"internalIndex": 91, "resourceId": 1116,
-                "name": "Spear Cretin", "classCode": 3,
-                "properties": 3 << 20, "pack": 4}
+        card = {"internalIndex": 1060, "resourceId": 1405,
+                "name": "Revival Jam", "classCode": 14,
+                "properties": 14 << 20, "pack": 4}
         rows, summary = build({"cards": [card]}, read_manifest(MANIFEST),
                               read_callbacks(CATALOG), read_subtypes())
         self.assertEqual(rows[0]["subtype"], "Effect")

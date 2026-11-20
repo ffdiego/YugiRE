@@ -14,9 +14,10 @@ public sealed class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
-    // P006 field->grave and P164 battle-destruction triggers share a pending
-    // queue. The battle provenance must not be lost when the monster is removed.
-    private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle)> queuedDeckSearches = new();
+    // P006, P164, P168 and P169 share a serial queue of post-graveyard
+    // effects; retain battle provenance and Spear Cretin's prior FLIP state.
+    private readonly Queue<(int Owner, Card Source, bool DestroyedByBattle, bool GraveyardRevival)> queuedDeckSearches = new();
+    private readonly List<int> selectedBatchIndices = [];
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
@@ -24,6 +25,10 @@ public sealed class DemoDuel
     private readonly bool[,] changedPosition = new bool[2, 5];
     public bool[,] DefensePosition { get; } = new bool[2, 5];
     public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
+    /// <summary>Whether the current occupant has previously been flipped face-up.
+    /// Cleared whenever an occupant leaves or a new monster is placed.</summary>
+    public bool[,] MonsterWasFlipped { get; } = new bool[2, 5];
+    public IReadOnlyList<int> SelectedBatchIndices => selectedBatchIndices.AsReadOnly();
     public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
     private sealed record BattleContinuation(int AttackerSide, int AttackerZone, Card Attacker,
@@ -235,6 +240,7 @@ public sealed class DemoDuel
         Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
         DefensePosition[player, zone] = faceDown;
         MonsterFaceDown[player, zone] = faceDown;
+        MonsterWasFlipped[player, zone] = false;
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
         message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s)."; return true;
@@ -442,6 +448,7 @@ public sealed class DemoDuel
             Monsters[player, zone] is not Card monster || !MonsterFaceDown[player, zone])
             return false;
         MonsterFaceDown[player, zone] = false;
+        MonsterWasFlipped[player, zone] = true;
         TriggerFlip(player, zone, monster, out message);
         if (message.Length == 0) message = "Monster revealed by an effect (no supported FLIP).";
         return true;
@@ -457,6 +464,7 @@ public sealed class DemoDuel
         DefensePosition[owner, zone] = !DefensePosition[owner, zone];
         MonsterFaceDown[owner, zone] = false;
         changedPosition[owner, zone] = true;
+        if (flipped) MonsterWasFlipped[owner, zone] = true;
         if (flipped)
         {
             TriggerFlip(owner, zone, monster, out message);
@@ -493,6 +501,7 @@ public sealed class DemoDuel
         attacked[p, source] = true;
         bool wasFaceDown = MonsterFaceDown[enemy, target];
         MonsterFaceDown[enemy, target] = false;
+        if (wasFaceDown) MonsterWasFlipped[enemy, target] = true;
         if (!wasFaceDown)
             return ResolveBattleOutcome(p, source, enemy, target, out message);
 
@@ -660,6 +669,7 @@ public sealed class DemoDuel
                     continue;
                 additions.Add(card);
                 Monsters[p, z] = null;
+                MonsterWasFlipped[p, z] = false;
                 MonsterFaceDown[p, z] = DefensePosition[p, z] = false;
                 changedPosition[p, z] = attacked[p, z] = false;
                 foreach (var equip in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
@@ -695,6 +705,7 @@ public sealed class DemoDuel
                     !NormalSummonRules.RequiresSpecialSummon(card) && zone >= 0)
                 {
                     Monsters[p, zone] = card;
+                    MonsterWasFlipped[p, zone] = false;
                     MonsterFaceDown[p, zone] = DefensePosition[p, zone] = true;
                     changedPosition[p, zone] = true;
                     attacked[p, zone] = false;
@@ -716,62 +727,66 @@ public sealed class DemoDuel
     }
 
     /// <summary>
-    /// Resolve P018/P006 to hand or P164 to the first free monster zone.
-    /// The optional destinationZone overload permits a future native-like
-    /// zone picker. Validate all inputs before mutating any source zone.
+    /// P018/P006: GY/deck to hand; P164/P168: deck to field; P169:
+    /// graveyard to field. A single card is selected by its source-zone
+    /// occurrence, never its catalog index. P168 with two copies has a
+    /// separate atomic batch path.
     /// </summary>
     public bool ResolveCardSelection(int sourceIndex, out string message) =>
-        ResolveCardSelection(sourceIndex, null, out message);
+        ResolveCardSelection(sourceIndex, null, false, out message);
 
-    public bool ResolveCardSelection(int sourceIndex, int? destinationZone, out string message)
+    public bool ResolveCardSelection(int sourceIndex, int? destinationZone, out string message) =>
+        ResolveCardSelection(sourceIndex, destinationZone, false, out message);
+
+    public bool ResolveCardSelection(int sourceIndex, int? destinationZone, bool faceDownDefense,
+        out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
-            pending.MinSelections is < 0 or > 1 ||
-            pending.Owner is < 0 or > 1)
+            pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
             return false;
 
         int owner = pending.Owner;
-        if (pending.Destination == CardSelectionDestination.Field &&
-            pending.Source != CardSelectionSource.Deck)
-            return false;
         Card[] deckSnapshot = pending.Source == CardSelectionSource.Deck
             ? decks[owner].ToArray() : [];
         IReadOnlyList<Card> source = pending.Source switch
         {
-            CardSelectionSource.Graveyard => graves[owner],
             CardSelectionSource.Deck => deckSnapshot,
+            CardSelectionSource.Graveyard => graves[owner],
             _ => []
         };
-        var candidate = pending.EligibleCards.FirstOrDefault(c => c.SourceIndex == sourceIndex);
-        if (candidate is null || sourceIndex < 0 || sourceIndex >= source.Count ||
-            !ReferenceEquals(source[sourceIndex], candidate.Card) ||
-            !CardSelectionRules.IsEligible(candidate.Card, pending.Filter, pending.RequiredAttributeCode))
+        CardSelectionCandidate? option = pending.EligibleCards.FirstOrDefault(c => c.SourceIndex == sourceIndex);
+        if (option is null || sourceIndex < 0 || sourceIndex >= source.Count ||
+            !ReferenceEquals(option.Card, source[sourceIndex]) ||
+            !CardSelectionRules.IsEligible(option.Card, pending.Filter,
+                pending.RequiredAttributeCode, pending.RequiredResourceId))
         {
-            message = "The selected card is no longer eligible in its source zone.";
+            message = "Selected card is no longer eligible at that source position.";
             return false;
         }
 
         int placementZone = -1;
         if (pending.Destination == CardSelectionDestination.Field)
         {
+            if (faceDownDefense && !pending.MaySelectFaceDownDefense)
+                return false;
             placementZone = destinationZone ??
                 Enumerable.Range(0, 5).FirstOrDefault(z => Monsters[owner, z] is null, -1);
             if (placementZone is < 0 or >= 5 || Monsters[owner, placementZone] is not null)
             {
-                message = "Select a free monster zone for this special summon.";
+                message = "Select a free monster zone for this Special Summon.";
                 return false;
             }
         }
-        else if (pending.Destination != CardSelectionDestination.Hand || destinationZone is not null)
+        else if (pending.Destination != CardSelectionDestination.Hand ||
+                 destinationZone is not null || faceDownDefense)
             return false;
 
         if (pending.Source == CardSelectionSource.Graveyard)
             graves[owner].RemoveAt(sourceIndex);
         else
         {
-            // Explicitly remove by source occurrence, then shuffle remaining deck.
-            // This is seeded sandbox RNG, not measured native ordering.
+            // No native shuffle parity is claimed for this seeded sandbox.
             var remaining = deckSnapshot.Where((_, index) => index != sourceIndex).ToArray();
             effectRandom.Shuffle(remaining);
             decks[owner].Clear();
@@ -779,78 +794,189 @@ public sealed class DemoDuel
         }
 
         if (pending.Destination == CardSelectionDestination.Hand)
-            hands[owner].Add(candidate.Card);
+            hands[owner].Add(option.Card);
         else
         {
-            Monsters[owner, placementZone] = candidate.Card;
-            DefensePosition[owner, placementZone] = false;
-            MonsterFaceDown[owner, placementZone] = false;
-            changedPosition[owner, placementZone] = true;
-            attacked[owner, placementZone] = false;
+            bool set = faceDownDefense ||
+                pending.SummonPosition == CardSelectionPosition.FaceDownDefense;
+            PlaceSelectedMonster(owner, placementZone, option.Card, set);
         }
 
         PendingCardSelection = null;
+        selectedBatchIndices.Clear();
         FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         message = pending.Destination == CardSelectionDestination.Field
-            ? $"{candidate.Card.Name} Special Summoned to P{owner + 1}'s zone {placementZone} in face-up attack."
-            : pending.Source == CardSelectionSource.Deck
-                ? $"{candidate.Card.Name} added from P{owner + 1}'s deck to hand; deck shuffled."
-                : $"{candidate.Card.Name} returned from P{owner + 1}'s graveyard to hand.";
+            ? $"{option.Card.Name} Special Summoned on P{owner + 1}'s field."
+            : $"{option.Card.Name} transferred to P{owner + 1}'s hand.";
         if (PendingCardSelection is not null) message += " Another card selection is pending.";
         return true;
     }
 
     /// <summary>
-    /// P164 only: the owner may decline the recruiter effect. A declined
-    /// effect never mutates or shuffles the Main Deck.
+    /// P168 permits zero, one or two same-name cards from a single Deck.
+    /// Accumulate source occurrence indices; no deck or field mutation occurs
+    /// until Done (or the maximum is selected), then shuffle exactly once.
     /// </summary>
+    public bool SelectBatchCard(int sourceIndex, out string message)
+    {
+        message = "A multiple-card recruitment is not pending.";
+        if (PendingCardSelection is not
+            { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
+              Filter: CardSelectionFilter.SameNameMonster, MinSelections: 0, MaxSelections: > 1 } pending)
+            return false;
+        Card[] deck = decks[pending.Owner].ToArray();
+        var option = pending.EligibleCards.FirstOrDefault(x => x.SourceIndex == sourceIndex);
+        if (option is null || sourceIndex < 0 || sourceIndex >= deck.Length ||
+            !ReferenceEquals(option.Card, deck[sourceIndex]) ||
+            !CardSelectionRules.IsEligible(option.Card, pending.Filter,
+                pending.RequiredAttributeCode, pending.RequiredResourceId) ||
+            selectedBatchIndices.Contains(sourceIndex) ||
+            selectedBatchIndices.Count >= pending.MaxSelections)
+            return false;
+
+        selectedBatchIndices.Add(sourceIndex);
+        message = $"Selected {selectedBatchIndices.Count}/{pending.MaxSelections} copies.";
+        return selectedBatchIndices.Count == pending.MaxSelections
+            ? FinishOptionalCardSelection(out message) : true;
+    }
+
+    /// <summary>Commit selected P168 same-name copies as a single transaction.</summary>
+    public bool FinishOptionalCardSelection(out string message)
+    {
+        message = "No multiple same-name recruitment is pending.";
+        if (PendingCardSelection is not
+            { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
+              Filter: CardSelectionFilter.SameNameMonster, MinSelections: 0, MaxSelections: > 1 } pending)
+            return false;
+        if (selectedBatchIndices.Count == 0)
+            return SkipOptionalCardSelection(out message);
+
+        int owner = pending.Owner;
+        int[] choices = selectedBatchIndices.ToArray();
+        Card[] deck = decks[owner].ToArray();
+        int[] zones = Enumerable.Range(0, 5)
+            .Where(z => Monsters[owner, z] is null).Take(choices.Length).ToArray();
+        if (choices.Length > pending.MaxSelections || zones.Length < choices.Length ||
+            choices.Distinct().Count() != choices.Length ||
+            choices.Any(index => index < 0 || index >= deck.Length ||
+                !pending.EligibleCards.Any(option => option.SourceIndex == index &&
+                    ReferenceEquals(option.Card, deck[index])) ||
+                !CardSelectionRules.IsEligible(deck[index], pending.Filter,
+                    pending.RequiredAttributeCode, pending.RequiredResourceId)))
+            return false;
+
+        var chosen = choices.Select(index => deck[index]).ToArray();
+        var omitted = choices.ToHashSet();
+        Card[] remainder = deck.Where((_, index) => !omitted.Contains(index)).ToArray();
+        effectRandom.Shuffle(remainder);
+        decks[owner].Clear();
+        foreach (Card card in remainder) decks[owner].Enqueue(card);
+        for (int i = 0; i < chosen.Length; i++)
+            PlaceSelectedMonster(owner, zones[i], chosen[i],
+                pending.SummonPosition == CardSelectionPosition.FaceDownDefense);
+
+        PendingCardSelection = null;
+        selectedBatchIndices.Clear();
+        FinishDeferredBattle();
+        BeginNextQueuedDeckSearch();
+        message = $"P{owner + 1} Special Summoned {chosen.Length} copies; Main Deck shuffled once.";
+        if (PendingCardSelection is not null) message += " Another card selection is pending.";
+        return true;
+    }
+
+    private void PlaceSelectedMonster(int owner, int zone, Card card, bool faceDownDefense)
+    {
+        Monsters[owner, zone] = card;
+        MonsterFaceDown[owner, zone] = faceDownDefense;
+        DefensePosition[owner, zone] = faceDownDefense;
+        MonsterWasFlipped[owner, zone] = false;
+        changedPosition[owner, zone] = true;
+        attacked[owner, zone] = false;
+    }
+
     public bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
-        if (PendingCardSelection is not { MinSelections: 0, MaxSelections: 1 } pending)
+        if (PendingCardSelection is not { MinSelections: 0 } pending)
             return false;
+        // Zero is the only skip option: do not silently lose already chosen copies.
+        if (selectedBatchIndices.Count != 0) return false;
         PendingCardSelection = null;
+        selectedBatchIndices.Clear();
         FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
-        message = $"P{pending.Owner + 1} declined the optional deck recruit.";
+        message = $"P{pending.Owner + 1} declined optional Special Summon; deck unchanged.";
         if (PendingCardSelection is not null) message += " Another card selection is pending.";
         return true;
     }
 
     private void BeginNextQueuedDeckSearch()
     {
-        if (PendingCardSelection is not null || PendingFlipTarget is not null) return;
+        if (PendingCardSelection is not null || PendingFlipTarget is not null || GameOver)
+            return;
         while (queuedDeckSearches.Count > 0)
         {
-            var (owner, source, destroyedByBattle) = queuedDeckSearches.Dequeue();
-            var graveyardFilter = CardSelectionRules.OnFieldToGraveyardFilter(source.Id);
+            var (owner, source, destroyedByBattle, graveyardRevival) = queuedDeckSearches.Dequeue();
+            int empty = Enumerable.Range(0, 5).Count(z => Monsters[owner, z] is null);
+            if (graveyardRevival)
+            {
+                if (empty == 0) continue;
+                // Spear Cretin never resurrects its very same card occurrence.
+                var monsters = CardSelectionRules.Candidates(
+                    graves[owner], CardSelectionFilter.AnyMonster)
+                    .Where(c => !ReferenceEquals(c.Card, source)).ToArray();
+                if (monsters.Length == 0) continue;
+                selectedBatchIndices.Clear();
+                PendingCardSelection = new(owner, CardSelectionSource.Graveyard,
+                    CardSelectionDestination.Field, CardSelectionFilter.AnyMonster,
+                    monsters, 1, 1, CardSelectionRules.SpearCretin,
+                    MaySelectFaceDownDefense: true);
+                return;
+            }
+
+            var searchFilter = CardSelectionRules.OnFieldToGraveyardFilter(source.Id);
             byte? attribute = destroyedByBattle
                 ? CardSelectionRules.BattleRecruitAttribute(source.Id) : null;
+            bool sameName = destroyedByBattle &&
+                CardSelectionRules.BattleSameNameRecruiter(source.Id);
             CardSelectionFilter filter;
             CardSelectionDestination destination;
             int minimum;
-            if (graveyardFilter is not null)
+            ushort? requiredId = null;
+            CardSelectionPosition summonPosition = CardSelectionPosition.FaceUpAttack;
+            if (searchFilter is not null)
             {
-                filter = graveyardFilter.Value;
+                filter = searchFilter.Value;
                 destination = CardSelectionDestination.Hand;
                 minimum = 1;
             }
-            else if (attribute is not null)
+            else if (attribute is not null && empty > 0)
             {
-                // A monster must have room after its battle destruction.
-                if (Enumerable.Range(0, 5).All(z => Monsters[owner, z] is not null))
-                    continue;
                 filter = CardSelectionFilter.MonsterAttributeAttackAtMost1500;
                 destination = CardSelectionDestination.Field;
                 minimum = 0;
             }
+            else if (sameName && empty > 0)
+            {
+                filter = CardSelectionFilter.SameNameMonster;
+                destination = CardSelectionDestination.Field;
+                minimum = 0;
+                requiredId = source.Id;
+                if (source.Id == CardSelectionRules.NimbleMomonga)
+                    summonPosition = CardSelectionPosition.FaceDownDefense;
+            }
             else continue;
 
-            var eligible = CardSelectionRules.Candidates(decks[owner].ToArray(), filter, attribute);
+            var eligible = CardSelectionRules.Candidates(decks[owner].ToArray(),
+                filter, attribute, requiredId);
             if (eligible.Count == 0) continue;
-            PendingCardSelection = new(owner, CardSelectionSource.Deck,
-                destination, filter, eligible, minimum, 1, source.Id, attribute);
+            int maximum = sameName ? Math.Min(2, Math.Min(empty, eligible.Count)) : 1;
+            if (maximum == 0) continue;
+            selectedBatchIndices.Clear();
+            PendingCardSelection = new(owner, CardSelectionSource.Deck, destination,
+                filter, eligible, minimum, maximum, source.Id, attribute,
+                RequiredResourceId: requiredId, SummonPosition: summonPosition);
             return;
         }
     }
@@ -932,8 +1058,10 @@ public sealed class DemoDuel
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false)
     {
         Card removed = Monsters[p, z]!;
+        bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
         Monsters[p, z] = null;
+        MonsterWasFlipped[p, z] = false;
         DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
         changedPosition[p, z] = attacked[p, z] = false;
         // Attached equipment goes to its owner's graveyard, but only the monster
@@ -941,12 +1069,25 @@ public sealed class DemoDuel
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
             RemoveEquipmentCore(e.Owner, e.SourceZone);
 
+        if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
+            ChangeLife(p, 1000);
+        else if (destroyedByBattle && removed.Id == CardSelectionRules.GiantGerm)
+            ChangeLife(1 - p, -500);
+
         if (CardSelectionRules.OnFieldToGraveyardFilter(removed.Id) is not null ||
-            destroyedByBattle && CardSelectionRules.BattleRecruitAttribute(removed.Id) is not null)
+            destroyedByBattle && (CardSelectionRules.BattleRecruitAttribute(removed.Id) is not null ||
+                                  CardSelectionRules.BattleSameNameRecruiter(removed.Id)))
+            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, false));
+
+        // Spear Cretin's FLIP does not resolve on revelation. After it has
+        // been flipped, its later trip to the graveyard allows each player to
+        // revive from their own graveyard. The source itself is ineligible.
+        if (removed.Id == CardSelectionRules.SpearCretin && previouslyFlipped)
         {
-            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle));
-            BeginNextQueuedDeckSearch();
+            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true));
+            queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true));
         }
+        BeginNextQueuedDeckSearch();
     }
 
     private void ReturnMonsterToHand(int player, int zone)
@@ -954,6 +1095,7 @@ public sealed class DemoDuel
         Card card = Monsters[player, zone]!;
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
+        MonsterWasFlipped[player, zone] = false;
         changedPosition[player, zone] = attacked[player, zone] = false;
         // Equip cards do not return with the monster; they go to the owner's graveyard.
         foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())

@@ -558,6 +558,60 @@
         "Sandbox only; native callback P164 catalogued, differential effects not confirmed",
         "No chain/negation, altered control, replaced graveyard destination, intrinsic special summon restrictions or native RNG/visual parity"
       ]
+    },
+    {
+      "id": "monster.effect.battle-same-name-recruiter",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Battle destruction and sent to Graveyard",
+        "Nimble Momonga gains 1000 LP or Giant Germ deals 500 damage",
+        "Optional select zero to two same-name monsters in Main Deck",
+        "Atomic Special Summon of chosen copies, face-down DEF or face-up ATK",
+        "Shuffle remaining deck once after chosen copies"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1114,
+        1115
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/CardSelectionScreen.cs",
+        "src/tests/Joey.Tests/BattleGraveyardEffectChecks.cs",
+        "docs/cards/p168-p169-battle-graveyard-sandbox.md"
+      ],
+      "limitations": [
+        "C# sandbox with historical card text; no differential Joey native effect confirmation.",
+        "No chains/negation, owner/control divergence, destination replacement, native RNG or UI timing parity."
+      ]
+    },
+    {
+      "id": "monster.effect.delayed-flipped-graveyard-revival",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Track previous FLIP independently from immediate FLIP activation",
+        "Trigger when previously flipped Spear Cretin leaves field for Graveyard",
+        "Each player may select a monster in own Graveyard other than the source occurrence",
+        "Special Summon face-up ATK or face-down DEF to free zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1116
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/CardSelectionScreen.cs",
+        "src/tests/Joey.Tests/BattleGraveyardEffectChecks.cs",
+        "docs/cards/p168-p169-battle-graveyard-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only, no differential native parity.",
+        "No chains/negation, special summon restrictions, altered controller/owner, exact legacy simultaneous-event priority or native UI."
+      ]
     }
   ]
 }
