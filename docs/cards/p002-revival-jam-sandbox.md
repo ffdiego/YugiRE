@@ -11,6 +11,15 @@ e o texto moderno apontam uma opção do **dono** após destruição em batalha,
 com custo pago no cemitério e invocação em defesa na próxima Standby.
 Referências externas não substituem confirmação no Joey original.
 
+**Atualização 20/11/2026:** uma captura **com jogador humano**
+comprovou a existência da pergunta *Yes/No*, três episódios de pagamento
+de exatamente 1.000 LP e três retornos na partida com respostas **Sim**,
+além de uma partida com resposta **Não** seguida de ausência de retorno.
+O operador também observou que o prompt não foi oferecido com 500 LP.
+A leitura de RAM não registra cliques e não determina a fronteira em
+1.000 LP exatos. A política CPU/demo e o timing exato seguem pendentes.
+Ver [evidência humana P002](../research/p002-revival-jam-human-yes-no-2026-11-20.md).
+
 - Evidência local: [C11 sem Gravity Bind](../research/mass96-c11-no-gravity-control-2026-11-20.md)
 - Catálogo: `P002`, availability `0x00582990`, preparation `0x0057DC40`.
 - Fonte histórica: https://ms.yugipedia.com/a/a1/2003_tournament_rulings.pdf
