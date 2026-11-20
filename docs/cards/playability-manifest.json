@@ -502,6 +502,33 @@
       ]
     },
     {
+      "id": "monster.flip.deck-disruption",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Needle Worm: FLIP mills top five cards of opponent's Main Deck directly to GY",
+        "Hiro's Shadow Scout: FLIP opponent draws three and discards only newly drawn Spell cards",
+        "FLIP Summon, combat revelation and effect revelation",
+        "Short mill does not defeat; failed forced draw defeats drawer (sandbox policy)"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        561,
+        610
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/DeckFlowRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipDeckFlowChecks.cs",
+        "docs/cards/p082-p088-flip-deck-flow-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox synthetic tests only; native P082/P088 callback behavior not differentially validated.",
+        "No chains/negation, draw/discard reaction triggers, substituted GY destination or native ordering/timing validation."
+      ]
+    },
+    {
       "id": "monster.effect.field-to-graveyard-search",
       "kind": "Monster",
       "subtype": "Effect",
