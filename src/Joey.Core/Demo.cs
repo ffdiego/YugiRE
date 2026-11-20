@@ -13,6 +13,10 @@ public sealed class DemoDuel
     public IReadOnlyList<DemoExcavationResult> LastMorphingJar2 { get; private set; } = [];
     /// <summary>Last P082/P088 deck-effect audit (sandbox, not native transcript).</summary>
     public DemoDeckFlowResult? LastDeckFlow { get; private set; }
+    public MonsterWipeResult? LastMonsterWipe { get; private set; }
+    // During a simultaneous board wipe, queue trigger effects but never
+    // begin resolving their choices before all affected monsters have left.
+    private bool resolvingBoardWipe;
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
@@ -198,7 +202,9 @@ public sealed class DemoDuel
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
-            Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id))));
+            Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
+            (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
+                Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
     public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
         Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
@@ -283,6 +289,25 @@ public sealed class DemoDuel
             return true;
         }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
+        if (Hand[index].ClassCode == 22 &&
+            MonsterWipeRules.Scope(Hand[index].Id) is not null)
+        {
+            Card spell = Hand[index];
+            if (MonsterWipeRules.Targets(spell.Id, ActivePlayer, Monsters,
+                MonsterFaceDown).Count == 0)
+            {
+                message = "No eligible monsters can be destroyed by this spell.";
+                return false;
+            }
+
+            // Once validated, this normal Spell is spent. Resolve the whole
+            // non-targeting wipe before opening queued monster triggers.
+            hands[ActivePlayer].RemoveAt(index);
+            graves[ActivePlayer].Add(spell);
+            LastMonsterWipe = ResolveMonsterWipe(spell.Id, ActivePlayer);
+            message = $"{spell.Name}: destroyed {LastMonsterWipe.TotalDestroyed} monster(s).";
+            return true;
+        }
         if (Hand[index].Id == 0x593)
         {
             int zone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
@@ -307,6 +332,20 @@ public sealed class DemoDuel
         int p = ActivePlayer;
         if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
+        if (card.ClassCode == 22 && MonsterWipeRules.Scope(card.Id) is not null)
+        {
+            if (MonsterWipeRules.Targets(card.Id, p, Monsters, MonsterFaceDown).Count == 0)
+            {
+                message = "No eligible monsters can be destroyed by this set spell.";
+                return false;
+            }
+            Spells[p, zone] = null;
+            SpellFaceDown[p, zone] = false;
+            graves[p].Add(card);
+            LastMonsterWipe = ResolveMonsterWipe(card.Id, p);
+            message = $"{card.Name}: destroyed {LastMonsterWipe.TotalDestroyed} monster(s).";
+            return true;
+        }
         if (card.Id == 0x593)
         {
             SpellFaceDown[p, zone] = false;
@@ -1124,6 +1163,37 @@ public sealed class DemoDuel
         return true;
     }
 
+    /// <summary>
+    /// Destroy a snapshot of all matching monster occurrences. Processing
+    /// is all-at-once from the player's perspective: deferred graveyard
+    /// triggers cannot prompt midway through the wipe.
+    /// </summary>
+    private MonsterWipeResult ResolveMonsterWipe(ushort resourceId, int caster)
+    {
+        var targets = MonsterWipeRules.Targets(
+            resourceId, caster, Monsters, MonsterFaceDown);
+        int[] counts = [0, 0];
+        int faceDownDestroyed = 0;
+        resolvingBoardWipe = true;
+        try
+        {
+            foreach (var target in targets)
+            {
+                if (!ReferenceEquals(Monsters[target.Player, target.Zone], target.Card))
+                    continue;
+                RemoveMonster(target.Player, target.Zone);
+                counts[target.Player]++;
+                if (target.FaceDown) faceDownDestroyed++;
+            }
+        }
+        finally { resolvingBoardWipe = false; }
+
+        // Includes Sangan/Witch and previously flipped Spear Cretin.
+        // P164/P168 do not fire: this was NOT battle destruction.
+        BeginNextQueuedDeckSearch();
+        return new(resourceId, caster, counts[0], counts[1], faceDownDestroyed);
+    }
+
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false)
     {
         Card removed = Monsters[p, z]!;
@@ -1156,7 +1226,8 @@ public sealed class DemoDuel
             queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true, false));
             queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true, false));
         }
-        BeginNextQueuedDeckSearch();
+        if (!resolvingBoardWipe)
+            BeginNextQueuedDeckSearch();
     }
 
     private void ReturnMonsterToHand(int player, int zone)

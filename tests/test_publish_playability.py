@@ -12,12 +12,13 @@ class PublishedPlayabilityTests(unittest.TestCase):
         all_cards = counts(cards, status, subtypes, 7)
         joey = counts(cards, status, subtypes, 4)
         self.assertEqual((len(cards), all_cards["total"], joey["total"]), (771, 771, 350))
-        self.assertEqual((all_cards["done"], all_cards["pct"]), (309, 40.08))
+        self.assertEqual((all_cards["done"], all_cards["pct"]), (311, 40.34))
         self.assertEqual((joey["done"], joey["pct"]), (97, 27.71))
         self.assertEqual(all_cards["bykind"]["Monster"]["total"], 499)
         self.assertEqual(all_cards["bykind"]["Spell"]["total"], 172)
         self.assertEqual(all_cards["bykind"]["Trap"]["total"], 100)
         self.assertEqual(all_cards["bykind"]["Spell"]["Partial"], 3)
+        self.assertEqual(all_cards["bykind"]["Spell"]["Done"], 25)
         self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 286)
 
     def test_public_subtypes_are_explicit_not_playability(self):
@@ -45,7 +46,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         one = json.loads(next(content for path, content in files.items()
                               if path.name == "all-packs.json"))
         self.assertEqual(one["schemaVersion"], 1)
-        self.assertEqual(one["message"], "309/771 (40.08%)")
+        self.assertEqual(one["message"], "311/771 (40.34%)")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
         card = {"internalIndex": 1060, "resourceId": 1405,
