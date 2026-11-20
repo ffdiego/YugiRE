@@ -1,0 +1,132 @@
+{
+  "schema": "joey-p168-native-effect-transitions-v1",
+  "source": "mass96-pilot-36.zip",
+  "sourceSha256": "12f518fac309b76bacc998e69c5d122bd79fc5ce95434c64ed0bdb6ae51e64b1",
+  "limitations": [
+    "Command-entry state samples are non-atomic; these cases compare bounded LP and summon-count effects, NOT a full native duel replay.",
+    "PositionWord 513/514 is retained raw; matching defense/attack flags in C# is a tested hypothesis, not a confirmed native bit decoder.",
+    "The source cards were battle destroyed, and the two deck-to-field movements are separately observed."
+  ],
+  "episodes": [
+    {
+      "cohort": 2,
+      "effectSeq": 716,
+      "resourceId": 1114,
+      "internalIndex": 383,
+      "name": "Giant Germ",
+      "sourceOwner": 1,
+      "affectedPlayer": 0,
+      "sourceLeftFieldSeq": 714,
+      "lifeDeltaSeq": 718,
+      "lifeBefore": 7400,
+      "lifeAfter": 6900,
+      "lifeDelta": -500,
+      "deckBefore": 32,
+      "deckAfter": 30,
+      "summons": [
+        {
+          "seq": 721,
+          "slot": 2,
+          "cardIndex": 383,
+          "positionWord": 514
+        },
+        {
+          "seq": 724,
+          "slot": 3,
+          "cardIndex": 383,
+          "positionWord": 514
+        }
+      ]
+    },
+    {
+      "cohort": 2,
+      "effectSeq": 758,
+      "resourceId": 1114,
+      "internalIndex": 383,
+      "name": "Giant Germ",
+      "sourceOwner": 0,
+      "affectedPlayer": 1,
+      "sourceLeftFieldSeq": 757,
+      "lifeDeltaSeq": 760,
+      "lifeBefore": 7600,
+      "lifeAfter": 7100,
+      "lifeDelta": -500,
+      "deckBefore": 32,
+      "deckAfter": 30,
+      "summons": [
+        {
+          "seq": 763,
+          "slot": 1,
+          "cardIndex": 383,
+          "positionWord": 514
+        },
+        {
+          "seq": 766,
+          "slot": 2,
+          "cardIndex": 383,
+          "positionWord": 514
+        }
+      ]
+    },
+    {
+      "cohort": 3,
+      "effectSeq": 133,
+      "resourceId": 1115,
+      "internalIndex": 453,
+      "name": "Nimble Momonga",
+      "sourceOwner": 0,
+      "affectedPlayer": 0,
+      "sourceLeftFieldSeq": 131,
+      "lifeDeltaSeq": 135,
+      "lifeBefore": 7600,
+      "lifeAfter": 8600,
+      "lifeDelta": 1000,
+      "deckBefore": 34,
+      "deckAfter": 32,
+      "summons": [
+        {
+          "seq": 137,
+          "slot": 0,
+          "cardIndex": 453,
+          "positionWord": 513
+        },
+        {
+          "seq": 139,
+          "slot": 1,
+          "cardIndex": 453,
+          "positionWord": 513
+        }
+      ]
+    },
+    {
+      "cohort": 3,
+      "effectSeq": 1076,
+      "resourceId": 1115,
+      "internalIndex": 453,
+      "name": "Nimble Momonga",
+      "sourceOwner": 1,
+      "affectedPlayer": 1,
+      "sourceLeftFieldSeq": 1075,
+      "lifeDeltaSeq": 1078,
+      "lifeBefore": 8000,
+      "lifeAfter": 9000,
+      "lifeDelta": 1000,
+      "deckBefore": 32,
+      "deckAfter": 30,
+      "summons": [
+        {
+          "seq": 1080,
+          "slot": 1,
+          "cardIndex": 453,
+          "positionWord": 513
+        },
+        {
+          "seq": 1082,
+          "slot": 2,
+          "cardIndex": 453,
+          "positionWord": 513
+        }
+      ]
+    }
+  ]
+}
