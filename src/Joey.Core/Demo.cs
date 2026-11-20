@@ -302,6 +302,9 @@ public sealed class DemoDuel
         if (ActionsBlocked || Phase != DemoPhase.Main || drawn) return false;
         if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
         hands[ActivePlayer].Add(decks[ActivePlayer].Dequeue()); drawn = true;
+        // Native human trace: Draw precedes Revival Jam's return (P002).
+        // This is a bounded synthetic Standby hook; no full phase engine yet.
+        ResolvePostDrawStandbyEffects();
         message = "Drew one card."; return true;
     }
     public bool Play(int index, out string message)
@@ -1580,12 +1583,11 @@ public sealed class DemoDuel
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
         battlePhaseEndedThisTurn = false;
         Array.Clear(attacked); Array.Clear(changedPosition);
-        // The demo exposes Main/Battle/End only. This internal turn-start event
-        // is a bounded Standby hook, not a full native phase scheduler.
-        ResolveStartOfTurnEffects();
+        // An actual Standby opportunity follows a successful Draw; see
+        // ResolvePostDrawStandbyEffects, not the turn increment itself.
     }
 
-    private void ResolveStartOfTurnEffects()
+    private void ResolvePostDrawStandbyEffects()
     {
         for (int i = delayedRevivals.Count - 1; i >= 0; i--)
         {
