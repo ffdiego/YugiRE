@@ -32,7 +32,14 @@ public static class MonsterWipeRules
         ushort resourceId, int caster, Card?[,] monsters, bool[,] faceDown)
     {
         var scope = Scope(resourceId);
-        if (scope is null || caster is < 0 or > 1) return [];
+        if (scope is null) return [];
+        return TargetsForScope(scope.Value, caster, monsters, faceDown);
+    }
+
+    public static IReadOnlyList<MonsterWipeTarget> TargetsForScope(
+        MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown)
+    {
+        if (caster is < 0 or > 1) return [];
         var result = new List<MonsterWipeTarget>(10);
         for (int p = 0; p < 2; p++)
         {

@@ -76,6 +76,34 @@
       ]
     },
     {
+      "id": "trap.summon-response",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Trap Hole destroys an opponent monster after Normal/Flip Summon with current ATK >=1000",
+        "Torrential Tribute destroys all monsters on either player's Normal/Flip Summon",
+        "Previously Set Trap and explicit optional response window",
+        "One Trap activation or Pass per bounded response",
+        "Queued field-to-Graveyard and summon effects survive destruction"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1002,
+        1425
+      ],
+      "evidence": [
+        "src/Joey.Core/SummonTrapRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/SummonResponseScreen.cs",
+        "src/tests/Joey.Tests/SummonTrapChecks.cs",
+        "docs/cards/p196-p038-summon-trap-reactions-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only, no full chain/priority/negation, Jinzo/immunity or native timing parity.",
+        "Torrential response to Special Summons and simultaneous FLIP chain timing remain pending."
+      ]
+    },
+    {
       "id": "field.type",
       "kind": "Spell",
       "subtype": "Field",
