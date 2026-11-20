@@ -233,13 +233,14 @@ static partial class Game
     {
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
+        bool selectingCard = duel.PendingCardSelection is not null;
         Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
-        if (Button("< Menu", 8, 8, 85, 30)) screen = "menu";
+        if (Button("< Menu", 8, 8, 85, 30, !selectingCard)) screen = "menu";
         Label($"LOCAL DEMO · {presentation.Style.Name}", 105, 16, 13, Gold);
-        if (Button("Draw", 240, 8, 80, 30)) { duel.Draw(out message); ClearDuelSelection(); }
-        if (Button("Battle", 326, 8, 80, 30)) { duel.BeginBattle(out message); ClearDuelSelection(); }
-        if (Button("End turn", 412, 8, 105, 30)) { duel.EndTurn(out message); ClearDuelSelection(); handPage = 0; }
-        if (Button("Reset", 523, 8, 75, 30)) StartDemo();
+        if (Button("Draw", 240, 8, 80, 30, !selectingCard)) { duel.Draw(out message); ClearDuelSelection(); }
+        if (Button("Battle", 326, 8, 80, 30, !selectingCard)) { duel.BeginBattle(out message); ClearDuelSelection(); }
+        if (Button("End turn", 412, 8, 105, 30, !selectingCard)) { duel.EndTurn(out message); ClearDuelSelection(); handPage = 0; }
+        if (Button("Reset", 523, 8, 75, 30, !selectingCard)) StartDemo();
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
             Button("Done FLIP", 605, 8, 125, 30))
         {
@@ -251,16 +252,16 @@ static partial class Game
             $"Turn {duel.Turn} P{duel.ActivePlayer + 1}: {duel.Phase}", 8, 50, 16, Gold);
         Raylib.DrawRectangle(240, 46, 545, 24, Panel);
         Label($"Opponent LP {duel.Life[1 - duel.ActivePlayer]}       Your LP {duel.Life[duel.ActivePlayer]}", 245, 51, 16);
-        if (Button("Direct attack", 8, 380, 200, 30)) duel.Attack(attacker, -1, out message);
-        if (Button("Cancel", 8, 416, 200, 30)) { ClearDuelSelection(); message = "Selection cleared."; }
+        if (Button("Direct attack", 8, 380, 200, 30, !selectingCard)) duel.Attack(attacker, -1, out message);
+        if (Button("Cancel", 8, 416, 200, 30, !selectingCard)) { ClearDuelSelection(); message = "Selection cleared."; }
         if (Button("Hand <", 8, 452, 98, 30, handPage > 0)) { handPage--; ClearDuelSelection(); }
         if (Button("Hand >", 112, 452, 98, 30, (handPage + 1) * 6 < duel.Hand.Count)) { handPage++; ClearDuelSelection(); }
         // A targeted FLIP must be resolved before hand actions or another attack.
-        bool handInput = duel.PendingFlipTarget is null && UpdateHandInteraction();
+        bool handInput = duel.PendingFlipTarget is null && !selectingCard && UpdateHandInteraction();
         if (hand >= 0 && hand < duel.Hand.Count) DrawArtwork(duel.Hand[hand], 8, 78, 200, 290);
         else if (attacker >= 0 && duel.Monsters[duel.ActivePlayer, attacker] is Card selectedMonster) DrawArtwork(selectedMonster, 8, 78, 200, 290);
         else Wrap("Hover a hand card. Right-click switches Summon/Activate to Set.", 12, 95, 195, 18);
-        DrawDuelField(handInput);
+        DrawDuelField(handInput || selectingCard);
         DrawDuelHand();
         DrawSpellActivation(frameElapsed);
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
@@ -289,5 +290,6 @@ static partial class Game
         for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, presentation.Busy ? Color.White : Gold);
         Label($"Deck {duel.DeckCount(0)}/{duel.DeckCount(1)} Grave {duel.Graveyard(0).Count}/{duel.Graveyard(1).Count}", 8, 568, 13);
         Label("Local demo | Right-click: Set", 8, 587, 12, Gold);
+        DrawCardSelectionOverlay();
     }
 }

@@ -1,6 +1,6 @@
 # Próxima família: seleção de cartas por efeito — reutilizar a UI do Joey
 
-Status: **plano de arquitetura**, sem nova carta implementada neste documento.
+Status: **P018 implementado no sandbox com seletor raylib provisório**; P006 e P164 pendentes.
 A etapa anterior foi Morphing Jar #2 (`1163`), que exige escavação automática
 do deck e **não** uma escolha do jogador.
 
@@ -48,7 +48,7 @@ public record PendingCardSelection(
     string EffectId);
 ```
 
-O contrato acima é **uma sugestão**, não uma API já criada.
+O contrato agora existe como `PendingCardSelection` em `CardSelectionRules.cs`, com candidatos identificados por `SourceIndex` (posição na zona, não índice DAT). Apenas `Graveyard -> Hand` tem resolver implementado.
 O Core calcula a lista de identidades elegíveis segundo o efeito e
 bloqueia ações normais enquanto há uma escolha; a UI apenas exibe
 as opções e retorna a identidade/índice selecionado. Ao confirmar,
@@ -59,7 +59,7 @@ do deck, também valida as vagas e posição.
 
 ## Sequência de implementação sugerida
 
-1. **P018:** Magician of Faith + Mask of Darkness. Reutiliza o mesmo
+1. **P018 (sandbox):** Magician of Faith + Mask of Darkness. Reutiliza o mesmo
    seletor filtrado por Spell ou Trap, lendo cartas do cemitério. Os
    casos sem cartas válidas não devem abrir uma tela vazia.
 2. **P006:** Sangan + Witch. Introduzir evento genérico de envio do
@@ -74,3 +74,7 @@ tela de escolha, as fontes dos cartões e a ordenação original. Documentar
 as coordenadas e os tempos separadamente no `Joey.LookAndFeel`.
 **Não reabrir a trilha geral de animações**; somente a UI necessária
 para cumprir os efeitos de cartas.
+
+## Estado P018
+
+Spell tem classe DAT 22; Trap tem classe 21. A seleção de uma carta é obrigatória se houver elegíveis. O Core revalida identidade e filtro antes da transferência; ações normais ficam bloqueadas até a decisão. Se o FLIP ocorre em combate, a destruição já calculada fica diferida até a escolha, inclusive para um defensor destruído. A interface raylib é um overlay paginado provisório, não a UI nativa verificada. Testes: `src/tests/Joey.Tests/CardSelectionChecks.cs`.

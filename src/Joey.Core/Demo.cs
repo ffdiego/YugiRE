@@ -30,6 +30,7 @@ public sealed class DemoDuel
     private readonly List<DemoSelectedMonster> flipSelections = [];
     public IReadOnlyList<DemoSelectedMonster> SelectedFlipTargets => flipSelections.AsReadOnly();
     public DemoFlipTarget? PendingFlipTarget { get; private set; }
+    public PendingCardSelection? PendingCardSelection { get; private set; }
     /// <summary>
     /// Determined destroyed at damage calculation, but still present during FLIP resolution.
     /// Such monsters cannot be returned to the hand by Penguin Soldier.
@@ -45,7 +46,7 @@ public sealed class DemoDuel
     }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
-    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null;
+    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null || PendingCardSelection is not null;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
@@ -101,7 +102,9 @@ public sealed class DemoDuel
         IReadOnlyList<Card?> side0Monsters,
         IReadOnlyList<Card?> side1Monsters,
         int activeLifePoints,
-        bool equipmentContextResolved = false)
+        bool equipmentContextResolved = false,
+        IReadOnlyList<Card>? side0Graveyard = null,
+        IReadOnlyList<Card>? side1Graveyard = null)
     {
         if (activeSide is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(activeSide));
@@ -119,6 +122,8 @@ public sealed class DemoDuel
         var duel = new DemoDuel { Turn = activeSide + 1, equipmentContextResolved = equipmentContextResolved };
         duel.Life[activeSide] = activeLifePoints;
         duel.hands[activeSide].AddRange(activeHand);
+        if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard);
+        if (side1Graveyard is not null) duel.graves[1].AddRange(side1Graveyard);
         for (int slot = 0; slot < 5; slot++)
         {
             duel.Monsters[0, slot] = side0Monsters[slot];
@@ -136,7 +141,8 @@ public sealed class DemoDuel
         // Prioritize featured FLIP monsters in the local demo's opening hand.
         foreach (ushort id in new ushort[] { FlipEffectRules.PenguinSoldier, FlipEffectRules.MorphingJar,
                                              FlipEffectRules.ManEaterBug, FlipEffectRules.HaneHane,
-                                             FlipEffectRules.MorphingJar2 })
+                                             FlipEffectRules.MorphingJar2,
+                                              FlipEffectRules.MagicianOfFaith, FlipEffectRules.MaskOfDarkness })
         {
             var flip = all.FirstOrDefault(c => c.Id == id);
             if (flip is null) continue;
@@ -482,7 +488,7 @@ public sealed class DemoDuel
         var battle = CalculateBattle(p, source, attacker, enemy, target, defender, out string damageMessage);
         deferredBattle = battle;
         TriggerFlip(enemy, target, defender, out string flipMessage);
-        if (PendingFlipTarget is not null)
+        if (PendingFlipTarget is not null || PendingCardSelection is not null)
         {
             message = $"{damageMessage} {flipMessage}";
             return true;
@@ -581,6 +587,19 @@ public sealed class DemoDuel
                 PendingFlipTarget = new(owner, zone, card, DemoFlipEffect.ReturnOne);
                 flipSelections.Clear();
                 message = $"{card.Name} FLIP (P{owner + 1}): choose exactly one monster to return to its owner's hand.";
+                break;
+            case DemoFlipEffect.RecoverFromGraveyard:
+                var filter = CardSelectionRules.FlipGraveyardFilter(card.Id);
+                if (filter is null) break;
+                var candidates = CardSelectionRules.Candidates(graves[owner], filter.Value);
+                if (candidates.Count == 0)
+                {
+                    message = $"{card.Name} FLIP: no eligible card in P{owner + 1}'s graveyard.";
+                    break;
+                }
+                PendingCardSelection = new(owner, CardSelectionSource.Graveyard,
+                    CardSelectionDestination.Hand, filter.Value, candidates, 1, 1, card.Id);
+                message = $"{card.Name} FLIP (P{owner + 1}): choose one {filter.Value} from your graveyard.";
                 break;
             case DemoFlipEffect.ShuffleAndExcavate:
                 ResolveMorphingJar2(out message);
@@ -681,6 +700,32 @@ public sealed class DemoDuel
         message = $"Morphing Jar #2 FLIP: returned {returned[0]}/{returned[1]} " +
             $"monsters to decks; excavated {results[0].Excavated}/{results[1].Excavated}; " +
             $"set {results[0].SpecialSummoned}/{results[1].SpecialSummoned} face-down.";
+    }
+
+    /// <summary>Resolve a pending graveyard selection by source zone position.</summary>
+    public bool ResolveCardSelection(int sourceIndex, out string message)
+    {
+        message = "Choose an eligible card in the pending source zone.";
+        if (PendingCardSelection is not { Source: CardSelectionSource.Graveyard,
+                Destination: CardSelectionDestination.Hand, MinSelections: 1, MaxSelections: 1 } pending)
+            return false;
+
+        int owner = pending.Owner;
+        var candidate = pending.EligibleCards.FirstOrDefault(option => option.SourceIndex == sourceIndex);
+        if (owner is < 0 or > 1 || candidate is null ||
+            sourceIndex < 0 || sourceIndex >= graves[owner].Count ||
+            !ReferenceEquals(graves[owner][sourceIndex], candidate.Card) ||
+            !CardSelectionRules.IsEligible(candidate.Card, pending.Filter))
+        {
+            message = "The chosen card is no longer eligible in that graveyard.";
+            return false;
+        }
+        graves[owner].RemoveAt(sourceIndex);
+        hands[owner].Add(candidate.Card);
+        PendingCardSelection = null;
+        FinishDeferredBattle();
+        message = $"{candidate.Card.Name} returned from P{owner + 1}'s graveyard to hand.";
+        return true;
     }
 
     /// <summary>

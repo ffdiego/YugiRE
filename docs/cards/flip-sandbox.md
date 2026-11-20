@@ -1,4 +1,4 @@
-# FLIP jogável — cinco monstros (incluindo Morphing Jar #2)
+# FLIP jogável — sete monstros (incluindo Morphing Jar #2 e P018)
 
 Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib.
 **Não** equivale a callbacks nativos idênticos, nem modela correntes e negação.
@@ -12,6 +12,9 @@ Escopo: engine C# do `DemoDuel` com teste sintético e interface hot-seat raylib
 | Morphing Jar #2 | 1163 (pack Joey) | FLIP: embaralha monstros nos Main Decks, escava até quota e coloca elegíveis face-down |
 
 **Morphing Jar #2** (`1163`) é distinta de **Morphing Jar** (`590`); agora as duas têm resolvers separados no sandbox.
+
+| Magician of Faith | 427 (P018) | FLIP: escolhe uma magia no próprio cemitério e a devolve à mão |
+| Mask of Darkness | 101 (P018) | FLIP: escolhe uma armadilha no próprio cemitério e a devolve à mão |
 
 ## Três fontes de revelação
 
@@ -130,3 +133,7 @@ Referências:
 - https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=4608&ope=2
 - https://ftp.yugipedia.com/wiki/Card_Rulings:Penguin_Soldier
 - https://ygorganization.com/learnrulingspart9
+
+### Recuperação P018
+
+A seleção do cemitério usa `PendingCardSelection`, com índice por ocorrência, revalidação da carta e entrega à mão. Sem candidatos, o FLIP não abre modal. No combate, a marcação de destruição precede o efeito, mas a remoção acontece depois da decisão. A UI raylib é provisória; sem chains/negação nem timings nativos verificados. Testes: `CardSelectionChecks.cs`.
