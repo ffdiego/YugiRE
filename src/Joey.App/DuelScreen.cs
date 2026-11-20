@@ -234,7 +234,8 @@ static partial class Game
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
         bool selectingCard = duel.PendingCardSelection is not null ||
-            duel.PendingSummonResponse is not null;
+            duel.PendingSummonResponse is not null ||
+            duel.PendingAttackResponse is not null;
         Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
         if (Button("< Menu", 8, 8, 85, 30, !selectingCard)) screen = "menu";
         Label($"LOCAL DEMO · {presentation.Style.Name}", 105, 16, 13, Gold);
@@ -293,5 +294,6 @@ static partial class Game
         Label("Local demo | Right-click: Set", 8, 587, 12, Gold);
         DrawCardSelectionOverlay();
         DrawSummonResponseOverlay();
+        DrawAttackResponseOverlay();
     }
 }

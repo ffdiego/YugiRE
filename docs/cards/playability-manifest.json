@@ -104,6 +104,34 @@
       ]
     },
     {
+      "id": "trap.attack-declaration-response",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Mirror Force: respond to an opponent's declared monster attack before damage",
+        "Destroy all opponent face-up Attack Position monsters, not only the attacker",
+        "Response to direct attacks and attacks into face-down defenders",
+        "Pass resumes the same declared attack without reopening the response window",
+        "Card-effect destruction queues field-to-Graveyard triggers, not battle-only recruiters"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1056
+      ],
+      "evidence": [
+        "src/Joey.Core/AttackTrapRules.cs",
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/AttackResponseScreen.cs",
+        "src/tests/Joey.Tests/AttackTrapChecks.cs",
+        "docs/cards/p201-mirror-force-attack-response-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox-only one-response window; no chain builder, negation, priority alternation, invalidated-attack replay, changed control or native timing parity.",
+        "Activation is not proof of original callback P201's dynamic behavior."
+      ]
+    },
+    {
       "id": "field.type",
       "kind": "Spell",
       "subtype": "Field",

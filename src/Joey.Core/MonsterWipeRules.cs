@@ -36,6 +36,25 @@ public static class MonsterWipeRules
         return TargetsForScope(scope.Value, caster, monsters, faceDown);
     }
 
+    /// <summary>
+    /// Mirror Force snapshot: every face-up Attack Position monster on the
+    /// attacking side. Position is checked at effect resolution, not when
+    /// selecting the attack target, because Mirror Force is non-targeting.
+    /// </summary>
+    public static IReadOnlyList<MonsterWipeTarget> AttackPositionTargets(
+        int player, Card?[,] monsters, bool[,] faceDown, bool[,] defensePosition)
+    {
+        if (player is < 0 or > 1) return [];
+        var result = new List<MonsterWipeTarget>(5);
+        for (int zone = 0; zone < 5; zone++)
+        {
+            if (monsters[player, zone] is Card card &&
+                !faceDown[player, zone] && !defensePosition[player, zone])
+                result.Add(new(player, zone, card, false));
+        }
+        return result.AsReadOnly();
+    }
+
     public static IReadOnlyList<MonsterWipeTarget> TargetsForScope(
         MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown)
     {

@@ -24,7 +24,7 @@ def fixture():
         row(1, 342, 22, 7),    # Sparks Done in every game
         row(2, 332, 22, 7),    # Sogen Done
         row(3, 300, 22, 4),    # Legendary Sword Partial
-        row(4, 1056, 21, 4),   # Mirror Force Trap Pending
+        row(4, 960, 21, 4),    # Negate Attack Trap Pending
         row(5, 3999, 15, 1),     # Generic Monster Pending
         row(6, 1427, 22, 0),  # Infinite Cards implemented, outside the scope
     ], "fingerprints": {"datSha256": "a" * 64}}
@@ -36,9 +36,9 @@ class CardPlayabilityTests(unittest.TestCase):
         self.callbacks = read_callbacks(CATALOG)
 
     def test_catalog_evidence_is_source_limited_and_unique(self):
-        self.assertEqual(len(self.manifest), 317)
-        self.assertEqual(len({v["id"] for v in self.manifest.values()}), 18)
-        self.assertEqual({self.manifest[card]["status"] for card in (101, 427, 47, 573, 1108, 1110, 1117, 1119, 1120, 1123, 1114, 1115, 1116, 561, 610, 1109, 1122, 335, 336, 1002, 1425)}, {"Done"})
+        self.assertEqual(len(self.manifest), 318)
+        self.assertEqual(len({v["id"] for v in self.manifest.values()}), 19)
+        self.assertEqual({self.manifest[card]["status"] for card in (101, 427, 47, 573, 1108, 1110, 1117, 1119, 1120, 1123, 1114, 1115, 1116, 561, 610, 1109, 1122, 335, 336, 1002, 1425, 1056)}, {"Done"})
         self.assertEqual(self.manifest[332]["subtype"], "Field")
         self.assertEqual(self.manifest[300]["status"], "Partial")
         self.assertEqual(self.manifest[1427]["status"], "Done")
