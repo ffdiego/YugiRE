@@ -225,6 +225,26 @@ public static class SandboxDuelRunner
                     turn, side, phase, action, sourceIndex, targetPlayer, targetZone,
                     message, before, after = Snapshot()
                 }));
+                // The headless runner never blocks waiting for human input.
+                // Explicit conservative policy: decline optional costs, log the
+                // choice, and do not present this as the native demo AI.
+                while (duel.PendingEffectDecision is { } request)
+                {
+                    object decisionBefore = Snapshot();
+                    bool resolved = duel.ResolveEffectDecision(
+                        request.Id, EffectDecisionAnswer.Decline, out string reason);
+                    if (!resolved)
+                        throw new InvalidOperationException("Headless effect decision was rejected.");
+                    events.WriteLine(JsonSerializer.Serialize(new
+                    {
+                        kind = "sandbox_effect_decision", duelIndex = game, seq = ++sequence,
+                        decisionId = request.Id, request.Owner,
+                        effectKind = request.Kind.ToString(),
+                        sourceIndex = request.Source.Index,
+                        policy = "DeclineOptionalCosts", answer = "Decline",
+                        turn = duel.Turn, reason, before = decisionBefore, after = Snapshot()
+                    }));
+                }
             }
             while (duel.Winner is null && duel.Turn <= maxTurns)
             {
