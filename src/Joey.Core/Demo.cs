@@ -23,6 +23,9 @@ public sealed class DemoDuel
     public DemoSummonTrapResult? LastSummonTrap { get; private set; }
     public DemoAttackResponse? PendingAttackResponse { get; private set; }
     public DemoAttackTrapResult? LastAttackTrap { get; private set; }
+    // Negate Attack ends the current Battle Phase; Main after Battle is
+    // allowed but a second Battle Phase in the same turn is not.
+    private bool battlePhaseEndedThisTurn;
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
@@ -562,7 +565,8 @@ public sealed class DemoDuel
     public bool BeginBattle(out string message)
     {
         message = "Battle unavailable on the opening turn or after game over.";
-        if (ActionsBlocked || Turn == 1 || Phase != DemoPhase.Main) return false;
+        if (ActionsBlocked || Turn == 1 || Phase != DemoPhase.Main ||
+            battlePhaseEndedThisTurn) return false;
         Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
     }
     /// <summary>
@@ -654,23 +658,63 @@ public sealed class DemoDuel
             !ReferenceEquals(Monsters[owner, attack.TargetZone], attack.Defender)))
             return false;
 
-        var targets = MonsterWipeRules.AttackPositionTargets(
-            attack.AttackingPlayer, Monsters, MonsterFaceDown, DefensePosition);
-        if (targets.Count == 0) return false;
+        // Verify all effect-dependent constraints before spending the Trap.
+        IReadOnlyList<MonsterWipeTarget>? targets = null;
+        if (trap.Id == AttackTrapRules.MirrorForce)
+        {
+            targets = MonsterWipeRules.AttackPositionTargets(
+                attack.AttackingPlayer, Monsters, MonsterFaceDown, DefensePosition);
+            if (targets.Count == 0) return false;
+        }
+
+        int reflectedDamage = 0;
+        if (trap.Id == AttackTrapRules.MagicCylinder)
+            reflectedDamage = AttackValue(attack.AttackingPlayer, attack.AttackerZone);
+
         Spells[owner, zone] = null;
         SpellFaceDown[owner, zone] = false;
         spellSetTurn[owner, zone] = 0;
         graves[owner].Add(trap);
         PendingAttackResponse = null;
 
-        // Card-effect destruction (NOT battle destruction): recruiters do not
-        // trigger, no FLIP has occurred yet, and queued GY searches wait
-        // until the full snapshot has been moved to Graveyards.
-        LastMonsterWipe = ResolveMonsterWipe(
-            trap.Id, owner, explicitTargets: targets);
+        int destroyed = 0;
+        bool endedBattle = false;
+        switch (trap.Id)
+        {
+            case AttackTrapRules.MirrorForce:
+                // Effect destruction, never battle destruction. Finish moving
+                // all matching monsters before resolving field-to-GY triggers.
+                LastMonsterWipe = ResolveMonsterWipe(
+                    trap.Id, owner, explicitTargets: targets);
+                destroyed = LastMonsterWipe.TotalDestroyed;
+                break;
+            case AttackTrapRules.MagicCylinder:
+                // The attacking monster remains on field; the attack is
+                // negated and ATK damage goes to its controller, not defender.
+                Damage(attack.AttackingPlayer, reflectedDamage);
+                break;
+            case AttackTrapRules.NegateAttack:
+                // A counter Trap ends Battle Phase immediately. Later actions
+                // in the turn use the sandbox Main phase; BeginBattle must not
+                // allow re-entry until AdvanceTurn.
+                Phase = DemoPhase.Main;
+                battlePhaseEndedThisTurn = true;
+                endedBattle = true;
+                break;
+            default:
+                throw new InvalidOperationException("Unrecognized attack Trap.");
+        }
         LastAttackTrap = new(trap.Id, owner, attack.AttackingPlayer,
-            LastMonsterWipe.TotalDestroyed, AttackContinued: false);
-        message = $"{trap.Name}: destroyed {LastMonsterWipe.TotalDestroyed} attack-position monster(s); attack canceled.";
+            destroyed, AttackContinued: false,
+            ReflectedDamage: reflectedDamage, BattlePhaseEnded: endedBattle);
+        message = trap.Id switch
+        {
+            AttackTrapRules.MirrorForce =>
+                $"{trap.Name}: destroyed {destroyed} Attack Position monster(s); attack canceled.",
+            AttackTrapRules.MagicCylinder =>
+                $"{trap.Name}: negated attack and inflicted {reflectedDamage} damage to P{attack.AttackingPlayer + 1}.",
+            _ => $"{trap.Name}: negated attack and ended the Battle Phase."
+        };
         return true;
     }
 
@@ -1510,6 +1554,8 @@ public sealed class DemoDuel
     }
     private void AdvanceTurn()
     {
-        Turn++; Phase = DemoPhase.Main; summoned = drawn = false; Array.Clear(attacked); Array.Clear(changedPosition);
+        Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
+        battlePhaseEndedThisTurn = false;
+        Array.Clear(attacked); Array.Clear(changedPosition);
     }
 }
