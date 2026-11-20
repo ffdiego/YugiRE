@@ -17,8 +17,12 @@ static partial class Game
         Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
         Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
         Label($"P{request.Owner + 1}: {request.EffectResourceId} card selection", 250, 95, 21, Gold);
-        Label($"{request.Source} -> {request.Destination} | choose one {request.Filter}", 250, 126, 17);
-        Label("Select a card to resolve the FLIP effect (mandatory).", 250, 151, 13);
+        string rule = request.RequiredAttributeCode is byte attribute
+            ? $"attribute {attribute}, ATK <= 1500" : request.Filter.ToString();
+        Label($"{request.Source} -> {request.Destination} | {rule}", 250, 126, 17);
+        Label(request.MinSelections == 0
+            ? "Optional recruit: select a monster or Skip."
+            : "Select one card (mandatory).", 250, 151, 13);
 
         for (int slot = 0; slot < CardSelectionPageSize; slot++)
         {
@@ -46,7 +50,17 @@ static partial class Game
             }
         }
 
-        if (Button("< Prev", 292, 531, 105, 30, cardSelectionPage > 0))
+        if (request.MinSelections == 0 &&
+            Button("Skip", 247, 531, 85, 30))
+        {
+            if (duel.SkipOptionalCardSelection(out message))
+            {
+                cardSelectionPage = 0;
+                ClearDuelSelection();
+            }
+            return;
+        }
+        if (Button("< Prev", 339, 531, 90, 30, cardSelectionPage > 0))
             cardSelectionPage--;
         Label($"{cardSelectionPage + 1}/{lastPage + 1}", 474, 537, 17, Gold);
         if (Button("Next >", 614, 531, 105, 30, cardSelectionPage < lastPage))
