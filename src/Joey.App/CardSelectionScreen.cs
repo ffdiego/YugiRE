@@ -35,7 +35,9 @@ static partial class Game
         Label(request.MinSelections == 0
             ? request.MaxSelections > 1
                 ? $"Choose up to {request.MaxSelections} copies, then Done (or Skip)."
-                : "Optional recruit: select a monster or Skip."
+                : request.Destination == CardSelectionDestination.Hand
+                    ? "Optional search: select a card to add to hand, or Skip."
+                    : "Optional recruit: select a monster or Skip."
             : "Select one card (mandatory).", 250, 151, 13);
 
         for (int slot = 0; slot < CardSelectionPageSize; slot++)
