@@ -233,7 +233,9 @@ static partial class Game
     {
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
-        bool selectingCard = duel.PendingCardSelection is not null ||
+        ApplyOptionalEffectPromptPolicy();
+        bool selectingCard = duel.PendingEffectDecision is not null ||
+            duel.PendingCardSelection is not null ||
             duel.PendingSummonResponse is not null ||
             duel.PendingAttackResponse is not null;
         Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
@@ -243,6 +245,10 @@ static partial class Game
         if (Button("Battle", 326, 8, 80, 30, !selectingCard)) { duel.BeginBattle(out message); ClearDuelSelection(); }
         if (Button("End turn", 412, 8, 105, 30, !selectingCard)) { duel.EndTurn(out message); ClearDuelSelection(); handPage = 0; }
         if (Button("Reset", 523, 8, 75, 30, !selectingCard)) StartDemo();
+        if (Button(optionalEffectPrompts == EffectPromptMode.Ask
+                ? "Prompts: ON" : "Prompts: OFF", 610, 8, 168, 30, !selectingCard))
+            optionalEffectPrompts = optionalEffectPrompts == EffectPromptMode.Ask
+                ? EffectPromptMode.Off : EffectPromptMode.Ask;
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
             Button("Done FLIP", 605, 8, 125, 30))
         {
@@ -295,5 +301,6 @@ static partial class Game
         DrawCardSelectionOverlay();
         DrawSummonResponseOverlay();
         DrawAttackResponseOverlay();
+        DrawEffectDecisionOverlay();
     }
 }
