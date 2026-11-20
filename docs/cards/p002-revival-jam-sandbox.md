@@ -37,7 +37,11 @@ gatilho.
 Ao aceitar, o Core cobra o custo **imediatamente** e agenda
 `PendingDelayedRevival` para a próxima entrada no turno do dono.
 O `DemoDuel` ainda não possui uma fase Standby pública; o scheduler
-executa um **hook provisório de começo de turno**, antes da Draw.
+executa um **hook provisório após a Draw**, ao completar `Draw()`
+com sucesso. Três episódios nativos no
+[experimento humano](../research/p002-revival-jam-human-yes-no-2026-11-20.md)
+confirmam a ordem *compra → retorno* (seq 35→37, 61→63, 91→93).
+A versão inicial resolvia erroneamente o efeito antes da Draw.
 Revalida a **mesma ocorrência** no GY e a existência de uma zona livre.
 Se não encontrar a carta ou a vaga, o custo não é reembolsado.
 Coloca-a em defesa face-up; não tenta simular o `positionWord=515`

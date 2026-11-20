@@ -13,7 +13,8 @@ internal static class RevivalJamDecisionChecks
     private static DemoDuel DestroyJam(Card jam, int life0 = 8000, Card? attacker = null)
     {
         var duel = DemoDuel.FromPartialObservation(1, [], Slots(jam),
-            Slots(attacker ?? Monster(900, 100, attack: 2000)), 8000);
+            Slots(attacker ?? Monster(900, 100, attack: 2000)), 8000,
+            side0Deck: [Monster(991, 1991)], side1Deck: [Monster(992, 1992)]);
         duel.Life[0] = life0;
         if (!duel.BeginBattle(out _) || !duel.Attack(0, 0, out _))
             throw new InvalidOperationException("Revival Jam test battle did not resolve.");
@@ -50,9 +51,9 @@ internal static class RevivalJamDecisionChecks
               declined.PendingDelayedRevivals.Count == 0 &&
               declined.EffectDecisionHistory.Count == 1 &&
               declined.EffectDecisionHistory[0].Answer == EffectDecisionAnswer.Decline &&
-              declined.EndTurn(out _) &&
+              declined.EndTurn(out _) && declined.Draw(out _) &&
               declined.Monsters[0, 0] is null,
-            "P002: refusal costs no LP and schedules no future revival");
+            "P002: refusal costs no LP and does not revive after the next Draw");
 
         var acceptedJam = Monster(RevivalJamRules.ResourceId, 1060);
         var accepted = DestroyJam(acceptedJam);
@@ -66,11 +67,15 @@ internal static class RevivalJamDecisionChecks
               !accepted.ResolveEffectDecision(pay.Id, EffectDecisionAnswer.Accept, out _),
             "P002: accepting charges LP once and schedules the next owner turn");
         check(accepted.EndTurn(out _) && accepted.Turn == 3 &&
+              accepted.Monsters[0, 0] is null &&
+              accepted.PendingDelayedRevivals.Count == 1,
+            "P002 native order: advancing turn alone does not revive before the Draw");
+        check(accepted.Draw(out _) &&
               ReferenceEquals(accepted.Monsters[0, 0], acceptedJam) &&
               accepted.DefensePosition[0, 0] && !accepted.MonsterFaceDown[0, 0] &&
               !accepted.Graveyard(0).Contains(acceptedJam) &&
               accepted.PendingDelayedRevivals.Count == 0,
-            "P002: exact source returns in face-up defense at owner turn-start Standby hook");
+            "P002 native order: exact source returns in defense after the owner's Draw");
 
         var poor = DestroyJam(Monster(RevivalJamRules.ResourceId, 1060), life0: 1500);
         check(poor.Life[0] == 1000 &&
@@ -87,10 +92,11 @@ internal static class RevivalJamDecisionChecks
         int blockedLife = blocked.Life[0];
         for (int zone = 0; zone < 5; zone++)
             blocked.Monsters[0, zone] = Monster((ushort)(950 + zone), 2000 + zone);
-        check(blocked.EndTurn(out _) && blocked.PendingDelayedRevivals.Count == 0 &&
+        check(blocked.EndTurn(out _) && blocked.PendingDelayedRevivals.Count == 1 &&
+              blocked.Draw(out _) && blocked.PendingDelayedRevivals.Count == 0 &&
               blocked.Graveyard(0).Any(c => ReferenceEquals(c, blockedJam)) &&
               blocked.Life[0] == blockedLife,
-            "P002: a full field cancels the delayed summon without LP refund");
+            "P002: a full field at post-Draw Standby cancels revival without LP refund");
 
         var jamAttacker = Monster(RevivalJamRules.ResourceId, 1060);
         var jamDefender = Monster(RevivalJamRules.ResourceId, 2060);
@@ -106,10 +112,13 @@ internal static class RevivalJamDecisionChecks
               both.PendingEffectDecision is null &&
               both.PendingDelayedRevivals.Count == 1,
             "P002: multiple optional decisions are serialized without losing a trigger");
-        check(both.EndTurn(out _) && both.Monsters[1, 0] is null &&
+        check(both.EndTurn(out _) && both.Turn == 3 &&
+              both.Draw(out _) && both.Monsters[1, 0] is null &&
               both.EndTurn(out _) && both.Turn == 4 &&
+              both.Monsters[1, 0] is null && both.PendingDelayedRevivals.Count == 1 &&
+              both.Draw(out _) &&
               ReferenceEquals(both.Monsters[1, 0], jamAttacker) &&
               both.DefensePosition[1, 0],
-            "P002: owner already active at destruction waits until their following turn");
+            "P002: owner already active at destruction waits until post-Draw Standby of next turn");
     }
 }

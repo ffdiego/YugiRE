@@ -48,6 +48,29 @@ O reset heurístico ocorre na seq **125** (197,50 s). No segundo segmento:
 - **Nenhum retorno posterior de `card_index=1060` foi observado** até a conclusão (seq 201), consistente com a recusa relatada.
 - Seq **162–165** (224,59–224,91 s) mostra side 1 perdendo **1.700 LP** (9000→7300). **Não** atribuir automaticamente esses 1.700 ao Revival Jam ou caracterizá-los como pagamento; o relato é de recusa e a captura não registra comandos nem causa do dano.
 
+## Ordem nativa adicional: compra precede o retorno (impacto no Core)
+
+O segundo exame da captura mostrou, em **três** episódios independentes,
+`hand_cards_changed` com uma carta adicionada no side 1 e
+`deck_count_changed` com uma carta removida **antes** da reaparição:
+
+| Episódio | Compra (hand+1 / deck-1) | Retorno de `card_index=1060` |
+| --- | --- | --- |
+| 1 | seq **35** (55,80 s; deck 34→33, hand +383) | seq **37** (57,00 s) |
+| 2 | seq **61** (85,00 s; deck 33→32, hand +244) | seq **63** (86,19 s) |
+| 3 | seq **91** (121,80 s; deck 31→30, hand +1016) | seq **93** (123,00 s) |
+
+A correspondência é muito forte para a ordem **Draw → efeito na
+Standby** (a Standby vem após a Draw nas regras do jogo). O coletor
+não registra o início/fim da fase em si, então a associação exata à
+transição de fase ainda pode ser confirmada por instrumentação de comandos.
+
+**Correção necessária:** o `DemoDuel` do PR #25 resolvia efeitos
+diferidos dentro de `AdvanceTurn()`, **antes** de `Draw()`. O contrato
+experimental de Revival Jam deve aplicar o efeito somente depois da
+compra bem-sucedida do dono. Isso não requer uma fase Standby pública
+para corrigir a ordem, mas exige testes de regressão específicos.
+
 ## O que foi observado, e o que ainda não foi provado
 
 **Sustentado:** o Joey original apresenta o prompt Yes/No para o custo, menciona a **próxima Standby**, existe forte correlação entre aceitação e pagamento de 1.000 LP seguida de retorno; recusa se correlaciona com ausência de retorno; LP 500 se correlacionam com ausência da pergunta. Os retornos aparecem com word bruto `0203`, consistente com face-up defense descrito no texto da carta, mas o bitfield exato não foi decodificado aqui.
