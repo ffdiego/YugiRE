@@ -16,8 +16,10 @@ comprovou a existência da pergunta *Yes/No*, três episódios de pagamento
 de exatamente 1.000 LP e três retornos na partida com respostas **Sim**,
 além de uma partida com resposta **Não** seguida de ausência de retorno.
 O operador também observou que o prompt não foi oferecido com 500 LP.
-A leitura de RAM não registra cliques e não determina a fronteira em
-1.000 LP exatos. A política CPU/demo e o timing exato seguem pendentes.
+A leitura de RAM não registra cliques nem determinou sozinha a fronteira em
+1.000 LP exatos. A decompilação posterior confirmou **LP > 1000** no caminho
+P002; o modo demo ativa o ramo de aceite automático para ambos os lados.
+Os timings exatos de fase e o alcance da política CPU fora da demo seguem pendentes.
 Ver [evidência humana P002](../research/p002-revival-jam-human-yes-no-2026-11-20.md).
 
 - Evidência local: [C11 sem Gravity Bind](../research/mass96-c11-no-gravity-control-2026-11-20.md)
@@ -68,8 +70,9 @@ não se deve interpretar os resultados como política nativa.
   devem solicitar custo.
 - Não há modelagem completa de **owner diferente de controller**: o
   adapter `DemoDuel` atualmente atribui o GY ao lado do campo.
-- LP estritamente maiores que 1000 são exigidos no sandbox;
-  faltam a confirmação de limites e negações no Joey PC.
+- LP estritamente maiores que 1000 são exigidos no sandbox, em consonância
+  com as comparações estáticas nos callbacks P002 do Joey original;
+  cenários de negação e controle da carta seguem sem paridade validada.
 - O hook de Standby ainda não emite chains, prioridade, negadores ou
   ativação de efeitos na invocação; não substituir por status Verified.
 - A política das outras decisões (`PendingCardSelection`,
@@ -84,8 +87,8 @@ não se deve interpretar os resultados como política nativa.
 `src/tests/Joey.Tests/RevivalJamDecisionChecks.cs` exercita:
 solicitação do dono, aceite e recusa, pagamento único, ID obsoleto,
 LP insuficiente, campo lotado, retorno exato e dois gatilhos na mesma
-batalha. Continuam pendentes captura com humano (Sim/Não), perfil de
-CPU/demo e comparação de janelas temporais.
+batalha. A captura humana Sim/Não já está documentada; continuam pendentes
+validação dinâmica da decisão CPU/demo e comparação detalhada de fases.
 
 ## Investigação estática de 21/11/2026
 
