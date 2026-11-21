@@ -97,7 +97,7 @@ flag ativa é limpa. Os passes 1 e 3 usam `00422C00`, que dimensiona
 a extensão `(dimensão−1)` via MulDiv e usa a tabela x16.16
 `A52EE8` para transformar o retângulo. O passe 2 usa a imagem inteira.
 
-O cliente substituiu círculos e fragmentos gerados pelos sete sprites
+O cliente substituiu os círculos e os fragmentos procedurais pelos sete sprites
 do DAT. A fila ainda conserva a carta até o limiar `0x80`, uma
 decisão anterior do cliente cuja visibilidade precisa de comparação.
 O decoder usa RGB preto como chave e conserva o alpha dos demais
