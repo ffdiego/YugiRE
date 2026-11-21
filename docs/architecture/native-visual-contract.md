@@ -270,3 +270,28 @@ O deck adversário fica em (290,140). Com o verso de 50 px, sua borda
 esquerda fica em 265, deixando quatro pixels após a faixa de fases.
 O foco desta correção é a composição do campo padrão, sem aplicar
 os ramos nativos de transição entre fundos.
+
+## Mãos e saída da batalha
+
+`0045C600` calcula `span = min((largura/2 + 8) × N, 512) − largura/2`
+e grava a contagem da mão inteira. `0045C590` começa em `525 − span/2`
+para o lado próprio ou `525 + span/2` para o adversário e soma ou
+subtrai `trunc(span × índice / (N−1))` quando há mais de uma carta.
+As âncoras Y=600 e Y=0 vêm de `005DB608`. Em `00418771–0041878B`, a
+largura e a altura globais são inicializadas pela consulta virtual
+`+38h` do recurso. A implementação conserva 108 × 153, compatível
+com o recurso de moldura grande identificado anteriormente. Ainda
+falta ligar a seleção de subimagem a esse recurso e ao recorte de cada
+carta em Draw.
+
+As duas mãos da Alpha agora usam a distribuição inteira, sem
+paginação. O canvas recorta as pontas das cartas junto às bordas.
+A mão distante desenha só versos de cartas, girados para aquele
+lado, e as origens de compra e descarte seguem as mesmas coordenadas.
+A mão própria conserva a elevação de foco de 32 px e o balão
+provisório de ações. A ordem exata de oclusão quando uma carta se
+move entre a mão e o campo ainda requer captura equivalente.
+
+O botão EP chama o comando de fim de turno também durante BP, como
+observado pelo jogador. O caminho mantém as escolhas pendentes e
+o descarte obrigatório do Core.

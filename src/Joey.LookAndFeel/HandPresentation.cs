@@ -11,13 +11,19 @@ public static class HandPresentation
     // have not been shown to be global native renderer dimensions.
     public const int CardWidth = 108, CardHeight = 153, HoverOffset = 32;
 
-    public static int CenterX(int index, int count)
+    public static int CenterX(int index, int count, bool nearSide = true)
     {
         if (count < 1 || index < 0 || index >= count)
             throw new ArgumentOutOfRangeException(nameof(index));
         int span = Math.Min((CardWidth / 2 + 8) * count, 512) - CardWidth / 2;
-        return 525 - span / 2 + (count > 1 ? span * index / (count - 1) : 0);
+        int offset = span / 2 - (count > 1 ? span * index / (count - 1) : 0);
+        return 525 + (nearSide ? -offset : offset);
     }
+
+    public static CardBounds Bounds(int index, int count, bool nearSide, int lift = 0) =>
+        new(CenterX(index, count, nearSide) - CardWidth / 2,
+            (nearSide ? NativeDuelLayout.CanvasHeight - lift : 0) - CardHeight / 2,
+            CardWidth, CardHeight);
 
     /// <summary>
     /// The native per-update motion: target + trunc((current-target)*3/4).

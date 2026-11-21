@@ -12,7 +12,7 @@ static partial class Game
     static bool joeyOnly;
     static readonly List<int> tributeZones = [];
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
-    static int page, selected, hand = -1, attacker = -1, handPage;
+    static int page, selected, hand = -1, attacker = -1;
     static DemoDuel duel = null!;
     static DatGraphics graphics = null!;
     static DuelTheme duelTheme = null!;

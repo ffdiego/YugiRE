@@ -36,13 +36,13 @@ static partial class Game
 
     static Card? FindHoveredDuelCard()
     {
-        int count = Math.Min(6, ViewHand.Count - handPage * 6);
-        if (hoverHand >= 0 && hoverHand / 6 == handPage && hoverHand < ViewHand.Count &&
-            Hit(HandBounds(hoverHand % 6)))
+        int count = ViewHand.Count;
+        if (hoverHand >= 0 && hoverHand < ViewHand.Count &&
+            Hit(HandBounds(hoverHand)))
             return ViewHand[hoverHand];
         for (int slot = count - 1; slot >= 0; slot--)
             if (Hit(HandBounds(slot)))
-                return ViewHand[handPage * 6 + slot];
+                return ViewHand[slot];
 
         for (int player = 0; player < 2; player++)
         {

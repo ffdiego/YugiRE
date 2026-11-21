@@ -30,5 +30,10 @@ static class EndTurnTests
         normal.Draw(out _); normal.EndTurn(out _); normal.Draw(out _); normal.EndTurn(out _);
         check(normal.Turn == 3 && normal.Hand.Count == 7 && normal.PendingEndDiscards == 1,
             "Imported deck reaches the same six-card limit after natural draws");
+        check(normal.DiscardForEndTurn(0, out _) && normal.Draw(out _) &&
+              normal.BeginBattle(out _) && normal.EndTurn(out _) &&
+              normal.Turn == 4 && normal.Phase == DemoPhase.End && normal.PendingEndDiscards == 1 &&
+              normal.DiscardForEndTurn(0, out _) && normal.Turn == 5,
+              "End Phase can follow Battle directly and keeps mandatory discards");
     }
 }

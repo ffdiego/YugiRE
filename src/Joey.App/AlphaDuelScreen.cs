@@ -65,7 +65,6 @@ static partial class Game
     static void ResetDuelPresentation()
     {
         screen = "duel";
-        handPage = 0;
         ClearDuelSelection();
         StopSpellActivation();
         ResetCardEffects();
@@ -211,23 +210,18 @@ static partial class Game
         }
     }
 
-    static Rectangle CpuHandBounds(int index, int count)
-    {
-        // The far hand uses mirrored native spacing in a compact client row.
-        int page = index / 6, cardsOnPage = Math.Clamp(count - page * 6, 1, 6);
-        int center = 525 + (525 - HandPresentation.CenterX(index % 6, cardsOnPage)) / 2;
-        return new(center - 15, 73, 30, 40);
-    }
+    static Rectangle CpuHandBounds(int index, int count) =>
+        ToRectangle(HandPresentation.Bounds(index, count, nearSide: false));
 
     static void DrawCpuHand()
     {
         int count = VisibleHand(1).Count;
-        for (int i = 0; i < Math.Min(6, count); i++)
+        for (int i = 0; i < count; i++)
         {
             if (DiscardInFlight(1, i)) continue;
             var rect = CpuHandBounds(i, count);
-            DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, 20, cropped: true);
+            DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height, degrees: 180);
         }
-        if (duelDebug || count > 6) Label($"CPU hand {count}", 266, 76, 13, Gold);
+        if (duelDebug) Label($"CPU hand {count}", 266, 76, 13, Gold);
     }
 }

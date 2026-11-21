@@ -8,16 +8,13 @@ static partial class Game
     // Native field centers and hand spacing; balloon rendering and update frequency are demo policy.
     static int hoverHand = -1;
     static bool setHandAction, choosingTributes, choosingEquip;
-    static readonly int[] handLift = new int[6];
+    static int[] handLift = [];
     static readonly PresentationTickClock hoverClock = new();
-    static Rectangle HandBounds(int slot) => HandBoundsForCount(handPage * 6 + slot, ViewHand.Count, handLift[slot]);
+    static int HandLiftAt(int index) => index < handLift.Length ? handLift[index] : 0;
+    static Rectangle HandBounds(int slot) => HandBoundsForCount(slot, ViewHand.Count, HandLiftAt(slot));
+    static Rectangle HandBoundsForCount(int index, int handCount, int lift = 0) =>
+        ToRectangle(HandPresentation.Bounds(index, handCount, nearSide: true, lift));
 
-    static Rectangle HandBoundsForCount(int index, int handCount, int lift = 0)
-    {
-        int count = Math.Min(6, handCount - index / 6 * 6);
-        return new(HandPresentation.CenterX(index % 6, count) - HandPresentation.CardWidth / 2,
-            600 - HandPresentation.CardHeight / 2 - lift, HandPresentation.CardWidth, HandPresentation.CardHeight);
-    }
     static Rectangle ActionBounds(int slot)
     {
         var card = HandBounds(slot);
@@ -29,7 +26,6 @@ static partial class Game
         hand = attacker = hoverHand = -1;
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
-        handPage = Math.Clamp(handPage, 0, Math.Max(0, (ViewHand.Count - 1) / 6));
         Array.Clear(handLift);
     }
     static void UseHandAction(int index)
@@ -57,7 +53,7 @@ static partial class Game
         else if (setHandAction)
         {
             int zone = duel.FirstFreeSpellZone();
-            var origin = HandBounds(index % 6);
+            var origin = HandBounds(index);
             if (duel.SetFromHand(index, out message))
             {
                 if (zone >= 0) BeginFlight(card, ViewPlayer, zone, origin, true, true);
@@ -72,7 +68,7 @@ static partial class Game
         else
         {
             int zone = duel.FirstFreeSpellZone();
-            var origin = HandBounds(index % 6);
+            var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
             if (FieldSpellRules.Supports(card.Id))
                 BeginCardActivation(card, FieldZoneBounds(ViewPlayer), origin);
@@ -85,7 +81,7 @@ static partial class Game
     {
         var card = ViewHand[index];
         int zone = duel.FirstFreeMonsterZone(tributeZones);
-        var origin = HandBounds(index % 6);
+        var origin = HandBounds(index);
         if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
         BeginFlight(card, ViewPlayer, zone, origin, false, setHandAction);
         ClearDuelSelection();
@@ -98,18 +94,18 @@ static partial class Game
             ? duel.CanSummonFromHand(index) : duel.CanActivateFromHand(index));
     static bool UpdateHandInteraction(int updates)
     {
-        handPage = Math.Clamp(handPage, 0, Math.Max(0, (ViewHand.Count - 1) / 6));
-        int count = Math.Min(6, ViewHand.Count - handPage * 6);
+        int count = ViewHand.Count;
+        if (handLift.Length < count) Array.Resize(ref handLift, count);
         int next = -1;
         for (int slot = 0; slot < count; slot++)
         {
             var rect = HandBounds(slot);
             // Include both rest and lifted positions so the card never escapes its hover area.
-            if (Hit(new Rectangle(rect.X, rect.Y, rect.Width, 598 - rect.Y))) next = handPage * 6 + slot;
+            if (Hit(new Rectangle(rect.X, rect.Y, rect.Width, NativeDuelLayout.CanvasHeight - rect.Y))) next = slot;
         }
-        if (next < 0 && hoverHand / 6 == handPage && hoverHand >= 0 && hoverHand < ViewHand.Count)
+        if (next < 0 && hoverHand >= 0 && hoverHand < ViewHand.Count)
         {
-            var balloon = ActionBounds(hoverHand % 6);
+            var balloon = ActionBounds(hoverHand);
             if (Hit(new Rectangle(balloon.X, balloon.Y, balloon.Width, balloon.Height + 6))) next = hoverHand;
         }
         bool overHand = next >= 0;
@@ -119,9 +115,9 @@ static partial class Game
             hoverHand = next;
             if (!choosingTributes && !choosingEquip) setHandAction = false;
         }
-        for (int slot = 0; slot < 6; slot++)
+        for (int slot = 0; slot < handLift.Length; slot++)
         {
-            int target = hoverHand == handPage * 6 + slot ? HandPresentation.HoverOffset : 0;
+            int target = hoverHand == slot ? HandPresentation.HoverOffset : 0;
             if (!presentation.Style.PlayAnimations) handLift[slot] = target;
             else
                 for (int i = 0; i < updates && handLift[slot] != target; i++)
@@ -135,14 +131,13 @@ static partial class Game
             UseHandAction(hoverHand);
         return true;
     }
-    static void DrawCardBack(int x, int y, int width, int height, bool cropped = false, int degrees = 0)
+    static void DrawCardBack(int x, int y, int width, int height, int degrees = 0)
     {
         bool sideways = degrees % 180 != 0;
         if (duelTheme.CardBack is Texture2D texture)
         {
-            float sourceHeight = cropped ? Math.Min(texture.Height, height * (float)texture.Width / width) : texture.Height;
             Raylib.DrawTexturePro(texture,
-                new Rectangle(0, texture.Height - sourceHeight, texture.Width, sourceHeight),
+                new Rectangle(0, 0, texture.Width, texture.Height),
                 new Rectangle(x + width / 2f, y + height / 2f, sideways ? height : width, sideways ? width : height),
                 new Vector2(sideways ? height / 2f : width / 2f, sideways ? width / 2f : height / 2f),
                 degrees, Color.White);
@@ -232,7 +227,7 @@ static partial class Game
                     {
                         var equip = ViewHand[hand];
                         int sourceZone = duel.FirstFreeSpellZone();
-                        var origin = HandBounds(hand % 6);
+                        var origin = HandBounds(hand);
                         if (duel.Equip(hand, player, zone, out message))
                         {
                             BeginCardActivation(equip, ZoneBounds(ViewPlayer, sourceZone, true), origin);
@@ -274,21 +269,17 @@ static partial class Game
     static void DrawDuelHand()
     {
         var visible = VisibleHand(ViewPlayer);
-        int page = Math.Clamp(handPage, 0, Math.Max(0, (visible.Count - 1) / 6));
-        int count = Math.Min(6, visible.Count - page * 6);
-        var drawOrder = Enumerable.Range(0, count).OrderBy(slot => handPage * 6 + slot == hoverHand ? 1 : 0);
-        foreach (int slot in drawOrder)
+        var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == hoverHand ? 1 : 0);
+        foreach (int index in drawOrder)
         {
-            int index = page * 6 + slot;
             if (DiscardInFlight(ViewPlayer, index)) continue;
-            var rect = HandBoundsForCount(index, visible.Count, handLift[slot]);
-            Raylib.DrawRectangleRec(rect, Panel);
-            DrawArtwork(visible[index], (int)rect.X + 2, (int)rect.Y + 2, (int)rect.Width - 4, (int)rect.Height - 4);
-            Raylib.DrawRectangleLinesEx(rect, index == hand ? 2 : 1, index == hand ? Color.White : Gold);
+            var rect = HandBoundsForCount(index, visible.Count, HandLiftAt(index));
+            DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
+            if (index == hand) Raylib.DrawRectangleLinesEx(rect, 2, Color.White);
         }
         if (MotionBusy || PhaseBusy || hoverHand < 0 || hoverHand >= ViewHand.Count) return;
         if (!duel.CanSetFromHand(hoverHand) && !duel.CanActivateFromHand(hoverHand) && duel.PendingEndDiscards == 0) return;
-        var bubble = ActionBounds(hoverHand % 6);
+        var bubble = ActionBounds(hoverHand);
         bool enabled = HandActionEnabled(hoverHand);
         Raylib.DrawRectangleRounded(bubble, .3f, 6, enabled ? new Color(248, 229, 177, 255) : Color.Gray);
         Vector2 tip = new(bubble.X + bubble.Width / 2, bubble.Y + bubble.Height + 5);
@@ -322,12 +313,6 @@ static partial class Game
         DrawPhasePanel(turnInput);
 
         if (actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
-        if (actionInput && handPage > 0 &&
-            (Button("<", 266, 565, 30, 24) || Raylib.IsKeyPressed(KeyboardKey.PageUp)))
-        { handPage--; ClearDuelSelection(); }
-        if (actionInput && (handPage + 1) * 6 < ViewHand.Count &&
-            (Button(">", 765, 565, 30, 24) || Raylib.IsKeyPressed(KeyboardKey.PageDown)))
-        { handPage++; ClearDuelSelection(); }
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);

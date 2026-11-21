@@ -43,6 +43,13 @@ internal static class NativePresentationChecks
               HandPresentation.CenterX(0, 1) == 521 &&
               HandPresentation.Approach(600, 568) == 592,
               "Native presentation: hand fan and smoothing moved out of Joey.Core");
+        check(HandPresentation.Bounds(0, 5, true).Y == 524 &&
+              HandPresentation.Bounds(0, 5, false).Y == -76 &&
+              HandPresentation.Bounds(0, 5, true, 32).Y == 492 &&
+              Enumerable.Range(0, 12).All(i => HandPresentation.CenterX(i, 12, true) +
+                  HandPresentation.CenterX(i, 12, false) == 1050) &&
+              Enumerable.Range(0, 12).Select(i => HandPresentation.CenterX(i, 12)).Distinct().Count() == 12,
+              "Both hands use the native side anchors and fit all cards in the fan");
         check(new DuelLookAndFeel().MoveCardAxis(600, 568) == 592 &&
               new FastLookAndFeel().MoveCardAxis(600, 568) == 592 &&
               new SilentLookAndFeel().MoveCardAxis(600, 568) == 592 &&

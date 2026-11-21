@@ -74,7 +74,7 @@ static partial class Game
             {
                 DuelPhaseDisplay.Battle => duel.CanBeginBattle,
                 DuelPhaseDisplay.Main2 => duel.Phase == DemoPhase.Battle,
-                DuelPhaseDisplay.End => duel.Phase == DemoPhase.Main,
+                DuelPhaseDisplay.End => duel.Phase is DemoPhase.Main or DemoPhase.Battle,
                 _ => false
             });
             var bounds = ToRectangle(DuelSurfaceLayout.PhaseButton(i));
@@ -96,7 +96,6 @@ static partial class Game
             if (!accepted) continue;
             ShowPhase(phase);
             ClearDuelSelection();
-            if (phase == DuelPhaseDisplay.End) handPage = 0;
         }
     }
 
