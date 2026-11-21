@@ -26,7 +26,7 @@ static partial class Game
             {
                 if (duel.ActivateAttackTrap(option.Owner, option.Zone, out message))
                 {
-                    BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true));
+                    BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true), nearSide: option.Owner == ViewPlayer);
                     ClearDuelSelection();
                 }
                 return;

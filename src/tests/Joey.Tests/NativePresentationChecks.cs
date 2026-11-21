@@ -14,6 +14,20 @@ internal static class NativePresentationChecks
         check(rect == new CardBounds(492, 308, 66, 88) &&
               NativeDuelLayout.CanvasWidth == 800 && NativeDuelLayout.CanvasHeight == 600,
               "Native presentation: native centers and demo-sized rect remain distinct");
+        foreach (bool near in new[] { true, false })
+        foreach (bool defense in new[] { false, true })
+        foreach (bool hidden in new[] { false, true })
+        {
+            var card = DuelCardLayout.OnBoard(DuelCardZone.Monster, near, 2, defense, hidden);
+            check(card.Degrees == (near ? 0 : 180) + (defense ? 90 : 0) &&
+                  card.FaceDown == hidden &&
+                  card.Bounds.Width == (defense ? 72 : 50) && card.Bounds.Height == (defense ? 50 : 72) &&
+                  card.AttributesCenter == (hidden ? null : new CardPoint(525, near ? 398 : 202)),
+                  $"Native card geometry: near={near}, defense={defense}, hidden={hidden}");
+        }
+        check(DuelCardLayout.Center(DuelCardZone.Spell, true, 0) == new CardPoint(369, 460) &&
+              DuelCardLayout.Center(DuelCardZone.Spell, false, 4) == new CardPoint(369, 140),
+              "Native card geometry: Spell/Trap uses the native second row");
         bool badZone = false;
         try { NativeDuelLayout.MonsterCenter(5, true); }
         catch (ArgumentOutOfRangeException) { badZone = true; }

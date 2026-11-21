@@ -13,13 +13,15 @@ static partial class Game
     static Card? activationCard;
     static CardBounds activationBounds, activationOrigin;
     static int activationCategory;
+    static bool activationNearSide;
     static bool ActivationBusy => activation.Current is not null;
 
     static CardBounds ToCardBounds(Rectangle rect) =>
         new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
 
-    static void BeginCardActivation(Card card, Rectangle zone, Rectangle? origin = null)
+    static void BeginCardActivation(Card card, Rectangle zone, Rectangle? origin = null, bool nearSide = true)
     {
+        activationNearSide = nearSide;
         ShowActivatedDetail(card);
         BeginActivation(ToCardBounds(zone), 0, card, origin);
     }
@@ -70,10 +72,11 @@ static partial class Game
         if (activationCard is { } card)
         {
             // A spent spell can already be in the graveyard. This is only its visual copy.
+            var portrait = DuelCardLayout.BoardPortrait(DuelCardLayout.FrameCenter(scratch));
             var bounds = step.Kind == ActivationStage.Travel
-                ? CardTravel.Sample(activationOrigin, scratch, activation.ElapsedUpdates)
-                : scratch;
-            DrawFieldCard(card, new Rectangle(bounds.X, bounds.Y, bounds.Width, bounds.Height), false);
+                ? CardTravel.Sample(activationOrigin, portrait, activation.ElapsedUpdates)
+                : portrait;
+            DrawDuelCard(card, DuelCardLayout.InTransit(bounds, activationNearSide, false, false));
         }
         if (step.Kind != ActivationStage.Glow) return;
 

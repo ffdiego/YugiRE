@@ -123,7 +123,8 @@ static partial class Game
         int counter = elapsedUpdates * NativeExplosionTimeline.UpdateIncrement;
         var passes = NativeExplosionTimeline.PassesAt(counter);
         if ((passes & NativeExplosionPasses.Initial) != 0)
-            DrawBoardCard(monster.Card, rect, monster.FaceDown, monster.Defense, upsideDown: monster.Player != ViewPlayer);
+            DrawDuelCard(monster.Card, DuelCardLayout.OnBoard(DuelCardZone.Monster, monster.Player == ViewPlayer,
+                monster.Zone, monster.Defense, monster.FaceDown));
         if ((passes & NativeExplosionPasses.Flare) != 0)
         {
             int alpha = Math.Clamp(235 - 3 * Math.Abs(counter - 88), 0, 235);

@@ -189,18 +189,18 @@ static partial class Game
         }
         Label(line, x, y, size);
     }
-    static void DrawArtwork(Card card, int x, int y, int w, int h, bool sideways = false, bool upsideDown = false)
+    static void DrawArtwork(Card card, int x, int y, int w, int h, int degrees = 0)
     {
         string? name = graphics.Artwork.For(card);
         if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
         var texture = graphics.Texture(name);
-        float scale = sideways
+        float scale = degrees % 180 != 0
             ? Math.Min(w / (float)texture.Height, h / (float)texture.Width)
             : Math.Min(w / (float)texture.Width, h / (float)texture.Height);
         float width = texture.Width * scale, height = texture.Height * scale;
         Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
             new Rectangle(x + w / 2f, y + h / 2f, width, height),
-            new Vector2(width / 2, height / 2), (sideways ? 90 : 0) + (upsideDown ? 180 : 0), Color.White);
+            new Vector2(width / 2, height / 2), degrees, Color.White);
     }
     static void DrawCards()
     {

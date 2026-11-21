@@ -79,15 +79,18 @@ static partial class Game
         previousDuelMessage = "";
     }
 
-    static Rectangle ZoneBounds(int player, int zone, bool spell)
-    {
-        bool near = player == ViewPlayer;
-        var native = NativeDuelLayout.MonsterBounds(zone, near);
-        return new(native.X, spell ? near ? 416 : 96 : native.Y, native.Width, native.Height);
-    }
+    static Rectangle ZoneBounds(int player, int zone, bool spell) =>
+        CardZoneBounds(spell ? DuelCardZone.Spell : DuelCardZone.Monster, player, zone);
 
-    static Rectangle FieldZoneBounds(int player) =>
-        ToRectangle(NativeDuelLayout.FieldSpellBounds(player == ViewPlayer));
+    static Rectangle FieldZoneBounds(int player) => CardZoneBounds(DuelCardZone.Field, player);
+
+    static Rectangle CardZoneBounds(DuelCardZone zone, int player, int slot = 0)
+    {
+        var center = DuelCardLayout.Center(zone, player == ViewPlayer, slot);
+        return new(center.X - NativeDuelLayout.MonsterCardWidth / 2,
+            center.Y - NativeDuelLayout.MonsterCardHeight / 2,
+            NativeDuelLayout.MonsterCardWidth, NativeDuelLayout.MonsterCardHeight);
+    }
 
     static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
     {
@@ -95,7 +98,8 @@ static partial class Game
         travelUpdate = 0;
         travelClock.Reset();
         flight = new(card, hidden, !spell && hidden, player, zone, spell, origin,
-            ZoneBounds(player, zone, spell));
+            ToRectangle(DuelCardLayout.OnBoard(spell ? DuelCardZone.Spell : DuelCardZone.Monster,
+                player == ViewPlayer, zone, false, hidden).Bounds));
     }
 
     static bool InFlight(int player, int zone, bool spell) =>
@@ -197,7 +201,7 @@ static partial class Game
                  step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
         {
             Rectangle? origin = step.HandIndex is int index ? CpuHandBounds(index, handCount) : null;
-            BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true), origin);
+            BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true), origin, nearSide: step.Player == ViewPlayer);
         }
         else if (step.Action == CpuAction.Position && step.SourceZone is int zone && duel.MonsterWasFlipped[step.Player, zone])
         {

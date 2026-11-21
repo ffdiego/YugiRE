@@ -70,8 +70,8 @@ internal static class LookAndFeelChecks
               NativeDuelLayout.GraveBounds(false).X < NativeDuelLayout.MonsterBounds(4, false).X &&
               NativeDuelLayout.GraveBounds(true).Y == NativeDuelLayout.MonsterBounds(4, true).Y &&
               NativeDuelLayout.GraveBounds(false).Y == NativeDuelLayout.MonsterBounds(4, false).Y &&
-              NativeDuelLayout.FieldSpellBounds(true).X == NativeDuelLayout.GraveBounds(false).X &&
-              NativeDuelLayout.FieldSpellBounds(false).X == NativeDuelLayout.GraveBounds(true).X,
+              DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
+              DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");
         var clock = new DuelPresentationClock(classic);
         clock.Show(DuelPresentationCue.FlipReveal);

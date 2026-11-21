@@ -65,11 +65,6 @@ public static class NativeDuelLayout
     // Mirrored side columns observed in the duel video. Dimensions are from the client.
     public static CardBounds GraveBounds(bool nearSide) => SideZoneBounds(nearSide, monsterRow: true);
     public static CardBounds DeckBounds(bool nearSide) => SideZoneBounds(nearSide, monsterRow: false);
-    public static CardBounds FieldSpellBounds(bool nearSide) => GraveBounds(!nearSide) with
-    {
-        Y = MonsterBounds(0, nearSide).Y
-    };
-
     private static CardBounds SideZoneBounds(bool nearSide, bool monsterRow) =>
         new(nearSide ? 730 : 250, monsterRow ? MonsterBounds(0, nearSide).Y : nearSide ? 416 : 96,
             MonsterCardWidth, MonsterCardHeight);
