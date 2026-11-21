@@ -200,7 +200,7 @@ static partial class Game
         {
             if (DiscardInFlight(1, i)) continue;
             var rect = CpuHandBounds(i, count);
-            DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, 20);
+            DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, 20, cropped: true);
         }
         Label($"CPU hand {count}", 254, 76, 13, Gold);
     }

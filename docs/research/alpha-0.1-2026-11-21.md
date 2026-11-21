@@ -14,6 +14,8 @@ dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat ../passion/deck
 
 O turno começa com compra automática. O painel vertical junto ao campo mostra **DP**, **SP**, **M1**, **BP**, **M2** e **EP**. Clique em **BP** para batalhar, **M2** para voltar às ações de fase principal após a batalha e **EP** para encerrar. Se você tiver mais de seis cartas, a fase final pede descarte. Passe o mouse sobre a mão para ver a carta, clique para invocar ou ativar e use o botão direito para alternar para **Set**. Na batalha, clique em um atacante e depois no alvo ou em **Direct attack** se o campo adversário estiver vazio. Quando uma armadilha ou um FLIP lhe dá uma escolha, a CPU aguarda sua resposta. **Reset** inicia um novo duelo.
 
+Para usar um tema próprio ou licenciado, passe `--duel-theme=/caminho/do/tema`. A pasta pode conter `board.png` (fundo do campo, área lógica de 570 × 600), `card-back.png` (verso vertical) e `font.ttf` (texto da tela de duelo). Cada arquivo ausente usa o padrão do cliente. O duelo local tem o fundo do DAT por padrão. A Alpha tem tabuleiro próprio. Ambos usam verso desenhado pelo cliente e fonte padrão do raylib.
+
 ## Regras e decisões
 
 A lista inclui oito monstros normais, Man-Eater Bug, Morphing Jar, Magician of Faith, Mask of Darkness, cinco magias de LP, Pot of Greed, Upstart Goblin, Legendary Sword, Trap Hole e Mirror Force. As regras de invocação, batalha, FLIP, recuperação, descarte e respostas vêm de `DemoDuel`. A vitória ocorre por LP zero ou falha de compra. O sandbox pode declarar empate se nenhum lado consegue completar a compra do Morphing Jar.

@@ -15,6 +15,7 @@ static partial class Game
     static int page, selected, hand = -1, attacker = -1, handPage;
     static DemoDuel duel = null!;
     static DatGraphics graphics = null!;
+    static DuelTheme duelTheme = null!;
     static bool includeUnused;
     static readonly DuelPresentationClock presentation = new(new DuelLookAndFeel());
     static string previousDuelMessage = "";
@@ -75,6 +76,19 @@ static partial class Game
         if (error.Length == 0 && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
+        duelTheme = new();
+        const string themePrefix = "--duel-theme=";
+        if (args.FirstOrDefault(arg => arg.StartsWith(themePrefix, StringComparison.Ordinal)) is { } themeArg)
+        {
+            try { duelTheme.Load(themeArg[themePrefix.Length..]); }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine(ex.Message);
+                duelTheme.Dispose();
+                Raylib.CloseWindow();
+                return 1;
+            }
+        }
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
         var canvas = Raylib.LoadRenderTexture(800, 600);
         bool quit = false;
@@ -129,6 +143,7 @@ static partial class Game
             Raylib.EndDrawing();
         }
         Raylib.UnloadRenderTexture(canvas);
+        duelTheme.Dispose();
         graphics.Dispose(); Raylib.CloseWindow(); return 0;
     }
     static Vector2 mouse;
@@ -139,18 +154,27 @@ static partial class Game
         Raylib.DrawRectangleLines(x, y, w, h, enabled ? Gold : Color.Gray);
         int font = w < 150 ? 14 : 18;
         string caption = text;
-        while (caption.Length > 0 && Raylib.MeasureText(caption, font) > w - 16) caption = caption[..^1];
+        while (caption.Length > 0 && MeasureLabel(caption, font) > w - 16) caption = caption[..^1];
         if (caption.Length < text.Length && caption.Length > 3) caption = caption[..^3] + "...";
         Label(caption, x + 8, y + (h - font) / 2, font, enabled ? Color.White : Color.Gray);
         return enabled && hover && Raylib.IsMouseButtonPressed(MouseButton.Left);
     }
-    static void Label(string text, int x, int y, int size = 20, Color? color = null) => Raylib.DrawText(text, x, y, size, color ?? Color.White);
+    static int MeasureLabel(string text, int size) => screen == "duel" && duelTheme.Text is Font font
+        ? (int)MathF.Ceiling(Raylib.MeasureTextEx(font, text, size, 1).X)
+        : Raylib.MeasureText(text, size);
+    static void Label(string text, int x, int y, int size = 20, Color? color = null)
+    {
+        if (screen == "duel" && duelTheme.Text is Font font)
+            Raylib.DrawTextEx(font, text, new(x, y), size, 1, color ?? Color.White);
+        else
+            Raylib.DrawText(text, x, y, size, color ?? Color.White);
+    }
     static void Wrap(string text, int x, int y, int width, int size)
     {
         string line = "";
         foreach (var word in text.Replace('\r', ' ').Replace('\n', ' ').Split(' '))
         {
-            if (Raylib.MeasureText(line + word, size) > width && line.Length > 0) { Label(line, x, y, size); y += size + 5; line = ""; }
+            if (MeasureLabel(line + word, size) > width && line.Length > 0) { Label(line, x, y, size); y += size + 5; line = ""; }
             line += word + " ";
         }
         Label(line, x, y, size);
@@ -252,7 +276,7 @@ static partial class Game
             string line = "";
             foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             {
-                if (line.Length > 0 && Raylib.MeasureText(line + " " + word, size) > width) { lines.Add(line); line = ""; }
+                if (line.Length > 0 && MeasureLabel(line + " " + word, size) > width) { lines.Add(line); line = ""; }
                 line = line.Length == 0 ? word : line + " " + word;
             }
             lines.Add(line);

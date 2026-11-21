@@ -107,6 +107,6 @@ static partial class Game
         string title = phaseNames[(int)displayedPhase];
         Raylib.DrawRectangle(350, 278, 350, 44, Panel);
         Raylib.DrawRectangleLines(350, 278, 350, 44, Gold);
-        Label(title, 525 - Raylib.MeasureText(title, 25) / 2, 287, 25, Gold);
+        Label(title, 525 - MeasureLabel(title, 25) / 2, 287, 25, Gold);
     }
 }

@@ -135,8 +135,18 @@ static partial class Game
             UseHandAction(hoverHand);
         return true;
     }
-    static void DrawCardBack(int x, int y, int width, int height)
+    static void DrawCardBack(int x, int y, int width, int height, bool sideways = false, bool cropped = false)
     {
+        if (duelTheme.CardBack is Texture2D texture)
+        {
+            float sourceHeight = cropped ? Math.Min(texture.Height, height * (float)texture.Width / width) : texture.Height;
+            Raylib.DrawTexturePro(texture,
+                new Rectangle(0, texture.Height - sourceHeight, texture.Width, sourceHeight),
+                new Rectangle(x + width / 2f, y + height / 2f, sideways ? height : width, sideways ? width : height),
+                new Vector2(sideways ? height / 2f : width / 2f, sideways ? width / 2f : height / 2f),
+                sideways ? 90 : 0, Color.White);
+            return;
+        }
         Raylib.DrawRectangle(x, y, width, height, new Color(57, 32, 20, 255));
         Raylib.DrawRectangleLines(x + 2, y + 2, width - 4, height - 4, Gold);
         Raylib.DrawEllipseLines(x + width / 2, y + height / 2, width / 3f, height / 3f, Gold);
@@ -148,7 +158,7 @@ static partial class Game
         if (faceDown)
         {
             int backHeight = defense ? Math.Min(height, width * 200 / 290) : height;
-            DrawCardBack(x, y + (height - backHeight) / 2, width, backHeight);
+            DrawCardBack(x, y + (height - backHeight) / 2, width, backHeight, sideways: defense);
         }
         else DrawArtwork(card, x, y, width, height, sideways: defense);
     }
@@ -268,7 +278,7 @@ static partial class Game
         Vector2 tip = new(bubble.X + bubble.Width / 2, bubble.Y + bubble.Height + 5);
         Raylib.DrawTriangle(new Vector2(tip.X - 6, tip.Y - 6), tip, new Vector2(tip.X + 6, tip.Y - 6), enabled ? Gold : Color.Gray);
         string caption = HandActionCaption(hoverHand);
-        Label(caption, (int)(bubble.X + (bubble.Width - Raylib.MeasureText(caption, 16)) / 2), (int)bubble.Y + 5, 16, Color.Black);
+        Label(caption, (int)(bubble.X + (bubble.Width - MeasureLabel(caption, 16)) / 2), (int)bubble.Y + 5, 16, Color.Black);
     }
     static void DrawDuel()
     {
@@ -288,15 +298,18 @@ static partial class Game
         bool turnInput = !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !showingMotion && !alphaBlocked && HumanChoice;
-        if (alphaCpu is null)
+        if (duelTheme.Board is Texture2D board)
+            Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),
+                new Rectangle(230, 0, 570, 600), Vector2.Zero, 0, Color.White);
+        else if (alphaCpu is null)
             Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
         else
         {
             Raylib.DrawRectangle(230, 72, 556, 229, new Color(35, 51, 63, 255));
             Raylib.DrawRectangle(230, 301, 556, 299, new Color(21, 66, 66, 255));
             Raylib.DrawLine(230, 301, 786, 301, Gold);
-            DrawCpuHand();
         }
+        if (alphaCpu is not null) DrawCpuHand();
         if (Button("< Menu", 8, 8, 85, 30)) { screen = "menu"; return; }
         Label(alphaCpu is null ? $"LOCAL DEMO · {presentation.Style.Name}" : "ALPHA - VS CPU", 105, 16, 13, Gold);
         DrawPhasePanel(turnInput);

@@ -54,7 +54,7 @@ static partial class Game
             Raylib.DrawRectangleLinesEx(bounds, chosen || hovered ? 3 : 1,
                 chosen ? Color.Lime : hovered ? Color.White : Gold);
             string name = option.Card.Name;
-            while (name.Length > 4 && Raylib.MeasureText(name, 12) > 98) name = name[..^1];
+            while (name.Length > 4 && MeasureLabel(name, 12) > 98) name = name[..^1];
             if (name.Length < option.Card.Name.Length) name = name[..^3] + "...";
             Label(name, x, y + 116, 12);
             if (hovered && Raylib.IsMouseButtonPressed(MouseButton.Left))
