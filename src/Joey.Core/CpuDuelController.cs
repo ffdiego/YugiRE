@@ -78,13 +78,13 @@ public sealed class CpuDuelController
                 (t.Trap.Id == SummonTrapRules.TrapHole ||
                  BoardPower(duel, 1 - Player) > BoardPower(duel, Player)));
             return trap is null ? Act(CpuAction.Response, duel.PassSummonResponse) :
-                Act(CpuAction.Response, (out string m) => duel.ActivateSummonTrap(Player, trap.Zone, out m), trap.Trap);
+                Act(CpuAction.Response, (out string m) => duel.ActivateSummonTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
         }
         if (duel.PendingAttackResponse is { } attack)
         {
             var trap = attack.EligibleTraps.FirstOrDefault(t => t.Owner == Player);
             return trap is null ? Act(CpuAction.Response, duel.PassAttackResponse) :
-                Act(CpuAction.Response, (out string m) => duel.ActivateAttackTrap(Player, trap.Zone, out m), trap.Trap);
+                Act(CpuAction.Response, (out string m) => duel.ActivateAttackTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
         }
         if (duel.PendingCardSelection is { } selection)
         {
@@ -137,7 +137,8 @@ public sealed class CpuDuelController
             int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
-            if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell]);
+            if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
+                source: duel.FirstFreeSpellZone());
 
             for (int z = 0; z < 5; z++)
             {
@@ -179,7 +180,8 @@ public sealed class CpuDuelController
                     .OrderByDescending(z => duel.AttackValue(Player, z)).FirstOrDefault(-1);
                 if (target < 0) continue;
                 int index = i;
-                return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index], target);
+                return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index],
+                    source: duel.FirstFreeSpellZone(), target: target);
             }
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);

@@ -2,10 +2,13 @@ namespace Joey.Core;
 
 public enum DemoPhase { Main, Battle, End }
 
+public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
+
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
 public sealed class DemoDuel
 {
+    public event Action<DemoMonsterDestruction>? MonsterDestroyed;
     private readonly List<Card>[] hands = [[], []];
     private readonly Queue<Card>[] decks = [new(), new()];
     // Seeded sandbox-only effect shuffling; separate from initial deck randomization.
@@ -269,7 +272,7 @@ public sealed class DemoDuel
         resolvingSummon = true;
         try
         {
-            foreach (int tribute in tributes) RemoveMonster(player, tribute);
+            foreach (int tribute in tributes) RemoveMonster(player, tribute, isTribute: true);
             Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
         }
         finally { resolvingSummon = false; }
@@ -1530,9 +1533,11 @@ public sealed class DemoDuel
         return new(resourceId, caster, counts[0], counts[1], faceDownDestroyed);
     }
 
-    private void RemoveMonster(int p, int z, bool destroyedByBattle = false)
+    private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false)
     {
         Card removed = Monsters[p, z]!;
+        bool faceDown = MonsterFaceDown[p, z];
+        bool defense = DefensePosition[p, z];
         bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
         Monsters[p, z] = null;
@@ -1577,6 +1582,8 @@ public sealed class DemoDuel
             BeginNextEffectDecision();
             BeginNextQueuedDeckSearch();
         }
+        if (!isTribute)
+            MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense));
     }
 
     private void ReturnMonsterToHand(int player, int zone)

@@ -69,10 +69,16 @@ variar. Instant ignora a prévia. O relógio de mensagens em
   de `0x004276F0`. O visualizador experimental da
   [`analise-visual`](https://github.com/ffdiego/YugiRE/tree/analise-visual)
   contém um rasterizador de referência para futuros testes diferenciais.
-- As dimensões do scratch e o centro de uma magia ativada diretamente da
-  mão são escolhidos pelo demo, não recuperados de cada contexto nativo.
-- O gatilho visual é acionado pela **ação bem-sucedida na UI**.
-  Eventos tipados do `Joey.Core` ainda não estão integrados.
+- O brilho é centralizado sobre a zona de ativação da carta. Para magias
+  ativadas da mão, o demo usa a primeira zona livre ou a zona de campo.
+  Uma carta que já foi ao cemitério permanece visível como cópia de
+  apresentação até o brilho acabar. As dimensões do scratch seguem as
+  dimensões de zona do cliente.
+- A apresentação recebe a carta ativada e sua zona após uma ação bem-sucedida
+  do humano ou da CPU. A destruição usa um evento tipado do Core e aguarda o
+  brilho de ativação acabar. As partículas são geradas pelo cliente nas
+  janelas do contador de destruição recuperado. O cemitério apresenta uma
+  pilha virada para baixo e atualiza a contagem ao fim da animação.
 - Sem captura da versão Windows do original, não há afirmação de
   temporização precisa, sincronia com vozes ou paridade de pixels.
 - O jogo não implementa ainda o fluxo geral de armadilhas ativadas;

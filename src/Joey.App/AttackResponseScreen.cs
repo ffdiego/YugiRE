@@ -25,7 +25,10 @@ static partial class Game
                 x, y, 238, 36))
             {
                 if (duel.ActivateAttackTrap(option.Owner, option.Zone, out message))
+                {
+                    BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true));
                     ClearDuelSelection();
+                }
                 return;
             }
         }

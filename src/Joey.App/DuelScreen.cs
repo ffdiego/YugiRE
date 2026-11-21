@@ -67,10 +67,14 @@ static partial class Game
             choosingEquip = true;
             message = $"Choose a compatible face-up monster for {card.Name}.";
         }
-        else if (duel.Play(index, out message))
+        else
         {
-            if (card.ClassCode == 22)
-                BeginSpellActivation(525, 460); // Preview center: free spell region.
+            int zone = duel.FirstFreeSpellZone();
+            if (!duel.Play(index, out message)) return;
+            if (FieldSpellRules.Supports(card.Id))
+                BeginCardActivation(card, FieldZoneBounds(ViewPlayer));
+            else if (zone >= 0 && card.ClassCode == 22)
+                BeginCardActivation(card, ZoneBounds(ViewPlayer, zone, true));
             ClearDuelSelection();
         }
     }
@@ -151,7 +155,7 @@ static partial class Game
         {
             bool own = player == ViewPlayer;
             // Dedicated field zone, independent of the five ordinary spell slots.
-            var fieldRect = new Rectangle(248, own ? 416 : 96, 66, 88);
+            var fieldRect = FieldZoneBounds(player);
             Raylib.DrawRectangleLinesEx(fieldRect, 1, own ? Gold : Color.Gray);
             Label("FIELD", (int)fieldRect.X + 7, (int)fieldRect.Y - 15, 11, Gold);
             if (duel.FieldSpells[player] is Card fieldCard)
@@ -160,8 +164,7 @@ static partial class Game
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
-                    BeginSpellActivation((int)(fieldRect.X + fieldRect.Width / 2),
-                                         (int)(fieldRect.Y + fieldRect.Height / 2));
+                    BeginCardActivation(fieldCard, fieldRect);
             }
             for (int zone = 0; zone < 5; zone++)
             {
@@ -204,10 +207,11 @@ static partial class Game
                     }
                     else if (choosingEquip && monster != null)
                     {
+                        var equip = ViewHand[hand];
+                        int sourceZone = duel.FirstFreeSpellZone();
                         if (duel.Equip(hand, player, zone, out message))
                         {
-                            var center = NativeDuelLayout.MonsterCenter(zone, own);
-                            BeginSpellActivation(center.X, center.Y);
+                            BeginCardActivation(equip, ZoneBounds(ViewPlayer, sourceZone, true));
                             ClearDuelSelection();
                         }
                     }
@@ -219,17 +223,20 @@ static partial class Game
                     else if (own && monster != null)
                     {
                         bool reveal = duel.MonsterFaceDown[player, zone];
-                        if (duel.ChangePosition(zone, out message) && reveal && alphaCpu is not null)
+                        if (duel.ChangePosition(zone, out message) && reveal)
                         {
-                            var center = NativeDuelLayout.MonsterCenter(zone, own);
-                            BeginSpellActivation(center.X, center.Y, category: 1);
+                            ShowActivatedDetail(monster);
+                            if (alphaCpu is not null)
+                            {
+                                var center = NativeDuelLayout.MonsterCenter(zone, own);
+                                BeginSpellActivation(center.X, center.Y, category: 1);
+                            }
                         }
                     }
                 }
-                else if (own && Hit(spellRect) && duel.Spells[player, zone] != null &&
+                else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell &&
                          duel.ActivateSetSpell(zone, out message))
-                    BeginSpellActivation((int)(spellRect.X + spellRect.Width / 2),
-                                         (int)(spellRect.Y + spellRect.Height / 2));
+                    BeginCardActivation(setSpell, spellRect);
             }
         }
     }
@@ -260,13 +267,16 @@ static partial class Game
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
         int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
+        bool activationWasPlaying = spellActivation.IsPlaying;
         spellActivation.Advance(frameElapsed, presentation.Style);
+        if (!activationWasPlaying && attackCue is null)
+            AdvanceDestructions(frameElapsed);
         if (alphaCpu is null || HumanChoice) ApplyOptionalEffectPromptPolicy();
         AdvanceAlpha(frameElapsed);
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
-        bool showingMotion = flight is not null || attackCue is not null || alphaCpu is not null && spellActivation.IsPlaying;
+        bool showingMotion = flight is not null || attackCue is not null || spellActivation.IsPlaying || DestructionBusy;
         bool turnInput = !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !showingMotion && !alphaBlocked && HumanChoice;
@@ -317,24 +327,12 @@ static partial class Game
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);
-        if (hand >= 0 && hand < ViewHand.Count)
-        {
-            var selectedCard = ViewHand[hand];
-            if (alphaCpu is null) DrawArtwork(selectedCard, 8, 78, 200, 290);
-            else
-            {
-                DrawArtwork(selectedCard, 8, 78, 200, 178);
-                var detail = selectedCard.Name + (selectedCard.IsMonster
-                    ? $"\nATK {selectedCard.Attack} / DEF {selectedCard.Defense}" : "") + "\n" + selectedCard.Description;
-                var detailLines = TextLines(detail, 205, 12);
-                for (int i = 0; i < Math.Min(8, detailLines.Count); i++)
-                    Label(detailLines[i], 8, 260 + i * 14, 12, i == 0 ? Gold : Color.White);
-            }
-        }
-        else if (attacker >= 0 && duel.Monsters[ViewPlayer, attacker] is Card selectedMonster) DrawArtwork(selectedMonster, 8, 78, 200, 290);
-        else Wrap("Hover a hand card. Right-click switches Summon/Activate to Set.", 12, 95, 195, 18);
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
+        if (!showingMotion && !selectingCard) UpdateDuelDetail();
+        DrawDuelDetail();
+        DrawGraveyards();
+        DrawDestructions();
         DrawDuelHand();
         DrawFlight();
         DrawAttackCue();
@@ -363,7 +361,7 @@ static partial class Game
         }
         var lines = TextLines(message, 205, 14);
         for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, presentation.Busy ? Color.White : Gold);
-        Label($"Deck {duel.DeckCount(0)}/{duel.DeckCount(1)} Grave {duel.Graveyard(0).Count}/{duel.Graveyard(1).Count}", 8, 568, 13);
+        Label($"Deck {duel.DeckCount(0)}/{duel.DeckCount(1)} Grave {VisibleGraveCount(0)}/{VisibleGraveCount(1)}", 8, 568, 13);
         Label("Right-click: Set", 8, 587, 12, Gold);
         if (choiceInput && HumanChoice && pendingOwner is not null)
         {

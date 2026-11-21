@@ -37,6 +37,30 @@ internal static class CpuDuelChecks
         cpu.Step(win);
         check(cpu.Step(win).Action == CpuAction.Spell && win.Winner == 1, "CPU: lethal spell wins");
 
+        var activation = State(1, [Spell(342)], deck: [weak]);
+        activation.Spells[1, 0] = Spell(1002, 21);
+        cpu.Step(activation);
+        check(cpu.Step(activation) is { Action: CpuAction.Spell, SourceZone: 1, Card.Id: 342 } &&
+            activation.Spells[1, 1] is null && activation.Graveyard(1).Last().Id == 342,
+            "CPU: spell activation reports its display zone even after the spell leaves the field");
+
+        var summonTrap = State(0, [strong]);
+        var destroyed = new List<DemoMonsterDestruction>();
+        summonTrap.MonsterDestroyed += destroyed.Add;
+        summonTrap.Spells[1, 3] = Spell(1002, 21);
+        summonTrap.SpellFaceDown[1, 3] = true;
+        check(summonTrap.SummonLeftmost(0, false, out _) &&
+            cpu.Step(summonTrap) is { Action: CpuAction.Response, SourceZone: 3, Card.Id: 1002 } &&
+            summonTrap.Spells[1, 3] is null && summonTrap.Graveyard(0).Single() == strong &&
+            destroyed.SequenceEqual(new[] { new DemoMonsterDestruction(0, 0, strong, false, false) }),
+            "CPU: Trap Hole reports its zone and one destroyed monster after normal resolution");
+
+        var tributeMonster = strong with { Properties = (strong.Properties & ~(15u << 25)) | (6u << 25) };
+        var tribute = State(0, [tributeMonster], own: weak);
+        tribute.MonsterDestroyed += destroyed.Add;
+        check(tribute.SummonLeftmost(0, false, out _, [0]) && tribute.Graveyard(0).Single() == weak &&
+            destroyed.Count == 1, "Presentation: tribute movement does not trigger destruction");
+
         var noMoves = State(1, [], own: weak, enemy: strong, deck: [Spell(999)]);
         int count = 0;
         while (noMoves.Turn == 2 && !noMoves.GameOver && count++ < 30)

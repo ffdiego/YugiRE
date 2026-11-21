@@ -67,7 +67,9 @@ static partial class Game
         screen = "duel";
         handPage = 0;
         ClearDuelSelection();
-        spellActivation.Stop();
+        StopSpellActivation();
+        ResetDestructions();
+        ResetDuelDetail();
         flight = null;
         travelClock.Reset();
         hoverClock.Reset();
@@ -82,6 +84,9 @@ static partial class Game
         var native = NativeDuelLayout.MonsterBounds(zone, near);
         return new(native.X, spell ? near ? 416 : 96 : native.Y, native.Width, native.Height);
     }
+
+    static Rectangle FieldZoneBounds(int player) =>
+        new(248, player == ViewPlayer ? 308 : 204, 66, 88);
 
     static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
     {
@@ -138,7 +143,7 @@ static partial class Game
             travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
             if (travelUpdate >= CardTravel.Updates) flight = null;
         }
-        if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || flight is not null || spellActivation.IsPlaying) return;
+        if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || flight is not null || spellActivation.IsPlaying || DestructionBusy) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;
         int? owner = CpuDuelController.PendingOwner(duel);
@@ -165,16 +170,16 @@ static partial class Game
             var origin = CpuHandBounds(index, handCount);
             BeginFlight(card, step.Player, zone, origin, !card.IsMonster, step.Action == CpuAction.Set);
         }
-        else if (step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
+        else if (step.SourceZone is int spellZone &&
+                 step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
         {
-            var center = step.SourceZone is int zone
-                ? NativeDuelLayout.MonsterCenter(zone, step.Player == ViewPlayer) : new CardPoint(525, 140);
-            BeginSpellActivation(center.X, center.Y);
+            BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true));
         }
         else if (step.Action == CpuAction.Position && step.SourceZone is int zone && duel.MonsterWasFlipped[step.Player, zone])
         {
             var center = NativeDuelLayout.MonsterCenter(zone, step.Player == ViewPlayer);
             BeginSpellActivation(center.X, center.Y, category: 1);
+            ShowActivatedDetail(card);
         }
     }
 
