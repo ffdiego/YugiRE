@@ -305,14 +305,17 @@ static partial class Game
     }
     static void DrawDuel()
     {
-        TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
+        TimeSpan frameElapsed = VisualReviewTiming.Elapsed(
+            TimeSpan.FromSeconds(Raylib.GetFrameTime()), presentation.Style,
+            visualReviewPaused, visualReviewStep);
         presentation.Advance(frameElapsed);
         int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
         bool effectsCouldAdvance = CanPlayCardEffects;
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
-        if (!MotionBusy && !PhaseBusy && (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
+        if (!visualReviewPaused && !MotionBusy && !PhaseBusy &&
+            (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         for (int player = 0; player < 2; player++)
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
@@ -320,9 +323,9 @@ static partial class Game
         bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
         bool showingMotion = MotionBusy || PhaseBusy;
-        bool turnInput = !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
+        bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
-        bool choiceInput = !showingMotion && !alphaBlocked && HumanChoice;
+        bool choiceInput = !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
         if (duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),

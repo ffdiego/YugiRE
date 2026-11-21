@@ -146,12 +146,24 @@ static partial class Game
                 else if (screen == "duel")
                 {
                     if (Raylib.IsKeyPressed(KeyboardKey.F3)) duelDebug = !duelDebug;
+                    if (Raylib.IsKeyPressed(KeyboardKey.F6))
+                    {
+                        visualReviewPaused = !visualReviewPaused;
+                        Console.WriteLine(visualReviewPaused ? "[visual-review] paused" : "[visual-review] resumed");
+                    }
+                    visualReviewStep = visualReviewPaused && Raylib.IsKeyPressed(KeyboardKey.F7);
                     DrawDuel();
                 }
                 else if (screen == "deck") DrawDeck();
             }
 
             Raylib.EndTextureMode();
+            if (screen == "duel" && Raylib.IsKeyPressed(KeyboardKey.F12))
+            {
+                try { CaptureVisualReview(canvas); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+                { Console.Error.WriteLine("[visual-review] screenshot failed: " + ex.Message); }
+            }
             Raylib.BeginDrawing(); Raylib.ClearBackground(Color.Black);
             Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height), new Rectangle(origin.X, origin.Y, width * scale, height * scale), Vector2.Zero, 0, Color.White);
             Raylib.EndDrawing();

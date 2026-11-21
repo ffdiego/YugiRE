@@ -37,6 +37,24 @@ internal static class LookAndFeelChecks
               "Presentation ticks: both rates reach the same card travel endpoint independently of frame partitioning");
         check(tickClock.Advance(TimeSpan.FromSeconds(1), instant) == 0,
               "Presentation ticks: Instant skips elapsed animations");
+        // Review mode: freeze only presentation; F7 advances one nominal
+        // update in Classic and Fast, with no timers or Core mutation.
+        var reviewClock = new PresentationTickClock();
+        TimeSpan reviewStep = VisualReviewTiming.Elapsed(
+            TimeSpan.FromSeconds(1), classic, paused: true, stepRequested: true);
+        check(VisualReviewTiming.Elapsed(TimeSpan.FromSeconds(1), classic,
+                  paused: true, stepRequested: false) == TimeSpan.Zero &&
+              reviewClock.Advance(reviewStep, classic) == 1 &&
+              VisualReviewTiming.Elapsed(TimeSpan.FromSeconds(3), classic,
+                  paused: false, stepRequested: false) == TimeSpan.FromSeconds(1),
+              "Visual review: F6 freezes and F7 steps exactly one nominal Classic update");
+        reviewClock.Reset();
+        check(reviewClock.Advance(VisualReviewTiming.Elapsed(
+                  TimeSpan.Zero, fast, paused: true, stepRequested: true), fast) == 1 &&
+              VisualReviewTiming.Elapsed(TimeSpan.FromSeconds(1), instant,
+                  paused: true, stepRequested: true) == TimeSpan.Zero,
+              "Visual review: Fast uses its own tick and Instant has no visual steps");
+
         var sequence = new PresentationSequence<string>();
         sequence.Enqueue("travel", CardTravel.Updates);
         sequence.Enqueue("glow", ActivationEffectPlayback.MaxUpdates);
