@@ -109,12 +109,14 @@
     {
       "address": "00451980",
       "family": "Abertura",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
     },
     {
       "address": "00451E60",
       "family": "Resultado do duelo",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelResultScreen.cs"
     },
     {
       "address": "004524F0",
