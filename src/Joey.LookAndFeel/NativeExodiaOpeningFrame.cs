@@ -2,7 +2,7 @@ namespace Joey.LookAndFeel;
 
 /// <summary>
 /// First, five-card phase of Exodia Draw 00454010. Native Update 00454000
-/// increases the counter by four; the first Draw branch runs while t < 316.
+/// increases the counter by four; the first Draw branch runs while t &lt; 316.
 /// The subsequent full Exodia assembly sequence is not reconstructed here.
 /// </summary>
 public readonly record struct NativeExodiaCardPose(
