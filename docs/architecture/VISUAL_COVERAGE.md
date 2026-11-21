@@ -5,7 +5,7 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 14/31 (45.16%).**
+**Implementadas (inclusive parciais): 16/31 (51.61%).**
 **Validadas no Joey original: 0/31.**
 
 Partial indica um componente visual C# relacionado, mas divergências
@@ -33,8 +33,8 @@ comparação com o executável original. Esta badge mede implementação,
 | `00450100` | Invocação especial | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `004505D0` | Ativação no campo | Partial | `src/Joey.App/DuelActivationScreen.cs` |
 | `00450AD0` | Ativação alternativa | Pending | — |
-| `00451980` | Abertura | Pending | — |
-| `00451E60` | Resultado do duelo | Pending | — |
+| `00451980` | Abertura | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
+| `00451E60` | Resultado do duelo | Partial | `src/Joey.App/DuelResultScreen.cs` |
 | `004524F0` | Fusão | Pending | — |
 | `004877F0` | Fusão | Pending | — |
 | `00453560` | Embaralhamento | Pending | — |
