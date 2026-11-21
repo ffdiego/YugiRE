@@ -4,7 +4,7 @@ Data da rodada: **21/11/2026**, após PRs #31, #33, #34, #35, #36,
 #37, #38, #39 e #40. O objetivo é comparar **comportamento
 observável**, sem exigir equivalência da implementação nativa.
 
-A cobertura declarada é **18/31 rotinas Draw com implementação
+A cobertura declarada é **19/31 rotinas Draw com implementação
 parcial ou concluída**, **0 Verified**: essa porcentagem não
 é um índice de fidelidade em pixels. Não promover nenhuma
 rotina a Verified só porque o DAT certo é usado.
@@ -87,6 +87,7 @@ uma posição do atlas.
 | Shuffle `00453560` | Buscas e Morphing Jar #2 | t=0/56/64/256/264/320 | centro, tamanho do BMP, moldura, sentido e som |
 | Fase `00481420`, aviso `00480C60` | Mudar para Battle e End Phase | 7 quadros de Battle (2 updates cada) | botão, animação de giro, cor, fade e ordenação |
 | Resultado `00451E60` | Vitória, derrota e empate | t=0/64/128/512 | sprite, centragem, fade, eventual saída/som |
+| Exodia `00454010` | Concluir as cinco peças na mão por compra, Sangan ou Hane-Hane | primeiro ramo t=0/16/32/64/80/312 | ordem das cinco miniaturas, ângulos, alfa, etapa posterior de montagem e áudio |
 
 Quando houver divergência, anexar **par** de PNGs (original
 e YugiRE) e o JSON do YugiRE, informando sprite/tipo,
@@ -96,7 +97,7 @@ Nome sugerido para registro:
 
 ## Pendências que não devem ser tratadas como implementadas
 
-As **13 rotinas Draw** abaixo constam `Pending`
+As **12 rotinas Draw** abaixo constam `Pending`
 no inventário após PR #40. Seus entrypoints e alguma análise
 estática existem, mas faltam evidências de evento, atlas,
 protocolo de jogo ou composição para uma fatia vertical segura.
@@ -113,7 +114,6 @@ protocolo de jogo ou composição para uma fatia vertical segura.
 | `0043DBE0` | Exclusão | evento nativo de banimento e efeito visual correto |
 | `00457520` | Moeda | ação e decisão por efeito, distribuição de quadros/resultado |
 | `00456B90` | Dado | ação e decisão por efeito, quadros/resultado |
-| `00454010` | Exodia | transição especial de vitória e animação completa |
 | `004584C0` | Vija | efeito de carta específico e máscara/recursos nativos |
 
 Priorizar trabalhos subsequentes por **efeitos acionáveis no Core
