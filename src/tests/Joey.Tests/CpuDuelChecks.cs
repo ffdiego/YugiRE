@@ -123,9 +123,14 @@ internal static class CpuDuelChecks
                 $"CPU: full duel seed {seed}, deterministic result independent of presentation");
     }
 
-    public static void RunCatalog(Action<bool, string> check, IReadOnlyList<Card> catalog)
+    public static void RunCatalog(Action<bool, string> check, Archive archive)
     {
-        var deck = AlphaDeck.Create(catalog);
+        var catalog = Catalog.Load(archive);
+        var packs = archive.Read(@"bin#\card_pack.bin");
+        var deck = AlphaDeck.Create(CardListResources.ForPacks(catalog, packs));
+        var art = CardArtwork.Load(archive, catalog);
+        check(deck.All(c => art.For(c) is { } image && !image.StartsWith(@"card\token_", StringComparison.OrdinalIgnoreCase)),
+            "Alpha: all cards are available in the packs and have non-token artwork");
         check(deck.Count == 40 && deck.GroupBy(c => c.Id).All(g => g.Count() <= 3), "Alpha: curated DAT deck has 40 cards, at most three copies");
         for (int seed = 0; seed < 30; seed++)
         {

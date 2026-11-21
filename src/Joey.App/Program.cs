@@ -8,7 +8,7 @@ return Game.Run(args);
 static partial class Game
 {
     static readonly Color Background = new(16, 23, 35, 255), Panel = new(29, 42, 57, 255), Gold = new(230, 185, 93, 255);
-    static List<Card> cards = [], orderedCards = [], joeyCards = [];
+    static List<Card> cards = [], orderedCards = [], joeyCards = [], playableCards = [];
     static bool joeyOnly;
     static readonly List<int> tributeZones = [];
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
@@ -44,8 +44,10 @@ static partial class Game
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
-            if (!includeUnused) orderedCards = CardListResources.ForPacks(orderedCards, archive.Read(@"bin#\card_pack.bin"));
-            joeyCards = CardListResources.ForPacks(orderedCards, archive.Read(@"bin#\card_pack.bin"), 4);
+            byte[] packs = archive.Read(@"bin#\card_pack.bin");
+            playableCards = CardListResources.ForPacks(orderedCards, packs);
+            if (!includeUnused) orderedCards = playableCards;
+            joeyCards = CardListResources.ForPacks(playableCards, packs, 4);
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
             Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
             InitializeDeck(args, path);
@@ -153,15 +155,18 @@ static partial class Game
         }
         Label(line, x, y, size);
     }
-    static void DrawArtwork(Card card, int x, int y, int w, int h)
+    static void DrawArtwork(Card card, int x, int y, int w, int h, bool sideways = false)
     {
         string? name = graphics.Artwork.For(card);
         if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
         var texture = graphics.Texture(name);
-        float scale = Math.Min(w / (float)texture.Width, h / (float)texture.Height);
+        float scale = sideways
+            ? Math.Min(w / (float)texture.Height, h / (float)texture.Width)
+            : Math.Min(w / (float)texture.Width, h / (float)texture.Height);
+        float width = texture.Width * scale, height = texture.Height * scale;
         Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
-            new Rectangle(x + (w - texture.Width * scale) / 2, y + (h - texture.Height * scale) / 2,
-                texture.Width * scale, texture.Height * scale), Vector2.Zero, 0, Color.White);
+            new Rectangle(x + w / 2f, y + h / 2f, width, height),
+            new Vector2(width / 2, height / 2), sideways ? 90 : 0, Color.White);
     }
     static void DrawCards()
     {

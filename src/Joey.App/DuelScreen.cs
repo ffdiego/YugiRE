@@ -133,9 +133,13 @@ static partial class Game
     static void DrawFieldCard(Card card, Rectangle rect, bool faceDown, bool defense = false)
     {
         int x = (int)rect.X + 3, y = (int)rect.Y + 2;
-        if (faceDown) DrawCardBack(x, y, (int)rect.Width - 6, (int)rect.Height - 4);
-        else DrawArtwork(card, x, y, (int)rect.Width - 6, (int)rect.Height - 4);
-        if (defense) Label("DEF", x + 2, y + (int)rect.Height - 16, 10, Gold);
+        int width = (int)rect.Width - 6, height = (int)rect.Height - 4;
+        if (faceDown)
+        {
+            int backHeight = defense ? Math.Min(height, width * 200 / 290) : height;
+            DrawCardBack(x, y + (height - backHeight) / 2, width, backHeight);
+        }
+        else DrawArtwork(card, x, y, width, height, sideways: defense);
     }
     static void DrawDuelField(bool blockInput)
     {

@@ -8,7 +8,7 @@ public static class AlphaDeck
         (77, 3), (25, 3), (40, 2), (378, 3), // Axe Raider, Battle Ox, Celtic Guardian, La Jinn
         (439, 3), (1, 2), (73, 3), (1050, 3), // 7 Colored Fish, Mystical Elf, Giant Soldier, Neo
         (500, 2), (590, 1), (427, 2), (101, 1), // FLIP: Bug, Jar, Faith, Mask
-        (345, 2), (342, 2), (338, 1), (341, 1), // LP: Ookazi, Sparks, Red Medicine, Dian Keto
+        (343, 1), (344, 1), (342, 2), (338, 1), (341, 1), // LP: Hinotama, Final Flame, Sparks, Red Medicine, Dian Keto
         (DrawSpellRules.PotOfGreed, 1), (DrawSpellRules.UpstartGoblin, 1),
         (300, 1), (1002, 2), (1056, 1)         // Sword, Trap Hole, Mirror Force
     ];

@@ -217,7 +217,7 @@ LabCaptureChecks.Run(Check);
 if (args.Length > 0)
 {
     using var attributeArchive = new Archive(args[0]);
-    CpuDuelChecks.RunCatalog(Check, Catalog.Load(attributeArchive));
+    CpuDuelChecks.RunCatalog(Check, attributeArchive);
     AiAttributeChecks.RunCatalog(Check,attributeArchive);
     AiCandidateSearchChecks.RunCatalog(Check,attributeArchive);
 }

@@ -27,7 +27,7 @@ static partial class Game
     {
         try
         {
-            var deck = AlphaDeck.Create(cards);
+            var deck = AlphaDeck.Create(playableCards);
             duel = DemoDuel.FromDecks(deck, deck, Random.Shared.Next());
         }
         catch (InvalidDataException ex)
@@ -46,7 +46,7 @@ static partial class Game
     static int RunAlphaHeadless()
     {
         const int seed = 1979;
-        var deck = AlphaDeck.Create(cards);
+        var deck = AlphaDeck.Create(playableCards);
         var match = DemoDuel.FromDecks(deck, deck, seed);
         CpuDuelController[] sides = [new(0), new(1)];
         for (int i = 0; i < 5000 && !match.GameOver; i++)
