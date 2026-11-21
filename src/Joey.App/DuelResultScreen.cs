@@ -13,7 +13,7 @@ static partial class Game
 
     static void DrawDuelResultNotice(TimeSpan elapsed)
     {
-        if (!duel.GameOver) return;
+        if (!duel.GameOver || (duel.ExodiaWinner is not null && ExodiaOpeningQueued)) return;
 
         // Native 00451E40 advances by four while 00451E60 draws.
         // We hold the fully visible result until the screen is left:
