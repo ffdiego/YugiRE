@@ -197,7 +197,7 @@ static partial class Game
             float width = sprite.Width * scale, height = sprite.Height * scale;
             Raylib.DrawTexturePro(sprite, new Rectangle(0, 0, sprite.Width, sprite.Height),
                 new Rectangle(center.X, center.Y, width, height),
-                new Vector2(width / 2, height / 2), 0, tint);
+                new System.Numerics.Vector2(width / 2, height / 2), 0, tint);
             return;
         }
 
