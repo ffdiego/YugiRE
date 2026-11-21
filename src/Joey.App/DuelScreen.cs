@@ -339,6 +339,7 @@ static partial class Game
         if (!showingMotion && !selectingCard) UpdateDuelDetail();
         AdvanceLifePresentation(frameElapsed);
         DrawDuelDetail();
+        DrawLifeFloatingDigits();
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
             Button("Done", 132, 584, 76, 16, choiceInput))
         {
