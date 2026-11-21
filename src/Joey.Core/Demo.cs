@@ -14,6 +14,8 @@ public sealed class DemoDuel
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
     public event Action<DemoHandTransfer>? HandTransferred;
     public event Action<DemoSpecialSummon>? MonsterSpecialSummoned;
+    /// <summary>Presentation-only: an effect has already changed a deck's order.</summary>
+    public event Action<int>? DeckShuffled;
     private readonly List<Card>[] hands = [[], []];
     private readonly Queue<Card>[] decks = [new(), new()];
     // Seeded sandbox-only effect shuffling; separate from initial deck randomization.
@@ -1042,6 +1044,7 @@ public sealed class DemoDuel
             effectRandom.Shuffle(shuffled);
             decks[p].Clear();
             foreach (var card in shuffled) decks[p].Enqueue(card);
+            DeckShuffled?.Invoke(p);
         }
 
         var results = new List<DemoExcavationResult>(2);
@@ -1152,6 +1155,7 @@ public sealed class DemoDuel
             effectRandom.Shuffle(remaining);
             decks[owner].Clear();
             foreach (var card in remaining) decks[owner].Enqueue(card);
+            DeckShuffled?.Invoke(owner);
         }
 
         if (pending.Destination == CardSelectionDestination.Hand)
@@ -1233,6 +1237,7 @@ public sealed class DemoDuel
         effectRandom.Shuffle(remainder);
         decks[owner].Clear();
         foreach (Card card in remainder) decks[owner].Enqueue(card);
+        DeckShuffled?.Invoke(owner);
         for (int i = 0; i < chosen.Length; i++)
             PlaceSelectedMonster(owner, zones[i], chosen[i],
                 pending.SummonPosition == CardSelectionPosition.FaceDownDefense);
