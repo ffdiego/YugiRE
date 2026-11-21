@@ -8,12 +8,16 @@ public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool Fa
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
 /// <summary>Presentation-only notification, emitted after an effect places a monster.</summary>
 public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense);
+/// <summary>Observable Exodia win; five card snapshots in head, arms, legs order.</summary>
+public sealed record DemoExodiaCompletion(int Player, IReadOnlyList<Card> Pieces);
 
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
 public sealed class DemoDuel
 {
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
+    /// <summary>Fired once after a player completes all five unique Exodia pieces.</summary>
+    public event Action<DemoExodiaCompletion>? ExodiaCompleted;
     /// <summary>Observational visual event after a valid tribute reaches the Graveyard.</summary>
     public event Action<DemoMonsterTribute>? MonsterTributed;
     public event Action<DemoHandTransfer>? HandTransferred;
@@ -116,6 +120,16 @@ public sealed class DemoDuel
     public DemoPhase Phase { get; private set; }
     public bool IsMainPhase2 => Phase == DemoPhase.Main && battlePhaseEndedThisTurn;
     public int? Winner { get; private set; }
+    public int? ExodiaWinner { get; private set; }
+
+    private void CheckExodia(int player)
+    {
+        if (GameOver) return;
+        var complete = ExodiaRules.CompleteHand(hands[player]);
+        if (complete is null) return;
+        ExodiaWinner = Winner = player;
+        ExodiaCompleted?.Invoke(new(player, complete));
+    }
     public const int EndTurnHandLimit = 6;
     // Native suppression/negation is not modeled; setting a spell does not activate it.
     public bool HandLimitDisabled => Enumerable.Range(0, 2).Any(p =>
@@ -136,6 +150,11 @@ public sealed class DemoDuel
             duel.hands[player].AddRange(shuffled.Take(5));
             foreach (var card in shuffled.Skip(5)) duel.decks[player].Enqueue(card);
         }
+        // Opening-hand win. Simultaneous Exodia opening hands are outside
+        // the observed Joey replay corpus; the seeded sandbox resolves the
+        // first player's hand first rather than claiming native priority.
+        duel.CheckExodia(0);
+        duel.CheckExodia(1);
         return duel;
     }
     /// <summary>
@@ -188,6 +207,7 @@ public sealed class DemoDuel
             duel.Monsters[0, slot] = side0Monsters[slot];
             duel.Monsters[1, slot] = side1Monsters[slot];
         }
+        duel.CheckExodia(activeSide);
         return duel;
     }
 
@@ -217,6 +237,8 @@ public sealed class DemoDuel
             hands[p].AddRange(monsters.Take(3)); hands[p].AddRange(spells);
             foreach (var c in monsters.Skip(3).Concat(spells)) decks[p].Enqueue(c);
         }
+        CheckExodia(0);
+        CheckExodia(1);
     }
     public static int NormalTributes(Card card) => card.Level <= 4 ? 0 : card.Level <= 6 ? 1 : 2;
     public bool CanSummonFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main && !summoned &&
@@ -327,6 +349,11 @@ public sealed class DemoDuel
         if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
         DrawToHand(ActivePlayer);
         drawn = true;
+        if (ExodiaWinner == ActivePlayer)
+        {
+            message = "Exodia complete: all five Forbidden One pieces in hand.";
+            return true;
+        }
         // Native human trace: Draw precedes Revival Jam's return (P002).
         // This is a bounded synthetic Standby hook; no full phase engine yet.
         ResolvePostDrawStandbyEffects();
@@ -967,6 +994,7 @@ public sealed class DemoDuel
                 LastDeckFlow = DeckFlowRules.DrawThenDiscardNewSpells(
                     card.Id, owner, 1 - owner, decks[1 - owner],
                     hands[1 - owner], graves[1 - owner], 3);
+                CheckExodia(1 - owner);
                 // Bounded demo policy, not an observed native deck-out sequence:
                 // a forced draw shortfall is a loss for the drawing player.
                 if (LastDeckFlow.DrawFailed && Winner is null)
@@ -994,9 +1022,12 @@ public sealed class DemoDuel
                 for (int p = 0; p < 2; p++)
                     for (int i = 0; i < 5 && decks[p].Count > 0; i++)
                         DrawToHand(p);
-                if (deckOut[0] && deckOut[1]) IsDraw = true;
-                else if (deckOut[0]) Winner = 1;
-                else if (deckOut[1]) Winner = 0;
+                if (!GameOver)
+                {
+                    if (deckOut[0] && deckOut[1]) IsDraw = true;
+                    else if (deckOut[0]) Winner = 1;
+                    else if (deckOut[1]) Winner = 0;
+                }
                 message = deckOut[0] || deckOut[1]
                     ? $"{card.Name} FLIP: both discard and draw; insufficient deck cards end the demo duel."
                     : $"{card.Name} FLIP: both discard their hands and draw 5.";
@@ -1010,6 +1041,7 @@ public sealed class DemoDuel
         int index = hands[player].Count;
         hands[player].Add(card);
         HandTransferred?.Invoke(new(player, index, card, FromDeck: true));
+        CheckExodia(player);
     }
 
     /// <summary>
@@ -1163,7 +1195,10 @@ public sealed class DemoDuel
         }
 
         if (pending.Destination == CardSelectionDestination.Hand)
+        {
             hands[owner].Add(option.Card);
+            CheckExodia(owner);
+        }
         else
         {
             bool set = faceDownDefense ||
@@ -1644,6 +1679,7 @@ public sealed class DemoDuel
         foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
             RemoveEquipmentCore(e.Owner, e.SourceZone);
         hands[player].Add(card);
+        CheckExodia(player);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
     public void NextTurn() => EndTurn(out _);
