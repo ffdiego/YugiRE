@@ -50,10 +50,9 @@ compras ou respostas lógicas. O FPS do programa original ainda não foi medido.
 A função de aproximação implementada é
 `target + trunc((current - target) * 3 / 4)` **por update**.
 `HandPresentation.CenterX` mantém as fórmulas anteriores, agora fora do
-`Joey.Core`. Os `108×153` pixels das cartas na mão, o tamanho
-`66×88` dos slots e a posição das zonas de magias são **escolhas do cliente**
-ainda não confirmadas como dimensões nativas universais. Os centros e a ordem
-espelhada dos monstros vêm da evidência, os retângulos são a nossa UI.
+`Joey.Core`. As dimensões atuais da mão estão descritas na seção de mãos.
+Os `66×88` são retângulos de clique do cliente. Os centros e a ordem
+espelhada das zonas são recuperados das tabelas nativas.
 
 O `Joey.App` usa `NativeDuelLayout.MonsterBounds` para zonas de monstros,
 `HandPresentation.CenterX` para a mão e
@@ -279,10 +278,15 @@ para o lado próprio ou `525 + span/2` para o adversário e soma ou
 subtrai `trunc(span × índice / (N−1))` quando há mais de uma carta.
 As âncoras Y=600 e Y=0 vêm de `005DB608`. Em `00418771–0041878B`, a
 largura e a altura globais são inicializadas pela consulta virtual
-`+38h` do recurso. A implementação conserva 108 × 153, compatível
-com o recurso de moldura grande identificado anteriormente. Ainda
-falta ligar a seleção de subimagem a esse recurso e ao recorte de cada
-carta em Draw.
+`+38h` do recurso. O valor carregado nesse caminho não foi observado em execução.
+Em 00:02.5 do vídeo, os cinco versos adversários medem cerca de
+100 pixels no eixo horizontal e seus centros distam 103 px. Com cinco
+cartas, a fórmula estática está no limite de 512 e o intervalo total
+observado de 412 implica largura de cálculo de 200. Assim, a largura
+de cálculo é derivada da fórmula e do vídeo. O desenho usa 100 × 145,
+compatível com a escala de metade do verso de 200 × 290 do DAT e com
+o recorte visível. A seleção final de subimagem e a escala exata em
+Draw ainda não estão ligadas de ponta a ponta pelo código nativo.
 
 As duas mãos da Alpha agora usam a distribuição inteira, sem
 paginação. O canvas recorta as pontas das cartas junto às bordas.

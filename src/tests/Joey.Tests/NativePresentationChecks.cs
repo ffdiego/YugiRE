@@ -38,18 +38,25 @@ internal static class NativePresentationChecks
         catch (ArgumentOutOfRangeException) { badZone = true; }
         check(badZone, "Native presentation: out-of-range zone is rejected");
 
-        check(HandPresentation.CenterX(0, 6) == 366 &&
-              HandPresentation.CenterX(5, 6) == 684 &&
+        check(HandPresentation.CenterX(0, 6) == 319 &&
+              HandPresentation.CenterX(5, 6) == 731 &&
               HandPresentation.CenterX(0, 1) == 521 &&
               HandPresentation.Approach(600, 568) == 592,
               "Native presentation: hand fan and smoothing moved out of Joey.Core");
-        check(HandPresentation.Bounds(0, 5, true).Y == 524 &&
-              HandPresentation.Bounds(0, 5, false).Y == -76 &&
-              HandPresentation.Bounds(0, 5, true, 32).Y == 492 &&
+        check(HandPresentation.Bounds(0, 5, true).Y == 528 &&
+              HandPresentation.Bounds(0, 5, false).Y == -72 &&
+              HandPresentation.Bounds(0, 5, true, 32).Y == 496 &&
               Enumerable.Range(0, 12).All(i => HandPresentation.CenterX(i, 12, true) +
                   HandPresentation.CenterX(i, 12, false) == 1050) &&
               Enumerable.Range(0, 12).Select(i => HandPresentation.CenterX(i, 12)).Distinct().Count() == 12,
               "Both hands use the native side anchors and fit all cards in the fan");
+        var fiveCpuCards = Enumerable.Range(0, 5)
+            .Select(i => HandPresentation.Bounds(i, 5, nearSide: false)).Reverse().ToArray();
+        check(fiveCpuCards.Select(card => card.X).SequenceEqual(new[] { 269, 372, 475, 578, 681 }) &&
+              fiveCpuCards.Zip(fiveCpuCards.Skip(1), (left, right) => right.X - left.X - left.Width)
+                  .All(gap => gap == 3) &&
+              HandPresentation.CenterX(1, 6) - HandPresentation.CenterX(0, 6) < HandPresentation.CardWidth,
+              "Hand rendering: five opponent cards have visible gaps; six overlap at the native span cap");
         check(new DuelLookAndFeel().MoveCardAxis(600, 568) == 592 &&
               new FastLookAndFeel().MoveCardAxis(600, 568) == 592 &&
               new SilentLookAndFeel().MoveCardAxis(600, 568) == 592 &&

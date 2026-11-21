@@ -7,15 +7,16 @@ namespace Joey.LookAndFeel;
 /// </summary>
 public static class HandPresentation
 {
-    // These sprite dimensions are the current client's asset choice; they
-    // have not been shown to be global native renderer dimensions.
-    public const int CardWidth = 108, CardHeight = 153, HoverOffset = 32;
+    // 0045C600 uses a resource width, not the width projected on the canvas.
+    // On the reference frame the 200-pixel card is shown at half size.
+    public const int LayoutCardWidth = 200;
+    public const int CardWidth = LayoutCardWidth / 2, CardHeight = 290 / 2, HoverOffset = 32;
 
     public static int CenterX(int index, int count, bool nearSide = true)
     {
         if (count < 1 || index < 0 || index >= count)
             throw new ArgumentOutOfRangeException(nameof(index));
-        int span = Math.Min((CardWidth / 2 + 8) * count, 512) - CardWidth / 2;
+        int span = Math.Min((LayoutCardWidth / 2 + 8) * count, 512) - LayoutCardWidth / 2;
         int offset = span / 2 - (count > 1 ? span * index / (count - 1) : 0);
         return 525 + (nearSide ? -offset : offset);
     }
