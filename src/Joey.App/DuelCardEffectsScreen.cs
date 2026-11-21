@@ -9,6 +9,7 @@ static partial class Game
     sealed record HandTransfer(DemoHandTransfer Transfer) : CardEffect;
     sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
+    sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
@@ -22,6 +23,8 @@ static partial class Game
         cardEffectClock.Reset();
         duel.MonsterDestroyed += monster => QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
         duel.HandTransferred += transfer => QueueCardEffect(new HandTransfer(transfer), CardTravel.Updates);
+        duel.MonsterSpecialSummoned += summon =>
+            QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
     }
 
     static void QueueCardEffect(CardEffect effect, int updates)
@@ -148,6 +151,9 @@ static partial class Game
             case NormalSummonPlacement summon:
                 DrawNormalSummon(summon, cardEffects.ElapsedUpdates);
                 break;
+            case SpecialSummonPlacement special:
+                DrawSpecialSummon(special.Summon, cardEffects.ElapsedUpdates);
+                break;
         }
     }
 
@@ -212,6 +218,40 @@ static partial class Game
         if (offset > 0)
             Raylib.DrawTextureRec(sprite, new Rectangle(0, 0, sprite.Width, offset),
                 new System.Numerics.Vector2(x, y + firstHeight), tint);
+    }
+
+    static void DrawSpecialSummon(DemoSpecialSummon summon, int elapsedUpdates)
+    {
+        var frame = NativeSpecialSummonFrame.FromUpdate(elapsedUpdates, effectCosine);
+        var center = DuelCardLayout.Center(DuelCardZone.Monster, summon.Player == ViewPlayer, summon.Zone);
+        if (frame.SpiralFrame is int sprite && frame.SpiralOpacity > 0)
+        {
+            // Native 00450100 selects the a/d set by position flag 0x4000.
+            string name = summon.FaceDownDefense
+                ? DatGraphics.SpecialSummonDefenseSprites[sprite]
+                : DatGraphics.SpecialSummonAttackSprites[sprite];
+            DrawEffectStamp(name, center, 0, 0x10000, frame.SpiralOpacity);
+        }
+
+        if (!frame.DrawCardOverlay) return;
+        // Native 0054E890 transforms the card at obj+0x108. The resource
+        // and size/mask are not fully reconstructed; this is the client's
+        // provisional card overlay using original mini/back DAT textures.
+        string? full = graphics.Artwork.For(summon.Card);
+        string nameOfCard = summon.FaceDownDefense
+            ? DatGraphics.DuelBack
+            : full is not null && full.StartsWith(@"card\\", StringComparison.OrdinalIgnoreCase)
+                ? @"mini\\" + full[5..] : DatGraphics.DuelBack;
+        var texture = graphics.Texture(nameOfCard);
+        var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster,
+            summon.Player == ViewPlayer, summon.Zone, summon.FaceDownDefense, summon.FaceDownDefense);
+        float scale = frame.OverlayScaleFixed8 / 256f;
+        float width = geometry.Bounds.Width * scale, height = geometry.Bounds.Height * scale;
+        Raylib.DrawTexturePro(texture,
+            new Rectangle(0, 0, texture.Width, texture.Height),
+            new Rectangle(center.X, center.Y, width, height),
+            new System.Numerics.Vector2(width / 2, height / 2),
+            geometry.Degrees, Color.White);
     }
 
     static void DrawHandTransfer(DemoHandTransfer move)
