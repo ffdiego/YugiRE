@@ -73,6 +73,50 @@ internal static class LookAndFeelChecks
               DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
               DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");
+        // Duel opening 00451950/00451980: 40 native updates, centered
+        // logo shrinks from 1.5x, stays opaque, then fades away.
+        var noticeCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var start0 = NativeDuelStartFrame.FromUpdate(0, noticeCosine);
+        var startMid = NativeDuelStartFrame.FromUpdate(8, noticeCosine);
+        var startHold = NativeDuelStartFrame.FromUpdate(32, noticeCosine);
+        var startFinal = NativeDuelStartFrame.FromUpdate(39, noticeCosine);
+        check(NativeDuelStartFrame.Updates == 40 &&
+              start0.Counter == 0 && start0.Opacity == 0 &&
+              start0.ScaleFixed8 == 384 &&
+              startMid.Counter == 64 && startMid.ScaleFixed8 == 256 &&
+              startMid.Opacity == 255 && startHold.Opacity == 255 &&
+              startFinal.Counter == 312 && startFinal.Opacity is > 0 and < 255,
+              "Duel start: native logo scale and three fade/hold windows");
+        bool outOfRangeStartRejected = false;
+        try { NativeDuelStartFrame.FromUpdate(40, noticeCosine); }
+        catch (ArgumentOutOfRangeException) { outOfRangeStartRejected = true; }
+        check(outOfRangeStartRejected,
+              "Duel start: stop after last live Draw sample at counter 312");
+        var introQueue = new PresentationSequence<string>();
+        introQueue.Enqueue("Duel Start", NativeDuelStartFrame.Updates);
+        introQueue.Enqueue("opening hand", CardTravel.Updates);
+        introQueue.Advance(NativeDuelStartFrame.Updates);
+        check(introQueue.Current?.Kind == "opening hand" &&
+              introQueue.ElapsedUpdates == 0,
+              "Duel start: hand dealing follows the opening notice in the presentation FIFO");
+
+        // Duel result 00451E40/00451E60: counter +4 and native
+        // fade-in over 128; the later Draw fade-out is not assumed
+        // reachable once Update clears the secondary flag at 0x200.
+        var end0 = NativeDuelEndFrame.FromUpdate(0, noticeCosine);
+        var endMid = NativeDuelEndFrame.FromUpdate(16, noticeCosine);
+        var endOpaque = NativeDuelEndFrame.FromUpdate(32, noticeCosine);
+        var endHeld = NativeDuelEndFrame.FromUpdate(400, noticeCosine);
+        check(end0.Counter == 0 && end0.Opacity == 0 &&
+              endMid.Counter == 64 && endMid.Opacity is > 0 and < 255 &&
+              endOpaque.Counter == 128 && endOpaque.Opacity == 255 &&
+              endHeld.Counter == 512 && endHeld.Opacity == 255,
+              "Duel result: fade-in and stable banner after the native update limit");
+        bool negativeResultRejected = false;
+        try { NativeDuelEndFrame.FromUpdate(-1, noticeCosine); }
+        catch (ArgumentOutOfRangeException) { negativeResultRejected = true; }
+        check(negativeResultRejected, "Duel result: reject negative native update");
+
         // Special Summon 004500E0/00450100: 41 native Updates, a/d
         // variants with four frames cycling every two Updates, plus card
         // overlay for 64 < t < 320.
