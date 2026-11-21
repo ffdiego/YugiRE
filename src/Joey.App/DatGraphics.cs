@@ -23,6 +23,10 @@ sealed class DatGraphics : IDisposable
         @"j\duel\effect\eff_star1_y.bmp"
     ];
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    public const string ShuffleFrameEnglish = @"j\duel\effect\deck_shuf_waku_e.yga";
+    public const string ShuffleManifest = @"j\duel\effect\shuffle.txt";
+    public static readonly string[] ShuffleSprites = Enumerable.Range(1, 5)
+        .Select(i => $@"j\duel\effect\deck_shuf{i}.bmp").ToArray();
     public const string DuelStartEnglish = @"j\duel\effect\duel_start_e.bmp";
     public const string DuelWinEnglish = @"j\duel\effect\duel_win_e.yga";
     public const string DuelLoseEnglish = @"j\duel\effect\duel_lose_e.yga";
@@ -161,7 +165,8 @@ sealed class DatGraphics : IDisposable
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
             LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
-            name.Equals(DuelStartEnglish, StringComparison.OrdinalIgnoreCase))
+            name.Equals(DuelStartEnglish, StringComparison.OrdinalIgnoreCase) ||
+            ShuffleSprites.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -178,7 +183,7 @@ sealed class DatGraphics : IDisposable
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts)
+            .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts).Concat(ShuffleSprites)
             .Append(DuelDetailBackground).Append(DuelStartEnglish)
             .Append(AttackSword).Append(AttackSwordPartial)
             .Distinct(StringComparer.OrdinalIgnoreCase);
@@ -215,7 +220,7 @@ sealed class DatGraphics : IDisposable
         _ = NativeYgaSprite.Decode(archive.Read(AttackImpact), static (data, size) => Archive.Decode(data, size));
         count++;
         foreach (string name in SpecialSummonAttackSprites.Concat(SpecialSummonDefenseSprites)
-                     .Concat(DuelResultsEnglish))
+                     .Concat(DuelResultsEnglish).Append(ShuffleFrameEnglish))
         {
             var spiral = NativeYgaSprite.Decode(archive.Read(name),
                 static (data, size) => Archive.Decode(data, size));
