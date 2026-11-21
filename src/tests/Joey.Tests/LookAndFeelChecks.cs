@@ -68,8 +68,8 @@ internal static class LookAndFeelChecks
               "Destruction FIFO: second monster starts after the first finishes");
         check(NativeDuelLayout.GraveBounds(true).X > NativeDuelLayout.MonsterBounds(4, true).X &&
               NativeDuelLayout.GraveBounds(false).X < NativeDuelLayout.MonsterBounds(4, false).X &&
-              NativeDuelLayout.GraveBounds(true).Y == NativeDuelLayout.MonsterBounds(4, true).Y &&
-              NativeDuelLayout.GraveBounds(false).Y == NativeDuelLayout.MonsterBounds(4, false).Y &&
+              DuelCardLayout.FrameCenter(NativeDuelLayout.GraveBounds(true)) == new CardPoint(760, 366) &&
+              DuelCardLayout.FrameCenter(NativeDuelLayout.GraveBounds(false)) == new CardPoint(290, 234) &&
               DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
               DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");

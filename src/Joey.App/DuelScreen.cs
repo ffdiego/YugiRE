@@ -169,8 +169,7 @@ static partial class Game
             bool own = player == ViewPlayer;
             // Dedicated field zone, independent of the five ordinary spell slots.
             var fieldRect = FieldZoneBounds(player);
-            Raylib.DrawRectangleLinesEx(fieldRect, 1, own ? Gold : Color.Gray);
-            Label("FIELD", (int)fieldRect.X + 7, (int)fieldRect.Y - 15, 11, Gold);
+            if (duelDebug) Raylib.DrawRectangleLinesEx(fieldRect, 1, own ? Gold : Color.Gray);
             if (duel.FieldSpells[player] is Card fieldCard)
             {
                 if (!ActivationInFlight(fieldRect))
@@ -185,8 +184,11 @@ static partial class Game
                 var monsterRect = ZoneBounds(player, zone, false);
                 var spellRect = ZoneBounds(player, zone, true);
                 var monster = duel.Monsters[player, zone];
-                Raylib.DrawRectangleLinesEx(monsterRect, 1, own ? Gold : Color.Gray);
-                Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
+                if (duelDebug)
+                {
+                    Raylib.DrawRectangleLinesEx(monsterRect, 1, own ? Gold : Color.Gray);
+                    Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
+                }
                 if (monster != null && !InFlight(player, zone, false))
                 {
                     var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster, own, zone,
@@ -312,47 +314,20 @@ static partial class Game
         bool turnInput = !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !showingMotion && !alphaBlocked && HumanChoice;
+        Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
         if (duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),
-                new Rectangle(230, 0, 570, 600), Vector2.Zero, 0, Color.White);
-        else if (alphaCpu is null)
-            Raylib.DrawTexture(graphics.Texture(@"j\duel\field\fie_normal.bmp"), 230, 0, Color.White);
-        else
-        {
-            Raylib.DrawRectangle(230, 72, 556, 229, new Color(35, 51, 63, 255));
-            Raylib.DrawRectangle(230, 301, 556, 299, new Color(21, 66, 66, 255));
-            Raylib.DrawLine(230, 301, 786, 301, Gold);
-        }
+                ToRectangle(DuelSurfaceLayout.Board), Vector2.Zero, 0, Color.White);
         if (alphaCpu is not null) DrawCpuHand();
-        if (Button("< Menu", 252, 8, 85, 30)) { screen = "menu"; return; }
-        Label(alphaCpu is null ? $"LOCAL DEMO · {presentation.Style.Name}" : "ALPHA - VS CPU", 345, 17, 13, Gold);
         DrawPhasePanel(turnInput);
-        if (Button("Reset", 454, 8, 75, 30))
-        {
-            if (alphaCpu is null) StartDemo(); else StartAlpha();
-            return;
-        }
-        if (alphaCpu is null && Button(optionalEffectPrompts == EffectPromptMode.Ask
-                ? "Prompts: ON" : "Prompts: OFF", 610, 74, 168, 30, !selectingCard))
-            optionalEffectPrompts = optionalEffectPrompts == EffectPromptMode.Ask
-                ? EffectPromptMode.Off : EffectPromptMode.Ask;
-        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
-            Button("Done FLIP", 605, 74, 125, 30, choiceInput))
-        {
-            duel.FinishFlipTargets(out message);
-            ClearDuelSelection();
-        }
-        int turnLabel = displayedTurn == 0 ? duel.Turn : displayedTurn;
-        int displayedPlayer = (turnLabel - 1) % 2;
-        string playerLabel = alphaCpu is null ? $"P{displayedPlayer + 1}" : displayedPlayer == 0 ? "You" : "CPU";
-        string heading = duel.IsDraw ? "DRAW" : duel.Winner is int winner
-            ? alphaCpu is null ? $"PLAYER {winner + 1} WINS" : winner == 0 ? "YOU WIN" : "CPU WINS"
-            : $"Turn {turnLabel} | {playerLabel}";
-        Raylib.DrawRectangle(250, 44, 540, 24, Panel);
-        Label(heading, 256, 49, 14, Gold);
-        if (Button("Cancel", 530, 8, 63, 30, actionInput)) { ClearDuelSelection(); message = "Selection cleared."; }
-        if (Button("< Hand", 600, 8, 78, 30, actionInput && handPage > 0)) { handPage--; ClearDuelSelection(); }
-        if (Button("Hand >", 684, 8, 78, 30, actionInput && (handPage + 1) * 6 < ViewHand.Count)) { handPage++; ClearDuelSelection(); }
+
+        if (actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
+        if (actionInput && handPage > 0 &&
+            (Button("<", 266, 565, 30, 24) || Raylib.IsKeyPressed(KeyboardKey.PageUp)))
+        { handPage--; ClearDuelSelection(); }
+        if (actionInput && (handPage + 1) * 6 < ViewHand.Count &&
+            (Button(">", 765, 565, 30, 24) || Raylib.IsKeyPressed(KeyboardKey.PageDown)))
+        { handPage++; ClearDuelSelection(); }
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);
@@ -360,6 +335,12 @@ static partial class Game
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
         if (!showingMotion && !selectingCard) UpdateDuelDetail();
         DrawDuelDetail();
+        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+            Button("Done", 132, 584, 76, 16, choiceInput))
+        {
+            duel.FinishFlipTargets(out message);
+            ClearDuelSelection();
+        }
         DrawSidePiles();
         DrawDuelHand();
         DrawCardEffects();
@@ -374,13 +355,16 @@ static partial class Game
             string help = flip.Effect switch
             {
                 DemoFlipEffect.ReturnUpToTwo =>
-                    $"P{flip.Owner + 1} Penguin: {duel.SelectedFlipTargets.Count}/2, select or Done",
+                    $"Select up to 2 ({duel.SelectedFlipTargets.Count}/2)",
                 DemoFlipEffect.ReturnOne =>
-                    $"P{flip.Owner + 1} Hane-Hane: choose ONE eligible monster",
-                _ => $"P{flip.Owner + 1} FLIP: choose any monster on the field"
+                    "Select one monster",
+                _ => "Select a FLIP target"
             };
-            if (HumanChoice) Label(help, 248, alphaCpu is null ? 78 : 195, 13, Gold);
+            if (HumanChoice) Label(help, 10, 587, 11, Gold);
         }
+        else if (actionInput && (choosingTributes || choosingEquip || duel.PendingEndDiscards > 0))
+            Label(choosingTributes ? "Choose tributes (Backspace cancels)" : choosingEquip
+                ? "Choose equip target (Backspace cancels)" : $"Discard {duel.PendingEndDiscards} to end turn", 10, 587, 11, Gold);
         if (message != previousDuelMessage)
         {
             DuelPresentationCue cue = message.Contains("FLIP", StringComparison.OrdinalIgnoreCase)
@@ -391,9 +375,13 @@ static partial class Game
             presentation.Show(cue);
             previousDuelMessage = message;
         }
-        var lines = TextLines(message, 365, 12);
-        if (lines.Count > 0)
-            Label(lines[0], 416, 50, 12, presentation.Busy ? Color.White : Gold);
+        if (duel.GameOver)
+        {
+            string result = duel.IsDraw ? "DRAW" : $"PLAYER {duel.Winner.GetValueOrDefault() + 1} WINS";
+            Raylib.DrawRectangle(400, 278, 250, 44, Panel);
+            Label(result, 525 - MeasureLabel(result, 22) / 2, 286, 22, Gold);
+        }
+        if (duelDebug) DrawDuelDebug(selectingCard);
         if (choiceInput && HumanChoice && pendingOwner is not null)
         {
             DrawCardSelectionOverlay();
@@ -402,4 +390,20 @@ static partial class Game
             DrawEffectDecisionOverlay();
         }
     }
+    static void DrawDuelDebug(bool selectingCard)
+    {
+        if (Button("Ocultar debug", 262, 8, 142, 30)) duelDebug = false;
+        if (Button("< Menu", 411, 8, 85, 30)) screen = "menu";
+        if (Button("Reset", 501, 8, 75, 30))
+        {
+            if (alphaCpu is null) StartDemo(); else StartAlpha();
+        }
+        if (alphaCpu is null && Button(optionalEffectPrompts == EffectPromptMode.Ask
+                ? "Prompts: ON" : "Prompts: OFF", 583, 8, 172, 30, !selectingCard))
+            optionalEffectPrompts = optionalEffectPrompts == EffectPromptMode.Ask
+                ? EffectPromptMode.Off : EffectPromptMode.Ask;
+        Raylib.DrawRectangle(262, 42, 502, 26, Panel);
+        Label(TextLines(message, 490, 12)[0], 268, 49, 12);
+    }
+
 }

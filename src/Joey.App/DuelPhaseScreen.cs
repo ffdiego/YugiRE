@@ -77,15 +77,14 @@ static partial class Game
                 DuelPhaseDisplay.End => duel.Phase == DemoPhase.Main,
                 _ => false
             });
-            var bounds = new Rectangle(218, 90 + i * 75, 28, 50);
+            var bounds = ToRectangle(DuelSurfaceLayout.PhaseButton(i));
             bool active = phase == displayedPhase;
             var sprite = graphics.Texture(DatGraphics.PhaseButtons[i]);
-            const int frameWidth = 40, frameHeight = 75;
+            const int frameWidth = DuelSurfaceLayout.PhaseWidth, frameHeight = DuelSurfaceLayout.PhaseHeight;
             int sourceX = active || enabled && Hit(bounds) ? frameWidth : 0;
             int sourceY = (displayedTurn & 1) == 0 && displayedTurn != 0 ? frameHeight : 0;
             Raylib.DrawTexturePro(sprite, new Rectangle(sourceX, sourceY, frameWidth, frameHeight),
                 bounds, System.Numerics.Vector2.Zero, 0, Color.White);
-            Raylib.DrawRectangleLinesEx(bounds, 1, active || enabled ? Gold : Color.Gray);
             if (!enabled || !Hit(bounds) || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
 
             bool accepted = phase switch
@@ -104,8 +103,6 @@ static partial class Game
     static void DrawPhaseNotice()
     {
         if (phaseUpdates <= 0) return;
-        Raylib.DrawRectangle(350, 278, 350, 44, Panel);
-        Raylib.DrawRectangleLines(350, 278, 350, 44, Gold);
         var banner = graphics.Texture(DatGraphics.PhaseBanners[(int)displayedPhase]);
         Raylib.DrawTexture(banner, 525 - banner.Width / 2, 300 - banner.Height / 2, Color.White);
     }

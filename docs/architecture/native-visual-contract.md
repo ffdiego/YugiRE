@@ -243,3 +243,30 @@ campo, com composição própria.
   YugiRE mais 180° para a fileira oposta, inclusive em defesa. Ainda
   falta ligar estaticamente o lado do dono à atribuição do ângulo
   no executável. A coluna de detalhes exibe a arte em pé.
+
+## Auditoria de composição em 800 × 600
+
+| Superfície | Geometria | Evidência |
+| --- | --- | --- |
+| Campo padrão | (230,0), 570 × 600 | `00449330` carrega `duel/field/field.txt`. A vtable `005DB060` chama Draw `00449850`. Em `004498AA–004498C0` o caminho estável passa Y=0 e X=`0xE6`. Dimensões do BMP. |
+| Fundo lateral | (0,0), 230 × 600 | `detail.txt`, dimensões do DAT e alinhamento observado no vídeo. O fundo do cliente ocupa o canvas à esquerda do campo sem encolher. |
+| Botões | X=221, Y=82/157/232/307/382/457, célula 40 × 75 | `phase.txt` codifica `1000 × X + Y`. Draw separa quociente e resto em `0048169C–004816BD`. `pha_s_*.bmp` mede 80 × 150, dividido em duas colunas e duas linhas em `0048165A–0048168C`. |
+
+O campo e o fundo lateral são desenhados antes da faixa de fases. Essa
+faixa cobre X=221…260, cruzando a junção X=230 conforme as posições do
+manifesto. Antes, a faixa era reduzida a 28 × 50 e a lateral a 214 px,
+deixando um vão artificial. A malha de diagnóstico foi retirada do
+quadro limpo, assim como a moldura opaca dos avisos e a barra de log sobre
+o campo. Menu, reset, opções de prompts e log ficam no overlay opcional.
+Esc abre o menu, Backspace cancela a seleção, e a paginação da mão e
+a confirmação do FLIP aparecem apenas quando cabíveis, nas bordas.
+Esses controles e os painéis de LP/descrição ainda usam composição do
+cliente. A mão adversária, o pivô dos avisos, os prompts e a distribuição
+dos quadros de rotação são pendências de fidelidade.
+
+As pilhas usam os centros recuperados em `005DB5B0` (deck) e
+`005DB5C0` (cemitério), acessados por `0045C280` nas regiões 0D e 0E.
+O deck adversário fica em (290,140). Com o verso de 50 px, sua borda
+esquerda fica em 265, deixando quatro pixels após a faixa de fases.
+O foco desta correção é a composição do campo padrão, sem aplicar
+os ramos nativos de transição entre fundos.

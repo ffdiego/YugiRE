@@ -63,13 +63,10 @@ static partial class Game
     static void DrawDuelDetail()
     {
         activatedDetail = false;
-        var background = graphics.Texture(DatGraphics.DuelDetailBackground);
-        Raylib.DrawTexturePro(background, new Rectangle(0, 0, background.Width, background.Height),
-            new Rectangle(0, 0, 214, 600), System.Numerics.Vector2.Zero, 0, Color.White);
-        Raylib.DrawRectangle(8, 10, 198, 32, Panel);
-        Raylib.DrawRectangle(8, 553, 198, 32, Panel);
-        Label($"Opponent LP  {duel.Life[1 - ViewPlayer]}", 12, 16, 19, Gold);
-        Label($"Your LP  {duel.Life[ViewPlayer]}", 12, 561, 19, Gold);
+        Raylib.DrawRectangle(62, 4, 137, 28, Panel);
+        Raylib.DrawRectangle(62, 552, 137, 28, Panel);
+        Label(duel.Life[1 - ViewPlayer].ToString(), 74, 9, 19, Gold);
+        Label(duel.Life[ViewPlayer].ToString(), 74, 557, 19, Gold);
         if (detailCard is not { } card) return;
 
         DrawArtwork(card, 14, 53, 186, 265);

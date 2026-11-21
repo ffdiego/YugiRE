@@ -122,6 +122,8 @@ static partial class Game
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
                     if (Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
+                    if (screen == "menu" && Button(duelDebug ? "Ocultar debug" : "Ativar debug", 535, 576, 175, 22))
+                        duelDebug = !duelDebug;
                     if (alphaError.Length > 0) Wrap(alphaError, 535, 475, 240, 13);
                     if (screen == "menu" && Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
@@ -141,7 +143,11 @@ static partial class Game
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
                 if (screen == "cards") DrawCards();
-                else if (screen == "duel") DrawDuel();
+                else if (screen == "duel")
+                {
+                    if (Raylib.IsKeyPressed(KeyboardKey.F3)) duelDebug = !duelDebug;
+                    DrawDuel();
+                }
                 else if (screen == "deck") DrawDeck();
             }
 
@@ -157,6 +163,7 @@ static partial class Game
     static string? Option(string[] args, string prefix) =>
         args.FirstOrDefault(arg => arg.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
     static Vector2 mouse;
+    static bool duelDebug;
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)
     {
         bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(x, y, w, h));

@@ -62,10 +62,10 @@ public static class NativeDuelLayout
                    MonsterCardWidth, MonsterCardHeight);
     }
 
-    // Mirrored side columns observed in the duel video. Dimensions are from the client.
-    public static CardBounds GraveBounds(bool nearSide) => SideZoneBounds(nearSide, monsterRow: true);
-    public static CardBounds DeckBounds(bool nearSide) => SideZoneBounds(nearSide, monsterRow: false);
-    private static CardBounds SideZoneBounds(bool nearSide, bool monsterRow) =>
-        new(nearSide ? 730 : 250, monsterRow ? MonsterBounds(0, nearSide).Y : nearSide ? 416 : 96,
-            MonsterCardWidth, MonsterCardHeight);
+    // 0045C280 regions 0D/0E, coordinate tables 005DB5B0/005DB5C0.
+    public static CardBounds GraveBounds(bool nearSide) =>
+        DuelCardLayout.BoardPortrait(nearSide ? new(760, 366) : new(290, 234));
+
+    public static CardBounds DeckBounds(bool nearSide) =>
+        DuelCardLayout.BoardPortrait(nearSide ? new(760, 460) : new(290, 140));
 }

@@ -78,9 +78,9 @@ static partial class Game
 
     static void DrawPile(CardBounds bounds, int count, string label)
     {
-        Raylib.DrawRectangleLinesEx(ToRectangle(bounds), 1, Color.Gray);
-        if (count > 0) DrawCardBack(bounds.X + 8, bounds.Y + 3, 50, 68);
-        Label($"{label} {count}", bounds.X + 6, bounds.Y + 74, 10, Gold);
+        if (duelDebug) Raylib.DrawRectangleLinesEx(ToRectangle(bounds), 1, Color.Gray);
+        if (count > 0) DrawCardBack(bounds.X, bounds.Y, bounds.Width, bounds.Height);
+        Label($"{label} {count}", bounds.X + 6, bounds.Y + bounds.Height + 2, 10, Gold);
     }
 
     static bool DiscardInFlight(int player, int index) =>

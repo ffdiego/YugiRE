@@ -4,6 +4,11 @@ internal static class NativePresentationChecks
 {
     public static void Run(Action<bool, string> check)
     {
+        check(DuelSurfaceLayout.Board == new CardBounds(230, 0, 570, 600) &&
+              Enumerable.Range(0, DuelSurfaceLayout.PhaseCount).Select(DuelSurfaceLayout.PhaseButton)
+                  .SequenceEqual(new[] { 82, 157, 232, 307, 382, 457 }
+                      .Select(y => new CardBounds(221, y, 40, 75))),
+              "Native duel surface: full backdrop and six consecutive phase cells");
         // Coordinates are native centers in the logical 800x600 canvas.
         check(NativeDuelLayout.MonsterCenter(0, true) == new CardPoint(369, 352) &&
               NativeDuelLayout.MonsterCenter(4, true) == new CardPoint(681, 352) &&

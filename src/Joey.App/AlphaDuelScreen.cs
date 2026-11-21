@@ -228,6 +228,6 @@ static partial class Game
             var rect = CpuHandBounds(i, count);
             DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, 20, cropped: true);
         }
-        Label($"CPU hand {count}", 254, 76, 13, Gold);
+        if (duelDebug || count > 6) Label($"CPU hand {count}", 266, 76, 13, Gold);
     }
 }
