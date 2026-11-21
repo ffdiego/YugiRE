@@ -74,6 +74,7 @@ static partial class Game
         foreach (var layout in handLayouts) layout.Clear();
         ResetDuelPhases();
         ResetDuelDetail();
+        ResetDuelResultNotice();
         flight = null;
         travelClock.Reset();
         hoverClock.Reset();
