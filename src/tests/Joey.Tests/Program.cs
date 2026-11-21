@@ -205,6 +205,7 @@ TypeFieldSpellChecks.Run(Check);
 EquipmentChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
+CpuDuelChecks.Run(Check);
 AiRankingChecks.Run(Check);
 AiCombatChecks.Run(Check);
 AiAttributeChecks.Run(Check);
@@ -215,6 +216,7 @@ LabCaptureChecks.Run(Check);
 if (args.Length > 0)
 {
     using var attributeArchive = new Archive(args[0]);
+    CpuDuelChecks.RunCatalog(Check, Catalog.Load(attributeArchive));
     AiAttributeChecks.RunCatalog(Check,attributeArchive);
     AiCandidateSearchChecks.RunCatalog(Check,attributeArchive);
 }

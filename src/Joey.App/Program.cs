@@ -52,6 +52,12 @@ static partial class Game
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
+        if (args.Contains("--alpha-headless"))
+        {
+            if (error.Length > 0) return 1;
+            try { return RunAlphaHeadless(); }
+            catch (InvalidDataException ex) { Console.Error.WriteLine(ex.Message); return 1; }
+        }
         if (args.Contains("--check-deck")) return CheckDeck();
         if (args.Contains("--check-data")) return error.Length == 0 ? 0 : 1;
         if (args.Contains("--check-graphics"))
@@ -64,6 +70,7 @@ static partial class Game
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
         { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data or --check-graphics for validation."); return 2; }
         duel = new(cards);
+        if (error.Length == 0 && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
@@ -90,7 +97,9 @@ static partial class Game
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
-                    if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+                    if (Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
+                    if (alphaError.Length > 0) Wrap(alphaError, 535, 475, 240, 13);
+                    if (screen == "menu" && Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
                         if (hover == 0) StartDemo();
                         if (hover == 1) screen = "deck";

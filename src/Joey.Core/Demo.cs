@@ -296,10 +296,18 @@ public sealed class DemoDuel
         else BeginNextQueuedDeckSearch();
         return true;
     }
+    public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !drawn;
+    public bool CanBeginBattle => !ActionsBlocked && Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn;
+    public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
+        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
+    public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
+        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null &&
+        !attacked[ActivePlayer, zone] && !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone];
+
     public bool Draw(out string message)
     {
         message = "Draw available once per turn in main phase.";
-        if (ActionsBlocked || Phase != DemoPhase.Main || drawn) return false;
+        if (!CanDraw) return false;
         if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
         hands[ActivePlayer].Add(decks[ActivePlayer].Dequeue()); drawn = true;
         // Native human trace: Draw precedes Revival Jam's return (P002).
@@ -545,8 +553,8 @@ public sealed class DemoDuel
     {
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
         int owner = ActivePlayer;
-        if (ActionsBlocked || Phase != DemoPhase.Main || zone is < 0 or >= 5 ||
-            Monsters[owner, zone] is not Card monster || changedPosition[owner, zone]) return false;
+        if (!CanChangePosition(zone)) return false;
+        var monster = Monsters[owner, zone]!;
         bool flipped = MonsterFaceDown[owner, zone];
         DefensePosition[owner, zone] = !DefensePosition[owner, zone];
         MonsterFaceDown[owner, zone] = false;
@@ -575,8 +583,7 @@ public sealed class DemoDuel
     public bool BeginBattle(out string message)
     {
         message = "Battle unavailable on the opening turn or after game over.";
-        if (ActionsBlocked || Turn == 1 || Phase != DemoPhase.Main ||
-            battlePhaseEndedThisTurn) return false;
+        if (!CanBeginBattle) return false;
         Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
     }
     /// <summary>
@@ -587,10 +594,8 @@ public sealed class DemoDuel
     {
         message = "Select an unused attacker and a valid enemy target in battle phase.";
         int p = ActivePlayer, enemy = 1 - p;
-        if (ActionsBlocked || Phase != DemoPhase.Battle || source is < 0 or >= 5 ||
-            Monsters[p, source] is not Card attacker || attacked[p, source] ||
-            DefensePosition[p, source] || MonsterFaceDown[p, source])
-            return false;
+        if (!CanAttack(source)) return false;
+        var attacker = Monsters[p, source]!;
 
         Card? defender = null;
         if (target == -1)

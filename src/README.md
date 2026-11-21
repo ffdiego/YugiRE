@@ -110,6 +110,16 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
+## Alpha vs CPU
+
+Escolha **Alpha - vs CPU** no menu ou execute da raiz:
+
+```bash
+dotnet run --project src/Joey.App -- ../passion/data.dat --alpha
+```
+
+O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Use `--fast` ou `--instant` para acelerar ou `--alpha-headless` para simular um duelo no terminal. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
+
 ## Importar e comparar um deck original
 
 O inspetor procura `deck.ydc` ao lado de `data.dat`. Para outra localização,
@@ -316,9 +326,7 @@ Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md) e
 [cinco magias de dano P045](../docs/cards/p045-direct-damage.md).
 Ativação imediata sem correntes, cemitério, combate, bloqueio de batalha no
 primeiro turno, derrota por deck vazio e vitória por LP são políticas do demo,
-ainda não atribuídas ao motor original. Há colocação virada para baixo, mas não há IA, efeitos de monstros,
-armadilhas, compra automática ou multiplayer em rede. Textos de cartas exibidos
-não implicam que seus efeitos estejam implementados.
+ainda não atribuídas ao motor original. A Alpha usa compra automática para a CPU e o sandbox oferece efeitos de monstros e armadilhas selecionados. O progresso por carta está em [CARDS.md](../CARDS.md).
 
 ## Validação
 
