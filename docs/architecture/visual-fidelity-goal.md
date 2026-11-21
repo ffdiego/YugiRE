@@ -51,6 +51,18 @@ A animação nativa pode usar **vários recursos visuais diferentes**, não apen
 | Asset ausente ou não decodificável | Diagnóstico explícito; nenhum placeholder silencioso em modo fiel |
 | Classic/Fast/Instant | Mesmas variantes/ordem lógica; diferenças de cadência intencionais e documentadas |
 
+## Overlays de diagnóstico e modo visual limpo
+
+A experiência possui dois contextos de apresentação, com a **mesma cena de jogo** e sem mudança de estado ou disposição:
+- **Modo fiel / comparação (padrão):** não desenha debug, estatísticas de engine, coordenadas, log de eventos, painéis de controle provisórios, caixas opacas de diagnóstico ou marcadores que não existam no Joey original. Reservar esse modo para screenshots e análise de diferenças pixel a pixel.
+- **Modo de desenvolvimento:** permite exibir diagnósticos por cima da cena para inspeção, inclusive com painéis opacos. Deve ser opcional, com botão visível `Ocultar debug` **enquanto o overlay estiver ligado**, `F3` para alternância e opção de ativação no menu/configuração. Ao desligar, as superfícies de diagnóstico e seus hitboxes desaparecem; a reativação pelo menu/atalho deve continuar acessível, sem deixar widget permanente sobre a captura limpa.
+
+**Não esconder gameplay junto com debug.** Barra de fase, comandos necessários, detalhe de cartas, escolha de alvo, respostas e estado do duelo pertencem à UI funcional quando necessários. Se seus botões/desenhos atuais são provisórios, a tarefa é recuperar sua geometria/aparência nativa ou dar-lhes apresentação transitória que não oculte acidentalmente sprites originais; simplesmente esconder tudo com debug OFF não resolve a fidelidade nem a jogabilidade.
+
+**Auditoria de sobreposição em 800×600:** quando a UI de jogo cobre fundo, zonas, cartas, textos nativos, espada ou efeitos, classificar cada interseção como (a) intencional e sustentada por evidência de layer/oclusão do Joey, (b) interface temporária documentada ou (c) regressão a corrigir. Avaliar layout e clipping em hand hover, carta ativa, seleção e troca de fase. Comparar mesma cena/câmera em debug ON/OFF para provar que só pixels do overlay mudam. Não alterar `Joey.LookAndFeel` nem `Joey.Core` para acomodar um painel de desenvolvimento.
+
+**Caso de referência (captura da Alpha de 21/11/2026):** há textos/controles sobre a região do tabuleiro e próximos às cartas. A imagem sozinha não permite distinguir cada controle essencial de cada diagnóstico; revisar o `DrawDuel` e os draw helpers por origem, registrar a classificação e testar o modo limpo.
+
 ## Tempo e ordenação
 
 - Recuperar da análise estática o **contador por update**, seu incremento, a condição de término, os estados e a origem das esperas; separar `Update`, `Draw`, produtor de comandos, consumidor e pausas de UI.
@@ -84,6 +96,8 @@ Uma medida estática não demonstra sozinha que o mesmo caminho é usado em todo
 - **Tempo:** para animações com contador e cadência demonstrados, alvo de **mesmo número de updates** e mesma ordem de eventos; discrepâncias em frames ou milissegundos devem ser medidas, não corrigidas por feeling.
 - **Fidelidade de assets e estados:** usar recursos reais do DAT e testar seleção de variantes por estado/update; o resultado não passa como fiel se omite frame intermediário ou troca por um desenho aproximado. O caso de impacto da espada é teste obrigatório ao implementar a animação completa de ataque.
 - **Pixels finais:** quando houver sprites, cores e blending recuperáveis, comparar capturas em coordenadas equivalentes; diferença bitmap completa pode depender de GDI vs. GPU, antialiasing, driver e captura. Registrar diferenças residuais sem usar a divergência de implementação como justificativa para posições erradas.
+- **Diagnóstico e sobreposição:** debug OFF por padrão no modo fiel, acionamento acessível, sem camada de diagnóstico em captura; testar toggle ON→OFF→ON, não interferência de clique e inexistência de mudança no estado/timing do duelo. UI essencial continua presente e deve respeitar os contratos visuais.
+
 - **Escopo:** correção localizada não encerra o objetivo global. Priorizar na alpha a sequência carta/campo/ATK-DEF/ataque/fase/LP/UI e expandir até todas as famílias visuais.
 
 O aceite final de cada componente deve apontar para evidência + teste/captura + lista de desvios conhecidos. **"Parece similar" não substitui valores comparáveis**; tampouco uma estimativa vira prova porque foi movida para uma classe chamada `Native*`.

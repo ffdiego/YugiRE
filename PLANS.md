@@ -13,6 +13,9 @@
 
 7. Os recursos de apresentação devem ser lidos do **`data.dat` original em runtime**; caches em memória são permitidos, mas a alpha fiel não deve usar sprites temporários/placeholders como aparência final. As animações devem preservar trocas de variante e quadros intermediários (ex.: espada inteira/espada aparentemente inserida na carta), não apenas posição inicial/final. Falta de recurso ou transição não investigada deve ser documentada e visível para revisão.
 
+8. **Modo visual limpo obrigatório:** o modo fiel parte com overlays de diagnóstico desativados. Quando os overlays estiverem ativos, disponibilizar botão clicável `Ocultar debug`, atalho `F3` e reativação pelo menu; controles essenciais de jogo não desaparecem junto com o debug. Texto provisório, contadores, FPS e botões auxiliares devem estar em camada distinta, sem modificar a geometria/timeline da cena.
+9. Revisar sobreposição e legibilidade da Alpha em 800×600 com capturas de modo limpo (sem debug) e modo diagnóstico; verificar HUD, mão, cartas, números, fases, ícones e cliques, sem cobrir sprites nativos por acidente.
+
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 
 - **Cálculo de atributos efetivos** a partir do estado: bases, magia de campo, equipamento, efeitos contínuos e temporários. Evitar aplicar bônus permanentes ao valor base.
@@ -76,6 +79,8 @@
 - [ ] Recuperar e aplicar o contrato nativo de renderização da carta: ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
 - [ ] Substituir placeholders remanescentes do fluxo visual padrão por **sprites originais carregados do DAT local**, usando manifests e seleção de variantes para cada estado; não versionar os assets. Testar aviso explícito de asset faltante e evitar substituição silenciosa.
 - [ ] Reconstituir estaticamente e validar a **troca de sprite da espada de ataque** ao atingir a carta, investigando os BMPs `j\\duel\\effect\\atk_icon.bmp` e `atk_icon2.bmp`, o frame/estado de transição, clipping, pivô e camada; preservar a ilusão de penetração relatada no vídeo, sem declarar seus detalhes como comprovados antes da análise.
+- [ ] Implementar `DebugOverlayEnabled` (ou equivalente) na UI: default OFF em modo fiel, botão `Ocultar debug` enquanto ativo, atalho F3 e toggle em menu para restaurar. Centralizar Draw e HitTest do overlay, sem interferir no duelo; testes do estado/toggle.
+- [ ] Fazer auditoria visual da Alpha em 800×600, separando **controles do jogo** de **diagnósticos**: corrigir layout provisório que cobre cartas, sprites e textos, e comparar capturas sem debug. A imagem recebida de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
 - [ ] Criar matriz de comparação por elemento visual e estados/quadros-chave contra Joey original: coordenadas/dimensões/ângulos e contagem de updates; registrar valores ainda provisórios em vez de arredondar silenciosamente.
 - [ ] Expandir sistematicamente a fidelidade de todas as telas/efeitos visuais, depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 - [ ] Confirmar cadência nativa de update/draw, tabela de cossenos x16.16 e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.

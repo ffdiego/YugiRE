@@ -19,6 +19,14 @@ A apresentação deve selecionar **a variante correta em cada estado e update**,
 
 Fallbacks geométricos genéricos ficam restritos a testes, ferramentas e modo de diagnóstico explicitamente indicado. Se um asset nativo não for encontrado/decodificado, registrar a falta com seu caminho e bloquear a declaração de fidelidade daquele elemento, em vez de substituir silenciosamente. Temas visuais customizados podem continuar como uma opção separada, que não comprova fidelidade ao Joey.
 
+## Diagnóstico opcional sem contaminar a cena fiel
+
+O `Joey.App` pode desenhar overlays de desenvolvimento sobre o canvas 800×600 para depuração, mas **a camada de diagnóstico deve ser desligável** por um botão `Ocultar debug` quando estiver visível, além de `F3` e uma opção de reativação no menu. O modo de comparação fiel começa sem overlay; se o toggle permanecer na tela quando desligado, ele também precisa ser ocultável para obter um frame limpo. A preferência pertence à UI e **não deve afetar** `Joey.Core`, posição dos sprites, hitboxes de jogo, cadência de updates ou fila de animação.
+
+Diferenciar explicitamente: (1) interface nativa ou essencial para o usuário jogar, que deve ser posicionada com fidelidade e permanecer operável; (2) HUD de desenvolvimento, FPS, coordenadas, logs, contadores, rastros e controles temporários, que aparecem só no modo debug. Um botão de gameplay não vira "debug" apenas por ter aparência provisória. Debug ativo pode sobrepor o jogo se isso for intencional e testado; com debug OFF, nenhuma área opaca de diagnóstico deve permanecer encobrindo a arte original.
+
+Para validação, capturar a mesma cena com debug ON/OFF em 800×600, confirmar que os pixels da cena (exceto pixels próprios do overlay) são idênticos, e conferir que uma sobreposição oculta não intercepta cliques ou altera turnos/timings. Guardar o modo limpo como referência da comparação com o executável.
+
 ## Componentes
 
 A consolidação da análise estática da branch `analise-visual` foi organizada
