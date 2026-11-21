@@ -37,6 +37,13 @@ jobs:
         run: python scripts/publish_playability.py
       - name: Recompute visual function coverage
         run: python scripts/publish_visual_coverage.py
+      - name: Validate coverage reports and batch exporter
+        run: |
+          python scripts/publish_playability.py --check
+          python scripts/publish_visual_coverage.py --check
+          python scripts/export_ghidra_visual_bundle.py --list-only > /dev/null
+          python -m unittest discover -s tests -p 'test_publish_playability.py'
+          python -m unittest discover -s tests -p 'test_publish_visual_coverage.py'
       - name: Publish updated progress files if changed
         shell: bash
         run: |
