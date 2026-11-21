@@ -60,7 +60,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Quebra / remoção alternativa | `00450C30` / `005DB314` | `00450FB0` | `00450FD0` | `effect/break.txt` | Não implementado como família separada. Distinção entre quebra e explosão ainda precisa de mapa de comandos. |
 | Revelação e deslocamento | `004182E0` / `005DA868` | `00418B60` | `00418EF0` | `card/card.txt` e arte/verso | Implementado com divergências. `DrawFlight` e `DrawHandTransfer` usam a interpolação de oito passos onde integrada. O FLIP e a troca animada de face ainda não reproduzem todos os passes. |
 | Set | `0044EFD0` / `005DB2C4` | `0044F370` | `0044F390` | `effect/set.txt`, `eff_set_b/y.bmp`, `eff_star0/1_b/y.bmp` | Implementado parcialmente: sprite central, oito partículas radiais do DAT, contador, escala e fade nativos. Seleção de variantes inferida; RNG, scratch, blending e frames pareados ainda pendentes. |
-| Invocação normal | `0044F630` / `005DB2D4` | `0044F9F0` | `0044FA10` | `effect/summon.txt` | Não implementado como efeito dedicado. |
+| Invocação normal | `0044F630` / `005DB2D4` | `0044F9F0` | `0044FA10` | `effect/summon.txt`, `mini/list_card.txt`, `mini/*.bmp` | Implementado parcialmente: miniatura DAT, duas janelas nativas, 33 updates e fila após o voo da carta (jogador e CPU); composição, recorte, lado e alpha ainda exigem capturas pareadas. |
 | Invocação especial | `0044FCC0` / `005DB2E4` | `004500E0` | `00450100` | `effect/sp_summon.txt` | Não implementado como efeito dedicado. |
 | Ativação no campo | `00450260` / `005DB2F4` | `00450590` | `004505D0` | `effect/activate.txt`, pares `kouka_ue/sita_*` | Implementado com divergências. `DrawSpellActivation` e `DrawActivationSprite` usam dois YGAs e scratch dinâmico, que também existe no original. Mistura e seleção por categoria ainda divergem. Comando 72, handler `00406B20`. |
 | Ativação alternativa | `00450730` / `005DB304` | `00450A90` | `00450AD0` | seleção aberta | Não implementado como ramo separado. |
@@ -241,3 +241,40 @@ BMPs/colorkey, scratch e blending precisa ser confirmada com o
 `docs/research/native-set-particles.md` e
 `docs/research/joey-knowledge-sqlite.md`. Sem comparação visual
 pareada, o estado continua **Partial**, não `Verified`.
+
+
+## Invocação normal — primeira fatia visual (21/11/2026)
+
+O construtor `0044F630` está no SQLite global e instala a vtable
+`005DB2D4`, carrega `duel/effect/summon.txt`, posiciona o objeto pelo
+mesmo `0045C140` usado por outros efeitos e inicializa referências
+a `data/mini/list_card.txt`. Os entrypoints transitórios
+`0044F9F0` (Update) e `0044FA10` (Draw) estão no ZIP Ghidra
+de 21/11, mas não são linhas independentes em `functions` no banco.
+
+**Fatos estáticos:** Update soma `8`, conserva atividade enquanto
+`counter < 257`, produz 33 amostras `0,8,…,256`. Draw tem dois
+ramos, delimitados por `(counter+0x40)*0x100 <= 0x8000`.
+No primeiro (`counter <= 64`), escala aparente
+`(counter+64)*256` em x16.16 e intensidade
+`C[(counter+56)&511] >> 8`; o blit chama `00422C00`.
+No segundo (`counter >= 72`), intensidade aparente
+`min(255, 3*C[(counter−160)&511] >> 10)` e varredura da
+imagem mini com origem `trunc(counter*5/8)`, módulo a dimensão
+do sprite. A decompilação ainda perde protótipos e registradores,
+e a seleção do quadrante e os passes de clipping não estão comprovados.
+
+O índice do DAT mostra uma contraparte `mini/<arquivo>.bmp`
+para todas as 777 imagens `card/<arquivo>.bmp` inventariadas.
+O cliente reutiliza a imagem mini original, sem placeholder,
+e agenda a animação depois do voo de invocação **face-up**,
+tanto humano quanto CPU. A segunda janela é representada por
+dois segmentos de recorte para a varredura circular; orientação,
+transformação e composição exatas são **provisórias**.
+A tabela x16.16 segue aproximada em C# e não há comparação
+pixel a pixel com a versão Windows original.
+
+O Set face-down conserva sua animação separada; a mecânica,
+a resposta à invocação e a IA em `Joey.Core` não mudaram.
+Esta fatia altera a cobertura de Draw para **13/31 (41,94%)**,
+mas continua `Partial`, não `Verified`.
