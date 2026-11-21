@@ -190,9 +190,9 @@ static partial class Game
         // The native Draw is split into scaling and vertically wrapped passes.
         // The second pass clipping/orientation remains an approximation.
         string? fullName = graphics.Artwork.For(summon.Card);
-        if (fullName is null || !fullName.StartsWith(@"card\\", StringComparison.OrdinalIgnoreCase))
+        if (fullName is null || !fullName.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase))
             return;
-        var sprite = graphics.Texture(@"mini\\" + fullName[5..]);
+        var sprite = graphics.Texture(@"mini\" + fullName[5..]);
         var center = DuelCardLayout.Center(DuelCardZone.Monster, summon.Player == ViewPlayer, summon.Zone);
         var frame = NativeNormalSummonFrame.FromUpdate(elapsedUpdates, effectCosine);
         if (frame.Opacity == 0) return;
@@ -240,8 +240,8 @@ static partial class Game
         string? full = graphics.Artwork.For(summon.Card);
         string nameOfCard = summon.FaceDownDefense
             ? DatGraphics.DuelBack
-            : full is not null && full.StartsWith(@"card\\", StringComparison.OrdinalIgnoreCase)
-                ? @"mini\\" + full[5..] : DatGraphics.DuelBack;
+            : full is not null && full.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase)
+                ? @"mini\" + full[5..] : DatGraphics.DuelBack;
         var texture = graphics.Texture(nameOfCard);
         var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster,
             summon.Player == ViewPlayer, summon.Zone, summon.FaceDownDefense, summon.FaceDownDefense);
