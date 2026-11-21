@@ -42,6 +42,7 @@ static partial class Game
         alphaBlocked = false;
         cpuDelay = TimeSpan.Zero;
         ResetDuelPresentation();
+        QueueDuelOpening();
         QueueOpeningDeal();
         message = "Your turn.";
     }
