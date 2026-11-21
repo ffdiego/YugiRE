@@ -40,7 +40,7 @@ rotina ainda não foi atribuída, e não ausência de Update ou Draw.
 | Cartas e mão | `004182E0` / `005DA868` | `00418B60`; hover `0045C8B0` | `00418EF0` | `card/card.txt`, molduras, arte e versos | Implementado com divergências. `DrawDuelField`, `DrawDuelCard`, `DrawFieldCard`, `DrawDuelHand`, `DrawCpuHand`, `DrawArtwork`, `DrawCardBack`. Centros, ângulos e face separados; a combinação da arte, clipping e escala em trânsito ainda difere. |
 | Deck, cemitério e pilhas | `0044C730` / `005DAC94` | `0043C870` | `0043C980` | `card/deck.txt`, BMPs de deck/sombra/grave | Implementado com divergências. `DrawSidePiles` e `DrawPile` usam o verso e texto do cliente. A vtable também aparece no caminho `0043D090`. |
 | Atributos ATK/DEF | criado por `004182E0`, recurso em `005F33EC` | Suavização no Draw | `004194D0 → 00480500 / 00480300` | `font/number.txt` e tiras de números | Implementado com divergências. Y centro ±46 está confirmado; o cliente ainda usa fonte de texto e valores imediatos. |
-| LP, dano e placar | `0044C3E0` carrega LP; `0047C310` cria objetos de delta (`005DBAA4`) | `0047C560` | `0047C660` | `life/lifepoint.txt`, `lp_jibu1/2.bmp`, `lp_aite1/2.bmp`, `font/number.txt` | Parcial: o contador visual usa rampa +100/10/1; `DrawDuelDetail` já compõe barras texturizadas do DAT por `min(LP,8000)/8000`, e usa atlas de dígitos quando `number.txt` revela quantidade de colunas (texto como fallback). Posicionamento, índice da fonte, máscaras, barra e efeito flutuante ainda não estão pareados com o original. |
+| LP, dano e placar | `0044C3E0` carrega LP; `0047C310` cria objetos de delta (`005DBAA4`) | `0047C560` | `0047C660` | `life/lifepoint.txt`, `lp_jibu1/2.bmp`, `lp_aite1/2.bmp`, `font/number.txt`, `damage00/01.bmp` | Parcial: contador 100/10/1, barras texturizadas, dígitos do DAT quando manifest compreendido e animação flutuante de dano/cura via `004806F0`. Fontes, posição, máscara, mistura, som e frames pareados não confirmados. |
 | Fases, botões e troca de cor | `00481040` / `005DBB2C` | `00481370` | `00481420` | `phase/phase.txt`, `pha_s/b/r_*.bmp` | Implementado com divergências. `DrawPhasePanel`: recortes centrais do giro foram comparados com o DAT nos dois sentidos. Hitbox e detalhes do estado ativo ainda não foram validados contra o Joey. |
 | Avisos de fase e novo jogador | `00480B40 / 00480BC0` inicializam estados | `00480C20` | `00480C60` | `phase_name/phase_name.txt`, banners e `nex_*.yga` | Implementado com divergências. `DrawPhaseNotice` seleciona o banner azul/vermelho por lado. Os sete quadros intermediários de batalha também vêm do DAT. Entrada e saída seguem os deslocamentos e a opacidade do Draw. Mistura do meio e aviso de jogador continuam abertos. |
 | Diálogos e seleções | `00487E70` (manifesto) | Aberto | Aberto | `dialog/dialog.txt`, `button_?.txt`, `ritualdlg.txt` | Placeholder/procedural inventado. `DrawCardSelectionOverlay`, `DrawSummonResponseOverlay`, `DrawAttackResponseOverlay` e `DrawEffectDecisionOverlay` usam painéis de gameplay do cliente. |
@@ -319,3 +319,46 @@ de um único separador real (nome de entrada DAT).
 
 Status **Partial**. A cobertura Draw passa a **14/31 (45.16%)**,
 sem qualquer `Verified` até comparação de quadros.
+
+
+## Dano e cura flutuantes — primeira integração (21/11/2026)
+
+O Draw `0047C660` chama `004806F0` sempre que o objeto de
+LP tem delta pendente (`obj+0x28 != 0`). O contador passado é
+`(obj+0x34) * 2`; `0047C560` já havia confirmado que
+`obj+0x34` cresce em 8 por Update até 256.
+
+`004806F0`, presente no SQLite global, confirma uma rotina
+de dígitos alinhados à direita, processados **da unidade para a
+esquerda**, com 10–12 glifos possíveis no atlas. Quando o
+contador visual está entre 1 e 255, cada glifo tem fase
+`phase = 2*ramp − floor(64/(n−1))*index` (um dígito usa
+delay zero), e só aparece quando sua fase é positiva:
+
+- `phase < 128`: deslocamento em Y por
+  `−(C[(2*phase−128)&511] * alturaGlifo >> 16)`;
+- `128 ≤ phase < 192`: segundo deslocamento por
+  `−(C[(4*phase−128)&511] * (alturaGlifo/4) >> 16)`;
+- `phase ≥ 192`: glifo em repouso.
+- Em atlases de 12 glifos, índices 10/11 representam
+  sinais positivo/negativo na análise estática.
+
+O DAT contém `j\\duel\\font\\damage00.bmp` e
+`damage01.bmp`; o Draw seleciona os descritores
+`(delta>0)+6` para a fonte. A associação desses dois nomes
+com os descritores 6/7 **ainda deve ser confirmada em
+`number.txt`**; no cliente, cada bitmap só é utilizado
+quando a quantidade de colunas pode ser lida do manifesto.
+O cliente desenha os glifos originais e amostra a função
+`NativeFloatingLifeDigits.Sample`, enquanto LP lógico
+continua a mudar imediatamente no Core.
+
+A origem `0045C140` na chamada original depende de parâmetros
+não reconstruídos com segurança pelo descompilador. A posição
+relativa ao HUD `right=209, top=536/45` e a escala máxima de
+32 pixels são aproximações explícitas do cliente. Ainda não há
+captura pareada ou validação de cor, colorkey, ordens dos passes
+ou FPS efetivo.
+
+Por já estar a família de LP contabilizada como `Partial`,
+a porcentagem visual permanece **14/31 (45.16%)**.
