@@ -122,6 +122,45 @@ internal static class LookAndFeelChecks
         check(invalidShuffleRejected,
               "Deck shuffle: do not sample a deactivated counter after t=320");
 
+        // Exodia 00454000/00454010: the first Draw branch places five
+        // DAT miniature images on a cosine ring with 16-counter stagger.
+        var exodiaCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var exodia0 = NativeExodiaOpeningFrame.FromUpdate(0, exodiaCosine);
+        var exodia4 = NativeExodiaOpeningFrame.FromUpdate(4, exodiaCosine);
+        var exodia8 = NativeExodiaOpeningFrame.FromUpdate(8, exodiaCosine);
+        var exodia16 = NativeExodiaOpeningFrame.FromUpdate(16, exodiaCosine);
+        var exodia20 = NativeExodiaOpeningFrame.FromUpdate(20, exodiaCosine);
+        var exodiaEnd = NativeExodiaOpeningFrame.FromUpdate(78, exodiaCosine);
+        check(NativeExodiaOpeningFrame.OpeningUpdates == 79 &&
+              exodia0.Counter == 0 && exodiaEnd.Counter == 312 &&
+              exodia0.Cards.Count == 5 &&
+              exodia0.Cards[0] == new NativeExodiaCardPose(0, new CardPoint(400, 164), 0) &&
+              exodia4.Cards[0] == new NativeExodiaCardPose(0, new CardPoint(400, 100), 255),
+              "Exodia first stage: native 79 samples and delayed top card fade/arrival");
+        check(exodia4.Cards[1].Opacity == 0 &&
+              exodia8.Cards[1].Opacity == 255 &&
+              exodia16.Cards[4].Opacity == 0 &&
+              exodia20.Cards.All(card => card.Opacity == 255) &&
+              exodiaEnd.Cards.All(card => card.Opacity == 255),
+              "Exodia first stage: five miniatures stagger every 16 native counter units");
+        check(exodiaEnd.Cards.All(card =>
+                  Math.Abs(Math.Sqrt(Math.Pow(card.Center.X - 400, 2) +
+                      Math.Pow(card.Center.Y - 300, 2)) - 200) <= 2) &&
+              exodiaEnd.Cards.Select(card => card.Center).Distinct().Count() == 5,
+              "Exodia first stage: all five image centers settle on distinct 200px orbit points");
+        bool exodiaOutOfRangeRejected = false;
+        try { NativeExodiaOpeningFrame.FromUpdate(79, exodiaCosine); }
+        catch (ArgumentOutOfRangeException) { exodiaOutOfRangeRejected = true; }
+        check(exodiaOutOfRangeRejected,
+              "Exodia first stage: stop before the unknown Draw branch at native counter 316");
+        var exodiaQueue = new PresentationSequence<string>();
+        exodiaQueue.Enqueue("fifth card draw", CardTravel.Updates);
+        exodiaQueue.Enqueue("exodia orbit", NativeExodiaOpeningFrame.OpeningUpdates);
+        exodiaQueue.Advance(CardTravel.Updates);
+        check(exodiaQueue.Current?.Kind == "exodia orbit" &&
+              exodiaQueue.ElapsedUpdates == 0,
+              "Exodia: finish fifth-card flight before Exodia's first visual phase");
+
         // Duel opening 00451950/00451980: 40 native updates, centered
         // logo shrinks from 1.5x, stays opaque, then fades away.
         var noticeCosine = ActivationEffectPlayback.ApproximateCosineTable();
