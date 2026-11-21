@@ -10,6 +10,7 @@ static partial class Game
     sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
     sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
+    sealed record DuelOpening : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
@@ -55,6 +56,11 @@ static partial class Game
         // Native 0044F9F0: 33 updates. Core has already applied the summon.
         // The same queue keeps the visual presentation after the hand flight.
         QueueCardEffect(new NormalSummonPlacement(card, player, zone), NativeNormalSummonFrame.Updates);
+    }
+
+    static void QueueDuelOpening()
+    {
+        QueueCardEffect(new DuelOpening(), NativeDuelStartFrame.Updates);
     }
 
     static void QueueOpeningDeal()
@@ -154,7 +160,18 @@ static partial class Game
             case SpecialSummonPlacement special:
                 DrawSpecialSummon(special.Summon, cardEffects.ElapsedUpdates);
                 break;
+            case DuelOpening:
+                DrawDuelOpening(cardEffects.ElapsedUpdates);
+                break;
         }
+    }
+
+    static void DrawDuelOpening(int elapsedUpdates)
+    {
+        var frame = NativeDuelStartFrame.FromUpdate(elapsedUpdates, effectCosine);
+        if (frame.Opacity == 0) return;
+        DrawEffectStamp(DatGraphics.DuelStartEnglish, new CardPoint(400, 300),
+            0, frame.ScaleFixed8 << 8, frame.Opacity);
     }
 
     static void DrawSetPlacement(SetPlacement placement, int elapsedUpdates)
