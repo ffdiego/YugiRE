@@ -15,6 +15,17 @@ Projeto: reimplementar **Yu-Gi-Oh! Power of Chaos: Joey the Passion** em C# / .N
 - Se houver ambiguidade material (timing, custos, alvo, cadeia, comportamento exclusivo de Joey), escolha uma implementação conservadora e testável, registre a hipótese no teste/`CARDS.md` e use o executável original como oráculo **sob demanda**.
 - Não transforme uma hipótese em resultado verificado. Diferencie explicitamente *implementado no sandbox*, *testado em C#*, *observado no Joey* e *inferido*. Índice interno, resource ID e slot são distintos.
 
+## Meta permanente de fidelidade visual
+
+**O alvo do `Joey.App`/`Joey.LookAndFeel` é reproduzir a apresentação do Joey original em nível de pixel e update observável; não reproduzir o código que a implementa.** É aceitável usar raylib, uma timeline de eventos e algoritmos C# diferentes se o resultado for equivalente. A liberdade arquitetural do Core **não** autoriza inventar coordenadas, tamanhos, pivôs, ângulos, ordem de desenho, duração ou sequência de animações.
+
+- Tratar **todo elemento visual** como parte do objetivo: cartas próprias/adversárias, posições de ataque/defesa, cartas face-up/face-down, atributos ATK/DEF, mão, zonas, sprites, textos/HUD, LP, cursor/espada, avisos de fase, prompts, transições e efeitos. Priorizar os elementos jogáveis na alpha, sem reduzir a meta final.
+- Para cada elemento, obter **posição e tamanho em pixels lógicos**, origem/pivô, orientação, escala, camada e recursos do DAT; para animações, obter contadores, curva/frames, ordem, gates/esperas e cadência. A tela-alvo de referência é **800×600**; separar coordenadas lógicas de escala da janela.
+- Priorizar prova por Ghidra + assets DAT + comparação do original em estado/frame equivalente. Registrar se cada valor é **estático confirmado**, **observado no original**, **derivado** ou **provisório**. Não chamar de nativo algo apenas copiado do vídeo ou escolhido no cliente.
+- Quando o executável fornecer a fórmula/tabela, portá-la ou reproduzir **seus resultados**; quando não, usar fallback explícito com pendência localizada. Nunca fazer números mágicos de UI passarem por valores verificados. Não exigir matching binário/bit a bit no rasterizador se os pixels observáveis coincidirem.
+- Para aceitar uma fatia visual, exigir ao menos casos dos dois lados, ataque/defesa, revelado/oculto quando cabível, e comparação de coordenadas/dimensões por teste; para efeitos, comparar quadros-chave e número de updates. Dados nativos e decisões provisórias devem ficar separados no código e nas notas.
+- Este contrato deve ser seguido mesmo durante ciclos rápidos de alpha. Detalhes e critérios: [meta de fidelidade visual](docs/architecture/visual-fidelity-goal.md). A apresentação não deve alterar nem bloquear permanentemente as regras do `Joey.Core`.
+
 ## Arquitetura
 
 - `src/Joey.Core/`: catálogo, estado de duelo, cartas, atributos, efeitos e IA; **sem dependência de Frida/Windows/Python**.

@@ -5,14 +5,20 @@ e a política de reprodução de cues visuais ou falas. O Core resolve as regras
 cartas/batalha imediatamente em um estado determinístico; a apresentação não deve
 alterar resultados, disparar compras ou introduzir delays em testes automatizados.
 
+## Resultado visual como contrato
+
+O objetivo do `Joey.LookAndFeel` é a **fidelidade de pixels e de tempo** do `joey_pc.exe` em seu canvas lógico de **800×600** — não equivalência de código, funções ou algoritmo de rasterização. Implementações em C#/raylib podem divergir internamente, desde que obtenham as **mesmas posições, dimensões, pivôs, orientações, escalas, recortes, ordem de composição, sprites e valores por update/frame** observáveis. Para a alpha, começar por cartas, ATK/DEF e ações visíveis; **a meta continua abrangendo todos os elementos visuais**.
+
+Contadores nativos, cadência nominal (Classic/Speedy), tempos efetivos e espera por decisões são medidas diferentes. Manter velocidade Classic como alvo do executável quando conhecida, sem converter contadores em milissegundos arbitrários; `Fast` e `Instant` são perfis opcionais deliberadamente não idênticos. Registrar os dados como confirmado por Ghidra, observado no vídeo/original, derivado ou provisório. Testar estados e quadros equivalentes e comparar resultados em pixels/updates. [Contrato completo de fidelidade](visual-fidelity-goal.md).
+
 ## Componentes
 
 A consolidação da análise estática da branch `analise-visual` foi organizada
 em [**contrato visual nativo**](native-visual-contract.md). As fórmulas de mão,
 centros do campo, contadores de ativação/explosão e despacho de objetos
 agora residem em `Joey.LookAndFeel` e não em `Joey.Core`.
-O port modela **updates e parâmetros**, sem atribuir FPS ou milissegundos
-nativos ainda não medidos.
+O port modela **updates e parâmetros** com base nos dados existentes, distinguindo
+cadência nominal recuperada, comportamento observado e timings ainda não medidos.
 
 
 - `DuelPresentationCue`: `CardMove`, `FlipReveal`, `FlipEffect`, `Battle`,
