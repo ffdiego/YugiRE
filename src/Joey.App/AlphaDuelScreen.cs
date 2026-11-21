@@ -80,6 +80,8 @@ static partial class Game
         ResetDuelResultNotice();
         flight = null;
         deferredTributeFlight = null;
+        visualReviewPaused = false;
+        visualReviewStep = false;
         travelClock.Reset();
         hoverClock.Reset();
         attackCue = null;
@@ -206,6 +208,9 @@ static partial class Game
             travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
             if (travelUpdate >= CardTravel.Updates) flight = null;
         }
+        // F7 steps presentation, never authorizes a new CPU decision.
+        // Without this gate a paused idle duel could still mutate Joey.Core.
+        if (visualReviewPaused) return;
         if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || MotionBusy || PhaseBusy) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;
