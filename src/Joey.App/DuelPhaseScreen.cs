@@ -11,6 +11,7 @@ static partial class Game
     static int displayedTurn, phaseUpdates;
     static int turnFlipElapsed;
     static bool drawNoticePending;
+    static bool RedPhaseSide => displayedTurn != 0 && (displayedTurn & 1) == 0;
     static bool TurnFlipping => drawNoticePending && turnFlipElapsed < NativePhaseTurnFlip.Updates;
     static bool PhaseBusy => !duel.GameOver && (phaseUpdates > 0 ||
         drawNoticePending || displayedTurn != duel.Turn || displayedPhase is DuelPhaseDisplay.Draw or DuelPhaseDisplay.Standby);
@@ -102,7 +103,7 @@ static partial class Game
             });
             var bounds = ToRectangle(DuelSurfaceLayout.PhaseButton(i));
             bool active = phase == displayedPhase;
-            bool red = displayedTurn != 0 && (displayedTurn & 1) == 0;
+            bool red = RedPhaseSide;
             const int frameWidth = DuelSurfaceLayout.PhaseWidth, frameHeight = DuelSurfaceLayout.PhaseHeight;
             string spriteName = DatGraphics.PhaseButtons[i];
             int sourceX = active || enabled && Hit(bounds) ? frameWidth : 0;
@@ -140,7 +141,8 @@ static partial class Game
     static void DrawPhaseNotice()
     {
         if (phaseUpdates <= 0) return;
-        var banner = graphics.Texture(DatGraphics.PhaseBanners[(int)displayedPhase]);
+        var banners = RedPhaseSide ? DatGraphics.PhaseBannersRed : DatGraphics.PhaseBannersBlue;
+        var banner = graphics.Texture(banners[(int)displayedPhase]);
         Raylib.DrawTexture(banner, 525 - banner.Width / 2, 300 - banner.Height / 2, Color.White);
     }
 }

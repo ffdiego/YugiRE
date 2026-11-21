@@ -18,8 +18,15 @@ sealed class DatGraphics : IDisposable
     public static readonly string[] PhaseButtons = PhaseButtonImages('s');
     public static readonly string[] PhaseFlipToBlue = PhaseButtonImages('b');
     public static readonly string[] PhaseFlipToRed = PhaseButtonImages('r');
-    public static readonly string[] PhaseBanners = PhaseCodes
-        .Select(phase => $@"j\duel\phase_name\e_{phase}_b.bmp").ToArray();
+    public static readonly string[] PhaseBannersBlue = PhaseBannerImages('b');
+    public static readonly string[] PhaseBannersRed = PhaseBannerImages('r');
+
+    private static string[] PhaseBannerImages(char side) => PhaseCodes
+        .Select(phase => $@"j\duel\phase_name\e_{phase}_{side}.bmp").ToArray();
+
+    private static bool IsPhaseBanner(string name) =>
+        PhaseBannersBlue.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+        PhaseBannersRed.Contains(name, StringComparer.OrdinalIgnoreCase);
 
     private static string[] PhaseButtonImages(char variant) => PhaseCodes
         .Select(phase => $@"j\duel\phase\pha_{variant}_{phase}.bmp").ToArray();
@@ -97,7 +104,7 @@ sealed class DatGraphics : IDisposable
         if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
-            PhaseBanners.Contains(name, StringComparer.OrdinalIgnoreCase))
+            IsPhaseBanner(name))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -112,7 +119,7 @@ sealed class DatGraphics : IDisposable
             CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
-        names = names.Concat(PhaseBanners).Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
+        names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
             .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
@@ -128,7 +135,7 @@ sealed class DatGraphics : IDisposable
                     throw new InvalidDataException($"Unexpected phase turn atlas: {name}");
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
-                if ((name is AttackSword or AttackSwordPartial || PhaseBanners.Contains(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)
+                if ((name is AttackSword or AttackSwordPartial || IsPhaseBanner(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)
                     throw new InvalidDataException($"Duel sprite color key is not transparent: {name}");
             }
             finally { Raylib.UnloadImage(image); }
