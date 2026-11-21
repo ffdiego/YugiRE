@@ -1,4 +1,5 @@
 using Joey.Core;
+using Joey.LookAndFeel;
 using Raylib_cs;
 
 static partial class Game
@@ -7,9 +8,26 @@ static partial class Game
     static Card? lastHoveredDetail;
     static bool activatedDetail;
     static int duelDescriptionScroll;
+    static readonly NativeLifePointPresentation[] lifeDisplays = [new(8000), new(8000)];
+    static readonly PresentationTickClock lifeClock = new();
+
+    static void AdvanceLifePresentation(TimeSpan elapsed)
+    {
+        // Read logical LP after all Core actions for this frame. The original
+        // LP object is independent of the logical duel; presentation only.
+        for (int player = 0; player < lifeDisplays.Length; player++)
+            lifeDisplays[player].SetLogicalLife(duel.Life[player], presentation.Style.PlayAnimations);
+        int updates = lifeClock.Advance(elapsed, presentation.Style);
+        for (int player = 0; player < lifeDisplays.Length; player++)
+            for (int update = 0; update < updates && lifeDisplays[player].Animating; update++)
+                lifeDisplays[player].AdvanceNativeUpdate();
+    }
 
     static void ResetDuelDetail()
     {
+        lifeClock.Reset();
+        for (int player = 0; player < lifeDisplays.Length; player++)
+            lifeDisplays[player].Reset(duel.Life[player]);
         detailCard = null;
         duelDescriptionScroll = 0;
         lastHoveredDetail = null;
@@ -65,8 +83,8 @@ static partial class Game
         activatedDetail = false;
         Raylib.DrawRectangle(62, 4, 137, 28, Panel);
         Raylib.DrawRectangle(62, 552, 137, 28, Panel);
-        Label(duel.Life[1 - ViewPlayer].ToString(), 74, 9, 19, Gold);
-        Label(duel.Life[ViewPlayer].ToString(), 74, 557, 19, Gold);
+        Label(lifeDisplays[1 - ViewPlayer].Displayed.ToString(), 74, 9, 19, Gold);
+        Label(lifeDisplays[ViewPlayer].Displayed.ToString(), 74, 557, 19, Gold);
         if (detailCard is not { } card) return;
 
         DrawArtwork(card, 14, 53, 186, 265);
