@@ -168,7 +168,8 @@
     {
       "address": "00454010",
       "family": "Exodia",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
     },
     {
       "address": "004584C0",
