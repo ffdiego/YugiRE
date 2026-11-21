@@ -41,6 +41,11 @@ static partial class Game
                 }
             }
             if (path == null) throw new FileNotFoundException("data.dat not found. Pass its path: dotnet run -- /path/to/data.dat");
+            if (args.Contains("--inspect-visual-dat"))
+            {
+                using var inspected = new Archive(path);
+                return VisualManifestProbe.Export(inspected);
+            }
             var archive = graphics.Open(path);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
@@ -55,6 +60,7 @@ static partial class Game
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
+        if (args.Contains("--inspect-visual-dat")) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
