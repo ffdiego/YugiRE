@@ -57,6 +57,12 @@ Check(demo.Attack(0, 0, out _) && demo.Life[1] == 6000 && demo.Monsters[1, 0] ==
 demo.NextTurn();
 Check(demo.BeginBattle(out _) && demo.Attack(0, -1, out _) && demo.Life[1] == 4000, "Direct attack damages LP");
 Check(!demo.Attack(0, -1, out _), "Attacker cannot attack twice");
+Check(demo.EndBattle(out _) && demo.IsMainPhase2 && !demo.CanDraw &&
+      !demo.CanBeginBattle && !demo.CanAttack(0) && !demo.EndBattle(out _),
+      "Main Phase 2 follows Battle without reopening attacks or the normal draw");
+demo.NextTurn();
+Check(!demo.IsMainPhase2 && demo.CanDraw && demo.CanBeginBattle,
+      "Next turn restores its own draw and Battle Phase eligibility");
 var equal = new DemoDuel([weak, weak, weak]);
 equal.Summon(0, 0, 0, true, out _); equal.NextTurn(); equal.Summon(0, 1, 0, true, out _); equal.BeginBattle(out _);
 Check(equal.Attack(0, 0, out _) && equal.Monsters[0, 0] == null && equal.Monsters[1, 0] == null && equal.Life[0] == 8000, "Equal attack destroys both without damage");

@@ -107,6 +107,8 @@ internal static class FlipMonsterChecks
         var original0 = hands.HandFor(0).Select(c => c.Index).ToHashSet();
         var original1 = hands.HandFor(1).Select(c => c.Index).ToHashSet();
         hands.NextTurn(); hands.NextTurn();
+        List<DemoHandTransfer> transfers = [];
+        hands.HandTransferred += transfers.Add;
         check(hands.ChangePosition(0, out _) && hands.PendingFlipTarget is null &&
               hands.Monsters[0, 0] == jar &&
               hands.HandFor(0).Count == 5 && hands.HandFor(1).Count == 5 &&
@@ -116,6 +118,12 @@ internal static class FlipMonsterChecks
               !hands.HandFor(1).Any(c => original1.Contains(c.Index)) &&
               !hands.GameOver,
               "Morphing Jar: flip summon discards both hands and draws five for each side");
+        var expectedTransfers = Enumerable.Range(0, 2)
+            .SelectMany(p => hands.Graveyard(p).Select(c => new DemoHandTransfer(p, 0, c, false)))
+            .Concat(Enumerable.Range(0, 2)
+                .SelectMany(p => hands.HandFor(p).Select((c, i) => new DemoHandTransfer(p, i, c, true))));
+        check(transfers.SequenceEqual(expectedTransfers),
+              "Morphing Jar: transfer events present each discard before any draw, in committed card order");
 
         var attackedJar = DemoDuel.FromDecks(deck0, deck1, seed: 37);
         attackedJar.Monsters[0, 0] = jar;
@@ -123,12 +131,17 @@ internal static class FlipMonsterChecks
         attackedJar.MonsterFaceDown[0, 0] = true;
         attackedJar.Monsters[1, 0] = enemy;
         attackedJar.NextTurn();
+        var eventOrder = new List<string>();
+        attackedJar.HandTransferred += _ => eventOrder.Add("transfer");
+        attackedJar.MonsterDestroyed += _ => eventOrder.Add("destroy");
         check(attackedJar.BeginBattle(out _) && attackedJar.Attack(0, 0, out _) &&
               attackedJar.Graveyard(0).Count == 6 && attackedJar.Graveyard(1).Count == 5 &&
               attackedJar.DeckCount(0) == 30 && attackedJar.DeckCount(1) == 30 &&
               attackedJar.Monsters[0, 0] is null && attackedJar.Life[1] == 8000 &&
               attackedJar.HandFor(0).Count == 5 && attackedJar.HandFor(1).Count == 5,
               "Morphing Jar: being attacked triggers both draws before normal battle destruction");
+        check(eventOrder.Count == 21 && eventOrder.Take(20).All(e => e == "transfer") && eventOrder[^1] == "destroy",
+              "Morphing Jar: the last draw cue precedes battle destruction");
 
         var empty = DemoDuel.FromPartialObservation(0, [jar, third],
             Slots(jar), Slots(enemy), 8000);

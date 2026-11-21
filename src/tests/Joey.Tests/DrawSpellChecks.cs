@@ -15,10 +15,15 @@ internal static class DrawSpellChecks
             DemoDuel State(Card spell, params Card[] deck) => DemoDuel.FromPartialObservation(side,
                 [spell], empty, empty, 8000, side0Deck: side == 0 ? deck : null, side1Deck: side == 1 ? deck : null);
             var d = State(pot, first, second, third);
+            List<DemoHandTransfer> transfers = [];
+            d.HandTransferred += transfers.Add;
             check(d.CanActivateFromHand(0) && d.Play(0, out _) && d.Hand.SequenceEqual(new[] { first, second }) &&
                 d.DeckCount(side) == 1 && d.Graveyard(side).SequenceEqual(new[] { pot }) &&
                 d.CanDraw && d.Draw(out _) && !d.CanDraw && d.Hand.Last() == third,
                 $"Draw spells P{side + 1}: Pot draws two in order and preserves the turn's normal draw");
+            check(transfers.SequenceEqual([
+                    new(side, 0, first, true), new(side, 1, second, true), new(side, 2, third, true)]),
+                $"Draw spells P{side + 1}: Pot and the normal draw emit one transfer per card");
             d = State(goblin, first);
             check(d.SetFromHand(0, out _) && d.DeckCount(side) == 1 && d.Life[1 - side] == 8000 &&
                 d.ActivateSetSpell(0, out _) && d.Spells[side, 0] is null && !d.SpellFaceDown[side, 0] &&

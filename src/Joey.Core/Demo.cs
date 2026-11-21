@@ -3,12 +3,14 @@ namespace Joey.Core;
 public enum DemoPhase { Main, Battle, End }
 
 public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
+public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
 
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
 public sealed class DemoDuel
 {
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
+    public event Action<DemoHandTransfer>? HandTransferred;
     private readonly List<Card>[] hands = [[], []];
     private readonly Queue<Card>[] decks = [new(), new()];
     // Seeded sandbox-only effect shuffling; separate from initial deck randomization.
@@ -103,6 +105,7 @@ public sealed class DemoDuel
     public int Turn { get; private set; } = 1;
     public int ActivePlayer => (Turn - 1) % 2;
     public DemoPhase Phase { get; private set; }
+    public bool IsMainPhase2 => Phase == DemoPhase.Main && battlePhaseEndedThisTurn;
     public int? Winner { get; private set; }
     public const int EndTurnHandLimit = 6;
     // Native suppression/negation is not modeled; setting a spell does not activate it.
@@ -300,7 +303,7 @@ public sealed class DemoDuel
         else BeginNextQueuedDeckSearch();
         return true;
     }
-    public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !drawn;
+    public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
     public bool CanBeginBattle => !ActionsBlocked && Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn;
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
@@ -313,7 +316,8 @@ public sealed class DemoDuel
         message = "Draw available once per turn in main phase.";
         if (!CanDraw) return false;
         if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
-        hands[ActivePlayer].Add(decks[ActivePlayer].Dequeue()); drawn = true;
+        DrawToHand(ActivePlayer);
+        drawn = true;
         // Native human trace: Draw precedes Revival Jam's return (P002).
         // This is a bounded synthetic Standby hook; no full phase engine yet.
         ResolvePostDrawStandbyEffects();
@@ -434,7 +438,7 @@ public sealed class DemoDuel
     {
         int player = ActivePlayer;
         graves[player].Add(spell);
-        for (int i = 0; i < effect.Cards; i++) hands[player].Add(decks[player].Dequeue());
+        for (int i = 0; i < effect.Cards; i++) DrawToHand(player);
         if (effect.OpponentLifeGain > 0) ChangeLife(1 - player, effect.OpponentLifeGain);
         message = $"{spell.Name}: drew {effect.Cards}." + (effect.OpponentLifeGain > 0
             ? $" Opponent gained {effect.OpponentLifeGain} LP." : "");
@@ -623,6 +627,21 @@ public sealed class DemoDuel
         if (!CanBeginBattle) return false;
         Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
     }
+
+    public bool EndBattle(out string message)
+    {
+        message = "Battle Phase must be active and all decisions resolved.";
+        if (ActionsBlocked || Phase != DemoPhase.Battle) return false;
+        EnterMainPhase2();
+        message = "Main Phase 2.";
+        return true;
+    }
+
+    private void EnterMainPhase2()
+    {
+        Phase = DemoPhase.Main;
+        battlePhaseEndedThisTurn = true;
+    }
     /// <summary>
     /// Attack declaration and Battle Step response are distinct from damage
     /// calculation and the following Damage Step FLIP resolution.
@@ -749,8 +768,7 @@ public sealed class DemoDuel
                 // A counter Trap ends Battle Phase immediately. Later actions
                 // in the turn use the sandbox Main phase; BeginBattle must not
                 // allow re-entry until AdvanceTurn.
-                Phase = DemoPhase.Main;
-                battlePhaseEndedThisTurn = true;
+                EnterMainPhase2();
                 endedBattle = true;
                 break;
             default:
@@ -955,13 +973,18 @@ public sealed class DemoDuel
             case DemoFlipEffect.ReplaceHands:
                 for (int p = 0; p < 2; p++)
                 {
-                    graves[p].AddRange(hands[p]);
-                    hands[p].Clear();
+                    while (hands[p].Count > 0)
+                    {
+                        Card discarded = hands[p][0];
+                        hands[p].RemoveAt(0);
+                        graves[p].Add(discarded);
+                        HandTransferred?.Invoke(new(p, 0, discarded, FromDeck: false));
+                    }
                 }
                 bool[] deckOut = [decks[0].Count < 5, decks[1].Count < 5];
                 for (int p = 0; p < 2; p++)
                     for (int i = 0; i < 5 && decks[p].Count > 0; i++)
-                        hands[p].Add(decks[p].Dequeue());
+                        DrawToHand(p);
                 if (deckOut[0] && deckOut[1]) IsDraw = true;
                 else if (deckOut[0]) Winner = 1;
                 else if (deckOut[1]) Winner = 0;
@@ -970,6 +993,14 @@ public sealed class DemoDuel
                     : $"{card.Name} FLIP: both discard their hands and draw 5.";
                 break;
         }
+    }
+
+    private void DrawToHand(int player)
+    {
+        Card card = decks[player].Dequeue();
+        int index = hands[player].Count;
+        hands[player].Add(card);
+        HandTransferred?.Invoke(new(player, index, card, FromDeck: true));
     }
 
     /// <summary>
@@ -1611,7 +1642,7 @@ public sealed class DemoDuel
             message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
             return true;
         }
-        AdvanceTurn(); message = "Turn changed. Draw once; summon once; Battle to attack.";
+        AdvanceTurn(); message = "Turn changed.";
         return true;
     }
     public bool DiscardForEndTurn(int index, out string message)

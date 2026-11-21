@@ -1,7 +1,7 @@
 namespace Joey.Core;
 
 public enum CpuStepStatus { Acted, WaitingForOpponent, GameOver, Blocked }
-public enum CpuAction { None, Draw, Summon, Set, Spell, Equip, Position, BeginBattle, Attack, Selection, Response, Decision, Discard, EndTurn }
+public enum CpuAction { None, Draw, Summon, Set, Spell, Equip, Position, BeginBattle, Attack, Selection, Response, Decision, Discard, EndTurn, EndBattle }
 public sealed record CpuStep(CpuStepStatus Status, CpuAction Action, int Player, string Message,
     Card? Card = null, int? SourceZone = null, int? TargetZone = null, int? HandIndex = null);
 
@@ -204,6 +204,7 @@ public sealed class CpuDuelController
                 if (enemies.Length > 0 && target < 0) continue;
                 return Act(CpuAction.Attack, (out string m) => duel.Attack(source, target, out m), duel.Monsters[Player, source], source, target);
             }
+            return Act(CpuAction.EndBattle, duel.EndBattle);
         }
         return Act(CpuAction.EndTurn, duel.EndTurn);
     }

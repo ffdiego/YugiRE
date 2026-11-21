@@ -35,6 +35,8 @@ internal static class MonsterWipeChecks
 
         var raigekiDuel = DemoDuel.FromPartialObservation(0, [raigeki],
             Slots(own), Slots(attacker, worm, tomato), 8000, side1Deck: [own]);
+        List<DemoMonsterDestruction> destructions = [];
+        raigekiDuel.MonsterDestroyed += destructions.Add;
         raigekiDuel.MonsterFaceDown[1, 1] = true;
         check(raigekiDuel.CanActivateFromHand(0) &&
               raigekiDuel.Play(0, out _) &&
@@ -51,6 +53,11 @@ internal static class MonsterWipeChecks
               "Raigeki: kills all opposing monsters including facedown, preserves own field, no FLIP or battle triggers");
         check(!raigekiDuel.Play(0, out _) && !raigekiDuel.CanActivateFromHand(0),
               "Raigeki: spell is spent exactly once");
+        check(destructions.SequenceEqual([
+                  new(1, 0, attacker, false, false),
+                  new(1, 1, worm, true, false),
+                  new(1, 2, tomato, false, false)]),
+              "Raigeki: emits one ordered destruction snapshot per monster");
 
         var noEnemy = DemoDuel.FromPartialObservation(0, [raigeki], Slots(own),
             Slots(), 8000);
