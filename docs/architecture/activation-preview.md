@@ -1,8 +1,8 @@
 # Prévia de ativação de magia — raylib + Joey.LookAndFeel
 
-**Situação:** fatia de apresentação **implementada**, não é reprodução
-fiel do executável. A trilha de animações fica **pausada** após esta entrega;
-a prioridade seguinte volta aos comportamentos de cartas no `Joey.Core`.
+**Situação:** fatia de apresentação implementada no duelo demo e na Alpha.
+Cartas ativadas da mão se movem até a zona e então brilham. Uma carta
+ativada na própria zona começa pelo brilho. [Scheduler e evidências](../research/native-action-scheduler.md#aplicação-à-alpha).
 
 ## O que pode ser experimentado
 
@@ -44,8 +44,8 @@ BGRA → RGBA e aplica a color key RGB preta. Assim
 
 ## Como os parâmetros são gerados
 
-`ActivationEffectPlayback` consome `NativeActivationTimeline` e
-`NativeActivationFrame`, recuperados do Ghidra no ciclo anterior:
+`PresentationSequence` encadeia o movimento de oito passos de `CardTravel`
+e o brilho de `NativeActivationTimeline` / `NativeActivationFrame`:
 
 1. A ativação começa em `t=0`.
 2. Cada *update lógico* acrescenta 16; último contador ativo `t=256`.
@@ -97,9 +97,5 @@ A verificação completa dos quatro YGAs **reais** fica em
 
 Conferir timings e pixels capturados no Windows pelo protocolo
 [`activation-windows-capture.md`](https://github.com/ffdiego/YugiRE/blob/analise-visual/docs/research/visual/activation-windows-capture.md).
-Depois recuperar a tabela de cossenos e medir a ordem exata update/draw;
-só então considerar rasterização bit a bit, áudio e timeline de eventos.
-
-**Não expandir a camada de animação agora.** Próxima prioridade:
-`PLANS.md` → Iteração B, cartas FLIP e seus comportamentos (e.g.
-Hane-Hane, Morphing Jar #2).
+Recuperar a tabela de cossenos e comparar o primeiro e último frame de
+movimento e brilho com a sequência observada no Joey.

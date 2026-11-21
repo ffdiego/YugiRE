@@ -34,7 +34,7 @@ evidência de sorteio de deck. Ver [plano de análise da IA](06-ai.md).
 **0x005BC700** indexa a tabela de DWORDs em **0x005EFBB0** pelo byte alto do
 word 0x00A577FC. Entradas observadas: 0x005B9F50, **0x005BC620**,
 0x005BC3C0, zero. Quando o handler retorna valor não zero, incrementa esse
-estado alto e limpa 0x00A577FE por meio da atualização do DWORD sobreposto.
+estado alto e zera apenas o byte alto de 0x00A577FE, preservando o baixo.
 Os significados completos da primeira e terceira rotina não são atribuídos
 neste checkpoint. Não confundir esse seletor com o estado privado do Ritual.
 
