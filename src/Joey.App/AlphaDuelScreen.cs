@@ -124,9 +124,30 @@ static partial class Game
         if (attackCue is not { } cue) return;
         float fraction = (float)(attackElapsed / cue.Duration);
         Vector2 head = Vector2.Lerp(cue.Origin, cue.Target, fraction);
-        Vector2 tail = Vector2.Lerp(cue.Origin, cue.Target, Math.Max(0, fraction - .3f));
-        Raylib.DrawLineEx(tail, head, 6, Gold);
-        Raylib.DrawCircleV(head, 6, Color.White);
+        DrawAttackSword(head, cue.Target - cue.Origin);
+    }
+
+    static void DrawAttackAim()
+    {
+        var origin = NativeDuelLayout.MonsterCenter(attacker, true);
+        Vector2 target = mouse;
+        int opponent = 1 - ViewPlayer;
+        for (int zone = 0; zone < 5; zone++)
+        {
+            if (duel.Monsters[opponent, zone] is null || !Hit(ZoneBounds(opponent, zone, false))) continue;
+            var center = NativeDuelLayout.MonsterCenter(zone, false);
+            target = new(center.X, center.Y);
+            break;
+        }
+        DrawAttackSword(target, target - new Vector2(origin.X, origin.Y));
+    }
+
+    static void DrawAttackSword(Vector2 position, Vector2 direction)
+    {
+        var sword = graphics.Texture(DatGraphics.AttackSword);
+        float angle = MathF.Atan2(direction.X, -direction.Y) * 180 / MathF.PI;
+        Raylib.DrawTexturePro(sword, new Rectangle(0, 0, sword.Width, sword.Height),
+            new Rectangle(position.X, position.Y, 25, 51), new Vector2(12.5f, 25.5f), angle, Color.White);
     }
 
     static void CommitHumanAttack(int target)

@@ -14,7 +14,7 @@ dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat ../passion/deck
 
 O turno começa com compra automática. O painel vertical junto ao campo mostra **DP**, **SP**, **M1**, **BP**, **M2** e **EP**. Clique em **BP** para batalhar, **M2** para voltar às ações de fase principal após a batalha e **EP** para encerrar. Se você tiver mais de seis cartas, a fase final pede descarte. Passe o mouse sobre a mão para ver a carta, clique para invocar ou ativar e use o botão direito para alternar para **Set**. Na batalha, clique em um atacante e depois no alvo ou em **Direct attack** se o campo adversário estiver vazio. Quando uma armadilha ou um FLIP lhe dá uma escolha, a CPU aguarda sua resposta. **Reset** inicia um novo duelo.
 
-Para usar um tema próprio ou licenciado, passe `--duel-theme=/caminho/do/tema`. A pasta pode conter `board.png` (fundo do campo, área lógica de 570 × 600), `card-back.png` (verso vertical) e `font.ttf` (texto da tela de duelo). Cada arquivo ausente usa o padrão do cliente. O duelo local tem o fundo do DAT por padrão. A Alpha tem tabuleiro próprio. Ambos usam verso desenhado pelo cliente e fonte padrão do raylib.
+Para usar um tema próprio ou licenciado, passe `--duel-theme=/caminho/do/tema`. A pasta pode conter `board.png` (fundo do campo, área lógica de 570 × 600), `card-back.png` (verso vertical) e `font.ttf` (texto da tela de duelo). Cada arquivo ausente usa o padrão do cliente. A Alpha e o duelo local usam o fundo e o verso do DAT por padrão. A fonte de texto padrão vem do raylib.
 
 O fundo e o verso também aceitam nomes de entradas BMP/YGA do DAT aberto. Os argumentos `--duel-board-dat=NOME` e `--duel-back-dat=NOME` prevalecem sobre os PNGs do tema. A fonte de texto continua configurável por `font.ttf`. [Origem dos recursos nativos](../architecture/native-visual-contract.md#origem-do-fundo-do-verso-e-do-texto).
 
@@ -23,6 +23,8 @@ dotnet run --project src/Joey.App -- ../passion/data.dat --alpha \
   '--duel-board-dat=j\duel\field\fie_normal.bmp' \
   '--duel-back-dat=card\card_ura.bmp'
 ```
+
+O anúncio central de cada fase e a espada de ataque usam imagens do DAT. Na batalha, a espada indica os monstros elegíveis e acompanha a mira até um alvo. Escolher um atacante com o campo adversário vazio declara ataque direto. O painel lateral usa os botões do cliente.
 
 ## Regras e decisões
 

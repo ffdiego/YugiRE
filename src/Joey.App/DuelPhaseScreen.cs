@@ -7,8 +7,6 @@ static partial class Game
     enum DuelPhaseDisplay { Draw, Standby, Main1, Battle, Main2, End }
 
     static readonly string[] phaseLabels = ["DP", "SP", "M1", "BP", "M2", "EP"];
-    static readonly string[] phaseNames =
-        ["Draw Phase", "Standby Phase", "Main Phase 1", "Battle Phase", "Main Phase 2", "End Phase"];
     static readonly PresentationTickClock phaseClock = new();
     static DuelPhaseDisplay displayedPhase;
     static int displayedTurn, phaseUpdates;
@@ -104,9 +102,9 @@ static partial class Game
     static void DrawPhaseNotice()
     {
         if (phaseUpdates <= 0) return;
-        string title = phaseNames[(int)displayedPhase];
         Raylib.DrawRectangle(350, 278, 350, 44, Panel);
         Raylib.DrawRectangleLines(350, 278, 350, 44, Gold);
-        Label(title, 525 - MeasureLabel(title, 25) / 2, 287, 25, Gold);
+        var banner = graphics.Texture(DatGraphics.PhaseBanners[(int)displayedPhase]);
+        Raylib.DrawTexture(banner, 525 - banner.Width / 2, 300 - banner.Height / 2, Color.White);
     }
 }

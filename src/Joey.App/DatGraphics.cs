@@ -5,6 +5,12 @@ using Raylib_cs;
 // GPU resources are owned here; originals stay in the archive and are never written out.
 sealed class DatGraphics : IDisposable
 {
+    public const string DuelBoard = @"j\duel\field\fie_normal.bmp";
+    public const string DuelBack = @"card\card_ura.bmp";
+    public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
+    public static readonly string[] PhaseBanners = new[] { "dr", "st", "m1", "ba", "m2", "en" }
+        .Select(phase => $@"j\duel\phase_name\e_{phase}_b.bmp").ToArray();
+
     readonly Dictionary<string, Texture2D> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly Queue<string> loaded = new();
     Archive? archive;
@@ -75,7 +81,9 @@ sealed class DatGraphics : IDisposable
             Raylib.UnloadImage(image);
             throw new InvalidDataException($"Cannot decode BMP {name}");
         }
-        if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits)
+        if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
+            name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
+            PhaseBanners.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -90,6 +98,7 @@ sealed class DatGraphics : IDisposable
             CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
+        names = names.Concat(PhaseBanners).Append(AttackSword).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
         {
@@ -98,6 +107,8 @@ sealed class DatGraphics : IDisposable
             {
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
+                if ((name == AttackSword || PhaseBanners.Contains(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)
+                    throw new InvalidDataException($"Duel sprite color key is not transparent: {name}");
             }
             finally { Raylib.UnloadImage(image); }
             count++;

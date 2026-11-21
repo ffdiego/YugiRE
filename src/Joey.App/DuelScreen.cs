@@ -204,6 +204,8 @@ static partial class Game
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
                 if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true) && !ActivationInFlight(spellRect))
                     DrawFieldCard(spell, spellRect, duel.SpellFaceDown[player, zone]);
+                if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
+                    DrawAttackSword(new(monsterRect.X + monsterRect.Width / 2, monsterRect.Y + 22), new(0, -1));
                 if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {
@@ -232,8 +234,15 @@ static partial class Game
                     }
                     else if (duel.Phase == DemoPhase.Battle)
                     {
-                        if (own && monster != null) { attacker = zone; hand = -1; message = "Choose an enemy target or Direct attack."; }
-                        else if (!own) CommitHumanAttack(zone);
+                        if (own && duel.CanAttack(zone))
+                        {
+                            attacker = zone;
+                            hand = -1;
+                            message = "Choose an enemy target.";
+                            if (!Enumerable.Range(0, 5).Any(z => duel.Monsters[1 - player, z] is not null))
+                                CommitHumanAttack(-1);
+                        }
+                        else if (!own && monster is not null) CommitHumanAttack(zone);
                     }
                     else if (own && monster != null)
                     {
@@ -351,6 +360,8 @@ static partial class Game
         DrawDuelHand();
         DrawCardEffects();
         DrawFlight();
+        if (actionInput && duel.CanAttack(attacker) && attackCue is null)
+            DrawAttackAim();
         DrawAttackCue();
         DrawSpellActivation();
         DrawPhaseNotice();

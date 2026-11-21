@@ -82,11 +82,12 @@ static partial class Game
             if (Option(args, "--duel-theme=") is string directory) duelTheme.Load(directory);
             string? board = Option(args, "--duel-board-dat=");
             string? back = Option(args, "--duel-back-dat=");
-            if (board is not null || back is not null)
-            {
-                if (error.Length > 0) throw new InvalidDataException(error);
-                duelTheme.LoadDatArt(graphics, board, back);
-            }
+            if (error.Length > 0 && (board is not null || back is not null))
+                throw new InvalidDataException(error);
+            if (error.Length == 0)
+                duelTheme.LoadDatArt(graphics,
+                    board ?? (duelTheme.Board is null ? DatGraphics.DuelBoard : null),
+                    back ?? (duelTheme.CardBack is null ? DatGraphics.DuelBack : null));
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException)
         {
