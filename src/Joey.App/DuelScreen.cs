@@ -96,6 +96,7 @@ static partial class Game
         bool set = setHandAction;
         BeginFlight(card, ViewPlayer, zone, origin, false, set);
         if (set) QueueSetEffect(ViewPlayer, zone, spell: false);
+        else QueueNormalSummonEffect(card, ViewPlayer, zone);
         ClearDuelSelection();
         return true;
     }

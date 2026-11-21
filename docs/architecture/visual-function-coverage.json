@@ -86,7 +86,8 @@
     {
       "address": "0044FA10",
       "family": "Invocação normal",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
     },
     {
       "address": "00450100",

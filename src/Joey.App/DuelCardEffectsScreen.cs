@@ -8,6 +8,7 @@ static partial class Game
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
     sealed record HandTransfer(DemoHandTransfer Transfer) : CardEffect;
     sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
+    sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
@@ -44,6 +45,13 @@ static partial class Game
                                           player == ViewPlayer, zone);
         var origins = NativeSetFrame.ParticleOrigins(center, radii, effectCosine);
         QueueCardEffect(new SetPlacement(player, zone, spell, origins), NativeSetFrame.Updates);
+    }
+
+    static void QueueNormalSummonEffect(Card card, int player, int zone)
+    {
+        // Native 0044F9F0: 33 updates. Core has already applied the summon.
+        // The same queue keeps the visual presentation after the hand flight.
+        QueueCardEffect(new NormalSummonPlacement(card, player, zone), NativeNormalSummonFrame.Updates);
     }
 
     static void QueueOpeningDeal()
@@ -137,6 +145,9 @@ static partial class Game
             case SetPlacement placement:
                 DrawSetPlacement(placement, cardEffects.ElapsedUpdates);
                 break;
+            case NormalSummonPlacement summon:
+                DrawNormalSummon(summon, cardEffects.ElapsedUpdates);
+                break;
         }
     }
 
@@ -164,6 +175,43 @@ static partial class Game
         }
         // Exact MT draw sequence, original 512-element cosine table,
         // BMP manifest order and the native scratch blend await comparison.
+    }
+
+    static void DrawNormalSummon(NormalSummonPlacement summon, int elapsedUpdates)
+    {
+        // The constructor 0044F630 loads data/mini/list_card.txt; the DAT
+        // contains a mini\\<name>.bmp counterpart for every card\\<name>.bmp.
+        // The native Draw is split into scaling and vertically wrapped passes.
+        // The second pass clipping/orientation remains an approximation.
+        string? fullName = graphics.Artwork.For(summon.Card);
+        if (fullName is null || !fullName.StartsWith(@"card\\", StringComparison.OrdinalIgnoreCase))
+            return;
+        var sprite = graphics.Texture(@"mini\\" + fullName[5..]);
+        var center = DuelCardLayout.Center(DuelCardZone.Monster, summon.Player == ViewPlayer, summon.Zone);
+        var frame = NativeNormalSummonFrame.FromUpdate(elapsedUpdates, effectCosine);
+        if (frame.Opacity == 0) return;
+        var tint = new Color(255, 255, 255, frame.Opacity);
+        if (frame.Stage == NativeNormalSummonStage.ExpandMiniature)
+        {
+            float scale = frame.ScaleFixed16 / 65536f;
+            float width = sprite.Width * scale, height = sprite.Height * scale;
+            Raylib.DrawTexturePro(sprite, new Rectangle(0, 0, sprite.Width, sprite.Height),
+                new Rectangle(center.X, center.Y, width, height),
+                new System.Numerics.Vector2(width / 2, height / 2), 0, tint);
+            return;
+        }
+
+        // The native Draw scrolls the mini image by floor(counter*5/8)
+        // and composites two strips if the source offset crosses its edge.
+        int offset = frame.WrappedSourceOffset(sprite.Height);
+        float x = center.X - sprite.Width / 2f;
+        float y = center.Y - sprite.Height / 2f;
+        int firstHeight = sprite.Height - offset;
+        Raylib.DrawTextureRec(sprite, new Rectangle(0, offset, sprite.Width, firstHeight),
+            new System.Numerics.Vector2(x, y), tint);
+        if (offset > 0)
+            Raylib.DrawTextureRec(sprite, new Rectangle(0, 0, sprite.Width, offset),
+                new System.Numerics.Vector2(x, y + firstHeight), tint);
     }
 
     static void DrawHandTransfer(DemoHandTransfer move)

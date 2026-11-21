@@ -73,6 +73,41 @@ internal static class LookAndFeelChecks
               DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
               DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");
+        // Normal Summon: 0044F9F0 increments by 8 through t=256,
+        // and 0044FA10 has different rendering branches either side of 64.
+        var summonCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var summonStart = NativeNormalSummonFrame.FromUpdate(0, summonCosine);
+        var summonLastExpand = NativeNormalSummonFrame.FromUpdate(8, summonCosine);
+        var summonFirstWrap = NativeNormalSummonFrame.FromUpdate(9, summonCosine);
+        var summonEnd = NativeNormalSummonFrame.FromUpdate(32, summonCosine);
+        check(NativeNormalSummonFrame.Updates == 33 &&
+              summonStart.Counter == 0 && summonEnd.Counter == 256 &&
+              summonStart.Stage == NativeNormalSummonStage.ExpandMiniature &&
+              summonStart.ScaleFixed16 == 0x4000 &&
+              summonLastExpand.Counter == 64 && summonLastExpand.ScaleFixed16 == 0x8000 &&
+              summonFirstWrap.Counter == 72 &&
+              summonFirstWrap.Stage == NativeNormalSummonStage.WrappedMiniature,
+              "Normal summon: native 33 updates, initial scale and branch at t=64/72");
+        check(summonStart.Opacity > summonLastExpand.Opacity &&
+              summonFirstWrap.Opacity > 0 &&
+              NativeNormalSummonFrame.FromUpdate(20, summonCosine).Opacity >
+                  summonFirstWrap.Opacity &&
+              summonFirstWrap.WrappedSourceOffset(72) == 45 &&
+              summonEnd.WrappedSourceOffset(72) == 16,
+              "Normal summon: cosine intensities and 5/8 scroll wrapping use native counters");
+        bool invalidSummonSampleRejected = false;
+        try { NativeNormalSummonFrame.FromUpdate(33, summonCosine); }
+        catch (ArgumentOutOfRangeException) { invalidSummonSampleRejected = true; }
+        check(invalidSummonSampleRejected,
+              "Normal summon: never sample deactivated native counter t=264");
+        var summonQueue = new PresentationSequence<string>();
+        summonQueue.Enqueue("hand flight", CardTravel.Updates);
+        summonQueue.Enqueue("normal summon", NativeNormalSummonFrame.Updates);
+        summonQueue.Advance(CardTravel.Updates);
+        check(summonQueue.Current?.Kind == "normal summon" &&
+              summonQueue.ElapsedUpdates == 0,
+              "Normal summon: card landing precedes native summon visual timeline");
+
         var setCosine = ActivationEffectPlayback.ApproximateCosineTable();
         var setStart = NativeSetFrame.FromUpdate(0, setCosine);
         var setMid = NativeSetFrame.FromUpdate(11, setCosine);
