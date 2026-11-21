@@ -25,6 +25,18 @@ internal static class LookAndFeelChecks
               "LookAndFeel: disabling speech and animation are independent policies");
         check(new CustomLook().Duration(DuelPresentationCue.FlipEffect) == TimeSpan.FromMilliseconds(200),
               "LookAndFeel: subclass overrides support per-cue timing changes");
+        var tickClock = new PresentationTickClock();
+        int splitSteps = Enumerable.Range(0, 27)
+            .Sum(_ => tickClock.Advance(TimeSpan.FromMilliseconds(10), classic));
+        tickClock.Reset();
+        int oneFrameSteps = tickClock.Advance(TimeSpan.FromMilliseconds(270), classic);
+        tickClock.Reset();
+        int fastSteps = tickClock.Advance(TimeSpan.FromMilliseconds(135), fast);
+        check(splitSteps == CardTravel.Updates && oneFrameSteps == splitSteps && fastSteps == splitSteps &&
+              classic.UpdatesPerSecond == 30 && fast.UpdatesPerSecond == 60,
+              "Presentation ticks: both rates reach the same card travel endpoint independently of frame partitioning");
+        check(tickClock.Advance(TimeSpan.FromSeconds(1), instant) == 0,
+              "Presentation ticks: Instant skips elapsed animations");
         var clock = new DuelPresentationClock(classic);
         clock.Show(DuelPresentationCue.FlipReveal);
         clock.Advance(TimeSpan.FromMilliseconds(100));

@@ -9,6 +9,7 @@ static partial class Game
     static int hoverHand = -1;
     static bool setHandAction, choosingTributes, choosingEquip;
     static readonly int[] handLift = new int[6];
+    static readonly PresentationTickClock hoverClock = new();
     static Rectangle HandBounds(int slot)
     {
         int count = Math.Min(6, ViewHand.Count - handPage * 6);
@@ -88,7 +89,7 @@ static partial class Game
     static bool HandActionEnabled(int index) => duel.PendingEndDiscards > 0 ||
         (setHandAction ? duel.CanSetFromHand(index) : ViewHand[index].IsMonster
             ? duel.CanSummonFromHand(index) : duel.CanActivateFromHand(index));
-    static bool UpdateHandInteraction()
+    static bool UpdateHandInteraction(int updates)
     {
         handPage = Math.Clamp(handPage, 0, Math.Max(0, (ViewHand.Count - 1) / 6));
         int count = Math.Min(6, ViewHand.Count - handPage * 6);
@@ -114,7 +115,10 @@ static partial class Game
         for (int slot = 0; slot < 6; slot++)
         {
             int target = hoverHand == handPage * 6 + slot ? HandPresentation.HoverOffset : 0;
-            handLift[slot] = presentation.Style.MoveCardAxis(handLift[slot], target);
+            if (!presentation.Style.PlayAnimations) handLift[slot] = target;
+            else
+                for (int i = 0; i < updates && handLift[slot] != target; i++)
+                    handLift[slot] = presentation.Style.MoveCardAxis(handLift[slot], target);
         }
         if (hoverHand < 0) return overHand;
         hand = hoverHand; attacker = -1;
@@ -255,6 +259,8 @@ static partial class Game
     {
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
+        int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
+        spellActivation.Advance(frameElapsed, presentation.Style);
         if (alphaCpu is null || HumanChoice) ApplyOptionalEffectPromptPolicy();
         AdvanceAlpha(frameElapsed);
         var pendingOwner = CpuDuelController.PendingOwner(duel);
@@ -310,7 +316,7 @@ static partial class Game
         if (Button("Hand >", 112, 452, 98, 30, actionInput && (handPage + 1) * 6 < ViewHand.Count)) { handPage++; ClearDuelSelection(); }
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
-        bool handInput = actionInput && UpdateHandInteraction();
+        bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);
         if (hand >= 0 && hand < ViewHand.Count)
         {
             var selectedCard = ViewHand[hand];
@@ -332,7 +338,7 @@ static partial class Game
         DrawDuelHand();
         DrawFlight();
         DrawAttackCue();
-        DrawSpellActivation(frameElapsed);
+        DrawSpellActivation();
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
             string help = flip.Effect switch

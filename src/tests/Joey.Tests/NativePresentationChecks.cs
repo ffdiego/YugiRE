@@ -25,10 +25,10 @@ internal static class NativePresentationChecks
               HandPresentation.Approach(600, 568) == 592,
               "Native presentation: hand fan and smoothing moved out of Joey.Core");
         check(new DuelLookAndFeel().MoveCardAxis(600, 568) == 592 &&
-              new FastLookAndFeel().MoveCardAxis(600, 568) == 586 &&
+              new FastLookAndFeel().MoveCardAxis(600, 568) == 592 &&
               new SilentLookAndFeel().MoveCardAxis(600, 568) == 592 &&
               new InstantLookAndFeel().MoveCardAxis(600, 568) == 568,
-              "Native presentation: profile overrides change motion without changing rules");
+              "Native presentation: Classic and Fast share one native hand update step");
 
         var activation = new NativeActivationTimeline();
         // Synthetic lookup for deterministic arithmetic tests. Do NOT claim

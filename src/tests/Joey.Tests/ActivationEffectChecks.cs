@@ -57,8 +57,8 @@ internal static class ActivationEffectChecks
               "Activation playback: starts at counter zero, own local screen position");
 
         playback.Advance(TimeSpan.FromMilliseconds(100), new DuelLookAndFeel());
-        check(playback.IsPlaying && playback.Counter == 96,
-              "Activation playback: prototype 60Hz policy gives six +16 updates in 100ms");
+        check(playback.IsPlaying && playback.Counter == 48,
+              "Activation playback: Classic advances three steps in 100ms");
         playback.Advance(TimeSpan.FromSeconds(1), new DuelLookAndFeel());
         check(!playback.IsPlaying && playback.Counter == 272,
               "Activation playback: 17 native updates terminate the animation without blocking");
@@ -66,10 +66,17 @@ internal static class ActivationEffectChecks
         playback.Start(new CardPoint(525, 352), new CardBounds(492, 308, 66, 88),
                        category: 1, style: new FastLookAndFeel());
         playback.Advance(TimeSpan.FromMilliseconds(100), new FastLookAndFeel());
-        check(playback.IsPlaying && playback.Counter == 192 &&
+        check(playback.IsPlaying && playback.Counter == 96 &&
               playback.Frame.Lower.ResourceIndex == 3 &&
               playback.Frame.Upper.ResourceIndex == 2,
               "Activation playback: Fast doubles update cadence; category 1 uses yellow resources");
+
+        playback.Advance(TimeSpan.FromMilliseconds(180), new FastLookAndFeel());
+        check(playback.IsPlaying && playback.Counter == 256,
+              "Activation playback: Fast still displays its last live counter after 280ms");
+        playback.Advance(TimeSpan.FromMilliseconds(4), new FastLookAndFeel());
+        check(!playback.IsPlaying && playback.Counter == 272,
+              "Activation playback: Fast terminates on the same seventeenth update");
 
         playback.Start(new CardPoint(525, 352), new CardBounds(492, 308, 66, 88),
                        style: new InstantLookAndFeel());

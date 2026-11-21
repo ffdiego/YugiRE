@@ -119,8 +119,11 @@ internal static class CpuDuelChecks
             return string.Join("|", transcript) + $"/{d.Winner}/{d.IsDraw}";
         }
         for (int seed = 0; seed < 40; seed++)
-            check(Play(seed, new DuelLookAndFeel()) == Play(seed, new InstantLookAndFeel()),
+        {
+            string expected = Play(seed, new DuelLookAndFeel());
+            check(expected == Play(seed, new FastLookAndFeel()) && expected == Play(seed, new InstantLookAndFeel()),
                 $"CPU: full duel seed {seed}, deterministic result independent of presentation");
+        }
     }
 
     public static void RunCatalog(Action<bool, string> check, Archive archive)

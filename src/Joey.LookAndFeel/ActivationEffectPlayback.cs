@@ -50,17 +50,15 @@ public sealed record NativeYgaSprite(int Width, int Height, byte[] Rgba)
 }
 
 /// <summary>
-/// Prototype visual scheduler: the real native update frequency is unknown.
-/// The selected calls-per-second here affect *presentation only*.
+/// Playback at the profile's nominal update rate, independent of rendering and rules.
 /// Samples the already-ported counter and native three-pass descriptors.
 /// </summary>
 public sealed class ActivationEffectPlayback
 {
-    public const double DemoUpdatesPerSecond = 60; // Client policy, NOT native evidence.
     public const int MaxUpdates = 17;
     private readonly NativeActivationTimeline timeline = new();
     private readonly int[] cosine;
-    private double accumulator;
+    private readonly PresentationTickClock clock = new();
     public CardPoint Center { get; private set; }
     public CardBounds ScratchBounds { get; private set; }
     public int Category { get; private set; }
@@ -90,7 +88,7 @@ public sealed class ActivationEffectPlayback
         Center = center;
         ScratchBounds = scratchBounds;
         Category = category;
-        accumulator = 0;
+        clock.Reset();
         timeline.Reset();
         IsPlaying = style?.PlayAnimations != false;
     }
@@ -101,12 +99,7 @@ public sealed class ActivationEffectPlayback
         if (elapsed < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(elapsed));
         if (!IsPlaying) return;
         if (!style.PlayAnimations) { IsPlaying = false; return; }
-        if (!double.IsFinite(style.Speed) || style.Speed <= 0)
-            throw new InvalidOperationException("Invalid presentation speed.");
-        accumulator += elapsed.TotalSeconds * DemoUpdatesPerSecond * style.Speed;
-        // Cap to a known 17 native updates so no unbounded loop on frame stalls.
-        int n = Math.Min((int)Math.Min(accumulator, MaxUpdates), MaxUpdates);
-        accumulator -= n;
+        int n = Math.Min(clock.Advance(elapsed, style), MaxUpdates);
         for (int i = 0; i < n && timeline.Active; i++)
             timeline.AdvanceNativeUpdate();
         IsPlaying = timeline.Active;
@@ -115,6 +108,6 @@ public sealed class ActivationEffectPlayback
     public void Stop()
     {
         IsPlaying = false;
-        accumulator = 0;
+        clock.Reset();
     }
 }

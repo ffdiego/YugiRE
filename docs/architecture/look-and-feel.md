@@ -34,15 +34,13 @@ nativos ainda não medidos.
   `Advance`, `SetStyle` e `Clear`. Não chama `Sleep`, `Task.Delay` ou
   qualquer método de `Joey.Core`.
 
-No `Joey.App` atual, os argumentos `--fast`, `--instant` e `--mute-joey`
-selecionam o preset ao iniciar, e a janela mostra o nome. A duração do cue
-controla apenas o realce do **texto de feedback**. O perfil também altera
-a suavização de movimento da mão: Classic = 1 passo nativo por render,
-Fast = 2, Instant = posicionamento imediato. Esta política por frame ainda
-não corresponde a um FPS nativo confirmado. A camada de áudio/vozes do
-Joey ainda **não existe**, portanto `--mute-joey` é uma política preparada
-para futuras falas, **não** a desativação de um player de áudio já integrado.
-Não confundir o timing inicial do demo com valores medidos no executável.
+No `Joey.App`, `PresentationTickClock` converte o tempo entre renders em
+passos inteiros e guarda a fração para o próximo quadro. Classic aplica 30
+passos/s e Fast aplica 60 no hover da mão, no deslocamento da carta e no
+brilho de ativação. Os três usam os mesmos contadores nos dois presets.
+Instant ignora essas transições. O intervalo entre ações da CPU e os
+outros cues continuam sob política do cliente. `--mute-joey` configura
+a preferência de voz, ainda sem player de áudio.
 
 Exemplo de futura extensão sem editar a engine:
 
@@ -63,10 +61,9 @@ A primeira integração desenhável está documentada em
 [`activation-preview.md`](activation-preview.md). `NativeYgaSprite`
 decodifica pixels BGRA dos YGAs originais com LZSS fornecido pelo chamador;
 `ActivationEffectPlayback` executa os 17 updates lógicos do nativo, usando
-uma frequência de atualização **escolhida pelo cliente**. O app raylib
+a cadência nominal selecionada no preset. O app raylib
 desenha os dois sprites e o scratch intermediário. A fidelidade de mistura,
 tabela de cosseno e temporização com o original **não foi demonstrada**.
-A animação fica congelada nesta fatia e a prioridade volta às cartas.
 
 ## Separação pretendida
 

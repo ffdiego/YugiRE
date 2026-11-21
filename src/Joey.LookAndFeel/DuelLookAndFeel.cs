@@ -16,22 +16,35 @@ public enum DuelPresentationCue
 
 public class DuelLookAndFeel
 {
+    // Nominal loop setting at 005EB618. Fast uses the same counters at twice this rate.
+    public const int ClassicUpdatesPerSecond = 30;
+
+    public double UpdatesPerSecond
+    {
+        get
+        {
+            double rate = ClassicUpdatesPerSecond * Speed;
+            if (!double.IsFinite(rate) || rate <= 0)
+                throw new InvalidOperationException("Presentation speed must be positive and finite.");
+            return rate;
+        }
+    }
+
     public virtual string Name => "Classic";
     public virtual double Speed => 1.0;
     public virtual bool PlayAnimations => true;
     public virtual bool PlayJoeyVoice => true;
 
     /// <summary>
-    /// One native hand-motion update per client render call by default.
-    /// This is not a claim about the original game's update frequency.
+    /// One native hand-motion step. The presentation clock decides when to call it.
     /// </summary>
     public virtual int MoveCardAxis(int current, int target) =>
         HandPresentation.Approach(current, target);
 
-    /// <summary>Nominal sandbox timing, not reverse-engineered native timing.</summary>
+    /// <summary>Card travel uses the native tick count. Other cue durations are client policy.</summary>
     protected virtual TimeSpan BaseDuration(DuelPresentationCue cue) => cue switch
     {
-        DuelPresentationCue.CardMove => TimeSpan.FromMilliseconds(220),
+        DuelPresentationCue.CardMove => TimeSpan.FromSeconds(CardTravel.Updates / (double)ClassicUpdatesPerSecond),
         DuelPresentationCue.FlipReveal => TimeSpan.FromMilliseconds(450),
         DuelPresentationCue.FlipEffect => TimeSpan.FromMilliseconds(500),
         DuelPresentationCue.Battle => TimeSpan.FromMilliseconds(650),
@@ -58,9 +71,6 @@ public class FastLookAndFeel : DuelLookAndFeel
     public override string Name => "Fast";
     public override double Speed => 2.0;
 
-    /// <summary>Two native motion steps per client render call.</summary>
-    public override int MoveCardAxis(int current, int target) =>
-        base.MoveCardAxis(base.MoveCardAxis(current, target), target);
 }
 
 /// <summary>Visual effects without character voice cues (voice playback is future UI integration).</summary>

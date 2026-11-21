@@ -16,9 +16,10 @@ static partial class Game
     static bool CanPlayMainOrBattle => CanPlayTurn && (alphaCpu is null || !duel.CanDraw);
 
     sealed record CardFlight(Card Card, bool Hidden, bool Defense, int Player, int Zone, bool Spell,
-        Rectangle Origin, Rectangle Destination, TimeSpan Duration);
+        Rectangle Origin, Rectangle Destination);
     static CardFlight? flight;
-    static TimeSpan travelElapsed;
+    static readonly PresentationTickClock travelClock = new();
+    static int travelUpdate;
     sealed record AttackCue(Vector2 Origin, Vector2 Target, TimeSpan Duration);
     static AttackCue? attackCue;
     static TimeSpan attackElapsed;
@@ -68,6 +69,8 @@ static partial class Game
         ClearDuelSelection();
         spellActivation.Stop();
         flight = null;
+        travelClock.Reset();
+        hoverClock.Reset();
         attackCue = null;
         presentation.Clear();
         previousDuelMessage = "";
@@ -83,10 +86,10 @@ static partial class Game
     static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
     {
         if (alphaCpu is null || !presentation.Style.PlayAnimations) return;
-        travelElapsed = TimeSpan.Zero;
-        var duration = presentation.Style.Duration(DuelPresentationCue.CardMove);
+        travelUpdate = 0;
+        travelClock.Reset();
         flight = new(card, hidden, !spell && hidden, player, zone, spell, origin,
-            ZoneBounds(player, zone, spell), duration);
+            ZoneBounds(player, zone, spell));
     }
 
     static bool InFlight(int player, int zone, bool spell) =>
@@ -96,8 +99,7 @@ static partial class Game
     {
         if (flight is not { } f) return;
         static CardBounds Bounds(Rectangle rect) => new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
-        int update = Math.Clamp((int)(travelElapsed.TotalSeconds / f.Duration.TotalSeconds * CardTravel.Updates), 0, CardTravel.Updates);
-        var cell = CardTravel.Sample(Bounds(f.Origin), Bounds(f.Destination), update);
+        var cell = CardTravel.Sample(Bounds(f.Origin), Bounds(f.Destination), travelUpdate);
         DrawFieldCard(f.Card, new(cell.X, cell.Y, cell.Width, cell.Height), f.Hidden, f.Defense);
     }
 
@@ -131,8 +133,11 @@ static partial class Game
     {
         attackElapsed += elapsed;
         if (attackCue is { } attack && attackElapsed >= attack.Duration) attackCue = null;
-        travelElapsed += elapsed;
-        if (flight is { } move && travelElapsed >= move.Duration) flight = null;
+        if (flight is not null)
+        {
+            travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
+            if (travelUpdate >= CardTravel.Updates) flight = null;
+        }
         if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || flight is not null || spellActivation.IsPlaying) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;

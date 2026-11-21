@@ -32,9 +32,9 @@ Joey.App (raylib)
 
 Os três arquivos `HandPresentation.cs`, `NativeAnimation.cs` e
 `DuelLookAndFeel.cs` ficam em `src/Joey.LookAndFeel`. O Core **não** depende
-do assembly de apresentação. O método `MoveCardAxis` é virtual: Classic aplica
-um passo nativo por *chamada do cliente*, Fast aplica dois, Instant salta à
-posição final. Isso altera **só a apresentação**, não o número de turnos,
+do assembly de apresentação. O método `MoveCardAxis` aplica um passo nativo. O relógio
+de apresentação o agenda a 30 passos/s em Classic e 60 em Fast. Instant
+salta à posição final. Isso altera **só a apresentação**, não o número de turnos,
 compras ou respostas lógicas. O FPS do programa original ainda não foi medido.
 
 ## Geometria e mão
@@ -116,14 +116,40 @@ evidência mostra que **draw também altera estado** para essa classe.
 Não se afirmou duração de animação em segundos, FPS de 60 do nativo nem
 contagem fixa de imagens exibidas.
 
+## Contadores do executável e efeito de `-speedy`
+
+Análise estática em Ghidra com `-noanalysis -readOnly`, conferida com
+`objdump` no EXE do SHA acima. O DWORD em `005EB618` começa em **30** na
+seção `.data`. O parser em `00411CA2` grava **60** com `-speedy`.
+A leitura em `00411101` passa o valor a `005456E0`, que calcula
+`(1000 << 16) / frequência`. O laço chama `00545780` em `004112D4` e
+essa rotina usa o intervalo acumulado e timestamps em milissegundos.
+Isso estabelece a cadência **nominal do laço** de 30 ou 60 iterações/s.
+O relatório anterior de xrefs não mostrou a leitura em `00411101`.
+
+| Efeito | Contador estático | Tempo nominal a 30 / 60 updates/s |
+| --- | --- | --- |
+| Movimento da carta (`00418B60`) | De `0` até `0x100` em passos de `0x20`: 8 updates de movimento | 267 / 133 ms |
+| Brilho de ativação (`00450590`) | `+0x10`, desativa no 17.º update | 567 / 283 ms |
+| Aviso padrão de fase (`00480B40`, `00480C20`, `00480C60`) | Começa em `0`, soma `8`, encerra no draw em `0x100`: 32 updates. O índice de fase `3` soma `4` de `0x40` a `0x80` e leva 40 updates. | 1.067 / 533 ms. Índice `3`: 1.333 / 667 ms. |
+| Aviso de troca de jogador (`00480BC0`, `00480C20`, `00480C60`) | Índice `6`, `+8` até `0x180`: 48 updates | 1.600 / 800 ms |
+| Valor flutuante de LP (`0047C4F0`, `0047C560`) | Contador `0 → 0x100` em 32 updates. Depois, enquanto a flag em `+0x30` estiver livre, consome um passo por update de `100`, `10` ou `1`, conforme o valor restante. Um delta de `1.000` requer mais 10 updates. | Espera: 1.067 / 533 ms. Consumo de 1.000: mais 333 / 167 ms. |
+
+As conversões assumem um update do objeto por iteração. Os valores não
+incluem esperas por resposta, sobreposições, pausas impostas por flags,
+nem a cadência efetiva de draw. A gravação feita com `-speedy`, a 30 fps,
+mostra a ordem dos efeitos, mas amostra menos quadros que a cadência nominal
+de update. Ela não mede o preset sem a flag. Ainda falta fechar a lógica de
+seleção e movimento da espada, que não deve herdar os tempos de uma carta.
+
 ## Primeira prévia em raylib (posterior à análise estática)
 
 A aplicação agora carrega os sprites de ativação `kouka_ue/sita_b/y.yga`
 do DAT original por `NativeYgaSprite` e desenha os três passes via
 `DuelActivationScreen.cs` quando uma magia suportada é realmente ativada.
 A política temporal `ActivationEffectPlayback` segue os 17 updates do
-contador, mas usa **60 atualizações/s como escolha do cliente**, não
-medição do EXE. As transformações usam tabela gerada com `Math.Cos`
+contador com 30 atualizações/s em Classic e 60 em Fast. Essas são as
+cadências nominais do laço recuperadas estaticamente. As transformações usam tabela gerada com `Math.Cos`
 e GPU blending da raylib; isto é uma **prévia**, não replay pixel-perfect.
 [Instruções, limitações e pausa da trilha](activation-preview.md).
 
@@ -142,5 +168,5 @@ executados pela CI; a UI ainda requer comparação manual com Joey no Windows.
    e concluir a ligação por eventos tipados de domínio. `--fast` e
    `--mute-joey` continuam políticas de apresentação, nunca regras.
 
-Os perfis de milissegundos existentes em `DuelLookAndFeel.cs` são ainda
-**tempos do protótipo** e não devem ser anunciados como originais do Joey.
+As durações dos demais cues em `DuelLookAndFeel.cs` continuam sendo
+políticas do protótipo. A trilha de ataque ainda usa uma duração provisória.

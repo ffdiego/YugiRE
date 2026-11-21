@@ -55,11 +55,10 @@ BGRA → RGBA e aplica a color key RGB preta. Assim
    a categoria azul é utilizada na integração atual, com a amarela
    disponível nos recursos e no modelo.
 
-No **cliente** foi escolhido **60 updates por segundo**, escalados pelo
-perfil Classic/Fast. Isso é uma convenção de visualização, **não** uma
-medição do loop do Joey original; o FPS de renderização pode variar.
-`Instant` ignora a prévia. O tempo de `DuelPresentationClock` usado
-para mensagens é outra política visual e não altera esses 17 updates.
+Classic executa os 17 updates a 30 passos/s e Fast a 60, conforme a
+cadência nominal recuperada do assembly. O FPS de renderização pode
+variar. Instant ignora a prévia. O relógio de mensagens em
+`DuelPresentationClock` permanece separado. [Contadores e endereços](native-visual-contract.md#contadores-do-executável-e-efeito-de--speedy)
 
 ### Limitações que ainda impedem declarar fidelidade
 

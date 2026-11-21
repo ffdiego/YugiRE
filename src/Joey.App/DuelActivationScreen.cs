@@ -4,9 +4,7 @@ using System.Numerics;
 
 static partial class Game
 {
-    // Local presentation-only preview. No change to Joey.Core or card timing.
-    // Native counter/path are known; 60 updates/sec and approximate cosine table
-    // are a client choice pending Windows measurement of the original.
+    // Render the presentation counter. Cosine lookup and blending are approximations.
     static readonly ActivationEffectPlayback spellActivation = new();
 
     static void BeginSpellActivation(int centerX, int centerY, int cardWidth = 66, int cardHeight = 88,
@@ -19,9 +17,8 @@ static partial class Game
             category, presentation.Style);
     }
 
-    static void DrawSpellActivation(TimeSpan elapsed)
+    static void DrawSpellActivation()
     {
-        spellActivation.Advance(elapsed, presentation.Style);
         if (!spellActivation.IsPlaying) return;
 
         var frame = spellActivation.Frame;
