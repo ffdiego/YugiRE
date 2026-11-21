@@ -47,6 +47,7 @@ static partial class Game
         ResetDuelPresentation();
         QueueDuelOpening();
         QueueOpeningDeal();
+        QueueInitialExodiaOpening();
         message = "Your turn.";
     }
 
