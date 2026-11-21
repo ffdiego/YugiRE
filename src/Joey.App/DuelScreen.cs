@@ -380,12 +380,7 @@ static partial class Game
             presentation.Show(cue);
             previousDuelMessage = message;
         }
-        if (duel.GameOver)
-        {
-            string result = duel.IsDraw ? "DRAW" : $"PLAYER {duel.Winner.GetValueOrDefault() + 1} WINS";
-            Raylib.DrawRectangle(400, 278, 250, 44, Panel);
-            Label(result, 525 - MeasureLabel(result, 22) / 2, 286, 22, Gold);
-        }
+        DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
         if (choiceInput && HumanChoice && pendingOwner is not null)
         {
