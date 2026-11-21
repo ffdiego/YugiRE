@@ -215,6 +215,8 @@ static partial class Game
             BeginFlight(card, step.Player, zone, origin, !card.IsMonster, step.Action == CpuAction.Set);
             if (step.Action == CpuAction.Set)
                 QueueSetEffect(step.Player, zone, spell: !card.IsMonster);
+            else
+                QueueNormalSummonEffect(card, step.Player, zone);
         }
         else if (step.SourceZone is int spellZone &&
                  step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
