@@ -67,7 +67,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Abertura | `004516A0` / `005DB334` | `00451950` | `00451980` | `effect/duelstart.txt`, `duel_start_e.bmp` | Parcial: imagem original DAT centralizada em (400,300), 40 updates, escala inicial + cosseno e fade-in/hold/fade-out. Ordenação antes da mão inicial é política da Alpha. |
 | Resultado do duelo | `00451B80` / `005DB344` | `00451E40` | `00451E60` | `effect/duelend.txt`, `duel_win/lose/draw_e.yga` | Parcial: substituiu painel do cliente pelos YGAs de resultado originais, centralizados em (400,300), com fade-in da função nativa; após t=512 mantém banner (não presume fade-out inatingível no Update). |
 | Fusão | `004520E0` / `005DB364` e `004874C0` / `005DBD54` | `004524E0 / 004877B0` | `004524F0 / 004877F0` | `effect/fusion.txt` | Não implementado. |
-| Embaralhamento | `004532C0` / `005DB384` | `00453540` | `00453560` | `effect/shuffle.txt` | Não implementado. As cartas de Morphing Jar usam a fila de transferências já descrita. |
+| Embaralhamento | `004532C0` / `005DB384` | `00453540` | `00453560` | `effect/shuffle.txt`, `deck_shuf1..5.bmp`, `deck_shuf_waku_e.yga` | Parcial: 41 Updates com 5 quadros originais e movimento deck→centro→deck; eventos em buscas no deck e Morphing Jar #2. Centro `DAT_005DB570`, escala/composição e ordem do manifesto ainda não comprovados. |
 | Corrente | `0041F5C0` / `005DABA8` | `0041F830` | `0041F870` | `chain/chain.txt` | Não implementado. |
 | Indicador de corrente desativada | `00452F20` / `005DB374` | `004531A0` | `004531C0` | `chain/disable.txt` | Não implementado. |
 | Remoção / exclusão | `0043D810` / `005DACB4` | `004481F0` | `0043DBE0` | `effect/exclusion.txt` | Não implementado como animação. |
@@ -405,3 +405,46 @@ visual passa para **16/31 (51.61%)**. Ainda faltam
 composição de superfície, diferenças de kernel BMP/YGA,
 eventual mascaramento do fundo, som do aviso, troca de cena,
 calibração do scheduler e capturas pareadas 800×600.
+
+
+## Embaralhamento — integração parcial (21/11/2026)
+
+O construtor `004532C0` está no SQLite global; os
+entrypoints `00453540` e `00453560` no ZIP Ghidra
+anterior. Update soma 8 a `obj+0x14` até desativar
+em 328: **41 quadros** `0,8,…,320`.
+
+O Draw seleciona cinco variantes com índice
+`(counter / 8) % 5 + 1` (1..5) carregadas pelo manifesto
+`effect/shuffle.txt`: o DAT lista `deck_shuf1..5.bmp`.
+Há também `deck_shuf_waku_e.yga`, usado como moldura
+na janela central. Três janelas:
+- `t < 64`: deck para centro, peso de origem
+  `256 − 4t` em ponto fixo x8.8.
+- `64 ≤ t ≤ 256`: embaralhamento central em cinco quadros;
+  música/sons repetidos a cada 64 unidades do contador.
+- `256 < t ≤ 320`: retorno ao deck, peso
+  `256 − 4(320−t)`.
+
+O ponto do deck usa `0045C140` com descritor de deck.
+O centro da operação lê `DAT_005DB570`, valor ainda
+não recuperado. No cliente, a hipótese explícita é
+`(525,300)` e a moldura em `(525,326)`; escala de
+sprite, clipping, seleção de buffers e blend continuam
+provisórios. As animações são apresentadas exclusivamente
+com os BMP/YGA originais do DAT.
+
+O Core emite `DeckShuffled` **depois** de concluir
+uma transformação de deck por buscador ou Morphing Jar #2;
+o evento não altera a ordem, seed, contagem ou aquisição
+das cartas e nunca é gerado pelos embaralhamentos iniciais
+de `DemoDuel.FromDecks`. A Alpha usa a mesma fila visual,
+inclusive quando ambos os lados embaralham em sequência.
+O teste Morphing Jar #2 exige os dois eventos separados,
+além da preservação das regras já testadas.
+
+Status **Partial**, cobertura visual **17/31 (54.84%)**,
+0 `Verified`. Conferir no executável localização do
+shuffle, tamanho real dos cinco BMPs, moldura, direção
+da viagem, som, transições, frames e ausência de
+animacões redundantes em buscas específicas.

@@ -73,6 +73,37 @@ internal static class LookAndFeelChecks
               DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
               DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");
+        // Deck shuffle 00453540/00453560: five 8-counter BMP phases
+        // and travel from deck to central stage and back.
+        var deckOrigin = new CardPoint(760, 366);
+        var shuffleCenter = new CardPoint(525, 300);
+        var shuffle0 = NativeShuffleFrame.FromUpdate(0);
+        var shuffle1 = NativeShuffleFrame.FromUpdate(1);
+        var shuffle5 = NativeShuffleFrame.FromUpdate(5);
+        var shuffle7 = NativeShuffleFrame.FromUpdate(7);
+        var shuffle8 = NativeShuffleFrame.FromUpdate(8);
+        var shuffle32 = NativeShuffleFrame.FromUpdate(32);
+        var shuffle33 = NativeShuffleFrame.FromUpdate(33);
+        var shuffle40 = NativeShuffleFrame.FromUpdate(40);
+        check(NativeShuffleFrame.Updates == 41 && shuffle0.Counter == 0 &&
+              shuffle40.Counter == 320 && shuffle0.SpriteFrame == 0 &&
+              shuffle1.SpriteFrame == 1 && shuffle5.SpriteFrame == 0 &&
+              shuffle7.Moving && !shuffle8.Moving && !shuffle32.Moving &&
+              shuffle33.Moving && shuffle40.Moving,
+              "Deck shuffle: five native frame variants and 41-Update travel gates");
+        check(shuffle0.Position(deckOrigin, shuffleCenter) == deckOrigin &&
+              shuffle8.Position(deckOrigin, shuffleCenter) == shuffleCenter &&
+              shuffle32.Position(deckOrigin, shuffleCenter) == shuffleCenter &&
+              shuffle40.Position(deckOrigin, shuffleCenter) == deckOrigin &&
+              shuffle7.DeckWeightFixed8 == 32 &&
+              shuffle33.DeckWeightFixed8 == 32,
+              "Deck shuffle: native 8.8 weight moves sprite into and out of stage center");
+        bool invalidShuffleRejected = false;
+        try { NativeShuffleFrame.FromUpdate(NativeShuffleFrame.Updates); }
+        catch (ArgumentOutOfRangeException) { invalidShuffleRejected = true; }
+        check(invalidShuffleRejected,
+              "Deck shuffle: do not sample a deactivated counter after t=320");
+
         // Duel opening 00451950/00451980: 40 native updates, centered
         // logo shrinks from 1.5x, stays opaque, then fades away.
         var noticeCosine = ActivationEffectPlayback.ApproximateCosineTable();

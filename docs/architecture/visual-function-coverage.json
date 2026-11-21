@@ -131,7 +131,8 @@
     {
       "address": "00453560",
       "family": "Embaralhamento",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
     },
     {
       "address": "0041F870",
