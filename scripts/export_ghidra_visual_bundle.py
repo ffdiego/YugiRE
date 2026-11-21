@@ -44,6 +44,31 @@ def targets() -> list[str]:
     return sorted(result)
 
 
+def choose_targets(explicit: list[str] | None, limit: int) -> list[str]:
+    """Use exact VAs for a focused batch, leaving the default inventory unchanged."""
+    if explicit is None:
+        return targets()[:limit]
+    selected = []
+    for value in explicit:
+        address = value.upper()
+        if not re.fullmatch(r"[0-9A-F]{8}", address):
+            raise ValueError(f"Invalid target VA: {value!r}; expected eight hex digits")
+        selected.append(address)
+    result = sorted(set(selected))
+    if len(result) > limit:
+        raise ValueError(f"Too many explicit VAs: {len(result)} exceeds max-functions={limit}")
+    return result
+
+
+def query_arguments(addresses: list[str], disassemble: bool = False,
+                    transient: bool = False) -> list[str]:
+    """Keep disassembly observational; transient function edits roll back."""
+    result = [("tempfunc:" if transient else "") + address for address in addresses]
+    if disassemble:
+        result.extend("ins:" + address + ":100" for address in addresses)
+    return result
+
+
 def run_query(ghidra: Path, work: Path, name: str, arguments: list[str],
               timeout: int) -> tuple[bool, str]:
     output = work / (name + ".txt")
@@ -99,6 +124,10 @@ def main(argv=None) -> int:
     parser.add_argument("--output", type=Path, default=Path("scratch/ghidra-visual-batch.zip"))
     parser.add_argument("--list-only", action="store_true",
                         help="preview targets without launching Ghidra")
+    parser.add_argument("--targets", nargs="+", metavar="VA",
+                        help="export only these explicit addresses, e.g. 0044EFD0")
+    parser.add_argument("--disassemble", action="store_true",
+                        help="include up to 100 assembly instructions per selected VA")
     parser.add_argument("--max-functions", type=int, default=120)
     parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--retry-missing", action="store_true",
@@ -107,7 +136,10 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if not 1 <= args.batch_size <= 12 or args.max_functions < 1 or args.timeout < 30:
         parser.error("batch-size must be 1..12; max-functions >=1; timeout >=30")
-    selected = targets()[:args.max_functions]
+    try:
+        selected = choose_targets(args.targets, args.max_functions)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.list_only:
         print(f"{len(selected)} target functions; SHA256 expected: {EXPECTED_SHA256}")
         print("\n".join(selected))
@@ -127,7 +159,8 @@ def main(argv=None) -> int:
     for index in range(0, len(selected), args.batch_size):
         group = selected[index:index + args.batch_size]
         name = f"batch-{index // args.batch_size:03d}"
-        ok, reason = run_query(ghidra, work, name, group, args.timeout)
+        ok, reason = run_query(ghidra, work, name,
+                               query_arguments(group, args.disassemble), args.timeout)
         found = extract_functions(work / (name + ".txt"))
         acquired.update(found)
         attempts.append({"name": name, "targets": group, "resolved": sorted(found),
@@ -137,7 +170,10 @@ def main(argv=None) -> int:
     if args.retry_missing:
         for index, address in enumerate(missing):
             name = f"retry-{index:03d}-{address}"
-            ok, reason = run_query(ghidra, work, name, ["tempfunc:" + address], args.timeout)
+            ok, reason = run_query(
+                ghidra, work, name,
+                query_arguments([address], args.disassemble, transient=True),
+                args.timeout)
             found = extract_functions(work / (name + ".txt"))
             acquired.update(found)
             attempts.append({"name": name, "targets": [address], "resolved": sorted(found),
@@ -146,7 +182,10 @@ def main(argv=None) -> int:
     missing = [address for address in selected if address not in acquired]
     metadata = {"schemaVersion": 1, "purpose": "private handoff: native visual decompilation",
                 "executableSha256": EXPECTED_SHA256, "gitHead": git_head(),
-                "selected": selected, "decompiled": sorted(acquired & set(selected)),
+                "selected": selected,
+                "explicitTargets": args.targets is not None,
+                "assemblyIncluded": args.disassemble,
+                "decompiled": sorted(acquired & set(selected)),
                 "missing": missing, "attempts": attempts,
                 "note": "Decompiler pseudocode is not verified runtime behavior; no DAT/EXE included."}
     (work / "manifest.json").write_text(
