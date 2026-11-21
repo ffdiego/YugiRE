@@ -21,6 +21,11 @@ internal static class NativePresentationChecks
                   NativePhaseTurnFlip.Frame(button, 16 + button * 3) == 0) &&
               NativePhaseTurnFlip.Frame(5, 63) == 0,
               "Phase turn flip: each button starts three updates later and holds its final face");
+        check(NativePhaseNotice.BattleFrame(7) is null &&
+              Enumerable.Range(8, 14).Select(NativePhaseNotice.BattleFrame)
+                  .SequenceEqual(Enumerable.Range(0, 7).SelectMany(i => new int?[] { i, i })) &&
+              NativePhaseNotice.BattleFrame(22) is null,
+            "Battle banner: seven native sprites appear for two updates each in the slowed window");
         // Coordinates are native centers in the logical 800x600 canvas.
         check(NativeDuelLayout.MonsterCenter(0, true) == new CardPoint(369, 352) &&
               NativeDuelLayout.MonsterCenter(4, true) == new CardPoint(681, 352) &&

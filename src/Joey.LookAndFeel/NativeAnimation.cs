@@ -102,6 +102,11 @@ public static class NativePhaseNotice
 {
     public const int StandardUpdates = 32;
     public const int BattleUpdates = 40;
+    public const int BattleFrameCount = 7;
+
+    // 00481370 slows the counter in [0x40, 0x80); 00480DC5 selects the seven frames.
+    public static int? BattleFrame(int elapsedUpdates) =>
+        elapsedUpdates is >= 8 and < 22 ? (elapsedUpdates - 8) / 2 : null;
 }
 
 /// <summary>

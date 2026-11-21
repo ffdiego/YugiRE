@@ -142,7 +142,11 @@ static partial class Game
     {
         if (phaseUpdates <= 0) return;
         var banners = RedPhaseSide ? DatGraphics.PhaseBannersRed : DatGraphics.PhaseBannersBlue;
-        var banner = graphics.Texture(banners[(int)displayedPhase]);
+        string asset = banners[(int)displayedPhase];
+        if (displayedPhase == DuelPhaseDisplay.Battle &&
+            NativePhaseNotice.BattleFrame(NativePhaseNotice.BattleUpdates - phaseUpdates) is int frame)
+            asset = (RedPhaseSide ? DatGraphics.BattleBannersRed : DatGraphics.BattleBannersBlue)[frame];
+        var banner = graphics.Texture(asset);
         Raylib.DrawTexture(banner, 525 - banner.Width / 2, 300 - banner.Height / 2, Color.White);
     }
 }

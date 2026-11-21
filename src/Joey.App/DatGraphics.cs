@@ -20,13 +20,20 @@ sealed class DatGraphics : IDisposable
     public static readonly string[] PhaseFlipToRed = PhaseButtonImages('r');
     public static readonly string[] PhaseBannersBlue = PhaseBannerImages('b');
     public static readonly string[] PhaseBannersRed = PhaseBannerImages('r');
+    public static readonly string[] BattleBannersBlue = BattleBannerImages('b');
+    public static readonly string[] BattleBannersRed = BattleBannerImages('r');
+
+    private static string[] BattleBannerImages(char side) => Enumerable.Range(1, NativePhaseNotice.BattleFrameCount)
+        .Select(frame => $@"j\duel\phase_name\e_ba_{side}{frame}.bmp").ToArray();
 
     private static string[] PhaseBannerImages(char side) => PhaseCodes
         .Select(phase => $@"j\duel\phase_name\e_{phase}_{side}.bmp").ToArray();
 
     private static bool IsPhaseBanner(string name) =>
         PhaseBannersBlue.Contains(name, StringComparer.OrdinalIgnoreCase) ||
-        PhaseBannersRed.Contains(name, StringComparer.OrdinalIgnoreCase);
+        PhaseBannersRed.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+        BattleBannersBlue.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+        BattleBannersRed.Contains(name, StringComparer.OrdinalIgnoreCase);
 
     private static string[] PhaseButtonImages(char variant) => PhaseCodes
         .Select(phase => $@"j\duel\phase\pha_{variant}_{phase}.bmp").ToArray();
@@ -119,7 +126,8 @@ sealed class DatGraphics : IDisposable
             CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
-        names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
+        names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
+            .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
             .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
