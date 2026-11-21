@@ -73,6 +73,35 @@ internal static class LookAndFeelChecks
               DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
               DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");
+        // Special Summon 004500E0/00450100: 41 native Updates, a/d
+        // variants with four frames cycling every two Updates, plus card
+        // overlay for 64 < t < 320.
+        var specialCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var special0 = NativeSpecialSummonFrame.FromUpdate(0, specialCosine);
+        var special1 = NativeSpecialSummonFrame.FromUpdate(1, specialCosine);
+        var special2 = NativeSpecialSummonFrame.FromUpdate(2, specialCosine);
+        var special9 = NativeSpecialSummonFrame.FromUpdate(9, specialCosine);
+        var special23 = NativeSpecialSummonFrame.FromUpdate(23, specialCosine);
+        var special24 = NativeSpecialSummonFrame.FromUpdate(24, specialCosine);
+        var special39 = NativeSpecialSummonFrame.FromUpdate(39, specialCosine);
+        var special40 = NativeSpecialSummonFrame.FromUpdate(40, specialCosine);
+        check(NativeSpecialSummonFrame.Updates == 41 &&
+              special0.Counter == 0 && special40.Counter == 320 &&
+              special0.SpiralFrame == 0 && special1.SpiralFrame == 0 &&
+              special2.SpiralFrame == 1 && special23.SpiralFrame == 3 &&
+              !special24.SpiralFrame.HasValue && !special40.SpiralFrame.HasValue,
+              "Special summon: four native sprite frames cycle during first 24 updates");
+        check(!special0.DrawCardOverlay && !NativeSpecialSummonFrame.FromUpdate(8, specialCosine).DrawCardOverlay &&
+              special9.DrawCardOverlay && special24.DrawCardOverlay &&
+              special39.DrawCardOverlay && !special40.DrawCardOverlay &&
+              special9.OverlayScaleFixed8 > 0 && special9.SpiralOpacity is >= 0 and <= 255,
+              "Special summon: transformed card overlay is active strictly from t>64 to t<320");
+        bool specialAfterEndRejected = false;
+        try { NativeSpecialSummonFrame.FromUpdate(NativeSpecialSummonFrame.Updates, specialCosine); }
+        catch (ArgumentOutOfRangeException) { specialAfterEndRejected = true; }
+        check(specialAfterEndRejected,
+              "Special summon: no native sample after Update deactivates at t=328");
+
         // Normal Summon: 0044F9F0 increments by 8 through t=256,
         // and 0044FA10 has different rendering branches either side of 64.
         var summonCosine = ActivationEffectPlayback.ApproximateCosineTable();
