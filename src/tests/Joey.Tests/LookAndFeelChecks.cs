@@ -169,13 +169,13 @@ internal static class LookAndFeelChecks
               NativeLifeHud.DecimalGlyphs(int.MaxValue).SequenceEqual([6, 5, 5, 3, 5]),
               "Native LP HUD: decimal digits use visual clamp to 65535");
 
-        string fontManifest = "duel_fontl.bmp 10\\n" +
-            "j/duel/font/duel_fontm_y.bmp 12 // sprite count\\n" +
-            "duel_fonts.bmp 8\\n";
+        string fontManifest = "duel_fontl.bmp 10\n" +
+            "j/duel/font/duel_fontm_y.bmp 12 // sprite count\n" +
+            "duel_fonts.bmp 8\n";
         check(NativeLifeHud.TryFontColumns(fontManifest, "DUEL_FONTM_Y.BMP") == 12 &&
               NativeLifeHud.TryFontColumns(fontManifest, "duel_fontl.bmp") == 10 &&
               NativeLifeHud.TryFontColumns(fontManifest, "missing.bmp") is null &&
-              NativeLifeHud.TryFontColumns("duel_fontm_y.bmp ?\\n", "duel_fontm_y.bmp") is null &&
+              NativeLifeHud.TryFontColumns("duel_fontm_y.bmp ?\n", "duel_fontm_y.bmp") is null &&
               NativeLifeHud.GlyphWidth(240, 12) == 20,
               "Native LP HUD: glyph columns derive from DAT manifest rather than guessed image width");
         bool invalidGlyphAtlasRejected = false;
