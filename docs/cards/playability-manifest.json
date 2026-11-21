@@ -49,6 +49,30 @@
       ]
     },
     {
+      "id": "spell.fixed-self-draw",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Pot of Greed: draw two cards",
+        "Upstart Goblin: draw one card and grant opponent 1000 LP",
+        "Activate from hand or set Spell/Trap zone without consuming the turn's draw"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1010,
+        1065
+      ],
+      "evidence": [
+        "src/Joey.Core/DrawSpellRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DrawSpellChecks.cs"
+      ],
+      "limitations": [
+        "C# sandbox: activation requires enough cards to complete the draw immediately.",
+        "Effects use local DAT descriptions. P119/P143 callback timing, chains and negation remain unverified."
+      ]
+    },
+    {
       "id": "spell.monster-wipe-nontargeting",
       "kind": "Spell",
       "subtype": "Normal",

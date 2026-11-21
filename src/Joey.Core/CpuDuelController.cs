@@ -134,9 +134,9 @@ public sealed class CpuDuelController
         if (duel.CanDraw) return Act(CpuAction.Draw, duel.Draw);
         if (duel.Phase == DemoPhase.Main)
         {
-            // LP spells are immediate, target-free and safe to reuse from hand or grave recovery.
             int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
-                LifePointSpellRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i), -1);
+                duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
+                    DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell]);
 
             for (int z = 0; z < 5; z++)
@@ -207,7 +207,7 @@ public sealed class CpuDuelController
     }
 
     private static int CardValue(Card c) => c.IsMonster ? Math.Max(c.Attack, c.Defense) +
-        (FlipEffectRules.Supports(c.Id) ? 800 : 0) : LifePointSpellRules.Supports(c.Id) ? 1800 :
+        (FlipEffectRules.Supports(c.Id) ? 800 : 0) : DrawSpellRules.Effect(c) is { Cards: 2 } ? 2400 : LifePointSpellRules.Supports(c.Id) ? 1800 :
         AttackTrapRules.Supports(c.Id) || SummonTrapRules.Supports(c.Id) ? 2000 : 100;
     private static int KnownPower(DemoDuel d, int p, int z) => d.MonsterFaceDown[p, z] ? 1200 :
         d.DefensePosition[p, z] ? d.DefenseValue(p, z) : d.AttackValue(p, z);

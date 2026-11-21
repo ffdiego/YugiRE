@@ -16,9 +16,11 @@ Use **Draw** para começar seu turno. Passe o mouse sobre a mão para ver a cart
 
 ## Regras e decisões
 
-A lista inclui oito monstros normais, Man-Eater Bug, Morphing Jar, Magician of Faith, Mask of Darkness, quatro magias de LP, Legendary Sword, Trap Hole e Mirror Force. As regras de invocação, batalha, FLIP, recuperação, descarte e respostas vêm de `DemoDuel`. A vitória ocorre por LP zero ou falha de compra. O sandbox pode declarar empate se nenhum lado consegue completar a compra do Morphing Jar.
+A lista inclui oito monstros normais, Man-Eater Bug, Morphing Jar, Magician of Faith, Mask of Darkness, quatro magias de LP, Pot of Greed, Upstart Goblin, Legendary Sword, Trap Hole e Mirror Force. As regras de invocação, batalha, FLIP, recuperação, descarte e respostas vêm de `DemoDuel`. A vitória ocorre por LP zero ou falha de compra. O sandbox pode declarar empate se nenhum lado consegue completar a compra do Morphing Jar.
 
 O `CpuDuelController` fica no Core e age um passo por chamada. Usa ATK/DEF efetivos para escolher confrontos e uma estimativa fixa para alvos ocultos. Invoca, coloca em defesa, usa magias e equipamento compatível, configura armadilhas e resolve as escolhas que lhe pertencem. Encerra o turno quando esgota as jogadas vantajosas. O limite tático de 48 passos reserva espaço para encerrar o turno e descartar. O teto de 256 passos produz um diagnóstico explícito se um estado inesperado impedir a continuação. Os módulos `NativeAi*` documentam ranking e simulação em contextos mais estreitos. A estratégia usa as regras C# existentes e heurísticas próprias, sem alegação de equivalência ao seletor de Joey. As respostas de armadilhas são janelas pontuais do sandbox, sem correntes gerais, fusões, rituais ou multiplayer.
+
+Pot of Greed (1010, P119) compra duas cartas. Upstart Goblin (1065, P143) compra uma e recupera 1.000 LP para o adversário. O resolver usa o texto do DAT local e os IDs do catálogo de callbacks. Ele aceita mão ou Set, valida a quantidade de cartas antes de consumir a magia e mantém a compra normal do turno separada. Ambos entram como `Done` apenas no sandbox. A lista é de demonstração e não aplica banlist.
 
 ## Apresentação e evidência
 
@@ -34,7 +36,7 @@ Os presets Classic, Fast e Instant controlam somente a apresentação e o interv
 
 ## Verificação e próximos passos
 
-Os testes cobrem vitória, derrota, deck-out, descarte, ausência de opções vantajosas, seleções pendentes inclusive fora do turno da CPU, duelos determinísticos sob Classic e Instant e 30 partidas completas usando o DAT local. `--alpha-headless` acessa a mesma lista e o mesmo controlador que a interface e encerrou na seed 1979, com vitória do primeiro lado no turno 13. A sessão Fedora não tem um display utilizável. Falta conferir os cliques e os movimentos numa janela no Windows ou num desktop Fedora.
+Os testes cobrem vitória, derrota, deck-out, descarte, ausência de opções vantajosas, seleções pendentes inclusive fora do turno da CPU, duelos determinísticos sob Classic e Instant e 30 partidas completas usando o DAT local. `dotnet build YugiRE.sln` passou com aviso `NU1900` na consulta de vulnerabilidades do NuGet. `Joey.Tests` passou 2.827 verificações offline e 4.182 com DAT/deck. `--alpha-headless` usa a mesma lista e o mesmo controlador que a interface. Na seed 1979, o primeiro lado venceu no turno 21 com 6.200 LP. `--check-graphics` decodificou 797 recursos, incluindo os quatro sprites de ativação. O gerador e os testes Python de jogabilidade passaram. A sessão Fedora não tem um display utilizável. Falta conferir os cliques e os movimentos numa janela no Windows ou num desktop Fedora.
 
 1. Rodar um duelo humano completo em janela, incluindo respostas de armadilhas e FLIP nos dois lados.
 2. Ajustar o ritmo visual e o feedback de destruição com base nessa rodada.

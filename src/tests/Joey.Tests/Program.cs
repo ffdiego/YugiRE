@@ -199,6 +199,7 @@ if (args.Length > 0)
 else DeckTraceChecks.Run(Check);
 DirectDamageChecks.Run(Check);
 LifePointSpellChecks.Run(Check);
+DrawSpellChecks.Run(Check);
 FieldSpellChecks.Run(Check);
 AttributeFieldSpellChecks.Run(Check);
 TypeFieldSpellChecks.Run(Check);

@@ -84,6 +84,18 @@ internal static class CpuDuelChecks
         check(discard.Turn == 3 && discards == 7 && discard.HandFor(1).Count == 6,
             "CPU: enforces end-turn hand limit and advances exactly once");
 
+        var stressed = State(1, Enumerable.Repeat(Spell(338), 75).ToArray(), deck: [weak]);
+        int stressActions = 0, tacticalSpells = 0;
+        while (stressed.Turn == 2 && stressActions++ < CpuDuelController.MaxActionsPerTurn)
+        {
+            var step = cpu.Step(stressed);
+            if (step.Status != CpuStepStatus.Acted) throw new Exception(step.Message);
+            if (step.Action == CpuAction.Spell) tacticalSpells++;
+        }
+        check(stressed.Turn == 3 && tacticalSpells == CpuDuelController.TacticalActionLimit - 1 &&
+            stressed.HandFor(1).Count == 6 && stressActions < CpuDuelController.MaxActionsPerTurn,
+            "CPU: tactical limit stops optional actions but still finishes mandatory discards");
+
         // Entire deterministic matches, with FLIP, LP and trap responses in both directions.
         var pool = new[] { strong, Monster(3, 1400, 2000), Monster(500, 450, 600), Monster(427, 300, 400),
             Monster(101, 900, 400), Monster(590, 700, 600), Spell(345), Spell(342), Spell(341), Spell(1002, 21), Spell(1056, 21) };

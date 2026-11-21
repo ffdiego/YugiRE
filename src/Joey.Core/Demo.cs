@@ -221,6 +221,7 @@ public sealed class DemoDuel
         (FieldSpellRules.Supports(Hand[index].Id) ||
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
+            (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
             (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
                 Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
@@ -317,7 +318,7 @@ public sealed class DemoDuel
     }
     public bool Play(int index, out string message)
     {
-        message = "Choose a supported LP, Field or continuous spell; equipment needs a compatible face-up monster.";
+        message = "Choose a supported spell. Equipment needs a compatible face-up monster.";
         if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
         if (FieldSpellRules.Supports(Hand[index].Id))
         {
@@ -360,6 +361,14 @@ public sealed class DemoDuel
             message = "Infinite Cards active: neither player has an end-turn hand limit.";
             return true;
         }
+        if (DrawSpellRules.Effect(Hand[index]) is { } draw)
+        {
+            if (!CanResolveDrawSpell(draw, out message)) return false;
+            var spell = Hand[index];
+            hands[ActivePlayer].RemoveAt(index);
+            ResolveDrawSpell(spell, draw, out message);
+            return true;
+        }
         // Demo policy: immediate LP effect and graveyard movement, without chains.
         // Resolve before spending the card, so unsupported spells are atomic.
         var card = Hand[index];
@@ -395,6 +404,14 @@ public sealed class DemoDuel
             SpellFaceDown[p, zone] = false;
             message = "Infinite Cards activated."; return true;
         }
+        if (DrawSpellRules.Effect(card) is { } draw)
+        {
+            if (!CanResolveDrawSpell(draw, out message)) return false;
+            Spells[p, zone] = null;
+            SpellFaceDown[p, zone] = false;
+            ResolveDrawSpell(card, draw, out message);
+            return true;
+        }
         // Same bounded plan as hand activation; native suppression is not modeled.
         var change = LifePointSpellRules.ResolveDemo(card.Id, p);
         if (change is null) return false;
@@ -403,6 +420,23 @@ public sealed class DemoDuel
         message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
         return true;
     }
+    private bool CanResolveDrawSpell(DrawSpellEffect effect, out string message)
+    {
+        // No chain can change the Deck between activation and resolution in this sandbox.
+        message = $"This spell needs {effect.Cards} card(s) in your deck.";
+        return DeckCount(ActivePlayer) >= effect.Cards;
+    }
+
+    private void ResolveDrawSpell(Card spell, DrawSpellEffect effect, out string message)
+    {
+        int player = ActivePlayer;
+        graves[player].Add(spell);
+        for (int i = 0; i < effect.Cards; i++) hands[player].Add(decks[player].Dequeue());
+        if (effect.OpponentLifeGain > 0) ChangeLife(1 - player, effect.OpponentLifeGain);
+        message = $"{spell.Name}: drew {effect.Cards}." + (effect.OpponentLifeGain > 0
+            ? $" Opponent gained {effect.OpponentLifeGain} LP." : "");
+    }
+
     public bool ActivateSetFieldSpell(out string message)
     {
         message = "Only a set Field Spell in your own zone can activate during Main Phase.";
