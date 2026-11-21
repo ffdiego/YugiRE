@@ -9,6 +9,9 @@ sealed class DatGraphics : IDisposable
     public const string DuelBack = @"card\card_ura.bmp";
     public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    private const string ExplosionManifest = @"j\duel\effect\explosion.txt";
+    public static readonly string[] ExplosionSprites = Enumerable.Range(1, 7)
+        .Select(index => $@"j\duel\effect\expl{index}.yga").ToArray();
     private static readonly string[] PhaseCodes = ["dr", "st", "m1", "ba", "m2", "en"];
     public static readonly string[] PhaseButtons = PhaseButtonImages('s');
     public static readonly string[] PhaseFlipToBlue = PhaseButtonImages('b');
@@ -138,7 +141,21 @@ sealed class DatGraphics : IDisposable
                 throw new InvalidDataException($"Activation YGA dimensions differ: {name}");
             count++;
         }
-        Console.WriteLine($"Decoded {count} BMP/YGA resources, including four activation sprites; {Artwork.Count} card mappings.");
+        var explosionEntries = System.Text.Encoding.ASCII.GetString(archive.Read(ExplosionManifest))
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (!explosionEntries.Select(name => @"j\duel\effect\" + name)
+            .SequenceEqual(ExplosionSprites, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidDataException("Unexpected explosion manifest order");
+        int[] explosionSizes = [164, 90, 114, 140, 160, 162, 196];
+        for (int i = 0; i < ExplosionSprites.Length; i++)
+        {
+            var sprite = NativeYgaSprite.Decode(archive.Read(ExplosionSprites[i]),
+                static (data, size) => Archive.Decode(data, size));
+            if (sprite.Width != explosionSizes[i] || sprite.Height != explosionSizes[i])
+                throw new InvalidDataException($"Unexpected explosion YGA dimensions: {ExplosionSprites[i]}");
+            count++;
+        }
+        Console.WriteLine($"Decoded {count} BMP/YGA resources, including activation and explosion sprites; {Artwork.Count} card mappings.");
     }
     public void Dispose()
     {

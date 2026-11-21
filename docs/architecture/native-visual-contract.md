@@ -115,6 +115,9 @@ evidência mostra que **draw também altera estado** para essa classe.
 Não se afirmou duração de animação em segundos, FPS de 60 do nativo nem
 contagem fixa de imagens exibidas.
 
+A seleção dos sete YGAs, a geometria e as divergências de composição
+estão no [inventário do renderizador](native-renderer-inventory.md#explosão-parâmetros-recuperados-e-aplicação).
+
 ## Contadores do executável e efeito de `-speedy`
 
 Análise estática em Ghidra com `-noanalysis -readOnly`, conferida com

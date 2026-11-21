@@ -9,7 +9,7 @@ static partial class Game
 
     static readonly PresentationSequence<ActivationStage> activation = new();
     static readonly PresentationTickClock activationClock = new();
-    static readonly int[] activationCosine = ActivationEffectPlayback.ApproximateCosineTable();
+    static readonly int[] effectCosine = ActivationEffectPlayback.ApproximateCosineTable();
     static Card? activationCard;
     static CardBounds activationBounds, activationOrigin;
     static int activationCategory;
@@ -81,7 +81,7 @@ static partial class Game
         if (step.Kind != ActivationStage.Glow) return;
 
         int counter = activation.ElapsedUpdates * NativeActivationTimeline.UpdateIncrement;
-        var frame = NativeActivationFrame.FromCounter(counter, activationCategory, activationCosine);
+        var frame = NativeActivationFrame.FromCounter(counter, activationCategory, effectCosine);
         DrawActivationSprite(frame.Lower);
         Raylib.DrawRectangle(scratch.X, scratch.Y, scratch.Width, scratch.Height,
             new Color(0, 0, 0, Math.Clamp(frame.Scratch.Opacity, 0, 255)));

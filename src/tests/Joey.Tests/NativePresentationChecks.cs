@@ -112,6 +112,24 @@ internal static class NativePresentationChecks
         check(activation.Active && activation.Counter == 0,
               "Native activation: reset permits repeatable playback");
 
+        var explosionCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var initialExplosion = NativeExplosionFrame.FromCounter(0, explosionCosine);
+        var layeredExplosion = NativeExplosionFrame.FromCounter(32, explosionCosine);
+        var fragmentStart = NativeExplosionFrame.FromCounter(128, explosionCosine);
+        var fragmentEnd = NativeExplosionFrame.FromCounter(184, explosionCosine);
+        check(initialExplosion == new NativeExplosionFrame(null, null, new(0, 0, 32768, 181)) &&
+              initialExplosion.Initial?.ScaledPixels(164) == 83 &&
+              layeredExplosion.Flare == new ExplosionSpritePass(1, 0, 32768, 128) &&
+              layeredExplosion.Initial is { ResourceIndex: 0, RotationIndex: 32, ScaleFixed16: 40960 },
+              "Native explosion: centered scaled initial and flare passes use native rotation and opacity");
+        check(fragmentStart.Flare is { ResourceIndex: 1 } &&
+              fragmentStart.Fragments == new ExplosionSpritePass(2, 0, 65536, 255) &&
+              fragmentStart.Initial is null &&
+              fragmentEnd.Fragments is { ResourceIndex: 6 } &&
+              fragmentEnd.Fragments?.ScaledPixels(196) == 196 &&
+              NativeExplosionFrame.FromCounter(192, explosionCosine) == default &&
+              NativeExplosionFrame.FromCounter(200, explosionCosine) == default,
+              "Native explosion: fragment slots 2–6, then two sprite-free updates before deactivation");
         var explosion = new NativeExplosionTimeline();
         check(explosion.VisiblePasses() == NativeExplosionPasses.Initial,
               "Native explosion: initial pass exists at counter zero");

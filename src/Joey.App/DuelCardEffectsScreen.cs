@@ -90,15 +90,20 @@ static partial class Game
 
     static void DrawCardEffects()
     {
-        bool first = true;
         bool playing = CanPlayCardEffects;
-        foreach (var step in cardEffects.Pending)
+        // Deferred removals stay beneath the active effect, even in adjacent zones.
+        foreach (var step in cardEffects.Pending.Skip(playing ? 1 : 0))
+            if (step.Kind is Destruction { Monster: var queued }) DrawDestructionCard(queued);
+
+        if (!playing) return;
+        switch (cardEffects.Current?.Kind)
         {
-            if (step.Kind is Destruction { Monster: var monster })
-                DrawDestruction(monster, first && playing ? cardEffects.ElapsedUpdates : 0);
-            else if (first && playing && step.Kind is HandTransfer { Transfer: var transfer })
+            case Destruction { Monster: var monster }:
+                DrawDestruction(monster, cardEffects.ElapsedUpdates);
+                break;
+            case HandTransfer { Transfer: var transfer }:
                 DrawHandTransfer(transfer);
-            first = false;
+                break;
         }
     }
 
@@ -118,30 +123,30 @@ static partial class Game
 
     static void DrawDestruction(DemoMonsterDestruction monster, int elapsedUpdates)
     {
-        var rect = ZoneBounds(monster.Player, monster.Zone, false);
-        var center = new Vector2(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
+        bool near = monster.Player == ViewPlayer;
+        var center = DuelCardLayout.Center(DuelCardZone.Monster, near, monster.Zone);
         int counter = elapsedUpdates * NativeExplosionTimeline.UpdateIncrement;
-        var passes = NativeExplosionTimeline.PassesAt(counter);
-        if ((passes & NativeExplosionPasses.Initial) != 0)
-            DrawDuelCard(monster.Card, DuelCardLayout.OnBoard(DuelCardZone.Monster, monster.Player == ViewPlayer,
-                monster.Zone, monster.Defense, monster.FaceDown));
-        if ((passes & NativeExplosionPasses.Flare) != 0)
-        {
-            int alpha = Math.Clamp(235 - 3 * Math.Abs(counter - 88), 0, 235);
-            Raylib.DrawCircleV(center, 8 + counter / 6f, new Color(255, 220, 151, alpha));
-            Raylib.DrawCircleLines((int)center.X, (int)center.Y, counter / 3f, new Color(255, 246, 218, alpha));
-        }
-        if ((passes & NativeExplosionPasses.Fragments) == 0) return;
-        // Procedural fragments use the native draw window, with client-selected shapes and trajectories.
-        float progress = (counter - 128) / 80f;
-        int opacity = (int)(255 * (1 - progress));
-        for (int i = 0; i < 24; i++)
-        {
-            float angle = i * 2.399963f;
-            float distance = (9 + progress * 48) * (0.5f + (i % 7) / 10f);
-            Vector2 point = center + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * distance;
-            Raylib.DrawRectangle((int)point.X, (int)point.Y, 2 + i % 4, 2 + i % 3,
-                new Color(255, 185 + i % 65, 125 + i % 100, opacity));
-        }
+        if (counter < 0x80)
+            DrawDestructionCard(monster);
+
+        var frame = NativeExplosionFrame.FromCounter(counter, effectCosine);
+        DrawExplosionSprite(frame.Flare, center);
+        DrawExplosionSprite(frame.Fragments, center);
+        DrawExplosionSprite(frame.Initial, center);
+    }
+
+    static void DrawDestructionCard(DemoMonsterDestruction monster) =>
+        DrawDuelCard(monster.Card, DuelCardLayout.OnBoard(DuelCardZone.Monster, monster.Player == ViewPlayer,
+            monster.Zone, monster.Defense, monster.FaceDown));
+
+    static void DrawExplosionSprite(ExplosionSpritePass? sample, CardPoint center)
+    {
+        if (sample is not { Opacity: > 0 } pass) return;
+        var texture = graphics.Texture(DatGraphics.ExplosionSprites[pass.ResourceIndex]);
+        int width = pass.ScaledPixels(texture.Width), height = pass.ScaledPixels(texture.Height);
+        if (width == 0 || height == 0) return;
+        Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
+            new Rectangle(center.X, center.Y, width, height), new Vector2(width / 2, height / 2),
+            pass.RotationIndex * (360f / 512), new Color(255, 255, 255, pass.Opacity));
     }
 }
