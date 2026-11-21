@@ -29,12 +29,26 @@ static partial class Game
         cardEffects.Enqueue(effect, updates);
     }
 
+    static void QueueOpeningDeal()
+    {
+        var near = duel.HandFor(0);
+        var far = duel.HandFor(1);
+        for (int index = 0; index < Math.Max(near.Count, far.Count); index++)
+        {
+            if (index < near.Count) QueueCardEffect(new HandTransfer(new(0, index, near[index], true)), CardTravel.Updates);
+            if (index < far.Count) QueueCardEffect(new HandTransfer(new(1, index, far[index], true)), CardTravel.Updates);
+        }
+    }
+
     static void AdvanceCardEffects(TimeSpan elapsed)
     {
         if (cardEffects.Current is not { } current) return;
         int updates = cardEffectClock.Advance(elapsed, presentation.Style);
         // After a stall, leave the next card on its first sample for this draw.
-        cardEffects.Advance(Math.Min(updates, current.Updates - cardEffects.ElapsedUpdates));
+        int remaining = current.Updates - cardEffects.ElapsedUpdates;
+        if (updates >= remaining && current.Kind is HandTransfer { Transfer: { FromDeck: false } move })
+            handLayouts[move.Player].RemoveAt(move.Index);
+        cardEffects.Advance(Math.Min(updates, remaining));
     }
 
     static IReadOnlyList<Card> VisibleHand(int player)
@@ -110,14 +124,13 @@ static partial class Game
     {
         bool near = move.Player == ViewPlayer;
         int count = VisibleHand(move.Player).Count;
-        Rectangle handRect = near
-            ? HandBoundsForCount(move.Index, count + (move.FromDeck ? 1 : 0))
-            : CpuHandBounds(move.Index, count + (move.FromDeck ? 1 : 0));
-        var handSlot = ToCardBounds(handRect);
+        var handSlot = move.FromDeck
+            ? HandPresentation.Bounds(move.Index, count + 1, near)
+            : handLayouts[move.Player].Bounds(move.Index, count, near ? HandLiftAt(move.Index) : 0);
         var pile = move.FromDeck ? NativeDuelLayout.DeckBounds(near) : NativeDuelLayout.GraveBounds(near);
         var bounds = CardTravel.Sample(move.FromDeck ? pile : handSlot, move.FromDeck ? handSlot : pile,
             cardEffects.ElapsedUpdates);
-        DrawFieldCard(move.Card, ToRectangle(bounds), faceDown: !near || move.FromDeck);
+        DrawFieldCard(move.Card, ToRectangle(bounds), faceDown: !near || move.FromDeck, upsideDown: !near);
     }
 
     static void DrawDestruction(DemoMonsterDestruction monster, int elapsedUpdates)

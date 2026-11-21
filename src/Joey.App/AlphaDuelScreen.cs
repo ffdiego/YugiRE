@@ -42,6 +42,7 @@ static partial class Game
         alphaBlocked = false;
         cpuDelay = TimeSpan.Zero;
         ResetDuelPresentation();
+        QueueOpeningDeal();
         message = "Your turn.";
     }
 
@@ -69,6 +70,7 @@ static partial class Game
         ClearDuelSelection();
         StopSpellActivation();
         ResetCardEffects();
+        foreach (var layout in handLayouts) layout.Clear();
         ResetDuelPhases();
         ResetDuelDetail();
         flight = null;
@@ -209,12 +211,14 @@ static partial class Game
             if (step.TargetZone is not int zone || zone < 0) return;
             int index = step.HandIndex.GetValueOrDefault();
             var origin = CpuHandBounds(index, handCount);
+            handLayouts[step.Player].RemoveAt(index);
             BeginFlight(card, step.Player, zone, origin, !card.IsMonster, step.Action == CpuAction.Set);
         }
         else if (step.SourceZone is int spellZone &&
                  step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
         {
             Rectangle? origin = step.HandIndex is int index ? CpuHandBounds(index, handCount) : null;
+            if (step.HandIndex is int spent) handLayouts[step.Player].RemoveAt(spent);
             BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true), origin, nearSide: step.Player == ViewPlayer);
         }
         else if (step.Action == CpuAction.Position && step.SourceZone is int zone && duel.MonsterWasFlipped[step.Player, zone])
@@ -226,11 +230,13 @@ static partial class Game
     }
 
     static Rectangle CpuHandBounds(int index, int count) =>
-        ToRectangle(HandPresentation.Bounds(index, count, nearSide: false));
+        ToRectangle(handLayouts[1].Bounds(index, count));
 
     static void DrawCpuHand()
     {
-        int count = VisibleHand(1).Count;
+        var visible = VisibleHand(1);
+        SynchronizeHand(1, visible);
+        int count = visible.Count;
         for (int i = 0; i < count; i++)
         {
             if (DiscardInFlight(1, i)) continue;

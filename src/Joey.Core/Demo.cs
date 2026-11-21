@@ -1651,6 +1651,7 @@ public sealed class DemoDuel
         if (ActionsBlocked || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
         var card = hands[ActivePlayer][index];
         hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
+        HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
         if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";
         else { AdvanceTurn(); message = $"Discarded {card.Name}. Turn changed."; }
         return true;

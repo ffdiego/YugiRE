@@ -9,11 +9,14 @@ static partial class Game
     static int hoverHand = -1;
     static bool setHandAction, choosingTributes, choosingEquip;
     static int[] handLift = [];
+    static readonly HandReflow<Card>[] handLayouts = [new(), new()];
     static readonly PresentationTickClock hoverClock = new();
     static int HandLiftAt(int index) => index < handLift.Length ? handLift[index] : 0;
-    static Rectangle HandBounds(int slot) => HandBoundsForCount(slot, ViewHand.Count, HandLiftAt(slot));
-    static Rectangle HandBoundsForCount(int index, int handCount, int lift = 0) =>
-        ToRectangle(HandPresentation.Bounds(index, handCount, nearSide: true, lift));
+    static Rectangle HandBounds(int slot) =>
+        ToRectangle(handLayouts[ViewPlayer].Bounds(slot, ViewHand.Count, HandLiftAt(slot)));
+
+    static void SynchronizeHand(int player, IReadOnlyList<Card> visible, int updates = 0) =>
+        handLayouts[player].Synchronize(visible, player == ViewPlayer, updates, presentation.Style.PlayAnimations);
 
     static Rectangle ActionBounds(int slot)
     {
@@ -56,6 +59,7 @@ static partial class Game
             var origin = HandBounds(index);
             if (duel.SetFromHand(index, out message))
             {
+                handLayouts[ViewPlayer].RemoveAt(index);
                 if (zone >= 0) BeginFlight(card, ViewPlayer, zone, origin, true, true);
                 ClearDuelSelection();
             }
@@ -70,6 +74,7 @@ static partial class Game
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
+            handLayouts[ViewPlayer].RemoveAt(index);
             if (FieldSpellRules.Supports(card.Id))
                 BeginCardActivation(card, FieldZoneBounds(ViewPlayer), origin);
             else if (zone >= 0 && card.ClassCode == 22)
@@ -83,6 +88,7 @@ static partial class Game
         int zone = duel.FirstFreeMonsterZone(tributeZones);
         var origin = HandBounds(index);
         if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
+        handLayouts[ViewPlayer].RemoveAt(index);
         BeginFlight(card, ViewPlayer, zone, origin, false, setHandAction);
         ClearDuelSelection();
         return true;
@@ -231,6 +237,7 @@ static partial class Game
                         var origin = HandBounds(hand);
                         if (duel.Equip(hand, player, zone, out message))
                         {
+                            handLayouts[ViewPlayer].RemoveAt(hand);
                             BeginCardActivation(equip, ZoneBounds(ViewPlayer, sourceZone, true), origin);
                             ClearDuelSelection();
                         }
@@ -270,11 +277,12 @@ static partial class Game
     static void DrawDuelHand()
     {
         var visible = VisibleHand(ViewPlayer);
+        SynchronizeHand(ViewPlayer, visible);
         var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == hoverHand ? 1 : 0);
         foreach (int index in drawOrder)
         {
             if (DiscardInFlight(ViewPlayer, index)) continue;
-            var rect = HandBoundsForCount(index, visible.Count, HandLiftAt(index));
+            var rect = ToRectangle(handLayouts[ViewPlayer].Bounds(index, visible.Count, HandLiftAt(index)));
             DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
             if (index == hand) Raylib.DrawRectangleLinesEx(rect, 2, Color.White);
         }
@@ -298,6 +306,8 @@ static partial class Game
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
         if (!MotionBusy && !PhaseBusy && (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
+        for (int player = 0; player < 2; player++)
+            SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||

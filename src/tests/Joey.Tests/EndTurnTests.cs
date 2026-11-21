@@ -8,6 +8,8 @@ static class EndTurnTests
         var sparks = new Card(2, 342, "Sparks", "", 21u << 20);
         // Deliberately oversized opening fixture to exercise multiple required choices.
         var duel = new DemoDuel([monster, monster, monster, sparks, sparks, sparks, sparks, sparks]);
+        List<DemoHandTransfer> transfers = [];
+        duel.HandTransferred += transfers.Add;
         check(duel.Hand.Count == 8 && duel.EndTurn(out _) && duel.Turn == 1 && duel.ActivePlayer == 0 &&
             duel.Phase == DemoPhase.End && duel.PendingEndDiscards == 2, "End turn waits for two excess hand cards");
         check(!duel.Draw(out _) && !duel.Play(0, out _) && !duel.Summon(0, 0, 0, true, out _) &&
@@ -23,6 +25,8 @@ static class EndTurnTests
             duel.Phase == DemoPhase.Main && duel.Graveyard(0).Count == 2 && duel.Graveyard(1).Count == 0,
             "Last required discard completes the turn exactly once");
         check(!duel.DiscardForEndTurn(0, out _) && duel.Graveyard(1).Count == 0, "No discard outside pending end phase");
+        check(transfers.SequenceEqual([new(0, 3, chosen, false), new(0, 0, monster, false)]),
+            "End-phase discard presentation uses the departing players and indices, including the last discard");
         var normal = DemoDuel.FromDecks(Enumerable.Repeat(monster, 40).ToArray(), Enumerable.Repeat(monster, 40).ToArray());
         normal.Draw(out _);
         check(normal.EndTurn(out _) && normal.Turn == 2 && normal.PendingEndDiscards == 0 && normal.Graveyard(0).Count == 0,

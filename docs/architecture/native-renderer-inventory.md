@@ -173,6 +173,26 @@ com o impacto. A comparação com o original em estado equivalente
 continua pendente.
 
 
+### Distribuição e recomposição das mãos
+
+`0045C8B0` percorre as posições correntes das duas mãos em
+`005F32AC`, consulta o alvo por carta em `0045C590` e grava de volta
+`alvo + trunc((posição − alvo) × 3/4)`. O trecho `0045C964–0045C976`
+aplica a fórmula em X e `0045C978–0045C98F` em Y. O cliente já
+aplicava o cálculo ao hover. Agora também aplica em X ao mudar a
+quantidade de cartas e mantém a posição corrente das demais quando
+uma delas sai. A carta em trânsito usa a posição visível na saída e
+o slot calculado na entrada. Isso vale nos dois lados e o preset
+Instant aplica o destino de imediato.
+
+A Alpha apresenta as dez cartas iniciais pela fila visual, uma por
+vez, com as mãos inicialmente vazias na apresentação. A ordem
+alternada entre jogadores e a revelação da carta própria ao pousar
+são decisões do cliente. A cadência e a ordem de distribuição nativas
+seguem em aberto. O Core já entrega as mãos iniciais prontas e a
+animação não realiza compras adicionais. Compras do turno, descartes
+de Morphing Jar e o descarte de fim de turno usam a mesma fila.
+
 ### Quadros do aviso de batalha
 
 O manifesto `phase_name.txt` reserva os índices 12–18 e 19–25 para

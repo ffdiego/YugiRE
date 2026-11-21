@@ -89,6 +89,28 @@ internal static class NativePresentationChecks
               new InstantLookAndFeel().MoveCardAxis(600, 568) == 568,
               "Native presentation: Classic and Fast share one native hand update step");
 
+        var repeated = new object();
+        var other = new object();
+        foreach (bool near in new[] { true, false })
+        {
+            var fan = new HandReflow<object>();
+            fan.Synchronize([repeated], near, 0, animate: true);
+            var first = fan.Bounds(0, 1);
+            fan.Synchronize([repeated, other, repeated], near, 0, animate: true);
+            var rightCopy = fan.Bounds(2, 3);
+            check(fan.Bounds(0, 3) == first && rightCopy == HandPresentation.Bounds(2, 3, near),
+                "Hand reflow: an arriving card lands in its new slot while survivors keep their last positions");
+            fan.RemoveAt(0);
+            fan.Synchronize([other, repeated], near, 1, animate: true);
+            var target = HandPresentation.Bounds(1, 2, near);
+            check(fan.Bounds(1, 2).X == HandPresentation.Approach(rightCopy.X, target.X),
+                "Hand reflow: removing the first copy preserves the position of the other copy");
+            fan.Synchronize([other, repeated], near, 64, animate: true);
+            check(fan.Bounds(1, 2) == target, "Hand reflow: repeated native updates reach the new fan");
+            fan.Synchronize([repeated], near, 0, animate: false);
+            check(fan.Bounds(0, 1) == first, "Hand reflow: Instant reaches the new fan without any updates");
+        }
+
         var activation = new NativeActivationTimeline();
         // Synthetic lookup for deterministic arithmetic tests. Do NOT claim
         // this is the actual native DAT_00A52EE8 table.
