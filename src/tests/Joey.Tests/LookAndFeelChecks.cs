@@ -213,6 +213,32 @@ internal static class LookAndFeelChecks
         check(invalidGlyphAtlasRejected,
               "Native LP HUD: reject an invalid atlas width instead of slicing wrong glyphs");
 
+        // 004806F0: damage/heal glyphs appear successively from the
+        // least significant digit, moving through two cosine Y windows.
+        var floatCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var floatStart = NativeFloatingLifeDigits.Sample(-250, 0, 10, 24, 12, floatCosine);
+        var floatRise = NativeFloatingLifeDigits.Sample(-250, 64, 10, 24, 12, floatCosine);
+        var floatBounce = NativeFloatingLifeDigits.Sample(-250, 160, 10, 24, 12, floatCosine);
+        var floatEnd = NativeFloatingLifeDigits.Sample(-250, 256, 10, 24, 12, floatCosine);
+        check(floatStart.Count == 0 && floatRise.Count == 4 &&
+              floatRise[0] == new NativeFloatingLifeGlyph(0, -10, -24, 64) &&
+              floatBounce[0].YOffsetPixels == -6 &&
+              floatEnd.Select(x => x.GlyphIndex).SequenceEqual([0, 5, 2, 11]) &&
+              floatEnd.All(x => x.YOffsetPixels == 0),
+              "Floating LP: digits appear low to high, move in two cosine windows then settle");
+        check(NativeFloatingLifeDigits.Sample(205, 256, 10, 24, 12, floatCosine)
+                  .Select(x => x.GlyphIndex).SequenceEqual([5, 0, 2, 10]) &&
+              NativeFloatingLifeDigits.Sample(205, 256, 10, 24, 10, floatCosine)
+                  .Select(x => x.GlyphIndex).SequenceEqual([5, 0, 2]) &&
+              NativeFloatingLifeDigits.Sample(int.MinValue, 256, 10, 24, 12, floatCosine)
+                  .Last().GlyphIndex == 11,
+              "Floating LP: plus/minus glyphs depend on DAT atlas and handle signed minimum");
+        bool invalidFloatColumnsRejected = false;
+        try { NativeFloatingLifeDigits.Sample(-250, 256, 10, 24, 9, floatCosine); }
+        catch (ArgumentOutOfRangeException) { invalidFloatColumnsRejected = true; }
+        check(invalidFloatColumnsRejected,
+              "Floating LP: no guessed glyph count for unrecognized DAT atlas");
+
         // 0047C4F0/0047C560: Core LP updates immediately, but the native
         // visual counter has a 32-update ramp before consuming signed deltas.
         var lp = new NativeLifePointPresentation(8000);

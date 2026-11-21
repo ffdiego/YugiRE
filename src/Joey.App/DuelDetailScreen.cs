@@ -134,6 +134,42 @@ static partial class Game
         }
     }
 
+    static void DrawLifeFloatingDigits()
+    {
+        if (!presentation.Style.PlayAnimations) return;
+        // Draw 0047C660 invokes 004806F0 while the signed delta remains.
+        // Use the actual 10..12 glyph atlas descriptor from number.txt.
+        for (int player = 0; player < 2; player++)
+        {
+            var counter = lifeDisplays[player];
+            if (counter.PendingDelta == 0) continue;
+            int variant = counter.PendingDelta > 0 ? 1 : 0;
+            if (graphics.LifeFloatingGlyphColumns[variant] is not int columns) continue;
+            var texture = graphics.Texture(DatGraphics.LifeFloatingFonts[variant]);
+            if (texture.Width % columns != 0) continue;
+
+            int sourceGlyphWidth = NativeLifeHud.GlyphWidth(texture.Width, columns);
+            int sourceGlyphHeight = texture.Height;
+            float scale = Math.Min(1f, 32f / sourceGlyphHeight);
+            int glyphWidth = Math.Max(1, (int)MathF.Round(sourceGlyphWidth * scale));
+            int glyphHeight = Math.Max(1, (int)MathF.Round(sourceGlyphHeight * scale));
+            int phase = Math.Min(0x100, counter.RampCounter * 2);
+            var glyphs = NativeFloatingLifeDigits.Sample(counter.PendingDelta, phase,
+                glyphWidth, glyphHeight, columns, effectCosine);
+            bool near = player == ViewPlayer;
+            // 0045C140 provides native LP effect origin, but its concrete
+            // coordinates for this descriptor remain unknown here.
+            float right = 209, top = near ? 536 : 45;
+            foreach (var glyph in glyphs)
+                Raylib.DrawTexturePro(texture,
+                    new Rectangle(glyph.GlyphIndex * sourceGlyphWidth, 0,
+                                  sourceGlyphWidth, sourceGlyphHeight),
+                    new Rectangle(right + glyph.XOffsetPixels, top + glyph.YOffsetPixels,
+                                  glyphWidth, glyphHeight),
+                    Vector2.Zero, 0, Color.White);
+        }
+    }
+
     static void DrawDuelDetail()
     {
         activatedDetail = false;
