@@ -152,7 +152,8 @@
     {
       "address": "004870B0",
       "family": "Sacrifício",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
     },
     {
       "address": "00457520",

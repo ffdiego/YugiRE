@@ -6,6 +6,7 @@ static partial class Game
 {
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
+    sealed record TributePlacement(DemoMonsterTribute Tribute, CardPoint[] ParticleOrigins) : CardEffect;
     sealed record HandTransfer(DemoHandTransfer Transfer) : CardEffect;
     sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
@@ -24,6 +25,7 @@ static partial class Game
         cardEffects.Clear();
         cardEffectClock.Reset();
         duel.MonsterDestroyed += monster => QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
+        duel.MonsterTributed += tribute => QueueTributeEffect(tribute);
         duel.HandTransferred += transfer => QueueCardEffect(new HandTransfer(transfer), CardTravel.Updates);
         duel.MonsterSpecialSummoned += summon =>
             QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
@@ -37,6 +39,24 @@ static partial class Game
         if (!CardEffectsBusy) cardEffectClock.Reset();
         cardEffects.Enqueue(effect, updates);
     }
+
+    static void QueueTributeEffect(DemoMonsterTribute tribute)
+    {
+        if (!presentation.Style.PlayAnimations) return;
+        Span<int> radii = stackalloc int[NativeSetFrame.ParticleCount];
+        for (int i = 0; i < radii.Length; i++)
+            radii[i] = Random.Shared.Next(NativeSetFrame.MinimumRadius,
+                NativeSetFrame.MaximumRadius + 1);
+        var center = DuelCardLayout.Center(DuelCardZone.Monster,
+            tribute.Player == ViewPlayer, tribute.Zone);
+        QueueCardEffect(new TributePlacement(tribute,
+            NativeTributeFrame.ParticleOrigins(center, radii, effectCosine)),
+            NativeTributeFrame.ReleasedUpdates);
+    }
+
+    static bool HasQueuedTributesFor(int player) =>
+        cardEffects.Pending.Any(step => step.Kind is TributePlacement { Tribute.Player: var owner }
+            && owner == player);
 
     static void QueueSetEffect(int player, int zone, bool spell)
     {
@@ -86,6 +106,10 @@ static partial class Game
         if (updates >= remaining && current.Kind is HandTransfer { Transfer: { FromDeck: false } move })
             handLayouts[move.Player].RemoveAt(move.Index);
         cardEffects.Advance(Math.Min(updates, remaining));
+        // Pay tribute(s) visually before revealing the new summon flight.
+        // The flight has already been committed logically by Joey.Core.
+        if (current.Kind is TributePlacement && !HasQueuedTributesFor(((TributePlacement)current.Kind).Tribute.Player))
+            ResumeTributeSummonFlight();
     }
 
     static IReadOnlyList<Card> VisibleHand(int player)
@@ -151,6 +175,9 @@ static partial class Game
             case Destruction { Monster: var monster }:
                 DrawDestruction(monster, cardEffects.ElapsedUpdates);
                 break;
+            case TributePlacement tribute:
+                DrawTributePlacement(tribute, cardEffects.ElapsedUpdates);
+                break;
             case HandTransfer { Transfer: var transfer }:
                 DrawHandTransfer(transfer);
                 break;
@@ -196,6 +223,45 @@ static partial class Game
         if (frame.Opacity == 0) return;
         DrawEffectStamp(DatGraphics.DuelStartEnglish, new CardPoint(400, 300),
             0, frame.ScaleFixed8 << 8, frame.Opacity);
+    }
+
+    static void DrawTributePlacement(TributePlacement placement, int elapsedUpdates)
+    {
+        var tribute = placement.Tribute;
+        var frame = NativeTributeFrame.FromUpdate(elapsedUpdates, released: true, effectCosine);
+        var center = DuelCardLayout.Center(DuelCardZone.Monster,
+            tribute.Player == ViewPlayer, tribute.Zone);
+
+        // The native first pass transforms the sacrificed card. Reuse the
+        // source monster snapshot after Joey.Core has already moved it to GY.
+        // Native rotation/scratch blend and sacrifice.txt resource order
+        // remain unverified in this partial C# renderer.
+        string? art = graphics.Artwork.For(tribute.Card);
+        string name = tribute.FaceDown ? DatGraphics.DuelBack
+            : art is not null && art.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase)
+                ? @"mini\" + art[5..] : DatGraphics.DuelBack;
+        var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster,
+            tribute.Player == ViewPlayer, tribute.Zone, tribute.Defense, tribute.FaceDown);
+        var tex = graphics.Texture(name);
+        if (frame.CardOpacity > 0)
+            Raylib.DrawTexturePro(tex,
+                new Rectangle(0, 0, tex.Width, tex.Height),
+                new Rectangle(center.X, center.Y, geometry.Bounds.Width, geometry.Bounds.Height),
+                new System.Numerics.Vector2(geometry.Bounds.Width / 2f, geometry.Bounds.Height / 2f),
+                geometry.Degrees, new Color(255, 255, 255, frame.CardOpacity));
+
+        // 004870B0 launches eight stars after counter 128, 16 units apart.
+        // 2/3 is the native resource index, but the bitmap association is
+        // provisional until sacrifice.txt has been inspected from data.dat.
+        foreach (var particle in frame.Particles)
+        {
+            var origin = placement.ParticleOrigins[particle.Sequence];
+            var sprite = graphics.Texture(DatGraphics.SetSprites[2 + particle.Variant]);
+            Raylib.DrawTexture(sprite,
+                origin.X - sprite.Width / 2,
+                origin.Y - particle.RisePixels - sprite.Height / 2,
+                new Color(255, 255, 255, frame.CardOpacity));
+        }
     }
 
     static void DrawSetPlacement(SetPlacement placement, int elapsedUpdates)
