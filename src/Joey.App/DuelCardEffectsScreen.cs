@@ -13,10 +13,13 @@ static partial class Game
     sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
     sealed record DuelOpening : CardEffect;
     sealed record ShuffleDeck(int Player) : CardEffect;
+    sealed record ExodiaOpening(DemoExodiaCompletion Completion) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
     static bool CardEffectsBusy => cardEffects.Current is not null;
+    static bool ExodiaOpeningQueued =>
+        cardEffects.Pending.Any(step => step.Kind is ExodiaOpening);
     static bool CanPlayCardEffects => flight is null && attackCue is null && !ActivationBusy;
     static bool MotionBusy => flight is not null || attackCue is not null || ActivationBusy || CardEffectsBusy;
 
@@ -31,6 +34,7 @@ static partial class Game
             QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
         duel.DeckShuffled += player =>
             QueueCardEffect(new ShuffleDeck(player), NativeShuffleFrame.Updates);
+        duel.ExodiaCompleted += completion => QueueExodiaOpening(completion);
     }
 
     static void QueueCardEffect(CardEffect effect, int updates)
@@ -79,6 +83,24 @@ static partial class Game
         // Native 0044F9F0: 33 updates. Core has already applied the summon.
         // The same queue keeps the visual presentation after the hand flight.
         QueueCardEffect(new NormalSummonPlacement(card, player, zone), NativeNormalSummonFrame.Updates);
+    }
+
+    static void QueueExodiaOpening(DemoExodiaCompletion completion)
+    {
+        if (completion.Pieces.Count != NativeExodiaOpeningFrame.CardCount)
+            throw new ArgumentException("Expected five Exodia pieces.", nameof(completion));
+        QueueCardEffect(new ExodiaOpening(completion),
+            NativeExodiaOpeningFrame.OpeningUpdates);
+    }
+
+    static void QueueInitialExodiaOpening()
+    {
+        // FromDecks can recognize a complete starting hand before the UI
+        // subscribes to Core events. Keep this order after Duel Start/deal.
+        if (duel.ExodiaWinner is not int winner) return;
+        var pieces = ExodiaRules.CompleteHand(duel.HandFor(winner));
+        if (pieces is not null)
+            QueueExodiaOpening(new DemoExodiaCompletion(winner, pieces));
     }
 
     static void QueueDuelOpening()
@@ -196,7 +218,31 @@ static partial class Game
             case ShuffleDeck shuffled:
                 DrawDeckShuffle(shuffled.Player, cardEffects.ElapsedUpdates);
                 break;
+            case ExodiaOpening exodia:
+                DrawExodiaOpening(exodia.Completion, cardEffects.ElapsedUpdates);
+                break;
         }
+    }
+
+    static void DrawExodiaOpening(DemoExodiaCompletion completion, int elapsedUpdates)
+    {
+        var frame = NativeExodiaOpeningFrame.FromUpdate(elapsedUpdates, effectCosine);
+        foreach (var pose in frame.Cards)
+        {
+            if (pose.Opacity == 0) continue;
+            string? full = graphics.Artwork.For(completion.Pieces[pose.Sequence]);
+            if (full is null || !full.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var texture = graphics.Texture(@"mini\" + full[5..]);
+            Raylib.DrawTexture(texture,
+                pose.Center.X - texture.Width / 2,
+                pose.Center.Y - texture.Height / 2,
+                new Color(255, 255, 255, pose.Opacity));
+        }
+
+        // This is ONLY t=0..312 of 00454010. Its remaining stages (assembled
+        // Exodia figure, background, glow/ball and audio) are not mapped.
+        // The generic native win banner is the deliberate client fallback.
     }
 
     static void DrawDeckShuffle(int player, int elapsedUpdates)
