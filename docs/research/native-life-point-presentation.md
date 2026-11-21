@@ -68,3 +68,60 @@ portar seu contador.
 em 100,100,10,10,10,10,10; cura +205 em 100,100,1,1,1,1,1;
 retarget durante animação; clamp visual a 65535; Instant; e
 sem interferência nas regras Core.
+
+
+## Integração parcial de atlas e barras do DAT (21/11/2026)
+
+O Draw transitório `0047C660` no ZIP visual contém a expressão
+`iStack_38 = min(obj+0x24, 8000) * largura / 8000`. A largura e a
+posição da barra chegam de outras estruturas e **não são recuperáveis
+com segurança** apenas desse pseudocódigo (registradores reconstruídos
+ambíguos). O cliente usa `NativeLifeHud.FilledBarPixels` com truncamento
+inteiro, saturando a barra em 8.000 LP, mesmo que o contador numérico
+possa alcançar 65.535.
+
+O índice do `data.dat` contém os seguintes recursos originais:
+
+- `j\duel\life\lp_jibu1.bmp` e `lp_jibu2.bmp` (painel local).
+- `j\duel\life\lp_aite1.bmp` e `lp_aite2.bmp` (painel adversário).
+- `j\duel\font\duel_fontm_y.bmp` e `number.txt`.
+- `j\duel\font\damage00.bmp` e `damage01.bmp`,
+  `j\duel\life\bomb_*.bmp` e `lp_explos.bmp` estão catalogados,
+  mas **não** foram integrados nesta fatia.
+
+O `Joey.App` agora renderiza as imagens 1/2 de cada lado como
+base/preenchimento, **composição provisória**. A barra tem 137 × 14 px,
+ancorada à coluna de detalhes já existente (não se trata de coordenadas
+nativas confirmadas). A segunda imagem é recortada ao comprimento
+derivado de `NativeLifeHud`; o LP e a animação continuaram isolados no
+`Joey.LookAndFeel`.
+
+O helper numérico `004803C0` seleciona os algarismos por
+`(valor % 10) * (larguraAtlas / numeroDeColunas)`, desenhando da direita
+para a esquerda; `00480200` consulta a quantidade de glifos carregada
+no manifesto. Como o conteúdo real do `number.txt` não está neste
+ambiente, o cliente tenta extrair esse número **do DAT na execução**,
+aceitando atlas com 10 a 12 glifos. Se não identificar a descrição,
+continua com o texto funcional anterior. Isto evita fixar um número
+inventado de colunas. O arquivo `duel_fontm_y.bmp` foi escolhido como
+primeira variante, mas sua correspondência à escolha dinâmica de
+`0047C660` ainda **não foi confirmada**; a renderização usa posições
+aproximadas, sem considerar o kernel de rasterização nativo.
+
+A função `DatGraphics.Validate` passa a decodificar os cinco BMPs
+utilizados pelo HUD. Falhas ou divergências de layout do atlas
+precisarão ser verificadas com o DAT original e os quadros
+capturados do jogo. O conteúdo do DAT e o ZIP SQLite não são
+incorporados ao repositório.
+
+### Próxima validação visual, sem urgência para o desenvolvimento
+
+Comparar, para cada lado, o número e a barra com 8.000, 4.000 e
+0 LP, observando se `lp_*1/2` são realmente base/preenchimento,
+a seleção de cor da fonte, os recortes verdes e a posição. Depois
+investigar as janelas de `0047C660` que chamam
+`004806F0` para os dígitos flutuantes de dano/cura e as imagens
+`bomb_*.bmp`.
+
+O estado continua **Partial**, e a cobertura de funções Draw
+permanece **13/31**: esta fatia melhora uma função já contada.
