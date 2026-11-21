@@ -155,6 +155,35 @@ internal static class LookAndFeelChecks
         check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
               "Set placement: effect starts after hand-to-field flight");
 
+        // 0047C660 uses displayed (not logical) LP for the native bar,
+        // saturating at 8000 even though the numeric display reaches 65535.
+        check(NativeLifeHud.FilledBarPixels(0, 137) == 0 &&
+              NativeLifeHud.FilledBarPixels(4000, 137) == 68 &&
+              NativeLifeHud.FilledBarPixels(7999, 137) == 136 &&
+              NativeLifeHud.FilledBarPixels(8000, 137) == 137 &&
+              NativeLifeHud.FilledBarPixels(65535, 137) == 137 &&
+              NativeLifeHud.FilledBarPixels(-100, 137) == 0,
+              "Native LP HUD: bar uses truncated displayed/8000 ratio and saturates");
+        check(NativeLifeHud.DecimalGlyphs(0).SequenceEqual([0]) &&
+              NativeLifeHud.DecimalGlyphs(8000).SequenceEqual([8, 0, 0, 0]) &&
+              NativeLifeHud.DecimalGlyphs(int.MaxValue).SequenceEqual([6, 5, 5, 3, 5]),
+              "Native LP HUD: decimal digits use visual clamp to 65535");
+
+        string fontManifest = "duel_fontl.bmp 10\\n" +
+            "j/duel/font/duel_fontm_y.bmp 12 // sprite count\\n" +
+            "duel_fonts.bmp 8\\n";
+        check(NativeLifeHud.TryFontColumns(fontManifest, "DUEL_FONTM_Y.BMP") == 12 &&
+              NativeLifeHud.TryFontColumns(fontManifest, "duel_fontl.bmp") == 10 &&
+              NativeLifeHud.TryFontColumns(fontManifest, "missing.bmp") is null &&
+              NativeLifeHud.TryFontColumns("duel_fontm_y.bmp ?\\n", "duel_fontm_y.bmp") is null &&
+              NativeLifeHud.GlyphWidth(240, 12) == 20,
+              "Native LP HUD: glyph columns derive from DAT manifest rather than guessed image width");
+        bool invalidGlyphAtlasRejected = false;
+        try { NativeLifeHud.GlyphWidth(239, 12); }
+        catch (ArgumentException) { invalidGlyphAtlasRejected = true; }
+        check(invalidGlyphAtlasRejected,
+              "Native LP HUD: reject an invalid atlas width instead of slicing wrong glyphs");
+
         // 0047C4F0/0047C560: Core LP updates immediately, but the native
         // visual counter has a 32-update ramp before consuming signed deltas.
         var lp = new NativeLifePointPresentation(8000);
