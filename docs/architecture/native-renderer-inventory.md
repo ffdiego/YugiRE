@@ -64,8 +64,8 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Invocação especial | `0044FCC0` / `005DB2E4` | `004500E0` | `00450100` | `effect/sp_summon.txt`, `sp_sum_a1..4.yga`, `sp_sum_d1..4.yga` | Implementado parcialmente: 41 updates, quatro YGAs alternados no início, imagem da carta transformada na segunda janela e eventos para buscas especiais/Morphing Jar #2. Orientação, textura interna e transformador `0054E890` provisórios. |
 | Ativação no campo | `00450260` / `005DB2F4` | `00450590` | `004505D0` | `effect/activate.txt`, pares `kouka_ue/sita_*` | Implementado com divergências. `DrawSpellActivation` e `DrawActivationSprite` usam dois YGAs e scratch dinâmico, que também existe no original. Mistura e seleção por categoria ainda divergem. Comando 72, handler `00406B20`. |
 | Ativação alternativa | `00450730` / `005DB304` | `00450A90` | `00450AD0` | seleção aberta | Não implementado como ramo separado. |
-| Abertura | `004516A0` / `005DB334` | `00451950` | `00451980` | `effect/duelstart.txt` | Não implementado. |
-| Resultado do duelo | `00451B80` / `005DB344` | `00451E40` | `00451E60` | `effect/duelend.txt` | Placeholder/procedural inventado. Resultado funcional em `DrawDuel` usa quadro e texto próprios. Há variante de cena em `00483B10`. |
+| Abertura | `004516A0` / `005DB334` | `00451950` | `00451980` | `effect/duelstart.txt`, `duel_start_e.bmp` | Parcial: imagem original DAT centralizada em (400,300), 40 updates, escala inicial + cosseno e fade-in/hold/fade-out. Ordenação antes da mão inicial é política da Alpha. |
+| Resultado do duelo | `00451B80` / `005DB344` | `00451E40` | `00451E60` | `effect/duelend.txt`, `duel_win/lose/draw_e.yga` | Parcial: substituiu painel do cliente pelos YGAs de resultado originais, centralizados em (400,300), com fade-in da função nativa; após t=512 mantém banner (não presume fade-out inatingível no Update). |
 | Fusão | `004520E0` / `005DB364` e `004874C0` / `005DBD54` | `004524E0 / 004877B0` | `004524F0 / 004877F0` | `effect/fusion.txt` | Não implementado. |
 | Embaralhamento | `004532C0` / `005DB384` | `00453540` | `00453560` | `effect/shuffle.txt` | Não implementado. As cartas de Morphing Jar usam a fila de transferências já descrita. |
 | Corrente | `0041F5C0` / `005DABA8` | `0041F830` | `0041F870` | `chain/chain.txt` | Não implementado. |
@@ -362,3 +362,46 @@ ou FPS efetivo.
 
 Por já estar a família de LP contabilizada como `Partial`,
 a porcentagem visual permanece **14/31 (45.16%)**.
+
+
+## Avisos de início e resultado do duelo — recursos e janela (21/11/2026)
+
+O SQLite global contém os construtores `004516A0` e
+`00451B80`; os updates/draws `00451950/00451980` e
+`00451E40/00451E60` estão no lote visual do Ghidra, sem
+necessidade de outra extração.
+
+**DUEL START:** `00451950` incrementa o contador em 8;
+`00451980` libera o objeto quando ultrapassa `0x13F`.
+Foram modeladas 40 amostras `0,8,…,312`:
+`t<64`: escala `256 + (C[2t] >> 9)` (8.8)
+e alfa `C[(2t−128)&511] >> 8`;
+`64≤t≤256`: opacidade 255 e escala unitária;
+`256<t<320`: alfa `C[(2t)&511] >> 8`.
+O Draw nativo usa o sprite `duel_start_e.bmp` no centro
+`(400,300)`. O cliente enfileira esse aviso antes da
+distribuição inicial na Alpha e no duelo local; a ordem entre
+efeitos e cartas **não** foi capturada no original.
+
+**Resultado:** `00451E40` aumenta o contador em 4 até
+`0x200`, e nesse limite altera uma flag interna. O Draw
+`00451E60` exibe uma única imagem no centro `(400,300)`:
+`t<128` usa `C[(t−128)&511]>>8` para fade-in;
+`128≤t≤512` exibe opacidade 255. O Draw também contém
+ramo para fade-out após 512, mas sua alcançabilidade
+pelo scheduler não está demonstrada. A Alpha, portanto,
+mantém o banner durante o estado terminal, em vez de
+inventar a transição subsequente.
+
+`DatGraphics` carrega do DAT os originais:
+`j\duel\effect\duel_start_e.bmp` e
+`j\duel\effect\duel_win_e.yga`,
+`duel_lose_e.yga`, `duel_draw_e.yga`.
+O mapa de win/lose/draw depende da perspectiva de
+`ViewPlayer`, sem mudar a resolução do duelo.
+
+Status **Partial** para ambas as famílias; a cobertura
+visual passa para **16/31 (51.61%)**. Ainda faltam
+composição de superfície, diferenças de kernel BMP/YGA,
+eventual mascaramento do fundo, som do aviso, troca de cena,
+calibração do scheduler e capturas pareadas 800×600.
