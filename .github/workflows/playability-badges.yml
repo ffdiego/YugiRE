@@ -1,4 +1,4 @@
-name: Publish playability badges
+name: Publish project coverage badges
 
 on:
   push:
@@ -8,6 +8,9 @@ on:
       - 'docs/cards/pack-index.json'
       - 'docs/cards/monster-subtypes.json'
       - 'scripts/publish_playability.py'
+      - 'docs/architecture/visual-function-coverage.json'
+      - 'docs/architecture/native-renderer-inventory.md'
+      - 'scripts/publish_visual_coverage.py'
       - '.github/workflows/playability-badges.yml'
   workflow_dispatch:
 
@@ -32,13 +35,22 @@ jobs:
           python-version: '3.12'
       - name: Recompute sandbox progress
         run: python scripts/publish_playability.py
+      - name: Recompute visual function coverage
+        run: python scripts/publish_visual_coverage.py
+      - name: Validate coverage reports and batch exporter
+        run: |
+          python scripts/publish_playability.py --check
+          python scripts/publish_visual_coverage.py --check
+          python scripts/export_ghidra_visual_bundle.py --list-only > /dev/null
+          python -m unittest discover -s tests -p 'test_publish_playability.py'
+          python -m unittest discover -s tests -p 'test_publish_visual_coverage.py'
       - name: Publish updated progress files if changed
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/cards/PLAYABILITY.md docs/cards/badges/
+          git add -A docs/cards/PLAYABILITY.md docs/cards/badges/ docs/architecture/VISUAL_COVERAGE.md docs/architecture/badges/
           if git diff --cached --quiet; then
             echo "Badge counts already up-to-date"
             exit 0

@@ -1,7 +1,7 @@
 # YugiRE
 
 [![Cartas jogáveis](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fall-packs.json)](docs/cards/PLAYABILITY.md)
-[![Joey jogável](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fjoey.json)](docs/cards/PLAYABILITY.md)
+[![Funções visuais](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Fvisual.json)](docs/architecture/VISUAL_COVERAGE.md)
 
 
 Engenharia reversa e protótipo de Yu-Gi-Oh! Power of Chaos: Joey the Passion.
@@ -25,10 +25,18 @@ Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-
 O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
 a comparação dinâmica completa de um duelo normal ainda está pendente.
 
-## Progresso jogável (novo indicador)
+## Progresso de cartas e apresentação
 
-O objetivo atual é medir **cartas jogáveis em Joey.Core**, por categoria, a partir da
-união dos packs (771 registros) ou apenas Joey (350). O manifest versionado
+O README apresenta duas métricas independentes: **cartas jogáveis na trilogia**
+(Done+Verified, 771 cartas) e **funções Draw nativas com implementação C#**
+(Partial+Done+Verified, dentre as funções identificadas). A segunda mede
+cobertura de implementação visual, **não fidelidade nativa comprovada**;
+seu denominador pode aumentar com novas descobertas.
+[Relatório visual detalhado](docs/architecture/VISUAL_COVERAGE.md).
+
+A métrica de cartas considera a união dos packs (771 registros). Os números
+específicos de Joey (350) seguem no relatório detalhado, mas sem badge
+separada. O manifest versionado
 `docs/cards/playability-manifest.json` lista as implementações documentadas;
 o gerador cruza resource IDs e catálogo do DAT local, sem versionar dados do jogo.
 

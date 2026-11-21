@@ -1,0 +1,52 @@
+# Cobertura de funções visuais — YugiRE
+
+Denominador: **rotinas Draw nativas distintas identificadas** em
+[native-renderer-inventory.md](native-renderer-inventory.md). Uma rotina
+compartilhada por várias famílias conta uma vez. Funções Draw ainda
+desconhecidas não entram no denominador, que poderá aumentar.
+
+**Implementadas (inclusive parciais): 11/31 (35.48%).**
+**Validadas no Joey original: 0/31.**
+
+Partial indica um componente visual C# relacionado, mas divergências
+conhecidas. Done exige escopo visual concluído em C#; Verified exige
+comparação com o executável original. Esta badge mede implementação,
+**não fidelidade pixel-perfect comprovada**.
+
+| VA Draw | Família | Estado | Implementação C# |
+| --- | --- | --- | --- |
+| `00449850` | Campo e troca de cenário | Partial | `src/Joey.App/DuelScreen.cs` |
+| `0046F7A0` | Painel de detalhes | Partial | `src/Joey.App/DuelDetailScreen.cs` |
+| `00418EF0` | Cartas e mão | Partial | `src/Joey.App/DuelScreen.cs` |
+| `0043C980` | Deck, cemitério e pilhas | Partial | `src/Joey.App/DuelScreen.cs` |
+| `004194D0` | Atributos ATK/DEF | Partial | `src/Joey.App/DuelScreen.cs` |
+| `0047C660` | LP, dano e placar | Partial | `src/Joey.App/DuelDetailScreen.cs` |
+| `00481420` | Fases, botões e troca de cor | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
+| `00480C60` | Avisos de fase e novo jogador | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
+| `0045E4A0` | Ajuda | Pending | — |
+| `0040E260` | Efeito de estado persistente | Pending | — |
+| `004142C0` | Combate declarado e espada | Partial | `src/Joey.App/AlphaDuelScreen.cs` |
+| `004514B0` | Explosão de destruição | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
+| `00450FD0` | Quebra / remoção alternativa | Pending | — |
+| `0044F390` | Set | Pending | — |
+| `0044FA10` | Invocação normal | Pending | — |
+| `00450100` | Invocação especial | Pending | — |
+| `004505D0` | Ativação no campo | Partial | `src/Joey.App/DuelActivationScreen.cs` |
+| `00450AD0` | Ativação alternativa | Pending | — |
+| `00451980` | Abertura | Pending | — |
+| `00451E60` | Resultado do duelo | Pending | — |
+| `004524F0` | Fusão | Pending | — |
+| `004877F0` | Fusão | Pending | — |
+| `00453560` | Embaralhamento | Pending | — |
+| `0041F870` | Corrente | Pending | — |
+| `004531C0` | Indicador de corrente desativada | Pending | — |
+| `0043DBE0` | Remoção / exclusão | Pending | — |
+| `004870B0` | Sacrifício | Pending | — |
+| `00457520` | Moeda | Pending | — |
+| `00456B90` | Dado | Pending | — |
+| `00454010` | Exodia | Pending | — |
+| `004584C0` | Vija | Pending | — |
+
+O conjunto de endereços deve corresponder ao inventário.
+Diálogos e ícones com Draw desconhecido permanecem listados no
+inventário, mas não inflam a porcentagem.
