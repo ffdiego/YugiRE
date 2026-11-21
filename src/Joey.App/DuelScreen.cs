@@ -162,6 +162,17 @@ static partial class Game
         }
         else DrawArtwork(card, x, y, width, height, sideways: defense);
     }
+    static void DrawBoardCard(Card card, Rectangle zone, bool faceDown, bool defense = false)
+    {
+        const int miniWidth = 50, miniHeight = 72;
+        int width = defense ? miniHeight : miniWidth;
+        int height = defense ? miniWidth : miniHeight;
+        int x = (int)(zone.X + (zone.Width - width) / 2);
+        int y = (int)(zone.Y + (zone.Height - height) / 2);
+        if (faceDown) DrawCardBack(x, y, width, height, sideways: defense);
+        else DrawArtwork(card, x, y, width, height, sideways: defense);
+    }
+
     static void DrawDuelField(bool blockInput)
     {
         for (int player = 0; player < 2; player++)
@@ -174,7 +185,7 @@ static partial class Game
             if (duel.FieldSpells[player] is Card fieldCard)
             {
                 if (!ActivationInFlight(fieldRect))
-                    DrawFieldCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
+                    DrawBoardCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
@@ -190,7 +201,7 @@ static partial class Game
                 Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
                 if (monster != null && !InFlight(player, zone, false))
                 {
-                    DrawFieldCard(monster, monsterRect, duel.MonsterFaceDown[player, zone], duel.DefensePosition[player, zone]);
+                    DrawBoardCard(monster, monsterRect, duel.MonsterFaceDown[player, zone], duel.DefensePosition[player, zone]);
                     if (!duel.MonsterFaceDown[player, zone])
                         Label($"{duel.AttackValue(player, zone)}/{duel.DefenseValue(player, zone)}", x, (int)monsterRect.Y + 89, 10, Gold);
                 }
@@ -203,9 +214,9 @@ static partial class Game
                     duel.IsMarkedForBattleDestruction(player, zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
                 if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true) && !ActivationInFlight(spellRect))
-                    DrawFieldCard(spell, spellRect, duel.SpellFaceDown[player, zone]);
+                    DrawBoardCard(spell, spellRect, duel.SpellFaceDown[player, zone]);
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
-                    DrawAttackSword(new(monsterRect.X + monsterRect.Width / 2, monsterRect.Y + 22), new(0, -1));
+                    DrawAttackSword(new(monsterRect.X + monsterRect.Width / 2, monsterRect.Y + 26), new(0, -1));
                 if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {
@@ -319,20 +330,20 @@ static partial class Game
             Raylib.DrawLine(230, 301, 786, 301, Gold);
         }
         if (alphaCpu is not null) DrawCpuHand();
-        if (Button("< Menu", 8, 8, 85, 30)) { screen = "menu"; return; }
-        Label(alphaCpu is null ? $"LOCAL DEMO · {presentation.Style.Name}" : "ALPHA - VS CPU", 105, 16, 13, Gold);
+        if (Button("< Menu", 252, 8, 85, 30)) { screen = "menu"; return; }
+        Label(alphaCpu is null ? $"LOCAL DEMO · {presentation.Style.Name}" : "ALPHA - VS CPU", 345, 17, 13, Gold);
         DrawPhasePanel(turnInput);
-        if (Button("Reset", 523, 8, 75, 30))
+        if (Button("Reset", 454, 8, 75, 30))
         {
             if (alphaCpu is null) StartDemo(); else StartAlpha();
             return;
         }
         if (alphaCpu is null && Button(optionalEffectPrompts == EffectPromptMode.Ask
-                ? "Prompts: ON" : "Prompts: OFF", 610, 8, 168, 30, !selectingCard))
+                ? "Prompts: ON" : "Prompts: OFF", 610, 74, 168, 30, !selectingCard))
             optionalEffectPrompts = optionalEffectPrompts == EffectPromptMode.Ask
                 ? EffectPromptMode.Off : EffectPromptMode.Ask;
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
-            Button("Done FLIP", 605, 8, 125, 30, choiceInput))
+            Button("Done FLIP", 605, 74, 125, 30, choiceInput))
         {
             duel.FinishFlipTargets(out message);
             ClearDuelSelection();
@@ -340,15 +351,14 @@ static partial class Game
         int turnLabel = displayedTurn == 0 ? duel.Turn : displayedTurn;
         int displayedPlayer = (turnLabel - 1) % 2;
         string playerLabel = alphaCpu is null ? $"P{displayedPlayer + 1}" : displayedPlayer == 0 ? "You" : "CPU";
-        Label(duel.IsDraw ? "DRAW" : duel.Winner is int winner
+        string heading = duel.IsDraw ? "DRAW" : duel.Winner is int winner
             ? alphaCpu is null ? $"PLAYER {winner + 1} WINS" : winner == 0 ? "YOU WIN" : "CPU WINS"
-            : $"Turn {turnLabel} | {playerLabel}", 8, 50, 16, Gold);
-        Raylib.DrawRectangle(240, 46, 545, 24, Panel);
-        Label($"{(alphaCpu is null ? "Opponent" : "CPU")} LP {duel.Life[1 - ViewPlayer]}       Your LP {duel.Life[ViewPlayer]}       {presentation.Style.Name}", 245, 51, 16);
-        if (Button("Direct attack", 8, 380, 200, 30, actionInput && duel.CanAttack(attacker))) CommitHumanAttack(-1);
-        if (Button("Cancel", 8, 416, 200, 30, actionInput)) { ClearDuelSelection(); message = "Selection cleared."; }
-        if (Button("Hand <", 8, 452, 98, 30, actionInput && handPage > 0)) { handPage--; ClearDuelSelection(); }
-        if (Button("Hand >", 112, 452, 98, 30, actionInput && (handPage + 1) * 6 < ViewHand.Count)) { handPage++; ClearDuelSelection(); }
+            : $"Turn {turnLabel} | {playerLabel}";
+        Raylib.DrawRectangle(250, 44, 540, 24, Panel);
+        Label(heading, 256, 49, 14, Gold);
+        if (Button("Cancel", 530, 8, 63, 30, actionInput)) { ClearDuelSelection(); message = "Selection cleared."; }
+        if (Button("< Hand", 600, 8, 78, 30, actionInput && handPage > 0)) { handPage--; ClearDuelSelection(); }
+        if (Button("Hand >", 684, 8, 78, 30, actionInput && (handPage + 1) * 6 < ViewHand.Count)) { handPage++; ClearDuelSelection(); }
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);
@@ -387,9 +397,9 @@ static partial class Game
             presentation.Show(cue);
             previousDuelMessage = message;
         }
-        var lines = TextLines(message, 205, 14);
-        for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, presentation.Busy ? Color.White : Gold);
-        Label("Right-click: Set", 8, 587, 12, Gold);
+        var lines = TextLines(message, 365, 12);
+        if (lines.Count > 0)
+            Label(lines[0], 416, 50, 12, presentation.Busy ? Color.White : Gold);
         if (choiceInput && HumanChoice && pendingOwner is not null)
         {
             DrawCardSelectionOverlay();

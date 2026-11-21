@@ -139,7 +139,8 @@ static partial class Game
             target = new(center.X, center.Y);
             break;
         }
-        DrawAttackSword(target, target - new Vector2(origin.X, origin.Y));
+        var anchor = new Vector2(origin.X, ZoneBounds(ViewPlayer, attacker, false).Y + 26);
+        DrawAttackSword(anchor, target - anchor);
     }
 
     static void DrawAttackSword(Vector2 position, Vector2 direction)

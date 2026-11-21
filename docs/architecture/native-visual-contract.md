@@ -199,3 +199,27 @@ políticas do protótipo. A trilha de ataque ainda usa uma duração provisória
 
 O inventário identifica as imagens. A seleção exata das variantes de
 espada e botões durante Update/Draw continua aberta.
+
+## Mira e dimensões do cliente
+
+A consulta Ghidra confirmou que a tabela `005DB560` alimenta os
+conversores de posição `0045C280` e `0045C3F0`. A animação de ataque
+já declarado entra em `00407A20 → 00413BA0 → 004140B0`. O último
+inicializa os estados 6 ou 7. A rotina que define a origem e a rotação
+da mira antes da declaração ainda precisa ser isolada.
+O construtor `00413BC0` referencia `duel/effect/attack.txt` em
+`00413CD8` e instala a tabela virtual em `005DA710`.
+
+No vídeo local, em torno de 00:43, as cartas do campo ocupam
+aproximadamente 50 × 72 pixels em pé. Isso coincide com o tamanho do
+verso em `mini\card_ura.bmp`. O cliente usa esse tamanho para as
+cartas assentadas no campo, invertendo os eixos em defesa e usando
+as zonas anteriores para os cliques. O tamanho da mão e a interpolação
+das cartas em trânsito ainda precisam de comparação.
+
+A posição da espada junto ao atacante e a mira pelo centro do alvo
+seguem a observação informada pelo jogador. O deslocamento da âncora
+dentro da zona e a rotação por atan2 são decisões do cliente. O vídeo
+também confirma a função da coluna de detalhes. O YugiRE apresenta LP,
+arte e descrição na coluna e mantém comandos em uma sobreposição no
+campo, com composição própria.

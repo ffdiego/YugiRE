@@ -1,14 +1,17 @@
 using Joey.Core;
+using Raylib_cs;
 
 static partial class Game
 {
     static Card? detailCard;
     static Card? lastHoveredDetail;
     static bool activatedDetail;
+    static int duelDescriptionScroll;
 
     static void ResetDuelDetail()
     {
         detailCard = null;
+        duelDescriptionScroll = 0;
         lastHoveredDetail = null;
         activatedDetail = false;
     }
@@ -16,6 +19,7 @@ static partial class Game
     static void ShowActivatedDetail(Card card)
     {
         detailCard = card;
+        duelDescriptionScroll = 0;
         activatedDetail = true;
     }
 
@@ -23,7 +27,10 @@ static partial class Game
     {
         var hovered = FindHoveredDuelCard();
         if (!activatedDetail && hovered is not null && !ReferenceEquals(hovered, lastHoveredDetail))
+        {
             detailCard = hovered;
+            duelDescriptionScroll = 0;
+        }
         lastHoveredDetail = hovered;
     }
 
@@ -56,16 +63,18 @@ static partial class Game
     static void DrawDuelDetail()
     {
         activatedDetail = false;
-        if (detailCard is not { } card)
-        {
-            Wrap("Hover a card to inspect it. Right-click switches Summon/Activate to Set.", 12, 95, 195, 18);
-            return;
-        }
+        Raylib.DrawRectangle(0, 0, 214, 600, Background);
+        Label($"Opponent LP  {duel.Life[1 - ViewPlayer]}", 12, 16, 19, Gold);
+        Label($"Your LP  {duel.Life[ViewPlayer]}", 12, 561, 19, Gold);
+        if (detailCard is not { } card) return;
 
-        DrawArtwork(card, 8, 78, 200, 178);
+        DrawArtwork(card, 14, 53, 186, 265);
         string stats = card.IsMonster ? $"\nATK {card.Attack} / DEF {card.Defense}" : "";
-        var lines = TextLines(card.Name + stats + "\n" + card.Description, 205, 12);
-        for (int i = 0; i < Math.Min(8, lines.Count); i++)
-            Label(lines[i], 8, 260 + i * 14, 12, i == 0 ? Gold : Raylib_cs.Color.White);
+        var lines = TextLines(card.Name + stats + "\n" + card.Description, 188, 13);
+        const int visibleLines = 14;
+        if (mouse.X < 214) duelDescriptionScroll -= (int)Raylib.GetMouseWheelMove() * 3;
+        duelDescriptionScroll = Math.Clamp(duelDescriptionScroll, 0, Math.Max(0, lines.Count - visibleLines));
+        for (int i = 0; i < visibleLines && i + duelDescriptionScroll < lines.Count; i++)
+            Label(lines[i + duelDescriptionScroll], 14, 325 + i * 16, 13, i + duelDescriptionScroll == 0 ? Gold : Color.White);
     }
 }
