@@ -135,6 +135,7 @@ RevivalJamDecisionChecks.Run(Check);
 NativeP168EvidenceChecks.Run(Check);
 HaneHaneChecks.Run(Check);
 MorphingJar2Checks.Run(Check);
+ExodiaChecks.Run(Check);
 LookAndFeelChecks.Run(Check);
 NativePresentationChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
