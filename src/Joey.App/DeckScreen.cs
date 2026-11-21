@@ -51,7 +51,7 @@ static partial class Game
         duel = NewDemo();
         ResetDuelPresentation();
         message = useImportedDeck ? "Imported main deck for both local players. Only selected effects work in this demo." :
-            "Local two-player demo. Draw or summon, then enter battle.";
+            "Local two-player demo. Select phases on the left of the field.";
     }
     static void DrawDeck()
     {

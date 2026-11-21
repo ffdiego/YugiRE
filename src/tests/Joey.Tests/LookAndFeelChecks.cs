@@ -55,6 +55,24 @@ internal static class LookAndFeelChecks
         sequence.Advance(int.MaxValue);
         check(sequence.Current is null && sequence.ElapsedUpdates == 0,
               "Presentation sequence: completion discards surplus time");
+        sequence.Enqueue("first monster", NativeExplosionTimeline.Updates);
+        sequence.Enqueue("second monster", NativeExplosionTimeline.Updates);
+        sequence.Advance(NativeExplosionTimeline.Updates - 1);
+        check(sequence.Pending.Count() == 2 && sequence.Current?.Kind == "first monster" &&
+              NativeExplosionTimeline.PassesAt(sequence.ElapsedUpdates * NativeExplosionTimeline.UpdateIncrement) ==
+                  NativeExplosionPasses.Fragments,
+              "Destruction FIFO: second monster is still pending in the first monster's final sample");
+        sequence.Advance(1);
+        check(sequence.Pending.Count() == 1 && sequence.Current?.Kind == "second monster" &&
+              sequence.ElapsedUpdates == 0,
+              "Destruction FIFO: second monster starts after the first finishes");
+        check(NativeDuelLayout.GraveBounds(true).X > NativeDuelLayout.MonsterBounds(4, true).X &&
+              NativeDuelLayout.GraveBounds(false).X < NativeDuelLayout.MonsterBounds(4, false).X &&
+              NativeDuelLayout.GraveBounds(true).Y == NativeDuelLayout.MonsterBounds(4, true).Y &&
+              NativeDuelLayout.GraveBounds(false).Y == NativeDuelLayout.MonsterBounds(4, false).Y &&
+              NativeDuelLayout.FieldSpellBounds(true).X == NativeDuelLayout.GraveBounds(false).X &&
+              NativeDuelLayout.FieldSpellBounds(false).X == NativeDuelLayout.GraveBounds(true).X,
+              "Duel layout: graveyards align with the monster rows opposite their field spell");
         var clock = new DuelPresentationClock(classic);
         clock.Show(DuelPresentationCue.FlipReveal);
         clock.Advance(TimeSpan.FromMilliseconds(100));

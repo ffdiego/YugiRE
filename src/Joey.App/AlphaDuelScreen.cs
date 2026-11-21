@@ -41,7 +41,7 @@ static partial class Game
         alphaBlocked = false;
         cpuDelay = TimeSpan.Zero;
         ResetDuelPresentation();
-        message = "Your turn. Draw a card to start.";
+        message = "Your turn.";
     }
 
     static int RunAlphaHeadless()
@@ -68,7 +68,8 @@ static partial class Game
         handPage = 0;
         ClearDuelSelection();
         StopSpellActivation();
-        ResetDestructions();
+        ResetCardEffects();
+        ResetDuelPhases();
         ResetDuelDetail();
         flight = null;
         travelClock.Reset();
@@ -86,7 +87,7 @@ static partial class Game
     }
 
     static Rectangle FieldZoneBounds(int player) =>
-        new(248, player == ViewPlayer ? 308 : 204, 66, 88);
+        ToRectangle(NativeDuelLayout.FieldSpellBounds(player == ViewPlayer));
 
     static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
     {
@@ -143,7 +144,7 @@ static partial class Game
             travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
             if (travelUpdate >= CardTravel.Updates) flight = null;
         }
-        if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || flight is not null || ActivationBusy || DestructionBusy) return;
+        if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || MotionBusy || PhaseBusy) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;
         int? owner = CpuDuelController.PendingOwner(duel);
@@ -194,9 +195,10 @@ static partial class Game
 
     static void DrawCpuHand()
     {
-        int count = duel.HandFor(1).Count;
+        int count = VisibleHand(1).Count;
         for (int i = 0; i < Math.Min(6, count); i++)
         {
+            if (DiscardInFlight(1, i)) continue;
             var rect = CpuHandBounds(i, count);
             DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, 20);
         }

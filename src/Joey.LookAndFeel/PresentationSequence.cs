@@ -8,6 +8,7 @@ public sealed class PresentationSequence<T>
     private readonly Queue<PresentationStep<T>> pending = new();
 
     public PresentationStep<T>? Current => pending.TryPeek(out var step) ? step : null;
+    public IEnumerable<PresentationStep<T>> Pending => pending;
     public int ElapsedUpdates { get; private set; }
 
     public void Enqueue(T kind, int updates)

@@ -10,11 +10,13 @@ static partial class Game
     static bool setHandAction, choosingTributes, choosingEquip;
     static readonly int[] handLift = new int[6];
     static readonly PresentationTickClock hoverClock = new();
-    static Rectangle HandBounds(int slot)
+    static Rectangle HandBounds(int slot) => HandBoundsForCount(handPage * 6 + slot, ViewHand.Count, handLift[slot]);
+
+    static Rectangle HandBoundsForCount(int index, int handCount, int lift = 0)
     {
-        int count = Math.Min(6, ViewHand.Count - handPage * 6);
-        return new(HandPresentation.CenterX(slot, count) - HandPresentation.CardWidth / 2,
-            600 - HandPresentation.CardHeight / 2 - handLift[slot], HandPresentation.CardWidth, HandPresentation.CardHeight);
+        int count = Math.Min(6, handCount - index / 6 * 6);
+        return new(HandPresentation.CenterX(index % 6, count) - HandPresentation.CardWidth / 2,
+            600 - HandPresentation.CardHeight / 2 - lift, HandPresentation.CardWidth, HandPresentation.CardHeight);
     }
     static Rectangle ActionBounds(int slot)
     {
@@ -245,17 +247,20 @@ static partial class Game
     }
     static void DrawDuelHand()
     {
-        int count = Math.Min(6, ViewHand.Count - handPage * 6);
+        var visible = VisibleHand(ViewPlayer);
+        int page = Math.Clamp(handPage, 0, Math.Max(0, (visible.Count - 1) / 6));
+        int count = Math.Min(6, visible.Count - page * 6);
         var drawOrder = Enumerable.Range(0, count).OrderBy(slot => handPage * 6 + slot == hoverHand ? 1 : 0);
         foreach (int slot in drawOrder)
         {
-            int index = handPage * 6 + slot;
-            var rect = HandBounds(slot);
+            int index = page * 6 + slot;
+            if (DiscardInFlight(ViewPlayer, index)) continue;
+            var rect = HandBoundsForCount(index, visible.Count, handLift[slot]);
             Raylib.DrawRectangleRec(rect, Panel);
-            DrawArtwork(ViewHand[index], (int)rect.X + 2, (int)rect.Y + 2, (int)rect.Width - 4, (int)rect.Height - 4);
+            DrawArtwork(visible[index], (int)rect.X + 2, (int)rect.Y + 2, (int)rect.Width - 4, (int)rect.Height - 4);
             Raylib.DrawRectangleLinesEx(rect, index == hand ? 2 : 1, index == hand ? Color.White : Gold);
         }
-        if (hoverHand < 0 || hoverHand >= ViewHand.Count) return;
+        if (MotionBusy || PhaseBusy || hoverHand < 0 || hoverHand >= ViewHand.Count) return;
         if (!duel.CanSetFromHand(hoverHand) && !duel.CanActivateFromHand(hoverHand) && duel.PendingEndDiscards == 0) return;
         var bubble = ActionBounds(hoverHand % 6);
         bool enabled = HandActionEnabled(hoverHand);
@@ -270,16 +275,16 @@ static partial class Game
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
         int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
-        bool activationWasPlaying = ActivationBusy;
+        bool effectsCouldAdvance = CanPlayCardEffects;
         AdvanceSpellActivation(frameElapsed);
-        if (!activationWasPlaying && attackCue is null)
-            AdvanceDestructions(frameElapsed);
-        if (alphaCpu is null || HumanChoice) ApplyOptionalEffectPromptPolicy();
+        if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
+        AdvanceDuelPhases(frameElapsed);
+        if (!MotionBusy && !PhaseBusy && (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         AdvanceAlpha(frameElapsed);
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
-        bool showingMotion = flight is not null || attackCue is not null || ActivationBusy || DestructionBusy;
+        bool showingMotion = MotionBusy || PhaseBusy;
         bool turnInput = !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !showingMotion && !alphaBlocked && HumanChoice;
@@ -294,14 +299,7 @@ static partial class Game
         }
         if (Button("< Menu", 8, 8, 85, 30)) { screen = "menu"; return; }
         Label(alphaCpu is null ? $"LOCAL DEMO · {presentation.Style.Name}" : "ALPHA - VS CPU", 105, 16, 13, Gold);
-        if (Button("Draw", 240, 8, 80, 30, turnInput && duel.CanDraw)) { duel.Draw(out message); ClearDuelSelection(); }
-        if (Button("Battle", 326, 8, 80, 30, actionInput && duel.CanBeginBattle)) { duel.BeginBattle(out message); ClearDuelSelection(); }
-        if (Button("End turn", 412, 8, 105, 30, actionInput && duel.Phase != DemoPhase.End))
-        {
-            duel.EndTurn(out message); ClearDuelSelection(); handPage = 0;
-            if (alphaCpu is not null && duel.ActivePlayer == 1)
-                cpuDelay = presentation.Style.Duration(DuelPresentationCue.CardMove);
-        }
+        DrawPhasePanel(turnInput);
         if (Button("Reset", 523, 8, 75, 30))
         {
             if (alphaCpu is null) StartDemo(); else StartAlpha();
@@ -317,10 +315,12 @@ static partial class Game
             duel.FinishFlipTargets(out message);
             ClearDuelSelection();
         }
-        string playerLabel = alphaCpu is null ? $"P{duel.ActivePlayer + 1}" : duel.ActivePlayer == 0 ? "You" : "CPU";
+        int turnLabel = displayedTurn == 0 ? duel.Turn : displayedTurn;
+        int displayedPlayer = (turnLabel - 1) % 2;
+        string playerLabel = alphaCpu is null ? $"P{displayedPlayer + 1}" : displayedPlayer == 0 ? "You" : "CPU";
         Label(duel.IsDraw ? "DRAW" : duel.Winner is int winner
             ? alphaCpu is null ? $"PLAYER {winner + 1} WINS" : winner == 0 ? "YOU WIN" : "CPU WINS"
-            : $"Turn {duel.Turn} | {playerLabel}: {duel.Phase}", 8, 50, 16, Gold);
+            : $"Turn {turnLabel} | {playerLabel}", 8, 50, 16, Gold);
         Raylib.DrawRectangle(240, 46, 545, 24, Panel);
         Label($"{(alphaCpu is null ? "Opponent" : "CPU")} LP {duel.Life[1 - ViewPlayer]}       Your LP {duel.Life[ViewPlayer]}       {presentation.Style.Name}", 245, 51, 16);
         if (Button("Direct attack", 8, 380, 200, 30, actionInput && duel.CanAttack(attacker))) CommitHumanAttack(-1);
@@ -328,18 +328,19 @@ static partial class Game
         if (Button("Hand <", 8, 452, 98, 30, actionInput && handPage > 0)) { handPage--; ClearDuelSelection(); }
         if (Button("Hand >", 112, 452, 98, 30, actionInput && (handPage + 1) * 6 < ViewHand.Count)) { handPage++; ClearDuelSelection(); }
         // Refresh eligibility after any turn-changing input in this frame.
-        actionInput &= CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
+        actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
         if (!showingMotion && !selectingCard) UpdateDuelDetail();
         DrawDuelDetail();
-        DrawGraveyards();
-        DrawDestructions();
+        DrawSidePiles();
         DrawDuelHand();
+        DrawCardEffects();
         DrawFlight();
         DrawAttackCue();
         DrawSpellActivation();
+        DrawPhaseNotice();
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
             string help = flip.Effect switch
@@ -364,7 +365,6 @@ static partial class Game
         }
         var lines = TextLines(message, 205, 14);
         for (int i = 0; i < Math.Min(4, lines.Count); i++) Label(lines[i], 8, 492 + i * 17, 14, presentation.Busy ? Color.White : Gold);
-        Label($"Deck {duel.DeckCount(0)}/{duel.DeckCount(1)} Grave {VisibleGraveCount(0)}/{VisibleGraveCount(1)}", 8, 568, 13);
         Label("Right-click: Set", 8, 587, 12, Gold);
         if (choiceInput && HumanChoice && pendingOwner is not null)
         {

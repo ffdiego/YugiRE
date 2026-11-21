@@ -97,6 +97,13 @@ public enum NativeExplosionPasses
     Fragments = 4
 }
 
+/// <summary>Native update counts for the phase notice at 00480B40 / 00480C20 / 00480C60.</summary>
+public static class NativePhaseNotice
+{
+    public const int StandardUpdates = 32;
+    public const int BattleUpdates = 40;
+}
+
 /// <summary>
 /// Only the static counters and draw-phase windows are ported. In the native
 /// object (00456730 / 004514B0), draw itself can deactivate the effect; the
@@ -105,6 +112,7 @@ public enum NativeExplosionPasses
 public sealed class NativeExplosionTimeline
 {
     public const int UpdateIncrement = 8;
+    public const int Updates = 0xD0 / UpdateIncrement;
     public int Counter { get; private set; }
     public bool Active { get; private set; } = true;
 
@@ -113,13 +121,15 @@ public sealed class NativeExplosionTimeline
         if (Active) Counter += UpdateIncrement;
     }
 
-    public NativeExplosionPasses VisiblePasses()
+    public NativeExplosionPasses VisiblePasses() =>
+        Active ? PassesAt(Counter) : NativeExplosionPasses.None;
+
+    public static NativeExplosionPasses PassesAt(int counter)
     {
-        if (!Active) return NativeExplosionPasses.None;
         NativeExplosionPasses result = NativeExplosionPasses.None;
-        if (Counter < 0x80) result |= NativeExplosionPasses.Initial;
-        if (Counter > 0x1f && Counter < 0x90) result |= NativeExplosionPasses.Flare;
-        if (Counter > 0x7f && Counter < 0xd0) result |= NativeExplosionPasses.Fragments;
+        if (counter < 0x80) result |= NativeExplosionPasses.Initial;
+        if (counter > 0x1f && counter < 0x90) result |= NativeExplosionPasses.Flare;
+        if (counter > 0x7f && counter < 0xd0) result |= NativeExplosionPasses.Fragments;
         return result;
     }
 
