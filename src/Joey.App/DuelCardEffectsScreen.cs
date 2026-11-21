@@ -32,6 +32,7 @@ static partial class Game
 
     static void QueueSetEffect(int player, int zone, bool spell)
     {
+        if (!presentation.Style.PlayAnimations) return;
         // The card is already committed to the Core; Set runs after flight.
         // Constructor 0044EFD0 takes eight 5-bit MT draws. Reproduce its
         // distribution, but not its shared native RNG stream/seed.
