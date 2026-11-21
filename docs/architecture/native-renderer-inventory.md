@@ -42,7 +42,7 @@ rotina ainda não foi atribuída, e não ausência de Update ou Draw.
 | Atributos ATK/DEF | criado por `004182E0`, recurso em `005F33EC` | Suavização no Draw | `004194D0 → 00480500 / 00480300` | `font/number.txt` e tiras de números | Implementado com divergências. Y centro ±46 está confirmado; o cliente ainda usa fonte de texto e valores imediatos. |
 | LP, dano e placar | `0044C3E0` carrega LP; `0047C310` cria objetos de delta (`005DBAA4`) | `0047C560` | `0047C660` | `life/lifepoint.txt`, `life/match.txt`, `font/number.txt` | Implementado com divergências. `DrawDuelDetail` escreve LP diretamente; contador, dígitos e efeito de dano ainda precisam de integração. |
 | Fases, botões e troca de cor | `00481040` / `005DBB2C` | `00481370` | `00481420` | `phase/phase.txt`, `pha_s/b/r_*.bmp` | Implementado com divergências. `DrawPhasePanel`: recortes centrais do giro foram comparados com o DAT nos dois sentidos. Hitbox e detalhes do estado ativo ainda não foram validados contra o Joey. |
-| Avisos de fase e novo jogador | `00480B40 / 00480BC0` inicializam estados | `00480C20` | `00480C60` | `phase_name/phase_name.txt`, banners e `nex_*.yga` | Implementado com divergências. `DrawPhaseNotice` seleciona o banner azul/vermelho por lado. Os sete quadros intermediários de batalha também vêm do DAT. Deslocamentos de entrada/saída e aviso de jogador continuam abertos. |
+| Avisos de fase e novo jogador | `00480B40 / 00480BC0` inicializam estados | `00480C20` | `00480C60` | `phase_name/phase_name.txt`, banners e `nex_*.yga` | Implementado com divergências. `DrawPhaseNotice` seleciona o banner azul/vermelho por lado. Os sete quadros intermediários de batalha também vêm do DAT. Entrada e saída seguem os deslocamentos e a opacidade do Draw. Mistura do meio e aviso de jogador continuam abertos. |
 | Diálogos e seleções | `00487E70` (manifesto) | Aberto | Aberto | `dialog/dialog.txt`, `button_?.txt`, `ritualdlg.txt` | Placeholder/procedural inventado. `DrawCardSelectionOverlay`, `DrawSummonResponseOverlay`, `DrawAttackResponseOverlay` e `DrawEffectDecisionOverlay` usam painéis de gameplay do cliente. |
 | Ajuda | `0045E250` / `005DB630` | `0045E3D0` | `0045E4A0` | `help/help.txt`, YGAs por idioma | Não implementado. |
 | Efeito de estado persistente | `0040DAC0` / `005DA44C` | `0040E010` | `0040E260` | `effect/affect.txt` | Não implementado. Associação por manifesto e vtable; sem mapa dos ícones e flags. |
@@ -175,3 +175,13 @@ usa `(t−0x40)/8` quando o índice de fase é 3 e a coluna é menor
 que 7. Como `00481370` avança o contador de quatro em quatro nesse
 intervalo, cada imagem fica dois updates. O cliente aplica essa
 seleção e mantém a composição central anterior nos demais updates.
+
+
+### Entrada e saída dos avisos
+
+Em `00480D0D–00480D8E`, durante `t<0x40`, as duas cópias usam
+X do centro ± `(C[2t] >> 10)` e opacidade `3t`. Após `0x80`,
+`00480EBE–00480F04` desenha uma cópia centrada, com opacidade
+`C[t−0x80] >> 8`. A Alpha usa essas fórmulas com a tabela de cosseno
+calculada pelo cliente e mistura raylib. O segundo passe do trecho
+central e o aviso de troca de jogador ainda não foram portados.

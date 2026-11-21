@@ -107,6 +107,22 @@ public static class NativePhaseNotice
     // 00481370 slows the counter in [0x40, 0x80); 00480DC5 selects the seven frames.
     public static int? BattleFrame(int elapsedUpdates) =>
         elapsedUpdates is >= 8 and < 22 ? (elapsedUpdates - 8) / 2 : null;
+
+    public static (int Offset, int Opacity) Motion(int elapsedUpdates, bool battle, ReadOnlySpan<int> cosineFixed16)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(elapsedUpdates);
+        if (cosineFixed16.Length != 512)
+            throw new ArgumentException("Expected 512 x16.16 cosine values.", nameof(cosineFixed16));
+
+        int limit = battle ? BattleUpdates : StandardUpdates;
+        if (elapsedUpdates >= limit) return (0, 0);
+        int counter = !battle || elapsedUpdates < 8 ? elapsedUpdates * 8
+            : elapsedUpdates < 24 ? 0x40 + (elapsedUpdates - 8) * 4 : (elapsedUpdates - 8) * 8;
+        // 00480D0D–00480D8E and 00480EBE–00480F04.
+        if (counter < 0x40) return (cosineFixed16[counter * 2] >> 10, counter * 3);
+        if (counter > 0x80) return (0, Math.Min(255, cosineFixed16[counter - 0x80] >> 8));
+        return (0, 255);
+    }
 }
 
 /// <summary>

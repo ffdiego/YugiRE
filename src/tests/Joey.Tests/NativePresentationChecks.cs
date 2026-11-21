@@ -26,6 +26,15 @@ internal static class NativePresentationChecks
                   .SequenceEqual(Enumerable.Range(0, 7).SelectMany(i => new int?[] { i, i })) &&
               NativePhaseNotice.BattleFrame(22) is null,
             "Battle banner: seven native sprites appear for two updates each in the slowed window");
+        var phaseMotionCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        check(NativePhaseNotice.Motion(0, false, phaseMotionCosine) == (64, 0) &&
+              NativePhaseNotice.Motion(4, false, phaseMotionCosine) == (45, 96) &&
+              NativePhaseNotice.Motion(8, false, phaseMotionCosine) == (0, 255) &&
+              NativePhaseNotice.Motion(17, false, phaseMotionCosine) == (0, 254) &&
+              NativePhaseNotice.Motion(25, true, phaseMotionCosine) ==
+                  NativePhaseNotice.Motion(17, false, phaseMotionCosine) &&
+              NativePhaseNotice.Motion(32, false, phaseMotionCosine) == (0, 0),
+            "Phase banner: mirrored native entrance, center hold and cosine fade");
         // Coordinates are native centers in the logical 800x600 canvas.
         check(NativeDuelLayout.MonsterCenter(0, true) == new CardPoint(369, 352) &&
               NativeDuelLayout.MonsterCenter(4, true) == new CardPoint(681, 352) &&
