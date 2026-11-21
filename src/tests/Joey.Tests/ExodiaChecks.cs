@@ -94,7 +94,8 @@ internal static class ExodiaChecks
             [five[4], null, null, null, null],
             [hane, null, null, null, null], 8000);
         bounced.MonsterFaceDown[1, 0] = bounced.DefensePosition[1, 0] = true;
-        check(bounced.ExodiaWinner is null && bounced.NextTurn() &&
+        bounced.NextTurn();
+        check(bounced.ExodiaWinner is null && bounced.ActivePlayer == 1 &&
               bounced.ChangePosition(0, out _) &&
               bounced.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnOne },
               "Exodia: an Exodia piece on the field does not win before being returned");
