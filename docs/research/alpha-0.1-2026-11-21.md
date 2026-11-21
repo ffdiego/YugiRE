@@ -16,6 +16,14 @@ O turno começa com compra automática. O painel vertical junto ao campo mostra 
 
 Para usar um tema próprio ou licenciado, passe `--duel-theme=/caminho/do/tema`. A pasta pode conter `board.png` (fundo do campo, área lógica de 570 × 600), `card-back.png` (verso vertical) e `font.ttf` (texto da tela de duelo). Cada arquivo ausente usa o padrão do cliente. O duelo local tem o fundo do DAT por padrão. A Alpha tem tabuleiro próprio. Ambos usam verso desenhado pelo cliente e fonte padrão do raylib.
 
+O fundo e o verso também aceitam nomes de entradas BMP/YGA do DAT aberto. Os argumentos `--duel-board-dat=NOME` e `--duel-back-dat=NOME` prevalecem sobre os PNGs do tema. A fonte de texto continua configurável por `font.ttf`. [Origem dos recursos nativos](../architecture/native-visual-contract.md#origem-do-fundo-do-verso-e-do-texto).
+
+```bash
+dotnet run --project src/Joey.App -- ../passion/data.dat --alpha \
+  '--duel-board-dat=j\duel\field\fie_normal.bmp' \
+  '--duel-back-dat=card\card_ura.bmp'
+```
+
 ## Regras e decisões
 
 A lista inclui oito monstros normais, Man-Eater Bug, Morphing Jar, Magician of Faith, Mask of Darkness, cinco magias de LP, Pot of Greed, Upstart Goblin, Legendary Sword, Trap Hole e Mirror Force. As regras de invocação, batalha, FLIP, recuperação, descarte e respostas vêm de `DemoDuel`. A vitória ocorre por LP zero ou falha de compra. O sandbox pode declarar empate se nenhum lado consegue completar a compra do Morphing Jar.

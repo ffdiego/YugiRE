@@ -77,17 +77,24 @@ static partial class Game
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();
-        const string themePrefix = "--duel-theme=";
-        if (args.FirstOrDefault(arg => arg.StartsWith(themePrefix, StringComparison.Ordinal)) is { } themeArg)
+        try
         {
-            try { duelTheme.Load(themeArg[themePrefix.Length..]); }
-            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            if (Option(args, "--duel-theme=") is string directory) duelTheme.Load(directory);
+            string? board = Option(args, "--duel-board-dat=");
+            string? back = Option(args, "--duel-back-dat=");
+            if (board is not null || back is not null)
             {
-                Console.Error.WriteLine(ex.Message);
-                duelTheme.Dispose();
-                Raylib.CloseWindow();
-                return 1;
+                if (error.Length > 0) throw new InvalidDataException(error);
+                duelTheme.LoadDatArt(graphics, board, back);
             }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException)
+        {
+            Console.Error.WriteLine(ex.Message);
+            duelTheme.Dispose();
+            graphics.Dispose();
+            Raylib.CloseWindow();
+            return 1;
         }
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
         var canvas = Raylib.LoadRenderTexture(800, 600);
@@ -146,6 +153,8 @@ static partial class Game
         duelTheme.Dispose();
         graphics.Dispose(); Raylib.CloseWindow(); return 0;
     }
+    static string? Option(string[] args, string prefix) =>
+        args.FirstOrDefault(arg => arg.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
     static Vector2 mouse;
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)
     {

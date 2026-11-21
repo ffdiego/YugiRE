@@ -170,3 +170,32 @@ executados pela CI; a UI ainda requer comparação manual com Joey no Windows.
 
 As durações dos demais cues em `DuelLookAndFeel.cs` continuam sendo
 políticas do protótipo. A trilha de ataque ainda usa uma duração provisória.
+
+## Origem do fundo, do verso e do texto
+
+- O índice e os cabeçalhos BMP do `data.dat` local confirmam
+  `j\duel\field\fie_normal.bmp` (570 × 600), `card\card_ura.bmp`
+  (200 × 290) e `mini\card_ura.bmp` (50 × 72).
+- O DAT contém imagens de dígitos e dano em `j\duel\font\`. O executável
+  referencia `duel/font/number.txt` via `00413DB0` durante a preparação
+  da apresentação das cartas. [Decompilação](../evidence/hand-hover-animation-references.txt).
+- Para texto, o executável chama `GDI32.CreateFontA` em `0054524B` e
+  `005453C1`, e a rotina `00545570` usa `TextOutW`. Esse caminho pede ao
+  Windows uma fonte por nome ou passa uma string vazia para a seleção do GDI.
+  O seletor `00544B80` tem `Courier New` no índice 0 e `Arial` no
+  índice 1 (tabela em `00544DE0`). A associação de cada família a uma
+  tela específica ainda precisa de rastreamento dos chamadores.
+- A árvore PE `.rsrc` contém ícones, grupo de ícones e strings. O índice do
+  DAT não lista TTF, OTF, FON ou FNT. A inspeção cobre esses contêineres
+  e os caminhos de texto acima.
+
+## Espadas e fases no DAT
+
+| Recurso | Entrada do DAT | Evidência |
+| --- | --- | --- |
+| Espada de ataque | `j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp` na mesma pasta | Dois BMPs de 35 × 71. O primeiro tem a espada inteira e o segundo contém o punho e parte da lâmina. O fundo dos dois é verde. |
+| Botões de fase | `j\duel\phase\pha_{b,r,s}_{dr,st,m1,ba,m2,en}.bmp` | 18 imagens para seis fases e três variantes. A pasta também tem `phase.txt`. |
+| Avisos de fase | `j\duel\phase_name\e_dr_b.bmp`, `e_m1_b.bmp` e demais variantes da pasta | O aviso de compra em inglês mede 239 × 44. Há variantes azuis/vermelhas e quadros adicionais para batalha e troca de turno. |
+
+O inventário identifica as imagens. A seleção exata das variantes de
+espada e botões durante Update/Draw continua aberta.
