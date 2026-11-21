@@ -135,7 +135,7 @@ static partial class Game
             UseHandAction(hoverHand);
         return true;
     }
-    static void DrawCardBack(int x, int y, int width, int height, bool sideways = false, bool cropped = false)
+    static void DrawCardBack(int x, int y, int width, int height, bool sideways = false, bool cropped = false, bool upsideDown = false)
     {
         if (duelTheme.CardBack is Texture2D texture)
         {
@@ -144,33 +144,33 @@ static partial class Game
                 new Rectangle(0, texture.Height - sourceHeight, texture.Width, sourceHeight),
                 new Rectangle(x + width / 2f, y + height / 2f, sideways ? height : width, sideways ? width : height),
                 new Vector2(sideways ? height / 2f : width / 2f, sideways ? width / 2f : height / 2f),
-                sideways ? 90 : 0, Color.White);
+                (sideways ? 90 : 0) + (upsideDown ? 180 : 0), Color.White);
             return;
         }
         Raylib.DrawRectangle(x, y, width, height, new Color(57, 32, 20, 255));
         Raylib.DrawRectangleLines(x + 2, y + 2, width - 4, height - 4, Gold);
         Raylib.DrawEllipseLines(x + width / 2, y + height / 2, width / 3f, height / 3f, Gold);
     }
-    static void DrawFieldCard(Card card, Rectangle rect, bool faceDown, bool defense = false)
+    static void DrawFieldCard(Card card, Rectangle rect, bool faceDown, bool defense = false, bool upsideDown = false)
     {
         int x = (int)rect.X + 3, y = (int)rect.Y + 2;
         int width = (int)rect.Width - 6, height = (int)rect.Height - 4;
         if (faceDown)
         {
             int backHeight = defense ? Math.Min(height, width * 200 / 290) : height;
-            DrawCardBack(x, y + (height - backHeight) / 2, width, backHeight, sideways: defense);
+            DrawCardBack(x, y + (height - backHeight) / 2, width, backHeight, sideways: defense, upsideDown: upsideDown);
         }
-        else DrawArtwork(card, x, y, width, height, sideways: defense);
+        else DrawArtwork(card, x, y, width, height, sideways: defense, upsideDown: upsideDown);
     }
-    static void DrawBoardCard(Card card, Rectangle zone, bool faceDown, bool defense = false)
+    static void DrawBoardCard(Card card, Rectangle zone, bool faceDown, bool defense = false, bool upsideDown = false)
     {
         const int miniWidth = 50, miniHeight = 72;
         int width = defense ? miniHeight : miniWidth;
         int height = defense ? miniWidth : miniHeight;
         int x = (int)(zone.X + (zone.Width - width) / 2);
         int y = (int)(zone.Y + (zone.Height - height) / 2);
-        if (faceDown) DrawCardBack(x, y, width, height, sideways: defense);
-        else DrawArtwork(card, x, y, width, height, sideways: defense);
+        if (faceDown) DrawCardBack(x, y, width, height, sideways: defense, upsideDown: upsideDown);
+        else DrawArtwork(card, x, y, width, height, sideways: defense, upsideDown: upsideDown);
     }
 
     static void DrawDuelField(bool blockInput)
@@ -185,7 +185,7 @@ static partial class Game
             if (duel.FieldSpells[player] is Card fieldCard)
             {
                 if (!ActivationInFlight(fieldRect))
-                    DrawBoardCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
+                    DrawBoardCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player], upsideDown: !own);
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
@@ -201,7 +201,7 @@ static partial class Game
                 Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
                 if (monster != null && !InFlight(player, zone, false))
                 {
-                    DrawBoardCard(monster, monsterRect, duel.MonsterFaceDown[player, zone], duel.DefensePosition[player, zone]);
+                    DrawBoardCard(monster, monsterRect, duel.MonsterFaceDown[player, zone], duel.DefensePosition[player, zone], upsideDown: !own);
                     if (!duel.MonsterFaceDown[player, zone])
                         Label($"{duel.AttackValue(player, zone)}/{duel.DefenseValue(player, zone)}", x, (int)monsterRect.Y + 89, 10, Gold);
                 }
@@ -214,7 +214,7 @@ static partial class Game
                     duel.IsMarkedForBattleDestruction(player, zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
                 if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true) && !ActivationInFlight(spellRect))
-                    DrawBoardCard(spell, spellRect, duel.SpellFaceDown[player, zone]);
+                    DrawBoardCard(spell, spellRect, duel.SpellFaceDown[player, zone], upsideDown: !own);
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
                     DrawAttackSword(new(monsterRect.X + monsterRect.Width / 2, monsterRect.Y + 26), new(0, -1));
                 if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;

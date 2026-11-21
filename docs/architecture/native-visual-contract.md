@@ -223,3 +223,23 @@ dentro da zona e a rotação por atan2 são decisões do cliente. O vídeo
 também confirma a função da coluna de detalhes. O YugiRE apresenta LP,
 arte e descrição na coluna e mantém comandos em uma sobreposição no
 campo, com composição própria.
+
+## Coluna de detalhes, troca de turno e orientação
+
+- A coluna tem fundo próprio `j\duel\detail\detail.bmp` (230 × 600).
+  O manifesto `detail.txt` também lista `line.bmp` e `scroll_bar.bmp`.
+  O Ghidra mostra o construtor `0041BE80` referenciando o manifesto em
+  `0041BF18` e instalando a vtable `005DA9F8`.
+- O construtor `00481040` carrega `duel/phase/phase.txt` e instala
+  `005DBB2C`. Update `00481370` avança `obj+150h` de 8 em 8 até
+  `0x200`. Draw `00481420` tem um ramo que lê esse contador enquanto
+  abaixo de `0x200`. O predicado ocupado `004812B0` também testa se
+  `obj+14Ch < 0x80`. São contadores separados para a troca e a fase.
+  A atribuição dos frames e das variantes de cor ainda está em aberto.
+- A vtable de carta `005DA868` aponta o Draw para `00418EF0`. Essa
+  rotina lê escala e rotação, usa caminho direto em casos sem
+  transformação e consulta a tabela x16.16 no caminho transformado.
+  A orientação vista no vídeo e relatada pelo jogador motivou no
+  YugiRE mais 180° para a fileira oposta, inclusive em defesa. Ainda
+  falta ligar estaticamente o lado do dono à atribuição do ângulo
+  no executável. A coluna de detalhes exibe a arte em pé.

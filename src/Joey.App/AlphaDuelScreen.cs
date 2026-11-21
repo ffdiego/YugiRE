@@ -106,7 +106,7 @@ static partial class Game
         if (flight is not { } f) return;
         static CardBounds Bounds(Rectangle rect) => new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
         var cell = CardTravel.Sample(Bounds(f.Origin), Bounds(f.Destination), travelUpdate);
-        DrawFieldCard(f.Card, new(cell.X, cell.Y, cell.Width, cell.Height), f.Hidden, f.Defense);
+        DrawFieldCard(f.Card, new(cell.X, cell.Y, cell.Width, cell.Height), f.Hidden, f.Defense, upsideDown: f.Player != ViewPlayer);
     }
 
     static void BeginAttackCue(int player, int source, int target)
