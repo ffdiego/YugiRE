@@ -20,7 +20,7 @@ static partial class Game
     static CardFlight? flight;
     static readonly PresentationTickClock travelClock = new();
     static int travelUpdate;
-    sealed record AttackCue(CardPoint Origin, CardPoint Target, bool NearSide);
+    sealed record AttackCue(CardPoint Origin, CardPoint Target, bool NearSide, bool AlreadyAimed);
     static AttackCue? attackCue;
     static readonly PresentationTickClock attackClock = new();
     static int attackUpdates;
@@ -117,17 +117,18 @@ static partial class Game
     {
         if (!presentation.Style.PlayAnimations) return;
         bool near = player == ViewPlayer;
-        var from = NativeDuelLayout.MonsterCenter(source, near);
+        var from = NativeAttackFrame.SwordAnchor(source, near);
         var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : NativeAttackFrame.DirectTarget(near);
         attackClock.Reset();
         attackUpdates = 0;
-        attackCue = new(from, to, near);
+        attackCue = new(from, to, near, target >= 0 && (alphaCpu is null || player == 0));
     }
 
     static void DrawAttackCue()
     {
         if (attackCue is not { } cue) return;
-        var frame = NativeAttackFrame.Sample(attackUpdates, cue.Origin, cue.Target, cue.NearSide, effectCosine);
+        var frame = NativeAttackFrame.Sample(attackUpdates, cue.Origin, cue.Target, cue.NearSide, effectCosine,
+            cue.AlreadyAimed);
         if (frame.ImpactScaleFixed16 > 0)
             DrawEffectStamp(DatGraphics.AttackImpact, frame.Position, 0, frame.ImpactScaleFixed16, frame.Opacity);
         DrawEffectStamp(frame.PartialSword ? DatGraphics.AttackSwordPartial : DatGraphics.AttackSword,
@@ -147,7 +148,7 @@ static partial class Game
 
     static void DrawAttackAim()
     {
-        var origin = NativeDuelLayout.MonsterCenter(attacker, true);
+        var origin = NativeAttackFrame.SwordAnchor(attacker, true);
         Vector2 target = mouse;
         int opponent = 1 - ViewPlayer;
         for (int zone = 0; zone < 5; zone++)
@@ -157,16 +158,8 @@ static partial class Game
             target = new(center.X, center.Y);
             break;
         }
-        var anchor = new Vector2(origin.X, ZoneBounds(ViewPlayer, attacker, false).Y + 26);
-        DrawAttackSword(anchor, target - anchor);
-    }
-
-    static void DrawAttackSword(Vector2 position, Vector2 direction)
-    {
-        var sword = graphics.Texture(DatGraphics.AttackSword);
-        float angle = MathF.Atan2(direction.X, -direction.Y) * 180 / MathF.PI;
-        Raylib.DrawTexturePro(sword, new Rectangle(0, 0, sword.Width, sword.Height),
-            new Rectangle(position.X, position.Y, 25, 51), new Vector2(12.5f, 25.5f), angle, Color.White);
+        int rotation = NativeAttackFrame.AimRotation(target.X - origin.X, target.Y - origin.Y);
+        DrawEffectStamp(DatGraphics.AttackSword, origin, rotation, 0x10000, 255);
     }
 
     static void CommitHumanAttack(int target)

@@ -55,7 +55,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 
 | Elemento | Construtor | Update | Draw | Recursos DAT | Estado |
 | --- | --- | --- | --- | --- | --- |
-| Combate declarado e espada | `00413BC0` / `005DA710` | `00414110` | `004142C0` | `effect/attack.txt`, `atk_icon.bmp`, `atk_icon2.bmp` | Implementado com divergências. `DrawAttackCue` usa o giro, deslocamento, lâmina parcial e impacto do estado 4. `DrawAttackAim` ainda usa âncora e tamanho provisórios. Ramos alternativos e mistura de raster ficam em aberto. Comando 31 via `00407A20 → 00413BA0`. |
+| Combate declarado e espada | `00413BC0` / `005DA710` | `00414110` | `004142C0` | `effect/attack.txt`, `atk_icon.bmp`, `atk_icon2.bmp` | Implementado com divergências. Ícones de elegibilidade e mira usam o centro da zona e escala unitária. `DrawAttackCue` usa o deslocamento, lâmina parcial e impacto do estado 4. Ramos alternativos e mistura de raster ficam em aberto. Comando 31 via `00407A20 → 00413BA0`. |
 | Explosão de destruição | `004511D0` / `005DB324` | `00456730` | `004514B0` | `effect/explosion.txt`, sete `expl*.yga` | Implementado com divergências. `DrawDestruction` usa os recursos e passes nativos. Composição raylib e retenção da carta ainda requerem comparação com o original. Comando 7C via `00405190`; outra chamada em `00405620`. |
 | Quebra / remoção alternativa | `00450C30` / `005DB314` | `00450FB0` | `00450FD0` | `effect/break.txt` | Não implementado como família separada. Distinção entre quebra e explosão ainda precisa de mapa de comandos. |
 | Revelação e deslocamento | `004182E0` / `005DA868` | `00418B60` | `00418EF0` | `card/card.txt` e arte/verso | Implementado com divergências. `DrawFlight` e `DrawHandTransfer` usam a interpolação de oito passos onde integrada. O FLIP e a troca animada de face ainda não reproduzem todos os passes. |
@@ -155,9 +155,15 @@ outra apresentação e não foi portado nesta fatia.
 A Alpha e o duelo local agendam este efeito quando o ataque continua
 após a janela de respostas. Um ataque negado não mostra impacto no
 alvo. Essa é a integração de apresentação do cliente, que aplica a
-sequência do estado 4 aos ataques resolvidos no sandbox. A mira antes
-da declaração, a relação exata com revelação e LP, e os ramos especiais
-precisam de análise adicional.
+sequência do estado 4 aos ataques resolvidos no sandbox.
+Antes da declaração, os ramos `00414317–00414401` e `00414907–004149D8`
+usam o centro de `0045C140` e escala unitária. O ícone elegível usa
+intensidade `0xA0`; para a mira, o original interpola o ângulo até
+`min(t, 0x80)/0x80`. No cliente, a mira aponta imediatamente e a
+confirmação humana de um alvo conserva o ângulo durante a espera
+inicial. O encaixe no centro do alvo e essa continuidade são políticas
+do cliente. A relação exata com revelação e LP e os ramos especiais
+seguem em aberto.
 
 O teste de render target a 800 × 600 chamou o Draw real do cliente para
 um ataque vertical. Nos updates 0, 8 e 15, a espada ocupou 71 px de

@@ -9,8 +9,13 @@ public readonly record struct NativeAttackFrame(
 
     public static CardPoint DirectTarget(bool nearSide) => new(525, nearSide ? 64 : 536);
 
+    // 00414317 and 00414907 both resolve the source through 0045C140.
+    public static CardPoint SwordAnchor(int source, bool nearSide) => NativeDuelLayout.MonsterCenter(source, nearSide);
+
+    public static int AimRotation(float dx, float dy) => (int)(Math.Atan2(dx, -dy) * (256 / Math.PI));
+
     public static NativeAttackFrame Sample(int update, CardPoint origin, CardPoint target,
-        bool nearSide, ReadOnlySpan<int> cosineFixed16)
+        bool nearSide, ReadOnlySpan<int> cosineFixed16, bool alreadyAimed = false)
     {
         if (update is < 0 or >= Updates) throw new ArgumentOutOfRangeException(nameof(update));
         if (cosineFixed16.Length != 512)
@@ -19,11 +24,11 @@ public readonly record struct NativeAttackFrame(
         int dx = target.X - origin.X, dy = target.Y - origin.Y;
         int start = nearSide ? 0 : 256;
         int turn = nearSide
-            ? (int)(Math.Atan2(dx, -dy) * (256 / Math.PI))
-            : (int)(Math.Atan2(-dx, dy) * (256 / Math.PI));
+            ? AimRotation(dx, dy)
+            : AimRotation(-dx, -dy);
 
         if (t <= 0x80)
-            return new(origin, start + turn * t / 0x80, false, 0, 255);
+            return new(origin, start + (alreadyAimed ? turn : turn * t / 0x80), false, 0, 255);
         if (t < 0x100)
         {
             int weight = cosineFixed16[(t - 0x80) & 511] >> 8;

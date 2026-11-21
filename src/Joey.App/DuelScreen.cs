@@ -207,7 +207,8 @@ static partial class Game
                 if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true) && !ActivationInFlight(spellRect))
                     DrawDuelCard(spell, DuelCardLayout.OnBoard(DuelCardZone.Spell, own, zone, false, duel.SpellFaceDown[player, zone]));
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
-                    DrawAttackSword(new(monsterRect.X + monsterRect.Width / 2, monsterRect.Y + 26), new(0, -1));
+                    DrawEffectStamp(DatGraphics.AttackSword, NativeAttackFrame.SwordAnchor(zone, own),
+                        0, 0x10000, 0xa0);
                 if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {

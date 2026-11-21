@@ -151,6 +151,10 @@ internal static class NativePresentationChecks
               AttackAt(8).Position == from && AttackAt(8).RotationIndex > 0 &&
               AttackAt(9).Position.X > from.X && AttackAt(15).Position.X < to.X &&
               !AttackAt(15).PartialSword, "Native attack: turn at the origin, then advance with the full sword");
+        check(NativeAttackFrame.SwordAnchor(0, true) == from && NativeAttackFrame.SwordAnchor(0, false) == to &&
+              NativeAttackFrame.Sample(0, from, to, true, explosionCosine, alreadyAimed: true) == AttackAt(8) &&
+              NativeAttackFrame.Sample(9, from, to, true, explosionCosine, alreadyAimed: true) == AttackAt(9),
+              "Client attack: a confirmed aim retains position and angle as it hands off to the flight");
         check(AttackAt(16) is { PartialSword: true, Position: { X: 681, Y: 248 }, ImpactScaleFixed16: 0, Opacity: 255 } &&
               AttackAt(17) is { PartialSword: true, ImpactScaleFixed16: 8192, Opacity: 255 } &&
               AttackAt(31) is { PartialSword: true, ImpactScaleFixed16: 122880, Opacity: 32 } &&
