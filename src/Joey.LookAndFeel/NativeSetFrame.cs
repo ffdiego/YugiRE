@@ -18,7 +18,7 @@ public readonly record struct NativeSetFrame(
 
     /// <summary>
     /// Set constructor 0044EFD0 fills eight X/Y pairs at object+0x104.
-    /// For particle i it samples radius = 0x10 + (MT_random & 0x1f),
+    /// For particle i it samples radius = 0x10 + (MT_random &amp; 0x1f),
     /// x = center.X + (cos[i*64] * radius >> 16),
     /// y = center.Y + (cos[(i*64-128)&511] * radius >> 16).
     /// Supply the eight radii explicitly to keep this calculation testable.
