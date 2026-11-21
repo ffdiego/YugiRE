@@ -142,3 +142,13 @@ A seleção do cemitério usa `PendingCardSelection`, com índice por ocorrênci
 ### Manipulação automática de Deck (P082/P088)
 
 Needle Worm envia cartas do topo do Main Deck adversário ao seu cemitério sem contá-las como compras; deck vazio pelo efeito não encerra automaticamente o duelo. Hiro's Shadow Scout exige compra de três, seguida do descarte das **magias recém-compradas** (classe DAT 22). O sandbox trata falta de cartas para a compra como derrota do jogador que compraria. A ordem/timing nativo de deck-out e triggers reativos a compras ainda não foi medida. Consultar [P082/P088](p082-p088-flip-deck-flow-sandbox.md) e `FlipDeckFlowChecks.cs`.
+
+### P018 — evidência estática (21/11/2026)
+
+O binário do Joey contém os filtros explícitos por resource ID 101/427,
+com classes DAT **21 (Trap)** e **22 (Spell)**. O seletor monta candidatos
+por ocorrência de cemitério (metadado de zona 4) e diferencia execução
+humana da automática; esta última delega a política a `FUN_005AF600`.
+A implementação atual de `CardSelectionRules` está alinhada quanto às
+classes, mas ordem final, política CPU e transferência específica ainda não
+foram validadas dinamicamente. [Pesquisa nativa P018](../research/p018-native-flip-recovery-2026-11-21.md).

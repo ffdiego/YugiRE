@@ -86,3 +86,11 @@ solicitação do dono, aceite e recusa, pagamento único, ID obsoleto,
 LP insuficiente, campo lotado, retorno exato e dois gatilhos na mesma
 batalha. Continuam pendentes captura com humano (Sim/Não), perfil de
 CPU/demo e comparação de janelas temporais.
+
+## Investigação estática de 21/11/2026
+
+O Ghidra confirmou a fronteira **LP > 1000** no callback nativo e o
+roteamento do prompt tipo 1 para um dispatcher compartilhado. Na cena demo 7,
+a máscara de controle ativa o caminho automático para ambos os lados do P002.
+Isso **não** torna a política C# de prompts automáticos equivalente à nativa.
+Detalhes, endereços e lacunas: [pesquisa do dispatcher P002](../research/p002-native-decision-dispatch-2026-11-21.md).
