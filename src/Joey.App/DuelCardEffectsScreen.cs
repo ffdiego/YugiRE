@@ -7,7 +7,7 @@ static partial class Game
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
     sealed record HandTransfer(DemoHandTransfer Transfer) : CardEffect;
-    sealed record SetPlacement(int Player, int Zone, bool Spell) : CardEffect;
+    sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
@@ -32,9 +32,18 @@ static partial class Game
 
     static void QueueSetEffect(int player, int zone, bool spell)
     {
-        // The card is already committed to the Core; the original visual
-        // effect starts after its hand-to-field travel ends.
-        QueueCardEffect(new SetPlacement(player, zone, spell), NativeSetFrame.Updates);
+        if (!presentation.Style.PlayAnimations) return;
+        // The card is already committed to the Core; Set runs after flight.
+        // Constructor 0044EFD0 takes eight 5-bit MT draws. Reproduce its
+        // distribution, but not its shared native RNG stream/seed.
+        Span<int> radii = stackalloc int[NativeSetFrame.ParticleCount];
+        for (int i = 0; i < radii.Length; i++)
+            radii[i] = Random.Shared.Next(NativeSetFrame.MinimumRadius,
+                                           NativeSetFrame.MaximumRadius + 1);
+        var center = DuelCardLayout.Center(spell ? DuelCardZone.Spell : DuelCardZone.Monster,
+                                          player == ViewPlayer, zone);
+        var origins = NativeSetFrame.ParticleOrigins(center, radii, effectCosine);
+        QueueCardEffect(new SetPlacement(player, zone, spell, origins), NativeSetFrame.Updates);
     }
 
     static void QueueOpeningDeal()
@@ -137,12 +146,24 @@ static partial class Game
         var zone = placement.Spell ? DuelCardZone.Spell : DuelCardZone.Monster;
         var center = DuelCardLayout.Center(zone, near, placement.Zone);
         var frame = NativeSetFrame.FromUpdate(elapsedUpdates, effectCosine);
-        // The central DAT bitmap uses the recovered counter, scale and fade.
-        // Side-to-color mapping, scratch compositing and particle positions
-        // are provisional/unknown until Set constructor 0044EFD0 is exported.
-        if (frame.MainOpacity > 0)
-            DrawEffectStamp(near ? DatGraphics.SetAuraBlue : DatGraphics.SetAuraYellow,
-                center, 0, frame.ScaleFixed16, frame.MainOpacity);
+        // Constructor 0044EFD0 uses 00402690: flag is monster-type 1..20,
+        // NOT the player's side. Draw 0044F390 selects indices 2/3 for
+        // monsters, 4/5 for spell/trap, alternating every 8 counter units.
+        // Manifest order is still inferred from original DAT resource names.
+        if (frame.MainOpacity <= 0) return;
+        DrawEffectStamp(placement.Spell ? DatGraphics.SetAuraYellow : DatGraphics.SetAuraBlue,
+            center, 0, frame.ScaleFixed16, frame.MainOpacity);
+        foreach (var particle in frame.Particles)
+        {
+            var origin = placement.ParticleOrigins[particle.Sequence];
+            var sprite = graphics.Texture(DatGraphics.SetSprites[
+                2 + (placement.Spell ? 2 : 0) + particle.Variant]);
+            Raylib.DrawTexture(sprite, origin.X - sprite.Width / 2,
+                origin.Y - particle.RisePixels - sprite.Height / 2,
+                new Color(255, 255, 255, frame.MainOpacity));
+        }
+        // Exact MT draw sequence, original 512-element cosine table,
+        // BMP manifest order and the native scratch blend await comparison.
     }
 
     static void DrawHandTransfer(DemoHandTransfer move)

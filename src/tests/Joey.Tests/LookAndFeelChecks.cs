@@ -88,6 +88,31 @@ internal static class LookAndFeelChecks
         check(setMid.Particles[1].Variant == 0 &&
               setMid.Particles[0].RisePixels > 0 && setEnd.MainOpacity < setMid.MainOpacity,
               "Native Set: alternating particles rise quadratically; X origin awaits native constructor");
+        // 0044EFD0: eight MT-derived radii on the 8-way cosine ring,
+        // at offsets obj+104h..140h. Test independent of random MT state.
+        int[] fixedRadii = Enumerable.Repeat(32, NativeSetFrame.ParticleCount).ToArray();
+        var origin = new CardPoint(400, 300);
+        var setOrigins = NativeSetFrame.ParticleOrigins(origin, fixedRadii, setCosine);
+        check(setOrigins.Length == 8 &&
+              setOrigins[0] == new CardPoint(432, 300) &&
+              setOrigins[2] == new CardPoint(400, 332) &&
+              setOrigins[4] == new CardPoint(368, 300) &&
+              setOrigins[6] == new CardPoint(400, 268),
+              "Set constructor: eight origins form a native 8-way cosine ring around the card");
+        fixedRadii[0] = NativeSetFrame.MinimumRadius;
+        fixedRadii[4] = NativeSetFrame.MaximumRadius;
+        setOrigins = NativeSetFrame.ParticleOrigins(origin, fixedRadii, setCosine);
+        check(setOrigins[0] == new CardPoint(416, 300) &&
+              setOrigins[4] == new CardPoint(353, 300),
+              "Set constructor: MT low five bits select native radius 16..47");
+        bool rejected = false;
+        try
+        {
+            NativeSetFrame.ParticleOrigins(origin, new int[7], setCosine);
+        }
+        catch (ArgumentException) { rejected = true; }
+        check(rejected, "Set constructor: fail closed on an incomplete list of native radii");
+
         var setQueue = new PresentationSequence<string>();
         setQueue.Enqueue("travel", CardTravel.Updates);
         setQueue.Enqueue("set", NativeSetFrame.Updates);
