@@ -3,6 +3,8 @@ namespace Joey.Core;
 public enum DemoPhase { Main, Battle, End }
 
 public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
+/// <summary>A tribute paid as a normal-summon cost; distinct from destruction.</summary>
+public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
 /// <summary>Presentation-only notification, emitted after an effect places a monster.</summary>
 public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense);
@@ -12,6 +14,8 @@ public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool Fac
 public sealed class DemoDuel
 {
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
+    /// <summary>Observational visual event after a valid tribute reaches the Graveyard.</summary>
+    public event Action<DemoMonsterTribute>? MonsterTributed;
     public event Action<DemoHandTransfer>? HandTransferred;
     public event Action<DemoSpecialSummon>? MonsterSpecialSummoned;
     /// <summary>Presentation-only: an effect has already changed a deck's order.</summary>
@@ -1623,7 +1627,9 @@ public sealed class DemoDuel
             BeginNextEffectDecision();
             BeginNextQueuedDeckSearch();
         }
-        if (!isTribute)
+        if (isTribute)
+            MonsterTributed?.Invoke(new(p, z, removed, faceDown, defense));
+        else
             MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense));
     }
 
