@@ -80,7 +80,8 @@
     {
       "address": "0044F390",
       "family": "Set",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
     },
     {
       "address": "0044FA10",
