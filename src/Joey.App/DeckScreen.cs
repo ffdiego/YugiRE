@@ -50,6 +50,7 @@ static partial class Game
         alphaCpu = null;
         duel = NewDemo();
         ResetDuelPresentation();
+        QueueDuelOpening();
         message = useImportedDeck ? "Imported main deck for both local players. Only selected effects work in this demo." :
             "Local two-player demo. Select phases on the left of the field.";
     }
