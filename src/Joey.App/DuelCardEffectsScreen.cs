@@ -11,6 +11,7 @@ static partial class Game
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
     sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
     sealed record DuelOpening : CardEffect;
+    sealed record ShuffleDeck(int Player) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
@@ -26,6 +27,8 @@ static partial class Game
         duel.HandTransferred += transfer => QueueCardEffect(new HandTransfer(transfer), CardTravel.Updates);
         duel.MonsterSpecialSummoned += summon =>
             QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
+        duel.DeckShuffled += player =>
+            QueueCardEffect(new ShuffleDeck(player), NativeShuffleFrame.Updates);
     }
 
     static void QueueCardEffect(CardEffect effect, int updates)
@@ -163,7 +166,28 @@ static partial class Game
             case DuelOpening:
                 DrawDuelOpening(cardEffects.ElapsedUpdates);
                 break;
+            case ShuffleDeck shuffled:
+                DrawDeckShuffle(shuffled.Player, cardEffects.ElapsedUpdates);
+                break;
         }
+    }
+
+    static void DrawDeckShuffle(int player, int elapsedUpdates)
+    {
+        var frame = NativeShuffleFrame.FromUpdate(elapsedUpdates);
+        var deckCenter = DuelCardLayout.FrameCenter(
+            NativeDuelLayout.DeckBounds(player == ViewPlayer));
+        // DAT_005DB570 is the shared native shuffle X origin; its value is
+        // unresolved here, so (525,300) is an explicit Alpha approximation.
+        var stageCenter = new CardPoint(525, 300);
+        var center = frame.Position(deckCenter, stageCenter);
+        int scale = frame.Moving ? frame.DeckWeightFixed8 << 8 : 0x10000;
+        if (scale > 0)
+            DrawEffectStamp(DatGraphics.ShuffleSprites[frame.SpriteFrame],
+                center, 0, scale, 255);
+        if (!frame.Moving)
+            DrawEffectStamp(DatGraphics.ShuffleFrameEnglish,
+                stageCenter with { Y = 326 }, 0, 0x10000, 255);
     }
 
     static void DrawDuelOpening(int elapsedUpdates)
