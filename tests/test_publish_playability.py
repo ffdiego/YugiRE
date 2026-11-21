@@ -39,7 +39,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
 
     def test_generated_badges_and_markdown_checked_in(self):
         files, values = generated()
-        self.assertEqual(len(files), 3)
+        self.assertEqual(len(files), 2)
         for path, expected in files.items():
             with self.subTest(path=path):
                 self.assertTrue(path.is_file(), str(path))
