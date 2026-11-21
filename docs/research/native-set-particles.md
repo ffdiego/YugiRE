@@ -1,74 +1,83 @@
-# Set: geometria das partículas — investigação direcionada
+# Set: geometria das partículas — evidência do SQLite global
 
-Revisão do renderer: `0044F370` (Update), `0044F390` (Draw),
-`0044EFD0` (construtor), vtable `005DB2C4`.
-Alvo: `joey_pc.exe` SHA-256
-`db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
+## Fontes
 
-## O que já está integrado
+- `joey-knowledge.sqlite`, enviado pelo usuário em 21/11/2026: funções
+  `0044EFD0` (construtor), `00402690` (classificação),
+  `0045C140` (centro), `0055C140` (gerador MT), referências e
+  chamadas `004059C0`/`00405CB0`.
+- Lote de Ghidra de 21/11/2026: `retry-011-0044F390.txt` (Draw);
+  `retry-010-0044F370.txt` (Update). Os dois entrypoints transitórios
+  **não existem como funções separadas** no SQLite atual.
+- SHA-256 nativo (mesmo alvo em ambos):
+  `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 
-A Alpha já executa o Set do Core e a transferência mão→zona. Após o voo,
-`Joey.App` desenha o BMP de Set do `data.dat` usando amostras do
-`NativeSetFrame`. O jogador confirmou visualmente que a última mudança
-funcionou no seu ambiente. Isso **não** equivale a comparação de
-pixels/frames pareados com o executável original.
+## Contrato recuperado do construtor 0044EFD0
 
-## O que o lote Ghidra de 21/11 oferece
+O construtor obtém o centro da carta por `0045C140` e o armazena em
+`obj+0x14` (X) e `obj+0x18` (Y). Em seguida prepara **oito pares
+de inteiros** em `obj+0x104,0x108`, com stride de 8 bytes:
 
-- `0044F370`: `obj+0x10 += 0x0C` por Update; flag ativa enquanto
-  `counter < 0x101`; são 22 amostras `0,12,...,252`.
-- `0044F390`: o laço itera oito vezes, incrementando o deslocamento de
-  lançamento em 16 unidades (`0x00..0x70`). Lançamentos posteriores
-  entram quando o contador alcança seu deslocamento.
-- Quando `age = trunc((counter - launchOffset) / 8)` é não negativo,
-  a variante é `age & 1` e o deslocamento vertical derivado é
-  `trunc(age * age / 16)`. O Draw subtrai metade das dimensões para
-  centralizar a imagem, **mas não determina o centro original**.
-- O Draw escolhe quatro índices de partículas segundo o estado de cor.
-  O mapeamento exato desses índices aos BMPs deve ser conferido com
-  `j\duel\effect\set.txt` do DAT local.
-- O pseudocódigo sugere um bloco de origens de partículas próximo de
-  `obj+0x104`. Registradores e tipos reconstruídos pelo Ghidra estão
-  ambíguos nesse trecho: verificar as instruções antes de fixar a
-  estrutura e o deslocamento exatos.
-- O construtor `0044EFD0` **não integra os 87 endereços** selecionados
-  no ZIP anterior. Portanto os X/Y iniciais e a associação por lado
-  ainda não foram extraídos. Não inventar posições ou dizer que as
-  partículas já aparecem no cliente.
-
-## Próxima extração pequena no Fedora
-
-Na raiz do repositório (onde já existe o projeto Ghidra local):
-
-```bash
-git pull --ff-only
-python3 scripts/export_ghidra_visual_bundle.py \
-  --targets 0044EFD0 0044F370 0044F390 \
-  --disassemble --retry-missing \
-  --output scratch/ghidra-set-constructor.zip
+```text
+para i = 0..7:
+    R = 16 + (NextUiDeckMtUInt32_0055C140() & 31)
+    theta = i * 64                 # unidades da tabela 0..511
+    X[i] = centerX + ((C[theta] * R) >> 16)
+    Y[i] = centerY + ((C[(theta-128)&511] * R) >> 16)
 ```
 
-O gerador executa Ghidra com `-readOnly -noanalysis`; o ZIP de
-`scratch/` reúne pseudocódigo, **até 100 instruções por endereço**,
-manifesto, logs e retries. A seleção `--targets` evita refazer as
-demais 84 funções. Não versionar esse ZIP: anexá-lo ao chat para
-inspeção. Não é necessário enviar EXE nem DAT.
+A tabela `C = DAT_00A52EE8` usa ponto fixo x16.16. Por isso os
+centros das partículas ficam em oito direções ao redor da carta,
+com raios inteiros de **16 a 47 pixels**. A ordem original é
+direita, diagonal inferior direita, baixo, diagonal inferior esquerda,
+esquerda, diagonal superior esquerda, cima, diagonal superior direita.
 
-Ao analisar a saída, identificar especificamente:
+A chamada de RNG usa o gerador Mersenne Twister compartilhado do
+jogo, estudado em `0055C140`. A Alpha preserva a distribuição dos
+cinco bits inferiores, mas usa `Random.Shared` separadamente da
+lógica de duelo. Isso **não** reproduz o estado exato do RNG nativo
+nem a realização concreta dos oito raios de um duelo original.
 
-1. O preenchimento de cada origem em `obj+0x104` ou estrutura
-   equivalente: base, oito deslocamentos, coordendas absolutas ou
-   relativas, dependência de lado/região/slot e eventuais valores
-   aleatórios.
-2. Quais campos do construtor alimentam as coordenadas `obj+0x14/0x18`
-   e a seleção de cor `obj+0x1E`; rastrear eventual chamada a
-   `0045C140`.
-3. A organização e dimensões dos BMPs em `set.txt`, além da
-   transparência/composição nos dispatches de `0044F390`.
-4. Com evidência suficiente, passar as origens reais ao modelo de
-   partículas, desenhar os quadros em raylib e testar ambas as
-   perspectivas. Até lá o Set permanece `Partial`, sem nova promoção
-   de cobertura.
+## Desenho recuperado de 0044F390 (ZIP Ghidra)
 
-Esta tarefa **não** altera regras de `Joey.Core`, nem a animação já
-integrada de Set, explosão ou espada.
+- Contador `0,12,…,252`: 22 amostras de Draw; a próxima atualização
+  desativa o efeito.
+- Para cada partícula `i`, o lançamento é atrasado em `16*i`.
+  `age = trunc((counter - 16*i) / 8)`, renderizado só com idade
+  não negativa.
+- `variant = age & 1`; a partícula troca entre duas variantes BMP.
+- A posição Y é `Y[i] - floor(age²/16)`. X permanece `X[i]`.
+  Os pixels da imagem são centralizados por metade da largura/altura.
+- O índice de sprite da partícula é
+  `(age&1) + 2 + (flag==0 ? 2 : 0)`. A reconstrução da associação
+  dos arquivos depende da ordem de `j\duel\effect\set.txt`,
+  que não consta no SQLite (ele contém referências a strings,
+  não o conteúdo do manifesto DAT).
+- `flag` fica em `obj+0x1E`, preenchido via `00402690`.
+  A função testa se o tipo da carta é de `1..20`, portanto a
+  distinção é de **tipo monstro vs. magia/armadilha**, não de lado.
+  A família de BMPs escolhida pelo cliente segue a hipótese baseada
+  em seus nomes e índices consecutivos.
+
+O cliente agora renderiza os oito BMPs de estrelas conforme as
+amostras de tempo e as origens provenientes da fórmula do construtor,
+além do brilho central já implementado.
+
+## O que falta validar visualmente
+
+- A ordem real dos arquivos em `set.txt` no `data.dat`, a
+  seleção exata de cores/colorkey e a composição dos passes.
+- A tabela x16.16 real (a Alpha ainda usa cosseno calculado).
+- O estado MT nativo (não é necessário copiar o código do gerador
+  para obter comportamento **observável** equivalente).
+- Capturas pareadas de Set de monstro e magia/armadilha nos dois lados
+  do campo, em updates 0, 11 e 21.
+
+**Status:** Set continua `Partial` na badge. O denominador e a
+quantidade coberta não mudaram; nenhuma equivalência pixel-perfect foi
+declarada.
+
+**Observação de processo:** o banco global continha o construtor que
+parecia faltar no ZIP; não solicitar outra exportação Ghidra desse
+endereço. Consultar primeiro o SQLite e então os entrypoints
+transitórios do lote quando não existirem na tabela `functions`.
