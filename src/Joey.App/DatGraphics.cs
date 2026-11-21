@@ -23,6 +23,18 @@ sealed class DatGraphics : IDisposable
         @"j\duel\effect\eff_star1_y.bmp"
     ];
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    // Native LP resources indexed in data.dat; the exact bar layer order and
+    // font color remain provisional pending frame-paired visual comparison.
+    public const string LifeBackgroundNear = @"j\duel\life\lp_jibu1.bmp";
+    public const string LifeBackgroundFar = @"j\duel\life\lp_aite1.bmp";
+    public const string LifeFillNear = @"j\duel\life\lp_jibu2.bmp";
+    public const string LifeFillFar = @"j\duel\life\lp_aite2.bmp";
+    public const string LifeNumberFont = @"j\duel\font\duel_fontm_y.bmp";
+    public const string LifeNumberManifest = @"j\duel\font\number.txt";
+    public static readonly string[] LifeSprites =
+    [
+        LifeBackgroundNear, LifeBackgroundFar, LifeFillNear, LifeFillFar, LifeNumberFont
+    ];
     private const string ExplosionManifest = @"j\duel\effect\explosion.txt";
     public static readonly string[] ExplosionSprites = Enumerable.Range(1, 7)
         .Select(index => $@"j\duel\effect\expl{index}.yga").ToArray();
@@ -56,6 +68,7 @@ sealed class DatGraphics : IDisposable
     public MenuResources? Menu { get; private set; }
     public CardListResources CardList { get; private set; } = null!;
     public CardArtwork Artwork { get; private set; } = null!;
+    public int? LifeNumberGlyphColumns { get; private set; }
     public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
     // Evict between frames, after the previous Raylib batch has been submitted.
     public void BeginFrame()
@@ -72,6 +85,8 @@ sealed class DatGraphics : IDisposable
         archive = new Archive(path);
         Menu = MenuResources.Load(archive);
         CardList = CardListResources.Load(archive);
+        string fonts = System.Text.Encoding.Latin1.GetString(archive.Read(LifeNumberManifest));
+        LifeNumberGlyphColumns = NativeLifeHud.TryFontColumns(fonts, "duel_fontm_y.bmp");
         return archive;
     }
     public Texture2D Texture(string name)
@@ -123,7 +138,8 @@ sealed class DatGraphics : IDisposable
         if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
-            IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase))
+            IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+            name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -140,7 +156,9 @@ sealed class DatGraphics : IDisposable
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Concat(SetSprites).Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial).Distinct(StringComparer.OrdinalIgnoreCase);
+            .Concat(SetSprites).Concat(LifeSprites)
+            .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
         {
