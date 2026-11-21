@@ -155,6 +155,51 @@ internal static class LookAndFeelChecks
         check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
               "Set placement: effect starts after hand-to-field flight");
 
+        // 0047C4F0/0047C560: Core LP updates immediately, but the native
+        // visual counter has a 32-update ramp before consuming signed deltas.
+        var lp = new NativeLifePointPresentation(8000);
+        lp.SetLogicalLife(7750);
+        for (int i = 0; i < NativeLifePointPresentation.RampUpdates; i++)
+        {
+            lp.SetLogicalLife(7750); // no restart on unchanged logical target
+            lp.AdvanceNativeUpdate();
+        }
+        check(lp.Displayed == 8000 && lp.PendingDelta == -250 &&
+              lp.RampCounter == NativeLifePointPresentation.RampEnd,
+              "Native LP: a delta is held throughout 32 Update ramp samples");
+        lp.AdvanceNativeUpdate();
+        check(lp.Displayed == 7900 && lp.PendingDelta == -150,
+              "Native LP: first damage display update subtracts 100");
+        lp.AdvanceNativeUpdate();
+        check(lp.Displayed == 7800 && lp.PendingDelta == -50,
+              "Native LP: second damage display update subtracts another 100");
+        for (int i = 0; i < 5; i++) lp.AdvanceNativeUpdate();
+        check(lp.Displayed == 7750 && lp.PendingDelta == 0 && lp.FlashCounter > 0,
+              "Native LP: the remaining 50 LP is displayed in five -10 steps");
+
+        var healing = new NativeLifePointPresentation(1000);
+        healing.SetLogicalLife(1205);
+        for (int i = 0; i < NativeLifePointPresentation.RampUpdates + 7; i++)
+            healing.AdvanceNativeUpdate();
+        check(healing.Displayed == 1205 && healing.PendingDelta == 0,
+              "Native LP: healing uses +100/+10/+1 visual steps");
+
+        var retargeted = new NativeLifePointPresentation(8000);
+        retargeted.SetLogicalLife(7000);
+        for (int i = 0; i < NativeLifePointPresentation.RampUpdates + 1; i++)
+            retargeted.AdvanceNativeUpdate();
+        retargeted.SetLogicalLife(7900);
+        check(retargeted.Displayed == 7900 && retargeted.PendingDelta == 0 &&
+              retargeted.RampCounter == 0,
+              "Native LP: a second logical change retargets from currently displayed LP");
+        retargeted.SetLogicalLife(200000, animate: false);
+        check(retargeted.Displayed == 65535 && retargeted.PendingDelta == 0 &&
+              retargeted.RampCounter == 256,
+              "Native LP: Instant presentation jumps to target and clips only the display to 16-bit");
+        retargeted.SetLogicalLife(0, animate: false);
+        check(retargeted.Displayed == 0 && !retargeted.Animating,
+              "Native LP: zero reaches the screen without altering Core win conditions");
+
         var clock = new DuelPresentationClock(classic);
         clock.Show(DuelPresentationCue.FlipReveal);
         clock.Advance(TimeSpan.FromMilliseconds(100));

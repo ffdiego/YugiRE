@@ -337,6 +337,7 @@ static partial class Game
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
         if (!showingMotion && !selectingCard) UpdateDuelDetail();
+        AdvanceLifePresentation(frameElapsed);
         DrawDuelDetail();
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
             Button("Done", 132, 584, 76, 16, choiceInput))
