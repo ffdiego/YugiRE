@@ -8,6 +8,8 @@ sealed class DatGraphics : IDisposable
     public const string DuelBoard = @"j\duel\field\fie_normal.bmp";
     public const string DuelBack = @"card\card_ura.bmp";
     public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
+    public const string AttackSwordPartial = @"j\duel\effect\atk_icon2.bmp";
+    public const string AttackImpact = @"j\duel\effect\atk_eff.yga";
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
     private const string ExplosionManifest = @"j\duel\effect\explosion.txt";
     public static readonly string[] ExplosionSprites = Enumerable.Range(1, 7)
@@ -94,6 +96,7 @@ sealed class DatGraphics : IDisposable
         }
         if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
+            name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             PhaseBanners.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
@@ -110,7 +113,7 @@ sealed class DatGraphics : IDisposable
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBanners).Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Append(DuelDetailBackground).Append(AttackSword).Distinct(StringComparer.OrdinalIgnoreCase);
+            .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
         {
@@ -125,7 +128,7 @@ sealed class DatGraphics : IDisposable
                     throw new InvalidDataException($"Unexpected phase turn atlas: {name}");
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
-                if ((name == AttackSword || PhaseBanners.Contains(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)
+                if ((name is AttackSword or AttackSwordPartial || PhaseBanners.Contains(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)
                     throw new InvalidDataException($"Duel sprite color key is not transparent: {name}");
             }
             finally { Raylib.UnloadImage(image); }
@@ -141,6 +144,8 @@ sealed class DatGraphics : IDisposable
                 throw new InvalidDataException($"Activation YGA dimensions differ: {name}");
             count++;
         }
+        _ = NativeYgaSprite.Decode(archive.Read(AttackImpact), static (data, size) => Archive.Decode(data, size));
+        count++;
         var explosionEntries = System.Text.Encoding.ASCII.GetString(archive.Read(ExplosionManifest))
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (!explosionEntries.Select(name => @"j\duel\effect\" + name)

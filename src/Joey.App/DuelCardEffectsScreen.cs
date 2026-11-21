@@ -1,7 +1,6 @@
 using Joey.Core;
 using Joey.LookAndFeel;
 using Raylib_cs;
-using System.Numerics;
 
 static partial class Game
 {
@@ -139,14 +138,10 @@ static partial class Game
         DrawDuelCard(monster.Card, DuelCardLayout.OnBoard(DuelCardZone.Monster, monster.Player == ViewPlayer,
             monster.Zone, monster.Defense, monster.FaceDown));
 
-    static void DrawExplosionSprite(ExplosionSpritePass? sample, CardPoint center)
+    static void DrawExplosionSprite(NativeEffectSpritePass? sample, CardPoint center)
     {
         if (sample is not { Opacity: > 0 } pass) return;
-        var texture = graphics.Texture(DatGraphics.ExplosionSprites[pass.ResourceIndex]);
-        int width = pass.ScaledPixels(texture.Width), height = pass.ScaledPixels(texture.Height);
-        if (width == 0 || height == 0) return;
-        Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
-            new Rectangle(center.X, center.Y, width, height), new Vector2(width / 2, height / 2),
-            pass.RotationIndex * (360f / 512), new Color(255, 255, 255, pass.Opacity));
+        DrawEffectStamp(DatGraphics.ExplosionSprites[pass.ResourceIndex], center,
+            pass.RotationIndex, pass.ScaleFixed16, pass.Opacity);
     }
 }

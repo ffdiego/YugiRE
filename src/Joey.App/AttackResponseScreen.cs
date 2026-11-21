@@ -35,7 +35,10 @@ static partial class Game
         if (Button("Pass attack response", 540, 460, 205, 34))
         {
             if (duel.PassAttackResponse(out message))
+            {
+                BeginAttackCue(response.Attack.AttackingPlayer, response.Attack.AttackerZone, response.Attack.TargetZone);
                 ClearDuelSelection();
+            }
         }
     }
 }

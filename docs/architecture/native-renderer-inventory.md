@@ -55,7 +55,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 
 | Elemento | Construtor | Update | Draw | Recursos DAT | Estado |
 | --- | --- | --- | --- | --- | --- |
-| Combate declarado e espada | `00413BC0` / `005DA710` | `00414110` | `004142C0` | `effect/attack.txt`, `atk_icon.bmp`, `atk_icon2.bmp` | Implementado com divergências. `DrawAttackSword` usa a espada inteira; `DrawAttackAim` e `DrawAttackCue` usam direção e trajetória do cliente. Falta isolar o seletor da lâmina parcial e o impacto. Comando 31 via `00407A20 → 00413BA0`. |
+| Combate declarado e espada | `00413BC0` / `005DA710` | `00414110` | `004142C0` | `effect/attack.txt`, `atk_icon.bmp`, `atk_icon2.bmp` | Implementado com divergências. `DrawAttackCue` usa o giro, deslocamento, lâmina parcial e impacto do estado 4. `DrawAttackAim` ainda usa âncora e tamanho provisórios. Ramos alternativos e mistura de raster ficam em aberto. Comando 31 via `00407A20 → 00413BA0`. |
 | Explosão de destruição | `004511D0` / `005DB324` | `00456730` | `004514B0` | `effect/explosion.txt`, sete `expl*.yga` | Implementado com divergências. `DrawDestruction` usa os recursos e passes nativos. Composição raylib e retenção da carta ainda requerem comparação com o original. Comando 7C via `00405190`; outra chamada em `00405620`. |
 | Quebra / remoção alternativa | `00450C30` / `005DB314` | `00450FB0` | `00450FD0` | `effect/break.txt` | Não implementado como família separada. Distinção entre quebra e explosão ainda precisa de mapa de comandos. |
 | Revelação e deslocamento | `004182E0` / `005DA868` | `00418B60` | `00418EF0` | `card/card.txt` e arte/verso | Implementado com divergências. `DrawFlight` e `DrawHandTransfer` usam a interpolação de oito passos onde integrada. O FLIP e a troca animada de face ainda não reproduzem todos os passes. |
@@ -122,11 +122,46 @@ do cliente. Os avisos de instrução, balão da mão, alvos e contornos de
 tributo em `DrawDuel`, `DrawDuelHand` e `DrawDuelField` são UI
 funcional provisória. `DrawCards` e `DrawDeck` são telas fora do
 dispatcher do duelo. `DrawPile` e `DrawCardBack` têm fallback e
-textos do cliente, mesmo quando usam verso do DAT. `DrawAttackCue`
-ainda desloca o sprite com lerp.
+textos do cliente, mesmo quando usam verso do DAT. `DrawAttackAim` ainda usa o giro por cursor e o tamanho do cliente.
 
-A próxima investigação começa em `00414110/004142C0` para recorte de
-espada e impacto. Depois vem a ordem de revelação, quebra e explosão,
-seguida dos três efeitos de invocação e das variantes de ativação.
-Os contadores de LP e as transições de fase já têm pontos de entrada;
-cabe ligar os sprites e verificar a composição antes de ajustar o ritmo.
+A próxima investigação pode seguir a ordem de revelação, quebra e
+explosão, e então os três efeitos de invocação e as variantes de
+ativação. Os contadores de LP e as transições de fase já têm pontos de
+entrada.
+
+## Ataque normal: origem, troca de sprite e impacto
+
+`attack.txt` lista, nesta ordem, `atk_icon.bmp`, `atk_icon2.bmp`,
+`atk_eff.yga` e `dmg_ref.yga`. A vtable `005DA710` liga
+Update `00414110` e Draw `004142C0`. No estado 4, o Update
+`0041413F` soma 16 ao contador, com avanço de estado ao atingir
+`0x200`. As coordenadas vêm de `0045C140` para ataque a monstro;
+o alvo direto está em X=525 e Y=64/536 conforme o lado
+(`004142F0–0041430E`).
+
+| Contador do estado 4 | Sprite e transformação | Evidência |
+| --- | --- | --- |
+| `0…0x80` | Espada inteira, na origem, gira de 0 ou 256 unidades angulares até a direção calculada por atan2. A fração do giro é `t/0x80`. | `00414812–004148F5` |
+| `0x80 < t < 0x100` | Espada inteira em interpolação entre origem e alvo. Peso da origem = `C[(t−0x80)&511] >> 8`, peso do alvo = `256 − pesoOrigem`. Coordenadas divididas por 256, com truncamento. | `00414601–004146E5` |
+| `0x100 ≤ t < 0x200` | No centro do alvo, primeiro desenha o impacto, depois a espada parcial. Impacto com escala `(t−0x100)<<9`, sem giro. Espada parcial com escala unitária e giro do vetor de ataque. Intensidade global `2×(0x200−t)` para ambos. | `004146F7–00414800` |
+
+A seleção de sprites, as janelas e os parâmetros acima são **estáticos
+confirmados**. O código C# usa uma tabela de cosseno calculada, atan2
+da plataforma, recorte e alpha da raylib. Os valores de intensidade
+acima de 255 entram no ramo nativo sem atenuação de `00422C00`;
+o cliente os limita a alpha 255. O estado 6 usa `dmg_ref.yga` para
+outra apresentação e não foi portado nesta fatia.
+
+A Alpha e o duelo local agendam este efeito quando o ataque continua
+após a janela de respostas. Um ataque negado não mostra impacto no
+alvo. Essa é a integração de apresentação do cliente, que aplica a
+sequência do estado 4 aos ataques resolvidos no sandbox. A mira antes
+da declaração, a relação exata com revelação e LP, e os ramos especiais
+precisam de análise adicional.
+
+O teste de render target a 800 × 600 chamou o Draw real do cliente para
+um ataque vertical. Nos updates 0, 8 e 15, a espada ocupou 71 px de
+altura. No update 16, já centralizada no alvo, a lâmina parcial
+ocupou 41 px de pixels visíveis. Nos updates 20 e 31 a área aumentou
+com o impacto. A comparação com o original em estado equivalente
+continua pendente.

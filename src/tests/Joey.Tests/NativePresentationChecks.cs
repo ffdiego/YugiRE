@@ -119,17 +119,34 @@ internal static class NativePresentationChecks
         var fragmentEnd = NativeExplosionFrame.FromCounter(184, explosionCosine);
         check(initialExplosion == new NativeExplosionFrame(null, null, new(0, 0, 32768, 181)) &&
               initialExplosion.Initial?.ScaledPixels(164) == 83 &&
-              layeredExplosion.Flare == new ExplosionSpritePass(1, 0, 32768, 128) &&
+              layeredExplosion.Flare == new NativeEffectSpritePass(1, 0, 32768, 128) &&
               layeredExplosion.Initial is { ResourceIndex: 0, RotationIndex: 32, ScaleFixed16: 40960 },
               "Native explosion: centered scaled initial and flare passes use native rotation and opacity");
         check(fragmentStart.Flare is { ResourceIndex: 1 } &&
-              fragmentStart.Fragments == new ExplosionSpritePass(2, 0, 65536, 255) &&
+              fragmentStart.Fragments == new NativeEffectSpritePass(2, 0, 65536, 255) &&
               fragmentStart.Initial is null &&
               fragmentEnd.Fragments is { ResourceIndex: 6 } &&
               fragmentEnd.Fragments?.ScaledPixels(196) == 196 &&
               NativeExplosionFrame.FromCounter(192, explosionCosine) == default &&
               NativeExplosionFrame.FromCounter(200, explosionCosine) == default,
               "Native explosion: fragment slots 2–6, then two sprite-free updates before deactivation");
+        var from = new CardPoint(369, 352);
+        var to = new CardPoint(681, 248);
+        NativeAttackFrame AttackAt(int update) => NativeAttackFrame.Sample(update, from, to, true, explosionCosine);
+        check(AttackAt(0).Position == from && AttackAt(0).RotationIndex == 0 &&
+              AttackAt(8).Position == from && AttackAt(8).RotationIndex > 0 &&
+              AttackAt(9).Position.X > from.X && AttackAt(15).Position.X < to.X &&
+              !AttackAt(15).PartialSword, "Native attack: turn at the origin, then advance with the full sword");
+        check(AttackAt(16) is { PartialSword: true, Position: { X: 681, Y: 248 }, ImpactScaleFixed16: 0, Opacity: 255 } &&
+              AttackAt(17) is { PartialSword: true, ImpactScaleFixed16: 8192, Opacity: 255 } &&
+              AttackAt(31) is { PartialSword: true, ImpactScaleFixed16: 122880, Opacity: 32 } &&
+              NativeAttackFrame.Updates == 32,
+              "Native attack: the partial sword appears at contact and the growing impact fades with it");
+        check(NativeAttackFrame.DirectTarget(true) == new CardPoint(525, 64) &&
+              NativeAttackFrame.DirectTarget(false) == new CardPoint(525, 536) &&
+              NativeAttackFrame.Sample(8, to, from, false, explosionCosine).RotationIndex ==
+                  AttackAt(8).RotationIndex + 256,
+              "Native attack: opposite side and direct target coordinates");
         var explosion = new NativeExplosionTimeline();
         check(explosion.VisiblePasses() == NativeExplosionPasses.Initial,
               "Native explosion: initial pass exists at counter zero");

@@ -20,9 +20,10 @@ static partial class Game
     static CardFlight? flight;
     static readonly PresentationTickClock travelClock = new();
     static int travelUpdate;
-    sealed record AttackCue(Vector2 Origin, Vector2 Target, TimeSpan Duration);
+    sealed record AttackCue(CardPoint Origin, CardPoint Target, bool NearSide);
     static AttackCue? attackCue;
-    static TimeSpan attackElapsed;
+    static readonly PresentationTickClock attackClock = new();
+    static int attackUpdates;
 
     static void StartAlpha()
     {
@@ -114,20 +115,34 @@ static partial class Game
 
     static void BeginAttackCue(int player, int source, int target)
     {
-        if (alphaCpu is null || !presentation.Style.PlayAnimations) return;
+        if (!presentation.Style.PlayAnimations) return;
         bool near = player == ViewPlayer;
         var from = NativeDuelLayout.MonsterCenter(source, near);
-        var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : new CardPoint(525, near ? 144 : 459);
-        attackElapsed = TimeSpan.Zero;
-        attackCue = new(new(from.X, from.Y), new(to.X, to.Y), presentation.Style.Duration(DuelPresentationCue.Battle) / 2);
+        var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : NativeAttackFrame.DirectTarget(near);
+        attackClock.Reset();
+        attackUpdates = 0;
+        attackCue = new(from, to, near);
     }
 
     static void DrawAttackCue()
     {
         if (attackCue is not { } cue) return;
-        float fraction = (float)(attackElapsed / cue.Duration);
-        Vector2 head = Vector2.Lerp(cue.Origin, cue.Target, fraction);
-        DrawAttackSword(head, cue.Target - cue.Origin);
+        var frame = NativeAttackFrame.Sample(attackUpdates, cue.Origin, cue.Target, cue.NearSide, effectCosine);
+        if (frame.ImpactScaleFixed16 > 0)
+            DrawEffectStamp(DatGraphics.AttackImpact, frame.Position, 0, frame.ImpactScaleFixed16, frame.Opacity);
+        DrawEffectStamp(frame.PartialSword ? DatGraphics.AttackSwordPartial : DatGraphics.AttackSword,
+            frame.Position, frame.RotationIndex, 0x10000, frame.Opacity);
+    }
+
+    static void DrawEffectStamp(string name, CardPoint center, int rotation, int scale, int opacity)
+    {
+        var sprite = graphics.Texture(name);
+        var transform = new NativeEffectSpritePass(0, rotation, scale, opacity);
+        int width = transform.ScaledPixels(sprite.Width), height = transform.ScaledPixels(sprite.Height);
+        if (width == 0 || height == 0) return;
+        Raylib.DrawTexturePro(sprite, new Rectangle(0, 0, sprite.Width, sprite.Height),
+            new Rectangle(center.X, center.Y, width, height), new Vector2(width / 2, height / 2),
+            rotation * (360f / 512), new Color(255, 255, 255, opacity));
     }
 
     static void DrawAttackAim()
@@ -157,13 +172,17 @@ static partial class Game
     static void CommitHumanAttack(int target)
     {
         int player = duel.ActivePlayer;
-        if (duel.Attack(attacker, target, out message)) BeginAttackCue(player, attacker, target);
+        if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
+            BeginAttackCue(player, attacker, target);
     }
 
     static void AdvanceAlpha(TimeSpan elapsed)
     {
-        attackElapsed += elapsed;
-        if (attackCue is { } attack && attackElapsed >= attack.Duration) attackCue = null;
+        if (attackCue is not null)
+        {
+            attackUpdates += Math.Min(NativeAttackFrame.Updates, attackClock.Advance(elapsed, presentation.Style));
+            if (attackUpdates >= NativeAttackFrame.Updates) attackCue = null;
+        }
         if (flight is not null)
         {
             travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
@@ -175,6 +194,7 @@ static partial class Game
         int? owner = CpuDuelController.PendingOwner(duel);
         if ((owner ?? duel.ActivePlayer) != cpu.Player) return;
         int handCount = duel.HandFor(cpu.Player).Count;
+        var pendingAttack = duel.PendingAttackResponse?.Attack;
         var step = cpu.Step(duel);
         if (step.Status == CpuStepStatus.Blocked)
         {
@@ -186,8 +206,10 @@ static partial class Game
         cpuDelay = presentation.Style.Duration(step.Action == CpuAction.Attack ? DuelPresentationCue.Battle : DuelPresentationCue.CardMove);
         message = "CPU: " + (step.Action == CpuAction.BeginBattle ? "Battle phase." : step.Message);
         ClearDuelSelection();
-        if (step.Action == CpuAction.Attack && step.SourceZone is int attackerZone && step.TargetZone is int targetZone)
+        if (step.Action == CpuAction.Attack && duel.PendingAttackResponse is null && step.SourceZone is int attackerZone && step.TargetZone is int targetZone)
             BeginAttackCue(step.Player, attackerZone, targetZone);
+        else if (step.Action == CpuAction.Response && step.Card is null && pendingAttack is { } continued)
+            BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone);
         if (step.Card is not Card card) return;
         if (step.Action is CpuAction.Set or CpuAction.Summon)
         {
