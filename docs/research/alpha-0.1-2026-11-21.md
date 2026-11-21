@@ -24,7 +24,7 @@ dotnet run --project src/Joey.App -- ../passion/data.dat --alpha \
   '--duel-back-dat=card\card_ura.bmp'
 ```
 
-O anúncio central de cada fase e a espada de ataque usam imagens do DAT. Na batalha, a espada indica os monstros elegíveis e permanece ancorada no atacante e gira na direção do cursor ou do centro do alvo. Escolher um atacante com o campo adversário vazio declara ataque direto. O painel lateral usa os botões do cliente.
+O anúncio central de cada fase e a espada de ataque usam imagens do DAT. Na batalha, a espada indica os monstros elegíveis e permanece ancorada no atacante e gira na direção do cursor ou do centro do alvo. Escolher um atacante com o campo adversário vazio declara ataque direto. A coluna de detalhes usa o fundo do DAT. Os botões de fase usam os quadros estáticos do DAT, com cores por turno e destaque para a fase ativa.
 
 ## Regras e decisões
 

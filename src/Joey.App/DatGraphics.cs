@@ -8,6 +8,10 @@ sealed class DatGraphics : IDisposable
     public const string DuelBoard = @"j\duel\field\fie_normal.bmp";
     public const string DuelBack = @"card\card_ura.bmp";
     public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
+    public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    public static readonly string[] PhaseButtons = new[] { "dr", "st", "m1", "ba", "m2", "en" }
+        .Select(phase => $@"j\duel\phase\pha_s_{phase}.bmp").ToArray();
+
     public static readonly string[] PhaseBanners = new[] { "dr", "st", "m1", "ba", "m2", "en" }
         .Select(phase => $@"j\duel\phase_name\e_{phase}_b.bmp").ToArray();
 
@@ -98,13 +102,15 @@ sealed class DatGraphics : IDisposable
             CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
-        names = names.Concat(PhaseBanners).Append(AttackSword).Distinct(StringComparer.OrdinalIgnoreCase);
+        names = names.Concat(PhaseBanners).Concat(PhaseButtons).Append(DuelDetailBackground).Append(AttackSword).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
         {
             var image = ReadImage(name);
             try
             {
+                if (PhaseButtons.Contains(name) && (image.Width != 80 || image.Height != 150))
+                    throw new InvalidDataException($"Unexpected phase button atlas: {name}");
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
                 if ((name == AttackSword || PhaseBanners.Contains(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)

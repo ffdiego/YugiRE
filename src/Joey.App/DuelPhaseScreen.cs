@@ -6,7 +6,6 @@ static partial class Game
 {
     enum DuelPhaseDisplay { Draw, Standby, Main1, Battle, Main2, End }
 
-    static readonly string[] phaseLabels = ["DP", "SP", "M1", "BP", "M2", "EP"];
     static readonly PresentationTickClock phaseClock = new();
     static DuelPhaseDisplay displayedPhase;
     static int displayedTurn, phaseUpdates;
@@ -68,7 +67,7 @@ static partial class Game
 
     static void DrawPhasePanel(bool canChoosePhase)
     {
-        for (int i = 0; i < phaseLabels.Length; i++)
+        for (int i = 0; i < DatGraphics.PhaseButtons.Length; i++)
         {
             var phase = (DuelPhaseDisplay)i;
             bool enabled = canChoosePhase && (phase switch
@@ -80,10 +79,13 @@ static partial class Game
             });
             var bounds = new Rectangle(218, 90 + i * 75, 28, 50);
             bool active = phase == displayedPhase;
-            Raylib.DrawRectangleRec(bounds, active ? Gold : enabled && Hit(bounds) ? Color.DarkBlue : Panel);
+            var sprite = graphics.Texture(DatGraphics.PhaseButtons[i]);
+            const int frameWidth = 40, frameHeight = 75;
+            int sourceX = active || enabled && Hit(bounds) ? frameWidth : 0;
+            int sourceY = (displayedTurn & 1) == 0 && displayedTurn != 0 ? frameHeight : 0;
+            Raylib.DrawTexturePro(sprite, new Rectangle(sourceX, sourceY, frameWidth, frameHeight),
+                bounds, System.Numerics.Vector2.Zero, 0, Color.White);
             Raylib.DrawRectangleLinesEx(bounds, 1, active || enabled ? Gold : Color.Gray);
-            Label(phaseLabels[i], (int)bounds.X + 4, (int)bounds.Y + 17, 14,
-                active ? Color.Black : enabled ? Color.White : Color.LightGray);
             if (!enabled || !Hit(bounds) || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
 
             bool accepted = phase switch

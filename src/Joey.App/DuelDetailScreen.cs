@@ -63,7 +63,11 @@ static partial class Game
     static void DrawDuelDetail()
     {
         activatedDetail = false;
-        Raylib.DrawRectangle(0, 0, 214, 600, Background);
+        var background = graphics.Texture(DatGraphics.DuelDetailBackground);
+        Raylib.DrawTexturePro(background, new Rectangle(0, 0, background.Width, background.Height),
+            new Rectangle(0, 0, 214, 600), System.Numerics.Vector2.Zero, 0, Color.White);
+        Raylib.DrawRectangle(8, 10, 198, 32, Panel);
+        Raylib.DrawRectangle(8, 553, 198, 32, Panel);
         Label($"Opponent LP  {duel.Life[1 - ViewPlayer]}", 12, 16, 19, Gold);
         Label($"Your LP  {duel.Life[ViewPlayer]}", 12, 561, 19, Gold);
         if (detailCard is not { } card) return;
@@ -71,6 +75,7 @@ static partial class Game
         DrawArtwork(card, 14, 53, 186, 265);
         string stats = card.IsMonster ? $"\nATK {card.Attack} / DEF {card.Defense}" : "";
         var lines = TextLines(card.Name + stats + "\n" + card.Description, 188, 13);
+        Raylib.DrawRectangle(8, 321, 198, 229, Panel);
         const int visibleLines = 14;
         if (mouse.X < 214) duelDescriptionScroll -= (int)Raylib.GetMouseWheelMove() * 3;
         duelDescriptionScroll = Math.Clamp(duelDescriptionScroll, 0, Math.Max(0, lines.Count - visibleLines));
