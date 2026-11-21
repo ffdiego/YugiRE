@@ -5,14 +5,36 @@ e a política de reprodução de cues visuais ou falas. O Core resolve as regras
 cartas/batalha imediatamente em um estado determinístico; a apresentação não deve
 alterar resultados, disparar compras ou introduzir delays em testes automatizados.
 
+## Resultado visual como contrato
+
+O objetivo do `Joey.LookAndFeel` é a **fidelidade de pixels e de tempo** do `joey_pc.exe` em seu canvas lógico de **800×600** — não equivalência de código, funções ou algoritmo de rasterização. Implementações em C#/raylib podem divergir internamente, desde que obtenham as **mesmas posições, dimensões, pivôs, orientações, escalas, recortes, ordem de composição, sprites e valores por update/frame** observáveis. Para a alpha, começar por cartas, ATK/DEF e ações visíveis; **a meta continua abrangendo todos os elementos visuais**.
+
+Contadores nativos, cadência nominal (Classic/Speedy), tempos efetivos e espera por decisões são medidas diferentes. Manter velocidade Classic como alvo do executável quando conhecida, sem converter contadores em milissegundos arbitrários; `Fast` e `Instant` são perfis opcionais deliberadamente não idênticos. Registrar os dados como confirmado por Ghidra, observado no vídeo/original, derivado ou provisório. Testar estados e quadros equivalentes e comparar resultados em pixels/updates. [Contrato completo de fidelidade](visual-fidelity-goal.md).
+
+## Recursos visuais: DAT como fonte de verdade
+
+Para o modo fiel, todos os sprites e variantes **existentes no original** devem vir do `data.dat` local em tempo de execução pelo leitor de arquivos do projeto. Carregar sob demanda e manter em cache texturas/frames decodificados em memória ou GPU é permitido; `sempre ler do DAT` significa **não depender de placeholders ou arquivos externos extraídos/substitutos como fonte visual padrão**, e não executar leitura física repetida em cada desenho.
+
+A apresentação deve selecionar **a variante correta em cada estado e update**, mantendo detalhes aparentemente pequenos: imagens de entrada/impacto/saída, cortes da espada, sobreposição atrás da carta, sprites parcialmente ocultos, opacidade e ordem de desenho. Para ataque, o DAT já contém `j\\duel\\effect\\atk_icon.bmp` e `atk_icon2.bmp`; o vídeo sugere a troca ao atingir a carta, mas o momento e o mecanismo devem ser confirmados pela análise de Update/Draw no Ghidra.
+
+Fallbacks geométricos genéricos ficam restritos a testes, ferramentas e modo de diagnóstico explicitamente indicado. Se um asset nativo não for encontrado/decodificado, registrar a falta com seu caminho e bloquear a declaração de fidelidade daquele elemento, em vez de substituir silenciosamente. Temas visuais customizados podem continuar como uma opção separada, que não comprova fidelidade ao Joey.
+
+## Diagnóstico opcional sem contaminar a cena fiel
+
+O `Joey.App` pode desenhar overlays de desenvolvimento sobre o canvas 800×600 para depuração, mas **a camada de diagnóstico deve ser desligável** por um botão `Ocultar debug` quando estiver visível, além de `F3` e uma opção de reativação no menu. O modo de comparação fiel começa sem overlay; se o toggle permanecer na tela quando desligado, ele também precisa ser ocultável para obter um frame limpo. A preferência pertence à UI e **não deve afetar** `Joey.Core`, posição dos sprites, hitboxes de jogo, cadência de updates ou fila de animação.
+
+Diferenciar explicitamente: (1) interface nativa ou essencial para o usuário jogar, que deve ser posicionada com fidelidade e permanecer operável; (2) HUD de desenvolvimento, FPS, coordenadas, logs, contadores, rastros e controles temporários, que aparecem só no modo debug. Um botão de gameplay não vira "debug" apenas por ter aparência provisória. Debug ativo pode sobrepor o jogo se isso for intencional e testado; com debug OFF, nenhuma área opaca de diagnóstico deve permanecer encobrindo a arte original.
+
+Para validação, capturar a mesma cena com debug ON/OFF em 800×600, confirmar que os pixels da cena (exceto pixels próprios do overlay) são idênticos, e conferir que uma sobreposição oculta não intercepta cliques ou altera turnos/timings. Guardar o modo limpo como referência da comparação com o executável.
+
 ## Componentes
 
 A consolidação da análise estática da branch `analise-visual` foi organizada
 em [**contrato visual nativo**](native-visual-contract.md). As fórmulas de mão,
 centros do campo, contadores de ativação/explosão e despacho de objetos
 agora residem em `Joey.LookAndFeel` e não em `Joey.Core`.
-O port modela **updates e parâmetros**, sem atribuir FPS ou milissegundos
-nativos ainda não medidos.
+O port modela **updates e parâmetros** com base nos dados existentes, distinguindo
+cadência nominal recuperada, comportamento observado e timings ainda não medidos.
 
 
 - `DuelPresentationCue`: `CardMove`, `FlipReveal`, `FlipEffect`, `Battle`,

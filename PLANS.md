@@ -9,6 +9,12 @@
 3. Para a maioria das cartas, começar pela descrição do DAT local e agrupamentos de perfil, não pela decompilação. Investigar nativamente apenas ambiguidades com consequência observável.
 4. Testes de `Joey.Tests` liberam `Done` **no escopo descrito**. Traces nativos permitem `Verified` quando comparem o **mesmo comportamento**, não por mera presença de um opcode.
 5. Manter `Joey.Core` independente de Frida e de tempo de animação; não apagar o laboratório legado.
+6. Para **todos os elementos visuais**, a meta é reproduzir coordenadas, dimensões, orientação, recursos, composição, contadores e duração **do Joey original**, mesmo com código de renderização e scheduler C# diferentes. A análise estática recupera parâmetros; vídeo e capturas comparam frames. Consultar [meta visual em pixels](docs/architecture/visual-fidelity-goal.md). Uma aproximação é uma pendência, não o contrato final.
+
+7. Os recursos de apresentação devem ser lidos do **`data.dat` original em runtime**; caches em memória são permitidos, mas a alpha fiel não deve usar sprites temporários/placeholders como aparência final. As animações devem preservar trocas de variante e quadros intermediários (ex.: espada inteira/espada aparentemente inserida na carta), não apenas posição inicial/final. Falta de recurso ou transição não investigada deve ser documentada e visível para revisão.
+
+8. **Modo visual limpo obrigatório:** o modo fiel parte com overlays de diagnóstico desativados. Quando os overlays estiverem ativos, disponibilizar botão clicável `Ocultar debug`, atalho `F3` e reativação pelo menu; controles essenciais de jogo não desaparecem junto com o debug. Texto provisório, contadores, FPS e botões auxiliares devem estar em camada distinta, sem modificar a geometria/timeline da cena.
+9. Revisar sobreposição e legibilidade da Alpha em 800×600 com capturas de modo limpo (sem debug) e modo diagnóstico; verificar HUD, mão, cartas, números, fases, ícones e cliques, sem cobrir sprites nativos por acidente.
 
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 
@@ -64,10 +70,19 @@
 
 ### Iteração D — aparência e experiência
 
+**Critério de conclusão visual:** fidelidade observável de **posição/tamanho por pixel e tempo por update** em 800×600, cobrindo progressivamente todos os elementos (carta, mão, texto, HUD, LP, fases, efeitos e transições). Não é necessário reproduzir GDI/opcodes/estrutura interna, mas deve-se demonstrar de onde vieram os valores. Conferir o [contrato de fidelidade visual](docs/architecture/visual-fidelity-goal.md) e documentar divergências mensuradas.
+
 - [x] Criar `Joey.LookAndFeel` independente do Core e raylib, com perfis Classic/Fast/Silent/Instant, clock não bloqueante, overrides e integração inicial de realce de texto no `Joey.App`.
 - [x] Consolidar os achados estáticos da `analise-visual` em `Joey.LookAndFeel`: mão/hover, posições espelhadas, update de ativação e explosão, passes/alpha e critérios de despacho, com testes e ligação parcial à raylib.
 - [x] Prévia visual de ativação jogável em raylib com os quatro YGAs originais carregados do DAT local, modelo nativo de três passes, clock de protótipo e perfis Classic/Fast/Instant; testes C# e verificação opcional de assets.
-- [x] **Pausar a trilha visual após a prévia de ativação**; voltar à Iteração B (comportamento de cartas FLIP, Hane-Hane/Morphing Jar #2).
+- [x] **Pausa histórica** após a prévia de ativação para priorizar Iteração B; **superada pela meta atual de alpha com fidelidade visual**, sem abandonar as regras.
+- [ ] Recuperar e aplicar o contrato nativo de renderização da carta: ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
+- [ ] Substituir placeholders remanescentes do fluxo visual padrão por **sprites originais carregados do DAT local**, usando manifests e seleção de variantes para cada estado; não versionar os assets. Testar aviso explícito de asset faltante e evitar substituição silenciosa.
+- [ ] Reconstituir estaticamente e validar a **troca de sprite da espada de ataque** ao atingir a carta, investigando os BMPs `j\\duel\\effect\\atk_icon.bmp` e `atk_icon2.bmp`, o frame/estado de transição, clipping, pivô e camada; preservar a ilusão de penetração relatada no vídeo, sem declarar seus detalhes como comprovados antes da análise.
+- [ ] Implementar `DebugOverlayEnabled` (ou equivalente) na UI: default OFF em modo fiel, botão `Ocultar debug` enquanto ativo, atalho F3 e toggle em menu para restaurar. Centralizar Draw e HitTest do overlay, sem interferir no duelo; testes do estado/toggle.
+- [ ] Fazer auditoria visual da Alpha em 800×600, separando **controles do jogo** de **diagnósticos**: corrigir layout provisório que cobre cartas, sprites e textos, e comparar capturas sem debug. A imagem recebida de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
+- [ ] Criar matriz de comparação por elemento visual e estados/quadros-chave contra Joey original: coordenadas/dimensões/ângulos e contagem de updates; registrar valores ainda provisórios em vez de arredondar silenciosamente.
+- [ ] Expandir sistematicamente a fidelidade de todas as telas/efeitos visuais, depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 - [ ] Confirmar cadência nativa de update/draw, tabela de cossenos x16.16 e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
 - [ ] Adicionar eventos de apresentação tipados do Core, timeline de animações de cartas, transições e LP animado, sem acoplar regras ao tempo de tela.
 - [ ] Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política, pois ainda não existe player de voz), preservando a apresentação clássica.
