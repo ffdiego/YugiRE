@@ -9,6 +9,18 @@ internal static class NativePresentationChecks
                   .SequenceEqual(new[] { 82, 157, 232, 307, 382, 457 }
                       .Select(y => new CardBounds(221, y, 40, 75))),
               "Native duel surface: full backdrop and six consecutive phase cells");
+        check(NativePhaseTurnFlip.Updates == 64 &&
+              NativePhaseTurnFlip.Frame(0, 7) is null &&
+              NativePhaseTurnFlip.Frame(0, 8) == 8 &&
+              NativePhaseTurnFlip.Frame(0, 12) == 4 &&
+              NativePhaseTurnFlip.Frame(0, 16) == 0,
+              "Phase turn flip: native counter, initial delay and reversed atlas order");
+        check(Enumerable.Range(0, DuelSurfaceLayout.PhaseCount).All(button =>
+                  NativePhaseTurnFlip.Frame(button, 7 + button * 3) is null &&
+                  NativePhaseTurnFlip.Frame(button, 8 + button * 3) == 8 &&
+                  NativePhaseTurnFlip.Frame(button, 16 + button * 3) == 0) &&
+              NativePhaseTurnFlip.Frame(5, 63) == 0,
+              "Phase turn flip: each button starts three updates later and holds its final face");
         // Coordinates are native centers in the logical 800x600 canvas.
         check(NativeDuelLayout.MonsterCenter(0, true) == new CardPoint(369, 352) &&
               NativeDuelLayout.MonsterCenter(4, true) == new CardPoint(681, 352) &&

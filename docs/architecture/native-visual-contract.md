@@ -299,3 +299,34 @@ move entre a mão e o campo ainda requer captura equivalente.
 O botão EP chama o comando de fim de turno também durante BP, como
 observado pelo jogador. O caminho mantém as escolhas pendentes e
 o descarte obrigatório do Core.
+
+## Rotação dos botões na troca de jogador
+
+`00481230` zera `obj+150h` quando muda o jogador. `00481370`
+soma 8 até `0x200`, totalizando 64 updates. O Draw
+`00481420` usa, para o botão de índice `i=0…5`,
+`local = contador − 0x40 − 0x18 × i`. Se negativo, desenha
+o quadro estático do lado anterior. Caso contrário usa
+`8 − trunc(min(local, 0x40) / 8)` como coluna de uma tira
+de 9 quadros de 40 × 75. O botão seguinte começa três updates
+depois. O quadro 0 permanece até o contador global chegar a
+`0x200`; então volta a usar o atlas estático.
+
+Em `004815D0–004815D8`, a seleção de recurso soma `6 × (1 +
+ladoRelativoNovo)` ao índice. Conforme a ordem de `phase.txt`,
+isso seleciona `pha_b_*.bmp` para destino azul e
+`pha_r_*.bmp` para destino vermelho. A leitura das tiras é
+da direita para a esquerda em ambas as direções.
+
+No cliente, Classic e Fast usam os 64 updates, a 30 ou 60 Hz.
+Instant mostra diretamente o lado novo. A animação começa depois do
+aviso de End e antes do aviso de Draw do novo turno. Essa integração
+usa o relógio visual do cliente. O aviso nativo de troca de jogador,
+solicitado separadamente por `00480BC0`, ainda não está integrado.
+
+Uma captura da Alpha Fast a 800 × 600 e 60 FPS, com debug desligado,
+encontrou o quadro intermediário 4 de todos os seis botões, nas duas
+direções, com igualdade RGB em relação aos recortes do DAT. Em ambas
+as viradas, as amostras apareceram a três frames de distância na captura.
+Esse teste compara a saída raylib com as tiras, e não com uma gravação
+quadro a quadro do executável.

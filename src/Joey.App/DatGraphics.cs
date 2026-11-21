@@ -9,11 +9,15 @@ sealed class DatGraphics : IDisposable
     public const string DuelBack = @"card\card_ura.bmp";
     public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
-    public static readonly string[] PhaseButtons = new[] { "dr", "st", "m1", "ba", "m2", "en" }
-        .Select(phase => $@"j\duel\phase\pha_s_{phase}.bmp").ToArray();
-
-    public static readonly string[] PhaseBanners = new[] { "dr", "st", "m1", "ba", "m2", "en" }
+    private static readonly string[] PhaseCodes = ["dr", "st", "m1", "ba", "m2", "en"];
+    public static readonly string[] PhaseButtons = PhaseButtonImages('s');
+    public static readonly string[] PhaseFlipToBlue = PhaseButtonImages('b');
+    public static readonly string[] PhaseFlipToRed = PhaseButtonImages('r');
+    public static readonly string[] PhaseBanners = PhaseCodes
         .Select(phase => $@"j\duel\phase_name\e_{phase}_b.bmp").ToArray();
+
+    private static string[] PhaseButtonImages(char variant) => PhaseCodes
+        .Select(phase => $@"j\duel\phase\pha_{variant}_{phase}.bmp").ToArray();
 
     readonly Dictionary<string, Texture2D> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly Queue<string> loaded = new();
@@ -102,7 +106,8 @@ sealed class DatGraphics : IDisposable
             CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
             @"j\list\list_bg.bmp", @"j\list\e_cardlistmoji2.bmp", @"j\list\e_back1.bmp", @"j\list\e_back2.bmp", @"j\duel\field\fie_normal.bmp" }
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
-        names = names.Concat(PhaseBanners).Concat(PhaseButtons).Append(DuelDetailBackground).Append(AttackSword).Distinct(StringComparer.OrdinalIgnoreCase);
+        names = names.Concat(PhaseBanners).Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
+            .Append(DuelDetailBackground).Append(AttackSword).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
         {
@@ -111,6 +116,10 @@ sealed class DatGraphics : IDisposable
             {
                 if (PhaseButtons.Contains(name) && (image.Width != 80 || image.Height != 150))
                     throw new InvalidDataException($"Unexpected phase button atlas: {name}");
+                if ((PhaseFlipToBlue.Contains(name) || PhaseFlipToRed.Contains(name)) &&
+                    (image.Width != DuelSurfaceLayout.PhaseWidth * NativePhaseTurnFlip.FrameCount ||
+                     image.Height != DuelSurfaceLayout.PhaseHeight))
+                    throw new InvalidDataException($"Unexpected phase turn atlas: {name}");
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
                 if ((name == AttackSword || PhaseBanners.Contains(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)

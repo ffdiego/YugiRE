@@ -9,14 +9,19 @@ static partial class Game
     static readonly PresentationTickClock phaseClock = new();
     static DuelPhaseDisplay displayedPhase;
     static int displayedTurn, phaseUpdates;
+    static int turnFlipElapsed;
+    static bool drawNoticePending;
+    static bool TurnFlipping => drawNoticePending && turnFlipElapsed < NativePhaseTurnFlip.Updates;
     static bool PhaseBusy => !duel.GameOver && (phaseUpdates > 0 ||
-        displayedTurn != duel.Turn || displayedPhase is DuelPhaseDisplay.Draw or DuelPhaseDisplay.Standby);
+        drawNoticePending || displayedTurn != duel.Turn || displayedPhase is DuelPhaseDisplay.Draw or DuelPhaseDisplay.Standby);
 
     static void ResetDuelPhases()
     {
         displayedTurn = 0;
         displayedPhase = DuelPhaseDisplay.Draw;
         phaseUpdates = 0;
+        turnFlipElapsed = NativePhaseTurnFlip.Updates;
+        drawNoticePending = false;
         phaseClock.Reset();
     }
 
@@ -31,6 +36,12 @@ static partial class Game
 
     static void AdvanceDuelPhases(TimeSpan elapsed)
     {
+        if (TurnFlipping)
+        {
+            int updates = phaseClock.Advance(elapsed, presentation.Style);
+            turnFlipElapsed += Math.Min(updates, NativePhaseTurnFlip.Updates - turnFlipElapsed);
+            if (TurnFlipping) return;
+        }
         if (phaseUpdates > 0)
             phaseUpdates = Math.Max(0, phaseUpdates - phaseClock.Advance(elapsed, presentation.Style));
         if (MotionBusy || phaseUpdates > 0 || duel.GameOver) return;
@@ -42,7 +53,19 @@ static partial class Game
                 ShowPhase(DuelPhaseDisplay.End);
                 if (phaseUpdates > 0) return;
             }
+            bool animate = displayedTurn != 0 && presentation.Style.PlayAnimations;
             displayedTurn = duel.Turn;
+            drawNoticePending = true;
+            if (animate)
+            {
+                turnFlipElapsed = 0;
+                phaseClock.Reset();
+                return;
+            }
+        }
+        if (drawNoticePending)
+        {
+            drawNoticePending = false;
             ShowPhase(DuelPhaseDisplay.Draw);
             if (duel.CanDraw)
             {
@@ -79,11 +102,26 @@ static partial class Game
             });
             var bounds = ToRectangle(DuelSurfaceLayout.PhaseButton(i));
             bool active = phase == displayedPhase;
-            var sprite = graphics.Texture(DatGraphics.PhaseButtons[i]);
+            bool red = displayedTurn != 0 && (displayedTurn & 1) == 0;
             const int frameWidth = DuelSurfaceLayout.PhaseWidth, frameHeight = DuelSurfaceLayout.PhaseHeight;
+            string spriteName = DatGraphics.PhaseButtons[i];
             int sourceX = active || enabled && Hit(bounds) ? frameWidth : 0;
-            int sourceY = (displayedTurn & 1) == 0 && displayedTurn != 0 ? frameHeight : 0;
-            Raylib.DrawTexturePro(sprite, new Rectangle(sourceX, sourceY, frameWidth, frameHeight),
+            int sourceY = red ? frameHeight : 0;
+            if (TurnFlipping)
+            {
+                if (NativePhaseTurnFlip.Frame(i, turnFlipElapsed) is int frame)
+                {
+                    spriteName = (red ? DatGraphics.PhaseFlipToRed : DatGraphics.PhaseFlipToBlue)[i];
+                    sourceX = frame * frameWidth;
+                    sourceY = 0;
+                }
+                else
+                {
+                    sourceX = 0;
+                    sourceY = red ? 0 : frameHeight;
+                }
+            }
+            Raylib.DrawTexturePro(graphics.Texture(spriteName), new Rectangle(sourceX, sourceY, frameWidth, frameHeight),
                 bounds, System.Numerics.Vector2.Zero, 0, Color.White);
             if (!enabled || !Hit(bounds) || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
 
