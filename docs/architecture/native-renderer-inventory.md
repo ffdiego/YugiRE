@@ -71,7 +71,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Corrente | `0041F5C0` / `005DABA8` | `0041F830` | `0041F870` | `chain/chain.txt` | Não implementado. |
 | Indicador de corrente desativada | `00452F20` / `005DB374` | `004531A0` | `004531C0` | `chain/disable.txt` | Não implementado. |
 | Remoção / exclusão | `0043D810` / `005DACB4` | `004481F0` | `0043DBE0` | `effect/exclusion.txt` | Não implementado como animação. |
-| Sacrifício | `00486D80` / `005DBD24` | `00487060` | `004870B0` | `effect/sacrifice.txt` | Não implementado como animação. Seleção funcional em `DrawDuelField` usa contorno do cliente. |
+| Sacrifício | `00486D80` / `005DBD24` | `00487060` | `004870B0` | `effect/sacrifice.txt`, estrelas do Set provisórias | Implementação parcial: evento para cada monstro usado como tributo; aguarda counter 128 em modo 0, modo 1 +8 até 384; oito partículas radiais; animações de tributos ocorrem antes do voo da nova invocação. Ordem real dos sprites, rotação/scratch, som e temporização pareada pendentes. |
 | Moeda | `004571D0` / `005DB404` | `00457500` | `00457520` | `effect/coin.txt`, 14 padrões na tira principal | Não implementado. Variante e relógio têm análise parcial na branch histórica. |
 | Dado | `004568C0` / `005DB3F4` | `00456B70` | `00456B90` | `effect/dice.txt` | Não implementado. |
 | Exodia | `00453B60` / `005DB3B4` | `00454000` | `00454010` | `exodia/exodia.txt` | Não implementado. |
@@ -448,3 +448,58 @@ Status **Partial**, cobertura visual **17/31 (54.84%)**,
 shuffle, tamanho real dos cinco BMPs, moldura, direção
 da viagem, som, transições, frames e ausência de
 animacões redundantes em buscas específicas.
+
+
+## Sacrifício — primeira fatia vertical (21/11/2026)
+
+As evidências foram **reabertas diretamente** do ZIP deconstruído
+`joey-knowledge(1).zip` e de `ghidra-visual-batch.zip`:
+
+- SQLite `functions+decompilations`: `00486D80` inicializa oito
+  pares X/Y em `obj+0xB4`, com 8 raios de
+  `16 + (NextUiDeckMtUInt32_0055C140() & 31)` sobre a tabela
+  de 512 cossenos x16.16, como o efeito Set.
+- SQLite callers `004879A0` e `00487B00` instanciam o mesmo
+  objeto com mode `0` (espera) e `1` (liberação),
+  respectivamente.
+- ZIP transient Update `00487060`: com modo 0, ao alcançar
+  contador `128` interrompe o avanço; com modo 1, soma
+  `8` por Update até desativar após contador `384`
+  (49 amostras `0,8,…,384`). Aciona uma chamada de som
+  quando alcança `136`.
+- ZIP transient Draw `004870B0`: dois passes principais,
+  com intensidades calculadas da tabela de cossenos. Depois
+  do contador 128, oito partículas são lançadas com atraso
+  de 16 unidades, fase `(counter−128−16*i)/8` e subida
+  quadrática `floor(age²/16)`. Os índices dos sprites
+  dessas partículas são `2 + (age & 1)`.
+- `effect/sacrifice.txt` está catalogado no DAT, mas sua
+  **ordem interna de recursos não está disponível** nesta
+  análise. A Alpha usa as imagens `eff_star0_b/1_b.bmp`
+  do Set **como substitutos provisórios**, não como
+  comprovação de equivalência.
+
+O Core já distinguia monstros tributados de monstros
+destruídos (`isTribute`), mas não emitia evento visual.
+Agora `DemoMonsterTribute` preserva jogador, zona, carta,
+face-down e defesa depois do pagamento bem-sucedido.
+Um pagamento inválido emite zero eventos; dois tributos
+válidos geram dois eventos, na ordem selecionada, e
+não disparam explosão de destruição.
+
+A Alpha põe os efeitos visuais dos tributos antes do
+`CardFlight` da carta recebida da mão e suprime
+temporariamente a carta nova no campo. O estado lógico
+`Joey.Core` permanece imediato; a fila de apresentação
+apenas reconstitui a ordem observável. Completada a
+sequência, o voo continua e o efeito de Set/invocação
+normal existente roda depois dele. Isto é uma escolha
+de composição do cliente, não uma medição pareada da
+ordem exata do original.
+
+**Pendências:** `sacrifice.txt` real, imagem central,
+rotação acumulativa que o Draw modifica, scratch,
+alpha, classe das estrelas, ângulo de cartas em
+defesa e sincronização com áudio. A cobertura do
+Draw passa para **18/31 (58.06%) Partial**, sem
+nova rotina Verified.
