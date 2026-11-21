@@ -7,6 +7,7 @@ static partial class Game
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
     sealed record HandTransfer(DemoHandTransfer Transfer) : CardEffect;
+    sealed record SetPlacement(int Player, int Zone, bool Spell) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
@@ -27,6 +28,13 @@ static partial class Game
         if (!presentation.Style.PlayAnimations) return;
         if (!CardEffectsBusy) cardEffectClock.Reset();
         cardEffects.Enqueue(effect, updates);
+    }
+
+    static void QueueSetEffect(int player, int zone, bool spell)
+    {
+        // The card is already committed to the Core; the original visual
+        // effect starts after its hand-to-field travel ends.
+        QueueCardEffect(new SetPlacement(player, zone, spell), NativeSetFrame.Updates);
     }
 
     static void QueueOpeningDeal()
@@ -117,7 +125,24 @@ static partial class Game
             case HandTransfer { Transfer: var transfer }:
                 DrawHandTransfer(transfer);
                 break;
+            case SetPlacement placement:
+                DrawSetPlacement(placement, cardEffects.ElapsedUpdates);
+                break;
         }
+    }
+
+    static void DrawSetPlacement(SetPlacement placement, int elapsedUpdates)
+    {
+        bool near = placement.Player == ViewPlayer;
+        var zone = placement.Spell ? DuelCardZone.Spell : DuelCardZone.Monster;
+        var center = DuelCardLayout.Center(zone, near, placement.Zone);
+        var frame = NativeSetFrame.FromUpdate(elapsedUpdates, effectCosine);
+        // The central DAT bitmap uses the recovered counter, scale and fade.
+        // Side-to-color mapping, scratch compositing and particle positions
+        // are provisional/unknown until Set constructor 0044EFD0 is exported.
+        if (frame.MainOpacity > 0)
+            DrawEffectStamp(near ? DatGraphics.SetAuraBlue : DatGraphics.SetAuraYellow,
+                center, 0, frame.ScaleFixed16, frame.MainOpacity);
     }
 
     static void DrawHandTransfer(DemoHandTransfer move)

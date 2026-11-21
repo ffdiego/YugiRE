@@ -73,6 +73,28 @@ internal static class LookAndFeelChecks
               DuelCardLayout.Center(DuelCardZone.Field, true) == new CardPoint(286, 353) &&
               DuelCardLayout.Center(DuelCardZone.Field, false) == new CardPoint(766, 236),
               "Duel layout: graveyards align with the monster rows opposite their field spell");
+        var setCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var setStart = NativeSetFrame.FromUpdate(0, setCosine);
+        var setMid = NativeSetFrame.FromUpdate(11, setCosine);
+        var setEnd = NativeSetFrame.FromUpdate(21, setCosine);
+        check(NativeSetFrame.Updates == 22 && setStart.Counter == 0 &&
+              setEnd.Counter == 252 && setStart.ScaleFixed16 == 65536 &&
+              setMid.ScaleFixed16 == (132 << 9) &&
+              setStart.MainOpacity == 0 && setMid.MainOpacity > 0 &&
+              setMid.Particles.Count == NativeSetFrame.ParticleCount &&
+              setStart.Particles.Count == 1 &&
+              setStart.Particles[0] == new NativeSetParticle(0, 0, 0),
+              "Native Set: 0044F370 counter, cosine fade, scale and staggered launches");
+        check(setMid.Particles[1].Variant == 0 &&
+              setMid.Particles[0].RisePixels > 0 && setEnd.MainOpacity < setMid.MainOpacity,
+              "Native Set: alternating particles rise quadratically; X origin awaits native constructor");
+        var setQueue = new PresentationSequence<string>();
+        setQueue.Enqueue("travel", CardTravel.Updates);
+        setQueue.Enqueue("set", NativeSetFrame.Updates);
+        setQueue.Advance(CardTravel.Updates);
+        check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
+              "Set placement: effect starts after hand-to-field flight");
+
         var clock = new DuelPresentationClock(classic);
         clock.Show(DuelPresentationCue.FlipReveal);
         clock.Advance(TimeSpan.FromMilliseconds(100));

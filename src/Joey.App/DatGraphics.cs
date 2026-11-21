@@ -10,6 +10,18 @@ sealed class DatGraphics : IDisposable
     public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
     public const string AttackSwordPartial = @"j\duel\effect\atk_icon2.bmp";
     public const string AttackImpact = @"j\duel\effect\atk_eff.yga";
+    public const string SetAuraBlue = @"j\duel\effect\eff_set_b.bmp";
+    public const string SetAuraYellow = @"j\duel\effect\eff_set_y.bmp";
+    // Six original BMPs in the DAT. Native index order and side-color selection
+    // still require inspecting Set constructor 0044EFD0.
+    public static readonly string[] SetSprites =
+    [
+        SetAuraBlue, SetAuraYellow,
+        @"j\duel\effect\eff_star0_b.bmp",
+        @"j\duel\effect\eff_star1_b.bmp",
+        @"j\duel\effect\eff_star0_y.bmp",
+        @"j\duel\effect\eff_star1_y.bmp"
+    ];
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
     private const string ExplosionManifest = @"j\duel\effect\explosion.txt";
     public static readonly string[] ExplosionSprites = Enumerable.Range(1, 7)
@@ -111,7 +123,7 @@ sealed class DatGraphics : IDisposable
         if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
-            IsPhaseBanner(name))
+            IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -128,7 +140,7 @@ sealed class DatGraphics : IDisposable
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial).Distinct(StringComparer.OrdinalIgnoreCase);
+            .Concat(SetSprites).Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial).Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
         {

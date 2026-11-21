@@ -60,7 +60,11 @@ static partial class Game
             if (duel.SetFromHand(index, out message))
             {
                 handLayouts[ViewPlayer].RemoveAt(index);
-                if (zone >= 0) BeginFlight(card, ViewPlayer, zone, origin, true, true);
+                if (zone >= 0)
+                {
+                    BeginFlight(card, ViewPlayer, zone, origin, true, true);
+                    QueueSetEffect(ViewPlayer, zone, spell: true);
+                }
                 ClearDuelSelection();
             }
         }
@@ -89,7 +93,9 @@ static partial class Game
         var origin = HandBounds(index);
         if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
         handLayouts[ViewPlayer].RemoveAt(index);
-        BeginFlight(card, ViewPlayer, zone, origin, false, setHandAction);
+        bool set = setHandAction;
+        BeginFlight(card, ViewPlayer, zone, origin, false, set);
+        if (set) QueueSetEffect(ViewPlayer, zone, spell: false);
         ClearDuelSelection();
         return true;
     }

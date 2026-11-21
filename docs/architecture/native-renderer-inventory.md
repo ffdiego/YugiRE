@@ -59,7 +59,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Explosão de destruição | `004511D0` / `005DB324` | `00456730` | `004514B0` | `effect/explosion.txt`, sete `expl*.yga` | Implementado com divergências. `DrawDestruction` usa os recursos e passes nativos. Composição raylib e retenção da carta ainda requerem comparação com o original. Comando 7C via `00405190`; outra chamada em `00405620`. |
 | Quebra / remoção alternativa | `00450C30` / `005DB314` | `00450FB0` | `00450FD0` | `effect/break.txt` | Não implementado como família separada. Distinção entre quebra e explosão ainda precisa de mapa de comandos. |
 | Revelação e deslocamento | `004182E0` / `005DA868` | `00418B60` | `00418EF0` | `card/card.txt` e arte/verso | Implementado com divergências. `DrawFlight` e `DrawHandTransfer` usam a interpolação de oito passos onde integrada. O FLIP e a troca animada de face ainda não reproduzem todos os passes. |
-| Set | `0044EFD0` / `005DB2C4` | `0044F370` | `0044F390` | `effect/set.txt` | Não implementado como efeito dedicado; movimento da carta é compartilhado no cliente. |
+| Set | `0044EFD0` / `005DB2C4` | `0044F370` | `0044F390` | `effect/set.txt`, `eff_set_b/y.bmp`, `eff_star0/1_b/y.bmp` | Implementado parcialmente: sprite central do DAT após voo, contador, escala e fade nativos; faltam scratch, coordenadas de partículas, cor, composição e frame pareado. |
 | Invocação normal | `0044F630` / `005DB2D4` | `0044F9F0` | `0044FA10` | `effect/summon.txt` | Não implementado como efeito dedicado. |
 | Invocação especial | `0044FCC0` / `005DB2E4` | `004500E0` | `00450100` | `effect/sp_summon.txt` | Não implementado como efeito dedicado. |
 | Ativação no campo | `00450260` / `005DB2F4` | `00450590` | `004505D0` | `effect/activate.txt`, pares `kouka_ue/sita_*` | Implementado com divergências. `DrawSpellActivation` e `DrawActivationSprite` usam dois YGAs e scratch dinâmico, que também existe no original. Mistura e seleção por categoria ainda divergem. Comando 72, handler `00406B20`. |
@@ -211,3 +211,23 @@ X do centro ± `(C[2t] >> 10)` e opacidade `3t`. Após `0x80`,
 `C[t−0x80] >> 8`. A Alpha usa essas fórmulas com a tabela de cosseno
 calculada pelo cliente e mistura raylib. O segundo passe do trecho
 central e o aviso de troca de jogador ainda não foram portados.
+
+## Set — integração parcial (21/11/2026)
+
+Em `0044F370`, o contador soma `0x0C` por Update até ultrapassar
+`0x100`: 22 updates (`0,12,…,252`), desativando em `264`.
+Em `0044F390`, a escala principal é `0x10000` para `t<0x80`
+e `t<<9` depois; a intensidade principal usa a tabela de cossenos
+`(C[(t−0x80)&511] × 0xB0)>>16`. O laço de partículas seleciona
+duas variantes alternadamente e usa oito lançamentos espaçados de
+16 unidades de contador, com deslocamento vertical quadrático.
+
+O índice DAT contém `eff_set_b/y.bmp` e
+`eff_star0/1_b/y.bmp`. O cliente desenha apenas o **sprite central**
+depois do voo da carta, em Set humano/CPU de ambos os lados, para
+monstros e magias/armadilhas. A correspondência lado/cor, colorkey,
+scratch, mistura, ordem de composição e posição X das partículas
+ainda não foram confirmadas. O construtor `0044EFD0`, ausente do
+ZIP atual, é necessário para recuperar as posições `obj+104h`.
+Não inventar coordenadas para as partículas. Não há frame pareado
+contra o executável original: o estado correto é **Partial**.
