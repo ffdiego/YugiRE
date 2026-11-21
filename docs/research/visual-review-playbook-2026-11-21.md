@@ -4,7 +4,7 @@ Data da rodada: **21/11/2026**, após PRs #31, #33, #34, #35, #36,
 #37, #38, #39 e #40. O objetivo é comparar **comportamento
 observável**, sem exigir equivalência da implementação nativa.
 
-A cobertura declarada é **17/31 rotinas Draw com implementação
+A cobertura declarada é **18/31 rotinas Draw com implementação
 parcial ou concluída**, **0 Verified**: essa porcentagem não
 é um índice de fidelidade em pixels. Não promover nenhuma
 rotina a Verified só porque o DAT certo é usado.
@@ -50,6 +50,7 @@ recortar primeiro a área original de 800×600.
 | Abertura `00451980` | Iniciar Alpha e duelo local | logo t=0/64/256/312 | escala, alfa, centro, background e ordem relativa à distribuição |
 | Mãos, carta `00418EF0` | Distribuição inicial, compra e descarte | primeira/última carta, dois lados | face, orientação, tamanho, interpolação, ordem |
 | Set `0044F390` | Baixar monstro e magia/armadilha, inclusive CPU | t=0/132/252; 8 estrelas | fonte e cor, posições, alfa, clipping, ordem dos 6 BMP |
+| Sacrifício `004870B0` | Invocar monstro nível 5–8 tributando 1 ou 2 monstros | t=0/128 (hold)/136/256/384; primeiro e último tributo | ordem das remoções antes do voo, 8 estrelas, textura, rotação, som, `sacrifice.txt` |
 | Invocação normal `0044FA10` | Invocar face-up dos dois lados | t=0/64/72/256 | associação de miniatura, segundo passe, fade e escala |
 | Invocação especial `00450100` | Recrutadores do deck, Morphing Jar #2 | t=0/72/184/192/312 | a/d conforme posição, quatro YGA, overlay da carta e camadas |
 | Ataque `004142C0` | Ataque direto e a monstro | mira, voo, contato, impacto | troca espada inteira/parcial, centro de contato, ângulo |
@@ -68,7 +69,7 @@ Nome sugerido para registro:
 
 ## Pendências que não devem ser tratadas como implementadas
 
-As **14 rotinas Draw** abaixo constam `Pending`
+As **13 rotinas Draw** abaixo constam `Pending`
 no inventário após PR #40. Seus entrypoints e alguma análise
 estática existem, mas faltam evidências de evento, atlas,
 protocolo de jogo ou composição para uma fatia vertical segura.
@@ -83,7 +84,6 @@ protocolo de jogo ou composição para uma fatia vertical segura.
 | `0041F870` | Corrente | fluxo de cadeia/ordem/respostas ausente no Core |
 | `004531C0` | Corrente desativada | condição do indicador durante as correntes |
 | `0043DBE0` | Exclusão | evento nativo de banimento e efeito visual correto |
-| `004870B0` | Sacrifício | evento após seleção de tributos, atlas, origem e sequência |
 | `00457520` | Moeda | ação e decisão por efeito, distribuição de quadros/resultado |
 | `00456B90` | Dado | ação e decisão por efeito, quadros/resultado |
 | `00454010` | Exodia | transição especial de vitória e animação completa |
