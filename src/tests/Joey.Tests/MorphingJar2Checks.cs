@@ -52,6 +52,8 @@ internal static class MorphingJar2Checks
 
         var byEffect = DemoDuel.FromPartialObservation(0, [],
             Slots(jar, large), Slots(opponent), 8000);
+        var specialSummons = new List<DemoSpecialSummon>();
+        byEffect.MonsterSpecialSummoned += specialSummons.Add;
         byEffect.MonsterFaceDown[0, 0] = byEffect.DefensePosition[0, 0] = true;
         check(byEffect.RevealMonsterByEffect(0, 0, out string summary) &&
               summary.Contains("excavated", StringComparison.OrdinalIgnoreCase) &&
@@ -67,6 +69,11 @@ internal static class MorphingJar2Checks
               byEffect.DeckCount(0) == 0 && byEffect.DeckCount(1) == 0 &&
               !byEffect.GameOver,
               "Morphing Jar #2: both players return their own monsters; Level 7 counts but goes to GY");
+
+        check(specialSummons.Count == 2 &&
+              specialSummons.Any(x => x.Player == 0 && x.Zone == 0 && x.Card == jar && x.FaceDownDefense) &&
+              specialSummons.Any(x => x.Player == 1 && x.Zone == 0 && x.Card == opponent && x.FaceDownDefense),
+              "Morphing Jar #2: visual placement events report both field owners without changing rules");
 
         // A card needing a special summon cannot bypass that gate just because
         // it was excavated; it still counts towards the monster quota.
