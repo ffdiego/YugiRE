@@ -166,6 +166,39 @@ internal static class LookAndFeelChecks
         catch (ArgumentOutOfRangeException) { negativeResultRejected = true; }
         check(negativeResultRejected, "Duel result: reject negative native update");
 
+        // Sacrifice 00486D80/00487060/004870B0: constructor mode 0
+        // waits at 128, released mode 1 advances to 384 and eight star
+        // particles launch 16 counter units apart after t=128.
+        var tributeCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var tributeStart = NativeTributeFrame.FromUpdate(0, released: true, tributeCosine);
+        var tributeHeld = NativeTributeFrame.FromUpdate(int.MaxValue, released: false, tributeCosine);
+        var tributeRelease = NativeTributeFrame.FromUpdate(16, released: true, tributeCosine);
+        var tributeFirstStar = NativeTributeFrame.FromUpdate(17, released: true, tributeCosine);
+        var tributeEnd = NativeTributeFrame.FromUpdate(48, released: true, tributeCosine);
+        check(NativeTributeFrame.ReleasedUpdates == 49 &&
+              tributeStart.Counter == 0 && tributeHeld.Counter == 128 &&
+              tributeRelease.Counter == 128 && tributeEnd.Counter == 384 &&
+              tributeRelease.CardOpacity == 128 &&
+              tributeStart.Particles.Count == 0 &&
+              tributeHeld.Particles.Count == 0 && tributeRelease.Particles.Count == 0,
+              "Sacrifice: native 49-update released sequence and unlimited 128-counter hold");
+        check(tributeFirstStar.Particles.Count == 1 &&
+              tributeFirstStar.Particles[0] == new NativeSetParticle(0, 1, 0) &&
+              tributeEnd.Particles.Count == 8 &&
+              tributeEnd.Particles[0].RisePixels == 64 &&
+              tributeEnd.Particles[7].RisePixels == 20,
+              "Sacrifice: eight delayed native particles alternate sprites and rise quadratically");
+        var sacrificeRadii = Enumerable.Repeat(32, NativeSetFrame.ParticleCount).ToArray();
+        check(NativeTributeFrame.ParticleOrigins(new CardPoint(400, 300),
+                  sacrificeRadii, tributeCosine).SequenceEqual(
+                      NativeSetFrame.ParticleOrigins(new CardPoint(400, 300), sacrificeRadii, tributeCosine)),
+              "Sacrifice constructor: same eight radius/angle origins as native Set");
+        bool tributeAfterEndRejected = false;
+        try { NativeTributeFrame.FromUpdate(49, released: true, tributeCosine); }
+        catch (ArgumentOutOfRangeException) { tributeAfterEndRejected = true; }
+        check(tributeAfterEndRejected,
+              "Sacrifice: reject native released counter after deactivation at 392");
+
         // Special Summon 004500E0/00450100: 41 native Updates, a/d
         // variants with four frames cycling every two Updates, plus card
         // overlay for 64 < t < 320.
