@@ -220,7 +220,7 @@ internal static class LookAndFeelChecks
         var floatRise = NativeFloatingLifeDigits.Sample(-250, 64, 10, 24, 12, floatCosine);
         var floatBounce = NativeFloatingLifeDigits.Sample(-250, 160, 10, 24, 12, floatCosine);
         var floatEnd = NativeFloatingLifeDigits.Sample(-250, 256, 10, 24, 12, floatCosine);
-        check(floatStart.Count == 0 && floatRise.Count == 3 &&
+        check(floatStart.Count == 0 && floatRise.Count == 4 &&
               floatRise[0] == new NativeFloatingLifeGlyph(0, -10, -24, 64) &&
               floatBounce[0].YOffsetPixels == -6 &&
               floatEnd.Select(x => x.GlyphIndex).SequenceEqual([0, 5, 2, 11]) &&
