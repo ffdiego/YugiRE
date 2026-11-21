@@ -59,7 +59,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Explosão de destruição | `004511D0` / `005DB324` | `00456730` | `004514B0` | `effect/explosion.txt`, sete `expl*.yga` | Implementado com divergências. `DrawDestruction` usa os recursos e passes nativos. Composição raylib e retenção da carta ainda requerem comparação com o original. Comando 7C via `00405190`; outra chamada em `00405620`. |
 | Quebra / remoção alternativa | `00450C30` / `005DB314` | `00450FB0` | `00450FD0` | `effect/break.txt` | Não implementado como família separada. Distinção entre quebra e explosão ainda precisa de mapa de comandos. |
 | Revelação e deslocamento | `004182E0` / `005DA868` | `00418B60` | `00418EF0` | `card/card.txt` e arte/verso | Implementado com divergências. `DrawFlight` e `DrawHandTransfer` usam a interpolação de oito passos onde integrada. O FLIP e a troca animada de face ainda não reproduzem todos os passes. |
-| Set | `0044EFD0` / `005DB2C4` | `0044F370` | `0044F390` | `effect/set.txt`, `eff_set_b/y.bmp`, `eff_star0/1_b/y.bmp` | Implementado parcialmente: sprite central do DAT após voo, contador, escala e fade nativos; faltam scratch, coordenadas de partículas, cor, composição e frame pareado. |
+| Set | `0044EFD0` / `005DB2C4` | `0044F370` | `0044F390` | `effect/set.txt`, `eff_set_b/y.bmp`, `eff_star0/1_b/y.bmp` | Implementado parcialmente: sprite central, oito partículas radiais do DAT, contador, escala e fade nativos. Seleção de variantes inferida; RNG, scratch, blending e frames pareados ainda pendentes. |
 | Invocação normal | `0044F630` / `005DB2D4` | `0044F9F0` | `0044FA10` | `effect/summon.txt` | Não implementado como efeito dedicado. |
 | Invocação especial | `0044FCC0` / `005DB2E4` | `004500E0` | `00450100` | `effect/sp_summon.txt` | Não implementado como efeito dedicado. |
 | Ativação no campo | `00450260` / `005DB2F4` | `00450590` | `004505D0` | `effect/activate.txt`, pares `kouka_ue/sita_*` | Implementado com divergências. `DrawSpellActivation` e `DrawActivationSprite` usam dois YGAs e scratch dinâmico, que também existe no original. Mistura e seleção por categoria ainda divergem. Comando 72, handler `00406B20`. |
@@ -223,11 +223,21 @@ duas variantes alternadamente e usa oito lançamentos espaçados de
 16 unidades de contador, com deslocamento vertical quadrático.
 
 O índice DAT contém `eff_set_b/y.bmp` e
-`eff_star0/1_b/y.bmp`. O cliente desenha apenas o **sprite central**
-depois do voo da carta, em Set humano/CPU de ambos os lados, para
-monstros e magias/armadilhas. A correspondência lado/cor, colorkey,
-scratch, mistura, ordem de composição e posição X das partículas
-ainda não foram confirmadas. O construtor `0044EFD0`, ausente do
-ZIP atual, é necessário para recuperar as posições `obj+104h`.
-Não inventar coordenadas para as partículas. Não há frame pareado
-contra o executável original: o estado correto é **Partial**.
+`eff_star0/1_b/y.bmp`. O cliente desenha o sprite central **e as
+oito partículas** depois do voo de Set humano/CPU de ambos os lados,
+para monstros e magias/armadilhas. Em 21/11/2026, o SQLite global
+recuperou o construtor `0044EFD0`, ausente do ZIP inicial: a cada
+partícula um gerador MT compartilhado escolhe raio de 16 a 47 px e a
+posição `obj+104h + 8*i` é calculada com `cos[i*64]` e
+`cos[(i*64−128)&511]` x16.16 em torno do centro. O Draw desloca cada
+partícula verticalmente por `floor(age²/16)` e alterna a variante
+`age & 1`. `00402690` revela seleção pela categoria monstro vs.
+magia/armadilha, não pela perspectiva do jogador.
+
+O cliente usa `Random.Shared` para os oito raios, sem replicar o estado
+MT do jogo; a tabela de cosseno ainda é calculada em C# e a ordem dos
+BMPs/colorkey, scratch e blending precisa ser confirmada com o
+`set.txt` do DAT e capturas pareadas. Há detalhes e SQL em
+`docs/research/native-set-particles.md` e
+`docs/research/joey-knowledge-sqlite.md`. Sem comparação visual
+pareada, o estado continua **Partial**, não `Verified`.
