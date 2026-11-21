@@ -35,6 +35,13 @@ sealed class DatGraphics : IDisposable
     [
         LifeBackgroundNear, LifeBackgroundFar, LifeFillNear, LifeFillFar, LifeNumberFont
     ];
+    public const string SpecialSummonManifest = @"j\duel\effect\sp_summon.txt";
+    public static readonly string[] SpecialSummonAttackSprites =
+        Enumerable.Range(1, NativeSpecialSummonFrame.SpiralFrameCount)
+            .Select(frame => $@"j\duel\effect\sp_sum_a{frame}.yga").ToArray();
+    public static readonly string[] SpecialSummonDefenseSprites =
+        Enumerable.Range(1, NativeSpecialSummonFrame.SpiralFrameCount)
+            .Select(frame => $@"j\duel\effect\sp_sum_d{frame}.yga").ToArray();
     private const string ExplosionManifest = @"j\duel\effect\explosion.txt";
     public static readonly string[] ExplosionSprites = Enumerable.Range(1, 7)
         .Select(index => $@"j\duel\effect\expl{index}.yga").ToArray();
@@ -191,6 +198,14 @@ sealed class DatGraphics : IDisposable
         }
         _ = NativeYgaSprite.Decode(archive.Read(AttackImpact), static (data, size) => Archive.Decode(data, size));
         count++;
+        foreach (string name in SpecialSummonAttackSprites.Concat(SpecialSummonDefenseSprites))
+        {
+            var spiral = NativeYgaSprite.Decode(archive.Read(name),
+                static (data, size) => Archive.Decode(data, size));
+            if (spiral.Width <= 0 || spiral.Height <= 0)
+                throw new InvalidDataException($"Invalid special-summon YGA: {name}");
+            count++;
+        }
         var explosionEntries = System.Text.Encoding.ASCII.GetString(archive.Read(ExplosionManifest))
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (!explosionEntries.Select(name => @"j\duel\effect\" + name)

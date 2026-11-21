@@ -9,7 +9,7 @@ class VisualCoverageTests(unittest.TestCase):
     def test_manifest_covers_unique_native_draw_entries(self):
         rows = load()
         self.assertEqual(len(rows), 31)
-        self.assertEqual(sum(r["status"] != "Pending" for r in rows), 13)
+        self.assertEqual(sum(r["status"] != "Pending" for r in rows), 14)
         self.assertEqual(len({r["address"] for r in rows}), len(rows))
         self.assertEqual(sum(r["address"] == "00418EF0" for r in rows), 1)
         known = inventory_draws(INVENTORY.read_text(encoding="utf-8"))
@@ -18,13 +18,13 @@ class VisualCoverageTests(unittest.TestCase):
 
     def test_generated_badge_is_checked_in(self):
         outputs, stats = generated()
-        self.assertEqual((stats["covered"], stats["total"], stats["verified"]), (13, 31, 0))
+        self.assertEqual((stats["covered"], stats["total"], stats["verified"]), (14, 31, 0))
         for path, expected in outputs.items():
             with self.subTest(path=path):
                 self.assertTrue(path.is_file())
                 self.assertEqual(path.read_text(encoding="utf-8"), expected)
         badge = json.loads(next(x for p, x in outputs.items() if p.name == "visual.json"))
-        self.assertEqual(badge["message"], "13/31 (41.94%)")
+        self.assertEqual(badge["message"], "14/31 (45.16%)")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ public enum DemoPhase { Main, Battle, End }
 
 public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
+/// <summary>Presentation-only notification, emitted after an effect places a monster.</summary>
+public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense);
 
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
@@ -11,6 +13,7 @@ public sealed class DemoDuel
 {
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
     public event Action<DemoHandTransfer>? HandTransferred;
+    public event Action<DemoSpecialSummon>? MonsterSpecialSummoned;
     private readonly List<Card>[] hands = [[], []];
     private readonly Queue<Card>[] decks = [new(), new()];
     // Seeded sandbox-only effect shuffling; separate from initial deck randomization.
@@ -1066,6 +1069,7 @@ public sealed class DemoDuel
                     MonsterFaceDown[p, zone] = DefensePosition[p, zone] = true;
                     changedPosition[p, zone] = true;
                     attacked[p, zone] = false;
+                    MonsterSpecialSummoned?.Invoke(new(p, zone, card, true));
                     summoned++;
                 }
                 else
@@ -1250,6 +1254,7 @@ public sealed class DemoDuel
         MonsterWasFlipped[owner, zone] = false;
         changedPosition[owner, zone] = true;
         attacked[owner, zone] = false;
+        MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense));
     }
 
     public bool SkipOptionalCardSelection(out string message)
