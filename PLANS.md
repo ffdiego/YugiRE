@@ -11,6 +11,8 @@
 5. Manter `Joey.Core` independente de Frida e de tempo de animação; não apagar o laboratório legado.
 6. Para **todos os elementos visuais**, a meta é reproduzir coordenadas, dimensões, orientação, recursos, composição, contadores e duração **do Joey original**, mesmo com código de renderização e scheduler C# diferentes. A análise estática recupera parâmetros; vídeo e capturas comparam frames. Consultar [meta visual em pixels](docs/architecture/visual-fidelity-goal.md). Uma aproximação é uma pendência, não o contrato final.
 
+7. Os recursos de apresentação devem ser lidos do **`data.dat` original em runtime**; caches em memória são permitidos, mas a alpha fiel não deve usar sprites temporários/placeholders como aparência final. As animações devem preservar trocas de variante e quadros intermediários (ex.: espada inteira/espada aparentemente inserida na carta), não apenas posição inicial/final. Falta de recurso ou transição não investigada deve ser documentada e visível para revisão.
+
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 
 - **Cálculo de atributos efetivos** a partir do estado: bases, magia de campo, equipamento, efeitos contínuos e temporários. Evitar aplicar bônus permanentes ao valor base.
@@ -72,6 +74,8 @@
 - [x] Prévia visual de ativação jogável em raylib com os quatro YGAs originais carregados do DAT local, modelo nativo de três passes, clock de protótipo e perfis Classic/Fast/Instant; testes C# e verificação opcional de assets.
 - [x] **Pausa histórica** após a prévia de ativação para priorizar Iteração B; **superada pela meta atual de alpha com fidelidade visual**, sem abandonar as regras.
 - [ ] Recuperar e aplicar o contrato nativo de renderização da carta: ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
+- [ ] Substituir placeholders remanescentes do fluxo visual padrão por **sprites originais carregados do DAT local**, usando manifests e seleção de variantes para cada estado; não versionar os assets. Testar aviso explícito de asset faltante e evitar substituição silenciosa.
+- [ ] Reconstituir estaticamente e validar a **troca de sprite da espada de ataque** ao atingir a carta, investigando os BMPs `j\\duel\\effect\\atk_icon.bmp` e `atk_icon2.bmp`, o frame/estado de transição, clipping, pivô e camada; preservar a ilusão de penetração relatada no vídeo, sem declarar seus detalhes como comprovados antes da análise.
 - [ ] Criar matriz de comparação por elemento visual e estados/quadros-chave contra Joey original: coordenadas/dimensões/ângulos e contagem de updates; registrar valores ainda provisórios em vez de arredondar silenciosamente.
 - [ ] Expandir sistematicamente a fidelidade de todas as telas/efeitos visuais, depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 - [ ] Confirmar cadência nativa de update/draw, tabela de cossenos x16.16 e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.

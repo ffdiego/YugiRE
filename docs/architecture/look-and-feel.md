@@ -11,6 +11,14 @@ O objetivo do `Joey.LookAndFeel` é a **fidelidade de pixels e de tempo** do `jo
 
 Contadores nativos, cadência nominal (Classic/Speedy), tempos efetivos e espera por decisões são medidas diferentes. Manter velocidade Classic como alvo do executável quando conhecida, sem converter contadores em milissegundos arbitrários; `Fast` e `Instant` são perfis opcionais deliberadamente não idênticos. Registrar os dados como confirmado por Ghidra, observado no vídeo/original, derivado ou provisório. Testar estados e quadros equivalentes e comparar resultados em pixels/updates. [Contrato completo de fidelidade](visual-fidelity-goal.md).
 
+## Recursos visuais: DAT como fonte de verdade
+
+Para o modo fiel, todos os sprites e variantes **existentes no original** devem vir do `data.dat` local em tempo de execução pelo leitor de arquivos do projeto. Carregar sob demanda e manter em cache texturas/frames decodificados em memória ou GPU é permitido; `sempre ler do DAT` significa **não depender de placeholders ou arquivos externos extraídos/substitutos como fonte visual padrão**, e não executar leitura física repetida em cada desenho.
+
+A apresentação deve selecionar **a variante correta em cada estado e update**, mantendo detalhes aparentemente pequenos: imagens de entrada/impacto/saída, cortes da espada, sobreposição atrás da carta, sprites parcialmente ocultos, opacidade e ordem de desenho. Para ataque, o DAT já contém `j\\duel\\effect\\atk_icon.bmp` e `atk_icon2.bmp`; o vídeo sugere a troca ao atingir a carta, mas o momento e o mecanismo devem ser confirmados pela análise de Update/Draw no Ghidra.
+
+Fallbacks geométricos genéricos ficam restritos a testes, ferramentas e modo de diagnóstico explicitamente indicado. Se um asset nativo não for encontrado/decodificado, registrar a falta com seu caminho e bloquear a declaração de fidelidade daquele elemento, em vez de substituir silenciosamente. Temas visuais customizados podem continuar como uma opção separada, que não comprova fidelidade ao Joey.
+
 ## Componentes
 
 A consolidação da análise estática da branch `analise-visual` foi organizada

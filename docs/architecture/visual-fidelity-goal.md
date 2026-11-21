@@ -21,6 +21,36 @@ A referência espacial é o canvas lógico do Joey em **800×600**. Comparar no 
 
 Não confundir **orientação de 180° do adversário** com **face-down**: frente/verso e rotação são variáveis independentes. A rotação de defesa também deve compor com o lado. O código atual do cliente pode estar incorreto mesmo quando a regra do Core estiver correta.
 
+## Política de recursos: sprites originais e variantes obrigatórios
+
+**Fonte única para o visual fiel:** os recursos originais armazenados no `data.dat` local fornecido pelo usuário, acessados **em runtime** por `DatGraphics`/leitor de archive existente (BMP, YGA e manifests relevantes). Recursos externos, texturas desenhadas no código e imagens provisórias **não substituem** um sprite nativo existente no caminho de execução fiel. Isso vale para fundo, verso e frente das cartas, mão, números/ícones quando baseados em imagens, HUD, botões, fases, espadas, efeitos, explosões e detalhes temporários. Onde o original renderiza texto por GDI em vez de sprite, investigar sua fonte/metrics em vez de inventar um asset supostamente armazenado no DAT.
+
+**Performance:** ler e decodificar no primeiro uso, com cache de CPU/GPU, atlas ou pré-carregamento é aceitável. O requisito é que a procedência do recurso seja o DAT local em execução, **não que o arquivo seja relido do disco a cada frame**. Não exportar a árvore proprietária para assets versionados. Custom skins são um modo alternativo explícito, sem alegação de paridade visual.
+
+**Sem placeholders silenciosos:** se um recurso estiver ausente, tiver caminho incorreto ou falhar ao decodificar, reportar `asset path + ação + motivo` no log/diagnóstico; não desenhar uma aproximação genérica como se fosse fiel. Um modo de desenvolvimento separado pode usar placeholder visivelmente identificado para manter a alpha utilizável, mas isso constitui desvio de fidelidade conhecido.
+
+### Trocas de sprite fazem parte da animação
+
+A animação nativa pode usar **vários recursos visuais diferentes**, não apenas transladar/rotacionar um sprite até seu destino. Para cada evento animado, investigar e preservar:
+
+- Identidade e caminho de **cada sprite/variante/frame**, seu recorte e transparência/colorkey; nunca inventar um substituto quando o DAT contiver o frame real.
+- Condição exata de seleção/troca (estado, counter, fase de impacto, posição, colisão, callback, flag), frame/update, pivô, posição, orientação, escala e camada.
+- Ordem de composição em relação ao monstro/ataque/partículas, inclusive partes desenhadas atrás da carta ou parcialmente ocultas para produzir o efeito original.
+- Independência das regras do Core: a mudança de sprite é visual; o impacto e o dano lógico são eventos próprios.
+
+**Caso de referência: espada de ataque.** O inventário em [`native-visual-contract.md`](native-visual-contract.md) identifica `j\\duel\\effect\\atk_icon.bmp` e `j\\duel\\effect\\atk_icon2.bmp` como dois BMPs distintos de aproximadamente **35 × 71**. O usuário observou no vídeo que, quando a espada alcança a carta, parece trocar para uma variante de lâmina parcialmente escondida, simulando que ela entrou na carta. **Isso é observação visual, não comprovação estática da lógica de troca.** Rastrear no Ghidra o seletor desses recursos, a condição/tick da transição e o clipping/ordem de desenho antes de codificar a sequência como nativa. Um único sprite que apenas viaja até o alvo **não é suficiente** para concluir fidelidade dessa animação.
+
+### Matriz de teste para recursos e troca de variante
+
+| Cenário | Verificação |
+| --- | --- |
+| Sprite estático (carta, verso, fundo, HUD) | Caminho do recurso no DAT, dimensões nativas, recorte, cor-chave e posição em 800×600 |
+| Ataque antes do contato | Sprite completo correto, origem, rotação, trajetória e camada |
+| Ataque no contato | Escolha da variante parcial, frame de troca, sobreposição/clipping em relação à carta |
+| Ataque após impacto | Variante final, desaparecimento e ordem com dano/destruição |
+| Asset ausente ou não decodificável | Diagnóstico explícito; nenhum placeholder silencioso em modo fiel |
+| Classic/Fast/Instant | Mesmas variantes/ordem lógica; diferenças de cadência intencionais e documentadas |
+
 ## Tempo e ordenação
 
 - Recuperar da análise estática o **contador por update**, seu incremento, a condição de término, os estados e a origem das esperas; separar `Update`, `Draw`, produtor de comandos, consumidor e pausas de UI.
@@ -52,6 +82,7 @@ Uma medida estática não demonstra sozinha que o mesmo caminho é usado em todo
 - **Geometria:** para elementos estáticos com coordenadas nativas conhecidas, alvo **exato em pixels lógicos** (erro 0 px em `x,y,w,h`). Para elementos animados, comparar a coordenada/arredondamento a cada update ou em quadros-chave equivalentes. Não alegar erro zero sem comparação.
 - **Orientação e composição:** frente/verso, rotação, ordem de camadas, ancoragem de texto e clipping corretos para os dois lados e todas as posições. Testar ataque/defesa × face-up/down × próprio/adversário.
 - **Tempo:** para animações com contador e cadência demonstrados, alvo de **mesmo número de updates** e mesma ordem de eventos; discrepâncias em frames ou milissegundos devem ser medidas, não corrigidas por feeling.
+- **Fidelidade de assets e estados:** usar recursos reais do DAT e testar seleção de variantes por estado/update; o resultado não passa como fiel se omite frame intermediário ou troca por um desenho aproximado. O caso de impacto da espada é teste obrigatório ao implementar a animação completa de ataque.
 - **Pixels finais:** quando houver sprites, cores e blending recuperáveis, comparar capturas em coordenadas equivalentes; diferença bitmap completa pode depender de GDI vs. GPU, antialiasing, driver e captura. Registrar diferenças residuais sem usar a divergência de implementação como justificativa para posições erradas.
 - **Escopo:** correção localizada não encerra o objetivo global. Priorizar na alpha a sequência carta/campo/ATK-DEF/ataque/fase/LP/UI e expandir até todas as famílias visuais.
 
