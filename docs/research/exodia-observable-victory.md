@@ -1,8 +1,9 @@
 # Exodia — condição de vitória observável (sandbox Core)
 
-**Estado:** regra lógica implementada; animação `00454010` ainda
-`Pending` no inventário Draw. Esta distinção é deliberada:
-um duelo terminar corretamente não equivale a reproduzir a cena.
+**Estado:** regra lógica implementada; **primeira etapa** do Draw
+`00454010` parcialmente portada. A animação posterior da figura
+montada de Exodia continua pendente, e nenhuma paridade visual foi
+demonstrada.
 
 ## Evidência e contrato
 
@@ -19,11 +20,11 @@ O índice do DAT confirma `j\duel\exodia\exodia.txt`,
 `card_hikari.yga`, `effe_hikari.bmp`,
 `exo_face1..3.yga`, `exo_arm1..3.yga`,
 `exo_arml1..3.yga` e `exo_ball.yga`.
-**Não está confirmado** como os recursos se distribuem
-pelos estados temporais de `00454010`, nem como o sprite
-de cada carta se movimenta. Não inventar associação de
-sprites ou promover esta rotina a `Partial` antes de
-implementar uma etapa vertical sustentada pelas evidências.
+A decompilação do Draw permite recuperar o **primeiro ramo**,
+que usa as miniaturas das cinco cartas de `data/mini/list_card.txt`.
+A correspondência entre os BMP/YGA de Exodia e os ramos
+posteriores a esse primeiro trecho **não está confirmada**.
+Apenas o primeiro ramo foi integrado como `Partial`.
 
 O contrato observável do jogo de cartas é possuir **cinco peças
 distintas simultaneamente na própria mão**: cabeça, braço direito,
@@ -62,9 +63,11 @@ Locais em que o estado da mão pode ficar completo:
 O evento de transferência de carta ocorre **antes**
 de `ExodiaCompleted` quando a quinta peça é comprada,
 para permitir uma futura animação após o voo da carta.
-A máquina lógica encerra o duelo independentemente do
-renderer; o banner de resultado genérico existente na Alpha
-continua em uso até portar o efeito Exodia nativo.
+A máquina lógica encerra o duelo independentemente do renderer.
+A Alpha enfileira a primeira fase orbital **depois** do voo da
+quinta carta, quando existente. O banner de vitória genérico
+só começa após essa primeira fase; as etapas posteriores do
+efeito Exodia permanecem sem reimplementação.
 
 ## Cobertura de regressão
 
@@ -91,9 +94,53 @@ continua em uso até portar o efeito Exodia nativo.
   o Core deixa as operações já comprometidas terminarem;
   a ordem de apresentação com o encerramento nativo
   exige captura pareada.
-- Sem equivalência da animação `00454010`; o HUD usa
-  o aviso de vitória geral já implementado.
+- A primeira janela do Draw (`0 ≤ t < 316`) foi portada,
+  mas o restante da animação, as imagens finais e os sons
+  permanecem sem equivalência; o HUD usa o aviso de vitória
+  geral após essa janela.
 
-**Métrica visual:** permanece **18/31 (58,06%) Partial**,
-com **0 Verified**; adicionar a regra de vitória não conta
-como reimplementar o Draw de Exodia.
+## Primeira janela visual de 00454010 (21/11/2026)
+
+`00454000` soma `4` ao contador do objeto por Update.
+O primeiro ramo do Draw, `t < 0x13C`, tem **79 amostras**
+`0, 4, …, 312` e itera cinco vezes, desenhando uma
+miniatura por peça de Exodia.
+
+Para a miniatura `i` de 0 a 4:
+
+```text
+angle = floor(i * 512 / 5)
+alpha = clamp(t * 16 - 256 * i, 0, 255)
+X = 400 + trunc_to_zero(C[(angle + 128) & 511] * 200 / 65536)
+Y = 300 - trunc_to_zero(C[angle] * 200 / 65536)
+    + floor((256 - alpha) / 4)
+```
+
+A coordenada é o **centro** do BMP (o Draw original
+subtrai metade das dimensões), num círculo de raio
+200 pixels em torno de `(400,300)`. Cada carta entra
+com atraso de 16 unidades no contador nativo, desaparecida
+64 pixels abaixo do ponto final, e chega ao ponto de
+destino com opacidade 255. A Alpha usa a tabela de
+cosseno aproximada do `Joey.LookAndFeel`, miniaturas
+originais do DAT e uma sequência de 79 Updates.
+
+A ordem dos arquivos de miniatura é a das cinco cartas
+retornadas por `ExodiaRules` (cabeça, braços, pernas).
+**A ordem de colocação nativa dos cinco recursos e sua
+orientação exata ainda precisam de captura pareada.**
+
+O Draw decompilado entra em outro ramo a partir de
+`t=316`, com composição, texturas, brilhos e
+movimentos da figura de Exodia mais complexos. Em vez
+de inventar essa etapa, a Alpha termina a animação
+orbital e então apresenta o banner comum de vitória.
+
+A `NativeExodiaOpeningFrame` valida contadores, os
+cinco centros, opacidades e a transição após o voo.
+A função `00454010` passa a constar como **Partial**,
+não `Verified`.
+
+**Métrica visual:** **19/31 (61,29%) Partial**, com
+**0 Verified**; a contagem considera apenas esta primeira
+fatia do Draw de Exodia.

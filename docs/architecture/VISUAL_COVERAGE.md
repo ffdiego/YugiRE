@@ -5,7 +5,7 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 18/31 (58.06%).**
+**Implementadas (inclusive parciais): 19/31 (61.29%).**
 **Validadas no Joey original: 0/31.**
 
 Partial indica um componente visual C# relacionado, mas divergências
@@ -44,7 +44,7 @@ comparação com o executável original. Esta badge mede implementação,
 | `004870B0` | Sacrifício | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `00457520` | Moeda | Pending | — |
 | `00456B90` | Dado | Pending | — |
-| `00454010` | Exodia | Pending | — |
+| `00454010` | Exodia | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `004584C0` | Vija | Pending | — |
 
 O conjunto de endereços deve corresponder ao inventário.
