@@ -23,6 +23,11 @@ sealed class DatGraphics : IDisposable
         @"j\duel\effect\eff_star1_y.bmp"
     ];
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    public const string DuelStartEnglish = @"j\duel\effect\duel_start_e.bmp";
+    public const string DuelWinEnglish = @"j\duel\effect\duel_win_e.yga";
+    public const string DuelLoseEnglish = @"j\duel\effect\duel_lose_e.yga";
+    public const string DuelDrawEnglish = @"j\duel\effect\duel_draw_e.yga";
+    public static readonly string[] DuelResultsEnglish = [DuelWinEnglish, DuelLoseEnglish, DuelDrawEnglish];
     // Native LP resources indexed in data.dat; the exact bar layer order and
     // font color remain provisional pending frame-paired visual comparison.
     public const string LifeBackgroundNear = @"j\duel\life\lp_jibu1.bmp";
@@ -155,7 +160,8 @@ sealed class DatGraphics : IDisposable
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
-            LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase))
+            LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+            name.Equals(DuelStartEnglish, StringComparison.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -173,7 +179,8 @@ sealed class DatGraphics : IDisposable
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
             .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts)
-            .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial)
+            .Append(DuelDetailBackground).Append(DuelStartEnglish)
+            .Append(AttackSword).Append(AttackSwordPartial)
             .Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
@@ -207,12 +214,13 @@ sealed class DatGraphics : IDisposable
         }
         _ = NativeYgaSprite.Decode(archive.Read(AttackImpact), static (data, size) => Archive.Decode(data, size));
         count++;
-        foreach (string name in SpecialSummonAttackSprites.Concat(SpecialSummonDefenseSprites))
+        foreach (string name in SpecialSummonAttackSprites.Concat(SpecialSummonDefenseSprites)
+                     .Concat(DuelResultsEnglish))
         {
             var spiral = NativeYgaSprite.Decode(archive.Read(name),
                 static (data, size) => Archive.Decode(data, size));
             if (spiral.Width <= 0 || spiral.Height <= 0)
-                throw new InvalidDataException($"Invalid special-summon YGA: {name}");
+                throw new InvalidDataException($"Invalid effect YGA: {name}");
             count++;
         }
         var explosionEntries = System.Text.Encoding.ASCII.GetString(archive.Read(ExplosionManifest))
