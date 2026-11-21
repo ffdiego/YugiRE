@@ -29,8 +29,8 @@ public readonly record struct NativeTributeFrame(
         if (cosineFixed16.Length != 512)
             throw new ArgumentException("Expected 512 cosine x16.16 entries.", nameof(cosineFixed16));
 
-        int counter = released ? checked(update * UpdateIncrement) :
-            Math.Min(checked(update * UpdateIncrement), HoldCounter);
+        int counter = released ? update * UpdateIncrement :
+            update >= HoldCounter / UpdateIncrement ? HoldCounter : update * UpdateIncrement;
         int since = counter - HoldCounter;
         // Main effect opacity from 004870B0, with fixed point x16.16.
         int opacity = since < 0
