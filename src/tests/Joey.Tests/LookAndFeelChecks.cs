@@ -37,6 +37,24 @@ internal static class LookAndFeelChecks
               "Presentation ticks: both rates reach the same card travel endpoint independently of frame partitioning");
         check(tickClock.Advance(TimeSpan.FromSeconds(1), instant) == 0,
               "Presentation ticks: Instant skips elapsed animations");
+        var sequence = new PresentationSequence<string>();
+        sequence.Enqueue("travel", CardTravel.Updates);
+        sequence.Enqueue("glow", ActivationEffectPlayback.MaxUpdates);
+        sequence.Advance(7);
+        check(sequence.Current?.Kind == "travel" && sequence.ElapsedUpdates == 7,
+              "Presentation sequence: glow waits until the last movement step");
+        sequence.Advance(1);
+        check(sequence.Current?.Kind == "glow" && sequence.ElapsedUpdates == 0,
+              "Presentation sequence: glow starts at zero when movement finishes");
+        sequence.Clear();
+        sequence.Enqueue("travel", CardTravel.Updates);
+        sequence.Enqueue("glow", ActivationEffectPlayback.MaxUpdates);
+        sequence.Advance(12);
+        check(sequence.Current?.Kind == "glow" && sequence.ElapsedUpdates == 4,
+              "Presentation sequence: a skipped render preserves elapsed time across the FIFO boundary");
+        sequence.Advance(int.MaxValue);
+        check(sequence.Current is null && sequence.ElapsedUpdates == 0,
+              "Presentation sequence: completion discards surplus time");
         var clock = new DuelPresentationClock(classic);
         clock.Show(DuelPresentationCue.FlipReveal);
         clock.Advance(TimeSpan.FromMilliseconds(100));

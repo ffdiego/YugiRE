@@ -143,7 +143,7 @@ static partial class Game
             travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
             if (travelUpdate >= CardTravel.Updates) flight = null;
         }
-        if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || flight is not null || spellActivation.IsPlaying || DestructionBusy) return;
+        if (alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || flight is not null || ActivationBusy || DestructionBusy) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;
         int? owner = CpuDuelController.PendingOwner(duel);
@@ -173,7 +173,8 @@ static partial class Game
         else if (step.SourceZone is int spellZone &&
                  step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
         {
-            BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true));
+            Rectangle? origin = step.HandIndex is int index ? CpuHandBounds(index, handCount) : null;
+            BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true), origin);
         }
         else if (step.Action == CpuAction.Position && step.SourceZone is int zone && duel.MonsterWasFlipped[step.Player, zone])
         {

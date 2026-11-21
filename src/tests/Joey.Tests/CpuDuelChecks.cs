@@ -40,7 +40,7 @@ internal static class CpuDuelChecks
         var activation = State(1, [Spell(342)], deck: [weak]);
         activation.Spells[1, 0] = Spell(1002, 21);
         cpu.Step(activation);
-        check(cpu.Step(activation) is { Action: CpuAction.Spell, SourceZone: 1, Card.Id: 342 } &&
+        check(cpu.Step(activation) is { Action: CpuAction.Spell, SourceZone: 1, HandIndex: 0, Card.Id: 342 } &&
             activation.Spells[1, 1] is null && activation.Graveyard(1).Last().Id == 342,
             "CPU: spell activation reports its display zone even after the spell leaves the field");
 

@@ -138,7 +138,7 @@ public sealed class CpuDuelController
                 duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
-                source: duel.FirstFreeSpellZone());
+                source: duel.FirstFreeSpellZone(), handIndex: spell);
 
             for (int z = 0; z < 5; z++)
             {
@@ -181,7 +181,7 @@ public sealed class CpuDuelController
                 if (target < 0) continue;
                 int index = i;
                 return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index],
-                    source: duel.FirstFreeSpellZone(), target: target);
+                    source: duel.FirstFreeSpellZone(), target: target, handIndex: index);
             }
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);

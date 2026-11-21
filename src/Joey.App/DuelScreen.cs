@@ -70,11 +70,12 @@ static partial class Game
         else
         {
             int zone = duel.FirstFreeSpellZone();
+            var origin = HandBounds(index % 6);
             if (!duel.Play(index, out message)) return;
             if (FieldSpellRules.Supports(card.Id))
-                BeginCardActivation(card, FieldZoneBounds(ViewPlayer));
+                BeginCardActivation(card, FieldZoneBounds(ViewPlayer), origin);
             else if (zone >= 0 && card.ClassCode == 22)
-                BeginCardActivation(card, ZoneBounds(ViewPlayer, zone, true));
+                BeginCardActivation(card, ZoneBounds(ViewPlayer, zone, true), origin);
             ClearDuelSelection();
         }
     }
@@ -160,7 +161,8 @@ static partial class Game
             Label("FIELD", (int)fieldRect.X + 7, (int)fieldRect.Y - 15, 11, Gold);
             if (duel.FieldSpells[player] is Card fieldCard)
             {
-                DrawFieldCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
+                if (!ActivationInFlight(fieldRect))
+                    DrawFieldCard(fieldCard, fieldRect, duel.FieldSpellFaceDown[player]);
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
@@ -188,7 +190,7 @@ static partial class Game
                     { Effect: DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne } &&
                     duel.IsMarkedForBattleDestruction(player, zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
-                if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true))
+                if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true) && !ActivationInFlight(spellRect))
                     DrawFieldCard(spell, spellRect, duel.SpellFaceDown[player, zone]);
                 if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
@@ -209,9 +211,10 @@ static partial class Game
                     {
                         var equip = ViewHand[hand];
                         int sourceZone = duel.FirstFreeSpellZone();
+                        var origin = HandBounds(hand % 6);
                         if (duel.Equip(hand, player, zone, out message))
                         {
-                            BeginCardActivation(equip, ZoneBounds(ViewPlayer, sourceZone, true));
+                            BeginCardActivation(equip, ZoneBounds(ViewPlayer, sourceZone, true), origin);
                             ClearDuelSelection();
                         }
                     }
@@ -267,8 +270,8 @@ static partial class Game
         TimeSpan frameElapsed = TimeSpan.FromSeconds(Math.Clamp(Raylib.GetFrameTime(), 0, 1));
         presentation.Advance(frameElapsed);
         int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
-        bool activationWasPlaying = spellActivation.IsPlaying;
-        spellActivation.Advance(frameElapsed, presentation.Style);
+        bool activationWasPlaying = ActivationBusy;
+        AdvanceSpellActivation(frameElapsed);
         if (!activationWasPlaying && attackCue is null)
             AdvanceDestructions(frameElapsed);
         if (alphaCpu is null || HumanChoice) ApplyOptionalEffectPromptPolicy();
@@ -276,7 +279,7 @@ static partial class Game
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
-        bool showingMotion = flight is not null || attackCue is not null || spellActivation.IsPlaying || DestructionBusy;
+        bool showingMotion = flight is not null || attackCue is not null || ActivationBusy || DestructionBusy;
         bool turnInput = !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !showingMotion && !alphaBlocked && HumanChoice;
