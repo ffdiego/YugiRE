@@ -53,7 +53,9 @@ internal static class MorphingJar2Checks
         var byEffect = DemoDuel.FromPartialObservation(0, [],
             Slots(jar, large), Slots(opponent), 8000);
         var specialSummons = new List<DemoSpecialSummon>();
+        var shuffledDecks = new List<int>();
         byEffect.MonsterSpecialSummoned += specialSummons.Add;
+        byEffect.DeckShuffled += shuffledDecks.Add;
         byEffect.MonsterFaceDown[0, 0] = byEffect.DefensePosition[0, 0] = true;
         check(byEffect.RevealMonsterByEffect(0, 0, out string summary) &&
               summary.Contains("excavated", StringComparison.OrdinalIgnoreCase) &&
@@ -70,6 +72,8 @@ internal static class MorphingJar2Checks
               !byEffect.GameOver,
               "Morphing Jar #2: both players return their own monsters; Level 7 counts but goes to GY");
 
+        check(shuffledDecks.SequenceEqual([0, 1]),
+              "Morphing Jar #2: deck-shuffle visual events are emitted after both actual deck commits");
         check(specialSummons.Count == 2 &&
               specialSummons.Any(x => x.Player == 0 && x.Zone == 0 && x.Card == jar && x.FaceDownDefense) &&
               specialSummons.Any(x => x.Player == 1 && x.Zone == 0 && x.Card == opponent && x.FaceDownDefense),
