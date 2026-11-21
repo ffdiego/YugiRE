@@ -18,6 +18,9 @@ static partial class Game
     sealed record CardFlight(Card Card, bool Hidden, bool Defense, int Player, int Zone, bool Spell,
         Rectangle Origin, Rectangle Destination);
     static CardFlight? flight;
+    // Tribute monsters must disappear before the incoming card's travel.
+    // Core already committed the summon; this only delays its visual flight.
+    static CardFlight? deferredTributeFlight;
     static readonly PresentationTickClock travelClock = new();
     static int travelUpdate;
     sealed record AttackCue(CardPoint Origin, CardPoint Target, bool NearSide, bool AlreadyAimed);
@@ -76,6 +79,7 @@ static partial class Game
         ResetDuelDetail();
         ResetDuelResultNotice();
         flight = null;
+        deferredTributeFlight = null;
         travelClock.Reset();
         hoverClock.Reset();
         attackCue = null;
@@ -99,15 +103,32 @@ static partial class Game
     static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
     {
         if (alphaCpu is null || !presentation.Style.PlayAnimations) return;
-        travelUpdate = 0;
-        travelClock.Reset();
-        flight = new(card, hidden, !spell && hidden, player, zone, spell, origin,
+        var planned = new CardFlight(card, hidden, !spell && hidden, player, zone, spell, origin,
             ToRectangle(DuelCardLayout.OnBoard(spell ? DuelCardZone.Spell : DuelCardZone.Monster,
                 player == ViewPlayer, zone, false, hidden).Bounds));
+        if (!spell && HasQueuedTributesFor(player))
+        {
+            deferredTributeFlight = planned;
+            return;
+        }
+        travelUpdate = 0;
+        travelClock.Reset();
+        flight = planned;
+    }
+
+    static void ResumeTributeSummonFlight()
+    {
+        if (deferredTributeFlight is not { } planned) return;
+        deferredTributeFlight = null;
+        travelUpdate = 0;
+        travelClock.Reset();
+        flight = planned;
     }
 
     static bool InFlight(int player, int zone, bool spell) =>
-        flight is { } f && (f.Player, f.Zone, f.Spell) == (player, zone, spell);
+        flight is { } f && (f.Player, f.Zone, f.Spell) == (player, zone, spell)
+        || deferredTributeFlight is { } pending &&
+           (pending.Player, pending.Zone, pending.Spell) == (player, zone, spell);
 
     static void DrawFlight()
     {
