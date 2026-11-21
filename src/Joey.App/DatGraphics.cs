@@ -30,6 +30,10 @@ sealed class DatGraphics : IDisposable
     public const string LifeFillNear = @"j\duel\life\lp_jibu2.bmp";
     public const string LifeFillFar = @"j\duel\life\lp_aite2.bmp";
     public const string LifeNumberFont = @"j\duel\font\duel_fontm_y.bmp";
+    public static readonly string[] LifeFloatingFonts =
+    [
+        @"j\duel\font\damage00.bmp", @"j\duel\font\damage01.bmp"
+    ];
     public const string LifeNumberManifest = @"j\duel\font\number.txt";
     public static readonly string[] LifeSprites =
     [
@@ -76,6 +80,7 @@ sealed class DatGraphics : IDisposable
     public CardListResources CardList { get; private set; } = null!;
     public CardArtwork Artwork { get; private set; } = null!;
     public int? LifeNumberGlyphColumns { get; private set; }
+    public int?[] LifeFloatingGlyphColumns { get; } = new int?[2];
     public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
     // Evict between frames, after the previous Raylib batch has been submitted.
     public void BeginFrame()
@@ -94,6 +99,9 @@ sealed class DatGraphics : IDisposable
         CardList = CardListResources.Load(archive);
         string fonts = System.Text.Encoding.Latin1.GetString(archive.Read(LifeNumberManifest));
         LifeNumberGlyphColumns = NativeLifeHud.TryFontColumns(fonts, "duel_fontm_y.bmp");
+        for (int i = 0; i < LifeFloatingFonts.Length; i++)
+            LifeFloatingGlyphColumns[i] = NativeLifeHud.TryFontColumns(
+                fonts, System.IO.Path.GetFileName(LifeFloatingFonts[i].Replace('\\', '/')));
         return archive;
     }
     public Texture2D Texture(string name)
@@ -146,7 +154,8 @@ sealed class DatGraphics : IDisposable
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
-            name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase))
+            name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
+            LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
             Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
             Raylib.ImageColorReplace(ref image, new Color(0, 255, 0, 255), Color.Blank);
@@ -163,7 +172,7 @@ sealed class DatGraphics : IDisposable
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Concat(SetSprites).Concat(LifeSprites)
+            .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts)
             .Append(DuelDetailBackground).Append(AttackSword).Append(AttackSwordPartial)
             .Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
