@@ -61,7 +61,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Revelação e deslocamento | `004182E0` / `005DA868` | `00418B60` | `00418EF0` | `card/card.txt` e arte/verso | Implementado com divergências. `DrawFlight` e `DrawHandTransfer` usam a interpolação de oito passos onde integrada. O FLIP e a troca animada de face ainda não reproduzem todos os passes. |
 | Set | `0044EFD0` / `005DB2C4` | `0044F370` | `0044F390` | `effect/set.txt`, `eff_set_b/y.bmp`, `eff_star0/1_b/y.bmp` | Implementado parcialmente: sprite central, oito partículas radiais do DAT, contador, escala e fade nativos. Seleção de variantes inferida; RNG, scratch, blending e frames pareados ainda pendentes. |
 | Invocação normal | `0044F630` / `005DB2D4` | `0044F9F0` | `0044FA10` | `effect/summon.txt`, `mini/list_card.txt`, `mini/*.bmp` | Implementado parcialmente: miniatura DAT, duas janelas nativas, 33 updates e fila após o voo da carta (jogador e CPU); composição, recorte, lado e alpha ainda exigem capturas pareadas. |
-| Invocação especial | `0044FCC0` / `005DB2E4` | `004500E0` | `00450100` | `effect/sp_summon.txt` | Não implementado como efeito dedicado. |
+| Invocação especial | `0044FCC0` / `005DB2E4` | `004500E0` | `00450100` | `effect/sp_summon.txt`, `sp_sum_a1..4.yga`, `sp_sum_d1..4.yga` | Implementado parcialmente: 41 updates, quatro YGAs alternados no início, imagem da carta transformada na segunda janela e eventos para buscas especiais/Morphing Jar #2. Orientação, textura interna e transformador `0054E890` provisórios. |
 | Ativação no campo | `00450260` / `005DB2F4` | `00450590` | `004505D0` | `effect/activate.txt`, pares `kouka_ue/sita_*` | Implementado com divergências. `DrawSpellActivation` e `DrawActivationSprite` usam dois YGAs e scratch dinâmico, que também existe no original. Mistura e seleção por categoria ainda divergem. Comando 72, handler `00406B20`. |
 | Ativação alternativa | `00450730` / `005DB304` | `00450A90` | `00450AD0` | seleção aberta | Não implementado como ramo separado. |
 | Abertura | `004516A0` / `005DB334` | `00451950` | `00451980` | `effect/duelstart.txt` | Não implementado. |
@@ -278,3 +278,44 @@ O Set face-down conserva sua animação separada; a mecânica,
 a resposta à invocação e a IA em `Joey.Core` não mudaram.
 Esta fatia altera a cobertura de Draw para **13/31 (41,94%)**,
 mas continua `Partial`, não `Verified`.
+
+
+## Invocação especial — etapa inicial (21/11/2026)
+
+`0044FCC0` está decompilada no SQLite global e prepara objeto
+`005DB2E4`, centro via `0045C140`, `effect/sp_summon.txt` e
+representação da carta em `obj+0x108`. No lote Ghidra inicial,
+`004500E0` avança `obj+0x10 += 8` até desativar em 328,
+produzindo 41 amostras `0,8,…,320`.
+O Draw `00450100` tem dois passes:
+
+- `t < 192`: `(t >> 4)&3` seleciona um dos quatro YGAs do
+  grupo indicado pelo bit 14 do descritor. A intensidade segue
+  `min(255, C[(t−96)&511] >> 8)`. O DAT contém
+  `sp_sum_a1..4.yga` e `sp_sum_d1..4.yga`.
+- `64 < t < 320`: a imagem da carta em `obj+0x108` é
+  transformada por `0054E890`, recebendo um parâmetro
+  `256 − (C[(t−192)&511] >> 13)`. Interpretado como
+  escala em 8.8 no cliente. Textura, blend e posicionamento
+  exatos não foram validados contra o original.
+
+O cliente agora enfileira o efeito quando o Core confirma uma
+invocação especial pelo seletor de cartas, busca em lote ou
+escavação de Morphing Jar #2, inclusive face-down quando
+cabível. O evento `MonsterSpecialSummoned` é **somente
+observacional** e não altera regras, custo ou estado de turno.
+As oito imagens YGA originais são carregadas do DAT local.
+O fallback visual da segunda janela usa miniatura/back nativo
+do DAT, mas a equivalência com `0054E890` ainda está aberta.
+
+A classe `NativeSpecialSummonFrame` guarda contador, sprite
+0..3, intensidade e janela de transformação; testes cobrem
+limites e a notificação de ambos os lados em Morphing Jar #2.
+A invocação normal existente também teve sua derivação de
+`mini\\` corrigida: as strings verbatim C# continham um
+separador duplicado, fazendo o cliente não encontrar a
+miniatura no carregamento. Esta correção usa prefixos
+de um único separador real (nome de entrada DAT).
+
+Status **Partial**. A cobertura Draw passa a **14/31 (45.16%)**,
+sem qualquer `Verified` até comparação de quadros.
