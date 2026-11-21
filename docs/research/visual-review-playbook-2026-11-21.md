@@ -43,6 +43,33 @@ Updates. Evitar comparar screenshots redimensionadas,
 com borda de janela, tooltips, mouse ou FPS diferentes;
 recortar primeiro a área original de 800×600.
 
+## Levantamento de recursos do DAT antes da revisão
+
+Para confirmar a ordem dos sprites e dimensões de atlases sem abrir o
+Ghidra nem iniciar a janela raylib, use no mesmo ambiente Windows em que
+está o `data.dat`:
+
+```powershell
+dotnet run --project src/Joey.App -- .\passion\data.dat --inspect-visual-dat
+```
+
+O comando examina os **57 manifests** catalogados em `j\duel\*.txt`
+(incluindo subdiretórios) e os BMPs/YGAs da mesma árvore. Grava
+`scratch/visual-review/dat-manifests.json`, com conteúdo Latin-1 e
+hexadecimal dos manifests, dimensões e SHA-256 de cada imagem. **Não**
+exporta pixels ou BMP/YGA, não inicia a janela e não executa o EXE
+nativo. Cada registro de imagem contém erro explícito caso o
+decodificador não reconheça seu formato; nesse caso o comando devolve
+código 2, mas mantém o relatório disponível para análise.
+
+Na investigação, conferir primeiro os manifests `sacrifice.txt`,
+`set.txt`, `sp_summon.txt`, `fusion.txt`, `break.txt`,
+`shuffle.txt`, `coin.txt`, `dice.txt`,
+`exclusion.txt`, `chain.txt`, `number.txt` e
+`lifepoint.txt` antes de supor a ordem dos sprites. O JSON não substitui
+a captura de frames, mas evita associar arbitrariamente um bitmap a
+uma posição do atlas.
+
 ## Matriz de comparação
 
 | Fatia (fontes nativas) | Provocar no cliente | Estados/quadros sugeridos | Divergência a procurar |
