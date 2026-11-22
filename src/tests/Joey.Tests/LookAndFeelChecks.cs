@@ -240,6 +240,26 @@ internal static class LookAndFeelChecks
                   new CardBounds(316, 246, 80, 58),
               "Field selection: original small frame has 4px padding in defense orientation");
 
+        // A 58x80 selection BMP has a 80x58 footprint AFTER a 90/270
+        // rotation. The DrawTexturePro destination stays source-sized.
+        foreach (int degrees in new[] { 90, 270 })
+            check(NativeCardSelectionFrame.ProjectedBounds(
+                      new CardBounds(320, 250, 72, 50), 58, 80, degrees) ==
+                      new CardBounds(316, 246, 80, 58),
+                  $"Field defense focus: 58x80 rotates exactly once ({degrees} degrees)");
+        foreach (int degrees in new[] { 0, 180 })
+            check(NativeCardSelectionFrame.ProjectedBounds(
+                      new CardBounds(325, 300, 50, 72), 58, 80, degrees) ==
+                      new CardBounds(321, 296, 58, 80),
+                  $"Field attack focus: 58x80 footprint stays upright ({degrees} degrees)");
+        check(NativeDetailPanel.PreviewBounds ==
+                  new CardBounds(15, 75, 200, 290) &&
+              NativeDetailPanel.PreviewBounds.X * 2 +
+                  NativeDetailPanel.PreviewBounds.Width == 230 &&
+              NativeDetailPanel.PreviewBounds.Y +
+                  NativeDetailPanel.PreviewBounds.Height == NativeDetailPanel.TextY,
+              "Native sidebar: full 200x290 card centered in 230px detail, above text viewport");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

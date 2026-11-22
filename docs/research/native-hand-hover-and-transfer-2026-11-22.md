@@ -71,3 +71,21 @@ as margens do frame pequeno em defesa. Os valores exatos das variantes
 normais/alternativas e os estados do renderizador 00418EF0 ainda
 requerem comparação de pixels. Essas mudanças são do cliente de
 apresentação; `Joey.Core` permanece intacto.
+
+## Correção do destaque em defesa e escala da lateral (22/11/2026)
+
+O `card_waku#s` original tem 58x80. O renderizador C# transpunha
+para 80x58 e depois girava 90°; isso transpunha a moldura **duas vezes**.
+Agora `DrawTexturePro` recebe sempre 58x80, com o pivô no centro;
+`ProjectedBounds` calcula a área final 80x58 e centraliza o destaque
+sobre a carta em defesa 72x50. Testes cobrem 0°, 90°, 180° e 270°.
+
+A carta grande do detalhe estava comprimida de 200x290 (DAT) para
+186x265; `NativeDetailPanel.PreviewBounds` agora a posiciona em
+(15,75,200,290), centralizada no fundo lateral de 230px e terminando
+no início do texto em Y=365. O Y=75 é derivado da comparação visual,
+não de uma prova estática da função nativa. Tanto o verso padrão quanto
+uma carta conhecida usam a mesma geometria. Os LPs deixam de
+comprimir verticalmente o atlas de números a 19px: `004803C0`
+copia os recortes 1:1. A âncora numérica em X=209 segue provisória,
+assim como o Y até confronto direto da rotina de Draw `0047C660`.

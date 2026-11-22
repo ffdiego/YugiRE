@@ -17,6 +17,11 @@ public static class NativeDetailPanel
     public const int TextWidth = TextRight - TextX;
     public const int TextHeight = TextBottom - TextY;
 
+    // The original DAT card front/back is 200x290; the detail image should
+    // not shrink it to 186x265. X is centered within detail.bmp (230px).
+    // Y placement 75 is from paired screenshots (not yet static VA verified).
+    public static CardBounds PreviewBounds => new(15, 75, 200, 290);
+
     // 0041C920 sets the scroll widget origin, using virtual SetPosition.
     public const int ScrollWidgetX = 186;
     public const int ScrollWidgetY = 364;

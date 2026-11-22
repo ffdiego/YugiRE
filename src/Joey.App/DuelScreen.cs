@@ -58,16 +58,19 @@ static partial class Game
             ? NativeCardSelectionFrame.LargeSprite(nearSide)
             : NativeCardSelectionFrame.SmallSprite(nearSide);
         var texture = graphics.Texture(name);
-        bool sideways = degrees % 180 != 0;
-        int frameWidth = sideways ? texture.Height : texture.Width;
-        int frameHeight = sideways ? texture.Width : texture.Height;
-        var padded = NativeCardSelectionFrame.Outline(
-            ToCardBounds(card), frameWidth, frameHeight);
+        // Use the texture's NATURAL dimensions for DrawTexturePro.
+        // A 90-degree rotation turns the 58x80 raster into an 80x58
+        // footprint. Passing 80x58 as the destination would transpose it
+        // twice and leave the highlight vertical on defense cards.
+        var footprint = NativeCardSelectionFrame.ProjectedBounds(
+            ToCardBounds(card), texture.Width, texture.Height, degrees);
         Raylib.DrawTexturePro(texture,
             new Rectangle(0, 0, texture.Width, texture.Height),
-            new Rectangle(padded.X + padded.Width / 2f, padded.Y + padded.Height / 2f,
-                          padded.Width, padded.Height),
-            new Vector2(padded.Width / 2f, padded.Height / 2f), degrees, Color.White);
+            new Rectangle(footprint.X + footprint.Width / 2f,
+                          footprint.Y + footprint.Height / 2f,
+                          texture.Width, texture.Height),
+            new Vector2(texture.Width / 2f, texture.Height / 2f),
+            degrees, Color.White);
     }
 
     static void DrawHandSelectionFrame(Rectangle bounds, bool nearSide) =>

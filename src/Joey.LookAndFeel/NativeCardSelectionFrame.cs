@@ -25,6 +25,19 @@ public static class NativeCardSelectionFrame
          resource.Equals(SmallAlternate, StringComparison.OrdinalIgnoreCase) ||
          resource.Equals(LargeAlternate, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// The final bounding box of a source-sized card_waku after rotation.
+    /// Raylib receives the unrotated texture dimensions; we transpose
+    /// dimensions only to compute the final footprint around the card.
+    /// </summary>
+    public static CardBounds ProjectedBounds(CardBounds card, int width, int height, int degrees)
+    {
+        if (degrees % 90 != 0)
+            throw new ArgumentOutOfRangeException(nameof(degrees));
+        return Outline(card, degrees % 180 != 0 ? height : width,
+                             degrees % 180 != 0 ? width : height);
+    }
+
     public static CardBounds Outline(CardBounds card, int frameWidth, int frameHeight)
     {
         if (frameWidth < card.Width || frameHeight < card.Height)

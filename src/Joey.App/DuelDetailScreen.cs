@@ -135,21 +135,20 @@ static partial class Game
             return;
         }
 
-        // 004803C0: a horizontal atlas, decimal digits chosen from low to
-        // high while drawing right-to-left. Here positions and color are
-        // provisional; source glyph slicing follows number.txt.
+        // 004803C0: the source atlas is drawn 1:1, advancing by the
+        // native glyph width. The old 19px cap shrank the LP numbers and
+        // changed their width/height ratio relative to the original.
+        // Anchor coordinates remain provisional pending 0047C660.
         int glyphWidth = NativeLifeHud.GlyphWidth(font.Width, columns);
         int[] digits = NativeLifeHud.DecimalGlyphs(displayed);
-        float height = Math.Min(19, font.Height);
-        float width = glyphWidth * height / font.Height;
-        float x = 188 - digits.Length * width;
-        float top = y + (19 - height) / 2;
+        float x = 209 - digits.Length * glyphWidth;
         foreach (int digit in digits)
         {
             Raylib.DrawTexturePro(font,
                 new Rectangle(digit * glyphWidth, 0, glyphWidth, font.Height),
-                new Rectangle(x, top, width, height), Vector2.Zero, 0, Color.White);
-            x += width;
+                new Rectangle(x, y, glyphWidth, font.Height),
+                Vector2.Zero, 0, Color.White);
+            x += glyphWidth;
         }
     }
 
@@ -202,12 +201,14 @@ static partial class Game
         DrawLifeDigits(ViewPlayer, 557);
         if (detailShowsBack)
         {
-            DrawCardBack(14, 53, 186, 265);
+            var bounds = NativeDetailPanel.PreviewBounds;
+            DrawCardBack(bounds.X, bounds.Y, bounds.Width, bounds.Height);
             return; // No identity, ATK/DEF, name or description for CPU cards.
         }
         if (detailCard is not { } card) return;
 
-        DrawArtwork(card, 14, 53, 186, 265);
+        var preview = NativeDetailPanel.PreviewBounds;
+        DrawArtwork(card, preview.X, preview.Y, preview.Width, preview.Height);
 
         // 0041B3E0 builds native rich text: name, optional monster ATK/DEF,
         // description; 0041BE80 supplies the actual 184px text viewport.
