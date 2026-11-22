@@ -37,7 +37,8 @@ static partial class Game
         try
         {
             var deck = AlphaDeck.Create(playableCards);
-            duel = DemoDuel.FromDecks(deck, deck, Random.Shared.Next());
+            var fusion = AlphaDeck.CreateFusionDeck(playableCards);
+            duel = DemoDuel.FromDecks(deck, deck, Random.Shared.Next(), fusion, fusion);
         }
         catch (InvalidDataException ex)
         {
@@ -59,7 +60,8 @@ static partial class Game
     {
         const int seed = 1979;
         var deck = AlphaDeck.Create(playableCards);
-        var match = DemoDuel.FromDecks(deck, deck, seed);
+        var fusion = AlphaDeck.CreateFusionDeck(playableCards);
+        var match = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
         CpuDuelController[] sides = [new(0), new(1)];
         for (int i = 0; i < 5000 && !match.GameOver; i++)
         {
@@ -317,7 +319,9 @@ static partial class Game
                  step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
         {
             Rectangle? origin = step.HandIndex is int index ? CpuHandBounds(index, handCount) : null;
-            if (step.HandIndex is int spent) handLayouts[step.Player].RemoveAt(spent);
+            var spent = step.AdditionalSpentHandIndices ?? [];
+            if (step.HandIndex is int spellIndex) spent = [.. spent, spellIndex];
+            foreach (int slot in spent.OrderDescending()) handLayouts[step.Player].RemoveAt(slot);
             BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true), origin, nearSide: step.Player == ViewPlayer);
         }
         else if (step.Action == CpuAction.Position && step.SourceZone is int zone && duel.MonsterWasFlipped[step.Player, zone])

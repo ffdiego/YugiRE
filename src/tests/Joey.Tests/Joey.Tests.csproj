@@ -2,6 +2,7 @@
     <None Update="Fixtures\*.jsonl" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../docs/evidence/cpu-deck-selection-tables.json" Link="Fixtures/cpu-deck-selection-tables.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../docs/research/card-static-sweep/12-receitas-de-fusao.jsonl" Link="Fixtures/12-receitas-de-fusao.jsonl" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../native_hooks/decks/demo-?.json" Link="Fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

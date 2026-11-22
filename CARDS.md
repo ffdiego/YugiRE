@@ -32,6 +32,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | P168 (Nimble Momonga e Giant Germ) | **Done** (2 IDs no sandbox) | `CardSelectionRules.cs`, `DemoDuel`, `BattleGraveyardEffectChecks.cs` | LP após destruição em batalha, invoca 0–2 cartas do mesmo nome; UI provisória |
 | P169 (Spear Cretin) | **Done** (1 ID no sandbox) | `DemoDuel.MonsterWasFlipped`, `BattleGraveyardEffectChecks.cs` | FLIP diferido no envio ao cemitério, seleção para cada jogador; sem paridade nativa |
 | P165 (Sonic Bird, Senju of the Thousand Hands) | **Done** (2 IDs no sandbox) | `RitualSearchRules.cs`, `DemoDuel`, `RitualSearcherChecks.cs`, UI raylib | Busca opcional por Magia/Monstro de Ritual no Normal/Flip Summon; não na revelação em batalha |
+| Invocação de Fusão por receita exata | **Done** para 31 resultados dos packs, **Partial** para outros três | `FusionRules.cs`, `DemoFusion.cs`, `FusionChecks.cs`, seleção na Alpha | Substitutos, Fusion Gate, respostas a Special Summon e os efeitos próprios de três resultados seguem pendentes |
 | P037/P039 (Dark Hole, Raigeki) | **Done** (2 magias no sandbox) | `MonsterWipeRules.cs`, `DemoDuel`, `MonsterWipeChecks.cs` | Destruição em massa sem alvo, enfileira buscas de Sangan/Witch e ressurreição de Spear Cretin; sem chains/negação |
 | P092 (destruição por tipo) | **Done** (7 magias no sandbox) | `MonsterWipeRules.cs`, `DemoDuel`, `MonsterWipeChecks.cs` | Monstros face-up do tipo indicado nos dois lados, inclusive em defesa |
 | P196/P038 (Trap Hole, Torrential Tribute) | **Done** (2 armadilhas no sandbox) | `SummonTrapRules.cs`, `DemoDuel`, `SummonTrapChecks.cs`, UI raylib | Resposta opcional a Normal/Flip Summon, sem cadeias ou paridade nativa; Special Summon pendente |
@@ -39,7 +40,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | P201 (Mirror Force) | **Done** (1 armadilha no sandbox) | `AttackTrapRules.cs`, `DemoDuel`, `AttackTrapChecks.cs`, UI raylib | Resposta à declaração de ataque antes do dano/FLIP, destruição dos monstros em ATK; sem chains ou replay nativo |
 | Outras armadilhas, monstros de efeito e rituais | **Pending** no motor genérico | Análises e catálogos em `docs/` | Restante das famílias e das janelas de resposta ainda pendente |
 
-**Todos os 499 monstros da união dos packs possuem classificação de referência:** 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` **somente para o ciclo básico (invocação/tributos/set/batalha) no sandbox C#**, sem alegar reproduzir o jogo original. Efeitos de monstros, fusões e rituais permanecem `Pending`. A classificação de cartas foi cruzada por fontes públicas, e os bits de categoria originais devem ser conferidos com o DAT no Windows.
+**Todos os 499 monstros da união dos packs possuem classificação de referência**. Há 264 Normal, 193 Effect, 34 Fusion e 8 Ritual. O grupo Normal é `Done` para o ciclo básico de invocação, tributos, Set e batalha no sandbox C#. A categoria dos resultados de fusão e dos monstros normais foi cruzada com os bits de categoria do DAT local.
 
 ## Monstros normais compartilhando uma implementação
 
@@ -197,6 +198,14 @@ Na Main Phase própria, o sandbox permite iniciar da mão ou de Set, selecionar 
 ### Destruição por tipo (P092)
 
 O filtro nativo em `0057AAA0` exige face-up para os sete IDs, inclusive quando o DAT descreve apenas “todos”. A resolução `00586540` percorre os dois lados e entrega uma máscara a `00576940`. No sandbox, o tipo vem do DAT e a ativação da mão ou de Set exige ao menos um monstro elegível. A disponibilidade com máscara vazia e os bloqueios de proteção nativa continuam em aberto. Eternal Rest (655) permanece sem regra no sandbox enquanto a contagem dos tipos de vínculo 1, 4 e 5 está em investigação. [Campanha estática P092](docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl)
+
+### Polymerization e Fusion Deck (P268)
+
+Polymerization (1003 e variante 1034) abre escolha do resultado e dos materiais próprios da mão ou do campo durante a Main Phase, inclusive quando veio de Set. Cada cópia ocupa sua própria posição. Se o campo estiver cheio, a seleção precisa liberar uma vaga. Antes de confirmar, o jogador pode cancelar sem gastar cartas. A confirmação envia magia e materiais ao cemitério e invoca em ataque ou defesa face-up. A seleção e o primeiro slot livre são políticas do sandbox, com controles provisórios na Alpha. A ativação usa a prévia existente e a colocação usa o evento de Special Summon.
+
+O Fusion Deck é separado da mão e do Main Deck. A Alpha inclui Rabid Horseman (91), Battle Ox (25) e Mystic Horseman (90). O duelo importado lê os monstros de Fusão da lista 1 do YDC, conferida em 58 presets do DAT. Monstros de Fusão devolvidos do campo à mão retornam ao Fusion Deck. O mesmo se aplica à devolução por Morphing Jar #2, sem aumentar sua quota de escavação. O ramo de categoria 2 de `00576960` redireciona os destinos de mão e Main Deck para a região de Fusão. `0058C52A` exclui a categoria da contagem do Morphing Jar #2.
+
+Os testes executam as 57 receitas do DAT, incluindo os três Blue-Eyes White Dragon de Blue-Eyes Ultimate Dragon (379). O manifesto registra 30 resultados dos packs no grupo de receita exata e Alligator’s Sword Dragon (812) separadamente, com ataque direto testado após a invocação. Chimera (1241), Thousand-Eyes Restrict (1334) e The Last Warrior (1526) podem ser invocados, com efeitos próprios pendentes. Polymerization permanece `Partial` enquanto o fluxo de materiais substitutos estiver pendente. Respostas, destinos substituídos por outros efeitos e timings do Joey original ainda precisam de comparação. [Receitas e endereços](docs/research/card-static-sweep/12-receitas-de-fusao.jsonl) · [Cenários C#](src/tests/Joey.Tests/FusionChecks.cs)
 
 ## Evidências nativas (não confundir com paridade C# completa)
 

@@ -45,19 +45,8 @@ static partial class Game
             int index = cardSelectionPage * CardSelectionPageSize + slot;
             if (index >= request.EligibleCards.Count) break;
             var option = request.EligibleCards[index];
-            int x = 247 + slot % 5 * 106, y = 182 + slot / 5 * 155;
-            var bounds = new Rectangle(x, y, 87, 112);
-            Raylib.DrawRectangleRec(bounds, Panel);
-            DrawArtwork(option.Card, x + 3, y + 3, 81, 104);
-            bool hovered = Hit(bounds);
             bool chosen = duel.SelectedBatchIndices.Contains(option.SourceIndex);
-            Raylib.DrawRectangleLinesEx(bounds, chosen || hovered ? 3 : 1,
-                chosen ? Color.Lime : hovered ? Color.White : Gold);
-            string name = option.Card.Name;
-            while (name.Length > 4 && MeasureLabel(name, 12) > 98) name = name[..^1];
-            if (name.Length < option.Card.Name.Length) name = name[..^3] + "...";
-            Label(name, x, y + 116, 12);
-            if (hovered && Raylib.IsMouseButtonPressed(MouseButton.Left))
+            if (DrawSelectionCard(option.Card, slot, chosen))
             {
                 bool resolved = request.MaxSelections > 1
                     ? duel.SelectBatchCard(option.SourceIndex, out message)
@@ -108,5 +97,22 @@ static partial class Game
         Label($"{cardSelectionPage + 1}/{lastPage + 1}", 474, 537, 17, Gold);
         if (Button("Next >", 614, 531, 105, 30, cardSelectionPage < lastPage))
             cardSelectionPage++;
+    }
+
+    static bool DrawSelectionCard(Card card, int slot, bool chosen, string? source = null)
+    {
+        int x = 247 + slot % 5 * 106, y = 182 + slot / 5 * 155;
+        var bounds = new Rectangle(x, y, 87, 112);
+        Raylib.DrawRectangleRec(bounds, Panel);
+        DrawArtwork(card, x + 3, y + 3, 81, 104);
+        bool hovered = Hit(bounds);
+        Raylib.DrawRectangleLinesEx(bounds, chosen || hovered ? 3 : 1,
+            chosen ? Color.Lime : hovered ? Color.White : Gold);
+        string name = card.Name;
+        while (name.Length > 4 && MeasureLabel(name, 12) > 98) name = name[..^1];
+        if (name.Length < card.Name.Length) name = name[..^3] + "...";
+        Label(name, x, y + 116, 12);
+        if (source is not null) Label(source, x, y + 131, 12, Gold);
+        return hovered && Raylib.IsMouseButtonPressed(MouseButton.Left);
     }
 }

@@ -60,19 +60,124 @@
       "kind": "Monster",
       "subtype": "Fusion",
       "mechanics": [
+        "Fusion Summon with Baby Dragon and Alligator’s Sword",
         "Attribute-filtered direct attack"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         812
       ],
       "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl",
         "src/Joey.Core/DirectAttackRules.cs",
         "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
         "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
       ],
       "limitations": [
-        "The on-field permission is playable in a seeded duel. Fusion Summon is outside this scope. The face-down defender case follows static evidence."
+        "Sandbox scope: exact materials, no substitutes, Fusion Gate, chains or original timing validation.",
+        "Face-down defender handling follows static evidence."
+      ]
+    },
+    {
+      "id": "monster.fusion-exact-materials",
+      "kind": "Monster",
+      "subtype": "Fusion",
+      "mechanics": [
+        "Polymerization uses distinct exact materials from the controller’s hand or field",
+        "Special Summon from its own Fusion Deck into an empty or freed Monster Zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        14,
+        36,
+        42,
+        68,
+        91,
+        132,
+        167,
+        188,
+        214,
+        216,
+        222,
+        293,
+        369,
+        379,
+        384,
+        388,
+        408,
+        436,
+        457,
+        464,
+        486,
+        494,
+        507,
+        532,
+        571,
+        612,
+        617,
+        706,
+        1404,
+        1445
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl"
+      ],
+      "limitations": [
+        "Sandbox scope: exact materials, no substitutes, Fusion Gate, chains or original timing validation."
+      ]
+    },
+    {
+      "id": "monster.fusion-pending-on-field-effects",
+      "kind": "Monster",
+      "subtype": "Fusion",
+      "mechanics": [
+        "Fusion Summon through Polymerization with exact materials"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1241,
+        1334,
+        1526
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl"
+      ],
+      "limitations": [
+        "The distinct monster effects of Chimera, Thousand-Eyes Restrict and The Last Warrior are pending."
+      ]
+    },
+    {
+      "id": "spell.polymerization",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Choose a result from the Fusion Deck and distinct exact materials from the controller’s hand or field",
+        "Send materials to the Graveyard and Special Summon the result",
+        "Activate from hand or Set during a Main Phase"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1003,
+        1034
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl",
+        "src/Joey.App/FusionSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Fusion substitutes, card-specific destination replacements and native chain windows are pending."
       ]
     },
     {
@@ -836,7 +941,7 @@
       "limitations": [
         "Done is scoped to the C# sandbox: five FLIP monsters. Morphing Jar #2 returns eligible Main Deck monsters from each player's field, shuffles deterministically, excavates up to its monster quota, Sets eligible Level 4-or-lower monsters and sends other excavated cards to graveyards.",
         "Battle-destroyed combatants are excluded from shuffle; damage is calculated before FLIP and marked cards go to graveyard at the end of the simplified Damage Step.",
-        "No Extra Deck/Fusion returns, tokens, foreign-controlled ownership, chained responses, replacement effects or full 2004 native parity; no separate card selection UI for Morphing Jar #2 excavation.",
+        "Fusion Monsters return to the Fusion Deck without increasing the excavation quota. Tokens, divergent ownership/control, chained responses, replacement effects and native timing remain pending.",
         "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior."
       ]
     },

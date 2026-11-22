@@ -67,8 +67,9 @@ campo e deck, com quotas independentes para cada lado, sem reutilizar
 
 1. Durante o Damage Step, o cálculo de dano determina quais combatentes
    já estão **marcados para destruição**. Esses não voltam ao deck.
-2. Os demais monstros são removidos do campo e devolvidos ao **Main Deck**
-   daquele jogador, com embaralhamento sintético reproduzível por seed.
+2. Os demais monstros são removidos do campo. Fusões retornam ao Fusion Deck
+   daquele jogador e ficam fora da quota, conforme `0058C52A` e `00576960`.
+   Os monstros do **Main Deck** retornam com embaralhamento reproduzível por seed.
 3. Cada jogador escava cartas do topo até revelar tantas **cartas de
    monstro** quanto a quantidade que devolveu ao Main Deck. Isto não é
    uma compra; cartas de magia/armadilha encontradas não contam para a quota.
@@ -85,7 +86,7 @@ e `DeckSnapshot(player)` permite à suíte inspecionar as cartas remanescentes
 sem alterá-las. A UI raylib aciona o efeito automaticamente quando revelado;
 não há janela de seleção de cartas nessa escavação.
 
-**Limites:** sem Extra Deck/Fusion, tokens, mudança de controlador/dono,
+**Limites:** tokens, mudança de controlador/dono,
 cadeia de respostas, efeitos contínuos ou escolha de invocações quando mais
 de cinco cartas forem elegíveis. O embaralhamento e a seed são uma política
 do sandbox, não um algoritmo recuperado do Joey original. O cenário de

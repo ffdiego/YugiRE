@@ -448,7 +448,7 @@ static partial class Game
         if (frame.SpiralFrame is int sprite && frame.SpiralOpacity > 0)
         {
             // Native 00450100 selects the a/d set by position flag 0x4000.
-            string name = summon.FaceDownDefense
+            string name = summon.InDefense
                 ? DatGraphics.SpecialSummonDefenseSprites[sprite]
                 : DatGraphics.SpecialSummonAttackSprites[sprite];
             DrawEffectStamp(name, center, 0, 0x10000, frame.SpiralOpacity);
@@ -465,7 +465,7 @@ static partial class Game
                 ? @"mini\" + full[5..] : DatGraphics.DuelBack;
         var texture = graphics.Texture(nameOfCard);
         var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster,
-            summon.Player == ViewPlayer, summon.Zone, summon.FaceDownDefense, summon.FaceDownDefense);
+            summon.Player == ViewPlayer, summon.Zone, summon.InDefense, summon.FaceDownDefense);
         float scale = frame.OverlayScaleFixed8 / 256f;
         float width = geometry.Bounds.Width * scale, height = geometry.Bounds.Height * scale;
         Raylib.DrawTexturePro(texture,

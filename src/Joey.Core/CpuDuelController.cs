@@ -3,7 +3,8 @@ namespace Joey.Core;
 public enum CpuStepStatus { Acted, WaitingForOpponent, GameOver, Blocked }
 public enum CpuAction { None, Draw, Summon, Set, Spell, Equip, Position, BeginBattle, Attack, Selection, Response, Decision, Discard, EndTurn, EndBattle }
 public sealed record CpuStep(CpuStepStatus Status, CpuAction Action, int Player, string Message,
-    Card? Card = null, int? SourceZone = null, int? TargetZone = null, int? HandIndex = null);
+    Card? Card = null, int? SourceZone = null, int? TargetZone = null, int? HandIndex = null,
+    IReadOnlyList<int>? AdditionalSpentHandIndices = null);
 
 /// <summary>
 /// Deterministic alpha strategy, NOT a reproduction of Joey's native selector.
@@ -29,7 +30,7 @@ public sealed class CpuDuelController
     /// <summary>Who owns the current blocking choice; null means ordinary turn play.</summary>
     public static int? PendingOwner(DemoDuel duel) =>
         duel.PendingEffectDecision?.Owner ?? duel.PendingCardSelection?.Owner ??
-        duel.PendingFlipTarget?.Owner ?? duel.PendingSpellTrapTarget?.Owner ??
+        duel.PendingFlipTarget?.Owner ?? duel.PendingSpellTrapTarget?.Owner ?? duel.PendingFusionSummon?.Owner ??
         (duel.PendingSummonResponse is { } summon ? summon.EligibleTraps[0].Owner :
         duel.PendingAttackResponse is { } attack ? attack.EligibleTraps[0].Owner : null);
 
@@ -52,7 +53,8 @@ public sealed class CpuDuelController
             return Idle(CpuStepStatus.Blocked, "CPU safety limit reached; unsupported state. Reset the duel.");
 
         CpuStep Act(CpuAction action, Operation operation, Card? card = null,
-            int? source = null, int? target = null, int? handIndex = null)
+            int? source = null, int? target = null, int? handIndex = null,
+            IReadOnlyList<int>? additionalSpentHandIndices = null)
         {
             if (!operation(out string message))
                 return new(CpuStepStatus.Blocked, action, Player, "CPU action rejected: " + message);
@@ -66,7 +68,7 @@ public sealed class CpuDuelController
                     CpuAction.Summon => $"Summoned {card!.Name}." +
                         (duel.PendingSummonResponse is null ? "" : " Trap response available."),
                     _ => message
-                }, card, source, target, handIndex);
+                }, card, source, target, handIndex, additionalSpentHandIndices);
         }
 
         if (duel.PendingEffectDecision is { } decision)
@@ -98,6 +100,16 @@ public sealed class CpuDuelController
                 pendingTarget.Spell,
                 source: pendingTarget.FromSet ? pendingTarget.SourceIndex : duel.FirstFreeSpellZone(),
                 handIndex: pendingTarget.FromSet ? null : pendingTarget.SourceIndex);
+        }
+        if (duel.PendingFusionSummon is { } fusion)
+        {
+            var option = fusion.Options.MaxBy(option => option.Result.Attack)!;
+            int[] spent = option.SuggestedMaterials.Where(material => material.Zone == FusionMaterialZone.Hand)
+                .Select(material => material.Index).ToArray();
+            return Act(CpuAction.Spell,
+                (out string m) => duel.ResolveFusionSummon(option.DeckIndex, option.SuggestedMaterials, out m),
+                fusion.Spell, source: fusion.FromSet ? fusion.SourceIndex : duel.FirstFreeSpellZone(),
+                handIndex: fusion.FromSet ? null : fusion.SourceIndex, additionalSpentHandIndices: spent);
         }
         if (duel.PendingCardSelection is { } selection)
         {
@@ -153,6 +165,10 @@ public sealed class CpuDuelController
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
                 source: duel.FirstFreeSpellZone(), handIndex: spell);
+            int fusionSpell = Enumerable.Range(0, duel.Hand.Count)
+                .FirstOrDefault(i => FusionRules.Supports(duel.Hand[i]) && duel.CanActivateFromHand(i), -1);
+            if (fusionSpell >= 0)
+                return Act(CpuAction.Selection, (out string m) => duel.Play(fusionSpell, out m));
             int targeted = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 SpellTrapTargetRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i) &&
                 duel.SpellTrapTargets(duel.Hand[i].Id).Any(candidate => candidate.Player != Player), -1);

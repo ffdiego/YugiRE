@@ -170,7 +170,7 @@ static partial class Game
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
-            if (duel.PendingSpellTrapTarget is not null)
+            if (duel.PendingSpellTrapTarget is not null || duel.PendingFusionSummon is not null)
             {
                 ClearDuelSelection();
                 return;
@@ -422,7 +422,8 @@ static partial class Game
                     }
                 }
                 else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell &&
-                         duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null)
+                         duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
+                         duel.PendingFusionSummon is null)
                     BeginCardActivation(setSpell, spellRect);
             }
         }
@@ -498,7 +499,8 @@ static partial class Game
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
         var pendingOwner = CpuDuelController.PendingOwner(duel);
-        bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
+        var fusion = duel.PendingFusionSummon;
+        bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
         bool showingMotion = MotionBusy || PhaseBusy;
         bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
@@ -576,7 +578,9 @@ static partial class Game
         }
         DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
-        if (choiceInput && HumanChoice && pendingOwner is not null)
+        if (choiceInput && fusion is not null)
+            DrawFusionSelection(fusion);
+        else if (choiceInput && HumanChoice && pendingOwner is not null)
         {
             DrawCardSelectionOverlay();
             DrawSummonResponseOverlay();

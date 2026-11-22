@@ -7,7 +7,11 @@ public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, boo
 public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
 /// <summary>Presentation-only notification, emitted after an effect places a monster.</summary>
-public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense);
+public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense,
+    bool FaceUpDefense = false)
+{
+    public bool InDefense => FaceDownDefense || FaceUpDefense;
+}
 /// <summary>Committed normal summon or face-down Set; not a special summon or FLIP.</summary>
 public sealed record DemoNormalSummon(int Player, int Zone, Card Card, bool FaceDown);
 /// <summary>Observable Exodia win; five card snapshots in head, arms, legs order.</summary>
@@ -19,7 +23,7 @@ public sealed record DemoDestinyBoardCompletion(int Player, IReadOnlyList<Card> 
 
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
-public sealed class DemoDuel
+public sealed partial class DemoDuel
 {
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
     /// <summary>Fired once after a player completes all five unique Exodia pieces.</summary>
@@ -42,9 +46,8 @@ public sealed class DemoDuel
     /// <summary>Last P082/P088 deck-effect audit (sandbox, not native transcript).</summary>
     public DemoDeckFlowResult? LastDeckFlow { get; private set; }
     public MonsterWipeResult? LastMonsterWipe { get; private set; }
-    // During a simultaneous board wipe, queue trigger effects but never
-    // begin resolving their choices before all affected monsters have left.
-    private bool resolvingBoardWipe;
+    // Keep Graveyard choices behind a complete board wipe or Fusion transaction.
+    private bool deferringFieldRemovalTriggers;
     private bool resolvingSummon;
     private readonly int[,] spellSetTurn = new int[2, 5];
     public DemoSummonResponse? PendingSummonResponse { get; private set; }
@@ -110,7 +113,7 @@ public sealed class DemoDuel
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
         PendingAttackResponse is not null || PendingEffectDecision is not null ||
-        PendingSpellTrapTarget is not null;
+        PendingSpellTrapTarget is not null || PendingFusionSummon is not null || deferringFieldRemovalTriggers;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
@@ -201,11 +204,14 @@ public sealed class DemoDuel
     public int PendingEndDiscards => Phase == DemoPhase.End && !HandLimitDisabled ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
-    public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979)
+    public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979,
+        IReadOnlyList<Card>? firstFusionDeck = null, IReadOnlyList<Card>? secondFusionDeck = null)
     {
         if (first.Count is < 40 or > 80 || second.Count is < 40 or > 80)
             throw new ArgumentException("Imported main decks must contain 40 to 80 cards");
         var duel = new DemoDuel { effectRandom = new Random(unchecked(seed ^ 0x4D4A3220)) };
+        duel.LoadFusionDeck(0, firstFusionDeck);
+        duel.LoadFusionDeck(1, secondFusionDeck);
         var random = new Random(seed);
         for (int player = 0; player < 2; player++)
         {
@@ -239,7 +245,9 @@ public sealed class DemoDuel
         IReadOnlyList<Card>? side1Graveyard = null,
         IReadOnlyList<Card>? side0Deck = null,
         IReadOnlyList<Card>? side1Deck = null,
-        int effectShuffleSeed = 1979)
+        int effectShuffleSeed = 1979,
+        IReadOnlyList<Card>? side0FusionDeck = null,
+        IReadOnlyList<Card>? side1FusionDeck = null)
     {
         if (activeSide is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(activeSide));
@@ -260,6 +268,8 @@ public sealed class DemoDuel
             equipmentContextResolved = equipmentContextResolved,
             effectRandom = new Random(effectShuffleSeed)
         };
+        duel.LoadFusionDeck(0, side0FusionDeck);
+        duel.LoadFusionDeck(1, side1FusionDeck);
         duel.Life[activeSide] = activeLifePoints;
         duel.hands[activeSide].AddRange(activeHand);
         if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard);
@@ -324,6 +334,7 @@ public sealed class DemoDuel
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
+            (FusionRules.Supports(Hand[index]) && FusionOptions(ActivePlayer).Any()) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
             (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id) &&
@@ -465,6 +476,8 @@ public sealed class DemoDuel
             return true;
         }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
+        if (FusionRules.Supports(Hand[index]))
+            return BeginFusionSummon(Hand[index], index, fromSet: false, out message);
         if (Hand[index].ClassCode == 22 && SpellTrapTargetRules.Supports(Hand[index].Id))
             return BeginSpellTrapTarget(Hand[index], index, fromSet: false, out message);
         if (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id))
@@ -520,6 +533,8 @@ public sealed class DemoDuel
         int p = ActivePlayer;
         if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
+        if (FusionRules.Supports(card))
+            return BeginFusionSummon(card, zone, fromSet: true, out message);
         if (card.ClassCode == 22 && SpellTrapTargetRules.Supports(card.Id))
         {
             if (card.Id == SpellTrapTargetRules.MysticalSpaceTyphoon && spellSetTurn[p, zone] >= Turn)
@@ -1354,8 +1369,9 @@ public sealed class DemoDuel
     /// Morphing Jar #2 (PSV-era sandbox): return unmarked Main Deck monsters,
     /// independently shuffle each owner's deck, then excavate until that side
     /// has found as many monsters as it returned. High-level/special-only
-    /// monsters and non-monsters are sent to the graveyard. Fusion, tokens,
-    /// field control changes and chain windows require a richer duel model.
+    /// monsters and non-monsters are sent to the graveyard. Fusion monsters
+    /// return to their Fusion Deck and do not add to the Main Deck quota.
+    /// Tokens, field control changes and chain windows remain outside this model.
     /// </summary>
     private void ResolveMorphingJar2(out string message)
     {
@@ -1371,7 +1387,8 @@ public sealed class DemoDuel
             {
                 if (Monsters[p, z] is not Card card || IsMarkedForBattleDestruction(p, z))
                     continue;
-                additions.Add(card);
+                if (FusionRules.IsFusionMonster(card)) fusionDecks[p].Add(card);
+                else additions.Add(card);
                 Monsters[p, z] = null;
                 MonsterWasFlipped[p, z] = false;
                 MonsterFaceDown[p, z] = DefensePosition[p, z] = false;
@@ -1596,15 +1613,15 @@ public sealed class DemoDuel
         return true;
     }
 
-    private void PlaceSelectedMonster(int owner, int zone, Card card, bool faceDownDefense)
+    private void PlaceSelectedMonster(int owner, int zone, Card card, bool faceDownDefense, bool faceUpDefense = false)
     {
         Monsters[owner, zone] = card;
         MonsterFaceDown[owner, zone] = faceDownDefense;
-        DefensePosition[owner, zone] = faceDownDefense;
+        DefensePosition[owner, zone] = faceDownDefense || faceUpDefense;
         MonsterWasFlipped[owner, zone] = false;
         changedPosition[owner, zone] = true;
         attacked[owner, zone] = false;
-        MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense));
+        MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense, faceUpDefense));
     }
 
     public bool SkipOptionalCardSelection(out string message)
@@ -1881,7 +1898,7 @@ public sealed class DemoDuel
             }
         }
         FinishDeferredBattle();
-        message = $"{pending.SourceCard.Name} FLIP: returned {returned} monster(s) to their owners' hands.";
+        message = $"{pending.SourceCard.Name} FLIP: returned {returned} monster(s).";
         return true;
     }
 
@@ -1899,7 +1916,7 @@ public sealed class DemoDuel
             : MonsterWipeRules.Targets(resourceId, caster, Monsters, MonsterFaceDown));
         int[] counts = [0, 0];
         int faceDownDestroyed = 0;
-        resolvingBoardWipe = true;
+        deferringFieldRemovalTriggers = true;
         try
         {
             foreach (var target in targets)
@@ -1911,7 +1928,7 @@ public sealed class DemoDuel
                 if (target.FaceDown) faceDownDestroyed++;
             }
         }
-        finally { resolvingBoardWipe = false; }
+        finally { deferringFieldRemovalTriggers = false; }
 
         // Includes Sangan/Witch and previously flipped Spear Cretin.
         // P164/P168 do not fire: this was NOT battle destruction.
@@ -1919,7 +1936,8 @@ public sealed class DemoDuel
         return new(resourceId, caster, counts[0], counts[1], faceDownDestroyed);
     }
 
-    private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false)
+    private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,
+        bool isFusionMaterial = false)
     {
         Card removed = Monsters[p, z]!;
         bool faceDown = MonsterFaceDown[p, z];
@@ -1963,14 +1981,14 @@ public sealed class DemoDuel
                 RevivalJamRules.LifePointCost, Turn));
         }
 
-        if (!resolvingBoardWipe)
+        if (!deferringFieldRemovalTriggers)
         {
             BeginNextEffectDecision();
             BeginNextQueuedDeckSearch();
         }
         if (isTribute)
             MonsterTributed?.Invoke(new(p, z, removed, faceDown, defense));
-        else
+        else if (!isFusionMaterial)
             MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense));
     }
 
@@ -1984,8 +2002,12 @@ public sealed class DemoDuel
         // Equip cards do not return with the monster; they go to the owner's graveyard.
         foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
             RemoveEquipmentCore(e.Owner, e.SourceZone);
-        hands[player].Add(card);
-        CheckExodia(player);
+        if (FusionRules.IsFusionMonster(card)) fusionDecks[player].Add(card);
+        else
+        {
+            hands[player].Add(card);
+            CheckExodia(player);
+        }
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
     public void NextTurn() => EndTurn(out _);

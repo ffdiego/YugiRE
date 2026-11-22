@@ -154,14 +154,21 @@ internal static class CpuDuelChecks
     {
         var catalog = Catalog.Load(archive);
         var packs = archive.Read(@"bin#\card_pack.bin");
-        var deck = AlphaDeck.Create(CardListResources.ForPacks(catalog, packs));
+        var playable = CardListResources.ForPacks(catalog, packs);
+        var deck = AlphaDeck.Create(playable);
+        var fusion = AlphaDeck.CreateFusionDeck(playable);
         var art = CardArtwork.Load(archive, catalog);
-        check(deck.All(c => art.For(c) is { } image && !image.StartsWith(@"card\token_", StringComparison.OrdinalIgnoreCase)),
+        check(deck.Concat(fusion).All(c => art.For(c) is { } image && !image.StartsWith(@"card\token_", StringComparison.OrdinalIgnoreCase)),
             "Alpha: all cards are available in the packs and have non-token artwork");
         check(deck.Count == 40 && deck.GroupBy(c => c.Id).All(g => g.Count() <= 3), "Alpha: curated DAT deck has 40 cards, at most three copies");
+        int fusions = 0;
         for (int seed = 0; seed < 30; seed++)
         {
-            var d = DemoDuel.FromDecks(deck, deck, seed);
+            var d = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
+            d.MonsterSpecialSummoned += summon =>
+            {
+                if (FusionRules.IsFusionMonster(summon.Card)) fusions++;
+            };
             var players = new[] { new CpuDuelController(0), new CpuDuelController(1) };
             int steps = 0;
             while (!d.GameOver && steps++ < 5000)
@@ -171,5 +178,6 @@ internal static class CpuDuelChecks
             }
             check(d.GameOver && steps < 5000, $"Alpha DAT: complete duel seed {seed} in {steps} actions / {d.Turn} turns");
         }
+        check(fusions > 0, "Alpha DAT: the curated Fusion Deck was used in a complete CPU duel");
     }
 }
