@@ -29,7 +29,7 @@ public sealed class CpuDuelController
     /// <summary>Who owns the current blocking choice; null means ordinary turn play.</summary>
     public static int? PendingOwner(DemoDuel duel) =>
         duel.PendingEffectDecision?.Owner ?? duel.PendingCardSelection?.Owner ??
-        duel.PendingFlipTarget?.Owner ??
+        duel.PendingFlipTarget?.Owner ?? duel.PendingSpellTrapTarget?.Owner ??
         (duel.PendingSummonResponse is { } summon ? summon.EligibleTraps[0].Owner :
         duel.PendingAttackResponse is { } attack ? attack.EligibleTraps[0].Owner : null);
 
@@ -90,6 +90,15 @@ public sealed class CpuDuelController
             return trap is null ? Act(CpuAction.Response, duel.PassAttackResponse) :
                 Act(CpuAction.Response, (out string m) => duel.ActivateAttackTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
         }
+        if (duel.PendingSpellTrapTarget is { } pendingTarget)
+        {
+            var target = pendingTarget.EligibleTargets.FirstOrDefault(candidate => candidate.Player != Player);
+            if (target is null) return Act(CpuAction.Selection, duel.CancelSpellTrapTarget);
+            return Act(CpuAction.Spell, (out string m) => duel.ResolveSpellTrapTarget(target.Player, target.Zone, out m),
+                pendingTarget.Spell,
+                source: pendingTarget.FromSet ? pendingTarget.SourceIndex : duel.FirstFreeSpellZone(),
+                handIndex: pendingTarget.FromSet ? null : pendingTarget.SourceIndex);
+        }
         if (duel.PendingCardSelection is { } selection)
         {
             var candidate = selection.EligibleCards
@@ -144,6 +153,11 @@ public sealed class CpuDuelController
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
                 source: duel.FirstFreeSpellZone(), handIndex: spell);
+            int targeted = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
+                SpellTrapTargetRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i) &&
+                duel.SpellTrapTargets(duel.Hand[i].Id).Any(candidate => candidate.Player != Player), -1);
+            if (targeted >= 0)
+                return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
 
             for (int z = 0; z < 5; z++)
             {

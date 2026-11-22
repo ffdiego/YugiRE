@@ -170,6 +170,11 @@ static partial class Game
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
+            if (duel.PendingSpellTrapTarget is not null)
+            {
+                ClearDuelSelection();
+                return;
+            }
             ShowPlayedCardDetail(card);
             handLayouts[ViewPlayer].RemoveAt(index);
             if (FieldSpellRules.Supports(card.Id))
@@ -285,6 +290,9 @@ static partial class Game
 
     static void DrawDuelField(bool blockInput)
     {
+        var pendingTarget = duel.PendingSpellTrapTarget;
+        bool CanHighlightSpell(int player, int zone) => pendingTarget is null ||
+            HumanChoice && pendingTarget.EligibleTargets.Any(target => target.Player == player && target.Zone == zone);
         for (int player = 0; player < 2; player++)
         {
             bool own = player == ViewPlayer;
@@ -298,10 +306,10 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]);
                     DrawDuelCard(fieldCard, geometry);
-                    if (Hit(fieldRect) && !IsJoeySpeaking())
+                    if (Hit(fieldRect) && CanHighlightSpell(player, SpellTrapTargetRules.FieldZone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
                 }
-                if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
+                if (own && duel.FieldSpellFaceDown[player] && !blockInput && duel.PendingSpellTrapTarget is null &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
                     BeginCardActivation(fieldCard, fieldRect);
@@ -321,7 +329,7 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster, own, zone,
                         duel.DefensePosition[player, zone], duel.MonsterFaceDown[player, zone]);
                     DrawDuelCard(monster, geometry);
-                    if (Hit(monsterRect) && !IsJoeySpeaking())
+                    if (Hit(monsterRect) && pendingTarget is null && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
                     if (geometry.AttributesCenter is { } center)
                     {
@@ -343,13 +351,14 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Spell, own, zone, false, duel.SpellFaceDown[player, zone]);
                     DrawDuelCard(spell, geometry);
-                    if (Hit(spellRect) && !IsJoeySpeaking())
+                    if (Hit(spellRect) && CanHighlightSpell(player, zone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
                 }
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
                     DrawEffectStamp(DatGraphics.AttackSword, NativeAttackFrame.SwordAnchor(zone, own),
                         0, 0x10000, 0xa0);
-                if (blockInput || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
+                if (blockInput || duel.PendingSpellTrapTarget is not null ||
+                    !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {
                     if (duel.PendingFlipTarget is not null)
@@ -403,9 +412,34 @@ static partial class Game
                     }
                 }
                 else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell &&
-                         duel.ActivateSetSpell(zone, out message))
+                         duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null)
                     BeginCardActivation(setSpell, spellRect);
             }
+        }
+    }
+
+    static void ReadSpellTrapTarget(PendingSpellTrapTarget pending)
+    {
+        if (Raylib.IsKeyPressed(KeyboardKey.Backspace))
+        {
+            duel.CancelSpellTrapTarget(out message);
+            return;
+        }
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        foreach (var target in pending.EligibleTargets)
+        {
+            var area = target.IsFieldZone ? FieldZoneBounds(target.Player) : ZoneBounds(target.Player, target.Zone, true);
+            if (!Hit(area)) continue;
+            int sourceZone = pending.FromSet ? pending.SourceIndex : duel.FirstFreeSpellZone();
+            Rectangle? origin = pending.FromSet ? null : HandBounds(pending.SourceIndex);
+            if (duel.ResolveSpellTrapTarget(target.Player, target.Zone, out message))
+            {
+                if (!pending.FromSet) handLayouts[pending.Owner].RemoveAt(pending.SourceIndex);
+                ShowPlayedCardDetail(pending.Spell);
+                BeginCardActivation(pending.Spell, ZoneBounds(pending.Owner, sourceZone, true), origin);
+                ClearDuelSelection();
+            }
+            return;
         }
     }
     static void DrawDuelHand()
@@ -460,6 +494,7 @@ static partial class Game
         bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
+        var spellTarget = duel.PendingSpellTrapTarget;
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
         if (duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),
@@ -476,6 +511,7 @@ static partial class Game
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
         bool handInput = actionInput && handHovered;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
+        if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
         // A travelling card or the CPU's turn must not freeze the sidebar.
         // Only an actual Joey speech cue may suppress inspection.
@@ -510,6 +546,8 @@ static partial class Game
             };
             if (HumanChoice) Label(help, 10, 587, 11, Gold);
         }
+        else if (choiceInput && duel.PendingSpellTrapTarget is not null)
+            Label("Choose a Spell or Trap (Backspace cancels)", 10, 587, 11, Gold);
         else if (actionInput && (choosingTributes || choosingEquip || duel.PendingEndDiscards > 0))
             Label(choosingTributes ? "Choose tributes (Backspace cancels)" : choosingEquip
                 ? "Choose equip target (Backspace cancels)" : $"Discard {duel.PendingEndDiscards} to end turn", 10, 587, 11, Gold);

@@ -71,9 +71,9 @@ uma cena especial inventada.
 - Ativação de Trap no turno adversário, *chain windows*
   e prioridades de resposta. A interface atual só oferece
   ativação durante a Main Phase do controlador.
-- Regras de destruição/remoção conjunta de Destiny Board
-  e suas mensagens quando qualquer parte sai do campo;
-  não há sistema genérico para todos os tipos de remoção.
+- A destruição com alvo de uma peça face-up já remove as demais peças face-up
+  do mesmo lado se Destiny Board estiver ativo (`00576360`, `00577280`).
+  A remoção conjunta por outras saídas do campo continua pendente.
 - Confirmar procura por carta da mão/deck, instante do
   End Phase, condições de interrupção e efeitos de
   múltiplas cópias contra o executável original.

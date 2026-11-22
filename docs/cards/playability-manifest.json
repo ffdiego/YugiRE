@@ -164,6 +164,53 @@
       ]
     },
     {
+      "id": "spell.targeted-face-up-trap-destruction",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Destroy one selected face-up Trap on either side",
+        "Activate from hand or Set during own Main Phase"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1004
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapTargetRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/DuelScreen.cs",
+        "src/tests/Joey.Tests/SpellTrapWipeChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "C# sandbox scope. Native chains, timing and protection are pending."
+      ]
+    },
+    {
+      "id": "spell.targeted-quick-play-spell-trap-destruction",
+      "kind": "Spell",
+      "subtype": "Quick-Play",
+      "mechanics": [
+        "Destroy one selected Spell or Trap on either side, including a Field Spell",
+        "Activate from hand or from an earlier Set during own Main Phase"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1079
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapTargetRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/DuelScreen.cs",
+        "src/tests/Joey.Tests/SpellTrapWipeChecks.cs",
+        "docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl"
+      ],
+      "limitations": [
+        "Quick-Play response windows outside the controller's Main Phase and chain interaction are pending.",
+        "Target choice and cancellation precede commitment in the C# sandbox."
+      ]
+    },
+    {
       "id": "spell.monster-wipe-nontargeting",
       "kind": "Spell",
       "subtype": "Normal",

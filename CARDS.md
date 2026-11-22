@@ -100,6 +100,8 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 336 | Raigeki | Done (sandbox) | Destrói todos os monstros do adversário; ignora a posição sem selecionar alvos |
 | 671 | Harpie's Feather Duster | Done (sandbox) | Destrói todas as magias e armadilhas do adversário, inclusive sua zona de campo |
 | 1061 | Heavy Storm | Done (sandbox) | Destrói todas as magias e armadilhas dos dois lados, inclusive as zonas de campo |
+| 1004 | Remove Trap | Done (sandbox) | Escolhe e destrói uma armadilha face-up de qualquer lado |
+| 1079 | Mystical Space Typhoon | Partial | Escolhe e destrói uma magia ou armadilha de qualquer lado, inclusive na zona de campo, na Main Phase própria |
 | 652 | Warrior Elimination | Done (sandbox) | Destrói Warriors face-up dos dois lados |
 | 659 | Stain Storm | Done (sandbox) | Destrói Machines face-up dos dois lados |
 | 661 | Eradicating Aerosol | Done (sandbox) | Destrói Insects face-up dos dois lados |
@@ -185,6 +187,12 @@ O produtor `00578540` agenda os pedidos para 219 e 522 após o comando de dano. 
 Harpie's Feather Duster emite a máscara `0x7E0` no lado adversário em `00586850`. Heavy Storm emite `0x07E007E0` em `00589830` para os dois lados. A máscara abrange as cinco zonas de magia/armadilha e a zona de campo por lado. A disponibilidade de Feather Duster conta cartas adversárias nessas seis posições via `0057FC40 → 0056A320`.
 
 No sandbox, a ativação da mão ou de Set exige outra carta elegível e inclui cartas face-up e face-down. A remoção de equipamento limpa seu vínculo e recalcula os stats do monstro sem removê-lo. A CPU usa a magia quando destrói mais cartas adversárias do que próprias. Feather Duster integra o deck padrão da Alpha. Proteções e respostas nativas de destruição de magias/armadilhas ficam pendentes. [Cenários C#](src/tests/Joey.Tests/SpellTrapWipeChecks.cs)
+
+### Destruição com alvo de magia ou armadilha (P075/P115)
+
+Mystical Space Typhoon (1079) usa `0057B530` para filtrar zonas ocupadas de ambos os lados, inclusive as zonas de campo, excluindo a própria carta. A resolução `00585C80` revalida o alvo via `00583470` e pede destruição em `00577880`. Remove Trap (1004) usa `0057B270` para aceitar apenas armadilhas face-up de qualquer lado e resolve em `005885A0`.
+
+Na Main Phase própria, o sandbox permite iniciar da mão ou de Set, selecionar uma carta no campo e cancelar antes de gastar a magia. O motor revalida a carta e o filtro quando a seleção é confirmada. Remove Trap pode ser ativada no turno em que foi baixada. Mystical Space Typhoon, incluída no deck padrão da Alpha, precisa esperar um turno após o Set e segue Partial enquanto faltarem as outras janelas de Quick-Play e as correntes. A destruição de uma peça face-up ligada a um Destiny Board ativo também remove as outras peças face-up do mesmo lado, conforme `00576360` e `00577280`. O recorte foi testado em C#, com confirmação nativa pendente. [Cenários C#](src/tests/Joey.Tests/SpellTrapWipeChecks.cs)
 
 ### Destruição por tipo (P092)
 

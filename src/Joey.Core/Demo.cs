@@ -91,6 +91,7 @@ public sealed class DemoDuel
     public IReadOnlyList<DemoSelectedMonster> SelectedFlipTargets => flipSelections.AsReadOnly();
     public DemoFlipTarget? PendingFlipTarget { get; private set; }
     public PendingCardSelection? PendingCardSelection { get; private set; }
+    public PendingSpellTrapTarget? PendingSpellTrapTarget { get; private set; }
     /// <summary>
     /// Determined destroyed at damage calculation, but still present during FLIP resolution.
     /// Such monsters cannot be returned to the hand by Penguin Soldier.
@@ -108,7 +109,8 @@ public sealed class DemoDuel
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
-        PendingAttackResponse is not null || PendingEffectDecision is not null;
+        PendingAttackResponse is not null || PendingEffectDecision is not null ||
+        PendingSpellTrapTarget is not null;
     private bool equipmentContextResolved = true; // Closed sandbox: static properties, no generic blockers.
     public IReadOnlyList<Card> Hand => hands[ActivePlayer];
     public IReadOnlyList<Card> HandFor(int player) => player is 0 or 1
@@ -293,7 +295,7 @@ public sealed class DemoDuel
         var spells = all.Where(c => EquipmentRules.Supports(c.Id) ||
             LifePointSpellRules.Supports(c.Id) || FieldSpellRules.Supports(c.Id) ||
             (c.ClassCode == 22 && (MonsterWipeRules.Scope(c.Id) is not null ||
-                SpellTrapWipeRules.Supports(c.Id))))
+                SpellTrapWipeRules.Supports(c.Id) || SpellTrapTargetRules.Supports(c.Id))))
             .OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
@@ -326,6 +328,8 @@ public sealed class DemoDuel
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
             (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id) &&
                 HasSpellTrapWipeTargets(Hand[index].Id)) ||
+            (Hand[index].ClassCode == 22 && SpellTrapTargetRules.Supports(Hand[index].Id) &&
+                SpellTrapTargets(Hand[index].Id).Any()) ||
             (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
                 Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
@@ -461,6 +465,8 @@ public sealed class DemoDuel
             return true;
         }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
+        if (Hand[index].ClassCode == 22 && SpellTrapTargetRules.Supports(Hand[index].Id))
+            return BeginSpellTrapTarget(Hand[index], index, fromSet: false, out message);
         if (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id))
             return ActivateSpellTrapWipe(Hand[index], index, fromSet: false, out message);
         if (Hand[index].ClassCode == 22 &&
@@ -514,6 +520,15 @@ public sealed class DemoDuel
         int p = ActivePlayer;
         if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
+        if (card.ClassCode == 22 && SpellTrapTargetRules.Supports(card.Id))
+        {
+            if (card.Id == SpellTrapTargetRules.MysticalSpaceTyphoon && spellSetTurn[p, zone] >= Turn)
+            {
+                message = "Mystical Space Typhoon cannot activate on its Set turn.";
+                return false;
+            }
+            return BeginSpellTrapTarget(card, zone, fromSet: true, out message);
+        }
         if (card.ClassCode == 22 && SpellTrapWipeRules.Supports(card.Id))
             return ActivateSpellTrapWipe(card, zone, fromSet: true, out message);
         if (card.Id == DestinyBoardRules.BoardResourceId)
@@ -566,6 +581,88 @@ public sealed class DemoDuel
         message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
         return true;
     }
+    internal IEnumerable<DemoSpellTrapTarget> SpellTrapTargets(ushort resourceId, int sourceZone = -1)
+    {
+        for (int player = 0; player < 2; player++)
+        for (int zone = 0; zone <= SpellTrapTargetRules.FieldZone; zone++)
+        {
+            if (player == ActivePlayer && zone == sourceZone) continue;
+            if (SpellTrapCardAt(player, zone) is Card card &&
+                SpellTrapTargetRules.Accepts(resourceId, card, IsSpellTrapFaceDown(player, zone)))
+                yield return new(player, zone, card);
+        }
+    }
+
+    private Card? SpellTrapCardAt(int player, int zone) => zone == SpellTrapTargetRules.FieldZone
+        ? FieldSpells[player] : Spells[player, zone];
+
+    private bool IsSpellTrapFaceDown(int player, int zone) => zone == SpellTrapTargetRules.FieldZone
+        ? FieldSpellFaceDown[player] : SpellFaceDown[player, zone];
+
+    private bool BeginSpellTrapTarget(Card spell, int source, bool fromSet, out string message)
+    {
+        var candidates = SpellTrapTargets(spell.Id, fromSet ? source : -1).ToArray();
+        if (candidates.Length == 0)
+        {
+            message = "No eligible Spell or Trap to target.";
+            return false;
+        }
+        PendingSpellTrapTarget = new(ActivePlayer, spell, source, fromSet, Array.AsReadOnly(candidates));
+        message = $"{spell.Name}: choose a Spell or Trap to destroy.";
+        return true;
+    }
+
+    public bool CancelSpellTrapTarget(out string message)
+    {
+        message = "No Spell or Trap target choice is pending.";
+        if (PendingSpellTrapTarget is null) return false;
+        PendingSpellTrapTarget = null;
+        message = "Target selection canceled.";
+        return true;
+    }
+
+    public bool ResolveSpellTrapTarget(int player, int zone, out string message)
+    {
+        message = "Choose an eligible Spell or Trap still in its original zone.";
+        if (GameOver || Phase != DemoPhase.Main || PendingSpellTrapTarget is not { } pending ||
+            pending.Owner != ActivePlayer || player is < 0 or > 1 ||
+            zone is < 0 or > SpellTrapTargetRules.FieldZone ||
+            SpellTrapCardAt(player, zone) is not Card target ||
+            !pending.EligibleTargets.Any(candidate => candidate.Player == player &&
+                candidate.Zone == zone && ReferenceEquals(candidate.Card, target)) ||
+            !SpellTrapTargetRules.Accepts(pending.Spell.Id, target, IsSpellTrapFaceDown(player, zone)))
+            return false;
+
+        int source = pending.SourceIndex;
+        if (pending.FromSet
+            ? !SpellFaceDown[pending.Owner, source] || !ReferenceEquals(Spells[pending.Owner, source], pending.Spell)
+            : source >= Hand.Count || !ReferenceEquals(Hand[source], pending.Spell) || FirstFreeSpellZone() < 0)
+        {
+            message = "The activating Spell is no longer available.";
+            return false;
+        }
+
+        bool clearBoard = !IsSpellTrapFaceDown(player, zone) && IsDestinyBoardPiece(target) &&
+            DestinyBoardRules.HasActiveBoard(player, Spells, SpellFaceDown);
+        PendingSpellTrapTarget = null;
+        if (pending.FromSet) ClearSpellTrapSlot(pending.Owner, source);
+        else hands[pending.Owner].RemoveAt(source);
+        graves[pending.Owner].Add(pending.Spell);
+        DestroySpellTrapCard(player, zone);
+        if (clearBoard)
+        {
+            // 00576360/00577280 remove other face-up pieces on the same side.
+            for (int slot = 0; slot < 5; slot++)
+                if (Spells[player, slot] is Card piece && !SpellFaceDown[player, slot] && IsDestinyBoardPiece(piece))
+                    DestroySpellTrapCard(player, slot);
+        }
+        message = $"{pending.Spell.Name}: destroyed a Spell or Trap.";
+        return true;
+    }
+
+    private static bool IsDestinyBoardPiece(Card card) =>
+        card.Id == DestinyBoardRules.BoardResourceId || DestinyBoardRules.IsMessage(card.Id);
+
     private bool HasSpellTrapWipeTargets(ushort resourceId, int sourceZone = -1)
     {
         int caster = ActivePlayer;
@@ -596,20 +693,27 @@ public sealed class DemoDuel
     private int DestroySpellTrapSide(int owner)
     {
         int count = 0;
-        for (int zone = 0; zone < 5; zone++)
+        for (int zone = 0; zone <= SpellTrapTargetRules.FieldZone; zone++)
         {
-            if (Spells[owner, zone] is not Card card) continue;
-            RemoveEquipmentCore(owner, zone);
-            if (Spells[owner, zone] is not null)
-            {
-                ClearSpellTrapSlot(owner, zone);
-                graves[owner].Add(card);
-            }
+            if (SpellTrapCardAt(owner, zone) is null) continue;
+            DestroySpellTrapCard(owner, zone);
             count++;
         }
-        if (FieldSpells[owner] is null) return count;
-        SendFieldSpellToGraveyard(owner);
-        return count + 1;
+        return count;
+    }
+
+    private void DestroySpellTrapCard(int owner, int zone)
+    {
+        if (zone == SpellTrapTargetRules.FieldZone)
+        {
+            SendFieldSpellToGraveyard(owner);
+            return;
+        }
+        if (Spells[owner, zone] is not Card card) return;
+        RemoveEquipmentCore(owner, zone);
+        if (Spells[owner, zone] is null) return;
+        ClearSpellTrapSlot(owner, zone);
+        graves[owner].Add(card);
     }
 
     private void ClearSpellTrapSlot(int owner, int zone)
