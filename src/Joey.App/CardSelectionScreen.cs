@@ -99,15 +99,15 @@ static partial class Game
             cardSelectionPage++;
     }
 
-    static bool DrawSelectionCard(Card card, int slot, bool chosen, string? source = null)
+    static bool DrawSelectionCard(Card card, int slot, bool chosen, string? source = null, bool selectable = true)
     {
         int x = 247 + slot % 5 * 106, y = 182 + slot / 5 * 155;
         var bounds = new Rectangle(x, y, 87, 112);
         Raylib.DrawRectangleRec(bounds, Panel);
         DrawArtwork(card, x + 3, y + 3, 81, 104);
-        bool hovered = Hit(bounds);
+        bool hovered = selectable && Hit(bounds);
         Raylib.DrawRectangleLinesEx(bounds, chosen || hovered ? 3 : 1,
-            chosen ? Color.Lime : hovered ? Color.White : Gold);
+            chosen ? Color.Lime : hovered ? Color.White : selectable ? Gold : Color.Gray);
         string name = card.Name;
         while (name.Length > 4 && MeasureLabel(name, 12) > 98) name = name[..^1];
         if (name.Length < card.Name.Length) name = name[..^3] + "...";

@@ -79,6 +79,9 @@ public static class FusionRules
     public static bool IsFusionMonster(Card card) =>
         card.IsMonster && NormalSummonRules.Category(card) == 2;
 
+    // 00568580 checks these exact resource IDs.
+    public static bool IsSubstitute(Card card) => card.IsMonster && card.Id is 108 or 257 or 268 or 641;
+
     internal static IReadOnlyList<ushort>? Recipe(Card card)
     {
         if (!IsFusionMonster(card)) return null;
@@ -89,8 +92,57 @@ public static class FusionRules
     internal static bool Matches(ushort materialId, ushort requiredId) =>
         materialId == requiredId || materialId == requiredId + 2000;
 
-    public static bool Fits(IReadOnlyList<ushort> recipe, IReadOnlyList<FusionMaterial> selected) =>
-        recipe.Distinct().All(id => selected.Count(material => Matches(material.Card.Id, id)) <=
-            recipe.Count(required => required == id)) &&
-        selected.All(material => recipe.Any(id => Matches(material.Card.Id, id)));
+    internal static bool MaySupply(IReadOnlyList<ushort> recipe, FusionMaterial material) =>
+        IsSubstitute(material.Card) || recipe.Any(id => Matches(material.Card.Id, id));
+
+    internal static FusionMaterial[]? Complete(IReadOnlyList<ushort> recipe,
+        IReadOnlyList<FusionMaterial> candidates, IReadOnlyList<FusionMaterial> selected, bool needsField)
+    {
+        if (!needsField || selected.Any(material => material.Zone == FusionMaterialZone.Field))
+            return CompleteRecipe(recipe, candidates, selected);
+
+        // Try each eligible field occurrence as an anchor. This also finds
+        // a legal combination when the only usable field material is a substitute.
+        foreach (var field in candidates.Where(material => material.Zone == FusionMaterialZone.Field)
+                     .OrderBy(material => IsSubstitute(material.Card)))
+            if (CompleteRecipe(recipe, candidates, [.. selected, field]) is { } complete)
+                return complete;
+        return null;
+    }
+
+    private static FusionMaterial[]? CompleteRecipe(IReadOnlyList<ushort> recipe,
+        IReadOnlyList<FusionMaterial> candidates, IReadOnlyList<FusionMaterial> selected)
+    {
+        if (selected.Count > recipe.Count ||
+            selected.Select(material => (material.Zone, material.Index)).Distinct().Count() != selected.Count)
+            return null;
+
+        var needed = recipe.ToList();
+        bool usedSubstitute = false;
+        foreach (var material in selected)
+        {
+            int match = needed.FindIndex(id => Matches(material.Card.Id, id));
+            if (match >= 0) needed.RemoveAt(match);
+            else if (!usedSubstitute && IsSubstitute(material.Card)) usedSubstitute = true;
+            else return null;
+        }
+
+        int exactNeeded = needed.Count - (usedSubstitute ? 1 : 0);
+        if (exactNeeded < 0) return null;
+        var available = candidates.Except(selected).ToList();
+        var complete = selected.ToList();
+        foreach (ushort id in needed)
+        {
+            if (complete.Count == selected.Count + exactNeeded) break;
+            int match = available.FindIndex(material => Matches(material.Card.Id, id));
+            if (match < 0) continue;
+            complete.Add(available[match]);
+            available.RemoveAt(match);
+        }
+
+        if (!usedSubstitute && complete.Count == recipe.Count - 1 &&
+            available.FirstOrDefault(material => IsSubstitute(material.Card)) is { } substitute)
+            complete.Add(substitute);
+        return complete.Count == recipe.Count ? complete.ToArray() : null;
+    }
 }

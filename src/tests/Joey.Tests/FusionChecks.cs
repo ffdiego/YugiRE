@@ -96,6 +96,61 @@ internal static class FusionChecks
         check(shuffle.ChangePosition(0, out _) && shuffle.FusionDeck(1).Single() == thousand &&
               shuffle.DeckSnapshot(1).Single() == filler && shuffle.LastMorphingJar2[1].Excavated == 0,
             "Fusion: Morphing Jar #2 returns the Fusion Monster without adding to the Main Deck quota");
+
+        CheckSubstitutes(check, spell, baby, wizard, thousand, filler);
+    }
+
+    private static void CheckSubstitutes(Action<bool, string> check, Card spell, Card baby, Card wizard,
+        Card thousand, Card filler)
+    {
+        Card?[] empty = new Card?[5];
+        Card[] substitutes = [Monster(108), Monster(257), Monster(268), Monster(641)];
+        foreach (Card substitute in substitutes)
+        {
+            var duel = DemoDuel.FromPartialObservation(0, [spell, baby, substitute], empty, empty, 8000,
+                side0FusionDeck: [thousand]);
+            check(duel.CanActivateFromHand(0) && duel.Play(0, out _) &&
+                  duel.ResolveFusionSummon(0, duel.PendingFusionSummon!.Options.Single().SuggestedMaterials, out _) &&
+                  duel.Graveyard(0).SequenceEqual([spell, baby, substitute]) && duel.Monsters[0, 0] == thousand,
+                $"Fusion substitute {substitute.Id}: fills one missing material from the hand");
+        }
+
+        var full = DemoDuel.FromPartialObservation(0, [spell, baby, wizard],
+            [filler, filler, substitutes[0], filler, filler], empty, 8000, side0FusionDeck: [thousand]);
+        check(full.CanActivateFromHand(0) && full.Play(0, out _),
+            "Fusion substitute: a field substitute can free the only zone even with exact materials in the hand");
+        var option = full.PendingFusionSummon!.Options.Single();
+        var hand = option.Materials.Where(material => material.Zone == FusionMaterialZone.Hand).ToArray();
+        check(full.CanCompleteFusionSelection(option, [hand[0]]) &&
+              !full.CanCompleteFusionSelection(option, hand) &&
+              !full.ResolveFusionSummon(0, hand, out _) && full.Graveyard(0).Count == 0,
+            "Fusion substitute: the choice filter prevents a dead end and the resolver preserves cards");
+        check(full.ResolveFusionSummon(0, option.SuggestedMaterials, out _) &&
+              full.Monsters[0, 2] == thousand && full.Hand.Count == 1 &&
+              full.Graveyard(0).Contains(substitutes[0]),
+            "Fusion substitute: the suggested combination consumes the field substitute and uses its zone");
+
+        var twoSubstitutes = DemoDuel.FromPartialObservation(0, [spell, substitutes[0], substitutes[1]],
+            empty, empty, 8000, side0FusionDeck: [thousand]);
+        check(!twoSubstitutes.CanActivateFromHand(0) && !twoSubstitutes.Play(0, out _),
+            "Fusion substitute: two substitutes cannot satisfy a two-material recipe");
+
+        Card blue = Monster(0), ultimate = Monster(379, fusion: true);
+        var triple = DemoDuel.FromPartialObservation(0, [spell, blue, blue, substitutes[0], substitutes[1]],
+            empty, empty, 8000, side0FusionDeck: [ultimate]);
+        check(triple.Play(0, out _), "Fusion substitute: can open a three-material recipe with two Blue-Eyes in hand");
+        var tripleOption = triple.PendingFusionSummon!.Options.Single();
+        var wildcards = tripleOption.Materials.Where(material => FusionRules.IsSubstitute(material.Card)).ToArray();
+        var copies = tripleOption.Materials.Where(material => material.Card == blue).ToArray();
+        check(!triple.CanCompleteFusionSelection(tripleOption, wildcards) &&
+              !triple.ResolveFusionSummon(0, [copies[0], .. wildcards], out _) &&
+              !triple.ResolveFusionSummon(0, [copies[0], copies[0], wildcards[0]], out _) &&
+              triple.Hand.Count == 5,
+            "Fusion substitute: a triple requires two exact, distinct occurrences and at most one wildcard");
+        check(triple.CanCompleteFusionSelection(tripleOption, [wildcards[1]]) &&
+              triple.ResolveFusionSummon(0, [wildcards[1], .. copies], out _) &&
+              triple.Monsters[0, 0] == ultimate && triple.Hand.Single() == substitutes[0],
+            "Fusion substitute: can select the wildcard first and choose which copy to use");
     }
 
     public static void RunCatalog(IReadOnlyList<Card> catalog, Action<bool, string> check)

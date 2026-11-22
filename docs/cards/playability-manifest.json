@@ -77,7 +77,7 @@
         "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
       ],
       "limitations": [
-        "Sandbox scope: exact materials, no substitutes, Fusion Gate, chains or original timing validation.",
+        "Sandbox scope includes one substitute per recipe. Fusion Gate, chains and original timing validation are pending.",
         "Face-down defender handling follows static evidence."
       ]
     },
@@ -86,7 +86,7 @@
       "kind": "Monster",
       "subtype": "Fusion",
       "mechanics": [
-        "Polymerization uses distinct exact materials from the controller’s hand or field",
+        "Polymerization uses distinct materials from the controller’s hand or field, with up to one substitute",
         "Special Summon from its own Fusion Deck into an empty or freed Monster Zone"
       ],
       "status": "Done",
@@ -129,7 +129,7 @@
         "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl"
       ],
       "limitations": [
-        "Sandbox scope: exact materials, no substitutes, Fusion Gate, chains or original timing validation."
+        "Sandbox scope includes one substitute per recipe. Fusion Gate, chains and original timing validation are pending."
       ]
     },
     {
@@ -137,7 +137,7 @@
       "kind": "Monster",
       "subtype": "Fusion",
       "mechanics": [
-        "Fusion Summon through Polymerization with exact materials"
+        "Fusion Summon through Polymerization with exact materials or one substitute"
       ],
       "status": "Partial",
       "resourceIds": [
@@ -156,15 +156,39 @@
       ]
     },
     {
+      "id": "monster.fusion-material-substitute",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "One occurrence can replace a single required Fusion Material from the hand or field"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        108,
+        257,
+        268,
+        641
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/cards/fusion-substitutes.md"
+      ],
+      "limitations": [
+        "Sandbox accepts any legal combination that frees a zone. The native full-board precheck requires runtime comparison."
+      ]
+    },
+    {
       "id": "spell.polymerization",
       "kind": "Spell",
       "subtype": "Normal",
       "mechanics": [
-        "Choose a result from the Fusion Deck and distinct exact materials from the controller’s hand or field",
+        "Choose a result and distinct materials from the controller’s hand or field, including up to one substitute",
         "Send materials to the Graveyard and Special Summon the result",
         "Activate from hand or Set during a Main Phase"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         1003,
         1034
@@ -177,7 +201,7 @@
         "src/Joey.App/FusionSelectionScreen.cs"
       ],
       "limitations": [
-        "Fusion substitutes, card-specific destination replacements and native chain windows are pending."
+        "Sandbox scope. Native chain windows and generic destination replacement effects are pending."
       ]
     },
     {

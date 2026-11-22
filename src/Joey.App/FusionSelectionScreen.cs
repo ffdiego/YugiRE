@@ -51,10 +51,11 @@ static partial class Game
             }
             var material = result.Materials[index];
             bool chosen = selectedFusionMaterials.Contains(material);
-            if (!DrawSelectionCard(material.Card, slot, chosen, $"{material.Zone} {material.Index + 1}")) continue;
+            bool selectable = chosen || duel.CanCompleteFusionSelection(result, [.. selectedFusionMaterials, material]);
+            if (!DrawSelectionCard(material.Card, slot, chosen, $"{material.Zone} {material.Index + 1}", selectable))
+                continue;
             if (chosen) selectedFusionMaterials.Remove(material);
-            else if (FusionRules.Fits(result.Recipe, [.. selectedFusionMaterials, material]))
-                selectedFusionMaterials.Add(material);
+            else selectedFusionMaterials.Add(material);
             return;
         }
 

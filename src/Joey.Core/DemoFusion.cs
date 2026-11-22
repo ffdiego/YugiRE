@@ -32,11 +32,8 @@ public sealed partial class DemoDuel
         {
             Card result = fusionDecks[owner][index];
             if (FusionRules.Recipe(result) is not { } recipe) continue;
-            var eligible = candidates.Where(material => recipe.Any(id => FusionRules.Matches(material.Card.Id, id))).ToArray();
-            FusionMaterial[] suggested = recipe.GroupBy(id => id)
-                .SelectMany(group => eligible.Where(material => FusionRules.Matches(material.Card.Id, group.Key))
-                    .Take(group.Count())).ToArray();
-            if (suggested.Length == recipe.Count && (!full || suggested.Any(m => m.Zone == FusionMaterialZone.Field)))
+            var eligible = candidates.Where(material => FusionRules.MaySupply(recipe, material)).ToArray();
+            if (FusionRules.Complete(recipe, eligible, [], full) is { } suggested)
                 yield return new(index, result, recipe, Array.AsReadOnly(eligible), Array.AsReadOnly(suggested));
         }
     }
@@ -63,6 +60,11 @@ public sealed partial class DemoDuel
         return true;
     }
 
+    public bool CanCompleteFusionSelection(FusionSummonOption option, IReadOnlyList<FusionMaterial> selected) =>
+        PendingFusionSummon is { } pending && pending.Options.Contains(option) &&
+        selected.All(option.Materials.Contains) &&
+        FusionRules.Complete(option.Recipe, option.Materials, selected, FirstFreeMonsterZone() < 0) is not null;
+
     public bool ResolveFusionSummon(int deckIndex, IReadOnlyList<FusionMaterial> materials, out string message,
         bool defense = false)
     {
@@ -71,8 +73,7 @@ public sealed partial class DemoDuel
             pending.Owner != ActivePlayer ||
             pending.Options.FirstOrDefault(option => option.DeckIndex == deckIndex) is not { } choice ||
             materials.Count != choice.Recipe.Count ||
-            materials.Select(material => (material.Zone, material.Index)).Distinct().Count() != materials.Count ||
-            !FusionRules.Fits(choice.Recipe, materials))
+            FusionRules.Complete(choice.Recipe, [], materials, needsField: false) is null)
             return false;
 
         int owner = pending.Owner;
