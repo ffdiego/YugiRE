@@ -45,8 +45,14 @@ static partial class Game
             lastDestinyBoardCandidate =
                 NativeCinematicRouting.DestinyBoardVictory(completed.Player);
         duel.MonsterNormalSummoned += normal =>
+        {
             lastSignatureCandidate = NativeCinematicRouting.SignatureCandidate(
                 normal.Player, normal.Card.Id, normal.FaceDown);
+            // Presentation events also cover forced/automatic normal Summons.
+            // A hidden CPU Set must never disclose its actual card identity.
+            ShowPlayedCardDetail(normal.Card,
+                hiddenFromPlayer: normal.Player != ViewPlayer && normal.FaceDown);
+        };
         duel.MonsterDestroyed += monster => QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
         duel.MonsterTributed += tribute => QueueTributeEffect(tribute);
         duel.HandTransferred += transfer =>
@@ -60,7 +66,11 @@ static partial class Game
             QueueCardEffect(new HandTransfer(transfer, departure), CardTravel.Updates);
         };
         duel.MonsterSpecialSummoned += summon =>
+        {
+            ShowPlayedCardDetail(summon.Card, hiddenFromPlayer:
+                summon.Player != ViewPlayer && summon.FaceDownDefense);
             QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
+        };
         duel.DeckShuffled += player =>
             QueueCardEffect(new ShuffleDeck(player), NativeShuffleFrame.Updates);
         duel.ExodiaCompleted += completion => QueueExodiaOpening(completion);
