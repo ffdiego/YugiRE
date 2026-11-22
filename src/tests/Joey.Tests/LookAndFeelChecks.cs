@@ -25,6 +25,57 @@ internal static class LookAndFeelChecks
               !NativeVisualArchiveScope.Includes(@"j\dueling\effect\vija.txt") &&
               !NativeVisualArchiveScope.Includes(null),
               "Visual DAT discovery: reject adjacent/non-cinematic archive branches");
+        // 00403310 routes two resource IDs to bust-up summon constructors;
+        // the perspective gate and the Draw are not yet mapped. No
+        // invented hold duration is allowed for report-only candidates.
+        var redEyesCutin = NativeCinematicRouting.SignatureCandidate(
+            1, NativeCinematicRouting.RedEyesResourceId, faceDown: false);
+        var alternateCutin = NativeCinematicRouting.SignatureCandidate(
+            0, NativeCinematicRouting.AlternateSignatureResourceId, faceDown: false);
+        var exodiaCutin = NativeCinematicRouting.ExodiaOpening(0);
+        check(redEyesCutin is { Kind: NativeCinematicKind.SignatureSummon,
+                               Player: 1, CardResourceId: 81,
+                               Manifest: @"j\bust_up\summon.txt" } &&
+              alternateCutin is { Kind: NativeCinematicKind.SignatureSummon,
+                                  Player: 0, CardResourceId: 744,
+                                  Manifest: @"j\bust_up\summon2.txt" },
+              "Native cinematic routing: signature candidates preserve IDs and source manifests");
+        check(NativeCinematicRouting.SignatureCandidate(0, 81, faceDown: true) is null &&
+              NativeCinematicRouting.SignatureCandidate(0, 80, faceDown: false) is null &&
+              NativeCinematicRouting.SignatureCandidate(0, 745, faceDown: false) is null,
+              "Native cinematic routing: Sets and unrelated monster IDs never cue a bust-up");
+        check(exodiaCutin.Kind == NativeCinematicKind.ExodiaOpening &&
+              exodiaCutin.Manifest == @"j\duel\exodia\exodia.txt" &&
+              exodiaCutin.HasPlayableDraw &&
+              NativeCinematicRouting.ImplementedUpdates(exodiaCutin) ==
+                    NativeExodiaOpeningFrame.OpeningUpdates &&
+              redEyesCutin.HasValue && !redEyesCutin.Value.HasPlayableDraw &&
+              !alternateCutin!.Value.HasPlayableDraw &&
+              NativeCinematicRouting.ImplementedUpdates(new(
+                  NativeCinematicKind.DestinyBoard, 0, 1528,
+                  @"j\duel\effect\vija.txt")) is null,
+              "Cinematic gate: only the implemented Exodia stage can block the visual FIFO");
+        bool invalidCinematicPlayerRejected = false;
+        try { NativeCinematicRouting.SignatureCandidate(2, 81, faceDown: false); }
+        catch (ArgumentOutOfRangeException) { invalidCinematicPlayerRejected = true; }
+        check(invalidCinematicPlayerRejected,
+              "Cinematic routing: reject invalid controller instead of misaddressing scene");
+        var cinematicOrder = new PresentationSequence<string>();
+        cinematicOrder.Enqueue("fifth transfer", CardTravel.Updates);
+        if (exodiaCutin.HasPlayableDraw)
+            cinematicOrder.Enqueue(exodiaCutin.Kind.ToString(),
+                NativeCinematicRouting.ImplementedUpdates(exodiaCutin)!.Value);
+        if (redEyesCutin?.HasPlayableDraw == true)
+            cinematicOrder.Enqueue(redEyesCutin.Value.Kind.ToString(),
+                NativeCinematicRouting.ImplementedUpdates(redEyesCutin.Value)!.Value);
+        check(cinematicOrder.Pending.Count() == 2 &&
+              cinematicOrder.Current?.Kind == "fifth transfer",
+              "Cinematic scheduler: unimplemented signature cues cannot produce invisible input locks");
+        cinematicOrder.Advance(CardTravel.Updates);
+        check(cinematicOrder.Current?.Kind == "ExodiaOpening" &&
+              cinematicOrder.ElapsedUpdates == 0,
+              "Cinematic scheduler: Exodia begins on the first sample after the last card flight");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
