@@ -149,6 +149,7 @@ static partial class Game
             var origin = HandBounds(index);
             if (duel.SetFromHand(index, out message))
             {
+                ShowPlayedCardDetail(card);
                 handLayouts[ViewPlayer].RemoveAt(index);
                 if (zone >= 0)
                 {
@@ -169,6 +170,7 @@ static partial class Game
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
+            ShowPlayedCardDetail(card);
             handLayouts[ViewPlayer].RemoveAt(index);
             if (FieldSpellRules.Supports(card.Id))
                 BeginCardActivation(card, FieldZoneBounds(ViewPlayer), origin);
@@ -183,6 +185,7 @@ static partial class Game
         int zone = duel.FirstFreeMonsterZone(tributeZones);
         var origin = HandBounds(index);
         if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
+        ShowPlayedCardDetail(card);
         handLayouts[ViewPlayer].RemoveAt(index);
         bool set = setHandAction;
         BeginFlight(card, ViewPlayer, zone, origin, false, set);

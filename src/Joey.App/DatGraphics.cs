@@ -44,7 +44,11 @@ sealed class DatGraphics : IDisposable
     public const string LifeBackgroundFar = @"j\duel\life\lp_aite1.bmp";
     public const string LifeFillNear = @"j\duel\life\lp_jibu2.bmp";
     public const string LifeFillFar = @"j\duel\life\lp_aite2.bmp";
-    public const string LifeNumberFont = @"j\duel\font\duel_fontm_y.bmp";
+    // The large LP labels in native screenshots use the large-number
+    // atlas; the previously selected medium-yellow atlas was too small.
+    // Keep the latter only as a manifest-validated fallback.
+    public const string LifeNumberFont = @"j\duel\font\duel_fontl.bmp";
+    public const string LifeNumberFallback = @"j\duel\font\duel_fontm_y.bmp";
     public static readonly string[] LifeFloatingFonts =
     [
         @"j\duel\font\damage00.bmp", @"j\duel\font\damage01.bmp"
@@ -52,7 +56,8 @@ sealed class DatGraphics : IDisposable
     public const string LifeNumberManifest = @"j\duel\font\number.txt";
     public static readonly string[] LifeSprites =
     [
-        LifeBackgroundNear, LifeBackgroundFar, LifeFillNear, LifeFillFar, LifeNumberFont
+        LifeBackgroundNear, LifeBackgroundFar, LifeFillNear, LifeFillFar,
+        LifeNumberFont, LifeNumberFallback
     ];
     public const string SpecialSummonManifest = @"j\duel\effect\sp_summon.txt";
     public static readonly string[] SpecialSummonAttackSprites =
@@ -95,6 +100,7 @@ sealed class DatGraphics : IDisposable
     public CardListResources CardList { get; private set; } = null!;
     public CardArtwork Artwork { get; private set; } = null!;
     public int? LifeNumberGlyphColumns { get; private set; }
+    public string LifeNumberSprite { get; private set; } = LifeNumberFont;
     public int?[] LifeFloatingGlyphColumns { get; } = new int?[2];
     public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
     // Evict between frames, after the previous Raylib batch has been submitted.
@@ -113,7 +119,13 @@ sealed class DatGraphics : IDisposable
         Menu = MenuResources.Load(archive);
         CardList = CardListResources.Load(archive);
         string fonts = System.Text.Encoding.Latin1.GetString(archive.Read(LifeNumberManifest));
-        LifeNumberGlyphColumns = NativeLifeHud.TryFontColumns(fonts, "duel_fontm_y.bmp");
+        LifeNumberSprite = LifeNumberFont;
+        LifeNumberGlyphColumns = NativeLifeHud.TryFontColumns(fonts, "duel_fontl.bmp");
+        if (LifeNumberGlyphColumns is null)
+        {
+            LifeNumberSprite = LifeNumberFallback;
+            LifeNumberGlyphColumns = NativeLifeHud.TryFontColumns(fonts, "duel_fontm_y.bmp");
+        }
         for (int i = 0; i < LifeFloatingFonts.Length; i++)
             LifeFloatingGlyphColumns[i] = NativeLifeHud.TryFontColumns(
                 fonts, System.IO.Path.GetFileName(LifeFloatingFonts[i].Replace('\\', '/')));
@@ -174,6 +186,7 @@ sealed class DatGraphics : IDisposable
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
+            name.Equals(LifeNumberFallback, StringComparison.OrdinalIgnoreCase) ||
             LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(DuelStartEnglish, StringComparison.OrdinalIgnoreCase) ||
             ShuffleSprites.Contains(name, StringComparer.OrdinalIgnoreCase))

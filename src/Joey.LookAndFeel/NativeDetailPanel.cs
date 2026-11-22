@@ -19,8 +19,10 @@ public static class NativeDetailPanel
 
     // The original DAT card front/back is 200x290; the detail image should
     // not shrink it to 186x265. X is centered within detail.bmp (230px).
-    // Y placement 75 is from paired screenshots (not yet static VA verified).
-    public static CardBounds PreviewBounds => new(15, 75, 200, 290);
+    // X=8 (vs provisional 15) measured against the paired original/RE
+    // screenshot, while Y=75 preserves the already-matched vertical edge.
+    // Absolute position still awaits static Draw correlation.
+    public static CardBounds PreviewBounds => new(8, 75, 200, 290);
 
     // 0041C920 sets the scroll widget origin, using virtual SetPosition.
     public const int ScrollWidgetX = 186;

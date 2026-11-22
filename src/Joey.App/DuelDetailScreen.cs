@@ -7,6 +7,9 @@ static partial class Game
 {
     static Card? detailCard;
     static bool detailShowsBack = true;
+    static Card? lastHoveredDetail;
+    static bool lastHoveredWasBack;
+    static bool hadHoveredTarget;
     static bool activatedDetail;
     static int duelDescriptionScroll;
     static readonly NativeLifePointPresentation[] lifeDisplays = [new(8000), new(8000)];
@@ -31,17 +34,24 @@ static partial class Game
             lifeDisplays[player].Reset(duel.Life[player]);
         detailCard = null;
         detailShowsBack = true; // The sidebar always starts with the DAT back.
+        lastHoveredDetail = null;
+        lastHoveredWasBack = false;
+        hadHoveredTarget = false;
         duelDescriptionScroll = 0;
         activatedDetail = false;
     }
 
-    static void ShowActivatedDetail(Card card)
+    static void ShowPlayedCardDetail(Card card, bool hiddenFromPlayer = false)
     {
-        detailCard = card;
-        detailShowsBack = false;
+        // Set cards belonging to the CPU are unknown to the human. Show
+        // the back, not a Card object, even though Core has its identity.
+        detailCard = hiddenFromPlayer ? null : card;
+        detailShowsBack = hiddenFromPlayer;
         duelDescriptionScroll = 0;
         activatedDetail = true;
     }
+
+    static void ShowActivatedDetail(Card card) => ShowPlayedCardDetail(card);
 
     static void UpdateDuelDetail()
     {
@@ -49,9 +59,16 @@ static partial class Game
         // Keep the last inspected face or back until another valid card
         // (including an unknown opponent card) is hovered.
         var target = FindHoveredDuelCard();
-        if (activatedDetail || target is not { } hovered) return;
-        if (ReferenceEquals(hovered.Card, detailCard) &&
-            hovered.Back == detailShowsBack) return;
+        bool enteredNewCard = target is { } hovering &&
+            (!hadHoveredTarget ||
+             !ReferenceEquals(hovering.Card, lastHoveredDetail) ||
+             hovering.Back != lastHoveredWasBack);
+        // A played card becomes the sidebar focus even if the pointer has
+        // not moved from its previous card. Only a NEW hover takes over.
+        hadHoveredTarget = target.HasValue;
+        lastHoveredDetail = target?.Card;
+        lastHoveredWasBack = target?.Back ?? false;
+        if (activatedDetail || !enteredNewCard || target is not { } hovered) return;
         detailCard = hovered.Card;
         detailShowsBack = hovered.Back;
         duelDescriptionScroll = 0;
@@ -128,25 +145,26 @@ static partial class Game
             return;
         }
 
-        var font = graphics.Texture(DatGraphics.LifeNumberFont);
+        var font = graphics.Texture(graphics.LifeNumberSprite);
         if (font.Width % columns != 0)
         {
             Label(displayed.ToString(), 74, y, 19, Gold);
             return;
         }
 
-        // 004803C0: the source atlas is drawn 1:1, advancing by the
-        // native glyph width. The old 19px cap shrank the LP numbers and
-        // changed their width/height ratio relative to the original.
-        // Anchor coordinates remain provisional pending 0047C660.
-        int glyphWidth = NativeLifeHud.GlyphWidth(font.Width, columns);
+        // 004803C0 selects fixed atlas slices right-to-left. The original
+        // HUD presents them at a larger scale than the source BMP; do not
+        // mistake the atlas's physical glyph height for the screen height.
+        // The right anchor and 32px target are based on paired screenshots.
+        int sourceWidth = NativeLifeHud.GlyphWidth(font.Width, columns);
+        float glyphWidth = NativeLifeHud.DisplayGlyphWidth(font.Width, font.Height, columns);
         int[] digits = NativeLifeHud.DecimalGlyphs(displayed);
-        float x = 209 - digits.Length * glyphWidth;
+        float x = NativeLifeHud.DisplayRightX - digits.Length * glyphWidth;
         foreach (int digit in digits)
         {
             Raylib.DrawTexturePro(font,
-                new Rectangle(digit * glyphWidth, 0, glyphWidth, font.Height),
-                new Rectangle(x, y, glyphWidth, font.Height),
+                new Rectangle(digit * sourceWidth, 0, sourceWidth, font.Height),
+                new Rectangle(x, y, glyphWidth, NativeLifeHud.DisplayGlyphHeight),
                 Vector2.Zero, 0, Color.White);
             x += glyphWidth;
         }
@@ -197,8 +215,8 @@ static partial class Game
         // description area with solid raylib Panel rectangles.
         DrawLifeBar(1 - ViewPlayer, near: false);
         DrawLifeBar(ViewPlayer, near: true);
-        DrawLifeDigits(1 - ViewPlayer, 9);
-        DrawLifeDigits(ViewPlayer, 557);
+        DrawLifeDigits(1 - ViewPlayer, NativeLifeHud.DisplayTopY);
+        DrawLifeDigits(ViewPlayer, NativeLifeHud.DisplayBottomY);
         if (detailShowsBack)
         {
             var bounds = NativeDetailPanel.PreviewBounds;

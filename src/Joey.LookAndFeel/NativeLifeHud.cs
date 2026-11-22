@@ -9,6 +9,22 @@ public static class NativeLifeHud
 {
     public const int BarFullAtLife = 8000;
 
+    // The original LP digits are enlarged bitmap glyphs, not GDI text.
+    // Pixel size/anchor are paired-frame estimates, pending the native
+    // 0047C660 layout descriptor.
+    public const int DisplayGlyphHeight = 32;
+    public const int DisplayRightX = 195;
+    public const int DisplayTopY = 3;
+    public const int DisplayBottomY = 536;
+
+    public static float DisplayGlyphWidth(int atlasWidth, int atlasHeight, int columns)
+    {
+        if (atlasHeight <= 0)
+            throw new ArgumentOutOfRangeException(nameof(atlasHeight));
+        return GlyphWidth(atlasWidth, columns) *
+               (DisplayGlyphHeight / (float)atlasHeight);
+    }
+
     /// <summary>
     /// 0047C660 limits obj+24h to 8000 before multiplying by bar width and
     /// dividing by 8000. Use 64-bit intermediates to avoid overflow.

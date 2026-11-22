@@ -259,12 +259,10 @@ internal static class LookAndFeelChecks
                       new CardBounds(321, 296, 58, 80),
                   $"Field attack focus: 58x80 footprint stays upright ({degrees} degrees)");
         check(NativeDetailPanel.PreviewBounds ==
-                  new CardBounds(15, 75, 200, 290) &&
-              NativeDetailPanel.PreviewBounds.X * 2 +
-                  NativeDetailPanel.PreviewBounds.Width == 230 &&
+                  new CardBounds(8, 75, 200, 290) &&
               NativeDetailPanel.PreviewBounds.Y +
                   NativeDetailPanel.PreviewBounds.Height == NativeDetailPanel.TextY,
-              "Native sidebar: full 200x290 card centered in 230px detail, above text viewport");
+              "Native sidebar: 200x290 at x=8 aligned with original paired screenshot");
 
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
@@ -603,6 +601,12 @@ internal static class LookAndFeelChecks
         check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
               "Set placement: effect starts after hand-to-field flight");
 
+        check(NativeLifeHud.DisplayGlyphHeight == 32 &&
+              NativeLifeHud.DisplayRightX == 195 &&
+              NativeLifeHud.DisplayGlyphWidth(120, 12, 10) == 32f &&
+              NativeLifeHud.DisplayTopY == 3 &&
+              NativeLifeHud.DisplayBottomY == 536,
+              "Original LP digits use scaled source sprite glyphs with right alignment");
         // 0047C660 uses displayed (not logical) LP for the native bar,
         // saturating at 8000 even though the numeric display reaches 65535.
         check(NativeLifeHud.FilledBarPixels(0, 137) == 0 &&

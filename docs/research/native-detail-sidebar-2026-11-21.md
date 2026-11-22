@@ -30,3 +30,19 @@ Este trabalho é uma melhoria parcial em uma família Draw já inventariada, nã
 ## Testes
 
 LookAndFeelChecks verifica coordenadas nativas, largura 184−8=176, origem do widget em 186,364, 3 cores COLORREF, quebra por medição e limites de rolagem. CI .NET 10 e testes offline Python/Node. Revisão gráfica em Windows: iniciar a Alpha, comparar card detail vazio, monstro e magia com descrição longa, observar contornos do painel, LP, texturas e scroll.
+## Ajuste horizontal do detalhe (22/11/2026)
+
+A comparação de cartas distintas lado a lado mostrou que 200x290 estava
+certo, porém a cópia RE começava cerca de 7–8 pixels à direita. A origem
+foi alterada de `(15,75)` para `(8,75)` sem alterar tamanho ou Y.
+Esta é medida por screenshot, aguardando confirmação estática de Draw.
+
+### Foco em cartas jogadas
+
+Ao confirmar carta da mão em Set, Summon ou Play, o painel recebe imediatamente
+essa carta. Nas ações de CPU, Set oculto muda para o verso sem expor identidade;
+Summon, Spell, Equip e Response mostram a carta conhecida jogada. O painel
+agora distingue a última entidade sob hover do detalhe atual, impedindo que
+um mouse estacionário sobre outra carta desfaça o foco da jogada no frame
+seguinte. Um *novo* hover volta a comandar o detalhe, e ao sair de todas as
+cartas ele permanece visível. A lógica não altera Joey.Core.

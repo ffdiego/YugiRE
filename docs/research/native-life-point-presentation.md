@@ -125,3 +125,13 @@ investigar as janelas de `0047C660` que chamam
 
 O estado continua **Partial**, e a cobertura de funções Draw
 permanece **13/31**: esta fatia melhora uma função já contada.
+
+## Revisão dos sprites de LP após comparação do original (22/11/2026)
+
+A imagem pareada mostrou o número permanente do LP significativamente maior que a versão RE, mesmo após o recorte 1:1 do atlas. A fonte original é um **atlas de dígitos BMP**, não uma fonte alfabética do sistema. O cliente agora tenta usar `duel_fontl.bmp` como fonte principal, consulta a quantidade de colunas do `number.txt` real e só volta a `duel_fontm_y.bmp` quando o manifesto não identifica o atlas grande.
+
+Os números do LP são desenhados com recorte correto do atlas, ampliados para 32 px de altura, alinhados à direita em X=195, com top Y=3 e bottom Y=536. Esses valores são **estimativas da captura**, não prova do código de `0047C660`; não promovemos cobertura visual com essa mudança.
+
+O texto flutuante de perda/cura de LP já passa por `damage00.bmp` / `damage01.bmp` e pelo sampler `NativeFloatingLifeDigits`, reconstruído a partir de `004806F0`. Portanto ele também é composto de sprites; a animação usa cossenos aproximados e posições iniciais provisórias. **Não** converter esse efeito para GDI/Raylib Text.
+
+O manifesto `j\duel\font\number.txt` no DAT real é a próxima evidência para conferir quais colunas/variante foram selecionadas e se o atlas grande corresponde ao LP permanente em todos os estados.

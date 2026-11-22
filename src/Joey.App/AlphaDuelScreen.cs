@@ -253,6 +253,10 @@ static partial class Game
         else if (step.Action == CpuAction.Response && step.Card is null && pendingAttack is { } continued)
             BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone);
         if (step.Card is not Card card) return;
+        if (step.Action is CpuAction.Set or CpuAction.Summon or
+            CpuAction.Spell or CpuAction.Equip or CpuAction.Response)
+            ShowPlayedCardDetail(card, hiddenFromPlayer:
+                step.Player != ViewPlayer && step.Action == CpuAction.Set);
         if (step.Action is CpuAction.Set or CpuAction.Summon)
         {
             if (step.TargetZone is not int zone || zone < 0) return;
