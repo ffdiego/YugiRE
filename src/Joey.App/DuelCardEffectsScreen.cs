@@ -7,7 +7,9 @@ static partial class Game
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
     sealed record TributePlacement(DemoMonsterTribute Tribute, CardPoint[] ParticleOrigins) : CardEffect;
-    sealed record HandTransfer(DemoHandTransfer Transfer) : CardEffect;
+    // Capture the departure before Joey.Core's committed hand is reflowed.
+    // The moving card is drawn independently while its neighbours shift.
+    sealed record HandTransfer(DemoHandTransfer Transfer, CardBounds? Departure = null) : CardEffect;
     sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
     sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
@@ -47,7 +49,16 @@ static partial class Game
                 normal.Player, normal.Card.Id, normal.FaceDown);
         duel.MonsterDestroyed += monster => QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
         duel.MonsterTributed += tribute => QueueTributeEffect(tribute);
-        duel.HandTransferred += transfer => QueueCardEffect(new HandTransfer(transfer), CardTravel.Updates);
+        duel.HandTransferred += transfer =>
+        {
+            // Joey.Core already applied this transfer when the event fires.
+            // For removal, the old card is still in the layout until the
+            // next presentation sync, so preserve its actual departure.
+            CardBounds? departure = transfer.FromDeck ? null :
+                handLayouts[transfer.Player].Bounds(
+                    transfer.Index, duel.HandFor(transfer.Player).Count + 1);
+            QueueCardEffect(new HandTransfer(transfer, departure), CardTravel.Updates);
+        };
         duel.MonsterSpecialSummoned += summon =>
             QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
         duel.DeckShuffled += player =>
@@ -154,10 +165,11 @@ static partial class Game
     {
         if (cardEffects.Current is not { } current) return;
         int updates = cardEffectClock.Advance(elapsed, presentation.Style);
-        // After a stall, leave the next card on its first sample for this draw.
+        // The logical hand count changes at transfer START, not when the
+        // animation ends. SynchronizeHand performs the reflow; removing
+        // the old index here would delete a different remaining card.
+        // After a stall, leave the next card on its first sample.
         int remaining = current.Updates - cardEffects.ElapsedUpdates;
-        if (updates >= remaining && current.Kind is HandTransfer { Transfer: { FromDeck: false } move })
-            handLayouts[move.Player].RemoveAt(move.Index);
         cardEffects.Advance(Math.Min(updates, remaining));
         // Pay tribute(s) visually before revealing the new summon flight.
         // The flight has already been committed logically by Joey.Core.
@@ -169,12 +181,16 @@ static partial class Game
     {
         if (!CardEffectsBusy) return duel.HandFor(player);
 
-        // Undo outstanding transfers on a copy of the committed hand. Each
-        // completed step becomes visible as soon as it leaves the queue.
+        // Undo only transfers that have not started rendering. The active
+        // transfer already changes the visible hand *layout*: existing cards
+        // reflow while the moving card is separately animated. The arriving
+        // card is masked by IncomingTransferInFlight until it has landed.
         List<Card> visible = [.. duel.HandFor(player)];
+        CardEffect? active = CanPlayCardEffects ? cardEffects.Current?.Kind : null;
         foreach (var step in cardEffects.Pending.Reverse())
         {
             if (step.Kind is not HandTransfer { Transfer: var move } || move.Player != player) continue;
+            if (ReferenceEquals(step.Kind, active)) continue;
             if (move.FromDeck)
                 visible.RemoveAt(move.Index);
             else
@@ -210,10 +226,11 @@ static partial class Game
         Label($"{label} {count}", bounds.X + 6, bounds.Y + bounds.Height + 2, 10, Gold);
     }
 
-    static bool DiscardInFlight(int player, int index) =>
+    static bool IncomingTransferInFlight(int player, int index, Card card) =>
         CanPlayCardEffects &&
-        cardEffects.Current?.Kind is HandTransfer { Transfer: { FromDeck: false } move } &&
-        move.Player == player && move.Index == index;
+        cardEffects.Current?.Kind is HandTransfer { Transfer: { FromDeck: true } move } &&
+        move.Player == player && move.Index == index &&
+        ReferenceEquals(move.Card, card);
 
     static void DrawCardEffects()
     {
@@ -231,7 +248,7 @@ static partial class Game
             case TributePlacement tribute:
                 DrawTributePlacement(tribute, cardEffects.ElapsedUpdates);
                 break;
-            case HandTransfer { Transfer: var transfer }:
+            case HandTransfer transfer:
                 DrawHandTransfer(transfer);
                 break;
             case SetPlacement placement:
@@ -439,13 +456,16 @@ static partial class Game
             geometry.Degrees, Color.White);
     }
 
-    static void DrawHandTransfer(DemoHandTransfer move)
+    static void DrawHandTransfer(HandTransfer effect)
     {
+        var move = effect.Transfer;
         bool near = move.Player == ViewPlayer;
         int count = VisibleHand(move.Player).Count;
+        // The arriving card's target moves with the fan as its neighbours
+        // reflow. Departing cards retain the pre-removal origin snapshot.
         var handSlot = move.FromDeck
-            ? HandPresentation.Bounds(move.Index, count + 1, near)
-            : handLayouts[move.Player].Bounds(move.Index, count, near ? HandLiftAt(move.Index) : 0);
+            ? handLayouts[move.Player].Bounds(move.Index, count)
+            : effect.Departure ?? HandPresentation.Bounds(move.Index, count + 1, near);
         var pile = move.FromDeck ? NativeDuelLayout.DeckBounds(near) : NativeDuelLayout.GraveBounds(near);
         var bounds = CardTravel.Sample(move.FromDeck ? pile : handSlot, move.FromDeck ? handSlot : pile,
             cardEffects.ElapsedUpdates);

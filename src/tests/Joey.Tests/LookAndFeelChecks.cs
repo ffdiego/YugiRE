@@ -182,6 +182,22 @@ internal static class LookAndFeelChecks
               NativeDetailPanel.ClampScroll(5, 4, 11) == 0,
               "Native detail: measured wrapping, explicit paragraphs, viewport and scroll bounds");
 
+        var first = new object();
+        var second = new object();
+        var arriving = new object();
+        var fan = new HandReflow<object>();
+        fan.Synchronize([first, second], near: true, updates: 0, animate: false);
+        int oldFirstX = fan.Bounds(0, 2).X;
+        fan.Synchronize([first, second, arriving], near: true, updates: 1, animate: true);
+        int inFlightX = fan.Bounds(0, 3).X;
+        int destinationX = HandPresentation.Bounds(0, 3, nearSide: true).X;
+        check(inFlightX != oldFirstX && inFlightX != destinationX &&
+              Math.Abs(inFlightX - destinationX) < Math.Abs(oldFirstX - destinationX),
+              "Hand reflow: existing cards move towards the new fan while a draw is travelling");
+        fan.Synchronize([first, arriving], near: true, updates: 1, animate: true);
+        check(fan.Bounds(0, 2).X != inFlightX,
+              "Hand reflow: removing a card changes the neighbours' layout immediately");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

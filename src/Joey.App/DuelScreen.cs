@@ -7,13 +7,15 @@ static partial class Game
 {
     // Native field centers and hand spacing; balloon rendering and update frequency are demo policy.
     static int hoverHand = -1;
+    static bool handActionsWereEnabled;
     static bool setHandAction, choosingTributes, choosingEquip;
     static int[] handLift = [];
     static readonly HandReflow<Card>[] handLayouts = [new(), new()];
     static readonly PresentationTickClock hoverClock = new();
     static int HandLiftAt(int index) => index < handLift.Length ? handLift[index] : 0;
     static Rectangle HandBounds(int slot) =>
-        ToRectangle(handLayouts[ViewPlayer].Bounds(slot, ViewHand.Count, HandLiftAt(slot)));
+        ToRectangle(handLayouts[ViewPlayer].Bounds(slot,
+            VisibleHand(ViewPlayer).Count, HandLiftAt(slot)));
 
     static void SynchronizeHand(int player, IReadOnlyList<Card> visible, int updates = 0) =>
         handLayouts[player].Synchronize(visible, player == ViewPlayer, updates, presentation.Style.PlayAnimations);
@@ -47,6 +49,7 @@ static partial class Game
     static void ClearDuelSelection()
     {
         hand = attacker = hoverHand = -1;
+        handActionsWereEnabled = false;
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
         Array.Clear(handLift);
@@ -126,19 +129,23 @@ static partial class Game
     static string HandActionCaption(int index) => "Discard"; // sandbox fallback only
     static bool HandActionEnabled(int index) =>
         duel.PendingEndDiscards > 0 || CurrentHandAction(index) is not null;
-    static bool UpdateHandInteraction(int updates)
+    // Inspection and lifting are independent of Core action availability.
+    // The player may hover both hands during draws, effects and CPU turns.
+    static bool UpdateHandInteraction(int updates, bool allowActions)
     {
-        int count = ViewHand.Count;
+        var visible = VisibleHand(ViewPlayer);
+        int count = visible.Count;
         if (handLift.Length < count) Array.Resize(ref handLift, count);
         int next = -1;
         for (int slot = 0; slot < count; slot++)
         {
+            if (IncomingTransferInFlight(ViewPlayer, slot, visible[slot])) continue;
             var rect = HandBounds(slot);
             // Hover is on the card, not on a static bubble (the original
             // action bubble follows the cursor). Union lifted/rest bounds
             // prevents flicker as the card animates upward.
             var resting = ToRectangle(handLayouts[ViewPlayer].Bounds(
-                slot, ViewHand.Count, 0));
+                slot, count, 0));
             float minY = MathF.Min(rect.Y, resting.Y);
             float maxY = MathF.Max(rect.Y + rect.Height, resting.Y + resting.Height);
             if (Hit(new Rectangle(rect.X, minY, rect.Width, maxY - minY)))
@@ -146,10 +153,10 @@ static partial class Game
         }
         bool overHand = next >= 0;
         if (choosingTributes || choosingEquip) next = -1;
-        if (next != hoverHand)
+        if (next != hoverHand || (allowActions && !handActionsWereEnabled))
         {
             hoverHand = next;
-            if (!choosingTributes && !choosingEquip)
+            if (allowActions && !choosingTributes && !choosingEquip)
             {
                 // Monsters default to Summon, spells to Activate when legal;
                 // a Trap can only Set, even before right-click.
@@ -164,6 +171,7 @@ static partial class Game
                     == NativeCursorAction.Set;
             }
         }
+        handActionsWereEnabled = allowActions;
         for (int slot = 0; slot < handLift.Length; slot++)
         {
             int target = hoverHand == slot ? HandPresentation.HoverOffset : 0;
@@ -172,7 +180,7 @@ static partial class Game
                 for (int i = 0; i < updates && handLift[slot] != target; i++)
                     handLift[slot] = presentation.Style.MoveCardAxis(handLift[slot], target);
         }
-        if (hoverHand < 0) return overHand;
+        if (hoverHand < 0 || !allowActions) return overHand;
         hand = hoverHand; attacker = -1;
         if (Raylib.IsMouseButtonPressed(MouseButton.Right) &&
             duel.PendingEndDiscards == 0 && CanToggleHandAction(hoverHand))
@@ -325,7 +333,7 @@ static partial class Game
         var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == hoverHand ? 1 : 0);
         foreach (int index in drawOrder)
         {
-            if (DiscardInFlight(ViewPlayer, index)) continue;
+            if (IncomingTransferInFlight(ViewPlayer, index, visible[index])) continue;
             var rect = ToRectangle(handLayouts[ViewPlayer].Bounds(index, visible.Count, HandLiftAt(index)));
             DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
             if (index == hand) Raylib.DrawRectangleLinesEx(rect, 2, Color.White);
@@ -376,10 +384,15 @@ static partial class Game
         if (actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
-        bool handInput = actionInput && UpdateHandInteraction(hoverUpdates);
+        bool joeySpeaking = presentation.Busy &&
+            presentation.ActiveCue == DuelPresentationCue.JoeySpeech;
+        bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
+        bool handInput = actionInput && handHovered;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
-        if (!showingMotion && !selectingCard) UpdateDuelDetail();
+        // A travelling card or the CPU's turn must not freeze the sidebar.
+        // Only an actual Joey speech cue may suppress inspection.
+        if (!joeySpeaking) UpdateDuelDetail();
         AdvanceLifePresentation(frameElapsed);
         DrawDuelDetail();
         DrawLifeFloatingDigits();

@@ -6,7 +6,9 @@ using System.Numerics;
 static partial class Game
 {
     static Card? detailCard;
+    static bool detailShowsBack;
     static Card? lastHoveredDetail;
+    static bool lastHoveredWasBack;
     static bool activatedDetail;
     static int duelDescriptionScroll;
     static readonly NativeLifePointPresentation[] lifeDisplays = [new(8000), new(8000)];
@@ -30,14 +32,17 @@ static partial class Game
         for (int player = 0; player < lifeDisplays.Length; player++)
             lifeDisplays[player].Reset(duel.Life[player]);
         detailCard = null;
+        detailShowsBack = false;
         duelDescriptionScroll = 0;
         lastHoveredDetail = null;
+        lastHoveredWasBack = false;
         activatedDetail = false;
     }
 
     static void ShowActivatedDetail(Card card)
     {
         detailCard = card;
+        detailShowsBack = false;
         duelDescriptionScroll = 0;
         activatedDetail = true;
     }
@@ -45,38 +50,54 @@ static partial class Game
     static void UpdateDuelDetail()
     {
         var hovered = FindHoveredDuelCard();
-        if (!activatedDetail && hovered is not null && !ReferenceEquals(hovered, lastHoveredDetail))
+        bool changed = !ReferenceEquals(hovered.Card, lastHoveredDetail) ||
+                       hovered.Back != lastHoveredWasBack;
+        if (!activatedDetail && changed)
         {
-            detailCard = hovered;
+            detailCard = hovered.Card;
+            detailShowsBack = hovered.Back;
             duelDescriptionScroll = 0;
         }
-        lastHoveredDetail = hovered;
+        lastHoveredDetail = hovered.Card;
+        lastHoveredWasBack = hovered.Back;
     }
 
-    static Card? FindHoveredDuelCard()
+    // Returning Back without a Card is intentional: the opponent's hand may
+    // be inspected, but no card identity, name, stats or description leaks.
+    static (Card? Card, bool Back) FindHoveredDuelCard()
     {
-        int count = ViewHand.Count;
-        if (hoverHand >= 0 && hoverHand < ViewHand.Count &&
-            Hit(HandBounds(hoverHand)))
-            return ViewHand[hoverHand];
-        for (int slot = count - 1; slot >= 0; slot--)
-            if (Hit(HandBounds(slot)))
-                return ViewHand[slot];
+        var near = VisibleHand(ViewPlayer);
+        for (int slot = near.Count - 1; slot >= 0; slot--)
+        {
+            if (IncomingTransferInFlight(ViewPlayer, slot, near[slot])) continue;
+            if (Hit(HandBounds(slot))) return (near[slot], false);
+        }
+
+        if (alphaCpu is not null)
+        {
+            int opponent = 1 - ViewPlayer;
+            var far = VisibleHand(opponent);
+            for (int slot = far.Count - 1; slot >= 0; slot--)
+            {
+                if (IncomingTransferInFlight(opponent, slot, far[slot])) continue;
+                if (Hit(CpuHandBounds(slot, far.Count))) return (null, true);
+            }
+        }
 
         for (int player = 0; player < 2; player++)
         {
             bool own = player == ViewPlayer;
             if (Hit(FieldZoneBounds(player)) && (own || !duel.FieldSpellFaceDown[player]))
-                return duel.FieldSpells[player];
+                return (duel.FieldSpells[player], false);
             for (int zone = 0; zone < 5; zone++)
             {
                 if (Hit(ZoneBounds(player, zone, false)) && (own || !duel.MonsterFaceDown[player, zone]))
-                    return duel.Monsters[player, zone];
+                    return (duel.Monsters[player, zone], false);
                 if (Hit(ZoneBounds(player, zone, true)) && (own || !duel.SpellFaceDown[player, zone]))
-                    return duel.Spells[player, zone];
+                    return (duel.Spells[player, zone], false);
             }
         }
-        return null;
+        return (null, false);
     }
 
     static void DrawLifeBar(int player, bool near)
@@ -181,6 +202,11 @@ static partial class Game
         DrawLifeBar(ViewPlayer, near: true);
         DrawLifeDigits(1 - ViewPlayer, 9);
         DrawLifeDigits(ViewPlayer, 557);
+        if (detailShowsBack)
+        {
+            DrawCardBack(14, 53, 186, 265);
+            return; // No identity, ATK/DEF, name or description for CPU cards.
+        }
         if (detailCard is not { } card) return;
 
         DrawArtwork(card, 14, 53, 186, 265);

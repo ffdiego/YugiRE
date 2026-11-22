@@ -290,7 +290,7 @@ static partial class Game
         int count = visible.Count;
         for (int i = 0; i < count; i++)
         {
-            if (DiscardInFlight(1, i)) continue;
+            if (IncomingTransferInFlight(1, i, visible[i])) continue;
             var rect = CpuHandBounds(i, count);
             DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height, degrees: 180);
         }
