@@ -15,11 +15,12 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | [05-janelas-invocacao-batalha](05-janelas-invocacao-batalha.jsonl) | 8 | 21 | 8 | 13 | 0 |
 | [06-combate-diferido-e-invocacao](06-combate-diferido-e-invocacao.jsonl) | 12 | 34 | 15 | 19 | 0 |
 | [07-selecao-vinculos-e-substituicao](07-selecao-vinculos-e-substituicao.jsonl) | 14 | 32 | 9 | 23 | 0 |
-| **Total** | 88 | 269 | 137 | 130 | 2 |
+| [08-efeitos-compostos-e-eventos](08-efeitos-compostos-e-eventos.jsonl) | 15 | 41 | 16 | 23 | 2 |
+| **Total** | 103 | 310 | 153 | 153 | 4 |
 
 <!-- fim cobertura -->
 
-A tabela inclui um registro sem identidade (1245). Os dois pendentes são 1245 e Minor Goblin Official (1302). IDs distintos com o mesmo nome permanecem distintos.
+A tabela inclui três registros sem nome confirmado (1245, 1257 e 1258). Esses registros e Minor Goblin Official (1302) estão pendentes. IDs distintos com o mesmo nome permanecem distintos.
 
 ## Evidência e reprodução
 
@@ -32,6 +33,7 @@ A tabela inclui um registro sem identidade (1245). Os dois pendentes são 1245 e
 - O lote 05 inspecionou os callbacks por instruções e cruzou os filtros e custos de 0057C2B0 e 0057C450 com o SQLite. O ramo de Enchanted Javelin em 0058D6B8 e o de Mask of Weakness em 0058D801 mostram por que P200 e o endereço principal compartilhado precisam ser analisados por ID.
 - O lote 06 inspecionou as entradas de resolução e cruzou a elegibilidade de Elegant Egotist e Polymerization com 0057F640 e 00580600. Os callbacks 0058CDF0 e 0058D970 sustentam a infraestrutura compartilhada; as diferenças de gatilho, filtro e benefício recorrente ficaram registradas por ID.
 - O lote 07 complementou as instruções dos resolvedores com 0057A470, 0057B3B0, 00580360 e 00589B70 no SQLite. 00586B30 distingue o efeito original por ID ao proteger armadilhas, e 00586FB0 dá a Relinquished e Thousand-Eyes Restrict o mesmo caminho de transferência e vínculo tipo 5.
+- O lote 08 cruzou as continuações de 00589EB0–00591890 com a disponibilidade de Chosen One em 005829D0 e o evento de Major Riot em 00581790. P166/P167 e os efeitos de destruição em batalha foram mantidos separados quando o callback confirmava apenas a ativação principal.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
 ## Próximos grupos para o Core
