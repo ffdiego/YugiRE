@@ -2,7 +2,7 @@
 
 Os lotes 01–09 do catálogo incremental contêm 326 IDs desta tabela. Os 117 IDs restantes têm documentação anterior nos estudos abaixo. A partição foi conferida pelo resource ID da tabela original. Perfis também presentes no JSONL, como P041, P168 e P200, aparecem aqui somente com as cartas já documentadas. A anotação de estudo anterior também inclui implementações de sandbox com seu escopo próprio.
 
-A conta cobre a tabela de callbacks. O inventário original registra 672 IDs de CARD_ID sem entrada nessa tabela, e o [lote 10](10-efeitos-sem-registro.jsonl) cobre 33 deles, fora da contagem de 443. O lote 09 mostra que mesmo um registro com todos os slots vazios pode ter efeitos nas rotinas globais.
+A conta cobre a tabela de callbacks. O inventário original registra 672 IDs de CARD_ID sem entrada nessa tabela, e os lotes [10](10-efeitos-sem-registro.jsonl) e [11](11-ataque-invocacao-e-fases.jsonl) cobrem 72 deles, fora da contagem de 443. O lote 09 mostra que mesmo um registro com todos os slots vazios pode ter efeitos nas rotinas globais.
 
 | Perfis ou grupo | IDs | Estudo existente |
 |---|---:|---|

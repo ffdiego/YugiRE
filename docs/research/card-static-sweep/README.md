@@ -1,6 +1,6 @@
 # Campanha estática de efeitos
 
-A unidade de cobertura é o resource ID. Os lotes 01–09 examinam o [catálogo de callbacks](../../evidence/card-callback-catalog.json). O lote 10 usa IDs do DAT ausentes da tabela. A classificação descreve o entendimento estático do efeito. Mapeado indica operação principal sustentada e informação suficiente para começar uma implementação. Parcial indica evidência útil com lacuna material. Pendente indica que a ligação entre a carta e a operação nativa permanece aberta. A campanha teve zero execuções do Joey.
+A unidade de cobertura é o resource ID. Os lotes 01–09 examinam o [catálogo de callbacks](../../evidence/card-callback-catalog.json). Os lotes 10–11 usam IDs do DAT ausentes da tabela. A classificação descreve o entendimento estático do efeito. Mapeado indica operação principal sustentada e informação suficiente para começar uma implementação. Parcial indica evidência útil com lacuna material. Pendente indica que a ligação entre a carta e a operação nativa permanece aberta. A campanha teve zero execuções do Joey.
 
 Cada arquivo JSONL define registros `family` seguidos dos registros `card` que herdam os campos da família pelo nome. `detail` descreve o ramo ou parâmetro individual e `pending_card` registra lacunas específicas. Campos nulos no registro de família representam informação ausente. Em um registro de carta, `profile: null` indica ausência na tabela de callbacks, distinta de um perfil registrado com slots vazios. Os endereços são VAs hexadecimais do executável alvo.
 
@@ -18,11 +18,12 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | [08-efeitos-compostos-e-eventos](08-efeitos-compostos-e-eventos.jsonl) | 15 | 41 | 16 | 23 | 2 |
 | [09-efeitos-fora-da-tabela](09-efeitos-fora-da-tabela.jsonl) | 7 | 16 | 10 | 4 | 2 |
 | [10-efeitos-sem-registro](10-efeitos-sem-registro.jsonl) | 6 | 33 | 30 | 3 | 0 |
-| **Total** | 116 | 359 | 194 | 160 | 5 |
+| [11-ataque-invocacao-e-fases](11-ataque-invocacao-e-fases.jsonl) | 11 | 39 | 18 | 21 | 0 |
+| **Total** | 127 | 398 | 212 | 181 | 5 |
 
 <!-- fim cobertura -->
 
-A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). Esses registros e The Unfriendly Amazon (1431) estão pendentes. Minor Goblin Official (1302) passou a Mapeado após o lote 09 localizar o emissor periódico fora do callback primário. A [reconciliação](reconciliacao.md) cobre os 443 registros da tabela, dos quais 117 remetem aos estudos existentes. O lote 10 acrescenta 33 dos 672 IDs do DAT sem registro. IDs distintos com o mesmo nome permanecem distintos.
+A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). Esses registros e The Unfriendly Amazon (1431) estão pendentes. Minor Goblin Official (1302) passou a Mapeado após o lote 09 localizar o emissor periódico fora do callback primário. A [reconciliação](reconciliacao.md) cobre os 443 registros da tabela, dos quais 117 remetem aos estudos existentes. Os lotes 10–11 cobrem 72 dos 672 IDs do DAT sem registro. Dos 73 sem registro com subtipo bruto 1 nos bits 18–19 de `CARD_PROP`, 71 têm entrada nesses lotes. As exceções são [Exodia (20)](../exodia-observable-victory.md) e 1250, cujo nome está vazio. Alligator’s Sword Dragon é o registro adicional de fusão. IDs distintos com o mesmo nome permanecem distintos.
 
 ## Evidência e reprodução
 
@@ -38,6 +39,7 @@ A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). 
 - O lote 08 cruzou as continuações de 00589EB0–00591890 com a disponibilidade de Chosen One em 005829D0 e o evento de Major Riot em 00581790. P166/P167 e os efeitos de destruição em batalha foram mantidos separados quando o callback confirmava apenas a ativação principal.
 - O lote 09 combinou os predicados globais do SQLite com instruções que verificam IDs nos estágios de batalha e de turno. Os ramos 005A627D, 005A637D e 005A647E distinguem os ganhos de LP por posição; 00582330 e 005A6D06 fecharam disponibilidade e dano de Minor Goblin Official.
 - O lote 10 cruzou `CARD_ID` com a tabela e verificou as identidades no DAT inglês. A tabela de seis auras em 005DCF98 contém IDs e sete deltas int16 por linha, lidos a partir do offset 0x001DCF98 no EXE identificado acima. Os saltos de 00583F40 confirmaram destinos distintos para Red-Eyes e Magical Labyrinth, corrigidos nos lotes 02 e 07.
+- O lote 11 cruzou os predicados de combate, turnos e invocação com o campo que 00402740 lê em `CARD_PROP`. Entre os caminhos de resolução examinados estão o débito de ataque em 005A1B98/005A1D5B, os três tributos de Gate Guardian em 0059DF40 e a seleção de Sinister Serpent em 005A7188–005A72E6.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
 ## Próximos grupos para o Core
