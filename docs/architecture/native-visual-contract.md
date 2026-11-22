@@ -72,6 +72,12 @@ A investigação de `0x0045D040` (update),
 ordenação. Empates de chave, máscaras exatas de cada tela e ordem de desenho
 sob múltiplos passes ainda precisam de verificação.
 
+Esse par de slots aplica-se aos objetos do **dispatcher visual**, não a
+qualquer vtable auxiliar: `005DACC4` (botão), por exemplo, usa `+8` para
+consultar e `+0xC` para ajustar coordenadas. A classificação vem da
+implementação decompilada, não apenas da posição do slot.
+
+
 ## Animação da ativação
 
 Funções `0x00450260` (construtor), `0x00450590` (update),

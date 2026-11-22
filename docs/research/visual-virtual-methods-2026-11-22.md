@@ -88,3 +88,56 @@ O script valida a identidade do executável, verifica conflitos entre os ponteir
 2. Investigar `0043ABA0`, `0043ABF0`, `0043AB10`, `0043AB40`, `0043AB70` para dados dos cinco cartões e scroll.
 3. Rastrear `00455FF0` e `00456360` até suas chamadas/estados que os habilitam para nomear corretamente os dois modos de layerfont.
 4. Não promover `Verified` sem capturas/frames pareados. Não versionar o ZIP com decompilações, o SQLite, o EXE nem o DAT.
+
+
+## Janela deslizante e geometria da seleção (investigação 22/11/2026)
+
+Fonte: SQLite das 6.518 funções e decompilações transitórias do ZIP Ghidra
+do usuário. Sem DAT local/captura, esta seção comprova fórmulas e fluxos,
+**não** fidelidade de pixels nem os nomes definitivos de cada controle.
+
+| Função | Papel sustentado pelo pseudocódigo |
+| --- | --- |
+| `0043AB10` | Conta cartas: `0040CAE0` nos modos comuns; tamanho do vetor DWORD nos modos `0x2A..0x2E` |
+| `0043AB40` | Lê carta por índice: `0040CAF0(index)` ou vetor filtrado |
+| `0043AB70` | Retorna flags por `0040CB50` ou zero nos modos filtrados |
+| `0043ABA0` | Calcula X/Y do slot visível |
+| `0043ABF0` | Usa a geometria e chama `0047FCB0`; argumentos parcialmente perdidos na decompilação |
+
+A fórmula X de `0043ABA0` é `anchorX + 64 * (slot - 2)`, para
+slots 0..4. Os deltas são -128, -64, 0, +64, +128. Em Y, a função
+calcula `anchorY + resourceY(variant) - height/2`, onde
+resourceY(variant) = *(int*)(*(int*)(obj+0x48)+4+8*variant)
+e `variant` é o byte em `obj+0x1FC`. **Ainda não fixamos**
+âncoras e alturas absolutas sem os manifests.
+
+O Update `0043B0F0` mantém o slot selecionado em `obj+0x1B8`
+e o offset de scroll em `obj+0x214`. Se a lista passa de cinco
+itens (`obj+0x1FC` não zero), avançar a partir do slot 4 aumenta
+o offset em uma unidade, até `total-5`. Retroceder a partir do
+slot 0 reduz o offset até zero. Para 7 itens, a sequência dos estados
+(slot, scroll) é `(0,0) → (1,0) → (2,0) → (3,0) → (4,0) → (4,1) → (4,2)`.
+**É janela deslizante, não paginação.**
+
+Os eventos `005664A0(3)` e `005664A0(4)` controlam
+movimento para trás/frente na rotina; não foram mapeados para teclas físicas.
+Os flags de `0043AB70` incluem o bit `0x800` no modo comum,
+que também é testado em `0043B280`. Não inferir ícones ou regras
+sem confirmar a aparência e as variantes no executável.
+
+### Aquisição dos recursos nativos
+
+O índice do DAT no repositório contém **51 recursos** sob
+`j\duel\list\` (14 manifests .txt) e **14** sob
+`j\duel\list_icon\` (um manifest .txt). Para gerar um relatório
+reduzido sem copiar texturas:
+
+~~~bash
+dotnet run --project src/Joey.App -- /caminho/para/data.dat --inspect-visual-dat
+python3 scripts/summarize_native_selection_dat.py
+~~~
+
+Compartilhar somente `scratch/visual-review/selection-manifests.json`
+após inspecionar seu conteúdo. Contém texto dos manifests e dimensões de
+imagens, não as imagens. O passo seguinte é confrontar os recortes e a
+posição real em 800x600 com a tela nativa. Badge permanece 19/34.
