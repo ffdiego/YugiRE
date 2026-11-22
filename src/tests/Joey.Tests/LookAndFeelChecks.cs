@@ -108,26 +108,41 @@ internal static class LookAndFeelChecks
               NativeDuelCursor.ActionSprite(NativeCursorAction.Flip) ==
                 @"cursor\cursor_e_flip.yga",
               "Original cursor cloud maps action names to actual English YGA assets");
-        check(NativeDuelCursor.HandAction(true, false, false) == NativeCursorAction.Summon &&
-              NativeDuelCursor.HandAction(true, true, false) == NativeCursorAction.Set &&
-              NativeDuelCursor.HandAction(false, true, false) == NativeCursorAction.Set &&
-              NativeDuelCursor.HandAction(false, false, false) == NativeCursorAction.Activate &&
-              NativeDuelCursor.HandAction(true, false, true) is null &&
-              NativeDuelCursor.HandAction(false, true, true) is null,
-              "Cursor cloud selects Summon/Set/Activate and preserves discard sandbox fallback");
-        var handCloud = NativeDuelCursor.ActionBounds(
-            new CardBounds(375, 450, 50, 72), 90, 30);
-        var liftedCloud = NativeDuelCursor.ActionBounds(
-            new CardBounds(375, 430, 50, 72), 90, 30);
-        check(NativeDuelCursor.CloudTipOverlapPixels == 12 &&
-              handCloud == new CardBounds(355, 432, 90, 30) &&
-              handCloud.Y + handCloud.Height == 450 + 12 &&
-              liftedCloud == new CardBounds(355, 412, 90, 30),
-              "Cursor action cloud tip overlaps top of card and follows its lifted Y position");
-        bool invalidCloudSizeRejected = false;
-        try { NativeDuelCursor.ActionBounds(new CardBounds(375, 450, 50, 72), 0, 30); }
-        catch (ArgumentOutOfRangeException) { invalidCloudSizeRejected = true; }
-        check(invalidCloudSizeRejected, "Cursor cloud rejects invalid sprite dimensions");
+        // The original screenshot shows a single hand-shaped pointer
+        // WITH its Summon cloud; it follows the pointer, not the card center.
+        check(NativeDuelCursor.CursorSprite(null) ==
+                  NativeDuelCursor.DefaultPointer &&
+              NativeDuelCursor.CursorSprite(NativeCursorAction.Summon) ==
+                  @"cursor\cursor_e_summon.yga" &&
+              NativeDuelCursor.CursorSprite(NativeCursorAction.Set) ==
+                  @"cursor\cursor_e_set.yga" &&
+              NativeDuelCursor.PointerOrigin(new CardPoint(375, 450)) ==
+                  new CardPoint(375, 450),
+              "Global cursor: one DAT sprite per frame, with legal hover changing its variant");
+        check(NativeDuelCursor.HandAction(true, true, true, false, false, false)
+                  == NativeCursorAction.Summon &&
+              NativeDuelCursor.HandAction(true, true, true, false, true, false)
+                  == NativeCursorAction.Set &&
+              NativeDuelCursor.HandAction(false, false, true, false, false, false)
+                  == NativeCursorAction.Set &&
+              NativeDuelCursor.HandAction(false, false, true, false, true, false)
+                  == NativeCursorAction.Set &&
+              NativeDuelCursor.HandAction(false, false, false, true, false, false)
+                  == NativeCursorAction.Activate &&
+              NativeDuelCursor.HandAction(false, false, true, true, false, false)
+                  == NativeCursorAction.Activate &&
+              NativeDuelCursor.HandAction(false, false, true, true, true, false)
+                  == NativeCursorAction.Set &&
+              NativeDuelCursor.HandAction(true, false, false, false, false, false) is null &&
+              NativeDuelCursor.HandAction(false, false, false, false, false, false) is null &&
+              NativeDuelCursor.HandAction(false, false, true, false, false, true) is null,
+              "Action cloud: only legal moves, Trap Set-only, both-mode spell and discard fallback");
+        check(NativeDuelCursor.CanToggleHandAction(true, true, true, false) &&
+              NativeDuelCursor.CanToggleHandAction(false, false, true, true) &&
+              !NativeDuelCursor.CanToggleHandAction(false, false, true, false) &&
+              !NativeDuelCursor.CanToggleHandAction(false, false, false, true) &&
+              !NativeDuelCursor.CanToggleHandAction(true, false, false, false),
+              "Right-click only cycles when two legal actions exist");
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
