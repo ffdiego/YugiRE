@@ -302,6 +302,82 @@ internal static class LookAndFeelChecks
               !NativeCardRaster.IsNativeMiniDestination(200, 290) &&
               !NativeCardRaster.IsNativeMiniDestination(50, 70),
               "Native mini art used only by 50x72 field cards (including defense)");
+        // Native window: the original Draw is 0043B280, Update 0043B0F0.
+        // These are pure-contract tests; there is no rendered C# window yet.
+        var fiveSelection = new NativeSelectionWindow(7);
+        check(fiveSelection.TotalCards == 7 &&
+              fiveSelection.VisibleCount == 5 &&
+              fiveSelection.MaximumScroll == 2 &&
+              fiveSelection.SelectedCardIndex == 0 &&
+              fiveSelection.OpeningCounter == 0x100 &&
+              !fiveSelection.EntranceComplete,
+              "Native selection: starts with five visible cards and +256 opening counter");
+        for (int n = 1; n <= 8; n++)
+        {
+            fiveSelection.AdvanceOpening();
+            check(fiveSelection.OpeningCounter == 0x100 - n * 0x20,
+                  $"Native selection: opening tick {n}/8 decrements by 0x20");
+        }
+        check(fiveSelection.EntranceComplete &&
+              !fiveSelection.MovePrevious() &&
+              fiveSelection.SelectedCardIndex == 0,
+              "Native selection: entrance complete and previous at first item is a no-op");
+
+        var selectionTrace = new (int Slot, int Scroll, int Absolute)[]
+        {
+            (0, 0, 0), (1, 0, 1), (2, 0, 2), (3, 0, 3),
+            (4, 0, 4), (4, 1, 5), (4, 2, 6)
+        };
+        foreach (var (slot, scroll, absolute) in selectionTrace)
+        {
+            check(fiveSelection.SelectedSlot == slot &&
+                  fiveSelection.ScrollOffset == scroll &&
+                  fiveSelection.SelectedCardIndex == absolute &&
+                  fiveSelection.CardIndexAtSlot(slot) == absolute,
+                  $"Native selection: sliding window ({slot}, {scroll}) -> index {absolute}");
+            if (absolute != 6) check(fiveSelection.MoveNext(),
+                                     $"Native selection: advance from absolute card {absolute}");
+        }
+        check(!fiveSelection.MoveNext() &&
+              fiveSelection.CardIndexAtSlot(0) == 2 &&
+              fiveSelection.CardIndexAtSlot(4) == 6 &&
+              fiveSelection.CardIndexAtSlot(5) == -1,
+              "Native selection: scrolling clamps at final item and keeps exactly five slots");
+        for (int i = 0; i < 6; i++) check(fiveSelection.MovePrevious(),
+                                            $"Native selection: backwards step {i + 1}");
+        check(fiveSelection.SelectedSlot == 0 && fiveSelection.ScrollOffset == 0,
+              "Native selection: reversed scrolling reaches the first item");
+        var shortSelection = new NativeSelectionWindow(3);
+        check(shortSelection.VisibleCount == 3 && shortSelection.MaximumScroll == 0 &&
+              shortSelection.CardIndexAtSlot(3) == -1 &&
+              shortSelection.MoveNext() && shortSelection.MoveNext() &&
+              !shortSelection.MoveNext(),
+              "Native selection: no extra cards or phantom scrolling for short lists");
+        var emptySelection = new NativeSelectionWindow(0);
+        check(emptySelection.VisibleCount == 0 && emptySelection.SelectedCardIndex == -1 &&
+              !emptySelection.MoveNext() && !emptySelection.MovePrevious(),
+              "Native selection: empty list is inert");
+
+        check(NativeSelectionWindow.SlotAnchor(525, 300, 39, 191, 0) ==
+                  new CardPoint(397, 244) &&
+              NativeSelectionWindow.SlotAnchor(525, 300, 39, 191, 4) ==
+                  new CardPoint(653, 244),
+              "Native selection: slot X spacing from 0043ABA0 and Y uses supplied resource fields");
+        var nativeSelectionCosine = new int[512];
+        nativeSelectionCosine[0] = 65536;
+        nativeSelectionCosine[64] = 32768;
+        nativeSelectionCosine[128] = 0;
+        check(NativeSelectionWindow.TransitionScaleFixed8(0, nativeSelectionCosine) == 256 &&
+              NativeSelectionWindow.TransitionScaleFixed8(128, nativeSelectionCosine) == 128 &&
+              NativeSelectionWindow.TransitionScaleFixed8(-128, nativeSelectionCosine) == 128 &&
+              NativeSelectionWindow.TransitionScaleFixed8(256, nativeSelectionCosine) == 0,
+              "Native selection: Draw cosine index uses abs(counter), not an invented easing");
+        check(NativeSelectionWindow.ManifestPath(1, 2) == @"j\duel\list\fusionlist2.txt" &&
+              NativeSelectionWindow.ManifestPath(2, 1) == @"j\duel\list\selectlist1.txt" &&
+              NativeSelectionWindow.ManifestPath(3, 2) == @"j\duel\list\gravelist2.txt" &&
+              NativeSelectionWindow.ManifestPath(4, 1) == @"j\duel\list\excludelist1.txt",
+              "Native selection: constructor switch maps modes 1/3/4 and default to DAT manifests");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

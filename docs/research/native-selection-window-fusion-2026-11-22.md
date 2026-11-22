@@ -1,0 +1,93 @@
+# Janela nativa de seleção e as duas famílias visuais de fusão — 22/11/2026
+
+**Pergunta:** como reimplementar a janela flutuante sem criar mais coordenadas e tempos por aproximação, e quais novas Draws de fato ampliariam o badge?
+
+**Material examinado diretamente:** `joey-knowledge.sqlite` (6.518 funções; decompilações de construtores/chamadores), o ZIP `ghidra-visual-virtual-methods.zip` (assembly e decompilações transitórias dos slots virtuais) e `joey-knowledge-visual-dat.sqlite` (15 manifests, 50 imagens, 85 referências ao conteúdo de listas). Alvo `joey_pc.exe`, SHA-256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`. Não foi executado o jogo nem criado um dump novo do Ghidra nesta rodada; os três materiais são evidências já existentes.
+
+## 1. O componente de seleção tem sua própria máquina de estados
+
+| Papel | Evidência de assembly/decompilação | Confiança |
+| --- | --- | --- |
+| Criador | `0040C940 → 0043A060`; vtable `005DABD8`, camada de cenário `0x700`, até cinco objetos de carta nas camadas `0x701+` | Alta |
+| Update | Vtable `+8 → 0043B0F0`; primeiro chama `0043E280`; lê eventos `005664A0(1,2,3,4)`; depois atualiza destinos dos cinco objetos | Alta para fluxo, não para teclas físicas |
+| Draw | Vtable `+C → 0043B280`; quando `obj+0x14 == 0` desenha fundo/slot/atributos; quando não-zero aplica transformação com cosseno | Alta para ramos, pass de composição incompleto |
+| Animação | `0043A060` coloca `obj+0x14=0x100`; `0043E280` diminui em `0x20` por Update até zero; nesse ponto chama virtual `+0x24` | Alta: oito updates de entrada; duração em ms depende do scheduler |
+| Encerramento | `0043E280` trata contador negativo e desativa após ficar abaixo de `-0xFF` | Alta para condicional; origem do contador negativo não mapeada |
+
+A janela não é apenas um overlay de dez cartões: ela possui **objeto de apresentação, recursos próprios e transição geométrica de entrada/saída**. A renderização usa um ramo normal e outro que interpola **posição e dimensões**; afirmar somente fade ou escala vertical seria incompleto.
+
+### Geometria recuperada
+
+`0043A060` define `obj+0x1C = DAT_005DB570` e `obj+0x20 = 300`. A fórmula em `0043ABA0` é:
+
+```text
+slotX = anchorX + 64 * (slot - 2)          // slot 0..4
+slotY = anchorY + resourceYOffset[variant] - resourceHeight / 2
+```
+
+Portanto, deslocamentos horizontais = `[-128, -64, 0, +64, +128]`. O valor global `DAT_005DB570`, a semântica definitiva dos campos de recurso, o pivô e a transformação completa de Draw **não** foram inferidos de uma captura. `NativeSelectionWindow.SlotAnchor` recebe as medidas reais de seu consumidor.
+
+O Draw de transição em `0043B280` contém:
+
+```text
+cosineIndex = ((abs(counter) + 256) / 2 - 128) & 511
+scaleFixed8 = DAT_00A52EE8[cosineIndex] >> 8
+```
+
+Há cálculos posteriores de `anchorX/Y + ((current-anchor) * scaleFixed8 >> 8)` e de largura/altura com a mesma escala. A decompilação avisa `Type propagation algorithm not settling` e usa registradores `unaff_*`; **não copiar esses registradores como valores finais de composição**. O modelo exige a tabela original para calcular `scaleFixed8`, em vez de substituir por `Math.Cos` sem autorização.
+
+### Navegação: janela deslizante
+
+`0043B0F0` usa `obj+0x1B8` para o slot selecionado e `obj+0x214` para o deslocamento da janela; `0x218/0x21C` são limites de scroll, inicializados no construtor conforme `total > 5`. Evento interno 4 avança; evento 3 retrocede (a tecla física correspondente não foi provada).
+
+Exemplo com 7 cartas, como em `NativeSelectionWindow`:
+
+| Índice absoluto | Slot selecionado | Scroll |
+| ---: | ---: | ---: |
+| 0 | 0 | 0 |
+| 1 | 1 | 0 |
+| 2 | 2 | 0 |
+| 3 | 3 | 0 |
+| 4 | 4 | 0 |
+| 5 | 4 | 1 |
+| 6 | 4 | 2 |
+
+Não há paginação 2×5 nem um sexto cartão visível. O contexto e o sentido exato da seleção de **múltiplas** cartas, inclusive as flags do efeito, pertencem ao Core ou a outro estado do objeto e ainda precisam de investigação.
+
+### Modos e recursos
+
+| Modo da construção | Prefixo dos manifests nativos | Exemplos de tamanho do fundo |
+| ---: | --- | --- |
+| 1 | `fusionlist1/2.txt` | `list_fusion0.bmp` 422×223, `list_fusion1.bmp` 422×244 |
+| 3 | `gravelist1/2.txt` | `list_grave0/1.bmp` 412×204 |
+| 4 | `excludelist1/2.txt` | `list_jyoga_jibu/aite.bmp` 384×180 |
+| Outros | `selectlist1/2.txt` | `list_select0/1.bmp` 451×191 |
+
+Os sufixos `1/2` são condicionados pela perspectiva no construtor (com um caso especial em modo `0x29`). Não rotular as variantes de jogador/CPU sem rastrear a expressão completa. O DAT de scroll possui `sele_box.bmp` (41×12), `fusi_box.yga` (47×32), setas específicas e um inteiro empacotado decodificado por `0043BA30`; a função de cada campo do inteiro ainda não está provada.
+
+## 2. As duas Draws de fusão não são simplesmente a janela de lista
+
+**Primeira família:** `00408270` espera o scheduler ficar livre e, no estado de fusão `DAT_00A558AC & 0x7F == 1`, cria objeto de **0xC4 bytes** por `004520E0`; esse construtor instala a vtable `005DB364`, carrega `duel/effect/fusion.txt` e usa recursos globais `card/list_card.txt` + `mini/list_card.txt`. A Draw é `004524F0`, Update `004524E0` (ainda não decompiladas no banco disponível).
+
+**Segunda família:** `00487C70` chama `00487930` e, em determinado caso (retorno zero), cria um objeto de **0xB0 bytes** por `004874C0`. A vtable é `005DBD54`; também usa `duel/effect/fusion.txt`. Seu campo de camada recebe `((descriptor >> 6)&0xFF)*0x10 + 0x201` se `(descriptor & 0x3E) == 0x16`; fora desse caso, camada `0x110`. A Draw `004877F0` e Update `004877B0` também faltam.
+
+**Conclusão sustentada:** são dois tipos de objeto visual com caminhos de criação e camadas diferentes. **Hipótese ainda aberta:** o primeiro é um efeito geral e o segundo é um efeito vinculado à carta; isso precisa do Draw para determinar o conteúdo de cada um. Nenhuma das duas Draws deve ser marcada implementada só por existir `FusionSelectionScreen.cs` — esse arquivo desenha um diálogo procedural, não a animação de fusão do executável.
+
+## 3. Trabalho desta rodada e o que ainda falta
+
+- Introduzido `NativeSelectionWindow` no `Joey.LookAndFeel`, **sem integração visual prematura**. O modelo codifica contagem de cinco slots, indexação com scroll, transição de oito updates, geometria parametrizada, fórmula nativa de lookup trigonométrico e mapeamento de manifests.
+- Testes sintéticos cobrem listas de 0, 3 e 7 cartas, retorno do scroll, entrada de oito updates, posições simétricas e cálculo com tabela sintética declaradamente não nativa.
+- Os **passos restantes** são obter disassembly e decompilações para as quatro rotinas `004524E0`, `004524F0`, `004877B0`, `004877F0`; mapear a interpolação de `0043B280` sem os `unaff_*` ambíguos; e integrar a janela no lugar dos overlays provisórios mantendo `PendingCardSelection` e `PendingFusionSummon`.
+
+A extração dirigida já é suportada pelo script existente:
+
+```bash
+python3 scripts/export_ghidra_visual_bundle.py \
+  --targets 004524E0 004524F0 004877B0 004877F0 \
+  --disassemble --retry-missing \
+  --output scratch/ghidra-fusion-remaining.zip
+```
+
+Pode ser executada na máquina que contém o Ghidra e o projeto Joey, quando chegarmos a essa etapa. **Não é necessário recriar o SQLite inteiro agora.** A importação das decompilações transitórias deve respeitar proveniência e SHA do EXE, sem reclassificar funções Ghidra ausentes como persistentes.
+
+**Cobertura:** permanece **19/34 Partial (55,88%) e 0 Verified**. Um modelo de layout/estado e uma investigação de construtores não equivalem à implementação das três Draws.
