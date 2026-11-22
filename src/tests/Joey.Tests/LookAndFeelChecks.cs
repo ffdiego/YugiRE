@@ -348,6 +348,9 @@ internal static class LookAndFeelChecks
         check(fiveSelection.SelectedSlot == 0 && fiveSelection.ScrollOffset == 0,
               "Native selection: reversed scrolling reaches the first item");
         var shortSelection = new NativeSelectionWindow(3);
+        check(!shortSelection.MoveNext(),
+              "Native selection: input is gated during the eight opening updates");
+        shortSelection.AdvanceOpening(8);
         check(shortSelection.VisibleCount == 3 && shortSelection.MaximumScroll == 0 &&
               shortSelection.CardIndexAtSlot(3) == -1 &&
               shortSelection.MoveNext() && shortSelection.MoveNext() &&

@@ -40,9 +40,7 @@ public sealed class NativeSelectionWindow
         if (updates < 0)
             throw new ArgumentOutOfRangeException(nameof(updates));
         if (updates == 0 || EntranceComplete) return;
-        OpeningCounter = (int)Math.Max(
-            0L, EntranceStartCounter - (long)CounterIncrement *
-            (EntranceStartCounter / CounterIncrement - OpeningCounter / CounterIncrement + updates));
+        OpeningCounter = (int)Math.Max(0L, OpeningCounter - (long)CounterIncrement * updates);
     }
 
     /// <summary>
