@@ -198,6 +198,21 @@ internal static class LookAndFeelChecks
         check(fan.Bounds(0, 2).X != inFlightX,
               "Hand reflow: removing a card changes the neighbours' layout immediately");
 
+        var revealStart = NativeHandDrawReveal.FromUpdate(0, nearSide: true);
+        var revealMid = NativeHandDrawReveal.FromUpdate(4, nearSide: true);
+        var revealEnd = NativeHandDrawReveal.FromUpdate(CardTravel.Updates, nearSide: true);
+        check(revealStart.FaceDown && !revealMid.FaceDown && !revealEnd.FaceDown &&
+              Math.Abs(revealStart.HorizontalScale - 1) < 0.00001 &&
+              revealMid.HorizontalScale < 0.00001 &&
+              Math.Abs(revealEnd.HorizontalScale - 1) < 0.00001,
+              "Own draw: face-down at deck, edge-on halfway, face-up when landing");
+        check(Math.Abs(NativeHandDrawReveal.FromUpdate(2, true).HorizontalScale -
+                       NativeHandDrawReveal.FromUpdate(6, true).HorizontalScale) < 0.00001 &&
+              NativeHandDrawReveal.FromUpdate(2, false).FaceDown &&
+              NativeHandDrawReveal.FromUpdate(7, false).FaceDown &&
+              NativeHandDrawReveal.FromUpdate(7, false).HorizontalScale == 1,
+              "CPU drawn card stays hidden; player reveal has a symmetric preview");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

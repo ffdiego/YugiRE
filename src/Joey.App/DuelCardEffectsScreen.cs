@@ -469,7 +469,21 @@ static partial class Game
         var pile = move.FromDeck ? NativeDuelLayout.DeckBounds(near) : NativeDuelLayout.GraveBounds(near);
         var bounds = CardTravel.Sample(move.FromDeck ? pile : handSlot, move.FromDeck ? handSlot : pile,
             cardEffects.ElapsedUpdates);
-        DrawFieldCard(move.Card, ToRectangle(bounds), faceDown: !near || move.FromDeck, upsideDown: !near);
+        if (move.FromDeck && near)
+        {
+            // 00418B60 interpolates the face and orientation over eight
+            // native update steps. Cosine scaling previews 00418EF0;
+            // the source table and blending are not verified yet.
+            var reveal = NativeHandDrawReveal.FromUpdate(cardEffects.ElapsedUpdates, nearSide: true);
+            float width = Math.Max(1f, (float)(bounds.Width * reveal.HorizontalScale));
+            float left = bounds.X + (bounds.Width - width) / 2f;
+            DrawFieldCard(move.Card,
+                new Rectangle(left, bounds.Y, width, bounds.Height),
+                faceDown: reveal.FaceDown);
+        }
+        else
+            DrawFieldCard(move.Card, ToRectangle(bounds),
+                faceDown: !near, upsideDown: !near);
     }
 
     static void DrawDestruction(DemoMonsterDestruction monster, int elapsedUpdates)
