@@ -75,7 +75,7 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Moeda | `004571D0` / `005DB404` | `00457500` | `00457520` | `effect/coin.txt`, 14 padrões na tira principal | Não implementado. Variante e relógio têm análise parcial na branch histórica. |
 | Dado | `004568C0` / `005DB3F4` | `00456B70` | `00456B90` | `effect/dice.txt` | Não implementado. |
 | Exodia | `00453B60` / `005DB3B4` | `00454000` | `00454010` | `exodia/exodia.txt`, miniaturas DAT, `exo_face/arm/arml`, `card_hikari`, `exo_ball` | **Partial:** Core reconhece as cinco peças na mão; Alpha porta apenas o primeiro ramo orbital de cinco miniaturas (79 updates, posição/alpha nativas). Montagem completa de Exodia, efeitos de luz, sons e recursos finais continuam pendentes. Ver `docs/research/exodia-observable-victory.md`. |
-| Vija | `004580F0` / `005DB414` | `004481F0` (vazio) | `004584C0` | `effect/vija.txt`, inteiros com número de padrões e offset Y | Não implementado. |
+| Vija / Destiny Board F-I-N-A-L | `004580F0` / `005DB414` | `004481F0` (vazio) | `004584C0` (contador +4 no Draw) | `effect/vija.txt`, `vija_skel.bmp`, `vija_smoke.yga`, `vija_moji_*.bmp/yga` | **Pending:** cenas criadas por `00409940/00409AB0` em modos diferentes para o conjunto de 5 cartas no campo; a ordem da máscara, o fluxo completo de letras e a lógica de vitória ainda não foram portados. Ver `docs/research/bust-up-cinematics-and-destiny-board.md`. |
 | Ícones de carta, outros prompts e variantes de ajuda | Aberto | Aberto | Aberto | `card/icon.txt`, `list_icon/`, `effect/layerfont.txt` e outros manifests | Ainda não investigado como cadeia de objetos. |
 
 ## Explosão: parâmetros recuperados e aplicação
@@ -503,3 +503,18 @@ alpha, classe das estrelas, ângulo de cartas em
 defesa e sincronização com áudio. A cobertura do
 Draw passa para **18/31 (58.06%) Partial**, sem
 nova rotina Verified.
+
+## Bustos do Joey, cenas signature e encerramentos (fora das 31 Draw)
+
+O SQLite contém uma família paralela à composição das cartas do duelo:
+`00402E00/00403310/004166F0` para reações, `00414A20` para
+signature summons (`bust_up/summon*.txt`) e `00415C90` para as
+expressões de vitória/derrota/empate. A base comum `0045CF80` e o
+controle de conclusão dos efeitos em `00409D00`, `00409940` e
+`00409AB0` são evidências de que essas cenas compartilham a gestão
+de apresentações, apesar de possuírem vtables/Draws diferentes.
+
+O índice do DAT inventaria 17 manifests e 160 BMP/YGA em `j\bust_up\`;
+essas cenas **não** faziam parte dos 31 Draw selecionados para a badge.
+O inspetor `--inspect-visual-dat` passa a cobrir seus recursos. A pesquisa
+e os entrypoints estão em `docs/research/bust-up-cinematics-and-destiny-board.md`.
