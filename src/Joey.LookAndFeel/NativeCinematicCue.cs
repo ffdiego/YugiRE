@@ -38,6 +38,13 @@ public static class NativeCinematicRouting
             @"j\duel\exodia\exodia.txt");
     }
 
+    public static NativeCinematicCue DestinyBoardVictory(int player)
+    {
+        ValidatePlayer(player);
+        return new(NativeCinematicKind.DestinyBoard, player, 1528,
+            @"j\duel\effect\vija.txt");
+    }
+
     public static NativeCinematicCue? SignatureCandidate(
         int player, int cardResourceId, bool faceDown)
     {
