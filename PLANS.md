@@ -70,6 +70,16 @@
 
 ### Iteração D — aparência e experiência
 
+**Método de trabalho para esta trilha (decisão 22/11/2026): assembly-first.** O mantenedor aponta diferenças visuais, e o agente realiza a investigação de `joey_pc.exe` antes de escolher sprites, coordenadas, cores ou timing. Capturas são oráculos de validação, não substitutos da análise da rotina. Registrar endereços, ramificações de estado, argumentos, recursos, grau de certeza e cenários de teste; deixar `Pending` quando o assembly não estiver esclarecido. Detalhes: [pendências assembly-first](docs/research/visual-assembly-first-backlog-2026-11-22.md) e [instruções aos agentes](AGENTS.md#política-obrigatória-engenharia-reversa-primeiro-para-apresentação).
+
+**Pendências visuais novas ou refinadas, em ordem sugerida:**
+
+- [ ] **LP flutuante por origem do dano/cura:** remover a escolha universal de ponto médio entre as fileiras. Rastrear `00414110` (combate), `00408470` (caso geral), `0047C4F0` (registro do delta/identificador), `0047C660` (Draw) e `004806F0` (números) até a passagem real de X/Y/slot. Comparar dano de batalha sobre monstro, dano direto/cura sobre a região de magias, ambos os lados, ataque direto e alvo face-down. **Nada de ajustar pela captura sem entender a seleção nativa de âncora.**
+- [ ] **Aviso de mudança de jogador/turno:** investigar os recursos `j/duel/phase_name/nex_e_b*.yga` / `nex_e_r*.yga`, transição e ordem relativas aos banners de fase. Seguir `00480B40`/`00480BC0`, `00480C20`, `00480C60` e seus chamadores antes de implementar o texto e a timeline no cliente.
+- [ ] **ATK/DEF em monstros no campo:** em monstros face-up, mostrar ambos os atributos também **em posição de defesa**, mantendo o texto horizontal; confirmar no assembly o sprite/fonte, visibilidade, coloração (ATK inativo em cinza na defesa, demais combinações a investigar) e camadas. Rastrear `004194D0 → 00480500 / 00480300`; o cliente já cria `AttributesCenter` para face-up defense, mas hoje usa um único texto sem as cores nativas.
+- [ ] **Cursor `Attack` na Battle Phase:** só quando o monstro pode atacar; rastrear a seleção do cursor e sua prioridade perante ações alternativas, além de confirmar `cursor/cursor_e_atk.yga` e o gate nativo. O `Joey.Core.CanAttack(zone)` existe; o cursor do cliente só trata ações da mão. Não confundir o cursor com a espada de ataque em campo.
+- [ ] **Cursores `SetAttack`/`SetDefense`:** recuperar as condições/alternância nativas de mudança de posição e as variantes `cursor_e_setatk.yga`/`cursor_e_setdef.yga`; não exibir ação ilegal nem assumir que os nomes do DAT provam o fluxo.
+
 **Critério de conclusão visual:** fidelidade observável de **posição/tamanho por pixel e tempo por update** em 800×600, cobrindo progressivamente todos os elementos (carta, mão, texto, HUD, LP, fases, efeitos e transições). Não é necessário reproduzir GDI/opcodes/estrutura interna, mas deve-se demonstrar de onde vieram os valores. Conferir o [contrato de fidelidade visual](docs/architecture/visual-fidelity-goal.md) e documentar divergências mensuradas.
 
 - [x] Criar `Joey.LookAndFeel` independente do Core e raylib, com perfis Classic/Fast/Silent/Instant, clock não bloqueante, overrides e integração inicial de realce de texto no `Joey.App`.
