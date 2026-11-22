@@ -27,6 +27,19 @@ internal static class ActivationEffectChecks
               raw.Rgba.SequenceEqual(new byte[] { 30, 20, 10, 200, 0, 0, 0, 0 }),
               "Activation YGA: raw BGRA is converted to RGBA and black color-key is transparent");
 
+        var cursorPixels = NativeYgaSprite.Decode(Yga(2, 1, 0, 0, pixels),
+            static (_, _) => throw new Exception("Raw YGA must not invoke LZSS"),
+            YgaTransparencyMode.SourceAlpha);
+        check(cursorPixels.Rgba.SequenceEqual(new byte[] { 30, 20, 10, 200, 0, 0, 0, 255 }),
+              "Cursor YGA: preserve fully opaque black lettering instead of punching transparent holes");
+
+        var actualTransparency = NativeYgaSprite.Decode(
+            Yga(2, 1, 0, 0, [0, 0, 0, 0, 0, 0, 0, 255]),
+            static (_, _) => throw new Exception("Raw YGA must not invoke LZSS"),
+            YgaTransparencyMode.SourceAlpha);
+        check(actualTransparency.Rgba.SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 255 }),
+              "Cursor YGA: source-alpha transparency and opaque black are distinguishable");
+
         var compressed = NativeYgaSprite.Decode(Yga(2, 1, 1, 3, [1, 2, 3]),
             (_, length) => length == pixels.Length ? (byte[])pixels.Clone() : []);
         check(compressed.Rgba.SequenceEqual(raw.Rgba),

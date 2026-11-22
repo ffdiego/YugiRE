@@ -94,6 +94,12 @@ internal static class LookAndFeelChecks
               NativeVisualArchiveScope.Includes(@"cursor\cursor00.yga") &&
               !NativeVisualArchiveScope.Includes(@"cursor_fake\cursor00.yga"),
               "Visual DAT inspector includes root cursor assets without adjacent directories");
+        check(NativeDuelCursor.UsesSourceAlpha(@"cursor\cursor_e_summon.yga") &&
+              NativeDuelCursor.UsesSourceAlpha(@"CURSOR\CURSOR_E_SET.YGA") &&
+              NativeDuelCursor.UsesSourceAlpha(NativeDuelCursor.DefaultPointer) &&
+              !NativeDuelCursor.UsesSourceAlpha(@"j\duel\effect\atk_eff.yga") &&
+              !NativeDuelCursor.UsesSourceAlpha(@"cursor\cursor_e.txt"),
+              "Cursor texture upload uses original source alpha, other YGA effects retain black-key policy");
         check(NativeDuelCursor.ManifestEnglish == @"cursor\cursor_e.txt" &&
               NativeDuelCursor.DefaultPointer == @"cursor\cursor00.yga" &&
               NativeDuelCursor.AlternatePointer == @"cursor\cursor01.yga" &&

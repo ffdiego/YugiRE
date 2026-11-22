@@ -138,3 +138,22 @@ visual de 19/31**, que inventaria outras funções Draw.
 O cursor é uma família adicional ainda fora das
 31 funções do denominador. Só promover fidelidade
 após capturas pareadas.
+
+## Correção do texto transparente do balão (22/11/2026)
+
+Captura do usuário: o balão Summon era branco e legível, mas as letras pretas
+viravam buracos mostrando a carta sob o cursor. A causa era a transformação
+incondicional de **RGB(0,0,0) em alpha=0** no decodificador YGA, criada para
+certos efeitos que usam preto como color-key.
+
+`NativeYgaSprite.Decode` agora recebe uma política explícita:
+
+- `YgaTransparencyMode.SourceAlpha` para recursos `cursor/*.yga`:
+  conserva o alpha BGRA do original, inclusive para pixels pretos opacos.
+- `YgaTransparencyMode.BlackColorKey` para sprites de efeitos já existentes:
+  mantém o comportamento legado de preto transparente, sem regressão global.
+
+O teste com YGA sintético verifica preto opaco, preto de alpha 0 e a conversão
+BGRA para RGBA. Os sprites proprietários não foram exportados nem versionados.
+A validação visual ainda exige executar o jogo localmente e verificar Summon,
+Set, Activate e outros idiomas caso esses recursos sejam habilitados.

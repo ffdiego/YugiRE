@@ -17,6 +17,16 @@ public static class NativeDuelCursor
     public const string DefaultPointer = @"cursor\cursor00.yga";
     public const string AlternatePointer = @"cursor\cursor01.yga";
 
+    /// <summary>
+    /// The original cursor YGAs use black lettering and source alpha for
+    /// the outline/background. They cannot share the black-key treatment
+    /// used by duel effect YGAs.
+    /// </summary>
+    public static bool UsesSourceAlpha(string? resource) =>
+        resource is not null &&
+        resource.StartsWith(@"cursor\", StringComparison.OrdinalIgnoreCase) &&
+        resource.EndsWith(".yga", StringComparison.OrdinalIgnoreCase);
+
     public static string ActionSprite(NativeCursorAction action) =>
         action switch
         {

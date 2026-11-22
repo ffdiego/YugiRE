@@ -127,7 +127,10 @@ sealed class DatGraphics : IDisposable
         {
             var sprite = NativeYgaSprite.Decode(
                 (archive ?? throw new InvalidOperationException("No DAT open")).Read(name),
-                static (data, size) => Archive.Decode(data, size));
+                static (data, size) => Archive.Decode(data, size),
+                NativeDuelCursor.UsesSourceAlpha(name)
+                    ? YgaTransparencyMode.SourceAlpha
+                    : YgaTransparencyMode.BlackColorKey);
             texture = UploadYga(sprite);
         }
         else
@@ -231,7 +234,8 @@ sealed class DatGraphics : IDisposable
                      .Append(NativeDuelCursor.AlternatePointer))
         {
             var sprite = NativeYgaSprite.Decode(archive.Read(name),
-                static (data, size) => Archive.Decode(data, size));
+                static (data, size) => Archive.Decode(data, size),
+                YgaTransparencyMode.SourceAlpha);
             if (sprite.Width <= 0 || sprite.Height <= 0)
                 throw new InvalidDataException($"Invalid cursor YGA: {name}");
             count++;

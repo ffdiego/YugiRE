@@ -3,6 +3,13 @@ using System.Buffers.Binary;
 namespace Joey.LookAndFeel;
 
 /// <summary>
+/// Some native effect sprites treat RGB black as a color-key; cursor YGAs
+/// instead contain opaque black glyphs inside the action bubble, so they
+/// must use their source BGRA alpha without forcing black transparent.
+/// </summary>
+public enum YgaTransparencyMode { BlackColorKey, SourceAlpha }
+
+/// <summary>
 /// Reads a single original YGA 32-bit BGRA sprite from data.dat. It owns no
 /// archive or renderer. The caller supplies the DAT-compatible LZSS decoder,
 /// keeping Joey.LookAndFeel independent of Joey.Core.
@@ -10,7 +17,8 @@ namespace Joey.LookAndFeel;
 public sealed record NativeYgaSprite(int Width, int Height, byte[] Rgba)
 {
     public static NativeYgaSprite Decode(ReadOnlySpan<byte> bytes,
-                                          Func<byte[], int, byte[]> decompress)
+                                          Func<byte[], int, byte[]> decompress,
+                                          YgaTransparencyMode transparency = YgaTransparencyMode.BlackColorKey)
     {
         ArgumentNullException.ThrowIfNull(decompress);
         if (bytes.Length < 24 || !bytes[..4].SequenceEqual("yga\0"u8))
@@ -37,12 +45,14 @@ public sealed record NativeYgaSprite(int Width, int Height, byte[] Rgba)
         if (pixels is null || pixels.Length != decodedSize)
             throw new InvalidDataException("YGA decompressor returned incorrect byte count.");
 
-        // Native animation passes use black (RGB 0) as a color key. BGRA is
-        // converted into RGBA for raylib; source alpha is preserved elsewhere.
+        // BGRA -> RGBA for raylib. Black-keying is an asset-family policy,
+        // NOT an intrinsic part of YGA decoding: cursor action labels use
+        // opaque black letters. Never erase them from the source alpha.
         for (int i = 0; i < pixels.Length; i += 4)
         {
             (pixels[i], pixels[i + 2]) = (pixels[i + 2], pixels[i]);
-            if (pixels[i] == 0 && pixels[i + 1] == 0 && pixels[i + 2] == 0)
+            if (transparency == YgaTransparencyMode.BlackColorKey &&
+                pixels[i] == 0 && pixels[i + 1] == 0 && pixels[i + 2] == 0)
                 pixels[i + 3] = 0;
         }
         return new NativeYgaSprite(width, height, pixels);
