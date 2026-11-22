@@ -11,5 +11,6 @@ public static class NativeVisualArchiveScope
     public static bool Includes(string? entryName) =>
         entryName is not null &&
         (entryName.StartsWith(@"j\duel\", StringComparison.OrdinalIgnoreCase) ||
-         entryName.StartsWith(@"j\bust_up\", StringComparison.OrdinalIgnoreCase));
+         entryName.StartsWith(@"j\bust_up\", StringComparison.OrdinalIgnoreCase) ||
+         entryName.StartsWith(@"cursor\", StringComparison.OrdinalIgnoreCase));
 }
