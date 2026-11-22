@@ -23,7 +23,7 @@ public static class HandPresentation
 
     public static CardBounds Bounds(int index, int count, bool nearSide, int lift = 0) =>
         new(CenterX(index, count, nearSide) - CardWidth / 2,
-            (nearSide ? NativeDuelLayout.CanvasHeight - lift : 0) - CardHeight / 2,
+            (nearSide ? NativeDuelLayout.CanvasHeight - lift : lift) - CardHeight / 2,
             CardWidth, CardHeight);
 
     /// <summary>

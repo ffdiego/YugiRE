@@ -8,12 +8,14 @@ static partial class Game
     // Native field centers and hand spacing; balloon rendering and update frequency are demo policy.
     static int hoverHand = -1;
     static int hoverCpuHand = -1;
+    static int[] cpuHandDrop = [];
     static bool handActionsWereEnabled;
     static bool setHandAction, choosingTributes, choosingEquip;
     static int[] handLift = [];
     static readonly HandReflow<Card>[] handLayouts = [new(), new()];
     static readonly PresentationTickClock hoverClock = new();
     static int HandLiftAt(int index) => index < handLift.Length ? handLift[index] : 0;
+    static int CpuHandDropAt(int index) => index < cpuHandDrop.Length ? cpuHandDrop[index] : 0;
     static Rectangle HandBounds(int slot) =>
         ToRectangle(handLayouts[ViewPlayer].Bounds(slot,
             VisibleHand(ViewPlayer).Count, HandLiftAt(slot)));
@@ -48,37 +50,63 @@ static partial class Game
             duel.CanActivateFromHand(index));
     static bool Hit(Rectangle rect) => Raylib.CheckCollisionPointRec(mouse, rect);
 
-    // The original 00418EF0 selects a frame resource from duel/card/card.txt
-    // only when the card is marked as selected. Its large frame has four
-    // pixels of padding around the 100x145 hand texture.
-    static void DrawHandSelectionFrame(Rectangle bounds, bool nearSide)
+    // card.txt holds both large hand and small board selection frames.
+    // Centre the frame over the *drawn card*, not the larger input zone.
+    static void DrawCardSelectionFrame(Rectangle card, bool nearSide, bool large, int degrees)
     {
-        var name = NativeCardSelectionFrame.LargeSprite(nearSide);
+        string name = large
+            ? NativeCardSelectionFrame.LargeSprite(nearSide)
+            : NativeCardSelectionFrame.SmallSprite(nearSide);
         var texture = graphics.Texture(name);
+        bool sideways = degrees % 180 != 0;
+        int frameWidth = sideways ? texture.Height : texture.Width;
+        int frameHeight = sideways ? texture.Width : texture.Height;
         var padded = NativeCardSelectionFrame.Outline(
-            ToCardBounds(bounds), texture.Width, texture.Height);
-        // On the far side, the card and its frame both face the opponent.
+            ToCardBounds(card), frameWidth, frameHeight);
         Raylib.DrawTexturePro(texture,
             new Rectangle(0, 0, texture.Width, texture.Height),
             new Rectangle(padded.X + padded.Width / 2f, padded.Y + padded.Height / 2f,
                           padded.Width, padded.Height),
-            new Vector2(padded.Width / 2f, padded.Height / 2f),
-            nearSide ? 0 : 180, Color.White);
+            new Vector2(padded.Width / 2f, padded.Height / 2f), degrees, Color.White);
     }
 
-    static void UpdateCpuHandHover()
+    static void DrawHandSelectionFrame(Rectangle bounds, bool nearSide) =>
+        DrawCardSelectionFrame(bounds, nearSide, large: true, degrees: nearSide ? 0 : 180);
+
+    static void DrawFieldSelectionFrame(CardRenderGeometry geometry, bool nearSide) =>
+        DrawCardSelectionFrame(ToRectangle(geometry.Bounds), nearSide,
+            large: false, degrees: geometry.Degrees);
+
+    static void UpdateCpuHandHover(int updates)
     {
         hoverCpuHand = -1;
         if (alphaCpu is null) return;
         int opponent = 1 - ViewPlayer;
         var cards = VisibleHand(opponent);
+        if (cpuHandDrop.Length < cards.Count) Array.Resize(ref cpuHandDrop, cards.Count);
+        int next = -1;
         for (int index = 0; index < cards.Count; index++)
         {
             if (IncomingTransferInFlight(opponent, index, cards[index])) continue;
-            var bounds = ToRectangle(handLayouts[opponent].Bounds(index, cards.Count));
-            if (Hit(bounds)) hoverCpuHand = index;
+            var current = ToRectangle(handLayouts[opponent].Bounds(
+                index, cards.Count, CpuHandDropAt(index)));
+            var rest = ToRectangle(handLayouts[opponent].Bounds(index, cards.Count));
+            float top = MathF.Min(current.Y, rest.Y);
+            float bottom = MathF.Max(current.Y + current.Height, rest.Y + rest.Height);
+            if (Hit(new Rectangle(current.X, top, current.Width, bottom - top)))
+                next = index;
+        }
+        hoverCpuHand = next;
+        for (int index = 0; index < cpuHandDrop.Length; index++)
+        {
+            int target = index == hoverCpuHand ? HandPresentation.HoverOffset : 0;
+            if (!presentation.Style.PlayAnimations) cpuHandDrop[index] = target;
+            else
+                for (int i = 0; i < updates && cpuHandDrop[index] != target; i++)
+                    cpuHandDrop[index] = presentation.Style.MoveCardAxis(cpuHandDrop[index], target);
         }
     }
+
     static void ClearDuelSelection()
     {
         hand = attacker = hoverHand = hoverCpuHand = -1;
@@ -86,6 +114,7 @@ static partial class Game
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
         Array.Clear(handLift);
+        Array.Clear(cpuHandDrop);
     }
     static void UseHandAction(int index)
     {
@@ -259,7 +288,13 @@ static partial class Game
             if (duel.FieldSpells[player] is Card fieldCard)
             {
                 if (!ActivationInFlight(fieldRect))
-                    DrawDuelCard(fieldCard, DuelCardLayout.OnBoard(DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]));
+                {
+                    var geometry = DuelCardLayout.OnBoard(
+                        DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]);
+                    DrawDuelCard(fieldCard, geometry);
+                    if (Hit(fieldRect) && !IsJoeySpeaking())
+                        DrawFieldSelectionFrame(geometry, own);
+                }
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput &&
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
@@ -280,6 +315,8 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster, own, zone,
                         duel.DefensePosition[player, zone], duel.MonsterFaceDown[player, zone]);
                     DrawDuelCard(monster, geometry);
+                    if (Hit(monsterRect) && !IsJoeySpeaking())
+                        DrawFieldSelectionFrame(geometry, own);
                     if (geometry.AttributesCenter is { } center)
                     {
                         const int fontSize = 10;
@@ -296,7 +333,13 @@ static partial class Game
                     duel.IsMarkedForBattleDestruction(player, zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, Color.Red);
                 if (duel.Spells[player, zone] is Card spell && !InFlight(player, zone, true) && !ActivationInFlight(spellRect))
-                    DrawDuelCard(spell, DuelCardLayout.OnBoard(DuelCardZone.Spell, own, zone, false, duel.SpellFaceDown[player, zone]));
+                {
+                    var geometry = DuelCardLayout.OnBoard(
+                        DuelCardZone.Spell, own, zone, false, duel.SpellFaceDown[player, zone]);
+                    DrawDuelCard(spell, geometry);
+                    if (Hit(spellRect) && !IsJoeySpeaking())
+                        DrawFieldSelectionFrame(geometry, own);
+                }
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
                     DrawEffectStamp(DatGraphics.AttackSword, NativeAttackFrame.SwordAnchor(zone, own),
                         0, 0x10000, 0xa0);
@@ -385,6 +428,9 @@ static partial class Game
         string caption = HandActionCaption(hoverHand);
         Label(caption, (int)(bubble.X + (bubble.Width - MeasureLabel(caption, 16)) / 2), (int)bubble.Y + 5, 16, Color.Black);
     }
+    static bool IsJoeySpeaking() =>
+        presentation.Busy && presentation.ActiveCue == DuelPresentationCue.JoeySpeech;
+
     static void DrawDuel()
     {
         TimeSpan frameElapsed = VisualReviewTiming.Elapsed(
@@ -412,9 +458,8 @@ static partial class Game
         if (duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),
                 ToRectangle(DuelSurfaceLayout.Board), Vector2.Zero, 0, Color.White);
-        bool joeySpeaking = presentation.Busy &&
-            presentation.ActiveCue == DuelPresentationCue.JoeySpeech;
-        if (!joeySpeaking) UpdateCpuHandHover();
+        bool joeySpeaking = IsJoeySpeaking();
+        if (!joeySpeaking) UpdateCpuHandHover(hoverUpdates);
         else hoverCpuHand = -1;
         if (alphaCpu is not null) DrawCpuHand();
         DrawPhasePanel(turnInput);

@@ -47,3 +47,27 @@ sprites. A cor transparente real de cada variante deve ser conferida
 com o BMP original e, se necessário, ajustada por análise de pixels.
 Falta estender a aplicação para a seleção das cartas de campo e
 comparar recortes equivalentes no 800x600 original.
+
+## Ajustes de foco observados no jogo original (22/11/2026)
+
+O jogador reportou:
+1. Em hover na mão oposta, o cartão de Joey **desce** enquanto o
+   marcador `card_waku#l2.bmp` acompanha o verso. A mão próxima ainda
+   sobe. O mesmo passo 3/4 do `HandPresentation.Approach` governa ambas.
+2. O painel de detalhe **nunca fica vazio**: inicia com o verso original
+   e sem descrição; ao sair de um alvo conserva o último cartão
+   conhecido ou o último verso oculto. Apenas outro alvo válido muda a
+   seleção. Espaços vazios do campo não apagam o conteúdo.
+3. Os sprites **pequenos** `card_waku#s.bmp` e `#s2.bmp` são desenhados
+   no campo sobre monstros, magias/armadilhas e cartas de campo
+   existentes, acompanhando a orientação da carta (ataque/defesa).
+   Um espaço vazio não gera marcador.
+4. Uma carta do adversário ainda oculta, seja na mão ou no campo,
+   aparece apenas como verso no painel; nome, ATK/DEF e descrição não
+   são divulgados.
+
+Os testes sintéticos conferem os deslocamentos espelhados de 32px e
+as margens do frame pequeno em defesa. Os valores exatos das variantes
+normais/alternativas e os estados do renderizador 00418EF0 ainda
+requerem comparação de pixels. Essas mudanças são do cliente de
+apresentação; `Joey.Core` permanece intacto.

@@ -6,9 +6,7 @@ using System.Numerics;
 static partial class Game
 {
     static Card? detailCard;
-    static bool detailShowsBack;
-    static Card? lastHoveredDetail;
-    static bool lastHoveredWasBack;
+    static bool detailShowsBack = true;
     static bool activatedDetail;
     static int duelDescriptionScroll;
     static readonly NativeLifePointPresentation[] lifeDisplays = [new(8000), new(8000)];
@@ -32,10 +30,8 @@ static partial class Game
         for (int player = 0; player < lifeDisplays.Length; player++)
             lifeDisplays[player].Reset(duel.Life[player]);
         detailCard = null;
-        detailShowsBack = false;
+        detailShowsBack = true; // The sidebar always starts with the DAT back.
         duelDescriptionScroll = 0;
-        lastHoveredDetail = null;
-        lastHoveredWasBack = false;
         activatedDetail = false;
     }
 
@@ -49,22 +45,21 @@ static partial class Game
 
     static void UpdateDuelDetail()
     {
-        var hovered = FindHoveredDuelCard();
-        bool changed = !ReferenceEquals(hovered.Card, lastHoveredDetail) ||
-                       hovered.Back != lastHoveredWasBack;
-        if (!activatedDetail && changed)
-        {
-            detailCard = hovered.Card;
-            detailShowsBack = hovered.Back;
-            duelDescriptionScroll = 0;
-        }
-        lastHoveredDetail = hovered.Card;
-        lastHoveredWasBack = hovered.Back;
+        // No object beneath the pointer is NOT a request to clear the panel.
+        // Keep the last inspected face or back until another valid card
+        // (including an unknown opponent card) is hovered.
+        var target = FindHoveredDuelCard();
+        if (activatedDetail || target is not { } hovered) return;
+        if (ReferenceEquals(hovered.Card, detailCard) &&
+            hovered.Back == detailShowsBack) return;
+        detailCard = hovered.Card;
+        detailShowsBack = hovered.Back;
+        duelDescriptionScroll = 0;
     }
 
-    // Returning Back without a Card is intentional: the opponent's hand may
-    // be inspected, but no card identity, name, stats or description leaks.
-    static (Card? Card, bool Back) FindHoveredDuelCard()
+    // A known card is available for the detail panel; an opponent's hidden
+    // card is represented exclusively as a back; null means no hit at all.
+    static (Card? Card, bool Back)? FindHoveredDuelCard()
     {
         var near = VisibleHand(ViewPlayer);
         for (int slot = near.Count - 1; slot >= 0; slot--)
@@ -77,27 +72,30 @@ static partial class Game
         {
             int opponent = 1 - ViewPlayer;
             var far = VisibleHand(opponent);
-            for (int slot = far.Count - 1; slot >= 0; slot--)
-            {
-                if (IncomingTransferInFlight(opponent, slot, far[slot])) continue;
-                if (Hit(CpuHandBounds(slot, far.Count))) return (null, true);
-            }
+            if (hoverCpuHand >= 0 && hoverCpuHand < far.Count &&
+                !IncomingTransferInFlight(opponent, hoverCpuHand, far[hoverCpuHand]))
+                return (null, true);
         }
 
         for (int player = 0; player < 2; player++)
         {
             bool own = player == ViewPlayer;
-            if (Hit(FieldZoneBounds(player)) && (own || !duel.FieldSpellFaceDown[player]))
-                return (duel.FieldSpells[player], false);
+            if (duel.FieldSpells[player] is Card fieldCard && Hit(FieldZoneBounds(player)))
+                return !own && duel.FieldSpellFaceDown[player]
+                    ? (null, true) : (fieldCard, false);
             for (int zone = 0; zone < 5; zone++)
             {
-                if (Hit(ZoneBounds(player, zone, false)) && (own || !duel.MonsterFaceDown[player, zone]))
-                    return (duel.Monsters[player, zone], false);
-                if (Hit(ZoneBounds(player, zone, true)) && (own || !duel.SpellFaceDown[player, zone]))
-                    return (duel.Spells[player, zone], false);
+                if (duel.Monsters[player, zone] is Card monster &&
+                    Hit(ZoneBounds(player, zone, false)))
+                    return !own && duel.MonsterFaceDown[player, zone]
+                        ? (null, true) : (monster, false);
+                if (duel.Spells[player, zone] is Card spell &&
+                    Hit(ZoneBounds(player, zone, true)))
+                    return !own && duel.SpellFaceDown[player, zone]
+                        ? (null, true) : (spell, false);
             }
         }
-        return (null, false);
+        return null;
     }
 
     static void DrawLifeBar(int player, bool near)

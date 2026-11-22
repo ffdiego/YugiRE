@@ -230,6 +230,16 @@ internal static class LookAndFeelChecks
                   new CardBounds(321, 296, 58, 80),
               "Native selection frame uses four-pixel padding around both card sizes");
 
+        check(HandPresentation.Bounds(0, 1, nearSide: false, lift: 32).Y -
+                  HandPresentation.Bounds(0, 1, nearSide: false).Y == 32 &&
+              HandPresentation.Bounds(0, 1, nearSide: true, lift: 32).Y -
+                  HandPresentation.Bounds(0, 1, nearSide: true).Y == -32,
+              "Original near hand lifts 32px; Joey selected far-side card drops 32px");
+        check(NativeCardSelectionFrame.Outline(
+                  new CardBounds(320, 250, 72, 50), 80, 58) ==
+                  new CardBounds(316, 246, 80, 58),
+              "Field selection: original small frame has 4px padding in defense orientation");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
