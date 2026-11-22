@@ -143,6 +143,18 @@ internal static class LookAndFeelChecks
               NativeDuelCursor.HandAction(false, false, false, false, false, false) is null &&
               NativeDuelCursor.HandAction(false, false, true, false, false, true) is null,
               "Action cloud: only legal moves, Trap Set-only, both-mode spell and discard fallback");
+        check(NativeDuelCursor.FieldMonsterAttackAction(
+                  ownMonster: true, canAttack: true, choosingTarget: false) ==
+                  NativeCursorAction.Attack &&
+              NativeDuelCursor.CursorSprite(NativeCursorAction.Attack) ==
+                  @"cursor\cursor_e_atk.yga" &&
+              NativeDuelCursor.FieldMonsterAttackAction(
+                  ownMonster: true, canAttack: false, choosingTarget: false) is null &&
+              NativeDuelCursor.FieldMonsterAttackAction(
+                  ownMonster: false, canAttack: true, choosingTarget: false) is null &&
+              NativeDuelCursor.FieldMonsterAttackAction(
+                  ownMonster: true, canAttack: true, choosingTarget: true) is null,
+              "Native cursor: Attack cloud only for Core-legal own monster without targeting");
         check(NativeDuelCursor.CanToggleHandAction(true, true, true, false) &&
               NativeDuelCursor.CanToggleHandAction(false, false, true, true) &&
               !NativeDuelCursor.CanToggleHandAction(false, false, true, false) &&

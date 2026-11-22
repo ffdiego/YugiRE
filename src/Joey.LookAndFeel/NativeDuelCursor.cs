@@ -77,6 +77,16 @@ public static class NativeDuelCursor
     }
 
     /// <summary>
+    /// A hovered own monster can expose the original Attack cloud only
+    /// when the duel engine permits a declaration and the player is not
+    /// already targeting an attack. This is a client-side eligibility
+    /// adapter; the exact native hover dispatcher remains to be traced.
+    /// </summary>
+    public static NativeCursorAction? FieldMonsterAttackAction(
+        bool ownMonster, bool canAttack, bool choosingTarget) =>
+        ownMonster && canAttack && !choosingTarget ? NativeCursorAction.Attack : null;
+
+    /// <summary>
     /// Right-click cycles only if two real choices are legal. Traps on hand
     /// cannot Activate, so their only available action is Set.
     /// </summary>

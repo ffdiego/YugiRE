@@ -49,7 +49,7 @@ Preferir consultar o SQLite/decompilações e o ZIP visual já extraído, inclus
 
 **Recurso identificado:** `cursor/cursor_e_atk.yga`, já mapeado em `NativeDuelCursor.ActionSprite(NativeCursorAction.Attack)`. A fonte da legalidade jogável atual é `DemoDuel.CanAttack(zone)`; isso **não comprova** o gate visual nativo, sua precedência sobre outras opções ou o hotspot. Rastrear o despacho do cursor e a ligação às flags/estados da fase de batalha no assembly. Não confundir com `j/duel/effect/atk_icon.bmp` (ícone/espada desenhado no campo).
 
-**Estado atual:** `GlobalCursorScreen.ActiveWindowCursorSprite` seleciona balões da mão, mas não o `Attack` da carta no campo. O item é pendente, não testado.
+**Estado atual (22/11):** `GlobalCursorScreen.ActiveWindowCursorSprite` agora seleciona o recurso original `cursor_e_atk.yga` para hover de monstro próprio com `DemoDuel.CanAttack(zone)` verdadeiro, exceto quando o jogador já está selecionando alvo. Testes sintéticos cobrem a autorização e negação do balão. **Pendente:** comparar a precedência e o hotspot reais do dispatcher Win32 no assembly; não chamar esse cursor de Verified.
 
 ## V05 — Cursores de mudança de posição
 

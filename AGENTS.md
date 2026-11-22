@@ -47,6 +47,10 @@ Ferramentas existentes: SQLite nativo enriquecido, `scripts/run-archive-query.sh
 
 **Exemplos pendentes:** números de LP flutuantes são posicionados pelo contexto/argumentos do Draw (dano de batalha não é idêntico a dano direto); anúncio de troca de jogador usa recursos próprios; atributos ATK/DEF têm visibilidade e cores dependentes do estado; cursor de ataque e cursores de posição só aparecem para ações permitidas. Ver [fila de investigação visual](docs/research/visual-assembly-first-backlog-2026-11-22.md) e `PLANS.md`.
 
+## Extrações nativas que dependem de outra máquina
+
+A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de extração executáveis mas não executadas**, para Ghidra/Windows e outras evidências indisponíveis neste ambiente. Ler seu `README.md` antes de executar, atualizar o estado após obter um ZIP e nunca marcar um item como concluído só porque o script foi escrito. Não executar automaticamente as tarefas pendentes durante builds, CI ou testes. Se uma análise visual travar por evidência ausente, adicionar um script direcionado com endereços e saída esperada, registrar a pendência e avançar em uma frente independente.
+
 ## Arquitetura
 
 - `src/Joey.Core/`: catálogo, estado de duelo, cartas, atributos, efeitos e IA; **sem dependência de Frida/Windows/Python**.

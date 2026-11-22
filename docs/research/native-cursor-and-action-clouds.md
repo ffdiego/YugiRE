@@ -157,3 +157,29 @@ O teste com YGA sintético verifica preto opaco, preto de alpha 0 e a conversão
 BGRA para RGBA. Os sprites proprietários não foram exportados nem versionados.
 A validação visual ainda exige executar o jogo localmente e verificar Summon,
 Set, Activate e outros idiomas caso esses recursos sejam habilitados.
+
+## Cursor Attack sobre monstros do campo (22/11/2026)
+
+**Observação fornecida pelo mantenedor:** durante a Battle Phase, o cursor
+apresenta o balão **Attack** quando o monstro é elegível a atacar.
+O DAT já contém `cursor/cursor_e_atk.yga`; a função
+`NativeDuelCursor.ActionSprite(NativeCursorAction.Attack)` já apontava
+para esse recurso. A implementação do ponteiro global, porém, só escolhia
+balões para a mão.
+
+`GlobalCursorScreen.ActiveWindowCursorSprite` agora detecta hover
+nas zonas de monstros do **jogador visível/ativo** e solicita
+`NativeDuelCursor.FieldMonsterAttackAction`. O gate usa
+`DemoDuel.CanAttack(zone)`, que testa estado lógico de Battle,
+monstro existente, não usado no turno, posição de ataque, face-up e
+janelas de ações bloqueadas. A nuvem não aparece enquanto já existe
+um alvo de ataque sendo escolhido (`attacker >= 0`), nem durante
+animações, troca de fases, reação/carta pendente ou turno da CPU.
+Continuamos desenhando **um único cursor original** após o canvas,
+sem segundo ponteiro, sprite fake ou ajuste novo de pixels.
+
+**Limite importante:** isso reproduz a elegibilidade da Alpha pelo
+Core e a observação do usuário, **não** prova o dispatcher real do EXE,
+a sua precedência na escolha de ações nem o hotspot. O cursor de
+mudança de posição continua pendente; não o emulamos neste commit.
+Testes determinísticos verificam os casos válidos e inválidos.

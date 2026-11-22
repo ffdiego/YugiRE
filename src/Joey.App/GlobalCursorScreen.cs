@@ -19,8 +19,29 @@ static partial class Game
             !choosingTributes && !choosingEquip &&
             mouse.X >= 0 && mouse.X < NativeDuelLayout.CanvasWidth &&
             mouse.Y >= 0 && mouse.Y < NativeDuelLayout.CanvasHeight &&
-            hoverHand >= 0 && hoverHand < ViewHand.Count)
-            return NativeDuelCursor.CursorSprite(CurrentHandAction(hoverHand));
+            !duel.GameOver)
+        {
+            if (hoverHand >= 0 && hoverHand < ViewHand.Count)
+                return NativeDuelCursor.CursorSprite(CurrentHandAction(hoverHand));
+
+            // The Attack balloon is a variant of the SAME native pointer,
+            // not an overlay on the card or the on-board sword marker.
+            // Gameplay eligibility comes from Core (phase, attack used,
+            // face-down/defense and pending actions); no speculative
+            // offsets, sprite images or temporary cursors are introduced.
+            if (duel.Phase == DemoPhase.Battle)
+            {
+                for (int zone = 0; zone < NativeDuelLayout.MonsterSlots; zone++)
+                {
+                    if (!Hit(ZoneBounds(ViewPlayer, zone, spell: false))) continue;
+                    var action = NativeDuelCursor.FieldMonsterAttackAction(
+                        ownMonster: duel.Monsters[ViewPlayer, zone] is not null,
+                        canAttack: duel.CanAttack(zone),
+                        choosingTarget: attacker >= 0);
+                    return NativeDuelCursor.CursorSprite(action);
+                }
+            }
+        }
 
         return NativeDuelCursor.DefaultPointer;
     }

@@ -1,0 +1,32 @@
+# scripts/pending — investigações nativas aguardando execução
+
+Esta pasta guarda **roteiros de coleta de evidência, não implementações incompletas**. Eles não são invocados por `build`, `CI`, testes ou pelo loop normal de desenvolvimento. Cada script é autocontido, roda a partir de qualquer diretório, usa o projeto Ghidra **local** e escreve somente sob `scratch/` (ignorado pelo Git). **Não versionar o ZIP, o executável, o DAT nem dumps de memória.**
+
+## Fila
+
+| Roteiro | Pré-requisito | Produz | Estado |
+| --- | --- | --- | --- |
+| `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Aguardando execução** |
+| `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Aguardando execução** |
+
+### Seleção/fusão: o que já sabemos e o que NÃO sabemos
+
+O primeiro roteiro obtém assembly de `0043B280`, `0055DCF0`, `004524E0/004524F0`, `004877B0/004877F0` e bytes estáticos da âncora e constantes do gerador x87. **Importante:** `00A52EE8` é uma tabela trigonométrica gerada em tempo de execução por `0055DCF0`; não espere obter seus 512 valores definitivos lendo apenas o PE no Ghidra. Depois da extração, recuperar os valores da tabela **após sua inicialização** com uma captura runtime ou reconstrução x87 comprovada. Consultar `docs/research/native-selection-window-fusion-2026-11-22.md`.
+
+### Corrente desativada: próxima família visual independente
+
+O segundo roteiro traz construtor, caminho de disparo e assembly de Update/Draw do objeto `005DB374`, que usa `j/duel/chain/disable.txt`. A decompilação já confirma `004531A0`: contador +1 por Update, desativa após 24; `004531C0`: quadro `(contador/2)%6`, com modo de composição alternativo por bit 0x40 do descritor. Ainda **não** conhecemos o índice do sprite no manifesto, as coordenadas efetivas de `0045C140`, o ponto exato de disparo e a rotação, portanto não inventar a apresentação. Essa é uma candidata a uma nova Draw no badge, **somente** após integração C# efetiva.
+
+## Uso
+
+Depois de atualizar a `main` na máquina com Ghidra, executar apenas o roteiro pertinente, por exemplo:
+
+```bash
+bash scripts/pending/01-selection-fusion-ghidra.sh
+```
+
+O exportador `scripts/export_ghidra_visual_bundle.py` valida o SHA-256 de `joey_pc.exe`, executa o Ghidra em modo `-readOnly` com rollback e inclui decompilações/disassembly em um ZIP privado. Se `GHIDRA_INSTALL_DIR` não aponta à instalação correta, ajustá-la antes de executar. Fazer upload **somente do ZIP gerado** na conversa apropriada.
+
+## Protocolo para novas pendências
+
+Cada novo roteiro deve especificar: hipótese/objetivo, endereços-alvo, dependências, comando reprodutível, artefato esperado e critério de encerramento. Depois de processar o ZIP e registrar conclusões em `docs/research/`, atualizar esta fila para **concluído** ou remover o roteiro de pending em commit separado; não abandonar scripts silenciosamente. Scripts de uso geral permanecem em `scripts/`.
