@@ -139,6 +139,7 @@ MorphingJar2Checks.Run(Check);
 ExodiaChecks.Run(Check);
 DestinyBoardChecks.Run(Check);
 LookAndFeelChecks.Run(Check);
+CursorLegalityChecks.Run(Check);
 NativePresentationChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
