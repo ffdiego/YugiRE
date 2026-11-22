@@ -8,12 +8,18 @@ namespace Joey.LookAndFeel;
 public static class NativeDetailPanel
 {
     // Object fields 0x6F..0x72 from 0041BE80:
-    // start X, top Y, width and bottom Y of the rich text window.
+    // left X, top Y, RIGHT X and bottom Y. 0041B3E0 sets the child
+    // text control width to (0x71 - 0x6F) = 184 - 8 = 176.
     public const int TextX = 8;
     public const int TextY = 365;
-    public const int TextWidth = 184;
+    public const int TextRight = 184;
     public const int TextBottom = 526;
+    public const int TextWidth = TextRight - TextX;
     public const int TextHeight = TextBottom - TextY;
+
+    // 0041C920 sets the scroll widget origin, using virtual SetPosition.
+    public const int ScrollWidgetX = 186;
+    public const int ScrollWidgetY = 364;
 
     // 0041B3E0 -> 00544B20 sets 14px GDI line height in non-Japanese mode.
     public const int EnglishTextSize = 14;
