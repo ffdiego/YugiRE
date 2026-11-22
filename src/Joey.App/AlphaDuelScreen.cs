@@ -186,6 +186,24 @@ static partial class Game
             target = new(center.X, center.Y);
             break;
         }
+        if (duel.CanAttackDirectly(attacker))
+        {
+            var direct = NativeAttackFrame.DirectTarget(nearSide: true);
+            var sword = graphics.Texture(DatGraphics.AttackSword);
+            var hitbox = new Rectangle(direct.X - sword.Width / 2, direct.Y - sword.Height / 2,
+                sword.Width, sword.Height);
+            bool hovered = Hit(hitbox);
+            DrawEffectStamp(DatGraphics.AttackSword, direct, 0, 0x10000, hovered ? 255 : 0xa0);
+            if (hovered)
+            {
+                target = new(direct.X, direct.Y);
+                if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+                {
+                    CommitHumanAttack(-1);
+                    return;
+                }
+            }
+        }
         int rotation = NativeAttackFrame.AimRotation(target.X - origin.X, target.Y - origin.Y);
         DrawEffectStamp(DatGraphics.AttackSword, origin, rotation, 0x10000, 255);
     }

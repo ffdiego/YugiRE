@@ -196,6 +196,9 @@ public sealed class CpuDuelController
                 .OrderByDescending(z => duel.AttackValue(Player, z)))
             {
                 int power = duel.AttackValue(Player, source);
+                if (power > 0 && duel.CanAttackDirectly(source))
+                    return Act(CpuAction.Attack, (out string m) => duel.Attack(source, -1, out m),
+                        duel.Monsters[Player, source], source, -1);
                 var enemies = Enumerable.Range(0, 5).Where(z => duel.Monsters[enemy, z] is not null).ToArray();
                 int target = enemies.Where(z => power > KnownPower(duel, enemy, z))
                     .OrderByDescending(z => !duel.MonsterFaceDown[enemy, z] && !duel.DefensePosition[enemy, z]

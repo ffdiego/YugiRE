@@ -129,6 +129,30 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 307 | Beast Fangs | Partial | `P025`, Beast tipo 11, +300/+300 sob condições suportadas |
 | 1427 (`0x593`) | Infinite Cards | Done (sandbox) | Desabilita limite de 6 cartas na End Phase enquanto ativa |
 
+### Auras elementais e ataque direto
+
+| Resource ID | Carta | Status | Escopo |
+| ---: | --- | --- | --- |
+| 491 | Hoshiningen | Done (sandbox) | LIGHT +500 ATK, DARK −400 ATK |
+| 627 | Witch's Apprentice | Done (sandbox) | DARK +500 ATK, LIGHT −400 ATK |
+| 523 | Star Boy | Done (sandbox) | WATER +500 ATK, FIRE −400 ATK |
+| 597 | Little Chimera | Done (sandbox) | FIRE +500 ATK, WATER −400 ATK |
+| 526 | Milus Radiant | Done (sandbox) | EARTH +500 ATK, WIND −400 ATK |
+| 608 | Bladefly | Done (sandbox) | WIND +500 ATK, EARTH −400 ATK |
+| 386 | Mystic Lamp | Done (sandbox) | Pode declarar ataque direto com monstros adversários em campo |
+| 396 | Leghul | Done (sandbox) | Mesma permissão de ataque direto |
+| 397 | Ooguchi | Done (sandbox) | Mesma permissão de ataque direto |
+| 421 | Jinzo #7 | Done (sandbox) | Mesma permissão de ataque direto |
+| 487 | Rainbow Flower | Done (sandbox) | Mesma permissão de ataque direto |
+| 634 | Queen's Double | Done (sandbox) | Mesma permissão de ataque direto |
+| 812 | Alligator's Sword Dragon | Partial | Permite ataque direto se todos os monstros adversários face-up forem WATER, FIRE ou EARTH. Exercitado com monstro já em campo |
+
+Cada fonte de aura face-up contribui para os monstros face-up dos dois lados, inclusive ela própria. O motor soma todas as contribuições com magia de campo e equipamento antes de limitar os atributos. Usa o atributo do DAT no contexto do sandbox. Auras em defesa face-up continuam ativas.
+
+O ataque direto normal continua disponível em campo adversário vazio. Com defensores presentes, o cliente oferece a escolha entre um monstro adversário e a espada no ponto de impacto direto existente. O uso do sprite DAT nesse ponto como controle clicável é uma decisão transitória do cliente. Os ataques passam pela janela de resposta e a permissão é conferida novamente antes do dano. O filtro de 812 ignora defensores ocultos segundo 0056A810 e ainda precisa de comparação em duelo no Joey original. A invocação por fusão de 812 continua em aberto.
+
+Os deltas e permissões vêm do [lote 10 da campanha estática](docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl). Os cenários em [MonsterBattleRuleChecks](src/tests/Joey.Tests/MonsterBattleRuleChecks.cs) cobrem as famílias no Core. A Alpha inclui Hoshiningen e Jinzo #7 no baralho padrão.
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |

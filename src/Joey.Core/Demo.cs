@@ -405,6 +405,22 @@ public sealed class DemoDuel
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null &&
         !attacked[ActivePlayer, zone] && !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone];
+    public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
+        DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
+
+    private bool DirectAttackAllowed(int player, Card attacker)
+    {
+        if (DirectAttackRules.AttacksThroughAnyMonster(attacker.Id)) return true;
+        int opponent = 1 - player;
+        for (int zone = 0; zone < 5; zone++)
+        {
+            if (Monsters[opponent, zone] is not Card defender) continue;
+            if (attacker.Id != DirectAttackRules.AlligatorsSwordDragon) return false;
+            if (!MonsterFaceDown[opponent, zone] &&
+                !DirectAttackRules.AllowsAlligatorDefender((byte)(defender.Properties >> 29))) return false;
+        }
+        return true;
+    }
 
     public bool Draw(out string message)
     {
@@ -612,8 +628,8 @@ public sealed class DemoDuel
     private NativeAiStats EquipmentStats(int p, int z)
     {
         if (Monsters[p, z] is not Card monster) return default;
-        // Demo policy: no intrinsic/type-changing or suppression effects. Field
-        // contributions are added on demand to equipment before the final clamp.
+        // This sandbox uses DAT attributes. Field, equipment and aura contributions
+        // are recalculated on demand before the final clamp.
         var stats = new NativeAiStats((ushort)monster.Index, (byte)monster.ClassCode,
             (byte)(monster.Properties >> 29), monster.Attack, monster.Defense);
         if (MonsterFaceDown[p, z]) return stats; // Native calculation returns before equipment deltas.
@@ -633,6 +649,12 @@ public sealed class DemoDuel
         {
             var bonus = FieldSpellRules.Bonus(field.Id, monster.ClassCode, (byte)(monster.Properties >> 29), DefensePosition[p, z]);
             sum = new(sum.Attack + bonus.Attack, sum.Defense + bonus.Defense);
+        }
+        for (int side = 0; side < 2; side++)
+        for (int zone = 0; zone < 5; zone++)
+        {
+            if (Monsters[side, zone] is Card source && !MonsterFaceDown[side, zone])
+                sum = new(sum.Attack + MonsterAuraRules.AttackDelta(source.Id, stats.AttributeCode), sum.Defense);
         }
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
@@ -771,7 +793,7 @@ public sealed class DemoDuel
         Card? defender = null;
         if (target == -1)
         {
-            if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] is not null))
+            if (!DirectAttackAllowed(p, attacker))
             {
                 message = "Enemy monsters block direct attacks.";
                 return false;
@@ -917,9 +939,9 @@ public sealed class DemoDuel
 
         if (attack.DirectAttack)
         {
-            if (Enumerable.Range(0, 5).Any(z => Monsters[enemy, z] is not null))
+            if (!DirectAttackAllowed(p, attack.Attacker))
             {
-                message = "Attack canceled: direct attack no longer has a clear field.";
+                message = "Attack canceled: direct attack is no longer allowed.";
                 return true;
             }
             int damage = AttackValue(p, source);

@@ -5,8 +5,9 @@ public static class AlphaDeck
 {
     private static readonly (ushort Id, int Copies)[] Pool =
     [
-        (77, 3), (25, 3), (40, 2), (378, 3), // Axe Raider, Battle Ox, Celtic Guardian, La Jinn
-        (439, 3), (1, 2), (73, 3), (1050, 3), // 7 Colored Fish, Mystical Elf, Giant Soldier, Neo
+        (77, 2), (25, 3), (40, 2), (378, 3), // Axe Raider, Battle Ox, Celtic Guardian, La Jinn
+        (439, 3), (1, 2), (73, 3), (1050, 2), // 7 Colored Fish, Mystical Elf, Giant Soldier, Neo
+        (491, 1), (421, 1),                   // Hoshiningen, Jinzo #7
         (500, 2), (590, 1), (427, 2), (101, 1), // FLIP: Bug, Jar, Faith, Mask
         (343, 1), (344, 1), (342, 2), (338, 1), (341, 1), // LP: Hinotama, Final Flame, Sparks, Red Medicine, Dian Keto
         (DrawSpellRules.PotOfGreed, 1), (DrawSpellRules.UpstartGoblin, 1),

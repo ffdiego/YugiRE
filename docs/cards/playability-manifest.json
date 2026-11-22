@@ -9,6 +9,73 @@
   ],
   "groups": [
     {
+      "id": "monster.elemental-aura",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Continuous ATK modifier"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        491,
+        523,
+        526,
+        597,
+        608,
+        627
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterAuraRules.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ],
+      "limitations": [
+        "Sandbox uses the DAT attribute. Native dynamic attribute changes and effect suppression are outside scope."
+      ]
+    },
+    {
+      "id": "monster.direct-attack",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Direct attack through opposing monsters"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        386,
+        396,
+        397,
+        421,
+        487,
+        634
+      ],
+      "evidence": [
+        "src/Joey.Core/DirectAttackRules.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ]
+    },
+    {
+      "id": "monster.fusion-direct-attack",
+      "kind": "Monster",
+      "subtype": "Fusion",
+      "mechanics": [
+        "Attribute-filtered direct attack"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        812
+      ],
+      "evidence": [
+        "src/Joey.Core/DirectAttackRules.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ],
+      "limitations": [
+        "The on-field permission is playable in a seeded duel. Fusion Summon is outside this scope. The face-down defender case follows static evidence."
+      ]
+    },
+    {
       "id": "lp.damage",
       "kind": "Spell",
       "subtype": "Normal",
