@@ -613,6 +613,24 @@ internal static class LookAndFeelChecks
         check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
               "Set placement: effect starts after hand-to-field flight");
 
+        check(NativeLifeHud.FloatingNumberAnchor(nearSide: true) == new CardPoint(525, 406) &&
+              NativeLifeHud.FloatingNumberAnchor(nearSide: false) == new CardPoint(525, 194),
+              "Floating LP glyphs occupy the gap between monster/spell rows, not sidebar");
+        check(NativeAttackFrame.ImpactStartUpdate == 16 &&
+              NativeAttackFrame.Updates == 32,
+              "Hidden defender stays face-down through sword approach and flips at impact");
+        var deferredLife = new NativeLifePointPresentation(8000);
+        // Core has already applied a 500 LP change while activation is still
+        // active; do not present it before that visual barrier completes.
+        bool cardMotionBusy = true;
+        if (!cardMotionBusy) deferredLife.SetLogicalLife(7500);
+        check(deferredLife.Displayed == 8000 && deferredLife.PendingDelta == 0,
+              "Life order: logical damage does not begin before card activation ends");
+        cardMotionBusy = false;
+        if (!cardMotionBusy) deferredLife.SetLogicalLife(7500);
+        check(deferredLife.PendingDelta == -500 &&
+              deferredLife.RampCounter == 0,
+              "Life order: damage starts its own native ramp after activation/attack");
         check(NativeLifeHud.DisplayGlyphScale == 3 &&
               NativeLifeHud.DisplayGlyphHeight == 36 &&
               NativeLifeHud.DisplayRightX == 195 &&

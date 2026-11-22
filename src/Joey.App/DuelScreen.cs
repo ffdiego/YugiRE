@@ -525,7 +525,6 @@ static partial class Game
         if (!joeySpeaking) UpdateDuelDetail();
         AdvanceLifePresentation(frameElapsed);
         DrawDuelDetail();
-        DrawLifeFloatingDigits();
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
             Button("Done", 132, 584, 76, 16, choiceInput))
         {
@@ -536,10 +535,14 @@ static partial class Game
         DrawDuelHand();
         DrawCardEffects();
         DrawFlight();
+        // Draw this AFTER queued destruction cards so no face-up card
+        // appears beneath the sword before the impact sample.
+        DrawHiddenAttackTargetBeforeImpact();
         if (actionInput && duel.CanAttack(attacker) && attackCue is null)
             DrawAttackAim();
         DrawAttackCue();
         DrawSpellActivation();
+        DrawLifeFloatingDigits();
         DrawPhaseNotice();
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {

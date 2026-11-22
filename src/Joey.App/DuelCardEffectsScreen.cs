@@ -33,7 +33,16 @@ static partial class Game
     // only; no synthetic pause or invented five-letter overlay.
     static NativeCinematicCue? lastDestinyBoardCandidate;
     static bool CanPlayCardEffects => flight is null && attackCue is null && !ActivationBusy;
-    static bool MotionBusy => flight is not null || attackCue is not null || ActivationBusy || CardEffectsBusy;
+    // Card/attack animations take precedence over LP presentation. Do not
+    // confuse this gate with MotionBusy, which also blocks actions while LP
+    // numbers are still catching up with the already-committed Core state.
+    static bool CardMotionBusy => flight is not null || attackCue is not null ||
+                                  ActivationBusy || CardEffectsBusy;
+    static bool LifePresentationBusy => presentation.Style.PlayAnimations &&
+        Enumerable.Range(0, lifeDisplays.Length).Any(player =>
+            lifeDisplays[player].Animating ||
+            lifeDisplays[player].Displayed != NativeLifePointPresentation.ClampToNativeDisplay(duel.Life[player]));
+    static bool MotionBusy => CardMotionBusy || LifePresentationBusy;
 
     static void ResetCardEffects()
     {

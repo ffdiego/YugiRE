@@ -23,7 +23,11 @@ static partial class Game
     static CardFlight? deferredTributeFlight;
     static readonly PresentationTickClock travelClock = new();
     static int travelUpdate;
-    sealed record AttackCue(CardPoint Origin, CardPoint Target, bool NearSide, bool AlreadyAimed);
+    // A hidden defender remains visually face-down until sword contact,
+    // although Core has already resolved battle and may have destroyed it.
+    sealed record HiddenAttackTarget(Card Card, int Player, int Zone, bool Defense);
+    sealed record AttackCue(CardPoint Origin, CardPoint Target, bool NearSide,
+        bool AlreadyAimed, HiddenAttackTarget? HiddenTarget);
     static AttackCue? attackCue;
     static readonly PresentationTickClock attackClock = new();
     static int attackUpdates;
@@ -141,7 +145,16 @@ static partial class Game
         DrawFieldCard(f.Card, new(cell.X, cell.Y, cell.Width, cell.Height), f.Hidden, f.Defense, upsideDown: f.Player != ViewPlayer);
     }
 
-    static void BeginAttackCue(int player, int source, int target)
+    static HiddenAttackTarget? CaptureHiddenAttackTarget(int defender, int zone)
+    {
+        if (zone is < 0 or >= NativeDuelLayout.MonsterSlots ||
+            !duel.MonsterFaceDown[defender, zone] ||
+            duel.Monsters[defender, zone] is not Card card) return null;
+        return new(card, defender, zone, duel.DefensePosition[defender, zone]);
+    }
+
+    static void BeginAttackCue(int player, int source, int target,
+        HiddenAttackTarget? hiddenTarget = null)
     {
         if (!presentation.Style.PlayAnimations) return;
         bool near = player == ViewPlayer;
@@ -149,7 +162,20 @@ static partial class Game
         var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : NativeAttackFrame.DirectTarget(near);
         attackClock.Reset();
         attackUpdates = 0;
-        attackCue = new(from, to, near, target >= 0 && (alphaCpu is null || player == 0));
+        attackCue = new(from, to, near, target >= 0 && (alphaCpu is null || player == 0), hiddenTarget);
+    }
+
+    static void DrawHiddenAttackTargetBeforeImpact()
+    {
+        // The sword reaches the defender at t=0x100 (update 16). The
+        // underlying Core monster may already be face-up or destroyed, so
+        // cover it with the captured back until contact. CardEffects draws
+        // before this overlay; do not leak a queued destruction reveal.
+        if (attackCue?.HiddenTarget is not { } target ||
+            attackUpdates >= NativeAttackFrame.ImpactStartUpdate) return;
+        var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster,
+            target.Player == ViewPlayer, target.Zone, target.Defense, faceDown: true);
+        DrawDuelCard(target.Card, geometry);
     }
 
     static void DrawAttackCue()
@@ -211,8 +237,9 @@ static partial class Game
     static void CommitHumanAttack(int target)
     {
         int player = duel.ActivePlayer;
+        var hidden = CaptureHiddenAttackTarget(1 - player, target);
         if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
-            BeginAttackCue(player, attacker, target);
+            BeginAttackCue(player, attacker, target, hidden);
     }
 
     static void AdvanceAlpha(TimeSpan elapsed)
@@ -237,6 +264,13 @@ static partial class Game
         if ((owner ?? duel.ActivePlayer) != cpu.Player) return;
         int handCount = duel.HandFor(cpu.Player).Count;
         var pendingAttack = duel.PendingAttackResponse?.Attack;
+        // CPU Step resolves its Core action immediately. Capture hidden
+        // targets before it can flip/destroy them; only the matching attack
+        // uses its snapshot, all other CPU actions discard these references.
+        var hiddenBeforeStep = new HiddenAttackTarget?[2, NativeDuelLayout.MonsterSlots];
+        for (int player = 0; player < 2; player++)
+        for (int zone = 0; zone < NativeDuelLayout.MonsterSlots; zone++)
+            hiddenBeforeStep[player, zone] = CaptureHiddenAttackTarget(player, zone);
         var step = cpu.Step(duel);
         if (step.Status == CpuStepStatus.Blocked)
         {
@@ -248,10 +282,15 @@ static partial class Game
         cpuDelay = presentation.Style.Duration(step.Action == CpuAction.Attack ? DuelPresentationCue.Battle : DuelPresentationCue.CardMove);
         message = "CPU: " + (step.Action == CpuAction.BeginBattle ? "Battle phase." : step.Message);
         ClearDuelSelection();
-        if (step.Action == CpuAction.Attack && duel.PendingAttackResponse is null && step.SourceZone is int attackerZone && step.TargetZone is int targetZone)
-            BeginAttackCue(step.Player, attackerZone, targetZone);
+        if (step.Action == CpuAction.Attack && duel.PendingAttackResponse is null &&
+            step.SourceZone is int attackerZone && step.TargetZone is int targetZone)
+            BeginAttackCue(step.Player, attackerZone, targetZone,
+                targetZone is >= 0 and < NativeDuelLayout.MonsterSlots
+                    ? hiddenBeforeStep[1 - step.Player, targetZone] : null);
         else if (step.Action == CpuAction.Response && step.Card is null && pendingAttack is { } continued)
-            BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone);
+            BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone,
+                continued.TargetZone is >= 0 and < NativeDuelLayout.MonsterSlots
+                    ? hiddenBeforeStep[1 - continued.AttackingPlayer, continued.TargetZone] : null);
         if (step.Card is not Card card) return;
         if (step.Action is CpuAction.Set or CpuAction.Summon or
             CpuAction.Spell or CpuAction.Equip or CpuAction.Response)

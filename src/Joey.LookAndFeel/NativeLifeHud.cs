@@ -29,6 +29,18 @@ public static class NativeLifeHud
         return GlyphWidth(atlasWidth, columns) * DisplayGlyphScale;
     }
 
+    /// <summary>
+    /// An unverified, stable overlay anchor on the duel board. It is derived
+    /// from existing card-row centres rather than the LP sidebar: near
+    /// (525, 406), far (525, 194), between monster and spell/trap zones.
+    /// </summary>
+    public static CardPoint FloatingNumberAnchor(bool nearSide)
+    {
+        var monster = DuelCardLayout.Center(DuelCardZone.Monster, nearSide, 2);
+        var spell = DuelCardLayout.Center(DuelCardZone.Spell, nearSide, 2);
+        return new((monster.X + spell.X) / 2, (monster.Y + spell.Y) / 2);
+    }
+
     public static int DisplayHeightForAtlas(int atlasHeight)
     {
         if (atlasHeight <= 0)

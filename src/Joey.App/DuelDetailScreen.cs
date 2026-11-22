@@ -17,8 +17,12 @@ static partial class Game
 
     static void AdvanceLifePresentation(TimeSpan elapsed)
     {
-        // Read logical LP after all Core actions for this frame. The original
-        // LP object is independent of the logical duel; presentation only.
+        // Core updates LP immediately, but its presentation must not start
+        // while a spell is still activating or an attack/flip/destruction
+        // animation is pending. In particular, never reveal damage while the
+        // sword is travelling. The LP catch-up is itself a motion barrier to
+        // keep CPU/turn actions from starting another move mid-number.
+        if (CardMotionBusy && presentation.Style.PlayAnimations) return;
         for (int player = 0; player < lifeDisplays.Length; player++)
             lifeDisplays[player].SetLogicalLife(duel.Life[player], presentation.Style.PlayAnimations);
         int updates = lifeClock.Advance(elapsed, presentation.Style);
@@ -194,9 +198,11 @@ static partial class Game
             var glyphs = NativeFloatingLifeDigits.Sample(counter.PendingDelta, phase,
                 glyphWidth, glyphHeight, columns, effectCosine);
             bool near = player == ViewPlayer;
-            // 0045C140 provides native LP effect origin, but its concrete
-            // coordinates for this descriptor remain unknown here.
-            float right = 209, top = near ? 536 : 45;
+            // Place the floating hit/heal numbers on the duel board, halfway
+            // between the monster and spell/trap rows. The exact native
+            // 0045C140 origin still needs a frame-paired measurement.
+            var anchor = NativeLifeHud.FloatingNumberAnchor(near);
+            float right = anchor.X, top = anchor.Y - glyphHeight / 2f;
             foreach (var glyph in glyphs)
                 Raylib.DrawTexturePro(texture,
                     new Rectangle(glyph.GlyphIndex * sourceGlyphWidth, 0,

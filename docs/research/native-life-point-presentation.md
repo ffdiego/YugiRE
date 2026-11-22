@@ -186,3 +186,39 @@ pelo manifesto e pelas dimensões do DAT. O fator 3, X/Y e a escolha
 da variante em momentos de flash são **estimativas visuais**, ainda
 sem prova estática do Draw `0047C660`. Não considerar este passo
 a validação da família de LP. Os `damage00/01` não foram alterados.
+
+## Ordem dos efeitos: ativação, ataque e LP (22/11/2026)
+
+Observações de execução fornecidas pelo usuário: dano/cura de uma magia só
+começam **após** sua ativação; em combate, a espada sai do atacante e
+atinge o alvo antes de revelar monstros face-down; o dano começa depois
+do movimento de ataque. Os números flutuantes aparecem no **campo** entre
+fileiras de monstros e magias/armadilhas, não no painel lateral.
+
+O cliente passa a separar `CardMotionBusy` (voo, animação de carta,
+ativação e espada) e `LifePresentationBusy` (valor numérico exibido
+diferente do Core ou animação/rampa ainda ativa). O `MotionBusy` global
+bloqueia novas jogadas enquanto qualquer uma das duas famílias estiver
+ativa. `AdvanceLifePresentation` não retargeta nem avança LP enquanto
+`CardMotionBusy`, mantendo `DemoDuel.Life` como valor lógico imediato.
+Somente depois inicia a rampa nativa de +8 por update até 256 e a
+contagem de +/-100/10/1. Isto preserva a ordenação mesmo se o Core
+resolver dano já no clique da magia/ataque.
+
+O efeito de ataque usa `NativeAttackFrame.ImpactStartUpdate=16`
+(`t=0x100`, metade da trajetória de 32 updates). Quando o alvo estava
+face-down, uma cópia visual do verso é capturada **antes** do Core
+resolver o combate e coberta no campo até o contato; inclusive se o Core
+já retirou o monstro do slot. O flip visual no contato **ainda não**
+interpola quadros de giro da carta e o caminho de resposta/chain pode
+exigir sequência mais fina; esta é uma barreira de revelação, não
+afirmação de paridade nativa.
+
+O desenho flutuante `damage00/01.bmp` deixa de usar X=209 e Y=45/536
+(painel). A âncora passa a ser obtida da geometria do campo:
+(525,406) jogador e (525,194) CPU, entre as duas fileiras. Essas
+coordenadas são **provisórias** e derivadas dos centros atuais, não
+extraídas de `0045C140`. Os recursos originais 16x40 e as curvas
+anteriores permanecem, sem migrar para fonte do sistema.
+
+A implementação de LP permanece **Partial**, sem alteração de badge.

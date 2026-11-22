@@ -6,6 +6,8 @@ public readonly record struct NativeAttackFrame(
 {
     public const int UpdateIncrement = 16;
     public const int Updates = 0x200 / UpdateIncrement;
+    // The sword enters its contact/impact branch when counter t >= 0x100.
+    public const int ImpactStartUpdate = 0x100 / UpdateIncrement;
 
     public static CardPoint DirectTarget(bool nearSide) => new(525, nearSide ? 64 : 536);
 
