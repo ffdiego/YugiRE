@@ -44,8 +44,11 @@ static class GraphicsTests
               CardArtwork.MiniResourceName(@"CARD\LOB000.BMP") ==
                   @"mini\LOB000.BMP",
               "Native 0041A800 maps large card art to separately catalogued mini art");
-        reject(() => CardArtwork.MiniResourceName(@"mini\fmr001.bmp"),
-               "Miniature catalog rejects an already-mini path");
+        bool invalidMiniResourceRejected = false;
+        try { _ = CardArtwork.MiniResourceName(@"mini\fmr001.bmp"); }
+        catch (ArgumentException) { invalidMiniResourceRejected = true; }
+        check(invalidMiniResourceRejected,
+              "Miniature catalog rejects an already-mini path");
         var alpha = new Card(2, 900, "Alpha", "", 0);
         var beta = new Card(1, 100, "Beta", "", 0);
         var unnamed = new Card(0, 50, "", "", 0);
