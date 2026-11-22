@@ -1,5 +1,8 @@
 namespace Joey.LookAndFeel;
 
+public readonly record struct NativeSelectionTransitionFrame(
+    CardPoint Center, int Width, int Height);
+
 /// <summary>
 /// The reusable native list WINDOW contract, not the gameplay selection
 /// rules. All state transitions here are reconstructed from 0043A060,
@@ -128,21 +131,61 @@ public sealed class NativeSelectionWindow
     }
 
     /// <summary>
-    /// The scale factor used by the Draw's nonzero obj+0x14 branch:
-    /// DAT_00A52EE8[((abs(counter)+0x100)/2-0x80)&511] >> 8.
-    /// Requires a supplied 512-value native fixed-point cosine table.
-    /// A guessed Math.Cos approximation is intentionally not used here.
+    /// <summary>
+    /// Exact Ghidra disassembly of 0043B280 at 0043B2E6..0043B31B:
+    /// positive counter uses (256-counter); negative uses (256+counter).
+    /// Signed division by two is rounded toward zero (CDQ/SUB/SAR), then
+    /// the result is offset by -128 and masked to the 512-sample table.
+    /// This is NOT abs(counter)/2; that would reverse the lookup direction
+    /// and shift odd closing counters.
+    /// </summary>
+    public static int TransitionCosineIndex(int counter)
+    {
+        if (counter is < -0x100 or > 0x100)
+            throw new ArgumentOutOfRangeException(nameof(counter));
+        return ((0x100 - Math.Abs(counter)) / 2 - 0x80) & 0x1ff;
+    }
+
+    /// <summary>
+    /// The 0043B280 Draw samples the original DAT_00A52EE8 signed
+    /// 16.16 cosine table and shifts its result by eight. Never fabricate
+    /// the table at runtime and present it as native.
     /// </summary>
     public static int TransitionScaleFixed8(
         int counter, ReadOnlySpan<int> nativeCosineTable)
     {
-        if (counter is < -0x100 or > 0x100)
-            throw new ArgumentOutOfRangeException(nameof(counter));
         if (nativeCosineTable.Length != 512)
             throw new ArgumentException("Expected 512 native fixed-point cosine samples",
                                         nameof(nativeCosineTable));
-        int index = ((Math.Abs(counter) + 0x100) / 2 - 0x80) & 0x1ff;
-        return nativeCosineTable[index] >> 8;
+        return nativeCosineTable[TransitionCosineIndex(counter)] >> 8;
+    }
+
+    /// <summary>
+    /// The native Draw's transition branch interpolates both center
+    /// coordinates and bitmap dimensions using the same cosine factor.
+    /// The start anchor is the pair returned by 0045C140 (sprite- and
+    /// perspective-dependent); the target is object+1Ch/+20h, and source
+    /// dimensions are object+2Ch/+30h. All four divisions truncate toward
+    /// zero, as implemented by CDQ/AND 0xff/SAR in the x86 instructions.
+    /// This returns CENTER and SIZE, not a guessed top-left Draw rectangle.
+    /// </summary>
+    public static NativeSelectionTransitionFrame TransitionFrame(
+        int counter, CardPoint startCenter, CardPoint targetCenter,
+        int bitmapWidth, int bitmapHeight, ReadOnlySpan<int> nativeCosineTable)
+    {
+        if (bitmapWidth <= 0)
+            throw new ArgumentOutOfRangeException(nameof(bitmapWidth));
+        if (bitmapHeight <= 0)
+            throw new ArgumentOutOfRangeException(nameof(bitmapHeight));
+        int scale = TransitionScaleFixed8(counter, nativeCosineTable);
+        // In the documented original range, intermediate multiplication
+        // fits 32 bits. C# integer division matches x86 signed truncation.
+        return new(
+            new CardPoint(
+                startCenter.X + (int)(((long)targetCenter.X - startCenter.X) * scale / 256),
+                startCenter.Y + (int)(((long)targetCenter.Y - startCenter.Y) * scale / 256)),
+            (int)((long)bitmapWidth * scale / 256),
+            (int)((long)bitmapHeight * scale / 256));
     }
 
     /// <summary>

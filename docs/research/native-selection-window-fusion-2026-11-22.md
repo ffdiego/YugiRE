@@ -125,3 +125,54 @@ registra 337/499 `Done` e 3 `Partial` na trilogia, 98/194
 Não alterar cobertura por esse relato sem reconciliar as evidências
 quando forem publicadas. A frente visual da janela de seleção
 permanece independente da investigação das regras.
+
+## 6. Correção por disassembly da interpolação em `0043B280`
+
+Ao confrontar o modelo C# de 22/11 com os bytes de assembly já exportados
+no bundle `ghidra-visual-virtual-methods.zip`, arquivo
+`retry-008-0043B280.txt`, foi encontrada uma divergência real.
+
+O ramo não-zero de `0043B280` executa `0043B2E6..0043B31B`:
+
+```text
+counter > 0  ? (256-counter) : (256+counter)
+CDQ; SUB EAX, EDX; SAR EAX,1      ; signed divide by 2 toward zero
+SUB EAX,128; AND EAX,511          ; índice do atlas trigonométrico
+MOV EBX,[0x00A52EE8 + 4*index]; SAR EBX,8
+```
+
+Logo, **índice = `(((256-|counter|)/2)-128)&511`** (divisão inteira
+truncada para zero). Exemplos independentes da tabela de cosseno:
+`0→0`, `128→448`, `-128→448`, `256→384`, `-1→511`,
+`-33→495`, `-225→399`.
+
+O modelo anterior usava `((abs(counter)+256)/2-128)&511`, que
+consulta o sentido **positivo** da tabela; poderia passar em testes
+com tabela simétrica, mas não preservava a instrução real.
+`NativeSelectionWindow.TransitionCosineIndex` e o teste com
+índices assimétricos corrigem o problema.
+
+Também fica agora documentada a sequência exata de `0043B31B..0043B380`:
+`0045C140` devolve a origem do sprite `(baseX,baseY)`,
+`obj+1C/20` fornece o centro final, e `obj+2C/30` são as
+dimensões do bitmap. Com `scale = cosine[index] >> 8`, o Draw
+calcula **ambos os centros e dimensões**:
+
+```text
+centerX = baseX + trunc_to_zero((targetX-baseX)*scale/256)
+centerY = baseY + trunc_to_zero((targetY-baseY)*scale/256)
+width   = trunc_to_zero(bitmapWidth*scale/256)
+height  = trunc_to_zero(bitmapHeight*scale/256)
+```
+
+A técnica `CDQ; AND EDX,0xFF; ADD EAX,EDX; SAR EAX,8` implementa
+a divisão com truncamento para zero, inclusive em deltas negativos.
+O C# agora expõe `NativeSelectionTransitionFrame` e
+`TransitionFrame` com **centro e tamanho**, sem inferir alinhamento
+top-left, sprite final, ordem de composição ou valores da tabela.
+
+Os testes usam propositalmente uma tabela artificial, para validar
+a fórmula de *lookup* e a aritmética; ela **não** prova os valores
+reais de `DAT_00A52EE8`. Ainda restam a recuperação da própria
+tabela, a semântica das variantes, os demais passes Draw e a
+integração no cliente. **Badge visual permanece 19/34.**

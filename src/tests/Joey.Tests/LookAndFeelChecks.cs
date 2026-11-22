@@ -387,15 +387,43 @@ internal static class LookAndFeelChecks
               NativeSelectionWindow.SlotAnchor(525, 300, 39, 191, 4) ==
                   new CardPoint(653, 244),
               "Native selection: slot X spacing from 0043ABA0 and Y uses supplied resource fields");
+        // Assembly 0043B2F6..0043B31B gives NEGATIVE index offsets.
+        // A cosine-symmetric test fixture previously concealed that our
+        // sign was reversed; distinguish all indices explicitly.
+        check(NativeSelectionWindow.TransitionCosineIndex(0) == 0 &&
+              NativeSelectionWindow.TransitionCosineIndex(128) == 448 &&
+              NativeSelectionWindow.TransitionCosineIndex(-128) == 448 &&
+              NativeSelectionWindow.TransitionCosineIndex(256) == 384 &&
+              NativeSelectionWindow.TransitionCosineIndex(-1) == 511 &&
+              NativeSelectionWindow.TransitionCosineIndex(-33) == 495 &&
+              NativeSelectionWindow.TransitionCosineIndex(-225) == 399,
+              "Native selection: x86 cosine index uses signed -(abs(counter)+1)/2 and rounds odd counts");
         var nativeSelectionCosine = new int[512];
         nativeSelectionCosine[0] = 65536;
-        nativeSelectionCosine[64] = 32768;
-        nativeSelectionCosine[128] = 0;
+        nativeSelectionCosine[448] = 32768;
+        nativeSelectionCosine[384] = 0;
+        nativeSelectionCosine[511] = 49152;
         check(NativeSelectionWindow.TransitionScaleFixed8(0, nativeSelectionCosine) == 256 &&
               NativeSelectionWindow.TransitionScaleFixed8(128, nativeSelectionCosine) == 128 &&
               NativeSelectionWindow.TransitionScaleFixed8(-128, nativeSelectionCosine) == 128 &&
-              NativeSelectionWindow.TransitionScaleFixed8(256, nativeSelectionCosine) == 0,
-              "Native selection: Draw cosine index uses abs(counter), not an invented easing");
+              NativeSelectionWindow.TransitionScaleFixed8(256, nativeSelectionCosine) == 0 &&
+              NativeSelectionWindow.TransitionScaleFixed8(-1, nativeSelectionCosine) == 192,
+              "Native selection: C# must use the x86 cosine lookup, including closing's odd start -1");
+        var transitionStart = new CardPoint(525, 300);
+        var transitionEnd = new CardPoint(620, 320);
+        check(NativeSelectionWindow.TransitionFrame(
+                  0, transitionStart, transitionEnd, 451, 191, nativeSelectionCosine) ==
+              new NativeSelectionTransitionFrame(transitionEnd, 451, 191) &&
+              NativeSelectionWindow.TransitionFrame(
+                  256, transitionStart, transitionEnd, 451, 191, nativeSelectionCosine) ==
+              new NativeSelectionTransitionFrame(transitionStart, 0, 0) &&
+              NativeSelectionWindow.TransitionFrame(
+                  128, transitionStart, transitionEnd, 451, 191, nativeSelectionCosine) ==
+              new NativeSelectionTransitionFrame(new CardPoint(572, 310), 225, 95) &&
+              NativeSelectionWindow.TransitionFrame(
+                  -1, transitionStart, transitionEnd, 451, 191, nativeSelectionCosine) ==
+              new NativeSelectionTransitionFrame(new CardPoint(596, 315), 338, 143),
+              "Native selection: Draw transforms center and both dimensions, truncating divisions like x86");
         check(NativeSelectionWindow.ManifestPath(1, 2) == @"j\duel\list\fusionlist2.txt" &&
               NativeSelectionWindow.ManifestPath(2, 1) == @"j\duel\list\selectlist1.txt" &&
               NativeSelectionWindow.ManifestPath(3, 2) == @"j\duel\list\gravelist2.txt" &&
