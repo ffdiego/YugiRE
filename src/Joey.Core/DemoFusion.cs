@@ -3,10 +3,29 @@ namespace Joey.Core;
 public sealed partial class DemoDuel
 {
     private readonly List<Card>[] fusionDecks = [[], []];
+    private readonly List<Card>[] banished = [[], []];
     public PendingFusionSummon? PendingFusionSummon { get; private set; }
 
     public IReadOnlyList<Card> FusionDeck(int player) => player is 0 or 1
         ? fusionDecks[player].AsReadOnly() : throw new ArgumentOutOfRangeException(nameof(player));
+    public IReadOnlyList<Card> Banished(int player) => player is 0 or 1
+        ? banished[player].AsReadOnly() : throw new ArgumentOutOfRangeException(nameof(player));
+
+    private bool IsActiveFusionGate(int owner) => owner is 0 or 1 && !FieldSpellFaceDown[owner] &&
+        FieldSpells[owner] is { Id: FusionRules.FusionGate, ClassCode: 22 };
+
+    public bool CanUseFusionGate(int owner) =>
+        !ActionsBlocked && Phase == DemoPhase.Main && IsActiveFusionGate(owner) &&
+        HasFusionCombination();
+
+    internal bool HasFusionCombination() => FusionOptions(ActivePlayer).Any();
+
+    public bool BeginFusionGate(int owner, out string message)
+    {
+        message = "A face-up Fusion Gate can be used during Main Phase.";
+        return !ActionsBlocked && Phase == DemoPhase.Main && IsActiveFusionGate(owner) &&
+            BeginFusionSummon(FieldSpells[owner]!, -1, false, out message, fieldOwner: owner);
+    }
 
     private void LoadFusionDeck(int player, IReadOnlyList<Card>? cards)
     {
@@ -38,7 +57,7 @@ public sealed partial class DemoDuel
         }
     }
 
-    private bool BeginFusionSummon(Card spell, int source, bool fromSet, out string message)
+    private bool BeginFusionSummon(Card spell, int source, bool fromSet, out string message, int? fieldOwner = null)
     {
         var options = FusionOptions(ActivePlayer).ToArray();
         if (options.Length == 0)
@@ -46,7 +65,7 @@ public sealed partial class DemoDuel
             message = "No Fusion Monster has matching materials and a legal destination.";
             return false;
         }
-        PendingFusionSummon = new(ActivePlayer, spell, source, fromSet, Array.AsReadOnly(options));
+        PendingFusionSummon = new(ActivePlayer, spell, source, fromSet, Array.AsReadOnly(options), fieldOwner);
         message = $"{spell.Name}: choose a Fusion Monster and its materials.";
         return true;
     }
@@ -86,9 +105,12 @@ public sealed partial class DemoDuel
         }
 
         int source = pending.SourceIndex;
-        if (pending.FromSet
-            ? !SpellFaceDown[owner, source] || !ReferenceEquals(Spells[owner, source], pending.Spell)
-            : source >= Hand.Count || !ReferenceEquals(Hand[source], pending.Spell) || FirstFreeSpellZone() < 0)
+        bool sourceAvailable = pending.FieldOwner is int fieldOwner
+            ? IsActiveFusionGate(fieldOwner) && ReferenceEquals(FieldSpells[fieldOwner], pending.Spell)
+            : pending.FromSet
+                ? SpellFaceDown[owner, source] && ReferenceEquals(Spells[owner, source], pending.Spell)
+                : source < Hand.Count && ReferenceEquals(Hand[source], pending.Spell) && FirstFreeSpellZone() >= 0;
+        if (!sourceAvailable)
         {
             message = "The activating Spell is no longer available.";
             return false;
@@ -112,13 +134,18 @@ public sealed partial class DemoDuel
             if (pending.FromSet) ClearSpellTrapSlot(owner, source);
             var spentHandSlots = materials.Where(material => material.Zone == FusionMaterialZone.Hand)
                 .Select(material => material.Index);
-            if (!pending.FromSet) spentHandSlots = spentHandSlots.Append(source);
+            if (!pending.FromSet && pending.FieldOwner is null) spentHandSlots = spentHandSlots.Append(source);
             foreach (int index in spentHandSlots.OrderDescending())
                 hands[owner].RemoveAt(index);
-            graves[owner].Add(pending.Spell);
+            if (pending.FieldOwner is null) graves[owner].Add(pending.Spell);
             foreach (var material in materials)
             {
-                if (material.Zone == FusionMaterialZone.Hand) graves[owner].Add(material.Card);
+                if (pending.FieldOwner is not null)
+                {
+                    banished[owner].Add(material.Card);
+                    if (material.Zone == FusionMaterialZone.Field) ClearMonsterSlot(owner, material.Index);
+                }
+                else if (material.Zone == FusionMaterialZone.Hand) graves[owner].Add(material.Card);
                 else RemoveMonster(owner, material.Index, isFusionMaterial: true);
             }
             fusionDecks[owner].RemoveAt(deckIndex);
@@ -127,7 +154,8 @@ public sealed partial class DemoDuel
         finally { deferringFieldRemovalTriggers = false; }
 
         BeginNextQueuedDeckSearch();
-        message = $"Fusion Summoned {choice.Result.Name}.";
+        message = pending.FieldOwner is null ? $"Fusion Summoned {choice.Result.Name}."
+            : $"Fusion Gate: Fusion Summoned {choice.Result.Name} and banished {materials.Count} materials.";
         return true;
     }
 

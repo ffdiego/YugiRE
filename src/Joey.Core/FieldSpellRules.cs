@@ -48,7 +48,7 @@ public static class FieldSpellRules
     public static bool Supports(ushort resourceId) =>
         TypeFields.ContainsKey(resourceId) ||
         AttributeFields.ContainsKey(resourceId) ||
-        resourceId == 1069; // Chorus of Sanctuary
+        resourceId is 1069 or FusionRules.FusionGate;
 
     /// <summary>
     /// Evaluate a face-up monster's field contribution from live type,
@@ -82,6 +82,7 @@ public static class FieldSpellRules
         333 => "Umi boosts Fish, Sea Serpent, Thunder and Aqua; weakens Machine and Pyro.",
         334 => "Yami boosts Fiend and Spellcaster; weakens Fairy.",
         1069 => "Chorus of Sanctuary gives Defense Position monsters 500 DEF.",
+        FusionRules.FusionGate => "Either player can use Fusion Gate during their Main Phase.",
         _ => AttributeFields.TryGetValue(resourceId, out var rule)
             ? $"{rule.Label} monsters gain 500 ATK and lose 400 DEF."
             : "This Field Spell is not yet implemented."

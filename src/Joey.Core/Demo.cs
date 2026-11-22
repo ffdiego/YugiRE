@@ -334,7 +334,7 @@ public sealed partial class DemoDuel
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
-            (FusionRules.Supports(Hand[index]) && FusionOptions(ActivePlayer).Any()) ||
+            (FusionRules.Supports(Hand[index]) && HasFusionCombination()) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
             (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id) &&
@@ -1944,14 +1944,7 @@ public sealed partial class DemoDuel
         bool defense = DefensePosition[p, z];
         bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
-        Monsters[p, z] = null;
-        MonsterWasFlipped[p, z] = false;
-        DefensePosition[p, z] = false; MonsterFaceDown[p, z] = false;
-        changedPosition[p, z] = attacked[p, z] = false;
-        // Attached equipment goes to its owner's graveyard, but only the monster
-        // sent from the field may activate a P006 search.
-        foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
-            RemoveEquipmentCore(e.Owner, e.SourceZone);
+        ClearMonsterSlot(p, z);
 
         if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
             ChangeLife(p, 1000);
@@ -1995,19 +1988,24 @@ public sealed partial class DemoDuel
     private void ReturnMonsterToHand(int player, int zone)
     {
         Card card = Monsters[player, zone]!;
-        Monsters[player, zone] = null;
-        DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
-        MonsterWasFlipped[player, zone] = false;
-        changedPosition[player, zone] = attacked[player, zone] = false;
-        // Equip cards do not return with the monster; they go to the owner's graveyard.
-        foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
-            RemoveEquipmentCore(e.Owner, e.SourceZone);
+        ClearMonsterSlot(player, zone);
         if (FusionRules.IsFusionMonster(card)) fusionDecks[player].Add(card);
         else
         {
             hands[player].Add(card);
             CheckExodia(player);
         }
+    }
+
+    private void ClearMonsterSlot(int player, int zone)
+    {
+        Monsters[player, zone] = null;
+        DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
+        MonsterWasFlipped[player, zone] = false;
+        changedPosition[player, zone] = attacked[player, zone] = false;
+        // Attached equips go to their owners' Graveyards when the monster leaves.
+        foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
+            RemoveEquipmentCore(e.Owner, e.SourceZone);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
     public void NextTurn() => EndTurn(out _);

@@ -5,12 +5,13 @@ public sealed record FusionMaterial(FusionMaterialZone Zone, int Index, Card Car
 public sealed record FusionSummonOption(int DeckIndex, Card Result, IReadOnlyList<ushort> Recipe,
     IReadOnlyList<FusionMaterial> Materials, IReadOnlyList<FusionMaterial> SuggestedMaterials);
 public sealed record PendingFusionSummon(int Owner, Card Spell, int SourceIndex, bool FromSet,
-    IReadOnlyList<FusionSummonOption> Options);
+    IReadOnlyList<FusionSummonOption> Options, int? FieldOwner);
 
 public static class FusionRules
 {
     public const ushort Polymerization = 1003;
     public const ushort AlternatePolymerization = 1034;
+    public const ushort FusionGate = 1547;
     public const int FusionDeckLimit = 15;
 
     // Joey tables at 005ECF10/005ED048, decoded in card-static-sweep batch 12.

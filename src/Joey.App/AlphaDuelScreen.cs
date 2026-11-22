@@ -315,14 +315,17 @@ static partial class Game
             else
                 QueueNormalSummonEffect(card, step.Player, zone);
         }
-        else if (step.SourceZone is int spellZone &&
+        else if ((step.SourceZone is not null || step.FieldOwner is not null) &&
                  step.Action is CpuAction.Equip or CpuAction.Spell or CpuAction.Response)
         {
             Rectangle? origin = step.HandIndex is int index ? CpuHandBounds(index, handCount) : null;
             var spent = step.AdditionalSpentHandIndices ?? [];
             if (step.HandIndex is int spellIndex) spent = [.. spent, spellIndex];
             foreach (int slot in spent.OrderDescending()) handLayouts[step.Player].RemoveAt(slot);
-            BeginCardActivation(card, ZoneBounds(step.Player, spellZone, true), origin, nearSide: step.Player == ViewPlayer);
+            int sourcePlayer = step.FieldOwner ?? step.Player;
+            var destination = step.FieldOwner is not null ? FieldZoneBounds(sourcePlayer) :
+                ZoneBounds(sourcePlayer, step.SourceZone!.Value, true);
+            BeginCardActivation(card, destination, origin, nearSide: sourcePlayer == ViewPlayer);
         }
         else if (step.Action == CpuAction.Position && step.SourceZone is int zone && duel.MonsterWasFlipped[step.Player, zone])
         {

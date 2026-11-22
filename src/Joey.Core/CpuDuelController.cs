@@ -4,7 +4,7 @@ public enum CpuStepStatus { Acted, WaitingForOpponent, GameOver, Blocked }
 public enum CpuAction { None, Draw, Summon, Set, Spell, Equip, Position, BeginBattle, Attack, Selection, Response, Decision, Discard, EndTurn, EndBattle }
 public sealed record CpuStep(CpuStepStatus Status, CpuAction Action, int Player, string Message,
     Card? Card = null, int? SourceZone = null, int? TargetZone = null, int? HandIndex = null,
-    IReadOnlyList<int>? AdditionalSpentHandIndices = null);
+    IReadOnlyList<int>? AdditionalSpentHandIndices = null, int? FieldOwner = null);
 
 /// <summary>
 /// Deterministic alpha strategy, NOT a reproduction of Joey's native selector.
@@ -54,7 +54,7 @@ public sealed class CpuDuelController
 
         CpuStep Act(CpuAction action, Operation operation, Card? card = null,
             int? source = null, int? target = null, int? handIndex = null,
-            IReadOnlyList<int>? additionalSpentHandIndices = null)
+            IReadOnlyList<int>? additionalSpentHandIndices = null, int? fieldOwner = null)
         {
             if (!operation(out string message))
                 return new(CpuStepStatus.Blocked, action, Player, "CPU action rejected: " + message);
@@ -68,7 +68,7 @@ public sealed class CpuDuelController
                     CpuAction.Summon => $"Summoned {card!.Name}." +
                         (duel.PendingSummonResponse is null ? "" : " Trap response available."),
                     _ => message
-                }, card, source, target, handIndex, additionalSpentHandIndices);
+                }, card, source, target, handIndex, additionalSpentHandIndices, fieldOwner);
         }
 
         if (duel.PendingEffectDecision is { } decision)
@@ -108,8 +108,10 @@ public sealed class CpuDuelController
                 .Select(material => material.Index).ToArray();
             return Act(CpuAction.Spell,
                 (out string m) => duel.ResolveFusionSummon(option.DeckIndex, option.SuggestedMaterials, out m),
-                fusion.Spell, source: fusion.FromSet ? fusion.SourceIndex : duel.FirstFreeSpellZone(),
-                handIndex: fusion.FromSet ? null : fusion.SourceIndex, additionalSpentHandIndices: spent);
+                fusion.Spell, source: fusion.FieldOwner is null
+                    ? fusion.FromSet ? fusion.SourceIndex : duel.FirstFreeSpellZone() : null,
+                handIndex: fusion.FromSet || fusion.FieldOwner is not null ? null : fusion.SourceIndex,
+                additionalSpentHandIndices: spent, fieldOwner: fusion.FieldOwner);
         }
         if (duel.PendingCardSelection is { } selection)
         {
@@ -159,6 +161,14 @@ public sealed class CpuDuelController
         if (duel.CanDraw) return Act(CpuAction.Draw, duel.Draw);
         if (duel.Phase == DemoPhase.Main)
         {
+            int gate = Enumerable.Range(0, 2).FirstOrDefault(duel.CanUseFusionGate, -1);
+            if (gate >= 0)
+                return Act(CpuAction.Selection, (out string m) => duel.BeginFusionGate(gate, out m));
+            int gateInHand = Enumerable.Range(0, duel.Hand.Count)
+                .FirstOrDefault(i => duel.Hand[i].Id == FusionRules.FusionGate, -1);
+            if (gateInHand >= 0 && duel.HasFusionCombination())
+                return Act(CpuAction.Spell, (out string m) => duel.Play(gateInHand, out m), duel.Hand[gateInHand],
+                    handIndex: gateInHand, fieldOwner: Player);
             int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
                     ShouldClearSpellTraps(duel, duel.Hand[i].Id) ||

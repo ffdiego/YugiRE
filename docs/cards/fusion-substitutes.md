@@ -23,7 +23,7 @@ Com Baby Dragon (3) e Time Wizard (15) na mão e Goddess with the Third Eye no c
 
 ## Recorte para o Core
 
-O sandbox contabiliza as ocorrências de material por ID da receita e permitir que um substituto cubra a única exigência restante. Para uma escolha parcial, a interface deve oferecer somente materiais que ainda permitem completar a receita com uma vaga livre ou liberada. O mesmo teste de existência de uma combinação completa pode servir para abrir a seleção e para a CPU escolher materiais. O sandbox aceita a combinação válida no caso de campo cheio acima enquanto a preferência específica do pré-teste do Joey fica pendente de reprodução.
+O sandbox contabiliza as ocorrências de material por ID da receita e permite que um substituto cubra a única exigência restante. Para uma escolha parcial, a interface habilita somente os materiais que ainda permitem completar a receita com uma vaga livre ou liberada. O mesmo teste de existência de uma combinação completa serve para abrir a seleção e para a CPU escolher materiais. O sandbox aceita a combinação válida no caso de campo cheio acima enquanto a preferência específica do pré-teste do Joey fica pendente de reprodução.
 
 | Cenário | Resultado esperado no Core |
 |---|---|

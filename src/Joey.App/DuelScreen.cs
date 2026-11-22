@@ -320,6 +320,12 @@ static partial class Game
                     Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
                     BeginCardActivation(fieldCard, fieldRect);
+                else if (!blockInput && Hit(fieldRect) && duel.CanUseFusionGate(player))
+                {
+                    Label("Click Fusion Gate to Fusion Summon", 10, 587, 11, Gold);
+                    if (Raylib.IsMouseButtonPressed(MouseButton.Left) && duel.BeginFusionGate(player, out message))
+                        ClearDuelSelection();
+                }
             }
             for (int zone = 0; zone < 5; zone++)
             {

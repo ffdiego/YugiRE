@@ -101,16 +101,19 @@ static partial class Game
 
     static void CommitHumanFusion(PendingFusionSummon request, FusionSummonOption result)
     {
-        int spellZone = request.FromSet ? request.SourceIndex : duel.FirstFreeSpellZone();
-        Rectangle? origin = request.FromSet ? null : HandBounds(request.SourceIndex);
+        var destination = request.FieldOwner is int fieldOwner ? FieldZoneBounds(fieldOwner) :
+            ZoneBounds(request.Owner, request.FromSet ? request.SourceIndex : duel.FirstFreeSpellZone(), true);
+        bool fromHand = request.FieldOwner is null && !request.FromSet;
+        Rectangle? origin = fromHand ? HandBounds(request.SourceIndex) : null;
         if (!duel.ResolveFusionSummon(result.DeckIndex, selectedFusionMaterials, out message, fusionDefensePosition))
             return;
         var spent = selectedFusionMaterials.Where(material => material.Zone == FusionMaterialZone.Hand)
             .Select(material => material.Index);
-        if (!request.FromSet) spent = spent.Append(request.SourceIndex);
+        if (fromHand) spent = spent.Append(request.SourceIndex);
         foreach (int index in spent.OrderDescending()) handLayouts[request.Owner].RemoveAt(index);
         ShowPlayedCardDetail(request.Spell);
-        BeginCardActivation(request.Spell, ZoneBounds(request.Owner, spellZone, true), origin);
+        BeginCardActivation(request.Spell, destination, origin,
+            nearSide: (request.FieldOwner ?? request.Owner) == ViewPlayer);
         ClearDuelSelection();
         ResetFusionChoice();
     }

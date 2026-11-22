@@ -77,7 +77,7 @@
         "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
       ],
       "limitations": [
-        "Sandbox scope includes one substitute per recipe. Fusion Gate, chains and original timing validation are pending.",
+        "Sandbox scope includes Polymerization, Fusion Gate and one substitute per recipe. Native chains and timing are pending.",
         "Face-down defender handling follows static evidence."
       ]
     },
@@ -129,7 +129,7 @@
         "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl"
       ],
       "limitations": [
-        "Sandbox scope includes one substitute per recipe. Fusion Gate, chains and original timing validation are pending."
+        "Sandbox scope includes Polymerization, Fusion Gate and one substitute per recipe. Native chains and timing are pending."
       ]
     },
     {
@@ -137,7 +137,7 @@
       "kind": "Monster",
       "subtype": "Fusion",
       "mechanics": [
-        "Fusion Summon through Polymerization with exact materials or one substitute"
+        "Fusion Summon through Polymerization or Fusion Gate, with exact materials or one substitute"
       ],
       "status": "Partial",
       "resourceIds": [
@@ -160,7 +160,7 @@
       "kind": "Monster",
       "subtype": "Effect",
       "mechanics": [
-        "One occurrence can replace a single required Fusion Material from the hand or field"
+        "One occurrence can replace a single required Fusion Material from the hand or field through Polymerization or Fusion Gate"
       ],
       "status": "Done",
       "resourceIds": [
@@ -202,6 +202,30 @@
       ],
       "limitations": [
         "Sandbox scope. Native chain windows and generic destination replacement effects are pending."
+      ]
+    },
+    {
+      "id": "spell.fusion-gate",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Activate the Field Spell from the hand or Set",
+        "Either player can reuse the face-up Gate during their Main Phase",
+        "Banish Fusion Materials instead of sending them to the Graveyard"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1547
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoFusion.cs",
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/Joey.App/FusionSelectionScreen.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/06-combate-diferido-e-invocacao.jsonl"
+      ],
+      "limitations": [
+        "Sandbox field replacement and Phase policy. Native chain timing, field suppression and banishment replacement effects are pending."
       ]
     },
     {
