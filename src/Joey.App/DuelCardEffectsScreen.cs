@@ -13,13 +13,20 @@ static partial class Game
     sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
     sealed record DuelOpening : CardEffect;
     sealed record ShuffleDeck(int Player) : CardEffect;
-    sealed record ExodiaOpening(DemoExodiaCompletion Completion) : CardEffect;
+    // Use the same FIFO as card animations. A cinematic with unknown Draw
+    // has no duration, cannot enter the queue and cannot lock input.
+    sealed record CinematicScene(NativeCinematicCue Cue, DemoExodiaCompletion? Completion) : CardEffect;
 
     static readonly PresentationSequence<CardEffect> cardEffects = new();
     static readonly PresentationTickClock cardEffectClock = new();
     static bool CardEffectsBusy => cardEffects.Current is not null;
     static bool ExodiaOpeningQueued =>
-        cardEffects.Pending.Any(step => step.Kind is ExodiaOpening);
+        cardEffects.Pending.Any(step => step.Kind is CinematicScene
+        { Cue.Kind: NativeCinematicKind.ExodiaOpening });
+    // Diagnostic only: resource 81 or 744 would enter the native
+    // bust-up pipeline, but the perspective gate and sprite timing
+    // are not mapped yet. Never treat this as an active animation.
+    static NativeCinematicCue? lastSignatureCandidate;
     static bool CanPlayCardEffects => flight is null && attackCue is null && !ActivationBusy;
     static bool MotionBusy => flight is not null || attackCue is not null || ActivationBusy || CardEffectsBusy;
 
@@ -27,6 +34,10 @@ static partial class Game
     {
         cardEffects.Clear();
         cardEffectClock.Reset();
+        lastSignatureCandidate = null;
+        duel.MonsterNormalSummoned += normal =>
+            lastSignatureCandidate = NativeCinematicRouting.SignatureCandidate(
+                normal.Player, normal.Card.Id, normal.FaceDown);
         duel.MonsterDestroyed += monster => QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
         duel.MonsterTributed += tribute => QueueTributeEffect(tribute);
         duel.HandTransferred += transfer => QueueCardEffect(new HandTransfer(transfer), CardTravel.Updates);
@@ -89,8 +100,21 @@ static partial class Game
     {
         if (completion.Pieces.Count != NativeExodiaOpeningFrame.CardCount)
             throw new ArgumentException("Expected five Exodia pieces.", nameof(completion));
-        QueueCardEffect(new ExodiaOpening(completion),
-            NativeExodiaOpeningFrame.OpeningUpdates);
+        // Core commits the win immediately; the existing FIFO handles
+        // the visual wait, after any already-queued fifth-card transfer.
+        var cue = NativeCinematicRouting.ExodiaOpening(completion.Player);
+        QueueCinematic(cue, completion);
+    }
+
+    static bool QueueCinematic(NativeCinematicCue cue, DemoExodiaCompletion? completion)
+    {
+        int? updates = NativeCinematicRouting.ImplementedUpdates(cue);
+        if (updates is not int count || !presentation.Style.PlayAnimations)
+            return false; // Crucial: unknown bust-up scenes do NOT stall.
+        if (cue.Kind == NativeCinematicKind.ExodiaOpening && completion is null)
+            throw new ArgumentException("Exodia scene requires the five cards.", nameof(completion));
+        QueueCardEffect(new CinematicScene(cue, completion), count);
+        return true;
     }
 
     static void QueueInitialExodiaOpening()
@@ -218,8 +242,9 @@ static partial class Game
             case ShuffleDeck shuffled:
                 DrawDeckShuffle(shuffled.Player, cardEffects.ElapsedUpdates);
                 break;
-            case ExodiaOpening exodia:
-                DrawExodiaOpening(exodia.Completion, cardEffects.ElapsedUpdates);
+            case CinematicScene { Cue.Kind: NativeCinematicKind.ExodiaOpening,
+                                  Completion: { } exodia }:
+                DrawExodiaOpening(exodia, cardEffects.ElapsedUpdates);
                 break;
         }
     }
