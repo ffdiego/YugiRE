@@ -54,7 +54,9 @@ dotnet run --project src/Joey.App -- .\passion\data.dat --inspect-visual-dat
 ```
 
 O comando examina os **57 manifests** catalogados em `j\duel\*.txt`
-(incluindo subdiretórios) e os BMPs/YGAs da mesma árvore. Grava
+e também os **17 manifests** de `j\bust_up\*.txt` (74 no total,
+incluindo subdiretórios). Registra metadados dos BMPs/YGAs das duas
+árvores, incluindo 160 imagens do busto/reação do Joey. Grava
 `scratch/visual-review/dat-manifests.json`, com conteúdo Latin-1 e
 hexadecimal dos manifests, dimensões e SHA-256 de cada imagem. **Não**
 exporta pixels ou BMP/YGA, não inicia a janela e não executa o EXE
@@ -69,6 +71,13 @@ Na investigação, conferir primeiro os manifests `sacrifice.txt`,
 `lifepoint.txt` antes de supor a ordem dos sprites. O JSON não substitui
 a captura de frames, mas evita associar arbitrariamente um bitmap a
 uma posição do atlas.
+
+**Nova família a observar (ainda não implementada):** reações do Joey,
+invocação de Red-Eyes B. Dragon e outras cenas signature em `j\bust_up\`,
+além do efeito Vija da vitória F-I-N-A-L em `duel/effect/vija.txt`.
+A cadeia de construtores, as esperas nativas e as cinco cartas da condição
+foram investigadas em [bust-up e Destiny Board](bust-up-cinematics-and-destiny-board.md).
+Nenhuma dessas observações deve elevar a badge até haver Draw ativo.
 
 ## Matriz de comparação
 
