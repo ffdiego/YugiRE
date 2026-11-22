@@ -1,8 +1,8 @@
 # Campanha estática de efeitos
 
-A unidade de cobertura é o resource ID do [catálogo de callbacks](../../evidence/card-callback-catalog.json). A classificação descreve o entendimento estático do efeito. Mapeado indica operação principal sustentada e informação suficiente para começar uma implementação. Parcial indica evidência útil com lacuna material. Pendente indica que a ligação entre a carta e a operação nativa permanece aberta. A campanha teve zero execuções do Joey.
+A unidade de cobertura é o resource ID. Os lotes 01–09 examinam o [catálogo de callbacks](../../evidence/card-callback-catalog.json). O lote 10 usa IDs do DAT ausentes da tabela. A classificação descreve o entendimento estático do efeito. Mapeado indica operação principal sustentada e informação suficiente para começar uma implementação. Parcial indica evidência útil com lacuna material. Pendente indica que a ligação entre a carta e a operação nativa permanece aberta. A campanha teve zero execuções do Joey.
 
-Cada arquivo JSONL define registros `family` seguidos dos registros `card` que herdam os campos da família pelo nome. `detail` descreve o ramo ou parâmetro individual e `pending_card` registra lacunas específicas. Campos nulos representam informação ausente no nível da família. Os endereços são VAs hexadecimais do executável alvo.
+Cada arquivo JSONL define registros `family` seguidos dos registros `card` que herdam os campos da família pelo nome. `detail` descreve o ramo ou parâmetro individual e `pending_card` registra lacunas específicas. Campos nulos no registro de família representam informação ausente. Em um registro de carta, `profile: null` indica ausência na tabela de callbacks, distinta de um perfil registrado com slots vazios. Os endereços são VAs hexadecimais do executável alvo.
 
 <!-- cobertura -->
 
@@ -17,11 +17,12 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | [07-selecao-vinculos-e-substituicao](07-selecao-vinculos-e-substituicao.jsonl) | 14 | 32 | 9 | 23 | 0 |
 | [08-efeitos-compostos-e-eventos](08-efeitos-compostos-e-eventos.jsonl) | 15 | 41 | 16 | 23 | 2 |
 | [09-efeitos-fora-da-tabela](09-efeitos-fora-da-tabela.jsonl) | 7 | 16 | 10 | 4 | 2 |
-| **Total** | 110 | 326 | 164 | 157 | 5 |
+| [10-efeitos-sem-registro](10-efeitos-sem-registro.jsonl) | 6 | 33 | 30 | 3 | 0 |
+| **Total** | 116 | 359 | 194 | 160 | 5 |
 
 <!-- fim cobertura -->
 
-A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). Esses registros e The Unfriendly Amazon (1431) estão pendentes. Minor Goblin Official (1302) passou a Mapeado após o lote 09 localizar o emissor periódico fora do callback primário. Os 117 registros restantes da tabela remetem aos [estudos existentes](reconciliacao.md). IDs distintos com o mesmo nome permanecem distintos.
+A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). Esses registros e The Unfriendly Amazon (1431) estão pendentes. Minor Goblin Official (1302) passou a Mapeado após o lote 09 localizar o emissor periódico fora do callback primário. A [reconciliação](reconciliacao.md) cobre os 443 registros da tabela, dos quais 117 remetem aos estudos existentes. O lote 10 acrescenta 33 dos 672 IDs do DAT sem registro. IDs distintos com o mesmo nome permanecem distintos.
 
 ## Evidência e reprodução
 
@@ -36,14 +37,16 @@ A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). 
 - O lote 07 complementou as instruções dos resolvedores com 0057A470, 0057B3B0, 00580360 e 00589B70 no SQLite. 00586B30 distingue o efeito original por ID ao proteger armadilhas, e 00586FB0 dá a Relinquished e Thousand-Eyes Restrict o mesmo caminho de transferência e vínculo tipo 5.
 - O lote 08 cruzou as continuações de 00589EB0–00591890 com a disponibilidade de Chosen One em 005829D0 e o evento de Major Riot em 00581790. P166/P167 e os efeitos de destruição em batalha foram mantidos separados quando o callback confirmava apenas a ativação principal.
 - O lote 09 combinou os predicados globais do SQLite com instruções que verificam IDs nos estágios de batalha e de turno. Os ramos 005A627D, 005A637D e 005A647E distinguem os ganhos de LP por posição; 00582330 e 005A6D06 fecharam disponibilidade e dano de Minor Goblin Official.
+- O lote 10 cruzou `CARD_ID` com a tabela e verificou as identidades no DAT inglês. A tabela de seis auras em 005DCF98 contém IDs e sete deltas int16 por linha, lidos a partir do offset 0x001DCF98 no EXE identificado acima. Os saltos de 00583F40 confirmaram destinos distintos para Red-Eyes e Magical Labyrinth, corrigidos nos lotes 02 e 07.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
 ## Próximos grupos para o Core
 
 1. **Destruição em massa por predicado.** Começar pelos sete destruidores por tipo de P092. Reusar uma operação de máscara com filtro de lado, face-up, tipo dinâmico e proteção. Acrescentar 4-Starred Ladybug of Doom com o filtro de nível e Heavy Storm com o filtro de zona. Eternal Rest depende de fechar os tipos de vínculo que entram na contagem.
 2. **Compra, LP e movimentação entre zonas.** Reusar quantidade e lado como parâmetros. Começar por Pot of Greed, Jar of Greed, Skelengel e Upstart Goblin. Em seguida, usar um seletor com origem, filtro, cota e destino para Fusion Sage e P248. Graceful Charity e Card Destruction acrescentam composição ordenada e eventos de descarte.
-3. **Seleção revalidada e efeitos vinculados.** Aplicar validação de ocorrência para Mystical Space Typhoon, Block Attack e Fissure. Expandir para renascimento com vínculo e modificadores temporários quando o motor puder expirar associações por movimento ou mudança de turno.
-4. **Respostas e efeitos contínuos.** Modelar eventos de compra, descarte, invocação e ataque. Separar negar o pedido, destruir a origem e substituir sua operação, como mostram as respostas a Raigeki e Harpie’s Feather Duster. Reusar os predicados de autorização de ação em Gravity Bind, Insect Barrier e Mask of Restrict.
+3. **Auras e ataque direto.** Usar uma tabela de contribuições por atributo dinâmico e quantidade de fontes, junto ao recálculo de ATK. Para ataque direto, usar permissões por carta e um predicado de campo separado para Alligator’s Sword Dragon.
+4. **Seleção revalidada e efeitos vinculados.** Aplicar validação de ocorrência para Mystical Space Typhoon, Block Attack e Fissure. Expandir para renascimento com vínculo e modificadores temporários quando o motor puder expirar associações por movimento ou mudança de turno.
+5. **Respostas e efeitos contínuos.** Modelar eventos de compra, descarte, invocação e ataque. Separar negar o pedido, destruir a origem e substituir sua operação, como mostram as respostas a Raigeki e Harpie’s Feather Duster. Reusar os predicados de autorização de ação em Gravity Bind, Insect Barrier e Mask of Restrict.
 
 ## Quando abrir o Joey original
 
