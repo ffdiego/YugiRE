@@ -12,6 +12,7 @@ on:
       - 'docs/architecture/visual-function-coverage.json'
       - 'docs/architecture/native-renderer-inventory.md'
       - 'scripts/publish_visual_coverage.py'
+      - 'tests/test_publish_visual_coverage.py'
       - '.github/workflows/playability-badges.yml'
   workflow_dispatch:
 
