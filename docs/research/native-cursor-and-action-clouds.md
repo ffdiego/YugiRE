@@ -53,70 +53,85 @@ de **nuvem** sobre a carta. A inspeção estática identifica
 os sprites pelo nome, não pelo formato visual (ainda
 não houve captura do atlas original neste ambiente).
 
-## Implementado no Joey.App
+## Integração revisada após duas capturas do Joey original
 
-`NativeDuelCursor` mapeia o idioma inglês por ação
-e possui um contrato puro de posição/limites testável.
-O balão procedural da mão foi substituído pelas texturas
-originais do DAT:
-- monstro + ação normal → `cursor_e_summon.yga`;
-- monstro ou magia/armadilha + Set → `cursor_e_set.yga`;
-- magia/armadilha + ativação → `cursor_e_act.yga`.
+As capturas fornecidas pelo usuário mostram a mão/cursor sob o
+balão de **Summon**, e que o balão acompanha o posicionamento do
+mouse sobre cartas diferentes. Não é um botão estático centralizado
+na carta: é uma variante visual do **mesmo cursor**.
 
-O botão de descarte de fim de turno continua usando o
-painel local, pois não foi identificada ação equivalente
-sem ambiguidade entre os YGAs. As demais ações
-(`atk`, `flip`, `fusion`, `rev`, etc.) estão
-catalogadas para integrações posteriores.
+O cliente agora usa o cursor original durante **toda a execução
+gráfica, em toda a janela** (menu, cartas, deck e duelo, inclusive
+área de letterboxing quando redimensionada). O ponteiro do SO é
+ocultado uma única vez depois da inicialização raylib, restaurado
+ao fechar o jogo. Desenhamos **exatamente um sprite por quadro**
+depois da composição final da janela, usando o mouse em coordenadas
+físicas da janela e o fator de escala visual:
 
-A interface calcula a área clicável a partir da **dimensão
-real da textura** (não mais do retângulo genérico
-de 50 × 27). Após feedback da comparação visual,
-a **ponta da nuvem deve aparecer em cima da carta**,
-não parar 5 pixels antes do topo. O posicionamento
-corrigido é
-`x = centroDaCarta − larguraSprite/2`,
-`y = topoDaCarta − alturaSprite + 12`.
-Assim o limite inferior do sprite avança 12 pixels
-sobre a borda superior da carta, mesmo com hover/lift.
-**Os 12 pixels são uma calibração inicial do cliente**;
-a localização do último pixel opaco da ponta e o pivô
-precisam ser comparados com o executável original.
+- cursor normal: `cursor/cursor00.yga`;
+- hover de monstro invocável: `cursor/cursor_e_summon.yga`;
+- hover com Set válido: `cursor/cursor_e_set.yga`;
+- hover de magia ativável: `cursor/cursor_e_act.yga`.
 
-A primeira versão do cliente também desenhava
-`cursor00.yga` por cima do cursor do sistema, criando
-a aparência de **dois ponteiros**. Isso foi removido:
-o sistema operacional continua desenhando o único mouse
-no duelo e em outras telas; não chamamos mais
-`HideCursor` nem sobrepomos `cursor00.yga`.
-`cursor00/01.yga` seguem catalogados e validados como
-recursos de pesquisa, **mas não são renderizados**.
-Portanto capturas F12 do canvas de 800 × 600 contêm
-as nuvens de ação, mas não necessariamente o ponteiro
-do SO, que fica fora do render target.
+**Nunca desenhar simultaneamente** `cursor00` e
+`cursor_e_summon`: isso duplicaria a mão/ponteiro.
+Também não desenhar mais as nuvens de ação fixas no topo
+das cartas. O arquivo `cursor01.yga` permanece catalogado,
+mas sua ativação nativa ainda é desconhecida.
 
-`DatGraphics.Validate` passa a decodificar os YGAs de
-cursor para detectar formatos inesperados sem abrir a
-janela. `--inspect-visual-dat` também examina
-`cursor/`, inclusive o texto original `cursor_e.txt`,
-e registra as dimensões sem exportar os pixels.
-Os recursos de jogo não são versionados no Git.
+A nuvem só aparece quando a carta sob o mouse permite
+uma ação de acordo com o `Joey.Core`. Não basta
+que uma carta seja monstro ou magia: é preciso respeitar
+fase, espaço de campo, invocação já usada e restrições
+de ativação. Ao trocar de carta, o modo padrão é:
+- monstro normal: **Summon**; botão direito alterna para
+  Set se também permitido;
+- magia com ativação e Set possíveis: **Activate**;
+  botão direito alterna para Set;
+- armadilha na mão: **Set** imediatamente; não oferece
+  Activate nem permite alternar com botão direito,
+  pois a ativação direta da mão é ilegal;
+- nenhuma opção disponível: cursor normal, sem nuvem.
+
+O fallback procedural **Discard** do sandbox continua
+independente até existir uma variante nativa correspondente.
+A detecção de hover usa a união da posição de repouso
+e da posição levantada da carta para não deixar a nuvem
+presa fora da carta ou oscilar durante o movimento.
+
+O hotspot real (origem relativa à ponta do dedo), as
+dimensões e a ordem de variação de `cursor00/01.yga`
+continuam para calibração. O atual `PointerOrigin`
+usa a posição do mouse como origem da textura; é
+**provisório**, embora os YGAs e sua seleção sejam
+originais. A textura é desenhada na janela inteira,
+fora do alvo de captura 800 × 600; portanto F12
+registra os nomes dos sprites ativos e o mouse lógico,
+mas o PNG do canvas não contém o cursor.
+
+`DatGraphics.Validate` continua verificando os YGAs;
+`--inspect-visual-dat` inclui todos os 68 itens da árvore
+`cursor/` sem exportar pixels. O jogo original não
+é copiado nem incluído no repositório.
 
 ## Roteiro para validação com o original
 
-1. Ficar sobre carta de monstro, observar balão de
-   Summon. Alternar botão direito para Set; repetir
-   em magia/armadilha e comparar com Activate.
-2. Conferir posição da ponta/nuvem, tamanho nativo
-   das texturas, transparência, efeito de hover,
-   ordem de render e deslocamento com a carta.
-3. Conferir se o ponteiro do Windows continua único
-   em repouso e ao passar sobre cartas. A função nativa
-   de `cursor00/01.yga` permanece em investigação;
-   não reintroduzir um segundo cursor sem evidência.
-4. Usar F6/F7 para inspecionar quadros estáveis e
-   F12 para PNG/JSON de 800×600. Comparar
-   ao lado de uma captura do jogo original.
+1. Percorrer menu, lista, deck e duelo; o cursor original
+   deve ficar sempre visível dentro da janela e nunca
+   coexistir com a seta do SO.
+2. Hover sobre uma carta de monstro e mover o mouse pela
+   sua superfície: a nuvem deve acompanhar o ponteiro,
+   não permanecer no centro da carta.
+3. Repetir com armadilha na mão: deve mostrar **Set**
+   por padrão e ignorar o botão direito. Com uma
+   magia ativável, conferir alternância Activate/Set
+   somente quando ambas forem legais.
+4. Conferir cursor normal quando a carta não tem ação
+   válida, e comparar ponto do dedo, transparência,
+   origem e escala do sprite com a captura original.
+5. F12 produz PNG/JSON do canvas (sem o cursor, que
+   é desenhado na janela); registrar comparações do
+   ponteiro com captura da janela inteira.
 
 **Esta PR não altera regras no `Joey.Core` nem a badge
 visual de 19/31**, que inventaria outras funções Draw.
