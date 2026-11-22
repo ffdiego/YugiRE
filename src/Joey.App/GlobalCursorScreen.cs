@@ -13,6 +13,8 @@ static partial class Game
     {
         if (screen == "duel" && !visualReviewPaused &&
             !MotionBusy && !PhaseBusy && !alphaBlocked &&
+            CanPlayTurn && CanPlayMainOrBattle &&
+            CpuDuelController.PendingOwner(duel) is null &&
             !choosingTributes && !choosingEquip &&
             mouse.X >= 0 && mouse.X < NativeDuelLayout.CanvasWidth &&
             mouse.Y >= 0 && mouse.Y < NativeDuelLayout.CanvasHeight &&
