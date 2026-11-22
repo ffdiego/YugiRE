@@ -406,3 +406,16 @@ a captura de registros de batalha e a cadeia de dano.
 O validador da compra também confere IDs e chamadas dos predicados centrais
 de [Exodia/Destiny Board](../docs/23-terminal-conditions.md) e a ausência das
 cinco partes de Exodia na tabela de callbacks.
+
+## Banco enriquecido: decompilações virtuais transitórias (22/11/2026)
+
+Depois de `ExportVisualVtables.java` e `enrich_joey_sqlite.py`, importe o ZIP de `export_ghidra_visual_bundle.py` para uma **nova** cópia do banco:
+
+```bash
+python3 scripts/import_visual_virtual_bundle.py \
+  --source scratch/joey-knowledge-visual-ghidra.sqlite \
+  --bundle scratch/ghidra-visual-virtual-methods.zip \
+  --output scratch/joey-knowledge-visual-decoded.sqlite
+```
+
+Os métodos transitórios ficam em `visual_transient_decompilations`, sem serem confundidos com funções persistentes. Dados do jogo, decomps e SQLite ficam somente em `scratch/`; scripts e documentação são versionáveis. Veja `docs/research/visual-virtual-methods-2026-11-22.md`.

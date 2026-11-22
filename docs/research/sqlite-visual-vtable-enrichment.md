@@ -37,3 +37,17 @@ O importador valida SHA256 do executável, formato TSV, posição dos slots, dup
 O badge visual continua em **19/31**: as novas tabelas medem investigação, não implementação C# nem paridade com o Joey. O exportador Java ainda precisa ser executado na instalação local do Ghidra; os quatro testes Python passaram em fixture sem binários.
 
 Não versionar SQLite, EXE nem DAT.
+
+## Etapa 4: importar as decompilações transitórias de funções virtuais (22/11/2026)
+
+O ZIP `ghidra-visual-virtual-methods.zip` fornecido pelo usuário contém 15 entrypoints distintos decompilados via `tempfunc:`, associados a 18 slots. O novo importador mantém o resultado em tabela separada e não promove funções transitórias para o índice persistente:
+
+```bash
+python3 scripts/import_visual_virtual_bundle.py \
+  --source scratch/joey-knowledge-visual-ghidra.sqlite \
+  --bundle scratch/ghidra-visual-virtual-methods.zip \
+  --output scratch/joey-knowledge-visual-decoded.sqlite \
+  --summary scratch/visual-transient-decomp-audit.json
+```
+
+Novo inventário de Draw identificados: **19/34 parcialmente implementados, 0 Verified**. Ver [relatório do lote](visual-virtual-methods-2026-11-22.md) para semântica dos slots; `+8`/`+C` não têm significado universal entre classes.

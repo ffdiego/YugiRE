@@ -43,6 +43,7 @@ rotina ainda não foi atribuída, e não ausência de Update ou Draw.
 | LP, dano e placar | `0044C3E0` carrega LP; `0047C310` cria objetos de delta (`005DBAA4`) | `0047C560` | `0047C660` | `life/lifepoint.txt`, `lp_jibu1/2.bmp`, `lp_aite1/2.bmp`, `font/number.txt`, `damage00/01.bmp` | Parcial: contador 100/10/1, barras texturizadas, dígitos do DAT quando manifest compreendido e animação flutuante de dano/cura via `004806F0`. Fontes, posição, máscara, mistura, som e frames pareados não confirmados. |
 | Fases, botões e troca de cor | `00481040` / `005DBB2C` | `00481370` | `00481420` | `phase/phase.txt`, `pha_s/b/r_*.bmp` | Implementado com divergências. `DrawPhasePanel`: recortes centrais do giro foram comparados com o DAT nos dois sentidos. Hitbox e detalhes do estado ativo ainda não foram validados contra o Joey. |
 | Avisos de fase e novo jogador | `00480B40 / 00480BC0` inicializam estados | `00480C20` | `00480C60` | `phase_name/phase_name.txt`, banners e `nex_*.yga` | Implementado com divergências. `DrawPhaseNotice` seleciona o banner azul/vermelho por lado. Os sete quadros intermediários de batalha também vêm do DAT. Entrada e saída seguem os deslocamentos e a opacidade do Draw. Mistura do meio e aviso de jogador continuam abertos. |
+| Seleção nativa de cartas | `0043A060` / `005DABD8` | `0043B0F0` | `0043B280` | `list/selectlist*.txt`, `gravelist*.txt`, `fusionlist*.txt`, `excludelist*.txt`, `list_icon/list_icon.txt` | **Pending:** lista de cinco cartões, navegação e renderização de transição; a UI provisória do cliente usa dez cartões em duas filas. Vtable confirmada no lote 22/11; a decompilação tem warning de tipagem. Ver `docs/research/visual-virtual-methods-2026-11-22.md`. |
 | Diálogos e seleções | `00487E70` (manifesto) | Aberto | Aberto | `dialog/dialog.txt`, `button_?.txt`, `ritualdlg.txt` | Placeholder/procedural inventado. `DrawCardSelectionOverlay`, `DrawSummonResponseOverlay`, `DrawAttackResponseOverlay` e `DrawEffectDecisionOverlay` usam painéis de gameplay do cliente. |
 | Ajuda | `0045E250` / `005DB630` | `0045E3D0` | `0045E4A0` | `help/help.txt`, YGAs por idioma | Não implementado. |
 | Efeito de estado persistente | `0040DAC0` / `005DA44C` | `0040E010` | `0040E260` | `effect/affect.txt` | Não implementado. Associação por manifesto e vtable; sem mapa dos ícones e flags. |
@@ -76,6 +77,8 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Dado | `004568C0` / `005DB3F4` | `00456B70` | `00456B90` | `effect/dice.txt` | Não implementado. |
 | Exodia | `00453B60` / `005DB3B4` | `00454000` | `00454010` | `exodia/exodia.txt`, miniaturas DAT, `exo_face/arm/arml`, `card_hikari`, `exo_ball` | **Partial:** Core reconhece as cinco peças na mão; Alpha porta apenas o primeiro ramo orbital de cinco miniaturas (79 updates, posição/alpha nativas). Montagem completa de Exodia, efeitos de luz, sons e recursos finais continuam pendentes. Ver `docs/research/exodia-observable-victory.md`. |
 | Vija / Destiny Board F-I-N-A-L | `004580F0` / `005DB414` | `004481F0` (vazio) | `004584C0` (contador +4 no Draw) | `effect/vija.txt`, `vija_skel.bmp`, `vija_smoke.yga`, `vija_moji_*.bmp/yga` | **Pending:** cenas criadas por `00409940/00409AB0` em modos diferentes para o conjunto de 5 cartas no campo; a ordem da máscara, o fluxo completo de letras e a lógica de vitória ainda não foram portados. Ver `docs/research/bust-up-cinematics-and-destiny-board.md`. |
+| Layerfont A | `00455D90` / `005DB3C4` | `004481F0` (vazio) | `00455FF0` (atualiza contador no Draw) | `effect/layerfont.txt` | **Pending:** contador +4 módulo 256, tabela cosseno e âncora próxima ao canto inferior direito. |
+| Layerfont B | `00456100` / `005DB3D4` | `004481F0` (vazio) | `00456360` (atualiza estado no Draw) | `effect/layerfont.txt` | **Pending:** intensidade +4/-4 e desenho condicional; estado acionador ainda não nomeado. |
 | Ícones de carta, outros prompts e variantes de ajuda | Aberto | Aberto | Aberto | `card/icon.txt`, `list_icon/`, `effect/layerfont.txt` e outros manifests | Ainda não investigado como cadeia de objetos. |
 
 ## Explosão: parâmetros recuperados e aplicação
@@ -504,7 +507,7 @@ defesa e sincronização com áudio. A cobertura do
 Draw passa para **18/31 (58.06%) Partial**, sem
 nova rotina Verified.
 
-## Bustos do Joey, cenas signature e encerramentos (fora das 31 Draw)
+## Bustos do Joey, cenas signature e encerramentos (fora das 34 Draw)
 
 O SQLite contém uma família paralela à composição das cartas do duelo:
 `00402E00/00403310/004166F0` para reações, `00414A20` para

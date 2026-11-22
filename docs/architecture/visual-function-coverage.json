@@ -51,6 +51,11 @@
       "client": "src/Joey.App/DuelPhaseScreen.cs"
     },
     {
+      "address": "0043B280",
+      "family": "Seleção nativa de cartas",
+      "status": "Pending"
+    },
+    {
       "address": "0045E4A0",
       "family": "Ajuda",
       "status": "Pending"
@@ -174,6 +179,16 @@
     {
       "address": "004584C0",
       "family": "Vija",
+      "status": "Pending"
+    },
+    {
+      "address": "00455FF0",
+      "family": "Layerfont A",
+      "status": "Pending"
+    },
+    {
+      "address": "00456360",
+      "family": "Layerfont B",
       "status": "Pending"
     }
   ]

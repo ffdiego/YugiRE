@@ -1,5 +1,7 @@
 # Famílias visuais ainda não contabilizadas no badge (21/11/2026)
 
+> Snapshot histórico: os slots e 3 Draws novos foram resolvidos em 22/11/2026. Consulte [o lote seguinte](visual-virtual-methods-2026-11-22.md) para os resultados e o badge atualizado de 19/34.
+
 Alvo: `joey_pc.exe`, SHA256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
 Fonte: `joey-knowledge.sqlite` enviado pelo usuário em 21/11/2026 e o inventário versionado do YugiRE.
 

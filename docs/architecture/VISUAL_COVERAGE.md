@@ -5,8 +5,8 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 19/31 (61.29%).**
-**Validadas no Joey original: 0/31.**
+**Implementadas (inclusive parciais): 19/34 (55.88%).**
+**Validadas no Joey original: 0/34.**
 
 Partial indica um componente visual C# relacionado, mas divergências
 conhecidas. Done exige escopo visual concluído em C#; Verified exige
@@ -27,6 +27,7 @@ desconhecido ainda não entram neste denominador. Ver
 | `0047C660` | LP, dano e placar | Partial | `src/Joey.App/DuelDetailScreen.cs` |
 | `00481420` | Fases, botões e troca de cor | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
 | `00480C60` | Avisos de fase e novo jogador | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
+| `0043B280` | Seleção nativa de cartas | Pending | — |
 | `0045E4A0` | Ajuda | Pending | — |
 | `0040E260` | Efeito de estado persistente | Pending | — |
 | `004142C0` | Combate declarado e espada | Partial | `src/Joey.App/AlphaDuelScreen.cs` |
@@ -50,6 +51,8 @@ desconhecido ainda não entram neste denominador. Ver
 | `00456B90` | Dado | Pending | — |
 | `00454010` | Exodia | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `004584C0` | Vija | Pending | — |
+| `00455FF0` | Layerfont A | Pending | — |
+| `00456360` | Layerfont B | Pending | — |
 
 O conjunto de endereços deve corresponder ao inventário.
 Diálogos e ícones com Draw desconhecido permanecem listados no
