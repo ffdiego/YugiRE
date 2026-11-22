@@ -33,13 +33,15 @@ Preferir consultar o SQLite/decompilações e o ZIP visual já extraído, inclus
 
 **Situação do cliente:** `DuelPhaseScreen.DrawPhaseNotice` desenha os banners de fase e da Battle Phase, mas não compõe o anúncio `nex_` do próximo jogador. A referência espacial é 800×600, sem pressupor o mesmo centro/timeline dos avisos de fase.
 
-## V03 — ATK/DEF em todos os monstros revelados, inclusive defesa
+## V03 — ATK/DEF do próprio monstro face-down e cores por posição
 
-**Observação:** ambos os valores continuam visíveis em carta face-up no modo de defesa, mas o valor **não usado** fica cinza; o caso especificamente observado é ATK cinza quando a carta está em defesa.
+**Correção explícita do mantenedor:** os dois valores de ATK/DEF **também aparecem abaixo dos nossos monstros face-down**, inclusive quando estão em posição de defesa. O verso da carta permanece visível. O monstro do oponente face-down **não** divulga os atributos. Na defesa, ATK (o atributo não utilizado) aparece em cinza, conforme observação visual anterior; confirmar a coloração inversa/variações por estado no original.
 
-**Candidatos:** `004194D0 → 00480500 / 00480300`, atlas `j/duel/font/number.txt`, flags de face/posição/lado e a geometria de `00419612..00419630`. Confirmar no assembly se ATK/DEF usam chamadas separadas, tonalização ou outra variante, e os critérios exatos de cinza/realce e orientação.
+**Evidência estática disponível:** `004194D0` consulta o lado, a região, flags de exibição e valores de ATK/DEF; chama `00480500` para os dois números e `00480300` para o separador. A decompilação possui variáveis de registradores ambíguas e não prova, isoladamente, o significado exato dos bits de face-down/lado. Revisar assembly, saltos, referências a `DAT_00A54E5C`, bit `0x8000`, escolha das variantes do atlas e o posicionamento `00419612..00419630`.
 
-**Estado atual:** `DuelCardLayout.OnBoard` já calcula `AttributesCenter` para monstros face-up mesmo em defesa; `DrawDuelField` renderiza `"ATK / DEF"` com `Label` monocolorido. A lacuna verificada é o desenho/cor dos atributos, não necessariamente a mera visibilidade em defesa. Testar ataque/defesa, ambos os lados, face-down/face-up, modificadores de atributos e atacante/defensor.
+**Correção funcional no cliente:** `DuelCardLayout.OnBoard` agora expõe `AttributesCenter` para monstros do lado próprio mesmo quando face-down, e para os monstros face-up de ambos os lados. Continua oculto para o adversário face-down. `DrawDuelField` usa a geometria resultante e não elimina informações de um monstro do próprio jogador antes do contato da espada. Testes C# verificam ambos os lados e ataque/defesa.
+
+**Ainda pendente de paridade nativa:** os recortes reais de `number.txt`, cinza versus ativo, variante por estado, suavização dos números, posicionamento dos dois campos e possível restrição temporária durante efeitos. O código atual ainda usa `Label` monocolorido; não declarar a família Verified sem comparar o assembly e capturas pareadas.
 
 ## V04 — Cursor de ataque na Battle Phase
 

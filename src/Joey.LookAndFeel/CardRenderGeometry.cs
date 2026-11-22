@@ -31,7 +31,13 @@ public static class DuelCardLayout
     {
         var center = Center(zone, nearSide, slot);
         var frame = BoardPortrait(center);
-        CardPoint? attributes = zone == DuelCardZone.Monster && !faceDown
+        // The human can inspect the attributes of their own Set monsters
+        // even while the card artwork stays face-down. An opponent's
+        // unrevealed monster must not disclose information. Native 004194D0
+        // renders ATK/DEF with side/visibility flags; exact gray/active
+        // color variants remain under assembly investigation.
+        CardPoint? attributes = zone == DuelCardZone.Monster &&
+                                (nearSide || !faceDown)
             ? center with { Y = center.Y + (nearSide ? 46 : -46) } // 00419612–00419630
             : null;
         return InTransit(frame, nearSide, defense, faceDown) with { AttributesCenter = attributes };

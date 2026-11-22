@@ -204,6 +204,32 @@ internal static class LookAndFeelChecks
         check(fan.Bounds(0, 2).X != inFlightX,
               "Hand reflow: removing a card changes the neighbours' layout immediately");
 
+        // The owner sees ATK/DEF for their own face-down Set monster.
+        // Keep the opponent's hidden monster attributes concealed. Attack
+        // and defense position do not affect ownership or visibility.
+        foreach (bool defense in new[] { false, true })
+        {
+            var ownFaceDown = DuelCardLayout.OnBoard(
+                DuelCardZone.Monster, nearSide: true, slot: 2,
+                defense: defense, faceDown: true);
+            var opponentFaceDown = DuelCardLayout.OnBoard(
+                DuelCardZone.Monster, nearSide: false, slot: 2,
+                defense: defense, faceDown: true);
+            var opponentFaceUp = DuelCardLayout.OnBoard(
+                DuelCardZone.Monster, nearSide: false, slot: 2,
+                defense: defense, faceDown: false);
+            check(ownFaceDown.FaceDown &&
+                  ownFaceDown.AttributesCenter is { } ownText &&
+                  ownText.Y == DuelCardLayout.Center(
+                      DuelCardZone.Monster, nearSide: true, slot: 2).Y + 46 &&
+                  opponentFaceDown.AttributesCenter is null &&
+                  opponentFaceUp.AttributesCenter is not null,
+                  $"Face-down monster attributes: visible only to owner; defense={defense}");
+        }
+        check(DuelCardLayout.OnBoard(DuelCardZone.Spell, true, 2, false, false)
+                  .AttributesCenter is null,
+              "No ATK/DEF in non-monster zones");
+
         var revealStart = NativeHandDrawReveal.FromUpdate(0, nearSide: true);
         var revealMid = NativeHandDrawReveal.FromUpdate(4, nearSide: true);
         var revealEnd = NativeHandDrawReveal.FromUpdate(CardTravel.Updates, nearSide: true);

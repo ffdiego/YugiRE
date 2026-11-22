@@ -347,7 +347,7 @@ static partial class Game
                     // The resolved Core card may already be face-up here;
                     // until sword contact, even its ATK/DEF must stay hidden.
                     if (geometry.AttributesCenter is { } center &&
-                        !IsHiddenAttackTargetBeforeImpact(player, zone))
+                        (own || !IsHiddenAttackTargetBeforeImpact(player, zone)))
                     {
                         const int fontSize = 10;
                         string attributes = $"{duel.AttackValue(player, zone)} / {duel.DefenseValue(player, zone)}";
