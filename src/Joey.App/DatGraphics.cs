@@ -23,6 +23,9 @@ sealed class DatGraphics : IDisposable
         @"j\duel\effect\eff_star1_y.bmp"
     ];
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    public const string DuelDetailManifest = @"j\duel\detail\detail.txt";
+    public const string DuelDetailLine = @"j\duel\detail\line.bmp";
+    public const string DuelDetailScrollbar = @"j\duel\detail\scroll_bar.bmp";
     public static readonly string[] CursorActionSprites =
         Enum.GetValues<NativeCursorAction>()
             .Select(NativeDuelCursor.ActionSprite).ToArray();
@@ -187,7 +190,8 @@ sealed class DatGraphics : IDisposable
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
             .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts).Concat(ShuffleSprites)
-            .Append(DuelDetailBackground).Append(DuelStartEnglish)
+            .Append(DuelDetailBackground).Append(DuelDetailLine)
+            .Append(DuelDetailScrollbar).Append(DuelStartEnglish)
             .Append(AttackSword).Append(AttackSwordPartial)
             .Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
