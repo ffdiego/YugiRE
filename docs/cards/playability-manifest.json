@@ -140,6 +140,30 @@
       ]
     },
     {
+      "id": "spell.spell-trap-wipe",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Destroy all Spell and Trap Cards on the affected side or sides, including the Field Spell zone",
+        "Activate from hand or from own set Spell/Trap zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        671,
+        1061
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/SpellTrapWipeChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl",
+        "docs/research/card-static-sweep/03-controle-e-eventos.jsonl"
+      ],
+      "limitations": [
+        "Sandbox activation requires another eligible card. Chains, native protection and native timing are outside scope."
+      ]
+    },
+    {
       "id": "spell.monster-wipe-nontargeting",
       "kind": "Spell",
       "subtype": "Normal",

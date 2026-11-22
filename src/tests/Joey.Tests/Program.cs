@@ -125,6 +125,7 @@ FlipMonsterChecks.Run(Check);
 FlipDeckFlowChecks.Run(Check);
 RitualSearcherChecks.Run(Check);
 MonsterWipeChecks.Run(Check);
+SpellTrapWipeChecks.Run(Check);
 SummonTrapChecks.Run(Check);
 AttackTrapChecks.Run(Check);
 AttackNegationTrapChecks.Run(Check);

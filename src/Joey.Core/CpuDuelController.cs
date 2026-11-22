@@ -140,6 +140,7 @@ public sealed class CpuDuelController
         {
             int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
+                    ShouldClearSpellTraps(duel, duel.Hand[i].Id) ||
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
                 source: duel.FirstFreeSpellZone(), handIndex: spell);
@@ -214,6 +215,14 @@ public sealed class CpuDuelController
             return Act(CpuAction.EndBattle, duel.EndBattle);
         }
         return Act(CpuAction.EndTurn, duel.EndTurn);
+    }
+
+    private bool ShouldClearSpellTraps(DemoDuel duel, ushort resourceId)
+    {
+        if (!SpellTrapWipeRules.Supports(resourceId)) return false;
+        int own = SpellTrapWipeRules.HitsOwnSide(resourceId)
+            ? SpellTrapWipeRules.CountOnSide(Player, duel.Spells, duel.FieldSpells) : 0;
+        return SpellTrapWipeRules.CountOnSide(1 - Player, duel.Spells, duel.FieldSpells) > own;
     }
 
     private static int CardValue(Card c) => c.IsMonster ? Math.Max(c.Attack, c.Defense) +

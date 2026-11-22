@@ -98,6 +98,8 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 1109 | Senju of the Thousand Hands | Done (sandbox) | No Normal ou Flip Summon pode buscar 1 Monstro de Ritual do próprio Main Deck para a mão |
 | 335 | Dark Hole | Done (sandbox) | Destrói todos os monstros de ambos os lados, sem disparar FLIP por simples destruição |
 | 336 | Raigeki | Done (sandbox) | Destrói todos os monstros do adversário; ignora a posição sem selecionar alvos |
+| 671 | Harpie's Feather Duster | Done (sandbox) | Destrói todas as magias e armadilhas do adversário, inclusive sua zona de campo |
+| 1061 | Heavy Storm | Done (sandbox) | Destrói todas as magias e armadilhas dos dois lados, inclusive as zonas de campo |
 | 652 | Warrior Elimination | Done (sandbox) | Destrói Warriors face-up dos dois lados |
 | 659 | Stain Storm | Done (sandbox) | Destrói Machines face-up dos dois lados |
 | 661 | Eradicating Aerosol | Done (sandbox) | Destrói Insects face-up dos dois lados |
@@ -177,6 +179,12 @@ Skelengel usa o ramo de compra única de `005887C0`. A escolha vem do texto do D
 | 522 | The Bistro Butcher | Done (sandbox) | Ao causar dano de batalha aos LP adversários, o adversário compra duas cartas |
 
 O produtor `00578540` agenda os pedidos para 219 e 522 após o comando de dano. Os callbacks `005844A0` e `00585D30` enviam os totais de compra a `00578B60`. O sandbox resolve a compra obrigatória após dano positivo e não letal, incluindo ataque direto e dano causado pelo defensor. Se faltarem cartas, compra as disponíveis e aplica deck-out. A ordem exata do pedido nativo e seus casos de deck-out seguem pendentes. [Estudo das rotinas de compra](docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl)
+
+### Destruição em massa de magias e armadilhas (P094/P141)
+
+Harpie's Feather Duster emite a máscara `0x7E0` no lado adversário em `00586850`. Heavy Storm emite `0x07E007E0` em `00589830` para os dois lados. A máscara abrange as cinco zonas de magia/armadilha e a zona de campo por lado. A disponibilidade de Feather Duster conta cartas adversárias nessas seis posições via `0057FC40 → 0056A320`.
+
+No sandbox, a ativação da mão ou de Set exige outra carta elegível e inclui cartas face-up e face-down. A remoção de equipamento limpa seu vínculo e recalcula os stats do monstro sem removê-lo. A CPU usa a magia quando destrói mais cartas adversárias do que próprias. Feather Duster integra o deck padrão da Alpha. Proteções e respostas nativas de destruição de magias/armadilhas ficam pendentes. [Cenários C#](src/tests/Joey.Tests/SpellTrapWipeChecks.cs)
 
 ### Destruição por tipo (P092)
 

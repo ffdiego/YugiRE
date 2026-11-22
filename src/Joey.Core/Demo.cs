@@ -292,7 +292,8 @@ public sealed class DemoDuel
         }
         var spells = all.Where(c => EquipmentRules.Supports(c.Id) ||
             LifePointSpellRules.Supports(c.Id) || FieldSpellRules.Supports(c.Id) ||
-            (c.ClassCode == 22 && MonsterWipeRules.Scope(c.Id) is not null))
+            (c.ClassCode == 22 && (MonsterWipeRules.Scope(c.Id) is not null ||
+                SpellTrapWipeRules.Supports(c.Id))))
             .OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
@@ -323,6 +324,8 @@ public sealed class DemoDuel
         (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
+            (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id) &&
+                HasSpellTrapWipeTargets(Hand[index].Id)) ||
             (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
                 Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
@@ -458,6 +461,8 @@ public sealed class DemoDuel
             return true;
         }
         if (FirstFreeSpellZone() < 0) { message = "Activation needs a free spell/trap zone."; return false; }
+        if (Hand[index].ClassCode == 22 && SpellTrapWipeRules.Supports(Hand[index].Id))
+            return ActivateSpellTrapWipe(Hand[index], index, fromSet: false, out message);
         if (Hand[index].ClassCode == 22 &&
             MonsterWipeRules.Scope(Hand[index].Id) is not null)
         {
@@ -509,6 +514,8 @@ public sealed class DemoDuel
         int p = ActivePlayer;
         if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
+        if (card.ClassCode == 22 && SpellTrapWipeRules.Supports(card.Id))
+            return ActivateSpellTrapWipe(card, zone, fromSet: true, out message);
         if (card.Id == DestinyBoardRules.BoardResourceId)
         {
             // Sandbox constraint: activation from an already-set trap is
@@ -559,6 +566,59 @@ public sealed class DemoDuel
         message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
         return true;
     }
+    private bool HasSpellTrapWipeTargets(ushort resourceId, int sourceZone = -1)
+    {
+        int caster = ActivePlayer;
+        return SpellTrapWipeRules.CountOnSide(1 - caster, Spells, FieldSpells) > 0 ||
+            SpellTrapWipeRules.HitsOwnSide(resourceId) &&
+            SpellTrapWipeRules.CountOnSide(caster, Spells, FieldSpells, sourceZone) > 0;
+    }
+
+    private bool ActivateSpellTrapWipe(Card spell, int source, bool fromSet, out string message)
+    {
+        int caster = ActivePlayer;
+        if (!HasSpellTrapWipeTargets(spell.Id, fromSet ? source : -1))
+        {
+            message = "No eligible Spell or Trap Cards can be destroyed.";
+            return false;
+        }
+
+        if (fromSet) ClearSpellTrapSlot(caster, source);
+        else hands[caster].RemoveAt(source);
+        graves[caster].Add(spell);
+
+        int destroyed = DestroySpellTrapSide(1 - caster);
+        if (SpellTrapWipeRules.HitsOwnSide(spell.Id)) destroyed += DestroySpellTrapSide(caster);
+        message = $"{spell.Name}: destroyed {destroyed} Spell or Trap Card(s).";
+        return true;
+    }
+
+    private int DestroySpellTrapSide(int owner)
+    {
+        int count = 0;
+        for (int zone = 0; zone < 5; zone++)
+        {
+            if (Spells[owner, zone] is not Card card) continue;
+            RemoveEquipmentCore(owner, zone);
+            if (Spells[owner, zone] is not null)
+            {
+                ClearSpellTrapSlot(owner, zone);
+                graves[owner].Add(card);
+            }
+            count++;
+        }
+        if (FieldSpells[owner] is null) return count;
+        SendFieldSpellToGraveyard(owner);
+        return count + 1;
+    }
+
+    private void ClearSpellTrapSlot(int owner, int zone)
+    {
+        Spells[owner, zone] = null;
+        SpellFaceDown[owner, zone] = false;
+        spellSetTurn[owner, zone] = 0;
+    }
+
     private bool CanResolveDrawSpell(DrawSpellEffect effect, out string message)
     {
         // No chain can change the Deck between activation and resolution in this sandbox.
@@ -705,9 +765,7 @@ public sealed class DemoDuel
         equipment.Remove(e);
         // Preserve an unrelated occupant if a caller directly replaced a public fixture slot.
         if (ReferenceEquals(Spells[owner, sourceZone], e.Card))
-        {
-            Spells[owner, sourceZone] = null; SpellFaceDown[owner, sourceZone] = false;
-        }
+            ClearSpellTrapSlot(owner, sourceZone);
         graves[owner].Add(e.Card);
         return true;
     }
