@@ -12,6 +12,19 @@ internal static class LookAndFeelChecks
 
     public static void Run(Action<bool, string> check)
     {
+        // Original DAT separates duel particle/HUD scenes from Joey's bust-up
+        // reaction, signature summon and duel-result scenes.
+        check(NativeVisualArchiveScope.Includes(@"j\duel\effect\vija.txt") &&
+              NativeVisualArchiveScope.Includes(@"j\bust_up\reaction02.txt") &&
+              NativeVisualArchiveScope.Includes(@"j\bust_up\summon2.txt") &&
+              NativeVisualArchiveScope.Includes(@"j\bust_up\win\fukidashi\e_kati01.bmp") &&
+              NativeVisualArchiveScope.Includes(@"J\BUST_UP\REACTION\REACTION01_EYES1.BMP"),
+              "Visual DAT discovery: duel + bust_up manifests and character sprite layers");
+        check(!NativeVisualArchiveScope.Includes(@"j\list\list_bg.bmp") &&
+              !NativeVisualArchiveScope.Includes(@"j\bustup\reaction01.txt") &&
+              !NativeVisualArchiveScope.Includes(@"j\dueling\effect\vija.txt") &&
+              !NativeVisualArchiveScope.Includes(null),
+              "Visual DAT discovery: reject adjacent/non-cinematic archive branches");
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

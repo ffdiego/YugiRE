@@ -5,7 +5,8 @@ using System.Text;
 using System.Text.Json;
 
 /// <summary>
-/// Headless metadata-only inspection of the user's own data.dat. The report
+/// Headless metadata-only inspection of the user's own data.dat, including
+/// both j/duel effects and j/bust_up character/reaction cut-ins. The report
 /// contains small .txt manifests and image dimensions/hashes, never image
 /// pixels, card assets, executable code, or reconstructed artwork.
 /// </summary>
@@ -21,7 +22,7 @@ static class VisualManifestProbe
     {
         ArgumentNullException.ThrowIfNull(archive);
         var entries = archive.Entries
-            .Where(entry => entry.Name.StartsWith(@"j\duel\", StringComparison.OrdinalIgnoreCase))
+            .Where(entry => NativeVisualArchiveScope.Includes(entry.Name))
             .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         var manifests = new List<ManifestRecord>();
         var images = new List<ImageRecord>();
