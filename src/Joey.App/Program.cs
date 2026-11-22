@@ -104,6 +104,15 @@ static partial class Game
             return 1;
         }
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
+        // For the entire lifetime of an initialized DAT application, the
+        // window uses ONE original YGA cursor. Hide the operating-system
+        // pointer once at the window level, not inside the duel renderer.
+        bool useNativeCursor = error.Length == 0;
+        if (useNativeCursor)
+        {
+            _ = graphics.Texture(NativeDuelCursor.DefaultPointer);
+            Raylib.HideCursor();
+        }
         var canvas = Raylib.LoadRenderTexture(800, 600);
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
@@ -163,8 +172,6 @@ static partial class Game
                 else if (screen == "deck") DrawDeck();
             }
 
-            // Keep the system cursor. cursor_e_*.yga are action-cloud
-            // overlays, not an additional mouse pointer.
             Raylib.EndTextureMode();
             if (screen == "duel" && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
@@ -173,9 +180,13 @@ static partial class Game
                 { Console.Error.WriteLine("[visual-review] screenshot failed: " + ex.Message); }
             }
             Raylib.BeginDrawing(); Raylib.ClearBackground(Color.Black);
-            Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height), new Rectangle(origin.X, origin.Y, width * scale, height * scale), Vector2.Zero, 0, Color.White);
+            Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height),
+                new Rectangle(origin.X, origin.Y, width * scale, height * scale),
+                Vector2.Zero, 0, Color.White);
+            if (useNativeCursor) DrawWindowCursor(scale);
             Raylib.EndDrawing();
         }
+        if (useNativeCursor) Raylib.ShowCursor();
         Raylib.UnloadRenderTexture(canvas);
         duelTheme.Dispose();
         graphics.Dispose(); Raylib.CloseWindow(); return 0;
