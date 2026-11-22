@@ -9,7 +9,8 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | Lote | Famílias | Cartas | Mapeado | Parcial | Pendente |
 |---|---:|---:|---:|---:|---:|
 | [01-lp-destruicao-respostas](01-lp-destruicao-respostas.jsonl) | 7 | 35 | 23 | 12 | 0 |
-| **Total** | 7 | 35 | 23 | 12 | 0 |
+| [02-zonas-e-modificadores](02-zonas-e-modificadores.jsonl) | 18 | 59 | 31 | 28 | 0 |
+| **Total** | 25 | 94 | 54 | 40 | 0 |
 
 <!-- fim cobertura -->
 
@@ -18,6 +19,7 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 - Base `scratch/joey-knowledge.sqlite`, aberta via `file:scratch/joey-knowledge.sqlite?mode=ro`. A tabela `metadata` identifica o executável por SHA-256 `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`. Há 6.518 decompilações e 36 dos 482 endereços de callback têm entrada decompilada.
 - Para reconstruir o caminho de uma carta, consultar `card_callbacks` e `card_callback_slots` pelo ID, `decompilations` pelos endereços e `refs` pelos chamadores. Para entradas ausentes, os lotes podem usar instruções locais via `objdump -d -Mintel --start-address=<VA> --stop-address=<VA> ../passion/joey_pc.exe`, após conferir o SHA-256. As descrições do DAT inglês orientam a leitura e são parafraseadas.
 - O lote 01 usou decompilação para 00584E60, 00585C80, 00588D90 e 00581790 e seus auxiliares disponíveis. As entradas 00584D00, 00585130, 00586540 e 0057AAA0 foram conferidas por instruções. A tabela em 0057AC28 indexa o salto em 0057AC14 a partir do ID 652. Os slots indicados como pendência são pontos de entrada para continuação.
+- O lote 02 consultou a decompilação de 00579A00, 0057F360, 0057A630 e dos emissores disponíveis. As resoluções da tabela de callbacks foram conferidas por instruções, incluindo o desvio menor/maior em 00588442/0058844C e as três quantidades de compra em 005887E9–0058881A.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
 ## Reuso e validação
