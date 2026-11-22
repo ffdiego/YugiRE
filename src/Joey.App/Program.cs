@@ -245,7 +245,7 @@ static partial class Game
             texture.Width, texture.Height, w, h, degrees);
         Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
             new Rectangle(x + w / 2f, y + h / 2f, width, height),
-            new Vector2(width / 2, height / 2), degrees, Color.White);
+            new Vector2(width / 2f, height / 2f), degrees, Color.White);
     }
     static void DrawCards()
     {
