@@ -84,21 +84,31 @@ A cadeia de construtores, as esperas nativas e as cinco cartas da condição
 foram investigadas em [bust-up e Destiny Board](bust-up-cinematics-and-destiny-board.md).
 Nenhuma dessas observações deve elevar a badge até haver Draw ativo.
 
-## Cursor e balões de ação sobre a carta
+## Cursor e balões contextuais de ação
 
-O balão original de Summon/Set/Activate agora vem de
-`cursor/cursor_e_*.yga`. Seu limite inferior **sobrepõe 12 pixels
-do topo da carta**; calibrar a ponta opaca com a captura original.
-A primeira versão desenhava `cursor00.yga` como um segundo
-ponteiro; agora apenas o cursor do SO permanece visível.
-O inspetor `--inspect-visual-dat` continua exportando metadados
-dos 68 registros `cursor/` do DAT, inclusive `cursor00/01`,
-sem renderizá-los. Comparar a transição do botão direito
-(Summon → Set), a transparência e o posicionamento da ponta.
-F12 registra o mouse lógico e o nome da ação selecionada;
-o ponteiro do SO fica fora do PNG do render target.
-Esses elementos **não contam** nas 31 Draw inventariadas.
-Ver [pesquisa de cursor](native-cursor-and-action-clouds.md).
+Conforme duas capturas do Joey original, o balão de Summon é
+uma **variante do cursor com nuvem** que acompanha o mouse
+enquanto este passa sobre uma carta; não é um overlay fixo
+sobre a borda da carta.
+
+No YugiRE, `cursor00.yga` agora fica ativo em **todas as telas
+da janela**, incluindo letterboxing ao redimensionar. Quando
+o Core permite uma ação, o cliente troca **o próprio sprite**
+por `cursor_e_summon/set/act.yga` — um único sprite por
+quadro, sem duplicar o ponteiro e sem mostrar ações ilegais.
+Armadilha na mão exibe Set por padrão; botão direito
+não oferece Activate. Uma carta sem ação legal volta ao
+cursor00 normal.
+
+A renderização final ocorre na janela, **fora do render target
+de 800×600**, e F12 contém metadados `cursorSprite`
+e `actionCloud`; o cursor não aparece no PNG do canvas.
+Para comparar posição/hotspot, capturar a janela inteira
+junto do original. Ainda não conhecemos o hotspot exato
+nem a função de `cursor01.yga`. O inspetor DAT cobre
+a pasta `cursor/` completa.
+
+Ver [investigação e roteiro](native-cursor-and-action-clouds.md).
 
 ## Matriz de comparação
 
