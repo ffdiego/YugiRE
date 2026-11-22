@@ -12,6 +12,10 @@ public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool Fac
 public sealed record DemoNormalSummon(int Player, int Zone, Card Card, bool FaceDown);
 /// <summary>Observable Exodia win; five card snapshots in head, arms, legs order.</summary>
 public sealed record DemoExodiaCompletion(int Player, IReadOnlyList<Card> Pieces);
+/// <summary>Observed field placement of a Spirit Message during an opponent End Phase.</summary>
+public sealed record DemoDestinyBoardMessagePlaced(int Player, int Zone, Card Card, bool FromDeck);
+/// <summary>Five face-up field cards satisfy Destiny Board's F-I-N-A-L condition.</summary>
+public sealed record DemoDestinyBoardCompletion(int Player, IReadOnlyList<Card> Pieces);
 
 // Temporary local two-player turn engine. Deck order and progression are demo policy.
 // Selected RE-backed battle/spell rules are marked individually; see src/README.md.
@@ -20,6 +24,8 @@ public sealed class DemoDuel
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
     /// <summary>Fired once after a player completes all five unique Exodia pieces.</summary>
     public event Action<DemoExodiaCompletion>? ExodiaCompleted;
+    public event Action<DemoDestinyBoardMessagePlaced>? DestinyBoardMessagePlaced;
+    public event Action<DemoDestinyBoardCompletion>? DestinyBoardCompleted;
     /// <summary>Observational visual event after a valid tribute reaches the Graveyard.</summary>
     public event Action<DemoMonsterTribute>? MonsterTributed;
     public event Action<DemoHandTransfer>? HandTransferred;
@@ -125,6 +131,58 @@ public sealed class DemoDuel
     public bool IsMainPhase2 => Phase == DemoPhase.Main && battlePhaseEndedThisTurn;
     public int? Winner { get; private set; }
     public int? ExodiaWinner { get; private set; }
+    public int? DestinyBoardWinner { get; private set; }
+
+    private void CheckDestinyBoard(int player)
+    {
+        if (GameOver) return;
+        var complete = DestinyBoardRules.CompleteField(player, Spells, SpellFaceDown);
+        if (complete is null) return;
+        DestinyBoardWinner = Winner = player;
+        DestinyBoardCompleted?.Invoke(new(player, complete));
+    }
+
+    private void ResolveDestinyBoardEndPhase(int endingPlayer)
+    {
+        // The bounded sandbox auto-places ONE next message on the owner's
+        // opponent End Phase. It never shuffles the deck or spends LP.
+        for (int owner = 0; owner < 2 && !GameOver; owner++)
+        {
+            if (owner == endingPlayer) continue;
+            ushort? message = DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown);
+            if (message is not ushort resourceId) continue;
+            int zone = Enumerable.Range(0, 5)
+                .FirstOrDefault(z => Spells[owner, z] is null, -1);
+            if (zone < 0) continue;
+
+            Card? chosen = null;
+            bool fromDeck = false;
+            int index = hands[owner].FindIndex(card => card.Id == resourceId);
+            if (index >= 0)
+            {
+                chosen = hands[owner][index];
+                hands[owner].RemoveAt(index);
+            }
+            else
+            {
+                // Search by card identity, preserving the relative order of
+                // all remaining deck cards and consuming no Core RNG.
+                Card[] cards = decks[owner].ToArray();
+                index = Array.FindIndex(cards, card => card.Id == resourceId);
+                if (index < 0) continue;
+                chosen = cards[index];
+                decks[owner].Clear();
+                for (int i = 0; i < cards.Length; i++)
+                    if (i != index) decks[owner].Enqueue(cards[i]);
+                fromDeck = true;
+            }
+
+            Spells[owner, zone] = chosen;
+            SpellFaceDown[owner, zone] = false;
+            DestinyBoardMessagePlaced?.Invoke(new(owner, zone, chosen, fromDeck));
+            CheckDestinyBoard(owner);
+        }
+    }
 
     private void CheckExodia(int player)
     {
@@ -256,6 +314,7 @@ public sealed class DemoDuel
     public bool CanSetFromHand(int index) => index >= 0 && index < Hand.Count && (Hand[index].IsMonster
         ? CanSummonFromHand(index)
         : !ActionsBlocked && Phase == DemoPhase.Main && Hand[index].ClassCode is 21 or 22 or 23 &&
+           !DestinyBoardRules.IsMessage(Hand[index].Id) &&
           (FieldSpellRules.Supports(Hand[index].Id) ? FieldSpells[ActivePlayer] is null : FirstFreeSpellZone() >= 0));
     public bool CanActivateFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main &&
         index >= 0 && index < Hand.Count &&
@@ -433,6 +492,21 @@ public sealed class DemoDuel
         int p = ActivePlayer;
         if (ActionsBlocked || Phase != DemoPhase.Main || zone < 0 || zone >= 5 ||
             !SpellFaceDown[p, zone] || Spells[p, zone] is not Card card) return false;
+        if (card.Id == DestinyBoardRules.BoardResourceId)
+        {
+            // Sandbox constraint: activation from an already-set trap is
+            // offered in the owner's Main Phase from a later turn.
+            // Opponent-response timing is not yet emulated.
+            if (spellSetTurn[p, zone] >= Turn)
+            {
+                message = "Destiny Board cannot activate on its Set turn.";
+                return false;
+            }
+            SpellFaceDown[p, zone] = false;
+            message = "Destiny Board face-up: Spirit Messages resolve on opponent End Phases.";
+            CheckDestinyBoard(p);
+            return true;
+        }
         if (card.ClassCode == 22 && MonsterWipeRules.Scope(card.Id) is not null)
         {
             if (MonsterWipeRules.Targets(card.Id, p, Monsters, MonsterFaceDown).Count == 0)
@@ -1699,7 +1773,14 @@ public sealed class DemoDuel
             message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
             return true;
         }
-        AdvanceTurn(); message = "Turn changed.";
+        ResolveDestinyBoardEndPhase(ActivePlayer);
+        if (GameOver)
+            message = "Destiny Board: F-I-N-A-L complete.";
+        else
+        {
+            AdvanceTurn();
+            message = "Turn changed.";
+        }
         return true;
     }
     public bool DiscardForEndTurn(int index, out string message)
@@ -1710,7 +1791,17 @@ public sealed class DemoDuel
         hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
         HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
         if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";
-        else { AdvanceTurn(); message = $"Discarded {card.Name}. Turn changed."; }
+        else
+        {
+            ResolveDestinyBoardEndPhase(ActivePlayer);
+            if (GameOver)
+                message = $"Discarded {card.Name}. Destiny Board: F-I-N-A-L complete.";
+            else
+            {
+                AdvanceTurn();
+                message = $"Discarded {card.Name}. Turn changed.";
+            }
+        }
         return true;
     }
     private void AdvanceTurn()

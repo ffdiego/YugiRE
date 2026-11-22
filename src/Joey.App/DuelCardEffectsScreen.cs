@@ -27,6 +27,9 @@ static partial class Game
     // bust-up pipeline, but the perspective gate and sprite timing
     // are not mapped yet. Never treat this as an active animation.
     static NativeCinematicCue? lastSignatureCandidate;
+    // The native Vija Draw has not been ported. Retain the route for F12
+    // only; no synthetic pause or invented five-letter overlay.
+    static NativeCinematicCue? lastDestinyBoardCandidate;
     static bool CanPlayCardEffects => flight is null && attackCue is null && !ActivationBusy;
     static bool MotionBusy => flight is not null || attackCue is not null || ActivationBusy || CardEffectsBusy;
 
@@ -35,6 +38,10 @@ static partial class Game
         cardEffects.Clear();
         cardEffectClock.Reset();
         lastSignatureCandidate = null;
+        lastDestinyBoardCandidate = null;
+        duel.DestinyBoardCompleted += completed =>
+            lastDestinyBoardCandidate =
+                NativeCinematicRouting.DestinyBoardVictory(completed.Player);
         duel.MonsterNormalSummoned += normal =>
             lastSignatureCandidate = NativeCinematicRouting.SignatureCandidate(
                 normal.Player, normal.Card.Id, normal.FaceDown);

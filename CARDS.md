@@ -143,6 +143,24 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 
 Todas as 13 magias de campo identificadas em P036 agora possuem efeitos básicos jogáveis no sandbox, reutilizando a zona FIELD e o mesmo cálculo dinâmico. Seis dependem de tipos, seis de atributos e Chorus depende da posição de defesa; Sogen se aplica a Warrior e Beast-Warrior. Os efeitos alcançam os dois lados do campo, e substituições removem os anteriores ao cemitério de seu dono. A interface existente aceita ativação da mão ou de carta setada. Para fontes e limites, consulte `docs/cards/p036-field-spells-sandbox.md`. Ainda não há paridade completa de interações/negação, e o mapeamento Sea Serpent = classe 5 precisa de conferência no DAT completo.
 
+## Destiny Board / F-I-N-A-L (P259 + P009)
+
+A sequência `Destiny Board` (ID 1528) + `Spirit Message`
+I/N/A/L (1541–1544) possui agora uma primeira implementação
+jogável no `DemoDuel`: ativação de Trap setada, uma mensagem
+por End Phase do adversário, busca na mão/deck e vitória ao
+reunir as cinco cartas face-up nas zonas de magia/armadilha.
+O Core emite `DestinyBoardMessagePlaced` e
+`DestinyBoardCompleted` para apresentação futura.
+
+**Status: Partial / SandboxOnly**, com testes determinísticos
+para ambos os jogadores. Ativação de Trap durante o turno
+adversário, remoção conjunta, regras de resposta, IA e
+animação nativa Vija continuam pendentes. A mera presença
+dos cinco IDs conhecidos não basta para marcar o perfil
+P259 como `Verified` ou completo em todos os duelos.
+Ver [regras de F-I-N-A-L](docs/cards/destiny-board-sandbox.md).
+
 ## Próxima lacuna concreta
 
 A carta **Mooyan Curry (resource ID 337)** exige escolher quem receberá 200 LP, portanto permanece fora da tabela de resolução automática. Adicionar seleção de jogador na interface/ações antes de considerá-la jogável. Famílias com efeito de resposta/negação continuam pendentes.

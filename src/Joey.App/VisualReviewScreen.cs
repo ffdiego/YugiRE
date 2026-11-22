@@ -56,6 +56,16 @@ static partial class Game
             lastSignatureCandidateResourceId = lastSignatureCandidate?.CardResourceId,
             lastSignatureCandidateManifest = lastSignatureCandidate?.Manifest,
             signatureCinematicRendered = lastSignatureCandidate?.HasPlayableDraw ?? false,
+            destinyBoardWinner = duel.DestinyBoardWinner,
+            destinyBoardManifest = lastDestinyBoardCandidate?.Manifest,
+            destinyBoardCinematicRendered = lastDestinyBoardCandidate?.HasPlayableDraw ?? false,
+            faceUpSpellResourceIds = Enumerable.Range(0, 2)
+                .Select(player => Enumerable.Range(0, 5)
+                    .Where(zone => !duel.SpellFaceDown[player, zone] &&
+                        duel.Spells[player, zone] is not null)
+                    .Select(zone => duel.Spells[player, zone]!.Id)
+                    .ToArray())
+                .ToArray(),
             flightUpdate = flight is null ? (int?)null : travelUpdate,
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
             activationEffect = activation.Current?.Kind.ToString() ?? "None",

@@ -76,6 +76,16 @@ internal static class LookAndFeelChecks
               cinematicOrder.ElapsedUpdates == 0,
               "Cinematic scheduler: Exodia begins on the first sample after the last card flight");
 
+        // Destiny Board is a distinct winner/cinematic route, but Vija
+        // 004584C0 is still Pending and must not block the input FIFO.
+        var destinyBoardCue = NativeCinematicRouting.DestinyBoardVictory(1);
+        check(destinyBoardCue.Kind == NativeCinematicKind.DestinyBoard &&
+              destinyBoardCue.Player == 1 && destinyBoardCue.CardResourceId == 1528 &&
+              destinyBoardCue.Manifest == @"j\duel\effect\vija.txt" &&
+              !destinyBoardCue.HasPlayableDraw &&
+              NativeCinematicRouting.ImplementedUpdates(destinyBoardCue) is null,
+              "Destiny Board cinematic: separate Vija route without an invented renderer or input wait");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
