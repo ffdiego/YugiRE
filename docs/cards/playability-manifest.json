@@ -167,6 +167,35 @@
       ]
     },
     {
+      "id": "spell.monster-wipe-face-up-type",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Non-targeting destruction of all face-up monsters of the specified type on both fields",
+        "Activate from hand or own set Spell/Trap zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        652,
+        659,
+        661,
+        662,
+        663,
+        1036,
+        1037
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/MonsterWipeChecks.cs",
+        "docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl"
+      ],
+      "limitations": [
+        "Uses the DAT type in the sandbox. Dynamic type changes, native protection and chains are outside scope.",
+        "Sandbox activation requires at least one eligible monster. Native activation with an empty destruction mask remains unverified."
+      ]
+    },
+    {
       "id": "trap.summon-response",
       "kind": "Trap",
       "subtype": "Normal",

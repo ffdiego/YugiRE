@@ -2,7 +2,7 @@ namespace Joey.Core;
 
 /// <summary>
 /// Bounded non-targeting monster destruction for the C# sandbox.
-/// The native callback families P037/P039 are catalogued, but effect
+/// The native callback families P037/P039/P092 are catalogued, but effect
 /// immunity, chains and original resolution timing are not yet modeled.
 /// </summary>
 public enum MonsterWipeScope { OpponentOnly, BothPlayers }
@@ -24,6 +24,20 @@ public static class MonsterWipeRules
     {
         DarkHole => MonsterWipeScope.BothPlayers,
         Raigeki => MonsterWipeScope.OpponentOnly,
+        _ => RequiredFaceUpType(resourceId) is null ? null : MonsterWipeScope.BothPlayers
+    };
+
+    // P092 candidate filter at 0057AAA0. The sandbox supplies the DAT type
+    // because no dynamic type changes are modeled here.
+    private static int? RequiredFaceUpType(ushort resourceId) => resourceId switch
+    {
+        652 => 15,  // Warrior Elimination
+        659 => 7,   // Stain Storm
+        661 => 10,  // Eradicating Aerosol
+        662 => 6,   // Breath of Light
+        663 => 8,   // Eternal Draught
+        1036 => 18, // Last Day of Witch
+        1037 => 3,  // Exile of the Wicked
         _ => null
     };
 
@@ -33,7 +47,7 @@ public static class MonsterWipeRules
     {
         var scope = Scope(resourceId);
         if (scope is null) return [];
-        return TargetsForScope(scope.Value, caster, monsters, faceDown);
+        return CollectTargets(scope.Value, caster, monsters, faceDown, RequiredFaceUpType(resourceId));
     }
 
     /// <summary>
@@ -56,7 +70,11 @@ public static class MonsterWipeRules
     }
 
     public static IReadOnlyList<MonsterWipeTarget> TargetsForScope(
-        MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown)
+        MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown) =>
+        CollectTargets(scope, caster, monsters, faceDown, null);
+
+    private static IReadOnlyList<MonsterWipeTarget> CollectTargets(
+        MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown, int? requiredFaceUpType)
     {
         if (caster is < 0 or > 1) return [];
         var result = new List<MonsterWipeTarget>(10);
@@ -66,8 +84,10 @@ public static class MonsterWipeRules
                 continue;
             for (int zone = 0; zone < 5; zone++)
             {
-                if (monsters[p, zone] is Card card)
-                    result.Add(new(p, zone, card, faceDown[p, zone]));
+                if (monsters[p, zone] is not Card card) continue;
+                bool hidden = faceDown[p, zone];
+                if (requiredFaceUpType is int type && (hidden || card.ClassCode != type)) continue;
+                result.Add(new(p, zone, card, hidden));
             }
         }
         return result.AsReadOnly();

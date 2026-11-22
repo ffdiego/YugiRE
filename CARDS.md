@@ -33,6 +33,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | P169 (Spear Cretin) | **Done** (1 ID no sandbox) | `DemoDuel.MonsterWasFlipped`, `BattleGraveyardEffectChecks.cs` | FLIP diferido no envio ao cemitério, seleção para cada jogador; sem paridade nativa |
 | P165 (Sonic Bird, Senju of the Thousand Hands) | **Done** (2 IDs no sandbox) | `RitualSearchRules.cs`, `DemoDuel`, `RitualSearcherChecks.cs`, UI raylib | Busca opcional por Magia/Monstro de Ritual no Normal/Flip Summon; não na revelação em batalha |
 | P037/P039 (Dark Hole, Raigeki) | **Done** (2 magias no sandbox) | `MonsterWipeRules.cs`, `DemoDuel`, `MonsterWipeChecks.cs` | Destruição em massa sem alvo, enfileira buscas de Sangan/Witch e ressurreição de Spear Cretin; sem chains/negação |
+| P092 (destruição por tipo) | **Done** (7 magias no sandbox) | `MonsterWipeRules.cs`, `DemoDuel`, `MonsterWipeChecks.cs` | Monstros face-up do tipo indicado nos dois lados, inclusive em defesa |
 | P196/P038 (Trap Hole, Torrential Tribute) | **Done** (2 armadilhas no sandbox) | `SummonTrapRules.cs`, `DemoDuel`, `SummonTrapChecks.cs`, UI raylib | Resposta opcional a Normal/Flip Summon, sem cadeias ou paridade nativa; Special Summon pendente |
 | P200/P192 (Magic Cylinder e Negate Attack) | **Done** (2 armadilhas no sandbox) | `AttackTrapRules.cs`, `DemoDuel`, `AttackNegationTrapChecks.cs` | Dano refletido e encerramento da Battle Phase; sem chains nem paridade nativa |
 | P201 (Mirror Force) | **Done** (1 armadilha no sandbox) | `AttackTrapRules.cs`, `DemoDuel`, `AttackTrapChecks.cs`, UI raylib | Resposta à declaração de ataque antes do dano/FLIP, destruição dos monstros em ATK; sem chains ou replay nativo |
@@ -95,6 +96,13 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 1109 | Senju of the Thousand Hands | Done (sandbox) | No Normal ou Flip Summon pode buscar 1 Monstro de Ritual do próprio Main Deck para a mão |
 | 335 | Dark Hole | Done (sandbox) | Destrói todos os monstros de ambos os lados, sem disparar FLIP por simples destruição |
 | 336 | Raigeki | Done (sandbox) | Destrói todos os monstros do adversário; ignora a posição sem selecionar alvos |
+| 652 | Warrior Elimination | Done (sandbox) | Destrói Warriors face-up dos dois lados |
+| 659 | Stain Storm | Done (sandbox) | Destrói Machines face-up dos dois lados |
+| 661 | Eradicating Aerosol | Done (sandbox) | Destrói Insects face-up dos dois lados |
+| 662 | Breath of Light | Done (sandbox) | Destrói Rocks face-up dos dois lados |
+| 663 | Eternal Draught | Done (sandbox) | Destrói Fish face-up dos dois lados |
+| 1036 | Last Day of Witch | Done (sandbox) | Destrói Spellcasters face-up dos dois lados |
+| 1037 | Exile of the Wicked | Done (sandbox) | Destrói Fiends face-up dos dois lados |
 | 1002 | Trap Hole | Done (sandbox) | Armadilha previamente Set reage a Normal/Flip Summon adversária com ATK atual ≥1000 e destrói o monstro |
 | 1425 | Torrential Tribute | Done (sandbox) | Armadilha previamente Set reage a Normal/Flip Summon e destrói todos os monstros; resposta a Special Summon pendente |
 | 1214 | Magic Cylinder | Done (sandbox) | Resposta a ataque adversário: cancela o ataque e reflete ATK atual como dano ao atacante; Battle Phase continua |
@@ -152,6 +160,10 @@ Cada fonte de aura face-up contribui para os monstros face-up dos dois lados, in
 O ataque direto normal continua disponível em campo adversário vazio. Com defensores presentes, o cliente oferece a escolha entre um monstro adversário e a espada no ponto de impacto direto existente. O uso do sprite DAT nesse ponto como controle clicável é uma decisão transitória do cliente. Os ataques passam pela janela de resposta e a permissão é conferida novamente antes do dano. O filtro de 812 ignora defensores ocultos segundo 0056A810 e ainda precisa de comparação em duelo no Joey original. A invocação por fusão de 812 continua em aberto.
 
 Os deltas e permissões vêm do [lote 10 da campanha estática](docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl). Os cenários em [MonsterBattleRuleChecks](src/tests/Joey.Tests/MonsterBattleRuleChecks.cs) cobrem as famílias no Core. A Alpha inclui Hoshiningen e Jinzo #7 no baralho padrão.
+
+### Destruição por tipo (P092)
+
+O filtro nativo em `0057AAA0` exige face-up para os sete IDs, inclusive quando o DAT descreve apenas “todos”. A resolução `00586540` percorre os dois lados e entrega uma máscara a `00576940`. No sandbox, o tipo vem do DAT e a ativação da mão ou de Set exige ao menos um monstro elegível. A disponibilidade com máscara vazia e os bloqueios de proteção nativa continuam em aberto. Eternal Rest (655) permanece sem regra no sandbox enquanto a contagem dos tipos de vínculo 1, 4 e 5 está em investigação. [Campanha estática P092](docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl)
 
 ## Evidências nativas (não confundir com paridade C# completa)
 

@@ -2,8 +2,8 @@ using Joey.Core;
 
 internal static class MonsterWipeChecks
 {
-    private static Card Monster(ushort id, int index, int atk = 1000, int def = 800) =>
-        new(index, id, $"Monster {id}", "", (3u << 20) | (4u << 25) |
+    private static Card Monster(ushort id, int index, int atk = 1000, int def = 800, int type = 3) =>
+        new(index, id, $"Monster {id}", "", ((uint)type << 20) | (4u << 25) |
             ((uint)(atk / 10) << 9) | (uint)(def / 10));
     private static Card Spell(ushort id, int index, int classCode = 22) =>
         new(index, id, $"Spell {id}", "", (uint)classCode << 20);
@@ -12,6 +12,7 @@ internal static class MonsterWipeChecks
 
     public static void Run(Action<bool, string> check)
     {
+        RunTypeWipes(check);
         var darkHole = Spell(335, 850);
         var raigeki = Spell(336, 851);
         var invalid = Spell(336, 852, classCode: 21);
@@ -161,5 +162,68 @@ internal static class MonsterWipeChecks
               spearDuel.ResolveCardSelection(0, out _) &&
               spearDuel.Monsters[0, 0] == own && spearDuel.Monsters[1, 0] == lowDef,
               "Dark Hole: previously flipped Spear Cretin starts own and opponent graveyard selections after wipe");
+    }
+
+    private static void RunTypeWipes(Action<bool, string> check)
+    {
+        (ushort Id, int Type)[] effects =
+            [(652, 15), (659, 7), (661, 10), (662, 6), (663, 8), (1036, 18), (1037, 3)];
+        foreach (var (id, type) in effects)
+        {
+            var spell = Spell(id, 200);
+            var nearMatch = Monster(25, 201, type: type);
+            var farMatch = Monster(24, 202, type: type);
+            var hiddenMatch = Monster(50, 203, type: type);
+            var other = Monster(56, 204, type: type == 15 ? 7 : 15);
+            var duel = DemoDuel.FromPartialObservation(0, [spell],
+                Slots(nearMatch, hiddenMatch, other), Slots(farMatch, other, hiddenMatch), 8000);
+            duel.MonsterFaceDown[0, 1] = duel.MonsterFaceDown[1, 2] = true;
+            duel.DefensePosition[0, 1] = duel.DefensePosition[1, 2] = true;
+            duel.DefensePosition[1, 0] = true;
+            List<DemoMonsterDestruction> destroyed = [];
+            duel.MonsterDestroyed += destroyed.Add;
+            check(duel.CanActivateFromHand(0) && duel.Play(0, out _) &&
+                  duel.LastMonsterWipe is { Caster: 0, DestroyedPlayer0: 1, DestroyedPlayer1: 1, DestroyedFaceDown: 0 } wipe &&
+                  wipe.EffectResourceId == id &&
+                  duel.Monsters[0, 0] is null && duel.Monsters[1, 0] is null &&
+                  duel.Monsters[0, 1] == hiddenMatch && duel.Monsters[1, 2] == hiddenMatch &&
+                  duel.MonsterFaceDown[0, 1] && duel.MonsterFaceDown[1, 2] &&
+                  duel.Monsters[0, 2] == other && duel.Monsters[1, 1] == other &&
+                  duel.Hand.Count == 0 && duel.Graveyard(0).SequenceEqual([spell, nearMatch]) &&
+                  duel.Graveyard(1).SequenceEqual([farMatch]) &&
+                  destroyed.SequenceEqual([new(0, 0, nearMatch, false, false), new(1, 0, farMatch, false, true)]) &&
+                  duel.PendingFlipTarget is null && duel.PendingCardSelection is null,
+                $"P092 {id}: same type face-up on both sides, including defense, and no FLIP");
+        }
+
+        var warriorElimination = Spell(652, 200);
+        var warrior = Monster(25, 201, type: 15);
+        var machine = Monster(24, 202, type: 7);
+        var set = DemoDuel.FromPartialObservation(1, [warriorElimination],
+            Slots(warrior), Slots(machine), 8000);
+        set.MonsterFaceDown[0, 0] = set.DefensePosition[0, 0] = true;
+        check(!set.CanActivateFromHand(0) && !set.Play(0, out _) &&
+              set.Hand.Single() == warriorElimination && set.Graveyard(1).Count == 0 &&
+              set.SetFromHand(0, out _) && !set.ActivateSetSpell(0, out _) &&
+              set.SpellFaceDown[1, 0] && set.Spells[1, 0] == warriorElimination &&
+              set.LastMonsterWipe is null,
+            "Warrior Elimination: a hidden Warrior is insufficient and failed activations preserve the spell");
+        set.MonsterFaceDown[0, 0] = false;
+        check(set.ActivateSetSpell(0, out _) && set.Spells[1, 0] is null &&
+              set.LastMonsterWipe is { Caster: 1, DestroyedPlayer0: 1, DestroyedPlayer1: 0, DestroyedFaceDown: 0 } &&
+              set.Monsters[0, 0] is null && set.Monsters[1, 0] == machine &&
+              set.Graveyard(0).Single() == warrior && set.Graveyard(1).Single() == warriorElimination,
+            "Warrior Elimination: set activation uses current face state with player 1 as caster");
+        check(MonsterWipeRules.Scope(655) is null,
+            "P092 Eternal Rest has no type-wipe rule");
+
+        var exile = Spell(1037, 205);
+        var sangan = Monster(47, 206);
+        var fiend = Monster(26, 207);
+        var trigger = DemoDuel.FromPartialObservation(0, [exile], Slots(sangan), Slots(fiend),
+            8000, side0Deck: [warrior]);
+        check(trigger.Play(0, out _) && trigger.Monsters[0, 0] is null &&
+              trigger.Monsters[1, 0] is null && trigger.PendingCardSelection is { EffectResourceId: 47 },
+            "Exile of the Wicked finishes the wipe before Sangan opens a search");
     }
 }

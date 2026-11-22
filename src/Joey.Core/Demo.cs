@@ -291,7 +291,8 @@ public sealed class DemoDuel
             monsters.Insert(0, flip);
         }
         var spells = all.Where(c => EquipmentRules.Supports(c.Id) ||
-            LifePointSpellRules.Supports(c.Id) || FieldSpellRules.Supports(c.Id))
+            LifePointSpellRules.Supports(c.Id) || FieldSpellRules.Supports(c.Id) ||
+            (c.ClassCode == 22 && MonsterWipeRules.Scope(c.Id) is not null))
             .OrderBy(c => c.Id == 300 ? 1 : 0).ToList();
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
