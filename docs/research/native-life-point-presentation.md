@@ -135,3 +135,19 @@ Os números do LP são desenhados com recorte correto do atlas, ampliados para 3
 O texto flutuante de perda/cura de LP já passa por `damage00.bmp` / `damage01.bmp` e pelo sampler `NativeFloatingLifeDigits`, reconstruído a partir de `004806F0`. Portanto ele também é composto de sprites; a animação usa cossenos aproximados e posições iniciais provisórias. **Não** converter esse efeito para GDI/Raylib Text.
 
 O manifesto `j\duel\font\number.txt` no DAT real é a próxima evidência para conferir quais colunas/variante foram selecionadas e se o atlas grande corresponde ao LP permanente em todos os estados.
+
+
+## Diagnóstico reproduzível de `number.txt` (22/11/2026)
+
+A extração previamente enviada ao chat contém `selection-manifests.json`, mas **não** o `number.txt` completo. O arquivo completo `scratch/visual-review/dat-manifests.json` existe na instalação Windows do usuário após `--inspect-visual-dat`; seu conteúdo numérico ainda não foi verificado aqui. Não apresentar atlas, número de colunas ou tamanho de glifo como confirmados antes de executar o diagnóstico sobre essa fonte.
+
+```powershell
+git pull
+python scripts/inspect_native_life_dat.py
+```
+
+O script lê o relatório completo já criado em `scratch/visual-review/dat-manifests.json` e gera `scratch/visual-review/life-font-evidence.json`, contendo `number.txt` original, argumentos de cada linha, dimensões dos BMPs relevantes e a interpretação **atual do cliente** sobre as colunas e o atlas selecionado. Nenhum pixel, hash de imagem nem BMP é exportado.
+
+Os quatro alvos são `duel_fontl.bmp`, `duel_fontm_y.bmp`, `damage00.bmp` e `damage01.bmp`. `0047C310` carrega `j/duel/font/number.txt`, `004803C0` indexa o atlas por dígito e `004806F0` gera o movimento dos números flutuantes. `NativeLifeHud.TryFontColumns` assume que o segundo token contém de 10 a 12 colunas; o script mostra quando essa heurística falha. Altura atual de 32px e âncoras do LP ainda são estimativas de captura e não devem ser declaradas como parity.
+
+**Próxima decisão:** usar o JSON resultante para conferir qual atlas o executável seleciona por condição, número de glifos e escala, e só depois substituir as constantes provisórias da apresentação do LP. Se o script indicar ausência do atlas ou largura incompatível, registrar falha sem retornar silenciosamente à fonte da raylib.
