@@ -149,14 +149,17 @@ internal static class LookAndFeelChecks
         // COLORREF (BGR numeric) colors and a 184px scrolling viewport.
         check(NativeDetailPanel.TextX == 8 &&
               NativeDetailPanel.TextY == 365 &&
-              NativeDetailPanel.TextWidth == 184 &&
+              NativeDetailPanel.TextRight == 184 &&
+              NativeDetailPanel.TextWidth == 176 &&
               NativeDetailPanel.TextBottom == 526 &&
+              NativeDetailPanel.ScrollWidgetX == 186 &&
+              NativeDetailPanel.ScrollWidgetY == 364 &&
               NativeDetailPanel.TextHeight == 161 &&
               NativeDetailPanel.EnglishTextSize == 14 &&
               NativeDetailPanel.EnglishLineAdvance == 14 &&
               NativeDetailPanel.EnglishFace == "Courier New" &&
               NativeDetailPanel.VisibleLineCount() == 11,
-              "Native detail: recovered text viewport and English GDI font contract");
+              "Native detail: recovered text viewport, scroll origin and English GDI font contract");
         check(NativeDetailPanel.DecodeColorRef(NativeDetailPanel.NameColorRef) ==
                   ((byte)16, (byte)16, (byte)16) &&
               NativeDetailPanel.DecodeColorRef(NativeDetailPanel.StatsColorRef) ==
@@ -166,7 +169,7 @@ internal static class LookAndFeelChecks
               "Native detail: decode source COLORREF values as RGB without swapping red/blue");
         var richLines = NativeDetailPanel.Wrap(
             "Dragon Knight", "ATK 2400 / DEF 2000",
-            "A long description about damage.\\nAnother paragraph.",
+            "A long description about damage." + Environment.NewLine + "Another paragraph.",
             value => value.Length * 7, width: 63);
         check(richLines.Take(2).SequenceEqual([
                   new NativeDetailPanel.TextLine("Dragon", NativeDetailPanel.LineKind.Name),
