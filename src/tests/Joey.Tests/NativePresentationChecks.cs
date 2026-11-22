@@ -53,7 +53,7 @@ internal static class NativePresentationChecks
             check(card.Degrees == (near ? 0 : 180) + (defense ? 90 : 0) &&
                   card.FaceDown == hidden &&
                   card.Bounds.Width == (defense ? 72 : 50) && card.Bounds.Height == (defense ? 50 : 72) &&
-                  card.AttributesCenter == (hidden ? null : new CardPoint(525, near ? 398 : 202)),
+                  card.AttributesCenter == (!near && hidden ? null : new CardPoint(525, near ? 398 : 202)),
                   $"Native card geometry: near={near}, defense={defense}, hidden={hidden}");
         }
         check(DuelCardLayout.Center(DuelCardZone.Spell, true, 0) == new CardPoint(369, 460) &&
