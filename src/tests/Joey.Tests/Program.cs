@@ -119,6 +119,7 @@ DifferentialNormalSummonTests.Run(Check,
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
+NormalSummonCinematicChecks.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
 FlipDeckFlowChecks.Run(Check);
