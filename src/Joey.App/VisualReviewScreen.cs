@@ -59,10 +59,12 @@ static partial class Game
             destinyBoardWinner = duel.DestinyBoardWinner,
             destinyBoardManifest = lastDestinyBoardCandidate?.Manifest,
             destinyBoardCinematicRendered = lastDestinyBoardCandidate?.HasPlayableDraw ?? false,
-            destinyBoardFaceUpCards = Enumerable.Range(0, 5)
-                .Where(zone => !duel.SpellFaceDown[0, zone] &&
-                    duel.Spells[0, zone] is Card)
-                .Select(zone => duel.Spells[0, zone]!.Id)
+            faceUpSpellResourceIds = Enumerable.Range(0, 2)
+                .Select(player => Enumerable.Range(0, 5)
+                    .Where(zone => !duel.SpellFaceDown[player, zone] &&
+                        duel.Spells[player, zone] is not null)
+                    .Select(zone => duel.Spells[player, zone]!.Id)
+                    .ToArray())
                 .ToArray(),
             flightUpdate = flight is null ? (int?)null : travelUpdate,
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
