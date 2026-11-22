@@ -8,6 +8,7 @@ on:
       - 'docs/cards/pack-index.json'
       - 'docs/cards/monster-subtypes.json'
       - 'scripts/publish_playability.py'
+      - 'tests/test_publish_playability.py'
       - 'docs/architecture/visual-function-coverage.json'
       - 'docs/architecture/native-renderer-inventory.md'
       - 'scripts/publish_visual_coverage.py'

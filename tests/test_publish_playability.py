@@ -12,15 +12,20 @@ class PublishedPlayabilityTests(unittest.TestCase):
         all_cards = counts(cards, status, subtypes, 7)
         joey = counts(cards, status, subtypes, 4)
         self.assertEqual((len(cards), all_cards["total"], joey["total"]), (771, 771, 350))
-        self.assertEqual((all_cards["done"], all_cards["pct"]), (318, 41.25))
-        self.assertEqual((joey["done"], joey["pct"]), (99, 28.29))
+        complete = {rid for rid in cards if status.get(rid) in {"Done", "Verified"}}
+        joey_complete = {rid for rid in complete if cards[rid]["mask"] & 4}
+        self.assertEqual((all_cards["done"], all_cards["pct"]),
+                         (len(complete), round(100 * len(complete) / 771, 2)))
+        self.assertEqual((joey["done"], joey["pct"]),
+                         (len(joey_complete), round(100 * len(joey_complete) / 350, 2)))
         self.assertEqual(all_cards["bykind"]["Monster"]["total"], 499)
         self.assertEqual(all_cards["bykind"]["Spell"]["total"], 172)
         self.assertEqual(all_cards["bykind"]["Trap"]["total"], 100)
-        self.assertEqual(all_cards["bykind"]["Spell"]["Partial"], 3)
-        self.assertEqual(all_cards["bykind"]["Spell"]["Done"], 27)
-        self.assertEqual(all_cards["bykind"]["Trap"]["Done"], 5)
-        self.assertEqual(all_cards["bykind"]["Monster"]["Done"], 286)
+        for kind, totals in all_cards["bykind"].items():
+            for state in ("Done", "Verified", "Partial", "Pending"):
+                expected = sum(card["kind"] == kind and status.get(rid, "Pending") == state
+                               for rid, card in cards.items())
+                self.assertEqual(totals[state], expected, (kind, state))
 
     def test_public_subtypes_are_explicit_not_playability(self):
         cards, status, subtypes, sources = load()
@@ -47,7 +52,9 @@ class PublishedPlayabilityTests(unittest.TestCase):
         one = json.loads(next(content for path, content in files.items()
                               if path.name == "all-packs.json"))
         self.assertEqual(one["schemaVersion"], 1)
-        self.assertEqual(one["message"], "318/771 (41.25%)")
+        expected = values["all-packs"]
+        self.assertEqual(one["message"],
+                         f"{expected['done']}/{expected['total']} ({expected['pct']:.2f}%)")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
         card = {"internalIndex": 1060, "resourceId": 1405,
