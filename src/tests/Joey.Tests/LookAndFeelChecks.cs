@@ -264,6 +264,12 @@ internal static class LookAndFeelChecks
                   NativeDetailPanel.PreviewBounds.Height == NativeDetailPanel.TextY,
               "Native sidebar: 200x290 at x=8 aligned with original paired screenshot");
 
+        check(NativeCardRaster.Project(200, 290, 50, 72, 0) == (50, 72) &&
+              NativeCardRaster.Project(200, 290, 72, 50, 90) == (50, 72) &&
+              NativeCardRaster.Project(200, 290, 200, 290, 0) == (200, 290) &&
+              NativeCardRaster.Project(200, 290, 100, 145, 0) == (100, 145),
+              "Card artwork draws at integer pixel dimensions in field/hand/sidebar");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
@@ -621,6 +627,19 @@ internal static class LookAndFeelChecks
               NativeLifeHud.DecimalGlyphs(int.MaxValue).SequenceEqual([6, 5, 5, 3, 5]),
               "Native LP HUD: decimal digits use visual clamp to 65535");
 
+        // Original user's DAT report: 80x12/10, 70x10/10 and 192x40/12.
+        string observedFontManifest = "duel_fontl.bmp 10\n" +
+            "duel_fontm_y.bmp 10\n" +
+            "damage00.bmp 12\n" + "damage01.bmp 12\n";
+        check(NativeLifeHud.TryFontColumns(observedFontManifest, "duel_fontl.bmp") == 10 &&
+              NativeLifeHud.TryFontColumns(observedFontManifest, "duel_fontm_y.bmp") == 10 &&
+              NativeLifeHud.TryFontColumns(observedFontManifest, "damage00.bmp") == 12 &&
+              NativeLifeHud.TryFontColumns(observedFontManifest, "damage01.bmp") == 12 &&
+              NativeLifeHud.GlyphWidth(80, 10) == 8 &&
+              NativeLifeHud.GlyphWidth(70, 10) == 7 &&
+              NativeLifeHud.GlyphWidth(192, 12) == 16 &&
+              MathF.Abs(NativeLifeHud.DisplayGlyphWidth(80, 12, 10) - 21.333334f) < .01f,
+              "LP font dimensions agree with actual number.txt and bitmap metadata");
         string fontManifest = "duel_fontl.bmp 10\n" +
             "j/duel/font/duel_fontm_y.bmp 12 // sprite count\n" +
             "duel_fonts.bmp 8\n";

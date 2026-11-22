@@ -151,3 +151,14 @@ O script lê o relatório completo já criado em `scratch/visual-review/dat-mani
 Os quatro alvos são `duel_fontl.bmp`, `duel_fontm_y.bmp`, `damage00.bmp` e `damage01.bmp`. `0047C310` carrega `j/duel/font/number.txt`, `004803C0` indexa o atlas por dígito e `004806F0` gera o movimento dos números flutuantes. `NativeLifeHud.TryFontColumns` assume que o segundo token contém de 10 a 12 colunas; o script mostra quando essa heurística falha. Altura atual de 32px e âncoras do LP ainda são estimativas de captura e não devem ser declaradas como parity.
 
 **Próxima decisão:** usar o JSON resultante para conferir qual atlas o executável seleciona por condição, número de glifos e escala, e só depois substituir as constantes provisórias da apresentação do LP. Se o script indicar ausência do atlas ou largura incompatível, registrar falha sem retornar silenciosamente à fonte da raylib.
+
+
+## Atlas comprovados pelo DAT e nitidez das cartas (22/11/2026)
+
+O relatório `life-font-evidence.json` do usuário corresponde ao `j/duel/font/number.txt` real. `duel_fontl.bmp` contém 10 glifos em 80x12, ou seja, cada glifo mede 8x12; `duel_fontm_y.bmp` tem 10 glifos em 70x10 (7x10 por glifo); `damage00.bmp` e `damage01.bmp` têm 12 glifos em 192x40 (16x40 por glifo). As alturas finais dos dígitos permanentes (32px) e sua posição ainda são estimativas visuais.
+
+A renderização de dano/cura não deve comprimir arbitrariamente os sprites de 40px para 32px. O cliente agora usa sua dimensão de origem e conserva a animação de `NativeFloatingLifeDigits`. A posição e curva nativas exatas continuam pendentes.
+
+As capturas pareadas mostram mais blocagem de pixels no Morphing Jar nativo do que no campo do RE, mas também há perda de nitidez em parte do fundo do RE. `DatGraphics.Texture` já utiliza filtro Point; foi fixado explicitamente `TextureFilter.Point` para o render target 800x600 e a geometria dos BMPs das cartas foi arredondada para tamanhos inteiros: por exemplo, 200x290 reduzido ao slot de campo resulta em 50x72, e não 49,655x72. Isso não prova equivalência ao rasterizador nativo: para validar, comparar F12 (canvas 800x600) com o jogo original na mesma resolução, sem passar por escala do Paint.
+
+O deslocamento horizontal restante da carta do detalhe foi informado como aproximadamente 2px pelo usuário. Não ajustamos novamente o `PreviewBounds.X` sem determinar a direção no par de capturas alinhado.

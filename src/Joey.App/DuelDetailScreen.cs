@@ -186,9 +186,10 @@ static partial class Game
 
             int sourceGlyphWidth = NativeLifeHud.GlyphWidth(texture.Width, columns);
             int sourceGlyphHeight = texture.Height;
-            float scale = Math.Min(1f, 32f / sourceGlyphHeight);
-            int glyphWidth = Math.Max(1, (int)MathF.Round(sourceGlyphWidth * scale));
-            int glyphHeight = Math.Max(1, (int)MathF.Round(sourceGlyphHeight * scale));
+            // Actual number.txt: damage00/01.bmp each have 12 glyphs in a
+            // 192x40 atlas, so preserve the 16x40 source samples. The 32px
+            // height cap was an invented resize, not a verified native rule.
+            int glyphWidth = sourceGlyphWidth, glyphHeight = sourceGlyphHeight;
             int phase = Math.Min(0x100, counter.RampCounter * 2);
             var glyphs = NativeFloatingLifeDigits.Sample(counter.PendingDelta, phase,
                 glyphWidth, glyphHeight, columns, effectCosine);

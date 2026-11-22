@@ -119,6 +119,8 @@ static partial class Game
             Raylib.HideCursor();
         }
         var canvas = Raylib.LoadRenderTexture(800, 600);
+        // Keep the 800x600 original DAT pixels discrete when scaling the window.
+        Raylib.SetTextureFilter(canvas.Texture, TextureFilter.Point);
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
@@ -237,10 +239,10 @@ static partial class Game
         string? name = graphics.Artwork.For(card);
         if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
         var texture = graphics.Texture(name);
-        float scale = degrees % 180 != 0
-            ? Math.Min(w / (float)texture.Height, h / (float)texture.Width)
-            : Math.Min(w / (float)texture.Width, h / (float)texture.Height);
-        float width = texture.Width * scale, height = texture.Height * scale;
+        // Integer-sized destination avoids a fractional 49.655-pixel wide
+        // field card fitted into a 50x72 viewport.
+        var (width, height) = NativeCardRaster.Project(
+            texture.Width, texture.Height, w, h, degrees);
         Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
             new Rectangle(x + w / 2f, y + h / 2f, width, height),
             new Vector2(width / 2, height / 2), degrees, Color.White);
