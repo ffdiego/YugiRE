@@ -223,7 +223,7 @@ static partial class Game
                 _ => NativeDetailPanel.DescriptionColorRef
             };
             var (r, g, b) = NativeDetailPanel.DecodeColorRef(sourceColor);
-            var color = new Color(r, g, b, 255);
+            var color = new Color((int)r, (int)g, (int)b, 255);
             int y = NativeDetailPanel.TextY + i * NativeDetailPanel.EnglishLineAdvance;
             Font? font = line.Kind == NativeDetailPanel.LineKind.Name ? titleFont : normalFont;
             if (font is Font loaded)
