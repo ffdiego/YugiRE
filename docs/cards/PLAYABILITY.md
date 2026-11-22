@@ -2,19 +2,19 @@
 
 Métrica de cartas jogáveis no sandbox C#, não paridade com o executável original.
 
-- **Trilogia:** 338/771 = 43.84%
-- **Joey:** 103/350 = 29.43%
-- **Partial:** 5; **Verified:** 0 (trilogia).
+- **Trilogia:** 369/771 = 47.86%
+- **Joey:** 110/350 = 31.43%
+- **Partial:** 8; **Verified:** 0 (trilogia).
 
 ## Por categoria
 
 | Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Trilogia | Monster | 499 | 302 | 1 | 196 | 0 | 60.52% |
-| Trilogia | Spell | 172 | 31 | 4 | 137 | 0 | 18.02% |
+| Trilogia | Monster | 499 | 333 | 3 | 163 | 0 | 66.73% |
+| Trilogia | Spell | 172 | 31 | 5 | 136 | 0 | 18.02% |
 | Trilogia | Trap | 100 | 5 | 0 | 95 | 0 | 5.00% |
-| Joey | Monster | 194 | 91 | 1 | 102 | 0 | 46.91% |
-| Joey | Spell | 84 | 10 | 1 | 73 | 0 | 11.90% |
+| Joey | Monster | 194 | 98 | 2 | 94 | 0 | 50.52% |
+| Joey | Spell | 84 | 10 | 2 | 72 | 0 | 11.90% |
 | Joey | Trap | 72 | 2 | 0 | 70 | 0 | 2.78% |
 
 ## Subtipos de monstros (classificação, não implementação)
