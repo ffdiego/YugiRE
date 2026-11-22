@@ -33,8 +33,8 @@ internal static class NormalSummonCinematicChecks
         List<DemoNormalSummon> sets = [];
         faceDown.MonsterNormalSummoned += sets.Add;
         check(faceDown.Summon(0, 0, 3, true, out _, faceDown: true) &&
-              sets is [{ Player: 0, Zone: 3, FaceDown: true, Card: var card }] &&
-              ReferenceEquals(card, weak) &&
+              sets is [{ Player: 0, Zone: 3, FaceDown: true, Card: var setCard }] &&
+              ReferenceEquals(setCard, weak) &&
               faceDown.MonsterFaceDown[0, 3],
               "Normal summon cue: an ordinary monster Set is explicitly face-down");
 
