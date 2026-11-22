@@ -118,6 +118,32 @@ internal static class DestinyBoardChecks
                   $"Destiny Board P{owner}: selecting messages preserves unrelated deck card order");
         }
 
+        var handFirst = DemoDuel.FromPartialObservation(0, [board, letters[0]],
+            new Card?[5], new Card?[5], 8000, side0Deck: [letters[0], letters[1]]);
+        List<DemoDestinyBoardMessagePlaced> fromHandEvents = [];
+        handFirst.DestinyBoardMessagePlaced += fromHandEvents.Add;
+        handFirst.SetFromHand(0, out _);
+        handFirst.NextTurn(); handFirst.NextTurn();
+        handFirst.ActivateSetSpell(0, out _);
+        int handFirstDeckCount = handFirst.DeckCount(0);
+        handFirst.NextTurn(); handFirst.NextTurn();
+        check(fromHandEvents is [{ Player: 0, FromDeck: false, Card: var firstMessage }] &&
+              ReferenceEquals(firstMessage, letters[0]) &&
+              handFirst.HandFor(0).Count == 0 &&
+              handFirst.DeckCount(0) == handFirstDeckCount &&
+              handFirst.DeckSnapshot(0).SequenceEqual([letters[0], letters[1]]),
+              "Destiny Board: own hand supplies the first letter before Deck without changing Deck order");
+
+        var unavailable = DemoDuel.FromPartialObservation(0, [board],
+            new Card?[5], new Card?[5], 8000, side0Deck: [dummy]);
+        unavailable.SetFromHand(0, out _);
+        unavailable.NextTurn(); unavailable.NextTurn();
+        unavailable.ActivateSetSpell(0, out _);
+        unavailable.NextTurn(); unavailable.NextTurn();
+        check(unavailable.Spells[0, 1] is null && unavailable.DeckCount(0) == 1 &&
+              unavailable.DestinyBoardWinner is null,
+              "Destiny Board: no matching Spirit Message means no placement or win");
+
         var blocked = DemoDuel.FromPartialObservation(0, [board],
             new Card?[5], new Card?[5], 8000, side0Deck: letters);
         blocked.SetFromHand(0, out _);
