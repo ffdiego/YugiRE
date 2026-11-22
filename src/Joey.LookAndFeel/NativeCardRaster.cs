@@ -6,6 +6,14 @@ namespace Joey.LookAndFeel;
 /// </summary>
 public static class NativeCardRaster
 {
+    /// <summary>
+    /// Exact field-card (portrait/defense) dimensions. Only these use the
+    /// original 50x72 mini/ BMP bank; hand/detail use large card/ artwork.
+    /// </summary>
+    public static bool IsNativeMiniDestination(int width, int height) =>
+        (width == DuelCardLayout.MiniWidth && height == DuelCardLayout.MiniHeight) ||
+        (width == DuelCardLayout.MiniHeight && height == DuelCardLayout.MiniWidth);
+
     public static (int Width, int Height) Project(
         int sourceWidth, int sourceHeight, int targetWidth, int targetHeight,
         int degrees)

@@ -236,7 +236,12 @@ static partial class Game
     }
     static void DrawArtwork(Card card, int x, int y, int w, int h, int degrees = 0)
     {
-        string? name = graphics.Artwork.For(card);
+        // Native 0041A800 loads independent card/ and mini/ catalogs. Do
+        // not downscale a 200x290 texture to 50x72 for the field: the
+        // original game ships precomputed 50x72 card miniatures.
+        string? name = NativeCardRaster.IsNativeMiniDestination(w, h)
+            ? graphics.Artwork.MiniFor(card)
+            : graphics.Artwork.For(card);
         if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
         var texture = graphics.Texture(name);
         // Integer-sized destination avoids a fractional 49.655-pixel wide

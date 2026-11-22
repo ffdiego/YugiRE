@@ -39,6 +39,13 @@ static class GraphicsTests
             grid.Hit(775, 110) == -1 && grid.Hit(225, 545) == -1, "Grid gaps and outside clicks do not select cards");
         check(CardGrid.LastPage(0) == 0 && CardGrid.LastPage(50) == 0 && CardGrid.LastPage(51) == 1 &&
             CardGrid.LastPage(100) == 1 && CardGrid.LastPage(1114) == 22, "Pagination handles empty, exact and partial pages");
+        check(CardArtwork.MiniResourceName(@"card\fmr001.bmp") ==
+                  @"mini\fmr001.bmp" &&
+              CardArtwork.MiniResourceName(@"CARD\LOB000.BMP") ==
+                  @"mini\LOB000.BMP",
+              "Native 0041A800 maps large card art to separately catalogued mini art");
+        reject(() => CardArtwork.MiniResourceName(@"mini\fmr001.bmp"),
+               "Miniature catalog rejects an already-mini path");
         var alpha = new Card(2, 900, "Alpha", "", 0);
         var beta = new Card(1, 100, "Beta", "", 0);
         var unnamed = new Card(0, 50, "", "", 0);

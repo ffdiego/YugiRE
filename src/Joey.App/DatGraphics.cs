@@ -7,6 +7,7 @@ sealed class DatGraphics : IDisposable
 {
     public const string DuelBoard = @"j\duel\field\fie_normal.bmp";
     public const string DuelBack = @"card\card_ura.bmp";
+    public const string MiniCardBack = @"mini\card_ura.bmp";
     public const string AttackSword = @"j\duel\effect\atk_icon.bmp";
     public const string AttackSwordPartial = @"j\duel\effect\atk_icon2.bmp";
     public const string AttackImpact = @"j\duel\effect\atk_eff.yga";

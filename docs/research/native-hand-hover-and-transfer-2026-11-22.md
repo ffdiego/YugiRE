@@ -89,3 +89,11 @@ uma carta conhecida usam a mesma geometria. Os LPs deixam de
 comprimir verticalmente o atlas de números a 19px: `004803C0`
 copia os recortes 1:1. A âncora numérica em X=209 segue provisória,
 assim como o Y até confronto direto da rotina de Draw `0047C660`.
+
+## Fonte das miniaturas originais (22/11/2026)
+
+A comparação pareada de Morphing Jar mostrou que a suavização do original não é reproduzida ao ajustar apenas os filtros da textura grande. A **causa identificada** é a utilização da fonte de arte errada: o executável carrega bancos distintos de `card/list_card.txt` e `mini/list_card.txt` em `0041A800`. O inventário público do `data.dat` contém 777 BMPs de `card/` (tamanhos 174054/174056 bytes, compatíveis com 200x290) e **777 arquivos homólogos em `mini/`** (10998/11000 bytes, compatíveis com 50x72), além dos dois manifests de 55916 bytes.
+
+O código novo lê e valida ambos os manifests (índice, ID, filename e existência real do BMP). Para dimensões de campo **50x72** ou **72x50** (defesa), `DrawArtwork` utiliza diretamente `mini/<arquivo>.bmp`; mão e painel lateral continuam com `card/<arquivo>.bmp`. Os versos do campo usam `mini/card_ura.bmp` quando o tema usa o back nativo; um back customizado não é sobrescrito. Os sprites são texturas nativas do DAT, não reconstruções/procedural.
+
+O filtro `Point` permanece sobre as imagens já no tamanho original de 50x72: mudar para bilinear/bicúbico seria outra aproximação sem fundamento. Aparência pixel a pixel ainda precisa de captura pareada de execução no Windows; não alterar badge de cobertura sem validação.

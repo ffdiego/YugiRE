@@ -10,6 +10,8 @@ sealed class DuelTheme : IDisposable
 
     public Texture2D? Board => boardEntry is string name ? dat!.Texture(name) : boardFile;
     public Texture2D? CardBack => backEntry is string name ? dat!.Texture(name) : backFile;
+    public bool UsesNativeCardBack =>
+        backEntry?.Equals(DatGraphics.DuelBack, StringComparison.OrdinalIgnoreCase) == true;
     public Font? Text { get; private set; }
     private Font? nativeDetailRegular, nativeDetailBold;
 

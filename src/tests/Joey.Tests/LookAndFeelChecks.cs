@@ -270,6 +270,12 @@ internal static class LookAndFeelChecks
               NativeCardRaster.Project(200, 290, 100, 145, 0) == (100, 145),
               "Card artwork draws at integer pixel dimensions in field/hand/sidebar");
 
+        check(NativeCardRaster.IsNativeMiniDestination(50, 72) &&
+              NativeCardRaster.IsNativeMiniDestination(72, 50) &&
+              !NativeCardRaster.IsNativeMiniDestination(100, 145) &&
+              !NativeCardRaster.IsNativeMiniDestination(200, 290) &&
+              !NativeCardRaster.IsNativeMiniDestination(50, 70),
+              "Native mini art used only by 50x72 field cards (including defense)");
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

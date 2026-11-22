@@ -265,7 +265,14 @@ static partial class Game
     static void DrawCardBack(int x, int y, int width, int height, int degrees = 0)
     {
         bool sideways = degrees % 180 != 0;
-        if (duelTheme.CardBack is Texture2D texture)
+        // The original ships a separate mini/card_ura.bmp. Preserve any
+        // explicit custom duel theme, but use the native 50x72 back on
+        // field/deck-size cards instead of reducing the 200x290 back.
+        Texture2D? cardBack = NativeCardRaster.IsNativeMiniDestination(width, height) &&
+            duelTheme.UsesNativeCardBack
+                ? graphics.Texture(DatGraphics.MiniCardBack)
+                : duelTheme.CardBack;
+        if (cardBack is Texture2D texture)
         {
             Raylib.DrawTexturePro(texture,
                 new Rectangle(0, 0, texture.Width, texture.Height),
