@@ -36,30 +36,49 @@ public static class NativeDuelCursor
         };
 
     /// <summary>
-    /// Corresponds to the action popup for the hand card, NOT the sprite
-    /// shown during an already-committed summon. The old sandbox discards
-    /// without a native cursor action; leave that fallback unchanged.
+    /// The original cursor uses one image at a time. On a legal hover it
+    /// switches to an action-specific image which includes the action cloud;
+    /// outside an actionable card it uses cursor00. Never draw both on the
+    /// same frame.
     /// </summary>
-    public static NativeCursorAction? HandAction(bool monster, bool setMode, bool discarding) =>
-        discarding ? null : setMode ? NativeCursorAction.Set :
-            monster ? NativeCursorAction.Summon : NativeCursorAction.Activate;
+    public static string CursorSprite(NativeCursorAction? action) =>
+        action is { } selected ? ActionSprite(selected) : DefaultPointer;
 
     /// <summary>
-    /// Local anchoring for the original cursor action bubble.
-    /// Its pointed lower tip should extend ONTO the upper portion of the
-    /// lifted card rather than stopping in the gap above it. Centers the
-    /// unscaled sprite horizontally; the overlap is provisional until
-    /// compared with the original executable and manifest.
+    /// Determine the only currently legal hand cursor action. This helper
+    /// receives the actual Core legality gates rather than classifying all
+    /// spells as Activate and all monsters as Summon.
     /// </summary>
-    public const int CloudTipOverlapPixels = 12;
-
-    public static CardBounds ActionBounds(CardBounds card, int spriteWidth, int spriteHeight)
+    public static NativeCursorAction? HandAction(
+        bool monster, bool canSummon, bool canSet, bool canActivate,
+        bool requestSet, bool discarding)
     {
-        if (spriteWidth <= 0) throw new ArgumentOutOfRangeException(nameof(spriteWidth));
-        if (spriteHeight <= 0) throw new ArgumentOutOfRangeException(nameof(spriteHeight));
-        int centerX = card.X + card.Width / 2;
-        return new(centerX - spriteWidth / 2,
-            card.Y - spriteHeight + CloudTipOverlapPixels,
-            spriteWidth, spriteHeight);
+        if (discarding) return null; // discard is a sandbox-only label
+        if (monster)
+        {
+            if (requestSet && canSet) return NativeCursorAction.Set;
+            if (canSummon) return NativeCursorAction.Summon;
+            return canSet ? NativeCursorAction.Set : null;
+        }
+
+        if (requestSet && canSet) return NativeCursorAction.Set;
+        if (canActivate) return NativeCursorAction.Activate;
+        return canSet ? NativeCursorAction.Set : null;
     }
+
+    /// <summary>
+    /// Right-click cycles only if two real choices are legal. Traps on hand
+    /// cannot Activate, so their only available action is Set.
+    /// </summary>
+    public static bool CanToggleHandAction(
+        bool monster, bool canSummon, bool canSet, bool canActivate) =>
+        canSet && (monster ? canSummon : canActivate);
+
+    /// <summary>
+    /// Cursor coordinates come from the full window, not the duel canvas.
+    /// The asset's precise hotspot is not yet recovered from cursor_e.txt.
+    /// Keeping the origin at the mouse point is an explicit provisional
+    /// placement until paired screenshots establish the real offset.
+    /// </summary>
+    public static CardPoint PointerOrigin(CardPoint windowMouse) => windowMouse;
 }
