@@ -141,3 +141,14 @@ Compartilhar somente `scratch/visual-review/selection-manifests.json`
 após inspecionar seu conteúdo. Contém texto dos manifests e dimensões de
 imagens, não as imagens. O passo seguinte é confrontar os recortes e a
 posição real em 800x600 com a tela nativa. Badge permanece 19/34.
+
+
+## DAT de seleção recuperado em 22/11/2026
+
+Os manifests reais da seleção e das listas de cemitério, fusão e exclusão
+foram medidos (15 manifests, 50 imagens e 85 referências). A função
+`0043BA30` decodifica os parâmetros compostos dos submanifests de scroll,
+mas seus quatro campos ainda não receberam rótulos geométricos comprovados.
+Ver [contrato DAT das listas nativas](native-selection-dat-contract-2026-11-22.md)
+e o importador `scripts/import_native_selection_dat.py`. A UI C# continua
+provisória e a cobertura Draw permanece separada da pesquisa.
