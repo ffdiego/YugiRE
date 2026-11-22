@@ -46,18 +46,20 @@ public static class NativeDuelCursor
 
     /// <summary>
     /// Local anchoring for the original cursor action bubble.
-    /// Centers the unscaled DAT sprite above the lifted hand card.
-    /// Native origin and YGA pivot must be compared with the original.
+    /// Its pointed lower tip should extend ONTO the upper portion of the
+    /// lifted card rather than stopping in the gap above it. Centers the
+    /// unscaled sprite horizontally; the overlap is provisional until
+    /// compared with the original executable and manifest.
     /// </summary>
+    public const int CloudTipOverlapPixels = 12;
+
     public static CardBounds ActionBounds(CardBounds card, int spriteWidth, int spriteHeight)
     {
         if (spriteWidth <= 0) throw new ArgumentOutOfRangeException(nameof(spriteWidth));
         if (spriteHeight <= 0) throw new ArgumentOutOfRangeException(nameof(spriteHeight));
         int centerX = card.X + card.Width / 2;
-        return new(centerX - spriteWidth / 2, card.Y - spriteHeight - 5,
+        return new(centerX - spriteWidth / 2,
+            card.Y - spriteHeight + CloudTipOverlapPixels,
             spriteWidth, spriteHeight);
     }
-
-    public static bool CanRenderPointer(int width, int height) =>
-        width is > 0 and <= 128 && height is > 0 and <= 128;
 }
