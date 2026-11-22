@@ -31,7 +31,7 @@ internal static class DestinyBoardChecks
             slots[0, i + 1] = letters[i];
         }
         check(DestinyBoardRules.CompleteField(0, slots, faceDown)?.Select(c => c.Id)
-                  .SequenceEqual([1528, 1541, 1542, 1543, 1544]) == true &&
+                  .SequenceEqual(new ushort[] { 1528, 1541, 1542, 1543, 1544 }) == true &&
               DestinyBoardRules.NextMessage(0, slots, faceDown) is null,
               "Destiny Board: five face-up field cards complete F-I-N-A-L in canonical order");
         faceDown[0, 4] = true;
@@ -106,7 +106,7 @@ internal static class DestinyBoardChecks
                           summary.Contains("F-I-N-A-L", StringComparison.OrdinalIgnoreCase) &&
                           completions is [{ Player: var p, Pieces: var pieces }] &&
                           p == owner && pieces.Select(c => c.Id)
-                             .SequenceEqual([1528, 1541, 1542, 1543, 1544]) &&
+                             .SequenceEqual(new ushort[] { 1528, 1541, 1542, 1543, 1544 }) &&
                           !duel.EndTurn(out _) && completions.Count == 1,
                           $"Destiny Board P{owner}: fifth face-up card wins without changing LP or advancing turn");
                 else
