@@ -11,16 +11,17 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | [01-lp-destruicao-respostas](01-lp-destruicao-respostas.jsonl) | 7 | 35 | 23 | 12 | 0 |
 | [02-zonas-e-modificadores](02-zonas-e-modificadores.jsonl) | 18 | 59 | 31 | 28 | 0 |
 | [03-controle-e-eventos](03-controle-e-eventos.jsonl) | 20 | 36 | 23 | 13 | 0 |
-| [04-regras-globais-e-continuacoes](04-regras-globais-e-continuacoes.jsonl) | 9 | 52 | 28 | 22 | 2 |
+| [04-regras-globais-e-continuacoes](04-regras-globais-e-continuacoes.jsonl) | 9 | 52 | 29 | 22 | 1 |
 | [05-janelas-invocacao-batalha](05-janelas-invocacao-batalha.jsonl) | 8 | 21 | 8 | 13 | 0 |
 | [06-combate-diferido-e-invocacao](06-combate-diferido-e-invocacao.jsonl) | 12 | 34 | 15 | 19 | 0 |
 | [07-selecao-vinculos-e-substituicao](07-selecao-vinculos-e-substituicao.jsonl) | 14 | 32 | 9 | 23 | 0 |
 | [08-efeitos-compostos-e-eventos](08-efeitos-compostos-e-eventos.jsonl) | 15 | 41 | 16 | 23 | 2 |
-| **Total** | 103 | 310 | 153 | 153 | 4 |
+| [09-efeitos-fora-da-tabela](09-efeitos-fora-da-tabela.jsonl) | 7 | 16 | 10 | 4 | 2 |
+| **Total** | 110 | 326 | 164 | 157 | 5 |
 
 <!-- fim cobertura -->
 
-A tabela inclui três registros sem nome confirmado (1245, 1257 e 1258). Esses registros e Minor Goblin Official (1302) estão pendentes. IDs distintos com o mesmo nome permanecem distintos.
+A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). Esses registros e The Unfriendly Amazon (1431) estão pendentes. Minor Goblin Official (1302) passou a Mapeado após o lote 09 localizar o emissor periódico fora do callback primário. Os 117 registros restantes da tabela remetem aos [estudos existentes](reconciliacao.md). IDs distintos com o mesmo nome permanecem distintos.
 
 ## Evidência e reprodução
 
@@ -34,6 +35,7 @@ A tabela inclui três registros sem nome confirmado (1245, 1257 e 1258). Esses r
 - O lote 06 inspecionou as entradas de resolução e cruzou a elegibilidade de Elegant Egotist e Polymerization com 0057F640 e 00580600. Os callbacks 0058CDF0 e 0058D970 sustentam a infraestrutura compartilhada; as diferenças de gatilho, filtro e benefício recorrente ficaram registradas por ID.
 - O lote 07 complementou as instruções dos resolvedores com 0057A470, 0057B3B0, 00580360 e 00589B70 no SQLite. 00586B30 distingue o efeito original por ID ao proteger armadilhas, e 00586FB0 dá a Relinquished e Thousand-Eyes Restrict o mesmo caminho de transferência e vínculo tipo 5.
 - O lote 08 cruzou as continuações de 00589EB0–00591890 com a disponibilidade de Chosen One em 005829D0 e o evento de Major Riot em 00581790. P166/P167 e os efeitos de destruição em batalha foram mantidos separados quando o callback confirmava apenas a ativação principal.
+- O lote 09 combinou os predicados globais do SQLite com instruções que verificam IDs nos estágios de batalha e de turno. Os ramos 005A627D, 005A637D e 005A647E distinguem os ganhos de LP por posição; 00582330 e 005A6D06 fecharam disponibilidade e dano de Minor Goblin Official.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
 ## Próximos grupos para o Core
@@ -47,10 +49,10 @@ A tabela inclui três registros sem nome confirmado (1245, 1257 e 1258). Esses r
 
 - **Janelas concorrentes e ordem observável.** Comparar Solemn Judgment e Horn of Heaven em invocação aberta e durante outro efeito, os três caminhos de Magic Drain (sem candidato, recusa, descarte) e Michizure após saídas de campo com causas diferentes. Capturar a ordem dos pedidos e se as cartas chegam efetivamente ao campo ou ao cemitério.
 - **Seleção e desempate.** Em Fissure e Widespread Ruin, colocar dois candidatos elegíveis com ATK igual e conferir quem escolhe e quais opções aparecem. Em Graceful Charity, observar compra insuficiente e se a interface permite encerrar antes de completar o descarte.
-- **Estado por turno e ocorrências simultâneas.** Em Jam Breeding Machine, comparar Standby com zona livre e cheia. Em Solemn Wishes e Skull Invitation, distinguir um evento com várias cartas de vários eventos independentes. Comparar o contador do Cocoon of Evolution com as três primeiras janelas de invocação correspondentes.
+- **Estado por turno e ocorrências simultâneas.** Verificar se Minor Goblin Official continua causando dano após os LP adversários subirem acima de 3000. Comparar combate interrompido de Hayabusa Knight e a sequência ataque → defesa de Goblin Attack Force. Em Jam Breeding Machine, comparar Standby com zona livre e cheia. Em Solemn Wishes e Skull Invitation, distinguir um evento com várias cartas de vários eventos independentes. Comparar o contador do Cocoon of Evolution com as três primeiras janelas de invocação correspondentes.
 - **Proteção e dependências em campo.** Comparar Ring of Destruction com alvo protegido e dano letal aos dois lados, além de renascimento vinculado quando a fonte é destruída, devolvida à mão ou usada em tributo.
 
-O próximo recorte estático é seguir os consumidores de modificadores, contadores e vínculos já identificados. Os dois pendentes podem ser retomados em paralelo com a procura dos produtores de Standby e das entradas sem identidade. A execução do jogo agrega evidência de fluxo, escolha e temporização aos casos acima.
+O próximo recorte estático é seguir os consumidores de modificadores, contadores e vínculos já identificados. Para The Unfriendly Amazon, o próximo recorte é procurar o produtor de tributo de Standby em tabelas indexadas. Para os quatro IDs sem nome, a pendência é identificar ocorrências alcançáveis no jogo. A execução do jogo agrega evidência de fluxo, escolha e temporização aos casos acima.
 
 ## Verificações da campanha
 
