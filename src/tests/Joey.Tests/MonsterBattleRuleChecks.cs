@@ -8,6 +8,7 @@ internal static class MonsterBattleRuleChecks
 
     public static void Run(Action<bool, string> check)
     {
+        RunBattleDraws(check);
         (ushort Id, byte Boost, byte Weaken)[] auras =
             [(491, 1, 2), (627, 2, 1), (523, 3, 4), (597, 4, 3), (526, 5, 6), (608, 6, 5)];
         foreach (var (id, boost, weaken) in auras)
@@ -101,5 +102,58 @@ internal static class MonsterBattleRuleChecks
               new CpuDuelController(1).Step(cpu) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
               cpu.Life[0] == 7400,
             "CPU can make a legal direct attack through a stronger defending monster");
+    }
+
+    private static void RunBattleDraws(Action<bool, string> check)
+    {
+        var sorcerer = Monster(219, 2, 900);
+        var butcher = Monster(522, 2, 1800);
+        var low = Monster(950, 1, 600);
+        var first = Monster(951, 1);
+        var second = Monster(952, 1);
+
+        var direct = DemoDuel.FromPartialObservation(1, [],
+            [null, null, null, null, null], [sorcerer, null, null, null, null],
+            8000, side1Deck: [first, second]);
+        check(direct.BeginBattle(out _) && direct.Attack(0, -1, out _) &&
+              direct.Life[0] == 7100 && direct.HandFor(1).SequenceEqual([first]) &&
+              direct.DeckSnapshot(1).SequenceEqual([second]) && direct.HandFor(0).Count == 0 &&
+              direct.LastDeckFlow is { EffectResourceId: 219, Controller: 1, AffectedPlayer: 1, MovedFromDeck: 1 },
+            "Masked Sorcerer: direct battle damage draws for the source controller");
+
+        var defense = DemoDuel.FromPartialObservation(1, [],
+            [sorcerer, null, null, null, null], [low, null, null, null, null],
+            8000, side0Deck: [first]);
+        defense.DefensePosition[0, 0] = true;
+        check(defense.BeginBattle(out _) && defense.Attack(0, 0, out _) &&
+              defense.Life[1] == 7800 && defense.HandFor(0).SequenceEqual([first]) &&
+              defense.Monsters[0, 0] == sorcerer && defense.Monsters[1, 0] == low,
+            "Masked Sorcerer: positive battle damage as defender draws without destroying the attacker");
+
+        var hit = DemoDuel.FromPartialObservation(1, [],
+            [low, null, null, null, null], [butcher, null, null, null, null],
+            8000, side0Deck: [first, second]);
+        check(hit.BeginBattle(out _) && hit.Attack(0, 0, out _) &&
+              hit.Life[0] == 6800 && hit.HandFor(0).SequenceEqual([first, second]) &&
+              hit.HandFor(1).Count == 0 && hit.Graveyard(0).SequenceEqual([low]) &&
+              hit.LastDeckFlow is { EffectResourceId: 522, Controller: 1, AffectedPlayer: 0, DrawFailed: false },
+            "Bistro Butcher: battle damage to the opponent draws two cards for that opponent");
+
+        var zero = DemoDuel.FromPartialObservation(1, [],
+            [low, null, null, null, null], [butcher, null, null, null, null],
+            8000, side0Deck: [first]);
+        zero.DefensePosition[0, 0] = true;
+        check(zero.BeginBattle(out _) && zero.Attack(0, 0, out _) &&
+              zero.Life[0] == 8000 && zero.HandFor(0).Count == 0 &&
+              zero.LastDeckFlow is null,
+            "Bistro Butcher: destroying a defender without LP damage does not trigger a draw");
+
+        var shortDeck = DemoDuel.FromPartialObservation(1, [],
+            [null, null, null, null, null], [butcher, null, null, null, null],
+            8000, side0Deck: [first]);
+        check(shortDeck.BeginBattle(out _) && shortDeck.Attack(0, -1, out _) &&
+              shortDeck.HandFor(0).SequenceEqual([first]) && shortDeck.Winner == 1 &&
+              shortDeck.LastDeckFlow is { Requested: 2, MovedFromDeck: 1, DrawFailed: true },
+            "Bistro Butcher: forced draw shortfall follows the sandbox deck-out policy");
     }
 }

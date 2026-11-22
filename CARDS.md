@@ -169,6 +169,15 @@ Os deltas e permissões vêm do [lote 10 da campanha estática](docs/research/ca
 
 Skelengel usa o ramo de compra única de `005887C0`. A escolha vem do texto do DAT e é oferecida no fluxo de decisões opcionais do sandbox. O motor suspende o fim da etapa de dano até a decisão e pula a oferta com deck vazio. A ordem do prompt e as interações de negação ainda precisam de comparação no Joey. As duas cartas integram o deck padrão da Alpha. [Estudo P118](docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl)
 
+### Compras por dano de batalha
+
+| Resource ID | Carta | Status | Escopo |
+| ---: | --- | --- | --- |
+| 219 | Masked Sorcerer | Done (sandbox) | Ao causar dano de batalha aos LP adversários, o controlador compra uma carta |
+| 522 | The Bistro Butcher | Done (sandbox) | Ao causar dano de batalha aos LP adversários, o adversário compra duas cartas |
+
+O produtor `00578540` agenda os pedidos para 219 e 522 após o comando de dano. Os callbacks `005844A0` e `00585D30` enviam os totais de compra a `00578B60`. O sandbox resolve a compra obrigatória após dano positivo e não letal, incluindo ataque direto e dano causado pelo defensor. Se faltarem cartas, compra as disponíveis e aplica deck-out. A ordem exata do pedido nativo e seus casos de deck-out seguem pendentes. [Estudo das rotinas de compra](docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl)
+
 ### Destruição por tipo (P092)
 
 O filtro nativo em `0057AAA0` exige face-up para os sete IDs, inclusive quando o DAT descreve apenas “todos”. A resolução `00586540` percorre os dois lados e entrega uma máscara a `00576940`. No sandbox, o tipo vem do DAT e a ativação da mão ou de Set exige ao menos um monstro elegível. A disponibilidade com máscara vazia e os bloqueios de proteção nativa continuam em aberto. Eternal Rest (655) permanece sem regra no sandbox enquanto a contagem dos tipos de vínculo 1, 4 e 5 está em investigação. [Campanha estática P092](docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl)

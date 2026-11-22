@@ -948,7 +948,7 @@ public sealed class DemoDuel
                 return true;
             }
             int damage = AttackValue(p, source);
-            Damage(enemy, damage);
+            DealMonsterBattleDamage(p, attack.Attacker, damage);
             message = $"Direct attack: {damage} damage.";
             return true;
         }
@@ -992,7 +992,7 @@ public sealed class DemoDuel
         {
             int delta = attack - DefenseValue(defenderSide, target);
             destroyDefender = delta > 0;
-            if (delta < 0) Damage(attackerSide, -delta);
+            if (delta < 0) DealMonsterBattleDamage(defenderSide, defender, -delta);
             message = delta > 0 ? "Battle: defender marked for destruction." :
                 delta == 0 ? "Battle: equal ATK/DEF." :
                 $"Battle: attacker takes {-delta} damage.";
@@ -1005,13 +1005,36 @@ public sealed class DemoDuel
                 destroyDefender = delta >= 0;
                 destroyAttacker = delta <= 0;
             }
-            if (delta > 0) Damage(defenderSide, delta);
-            if (delta < 0) Damage(attackerSide, -delta);
+            if (delta > 0) DealMonsterBattleDamage(attackerSide, attacker, delta);
+            if (delta < 0) DealMonsterBattleDamage(defenderSide, defender, -delta);
             message = delta == 0 ? "Battle: equal ATK, no LP damage." :
                 $"Battle: {Math.Abs(delta)} LP damage.";
         }
         return new(attackerSide, source, attacker, defenderSide, target, defender,
                    destroyAttacker, destroyDefender);
+    }
+
+    private void DealMonsterBattleDamage(int controller, Card source, int amount)
+    {
+        if (amount <= 0) return;
+        int opponent = 1 - controller;
+        Damage(opponent, amount);
+        if (GameOver) return;
+
+        // Native battle damage producer 00578540 queues both IDs. The
+        // sandbox resolves mandatory draws here, after LP damage is applied.
+        (int recipient, int count) = source.Id switch
+        {
+            219 => (controller, 1), // Masked Sorcerer
+            522 => (opponent, 2),   // The Bistro Butcher
+            _ => (opponent, 0)
+        };
+        if (count == 0) return;
+        int drawn = Math.Min(count, DeckCount(recipient));
+        for (int i = 0; i < drawn; i++) DrawToHand(recipient);
+        bool deckOut = drawn < count;
+        if (deckOut && !GameOver) Winner = 1 - recipient;
+        LastDeckFlow = new(source.Id, controller, recipient, count, drawn, drawn, 0, 0, deckOut);
     }
 
     private void FinishDeferredBattle()

@@ -188,6 +188,27 @@
       ]
     },
     {
+      "id": "monster.battle-damage-draw",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "When the monster inflicts positive battle damage, draw for the specified player"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        219,
+        522
+      ],
+      "evidence": [
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "Sandbox resolves these mandatory draws immediately after nonlethal battle damage. Original request order and deck-out timing remain unverified."
+      ]
+    },
+    {
       "id": "monster.flip.optional-draw",
       "kind": "Monster",
       "subtype": "Effect",
