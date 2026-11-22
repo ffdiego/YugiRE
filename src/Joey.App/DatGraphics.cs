@@ -23,6 +23,9 @@ sealed class DatGraphics : IDisposable
         @"j\duel\effect\eff_star1_y.bmp"
     ];
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
+    public static readonly string[] CursorActionSprites =
+        Enum.GetValues<NativeCursorAction>()
+            .Select(NativeDuelCursor.ActionSprite).ToArray();
     public const string ShuffleFrameEnglish = @"j\duel\effect\deck_shuf_waku_e.yga";
     public const string ShuffleManifest = @"j\duel\effect\shuffle.txt";
     public static readonly string[] ShuffleSprites = Enumerable.Range(1, 5)
@@ -219,6 +222,15 @@ sealed class DatGraphics : IDisposable
         }
         _ = NativeYgaSprite.Decode(archive.Read(AttackImpact), static (data, size) => Archive.Decode(data, size));
         count++;
+        foreach (string name in CursorActionSprites.Append(NativeDuelCursor.DefaultPointer)
+                     .Append(NativeDuelCursor.AlternatePointer))
+        {
+            var sprite = NativeYgaSprite.Decode(archive.Read(name),
+                static (data, size) => Archive.Decode(data, size));
+            if (sprite.Width <= 0 || sprite.Height <= 0)
+                throw new InvalidDataException($"Invalid cursor YGA: {name}");
+            count++;
+        }
         foreach (string name in SpecialSummonAttackSprites.Concat(SpecialSummonDefenseSprites)
                      .Concat(DuelResultsEnglish).Append(ShuffleFrameEnglish))
         {
