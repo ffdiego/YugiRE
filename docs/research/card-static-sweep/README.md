@@ -1,6 +1,6 @@
 # Campanha estática de efeitos
 
-A unidade de cobertura é o resource ID. Os lotes 01–09 examinam o [catálogo de callbacks](../../evidence/card-callback-catalog.json). Os lotes 10–13 usam IDs do DAT ausentes da tabela. A classificação descreve o entendimento estático do comportamento no recorte da família. Mapeado indica operação principal sustentada e informação suficiente para começar uma implementação. Parcial indica evidência útil com lacuna material. Pendente indica que a ligação entre a carta e a operação nativa permanece aberta. A campanha teve zero execuções do Joey.
+A unidade de cobertura é o resource ID. Os lotes 01–09 examinam o [catálogo de callbacks](../../evidence/card-callback-catalog.json). Os lotes 10–15 usam IDs do DAT ausentes da tabela. A classificação descreve o entendimento estático do comportamento no recorte da família. Mapeado indica operação principal sustentada e informação suficiente para começar uma implementação. Parcial indica evidência útil com lacuna material. Pendente indica que a ligação entre a carta e a operação nativa permanece aberta. A campanha teve zero execuções do Joey.
 
 Cada arquivo JSONL define registros `family` seguidos dos registros `card` que herdam os campos da família pelo nome. `detail` descreve o ramo ou parâmetro individual e `pending_card` registra lacunas específicas. Campos nulos no registro de família representam informação ausente. Em um registro de carta, `profile: null` indica ausência na tabela de callbacks, distinta de um perfil registrado com slots vazios. Os endereços são VAs hexadecimais do executável alvo.
 
@@ -21,13 +21,17 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | [11-ataque-invocacao-e-fases](11-ataque-invocacao-e-fases.jsonl) | 11 | 39 | 18 | 21 | 0 |
 | [12-receitas-de-fusao](12-receitas-de-fusao.jsonl) | 1 | 53 | 53 | 0 | 0 |
 | [13-resultados-de-ritual](13-resultados-de-ritual.jsonl) | 1 | 15 | 15 | 0 | 0 |
-| **Total** | 129 | 466 | 280 | 181 | 5 |
+| [14-monstros-normais](14-monstros-normais.jsonl) | 1 | 526 | 526 | 0 | 0 |
+| [15-reconciliacao-residual](15-reconciliacao-residual.jsonl) | 3 | 6 | 2 | 0 | 4 |
+| **Total** | 133 | 998 | 808 | 181 | 9 |
 
 <!-- fim cobertura -->
 
-A tabela inclui quatro registros sem nome confirmado (1245, 1251, 1257 e 1258). Esses registros e The Unfriendly Amazon (1431) estão pendentes. Minor Goblin Official (1302) passou a Mapeado após o lote 09 localizar o emissor periódico fora do callback primário. A [reconciliação](reconciliacao.md) cobre os 443 registros da tabela, dos quais 117 remetem aos estudos existentes. Os lotes 10–13 cobrem 140 dos 672 IDs do DAT sem registro. Dos 73 sem registro com subtipo bruto 1 nos bits 18–19 de `CARD_PROP`, 71 têm entrada nos lotes 10–11. As exceções são [Exodia (20)](../exodia-observable-victory.md) e 1250, cujo nome está vazio. IDs distintos com o mesmo nome permanecem distintos.
+O inventário cobre **1.114 dos 1.114 IDs do DAT inglês**, incluindo **771/771** dos três packs. São 997 IDs do DAT classificados no JSONL e 117 com estudos anteriores ligados pela [reconciliação](reconciliacao.md). O 998º registro do JSONL, 1245, tem callback e não está no inventário do DAT. Os 672 IDs do DAT sem callback estão nos lotes 10–15. Entre os 998 registros, permanecem Pendente quatro sem nome confirmado (1245, 1251, 1257 e 1258), The Unfriendly Amazon (1431) e quatro recursos de classes 23/24 com pack zero. IDs distintos com o mesmo nome permanecem distintos.
 
 As receitas cobrem os 57 resultados de fusão do DAT, dos quais 34 têm indicação de pack. Há 52 linhas de dois materiais a partir de `005ECF10` e três de três materiais a partir de `005ED048`. Flame Swordsman (2014) e Thousand Dragon (2068) são variantes que usam a receita dos IDs 14 e 68. O ID 0 da receita de Blue-Eyes Ultimate Dragon é Blue-Eyes White Dragon. Os campos `existing_card_recipes` e `existing_card_rules` complementam entradas existentes sem contar seus IDs de novo. Os 16 resultados de Ritual têm par e nível documentados, dos quais oito aparecem nos packs. A classificação por receita de invocação preserva separadamente a classificação do efeito próprio de cada monstro.
+
+Os 528 monstros de categoria nativa Normal se dividem em 264 com indicação de pack e 264 de pack zero. O lote 14 documenta 526 desses IDs pela regra base. Os IDs 81 e 390 continuam com as entradas anteriores que registram seu papel em efeitos de associação. O lote 15 liga Exodia ao [predicado central de vitória](../../23-terminal-conditions.md) e registra a Normal Summon sem tributo do ID 1250 quando é a única carta da mão e existe vaga.
 
 ## Evidência e reprodução
 
@@ -45,6 +49,7 @@ As receitas cobrem os 57 resultados de fusão do DAT, dos quais 34 têm indicaç
 - O lote 10 cruzou `CARD_ID` com a tabela e verificou as identidades no DAT inglês. A tabela de seis auras em 005DCF98 contém IDs e sete deltas int16 por linha, lidos a partir do offset 0x001DCF98 no EXE identificado acima. Os saltos de 00583F40 confirmaram destinos distintos para Red-Eyes e Magical Labyrinth, corrigidos nos lotes 02 e 07.
 - O lote 11 cruzou os predicados de combate, turnos e invocação com o campo que 00402740 lê em `CARD_PROP`. Entre os caminhos de resolução examinados estão o débito de ataque em 005A1B98/005A1D5B, os três tributos de Gate Guardian em 0059DF40 e a seleção de Sinister Serpent em 005A7188–005A72E6.
 - O lote 12 leu palavras uint16 little-endian da seção `.data`, nos offsets de arquivo `0x1ECF10` e `0x1ED048`, segundo os limites e strides de 00591D10. 00591A10 confirmou as origens e a exclusão de ocorrências já usadas. Os saltos em 005927F0 e 005928AA distinguem o destino dos materiais sob Fusion Gate. O lote 13 conferiu os pares e níveis do [estudo de Ritual](../../cards/ritual-bindings.md) contra a tabela em `005ED060`, a sentinela e os níveis do DAT.
+- Os lotes 14–15 usam o [acessor de categoria](../../02-file-formats.md#card_propbin--quarta-rodada) e os [gates de invocação normal](../../26-normal-summon-tributes.md). O conjunto integral dos 264 monstros de categoria 0 com pack coincide por ID com `monster.normal` do manifesto. Para 1250, a comparação em 005AAC8C e os estados 0x5A/0x5B de 0059DF40 confirmam o ramo; o DAT local deixa o nome vazio.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
 ## Próximos grupos para o Core
