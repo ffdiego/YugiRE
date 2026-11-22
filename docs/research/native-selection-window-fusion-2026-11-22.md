@@ -91,3 +91,37 @@ python3 scripts/export_ghidra_visual_bundle.py \
 Pode ser executada na máquina que contém o Ghidra e o projeto Joey, quando chegarmos a essa etapa. **Não é necessário recriar o SQLite inteiro agora.** A importação das decompilações transitórias deve respeitar proveniência e SHA do EXE, sem reclassificar funções Ghidra ausentes como persistentes.
 
 **Cobertura:** permanece **19/34 Partial (55,88%) e 0 Verified**. Um modelo de layout/estado e uma investigação de construtores não equivalem à implementação das três Draws.
+
+## 4. Encerramento da janela: handler e contador confirmados no SQLite
+
+A inspeção direta das funções `0043E0A0` e `0043E280` no
+`research-selection-dat.sqlite` esclareceu o ramo negativo do contador:
+
+- `0043E0A0` escreve **`obj+0x14=-1`**, registra o argumento de fechamento em `obj+0x10`, chama `005BFCC0` e o método virtual `+0x28`. Ainda falta comprovar quais eventos de UI chamam esse handler e o significado de seu argumento.
+- `0043E280` subtrai **`0x20` por Update** sempre que `obj+0x14!=0`; ao alcançar zero chama virtual `+0x24` (fim da entrada).
+- Durante o fechamento, o contador percorre **-1 → -33 → -65 → -97 → -129 → -161 → -193 → -225 → -257**. Quando fica abaixo de `-0xFF`, o original chama virtual `+0x2C` e desativa o objeto pelo byte `obj+4`. Assim, são **oito Updates do início negativo até a desativação**, sendo -225 o último contador a ser desenhado se a renderização acompanhar um Update por frame.
+
+O `NativeSelectionWindow` passou a modelar `BeginClosing()`,
+`AdvanceClosing()`, `IsClosing`, `IsClosed` e `TransitionCounter`
+(que expõe o contador atual para a função de interpolação já extraída).
+Não coloca automaticamente a janela em fechamento por um botão provisório
+nem considera provada a tecla de confirmação; essa associação depende
+dos chamadores.
+
+Os testes novos cobrem os oito passos, impedimento de navegação durante
+a saída, encerramento único e ausência de Updates depois de desativado.
+Essa fatia continua sendo **modelo visual, não Draw integrada**;
+cobertura visual segue 19/34.
+
+## 5. Estado da investigação de monstros em sessão paralela
+
+O mantenedor relatou conclusão da **investigação** dos monstros
+em uma sessão Codex paralela. Não foi fornecido ainda um relatório
+ou commit dessa sessão nesta rodada; não inferir que todos os efeitos
+tenham sido implementados ou comparados com o original.
+Na versão pública consultada em 22/11, `docs/cards/PLAYABILITY.md`
+registra 337/499 `Done` e 3 `Partial` na trilogia, 98/194
+`Done` e 2 `Partial` em Joey, e zero `Verified`.
+Não alterar cobertura por esse relato sem reconciliar as evidências
+quando forem publicadas. A frente visual da janela de seleção
+permanece independente da investigação das regras.

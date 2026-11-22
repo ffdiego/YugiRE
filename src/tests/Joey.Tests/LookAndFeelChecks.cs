@@ -347,6 +347,27 @@ internal static class LookAndFeelChecks
                                             $"Native selection: backwards step {i + 1}");
         check(fiveSelection.SelectedSlot == 0 && fiveSelection.ScrollOffset == 0,
               "Native selection: reversed scrolling reaches the first item");
+        // 0043E0A0 explicitly arms exit at -1; 0043E280 then decrements
+        // by 0x20 until it crosses below -0xFF on update 8.
+        check(fiveSelection.BeginClosing() &&
+              fiveSelection.TransitionCounter == -1 &&
+              !fiveSelection.EntranceComplete &&
+              !fiveSelection.IsClosed &&
+              !fiveSelection.MoveNext(),
+              "Native selection: closing starts at -1 and gates further input");
+        for (int step = 1; step <= 8; step++)
+        {
+            fiveSelection.AdvanceClosing();
+            check(fiveSelection.ClosingCounter == -1 - step * 0x20 &&
+                  fiveSelection.TransitionCounter == fiveSelection.ClosingCounter &&
+                  fiveSelection.IsClosed == (step == 8),
+                  $"Native selection: close update {step}/8 reaches exact counter");
+        }
+        check(!fiveSelection.BeginClosing() && !fiveSelection.MovePrevious(),
+              "Native selection: object deactivates once when counter is below -255");
+        fiveSelection.AdvanceClosing();
+        check(fiveSelection.ClosingCounter == -257 &&
+              fiveSelection.IsClosed, "Native selection: deactivated object cannot tick again");
         var shortSelection = new NativeSelectionWindow(3);
         check(!shortSelection.MoveNext(),
               "Native selection: input is gated during the eight opening updates");
