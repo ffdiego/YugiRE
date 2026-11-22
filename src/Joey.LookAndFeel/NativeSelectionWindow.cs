@@ -188,6 +188,23 @@ public sealed class NativeSelectionWindow
     }
 
     /// <summary>
+    /// The nonzero Draw branch in 0043B280 (assembly 0043B2A9..0043B2DF)
+    /// chooses descriptor 0xC/0xD/0xE/0xF for modes 1/2/3/4.
+    /// It calls 0045C140(side, descriptor, 0) and gets a POSITION PAIR
+    /// (EAX=X, EDX=Y) for the start of the opening/closing transformation.
+    /// The value is a descriptor, not a DAT texture index or card slot.
+    /// Other modes use -1, whose meaning remains unconfirmed.
+    /// </summary>
+    public static int TransitionOriginDescriptor(int mode) => mode switch
+    {
+        1 => 0xC,
+        2 => 0xD,
+        3 => 0xE,
+        4 => 0xF,
+        _ => -1
+    };
+
+    /// <summary>
     /// The constructor's mode switch; the 1/2 suffix is passed explicitly
     /// because the native perspective/side rule must not be guessed.
     /// </summary>

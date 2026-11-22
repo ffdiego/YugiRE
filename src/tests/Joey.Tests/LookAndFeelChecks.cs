@@ -424,6 +424,12 @@ internal static class LookAndFeelChecks
                   -1, transitionStart, transitionEnd, 451, 191, nativeSelectionCosine) ==
               new NativeSelectionTransitionFrame(new CardPoint(596, 315), 338, 143),
               "Native selection: Draw transforms center and both dimensions, truncating divisions like x86");
+        check(NativeSelectionWindow.TransitionOriginDescriptor(1) == 0xC &&
+              NativeSelectionWindow.TransitionOriginDescriptor(2) == 0xD &&
+              NativeSelectionWindow.TransitionOriginDescriptor(3) == 0xE &&
+              NativeSelectionWindow.TransitionOriginDescriptor(4) == 0xF &&
+              NativeSelectionWindow.TransitionOriginDescriptor(0x29) == -1,
+              "Native selection: Draw chooses 0045C140 origin descriptor by window type");
         check(NativeSelectionWindow.ManifestPath(1, 2) == @"j\duel\list\fusionlist2.txt" &&
               NativeSelectionWindow.ManifestPath(2, 1) == @"j\duel\list\selectlist1.txt" &&
               NativeSelectionWindow.ManifestPath(3, 2) == @"j\duel\list\gravelist2.txt" &&

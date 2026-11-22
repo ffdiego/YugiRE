@@ -176,3 +176,35 @@ a fórmula de *lookup* e a aritmética; ela **não** prova os valores
 reais de `DAT_00A52EE8`. Ainda restam a recuperação da própria
 tabela, a semântica das variantes, os demais passes Draw e a
 integração no cliente. **Badge visual permanece 19/34.**
+
+## 7. A transição possui uma origem distinta para cada família de lista
+
+O bloco de assembly `0043B2A9..0043B2DF` de `0043B280`
+seleciona um inteiro por `obj+0x38` (modo de janela) antes de chamar
+`0045C140`:
+
+| Modo | Manifest pelo construtor | Descritor de origem do Draw |
+| ---: | --- | ---: |
+| 1 | fusionlist | `0x0C` |
+| 2 | selectlist | `0x0D` |
+| 3 | gravelist | `0x0E` |
+| 4 | excludelist | `0x0F` |
+| Demais | fallback (não assumir mesma âncora) | `-1` |
+
+A chamada real passa `0045C140(obj+0x34, descritor, 0)`.
+No x86, ela devolve o par de coordenadas em **EAX/EDX**,
+que é usado como origem da interpolação da etapa 6. A assinatura
+automática do Ghidra mostra somente um retorno `int`; esse é
+um caso em que ler o assembly evita perder a segunda coordenada.
+
+`NativeSelectionWindow.TransitionOriginDescriptor` preserva essa
+decisão sem adivinhar o resultado de `0045C140`, pois ele depende de
+estado/perspectiva e de dados globais ainda não exportados. Não
+presumir que todos os tipos de lista saem da posição (525,300),
+nem que os descritores `0x0C..0x0F` sejam índices diretos
+de imagens no arquivo DAT.
+
+O método de Draw que compõe as cartas quando `obj+0x14=0` ainda
+contém chamadas indiretas e variáveis transitórias sem tipagem
+resolvida. Não transportar sua geometria restante por imitação
+do overlay atual.
