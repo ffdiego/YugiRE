@@ -338,7 +338,10 @@ static partial class Game
                     DrawDuelCard(monster, geometry);
                     if (Hit(monsterRect) && pendingTarget is null && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
-                    if (geometry.AttributesCenter is { } center)
+                    // The resolved Core card may already be face-up here;
+                    // until sword contact, even its ATK/DEF must stay hidden.
+                    if (geometry.AttributesCenter is { } center &&
+                        !IsHiddenAttackTargetBeforeImpact(player, zone))
                     {
                         const int fontSize = 10;
                         string attributes = $"{duel.AttackValue(player, zone)} / {duel.DefenseValue(player, zone)}";

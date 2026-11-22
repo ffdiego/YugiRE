@@ -106,6 +106,9 @@ static partial class Game
                     ? (null, true) : (fieldCard, false);
             for (int zone = 0; zone < 5; zone++)
             {
+                if (Hit(ZoneBounds(player, zone, false)) &&
+                    IsHiddenAttackTargetBeforeImpact(player, zone))
+                    return (null, true);
                 if (duel.Monsters[player, zone] is Card monster &&
                     Hit(ZoneBounds(player, zone, false)))
                     return !own && duel.MonsterFaceDown[player, zone]

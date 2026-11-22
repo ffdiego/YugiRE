@@ -165,6 +165,11 @@ static partial class Game
         attackCue = new(from, to, near, target >= 0 && (alphaCpu is null || player == 0), hiddenTarget);
     }
 
+    static bool IsHiddenAttackTargetBeforeImpact(int player, int zone) =>
+        attackCue?.HiddenTarget is { } target &&
+        attackUpdates < NativeAttackFrame.ImpactStartUpdate &&
+        target.Player == player && target.Zone == zone;
+
     static void DrawHiddenAttackTargetBeforeImpact()
     {
         // The sword reaches the defender at t=0x100 (update 16). The
