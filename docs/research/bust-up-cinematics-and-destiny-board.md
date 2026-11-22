@@ -69,3 +69,22 @@ já conhecidos. Invocações normais de Red-Eyes (resource ID 81) e do
 recurso 744 passam a emitir um **candidato de cut-in** observável no
 JSON do F12. Como as respectivas durações e renderizadores não foram
 reconstruídos, **nenhum dos dois interrompe ou atrasa o duelo**. O bust-up não integra o denominador atual das 31 funções visualmente inventariadas e Vija continua Pending.
+
+## Implementação subsequente: vitória F-I-N-A-L no sandbox
+
+`DestinyBoardRules` reutiliza os resource IDs 1528 e 1541–1544,
+sem converter os índices internos do SQLite em IDs. `DemoDuel`
+pode ativar Destiny Board após seu turno de Set, colocar
+uma Spirit Message da mão ou deck em cada End Phase
+adversária e encerrar o duelo quando as cinco cartas
+estão simultaneamente face-up no campo. A condição é
+independente dos LP e da vitória por Exodia na mão.
+
+Esta etapa é **sandbox jogável, não paridade Joey original**:
+resposta de Trap no turno adversário, remoção conjunta,
+composição visual `004584C0`, áudio e IA continuam abertos.
+O `NativeCinematicRouting` identifica uma intenção Vija,
+sem reservá-la na fila até que seu Draw tenha duração e
+sprites validados. Ver [limites/testes da implementação]
+(../cards/destiny-board-sandbox.md). A cobertura Draw
+permanece **19/31**, zero `Verified`.
