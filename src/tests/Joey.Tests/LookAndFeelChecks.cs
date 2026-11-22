@@ -143,6 +143,45 @@ internal static class LookAndFeelChecks
               !NativeDuelCursor.CanToggleHandAction(false, false, false, true) &&
               !NativeDuelCursor.CanToggleHandAction(true, false, false, false),
               "Right-click only cycles when two legal actions exist");
+        // Native detail 0041BE80 / 0041B3E0: the client must not
+        // replace the original detail.bmp with raylib-colored rectangles.
+        // The English GDI builder uses 14px Courier New-family text,
+        // COLORREF (BGR numeric) colors and a 184px scrolling viewport.
+        check(NativeDetailPanel.TextX == 8 &&
+              NativeDetailPanel.TextY == 365 &&
+              NativeDetailPanel.TextRight == 184 &&
+              NativeDetailPanel.TextWidth == 176 &&
+              NativeDetailPanel.TextBottom == 526 &&
+              NativeDetailPanel.ScrollWidgetX == 186 &&
+              NativeDetailPanel.ScrollWidgetY == 364 &&
+              NativeDetailPanel.TextHeight == 161 &&
+              NativeDetailPanel.EnglishTextSize == 14 &&
+              NativeDetailPanel.EnglishLineAdvance == 14 &&
+              NativeDetailPanel.EnglishFace == "Courier New" &&
+              NativeDetailPanel.VisibleLineCount() == 11,
+              "Native detail: recovered text viewport, scroll origin and English GDI font contract");
+        check(NativeDetailPanel.DecodeColorRef(NativeDetailPanel.NameColorRef) ==
+                  ((byte)16, (byte)16, (byte)16) &&
+              NativeDetailPanel.DecodeColorRef(NativeDetailPanel.StatsColorRef) ==
+                  ((byte)180, (byte)73, (byte)30) &&
+              NativeDetailPanel.DecodeColorRef(NativeDetailPanel.DescriptionColorRef) ==
+                  ((byte)110, (byte)88, (byte)11),
+              "Native detail: decode source COLORREF values as RGB without swapping red/blue");
+        var richLines = NativeDetailPanel.Wrap(
+            "Dragon Knight", "ATK 2400 / DEF 2000",
+            "A long description about damage." + Environment.NewLine + "Another paragraph.",
+            value => value.Length * 7, width: 63);
+        check(richLines.Take(2).SequenceEqual([
+                  new NativeDetailPanel.TextLine("Dragon", NativeDetailPanel.LineKind.Name),
+                  new NativeDetailPanel.TextLine("Knight", NativeDetailPanel.LineKind.Name)]) &&
+              richLines.Any(line => line.Kind == NativeDetailPanel.LineKind.Stats) &&
+              richLines.Any(line => line.Kind == NativeDetailPanel.LineKind.Description) &&
+              richLines.All(line => line.Value.Length * 7 <= 63) &&
+              NativeDetailPanel.ClampScroll(500, 18, 11) == 7 &&
+              NativeDetailPanel.ClampScroll(-500, 18, 11) == 0 &&
+              NativeDetailPanel.ClampScroll(5, 4, 11) == 0,
+              "Native detail: measured wrapping, explicit paragraphs, viewport and scroll bounds");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

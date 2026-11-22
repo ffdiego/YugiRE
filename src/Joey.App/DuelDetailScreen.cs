@@ -173,8 +173,10 @@ static partial class Game
     static void DrawDuelDetail()
     {
         activatedDetail = false;
-        Raylib.DrawRectangle(62, 4, 137, 28, Panel);
-        Raylib.DrawRectangle(62, 552, 137, 28, Panel);
+
+        // detail/detail.bmp has already been drawn as the background in
+        // DuelScreen. Do NOT cover its native LP top/bottom frames or card
+        // description area with solid raylib Panel rectangles.
         DrawLifeBar(1 - ViewPlayer, near: false);
         DrawLifeBar(ViewPlayer, near: true);
         DrawLifeDigits(1 - ViewPlayer, 9);
@@ -182,13 +184,54 @@ static partial class Game
         if (detailCard is not { } card) return;
 
         DrawArtwork(card, 14, 53, 186, 265);
-        string stats = card.IsMonster ? $"\nATK {card.Attack} / DEF {card.Defense}" : "";
-        var lines = TextLines(card.Name + stats + "\n" + card.Description, 188, 13);
-        Raylib.DrawRectangle(8, 321, 198, 229, Panel);
-        const int visibleLines = 14;
-        if (mouse.X < 214) duelDescriptionScroll -= (int)Raylib.GetMouseWheelMove() * 3;
-        duelDescriptionScroll = Math.Clamp(duelDescriptionScroll, 0, Math.Max(0, lines.Count - visibleLines));
+
+        // 0041B3E0 builds native rich text: name, optional monster ATK/DEF,
+        // description; 0041BE80 supplies the actual 184px text viewport.
+        // English font GDI face comes from 0040F650 / 00544B80.
+        const int size = NativeDetailPanel.EnglishTextSize;
+        Font? normalFont = duelTheme.DetailTextFont(bold: false);
+        Font? titleFont = duelTheme.DetailTextFont(bold: true);
+        int Measure(string value) =>
+            normalFont is Font font
+                ? (int)MathF.Ceiling(Raylib.MeasureTextEx(font, value, size, 0).X)
+                : Raylib.MeasureText(value, size);
+
+        string? stats = card.IsMonster
+            ? $"ATK {card.Attack} / DEF {card.Defense}" : null;
+        var lines = NativeDetailPanel.Wrap(card.Name, stats, card.Description, Measure);
+        int visibleLines = NativeDetailPanel.VisibleLineCount();
+        if (mouse.X >= NativeDetailPanel.TextX &&
+            mouse.X < NativeDetailPanel.TextX + NativeDetailPanel.TextWidth &&
+            mouse.Y >= NativeDetailPanel.TextY &&
+            mouse.Y < NativeDetailPanel.TextBottom)
+            duelDescriptionScroll -= (int)Raylib.GetMouseWheelMove() * 3;
+        duelDescriptionScroll = NativeDetailPanel.ClampScroll(
+            duelDescriptionScroll, lines.Count, visibleLines);
+
+        // The native panel is clipped; unbounded text should never cover
+        // the LP bar, card image or adjacent duel field.
+        Raylib.BeginScissorMode(NativeDetailPanel.TextX,
+            NativeDetailPanel.TextY, NativeDetailPanel.TextWidth,
+            NativeDetailPanel.TextHeight);
         for (int i = 0; i < visibleLines && i + duelDescriptionScroll < lines.Count; i++)
-            Label(lines[i + duelDescriptionScroll], 14, 325 + i * 16, 13, i + duelDescriptionScroll == 0 ? Gold : Color.White);
+        {
+            var line = lines[i + duelDescriptionScroll];
+            uint sourceColor = line.Kind switch
+            {
+                NativeDetailPanel.LineKind.Name => NativeDetailPanel.NameColorRef,
+                NativeDetailPanel.LineKind.Stats => NativeDetailPanel.StatsColorRef,
+                _ => NativeDetailPanel.DescriptionColorRef
+            };
+            var (r, g, b) = NativeDetailPanel.DecodeColorRef(sourceColor);
+            var color = new Color((int)r, (int)g, (int)b, 255);
+            int y = NativeDetailPanel.TextY + i * NativeDetailPanel.EnglishLineAdvance;
+            Font? font = line.Kind == NativeDetailPanel.LineKind.Name ? titleFont : normalFont;
+            if (font is Font loaded)
+                Raylib.DrawTextEx(loaded, line.Value,
+                    new Vector2(NativeDetailPanel.TextX, y), size, 0, color);
+            else
+                Raylib.DrawText(line.Value, NativeDetailPanel.TextX, y, size, color);
+        }
+        Raylib.EndScissorMode();
     }
 }
