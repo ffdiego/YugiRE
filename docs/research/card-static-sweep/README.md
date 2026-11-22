@@ -9,11 +9,11 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | Lote | Famílias | Registros | Mapeado | Parcial | Pendente |
 |---|---:|---:|---:|---:|---:|
 | [01-lp-destruicao-respostas](01-lp-destruicao-respostas.jsonl) | 7 | 35 | 29 | 6 | 0 |
-| [02-zonas-e-modificadores](02-zonas-e-modificadores.jsonl) | 18 | 59 | 36 | 23 | 0 |
-| [03-controle-e-eventos](03-controle-e-eventos.jsonl) | 20 | 36 | 23 | 13 | 0 |
-| [04-regras-globais-e-continuacoes](04-regras-globais-e-continuacoes.jsonl) | 9 | 52 | 34 | 17 | 1 |
-| [05-janelas-invocacao-batalha](05-janelas-invocacao-batalha.jsonl) | 8 | 21 | 8 | 13 | 0 |
-| [06-combate-diferido-e-invocacao](06-combate-diferido-e-invocacao.jsonl) | 12 | 34 | 18 | 16 | 0 |
+| [02-zonas-e-modificadores](02-zonas-e-modificadores.jsonl) | 18 | 59 | 40 | 19 | 0 |
+| [03-controle-e-eventos](03-controle-e-eventos.jsonl) | 20 | 36 | 27 | 9 | 0 |
+| [04-regras-globais-e-continuacoes](04-regras-globais-e-continuacoes.jsonl) | 9 | 52 | 38 | 13 | 1 |
+| [05-janelas-invocacao-batalha](05-janelas-invocacao-batalha.jsonl) | 8 | 21 | 10 | 11 | 0 |
+| [06-combate-diferido-e-invocacao](06-combate-diferido-e-invocacao.jsonl) | 12 | 34 | 20 | 14 | 0 |
 | [07-selecao-vinculos-e-substituicao](07-selecao-vinculos-e-substituicao.jsonl) | 14 | 32 | 9 | 23 | 0 |
 | [08-efeitos-compostos-e-eventos](08-efeitos-compostos-e-eventos.jsonl) | 15 | 41 | 16 | 23 | 2 |
 | [09-efeitos-fora-da-tabela](09-efeitos-fora-da-tabela.jsonl) | 7 | 16 | 10 | 4 | 2 |
@@ -23,7 +23,7 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 | [13-resultados-de-ritual](13-resultados-de-ritual.jsonl) | 1 | 15 | 15 | 0 | 0 |
 | [14-monstros-normais](14-monstros-normais.jsonl) | 1 | 526 | 526 | 0 | 0 |
 | [15-reconciliacao-residual](15-reconciliacao-residual.jsonl) | 3 | 6 | 2 | 0 | 4 |
-| **Total** | 133 | 998 | 831 | 158 | 9 |
+| **Total** | 133 | 998 | 847 | 142 | 9 |
 
 <!-- fim cobertura -->
 
@@ -31,10 +31,10 @@ O inventário cobre **1.114 dos 1.114 IDs do DAT inglês**, incluindo **771/771*
 
 | Recorte do DAT | Mapeado no JSONL | Parcial no JSONL | Pendente no JSONL | Estudo anterior | Total |
 |---|---:|---:|---:|---:|---:|
-| Todos os packs | 518 | 148 | 1 | 104 | 771 |
-| Pack Joey | 202 | 100 | 1 | 47 | 350 |
+| Todos os packs | 534 | 132 | 1 | 104 | 771 |
+| Pack Joey | 215 | 87 | 1 | 47 | 350 |
 
-Uma revisão de 23 entradas passou a Mapeado após confirmar rotinas de pagamento, modificadores, invocação ou encerramento. O campo `additional_evidence` complementa a interpretação original no registro de família ou carta. A duração dos modificadores temporários vem do DAT, com os deltas confirmados no consumidor em 0056DD30.
+Duas revisões passaram 39 entradas a Mapeado após confirmar rotinas de pagamento, modificadores, invocação, encerramento, restrições de ataque e supressão. O campo `additional_evidence` complementa a interpretação original no registro de família ou carta. A duração dos modificadores temporários vem do DAT, com os deltas confirmados no consumidor em 0056DD30. As rotinas 00598D70 e 00598C40 separam fonte de supressão, máscara por classe e estado de cada carta aberta.
 
 As receitas cobrem os 57 resultados de fusão do DAT, dos quais 34 têm indicação de pack. Há 52 linhas de dois materiais a partir de `005ECF10` e três de três materiais a partir de `005ED048`. Flame Swordsman (2014) e Thousand Dragon (2068) são variantes que usam a receita dos IDs 14 e 68. O ID 0 da receita de Blue-Eyes Ultimate Dragon é Blue-Eyes White Dragon. Os campos `existing_card_recipes` e `existing_card_rules` complementam entradas existentes sem contar seus IDs de novo. Os 16 resultados de Ritual têm par e nível documentados, dos quais oito aparecem nos packs. A classificação por receita de invocação preserva separadamente a classificação do efeito próprio de cada monstro.
 
