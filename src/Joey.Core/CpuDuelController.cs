@@ -70,8 +70,12 @@ public sealed class CpuDuelController
         }
 
         if (duel.PendingEffectDecision is { } decision)
+        {
+            var answer = decision.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(decision.Owner) > 0
+                ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
             return Act(CpuAction.Decision, (out string m) => duel.ResolveEffectDecision(
-                decision.Id, EffectDecisionAnswer.Decline, out m));
+                decision.Id, answer, out m));
+        }
         if (duel.PendingSummonResponse is { } summon)
         {
             var trap = summon.EligibleTraps.FirstOrDefault(t => t.Owner == Player &&
@@ -230,6 +234,9 @@ public sealed class CpuDuelController
         FlipEffectRules.MaskOfDarkness => d.Graveyard(Player).Any(c => c.ClassCode == 21),
         FlipEffectRules.MorphingJar => d.HandFor(Player).Count < 3 && d.DeckCount(Player) >= 5,
         FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout => true,
+        FlipEffectRules.FourStarredLadybugOfDoom =>
+            MonsterWipeRules.LevelFourOpponentTargets(Player, d.Monsters, d.MonsterFaceDown).Count > 0,
+        FlipEffectRules.Skelengel => d.DeckCount(Player) > 0,
         _ => false
     };
 }

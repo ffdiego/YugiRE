@@ -2,9 +2,9 @@ using Joey.Core;
 
 internal static class FlipMonsterChecks
 {
-    private static Card Monster(ushort id, int index, int attack = 1000, int defense = 600) =>
+    private static Card Monster(ushort id, int index, int attack = 1000, int defense = 600, int level = 4) =>
         new(index, id, id == 500 ? "Man-Eater Bug" : id == 590 ? "Morphing Jar" : $"Monster {id}",
-            "", (1u << 20) | (4u << 25) | ((uint)(attack / 10) << 9) | (uint)(defense / 10));
+            "", (1u << 20) | ((uint)level << 25) | ((uint)(attack / 10) << 9) | (uint)(defense / 10));
     private static Card?[] Slots(Card? first = null, Card? second = null) =>
         [first, second, null, null, null];
     private static string Snapshot(DemoDuel duel) => string.Join(";", duel.Turn,
@@ -17,6 +17,8 @@ internal static class FlipMonsterChecks
 
     public static void Run(Action<bool, string> check)
     {
+        RunLadybug(check);
+        RunSkelengel(check);
         check(FlipEffectRules.Effect(500) == DemoFlipEffect.DestroyMonster &&
               FlipEffectRules.Effect(590) == DemoFlipEffect.ReplaceHands &&
               FlipEffectRules.Effect(1163) == DemoFlipEffect.ShuffleAndExcavate &&
@@ -250,5 +252,91 @@ internal static class FlipMonsterChecks
               noEffect.PendingFlipTarget is null && noEffect.Graveyard(0).Count == 1 &&
               noEffect.Life.SequenceEqual([8000, 8000]),
               "FLIP: unsupported monster does not inherit other FLIP effects");
+    }
+
+    private static void RunLadybug(Action<bool, string> check)
+    {
+        var ladybug = Monster(1338, 400, 800, 1200, level: 3);
+        var four = Monster(100, 401, 1600);
+        var five = Monster(102, 403, level: 5);
+        var summon = DemoDuel.FromPartialObservation(1, [],
+            [four, four, four, five, null], Slots(ladybug, four), 8000);
+        summon.MonsterFaceDown[1, 0] = summon.DefensePosition[1, 0] = true;
+        summon.MonsterFaceDown[0, 2] = summon.DefensePosition[0, 2] = true;
+        summon.DefensePosition[0, 1] = true;
+        check(summon.ChangePosition(0, out _) &&
+              summon.LastMonsterWipe is { EffectResourceId: 1338, Caster: 1, DestroyedPlayer0: 2, DestroyedPlayer1: 0, DestroyedFaceDown: 0 } &&
+              summon.Monsters[0, 0] is null && summon.Monsters[0, 1] is null &&
+              summon.Monsters[0, 2] == four && summon.MonsterFaceDown[0, 2] &&
+              summon.Monsters[0, 3] == five && summon.Monsters[1, 1] == four &&
+              summon.PendingFlipTarget is null,
+            "Ladybug FLIP Summon: destroys only opposing face-up Level 4 in either position");
+
+        var battle = DemoDuel.FromPartialObservation(1, [],
+            Slots(ladybug), Slots(four, five), 8000);
+        battle.MonsterFaceDown[0, 0] = battle.DefensePosition[0, 0] = true;
+        check(battle.BeginBattle(out _) && battle.Attack(0, 0, out _) &&
+              battle.LastMonsterWipe is { Caster: 0, TotalDestroyed: 1 } &&
+              battle.Graveyard(0).SequenceEqual([ladybug]) && battle.Graveyard(1).SequenceEqual([four]) &&
+              battle.Monsters[1, 1] == five && battle.Life.SequenceEqual([8000, 8000]),
+            "Ladybug: destroys the attacking Level 4 after damage, then leaves by battle once");
+
+        var empty = DemoDuel.FromPartialObservation(0, [], Slots(ladybug), Slots(), 8000);
+        empty.MonsterFaceDown[0, 0] = true;
+        check(empty.RevealMonsterByEffect(0, 0, out _) &&
+              empty.LastMonsterWipe is { TotalDestroyed: 0 } &&
+              empty.PendingFlipTarget is null && empty.Monsters[0, 0] == ladybug,
+            "Ladybug: external reveal with no matches resolves without a prompt");
+    }
+
+    private static void RunSkelengel(Action<bool, string> check)
+    {
+        var angel = Monster(539, 500, 900, 400, level: 2);
+        var attacker = Monster(110, 114, 1300, 1000);
+        var accept = DemoDuel.FromPartialObservation(1, [], Slots(angel), Slots(attacker), 8000,
+            side0Deck: [attacker]);
+        accept.MonsterFaceDown[0, 0] = accept.DefensePosition[0, 0] = true;
+        check(accept.BeginBattle(out _) && accept.Attack(0, 0, out _) &&
+              accept.PendingEffectDecision is { Owner: 0, Kind: EffectDecisionKind.DrawOneOnFlip } &&
+              accept.IsMarkedForBattleDestruction(0, 0) && !accept.EndBattle(out _) &&
+              accept.HandFor(0).Count == 0 && accept.HandFor(1).Count == 0,
+            "Skelengel: owner gets optional draw before the end of Damage Step");
+        long id = accept.PendingEffectDecision!.Id;
+        check(!accept.ResolveEffectDecision(id + 1, EffectDecisionAnswer.Accept, out _) &&
+              accept.ResolveEffectDecision(id, EffectDecisionAnswer.Accept, out _) &&
+              accept.HandFor(0).SequenceEqual([attacker]) && accept.DeckCount(0) == 0 &&
+              accept.Graveyard(0).SequenceEqual([angel]) && accept.PendingEffectDecision is null &&
+              !accept.IsMarkedForBattleDestruction(0, 0) &&
+              !accept.ResolveEffectDecision(id, EffectDecisionAnswer.Accept, out _),
+            "Skelengel: accept consumes the decision exactly once, draws for the owner and completes battle");
+
+        var decline = DemoDuel.FromPartialObservation(0, [], Slots(angel), Slots(), 8000,
+            side0Deck: [attacker]);
+        decline.MonsterFaceDown[0, 0] = true;
+        check(decline.RevealMonsterByEffect(0, 0, out _) &&
+              decline.PendingEffectDecision is { } offer &&
+              decline.ResolveEffectDecision(offer.Id, EffectDecisionAnswer.Decline, out _) &&
+              decline.DeckSnapshot(0).SequenceEqual([attacker]) && decline.Hand.Count == 0,
+            "Skelengel: external reveal can be declined without changing the deck");
+
+        var empty = DemoDuel.FromPartialObservation(0, [], Slots(angel), Slots(), 8000);
+        empty.MonsterFaceDown[0, 0] = true;
+        check(empty.ChangePosition(0, out _) &&
+              empty.PendingEffectDecision is null && !empty.GameOver,
+            "Skelengel: an empty deck suppresses the optional draw");
+
+        var trap = new Card(611, 1425, "Torrential Tribute", "", 21u << 20);
+        var response = DemoDuel.FromPartialObservation(0, [trap], Slots(), Slots(angel), 8000,
+            side1Deck: [attacker]);
+        response.MonsterFaceDown[1, 0] = response.DefensePosition[1, 0] = true;
+        check(response.SetFromHand(0, out _), "Skelengel: set summon response fixture");
+        response.NextTurn();
+        check(response.ChangePosition(0, out _) && response.PendingSummonResponse is not null &&
+              response.PendingEffectDecision is null && response.ActivateSummonTrap(0, 0, out _) &&
+              response.Graveyard(1).SequenceEqual([angel]) &&
+              response.PendingEffectDecision is { Owner: 1, Kind: EffectDecisionKind.DrawOneOnFlip } &&
+              new CpuDuelController(1).Step(response) is { Status: CpuStepStatus.Acted, Action: CpuAction.Decision } &&
+              response.HandFor(1).SequenceEqual([attacker]),
+            "Skelengel: existing summon response resolves before the queued draw, including the CPU path");
     }
 }

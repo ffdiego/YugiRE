@@ -92,6 +92,8 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 1116 | Spear Cretin | Done (sandbox) | Após ser virado, ao ir ao cemitério cada lado revive 1 monstro do próprio cemitério |
 | 561 | Needle Worm | Done (sandbox) | FLIP: envia até 5 cartas do topo do deck oponente ao seu cemitério |
 | 610 | Hiro's Shadow Scout | Done (sandbox) | FLIP: adversário compra até 3 cartas e descarta as magias recém-compradas; deck-out na compra obrigatória insuficiente (política do sandbox) |
+| 1338 | 4-Starred Ladybug of Doom | Done (sandbox) | FLIP destrói monstros adversários face-up de nível 4 |
+| 539 | Skelengel | Done (sandbox) | FLIP oferece ao controlador comprar uma carta |
 | 1122 | Sonic Bird | Done (sandbox) | No Normal ou Flip Summon pode buscar 1 Magia de Ritual do próprio Main Deck para a mão |
 | 1109 | Senju of the Thousand Hands | Done (sandbox) | No Normal ou Flip Summon pode buscar 1 Monstro de Ritual do próprio Main Deck para a mão |
 | 335 | Dark Hole | Done (sandbox) | Destrói todos os monstros de ambos os lados, sem disparar FLIP por simples destruição |
@@ -160,6 +162,12 @@ Cada fonte de aura face-up contribui para os monstros face-up dos dois lados, in
 O ataque direto normal continua disponível em campo adversário vazio. Com defensores presentes, o cliente oferece a escolha entre um monstro adversário e a espada no ponto de impacto direto existente. O uso do sprite DAT nesse ponto como controle clicável é uma decisão transitória do cliente. Os ataques passam pela janela de resposta e a permissão é conferida novamente antes do dano. O filtro de 812 ignora defensores ocultos segundo 0056A810 e ainda precisa de comparação em duelo no Joey original. A invocação por fusão de 812 continua em aberto.
 
 Os deltas e permissões vêm do [lote 10 da campanha estática](docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl). Os cenários em [MonsterBattleRuleChecks](src/tests/Joey.Tests/MonsterBattleRuleChecks.cs) cobrem as famílias no Core. A Alpha inclui Hoshiningen e Jinzo #7 no baralho padrão.
+
+### FLIPs de destruição em massa e compra
+
+4-Starred Ladybug of Doom compartilha a resolução de destruição em massa com o P092. O filtro de `0058F940` usa o nível 4, a face e o lado adversário. O sandbox mantém as remoções já determinadas em combate sob o próprio fluxo de batalha. [Estudo P242](docs/research/card-static-sweep/05-janelas-invocacao-batalha.jsonl)
+
+Skelengel usa o ramo de compra única de `005887C0`. A escolha vem do texto do DAT e é oferecida no fluxo de decisões opcionais do sandbox. O motor suspende o fim da etapa de dano até a decisão e pula a oferta com deck vazio. A ordem do prompt e as interações de negação ainda precisam de comparação no Joey. As duas cartas integram o deck padrão da Alpha. [Estudo P118](docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl)
 
 ### Destruição por tipo (P092)
 

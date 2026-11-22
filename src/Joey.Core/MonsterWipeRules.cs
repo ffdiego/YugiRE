@@ -47,8 +47,15 @@ public static class MonsterWipeRules
     {
         var scope = Scope(resourceId);
         if (scope is null) return [];
-        return CollectTargets(scope.Value, caster, monsters, faceDown, RequiredFaceUpType(resourceId));
+        Predicate<Card>? filter = RequiredFaceUpType(resourceId) is int type
+            ? card => card.ClassCode == type
+            : null;
+        return CollectTargets(scope.Value, caster, monsters, faceDown, filter);
     }
+
+    internal static IReadOnlyList<MonsterWipeTarget> LevelFourOpponentTargets(
+        int owner, Card?[,] monsters, bool[,] faceDown) =>
+        CollectTargets(MonsterWipeScope.OpponentOnly, owner, monsters, faceDown, card => card.Level == 4);
 
     /// <summary>
     /// Mirror Force snapshot: every face-up Attack Position monster on the
@@ -74,7 +81,7 @@ public static class MonsterWipeRules
         CollectTargets(scope, caster, monsters, faceDown, null);
 
     private static IReadOnlyList<MonsterWipeTarget> CollectTargets(
-        MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown, int? requiredFaceUpType)
+        MonsterWipeScope scope, int caster, Card?[,] monsters, bool[,] faceDown, Predicate<Card>? faceUpFilter)
     {
         if (caster is < 0 or > 1) return [];
         var result = new List<MonsterWipeTarget>(10);
@@ -86,7 +93,7 @@ public static class MonsterWipeRules
             {
                 if (monsters[p, zone] is not Card card) continue;
                 bool hidden = faceDown[p, zone];
-                if (requiredFaceUpType is int type && (hidden || card.ClassCode != type)) continue;
+                if (faceUpFilter is not null && (hidden || !faceUpFilter(card))) continue;
                 result.Add(new(p, zone, card, hidden));
             }
         }

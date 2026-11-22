@@ -167,6 +167,48 @@
       ]
     },
     {
+      "id": "monster.flip.destroy-opponent-level-four",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP: destroy opposing face-up Level 4 monsters without selecting targets"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1338
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "docs/research/card-static-sweep/05-janelas-invocacao-batalha.jsonl"
+      ],
+      "limitations": [
+        "Sandbox uses the DAT level and keeps monsters already marked by battle on the battle removal path. Native phase timing, suppression and protection remain outside this scope."
+      ]
+    },
+    {
+      "id": "monster.flip.optional-draw",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP: the controller may draw one card"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        539
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/EffectDecisions.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "Sandbox uses its optional effect prompt and skips the offer when the deck is empty. Native prompt ordering and suppression remain unverified."
+      ]
+    },
+    {
       "id": "spell.monster-wipe-face-up-type",
       "kind": "Spell",
       "subtype": "Normal",

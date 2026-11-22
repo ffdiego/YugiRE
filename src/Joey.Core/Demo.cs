@@ -724,6 +724,7 @@ public sealed class DemoDuel
         MonsterFaceDown[player, zone] = false;
         MonsterWasFlipped[player, zone] = true;
         TriggerFlip(player, zone, monster, out message);
+        BeginNextEffectDecision();
         if (message.Length == 0) message = "Monster revealed by an effect (no supported FLIP).";
         return true;
     }
@@ -748,6 +749,7 @@ public sealed class DemoDuel
             try { QueueRitualSummonSearch(owner, monster); }
             finally { resolvingSummon = false; }
             BeginSummonResponse(new(owner, zone, monster, DemoSummonKind.Flip));
+            BeginNextEffectDecision();
             if (PendingSummonResponse is not null)
                 message = $"{monster.Name} Flip Summoned: choose a set Trap or Pass.";
             else if (PendingCardSelection is not null)
@@ -969,7 +971,8 @@ public sealed class DemoDuel
             defender, out string damageMessage);
         deferredBattle = battle;
         TriggerFlip(enemy, target, defender, out string flipMessage);
-        if (PendingFlipTarget is not null || PendingCardSelection is not null)
+        BeginNextEffectDecision();
+        if (PendingFlipTarget is not null || PendingCardSelection is not null || PendingEffectDecision is not null)
         {
             message = $"{damageMessage} {flipMessage}";
             return true;
@@ -1089,6 +1092,22 @@ public sealed class DemoDuel
                     card.Id, owner, 1 - owner, decks[1 - owner], graves[1 - owner], 5);
                 message = $"{card.Name} FLIP: sent {LastDeckFlow.MovedFromDeck} " +
                     $"of 5 top cards from P{2 - owner}'s Deck to their Graveyard.";
+                break;
+            case DemoFlipEffect.DestroyOpponentFaceUpLevelFour:
+                var targets = MonsterWipeRules.LevelFourOpponentTargets(owner, Monsters, MonsterFaceDown)
+                    .Where(target => !IsMarkedForBattleDestruction(target.Player, target.Zone)).ToArray();
+                LastMonsterWipe = ResolveMonsterWipe(card.Id, owner, explicitTargets: targets);
+                message = $"{card.Name} FLIP: destroyed {LastMonsterWipe.TotalDestroyed} face-up Level 4 monster(s).";
+                break;
+            case DemoFlipEffect.OptionalDrawOne:
+                if (decks[owner].Count == 0 || GameOver)
+                {
+                    message = $"{card.Name} FLIP: no optional draw available.";
+                    break;
+                }
+                queuedEffectDecisions.Enqueue(new(++nextEffectDecisionId, owner, card,
+                    EffectDecisionKind.DrawOneOnFlip, LifePointCost: 0, CreatedTurn: Turn));
+                message = $"{card.Name} FLIP: P{owner + 1} may draw one card.";
                 break;
             case DemoFlipEffect.DrawAndDiscardOpponentSpells:
                 // P088: draw exactly three (if available), then discard only
@@ -1875,6 +1894,8 @@ public sealed class DemoDuel
         message = "No matching optional effect decision is pending.";
         if (PendingEffectDecision is not { } request || request.Id != id ||
             !Enum.IsDefined(answer) || GameOver) return false;
+        if (request.Kind == EffectDecisionKind.DrawOneOnFlip)
+            return ResolveFlipDrawDecision(request, answer, out message);
         if (answer == EffectDecisionAnswer.Accept &&
             (!RevivalJamRules.MayPay(Life[request.Owner]) ||
              !graves[request.Owner].Any(c => ReferenceEquals(c, request.Source))))
@@ -1897,6 +1918,25 @@ public sealed class DemoDuel
             ? $"P{request.Owner + 1} paid {request.LifePointCost} LP; Revival Jam scheduled."
             : $"P{request.Owner + 1} declined Revival Jam's optional cost.";
         BeginNextEffectDecision();
+        BeginNextQueuedDeckSearch();
+        return true;
+    }
+
+    private bool ResolveFlipDrawDecision(PendingEffectDecision request, EffectDecisionAnswer answer, out string message)
+    {
+        bool draw = answer == EffectDecisionAnswer.Accept;
+        if (draw && decks[request.Owner].Count == 0)
+        {
+            message = "The deck is empty.";
+            return false;
+        }
+        PendingEffectDecision = null;
+        int life = Life[request.Owner];
+        effectDecisionHistory.Add(new(request.Id, request.Owner, request.Kind, answer, Turn, life, life));
+        if (draw) DrawToHand(request.Owner);
+        message = draw ? $"P{request.Owner + 1} drew one card with {request.Source.Name}." :
+            $"P{request.Owner + 1} declined the draw from {request.Source.Name}.";
+        FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         return true;
     }

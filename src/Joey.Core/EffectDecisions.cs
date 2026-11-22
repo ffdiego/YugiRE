@@ -2,9 +2,9 @@ namespace Joey.Core;
 
 /// <summary>
 /// A rule request is independent of how it is shown (raylib, AI, or replay).
-/// This initial vertical slice models an optional cost, not chain priority.
+/// Optional costs and effects share the same decision lifecycle.
 /// </summary>
-public enum EffectDecisionKind { PayLifePointsForRevival }
+public enum EffectDecisionKind { PayLifePointsForRevival, DrawOneOnFlip }
 public enum EffectDecisionAnswer { Accept, Decline }
 public enum EffectPromptMode { Ask, Automatic, Off }
 
