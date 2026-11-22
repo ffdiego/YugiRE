@@ -613,12 +613,13 @@ internal static class LookAndFeelChecks
         check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
               "Set placement: effect starts after hand-to-field flight");
 
-        check(NativeLifeHud.DisplayGlyphHeight == 32 &&
+        check(NativeLifeHud.DisplayGlyphScale == 3 &&
+              NativeLifeHud.DisplayGlyphHeight == 36 &&
               NativeLifeHud.DisplayRightX == 195 &&
-              NativeLifeHud.DisplayGlyphWidth(120, 12, 10) == 32f &&
-              NativeLifeHud.DisplayTopY == 3 &&
-              NativeLifeHud.DisplayBottomY == 536,
-              "Original LP digits use scaled source sprite glyphs with right alignment");
+              NativeLifeHud.DisplayGlyphWidth(120, 12, 10) == 36 &&
+              NativeLifeHud.DisplayTopY == -1 &&
+              NativeLifeHud.DisplayBottomY == 532,
+              "LP digits: client uses 3x bitmap glyph scale, right-aligned to atlas evidence");
         // 0047C660 uses displayed (not logical) LP for the native bar,
         // saturating at 8000 even though the numeric display reaches 65535.
         check(NativeLifeHud.FilledBarPixels(0, 137) == 0 &&
