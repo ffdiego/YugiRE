@@ -58,4 +58,14 @@ A condição geral do TCG é ter Destiny Board mais as quatro Spirit Messages no
 
 --inspect-visual-dat agora examina **j\duel\ e j\bust_up\**, totalizando **74 manifests** no índice original e incluindo metadados das 160 imagens de busto. O JSON é gerado localmente em scratch/visual-review/dat-manifests.json. Não exporta pixels, EXE ou DAT nem faz upload automático. NativeVisualArchiveScope é um predicado de descoberta com testes, **não é um renderer**.
 
-Cobertura Draw permanece **19/31 (61,29%)**, 0 Verified. O bust-up não integra o denominador atual das 31 funções visualmente inventariadas e Vija continua Pending.
+Cobertura Draw permanece **19/31 (61,29%)**, 0 Verified.
+
+## Implementação posterior: cue tipada e gate sem pausa invisível
+
+O contrato `NativeCinematicCue` e a política `NativeCinematicRouting`
+estão documentados em [gates de cenas](../architecture/native-cinematic-gates.md).
+A Exodia usa a mesma fila `PresentationSequence` e preserva os 79 updates
+já conhecidos. Invocações normais de Red-Eyes (resource ID 81) e do
+recurso 744 passam a emitir um **candidato de cut-in** observável no
+JSON do F12. Como as respectivas durações e renderizadores não foram
+reconstruídos, **nenhum dos dois interrompe ou atrasa o duelo**. O bust-up não integra o denominador atual das 31 funções visualmente inventariadas e Vija continua Pending.
