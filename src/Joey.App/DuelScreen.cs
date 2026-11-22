@@ -18,19 +18,31 @@ static partial class Game
     static void SynchronizeHand(int player, IReadOnlyList<Card> visible, int updates = 0) =>
         handLayouts[player].Synchronize(visible, player == ViewPlayer, updates, presentation.Style.PlayAnimations);
 
-    static Rectangle ActionBounds(int slot)
+    // The action cloud is part of the cursor image and moves with the
+    // pointer; the card itself only has a native-free discard fallback.
+    static Rectangle DiscardActionBounds(int slot)
     {
         var card = HandBounds(slot);
-        var action = NativeDuelCursor.HandAction(ViewHand[slot].IsMonster,
-            setHandAction, duel.PendingEndDiscards > 0);
-        if (action is not NativeCursorAction nativeAction)
-            return new(card.X, card.Y - 32, card.Width, 27); // discard: sandbox fallback
-
-        var icon = graphics.Texture(NativeDuelCursor.ActionSprite(nativeAction));
-        var bounds = NativeDuelCursor.ActionBounds(ToCardBounds(card),
-            icon.Width, icon.Height);
-        return ToRectangle(bounds);
+        return new(card.X, card.Y - 32, card.Width, 27);
     }
+
+    static NativeCursorAction? CurrentHandAction(int index) =>
+        index < 0 || index >= ViewHand.Count ? null :
+        NativeDuelCursor.HandAction(
+            ViewHand[index].IsMonster,
+            duel.CanSummonFromHand(index),
+            duel.CanSetFromHand(index),
+            duel.CanActivateFromHand(index),
+            setHandAction,
+            duel.PendingEndDiscards > 0);
+
+    static bool CanToggleHandAction(int index) =>
+        index >= 0 && index < ViewHand.Count &&
+        NativeDuelCursor.CanToggleHandAction(
+            ViewHand[index].IsMonster,
+            duel.CanSummonFromHand(index),
+            duel.CanSetFromHand(index),
+            duel.CanActivateFromHand(index));
     static bool Hit(Rectangle rect) => Raylib.CheckCollisionPointRec(mouse, rect);
     static void ClearDuelSelection()
     {
@@ -49,6 +61,8 @@ static partial class Game
             if (duel.DiscardForEndTurn(index, out message)) ClearDuelSelection();
             return;
         }
+        var action = CurrentHandAction(index);
+        if (action is null) return;
         if (card.IsMonster)
         {
             if (!duel.CanSummonFromHand(index)) return;
@@ -61,7 +75,7 @@ static partial class Game
             }
             CommitHumanSummon(index);
         }
-        else if (setHandAction)
+        else if (action == NativeCursorAction.Set)
         {
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
@@ -76,12 +90,13 @@ static partial class Game
                 ClearDuelSelection();
             }
         }
-        else if (EquipmentRules.Supports(card.Id) && duel.CanActivateFromHand(index))
+        else if (action == NativeCursorAction.Activate &&
+                 EquipmentRules.Supports(card.Id) && duel.CanActivateFromHand(index))
         {
             choosingEquip = true;
             message = $"Choose a compatible face-up monster for {card.Name}.";
         }
-        else
+        else if (action == NativeCursorAction.Activate)
         {
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
@@ -108,11 +123,9 @@ static partial class Game
         ClearDuelSelection();
         return true;
     }
-    static string HandActionCaption(int index) => duel.PendingEndDiscards > 0 ? "Discard" :
-        setHandAction ? "Set" : ViewHand[index].IsMonster ? "Summon" : "Activate";
-    static bool HandActionEnabled(int index) => duel.PendingEndDiscards > 0 ||
-        (setHandAction ? duel.CanSetFromHand(index) : ViewHand[index].IsMonster
-            ? duel.CanSummonFromHand(index) : duel.CanActivateFromHand(index));
+    static string HandActionCaption(int index) => "Discard"; // sandbox fallback only
+    static bool HandActionEnabled(int index) =>
+        duel.PendingEndDiscards > 0 || CurrentHandAction(index) is not null;
     static bool UpdateHandInteraction(int updates)
     {
         int count = ViewHand.Count;
@@ -121,20 +134,35 @@ static partial class Game
         for (int slot = 0; slot < count; slot++)
         {
             var rect = HandBounds(slot);
-            // Include both rest and lifted positions so the card never escapes its hover area.
-            if (Hit(new Rectangle(rect.X, rect.Y, rect.Width, NativeDuelLayout.CanvasHeight - rect.Y))) next = slot;
-        }
-        if (next < 0 && hoverHand >= 0 && hoverHand < ViewHand.Count)
-        {
-            var balloon = ActionBounds(hoverHand);
-            if (Hit(new Rectangle(balloon.X, balloon.Y, balloon.Width, balloon.Height + 6))) next = hoverHand;
+            // Hover is on the card, not on a static bubble (the original
+            // action bubble follows the cursor). Union lifted/rest bounds
+            // prevents flicker as the card animates upward.
+            var resting = ToRectangle(handLayouts[ViewPlayer].Bounds(
+                slot, ViewHand.Count, 0));
+            float minY = MathF.Min(rect.Y, resting.Y);
+            float maxY = MathF.Max(rect.Y + rect.Height, resting.Y + resting.Height);
+            if (Hit(new Rectangle(rect.X, minY, rect.Width, maxY - minY)))
+                next = slot;
         }
         bool overHand = next >= 0;
         if (choosingTributes || choosingEquip) next = -1;
         if (next != hoverHand)
         {
             hoverHand = next;
-            if (!choosingTributes && !choosingEquip) setHandAction = false;
+            if (!choosingTributes && !choosingEquip)
+            {
+                // Monsters default to Summon, spells to Activate when legal;
+                // a Trap can only Set, even before right-click.
+                setHandAction = next >= 0 &&
+                    NativeDuelCursor.HandAction(
+                        ViewHand[next].IsMonster,
+                        duel.CanSummonFromHand(next),
+                        duel.CanSetFromHand(next),
+                        duel.CanActivateFromHand(next),
+                        requestSet: false,
+                        discarding: duel.PendingEndDiscards > 0)
+                    == NativeCursorAction.Set;
+            }
         }
         for (int slot = 0; slot < handLift.Length; slot++)
         {
@@ -146,7 +174,8 @@ static partial class Game
         }
         if (hoverHand < 0) return overHand;
         hand = hoverHand; attacker = -1;
-        if (Raylib.IsMouseButtonPressed(MouseButton.Right) && duel.PendingEndDiscards == 0)
+        if (Raylib.IsMouseButtonPressed(MouseButton.Right) &&
+            duel.PendingEndDiscards == 0 && CanToggleHandAction(hoverHand))
             setHandAction = !setHandAction;
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && HandActionEnabled(hoverHand))
             UseHandAction(hoverHand);
@@ -301,26 +330,16 @@ static partial class Game
             DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
             if (index == hand) Raylib.DrawRectangleLinesEx(rect, 2, Color.White);
         }
-        if (MotionBusy || PhaseBusy || hoverHand < 0 || hoverHand >= ViewHand.Count) return;
-        if (!duel.CanSetFromHand(hoverHand) && !duel.CanActivateFromHand(hoverHand) && duel.PendingEndDiscards == 0) return;
-        var bubble = ActionBounds(hoverHand);
-        bool enabled = HandActionEnabled(hoverHand);
-        var action = NativeDuelCursor.HandAction(ViewHand[hoverHand].IsMonster,
-            setHandAction, duel.PendingEndDiscards > 0);
-        if (action is NativeCursorAction nativeAction)
-        {
-            // These are the actual cursor action clouds, separate from
-            // 0044FA10 Summon and 0044F390 Set field animations.
-            var sprite = graphics.Texture(NativeDuelCursor.ActionSprite(nativeAction));
-            Raylib.DrawTexture(sprite, (int)bubble.X, (int)bubble.Y,
-                enabled ? Color.White : new Color(150, 150, 150, 220));
-            return;
-        }
-        // End-of-turn manual discard is a client action without a mapped
-        // original cursor_*.yga. Retain its existing bubble for now.
-        Raylib.DrawRectangleRounded(bubble, .3f, 6, enabled ? new Color(248, 229, 177, 255) : Color.Gray);
+        // The cursor image itself switches to Summon/Set/Activate when
+        // a legal hand action is hovered. Do not draw a second action
+        // cloud tied to the card. Keep the sandbox discard caption only.
+        if (MotionBusy || PhaseBusy || hoverHand < 0 ||
+            hoverHand >= ViewHand.Count || duel.PendingEndDiscards == 0) return;
+        var bubble = DiscardActionBounds(hoverHand);
+        Raylib.DrawRectangleRounded(bubble, .3f, 6,
+            new Color(248, 229, 177, 255));
         Vector2 tip = new(bubble.X + bubble.Width / 2, bubble.Y + bubble.Height + 5);
-        Raylib.DrawTriangle(new Vector2(tip.X - 6, tip.Y - 6), tip, new Vector2(tip.X + 6, tip.Y - 6), enabled ? Gold : Color.Gray);
+        Raylib.DrawTriangle(new Vector2(tip.X - 6, tip.Y - 6), tip, new Vector2(tip.X + 6, tip.Y - 6), Gold);
         string caption = HandActionCaption(hoverHand);
         Label(caption, (int)(bubble.X + (bubble.Width - MeasureLabel(caption, 16)) / 2), (int)bubble.Y + 5, 16, Color.Black);
     }
