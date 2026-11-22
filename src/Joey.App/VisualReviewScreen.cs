@@ -41,6 +41,13 @@ static partial class Game
             paused = visualReviewPaused,
             reviewStep = visualReviewStep,
             debugVisible = duelDebug,
+            mouseCanvas = new { x = mouse.X, y = mouse.Y },
+            cursorSprite = NativeDuelCursor.DefaultPointer,
+            customCursorVisible = duelSystemCursorHidden,
+            actionCloud = hoverHand >= 0 && hoverHand < ViewHand.Count
+                ? NativeDuelCursor.HandAction(ViewHand[hoverHand].IsMonster,
+                    setHandAction, duel.PendingEndDiscards > 0)?.ToString()
+                : null,
             turn = duel.Turn,
             phase = duel.Phase.ToString(),
             playerPerspective = ViewPlayer,
