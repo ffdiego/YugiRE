@@ -6,15 +6,18 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 
 <!-- cobertura -->
 
-| Lote | Famílias | Cartas | Mapeado | Parcial | Pendente |
+| Lote | Famílias | Registros | Mapeado | Parcial | Pendente |
 |---|---:|---:|---:|---:|---:|
 | [01-lp-destruicao-respostas](01-lp-destruicao-respostas.jsonl) | 7 | 35 | 23 | 12 | 0 |
 | [02-zonas-e-modificadores](02-zonas-e-modificadores.jsonl) | 18 | 59 | 31 | 28 | 0 |
 | [03-controle-e-eventos](03-controle-e-eventos.jsonl) | 20 | 36 | 23 | 13 | 0 |
 | [04-regras-globais-e-continuacoes](04-regras-globais-e-continuacoes.jsonl) | 9 | 52 | 28 | 22 | 2 |
-| **Total** | 54 | 182 | 105 | 75 | 2 |
+| [05-janelas-invocacao-batalha](05-janelas-invocacao-batalha.jsonl) | 8 | 21 | 8 | 13 | 0 |
+| **Total** | 62 | 203 | 113 | 88 | 2 |
 
 <!-- fim cobertura -->
+
+São 202 IDs com identidade de carta e um registro sem identidade (1245). Os dois pendentes são 1245 e Minor Goblin Official (1302). IDs distintos com o mesmo nome permanecem distintos.
 
 ## Evidência e reprodução
 
@@ -24,10 +27,25 @@ Cada arquivo JSONL define registros `family` seguidos dos registros `card` que h
 - O lote 02 consultou a decompilação de 00579A00, 0057F360, 0057A630 e dos emissores disponíveis. As resoluções da tabela de callbacks foram conferidas por instruções, incluindo o desvio menor/maior em 00588442/0058844C e as três quantidades de compra em 005887E9–0058881A.
 - O lote 03 cruzou instruções nos callbacks 00589030–0058BA80 com decompilações de 00585F50, 0058C080, 0058E2F0, 00591040 e 005914A0. Os caminhos de banimento em 0058C080 distinguem 1157 por classificação FLIP e 1158 pela classe armadilha.
 - O lote 04 cruzou IDs em rotinas globais decompiladas, especialmente 0056B7D0, 0059CE90/0059CF30 e 0059D560–0059D790. As entradas que usam instruções registram o endereço da rotina ou o endereço exato do teste de ID. O salto de P248 foi conferido nas tabelas 005903F4/005903E4.
+- O lote 05 inspecionou os callbacks por instruções e cruzou os filtros e custos de 0057C2B0 e 0057C450 com o SQLite. O ramo de Enchanted Javelin em 0058D6B8 e o de Mask of Weakness em 0058D801 mostram por que P200 e o endereço principal compartilhado precisam ser analisados por ID.
 - A campanha reaproveita os estudos consolidados de [destruição por máscara](../../cards/monster-destruction.md), [custos de descarte](../../cards/tribute-discard-cost.md), [P025](../../cards/p025-preliminary.md), [rituais](../../cards/ritual-bindings.md) e [dano fixo P045](../../cards/p045-direct-damage.md). As cartas já cobertas por esses estudos ficam fora da contagem de novas investigações.
 
-## Reuso e validação
+## Próximos grupos para o Core
 
-O lote 01 sustenta emissores genéricos de ganho/perda de LP, contagem de zona, destruição por predicado e destruição de alvo com revalidação. O resolvedor das respostas distingue cancelar um pedido de destruir sua origem e de substituir a operação por outra máscara.
+1. **Destruição em massa por predicado.** Começar pelos sete destruidores por tipo de P092. Reusar uma operação de máscara com filtro de lado, face-up, tipo dinâmico e proteção. Acrescentar 4-Starred Ladybug of Doom com o filtro de nível e Heavy Storm com o filtro de zona. Eternal Rest depende de fechar os tipos de vínculo que entram na contagem.
+2. **Compra, LP e movimentação entre zonas.** Reusar quantidade e lado como parâmetros. Começar por Pot of Greed, Jar of Greed, Skelengel e Upstart Goblin. Em seguida, usar um seletor com origem, filtro, cota e destino para Fusion Sage e P248. Graceful Charity e Card Destruction acrescentam composição ordenada e eventos de descarte.
+3. **Seleção revalidada e efeitos vinculados.** Aplicar validação de ocorrência para Mystical Space Typhoon, Block Attack e Fissure. Expandir para renascimento com vínculo e modificadores temporários quando o motor puder expirar associações por movimento ou mudança de turno.
+4. **Respostas e efeitos contínuos.** Modelar eventos de compra, descarte, invocação e ataque. Separar negar o pedido, destruir a origem e substituir sua operação, como mostram as respostas a Raigeki e Harpie’s Feather Duster. Reusar os predicados de autorização de ação em Gravity Bind, Insect Barrier e Mask of Restrict.
 
-As observações com maior valor no executável são a legalidade de respostas concorrentes, a reação de Michizure a diferentes causas de saída do campo e o comportamento de Eternal Rest com vínculos de tipos 4/5. O próximo passo estático para cada um já está indicado no catálogo. Para implementação, a primeira fatia recomendada é destruição em massa por tipo, com face-down, tipos dinâmicos e os dois lados como casos de teste.
+## Quando abrir o Joey original
+
+- **Janelas concorrentes e ordem observável.** Comparar Solemn Judgment e Horn of Heaven em invocação aberta e durante outro efeito, os três caminhos de Magic Drain (sem candidato, recusa, descarte) e Michizure após saídas de campo com causas diferentes. Capturar a ordem dos pedidos e se as cartas chegam efetivamente ao campo ou ao cemitério.
+- **Seleção e desempate.** Em Fissure e Widespread Ruin, colocar dois candidatos elegíveis com ATK igual e conferir quem escolhe e quais opções aparecem. Em Graceful Charity, observar compra insuficiente e se a interface permite encerrar antes de completar o descarte.
+- **Estado por turno e ocorrências simultâneas.** Em Jam Breeding Machine, comparar Standby com zona livre e cheia. Em Solemn Wishes e Skull Invitation, distinguir um evento com várias cartas de vários eventos independentes. Comparar o contador do Cocoon of Evolution com as três primeiras janelas de invocação correspondentes.
+- **Proteção e dependências em campo.** Comparar Ring of Destruction com alvo protegido e dano letal aos dois lados, além de renascimento vinculado quando a fonte é destruída, devolvida à mão ou usada em tributo.
+
+O próximo recorte estático é seguir os consumidores de modificadores, contadores e vínculos já identificados. Os dois pendentes podem ser retomados em paralelo com a procura dos produtores de Standby e das entradas sem identidade. A execução do jogo agrega evidência de fluxo, escolha e temporização aos casos acima.
+
+## Verificações da campanha
+
+O SQLite retornou `ok` em `PRAGMA quick_check` e manteve o SHA-256 `cf5a29df75fe6fa86a655ecae82ead8e7c41c06477bbd2fd653f10b9b02664b5` do início ao fim. A conferência automatizada validou o JSONL, famílias referenciadas, unicidade de IDs, nomes, perfis, ponteiros dos slots e contagens contra a base e o catálogo versionado. A checagem de endereços confirma formato e faixa executável. As interpretações de comportamento são estáticas.
