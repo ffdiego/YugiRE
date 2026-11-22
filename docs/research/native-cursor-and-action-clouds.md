@@ -71,22 +71,29 @@ catalogadas para integrações posteriores.
 
 A interface calcula a área clicável a partir da **dimensão
 real da textura** (não mais do retângulo genérico
-de 50 × 27). O posicionamento atual é
+de 50 × 27). Após feedback da comparação visual,
+a **ponta da nuvem deve aparecer em cima da carta**,
+não parar 5 pixels antes do topo. O posicionamento
+corrigido é
 `x = centroDaCarta − larguraSprite/2`,
-`y = topoDaCarta − alturaSprite − 5`.
-É **ancoragem provisória do cliente**, não coordenada
-nativa verificada.
+`y = topoDaCarta − alturaSprite + 12`.
+Assim o limite inferior do sprite avança 12 pixels
+sobre a borda superior da carta, mesmo com hover/lift.
+**Os 12 pixels são uma calibração inicial do cliente**;
+a localização do último pixel opaco da ponta e o pivô
+precisam ser comparados com o executável original.
 
-O ponteiro do sistema é escondido apenas durante o
-duelo quando o `cursor00.yga` original tem tamanho
-plausível (cada dimensão entre 1 e 128 pixels).
-O `cursor00.yga` é desenhado no canvas
-**800 × 600**, após os outros overlays, na posição
-do mouse lógico (origin/hotspot superior esquerdo
-**provisório**). Ao sair do duelo ou mover para a
-área de letterboxing, o ponteiro do Windows reaparece.
-`cursor01.yga` fica catalogado, mas não alternamos
-entre as imagens sem comprovar a condição nativa.
+A primeira versão do cliente também desenhava
+`cursor00.yga` por cima do cursor do sistema, criando
+a aparência de **dois ponteiros**. Isso foi removido:
+o sistema operacional continua desenhando o único mouse
+no duelo e em outras telas; não chamamos mais
+`HideCursor` nem sobrepomos `cursor00.yga`.
+`cursor00/01.yga` seguem catalogados e validados como
+recursos de pesquisa, **mas não são renderizados**.
+Portanto capturas F12 do canvas de 800 × 600 contêm
+as nuvens de ação, mas não necessariamente o ponteiro
+do SO, que fica fora do render target.
 
 `DatGraphics.Validate` passa a decodificar os YGAs de
 cursor para detectar formatos inesperados sem abrir a
@@ -103,11 +110,10 @@ Os recursos de jogo não são versionados no Git.
 2. Conferir posição da ponta/nuvem, tamanho nativo
    das texturas, transparência, efeito de hover,
    ordem de render e deslocamento com a carta.
-3. Capturar o cursor em repouso e pressionado;
-   determinar hotspot e a função real de
-   `cursor00/01.yga`, inclusive se o executável
-   original esconde o cursor Win32 somente em
-   tela cheia ou também em janela.
+3. Conferir se o ponteiro do Windows continua único
+   em repouso e ao passar sobre cartas. A função nativa
+   de `cursor00/01.yga` permanece em investigação;
+   não reintroduzir um segundo cursor sem evidência.
 4. Usar F6/F7 para inspecionar quadros estáveis e
    F12 para PNG/JSON de 800×600. Comparar
    ao lado de uma captura do jogo original.

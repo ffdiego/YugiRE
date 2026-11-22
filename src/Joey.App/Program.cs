@@ -163,10 +163,8 @@ static partial class Game
                 else if (screen == "deck") DrawDeck();
             }
 
-            // The original cursor is drawn LAST on the 800x600 canvas.
-            // Menu/deck screens retain the ordinary OS cursor.
-            if (screen == "duel" && error.Length == 0) DrawNativeDuelCursor();
-            else RestoreSystemCursor();
+            // Keep the system cursor. cursor_e_*.yga are action-cloud
+            // overlays, not an additional mouse pointer.
             Raylib.EndTextureMode();
             if (screen == "duel" && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
@@ -178,7 +176,6 @@ static partial class Game
             Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height), new Rectangle(origin.X, origin.Y, width * scale, height * scale), Vector2.Zero, 0, Color.White);
             Raylib.EndDrawing();
         }
-        RestoreSystemCursor();
         Raylib.UnloadRenderTexture(canvas);
         duelTheme.Dispose();
         graphics.Dispose(); Raylib.CloseWindow(); return 0;

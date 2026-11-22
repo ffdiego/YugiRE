@@ -87,12 +87,16 @@ Nenhuma dessas observações deve elevar a badge até haver Draw ativo.
 ## Cursor e balões de ação sobre a carta
 
 O balão original de Summon/Set/Activate agora vem de
-`cursor/cursor_e_*.yga`, e o ponteiro próprio usa `cursor00.yga`
-no canvas 800×600. O inspetor `--inspect-visual-dat` também
-exporta metadados dos 68 registros `cursor/` do DAT.
-Comparar com o original a ponta da nuvem, o pivô do cursor,
-a transição do botão direito (Summon → Set) e transparência;
-F12 registra a posição do cursor e o nome da ação selecionada.
+`cursor/cursor_e_*.yga`. Seu limite inferior **sobrepõe 12 pixels
+do topo da carta**; calibrar a ponta opaca com a captura original.
+A primeira versão desenhava `cursor00.yga` como um segundo
+ponteiro; agora apenas o cursor do SO permanece visível.
+O inspetor `--inspect-visual-dat` continua exportando metadados
+dos 68 registros `cursor/` do DAT, inclusive `cursor00/01`,
+sem renderizá-los. Comparar a transição do botão direito
+(Summon → Set), a transparência e o posicionamento da ponta.
+F12 registra o mouse lógico e o nome da ação selecionada;
+o ponteiro do SO fica fora do PNG do render target.
 Esses elementos **não contam** nas 31 Draw inventariadas.
 Ver [pesquisa de cursor](native-cursor-and-action-clouds.md).
 

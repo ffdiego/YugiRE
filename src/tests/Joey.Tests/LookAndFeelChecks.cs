@@ -115,12 +115,19 @@ internal static class LookAndFeelChecks
               NativeDuelCursor.HandAction(true, false, true) is null &&
               NativeDuelCursor.HandAction(false, true, true) is null,
               "Cursor cloud selects Summon/Set/Activate and preserves discard sandbox fallback");
-        check(NativeDuelCursor.ActionBounds(new CardBounds(375, 450, 50, 72), 90, 30)
-                  == new CardBounds(355, 415, 90, 30) &&
-              NativeDuelCursor.CanRenderPointer(32, 32) &&
-              !NativeDuelCursor.CanRenderPointer(129, 32) &&
-              !NativeDuelCursor.CanRenderPointer(32, 0),
-              "Cursor action popup uses YGA dimensions and pointer guards reject oversized sprites");
+        var handCloud = NativeDuelCursor.ActionBounds(
+            new CardBounds(375, 450, 50, 72), 90, 30);
+        var liftedCloud = NativeDuelCursor.ActionBounds(
+            new CardBounds(375, 430, 50, 72), 90, 30);
+        check(NativeDuelCursor.CloudTipOverlapPixels == 12 &&
+              handCloud == new CardBounds(355, 432, 90, 30) &&
+              handCloud.Y + handCloud.Height == 450 + 12 &&
+              liftedCloud == new CardBounds(355, 412, 90, 30),
+              "Cursor action cloud tip overlaps top of card and follows its lifted Y position");
+        bool invalidCloudSizeRejected = false;
+        try { NativeDuelCursor.ActionBounds(new CardBounds(375, 450, 50, 72), 0, 30); }
+        catch (ArgumentOutOfRangeException) { invalidCloudSizeRejected = true; }
+        check(invalidCloudSizeRejected, "Cursor cloud rejects invalid sprite dimensions");
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
