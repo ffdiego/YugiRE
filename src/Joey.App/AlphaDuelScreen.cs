@@ -294,6 +294,11 @@ static partial class Game
             var rect = CpuHandBounds(i, count);
             DrawCardBack((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height, degrees: 180);
         }
+        // Paint the highlight last so neighbouring overlapping backs do
+        // not obscure it. No card identity or face is read by this path.
+        if (hoverCpuHand >= 0 && hoverCpuHand < count &&
+            !IncomingTransferInFlight(1, hoverCpuHand, visible[hoverCpuHand]))
+            DrawHandSelectionFrame(CpuHandBounds(hoverCpuHand, count), nearSide: false);
         if (duelDebug) Label($"CPU hand {count}", 266, 76, 13, Gold);
     }
 }

@@ -165,7 +165,8 @@ sealed class DatGraphics : IDisposable
             Raylib.UnloadImage(image);
             throw new InvalidDataException($"Cannot decode BMP {name}");
         }
-        if (name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
+        if (NativeCardSelectionFrame.IsFrame(name) ||
+            name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||

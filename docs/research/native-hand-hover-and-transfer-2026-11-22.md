@@ -19,3 +19,31 @@ Requisitos observados pelo usuário: sprite sobre carta selecionada; hover da CP
 - Ainda pendente: capturas pareadas da virada e do hover em 800x600, com os mesmos estados do original.
 
 Nenhuma regra em Joey.Core foi alterada e a cobertura de Draws ainda não pode ser elevada. Verificar manualmente com compras/descartes de duas e cinco cartas e com a mão da CPU durante animações.
+
+## Seleção de cartas: recursos originais do DAT (22/11/2026)
+
+O usuário extraiu o manifesto `j\\duel\\card\\card.txt` e metadados de imagem.
+A ordem é `card_waku#s.bmp`, `card_waku#l.bmp`, `card_waku#s2.bmp`,
+`card_waku#l2.bmp`; as dimensões são **58x80**, **108x153**,
+**58x80** e **108x153**. As margens correspondem a quatro pixels
+em torno de cartas de 50x72 e 100x145, respectivamente.
+
+Em `00418EF0`, o índice do recurso é
+`((descriptor & 0x3E) == 0x16) + 2 * variant`. A região 11
+(`0x16`) escolhe a imagem grande; a variante depende de bits de
+propriedade/owner e pode ser modificada por flags da carta.
+O destaque é desenhado apenas quando o ponteiro global indica a
+carta selecionada ou quando um estado visual especial está ativo.
+
+`NativeCardSelectionFrame` preserva todos os nomes e padding de forma
+testável e substitui o retângulo branco do cliente nos cartões da mão.
+Durante o hover da CPU utiliza a variante alternativa de 108x153 e
+gira o destaque junto ao verso. A associação simples near/far para
+a variante ainda é uma **hipótese do cliente**, não uma equivalência
+comprovada para todas as flags e estados do executável.
+
+`DatGraphics` aplica o mesmo teste de color-key verde aos quatro
+sprites. A cor transparente real de cada variante deve ser conferida
+com o BMP original e, se necessário, ajustada por análise de pixels.
+Falta estender a aplicação para a seleção das cartas de campo e
+comparar recortes equivalentes no 800x600 original.

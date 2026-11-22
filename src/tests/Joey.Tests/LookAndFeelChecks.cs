@@ -213,6 +213,23 @@ internal static class LookAndFeelChecks
               NativeHandDrawReveal.FromUpdate(7, false).HorizontalScale == 1,
               "CPU drawn card stays hidden; player reveal has a symmetric preview");
 
+        check(NativeCardSelectionFrame.LargeSprite(nearSide: true) ==
+                  @"j\duel\card\card_waku#l.bmp" &&
+              NativeCardSelectionFrame.LargeSprite(nearSide: false) ==
+                  @"j\duel\card\card_waku#l2.bmp" &&
+              NativeCardSelectionFrame.SmallSprite(nearSide: true) ==
+                  @"j\duel\card\card_waku#s.bmp" &&
+              NativeCardSelectionFrame.SmallSprite(nearSide: false) ==
+                  @"j\duel\card\card_waku#s2.bmp" &&
+              NativeCardSelectionFrame.IsFrame(@"J\DUEL\CARD\CARD_WAKU#L.BMP") &&
+              !NativeCardSelectionFrame.IsFrame(@"j\duel\card\card_ura.bmp"),
+              "Native card selection: original four DAT sprite slots, own/far variants");
+        check(NativeCardSelectionFrame.Outline(new CardBounds(375, 450, 100, 145), 108, 153) ==
+                  new CardBounds(371, 446, 108, 153) &&
+              NativeCardSelectionFrame.Outline(new CardBounds(325, 300, 50, 72), 58, 80) ==
+                  new CardBounds(321, 296, 58, 80),
+              "Native selection frame uses four-pixel padding around both card sizes");
+
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();

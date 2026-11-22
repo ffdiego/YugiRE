@@ -7,6 +7,7 @@ static partial class Game
 {
     // Native field centers and hand spacing; balloon rendering and update frequency are demo policy.
     static int hoverHand = -1;
+    static int hoverCpuHand = -1;
     static bool handActionsWereEnabled;
     static bool setHandAction, choosingTributes, choosingEquip;
     static int[] handLift = [];
@@ -46,9 +47,41 @@ static partial class Game
             duel.CanSetFromHand(index),
             duel.CanActivateFromHand(index));
     static bool Hit(Rectangle rect) => Raylib.CheckCollisionPointRec(mouse, rect);
+
+    // The original 00418EF0 selects a frame resource from duel/card/card.txt
+    // only when the card is marked as selected. Its large frame has four
+    // pixels of padding around the 100x145 hand texture.
+    static void DrawHandSelectionFrame(Rectangle bounds, bool nearSide)
+    {
+        var name = NativeCardSelectionFrame.LargeSprite(nearSide);
+        var texture = graphics.Texture(name);
+        var padded = NativeCardSelectionFrame.Outline(
+            ToCardBounds(bounds), texture.Width, texture.Height);
+        // On the far side, the card and its frame both face the opponent.
+        Raylib.DrawTexturePro(texture,
+            new Rectangle(0, 0, texture.Width, texture.Height),
+            new Rectangle(padded.X + padded.Width / 2f, padded.Y + padded.Height / 2f,
+                          padded.Width, padded.Height),
+            new Vector2(padded.Width / 2f, padded.Height / 2f),
+            nearSide ? 0 : 180, Color.White);
+    }
+
+    static void UpdateCpuHandHover()
+    {
+        hoverCpuHand = -1;
+        if (alphaCpu is null) return;
+        int opponent = 1 - ViewPlayer;
+        var cards = VisibleHand(opponent);
+        for (int index = 0; index < cards.Count; index++)
+        {
+            if (IncomingTransferInFlight(opponent, index, cards[index])) continue;
+            var bounds = ToRectangle(handLayouts[opponent].Bounds(index, cards.Count));
+            if (Hit(bounds)) hoverCpuHand = index;
+        }
+    }
     static void ClearDuelSelection()
     {
-        hand = attacker = hoverHand = -1;
+        hand = attacker = hoverHand = hoverCpuHand = -1;
         handActionsWereEnabled = false;
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
@@ -330,13 +363,14 @@ static partial class Game
     {
         var visible = VisibleHand(ViewPlayer);
         SynchronizeHand(ViewPlayer, visible);
-        var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == hoverHand ? 1 : 0);
+        int focused = (choosingTributes || choosingEquip) && hand >= 0 ? hand : hoverHand;
+        var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == focused ? 1 : 0);
         foreach (int index in drawOrder)
         {
             if (IncomingTransferInFlight(ViewPlayer, index, visible[index])) continue;
             var rect = ToRectangle(handLayouts[ViewPlayer].Bounds(index, visible.Count, HandLiftAt(index)));
             DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
-            if (index == hand) Raylib.DrawRectangleLinesEx(rect, 2, Color.White);
+            if (index == focused) DrawHandSelectionFrame(rect, nearSide: true);
         }
         // The cursor image itself switches to Summon/Set/Activate when
         // a legal hand action is hovered. Do not draw a second action
@@ -378,14 +412,16 @@ static partial class Game
         if (duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),
                 ToRectangle(DuelSurfaceLayout.Board), Vector2.Zero, 0, Color.White);
+        bool joeySpeaking = presentation.Busy &&
+            presentation.ActiveCue == DuelPresentationCue.JoeySpeech;
+        if (!joeySpeaking) UpdateCpuHandHover();
+        else hoverCpuHand = -1;
         if (alphaCpu is not null) DrawCpuHand();
         DrawPhasePanel(turnInput);
 
         if (actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
-        bool joeySpeaking = presentation.Busy &&
-            presentation.ActiveCue == DuelPresentationCue.JoeySpeech;
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
         bool handInput = actionInput && handHovered;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
