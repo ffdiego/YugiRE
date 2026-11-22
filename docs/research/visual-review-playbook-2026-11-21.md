@@ -84,6 +84,18 @@ A cadeia de construtores, as esperas nativas e as cinco cartas da condição
 foram investigadas em [bust-up e Destiny Board](bust-up-cinematics-and-destiny-board.md).
 Nenhuma dessas observações deve elevar a badge até haver Draw ativo.
 
+## Cursor e balões de ação sobre a carta
+
+O balão original de Summon/Set/Activate agora vem de
+`cursor/cursor_e_*.yga`, e o ponteiro próprio usa `cursor00.yga`
+no canvas 800×600. O inspetor `--inspect-visual-dat` também
+exporta metadados dos 68 registros `cursor/` do DAT.
+Comparar com o original a ponta da nuvem, o pivô do cursor,
+a transição do botão direito (Summon → Set) e transparência;
+F12 registra a posição do cursor e o nome da ação selecionada.
+Esses elementos **não contam** nas 31 Draw inventariadas.
+Ver [pesquisa de cursor](native-cursor-and-action-clouds.md).
+
 ## Matriz de comparação
 
 | Fatia (fontes nativas) | Provocar no cliente | Estados/quadros sugeridos | Divergência a procurar |
