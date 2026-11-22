@@ -224,22 +224,65 @@ Com o projeto Ghidra já instalado, a extração enfocada é:
 
 ```bash
 python3 scripts/export_ghidra_visual_bundle.py \
-  --targets 0043B280 004524E0 004524F0 004877B0 004877F0 \
+  --targets 0043B280 0055DCF0 004524E0 004524F0 004877B0 004877F0 \
   --disassemble --instruction-count 512 --retry-missing \
-  --memory 00A52EE8:2048 --memory 005DB570:4 \
+  --memory 005DB570:4 --memory 005DCCF8:8 --memory 005DCCB0:8 \
   --output scratch/ghidra-selection-fusion-contract.zip
 ```
 
-`00A52EE8:2048` representa os 512 `int32` da tabela original
-de interpolação, 4 blocos; `005DB570:4` é o inteiro global
-usado como X no construtor de seleção `0043A060`. Ambos
-faltam no SQLite, que guarda referências, não necessariamente os
-valores de memória do EXE. Mesmo com a tabela extraída, a integração
-ao cliente só será considerada fiel após recuperar a origem
-por `0045C140`, as variantes do manifesto e os passes
-de desenho correspondentes.
+`005DB570:4` é o inteiro global utilizado como X no construtor
+da seleção `0043A060`; `005DCCF8:8` e `005DCCB0:8`
+capturam as duas constantes referenciadas pelo inicializador x87
+em `0055DCF0`. A quantidade/tipo exato dessas constantes deve ser
+confirmada pelas instruções FLD na exportação, não apenas pelo
+tamanho solicitado.
+
+**Correção essencial, após investigar quem escreve a tabela:**
+`00A52EE8:2048` **não é uma maneira confiável de recuperar a
+tabela nativa com Ghidra estático**. A rotina `0055DCF0`,
+chamada por `0055BFA0`, produz 512 inteiros em `00A52EE8`
+até `00A536E8` com `FCOS` e `__ftol`, e marca
+`00A536E8=1` ao finalizar. Uma leitura do EXE em repouso pode
+mostrar zeros ou memória não inicializada, não os números finais.
+
+Para conferir valores exatos usados pela aplicação, além da
+decompilação de `0055DCF0`, será necessária uma **leitura
+runtime após sua execução** (Frida/depurador) ou uma reprodução
+comprovada do cálculo e arredondamento x87. A exportação estática
+agora se restringe à âncora, às constantes e às funções.
+A integração só será considerada fiel após confirmar também a
+origem calculada por `0045C140`, as variantes dos manifests
+e os passes de desenho correspondentes.
 
 Este commit **não executa Ghidra nem contém esses valores**.
 Registra o método para obtê-los sem recriar o SQLite completo,
 com testes Python offline para validação dos intervalos e do dump
 de memória. Continua valendo **19/34 Partial e zero Verified**.
+
+## 9. Proveniência da tabela trigonométrica: produzida pelo executável
+
+Consulta direta ao SQLite de 6.518 decompilações revelou a rotina
+`0055DCF0`, que contém o único escritor identificado da região
+`00A52EE8..00A536E8`. Sua sequência é:
+
+```text
+if (!tableInitialized) {
+  for (i = 0; i < 512; i++) {
+    table[i] = __ftol(fcos(i * constant_005DCCF8 * constant_005DCCB0));
+  }
+  tableInitialized = 1;
+}
+```
+
+A decompilação mostra referências `005DCCF8` e `005DCCB0`
+mas não seus valores. O endereço `0055BFA0` chama `0055DCF0`.
+A tabela não deve ser tratada como um asset armazenado no DAT
+nem como uma constante já inicializada no arquivo PE.
+
+**Evidências necessárias para fechar este caso:** assembly do
+inicializador, os operandos x87 e o conteúdo da tabela **após**
+o processo inicializá-la, para decidir se um gerador C# produz
+os mesmos 512 inteiros. Não confundir `Math.Cos` duplo padrão
+com `FCOS` de precisão estendida e regras de `__ftol` sem teste
+diferencial. A geometria de `NativeSelectionWindow` permanece
+parametrizada pelo `ReadOnlySpan<int>` recebido, sem heurística.

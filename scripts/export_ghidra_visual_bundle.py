@@ -75,7 +75,7 @@ def query_arguments(addresses: list[str], disassemble: bool = False,
 def memory_queries(ranges: list[str] | None) -> list[str]:
     """Split read-only native-memory evidence into QueryArchive's 512-byte chunks.
 
-    Each range uses VA:BYTE_COUNT (e.g. 00A52EE8:2048). No bytes are
+    Each range uses VA:BYTE_COUNT (e.g. 005DB570:4). No bytes are
     checked into git; query output remains in a private scratch/ ZIP.
     """
     commands = []
