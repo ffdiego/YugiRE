@@ -131,7 +131,6 @@ public sealed class NativeSelectionWindow
     }
 
     /// <summary>
-    /// <summary>
     /// Exact Ghidra disassembly of 0043B280 at 0043B2E6..0043B31B:
     /// positive counter uses (256-counter); negative uses (256+counter).
     /// Signed division by two is rounded toward zero (CDQ/SUB/SAR), then
