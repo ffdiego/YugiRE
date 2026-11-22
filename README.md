@@ -1,7 +1,7 @@
 # YugiRE
 
 [![Cartas jogáveis](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fall-packs.json)](docs/cards/PLAYABILITY.md)
-[![Funções visuais](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Fvisual.json)](docs/architecture/VISUAL_COVERAGE.md)
+[![Draw C# (inclusive parciais)](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Fvisual.json)](docs/architecture/VISUAL_COVERAGE.md)
 
 
 Engenharia reversa e protótipo de Yu-Gi-Oh! Power of Chaos: Joey the Passion.

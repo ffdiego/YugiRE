@@ -65,12 +65,12 @@ def generated() -> tuple[dict[Path, str], dict[str, int | float]]:
     verified = sum(x["status"] == "Verified" for x in rows)
     percent = round(100 * covered / total, 2) if total else 0.0
     stats = {"covered": covered, "total": total, "verified": verified, "percent": percent}
-    badge = {"schemaVersion": 1, "label": "funções visuais",
+    badge = {"schemaVersion": 1, "label": "Draw C# (parciais)",
              "message": f"{covered}/{total} ({percent:.2f}%)",
              "color": "brightgreen" if percent >= 70 else "blue" if percent >= 20 else "orange"}
     tick = chr(96)
     lines = [
-        "# Cobertura de funções visuais — YugiRE", "",
+        "# Cobertura de Draw nativas — YugiRE", "",
         "Denominador: **rotinas Draw nativas distintas identificadas** em",
         "[native-renderer-inventory.md](native-renderer-inventory.md). Uma rotina",
         "compartilhada por várias famílias conta uma vez. Funções Draw ainda",
@@ -81,6 +81,9 @@ def generated() -> tuple[dict[Path, str], dict[str, int | float]]:
         "conhecidas. Done exige escopo visual concluído em C#; Verified exige",
         "comparação com o executável original. Esta badge mede implementação,",
         "**não fidelidade pixel-perfect comprovada**.", "",
+        "**Não cobre toda a UI:** seleções, diálogos e outros objetos com Draw",
+        "desconhecido ainda não entram neste denominador. Ver",
+        "[famílias visuais em investigação](../research/visual-unmapped-families-2026-11-21.md).", "" ,
         "| VA Draw | Família | Estado | Implementação C# |",
         "| --- | --- | --- | --- |",
     ]

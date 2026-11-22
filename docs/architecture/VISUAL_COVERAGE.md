@@ -1,4 +1,4 @@
-# Cobertura de funções visuais — YugiRE
+# Cobertura de Draw nativas — YugiRE
 
 Denominador: **rotinas Draw nativas distintas identificadas** em
 [native-renderer-inventory.md](native-renderer-inventory.md). Uma rotina
@@ -12,6 +12,10 @@ Partial indica um componente visual C# relacionado, mas divergências
 conhecidas. Done exige escopo visual concluído em C#; Verified exige
 comparação com o executável original. Esta badge mede implementação,
 **não fidelidade pixel-perfect comprovada**.
+
+**Não cobre toda a UI:** seleções, diálogos e outros objetos com Draw
+desconhecido ainda não entram neste denominador. Ver
+[famílias visuais em investigação](../research/visual-unmapped-families-2026-11-21.md).
 
 | VA Draw | Família | Estado | Implementação C# |
 | --- | --- | --- | --- |
