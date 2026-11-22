@@ -207,6 +207,8 @@ O Fusion Deck é separado da mão e do Main Deck. A Alpha inclui Rabid Horseman 
 
 Os testes executam as 57 receitas do DAT, incluindo os três Blue-Eyes White Dragon de Blue-Eyes Ultimate Dragon (379). O manifesto registra 30 resultados dos packs no grupo de receita exata e Alligator’s Sword Dragon (812) separadamente, com ataque direto testado após a invocação. Chimera (1241), Thousand-Eyes Restrict (1334) e The Last Warrior (1526) podem ser invocados, com efeitos próprios pendentes. Polymerization permanece `Partial` enquanto o fluxo de materiais substitutos estiver pendente. Respostas, destinos substituídos por outros efeitos e timings do Joey original ainda precisam de comparação. [Receitas e endereços](docs/research/card-static-sweep/12-receitas-de-fusao.jsonl) · [Cenários C#](src/tests/Joey.Tests/FusionChecks.cs)
 
+A [análise dos substitutos de fusão](docs/cards/fusion-substitutes.md) confirma a cota de um por receita e localiza um caso de campo cheio em que a preferência nativa por materiais exatos pode ocultar uma combinação que liberaria vaga.
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |
