@@ -27,6 +27,11 @@ dotnet run --project src/Joey.App -- .\passion\data.dat --alpha
   perfil de apresentação (Classic=30/s; Fast=60/s). É um recurso do
   **cliente**; a taxa nativa real e a ordem Update/Draw ainda não
   estão comprovadas. O modo `--instant` não tem updates para avançar.
+- Quando uma invocação normal ocorre, F12 também registra o último
+  **candidato** a cut-in (`lastSignatureCandidateResourceId` e
+  `lastSignatureCandidateManifest`). Isso não significa que a cinemática
+  tenha sido renderizada; `signatureCinematicRendered` permanece false
+  até existir implementação sustentada pelo Draw do busto do Joey.
 - **F12** grava o *render target* do YugiRE, sempre com **800×600
   pixels**, em `scratch/visual-review/yugire-<UTC>.png`.
   Ao lado, grava um JSON com turno, fase, lado, LP lógico e exibido,

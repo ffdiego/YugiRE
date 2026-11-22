@@ -49,6 +49,13 @@ static partial class Game
             pendingLifeDelta = new[] { lifeDisplays[0].PendingDelta, lifeDisplays[1].PendingDelta },
             cardEffect = cardEffects.Current?.Kind.GetType().Name ?? "None",
             cardEffectUpdate = cardEffects.ElapsedUpdates,
+            cinematicKind = cardEffects.Current?.Kind is CinematicScene active
+                ? active.Cue.Kind.ToString() : "None",
+            cinematicManifest = cardEffects.Current?.Kind is CinematicScene scene
+                ? scene.Cue.Manifest : null,
+            lastSignatureCandidateResourceId = lastSignatureCandidate?.CardResourceId,
+            lastSignatureCandidateManifest = lastSignatureCandidate?.Manifest,
+            signatureCinematicRendered = lastSignatureCandidate?.HasPlayableDraw ?? false,
             flightUpdate = flight is null ? (int?)null : travelUpdate,
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
             activationEffect = activation.Current?.Kind.ToString() ?? "None",

@@ -8,6 +8,8 @@ public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool Fa
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
 /// <summary>Presentation-only notification, emitted after an effect places a monster.</summary>
 public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense);
+/// <summary>Committed normal summon or face-down Set; not a special summon or FLIP.</summary>
+public sealed record DemoNormalSummon(int Player, int Zone, Card Card, bool FaceDown);
 /// <summary>Observable Exodia win; five card snapshots in head, arms, legs order.</summary>
 public sealed record DemoExodiaCompletion(int Player, IReadOnlyList<Card> Pieces);
 
@@ -22,6 +24,8 @@ public sealed class DemoDuel
     public event Action<DemoMonsterTribute>? MonsterTributed;
     public event Action<DemoHandTransfer>? HandTransferred;
     public event Action<DemoSpecialSummon>? MonsterSpecialSummoned;
+    /// <summary>Presentation-only notice of a successful normal summon or Set.</summary>
+    public event Action<DemoNormalSummon>? MonsterNormalSummoned;
     /// <summary>Presentation-only: an effect has already changed a deck's order.</summary>
     public event Action<int>? DeckShuffled;
     private readonly List<Card>[] hands = [[], []];
@@ -313,6 +317,7 @@ public sealed class DemoDuel
         DefensePosition[player, zone] = faceDown;
         MonsterFaceDown[player, zone] = faceDown;
         MonsterWasFlipped[player, zone] = false;
+        MonsterNormalSummoned?.Invoke(new(player, zone, Monsters[player, zone]!, faceDown));
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
         message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
