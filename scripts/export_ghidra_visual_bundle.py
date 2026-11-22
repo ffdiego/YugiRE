@@ -61,12 +61,60 @@ def choose_targets(explicit: list[str] | None, limit: int) -> list[str]:
 
 
 def query_arguments(addresses: list[str], disassemble: bool = False,
-                    transient: bool = False) -> list[str]:
+                    transient: bool = False,
+                    instruction_count: int = 100) -> list[str]:
     """Keep disassembly observational; transient function edits roll back."""
+    if not 1 <= instruction_count <= 1024:
+        raise ValueError("Instruction count must be between 1 and 1024")
     result = [("tempfunc:" if transient else "") + address for address in addresses]
     if disassemble:
-        result.extend("ins:" + address + ":100" for address in addresses)
+        result.extend(f"ins:{address}:{instruction_count}" for address in addresses)
     return result
+
+
+def memory_queries(ranges: list[str] | None) -> list[str]:
+    """Split read-only native-memory evidence into QueryArchive's 512-byte chunks.
+
+    Each range uses VA:BYTE_COUNT (e.g. 00A52EE8:2048). No bytes are
+    checked into git; query output remains in a private scratch/ ZIP.
+    """
+    commands = []
+    spans = []
+    for item in ranges or []:
+        match = re.fullmatch(r"([0-9a-fA-F]{8}):([1-9][0-9]*)", item)
+        if not match:
+            raise ValueError(f"Invalid memory range {item!r}; expected VA:decimal_bytes")
+        address, count = int(match[1], 16), int(match[2])
+        if count > 4096 or address + count - 1 > 0xFFFFFFFF:
+            raise ValueError(f"Memory range exceeds 4096 bytes or VA space: {item!r}")
+        if any(address < end and start < address + count for start, end in spans):
+            raise ValueError(f"Overlapping memory range: {item!r}")
+        spans.append((address, address + count))
+        for offset in range(0, count, 512):
+            commands.append(f"bytes:{address + offset:08X}:{min(512, count - offset)}")
+    return commands
+
+
+def validate_memory_dump(path: Path, commands: list[str]) -> bool:
+    """Fail closed if a Ghidra memory read is incomplete or malformed."""
+    expected = {}
+    for command in commands:
+        _, address, length = command.split(":")
+        expected[address.lower()] = int(length)
+    actual = {}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.startswith("BYTES "):
+            continue
+        match = re.fullmatch(r"BYTES ([0-9a-fA-F]{8}) count=(\d+) (.*)", line)
+        if not match:
+            return False
+        address = match[1].lower()
+        chunk = match[3].split()
+        if (address in actual or int(match[2]) != len(chunk) or
+                any(not re.fullmatch(r"[0-9A-Fa-f]{2}", byte) for byte in chunk)):
+            return False
+        actual[address] = len(chunk)
+    return actual == expected
 
 
 def run_query(ghidra: Path, work: Path, name: str, arguments: list[str],
@@ -127,7 +175,12 @@ def main(argv=None) -> int:
     parser.add_argument("--targets", nargs="+", metavar="VA",
                         help="export only these explicit addresses, e.g. 0044EFD0")
     parser.add_argument("--disassemble", action="store_true",
-                        help="include up to 100 assembly instructions per selected VA")
+                        help="include assembly instructions per selected VA")
+    parser.add_argument("--instruction-count", type=int, default=100,
+                        help="instructions per selected VA (1..1024; default 100)")
+    parser.add_argument("--memory", action="append", metavar="VA:BYTES",
+                        help="read a native memory range in private 512-byte chunks; "
+                             "repeatable, e.g. --memory 00A52EE8:2048")
     parser.add_argument("--max-functions", type=int, default=120)
     parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--retry-missing", action="store_true",
@@ -138,11 +191,17 @@ def main(argv=None) -> int:
         parser.error("batch-size must be 1..12; max-functions >=1; timeout >=30")
     try:
         selected = choose_targets(args.targets, args.max_functions)
+        memory_commands = memory_queries(args.memory)
+        if not 1 <= args.instruction_count <= 1024:
+            raise ValueError("Instruction count must be between 1 and 1024")
     except ValueError as exc:
         parser.error(str(exc))
     if args.list_only:
         print(f"{len(selected)} target functions; SHA256 expected: {EXPECTED_SHA256}")
         print("\n".join(selected))
+        if memory_commands:
+            print(f"{len(memory_commands)} memory chunks (read-only):")
+            print("\n".join(memory_commands))
         return 0
     ghidra = Path(os.environ.get("GHIDRA_INSTALL_DIR", str(
         ROOT.parent / "tools/ghidra_12.2_PUBLIC"))).expanduser().resolve()
@@ -160,7 +219,9 @@ def main(argv=None) -> int:
         group = selected[index:index + args.batch_size]
         name = f"batch-{index // args.batch_size:03d}"
         ok, reason = run_query(ghidra, work, name,
-                               query_arguments(group, args.disassemble), args.timeout)
+                               query_arguments(group, args.disassemble,
+                                               instruction_count=args.instruction_count),
+                               args.timeout)
         found = extract_functions(work / (name + ".txt"))
         acquired.update(found)
         attempts.append({"name": name, "targets": group, "resolved": sorted(found),
@@ -172,7 +233,8 @@ def main(argv=None) -> int:
             name = f"retry-{index:03d}-{address}"
             ok, reason = run_query(
                 ghidra, work, name,
-                query_arguments([address], args.disassemble, transient=True),
+                query_arguments([address], args.disassemble, transient=True,
+                                instruction_count=args.instruction_count),
                 args.timeout)
             found = extract_functions(work / (name + ".txt"))
             acquired.update(found)
@@ -180,11 +242,28 @@ def main(argv=None) -> int:
                              "ok": ok, "message": reason})
             print(f"{name}: {len(found)}/1 ({reason})", flush=True)
     missing = [address for address in selected if address not in acquired]
+    memory_ok = True
+    if memory_commands:
+        memory_ok, reason = run_query(
+            ghidra, work, "memory-read", memory_commands, args.timeout)
+        if memory_ok:
+            memory_ok = validate_memory_dump(work / "memory-read.txt", memory_commands)
+            if not memory_ok:
+                reason = "Incomplete or malformed native memory-read output"
+        attempts.append({"name": "memory-read", "targets": memory_commands,
+                         "resolved": memory_commands if memory_ok else [],
+                         "ok": memory_ok, "message": reason})
+        print(f"memory-read: {len(memory_commands)} chunks "
+              f"({'ok' if memory_ok else reason})", flush=True)
     metadata = {"schemaVersion": 1, "purpose": "private handoff: native visual decompilation",
                 "executableSha256": EXPECTED_SHA256, "gitHead": git_head(),
                 "selected": selected,
                 "explicitTargets": args.targets is not None,
                 "assemblyIncluded": args.disassemble,
+                "instructionCount": args.instruction_count,
+                "memoryRanges": args.memory or [],
+                "memoryChunks": len(memory_commands),
+                "memoryComplete": memory_ok,
                 "decompiled": sorted(acquired & set(selected)),
                 "missing": missing, "attempts": attempts,
                 "note": "Decompiler pseudocode is not verified runtime behavior; no DAT/EXE included."}
@@ -204,7 +283,7 @@ def main(argv=None) -> int:
                 archive.write(path, arcname=path.name)
     print(f"ZIP: {output} | {len(acquired & set(selected))}/{len(selected)} functions "
           f"| unresolved: {len(missing)}")
-    return 0 if not missing else 1
+    return 0 if not missing and memory_ok else 1
 
 
 if __name__ == "__main__":

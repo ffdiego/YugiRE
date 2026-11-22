@@ -208,3 +208,38 @@ O método de Draw que compõe as cartas quando `obj+0x14=0` ainda
 contém chamadas indiretas e variáveis transitórias sem tipagem
 resolvida. Não transportar sua geometria restante por imitação
 do overlay atual.
+
+## 8. Extração privada e reprodutível dos dados que faltam ao Draw
+
+O `QueryArchive.java` já aceitava `bytes:VA:N` de até 512 bytes, mas
+o invólucro `export_ghidra_visual_bundle.py` não conseguia solicitar
+faixas extensas. Ele agora aceita `--memory VA:BYTES`, dividindo
+automaticamente em blocos de 512 bytes, validando a quantidade e os
+hexadecimais retornados, e incluindo os dumps **somente no ZIP privado**
+sob `scratch/`. Também aceita `--instruction-count` (até 1024)
+para evitar truncar a análise de uma Draw longa aos 100 primeiros
+mnemônicos. A consulta Ghidra segue `-readOnly`, com rollback.
+
+Com o projeto Ghidra já instalado, a extração enfocada é:
+
+```bash
+python3 scripts/export_ghidra_visual_bundle.py \
+  --targets 0043B280 004524E0 004524F0 004877B0 004877F0 \
+  --disassemble --instruction-count 512 --retry-missing \
+  --memory 00A52EE8:2048 --memory 005DB570:4 \
+  --output scratch/ghidra-selection-fusion-contract.zip
+```
+
+`00A52EE8:2048` representa os 512 `int32` da tabela original
+de interpolação, 4 blocos; `005DB570:4` é o inteiro global
+usado como X no construtor de seleção `0043A060`. Ambos
+faltam no SQLite, que guarda referências, não necessariamente os
+valores de memória do EXE. Mesmo com a tabela extraída, a integração
+ao cliente só será considerada fiel após recuperar a origem
+por `0045C140`, as variantes do manifesto e os passes
+de desenho correspondentes.
+
+Este commit **não executa Ghidra nem contém esses valores**.
+Registra o método para obtê-los sem recriar o SQLite completo,
+com testes Python offline para validação dos intervalos e do dump
+de memória. Continua valendo **19/34 Partial e zero Verified**.

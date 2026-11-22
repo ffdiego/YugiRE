@@ -98,7 +98,9 @@ public class QueryArchive extends GhidraScript {
                     out.println("NOTE no instruction at "+fields[1]+"; starting at next defined instruction");
                     instruction=currentProgram.getListing().getInstructionAfter(toAddr(fields[1]));
                 }
-                int limit=Math.min(Integer.parseInt(fields[2]),100);
+                int limit=Integer.parseInt(fields[2]);
+                if(limit<1 || limit>1024) throw new IllegalArgumentException(
+                    "ins count must be between 1 and 1024");
                 for(int n=0;instruction!=null && n<limit;n++) {
                     out.println("INS "+instruction.getAddress()+" "+instruction);
                     instruction=instruction.getNext();
