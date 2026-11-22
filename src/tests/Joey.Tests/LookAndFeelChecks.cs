@@ -86,6 +86,41 @@ internal static class LookAndFeelChecks
               NativeCinematicRouting.ImplementedUpdates(destinyBoardCue) is null,
               "Destiny Board cinematic: separate Vija route without an invented renderer or input wait");
 
+        // DAT contains a separate root cursor/ resource group: localized
+        // action-cloud YGAs and two pointer images. These are unrelated
+        // to summon.txt/set.txt effect objects drawn on the field.
+        check(NativeVisualArchiveScope.Includes(@"cursor\cursor_e.txt") &&
+              NativeVisualArchiveScope.Includes(@"CURSOR\CURSOR_E_SUMMON.YGA") &&
+              NativeVisualArchiveScope.Includes(@"cursor\cursor00.yga") &&
+              !NativeVisualArchiveScope.Includes(@"cursor_fake\cursor00.yga"),
+              "Visual DAT inspector includes root cursor assets without adjacent directories");
+        check(NativeDuelCursor.ManifestEnglish == @"cursor\cursor_e.txt" &&
+              NativeDuelCursor.DefaultPointer == @"cursor\cursor00.yga" &&
+              NativeDuelCursor.AlternatePointer == @"cursor\cursor01.yga" &&
+              NativeDuelCursor.ActionSprite(NativeCursorAction.Summon) ==
+                @"cursor\cursor_e_summon.yga" &&
+              NativeDuelCursor.ActionSprite(NativeCursorAction.Set) ==
+                @"cursor\cursor_e_set.yga" &&
+              NativeDuelCursor.ActionSprite(NativeCursorAction.Activate) ==
+                @"cursor\cursor_e_act.yga" &&
+              NativeDuelCursor.ActionSprite(NativeCursorAction.Attack) ==
+                @"cursor\cursor_e_atk.yga" &&
+              NativeDuelCursor.ActionSprite(NativeCursorAction.Flip) ==
+                @"cursor\cursor_e_flip.yga",
+              "Original cursor cloud maps action names to actual English YGA assets");
+        check(NativeDuelCursor.HandAction(true, false, false) == NativeCursorAction.Summon &&
+              NativeDuelCursor.HandAction(true, true, false) == NativeCursorAction.Set &&
+              NativeDuelCursor.HandAction(false, true, false) == NativeCursorAction.Set &&
+              NativeDuelCursor.HandAction(false, false, false) == NativeCursorAction.Activate &&
+              NativeDuelCursor.HandAction(true, false, true) is null &&
+              NativeDuelCursor.HandAction(false, true, true) is null,
+              "Cursor cloud selects Summon/Set/Activate and preserves discard sandbox fallback");
+        check(NativeDuelCursor.ActionBounds(new CardBounds(375, 450, 50, 72), 90, 30)
+                  == new CardBounds(355, 415, 90, 30) &&
+              NativeDuelCursor.CanRenderPointer(32, 32) &&
+              !NativeDuelCursor.CanRenderPointer(129, 32) &&
+              !NativeDuelCursor.CanRenderPointer(32, 0),
+              "Cursor action popup uses YGA dimensions and pointer guards reject oversized sprites");
         var classic = new DuelLookAndFeel();
         var fast = new FastLookAndFeel();
         var silent = new SilentLookAndFeel();
