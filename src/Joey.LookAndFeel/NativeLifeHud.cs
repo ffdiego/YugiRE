@@ -9,20 +9,31 @@ public static class NativeLifeHud
 {
     public const int BarFullAtLife = 8000;
 
-    // The original LP digits are enlarged bitmap glyphs, not GDI text.
-    // Pixel size/anchor are paired-frame estimates, pending the native
-    // 0047C660 layout descriptor.
-    public const int DisplayGlyphHeight = 32;
+    // The DAT's verified LP fontl BMP is 80x12 with ten 8x12 glyphs.
+    // Native screenshot shows a roughly 3x pixel scale for these digits.
+    // This scale and anchors are PAIR-CAPTURE estimates, not verified
+    // arguments from Draw 0047C660. Keep the multiplier in LookAndFeel.
+    public const int DisplayGlyphScale = 3;
+    public const int DisplayGlyphHeight = 12 * DisplayGlyphScale;
     public const int DisplayRightX = 195;
-    public const int DisplayTopY = 3;
-    public const int DisplayBottomY = 536;
+    // Preserve the previous visible bottom edges as size increases 32→36.
+    public const int DisplayTopY = -1;
+    public const int DisplayBottomY = 532;
 
-    public static float DisplayGlyphWidth(int atlasWidth, int atlasHeight, int columns)
+    public static int DisplayGlyphWidth(int atlasWidth, int atlasHeight, int columns)
     {
         if (atlasHeight <= 0)
             throw new ArgumentOutOfRangeException(nameof(atlasHeight));
-        return GlyphWidth(atlasWidth, columns) *
-               (DisplayGlyphHeight / (float)atlasHeight);
+        // An integer scale prevents uneven fractional rasterization of
+        // the native 8px bitmap glyphs (previously 21.3333px at 32px).
+        return GlyphWidth(atlasWidth, columns) * DisplayGlyphScale;
+    }
+
+    public static int DisplayHeightForAtlas(int atlasHeight)
+    {
+        if (atlasHeight <= 0)
+            throw new ArgumentOutOfRangeException(nameof(atlasHeight));
+        return atlasHeight * DisplayGlyphScale;
     }
 
     /// <summary>

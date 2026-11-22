@@ -152,19 +152,19 @@ static partial class Game
             return;
         }
 
-        // 004803C0 selects fixed atlas slices right-to-left. The original
-        // HUD presents them at a larger scale than the source BMP; do not
-        // mistake the atlas's physical glyph height for the screen height.
-        // The right anchor and 32px target are based on paired screenshots.
+        // The DAT's fontl atlas has ten 8x12 decimal glyphs. Draw each
+        // at a whole-number multiplier (3x), not fractional 21.33x32,
+        // to preserve the native hard pixel edges.
         int sourceWidth = NativeLifeHud.GlyphWidth(font.Width, columns);
-        float glyphWidth = NativeLifeHud.DisplayGlyphWidth(font.Width, font.Height, columns);
+        int glyphWidth = NativeLifeHud.DisplayGlyphWidth(font.Width, font.Height, columns);
+        int glyphHeight = NativeLifeHud.DisplayHeightForAtlas(font.Height);
         int[] digits = NativeLifeHud.DecimalGlyphs(displayed);
-        float x = NativeLifeHud.DisplayRightX - digits.Length * glyphWidth;
+        int x = NativeLifeHud.DisplayRightX - digits.Length * glyphWidth;
         foreach (int digit in digits)
         {
             Raylib.DrawTexturePro(font,
                 new Rectangle(digit * sourceWidth, 0, sourceWidth, font.Height),
-                new Rectangle(x, y, glyphWidth, NativeLifeHud.DisplayGlyphHeight),
+                new Rectangle(x, y, glyphWidth, glyphHeight),
                 Vector2.Zero, 0, Color.White);
             x += glyphWidth;
         }

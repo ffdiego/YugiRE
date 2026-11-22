@@ -644,8 +644,13 @@ internal static class LookAndFeelChecks
               NativeLifeHud.GlyphWidth(80, 10) == 8 &&
               NativeLifeHud.GlyphWidth(70, 10) == 7 &&
               NativeLifeHud.GlyphWidth(192, 12) == 16 &&
-              MathF.Abs(NativeLifeHud.DisplayGlyphWidth(80, 12, 10) - 21.333334f) < .01f,
-              "LP font dimensions agree with actual number.txt and bitmap metadata");
+              NativeLifeHud.DisplayGlyphWidth(80, 12, 10) == 24 &&
+              NativeLifeHud.DisplayHeightForAtlas(12) == 36 &&
+              NativeLifeHud.DisplayGlyphWidth(70, 10, 10) == 21 &&
+              NativeLifeHud.DisplayHeightForAtlas(10) == 30 &&
+              NativeLifeHud.DisplayTopY + NativeLifeHud.DisplayGlyphHeight == 35 &&
+              NativeLifeHud.DisplayBottomY + NativeLifeHud.DisplayGlyphHeight == 568,
+              "LP font manifests agree with integer 3x presentation raster/anchors");
         string fontManifest = "duel_fontl.bmp 10\n" +
             "j/duel/font/duel_fontm_y.bmp 12 // sprite count\n" +
             "duel_fonts.bmp 8\n";

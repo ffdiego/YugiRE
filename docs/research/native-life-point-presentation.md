@@ -162,3 +162,27 @@ A renderização de dano/cura não deve comprimir arbitrariamente os sprites de 
 As capturas pareadas mostram mais blocagem de pixels no Morphing Jar nativo do que no campo do RE, mas também há perda de nitidez em parte do fundo do RE. `DatGraphics.Texture` já utiliza filtro Point; foi fixado explicitamente `TextureFilter.Point` para o render target 800x600 e a geometria dos BMPs das cartas foi arredondada para tamanhos inteiros: por exemplo, 200x290 reduzido ao slot de campo resulta em 50x72, e não 49,655x72. Isso não prova equivalência ao rasterizador nativo: para validar, comparar F12 (canvas 800x600) com o jogo original na mesma resolução, sem passar por escala do Paint.
 
 O deslocamento horizontal restante da carta do detalhe foi informado como aproximadamente 2px pelo usuário. Não ajustamos novamente o `PreviewBounds.X` sem determinar a direção no par de capturas alinhado.
+
+## Apresentação integer-scale dos LP (22/11/2026)
+
+O DAT original enviado pelo usuário contém `duel_fontl.bmp` com dez glifos
+de **8×12 px** (bitmap de 80×12) e `duel_fontm_y.bmp` com dez glifos de
+7×10 (bitmap de 70×10). A captura do Joey original mostra algarismos
+grandes, blocados e aproximadamente três vezes maiores que a célula
+`duel_fontl`; o antigo desenho RE ampliava a célula de 8×12 para uma
+retícula fracionária de 21,333×32, que pode borrar ou produzir largura
+não uniforme sob `TextureFilter.Point`.
+
+`NativeLifeHud` agora concentra `DisplayGlyphScale=3`, e o cliente
+desenha `duel_fontl` em **24×36 px por glifo**, sem alteração de textura
+nem substituição por font TTF. A origem Y foi deslocada para manter
+aproximadamente as mesmas bordas inferiores das duas regiões de LP
+até que uma captura pareada de mesmo estado valide o alinhamento.
+O atlas alternativo `duel_fontm_y` permanece compatível, mas seu
+tamanho resultante também respeita o multiplicador de inteiros.
+
+**Nível de confiança:** o tamanho da célula de origem é comprovado
+pelo manifesto e pelas dimensões do DAT. O fator 3, X/Y e a escolha
+da variante em momentos de flash são **estimativas visuais**, ainda
+sem prova estática do Draw `0047C660`. Não considerar este passo
+a validação da família de LP. Os `damage00/01` não foram alterados.
