@@ -42,8 +42,7 @@ static partial class Game
             reviewStep = visualReviewStep,
             debugVisible = duelDebug,
             mouseCanvas = new { x = mouse.X, y = mouse.Y },
-            cursorSprite = NativeDuelCursor.DefaultPointer,
-            customCursorVisible = duelSystemCursorHidden,
+            mousePointerSource = "operating-system",
             actionCloud = hoverHand >= 0 && hoverHand < ViewHand.Count
                 ? NativeDuelCursor.HandAction(ViewHand[hoverHand].IsMonster,
                     setHandAction, duel.PendingEndDiscards > 0)?.ToString()
