@@ -21,7 +21,15 @@ static partial class Game
     static Rectangle ActionBounds(int slot)
     {
         var card = HandBounds(slot);
-        return new(card.X, card.Y - 32, card.Width, 27);
+        var action = NativeDuelCursor.HandAction(ViewHand[slot].IsMonster,
+            setHandAction, duel.PendingEndDiscards > 0);
+        if (action is not NativeCursorAction nativeAction)
+            return new(card.X, card.Y - 32, card.Width, 27); // discard: sandbox fallback
+
+        var icon = graphics.Texture(NativeDuelCursor.ActionSprite(nativeAction));
+        var bounds = NativeDuelCursor.ActionBounds(ToCardBounds(card),
+            icon.Width, icon.Height);
+        return ToRectangle(bounds);
     }
     static bool Hit(Rectangle rect) => Raylib.CheckCollisionPointRec(mouse, rect);
     static void ClearDuelSelection()
@@ -297,6 +305,19 @@ static partial class Game
         if (!duel.CanSetFromHand(hoverHand) && !duel.CanActivateFromHand(hoverHand) && duel.PendingEndDiscards == 0) return;
         var bubble = ActionBounds(hoverHand);
         bool enabled = HandActionEnabled(hoverHand);
+        var action = NativeDuelCursor.HandAction(ViewHand[hoverHand].IsMonster,
+            setHandAction, duel.PendingEndDiscards > 0);
+        if (action is NativeCursorAction nativeAction)
+        {
+            // These are the actual cursor action clouds, separate from
+            // 0044FA10 Summon and 0044F390 Set field animations.
+            var sprite = graphics.Texture(NativeDuelCursor.ActionSprite(nativeAction));
+            Raylib.DrawTexture(sprite, (int)bubble.X, (int)bubble.Y,
+                enabled ? Color.White : new Color(150, 150, 150, 220));
+            return;
+        }
+        // End-of-turn manual discard is a client action without a mapped
+        // original cursor_*.yga. Retain its existing bubble for now.
         Raylib.DrawRectangleRounded(bubble, .3f, 6, enabled ? new Color(248, 229, 177, 255) : Color.Gray);
         Vector2 tip = new(bubble.X + bubble.Width / 2, bubble.Y + bubble.Height + 5);
         Raylib.DrawTriangle(new Vector2(tip.X - 6, tip.Y - 6), tip, new Vector2(tip.X + 6, tip.Y - 6), enabled ? Gold : Color.Gray);
