@@ -1184,6 +1184,34 @@
         "Sandbox only, no differential native parity.",
         "No chains/negation, special summon restrictions, altered controller/owner, exact legacy simultaneous-event priority or native UI."
       ]
+    },
+    {
+      "id": "trap.continuous.royal-command-flip-suppression",
+      "kind": "Trap",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Face-up Royal Command suppresses FLIP effect admission from flip summon, attack reveal or external reveal",
+        "Face-down Royal Command has no suppression until activated after its Set turn",
+        "Face-up Jinzo or Royal Decree negates Royal Command's continuous effect",
+        "Queued monster target, card selection, or optional FLIP draw are rechecked before resolution",
+        "Negated FLIP does not undo its reveal, damage calculation, or pending battle destruction"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1530
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectSuppressionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/RoyalCommandSuppressionChecks.cs",
+        "docs/cards/royal-command.md"
+      ],
+      "limitations": [
+        "This is bounded Royal Command sandbox behavior, not a general native suppression state machine; .NET CI initially pending.",
+        "Royal Command can be activated from Set on its owner's later Main Phase only; no opponent turn Trap responses or full priority/chains.",
+        "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
+        "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions."
+      ]
     }
   ]
 }
