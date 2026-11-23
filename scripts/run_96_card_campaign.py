@@ -28,11 +28,37 @@ DECK_FOLDER = ROOT / "native_hooks/decks/mass-96"
 PLAN_FILE = DECK_FOLDER / "campaign-plan.json"
 
 
+def stable_campaign_identity(plan: dict) -> dict:
+    """Compare archived decks against current catalogs without rewriting history.
+
+    doneSandbox is a dated observation when the campaign was created.
+    It legitimately changes as cards become implemented. Everything else
+    (seed, callbacks, card identities, cohorts and deck filenames) must
+    remain byte-for-byte equivalent at the JSON-value level.
+    """
+    return {
+        **plan,
+        "cohorts": [
+            {
+                **cohort,
+                "targets": [
+                    {key: value for key, value in card.items()
+                     if key != "doneSandbox"}
+                    for card in cohort["targets"]
+                ],
+            }
+            for cohort in plan["cohorts"]
+        ],
+    }
+
+
 def load_plan() -> dict:
     committed = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
     expected, decks = prepare()
-    if committed != expected:
-        raise ValueError("Committed 96-card plan differs from the catalog-derived plan")
+    if stable_campaign_identity(committed) != stable_campaign_identity(expected):
+        raise ValueError(
+            "Committed 96-card campaign identity differs from catalog-derived plan"
+        )
     for name, deck in decks.items():
         source = json.loads((DECK_FOLDER / name).read_text(encoding="utf-8"))
         if source != deck:

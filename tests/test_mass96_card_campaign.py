@@ -14,7 +14,7 @@ from scripts.prepare_96_card_campaign import (
 )
 from scripts.run_96_card_campaign import (
     PLAN_FILE, DECK_FOLDER, build_command, inspect_capture,
-    load_plan, main as run_main, run_specs,
+    load_plan, stable_campaign_identity, main as run_main, run_specs,
 )
 
 
@@ -69,9 +69,15 @@ class Native96CardCampaignTests(unittest.TestCase):
                 self.assertNotEqual(first["main"], second["main"])
 
     def test_committed_decks_are_reproduced_from_catalog_and_same_seed(self):
-        self.assertEqual(load_plan(), self.plan)
-        self.assertEqual(json.loads(PLAN_FILE.read_text(encoding="utf-8")),
-                         self.plan)
+        historical = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
+        # The archived experiment is immutable. A card becoming Done
+        # since the experiment was generated must not force deck rewrites.
+        self.assertEqual(load_plan(), historical)
+        self.assertEqual(stable_campaign_identity(historical),
+                         stable_campaign_identity(self.plan))
+        self.assertTrue(all(type(target["doneSandbox"]) is bool
+                            for cohort in historical["cohorts"]
+                            for target in cohort["targets"]))
         for name, deck in self.decks.items():
             with self.subTest(name=name):
                 self.assertEqual(
@@ -81,6 +87,30 @@ class Native96CardCampaignTests(unittest.TestCase):
                          shuffle([1, 2, 3, 4, 5], 12345))
         self.assertNotEqual(shuffle([1, 2, 3, 4, 5], 12345),
                             shuffle([1, 2, 3, 4, 5], 12346))
+
+    def test_historical_progress_status_is_not_used_to_rewrite_deck_identity(self):
+        import copy
+        archived = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
+        newer = copy.deepcopy(archived)
+        newer["cohorts"][0]["targets"][0]["doneSandbox"] = not (
+            newer["cohorts"][0]["targets"][0]["doneSandbox"])
+        self.assertEqual(stable_campaign_identity(archived),
+                         stable_campaign_identity(newer),
+                         "Only sandbox progress is allowed to evolve")
+        newer["cohorts"][0]["targets"][0]["internalIndex"] += 1
+        self.assertNotEqual(stable_campaign_identity(archived),
+                            stable_campaign_identity(newer),
+                            "Internal indices must still trigger integrity gate")
+        newer = copy.deepcopy(archived)
+        newer["cohorts"][0]["decks"]["A"] = "different-deck.json"
+        self.assertNotEqual(stable_campaign_identity(archived),
+                            stable_campaign_identity(newer),
+                            "Deck names must still trigger integrity gate")
+        newer = copy.deepcopy(archived)
+        newer["seed"] += 1
+        self.assertNotEqual(stable_campaign_identity(archived),
+                            stable_campaign_identity(newer),
+                            "Experiment seed must still trigger integrity gate")
 
     def test_runner_is_bounded_and_state_focused(self):
         specs = run_specs(self.plan)
