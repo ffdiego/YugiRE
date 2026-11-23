@@ -6,7 +6,8 @@ import unittest
 from pathlib import Path
 
 from scripts.export_ghidra_visual_bundle import (
-    ROOT, choose_targets, memory_queries, query_arguments, validate_memory_dump,
+    ROOT, choose_targets, instruction_windows, validate_instruction_window_dump,
+    memory_queries, query_arguments, validate_memory_dump,
 )
 
 
@@ -36,6 +37,57 @@ class FocusedVisualExportTests(unittest.TestCase):
             query_arguments(["0044EFD0"], disassemble=True, transient=True),
             ["tempfunc:0044EFD0", "ins:0044EFD0:100"],
         )
+
+    def test_bounded_instruction_windows_select_exact_return_addresses(self):
+        self.assertEqual(
+            instruction_windows(["0041a1e6:48", "0041A520:64"]),
+            ["ins:0041A1E6:48", "ins:0041A520:64"],
+        )
+        self.assertEqual(instruction_windows(None), [])
+        for invalid in ("0x0041A1E6:48", "0041A1:48", "0041A1EZ:48",
+                        "0041A1E6:0", "0041A1E6:-1", "0041A1E6:1025"):
+            with self.subTest(spec=invalid), self.assertRaisesRegex(
+                    ValueError, "Invalid instruction window"):
+                instruction_windows([invalid])
+        with self.assertRaisesRegex(ValueError, "Duplicate instruction window"):
+            instruction_windows(["0041A1E6:48", "0041a1e6:64"])
+        with self.assertRaisesRegex(ValueError, "Too many instruction windows"):
+            instruction_windows([f"{0x41a100 + i:08X}:4" for i in range(33)])
+
+    def test_exact_instruction_window_requires_markers_and_correct_first_va(self):
+        commands = instruction_windows(["0041A1E6:3", "0041A520:2"])
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "windows.txt"
+            valid = (
+                "SHA256: expected\n"
+                "INS_WINDOW_BEGIN 0041A1E6 count=3\n"
+                "INS 0041a1e6 MOV EAX,EBX\n"
+                "INS 0041a1e8 CALL EDX\n"
+                "INS 0041a1ea MOV ECX,EAX\n"
+                "INS_WINDOW_END 0041A1E6 actual=3\n"
+                "INS_WINDOW_BEGIN 0041A520 count=2\n"
+                "INS 0041a520 MOV EDI,EBX\n"
+                "INS 0041a522 CALL EAX\n"
+                "INS_WINDOW_END 0041A520 actual=2\n"
+            )
+            file.write_text(valid, encoding="utf-8")
+            self.assertTrue(validate_instruction_window_dump(file, commands))
+            # A shifted Ghidra fallback must never count as target evidence.
+            for corrupt in (
+                valid.replace("INS 0041a1e6 ", "INS 0041a1e7 "),
+                valid.replace("actual=3", "actual=4"),
+                valid.replace("count=3", "count=2"),
+                valid.replace("INS_WINDOW_END 0041A520 actual=2\n", ""),
+                valid.replace("INS_WINDOW_BEGIN 0041A520 count=2\n", ""),
+                valid.replace("INS 0041a520 MOV EDI,EBX\n", ""),
+                valid.replace("INS_WINDOW_BEGIN 0041A520 count=2\n",
+                              "INS_WINDOW_BEGIN 0041A1E6 count=2\n"),
+            ):
+                with self.subTest(corrupt=corrupt[:50]):
+                    file.write_text(corrupt, encoding="utf-8")
+                    self.assertFalse(validate_instruction_window_dump(file, commands))
+            file.write_text(valid + valid, encoding="utf-8")
+            self.assertFalse(validate_instruction_window_dump(file, commands))
 
     def test_memory_queries_split_read_only_ranges_at_512_byte_boundaries(self):
         self.assertEqual(
@@ -93,6 +145,15 @@ class FocusedVisualExportTests(unittest.TestCase):
         self.assertIn("5 memory chunks", memory.stdout)
         self.assertIn("bytes:00A52EE8:512", memory.stdout)
         self.assertIn("bytes:005DB570:4", memory.stdout)
+        focused = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/export_ghidra_visual_bundle.py"),
+             "--targets", "0041A070", "--instruction-window", "0041A1E6:48",
+             "--instruction-window", "0041A520:64", "--list-only"],
+            cwd=ROOT, capture_output=True, text=True, check=True,
+        )
+        self.assertIn("2 focused instruction windows", focused.stdout)
+        self.assertIn("ins:0041A1E6:48", focused.stdout)
+        self.assertIn("ins:0041A520:64", focused.stdout)
 
 
 if __name__ == "__main__":

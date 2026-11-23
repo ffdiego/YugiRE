@@ -101,10 +101,17 @@ public class QueryArchive extends GhidraScript {
                 int limit=Integer.parseInt(fields[2]);
                 if(limit<1 || limit>1024) throw new IllegalArgumentException(
                     "ins count must be between 1 and 1024");
-                for(int n=0;instruction!=null && n<limit;n++) {
+                // Mark each bounded instruction window so the focused
+                // exporter can prove that it began at the requested VA,
+                // rather than silently accepting Ghidra's next instruction.
+                String windowAddress=fields[1].toUpperCase(Locale.ROOT);
+                out.println("INS_WINDOW_BEGIN "+windowAddress+" count="+limit);
+                int actual=0;
+                for(;instruction!=null && actual<limit;actual++) {
                     out.println("INS "+instruction.getAddress()+" "+instruction);
                     instruction=instruction.getNext();
                 }
+                out.println("INS_WINDOW_END "+windowAddress+" actual="+actual);
                 continue;
             }
             if(args[i].startsWith("writers:")) {

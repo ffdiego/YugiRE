@@ -72,6 +72,81 @@ def query_arguments(addresses: list[str], disassemble: bool = False,
     return result
 
 
+def instruction_windows(specifications: list[str] | None) -> list[str]:
+    """Bounded instruction-only windows at exact native return addresses.
+
+    A Ghidra decompilation may show undefined EBX/EDI across indirect calls.
+    A focused instruction window captures the producer/consumer around each
+    callsite without writing executable memory or inventing a function.
+    """
+    if not specifications:
+        return []
+    if len(specifications) > 32:
+        raise ValueError("Too many instruction windows (maximum 32)")
+    windows = []
+    seen = set()
+    for item in specifications:
+        match = re.fullmatch(r"([0-9a-fA-F]{8}):([1-9][0-9]*)", item)
+        if not match or not 1 <= int(match[2]) <= 1024:
+            raise ValueError(f"Invalid instruction window {item!r}; expected VA:1..1024")
+        address = match[1].upper()
+        if address in seen:
+            raise ValueError(f"Duplicate instruction window address {address}")
+        seen.add(address)
+        windows.append(f"ins:{address}:{int(match[2])}")
+    return windows
+
+
+def validate_instruction_window_dump(path: Path, commands: list[str]) -> bool:
+    """Fail closed on missing, shifted, duplicate or malformed assembly windows.
+
+    QueryArchive prints an explicit begin/end marker around each ins: request.
+    Unlike its generic fallback, a focused window must start at exactly
+    the requested instruction address. This prevents a plausible-looking
+    disassembly of the *next* function from masquerading as target evidence.
+    """
+    expected = {item.split(":")[1]: int(item.split(":")[2]) for item in commands}
+    if not expected:
+        return True
+    seen = set()
+    active_address = None
+    active_limit = 0
+    active_instructions = []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return False
+    for line in lines:
+        if line.startswith("INS_WINDOW_BEGIN "):
+            match = re.fullmatch(
+                r"INS_WINDOW_BEGIN ([0-9A-Fa-f]{8}) count=([0-9]+)", line)
+            if not match or active_address is not None:
+                return False
+            address = match[1].upper()
+            if address not in expected or address in seen or int(match[2]) != expected[address]:
+                return False
+            active_address = address
+            active_limit = int(match[2])
+            active_instructions = []
+        elif line.startswith("INS_WINDOW_END "):
+            match = re.fullmatch(
+                r"INS_WINDOW_END ([0-9A-Fa-f]{8}) actual=([0-9]+)", line)
+            if not match or active_address is None or match[1].upper() != active_address:
+                return False
+            n = int(match[2])
+            if (not active_instructions or len(active_instructions) != n or
+                    n > active_limit or active_instructions[0] != active_address):
+                return False
+            seen.add(active_address)
+            active_address = None
+        elif line.startswith("INS "):
+            match = re.fullmatch(r"INS ([0-9A-Fa-f]{8}) (.+)", line)
+            if match is None or active_address is None:
+                return False
+            active_instructions.append(match[1].upper())
+    return active_address is None and seen == set(expected)
+
+
 def memory_queries(ranges: list[str] | None) -> list[str]:
     """Split read-only native-memory evidence into QueryArchive's 512-byte chunks.
 
@@ -178,6 +253,8 @@ def main(argv=None) -> int:
                         help="include assembly instructions per selected VA")
     parser.add_argument("--instruction-count", type=int, default=100,
                         help="instructions per selected VA (1..1024; default 100)")
+    parser.add_argument("--instruction-window", action="append", metavar="VA:COUNT",
+                        help="extra exact assembly callsite window (repeatable, max 32)")
     parser.add_argument("--memory", action="append", metavar="VA:BYTES",
                         help="read a native memory range in private 512-byte chunks; "
                              "repeatable, e.g. --memory 00A52EE8:2048")
@@ -192,6 +269,7 @@ def main(argv=None) -> int:
     try:
         selected = choose_targets(args.targets, args.max_functions)
         memory_commands = memory_queries(args.memory)
+        window_commands = instruction_windows(args.instruction_window)
         if not 1 <= args.instruction_count <= 1024:
             raise ValueError("Instruction count must be between 1 and 1024")
     except ValueError as exc:
@@ -202,6 +280,9 @@ def main(argv=None) -> int:
         if memory_commands:
             print(f"{len(memory_commands)} memory chunks (read-only):")
             print("\n".join(memory_commands))
+        if window_commands:
+            print(f"{len(window_commands)} focused instruction windows (read-only):")
+            print("\n".join(window_commands))
         return 0
     ghidra = Path(os.environ.get("GHIDRA_INSTALL_DIR", str(
         ROOT.parent / "tools/ghidra_12.2_PUBLIC"))).expanduser().resolve()
@@ -255,6 +336,20 @@ def main(argv=None) -> int:
                          "ok": memory_ok, "message": reason})
         print(f"memory-read: {len(memory_commands)} chunks "
               f"({'ok' if memory_ok else reason})", flush=True)
+    windows_ok = True
+    if window_commands:
+        windows_ok, reason = run_query(
+            ghidra, work, "instruction-windows", window_commands, args.timeout)
+        if windows_ok:
+            windows_ok = validate_instruction_window_dump(
+                work / "instruction-windows.txt", window_commands)
+            if not windows_ok:
+                reason = "Missing, shifted or malformed exact instruction windows"
+        attempts.append({"name": "instruction-windows", "targets": window_commands,
+                         "resolved": window_commands if windows_ok else [],
+                         "ok": windows_ok, "message": reason})
+        print(f"instruction-windows: {len(window_commands)} requested "
+              f"({'ok' if windows_ok else reason})", flush=True)
     metadata = {"schemaVersion": 1, "purpose": "private handoff: native visual decompilation",
                 "executableSha256": EXPECTED_SHA256, "gitHead": git_head(),
                 "selected": selected,
@@ -264,6 +359,9 @@ def main(argv=None) -> int:
                 "memoryRanges": args.memory or [],
                 "memoryChunks": len(memory_commands),
                 "memoryComplete": memory_ok,
+                "instructionWindows": args.instruction_window or [],
+                "instructionWindowCount": len(window_commands),
+                "instructionWindowsComplete": windows_ok,
                 "decompiled": sorted(acquired & set(selected)),
                 "missing": missing, "attempts": attempts,
                 "note": "Decompiler pseudocode is not verified runtime behavior; no DAT/EXE included."}
@@ -283,7 +381,7 @@ def main(argv=None) -> int:
                 archive.write(path, arcname=path.name)
     print(f"ZIP: {output} | {len(acquired & set(selected))}/{len(selected)} functions "
           f"| unresolved: {len(missing)}")
-    return 0 if not missing and memory_ok else 1
+    return 0 if not missing and memory_ok and windows_ok else 1
 
 
 if __name__ == "__main__":

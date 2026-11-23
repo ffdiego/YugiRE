@@ -50,6 +50,16 @@ já exporta os metadados de `j\\duel\\card\\`; em seguida rode:
 python3 scripts/summarize_native_card_status_dat.py
 ```
 
+Para rastrear `EBX`, `EDI` e `iStack_6c`, o quarto roteiro também
+inclui **12** chamadas `--instruction-window VA:COUNT` nos
+endereços exatos de retorno que aparecem nas decompilações dos
+Draws A/B. O exportador e o `QueryArchive.java` agora incluem
+marcadores de início/fim e verificam que a janela não foi deslocada
+pelo fallback do Ghidra. O ZIP contém esses trechos no arquivo
+`instruction-windows.txt`, com status em `manifest.json`.
+Isso **não significa** que o Ghidra já rodou nem que os X foram
+resolvidos: ainda aguardamos o bundle real.
+
 Ele cria `scratch/visual-review/card-status-manifests.json`, com índices
 0..13, caminhos e dimensões sem pixels. A leitura falha se as quatro
 âncoras conhecidas do manifesto não coincidirem com o contrato de

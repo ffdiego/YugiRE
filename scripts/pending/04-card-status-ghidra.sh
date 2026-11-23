@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # PENDING: determine original card status indicators, from the shared
 # duel/card/card.txt sprite bank through native drawing and phase gates.
-# Trace EBX/EDI/iStack_6c near 0041A1E6 0041A1F5 0041A23D,
+# Exact instruction-window starts are return addresses preserved in
+# Ghidra's own decompilation, not guessed instruction boundaries.
+# Trace EBX/EDI/iStack_6c around 0041A1E6 0041A1F5 0041A23D,
 # and 0041A520 0041A52E 0041A580. Do not guess sprite widths.
+# The exporter fails closed if an instruction window cannot be recovered.
 # Requires private local Ghidra project; never version EXE, DAT or ZIP.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -17,6 +20,18 @@ python3 scripts/export_ghidra_visual_bundle.py \
             0041A800 00413DB0 00417F40 00480200 00480230 \
             004803C0 00480690 \
   --disassemble --instruction-count 1024 --retry-missing \
+  --instruction-window 0041A123:48 \
+  --instruction-window 0041A131:48 \
+  --instruction-window 0041A159:80 \
+  --instruction-window 0041A1E6:56 \
+  --instruction-window 0041A1F5:64 \
+  --instruction-window 0041A23D:48 \
+  --instruction-window 0041A46F:48 \
+  --instruction-window 0041A47D:48 \
+  --instruction-window 0041A4A5:80 \
+  --instruction-window 0041A520:56 \
+  --instruction-window 0041A52E:64 \
+  --instruction-window 0041A580:48 \
   --output scratch/ghidra-card-status-contract.zip
 echo "Share privately: scratch/ghidra-card-status-contract.zip"
 echo "Separately summarize card.txt names/dimensions from your own data.dat:"
