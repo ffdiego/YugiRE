@@ -1278,7 +1278,7 @@
       "resourceIds": [
         461
       ],
-      "status": "Partial",
+      "status": "Done",
       "mechanics": [
         "The Immortal of Thunder (461) FLIP: gain 3000 LP for its current controller/owner in bounded sandbox",
         "After that same monster occurrence has been flipped, any subsequent field-to-Graveyard movement loses 5000 LP for that owner",
@@ -1298,7 +1298,7 @@
         "Native P065 availability 00581040, preparation 0057C5F0 and primary 00585970 are catalogued but absent from current SQLite decompilations.",
         "Historical text requires flipping before the 5000 LP penalty, whereas the current official TCG card text does not spell out this qualification; the original Joey implementation must be observed.",
         "Relationship of Royal Command to delayed loss, change of control/ownership, effect negation and priority is not proven.",
-        "Build and C# sandbox CI initially pending. No dynamic Win32 replay or native comparison."
+        "CI .NET 10 build and 3,325 synthetic tests passed, including 14 P065 checks, on PR #59; this is bounded sandbox only and not native Verified."
       ]
     }
   ]

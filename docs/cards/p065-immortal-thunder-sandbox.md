@@ -56,7 +56,9 @@ owner/controller divergence, change-of-control, native chain
 order, counter traps or exact timing relative to simultaneous
 field removals.
 
-**Status: Partial pending CI; not Verified.**
+**Status: Done no escopo do sandbox histórico; não Verified.** O build
+.NET 10 e **3.325 verificações sintéticas** passaram no CI do PR #59,
+incluindo **14 verificações P065**. Ainda não há comparação com o Joey original.
 
 ## Pending native extraction
 
