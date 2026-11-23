@@ -91,6 +91,8 @@ static partial class Game
         visualReviewStep = false;
         travelClock.Reset();
         hoverClock.Reset();
+        foreach (var timeline in fieldAttributeTimelines)
+            timeline?.Reset();
         attackCue = null;
         presentation.Clear();
         previousDuelMessage = "";

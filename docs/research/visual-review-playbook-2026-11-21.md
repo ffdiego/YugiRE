@@ -48,6 +48,13 @@ Para medir diferenças RGB por pixel, executar `python3 scripts/compare_visual_f
   e tabuleiro. Veja [comparação de frames](visual-frame-comparison-2026-11-22.md).
   Os pixels do cursor global não estão no PNG F12.
 
+O tween de atributos ATK/DEF segue os updates nominais da apresentação:
+na revisão com **F6 pausado** os valores exibidos devem ficar estáveis;
+**F7** avança um passo da recorrência `7/8`, mesmo se o Core já tiver
+aplicado o buff/debuff. O perfil **Instant** não anima os dígitos.
+Os valores iniciais vêm de `00418B10` (atributos básicos da carta).
+Ver [análise de atributos](native-field-attributes-2026-11-22.md).
+
 O screenshot do Joey original deve estar na **mesma fase,
 perspectiva, zona, carta e update**. A captura de YugiRE
 não prova por si só que o original executou o mesmo número de

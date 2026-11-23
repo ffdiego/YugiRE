@@ -12,6 +12,10 @@ static partial class Game
     static bool handActionsWereEnabled;
     static bool setHandAction, choosingTributes, choosingEquip;
     static int[] handLift = [];
+    // Presentation-only numeric smoothing for the two monster rows.
+    // Lazily allocated; no Core state or attribute values are mutated.
+    static readonly NativeFieldAttributeTimeline?[,] fieldAttributeTimelines =
+        new NativeFieldAttributeTimeline?[2, NativeDuelLayout.MonsterSlots];
     static readonly HandReflow<Card>[] handLayouts = [new(), new()];
     static readonly PresentationTickClock hoverClock = new();
     static int HandLiftAt(int index) => index < handLift.Length ? handLift[index] : 0;
@@ -299,12 +303,17 @@ static partial class Game
     // Position alpha is 0xA0/0x100; modified attributes use blue/red atlas.
     // The anchor is the existing 00418A80 field-card geometry, whose final
     // native pixel parity still requires paired frame comparison.
-    static void DrawFieldAttributes(int player, int zone, Card monster, CardPoint center)
+    static void DrawFieldAttributes(int player, int zone, Card monster, CardPoint center, int presentationUpdates)
     {
         var normal = graphics.Texture(NativeFieldAttributeFonts.Normal);
         int width = NativeLifeHud.GlyphWidth(normal.Width, NativeFieldAttributeFonts.NormalColumns);
-        var frame = NativeFieldAttributeFrame.Compose(center, width, normal.Height,
+        var timeline = fieldAttributeTimelines[player, zone] ??= new NativeFieldAttributeTimeline();
+        var displayed = timeline.Sample(monster,
+            monster.Attack, monster.Defense,
             duel.AttackValue(player, zone), duel.DefenseValue(player, zone),
+            presentationUpdates, presentation.Style.PlayAnimations);
+        var frame = NativeFieldAttributeFrame.Compose(center, width, normal.Height,
+            displayed.Attack, displayed.Defense,
             monster.Attack, monster.Defense, duel.DefensePosition[player, zone]);
 
         DrawFieldNumber(frame.Defense);
@@ -333,7 +342,7 @@ static partial class Game
         }
     }
 
-    static void DrawDuelField(bool blockInput)
+    static void DrawDuelField(bool blockInput, int attributeUpdates)
     {
         var pendingTarget = duel.PendingSpellTrapTarget;
         bool CanHighlightSpell(int player, int zone) => pendingTarget is null ||
@@ -386,8 +395,13 @@ static partial class Game
                     // until sword contact, even its ATK/DEF must stay hidden.
                     if (geometry.AttributesCenter is { } center &&
                         (own || !IsHiddenAttackTargetBeforeImpact(player, zone)))
-                        DrawFieldAttributes(player, zone, monster, center);
+                        DrawFieldAttributes(player, zone, monster, center, attributeUpdates);
+                    else
+                        fieldAttributeTimelines[player, zone]?.Reset();
                 }
+                if (monster is null || InFlight(player, zone, false))
+                    fieldAttributeTimelines[player, zone]?.Reset();
+
                 if (own && (attacker == zone || tributeZones.Contains(zone)))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, tributeZones.Contains(zone) ? Color.Red : Color.White);
                 if (duel.SelectedFlipTargets.Any(t => t.Player == player && t.Zone == zone))
@@ -564,7 +578,8 @@ static partial class Game
         bool handInput = actionInput && handHovered;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
-        DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard);
+        DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard,
+            hoverUpdates);
         // A travelling card or the CPU's turn must not freeze the sidebar.
         // Only an actual Joey speech cue may suppress inspection.
         if (!joeySpeaking) UpdateDuelDetail();

@@ -39,15 +39,27 @@ Esses são argumentos de composição nativos, não valores de alpha de
 o blending exato ainda está pendente.
 
 `004194D0` também atualiza os valores exibidos de ATK e DEF com a
-fórmula `target + trunc((displayed-target)*7/8)`. O helper C# foi
-adicionado com testes, mas não está ligado ao loop ainda: a chamada
-acontece no Draw original, e falta esclarecer cadência e reset
-quando muda a carta. Não atualizar o `Joey.Core` para animar números.
+fórmula `target + trunc((displayed-target)*7/8)`. A investigação adicional
+localizou a origem e o reset: **`00418B10` grava o ATK e DEF básicos do
+`CARD_Prop.bin` nos campos +0x4C e +0x50 quando atribui nova carta**.
+Em seguida `004194D0` usa os valores efetivos do duelo e avança esses
+acumuladores **durante Draw**. Os dois campos se movem independentemente.
+
+O cliente agora executa a mesma recorrência em `NativeFieldAttributeTimeline`,
+mas com uma adaptação intencional de frequência: a janela raylib usa 60 FPS
+mesmo com o perfil Classic de 30 updates/s; o avanço usa a contagem de
+`PresentationTickClock`, não o número bruto de frames raylib, evitando
+velocidade visual dupla e respeitando F6/F7. Sem updates a amostra fica
+estável; em `Instant` muda imediatamente. Se o slot fica vazio/oculto,
+ou a carta troca de instância, a timeline reinicia. Essa adaptação
+continua **Partial** até comparar a cadência real do Draw nativo.
+Não atualizar o `Joey.Core` para animar números.
 
 ## Implementação e limitações
 
 `NativeFieldAttributeFrame` encapsula posições relativas, variantes,
-opacidades e smoothing. `DatGraphics` carrega os três BMPs do
+opacidades e smoothing; `NativeFieldAttributeTimeline` mantém um estado
+por objeto e slot e avança por updates de apresentação. `DatGraphics` carrega os três BMPs do
 `data.dat` local e aplica colorkey verde. `DuelScreen` substitui a
 fonte de texto provisória pelo desenho de glifos nos três passes.
 Mantém os atributos dos nossos face-down visíveis, e os do adversário
@@ -57,8 +69,8 @@ valor normal/aumentado/reduzido, centro, alpha e aritmética assinada.
 Esta é uma melhoria da Draw `004194D0` **já Partial**: badge continua
 **19/34 (55,88%), 0 Verified**. Ainda não recuperamos todas as flags
 de visibilidade (incluindo bit `0x8000`), a origem absoluta das
-coordenadas, a composição exata dos bitmaps, nem o tween visual no
-cliente. Não afirmar fidelidade pixel-perfeita.
+coordenadas e a composição exata dos bitmaps. A cadência do tween
+no cliente precisa de comparação pareada com o nativo. Não afirmar fidelidade pixel-perfeita.
 
 ## Próxima coleta (pendente)
 

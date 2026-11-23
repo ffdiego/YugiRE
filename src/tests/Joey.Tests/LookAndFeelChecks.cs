@@ -268,6 +268,46 @@ internal static class LookAndFeelChecks
               NativeFieldAttributeFrame.SmoothDisplayed(1000, 1001) == 1001,
               "Native field attributes: odd-width glyph anchoring and 7/8 signed smoothing");
 
+        // The native object's 00418B10 initializes to the card's base
+        // stats. 004194D0 eases toward effective stats once per visual tick.
+        // The client is 60 FPS but Classic is 30 updates/s, so zero updates
+        // must not move the digits (including while F6 is paused).
+        var fieldTimeline = new NativeFieldAttributeTimeline();
+        object fieldCardA = new(), fieldCardB = new();
+        var fieldAtSpawn = fieldTimeline.Sample(fieldCardA, 1000, 1000,
+            targetAttack: 1800, targetDefense: 600,
+            presentationUpdates: 0, animate: true);
+        check(fieldAtSpawn == new NativeFieldDisplayedAttributes(1000, 1000) &&
+              fieldTimeline.HasCard &&
+              fieldTimeline.Sample(fieldCardA, 1000, 1000, 1800, 600, 0, true) ==
+                  fieldAtSpawn &&
+              fieldTimeline.Sample(fieldCardA, 1000, 1000, 1800, 600, 1, true) ==
+                  new NativeFieldDisplayedAttributes(1100, 950) &&
+              fieldTimeline.Sample(fieldCardA, 1000, 1000, 1800, 600, 0, true) ==
+                  new NativeFieldDisplayedAttributes(1100, 950) &&
+              fieldTimeline.Sample(fieldCardA, 1000, 1000, 1800, 600, 1, true) ==
+                  new NativeFieldDisplayedAttributes(1188, 906),
+              "Native attribute easing: seed from CARD_Prop and hold on zero updates");
+        // Multiple accumulated ticks catch up after a long frame. Replacing
+        // a card with identical base attributes resets its smoothing.
+        var batchTimeline = new NativeFieldAttributeTimeline();
+        var multi = batchTimeline.Sample(fieldCardA, 1000, 1000, 1800, 600, 2, true);
+        check(multi == new NativeFieldDisplayedAttributes(1188, 906) &&
+              batchTimeline.Sample(fieldCardB, 1000, 1000, 1800, 600, 0, true) ==
+                  new NativeFieldDisplayedAttributes(1000, 1000) &&
+              batchTimeline.Sample(fieldCardB, 1000, 1000, 1800, 600, 0, false) ==
+                  new NativeFieldDisplayedAttributes(1800, 600),
+              "Native attribute easing: accumulated ticks, identity reset and Instant");
+        batchTimeline.Reset();
+        check(!batchTimeline.HasCard &&
+              batchTimeline.Sample(fieldCardA, 1300, 1400, 1300, 1400, 3, true) ==
+                  new NativeFieldDisplayedAttributes(1300, 1400),
+              "Native attribute easing: emptied slot never retains prior occupant numbers");
+        bool invalidAttributeTickRejected = false;
+        try { fieldTimeline.Sample(fieldCardA, 1000, 1000, 1100, 1100, -1, true); }
+        catch (ArgumentOutOfRangeException) { invalidAttributeTickRejected = true; }
+        check(invalidAttributeTickRejected, "Native attribute easing: negative updates rejected");
+
         // The owner sees ATK/DEF for their own face-down Set monster.
         // Keep the opponent's hidden monster attributes concealed. Attack
         // and defense position do not affect ownership or visibility.

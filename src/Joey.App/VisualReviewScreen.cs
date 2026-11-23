@@ -79,6 +79,24 @@ static partial class Game
                     .Select(zone => duel.Spells[player, zone]!.Id)
                     .ToArray())
                 .ToArray(),
+            // F12 stores current presentation numerals as well as the
+            // logical attributes, so screenshot differences can be paired
+            // with the exact easing state. Never disclose hidden CPU stats.
+            fieldAttributes = Enumerable.Range(0, 2).SelectMany(player =>
+                Enumerable.Range(0, NativeDuelLayout.MonsterSlots)
+                    .Where(zone => fieldAttributeTimelines[player, zone]?.HasCard == true &&
+                        duel.Monsters[player, zone] is not null &&
+                        (player == ViewPlayer || !duel.MonsterFaceDown[player, zone]))
+                    .Select(zone => new
+                    {
+                        player,
+                        zone,
+                        cardResourceId = duel.Monsters[player, zone]!.Id,
+                        displayedAttack = fieldAttributeTimelines[player, zone]!.Displayed.Attack,
+                        displayedDefense = fieldAttributeTimelines[player, zone]!.Displayed.Defense,
+                        effectiveAttack = duel.AttackValue(player, zone),
+                        effectiveDefense = duel.DefenseValue(player, zone)
+                    })).ToArray(),
             flightUpdate = flight is null ? (int?)null : travelUpdate,
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
             activationEffect = activation.Current?.Kind.ToString() ?? "None",
