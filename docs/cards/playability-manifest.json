@@ -1196,7 +1196,7 @@
         "Two distinct occurrence targets, validated before moving either card",
         "Preserve pending battle continuation and handle equipment/active Destiny Board dependencies"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         585,
         1521
@@ -1208,7 +1208,7 @@
         "docs/cards/p085-p255-two-spelltrap-flip-sandbox.md"
       ],
       "limitations": [
-        ".NET build and synthetic tests not yet executed at branch creation.",
+        "C# .NET 10 full solution build and Joey.Tests suite passed in PR #55 (3,242 synthetic checks, including 14 new two-target FLIP checks); only bounded sandbox coverage, not native Joey parity.",
         "Native 00583120 and 0056A320 substantiate Tornado Bird availability including FIELD, while seven of eight card callback functions remain missing from this SQLite.",
         "No differential native duel validation, chains, effect negation (Royal Command), altered control/ownership, linked-resolver edge cases, or native visual/timing parity."
       ]

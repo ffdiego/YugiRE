@@ -1,7 +1,8 @@
 # P085/P255 — Greenkappa e Tornado Bird: seleção de duas S/T
 
-Status inicial: **Partial**, aguardando build e regressões no CI. A regra
-implementada é uma fatia jogável de sandbox, **não é paridade nativa**.
+Status: **Done no escopo sandbox**. A solução .NET 10 compilou e
+**3.242 verificações sintéticas passaram** no CI do PR #55, incluindo
+14 cenários novos das duas cartas. **Não há paridade nativa verificada**.
 
 ## Evidências
 
@@ -57,4 +58,5 @@ geração durável de instância ao substituir publicamente o mesmo objeto
 `Card`, nem ordenação/timing nativo dos movimentos.
 
 Ghidra pendente: `scripts/pending/04-flip-spelltrap-targets-ghidra.sh`
-preparado localmente no lote 7 e não executado neste ambiente.
+versionado neste PR; **não executado** neste ambiente. Produz ZIP privado
+em `scratch/ghidra-flip-spelltrap-two-targets.zip` na máquina com Ghidra.

@@ -9,6 +9,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Aguardando execução** |
 | `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Aguardando execução** |
 | `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Aguardando execução** |
+| `04-flip-spelltrap-targets-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-spelltrap-two-targets.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -32,6 +33,17 @@ O segundo comando cria `scratch/visual-review/chain-manifests.json`, filtrando a
 ### ATK/DEF — conferir a composição nativa antes da validação visual
 
 O terceiro roteiro exporta assembly de `00418A80`, `00418EF0`, `004194D0`, `00417F40`, `00480200`, `00480230`, `00480300` e `00480500`. No cliente já estão integrados os três bitmaps originais `duel_fontm` e o split de opacidades 160/256; faltam comparar coordenadas absolutas, mascaramento, modo de blend e ordem Update/Draw. **Não** interpretar a existência desse roteiro como extração executada. O manifesto e dimensões dos BMPs podem ser inspecionados separadamente com `--inspect-visual-dat`. Ver [`native-field-attributes`](../../docs/research/native-field-attributes-2026-11-22.md).
+
+### FLIP com duas magias/armadilhas — callbacks que faltam
+
+O quarto roteiro investiga Greenkappa (`585`, P085) e Tornado Bird (`1521`, P255).
+Os oito slots catalogados de callback têm apenas uma disponibilidade decompilada
+(`00583120`, Tornado Bird) no SQLite atual. O ZIP deverá conter assembly e
+status de resolução para os sete endereços ausentes, seus helpers de seleção,
+modos `0x0B/0x0E` e gate de IA. Confirmar filtros face-down, zona FIELD,
+resolução de dois alvos e efeito de negação antes de reivindicar paridade
+nativa. **O script registrado não foi executado.** Ver
+[`P085/P255`](../../docs/cards/p085-p255-two-spelltrap-flip-sandbox.md).
 
 ## Uso
 
