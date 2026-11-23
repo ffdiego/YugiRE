@@ -43,6 +43,15 @@ controlador somente em turno posterior ao Set, espelhando o
 modelo restrito já usado para Destiny Board. Não existe
 ativação reativa no turno adversário ou cadeia completa.
 
+## Resultado dos testes sintéticos
+
+No CI inicial do PR #56, a solução .NET 10 compilou e a suíte
+\`Joey.Tests\` aprovou **3.254 checks**, incluindo 22 novos checks
+de Royal Command. O job Python legado falhou porque espera
+322 IDs, embora o manifesto desse commit tenha 391.
+O teste sintético de não-FLIP e cópias múltiplas foi acrescentado
+em commit posterior e exige nova verificação pelo CI.
+
 ## Testes
 `src/tests/Joey.Tests/RoyalCommandSuppressionChecks.cs`:
 - armadilha setada vs ativa; turno de Set;

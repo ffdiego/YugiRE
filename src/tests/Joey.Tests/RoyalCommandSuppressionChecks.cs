@@ -204,5 +204,44 @@ internal static class RoyalCommandSuppressionChecks
               remove.Spells[1, 0] is null && !remove.FlipEffectsNegated &&
               remove.Graveyard(1).Single() == command,
               "Royal Command: global suppression recalculates when Heavy Storm removes its source");
+
+        var duplicate = Trap(1530, 1108);
+        var multiple = DemoDuel.FromPartialObservation(0, [],
+            Slots(bug), Slots(enemy), 8000);
+        multiple.Spells[0, 0] = command;
+        multiple.Spells[1, 3] = duplicate;
+        check(multiple.FlipEffectsNegated &&
+              (multiple.Spells[0, 0] = null) is null &&
+              multiple.FlipEffectsNegated &&
+              (multiple.Spells[1, 3] = null) is null &&
+              !multiple.FlipEffectsNegated,
+              "Royal Command: independent face-up copies keep suppression until the last leaves");
+
+        var sangan = Monster(47, 1747, atk: 1000);
+        var searchCopy = Monster(48, 1748, atk: 1400);
+        var hole = Spell(335, 1335);
+        var nonFlip = DemoDuel.FromPartialObservation(0, [hole],
+            Slots(sangan), Slots(enemy), 8000, side0Deck: [searchCopy]);
+        nonFlip.Spells[1, 0] = command;
+        check(nonFlip.FlipEffectsNegated &&
+              nonFlip.Play(0, out _) &&
+              nonFlip.PendingCardSelection is {
+                  EffectResourceId: 47, Filter: CardSelectionFilter.MonsterAttackAtMost1500 } &&
+              nonFlip.ResolveCardSelection(0, out _) &&
+              nonFlip.PendingCardSelection is null &&
+              nonFlip.HandFor(0).SequenceEqual([searchCopy]) &&
+              nonFlip.DeckCount(0) == 0,
+              "Royal Command: Sangan's non-FLIP Graveyard search remains eligible");
+
+        var underDecree = DemoDuel.FromPartialObservation(0, [command],
+            Slots(), Slots(), 8000);
+        underDecree.Spells[1, 4] = decree;
+        check(underDecree.SetFromHand(0, out _), "Royal Command: set under active Royal Decree");
+        underDecree.NextTurn(); underDecree.NextTurn();
+        check(underDecree.ActivateSetSpell(0, out _) &&
+              !underDecree.SpellFaceDown[0, 0] &&
+              !underDecree.FlipEffectsNegated &&
+              underDecree.Spells[0, 0] == command,
+              "Royal Command: may become face-up under Royal Decree but remains ineffective");
     }
 }

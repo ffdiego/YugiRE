@@ -1207,7 +1207,7 @@
         "docs/cards/royal-command.md"
       ],
       "limitations": [
-        "This is bounded Royal Command sandbox behavior, not a general native suppression state machine; .NET CI initially pending.",
+        "Bounded Royal Command implementation compiled and passed 3,254 synthetic checks (22 new Royal Command cases) in PR #56 CI; additional non-FLIP and multiple-source cases appended for follow-up CI. Partial due to absent chain timing and native differential validation.",
         "Royal Command can be activated from Set on its owner's later Main Phase only; no opponent turn Trap responses or full priority/chains.",
         "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
         "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions."
