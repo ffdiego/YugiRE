@@ -42,7 +42,7 @@ internal static class FlipBanishBurnChecks
 
         foreach (int count in new[] {0,1,2})
         {
-            Card[] initial = [a,b,c].Take(count).ToArray();
+            Card[] initial = new[] { a, b, c }.Take(count).ToArray();
             var shortDeck = DemoDuel.FromPartialObservation(0, [], Slots(lady), Slots(), 8000,
                 side0Deck: initial);
             Hide(shortDeck,0);
@@ -89,7 +89,7 @@ internal static class FlipBanishBurnChecks
 
         foreach (int count in new[] {0,1})
         {
-            Card[] hand = [a,b].Take(count).ToArray();
+            Card[] hand = new[] { a, b }.Take(count).ToArray();
             var shortHand = DemoDuel.FromPartialObservation(0, hand, Slots(fire), Slots(), 8000);
             Hide(shortHand,0);
             check(shortHand.ChangePosition(0,out _) &&
