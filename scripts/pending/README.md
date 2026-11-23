@@ -38,8 +38,13 @@ O terceiro roteiro exporta assembly de `00418A80`, `00418EF0`, `004194D0`, `0041
 
 ### Indicadores de estado de carta e flashes de ATK/DEF
 
+**Parte resolvida sem novo DAT:** `0041A070` e `0041A3B0` usam a entrada 8 do `font/number.txt` (`duel_fontm_y.bmp`, 70×10 pixels, glifos 7×10). O primeiro centraliza via `00480690`, o segundo desenha à direita via `004803C0`; `NativeCardStatusDigits` já implementa ambos os cálculos. O **próximo bundle é especificamente para descobrir o produtor de EBX/EDI e `iStack_6c`** nas chamadas virtuais e as dimensões/nomes reais dos ícones; não para redescobrir os algarismos. Ver [evidência da numeração](../../docs/research/native-card-status-digits-2026-11-22.md).
+
+
 O quarto roteiro exporta assembly dos subpasses `00419B70`, `0041A070`,
-`0041A3B0` e funções do banco de sprites `duel/card/card.txt`. É
+`0041A3B0`, a animação `00418B60`, os comandos nativos `0040B270` e
+`0040B370`, o dispatcher `005B9470`, o carregador da miniatura
+`00418560` e funções do banco de sprites `duel/card/card.txt`. É
 independente do roteiro 03 (glifos ATK/DEF). No Windows, `--inspect-visual-dat`
 já exporta os metadados de `j\\duel\\card\\`; em seguida rode:
 
