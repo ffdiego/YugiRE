@@ -308,6 +308,52 @@ internal static class LookAndFeelChecks
         catch (ArgumentOutOfRangeException) { invalidAttributeTickRejected = true; }
         check(invalidAttributeTickRejected, "Native attribute easing: negative updates rejected");
 
+        // Native card Draw gate 00418EF0 -> 004194D0. The object must
+        // be fully settled, the descriptor must address a monster row,
+        // and 0056DD30 must agree on which card occupies that slot.
+        // Bit 0x8000 is the native face-up/revealed flag.
+        static ushort NativeFieldDescriptor(int side, int region, int offset, bool faceUp) =>
+            checked((ushort)(side | (region << 1) | (offset << 6) |
+                (faceUp ? NativeFieldAttributeVisibility.FaceUpDescriptorFlag : 0)));
+        ushort ownSet = NativeFieldDescriptor(0, 0, 2, false);
+        ushort enemySet = NativeFieldDescriptor(1, 0, 2, false);
+        ushort enemyFaceUp = NativeFieldDescriptor(1, 0, 2, true);
+        bool NativeNumbers(ushort descriptor, int state = 0, int counter = 0x100,
+            bool visible = true, ushort cardId = 77, ushort occupiedId = 77) =>
+            NativeFieldAttributeVisibility.ShouldDrawNative(
+                descriptor, perspectiveSide: 0,
+                cardResourceId: cardId, fieldOccupantResourceId: occupiedId,
+                objectVisible: visible, movementCounter: counter,
+                animationState: state);
+        check(NativeNumbers(ownSet) &&
+              !NativeNumbers(enemySet) &&
+              NativeNumbers(enemyFaceUp) &&
+              !NativeNumbers(ownSet, counter: 0xe0) &&
+              !NativeNumbers(ownSet, state: NativeFieldAttributeVisibility.ExitAnimationState) &&
+              !NativeNumbers(ownSet, visible: false) &&
+              !NativeNumbers(ownSet, occupiedId: 78) &&
+              !NativeNumbers(NativeFieldDescriptor(0, 1, 2, true)) &&
+              !NativeNumbers(NativeFieldDescriptor(0, 0, 11, true)),
+              "Native attribute Draw gate: settled field occupant, perspective, visibility and identity");
+        check(NativeFieldAttributeVisibility.ShouldDrawNative(
+                  NativeFieldDescriptor(1, 0, 4, false), 1, 42, 42, true, 256, 0) &&
+              !NativeFieldAttributeVisibility.ShouldDrawClient(
+                  ownMonster: false, faceDown: true,
+                  settled: true, hiddenDefenderBeforeImpact: false) &&
+              NativeFieldAttributeVisibility.ShouldDrawClient(
+                  ownMonster: true, faceDown: true,
+                  settled: true, hiddenDefenderBeforeImpact: true) &&
+              !NativeFieldAttributeVisibility.ShouldDrawClient(
+                  ownMonster: false, faceDown: false,
+                  settled: true, hiddenDefenderBeforeImpact: true) &&
+              NativeFieldAttributeVisibility.ShouldDrawClient(
+                  ownMonster: false, faceDown: false,
+                  settled: true, hiddenDefenderBeforeImpact: false) &&
+              !NativeFieldAttributeVisibility.ShouldDrawClient(
+                  ownMonster: true, faceDown: false,
+                  settled: false, hiddenDefenderBeforeImpact: false),
+              "Native attribute client gate: same mask for F12 and draw, no enemy stats before sword impact");
+
         // The owner sees ATK/DEF for their own face-down Set monster.
         // Keep the opponent's hidden monster attributes concealed. Attack
         // and defense position do not affect ownership or visibility.

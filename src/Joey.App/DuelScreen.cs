@@ -391,10 +391,15 @@ static partial class Game
                     DrawDuelCard(monster, geometry);
                     if (Hit(monsterRect) && pendingTarget is null && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
-                    // The resolved Core card may already be face-up here;
-                    // until sword contact, even its ATK/DEF must stay hidden.
-                    if (geometry.AttributesCenter is { } center &&
-                        (own || !IsHiddenAttackTargetBeforeImpact(player, zone)))
+                    // The Core may have flipped an enemy defender logically
+                    // before the sword reaches it. Reuse the same presentation
+                    // gate as F12: do not expose that enemy's new attributes
+                    // beneath the captured face-down card or in diagnostics.
+                    bool showAttributes = NativeFieldAttributeVisibility.ShouldDrawClient(
+                        own, duel.MonsterFaceDown[player, zone],
+                        settled: true, hiddenDefenderBeforeImpact:
+                            IsHiddenAttackTargetBeforeImpact(player, zone));
+                    if (showAttributes && geometry.AttributesCenter is { } center)
                         DrawFieldAttributes(player, zone, monster, center, attributeUpdates);
                     else
                         fieldAttributeTimelines[player, zone]?.Reset();

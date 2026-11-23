@@ -55,6 +55,13 @@ aplicado o buff/debuff. O perfil **Instant** não anima os dígitos.
 Os valores iniciais vêm de `00418B10` (atributos básicos da carta).
 Ver [análise de atributos](native-field-attributes-2026-11-22.md).
 
+O F12 inclui ATK/DEF exibidos e efetivos somente de cartas realmente
+visíveis na apresentação. Caso de regressão importante: atacar um
+monstro Set da CPU; **antes do contato da espada** o JSON não pode
+expor os atributos se o Core já tiver revelado a identidade para
+resolver a batalha. Os números são desenhados após a carta estabilizada;
+status e indicadores adicionais possuem Draws separados ainda pendentes.
+
 O screenshot do Joey original deve estar na **mesma fase,
 perspectiva, zona, carta e update**. A captura de YugiRE
 não prova por si só que o original executou o mesmo número de

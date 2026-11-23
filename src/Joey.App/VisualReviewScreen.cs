@@ -86,7 +86,12 @@ static partial class Game
                 Enumerable.Range(0, NativeDuelLayout.MonsterSlots)
                     .Where(zone => fieldAttributeTimelines[player, zone]?.HasCard == true &&
                         duel.Monsters[player, zone] is not null &&
-                        (player == ViewPlayer || !duel.MonsterFaceDown[player, zone]))
+                        NativeFieldAttributeVisibility.ShouldDrawClient(
+                            player == ViewPlayer,
+                            duel.MonsterFaceDown[player, zone],
+                            settled: !InFlight(player, zone, spell: false),
+                            hiddenDefenderBeforeImpact:
+                                IsHiddenAttackTargetBeforeImpact(player, zone)))
                     .Select(zone => new
                     {
                         player,

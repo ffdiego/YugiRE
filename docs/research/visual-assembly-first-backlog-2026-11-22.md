@@ -43,7 +43,9 @@ Preferir consultar o SQLite/decompilações e o ZIP visual já extraído, inclus
 
 **Avanço implementado (22/11):** três atlas BMP originais com seleção normal/aumentado/reduzido, glifo separador e parâmetros de composição `0xA0/0x100` para ATK/DEF em ataque e defesa. Passes e testes isolados em `NativeFieldAttributeFrame` com ligação ao `DuelScreen`. [Detalhes técnicos](native-field-attributes-2026-11-22.md).
 
-**Ainda pendente de paridade nativa:** suavização 7/8 no Draw (já modelada, não ligada ao loop), âncora de `0045C140`, flags de exibição (notadamente `0x8000`), blends reais, comparação de pixels e condições durante efeitos. Não marcar Verified sem verificação.
+**Avanço de visibilidade/camadas:** `00418EF0` só alcança `004194D0` para carta estabilizada (`obj+0x14 == 0x100`, estado !=5). `004194D0` exige região de monstros, perspectiva própria ou bit `0x8000`, e identidade atual no campo confirmada por `0056DD30`. O gate está em `NativeFieldAttributeVisibility`, com testes e integração entre renderer/F12. O F12 deixa de vazar números da CPU na janela entre revelação lógica e contato da espada. Tween 7/8 já ligado ao relógio de apresentação. Status `00419B70/0041A3B0/0041A070` é overlay independente da família numérica. [Rastreio](native-field-attributes-2026-11-22.md).
+
+**Ainda pendente de paridade nativa:** âncora de `0045C140`, modos de blend, gates de efeitos ainda não correlacionados e capturas pareadas. Não marcar Verified.
 
 ## V04 — Cursor de ataque na Battle Phase
 

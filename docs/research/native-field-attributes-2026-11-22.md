@@ -55,6 +55,58 @@ ou a carta troca de instância, a timeline reinicia. Essa adaptação
 continua **Partial** até comparar a cadência real do Draw nativo.
 Não atualizar o `Joey.Core` para animar números.
 
+## Gate de visibilidade e ordem de camadas (investigação posterior)
+
+A cadeia de Draw foi conferida novamente no SQLite (versão privada,
+sem alterar a base de funções do projeto):
+
+1. `00418EF0` verifica `obj+0x20 != 0` (objeto ativo). No ramo de
+   animação `obj+0x18 == 5`, desenha a carta/transformação e retorna
+   sem chamar `004194D0`.
+2. Se o contador de transição `obj+0x14 != 0x100`, o Draw trata a
+   transformação/movimento e retorna, novamente sem números. Esse
+   contador vem de `00418B60`, que interpola posição, rotação e
+   estado face-up/down.
+3. No ramo estabilizado, `00418EF0` desenha primeiro a carta,
+   compõe o foco/seleção quando aplicável, e só então chama
+   `004194D0`.
+4. `004194D0` lê o descriptor de posição em `obj+0x24`:
+   bit 0 = lado, bits 1..5 = região, bits 6..13 = slot.
+   Se `região+slot > 10` ou `região != 0`, não desenha ATK/DEF.
+   Se o lado não corresponde à perspectiva, só desenha quando
+   `0x8000` está marcado (face-up/revelado). Isso sustenta a
+   observação: monstros próprios Set mostram atributos, ocultos
+   adversários não.
+5. Antes do desenho, `004194D0` chama `0056DD30(lado,slot)` e
+   compara a identidade de carta retornada com `obj+0x10`.
+   Caso não coincida, suprime os números, mesmo que o objeto
+   renderizado ainda tenha a carta antiga.
+6. **Não confundir números com outros indicadores.** Quando
+   `descriptor & 0x8000` e a região é elegível, `004194D0`
+   executa separadamente `00419B70`, `0041A3B0` e
+   `0041A070` **após o caminho dos números**, inclusive em
+   alguns casos em que os números foram omitidos. Esses Draws
+   consultam flags de efeitos e usam outros recursos; ainda não
+   foram portados como se fossem parte do atlas ATK/DEF.
+
+A classe pura `NativeFieldAttributeVisibility` codifica os gates de
+número acima e possui testes de estados de movimento, saída, região,
+identidade e ocultação. No cliente, a função `ShouldDrawClient`
+adapta o gate à cena resolvida pelo Core e é compartilhada pelo
+`DuelScreen` e pela captura `F12`.
+
+**Regressão corrigida:** se o Core revelar uma carta inimiga
+face-down **antes** do quadro de contato da espada, o YugiRE preserva
+o verso através de `DrawHiddenAttackTargetBeforeImpact`, mas a captura
+JSON do F12 anteriormente consultava o flag lógico já atualizado e
+podia registrar números efetivos ocultos no visual. Agora F12
+consulta o mesmo gate visual da cena e não registra esses atributos
+antes do contato. Nossos Set continuam exibindo ATK/DEF.
+
+A correspondência exata em pixels do overlay de status e suas
+prioridades com explosões e invocações requer comparação pareada.
+Não tratar essa análise como nova Draw implementada.
+
 ## Implementação e limitações
 
 `NativeFieldAttributeFrame` encapsula posições relativas, variantes,
@@ -68,7 +120,7 @@ valor normal/aumentado/reduzido, centro, alpha e aritmética assinada.
 
 Esta é uma melhoria da Draw `004194D0` **já Partial**: badge continua
 **19/34 (55,88%), 0 Verified**. Ainda não recuperamos todas as flags
-de visibilidade (incluindo bit `0x8000`), a origem absoluta das
+de visibilidade e de objetos transientes além dos gates já mapeados, a origem absoluta das
 coordenadas e a composição exata dos bitmaps. A cadência do tween
 no cliente precisa de comparação pareada com o nativo. Não afirmar fidelidade pixel-perfeita.
 
