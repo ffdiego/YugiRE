@@ -1272,6 +1272,32 @@ public sealed partial class DemoDuel
                 flipSelections.Clear();
                 message = $"{card.Name} FLIP (P{owner + 1}): choose exactly one monster to return to its owner's hand.";
                 break;
+            case DemoFlipEffect.RecruitSameNameFaceDown:
+                // Bubonic Vermin (P168): same-ID deck selector as Giant Germ/Momonga,
+                // but triggered by FLIP, choosing at most one copy in face-down DEF.
+                // The source stays in place until deferred battle destruction completes.
+                if (!Enumerable.Range(0, 5).Any(z => Monsters[owner, z] is null))
+                {
+                    message = $"{card.Name} FLIP: no free monster zone for a recruit.";
+                    break;
+                }
+                var sameNameCandidates = CardSelectionRules.Candidates(
+                    decks[owner].ToArray(), CardSelectionFilter.SameNameMonster,
+                    requiredResourceId: card.Id);
+                if (sameNameCandidates.Count == 0)
+                {
+                    message = $"{card.Name} FLIP: no same-name monster in your Deck.";
+                    break;
+                }
+                selectedBatchIndices.Clear();
+                PendingCardSelection = new(owner, CardSelectionSource.Deck,
+                    CardSelectionDestination.Field, CardSelectionFilter.SameNameMonster,
+                    sameNameCandidates, 0, 1, card.Id,
+                    RequiredResourceId: card.Id,
+                    SummonPosition: CardSelectionPosition.FaceDownDefense);
+                message = $"{card.Name} FLIP (P{owner + 1}): optionally select one same-name " +
+                    "monster from your Deck to Special Summon in face-down Defense Position.";
+                break;
             case DemoFlipEffect.RecoverFromGraveyard:
                 var filter = CardSelectionRules.FlipGraveyardFilter(card.Id);
                 if (filter is null) break;
@@ -1450,7 +1476,8 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>
-    /// P018/P006: GY/deck to hand; P164/P168: deck to field; P169:
+    /// P018/P006: GY/deck to hand; P164/P168: deck to field (including
+    /// Bubonic Vermin's FLIP recruit); P169:
     /// graveyard to field. A single card is selected by its source-zone
     /// occurrence, never its catalog index. P168 with two copies has a
     /// separate atomic batch path.

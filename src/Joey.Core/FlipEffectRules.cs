@@ -8,7 +8,7 @@ public enum DemoFlipEffect
 {
     None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate,
     RecoverFromGraveyard, MillOpponentDeck, DrawAndDiscardOpponentSpells,
-    DestroyOpponentFaceUpLevelFour, OptionalDrawOne
+    DestroyOpponentFaceUpLevelFour, OptionalDrawOne, RecruitSameNameFaceDown
 }
 
 public static class FlipEffectRules
@@ -24,6 +24,9 @@ public static class FlipEffectRules
     public const ushort HirosShadowScout = 610;
     public const ushort FourStarredLadybugOfDoom = 1338;
     public const ushort Skelengel = 539;
+    // P168 shares the original primary callback with Giant Germ and Nimble Momonga,
+    // but this monster recruits on FLIP rather than after battle destruction.
+    public const ushort BubonicVermin = 1307;
 
     public static DemoFlipEffect Effect(ushort resourceId) => resourceId switch
     {
@@ -37,6 +40,7 @@ public static class FlipEffectRules
         HirosShadowScout => DemoFlipEffect.DrawAndDiscardOpponentSpells,
         FourStarredLadybugOfDoom => DemoFlipEffect.DestroyOpponentFaceUpLevelFour,
         Skelengel => DemoFlipEffect.OptionalDrawOne,
+        BubonicVermin => DemoFlipEffect.RecruitSameNameFaceDown,
         _ => DemoFlipEffect.None
     };
     public static bool Supports(ushort resourceId) => Effect(resourceId) != DemoFlipEffect.None;
