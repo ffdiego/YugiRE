@@ -45,7 +45,9 @@ diferida e recusa durante batalha.
 
 ## Limitações e estado
 
-**Partial até o CI.** Não há paridade nativa validada, nem engine completa de
+**Done no escopo do sandbox**, após compilação e 3.238 verificações sintéticas
+aprovadas no CI .NET 10 do PR #54, incluindo 13 verificações de Bubonic Vermin.
+Não há paridade nativa validada, nem engine completa de
 chains, Royal Command/supressão, bloqueio de Special Summon, controle
 trocado, restrições de timing ou RNG original. O SQLite não contém
 a decompilação do callback primário `0058B040`; não inferir dela
