@@ -91,6 +91,10 @@ public sealed partial class DemoDuel
                                               bool DestroyAttacker, bool DestroyDefender);
     private BattleContinuation? deferredBattle;
     private readonly List<DemoSelectedMonster> flipSelections = [];
+    private readonly List<DemoSpellTrapTarget> flipSpellTrapSelections = [];
+    public IReadOnlyList<DemoSpellTrapTarget> SelectedFlipSpellTrapTargets =>
+        flipSpellTrapSelections.AsReadOnly();
+    public PendingFlipSpellTrapTargets? PendingFlipSpellTrapTargets { get; private set; }
     public IReadOnlyList<DemoSelectedMonster> SelectedFlipTargets => flipSelections.AsReadOnly();
     public DemoFlipTarget? PendingFlipTarget { get; private set; }
     public PendingCardSelection? PendingCardSelection { get; private set; }
@@ -111,6 +115,7 @@ public sealed partial class DemoDuel
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
+        PendingFlipSpellTrapTargets is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
         PendingAttackResponse is not null || PendingEffectDecision is not null ||
         PendingSpellTrapTarget is not null || PendingFusionSummon is not null || deferringFieldRemovalTriggers;
@@ -606,6 +611,115 @@ public sealed partial class DemoDuel
                 SpellTrapTargetRules.Accepts(resourceId, card, IsSpellTrapFaceDown(player, zone)))
                 yield return new(player, zone, card);
         }
+    }
+
+    /// <summary>
+    /// Select a mandatory pair of FLIP S/T targets. Picks do not mutate the
+    /// field. Final resolution rechecks both occurrences before moving either.
+    /// The same zone can be clicked again to deselect it.
+    /// </summary>
+    public bool SelectFlipSpellTrapTarget(int player, int zone, out string message)
+    {
+        message = "No eligible FLIP Spell/Trap target is pending.";
+        if (PendingFlipSpellTrapTargets is not { } pending || GameOver ||
+            player is < 0 or > 1 || zone is < 0 or > SpellTrapTargetRules.FieldZone)
+            return false;
+
+        int selectedIndex = flipSpellTrapSelections.FindIndex(x =>
+            x.Player == player && x.Zone == zone);
+        if (selectedIndex >= 0)
+        {
+            flipSpellTrapSelections.RemoveAt(selectedIndex);
+            message = $"Deselected Spell/Trap target ({flipSpellTrapSelections.Count}/2).";
+            return true;
+        }
+
+        Card? current = SpellTrapCardAt(player, zone);
+        if (current is null ||
+            !pending.EligibleTargets.Any(t => t.Player == player && t.Zone == zone &&
+                ReferenceEquals(t.Card, current)) ||
+            !FlipSpellTrapSelectionRules.IsEligible(pending.Source.Id, current,
+                IsSpellTrapFaceDown(player, zone)))
+        {
+            message = "This Spell/Trap occurrence or face state is no longer eligible.";
+            return false;
+        }
+
+        flipSpellTrapSelections.Add(new(player, zone, current));
+        if (flipSpellTrapSelections.Count < PendingFlipSpellTrapTargets.RequiredCount)
+        {
+            message = "Choose one more distinct Spell/Trap target.";
+            return true;
+        }
+
+        // Transactional validation: do not remove either card when a previous
+        // pick disappeared or was replaced before the second click.
+        bool valid = flipSpellTrapSelections.Count == PendingFlipSpellTrapTargets.RequiredCount &&
+            flipSpellTrapSelections.All(t =>
+                ReferenceEquals(SpellTrapCardAt(t.Player, t.Zone), t.Card) &&
+                FlipSpellTrapSelectionRules.IsEligible(pending.Source.Id, t.Card,
+                    IsSpellTrapFaceDown(t.Player, t.Zone)));
+        if (!valid)
+        {
+            flipSpellTrapSelections.RemoveAt(flipSpellTrapSelections.Count - 1);
+            message = "A previously selected target changed; deselect it and choose again.";
+            return false;
+        }
+
+        DemoSpellTrapTarget[] targets = flipSpellTrapSelections.ToArray();
+        bool[] activeBoardLeaves = new bool[2];
+        foreach (var t in targets)
+        {
+            if (!IsSpellTrapFaceDown(t.Player, t.Zone) &&
+                t.Card.Id == DestinyBoardRules.BoardResourceId &&
+                DestinyBoardRules.HasActiveBoard(t.Player, Spells, SpellFaceDown))
+                activeBoardLeaves[t.Player] = true;
+        }
+        PendingFlipSpellTrapTargets = null;
+        flipSpellTrapSelections.Clear();
+
+        foreach (var t in targets)
+            if (pending.Operation == FlipSpellTrapOperation.Destroy)
+                DestroySpellTrapCard(t.Player, t.Zone);
+            else ReturnSpellTrapCardToOwnerHand(t.Player, t.Zone);
+
+        // Mirror the existing MST cleanup for a face-up Destiny Board leaving.
+        // Full chained-resolution equivalence remains pending native evidence.
+        for (int side = 0; side < 2; side++)
+        {
+            if (!activeBoardLeaves[side]) continue;
+            for (int z = 0; z < 5; z++)
+                if (Spells[side, z] is Card piece &&
+                    !SpellFaceDown[side, z] && IsDestinyBoardPiece(piece))
+                    DestroySpellTrapCard(side, z);
+        }
+
+        FinishDeferredBattle();
+        BeginNextQueuedDeckSearch();
+        message = pending.Operation == FlipSpellTrapOperation.Destroy
+            ? $"{pending.Source.Name} FLIP: destroyed two Set Spell/Trap Cards."
+            : $"{pending.Source.Name} FLIP: returned two Spell/Trap Cards to their owners' hands.";
+        return true;
+    }
+
+    /// <summary>Unlike RemoveEquipmentCore, a bounced equip does not enter Graveyard.</summary>
+    private void ReturnSpellTrapCardToOwnerHand(int player, int zone)
+    {
+        Card? card = SpellTrapCardAt(player, zone);
+        if (card is null) return;
+        if (zone == SpellTrapTargetRules.FieldZone)
+        {
+            FieldSpells[player] = null;
+            FieldSpellFaceDown[player] = false;
+        }
+        else
+        {
+            var link = equipment.SingleOrDefault(e => e.Owner == player &&
+                e.SourceZone == zone && ReferenceEquals(e.Card, card));
+            if (link is not null) equipment.Remove(link);
+            ClearSpellTrapSlot(player, zone);
+        }
+        hands[player].Add(card);
     }
 
     private Card? SpellTrapCardAt(int player, int zone) => zone == SpellTrapTargetRules.FieldZone
@@ -1149,7 +1263,8 @@ public sealed partial class DemoDuel
         deferredBattle = battle;
         TriggerFlip(enemy, target, defender, out string flipMessage);
         BeginNextEffectDecision();
-        if (PendingFlipTarget is not null || PendingCardSelection is not null || PendingEffectDecision is not null)
+        if (PendingFlipTarget is not null || PendingCardSelection is not null ||
+            PendingFlipSpellTrapTargets is not null || PendingEffectDecision is not null)
         {
             message = $"{damageMessage} {flipMessage}";
             return true;
@@ -1271,6 +1386,24 @@ public sealed partial class DemoDuel
                 PendingFlipTarget = new(owner, zone, card, DemoFlipEffect.ReturnOne);
                 flipSelections.Clear();
                 message = $"{card.Name} FLIP (P{owner + 1}): choose exactly one monster to return to its owner's hand.";
+                break;
+            case DemoFlipEffect.DestroyTwoSetSpellTraps:
+            case DemoFlipEffect.ReturnTwoSpellTraps:
+                var effect = FlipSpellTrapSelectionRules.Effect(card.Id);
+                if (effect is null) break;
+                var spellTargets = FlipSpellTrapSelectionRules.Candidates(card.Id, Spells,
+                    SpellFaceDown, FieldSpells, FieldSpellFaceDown);
+                if (spellTargets.Count < PendingFlipSpellTrapTargets.RequiredCount)
+                {
+                    message = $"{card.Name} FLIP: fewer than two eligible Spell/Trap Cards.";
+                    break;
+                }
+                flipSpellTrapSelections.Clear();
+                PendingFlipSpellTrapTargets = new(owner, card, effect.Value,
+                    card.Id == FlipEffectRules.Greenkappa, spellTargets);
+                message = $"{card.Name} FLIP (P{owner + 1}): select exactly two " +
+                    (card.Id == FlipEffectRules.Greenkappa ? "face-down " : "") +
+                    "Spell/Trap Cards on either side.";
                 break;
             case DemoFlipEffect.RecoverFromGraveyard:
                 var filter = CardSelectionRules.FlipGraveyardFilter(card.Id);
@@ -1739,7 +1872,7 @@ public sealed partial class DemoDuel
     private void BeginNextQueuedDeckSearch()
     {
         if (PendingCardSelection is not null || PendingFlipTarget is not null ||
-            PendingSummonResponse is not null || PendingAttackResponse is not null ||
+            PendingFlipSpellTrapTargets is not null || PendingSummonResponse is not null || PendingAttackResponse is not null ||
             resolvingSummon || GameOver)
             return;
         BeginNextEffectDecision();
@@ -2083,7 +2216,8 @@ public sealed partial class DemoDuel
     private void BeginNextEffectDecision()
     {
         if (PendingEffectDecision is not null || PendingCardSelection is not null ||
-            PendingFlipTarget is not null || PendingSummonResponse is not null ||
+            PendingFlipTarget is not null || PendingFlipSpellTrapTargets is not null ||
+            PendingSummonResponse is not null ||
             PendingAttackResponse is not null || GameOver)
             return;
         if (queuedEffectDecisions.TryDequeue(out var request))

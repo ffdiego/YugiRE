@@ -30,6 +30,7 @@ public sealed class CpuDuelController
     /// <summary>Who owns the current blocking choice; null means ordinary turn play.</summary>
     public static int? PendingOwner(DemoDuel duel) =>
         duel.PendingEffectDecision?.Owner ?? duel.PendingCardSelection?.Owner ??
+        duel.PendingFlipSpellTrapTargets?.Owner ??
         duel.PendingFlipTarget?.Owner ?? duel.PendingSpellTrapTarget?.Owner ?? duel.PendingFusionSummon?.Owner ??
         (duel.PendingSummonResponse is { } summon ? summon.EligibleTraps[0].Owner :
         duel.PendingAttackResponse is { } attack ? attack.EligibleTraps[0].Owner : null);
@@ -112,6 +113,20 @@ public sealed class CpuDuelController
                     ? fusion.FromSet ? fusion.SourceIndex : duel.FirstFreeSpellZone() : null,
                 handIndex: fusion.FromSet || fusion.FieldOwner is not null ? null : fusion.SourceIndex,
                 additionalSpentHandIndices: spent, fieldOwner: fusion.FieldOwner);
+        }
+        if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
+        {
+            // Prefer adverse targets, while allowing own-side selections when
+            // the effect requires two cards across the entire field.
+            var choice = twoSpellTargets.EligibleTargets
+                .Where(t => !duel.SelectedFlipSpellTrapTargets.Any(s =>
+                    s.Player == t.Player && s.Zone == t.Zone))
+                .OrderBy(t => t.Player == Player ? 1 : 0)
+                .ThenBy(t => t.Zone).FirstOrDefault();
+            return choice is null
+                ? Idle(CpuStepStatus.Blocked, "Mandatory two-target FLIP has no candidate.")
+                : Act(CpuAction.Selection, (out string m) =>
+                    duel.SelectFlipSpellTrapTarget(choice.Player, choice.Zone, out m));
         }
         if (duel.PendingCardSelection is { } selection)
         {
@@ -286,6 +301,9 @@ public sealed class CpuDuelController
         FlipEffectRules.FourStarredLadybugOfDoom =>
             MonsterWipeRules.LevelFourOpponentTargets(Player, d.Monsters, d.MonsterFaceDown).Count > 0,
         FlipEffectRules.Skelengel => d.DeckCount(Player) > 0,
+        FlipEffectRules.Greenkappa or FlipEffectRules.TornadoBird =>
+            FlipSpellTrapSelectionRules.Candidates(c.Id, d.Spells,
+                d.SpellFaceDown, d.FieldSpells, d.FieldSpellFaceDown).Count >= 2,
         _ => false
     };
 }

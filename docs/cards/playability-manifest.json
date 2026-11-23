@@ -1184,6 +1184,34 @@
         "Sandbox only, no differential native parity.",
         "No chains/negation, special summon restrictions, altered controller/owner, exact legacy simultaneous-event priority or native UI."
       ]
+    },
+    {
+      "id": "monster.flip.two-spelltrap-targets",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Greenkappa FLIP: select exactly two face-down Spell/Trap Cards and destroy",
+        "Tornado Bird FLIP: select exactly two Spell/Trap Cards, including face-up and face-down, and return to owner's hand",
+        "Both sides and the Field Spell zone",
+        "Two distinct occurrence targets, validated before moving either card",
+        "Preserve pending battle continuation and handle equipment/active Destiny Board dependencies"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        585,
+        1521
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipSpellTrapSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipSpellTrapSelectionChecks.cs",
+        "docs/cards/p085-p255-two-spelltrap-flip-sandbox.md"
+      ],
+      "limitations": [
+        ".NET build and synthetic tests not yet executed at branch creation.",
+        "Native 00583120 and 0056A320 substantiate Tornado Bird availability including FIELD, while seven of eight card callback functions remain missing from this SQLite.",
+        "No differential native duel validation, chains, effect negation (Royal Command), altered control/ownership, linked-resolver edge cases, or native visual/timing parity."
+      ]
     }
   ]
 }
