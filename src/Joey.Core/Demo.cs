@@ -60,11 +60,8 @@ public sealed partial class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
-    // Banish (removed from play) is not a discard, a mill or the Graveyard.
-    // Retain original physical Card occurrences for future return-from-banish effects.
-    private readonly List<Card>[] banished = [[], []];
-    public IReadOnlyList<Card> Banished(int player) => player is 0 or 1
-        ? banished[player].AsReadOnly() : throw new ArgumentOutOfRangeException(nameof(player));
+    // The banished zone is shared with Fusion Gate in DemoFusion.cs.
+    // FLIP banishment reuses those same physical card occurrences.
     public DemoFlipBanishBurnResult? LastFlipBanishBurn { get; private set; }
     // Serial choice resolution shared by post-graveyard effects and P165
     // Normal/Flip Summon triggers. Preserve provenance: battle and Graveyard
