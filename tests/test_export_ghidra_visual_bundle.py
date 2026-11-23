@@ -56,13 +56,13 @@ class FocusedVisualExportTests(unittest.TestCase):
         commands = memory_queries(["005DB570:4", "00A52EE8:3"])
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "memory.txt"
-            path.write_text("SHA256: expected\\nBYTES 005db570 count=4 "
-                            "01 02 03 04\\nBYTES 00a52ee8 count=3 10 20 30\\n")
+            path.write_text("SHA256: expected\nBYTES 005db570 count=4 "
+                            "01 02 03 04\nBYTES 00a52ee8 count=3 10 20 30\n")
             self.assertTrue(validate_memory_dump(path, commands))
-            path.write_text("BYTES 005db570 count=3 01 02 03\\n"
-                            "BYTES 00a52ee8 count=3 10 20 30\\n")
+            path.write_text("BYTES 005db570 count=3 01 02 03\n"
+                            "BYTES 00a52ee8 count=3 10 20 30\n")
             self.assertFalse(validate_memory_dump(path, commands))
-            path.write_text("BYTES 005db570 count=4 01 02 03 FF\\n")
+            path.write_text("BYTES 005db570 count=4 01 02 03 FF\n")
             self.assertFalse(validate_memory_dump(path, commands))
 
     def test_longer_assembly_request_is_explicit_and_bounded(self):
