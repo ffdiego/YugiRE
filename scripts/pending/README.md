@@ -9,6 +9,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Aguardando execução** |
 | `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Aguardando execução** |
 | `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Aguardando execução** |
+| `04-card-status-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-card-status-contract.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -32,6 +33,24 @@ O segundo comando cria `scratch/visual-review/chain-manifests.json`, filtrando a
 ### ATK/DEF — conferir a composição nativa antes da validação visual
 
 O terceiro roteiro exporta assembly de `00418A80`, `00418EF0`, `004194D0`, `00417F40`, `00480200`, `00480230`, `00480300` e `00480500`. No cliente já estão integrados os três bitmaps originais `duel_fontm` e o split de opacidades 160/256; faltam comparar coordenadas absolutas, mascaramento, modo de blend e ordem Update/Draw. **Não** interpretar a existência desse roteiro como extração executada. O manifesto e dimensões dos BMPs podem ser inspecionados separadamente com `--inspect-visual-dat`. Ver [`native-field-attributes`](../../docs/research/native-field-attributes-2026-11-22.md).
+
+### Indicadores de estado de carta e flashes de ATK/DEF
+
+O quarto roteiro exporta assembly dos subpasses `00419B70`, `0041A070`,
+`0041A3B0` e funções do banco de sprites `duel/card/card.txt`. É
+independente do roteiro 03 (glifos ATK/DEF). No Windows, `--inspect-visual-dat`
+já exporta os metadados de `j\\duel\\card\\`; em seguida rode:
+
+```bash
+python3 scripts/summarize_native_card_status_dat.py
+```
+
+Ele cria `scratch/visual-review/card-status-manifests.json`, com índices
+0..13, caminhos e dimensões sem pixels. A leitura falha se as quatro
+âncoras conhecidas do manifesto não coincidirem com o contrato de
+`00418EF0`; não tentar corrigir índices por estimativa. Os sprites
+desenhados e sua semântica visual ainda exigem disassembly e inspeção DAT.
+Ver [pesquisa dos indicadores](../../docs/research/native-card-status-overlays-2026-11-22.md).
 
 ## Uso
 

@@ -61,6 +61,14 @@ Preferir consultar o SQLite/decompilações e o ZIP visual já extraído, inclus
 
 **Recursos candidatos:** `cursor/cursor_e_setatk.yga`, `cursor/cursor_e_setdef.yga`. Mapear a seleção, o ciclo de escolhas e os gates nativos, então usar o Core para impedir ações ilegais. Não inferir o significado exato de cada sufixo sem calls ao recurso e comparação.
 
+## V06 — Indicadores sobre os monstros e flashes de atributos
+
+**Localização recuperada:** após desenhar os números, `004194D0` executa três subpasses independentes `00419B70`, `0041A3B0` e `0041A070` quando o descritor possui `0x8000` e a região é elegível. O construtor `004182E0` carrega **`duel/card/card.txt`**, não confundir com `duel/card/icon.txt` de `0041A800` (outra coleção).
+
+**Família identificada:** índices 4/5 são sinais de alteração de atributo/tipo; 6/7 e 8/9 são duas máquinas de animação sobre flags de campo diferentes; 10..13 são flashes alternados durante mudança de ATK/DEF. Os contadores e o roteamento estão isolados em `NativeCardStatusOverlay` e testes sintéticos. `scripts/summarize_native_card_status_dat.py` foi validado com quatro testes sintéticos para enumerar nomes/dimensões a partir do JSON de `--inspect-visual-dat`. O nome e a geometria reais dos sprites ainda não são conhecidos.
+
+**Estado:** *Pending* para Draw de efeitos (não conta como novo renderizador, não altera 19/34). A extração de disassembly específica está em `scripts/pending/04-card-status-ghidra.sh`; documentação em [status de cartas](native-card-status-overlays-2026-11-22.md). Só integrar os overlays ao cliente após mapear as texturas, recortes, âncoras e filtros de estados. Não inventar sprites a partir do prefixo do arquivo.
+
 ## Fronteiras e acompanhamento
 
 - **Problemas de engine/regras:** continuam no plano de jogabilidade; não exigir assembly para implementar uma regra simples do Core que já tenha base textual e testes.

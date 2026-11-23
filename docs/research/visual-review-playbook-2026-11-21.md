@@ -62,6 +62,13 @@ expor os atributos se o Core já tiver revelado a identidade para
 resolver a batalha. Os números são desenhados após a carta estabilizada;
 status e indicadores adicionais possuem Draws separados ainda pendentes.
 
+Os subpasses de status nativo `00419B70`, `0041A070` e
+`0041A3B0` têm seletores de estado/frame analisados, mas **ainda não
+são renderizados no cliente**. Para comparar ícones ou flashes no
+futuro, recuperar os nomes/dimensões do `duel/card/card.txt` pelo
+`scripts/summarize_native_card_status_dat.py` após `--inspect-visual-dat`.
+Não confundir esse banco com `duel/card/icon.txt` da lista de cartas.
+
 O screenshot do Joey original deve estar na **mesma fase,
 perspectiva, zona, carta e update**. A captura de YugiRE
 não prova por si só que o original executou o mesmo número de

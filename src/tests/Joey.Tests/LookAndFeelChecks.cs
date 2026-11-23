@@ -354,6 +354,68 @@ internal static class LookAndFeelChecks
                   settled: false, hiddenDefenderBeforeImpact: false),
               "Native attribute client gate: same mask for F12 and draw, no enemy stats before sword impact");
 
+        // 00419B70 distinguishes type and attribute changes against
+        // CARD_Prop: glyph banks #5 (class) and #4 (attribute). These are
+        // NOT ordinary raw ATK/DEF values and must not be conflated.
+        var bothChanged = NativeCardStatusOverlay.IdentityChanges(
+            originalClassCode: 1, effectiveClassCode: 5,
+            originalAttributeCode: 2, effectiveAttributeCode: 6);
+        check(bothChanged == new NativeCardIdentityOverlays(true, true) &&
+              NativeCardStatusOverlay.ChangedAttributeIndex == 4 &&
+              NativeCardStatusOverlay.ChangedTypeIndex == 5 &&
+              NativeCardStatusOverlay.IdentityChanges(1, 1, 2, 2) ==
+                  new NativeCardIdentityOverlays(false, false) &&
+              NativeCardStatusOverlay.IdentityChanges(1, 0, 2, 7) ==
+                  new NativeCardIdentityOverlays(false, false) &&
+              NativeCardStatusOverlay.IdentityChanges(1, 20, 2, 5) ==
+                  new NativeCardIdentityOverlays(true, true),
+              "Native status change: resource indices, original type/attribute comparison and range gate");
+
+        // FUN_0041A070: bits 2..5, icon #6, 3-frame idle cycling;
+        // state 3 uses frames 2..5 before 0x100 and tail icon #7 after.
+        var status6 = NativeCardStatusOverlay.First(
+            fieldFlags: 0x14, animationState: 0,
+            animationCounter: 0, nativeGlobalCounter: 32);
+        var status6Begin = NativeCardStatusOverlay.First(
+            fieldFlags: 0, animationState: 3,
+            animationCounter: 0, nativeGlobalCounter: 0);
+        var status6End = NativeCardStatusOverlay.First(
+            fieldFlags: 0, animationState: 3,
+            animationCounter: 255, nativeGlobalCounter: 0);
+        var status6Tail = NativeCardStatusOverlay.First(
+            fieldFlags: 0, animationState: 3,
+            animationCounter: 272, nativeGlobalCounter: 16);
+        check(status6 == new NativeCardStatusFrame(6, 2, 5, null, null) &&
+              status6Begin == new NativeCardStatusFrame(6, 2, 0, null, null) &&
+              status6End == new NativeCardStatusFrame(6, 5, 0, null, null) &&
+              status6Tail == new NativeCardStatusFrame(6, 1, 0, 7, 7) &&
+              NativeCardStatusOverlay.First(0, 0, 0, 0) is null,
+              "Native status icon 6/7: exact flag bits, idle and transition frame routing");
+
+        // FUN_0041A3B0: bits 6..8, icon #8 and tail #9; state 4
+        // samples frames 0..3 in 64-counter intervals.
+        var status8 = NativeCardStatusOverlay.Second(
+            fieldFlags: 0x140, animationState: 0, animationCounter: 0);
+        var status8Mid = NativeCardStatusOverlay.Second(
+            fieldFlags: 0, animationState: 4, animationCounter: 128);
+        var status8Tail = NativeCardStatusOverlay.Second(
+            fieldFlags: 0, animationState: 4, animationCounter: 272);
+        check(status8 == new NativeCardStatusFrame(8, 0, 5, null, null) &&
+              status8Mid == new NativeCardStatusFrame(8, 2, 0, null, null) &&
+              status8Tail == new NativeCardStatusFrame(8, 0, 0, 9, 7) &&
+              NativeCardStatusOverlay.Second(0, 0, 0) is null,
+              "Native status icon 8/9: bits 6..8, transition frames and tail");
+
+        check(NativeCardStatusOverlay.AttributeChangeFlashIndex(true, 0) == 10 &&
+              NativeCardStatusOverlay.AttributeChangeFlashIndex(true, 4) == 11 &&
+              NativeCardStatusOverlay.AttributeChangeFlashIndex(false, 0) == 12 &&
+              NativeCardStatusOverlay.AttributeChangeFlashIndex(false, 4) == 13,
+              "Native ATK/DEF change flash: global counter selects original card bank 10..13");
+        bool invalidStatusCounterRejected = false;
+        try { NativeCardStatusOverlay.Second(0, 4, -1); }
+        catch (ArgumentOutOfRangeException) { invalidStatusCounterRejected = true; }
+        check(invalidStatusCounterRejected, "Native status cues reject negative native counters");
+
         // The owner sees ATK/DEF for their own face-down Set monster.
         // Keep the opponent's hidden monster attributes concealed. Attack
         // and defense position do not affect ownership or visibility.
