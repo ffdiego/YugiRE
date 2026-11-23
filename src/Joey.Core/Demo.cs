@@ -36,6 +36,8 @@ public sealed partial class DemoDuel
     public event Action<DemoSpecialSummon>? MonsterSpecialSummoned;
     /// <summary>Presentation-only notice of a successful normal summon or Set.</summary>
     public event Action<DemoNormalSummon>? MonsterNormalSummoned;
+    /// <summary>Committed manual position change, not an attack reveal or temporary inspection.</summary>
+    public event Action<DemoMonsterPositionChange>? MonsterPositionChanged;
     /// <summary>Presentation-only: an effect has already changed a deck's order.</summary>
     public event Action<int>? DeckShuffled;
     private readonly List<Card>[] hands = [[], []];
@@ -913,10 +915,14 @@ public sealed partial class DemoDuel
         if (!CanChangePosition(zone)) return false;
         var monster = Monsters[owner, zone]!;
         bool flipped = MonsterFaceDown[owner, zone];
-        DefensePosition[owner, zone] = !DefensePosition[owner, zone];
+        bool oldDefense = DefensePosition[owner, zone];
+        DefensePosition[owner, zone] = !oldDefense;
         MonsterFaceDown[owner, zone] = false;
         changedPosition[owner, zone] = true;
         if (flipped) MonsterWasFlipped[owner, zone] = true;
+        var change = new DemoMonsterPositionChange(owner, zone, monster,
+            flipped, oldDefense, false, DefensePosition[owner, zone]);
+        MonsterPositionChanged?.Invoke(change);
         if (flipped)
         {
             TriggerFlip(owner, zone, monster, out message);
@@ -933,6 +939,18 @@ public sealed partial class DemoDuel
                 message = $"{monster.Name} Flip Summoned: resolve its pending effect.";
             else if (message.Length == 0)
                 message = "Flip Summon: face-up attack position.";
+        }
+        else if (MonsterPositionEffectRules.Trigger(change) ==
+                 MonsterPositionTriggeredEffect.DestroyOpponentMonster)
+        {
+            // Dream Clown reuses the existing destruction picker but not FLIP semantics.
+            if (Enumerable.Range(0, 5).Any(z => Monsters[1 - owner, z] is not null))
+            {
+                PendingFlipTarget = new(owner, zone, monster, DemoFlipEffect.DestroyOpponentMonster,
+                    DemoMonsterEffectTrigger.PositionChange);
+                message = $"{monster.Name}: choose an opposing monster to destroy.";
+            }
+            else message = $"{monster.Name}: no opposing monster to destroy.";
         }
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
@@ -1840,6 +1858,12 @@ public sealed partial class DemoDuel
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
             Monsters[targetPlayer, targetZone] is not Card target) return false;
 
+        if (pending.Effect == DemoFlipEffect.DestroyOpponentMonster &&
+            targetPlayer == pending.Owner)
+        {
+            message = "Select an opposing monster for this position-triggered effect.";
+            return false;
+        }
         if (pending.Effect is DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne)
         {
             if (IsMarkedForBattleDestruction(targetPlayer, targetZone))
@@ -1863,7 +1887,9 @@ public sealed partial class DemoDuel
 
         PendingFlipTarget = null;
         RemoveMonster(targetPlayer, targetZone);
-        message = $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
+        message = pending.Trigger == DemoMonsterEffectTrigger.PositionChange
+            ? $"{pending.SourceCard.Name}: destroyed {target.Name} after changing position."
+            : $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
         FinishDeferredBattle();
         return true;
     }

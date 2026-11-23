@@ -122,6 +122,7 @@ SummonTests.Run(Check);
 NormalSummonCinematicChecks.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
+PositionChangeEffectChecks.Run(Check);
 FlipDeckFlowChecks.Run(Check);
 RitualSearcherChecks.Run(Check);
 MonsterWipeChecks.Run(Check);

@@ -8,8 +8,11 @@ public enum DemoFlipEffect
 {
     None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate,
     RecoverFromGraveyard, MillOpponentDeck, DrawAndDiscardOpponentSpells,
-    DestroyOpponentFaceUpLevelFour, OptionalDrawOne
+    DestroyOpponentFaceUpLevelFour, OptionalDrawOne,
+    DestroyOpponentMonster // position-triggered Dream Clown; reuses the monster picker
 }
+
+public enum DemoMonsterEffectTrigger { Flip, PositionChange }
 
 public static class FlipEffectRules
 {
@@ -47,8 +50,11 @@ public static class FlipEffectRules
 /// Attack-destroyed monsters remain physically on the field until the end of
 /// the Damage Step, but cannot be returned to the hand by bounce FLIP effects.
 /// </summary>
+/// <summary>Existing selector API, also used by a position-triggered monster effect.
+/// The name is retained for UI compatibility until generic target selection is added.</summary>
 public sealed record DemoFlipTarget(int Owner, int SourceZone, Card SourceCard,
-                                     DemoFlipEffect Effect = DemoFlipEffect.DestroyMonster);
+    DemoFlipEffect Effect = DemoFlipEffect.DestroyMonster,
+    DemoMonsterEffectTrigger Trigger = DemoMonsterEffectTrigger.Flip);
 
 public sealed record DemoSelectedMonster(int Player, int Zone, Card Card);
 

@@ -1184,6 +1184,30 @@
         "Sandbox only, no differential native parity.",
         "No chains/negation, special summon restrictions, altered controller/owner, exact legacy simultaneous-event priority or native UI."
       ]
+    },
+    {
+      "id": "monster.effect.position-change-destruction",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Manual face-up attack to face-up defense transition triggers Dream Clown",
+        "Select and destroy one opposing monster; preserve distinct FLIP triggers"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        119
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterPositionEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/PositionChangeEffectChecks.cs",
+        "docs/cards/p071-dream-clown-position-sandbox.md"
+      ],
+      "limitations": [
+        "Branch implementation and synthetic regression fixtures not executed: .NET SDK unavailable in this environment.",
+        "Legacy PendingFlipTarget reused for position-triggered selection; chain, negation, immunity, native timing and behavior not verified.",
+        "Native 00575210 request producer and 00585C80 shared primary callback are static evidence; Dream Clown target preparation 00593970 absent from SQLite decompilation."
+      ]
     }
   ]
 }
