@@ -303,6 +303,7 @@ public sealed class CpuDuelController
         FlipEffectRules.Skelengel => d.DeckCount(Player) > 0,
         FlipEffectRules.LadyAssailantOfFlames => d.DeckCount(Player) >= 3,
         FlipEffectRules.FireSorcerer => d.HandFor(Player).Count >= 2,
+        FlipEffectRules.ImmortalOfThunder => d.Life[Player] <= 5000,
         FlipEffectRules.Greenkappa or FlipEffectRules.TornadoBird =>
             FlipSpellTrapSelectionRules.Candidates(c.Id, d.Spells,
                 d.SpellFaceDown, d.FieldSpells, d.FieldSpellFaceDown).Count >= 2,

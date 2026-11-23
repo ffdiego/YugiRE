@@ -1270,6 +1270,36 @@
         "RNG is .NET sandbox seeded, not Joey RNG; no chain reactions, special banish redirection, counterplay priority or native differential replay.",
         ".NET 10 solution build and 3,311 synthetic tests passed in PR #58 (16 P051/P052 checks); only bounded sandbox coverage, not Verified against Joey original."
       ]
+    },
+    {
+      "id": "monster.flip.immortal-thunder-flip-life-graveyard-loss",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "resourceIds": [
+        461
+      ],
+      "status": "Partial",
+      "mechanics": [
+        "The Immortal of Thunder (461) FLIP: gain 3000 LP for its current controller/owner in bounded sandbox",
+        "After that same monster occurrence has been flipped, any subsequent field-to-Graveyard movement loses 5000 LP for that owner",
+        "Retain per-occurrence flip flag through battle and other Graveyard removals; clear it on field exit",
+        "Unflipped Set monsters and normal face-up summons do not meet the historical flip condition",
+        "Return to Hand or Fusion Gate banishment does not cause the field-to-Graveyard loss",
+        "Royal Command FLIP admission suppresses gain without undoing the actual flip"
+      ],
+      "evidence": [
+        "src/Joey.Core/ImmortalThunderRules.cs",
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/ImmortalThunderChecks.cs",
+        "docs/cards/p065-immortal-thunder-sandbox.md"
+      ],
+      "limitations": [
+        "Native P065 availability 00581040, preparation 0057C5F0 and primary 00585970 are catalogued but absent from current SQLite decompilations.",
+        "Historical text requires flipping before the 5000 LP penalty, whereas the current official TCG card text does not spell out this qualification; the original Joey implementation must be observed.",
+        "Relationship of Royal Command to delayed loss, change of control/ownership, effect negation and priority is not proven.",
+        "Build and C# sandbox CI initially pending. No dynamic Win32 replay or native comparison."
+      ]
     }
   ]
 }

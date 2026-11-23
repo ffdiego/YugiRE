@@ -1500,6 +1500,13 @@ public sealed partial class DemoDuel
                     CardSelectionDestination.Hand, filter.Value, candidates, 1, 1, card.Id);
                 message = $"{card.Name} FLIP (P{owner + 1}): choose one {filter.Value} from your graveyard.";
                 break;
+            case DemoFlipEffect.Gain3000LifePoints:
+                // P065: this is the FLIP half of the original card.
+                // Its separate field-to-Graveyard LP loss is handled centrally
+                // by RemoveMonster, conditional on this occurrence's flip history.
+                ChangeLife(owner, ImmortalThunderRules.FlipLifeGain);
+                message = $"{card.Name} FLIP: P{owner + 1} gained {ImmortalThunderRules.FlipLifeGain} LP.";
+                break;
             case DemoFlipEffect.BanishThreeDeckBurn800:
             case DemoFlipEffect.BanishTwoRandomHandBurn800:
                 // P051/P052 share native 00584E60 (800 LP), not their payment
@@ -2182,6 +2189,13 @@ public sealed partial class DemoDuel
         bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
         ClearMonsterSlot(p, z);
+
+        // A separate sent-from-field-to-Graveyard effect. The legacy P065
+        // description conditions this on the same card having been flipped.
+        // Never apply it to a normal face-up summon, an unflipped Set card,
+        // bounce to hand, or Fusion Gate's banishment.
+        if (ImmortalThunderRules.LosesLifeOnFieldToGraveyard(removed.Id, previouslyFlipped))
+            ChangeLife(p, -ImmortalThunderRules.GraveyardLifeLoss);
 
         if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
             ChangeLife(p, 1000);
