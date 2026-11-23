@@ -11,6 +11,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Aguardando execução** |
 | `04-card-status-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-card-status-contract.zip` | **Aguardando execução** |
 | `05-flip-spelltrap-targets-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-spelltrap-two-targets.zip` | **Aguardando execução** |
+| `06-prohibition-links-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-prohibition-links-contract.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -64,6 +65,18 @@ filtro face-down, zona FIELD, ação de retorno/destruição, possíveis
 resoluções parciais e supressão (Royal Command) antes de elevar as
 cartas a Verified. **Este roteiro ainda não foi executado**.
 Consultar [P085/P255](../../docs/cards/p085-p255-two-spelltrap-flip-sandbox.md).
+
+### Prohibition e efetividade das fontes contínuas
+
+O sexto roteiro exporta os callbacks de **Prohibition** (resource ID 1162,
+índice DAT 229): primário `0058C430` e preparação de alvo
+`00595F20`, que **não estão decompilados no SQLite atual**.
+Inclui `0056B440` e `005674E0` (ligações/identidade) e os
+contadores `00569820`/`005699F0`, além da recomputação de Jinzo,
+Royal Decree e Royal Command. Confirmar o significado dos vínculos
+de tipos 9/11, o momento da declaração e o efeito sobre cartas já
+presentes, antes de implementar Prohibition por aproximação.
+**Roteiro ainda não executado**.
 
 ## Uso
 
