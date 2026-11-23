@@ -9,7 +9,7 @@ Métrica de cartas jogáveis no sandbox C#, não paridade com o executável orig
 ## Por categoria
 
 | Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Trilogia | Monster | 499 | 342 | 3 | 154 | 0 | 68.54% |
 | Trilogia | Spell | 172 | 33 | 4 | 135 | 0 | 19.19% |
 | Trilogia | Trap | 100 | 5 | 1 | 94 | 0 | 5.00% |
