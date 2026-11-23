@@ -12,6 +12,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | `04-card-status-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-card-status-contract.zip` | **Aguardando execução** |
 | `05-flip-spelltrap-targets-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-spelltrap-two-targets.zip` | **Aguardando execução** |
 | `06-prohibition-links-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-prohibition-links-contract.zip` | **Aguardando execução** |
+| `07-flip-banish-burn-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-banish-burn-contract.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -82,6 +83,16 @@ Royal Decree e Royal Command. Confirmar o significado dos vínculos
 de tipos 9/11, o momento da declaração e o efeito sobre cartas já
 presentes, antes de implementar Prohibition por aproximação.
 **Roteiro ainda não executado**.
+
+### FLIP P051/P052 — banimento de Deck / mão e dano 800
+
+O sétimo roteiro extrai os gates de disponibilidade e produtores do
+custo de Lady Assailant of Flames (`1435`) e Fire Sorcerer (`1436`).
+O callback de dano `00584E60` está decompilado, porém as quatro
+rotinas específicas de custo ainda não estão no SQLite. Confirmar
+consumo e ordem de seleção, RNG do modo 4, destino `0x62`,
+restrições por Royal Command e comportamento com mão/deck
+insuficientes. **Roteiro não executado.**
 
 ## Uso
 

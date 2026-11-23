@@ -9,7 +9,8 @@ public enum DemoFlipEffect
     None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate,
     RecoverFromGraveyard, MillOpponentDeck, DrawAndDiscardOpponentSpells,
     DestroyOpponentFaceUpLevelFour, OptionalDrawOne,
-    DestroyTwoSetSpellTraps, ReturnTwoSpellTraps
+    DestroyTwoSetSpellTraps, ReturnTwoSpellTraps,
+    BanishThreeDeckBurn800, BanishTwoRandomHandBurn800
 }
 
 public static class FlipEffectRules
@@ -27,6 +28,8 @@ public static class FlipEffectRules
     public const ushort Skelengel = 539;
     public const ushort Greenkappa = 585;
     public const ushort TornadoBird = 1521;
+    public const ushort LadyAssailantOfFlames = 1435;
+    public const ushort FireSorcerer = 1436;
 
     public static DemoFlipEffect Effect(ushort resourceId) => resourceId switch
     {
@@ -42,6 +45,8 @@ public static class FlipEffectRules
         Skelengel => DemoFlipEffect.OptionalDrawOne,
         Greenkappa => DemoFlipEffect.DestroyTwoSetSpellTraps,
         TornadoBird => DemoFlipEffect.ReturnTwoSpellTraps,
+        LadyAssailantOfFlames => DemoFlipEffect.BanishThreeDeckBurn800,
+        FireSorcerer => DemoFlipEffect.BanishTwoRandomHandBurn800,
         _ => DemoFlipEffect.None
     };
     public static bool Supports(ushort resourceId) => Effect(resourceId) != DemoFlipEffect.None;

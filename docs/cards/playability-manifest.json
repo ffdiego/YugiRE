@@ -1240,6 +1240,36 @@
         "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
         "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions."
       ]
+    },
+    {
+      "id": "monster.flip.banish-cost-burn-800",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Lady Assailant of Flames (1435): FLIP banishes exactly three top cards of controller's own Deck and inflicts 800 damage",
+        "Fire Sorcerer (1436): FLIP banishes two distinct random cards from controller's own Hand and inflicts 800 damage",
+        "Separate banished zone retains original occurrences; no Graveyard/discard/draw callbacks",
+        "Cost unavailable below 3 Deck or 2 Hand cards produces no mutation or burn in the bounded sandbox",
+        "Respect shared Royal Command FLIP admission gate; preserve battle continuation and CPU availability heuristic"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1435,
+        1436
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipBanishBurnRules.cs",
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipBanishBurnChecks.cs",
+        "docs/cards/p051-p052-flip-banish-burn-sandbox.md"
+      ],
+      "limitations": [
+        "Callbacks 00582E60 / 00582EA0 and preparation 0057DDD0 / 0057DDF0 are not decompiled in provided SQLite; constraints from existing static sweep and legacy card texts.",
+        "Primary 00584E60 is decompiled and confirms 800 damage, but not native availability/cost order.",
+        "RNG is .NET sandbox seeded, not Joey RNG; no chain reactions, special banish redirection, counterplay priority or native differential replay.",
+        "Build and synthetic regression CI pending at initial commit."
+      ]
     }
   ]
 }

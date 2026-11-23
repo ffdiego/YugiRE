@@ -60,6 +60,12 @@ public sealed partial class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
+    // Banish (removed from play) is not a discard, a mill or the Graveyard.
+    // Retain original physical Card occurrences for future return-from-banish effects.
+    private readonly List<Card>[] banished = [[], []];
+    public IReadOnlyList<Card> Banished(int player) => player is 0 or 1
+        ? banished[player].AsReadOnly() : throw new ArgumentOutOfRangeException(nameof(player));
+    public DemoFlipBanishBurnResult? LastFlipBanishBurn { get; private set; }
     // Serial choice resolution shared by post-graveyard effects and P165
     // Normal/Flip Summon triggers. Preserve provenance: battle and Graveyard
     // events must not be interpreted as a Summon, or vice versa.
@@ -1496,6 +1502,22 @@ public sealed partial class DemoDuel
                 PendingCardSelection = new(owner, CardSelectionSource.Graveyard,
                     CardSelectionDestination.Hand, filter.Value, candidates, 1, 1, card.Id);
                 message = $"{card.Name} FLIP (P{owner + 1}): choose one {filter.Value} from your graveyard.";
+                break;
+            case DemoFlipEffect.BanishThreeDeckBurn800:
+            case DemoFlipEffect.BanishTwoRandomHandBurn800:
+                // P051/P052 share native 00584E60 (800 LP), not their payment
+                // producer. Do not represent banishment as Graveyard movement.
+                LastFlipBanishBurn = FlipBanishBurnRules.Resolve(
+                    card.Id, owner, decks[owner], hands[owner], banished[owner], effectRandom);
+                if (LastFlipBanishBurn.Applied)
+                {
+                    Damage(1 - owner, LastFlipBanishBurn.Damage);
+                    message = $"{card.Name} FLIP: banished " +
+                        $"{LastFlipBanishBurn.BanishedCards.Count} cards from " +
+                        $"{LastFlipBanishBurn.CostSource} and inflicted {LastFlipBanishBurn.Damage} damage.";
+                }
+                else
+                    message = $"{card.Name} FLIP: unavailable banishment cost; no damage.";
                 break;
             case DemoFlipEffect.MillOpponentDeck:
                 // P082: sending cards straight from deck to GY is not a draw.
