@@ -49,7 +49,11 @@ sealed class DatGraphics : IDisposable
     // atlas; the previously selected medium-yellow atlas was too small.
     // Keep the latter only as a manifest-validated fallback.
     public const string LifeNumberFont = @"j\duel\font\duel_fontl.bmp";
-    public const string LifeNumberFallback = @"j\duel\font\duel_fontm_y.bmp";
+    // 0041A070 / 0041A3B0 select resource #8 from number.txt.
+    // The same yellow 10-column bitmap was already validated/loaded
+    // as the LP fallback; naming it here does not enable status Draws.
+    public const string CardStatusNumberFont = NativeCardStatusDigits.FontResource;
+    public const string LifeNumberFallback = CardStatusNumberFont;
     public static readonly string[] LifeFloatingFonts =
     [
         @"j\duel\font\damage00.bmp", @"j\duel\font\damage01.bmp"
