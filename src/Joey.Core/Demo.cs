@@ -99,6 +99,59 @@ public sealed partial class DemoDuel
     public DemoFlipTarget? PendingFlipTarget { get; private set; }
     public PendingCardSelection? PendingCardSelection { get; private set; }
     public PendingSpellTrapTarget? PendingSpellTrapTarget { get; private set; }
+    /// <summary>Live board predicate; hidden Royal Command does not suppress FLIPs.</summary>
+    public bool FlipEffectsNegated => FlipEffectSuppressionRules.RoyalCommandEffective(
+        Monsters, MonsterFaceDown, Spells, SpellFaceDown);
+
+    private enum PendingFlipChoice { MonsterTarget, CardSelection, SpellTrapTargets, OptionalDraw }
+
+    /// <summary>
+    /// Cancel an already queued FLIP when Royal Command becomes effective
+    /// before its resolver. A non-FLIP request (e.g. Sangan/Witch) is unaffected.
+    /// The caller passes the pending-request family to avoid consuming a
+    /// different kind of player interaction by mistake.
+    /// </summary>
+    private bool TryNegatePendingFlip(PendingFlipChoice expected, out string message)
+    {
+        message = "";
+        if (!FlipEffectsNegated) return false;
+        string? effectName = null;
+        switch (expected)
+        {
+            case PendingFlipChoice.MonsterTarget
+                when PendingFlipTarget is { } target &&
+                     FlipEffectRules.Supports(target.SourceCard.Id):
+                effectName = target.SourceCard.Name;
+                PendingFlipTarget = null;
+                flipSelections.Clear();
+                break;
+            case PendingFlipChoice.CardSelection
+                when PendingCardSelection is { } selection &&
+                     FlipEffectRules.Supports(selection.EffectResourceId):
+                effectName = $"card {selection.EffectResourceId}";
+                PendingCardSelection = null;
+                selectedBatchIndices.Clear();
+                break;
+            case PendingFlipChoice.SpellTrapTargets
+                when PendingFlipSpellTrapTargets is { } targets &&
+                     FlipEffectRules.Supports(targets.Source.Id):
+                effectName = targets.Source.Name;
+                PendingFlipSpellTrapTargets = null;
+                flipSpellTrapSelections.Clear();
+                break;
+            case PendingFlipChoice.OptionalDraw
+                when PendingEffectDecision is { Kind: EffectDecisionKind.DrawOneOnFlip } choice:
+                effectName = choice.Source.Name;
+                PendingEffectDecision = null;
+                break;
+        }
+        if (effectName is null) return false;
+        FinishDeferredBattle();
+        BeginNextEffectDecision();
+        BeginNextQueuedDeckSearch();
+        message = $"{effectName} FLIP effect negated by Royal Command; no effect applied.";
+        return true;
+    }
     /// <summary>
     /// Determined destroyed at damage calculation, but still present during FLIP resolution.
     /// Such monsters cannot be returned to the hand by Penguin Soldier.
@@ -551,6 +604,26 @@ public sealed partial class DemoDuel
         }
         if (card.ClassCode == 22 && SpellTrapWipeRules.Supports(card.Id))
             return ActivateSpellTrapWipe(card, zone, fromSet: true, out message);
+        if (card.Id == FlipEffectSuppressionRules.RoyalCommand && card.ClassCode == 21)
+        {
+            // This bounded trap window follows Destiny Board: owner Main Phase
+            // on a later turn. Opponent response/chains remain unimplemented.
+            if (spellSetTurn[p, zone] >= Turn)
+            {
+                message = "Royal Command cannot activate on its Set turn.";
+                return false;
+            }
+            if (FlipEffectSuppressionRules.JinzoFaceUp(Monsters, MonsterFaceDown))
+            {
+                message = "Jinzo prevents activation of Royal Command.";
+                return false;
+            }
+            SpellFaceDown[p, zone] = false;
+            message = FlipEffectsNegated
+                ? "Royal Command face-up: FLIP effects are negated."
+                : "Royal Command face-up: its Trap effect is currently negated.";
+            return true;
+        }
         if (card.Id == DestinyBoardRules.BoardResourceId)
         {
             // Sandbox constraint: activation from an already-set trap is
@@ -621,6 +694,7 @@ public sealed partial class DemoDuel
     public bool SelectFlipSpellTrapTarget(int player, int zone, out string message)
     {
         message = "No eligible FLIP Spell/Trap target is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.SpellTrapTargets, out message)) return true;
         if (PendingFlipSpellTrapTargets is not { } pending || GameOver ||
             player is < 0 or > 1 || zone is < 0 or > SpellTrapTargetRules.FieldZone)
             return false;
@@ -1360,6 +1434,11 @@ public sealed partial class DemoDuel
     private void TriggerFlip(int owner, int zone, Card card, out string message)
     {
         message = "";
+        if (FlipEffectRules.Supports(card.Id) && FlipEffectsNegated)
+        {
+            message = $"{card.Name} revealed; FLIP effect negated by Royal Command.";
+            return;
+        }
         switch (FlipEffectRules.Effect(card.Id))
         {
             case DemoFlipEffect.DestroyMonster:
@@ -1598,6 +1677,7 @@ public sealed partial class DemoDuel
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
             return false;
@@ -1681,6 +1761,7 @@ public sealed partial class DemoDuel
     public bool SelectBatchCard(int sourceIndex, out string message)
     {
         message = "A multiple-card recruitment is not pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
               Filter: CardSelectionFilter.SameNameMonster, MinSelections: 0, MaxSelections: > 1 } pending)
@@ -1705,6 +1786,7 @@ public sealed partial class DemoDuel
     public bool FinishOptionalCardSelection(out string message)
     {
         message = "No multiple same-name recruitment is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
               Filter: CardSelectionFilter.SameNameMonster, MinSelections: 0, MaxSelections: > 1 } pending)
@@ -1760,6 +1842,7 @@ public sealed partial class DemoDuel
     public bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MinSelections: 0 } pending)
             return false;
         // Zero is the only skip option: do not silently lose already chosen copies.
@@ -1969,6 +2052,7 @@ public sealed partial class DemoDuel
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
+        if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
             Monsters[targetPlayer, targetZone] is not Card target) return false;
@@ -2012,6 +2096,7 @@ public sealed partial class DemoDuel
     private bool CompleteReturnTargets(out string message)
     {
         message = "No return-target FLIP effect is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo } pending)
             return false;
         if (pending.Effect == DemoFlipEffect.ReturnOne && flipSelections.Count != 1)
@@ -2233,6 +2318,7 @@ public sealed partial class DemoDuel
         message = "No matching optional effect decision is pending.";
         if (PendingEffectDecision is not { } request || request.Id != id ||
             !Enum.IsDefined(answer) || GameOver) return false;
+        if (TryNegatePendingFlip(PendingFlipChoice.OptionalDraw, out message)) return true;
         if (request.Kind == EffectDecisionKind.DrawOneOnFlip)
             return ResolveFlipDrawDecision(request, answer, out message);
         if (answer == EffectDecisionAnswer.Accept &&

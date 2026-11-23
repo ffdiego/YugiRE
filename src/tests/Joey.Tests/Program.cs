@@ -123,6 +123,7 @@ NormalSummonCinematicChecks.Run(Check);
 NormalMonsterPlayabilityChecks.Run(Check);
 FlipMonsterChecks.Run(Check);
 FlipSpellTrapSelectionChecks.Run(Check);
+RoyalCommandSuppressionChecks.Run(Check);
 FlipDeckFlowChecks.Run(Check);
 RitualSearcherChecks.Run(Check);
 MonsterWipeChecks.Run(Check);

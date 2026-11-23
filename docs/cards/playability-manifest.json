@@ -1212,6 +1212,34 @@
         "Native 00583120 and 0056A320 substantiate Tornado Bird availability including FIELD, while seven of eight card callback functions remain missing from this SQLite.",
         "No differential native duel validation, chains, effect negation (Royal Command), altered control/ownership, linked-resolver edge cases, or native visual/timing parity."
       ]
+    },
+    {
+      "id": "trap.continuous.royal-command-flip-suppression",
+      "kind": "Trap",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Face-up Royal Command suppresses FLIP effect admission from flip summon, attack reveal or external reveal",
+        "Face-down Royal Command has no suppression until activated after its Set turn",
+        "Face-up Jinzo or Royal Decree negates Royal Command's continuous effect",
+        "Queued monster target, card selection, or optional FLIP draw are rechecked before resolution",
+        "Negated FLIP does not undo its reveal, damage calculation, or pending battle destruction"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1530
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectSuppressionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/RoyalCommandSuppressionChecks.cs",
+        "docs/cards/royal-command.md"
+      ],
+      "limitations": [
+        "Bounded Royal Command implementation compiled and passed 3,254 synthetic checks (22 new Royal Command cases) in PR #56 CI; additional non-FLIP and multiple-source cases appended for follow-up CI. Partial due to absent chain timing and native differential validation.",
+        "Royal Command can be activated from Set on its owner's later Main Phase only; no opponent turn Trap responses or full priority/chains.",
+        "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
+        "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions."
+      ]
     }
   ]
 }
