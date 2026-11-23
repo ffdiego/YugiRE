@@ -46,12 +46,11 @@ public static class FlipEffectRules
 }
 
 /// <summary>
-/// A FLIP waiting for target selection. Owner chooses targets in the hot-seat demo.
-/// Attack-destroyed monsters remain physically on the field until the end of
-/// the Damage Step, but cannot be returned to the hand by bounce FLIP effects.
+/// Existing monster target-selection contract; historical FLIP-facing name kept
+/// for compatibility with the UI. Also used by position-triggered effects.
+/// Attack-destroyed monsters stay on the field until the end of Damage Step but
+/// cannot be returned to hand by bounce effects.
 /// </summary>
-/// <summary>Existing selector API, also used by a position-triggered monster effect.
-/// The name is retained for UI compatibility until generic target selection is added.</summary>
 public sealed record DemoFlipTarget(int Owner, int SourceZone, Card SourceCard,
     DemoFlipEffect Effect = DemoFlipEffect.DestroyMonster,
     DemoMonsterEffectTrigger Trigger = DemoMonsterEffectTrigger.Flip);

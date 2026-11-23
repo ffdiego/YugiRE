@@ -21,7 +21,8 @@ Os testes sintéticos em `PositionChangeEffectChecks.cs` exercitam os
 dois sentidos da mudança, alvo próprio inválido, campo sem alvo, consumo
 único, callback de Man-Eater Bug e escolha da CPU.
 
-**Status: Partial.** Não houve compilação nem execução dos testes nesta
-sessão (SDK .NET indisponível), nem comparação com o Joey original.
+**Status: Done no escopo sandbox.** A CI .NET 10 compilou a solução e executou
+com sucesso os 3.228 testes sintéticos (workflow 45098338059), incluindo os
+10 casos novos. Não houve comparação com o Joey original.
 Janelas de resposta, supressão, imunidade, revalidação após cadeia e timing
 nativo precisam de investigação/implementação separadas.
