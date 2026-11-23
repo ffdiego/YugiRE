@@ -148,6 +148,10 @@ O modelo de estados, geometry e os seletores de frame têm testes
 sintéticos de limites, recortes e contagem regressiva. A cobertura
 visual continua **19/34 Partial, 0 Verified**.
 
+## Numeração amarela — contrato adicional
+
+Os dois status usam `00417F40(8)` → `j/duel/font/duel_fontm_y.bmp` (fonte de **70×10**, **10 glifos 7×10**, comprovada pelos metadados originais do DAT). `0041A070` centraliza o número via `00480690`; `0041A3B0` desenha diretamente pelo lado direito via `004803C0`. O recorte e a ordem da direita para a esquerda foram codificados em `NativeCardStatusDigits`, com testes. Os offsets horizontais externos mantêm `unaff_EBX` e `iStack_6c` explícitos e **não** autorizam uma posição final. Ver [contrato dos dígitos](native-card-status-digits-2026-11-22.md).
+
 ## Incremento no projeto (sem fingir uma Draw implementada)
 
 `NativeCardStatusOverlay.cs`, em `Joey.LookAndFeel`, contém índices

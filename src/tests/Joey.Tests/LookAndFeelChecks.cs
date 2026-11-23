@@ -505,6 +505,67 @@ internal static class LookAndFeelChecks
                   new NativeCardStatusTransition(4, 496),
               "Native card status timeline: exit after 32 updates and state 4 shares countdown");
 
+        // Both native status Draws select resource 8 of font/number.txt,
+        // the 70x10 yellow atlas with ten 7x10 numeral cells. This is
+        // original DAT metadata, independent of speculative icon sprites.
+        check(NativeCardStatusDigits.OriginalFontResourceIndex == 8 &&
+              NativeCardStatusDigits.FontResource == @"j\duel\font\duel_fontm_y.bmp" &&
+              NativeCardStatusDigits.Columns == 10 &&
+              NativeCardStatusDigits.EvidenceAtlasWidth == 70 &&
+              NativeCardStatusDigits.EvidenceAtlasHeight == 10 &&
+              NativeLifeHud.TryFontColumns("duel_fontm_y.bmp 10\n",
+                  "duel_fontm_y.bmp") == 10,
+              "Native status digits: original yellow number atlas path and column count");
+
+        // 00480690 centers the full digit string, then calls 004803C0;
+        // that callee advances right-to-left, drawing units first.
+        var centeredStatusDigits = NativeCardStatusDigits.Centered(
+            new CardPoint(525, 383), 15, 70, 10);
+        check(centeredStatusDigits.Length == 2 &&
+              centeredStatusDigits[0] == new NativeCardStatusDigitPass(
+                  5, new CardBounds(35, 0, 7, 10), new CardPoint(525, 378)) &&
+              centeredStatusDigits[1] == new NativeCardStatusDigitPass(
+                  1, new CardBounds(7, 0, 7, 10), new CardPoint(518, 378)),
+              "Native status numeric A: centered 15 and right-to-left source/destination order");
+
+        // The B Draw calls 004803C0 directly with a right-edge X.
+        var rightStatusDigits = NativeCardStatusDigits.RightAnchored(
+            rightEdge: 542, centerY: 321, value: 7, atlasWidth: 70, atlasHeight: 10);
+        var zeroStatusDigits = NativeCardStatusDigits.Centered(
+            new CardPoint(525, 383), 0, 70, 10);
+        check(rightStatusDigits.Length == 1 &&
+              rightStatusDigits[0] == new NativeCardStatusDigitPass(
+                  7, new CardBounds(49, 0, 7, 10), new CardPoint(535, 316)) &&
+              zeroStatusDigits.Length == 1 &&
+              zeroStatusDigits[0] == new NativeCardStatusDigitPass(
+                  0, new CardBounds(0, 0, 7, 10), new CardPoint(521, 378)),
+              "Native status numeric B: right-anchored digit, zero renders one glyph");
+
+        // Horizontal X has *symbolic* register/stack operands from the
+        // decompiler. Test only their algebra, never an invented sprite
+        // width or screen-space location. iStack_6c may be written by
+        // a virtual call; its source still requires assembly.
+        check(NativeCardStatusDigits.HorizontalFromDecompilerOperands(
+                  objectX: 525, firstStatusEbx: 30, firstPostDrawOffset: 4,
+                  secondStatusEbx: 26) ==
+                  new NativeCardStatusHorizontalOperands(520, 535),
+              "Native status X: preserve the unresolved EBX/post-draw operands in layout equations");
+        bool invalidStatusDigitAtlasRejected = false;
+        try
+        {
+            _ = NativeCardStatusDigits.Centered(
+                new CardPoint(525, 383), 15, atlasWidth: 69, atlasHeight: 10);
+        }
+        catch (ArgumentException) { invalidStatusDigitAtlasRejected = true; }
+        bool negativeStatusDigitRejected = false;
+        try
+        {
+            _ = NativeCardStatusDigits.RightAnchored(525, 383, -1, 70, 10);
+        }
+        catch (ArgumentOutOfRangeException) { negativeStatusDigitRejected = true; }
+        check(invalidStatusDigitAtlasRejected && negativeStatusDigitRejected,
+              "Native status numeric layout rejects malformed atlas and negative value");
+
         // The owner sees ATK/DEF for their own face-down Set monster.
         // Keep the opponent's hidden monster attributes concealed. Attack
         // and defense position do not affect ownership or visibility.

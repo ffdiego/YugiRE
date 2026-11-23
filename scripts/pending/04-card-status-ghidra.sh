@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # PENDING: determine original card status indicators, from the shared
 # duel/card/card.txt sprite bank through native drawing and phase gates.
+# Trace EBX/EDI/iStack_6c near 0041A1E6 0041A1F5 0041A23D,
+# and 0041A520 0041A52E 0041A580. Do not guess sprite widths.
 # Requires private local Ghidra project; never version EXE, DAT or ZIP.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -12,7 +14,8 @@ fi
 python3 scripts/export_ghidra_visual_bundle.py \
   --targets 004182E0 00418560 00418B60 004194D0 00419B70 \
             0041A070 0041A3B0 0040B270 0040B370 005B9470 \
-            0041A800 00413DB0 00417F40 004803C0 00480690 \
+            0041A800 00413DB0 00417F40 00480200 00480230 \
+            004803C0 00480690 \
   --disassemble --instruction-count 1024 --retry-missing \
   --output scratch/ghidra-card-status-contract.zip
 echo "Share privately: scratch/ghidra-card-status-contract.zip"
