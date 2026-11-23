@@ -204,6 +204,40 @@ internal static class NativePresentationChecks
               explosion.VisiblePasses() == NativeExplosionPasses.None,
               "Native explosion: deactivation at draw after t=207, not a fixed duration in ms");
 
+        // 004531A0 / 004531C0: 24 Updates, two passes through six indices.
+        // Frame INDEX and descriptor bit are known; DAT textures/geometry are not.
+        var disabledChain = new NativeDisabledChainTimeline();
+        var chainFrames = new List<int>();
+        for (int tick = 0; tick < NativeDisabledChainTimeline.Updates; tick++)
+        {
+            var frame = disabledChain.Sample(0u);
+            if (frame is null) throw new InvalidOperationException("Live chain frame missing");
+            chainFrames.Add(frame.Value.FrameIndex);
+            disabledChain.AdvanceNativeUpdate();
+        }
+        check(chainFrames.SequenceEqual(Enumerable.Range(0, 24).Select(t => t / 2 % 6)) &&
+              disabledChain.Counter == 24 && !disabledChain.Active &&
+              disabledChain.Sample(0u) is null,
+              "Native disabled chain: two cycles of six indices, two updates each; stop at 24");
+        check(NativeDisabledChainFrame.FromCounter(11, 0u) ==
+                  new NativeDisabledChainFrame(11, 5, false) &&
+              NativeDisabledChainFrame.FromCounter(12, 0x40u) ==
+                  new NativeDisabledChainFrame(12, 0, true) &&
+              !NativeDisabledChainFrame.FromCounter(13, 0x20u).DescriptorBit40,
+              "Native disabled chain: descriptor bit 0x40 branches independently of frame index");
+        bool chainBeforeRejected = false, chainAfterRejected = false;
+        try { NativeDisabledChainFrame.FromCounter(-1, 0u); }
+        catch (ArgumentOutOfRangeException) { chainBeforeRejected = true; }
+        try { NativeDisabledChainFrame.FromCounter(24, 0u); }
+        catch (ArgumentOutOfRangeException) { chainAfterRejected = true; }
+        disabledChain.AdvanceNativeUpdate();
+        check(chainBeforeRejected && chainAfterRejected && disabledChain.Counter == 24,
+              "Native disabled chain: invalid Draw counters rejected; inactive Update is stable");
+        disabledChain.Reset();
+        check(disabledChain.Active && disabledChain.Counter == 0 &&
+              disabledChain.Sample(0x40u) is { FrameIndex: 0, DescriptorBit40: true },
+              "Native disabled chain: reset reconstructs first frame without milliseconds");
+
         check(NativeVisualDispatch.Participates(true, 0b0101, 0b0001) &&
               !NativeVisualDispatch.Participates(false, 0b0101, 0b0001) &&
               !NativeVisualDispatch.Participates(true, 0b0100, 0b0001) &&

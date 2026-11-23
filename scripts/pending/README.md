@@ -17,6 +17,17 @@ O primeiro roteiro obtém assembly de `0043B280`, `0055DCF0`, `004524E0/004524F0
 
 O segundo roteiro traz construtor, caminho de disparo e assembly de Update/Draw do objeto `005DB374`, que usa `j/duel/chain/disable.txt`. A decompilação já confirma `004531A0`: contador +1 por Update, desativa após 24; `004531C0`: quadro `(contador/2)%6`, com modo de composição alternativo por bit 0x40 do descritor. Ainda **não** conhecemos o índice do sprite no manifesto, as coordenadas efetivas de `0045C140`, o ponto exato de disparo e a rotação, portanto não inventar a apresentação. Essa é uma candidata a uma nova Draw no badge, **somente** após integração C# efetiva.
 
+### Metadados do DAT para corrente desativada (sem Ghidra)
+
+O escopo do inspetor `--inspect-visual-dat` já inclui `j\duel\chain\`. Na máquina com o `data.dat` original, executar:
+
+```bash
+dotnet run --project src/Joey.App -- /caminho/para/data.dat --inspect-visual-dat
+python3 scripts/summarize_native_chain_dat.py
+```
+
+O segundo comando cria `scratch/visual-review/chain-manifests.json`, filtrando apenas o texto dos manifests e as dimensões das imagens (sem pixels, hashes de imagem ou arte gráfica). Verificar seu conteúdo e compartilhar este JSON **privadamente**, junto do ZIP de Ghidra. Não versionar nenhum dos dois. A extração dos metadados **não** identifica automaticamente o papel/ordem dos sprites: isso depende de `004531C0`, `0045C140` e do manifesto real.
+
 ## Uso
 
 Depois de atualizar a `main` na máquina com Ghidra, executar apenas o roteiro pertinente, por exemplo:
