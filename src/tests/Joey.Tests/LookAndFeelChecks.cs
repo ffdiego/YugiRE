@@ -143,6 +143,14 @@ internal static class LookAndFeelChecks
               NativeDuelCursor.HandAction(false, false, false, false, false, false) is null &&
               NativeDuelCursor.HandAction(false, false, true, false, false, true) is null,
               "Action cloud: only legal moves, Trap Set-only, both-mode spell and discard fallback");
+        check(NativeDuelCursor.ActionForSprite(NativeDuelCursor.DefaultPointer) is null &&
+              NativeDuelCursor.ActionForSprite(@"CURSOR\CURSOR_E_ATK.YGA") ==
+                  NativeCursorAction.Attack &&
+              NativeDuelCursor.ActionForSprite(NativeDuelCursor.ActionSprite(
+                  NativeCursorAction.Summon)) == NativeCursorAction.Summon &&
+              NativeDuelCursor.ActionForSprite(@"cursor\unknown.yga") is null &&
+              NativeDuelCursor.ActionForSprite(null) is null,
+              "F12 cursor metadata: action cloud derived from actual sprite, including field Attack");
         check(NativeDuelCursor.FieldMonsterAttackAction(
                   ownMonster: true, canAttack: true, choosingTarget: false) ==
                   NativeCursorAction.Attack &&

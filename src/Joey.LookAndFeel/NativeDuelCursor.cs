@@ -55,6 +55,21 @@ public static class NativeDuelCursor
         action is { } selected ? ActionSprite(selected) : DefaultPointer;
 
     /// <summary>
+    /// Inverse of the DAT action-cloud resource map, for F12 diagnostics.
+    /// Returning null for the base pointer/unrecognized resource prevents
+    /// stale hand actions from being reported during field-monster hover.
+    /// This does not reconstruct the original Win32 cursor dispatcher.
+    /// </summary>
+    public static NativeCursorAction? ActionForSprite(string? sprite)
+    {
+        if (sprite is null) return null;
+        foreach (var action in Enum.GetValues<NativeCursorAction>())
+            if (string.Equals(ActionSprite(action), sprite, StringComparison.OrdinalIgnoreCase))
+                return action;
+        return null;
+    }
+
+    /// <summary>
     /// Determine the only currently legal hand cursor action. This helper
     /// receives the actual Core legality gates rather than classifying all
     /// spells as Activate and all monsters as Summon.

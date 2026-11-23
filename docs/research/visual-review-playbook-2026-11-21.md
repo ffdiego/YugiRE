@@ -41,6 +41,13 @@ dotnet run --project src/Joey.App -- .\passion\data.dat --alpha
   versionados**. Nenhuma captura ou dado do jogo é enviada
   automaticamente a terceiros.
 
+Para medir diferenças RGB por pixel, executar `python3 scripts/compare_visual_frames.py
+  original.png yugire.png` sobre dois PNGs já alinhados em 800×600. O programa
+  grava `difference.png`, `mismatch-mask.png`, `overlay.png` e `report.json`
+  sob `scratch/visual-review/comparison/`, separando painel lateral (x<230)
+  e tabuleiro. Veja [comparação de frames](visual-frame-comparison-2026-11-22.md).
+  Os pixels do cursor global não estão no PNG F12.
+
 O screenshot do Joey original deve estar na **mesma fase,
 perspectiva, zona, carta e update**. A captura de YugiRE
 não prova por si só que o original executou o mesmo número de

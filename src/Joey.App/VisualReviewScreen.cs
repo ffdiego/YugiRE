@@ -30,6 +30,8 @@ static partial class Game
 
         // Recording counters makes comparing frames with an original-game
         // screenshot easier. This metadata is about YugiRE, not a native trace.
+        // Both fields describe the same pointer decision, including field Attack.
+        string cursorSprite = ActiveWindowCursorSprite();
         var snapshot = new
         {
             schemaVersion = 1,
@@ -50,9 +52,8 @@ static partial class Game
             detailCardResourceId = detailCard?.Id,
             mouseCanvas = new { x = mouse.X, y = mouse.Y },
             mousePointerSource = "original-data.dat-window-overlay",
-            cursorSprite = ActiveWindowCursorSprite(),
-            actionCloud = ActiveWindowCursorSprite() == NativeDuelCursor.DefaultPointer
-                ? null : CurrentHandAction(hoverHand)?.ToString(),
+            cursorSprite,
+            actionCloud = NativeDuelCursor.ActionForSprite(cursorSprite)?.ToString(),
             turn = duel.Turn,
             phase = duel.Phase.ToString(),
             playerPerspective = ViewPlayer,
