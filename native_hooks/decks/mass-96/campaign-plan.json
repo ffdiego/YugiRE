@@ -1054,7 +1054,7 @@
           "cardClass": 4,
           "family": "monster",
           "callbackProfile": "P051",
-          "doneSandbox": false,
+          "doneSandbox": true,
           "copiesPerSide": 3
         },
         {
@@ -1064,7 +1064,7 @@
           "cardClass": 18,
           "family": "monster",
           "callbackProfile": "P052",
-          "doneSandbox": false,
+          "doneSandbox": true,
           "copiesPerSide": 3
         },
         {

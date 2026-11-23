@@ -51,7 +51,8 @@ costs, duplicate hand occurrences, player ownership, no Graveyard
 movement, reveal once, no face-up position trigger, Royal Command
 suppression, battle resolution, and lethal LP damage.
 
-Status initially **Partial** awaiting .NET CI. Even if marked Done
+Status **Done** for bounded sandbox after .NET 10 build and **3,311 synthetic
+checks passed**, including 16 new P051/P052 checks, on PR #58. Even if marked Done
 after the sandbox suite passes, neither card is Verified without
 a native capture under controlled decks and matching initial
 states, action sequence, and RNG observation.
