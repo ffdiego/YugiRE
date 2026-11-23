@@ -37,7 +37,9 @@ O terceiro roteiro exporta assembly de `00418A80`, `00418EF0`, `004194D0`, `0041
 ### Indicadores de estado de carta e flashes de ATK/DEF
 
 O quarto roteiro exporta assembly dos subpasses `00419B70`, `0041A070`,
-`0041A3B0` e funções do banco de sprites `duel/card/card.txt`. É
+`0041A3B0`, a animação `00418B60`, os comandos nativos `0040B270` e
+`0040B370`, o dispatcher `005B9470`, o carregador da miniatura
+`00418560` e funções do banco de sprites `duel/card/card.txt`. É
 independente do roteiro 03 (glifos ATK/DEF). No Windows, `--inspect-visual-dat`
 já exporta os metadados de `j\\duel\\card\\`; em seguida rode:
 

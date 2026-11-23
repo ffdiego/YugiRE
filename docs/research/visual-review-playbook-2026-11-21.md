@@ -69,6 +69,14 @@ futuro, recuperar os nomes/dimensões do `duel/card/card.txt` pelo
 `scripts/summarize_native_card_status_dat.py` após `--inspect-visual-dat`.
 Não confundir esse banco com `duel/card/icon.txt` da lista de cartas.
 
+Os status A/B entram em transição com contador **0x200** e o nativo
+subtrai **0x10 por Update**, enquanto a carta está estabilizada;
+**a animação começa pelo pass adicional 7/9** e só depois percorre
+os quadros principais 6/8. As âncoras verticais usam a **altura da
+miniatura da carta**, não a fonte ATK/DEF. No cliente esses Draws
+continuam Pending: não interpretar o F12 como captura de uma animação
+que ainda não é renderizada. Ver [contrato](native-card-status-overlays-2026-11-22.md).
+
 O screenshot do Joey original deve estar na **mesma fase,
 perspectiva, zona, carta e update**. A captura de YugiRE
 não prova por si só que o original executou o mesmo número de

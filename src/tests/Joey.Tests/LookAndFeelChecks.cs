@@ -416,6 +416,95 @@ internal static class LookAndFeelChecks
         catch (ArgumentOutOfRangeException) { invalidStatusCounterRejected = true; }
         check(invalidStatusCounterRejected, "Native status cues reject negative native counters");
 
+        // Status overlay geometry: these offsets use the miniature-card
+        // image height DAT_005F3008, not the ATK/DEF digit atlas height.
+        // X depends on sprite dimensions that Ghidra currently mis-types;
+        // do not assert imaginary absolute icon positions.
+        var statusSameSide = NativeCardStatusGeometry.FromNative(
+            new CardPoint(525, 352), miniHeight: 72,
+            perspectiveSide: 0, descriptorSide: 0);
+        var statusOtherSide = NativeCardStatusGeometry.FromNative(
+            new CardPoint(525, 352), miniHeight: 72,
+            perspectiveSide: 0, descriptorSide: 1);
+        var statusHeightOdd = NativeCardStatusGeometry.FromNative(
+            new CardPoint(525, 248), miniHeight: 73,
+            perspectiveSide: 1, descriptorSide: 1);
+        check(statusSameSide == new NativeCardStatusGeometry(1, 316, 383) &&
+              statusOtherSide == new NativeCardStatusGeometry(-1, 388, 321) &&
+              statusHeightOdd == new NativeCardStatusGeometry(1, 212, 279) &&
+              NativeCardStatusGeometry.SourceFrame(96, 18, 6, 4) ==
+                  new CardBounds(64, 0, 16, 18) &&
+              NativeCardStatusGeometry.SourceFrame(160, 20, 8, 7) ==
+                  new CardBounds(140, 0, 20, 20),
+              "Native card status: card-height-driven vertical anchors and horizontal frame slicing");
+        bool invalidStatusAtlasRejected = false;
+        try { _ = NativeCardStatusGeometry.SourceFrame(97, 18, 6, 4); }
+        catch (ArgumentException) { invalidStatusAtlasRejected = true; }
+        check(invalidStatusAtlasRejected,
+              "Native card status: non-divisible DAT atlas must not be silently cropped");
+
+        // 005B9470 routes opcodes 0x5F (set four-bit first status),
+        // 0x60 (saturating add) and 0x69 (three-bit minimum/replace).
+        // Both animated branches set their objects' transition counter
+        // to 0x200, not 0x100; last digit/flag semantics remain pending.
+        check(NativeCardStatusCounters.DirectSetFirstCommand == 0x5f &&
+              NativeCardStatusCounters.AddCommand == 0x60 &&
+              NativeCardStatusCounters.MinimumCommand == 0x69 &&
+              NativeCardStatusCounters.TransitionCounter == 0x200 &&
+              NativeCardStatusCounters.SetFirst(0x2f) == 15 &&
+              NativeCardStatusCounters.AddFirst(12, 2) == 14 &&
+              NativeCardStatusCounters.AddFirst(14, 2) == 15 &&
+              NativeCardStatusCounters.AddFirst(0, 0) == 0 &&
+              NativeCardStatusCounters.MinimumSecond(0, 5) == 5 &&
+              NativeCardStatusCounters.MinimumSecond(5, 3) == 3 &&
+              NativeCardStatusCounters.MinimumSecond(3, 5) == 3 &&
+              NativeCardStatusCounters.MinimumSecond(0, 8) == 0,
+              "Native card status mutation: add capped at 15, minimum masked to 3 bits");
+        bool invalidNativeStatusInputRejected = false;
+        try { _ = NativeCardStatusCounters.MinimumSecond(-1, 4); }
+        catch (ArgumentOutOfRangeException) { invalidNativeStatusInputRejected = true; }
+        check(invalidNativeStatusInputRejected,
+              "Native card status mutation rejects negative current values");
+
+        // 00418B60 updates states 3/4 only after the card has settled:
+        // the countdown starts at 512 and moves backward by 16/update.
+        // A complete status effect lasts 32 native Updates; index 7/9
+        // is visible first, index 6/8 follows after the 0x100 boundary.
+        var statusTransition = NativeCardStatusTransition.First();
+        check(statusTransition.Active &&
+              statusTransition.State == 3 &&
+              statusTransition.Counter == 512 &&
+              statusTransition.Advance(cardSettled: false) == statusTransition &&
+              NativeCardStatusTransition.Second().State == 4 &&
+              NativeCardStatusTransition.TotalUpdates == 32,
+              "Native card status timeline: initial state and movement gate");
+        statusTransition = statusTransition.Advance(cardSettled: true);
+        var firstTailSample = NativeCardStatusOverlay.First(
+            0, statusTransition.State, statusTransition.Counter, 0);
+        check(statusTransition.Counter == 496 &&
+              firstTailSample is { TailResourceIndex: 7, TailFrame: 1 },
+              "Native card status timeline: decreasing initial tail frames");
+        for (int i = 1; i < 16; i++)
+            statusTransition = statusTransition.Advance(cardSettled: true);
+        var lastTailSample = NativeCardStatusOverlay.First(
+            0, statusTransition.State, statusTransition.Counter, 0);
+        check(statusTransition.Counter == 256 &&
+              lastTailSample is { TailResourceIndex: 7, TailFrame: 0 },
+              "Native card status timeline: 0x100 still uses tail");
+        statusTransition = statusTransition.Advance(cardSettled: true);
+        var firstMainSample = NativeCardStatusOverlay.First(
+            0, statusTransition.State, statusTransition.Counter, 0);
+        check(statusTransition.Counter == 240 &&
+              firstMainSample is { MainFrame: 5, TailResourceIndex: null },
+              "Native card status timeline: state 3 main strip begins at 0xF0");
+        for (int i = 17; i < NativeCardStatusTransition.TotalUpdates; i++)
+            statusTransition = statusTransition.Advance(cardSettled: true);
+        check(statusTransition == default &&
+              !statusTransition.Active &&
+              NativeCardStatusTransition.Second().Advance(cardSettled: true) ==
+                  new NativeCardStatusTransition(4, 496),
+              "Native card status timeline: exit after 32 updates and state 4 shares countdown");
+
         // The owner sees ATK/DEF for their own face-down Set monster.
         // Keep the opponent's hidden monster attributes concealed. Attack
         // and defense position do not affect ownership or visibility.

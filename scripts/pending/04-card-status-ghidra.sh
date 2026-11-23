@@ -10,7 +10,8 @@ if [[ ! -f ghidra-projects/Joey.gpr ]]; then
   exit 2
 fi
 python3 scripts/export_ghidra_visual_bundle.py \
-  --targets 004182E0 004194D0 00419B70 0041A070 0041A3B0 \
+  --targets 004182E0 00418560 00418B60 004194D0 00419B70 \
+            0041A070 0041A3B0 0040B270 0040B370 005B9470 \
             0041A800 00413DB0 00417F40 004803C0 00480690 \
   --disassemble --instruction-count 1024 --retry-missing \
   --output scratch/ghidra-card-status-contract.zip
