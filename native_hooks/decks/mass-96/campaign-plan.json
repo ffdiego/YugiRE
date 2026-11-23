@@ -512,7 +512,7 @@
           "cardClass": 17,
           "family": "monster",
           "callbackProfile": "P118",
-          "doneSandbox": false,
+          "doneSandbox": true,
           "copiesPerSide": 3
         },
         {
@@ -594,7 +594,7 @@
           "cardClass": 15,
           "family": "monster",
           "callbackProfile": "P085",
-          "doneSandbox": false,
+          "doneSandbox": true,
           "copiesPerSide": 3
         },
         {
@@ -870,7 +870,7 @@
           "cardClass": 10,
           "family": "monster",
           "callbackProfile": "P242",
-          "doneSandbox": false,
+          "doneSandbox": true,
           "copiesPerSide": 3
         },
         {
