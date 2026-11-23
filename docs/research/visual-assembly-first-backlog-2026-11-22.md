@@ -41,7 +41,9 @@ Preferir consultar o SQLite/decompilações e o ZIP visual já extraído, inclus
 
 **Correção funcional no cliente:** `DuelCardLayout.OnBoard` agora expõe `AttributesCenter` para monstros do lado próprio mesmo quando face-down, e para os monstros face-up de ambos os lados. Continua oculto para o adversário face-down. `DrawDuelField` usa a geometria resultante e não elimina informações de um monstro do próprio jogador antes do contato da espada. Testes C# verificam ambos os lados e ataque/defesa.
 
-**Ainda pendente de paridade nativa:** os recortes reais de `number.txt`, cinza versus ativo, variante por estado, suavização dos números, posicionamento dos dois campos e possível restrição temporária durante efeitos. O código atual ainda usa `Label` monocolorido; não declarar a família Verified sem comparar o assembly e capturas pareadas.
+**Avanço implementado (22/11):** três atlas BMP originais com seleção normal/aumentado/reduzido, glifo separador e parâmetros de composição `0xA0/0x100` para ATK/DEF em ataque e defesa. Passes e testes isolados em `NativeFieldAttributeFrame` com ligação ao `DuelScreen`. [Detalhes técnicos](native-field-attributes-2026-11-22.md).
+
+**Ainda pendente de paridade nativa:** suavização 7/8 no Draw (já modelada, não ligada ao loop), âncora de `0045C140`, flags de exibição (notadamente `0x8000`), blends reais, comparação de pixels e condições durante efeitos. Não marcar Verified sem verificação.
 
 ## V04 — Cursor de ataque na Battle Phase
 

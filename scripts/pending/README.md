@@ -8,6 +8,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | --- | --- | --- | --- |
 | `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Aguardando execução** |
 | `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Aguardando execução** |
+| `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -27,6 +28,10 @@ python3 scripts/summarize_native_chain_dat.py
 ```
 
 O segundo comando cria `scratch/visual-review/chain-manifests.json`, filtrando apenas o texto dos manifests e as dimensões das imagens (sem pixels, hashes de imagem ou arte gráfica). Verificar seu conteúdo e compartilhar este JSON **privadamente**, junto do ZIP de Ghidra. Não versionar nenhum dos dois. A extração dos metadados **não** identifica automaticamente o papel/ordem dos sprites: isso depende de `004531C0`, `0045C140` e do manifesto real.
+
+### ATK/DEF — conferir a composição nativa antes da validação visual
+
+O terceiro roteiro exporta assembly de `00418A80`, `00418EF0`, `004194D0`, `00417F40`, `00480200`, `00480230`, `00480300` e `00480500`. No cliente já estão integrados os três bitmaps originais `duel_fontm` e o split de opacidades 160/256; faltam comparar coordenadas absolutas, mascaramento, modo de blend e ordem Update/Draw. **Não** interpretar a existência desse roteiro como extração executada. O manifesto e dimensões dos BMPs podem ser inspecionados separadamente com `--inspect-visual-dat`. Ver [`native-field-attributes`](../../docs/research/native-field-attributes-2026-11-22.md).
 
 ## Uso
 

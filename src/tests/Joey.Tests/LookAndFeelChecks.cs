@@ -224,6 +224,50 @@ internal static class LookAndFeelChecks
         check(fan.Bounds(0, 2).X != inFlightX,
               "Hand reflow: removing a card changes the neighbours' layout immediately");
 
+        // Native 004194D0 and number.txt: one 11-column default atlas,
+        // two 10-column modified atlases; the slash is glyph index 10.
+        string fieldManifest = "duel_fontm.bmp 11\n" +
+            "duel_fontm_b.bmp 10\n" + "duel_fontm_r.bmp 10\n";
+        check(NativeFieldAttributeFonts.Normal == @"j\duel\font\duel_fontm.bmp" &&
+              NativeFieldAttributeFonts.Increased == @"j\duel\font\duel_fontm_b.bmp" &&
+              NativeFieldAttributeFonts.Decreased == @"j\duel\font\duel_fontm_r.bmp" &&
+              NativeFieldAttributeFonts.SeparatorIndex == 10 &&
+              NativeLifeHud.TryFontColumns(fieldManifest, "duel_fontm.bmp") == 11 &&
+              NativeLifeHud.TryFontColumns(fieldManifest, "duel_fontm_b.bmp") == 10 &&
+              NativeLifeHud.TryFontColumns(fieldManifest, "duel_fontm_r.bmp") == 10 &&
+              NativeFieldAttributeFonts.ForValue(1200, 1200) == NativeFieldAttributeFonts.Normal &&
+              NativeFieldAttributeFonts.ForValue(1300, 1200) == NativeFieldAttributeFonts.Increased &&
+              NativeFieldAttributeFonts.ForValue(1100, 1200) == NativeFieldAttributeFonts.Decreased,
+              "Native field font: original normal/boost/debuff atlases and slash index");
+        var attackFrame = NativeFieldAttributeFrame.Compose(new CardPoint(525, 398),
+            normalGlyphWidth: 8, normalGlyphHeight: 12,
+            attack: 1200, defense: 1000, originalAttack: 1200, originalDefense: 1000,
+            defensePosition: false);
+        var defenseFrame = NativeFieldAttributeFrame.Compose(new CardPoint(525, 398),
+            normalGlyphWidth: 8, normalGlyphHeight: 12,
+            attack: 1300, defense: 900, originalAttack: 1200, originalDefense: 1000,
+            defensePosition: true);
+        check(attackFrame.Attack.CenterX == 501 &&
+              attackFrame.Defense.CenterX == 549 &&
+              attackFrame.SeparatorX == 521 &&
+              attackFrame.SeparatorY == 392 &&
+              attackFrame.Attack.Opacity == 256 &&
+              attackFrame.Defense.Opacity == 160 &&
+              attackFrame.SeparatorOpacity == 160 &&
+              defenseFrame.Attack.Opacity == 160 &&
+              defenseFrame.Defense.Opacity == 256 &&
+              defenseFrame.Attack.Sprite == NativeFieldAttributeFonts.Increased &&
+              defenseFrame.Defense.Sprite == NativeFieldAttributeFonts.Decreased,
+              "Native field ATK/DEF: positions, active/inactive alpha and modified palettes");
+        check(new NativeFieldNumberPass(NativeFieldAttributeFonts.Normal, 11,
+                  123, 501, 0, 160).LeftX(7) == 490 &&
+              new NativeFieldNumberPass(NativeFieldAttributeFonts.Normal, 11,
+                  0, 501, 0, 160).LeftX(7) == 497 &&
+              NativeFieldAttributeFrame.SmoothDisplayed(1000, 2000) == 1125 &&
+              NativeFieldAttributeFrame.SmoothDisplayed(2000, 1000) == 1875 &&
+              NativeFieldAttributeFrame.SmoothDisplayed(1000, 1001) == 1001,
+              "Native field attributes: odd-width glyph anchoring and 7/8 signed smoothing");
+
         // The owner sees ATK/DEF for their own face-down Set monster.
         // Keep the opponent's hidden monster attributes concealed. Attack
         // and defense position do not affect ownership or visibility.

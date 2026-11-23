@@ -295,6 +295,44 @@ static partial class Game
         else DrawArtwork(card, x, y, width, height, degrees: geometry.Degrees);
     }
 
+    // 004194D0 draws DEF, its slash, then ATK using original DAT bitmaps.
+    // Position alpha is 0xA0/0x100; modified attributes use blue/red atlas.
+    // The anchor is the existing 00418A80 field-card geometry, whose final
+    // native pixel parity still requires paired frame comparison.
+    static void DrawFieldAttributes(int player, int zone, Card monster, CardPoint center)
+    {
+        var normal = graphics.Texture(NativeFieldAttributeFonts.Normal);
+        int width = NativeLifeHud.GlyphWidth(normal.Width, NativeFieldAttributeFonts.NormalColumns);
+        var frame = NativeFieldAttributeFrame.Compose(center, width, normal.Height,
+            duel.AttackValue(player, zone), duel.DefenseValue(player, zone),
+            monster.Attack, monster.Defense, duel.DefensePosition[player, zone]);
+
+        DrawFieldNumber(frame.Defense);
+        Raylib.DrawTexturePro(normal,
+            new Rectangle(NativeFieldAttributeFonts.SeparatorIndex * width, 0, width, normal.Height),
+            new Rectangle(frame.SeparatorX, frame.SeparatorY, width, normal.Height),
+            Vector2.Zero, 0,
+            new Color(255, 255, 255, Math.Min(255, frame.SeparatorOpacity)));
+        DrawFieldNumber(frame.Attack);
+    }
+
+    static void DrawFieldNumber(NativeFieldNumberPass pass)
+    {
+        var font = graphics.Texture(pass.Sprite);
+        int glyphWidth = NativeLifeHud.GlyphWidth(font.Width, pass.Columns);
+        int[] digits = NativeLifeHud.DecimalGlyphs(pass.Value);
+        int x = pass.LeftX(glyphWidth);
+        var tint = new Color(255, 255, 255, Math.Min(255, pass.Opacity));
+        foreach (int digit in digits)
+        {
+            Raylib.DrawTexturePro(font,
+                new Rectangle(digit * glyphWidth, 0, glyphWidth, font.Height),
+                new Rectangle(x, pass.TopY, glyphWidth, font.Height),
+                Vector2.Zero, 0, tint);
+            x += glyphWidth;
+        }
+    }
+
     static void DrawDuelField(bool blockInput)
     {
         var pendingTarget = duel.PendingSpellTrapTarget;
@@ -348,11 +386,7 @@ static partial class Game
                     // until sword contact, even its ATK/DEF must stay hidden.
                     if (geometry.AttributesCenter is { } center &&
                         (own || !IsHiddenAttackTargetBeforeImpact(player, zone)))
-                    {
-                        const int fontSize = 10;
-                        string attributes = $"{duel.AttackValue(player, zone)} / {duel.DefenseValue(player, zone)}";
-                        Label(attributes, center.X - MeasureLabel(attributes, fontSize) / 2, center.Y - fontSize / 2, fontSize);
-                    }
+                        DrawFieldAttributes(player, zone, monster, center);
                 }
                 if (own && (attacker == zone || tributeZones.Contains(zone)))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, tributeZones.Contains(zone) ? Color.Red : Color.White);

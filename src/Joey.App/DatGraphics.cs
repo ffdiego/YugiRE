@@ -54,6 +54,14 @@ sealed class DatGraphics : IDisposable
     [
         @"j\duel\font\damage00.bmp", @"j\duel\font\damage01.bmp"
     ];
+    // 004194D0 selects these three original medium-number atlas bitmaps.
+    // Manifest columns are 11 for normal (including slash), 10 for color variants.
+    public static readonly string[] FieldAttributeFonts =
+    [
+        NativeFieldAttributeFonts.Normal,
+        NativeFieldAttributeFonts.Increased,
+        NativeFieldAttributeFonts.Decreased
+    ];
     public const string LifeNumberManifest = @"j\duel\font\number.txt";
     public static readonly string[] LifeSprites =
     [
@@ -189,6 +197,7 @@ sealed class DatGraphics : IDisposable
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFallback, StringComparison.OrdinalIgnoreCase) ||
             LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+            FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(DuelStartEnglish, StringComparison.OrdinalIgnoreCase) ||
             ShuffleSprites.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
@@ -207,7 +216,8 @@ sealed class DatGraphics : IDisposable
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts).Concat(ShuffleSprites)
+            .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts)
+            .Concat(FieldAttributeFonts).Concat(ShuffleSprites)
             .Append(DuelDetailBackground).Append(DuelDetailLine)
             .Append(DuelDetailScrollbar).Append(DuelStartEnglish)
             .Append(AttackSword).Append(AttackSwordPartial)
