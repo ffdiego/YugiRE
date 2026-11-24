@@ -401,7 +401,7 @@ public sealed partial class DemoDuel
         private CommandResult ActivateDrawSpell(ActivateDrawSpellCommand activate, IActionCommandSink followups)
         {
             if (reservedDrawSpell.Count != 0 || drawSpellSource is not null ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Draw spell requires isolated activation.");
             if (!duel.TryResolveCardTarget(activate.Source, out _, out _))
                 return new(CommandOutcome.Skipped, "Draw spell occurrence gone.");
@@ -434,7 +434,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ActivateLifePointSpell(ActivateLifePointSpellCommand activate, IActionCommandSink followups)
         {
-            if (followups is not ActionQueue { PendingCount: 0 } queue)
+            if (followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "LP spell requires an isolated activation.");
             if (!duel.TryResolveCardTarget(activate.Source, out _, out var card))
                 return new(CommandOutcome.Skipped, "LP spell occurrence gone.");
@@ -473,7 +473,7 @@ public sealed partial class DemoDuel
         private CommandResult ActivateTargetedSpellTrap(ActivateTargetedSpellTrapCommand activate, IActionCommandSink followups)
         {
             if (wipe is not null || finishScheduled ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Targeted Spell/Trap needs isolated activation.");
             if (!duel.TryResolveCardTarget(activate.Source, out _, out _) ||
                 !duel.TryResolveCardTarget(activate.Target, out _, out _))
@@ -493,7 +493,7 @@ public sealed partial class DemoDuel
         private CommandResult ActivateSpellTrapWipe(CardTarget source, IActionCommandSink followups)
         {
             if (wipe is not null || finishScheduled ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Spell/Trap wipe requires an isolated activation.");
             if (!duel.TryResolveCardTarget(source, out _, out _))
                 return new(CommandOutcome.Skipped, "Wipe source occurrence gone.");
@@ -511,7 +511,7 @@ public sealed partial class DemoDuel
         private CommandResult ActivateMonsterWipe(CardTarget source, IActionCommandSink followups, bool requireRaigeki = false)
         {
             if (wipe is not null || finishScheduled ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Monster wipe requires an isolated activation.");
             int side = source.Side;
             if (!duel.TryResolveCardTarget(source, out _, out _))
@@ -554,7 +554,7 @@ public sealed partial class DemoDuel
         private CommandResult PreparePlacement(PrepareNormalPlacementCommand prepare, IActionCommandSink followups)
         {
             if (placement is not null || wipe is not null || finishScheduled ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Normal placement requires an isolated batch.");
             if (!duel.TryResolveCardTarget(prepare.Source, out _, out var card))
                 return new(CommandOutcome.Skipped, "Hand occurrence gone.");
@@ -669,7 +669,7 @@ public sealed partial class DemoDuel
         private CommandResult MovePosition(CardTarget target, bool flip, bool? defense, IActionCommandSink followups)
         {
             if (placement is not null || wipe is not null || finishScheduled || resolvingFlipBatch ||
-                followups is not ActionQueue { PendingCount: 0 })
+                followups is not IActionBatchSink { PendingCount: 0 })
                 return new(CommandOutcome.Rejected, "Position change requires an isolated action.");
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Monster occurrence gone.");
@@ -772,7 +772,7 @@ public sealed partial class DemoDuel
                 return ResolveFlipBanish(position, card, followups);
             if (card.Id == FlipEffectRules.MorphingJar)
             {
-                if (followups is not ActionQueue { PendingCount: 0 } queue)
+                if (followups is not IActionBatchSink { PendingCount: 0 } queue)
                     return new(CommandOutcome.Rejected, "Morphing Jar needs isolated resolution.");
                 var commands = new List<DuelCommand>();
                 for (int p = 0; p < 2; p++)
@@ -812,7 +812,7 @@ public sealed partial class DemoDuel
         private CommandResult ResolveJar2(ResolvePositionCommand position, DemoMonsterPositionChange change, IActionCommandSink followups)
         {
             if (jar2 is not null || resolvingFlipBatch || wipe is not null || finishScheduled ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Morphing Jar #2 requires isolated resolution.");
             var batch = new Jar2Batch(change);
             List<DuelCommand>[] returns = [[], []];
@@ -890,7 +890,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveFlipBanish(ResolvePositionCommand position, Card card, IActionCommandSink followups)
         {
-            if (resolvingFlipBatch || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (resolvingFlipBatch || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 FlipBanishBurnRules.Cost(card.Id) is not { } cost)
                 return new(CommandOutcome.Rejected, "Banish burn requires isolated resolution.");
             int side = position.Side, required = FlipBanishBurnRules.RequiredCount(card.Id);
@@ -928,7 +928,7 @@ public sealed partial class DemoDuel
         private CommandResult PrepareGraveyardBanishSummon(PrepareGraveyardBanishSummonCommand prepare, IActionCommandSink followups)
         {
             var cost = new CardTarget?[] { prepare.First, prepare.Second, prepare.Third }.OfType<CardTarget>().ToArray();
-            if (banishSummon is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (banishSummon is not null || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanGraveyardBanishSummon(prepare.Source, prepare.Slot, cost))
                 return new(CommandOutcome.Rejected, "Inherent summon source, cost or destination changed.");
             banishSummon = prepare;
@@ -989,7 +989,7 @@ public sealed partial class DemoDuel
         private CommandResult ResolveLadybug(ResolvePositionCommand position, IActionCommandSink followups)
         {
             if (wipe is not null || finishScheduled || resolvingFlipBatch ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Ladybug requires isolated resolution.");
             var targets = new List<CardTarget>();
             var plans = new Dictionary<CardTarget, DuelCommand[]>();
@@ -1018,7 +1018,7 @@ public sealed partial class DemoDuel
         private CommandResult ResolveFlipSpellTrapPair(ResolveFlipSpellTrapPairCommand answer, IActionCommandSink followups)
         {
             CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
-            if (wipe is not null || finishScheduled || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (wipe is not null || finishScheduled || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanFlipSpellTrapPair(answer.Request, targets, out var source, out var batch, out var cascade))
                 return new(CommandOutcome.Rejected, "FLIP pair request or occurrence changed.");
             duel.PendingFlipSpellTrapTargets = null;
@@ -1051,7 +1051,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveFlipDeckFlow(ResolvePositionCommand position, Card card, IActionCommandSink followups)
         {
-            if (resolvingFlipBatch || followups is not ActionQueue { PendingCount: 0 } queue)
+            if (resolvingFlipBatch || followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Deck flow needs isolated resolution.");
             bool mill = card.Id == FlipEffectRules.NeedleWorm;
             int side = 1 - position.Side, requested = mill ? 5 : 3;
@@ -1193,7 +1193,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveDeckSearch(ResolveDeckSearchCommand answer, IActionCommandSink followups)
         {
-            if (reservedDeckSearchOwner is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (reservedDeckSearchOwner is not null || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanQueuedDeckSearch(answer.Request, answer.Target))
                 return new(CommandOutcome.Rejected, "Deck search request or target changed.");
 
@@ -1204,7 +1204,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveDeckRecruitment(ResolveDeckRecruitmentCommand answer, IActionCommandSink followups)
         {
-            if (reservedDeckSearchOwner is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (reservedDeckSearchOwner is not null || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanQueuedDeckRecruitment(answer.Request, answer.Target, answer.Slot))
                 return new(CommandOutcome.Rejected, "Recruitment request, target or slot changed.");
             DuelCommand? movement = answer.Target is { } target && answer.Slot is int slot
@@ -1216,14 +1216,14 @@ public sealed partial class DemoDuel
         private CommandResult ResolveSameNameRecruitment(ResolveSameNameRecruitmentCommand answer, IActionCommandSink followups)
         {
             CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
-            if (reservedDeckSearchOwner is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (reservedDeckSearchOwner is not null || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanSameNameRecruitment(answer.Request, targets, answer.SingleSlot, out var movements))
                 return new(CommandOutcome.Rejected, "Same-name recruitment request, copies or slots changed.");
             ReserveDeckTransfer(answer.Side, movements, queue);
             return new(CommandOutcome.Applied);
         }
 
-        private void ReserveDeckTransfer(int side, IReadOnlyList<DuelCommand> movements, ActionQueue queue)
+        private void ReserveDeckTransfer(int side, IReadOnlyList<DuelCommand> movements, IActionBatchSink queue)
         {
             duel.PendingCardSelection = null;
             duel.selectedBatchIndices.Clear();
@@ -1309,7 +1309,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveGraveyardRevival(ResolveGraveyardRevivalCommand answer, IActionCommandSink followups)
         {
-            if (resolvingGraveyardRecovery || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (resolvingGraveyardRecovery || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanGraveyardRevival(answer.Request, answer.Target, answer.Slot, answer.FaceDownDefense, out var movement))
                 return new(CommandOutcome.Rejected, "Revival request, occurrence or destination changed.");
             ReserveGraveyardTransfer(answer.Side, movement, queue);
@@ -1318,7 +1318,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveGraveyardRecovery(ResolveGraveyardRecoveryCommand answer, IActionCommandSink followups)
         {
-            if (resolvingGraveyardRecovery || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (resolvingGraveyardRecovery || followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 !duel.TryPlanQueuedGraveyardRecovery(answer.Request, answer.Target, out var movement))
                 return new(CommandOutcome.Rejected, "Graveyard recovery request or target changed.");
 
@@ -1326,7 +1326,7 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private void ReserveGraveyardTransfer(int side, DuelCommand? movement, ActionQueue queue)
+        private void ReserveGraveyardTransfer(int side, DuelCommand? movement, IActionBatchSink queue)
         {
             // Consume the request separately from moving the occurrence.
             duel.PendingCardSelection = null;
@@ -1367,7 +1367,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveMonsterFlipTargets(ResolveMonsterFlipTargetsCommand answer, IActionCommandSink followups)
         {
-            if (followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (followups is not IActionBatchSink { PendingCount: 0 } queue ||
                 wipe is not null || finishScheduled || !duel.CanAdmitQueuedMonsterFlipAnswer())
                 return new(CommandOutcome.Rejected, "No isolated supported FLIP selection.");
             CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
@@ -1404,7 +1404,7 @@ public sealed partial class DemoDuel
             }
             else if (links.Length > 0)
             {
-                if (followups is not ActionQueue { PendingCount: 0 } queue || finishScheduled)
+                if (followups is not IActionBatchSink { PendingCount: 0 } queue || finishScheduled)
                     return new(CommandOutcome.Rejected, "Linked return requires isolated action.");
                 queue.EnqueueBatch(links);
                 linkedRemovalBatch = true;
@@ -1436,7 +1436,7 @@ public sealed partial class DemoDuel
             {
                 // A standalone destroy must reserve the whole linked sequence;
                 // never splice it ahead of an already admitted FIFO tail.
-                if (followups is not ActionQueue { PendingCount: 0 } queue || finishScheduled)
+                if (followups is not IActionBatchSink { PendingCount: 0 } queue || finishScheduled)
                     return new(CommandOutcome.Rejected, "Linked destruction requires an isolated action.");
                 queue.EnqueueBatch(links);
                 linkedRemovalBatch = true;

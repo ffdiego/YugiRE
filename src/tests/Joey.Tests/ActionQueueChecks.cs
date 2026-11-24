@@ -66,6 +66,22 @@ internal static class ActionQueueChecks
         }
     }
 
+    private sealed class CallbackExecutor(Action notify) : IDuelCommandExecutor
+    {
+        public IActionCommandSink? CapturedSink { get; private set; }
+
+        public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
+        {
+            CapturedSink = followups;
+            if (command is DrawCommand)
+            {
+                notify();
+                followups.Enqueue(new HealCommand(0, 50));
+            }
+            return new(CommandOutcome.Applied);
+        }
+    }
+
     private static void Drain(ActionQueue queue)
     {
         for (int i = 0; i < 100 && queue.IsBusy; i++) queue.Tick();
@@ -157,6 +173,25 @@ internal static class ActionQueueChecks
         check(rejectedAdmissions == 8 && !queue.IsBusy &&
             guardedExecutor.Executed.SequenceEqual([new DrawCommand(0), new DamageCommand(1, 100)]),
             "A06 presentation only observes and continuations admit through their returned step");
+
+        bool callbackRejected = false;
+        var callbackExecutor = new CallbackExecutor(() =>
+        {
+            try { queue.Enqueue(new DamageCommand(1, 100)); }
+            catch (InvalidOperationException) { callbackRejected = true; }
+        });
+        queue = new ActionQueue(callbackExecutor);
+        queue.Enqueue(new DrawCommand(0));
+        queue.Tick();
+        bool retainedSinkRejected = false;
+        try { callbackExecutor.CapturedSink!.Enqueue(new DamageCommand(1, 100)); }
+        catch (InvalidOperationException) { retainedSinkRejected = true; }
+
+        Drain(queue);
+        check(callbackRejected && retainedSinkRejected &&
+            queue.Trace.Where(t => t.Stage == ActionTraceStage.Executed).Select(t => t.Entry.Command)
+                .SequenceEqual([new DrawCommand(0), new HealCommand(0, 50)]),
+            "A06 executor sink permits only in-scope follow-ups and blocks external callback writes");
 
         var source = new Card(1, 1, "Decision fixture", "", 1u << 20);
         var request = new PendingEffectDecision(1, 0, source, EffectDecisionKind.DrawOneOnFlip, 0, 1);
