@@ -275,6 +275,7 @@ DuelConsoleScriptChecks.Run(Check);
 DuelConsoleTargetedChecks.Run(Check);
 DuelConsoleTraceChecks.Run(Check);
 DuelConsoleFlipSelectionChecks.Run(Check);
+DuelConsoleFieldSelectionChecks.Run(Check);
 QueuedGraveyardRecoveryChecks.Run(Check);
 QueuedDeckSearchChecks.Run(Check);
 QueuedDeckRecruitmentChecks.Run(Check);
