@@ -8,6 +8,7 @@ import argparse
 import json
 from pathlib import Path
 from inspect_joey_replay import read_file
+from joey_replay_placements import decode_placement
 
 
 def reconstruct_opening(summary: dict) -> dict:
@@ -82,7 +83,11 @@ def initial_prefix_checks(records: list[dict], reconstruction: dict) -> list[dic
         elif op==0x61 and (a,b,c)==(1,1,0) and decks[side]:
             hands[side].append(decks[side].pop(0))
         elif op in (0xCE,0xCF):
-            index=b&0xFF
+            try:
+                placement=decode_placement(r)
+            except ValueError:
+                break
+            index=placement.hand_index
             expected=hands[side][index] if index<len(hands[side]) else None
             checks.append({"record_index":r["record_index"],"side":side,"hand_index":index,
                            "recorded_resource":a,"predicted_resource":expected,"match":expected==a})

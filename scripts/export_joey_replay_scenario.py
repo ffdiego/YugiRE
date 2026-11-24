@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export a bounded native YDR slice to the existing YugiRE console script format.
 
-Strict: only known ordinary draw and LP records; no skipping unknown commands.
+Strict: ordinary draw/LP and supported hand placements; no skipping unknown commands.
 The setup script is an explicit checkpoint supplied by the operator, not inferred
 from the deck inventory. Preserve source record indices; never export save ID.
 """
@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from inspect_joey_replay import read_file
 from reconstruct_joey_replay_opening import reconstruct_opening, initial_prefix_checks
+from joey_replay_placements import decode_placement
 
 
 def project_record(record: dict) -> list[str]:
@@ -30,6 +31,8 @@ def project_record(record: dict) -> list[str]:
         # 005B9F50 initial five; 00578860 common one-card draw.
         # Does not cover special draw routes, terminal behavior of a short deck.
         return [f"draw {b} {side}"]
+    if opcode in (0xCE, 0xCF):
+        return [decode_placement(record).setup_command()]
     raise ValueError(f"unsupported record 0x{raw:04X} ({a}, {b}, {c})")
 
 
@@ -59,6 +62,7 @@ def build_script(records, summary, source_hash: str, start: int, count: int,
         f"# Native range [{start}, {start + count}) / {len(records)} records",
         "# Checkpoint supplied or reconstructed; exact native state NOT verified.",
         "# Commands reproduce selected recorded operations, NOT the original rule decisions.",
+        "# move-id checks the source resource ID; placement is a setup edit, not a summon/activation.",
         checkpoint.rstrip(), "state", *projected, "diff",
     ]
     return "\n".join(lines) + "\n"
