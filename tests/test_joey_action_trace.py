@@ -96,6 +96,24 @@ class TraceTests(unittest.TestCase):
         self.assertIsNone(canonical([0x807c,0,1,1])) # banish variant
         self.assertIsNone(canonical([0x33,0,1,1])) # wrong defender side
 
+    def test_replay_command_csv_preserves_the_complete_window(self):
+        kind, rows = native_rows(ROOT / "docs/evidence/replays/relinquished_commands.csv")
+        self.assertEqual(kind, "archived-ydr-csv")
+        self.assertEqual([record["index"] for record in rows[281:302]], list(range(281, 302)))
+        self.assertEqual([record["index"] for record in rows[281:302] if canonical(record["args"])],
+                         [281, 290, 296, 301])
+
+    def test_replay_command_csv_rejects_missing_or_out_of_range_records(self):
+        columns = "record_index,raw_opcode_hex,argument_1,argument_2,argument_3\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = pathlib.Path(tmp) / "commands.csv"
+            for data, error in (("0,0x61,1,1,0\n2,0x61,1,1,0\n", "sequence gap"),
+                                ("0,0x61,1,1,65536\n", "unsigned argument words"),
+                                ("0,0x61,1,1,0,extra\n", "malformed replay command CSV row")):
+                fixture.write_text(columns + data, encoding="utf-8")
+                with self.subTest(data=data), self.assertRaisesRegex(ValueError, error):
+                    native_rows(fixture)
+
     def test_live_capture_requires_complete_lossless_footer_with_exact_event_count(self):
         header = {"kind": "metadata", "mode": "live_duels", "formatVersion": 2}
         events = [

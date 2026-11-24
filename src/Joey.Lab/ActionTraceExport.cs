@@ -11,9 +11,26 @@ public static class ActionTraceExport
     // catalogue entries for a deterministic pilot; no original DAT required.
     public static int RunBattlePilot(string[] args, TextWriter output, TextWriter error)
     {
-        if(args.Length!=0) { error.WriteLine("Usage: action-trace-battle-pilot"); return 2; }
-        Card monster=new(24,24,"Fixture monster","",(3u<<20)|(4u<<25)|(140u<<9));
-        var duel=DemoDuel.FromPartialObservation(1,[],new Card?[5],new Card?[5],8000,side1Deck:[monster]);
+        bool archivedWindow = args is ["--archived-window"];
+        if (args.Length != 0 && !archivedWindow)
+        {
+            error.WriteLine("Usage: action-trace-battle-pilot [--archived-window]");
+            return 2;
+        }
+        // The alternate fixture supplies only the inputs to the four
+        // comparable records of the documented archive window.
+        int side = archivedWindow ? 0 : 1;
+        int slot = archivedWindow ? 0 : 2;
+        ushort resource = archivedWindow ? (ushort)573 : (ushort)24;
+        uint attack = archivedWindow ? 110u : 140u;
+        Card monster = new(resource, resource, "Fixture monster", "", (3u << 20) | (4u << 25) | (attack << 9));
+        var duel = DemoDuel.FromPartialObservation(side, [], new Card?[5], new Card?[5], 8000,
+            side0Deck: side == 0 ? [monster] : null, side1Deck: side == 1 ? [monster] : null);
+        if (archivedWindow)
+        {
+            duel.NextTurn();
+            duel.NextTurn();
+        }
         var console = new DuelConsoleSession(duel);
         bool RunScript(params string[] lines)
         {
@@ -31,12 +48,12 @@ public static class ActionTraceExport
             return false;
         }
 
-        if (!RunScript("draw 1 1", "summon 0 2", "battle begin", "attack 2 direct", "battle end"))
+        if (!RunScript($"draw 1 {side}", $"summon 0 {slot}", "battle begin", $"attack {slot} direct", "battle end"))
         {
             error.WriteLine("Synthetic direct battle pilot did not complete.");
             return 1;
         }
-        output.WriteLine(Serialize(Capture(console.Queue, "synthetic-rule-pilot-draw-summon-direct-attack")));
+        output.WriteLine(Serialize(Capture(console.Queue, archivedWindow ? "synthetic-archive-window-281-301" : "synthetic-rule-pilot-draw-summon-direct-attack")));
         return 0;
     }
 

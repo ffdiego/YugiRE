@@ -85,3 +85,23 @@ rejeita lacunas de sequência em qualquer parte do documento, antes de
 selecionar a janela. As exportações atuais incluem `rowCount` para detectar
 um sufixo removido. Exportações v1 anteriores continuam legíveis, com a
 limitação de que o sufixo ausente não pode ser identificado pela contagem.
+
+## Aceitação do trace comparável
+
+O CI executa o Lab e chama o comparador sobre os registros 281–301 do CSV
+já versionado da amostra Relinquished. O Lab usa uma fixture sintética
+com os parâmetros necessários para projetar compra, invocação, ataque
+direto e dano. A comparação concorda nos registros 281, 290, 296 e 301.
+O relatório informa 17 registros nativos e quatro comandos C# sem
+mapeamento e retorna `inconclusive` (exit 3). A fixture padrão, com
+entradas diferentes, retorna `mismatch` (exit 1) e quatro diferenças.
+
+O CSV é aceito como fonte arquivada, com índices contíguos desde zero e
+quatro palavras de 16 bits por registro. A fixture reproduz as operações
+projetáveis da janela. O estado completo do turno, a execução pareada e
+a apresentação do combate aguardam A09.
+
+```bash
+dotnet build YugiRE.sln
+python3 scripts/tests/check_action_trace_archive.py src/Joey.Lab/bin/Debug/net10.0/Joey.Lab.dll
+```

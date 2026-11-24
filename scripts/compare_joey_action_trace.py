@@ -6,6 +6,7 @@ a match with gaps is inconclusive, never evidence of full rule parity.
 """
 from __future__ import annotations
 import argparse
+import csv
 import json
 from pathlib import Path
 from inspect_joey_replay import read_file
@@ -18,13 +19,34 @@ def words(value, bits=16):
     return value
 
 
+def archived_csv_rows(path):
+    required = {"record_index", "raw_opcode_hex", "argument_1", "argument_2", "argument_3"}
+    rows = []
+    with path.open(encoding="utf-8", newline="") as stream:
+        reader = csv.DictReader(stream)
+        fields = reader.fieldnames or []
+        if not required.issubset(fields) or len(fields) != len(set(fields)):
+            raise ValueError("expected replay command CSV columns")
+        for index, row in enumerate(reader):
+            if None in row or any(row[name] is None for name in required):
+                raise ValueError("malformed replay command CSV row")
+            if int(row["record_index"]) != index:
+                raise ValueError("archived replay CSV sequence gap")
+            args = [int(row["raw_opcode_hex"], 16),
+                    *(int(row[f"argument_{i}"]) for i in range(1, 4))]
+            rows.append({"index": index, "args": words(args)})
+    return rows
+
+
 def native_rows(path):
     if path.suffix.lower()==".ydr":
         records,_=read_file(path)
         return "ydr-record", [{"index":r["record_index"],"args":[int(r["raw_opcode_hex"],16),
             r["argument_1"],r["argument_2"],r["argument_3"]]} for r in records]
+    if path.suffix.lower() == ".csv":
+        return "archived-ydr-csv", archived_csv_rows(path)
     if path.suffix.lower()!=".jsonl":
-        raise ValueError("native input must be .ydr or .jsonl")
+        raise ValueError("native input must be .ydr, .jsonl or replay command .csv")
     result = []
     metadata = None
     event_count = 0
