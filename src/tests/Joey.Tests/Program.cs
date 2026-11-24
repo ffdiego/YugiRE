@@ -115,6 +115,7 @@ CpuDeckSelectionTests.Run(Check);
 CpuDifficultyProgressionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
 ActionQueueChecks.Run(Check);
+ActionTraceProjectionChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
 DeckTests.Run(Check, Reject);
@@ -243,6 +244,8 @@ QueuedMonsterWipeChecks.Run(Check);
 QueuedSpellTrapWipeChecks.Run(Check);
 QueuedTargetedSpellTrapChecks.Run(Check);
 QueuedMonsterFlipTargetChecks.Run(Check);
+QueuedGraveyardRecoveryChecks.Run(Check);
+QueuedDeckSearchChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);
