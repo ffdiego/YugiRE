@@ -251,6 +251,7 @@ QueuedGraveyardRevivalChecks.Run(Check);
 QueuedRitualSearchChecks.Run(Check);
 QueuedFlipDeckFlowChecks.Run(Check);
 QueuedFlipFieldChecks.Run(Check);
+QueuedFlipBanishBurnChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);
