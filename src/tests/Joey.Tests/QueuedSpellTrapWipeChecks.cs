@@ -92,8 +92,9 @@ internal static class QueuedSpellTrapWipeChecks
             if(set){check(d.TryQueueSpellTrapSet(0,out _),"Trunade Set");Drain(q);index=1;}
             check(!(set?d.ActivateSetSpell(index,out _):d.Play(index,out _)),
                 "No legacy destruction route");
-            check(d.TryCaptureCardTarget(enemy,DuelZone.SpellTrap,0,out var equip)&&
-                d.TryCaptureCardTarget(side,DuelZone.SpellTrap,0,out var trap),"Capture return identities");
+            bool equipCaptured=d.TryCaptureCardTarget(enemy,DuelZone.SpellTrap,0,out var equip);
+            bool trapCaptured=d.TryCaptureCardTarget(side,DuelZone.SpellTrap,0,out var trap);
+            check(equipCaptured&&trapCaptured,"Capture return identities");
             int start=q.Trace.Count;
             check(d.TryQueueActivation(index,set,out _)&&d.EquipmentCards.Count==1,
                 "Trunade generic admission is nonmutating");
@@ -158,6 +159,21 @@ internal static class QueuedSpellTrapWipeChecks
             bq.Trace.Skip(boardBefore).Count(x=>x.Stage==ActionTraceStage.Executed &&
                 x.Entry.Command is DestroyCommand)==2,
             "Destiny Board and message each receive one destruction, no double cleanup");
+
+        var returnBoard=DemoDuel.FromPartialObservation(0,
+            [Spell(DestinyBoardRules.BoardResourceId,21),Spell(1541)],Units(),Units(),8000,
+            side1Deck:[Spell(1080)]);
+        returnBoard.SetFromHand(0,out _);
+        returnBoard.NextTurn();returnBoard.NextTurn();
+        check(returnBoard.ActivateSetSpell(0,out _),"Trunade Board activation");
+        returnBoard.NextTurn();returnBoard.NextTurn();returnBoard.NextTurn();
+        var tbq=returnBoard.CreatePrimitiveActionQueue();tbq.Enqueue(new DrawCommand(1));Drain(tbq);
+        check(returnBoard.TryQueueActivation(0,false,out _),"Trunade on Board admitted");
+        Drain(tbq);
+        check(returnBoard.Graveyard(0).Count==0&&
+            returnBoard.HandFor(0).Select(c=>c.Id).Order().SequenceEqual(new ushort[]{1528,1541})&&
+            returnBoard.Spells[0,0] is null&&returnBoard.Spells[0,1] is null,
+            "Mass return moves both Board pieces without selective destruction cascade");
 
         var lone=DemoDuel.FromPartialObservation(0,[Spell(1061)],Units(),Units(),8000);
         var lq=lone.CreatePrimitiveActionQueue();
