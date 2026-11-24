@@ -493,3 +493,38 @@ inteiras, scroll e foco; teste visual com DAT real continua
 pendente. A Draw 0043B280 agora tem integração funcional parcial
 no cliente (não Verified): cobertura 20/34, 58,82%.
 As duas Draws de fusão continuam Pending.
+
+
+## V11 — banco de fusão e revisão do objeto vinculado
+
+Consulta ao SQLite existente (sem repetir bundle 01): construtores
+004520E0 e 004874C0 zeram os campos +14 (contador) e +18 (ângulo).
+O primeiro é criado por 00408270 após avançar a fase baixa do comando
+e aguardar o scheduler. O segundo passa por 00486CE0 → 00487C70;
+00487930 busca um objeto existente por lado e soma de região/slot,
+00487DF0 chama seu virtual +14 se encontrado. Isso é uma pista para
+a flag de liberação, não prova que qualquer Fusion Summon do Core
+deva criar ou liberar o objeto vinculado. 00422C00 chama 00422840
+para intensidade >255; no outro ramo calcula quad via MulDiv,
+tabela C e 00422E30. A decompilação perde argumentos/registros;
+não substituir o compositor por equivalência pixel-perfect inferida.
+
+O banco compartilhado NativeFusionResources lê fusion.txt local
+em ordem, exige índices 0..2, rejeita sintaxe desconhecida.
+O modo --review-attached-fusion=ID,8080 exige a tabela real capturada
+pelo script 11; nunca utiliza o fallback aproximado. O ID é um
+resource ID numérico real de monstro. Para a revisão, o centro
+vem da zona selecionada; o objeto vinculado usa escala/intensidade
+e ângulo negativo do contrato, com compositor raylib explicitamente
+provisório. F5 alterna a flag de liberação, F6 o objeto associado
+ativo, F7 executa um Update e um Draw, F9 executa apenas Draw
+(inclusive enquanto espera em 128), F8 reinicia, F12 exporta PNG/JSON.
+Repetir o desenho da janela gráfica não consome mutações do ângulo.
+Não dispara regras, não interfere no scheduler.
+
+A fusão geral não é colocada em gameplay apenas com os dois passes
+centrais: faltam centro, seletores, órbitas, compositor e epílogo.
+O novo roteiro 13 pede apenas evidências ainda ausentes, e não
+reexecuta bundle 01. DAT original não disponível aqui; revisão
+gráfica ainda não executada. Ambas Draws de fusão permanecem
+Pending; seleção 0043B280 Partial, cobertura 20/34, 0 Verified.

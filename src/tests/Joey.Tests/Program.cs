@@ -157,6 +157,7 @@ NativeFusionChecks.Run(Check, Reject);
 NativeDisabledChainChecks.Run(Check, Reject);
 NativeCardStatusCompositionChecks.Run(Check, Reject);
 NativeSelectionManifestChecks.Run(Check, Reject);
+NativeFusionResourceChecks.Run(Check, Reject);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);

@@ -141,3 +141,25 @@ nem termina o processo. Saída privada: scratch/visual-review/native-cosine.json
 Não sobrescreve captura anterior. Critério: captura válida carregada pelo
 cliente e F12 indicando native-runtime-capture. O log de Draw de V01
 continua pendente. Não é necessário repetir os bundles 01–04.
+
+
+## V11/V17 — 13-fusion-remaining-contract-ghidra.sh (aguardando Fedora)
+
+Apenas lacunas novas: dados de centro 005DB278/27C e janela de
+seletores 005DB280 (48 bytes brutos, NÃO presumir tipo/stride);
+fator final x87 005DCD00; compositor 00422C00/00422840/00422E30
+e caminho de liberação 00486CE0/00487930/00487DF0.
+Pré-requisito: Ghidra local e mesmo projeto/fingerprint de Joey.
+Executar:
+
+    bash scripts/pending/13-fusion-remaining-contract-ghidra.sh
+
+Saída privada scratch/ghidra-fusion-remaining-contract.zip.
+Não repetir as seis funções do bundle 01; o epílogo ainda exige
+assembly se a evidência existente não bastar. Conferir tipo/stride
+dos seletores, relação dos centros com a perspectiva, regra de
+transformação e escritor da flag. Importação SQLite pendente
+até receber o ZIP; não confundir a coleta com implementação.
+Para os recursos, utilizar --inspect-visual-dat já existente
+e compartilhar privadamente apenas registros de fusion.txt e
+dimensões das imagens referenciadas (sem pixels).
