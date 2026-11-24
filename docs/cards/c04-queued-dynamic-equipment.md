@@ -25,5 +25,5 @@ Campo/mão/LP em testes de headless. Nenhum novo efeito resolve fora da fila.
 
 UI/CPU legados permanecem nos 21 fixos; os 3 novos só são admitidos
 por TryQueueEquipment/EquipCommand até migração de entrada/presentation
-gate da aplicação. Não marcar Done. Nenhum hook ou coleta externa
-necessário. Testes registrados, CI pendente nesta sessão.
+gate da aplicação. Status histórico C04.2: Partial. A revisão de ciclo de vida e a promoção
+proposta constam em [C04.5](c04-dynamic-equipment-lifecycle.md).

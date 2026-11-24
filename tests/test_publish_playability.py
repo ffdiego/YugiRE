@@ -43,7 +43,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         for rid in (300,301,302,304,306,307,308,309,311,314,315,318,321,322,324,325,326,327,653,1012,1013):
             self.assertEqual(status.get(rid), "Done")
         for rid in (656,1449,1450):
-            self.assertEqual(status.get(rid), "Partial")
+            self.assertEqual(status.get(rid), "Done")
         for rid in (1514, 1517, 1519):
             self.assertEqual(status.get(rid), "Partial")
         for rid in (1515, 1516, 1518):

@@ -1467,10 +1467,12 @@
       "kind": "Spell",
       "subtype": "Equip",
       "mechanics": [
-        "Equip",
-        "Dynamic ATK/DEF modifier"
+        "Queue-backed equip from Hand/Set to either compatible face-up monster",
+        "Megamorph replaces original ATK according to equipment controller relative LP, not final ATK",
+        "United We Stand adds 800 ATK/DEF per own face-up monster; Mage Power adds 500 per own occupied S/T or FIELD slot",
+        "Live recalculation, independent additive modifiers, and cleanup on source destruction or target departure"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         656,
         1449,
@@ -1480,10 +1482,14 @@
         "src/Joey.Core/DynamicEquipmentRules.cs",
         "src/Joey.Core/DemoQueuedEquipment.cs",
         "src/tests/Joey.Tests/QueuedEquipmentChecks.cs",
-        "docs/cards/c04-queued-dynamic-equipment.md"
+        "docs/cards/c04-queued-dynamic-equipment.md",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DynamicEquipmentLifecycleChecks.cs",
+        "docs/cards/c04-dynamic-equipment-lifecycle.md"
       ],
       "limitations": [
-        "Queue-backed headless hand/Set activation; UI/CPU, suppression and native comparison pending."
+        "Done in bounded headless C# duel scope through queue-backed activation and lifecycle; graphical/CPU producers pending ACTIONS.",
+        "No general spell suppression, native ownership changes, or differential replay; mixed-owner multiple Megamorph follows sandbox link order, not independently verified native link order."
       ]
     },
     {
