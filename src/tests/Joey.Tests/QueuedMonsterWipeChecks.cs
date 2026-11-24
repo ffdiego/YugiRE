@@ -99,10 +99,25 @@ internal static class QueuedMonsterWipeChecks
         var linked=DemoDuel.FromPartialObservation(0,[Spell(300),Spell(335)],Slots(normal),Slots(normal),
             8000,equipmentContextResolved:true);
         var lq=linked.CreatePrimitiveActionQueue();
-        check(linked.TryQueueEquipment(DuelZone.Hand,0,1,0,out _),"Wipe linked equipment setup");
+        check(linked.TryQueueEquipment(DuelZone.Hand,0,0,0,out _),"Wipe linked equipment setup");
         Drain(lq);
+        bool sourceCaptured = linked.TryCaptureCardTarget(0, DuelZone.Hand, 0, out var source);
+        bool ownCaptured = linked.TryCaptureCardTarget(0, DuelZone.Monster, 0, out var ownMonster);
+        bool opposingCaptured = linked.TryCaptureCardTarget(1, DuelZone.Monster, 0, out var opposingMonster);
+        bool equipmentCaptured = linked.TryCaptureCardTarget(0, DuelZone.SpellTrap, 0, out var equipment);
+        check(sourceCaptured && ownCaptured && opposingCaptured && equipmentCaptured,
+            "Wipe captures real occurrences");
+        int linkedTraceStart = lq.Trace.Count;
         check(linked.TryQueueMonsterWipe(DuelZone.Hand,0,out _),"Wipe with linked equipment admitted");
         Drain(lq);
+        var moves = lq.Trace.Skip(linkedTraceStart)
+            .Where(entry => entry.Stage == ActionTraceStage.Executed)
+            .Select(entry => entry.Entry.Command)
+            .Where(command => command is SendToGraveyardCommand or DestroyCommand);
+        check(moves.SequenceEqual([
+                new SendToGraveyardCommand(0, source), new DestroyCommand(0, ownMonster),
+                new DestroyCommand(0, equipment), new DestroyCommand(1, opposingMonster)]),
+            "A08 wipe spends its source, destroys ordered targets and follows immediately with linked cleanup");
         check(linked.EquipmentCards.Count==0 && linked.Spells[0,0] is null &&
             linked.Graveyard(0).Any(c=>c.Id==300) && linked.LastMonsterWipe is {TotalDestroyed:2},
             "Wipe removes linked equipment via separate command");

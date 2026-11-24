@@ -98,6 +98,25 @@ internal static class ActionQueueLinkedChecks
                 "A02 scheduler answer records decision and draws only on Accept");
         }
 
+        var suppressed = DemoDuel.FromPartialObservation(0, [], Slots(Monster(FlipEffectRules.Skelengel)),
+            Slots(), 8000, side0Deck: [normal]);
+        suppressed.MonsterFaceDown[0, 0] = suppressed.DefensePosition[0, 0] = true;
+        var suppressionQueue = suppressed.CreatePrimitiveActionQueue();
+        check(suppressed.TryQueueChangePosition(0, out _), "A08 queued optional draw setup");
+        for (int i = 0; i < 20 && suppressionQueue.PendingDecision is null; i++) suppressionQueue.Tick();
+        var pendingDraw = suppressionQueue.PendingDecision ?? throw new Exception("Missing queued draw fixture.");
+        check(suppressionQueue.SubmitDecision(pendingDraw.Id, EffectDecisionAnswer.Accept),
+            "A08 initially legal optional draw is accepted");
+        suppressionQueue.Tick(); // publish the answer command for execution
+        ushort suppression = FlipEffectSuppressionRules.RoyalCommand;
+        suppressed.Spells[1, 0] = new Card(suppression, suppression, "Suppression fixture", "", 21u << 20);
+        Drain(suppressionQueue);
+        check(suppressed.DeckCount(0) == 1 && suppressed.Hand.Count == 0 &&
+            suppressed.EffectDecisionHistory.Count == 0 &&
+            suppressionQueue.Trace.All(entry => entry.Entry.Command is not DrawCommand) &&
+            suppressionQueue.Trace.Last().Result?.Outcome == CommandOutcome.Skipped,
+            "A08 a negated accepted decision never admits its dependent draw");
+
         var sangan = Monster(47);
         var search = DemoDuel.FromPartialObservation(0, [raigeki], Slots(), Slots(sangan), 8000, side1Deck: [normal]);
         var sq = search.CreatePrimitiveActionQueue();

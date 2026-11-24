@@ -293,7 +293,7 @@ public sealed partial class DemoDuel
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
-            if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision);
+            if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision, followups);
             // An unspent source cancels the entire reserved wipe, including linked consequences.
             if (wipe is { SourceSpent: false } pendingWipe &&
                 (command is not SendToGraveyardCommand sendSource || sendSource.Target != pendingWipe.Source))
@@ -454,12 +454,11 @@ public sealed partial class DemoDuel
                 // No other admitted action can run between these draws.
                 if (duel.DeckCount(activate.Side) < effect.Cards)
                     throw new InvalidOperationException("Reserved draw spell deck changed during activation.");
-                var batch = new List<DuelCommand>();
-                for (int i = 0; i < effect.Cards; i++) batch.Add(new DrawCommand(activate.Side));
-                if (effect.OpponentLifeGain > 0)
-                    batch.Add(new HealCommand(1 - activate.Side, effect.OpponentLifeGain));
-                foreach (var next in batch) reservedDrawSpell.Enqueue(next);
-                return new(batch);
+                var context = new EffectContext();
+                context.Draw(activate.Side, effect.Cards);
+                context.ChangeLifePoints(1 - activate.Side, effect.OpponentLifeGain);
+                foreach (var next in context.Commands) reservedDrawSpell.Enqueue(next);
+                return new(context.Commands);
             });
             return new(CommandOutcome.Applied);
         }
@@ -474,17 +473,12 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "LP spell no longer legal.");
             // Legacy order: spend source, then caster LP, then opposing LP.
             // No mutation in the producer. Each operation has its own gate.
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
-            AddDelta(batch, activate.Side, change.CasterDelta);
-            AddDelta(batch, 1 - activate.Side, change.OpponentDelta);
-            queue.EnqueueBatch(batch);
+            var context = new EffectContext();
+            context.SendToGraveyard(activate.Source);
+            context.ChangeLifePoints(activate.Side, change.CasterDelta);
+            context.ChangeLifePoints(1 - activate.Side, change.OpponentDelta);
+            queue.EnqueueBatch(context.Commands);
             return new(CommandOutcome.Applied);
-        }
-
-        private static void AddDelta(List<DuelCommand> batch, int side, int delta)
-        {
-            if (delta > 0) batch.Add(new HealCommand(side, delta));
-            else if (delta < 0) batch.Add(new DamageCommand(side, -delta));
         }
 
         private CommandResult SendSetFixedSpellToGraveyard(CardTarget target)
@@ -513,9 +507,10 @@ public sealed partial class DemoDuel
             if (!duel.TryPlanTargetedSpellTrap(activate.Source, activate.Target, out var spell, out var targets))
                 return new(CommandOutcome.Rejected, "Targeted Spell/Trap no longer legal.");
 
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
-            batch.AddRange(targets.Select(target => new DestroyCommand(target.Side, target)));
-            queue.EnqueueBatch(batch);
+            var context = new EffectContext();
+            context.SendToGraveyard(activate.Source);
+            foreach (var target in targets) context.Destroy(target);
+            queue.EnqueueBatch(context.Commands);
             wipe = new(activate.Side, spell.Id, activate.Source, targets, monsterWipe: false)
                 { PrimaryTarget = activate.Target };
             ScheduleFinish(activate.Side, followups);
@@ -532,9 +527,10 @@ public sealed partial class DemoDuel
             if (!duel.TryPlanSpellTrapWipe(source, out var spell, out var targets))
                 return new(CommandOutcome.Rejected, "Spell/Trap wipe no longer legal.");
 
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(source.Side, source) };
-            batch.AddRange(targets.Select(target => new DestroyCommand(target.Side, target)));
-            queue.EnqueueBatch(batch);
+            var context = new EffectContext();
+            context.SendToGraveyard(source);
+            foreach (var target in targets) context.Destroy(target);
+            queue.EnqueueBatch(context.Commands);
             wipe = new(source.Side, spell.Id, source, targets, monsterWipe: false);
             ScheduleFinish(source.Side, followups);
             return new(CommandOutcome.Applied);
@@ -553,7 +549,8 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Monster wipe no longer legal.");
 
             var targets = new List<CardTarget>();
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(side, source) };
+            var context = new EffectContext();
+            context.SendToGraveyard(source);
             var plans = new Dictionary<CardTarget, DuelCommand[]>();
             foreach (var item in snapshot)
             {
@@ -562,13 +559,12 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Rejected, "Untracked occurrence or linked equipment.");
                 targets.Add(target);
                 plans.Add(target, links);
-                batch.Add(new DestroyCommand(target.Side, target));
-                batch.AddRange(links);
+                context.Destroy(target, links);
             }
             // Use the existing sandbox target order, not an invented visual order.
             // Each actual movement receives its own command. No spell/monster
             // movement happens in this activation producer.
-            queue.EnqueueBatch(batch);
+            queue.EnqueueBatch(context.Commands);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             wipe = new(side, spell.Id, source, targets);
             ScheduleFinish(side, followups);
@@ -792,8 +788,7 @@ public sealed partial class DemoDuel
                 followups.ScheduleContinuation(_ => new([], answer =>
                 {
                     var selected = answer ?? throw new InvalidOperationException("Missing draw answer.");
-                    DuelCommand record = new RecordFlipDrawDecisionCommand(side, request.Id, selected);
-                    return new(selected == EffectDecisionAnswer.Accept ? [record, new DrawCommand(side)] : [record]);
+                    return new([new RecordFlipDrawDecisionCommand(side, request.Id, selected)]);
                 }, request));
                 return new(CommandOutcome.Applied);
             }
@@ -1156,11 +1151,20 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision)
+        private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision, IActionCommandSink followups)
         {
             if (queueDrawDecision is not { } request || request.Id != decision.DecisionId || request.Owner != decision.Side)
                 return new(CommandOutcome.Rejected, "No matching queued draw decision.");
+
             queueDrawDecision = null;
+            if (duel.FlipEffectsNegated)
+                return new(CommandOutcome.Skipped, "Optional draw effect is now negated.");
+            if (duel.LegacyActionsBlocked || request.CreatedTurn != duel.Turn ||
+                (decision.Answer == EffectDecisionAnswer.Accept && duel.DeckCount(decision.Side) == 0))
+                return new(CommandOutcome.Rejected, "Optional draw is no longer legal.");
+
+            if (decision.Answer == EffectDecisionAnswer.Accept)
+                followups.Enqueue(new DrawCommand(decision.Side));
             int life = duel.Life[decision.Side];
             duel.effectDecisionHistory.Add(new(request.Id, request.Owner, request.Kind, decision.Answer, duel.Turn, life, life));
             return new(CommandOutcome.Applied);
