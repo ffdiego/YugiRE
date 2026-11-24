@@ -64,6 +64,29 @@ internal static class QueuedEndTurnChecks
                 "A07 turn advance releases the next player's actions");
         }
 
+        var draws = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000,
+            side0Deck: [card, card], side1Deck: [card]);
+        var drawSession = new DuelConsoleSession(draws);
+        check(drawSession.Execute("draw 1").Enqueued, "A07 privileged draw remains available");
+        Drain(drawSession.Queue);
+        check(draws.HandFor(0).Count == 1 && draws.CanDraw && drawSession.Execute("turn draw").Enqueued &&
+            draws.HandFor(0).Count == 1, "A07 legal draw admits without mutation after a privileged draw");
+        Drain(drawSession.Queue);
+        check(draws.HandFor(0).Count == 2 && !draws.CanDraw && !drawSession.Execute("turn draw").Success,
+            "A07 legal draw consumes the once-per-turn permission");
+        check(drawSession.Execute("turn end").Enqueued, "A07 end the first player's turn");
+        Drain(drawSession.Queue);
+        check(drawSession.Execute("turn draw").Enqueued, "A07 the next player gets a new legal draw");
+        Drain(drawSession.Queue);
+        check(draws.HandFor(1).Count == 1 && draws.HandFor(0).Count == 2,
+            "A07 the legal draw operates on the active side's deck");
+        check(drawSession.Execute("turn end").Enqueued, "A07 return to the empty deck");
+        Drain(drawSession.Queue);
+        check(drawSession.Execute("turn draw").Enqueued, "A07 admit the empty deck draw");
+        Drain(drawSession.Queue);
+        check(draws.Winner == 1 && drawSession.Queue.Trace.Last().Result?.Outcome == CommandOutcome.Applied,
+            "A07 a legal empty deck draw applies the sandbox loss");
+
         var plain = DemoDuel.FromPartialObservation(0, [card], new Card?[5], new Card?[5], 8000);
         var plainQueue = plain.CreatePrimitiveActionQueue();
         plainQueue.Enqueue(new EndTurnCommand(1, 1));

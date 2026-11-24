@@ -533,7 +533,8 @@ public sealed partial class DemoDuel
         }
         else BeginNextQueuedDeckSearch();
     }
-    public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
+    public bool CanDraw => !ActionsBlocked && AllowsTurnDraw;
+    private bool AllowsTurnDraw => Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
     public bool CanBeginBattle => !ActionsBlocked && AllowsBattlePhaseChange(enterBattle: true);
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
@@ -561,9 +562,11 @@ public sealed partial class DemoDuel
     {
         message = "Draw available once per turn in main phase.";
         if (!CanDraw) return false;
-        if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
-        DrawToHand(ActivePlayer);
-        drawn = true;
+        if (!TakeTurnDraw())
+        {
+            message = "Empty deck: active player loses (demo policy).";
+            return true;
+        }
         if (ExodiaWinner == ActivePlayer)
         {
             message = "Exodia complete: all five Forbidden One pieces in hand.";
@@ -574,6 +577,18 @@ public sealed partial class DemoDuel
         ResolvePostDrawStandbyEffects();
         message = "Drew one card."; return true;
     }
+    private bool TakeTurnDraw()
+    {
+        if (decks[ActivePlayer].Count == 0)
+        {
+            Winner = 1 - ActivePlayer;
+            return false;
+        }
+        DrawToHand(ActivePlayer);
+        drawn = true;
+        return true;
+    }
+
     public bool Play(int index, out string message)
     {
         message = "Choose a supported spell. Equipment needs a compatible face-up monster.";

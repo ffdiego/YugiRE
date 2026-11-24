@@ -19,6 +19,8 @@ public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool E
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side);
 internal sealed record AdvanceTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
+public sealed record TurnDrawCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
+internal sealed record ResolveStandbyRevivalCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one card
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
@@ -104,6 +106,8 @@ internal static class DuelCommandValidation
             case ChangeBattlePhaseCommand { ExpectedTurn: > 0 }:
             case EndTurnCommand { ExpectedTurn: > 0 }:
             case AdvanceTurnCommand { ExpectedTurn: > 0 }:
+            case TurnDrawCommand { ExpectedTurn: > 0 }:
+            case ResolveStandbyRevivalCommand { ExpectedTurn: > 0 }:
             case DrawCommand:
             case FinishFieldRemovalCommand:
                 break;

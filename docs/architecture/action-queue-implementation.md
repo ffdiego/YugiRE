@@ -69,5 +69,19 @@ A execução revalida lado, turno e a ocorrência da mão.
 
 A admissão recusa uma End Phase que possa ativar o resolvedor legado do
 tabuleiro. A entrada de turno reaproveita o reset do sandbox. Compra
-automática, efeitos de End/Standby e mapeamento de fases no replay nativo
+automática, demais efeitos de End/Standby e mapeamento de fases no replay nativo
 ficam em fatias próprias de A07.
+
+## A07 — Compra legal e retorno de Standby no sandbox
+
+`turn draw` usa `TurnDrawCommand` com lado e turno esperados. Uma compra
+bem-sucedida emite a projeção usual de uma carta (`0x61`). A perda por
+deck vazio aplica a regra do sandbox e fica sem projeção. A operação
+privilegiada `draw N [SIDE]` preserva a permissão de compra legal do turno.
+
+Depois do gate de compra, a fila processa cada retorno atrasado vencido
+do lado ativo, na ordem do resolvedor legado. Cada promessa é consumida
+uma vez. Com a ocorrência ainda no cemitério e um slot livre, um
+`SpecialSummonCommand` separado invoca em defesa revelada. Campo cheio ou
+fonte ausente consome a promessa com o custo já pago. O caminho admite
+a compra manual no sandbox e deixa em aberto os gates nativos completos.
