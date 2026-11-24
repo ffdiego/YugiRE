@@ -2,7 +2,7 @@
 
 Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem de cartas do DAT nem uma lista de callbacks decompilados. Atualize após implementar e testar, com escopo explícito.
 
-**[Painel de progresso no GitHub](docs/cards/PLAYABILITY.md):** a badge no README apresenta a cobertura total e a cobertura de Joey. O GitHub Actions atualiza esses indicadores após mudanças no manifest.
+**[Painel de progresso no GitHub](docs/cards/PLAYABILITY.md):** a badge no README apresenta Done+Verified da trilogia e a contagem separada de Partial; a cobertura de Joey consta no relatório. O GitHub Actions atualiza esses indicadores após mudanças no manifest.
 
 **Gerador detalhado local:** `python scripts/card_playability.py --dat ../passion/data.dat` gera `scratch/card-playability/PROGRESS.md`, `summary.json` e CSV com as cartas de cada pack. Os IDs implementados ficam em [`docs/cards/playability-manifest.json`](docs/cards/playability-manifest.json); os critérios de contagem em [`docs/cards/playability-progress.md`](docs/cards/playability-progress.md). O registry antigo mede engenharia reversa, não a jogabilidade atual.
 
@@ -21,12 +21,14 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Magias normais de compra fixa `P119/P143` | **Done** (2 IDs no sandbox) | Pot of Greed (1010) e Upstart Goblin (1065). `DrawSpellRules`, `DemoDuel` e `DrawSpellChecks` cobrem mão, Set, contagens, LP e uso pela CPU. | Exigem cartas suficientes no deck. Sem correntes, negação ou comparação nativa do timing. |
-| Equipamentos `P025` | **Partial** (24 IDs, 3 apenas na fila opt-in) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs, incluindo 3 dinâmicos). UI/CPU da fila e supressões pendentes |
-| Magias de campo `P036` | **Done** (13 IDs no sandbox) | Seis magias por tipo, seis por atributo e Chorus of Sanctuary; zona FIELD, ativação/set, substituição, bônus/penalidades e combate | Regras baseadas em texto, não paridade nativa integral; Sea Serpent classCode 5 ainda é inferido |
+| Equipamentos `P025` | **Done** (21 fixos, escopo sandbox); **Partial** (3 dinâmicos) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs). [Ciclo fixo testado](docs/cards/c04-fixed-equipment-lifecycle.md); UI/CPU da fila e supressões pendentes |
+| Magias de campo `P036` | **Done** (13 IDs no sandbox) | Seis magias por tipo, seis por atributo e Chorus of Sanctuary; zona FIELD, ativação/set, substituição, bônus/penalidades e combate | DAT confirma Sea Serpent `classCode=5`. Comparação em duelo nativo pendente. |
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Dream Clown (119), gatilho de posição | **Done** (escopo sandbox, testes .NET CI) | `MonsterPositionEffectRules.cs`, `DemoDuel.ChangePosition`, `PositionChangeEffectChecks.cs` | Ataque → defesa inicia seleção e destruição de monstro adversário. Seletor legado compartilhado com FLIP, gatilho distinto de FLIP; sem chain ou paridade nativa. |
 | P168 / Bubonic Vermin (1307) | **Done** (sandbox, regressões .NET no CI) | `FlipEffectRules.cs`, `DemoDuel`, `BubonicVerminChecks.cs`, seletor de cartas existente | FLIP opcional: Deck → campo, 1 cópia por resource ID em defesa oculta. Gate de Royal Command integrado; sem chains ou paridade dinâmica. |
-| P252 — Dark Necrofear (1514) | **Partial** | `GraveyardBanishSummonRules.cs`, `DemoDuel.SpecialSummonByGraveyardBanish` | Custo de 3 Fiends no próprio GY, invocação especial Core; UI/CPU, Spirit Elimination, End Phase/equipamento e controle ainda pendentes. |
+| P252 — Dark Necrofear (1514) | **Partial** | `GraveyardBanishSummonRules.cs`, `DemoQueuedGraveyardBanishSummon.cs`, `QueuedGraveyardBanishSummonChecks.cs` | Custo de 3 Fiends no próprio GY, invocação especial Core na fila; UI/CPU, Spirit Elimination, End Phase/equipamento e controle ainda pendentes. |
+| C16 — Soul of Purity and Light, Spirit of Flames, recurso 1518 | **Done** (escopo headless C#) | [Atributos de batalha](docs/cards/c16-elemental-battle-attributes.md), `ElementalBattleAttributeChecks.cs` | Invocação por fila e modificadores de ATK em batalha; produtores UI/CPU e paridade nativa pendentes. |
+| C16 — Aqua Spirit e Garuda (1517/1519) | **Partial** | [Contrato C16](docs/cards/c16-queued-graveyard-banish-summon.md) | Procedimento de invocação; contrato puro de mudança de posição (Aqua Standby, Garuda End Phase adversárias), execução pendente. [P253](docs/cards/c16-elemental-position-opportunities.md). |
 | P188 — Dimensional Warrior (255) | **Done** (escopo sandbox, testes .NET CI) | `DimensionalWarriorRules.cs`, `DemoDuel.FinishDeferredBattle`, `DimensionalWarriorChecks.cs` | Dois combatentes banidos após cálculo de dano; sem efeitos de cemitério; callback primário `0058CC00` não decompilado nem validado em duelo nativo. |
 | FLIP P065 (The Immortal of Thunder, 461) | **Done** (sandbox histórico, testes .NET no CI) | `ImmortalThunderRules.cs`, `FlipEffectRules.cs`, `DemoDuel.RemoveMonster`, `ImmortalThunderChecks.cs` | +3000 no FLIP e -5000 na saída para GY **após revelação** da ocorrência; timing/negação/controle nativos ainda não verificados. |
 | FLIPs P051/P052 (Lady Assailant e Fire Sorcerer) | **Done** (sandbox validado no CI .NET) | `FlipBanishBurnRules.cs`, `FlipEffectRules.cs`, `FlipBanishBurnChecks.cs` | Custo por banimento Deck/Hand, dano 800 compartilhado e RNG determinístico sandbox. Sem paridade de seleção aleatória nativa nem callback de disponibilidade decompilado. |
@@ -52,7 +54,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 
 ## Monstros normais compartilhando uma implementação
 
-Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `monster.normal`, e cada um é exercitado por `NormalMonsterPlayabilityChecks.Run` com propriedades sintéticas representativas dos níveis 1–8. No Windows, `Joey.Tests` com o `data.dat` também executa `RunWithCatalog`, usando nível, ATK/DEF e categoria **reais** de cada carta; essa última verificação não foi executada no CI sem DAT. Isso valida o escopo de sandbox, **não** 264 implementações de efeitos individuais ou paridade nativa. Identidades Normal históricas podem mudar entre edições, então divergências do DAT ainda devem ser revisadas.
+Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `monster.normal`. `NormalMonsterPlayabilityChecks.Run` usa propriedades sintéticas representativas dos níveis 1–8. A execução local em Fedora/.NET 10 também passou em `RunWithCatalog` para os 264 IDs do DAT de referência, usando nível, ATK/DEF e categoria do jogo nos cenários do sandbox. O CI sem DAT executa a suíte sintética.
 
 ## FLIP jogável: primeiro lote
 
@@ -138,7 +140,7 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 329 | Forest | Done (sandbox) | Insect 10, Beast 11, Beast-Warrior 12, Plant 13: +200 ATK/DEF |
 | 330 | Wasteland | Done (sandbox) | Dinosaur 9, Zombie 2, Rock 6: +200 ATK/DEF |
 | 331 | Mountain | Done (sandbox) | Dragon 1, Winged Beast 16, Thunder 19: +200 ATK/DEF |
-| 333 | Umi | Done (sandbox) | Fish 8, Sea Serpent 5 (inferido), Thunder 19, Aqua 14: +200 ATK/DEF; Machine 7, Pyro 4: -200/-200 |
+| 333 | Umi | Done (sandbox) | Fish 8, Sea Serpent 5, Thunder 19, Aqua 14: +200 ATK/DEF; Machine 7, Pyro 4: -200/-200 |
 | 334 | Yami | Done (sandbox) | Fiend 3, Spellcaster 18: +200 ATK/DEF; Fairy 17: -200/-200 |
 | 1069 | Chorus of Sanctuary | Done (sandbox) | +500 DEF somente para monstros face-up em posição de defesa |
 | 1125 | Gaia Power | Done (sandbox) | EARTH (attributeCode 5), +500 ATK/-400 DEF |
@@ -271,7 +273,7 @@ Needle Worm e Hiro's Shadow Scout: Flip Summon manual emite movimentações indi
 
 ## Primeiro cenário de magia de campo
 
-Todas as 13 magias de campo identificadas em P036 agora possuem efeitos básicos jogáveis no sandbox, reutilizando a zona FIELD e o mesmo cálculo dinâmico. Seis dependem de tipos, seis de atributos e Chorus depende da posição de defesa; Sogen se aplica a Warrior e Beast-Warrior. Os efeitos alcançam os dois lados do campo, e substituições removem os anteriores ao cemitério de seu dono. A interface existente aceita ativação da mão ou de carta setada. Para fontes e limites, consulte `docs/cards/p036-field-spells-sandbox.md`. Ainda não há paridade completa de interações/negação, e o mapeamento Sea Serpent = classe 5 precisa de conferência no DAT completo.
+Todas as 13 magias de campo identificadas em P036 agora possuem efeitos básicos jogáveis no sandbox, reutilizando a zona FIELD e o mesmo cálculo dinâmico. Seis dependem de tipos, seis de atributos e Chorus depende da posição de defesa; Sogen se aplica a Warrior e Beast-Warrior. Os efeitos alcançam os dois lados do campo, e substituições removem os anteriores ao cemitério de seu dono. A interface existente aceita ativação da mão ou de carta setada. O DAT de referência confirma a classe 5 para Sea Serpent. A validação de interações e negações em duelo nativo permanece pendente. [Evidências](docs/cards/p036-field-spells-sandbox.md).
 
 ## Destiny Board / F-I-N-A-L (P259 + P009)
 

@@ -1,0 +1,15 @@
+# Native DAT resource IDs; intentionally synthetic scenario (not YDR).
+spawn 1123 0 hand
+summon 0 2
+spawn 342 0 hand
+spawn 336 0 hand
+spawn 81 1 monster 0
+spawn 81 1 monster 1 set
+spawn 81 0 deck
+state
+draw 1
+activate hand 0
+activate hand 0
+diff
+
+state

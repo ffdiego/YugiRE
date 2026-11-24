@@ -436,7 +436,7 @@ public sealed partial class DemoDuel
     public bool CanActivateFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main &&
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
-        (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
+        (FirstFreeSpellZone() >= 0 && ((Hand[index].ClassCode == 22 && EquipmentRules.Supports(Hand[index].Id)) ||
             (FusionRules.Supports(Hand[index]) && HasFusionCombination()) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
@@ -533,7 +533,7 @@ public sealed partial class DemoDuel
         else BeginNextQueuedDeckSearch();
     }
     public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
-    public bool CanBeginBattle => !ActionsBlocked && Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn;
+    public bool CanBeginBattle => !ActionsBlocked && AllowsBattlePhaseChange(enterBattle: true);
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
@@ -1097,6 +1097,12 @@ public sealed partial class DemoDuel
             if (Monsters[side, zone] is Card source && !MonsterFaceDown[side, zone])
                 sum = new(sum.Attack + MonsterAuraRules.AttackDelta(source.Id, stats.AttributeCode), sum.Defense);
         }
+        // Native 0056DD30: phase-dependent elemental summon effects.
+        int opposingSouls = Enumerable.Range(0,5).Count(slot =>
+            Monsters[1-p,slot]?.Id == ElementalBattleAttributeRules.SoulOfPurityAndLight &&
+            !MonsterFaceDown[1-p,slot] && !IsMarkedForBattleDestruction(1-p,slot));
+        sum = new(sum.Attack + ElementalBattleAttributeRules.AttackDelta(
+            monster.Id, p, ActivePlayer, Phase == DemoPhase.Battle, opposingSouls), sum.Defense);
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
     }
@@ -1113,7 +1119,8 @@ public sealed partial class DemoDuel
     public NativeAiResult<bool> EquipmentEligibility(int index, int targetPlayer, int targetZone)
     {
         if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count ||
-            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0)
+            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0 ||
+            Hand[index].ClassCode != 22 || Monsters[targetPlayer,targetZone] is not { IsMonster: true })
             return NativeAiResult<bool>.Supported(false);
         return EquipmentRules.Eligibility(Hand[index].Id, DemoEquipmentTarget(targetPlayer, targetZone));
     }
@@ -1232,16 +1239,28 @@ public sealed partial class DemoDuel
     {
         message = "Battle unavailable on the opening turn or after game over.";
         if (!CanBeginBattle) return false;
-        Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
+        ApplyBattlePhaseChange(enterBattle: true);
+        message = "Select your monster, then an enemy monster or Direct attack.";
+        return true;
     }
 
     public bool EndBattle(out string message)
     {
         message = "Battle Phase must be active and all decisions resolved.";
-        if (ActionsBlocked || Phase != DemoPhase.Battle) return false;
-        EnterMainPhase2();
+        if (ActionsBlocked || !AllowsBattlePhaseChange(enterBattle: false)) return false;
+        ApplyBattlePhaseChange(enterBattle: false);
         message = "Main Phase 2.";
         return true;
+    }
+
+    private bool AllowsBattlePhaseChange(bool enterBattle) => enterBattle
+        ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn
+        : Phase == DemoPhase.Battle;
+
+    private void ApplyBattlePhaseChange(bool enterBattle)
+    {
+        if (enterBattle) Phase = DemoPhase.Battle;
+        else EnterMainPhase2();
     }
 
     private void EnterMainPhase2()

@@ -19,7 +19,12 @@ static partial class Game
     // has no duration, cannot enter the queue and cannot lock input.
     sealed record CinematicScene(NativeCinematicCue Cue, DemoExodiaCompletion? Completion) : CardEffect;
 
-    static readonly PresentationSequence<CardEffect> cardEffects = new();
+    static readonly PresentationSequence<CardEffect> legacyCardEffects = new();
+    static readonly CommandPresentationSteps<CardEffect> commandCardEffects = new();
+    // During a scheduler command, event handlers can emit only its own visual substeps.
+    // No event waits in a second logical FIFO across commands.
+    static PresentationSequence<CardEffect> cardEffects => queuedDuel?.Active is { } command
+        ? commandCardEffects.For(command.Sequence) : legacyCardEffects;
     static readonly PresentationTickClock cardEffectClock = new();
     static bool CardEffectsBusy => cardEffects.Current is not null;
     static bool ExodiaOpeningQueued =>
@@ -46,7 +51,8 @@ static partial class Game
 
     static void ResetCardEffects()
     {
-        cardEffects.Clear();
+        legacyCardEffects.Clear();
+        commandCardEffects.Reset();
         cardEffectClock.Reset();
         lastSignatureCandidate = null;
         lastDestinyBoardCandidate = null;

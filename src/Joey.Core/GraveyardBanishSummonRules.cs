@@ -17,6 +17,27 @@ public static class GraveyardBanishSummonRules
     public static int RequiredCount(ushort sourceId) =>
         sourceId == DarkNecrofear ? DarkNecrofearCost : 0;
 
+    // Native 0059DEF0: 0x5ea -> 3, 0x5eb -> 2, 0x5ec..0x5ef -> 1.
+    // Native 00599E30 uses class 3 for Necrofear, same DAT attribute
+    // as source for the other five. Keep legacy ID-only admission scoped
+    // to Necrofear until the UI/CPU routes and other effects are migrated.
+    public static int QueuedRequiredCount(Card source) =>
+        !source.IsMonster || !NormalSummonRules.RequiresSpecialSummon(source) ? 0 : source.Id switch
+        {
+            DarkNecrofear => 3,
+            1515 => 2,
+            >= 1516 and <= 1519 => 1,
+            _ => 0
+        };
+
+    public static bool QueuedIsEligible(Card source, Card candidate)
+    {
+        if (QueuedRequiredCount(source) == 0 || !candidate.IsMonster) return false;
+        if (source.Id == DarkNecrofear) return candidate.ClassCode == FiendClass;
+        uint attribute = source.Properties >> 29 & 7;
+        return attribute is >= 1 and <= 6 && (candidate.Properties >> 29 & 7) == attribute;
+    }
+
     public static IReadOnlyList<CardSelectionCandidate> Candidates(
         ushort sourceId, IReadOnlyList<Card> graveyard) =>
         Array.AsReadOnly(graveyard.Select((c, i) => new CardSelectionCandidate(i, c))

@@ -40,6 +40,14 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(status.get(540), "Done")  # Hane-Hane mandatory single return
         self.assertEqual(status.get(1163), "Done")  # Morphing Jar #2 excavation
         self.assertEqual(status.get(332), "Done")
+        for rid in (300,301,302,304,306,307,308,309,311,314,315,318,321,322,324,325,326,327,653,1012,1013):
+            self.assertEqual(status.get(rid), "Done")
+        for rid in (656,1449,1450):
+            self.assertEqual(status.get(rid), "Partial")
+        for rid in (1514, 1517, 1519):
+            self.assertEqual(status.get(rid), "Partial")
+        for rid in (1515, 1516, 1518):
+            self.assertEqual(status.get(rid), "Done")  # cost + battle attributes
         self.assertEqual(len(sources), 6)
 
     def test_generated_badges_and_markdown_checked_in(self):
@@ -55,7 +63,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(one["label"], "CARDS")
         expected = values["all-packs"]
         self.assertEqual(one["message"],
-                         f"{expected['done']}/{expected['total']} ({expected['pct']:.2f}%)")
+                         f"{expected['done']}/{expected['total']} ({expected['pct']:.2f}%) | {expected['statuses']['Partial']} partial")
 
     def test_card_csv_classifier_keeps_generic_monster_pending(self):
         card = {"internalIndex": 1060, "resourceId": 1405,

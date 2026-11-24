@@ -588,7 +588,7 @@
         "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
       ],
       "limitations": [
-        "Native timing and eligibility are not fully verified; Sea Serpent native type code 5 is provisional."
+        "The pinned DAT confirms Sea Serpent type code 5. Native duel timing and eligibility remain pending."
       ]
     },
     {
@@ -635,10 +635,10 @@
       "kind": "Spell",
       "subtype": "Equip",
       "mechanics": [
-        "Equip",
-        "ATK/DEF modifier"
+        "Equip a compatible face-up monster on either side from hand or Set via EquipCommand",
+        "Independent fixed ATK/DEF modifier, live target link, cleanup on source destruction or target departure"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         300,
         301,
@@ -646,10 +646,15 @@
       ],
       "evidence": [
         "src/Joey.Core/EquipmentRules.cs",
-        "src/tests/Joey.Tests/EquipmentChecks.cs"
+        "src/tests/Joey.Tests/EquipmentChecks.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FixedEquipmentLifecycleChecks.cs",
+        "docs/cards/c04-fixed-equipment-lifecycle.md"
       ],
       "limitations": [
-        "Only selected equipment eligibility and lifecycle cases in the sandbox; not full native interactions."
+        "Done in the bounded C# sandbox: queue-backed hand/Set admission, fixed predicates, modifiers, source destruction and target destruction/return/battle tested. UI/CPU queue producer integration pending; legacy hand activation remains available.",
+        "No native differential replay, general suppression, ownership/controller changes or unimplemented target-transform effects."
       ]
     },
     {
@@ -1340,13 +1345,18 @@
       "status": "Partial",
       "mechanics": [
         "Core-only inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
-        "Revalidate hand source, distinct graveyard positions and free destination before changing zones"
+        "Revalidate hand source, distinct graveyard positions and free destination before changing zones",
+        "Queue-backed cost and face-up Special Summon, one command per occurrence, no summon before all costs are applied"
       ],
       "evidence": [
         "src/Joey.Core/GraveyardBanishSummonRules.cs",
         "src/Joey.Core/Demo.cs",
         "src/tests/Joey.Tests/GraveyardBanishSummonChecks.cs",
-        "docs/research/p252-necrofear-control-contract.md"
+        "docs/research/p252-necrofear-control-contract.md",
+        "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
+        "docs/cards/c16-queued-graveyard-banish-summon.md"
       ],
       "limitations": [
         "No End Phase equip/control, UI/CPU input, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
@@ -1412,10 +1422,10 @@
       "kind": "Spell",
       "subtype": "Equip",
       "mechanics": [
-        "Equip",
-        "ATK/DEF modifier"
+        "Equip a compatible face-up monster on either side from hand or Set via EquipCommand",
+        "Independent fixed ATK/DEF modifier, live target link, cleanup on source destruction or target departure"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         302,
         304,
@@ -1440,10 +1450,16 @@
         "src/Joey.Core/EquipmentRules.cs",
         "src/Joey.Core/NativeAiAttributes.cs",
         "src/tests/Joey.Tests/EquipmentChecks.cs",
-        "docs/cards/c04-fixed-equipment.md"
+        "docs/cards/c04-fixed-equipment.md",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/tests/Joey.Tests/QueuedEquipmentChecks.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FixedEquipmentLifecycleChecks.cs",
+        "docs/cards/c04-fixed-equipment-lifecycle.md"
       ],
       "limitations": [
-        "Legacy hand activation and ordinary cleanup only; C# tests added but not yet executed. Set activation, action queue migration, native suppression and other interactions pending."
+        "Done in the bounded C# sandbox: queue-backed hand/Set admission, fixed predicates, modifiers, source destruction and target destruction/return/battle tested. UI/CPU queue producer integration pending; legacy hand activation remains available.",
+        "No native differential replay, general suppression, ownership/controller changes or unimplemented target-transform effects."
       ]
     },
     {
@@ -1468,6 +1484,63 @@
       ],
       "limitations": [
         "Queue-backed headless hand/Set activation; UI/CPU, suppression and native comparison pending."
+      ]
+    },
+    {
+      "id": "monster.special-summon.elemental-graveyard-banish-c16",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Queue-backed inherent Special Summon from hand by banishing exactly two (1515) or one (1516–1519) eligible monsters from own Graveyard; match source attribute",
+        "Revalidate distinct occurrences, cost and free slot; separate BanishCommand per cost and SpecialSummonCommand only after full payment"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1517,
+        1519
+      ],
+      "evidence": [
+        "src/Joey.Core/GraveyardBanishSummonRules.cs",
+        "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
+        "docs/cards/c16-queued-graveyard-banish-summon.md",
+        "src/Joey.Core/ElementalPositionRules.cs",
+        "src/tests/Joey.Tests/ElementalPositionRuleChecks.cs",
+        "docs/cards/c16-elemental-position-opportunities.md"
+      ],
+      "limitations": [
+        "Aqua Spirit Standby and Garuda End Phase position effects: pure text-based intent only, no phase/selection/executor integration yet; native callback 005907D0 missing. UI/CPU, Spirit Elimination and native differential validation pending."
+      ]
+    },
+    {
+      "id": "monster.special-summon.elemental-battle-attributes-c16",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1515,
+        1516,
+        1518
+      ],
+      "mechanics": [
+        "Queue-backed inherent Special Summon by banishing own Graveyard monsters matching source attribute (2 for 1515, 1 for 1516/1518)",
+        "Soul of Purity and Light lowers opposing monsters' ATK by 300 per face-up source during opponent Battle Phase",
+        "Spirit of Flames gains 300 ATK during own Battle Phase; resource 1518 gains 300 ATK during opponent Battle Phase",
+        "Recalculate stats and use in actual battle; no additional mutation outside queue for continuous modifiers"
+      ],
+      "evidence": [
+        "src/Joey.Core/GraveyardBanishSummonRules.cs",
+        "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
+        "src/Joey.Core/ElementalBattleAttributeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
+        "src/tests/Joey.Tests/ElementalBattleAttributeChecks.cs",
+        "docs/cards/c16-elemental-battle-attributes.md"
+      ],
+      "limitations": [
+        "Done in explicit headless C# duel scope via opt-in queue summon API and legacy battle path. Graphical/CPU producer integration belongs to ACTIONS; no native differential validation.",
+        "Native effect suppression, ownership/controller changes, Spirit Elimination, special summon responses pending. Resource 1518 verified as Joey pack ID and native effect branch; DAT name still to confirm."
       ]
     }
   ]

@@ -92,3 +92,7 @@ de evento.
 O CSV não prova sozinho autoria de ataques, dano real aplicado ou semântica
 completa do efeito do Relinquished. Anotações devem sempre distinguir
 **bytes**, **hipóteses do Ghidra** e **relato do operador**.
+
+## Atualização A05.2 (23/11)
+
+O carregador e a seed foram identificados; ver [contrato atualizado](architecture/native-replay-scenarios.md). 0x18 alimenta o RNG de 005BFEB0, embora seja derivado do relógio. 0x0C versão, 0x10 associação de decks, 0x14 seletor de ordem de shuffle. A reconstrução de IDs do main deck é consistente com CF #9 e CE #12 da amostra; não confirma a partida integral. Nomes dos grupos extras não são assumidos pelo relatório.

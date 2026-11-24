@@ -126,13 +126,19 @@ Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastre
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
 
-## ACTIONS — aguardando coleta
+## ACTIONS — evidência de fases
 
 | Roteiro | ID | Ambiente | Saída | Estado |
 | --- | --- | --- | --- | --- |
-| `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Aguardando execução/importação |
+| `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Coletado e importado no SQLite cumulativo v2 |
 
-Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22/11 não possui decompilações nos dez VAs-alvo. O roteiro extrai os drivers e handlers das tabelas, mais as duas tabelas brutas. Pergunta: como o índice de A577FE se liga às escritas em A577FA e aos rótulos exibidos? Encerrar a coleta após verificar fingerprint e cobertura dos alvos (ausências explícitas), importar evidências compatíveis em cópia cumulativa do SQLite e documentar o mapeamento ou a lacuna residual. Não chamar a coleta de implementação A07. Ver [A01](../../docs/architecture/action-queue.md).
+O ZIP local tem SHA-256 `c3f2fc53f0af6554aa90e65e75d2fc6a558ba5b19547f405a34c865fccea54b3`.
+No SQLite v2 o mesmo digest identifica dez resultados de decompilação, janelas de
+assembly e dois blocos de 28 bytes, em `005EFB78` e `005EFB94`. Os dois blocos
+coincidem com o EXE local de fingerprint fixado. A pergunta restante é a
+correlação entre índice do dispatcher, bits de fase e rótulos no jogo.
+Consultar a [evidência estática](../../docs/20-turn-scheduling.md#reprodução-e-evidências)
+antes de ampliar a coleta. O roteiro 11 fica disponível para reproduzir a coleta original.
 
 ### 14 — C01: taxonomia de efeitos pelo DAT local
 
@@ -140,8 +146,8 @@ Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22
 - Comando: `bash scripts/pending/14-card-effect-taxonomy.sh /caminho/para/data.dat`.
 - Saída privada: `scratch/card-taxonomy.json` (IDs, fingerprints, famílias, rotas e status atuais; sem descrições).
 - Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
-- Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.
-- Estado: aguardando execução local; classificador testado com fixtures sintéticas, integração .NET ainda não executada. Nunca executar o modo `--taxonomy-input` diretamente ou redirecionar sua saída para arquivo: a descrição deve ficar no pipe privado do classificador.
+- Encerramento: conferir as 771 entradas por ID, máscara e categoria e validar o fingerprint com `docs/cards/pack-index.json`. O SQLite v2 contém 442 identidades. O DAT local fornece as descrições para a triagem.
+- Estado: execução concluída em Fedora/.NET 10. Rotas validadas no lote local: 264 sem efeito aplicável, 433 fila/resposta, 72 revisão e duas candidatas triviais. A compra já consta como Done e a cura permanece Pending. Mantenha a saída `--taxonomy-input` no pipe privado do classificador. A classificação preserva os status do manifesto e a saída em `scratch/` contém somente metadados.
 
 ### 12 — C07: chegada ao cemitério e causa do descarte
 
@@ -194,7 +200,15 @@ dimensões das imagens referenciadas (sem pixels).
 
 `bash scripts/pending/16-cards-revival-spells-ghidra.sh` no Fedora/Ghidra local. Saída privada `scratch/ghidra-revival-spells-contract.zip`. Extrair sete callbacks ausentes nos dois SQLite, com assembly e helpers de movimentação/identidade. Confirmar propriedade/controle, seleção, custo e vínculo; não promover cobertura apenas pela coleta. Ver [lacuna](../../docs/cards/p117-p159-p160-revival-spells-gap.md).
 
-## V20/V21/V22 — 16-coin-dice-break-ghidra.sh (aguardando Fedora)
+### 17 — CARDS: P253 mudança de posição elemental
+
+`bash scripts/pending/17-cards-elemental-position-ghidra.sh` — coleta complementar ao roteiro 11 de ACTIONS: callbacks 0057B1F0/0057CD40/005907D0, helpers e tabela de produtores. Saída privada `scratch/ghidra-elemental-position-contract.zip`. Confirmar dispatch, filtro, lock de Aqua e mudança de posição por efeito. [Contrato](../../docs/cards/c16-elemental-position-opportunities.md).
+
+## A03/A04 — 22-actions-console-visual-smoke.sh (piloto validado no Windows)
+
+Roteiro 22 executado via PowerShell, headless e gráfico: 18 Applied e 106 linhas relevantes idênticas após fff5e6e. Novo roteiro `scripts/fixtures/duel-console-two-sides-smoke.txt` executou 29 Applied, sem espera >=5s; operador confirmou compras animadas de ambos lados. CI 45328386043. Manter script como regressão opcional. Não implica paridade visual nativa; A05/A07 pendentes.
+
+## V20/V21/V22 — 16-coin-dice-break-ghidra.sh (recebido no SQLite v2; histórico)
 
 Ambiente: Ghidra local, projeto e EXE original com fingerprint validado pelo exportador. Consulta SQLite já concluída: seis Update/Draw não presentes; construtores/handlers presentes com ABI ambígua.
 
@@ -210,7 +224,7 @@ Ambiente: Ghidra headless, mesmo projeto e EXE atestado. O SQLite já contém as
 
 Saída privada: scratch/ghidra-chain-affect-assembly.zip. Confirmar as chaves de lookup de chain.txt, pass decimal, composição scratch e dispatch de affect.txt. Para os dois manifests, reutilizar --inspect-visual-dat e preservar a ordem/campos/dimensões. Importar evidência compatível em cópia SQLite após receber a coleta; sem marcar Draw como implementada. Ver [contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
 
-## V25/V26 — 18-alternative-activation-exclusion-ghidra.sh (aguardando Fedora)
+## V25/V26 — 18-alternative-activation-exclusion-ghidra.sh (recebido no SQLite v2; histórico)
 
 Ghidra local, EXE/projeto atestado. SQLite já consultado: dois Draws ausentes, construtores disponíveis; Update de exclusão no-op.
 
@@ -218,15 +232,15 @@ Ghidra local, EXE/projeto atestado. SQLite já consultado: dois Draws ausentes, 
 
 Saída privada: scratch/ghidra-alternative-activation-exclusion.zip. Confirmar slots da vtable, fases, recortes e gate de término (inclusive possível mutação no Draw), ABI e mascaramento de exclusão. Recuperar xrefs do construtor se disponíveis, não atribuir opcode por nome de asset. Usar --inspect-visual-dat para exclusion.txt. Importar evidências compatíveis em SQLite cumulativo após receber ZIP. [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
 
-## V27/V28/V29 — 19-layerfont-help-ghidra.sh (aguardando Fedora)
+## V27/V28/V29 — 19-layerfont-help-ghidra.sh (recebido no SQLite v2; histórico)
 
-Ghidra local, projeto/EXE atestado. SQLite já contém decompilações transitórias Layerfont; faltam operandos e composição confirmados em assembly. Help Update/Draw ausentes.
+Ghidra local, projeto/EXE atestado. SQLite já contém decompilações transitórias Layerfont; faltam operandos e composição confirmados em assembly. Help Update/Draw recebidos no bundle 19; ver V29.
 
     bash scripts/pending/19-layerfont-help-ghidra.sh
 
 Saída privada: scratch/ghidra-layerfont-help-contract.zip. Confirmar dimensões/operandos de +48/+4C, gates/seleção do help e slots de vtable. Reutilizar --inspect-visual-dat para layerfont.txt e help.txt; não enviar pixels. Importar resultados em SQLite cumulativo quando recebidos. [Contrato](../../docs/research/native-layerfont-help-2026-11-24.md).
 
-## V30 / V11 — 20-vija-selection-origins-ghidra.sh (aguardando Fedora)
+## V30 / V11 — 20-vija-selection-origins-ghidra.sh (recebido no SQLite v2; histórico)
 
 Ghidra local, mesmo projeto/EXE. O snapshot atual não possui Draw 004584C0; construtor, predicado e chamadores já consultados. Janelas dirigidas apenas para ABI ambígua e memória das tabelas não coletadas.
 
@@ -238,7 +252,7 @@ Saída privada: scratch/ghidra-vija-selection-origins.zip. Conferir Draw, másca
 
 Após receber ZIPs válidos, usar `scripts/import_visual_evidence.py` com `--source`, `--bundle` (repetível) e `--output` apontando a uma nova cópia. O importador histórico de métodos virtuais não aceita batches cumulativos. Ver [procedimento e consultas](../../docs/research/visual-evidence-cumulative-import.md). Não versionar evidência privada.
 
-## V04/V06 — 21-attack-life-draw-ghidra.sh (aguardando Fedora)
+## V04/V06 — 21-attack-life-draw-ghidra.sh (recebido no SQLite v2; histórico)
 
 Ghidra local, projeto e EXE atestado. Os dois Draws não existem nas tabelas de decompilação do SQLite atual; produtores e Update já consultados. 
 
@@ -246,7 +260,7 @@ Ghidra local, projeto e EXE atestado. Os dois Draws não existem nas tabelas de 
 
 Saída privada: scratch/ghidra-attack-life-draw-contract.zip. Recuperar instruções de seleção de sprite/pivô e âncoras de LP por slot/-1, ABI dos produtores e vtables. Importar com import_visual_evidence.py em nova cópia. [Contrato](../../docs/research/native-attack-life-routing-2026-11-24.md). Não repetir a coleta completa do inventário.
 
-## V07 — 23-turn-notice-draw-ghidra.sh (aguardando Fedora)
+## V07 — 23-turn-notice-draw-ghidra.sh (recebido no SQLite v2; histórico)
 
 Ghidra local, projeto/EXE atestado. SQLite confirmou ordem, preloads e contadores de painel; faltam 00480C20/00480C60 e virtual +4. 
 

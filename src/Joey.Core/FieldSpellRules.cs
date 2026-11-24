@@ -18,9 +18,7 @@ public static class FieldSpellRules
     // Aqua=14 (Penguin Soldier), Warrior=15 (The Legendary Fisherman),
     // Winged Beast=16 (Sonic Bird), Fairy=17 (Shining Angel),
     // Spellcaster=18 (Magician of Faith), Thunder=19 (Thunder Dragon).
-    // Sea Serpent=5 is inferred from the legacy 20-type ordering, as the
-    // local effect-callback sample contains no Sea Serpent identity.
-    // Confirm 5 using a full local DAT catalog when available.
+    // Sea Serpent=5 is confirmed by resources 352 and 447 in the pinned DAT.
     private static readonly IReadOnlyDictionary<ushort, (int[] Boost, int[] Weaken)> TypeFields =
         new Dictionary<ushort, (int[], int[])>
         {

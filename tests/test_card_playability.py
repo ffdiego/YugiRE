@@ -23,7 +23,7 @@ def fixture():
     return {"cards": [
         row(1, 342, 22, 7),    # Sparks Done in every game
         row(2, 332, 22, 7),    # Sogen Done
-        row(3, 300, 22, 4),    # Legendary Sword Partial
+        row(3, 656, 22, 4),    # Dynamic equipment Partial
         row(4, 1321, 21, 4),   # Magic Drain Trap Pending
         row(5, 3999, 15, 1),     # Generic Monster Pending
         row(6, 1427, 22, 0),  # Infinite Cards implemented, outside the scope
@@ -52,7 +52,8 @@ class CardPlayabilityTests(unittest.TestCase):
             self.assertEqual(self.manifest[card]["status"], "Done")
             self.assertEqual(self.callbacks[card], callback)
         self.assertEqual(self.manifest[332]["subtype"], "Field")
-        self.assertEqual(self.manifest[300]["status"], "Partial")
+        self.assertEqual(self.manifest[300]["status"], "Done")
+        self.assertEqual(self.manifest[656]["status"], "Partial")
         self.assertEqual(self.manifest[1427]["status"], "Done")
         self.assertEqual(self.callbacks[332], "P036")
 
@@ -75,7 +76,7 @@ class CardPlayabilityTests(unittest.TestCase):
         self.assertEqual(union["byKind"]["Monster"]["completePct"], 0.0)
         self.assertEqual(union["genericMonsterBasics"], 1)
         self.assertEqual(union["unclassifiedSubtypes"], 2)
-        self.assertEqual(next(r for r in rows if r["resourceId"] == 300)["callbackProfile"], "P025")
+        self.assertEqual(next(r for r in rows if r["resourceId"] == 656)["callbackProfile"], "P025")
         self.assertTrue(next(r for r in rows if r["resourceId"] == 3999)["basicMonsterMechanics"])
         self.assertNotIn("1427", [str(r["resourceId"]) for r in rows if r["packMask"] & 7])
 

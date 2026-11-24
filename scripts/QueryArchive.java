@@ -163,10 +163,15 @@ public class QueryArchive extends GhidraScript {
         int count=0;
         for(Function f:selected) {
             if(count++>=12)break;
+            DecompileResults result=decomp.decompileFunction(f,30,monitor);
+            DecompiledFunction body=result.decompileCompleted()?result.getDecompiledFunction():null;
+            if(body==null || body.getC()==null || body.getC().isBlank()) {
+                out.println("DECOMPILE_FAILED "+f.getEntryPoint()+" "+result.getErrorMessage());
+                continue;
+            }
             out.println("FUNCTION "+f.getName()+" @"+f.getEntryPoint());
             for(Reference ref:getReferencesTo(f.getEntryPoint()))out.println(" CALLER "+ref.getFromAddress()+" "+getFunctionContaining(ref.getFromAddress()));
-            DecompileResults result=decomp.decompileFunction(f,30,monitor);
-            out.println(result.decompileCompleted()?result.getDecompiledFunction().getC():result.getErrorMessage());
+            out.println(body.getC());
         }
         decomp.dispose();out.close();
         } finally {

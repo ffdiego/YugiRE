@@ -9,7 +9,7 @@ public sealed partial class DemoDuel
     /// Existing App/CPU entrypoints remain legacy; do not mix their decisions
     /// with admitted queue work. Direct array writes are fixture-only.
     /// </summary>
-    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null)
+    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false)
     {
         if (primitiveActionQueue is not null)
             throw new InvalidOperationException("A duel already owns an action queue.");
@@ -19,7 +19,7 @@ public sealed partial class DemoDuel
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
-                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0);
+                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0, allowLabEdits);
     }
 
     /// <summary>
@@ -75,9 +75,31 @@ public sealed partial class DemoDuel
         return targets.Count != 0;
     }
 
+    /// <summary>Dispatch to the single C12 producer for each supported activation family.</summary>
+    public bool TryQueueActivation(int index, bool fromSet, out string message,
+        ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "Choose a legal, migrated spell activation.";
+        if (primitiveActionQueue is not { IsBusy: false } || ActionsBlocked || Phase != DemoPhase.Main)
+            return false;
+        DuelZone zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+        if (!TryCaptureCardTarget(ActivePlayer, zone, index, out var source) ||
+            !TryResolveCardTarget(source, out _, out var card) || card.ClassCode != 22)
+            return false;
+        if (DrawSpellRules.Effect(card) is not null)
+            return TryQueueDrawSpell(zone, index, out message, origin);
+        if (LifePointSpellRules.Supports(card.Id))
+            return TryQueueLifePointSpell(zone, index, out message, origin);
+        if (MonsterWipeRules.Scope(card.Id) is not null)
+            return TryQueueMonsterWipe(zone, index, out message, origin);
+        if (SpellTrapWipeRules.Supports(card.Id))
+            return TryQueueSpellTrapWipe(zone, index, out message, origin);
+        return false;
+    }
+
     /// <summary>Opt-in normal Summon or monster Set; all costs validated before admission.</summary>
     public bool TryQueueNormalPlacement(int index, int zone, bool faceDown, out string message,
-        IReadOnlyList<int>? tributeZones = null)
+        IReadOnlyList<int>? tributeZones = null, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a legal Normal Summon/Set and distinct tracked tributes.";
         if (primitiveActionQueue is not { IsBusy: false } queue || !CanSummonFromHand(index) ||
@@ -95,27 +117,27 @@ public sealed partial class DemoDuel
             targets.Add(target);
         }
         queue.Enqueue(new PrepareNormalPlacementCommand(side, source, zone, faceDown,
-            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null), ActionOrigin.Player);
+            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null), origin);
         message = "Normal placement admitted.";
         return true;
     }
 
     /// <summary>Opt-in Set of a non-monster in its usual leftmost/dedicated zone.</summary>
-    public bool TryQueueSpellTrapSet(int index, out string message)
+    public bool TryQueueSpellTrapSet(int index, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a legal Spell/Trap Set and an idle queue.";
         if (primitiveActionQueue is not { IsBusy: false } queue || !CanSetFromHand(index) ||
             Hand[index].IsMonster || !TryCaptureCardTarget(ActivePlayer, DuelZone.Hand, index, out var source)) return false;
         bool field = FieldSpellRules.Supports(Hand[index].Id);
         queue.Enqueue(new SetCommand(ActivePlayer, source, field ? DuelZone.FieldSpell : DuelZone.SpellTrap,
-            field ? 0 : FirstFreeSpellZone()), ActionOrigin.Player);
+            field ? 0 : FirstFreeSpellZone()), origin);
         message = "Set admitted.";
         return true;
     }
 
     /// <summary>Opt-in manual position change or Flip Summon. Battle and
     /// effect-driven reveals are distinct legacy paths, not this command.</summary>
-    public bool TryQueueChangePosition(int zone, out string message)
+    public bool TryQueueChangePosition(int zone, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a legal position change supported by the queue pilot.";
         if (primitiveActionQueue is not { IsBusy: false } queue || !CanChangePosition(zone) ||
@@ -124,7 +146,7 @@ public sealed partial class DemoDuel
         if (MonsterFaceDown[side, zone] && !CanQueueFlip(Monsters[side, zone]!)) return false;
         DuelCommand command = MonsterFaceDown[side, zone] ? new FlipCommand(side, target)
             : new ChangePositionCommand(side, target, !DefensePosition[side, zone]);
-        queue.Enqueue(command, ActionOrigin.Player);
+        queue.Enqueue(command, origin);
         message = "Position change admitted.";
         return true;
     }
@@ -138,7 +160,9 @@ public sealed partial class DemoDuel
         DemoFlipEffect.RecoverFromGraveyard or DemoFlipEffect.OptionalDrawOne or
         DemoFlipEffect.DestroyTwoSetSpellTraps or DemoFlipEffect.ReturnTwoSpellTraps or
         DemoFlipEffect.RecruitSameNameFaceDown or DemoFlipEffect.MillOpponentDeck or
-        DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour;
+        DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour or
+        DemoFlipEffect.BanishThreeDeckBurn800 or DemoFlipEffect.BanishTwoRandomHandBurn800 or
+        DemoFlipEffect.ShuffleAndExcavate;
 
     // Snapshot linked consequences before the producer admits any removals.
     // Each is a normal typed command, in the legacy per-removal order.
@@ -204,6 +228,30 @@ public sealed partial class DemoDuel
             public int Discarded { get; set; }
         }
         private FlipDeckFlow? flipDeckFlow;
+        private sealed class FlipBanishBatch(ushort effect, int owner, FlipBanishCostSource source, int required, IEnumerable<CardTarget> expected)
+        {
+            public ushort Effect { get; } = effect;
+            public int Owner { get; } = owner;
+            public FlipBanishCostSource Source { get; } = source;
+            public int Required { get; } = required;
+            public Queue<CardTarget> Expected { get; } = new(expected);
+            public List<Card> Removed { get; } = [];
+            public bool DamageApplied { get; set; }
+        }
+        private FlipBanishBatch? flipBanish;
+        private sealed class Jar2Batch(DemoMonsterPositionChange change)
+        {
+            public DemoMonsterPositionChange Change { get; } = change;
+            public Dictionary<CardTarget, DuelCommand[]> Returns { get; } = new();
+            public int[] Returned { get; } = [0, 0];
+            public int[] Found { get; } = [0, 0];
+            public int[] Summoned { get; } = [0, 0];
+            public int[] Sent { get; } = [0, 0];
+        }
+        private Jar2Batch? jar2;
+        private PrepareGraveyardBanishSummonCommand? banishSummon;
+        private readonly Queue<CardTarget> banishSummonCosts = new();
+        private int banishSummonPaid;
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
@@ -216,6 +264,8 @@ public sealed partial class DemoDuel
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is FinishGraveyardBanishSummonCommand finishBanishSummon)
+                return FinishGraveyardBanishSummon(finishBanishSummon.Side);
             if (command is ResolveSameNameRecruitmentCommand sameName)
                 return ResolveSameNameRecruitment(sameName, followups);
             if (command is ResolveDeckRecruitmentCommand recruit)
@@ -234,6 +284,9 @@ public sealed partial class DemoDuel
                 return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
+            // Only a reserved battle snapshot may finish after lethal LP.
+            if (command is FinishBattleRemovalCommand battleFinish)
+                return duel.FinishQueuedBattleRemoval(battleFinish);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
             if (command is FinishNormalPlacementCommand finish)
@@ -255,6 +308,16 @@ public sealed partial class DemoDuel
 
             switch (command)
             {
+                case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
+                case LabMoveCommand move: return duel.ExecuteLabMove(move);
+                case DeclareDirectAttackCommand attack:
+                    return duel.ExecuteQueuedDirectAttack(attack, followups);
+                case DeclareTargetedAttackCommand attack:
+                    return duel.ExecuteQueuedTargetedAttack(attack, followups);
+                case SnapshotBattleRemovalCommand snapshot:
+                    return duel.SnapshotQueuedBattleRemoval(snapshot);
+                case ChangeBattlePhaseCommand phase:
+                    return duel.ExecuteQueuedBattlePhaseChange(phase);
                 case DrawCommand draw:
                     if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
                         return DrawForShadowScout(flow);
@@ -267,6 +330,9 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case DamageCommand damage:
                     duel.ChangeLife(damage.Side, -damage.Amount);
+                    if (flipBanish is { } paid && paid.Removed.Count == paid.Required &&
+                        damage.Side == 1 - paid.Owner && damage.Amount == FlipBanishBurnRules.BurnDamage)
+                        paid.DamageApplied = true;
                     return new(CommandOutcome.Applied);
                 case HealCommand heal:
                     duel.ChangeLife(heal.Side, heal.Amount);
@@ -307,6 +373,10 @@ public sealed partial class DemoDuel
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
+                case PrepareGraveyardBanishSummonCommand prepareBanish:
+                    return PrepareGraveyardBanishSummon(prepareBanish, followups);
+                case BanishCommand banish:
+                    return BanishFromSource(banish.Target);
                 case DiscardCommand discard:
                     var discarded = SendHandToGraveyard(discard.Target, discard: true);
                     if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
@@ -318,6 +388,8 @@ public sealed partial class DemoDuel
                     return MoveSelectedCardToHand(move.Source);
                 case ShuffleDeckCommand shuffle:
                     return ShuffleDeck(shuffle.Side);
+                case ReturnToDeckCommand returnDeck:
+                    return ReturnMonsterToDeck(returnDeck.Target);
                 case ReturnToHandCommand bounce:
                     return bounce.Target.Zone == DuelZone.Monster ? ReturnQueuedMonster(bounce.Target, followups) : ReturnQueuedSpellTrap(bounce.Target);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -561,12 +633,14 @@ public sealed partial class DemoDuel
             }
             // Direct, unprepared commands may only place level 1–4 monsters.
             // A response/choice is opened on a later pass, after the summon gate.
+            var observation = new PlacementObservation(source, card.Id, index, DuelZone.Monster,
+                slot, faceDown, faceDown, paidTributes.Count);
             duel.CommitNormalPlacement(index, source.Side, slot, faceDown);
             placement = null;
             paidTributes.Clear();
             var target = source with { Zone = DuelZone.Monster };
             followups.ScheduleContinuation(_ => new([new FinishNormalPlacementCommand(source.Side, target, faceDown)]));
-            return new(CommandOutcome.Applied);
+            return new(CommandOutcome.Applied) { Placement = observation };
         }
 
         private CommandResult FinishPlacement(FinishNormalPlacementCommand finish)
@@ -602,7 +676,8 @@ public sealed partial class DemoDuel
                 duel.spellSetTurn[set.Side, set.Slot] = duel.Turn;
             }
             duel.hands[set.Side].RemoveAt(index);
-            return new(CommandOutcome.Applied);
+            return new(CommandOutcome.Applied) { Placement = new(set.Source, card.Id, index,
+                set.Destination, set.Slot, true, false, 0) };
         }
 
         private CommandResult MovePosition(CardTarget target, bool flip, bool? defense, IActionCommandSink followups)
@@ -632,6 +707,32 @@ public sealed partial class DemoDuel
                 for (int i = 0; i < Math.Min(requested, duel.decks[1 - side].Count); i++)
                     if (!duel.TryCaptureCardTarget(1 - side, DuelZone.Deck, i, out _))
                         return new(CommandOutcome.Rejected, "Untracked deck-flow occurrence.");
+            }
+
+            if (flip && !duel.FlipEffectsNegated && FlipBanishBurnRules.Cost(card.Id) is { } cost)
+            {
+                DuelZone zone = cost == FlipBanishCostSource.Deck ? DuelZone.Deck : DuelZone.Hand;
+                int available = zone == DuelZone.Deck ? duel.decks[side].Count : duel.hands[side].Count;
+                int required = FlipBanishBurnRules.RequiredCount(card.Id);
+                if (available >= required)
+                    for (int i = 0; i < (zone == DuelZone.Deck ? required : available); i++)
+                        if (!duel.TryCaptureCardTarget(side, zone, i, out _))
+                            return new(CommandOutcome.Rejected, "Untracked banishment cost occurrence.");
+            }
+
+            if (flip && !duel.FlipEffectsNegated && card.Id == FlipEffectRules.MorphingJar2)
+            {
+                for (int p = 0; p < 2; p++)
+                {
+                    for (int z = 0; z < 5; z++)
+                        if (duel.Monsters[p,z] is not null && !duel.IsMarkedForBattleDestruction(p,z) &&
+                            (!duel.TryCaptureCardTarget(p,DuelZone.Monster,z,out _) ||
+                             !duel.TryPlanRemovalLinks(p,z,out _,toGraveyard:false)))
+                            return new(CommandOutcome.Rejected,"Untracked Jar #2 return.");
+                    for (int i = 0; i < duel.decks[p].Count; i++)
+                        if (!duel.TryCaptureCardTarget(p,DuelZone.Deck,i,out _))
+                            return new(CommandOutcome.Rejected,"Untracked Jar #2 deck.");
+                }
             }
 
             var change = duel.CommitManualPosition(side, slot);
@@ -679,6 +780,10 @@ public sealed partial class DemoDuel
                 return ResolveFlipDeckFlow(position, card, followups);
             if (card.Id == FlipEffectRules.FourStarredLadybugOfDoom)
                 return ResolveLadybug(position, followups);
+            if (card.Id == FlipEffectRules.MorphingJar2)
+                return ResolveJar2(position, change, followups);
+            if (FlipBanishBurnRules.Cost(card.Id) is not null)
+                return ResolveFlipBanish(position, card, followups);
             if (card.Id == FlipEffectRules.MorphingJar)
             {
                 if (followups is not ActionQueue { PendingCount: 0 } queue)
@@ -716,6 +821,183 @@ public sealed partial class DemoDuel
             // execute its answer here. A06/C12 migrate the response path.
             duel.FinishManualPosition(change, resolveFlip: true, out var detail);
             return new(CommandOutcome.Applied, detail);
+        }
+
+        private CommandResult ResolveJar2(ResolvePositionCommand position, DemoMonsterPositionChange change, IActionCommandSink followups)
+        {
+            if (jar2 is not null || resolvingFlipBatch || wipe is not null || finishScheduled ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Morphing Jar #2 requires isolated resolution.");
+            var batch = new Jar2Batch(change);
+            List<DuelCommand>[] returns = [[], []];
+            for (int p = 0; p < 2; p++)
+            for (int z = 0; z < 5; z++)
+            {
+                if (duel.Monsters[p,z] is null || duel.IsMarkedForBattleDestruction(p,z)) continue;
+                if (!duel.TryCaptureCardTarget(p,DuelZone.Monster,z,out var target) ||
+                    !duel.TryPlanRemovalLinks(p,z,out var links,toGraveyard:false))
+                    return new(CommandOutcome.Rejected, "Untracked Jar #2 target or equipment.");
+                batch.Returns.Add(target, links);
+                returns[p].Add(new ReturnToDeckCommand(p,target));
+                returns[p].AddRange(links);
+            }
+            jar2 = batch;
+            resolvingFlipBatch = true;
+            duel.LastMorphingJar2 = [];
+            queue.EnqueueBatch(returns[0]);
+            // Same order as the legacy sandbox: return side 0, shuffle if
+            // needed, return side 1, shuffle if needed, then excavate.
+            queue.ScheduleContinuation(_ => new(
+                batch.Returned[0] > 0 ? [new ShuffleDeckCommand(0), .. returns[1]] : returns[1],
+                _ => new(batch.Returned[1] > 0 ? [new ShuffleDeckCommand(1)] : [],
+                    _ => PlanJar2Excavation(batch, position))));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ReturnMonsterToDeck(CardTarget target)
+        {
+            if (jar2 is not { } batch || !batch.Returns.TryGetValue(target,out var expected))
+                return new(CommandOutcome.Rejected, "Only reserved Morphing Jar #2 return is migrated.");
+            if (!duel.TryResolveCardTarget(target,out int slot,out var card) ||
+                duel.IsMarkedForBattleDestruction(target.Side,slot) ||
+                !duel.TryPlanRemovalLinks(target.Side,slot,out var links,toGraveyard:false) ||
+                !links.SequenceEqual(expected))
+                throw new InvalidOperationException("Reserved Jar #2 return or equipment changed.");
+            batch.Returns.Remove(target);
+            duel.ClearMonsterSlot(target.Side,slot,removeEquipment:false);
+            if (FusionRules.IsFusionMonster(card)) duel.fusionDecks[target.Side].Add(card);
+            else
+            {
+                duel.decks[target.Side].Enqueue(card);
+                batch.Returned[target.Side]++;
+            }
+            return new(CommandOutcome.Applied);
+        }
+
+        private static bool Jar2CanSummon(Card card) =>
+            card.IsMonster && card.Level is >= 1 and <= 4 && !NormalSummonRules.RequiresSpecialSummon(card);
+
+        private ActionContinuationStep PlanJar2Excavation(Jar2Batch batch, ResolvePositionCommand position)
+        {
+            // Pure plan over the shuffled snapshots. Count every monster,
+            // even those that cannot be placed. No drawing or temporary hand.
+            var commands = new List<DuelCommand>();
+            for (int p = 0; p < 2; p++)
+            {
+                int found = 0;
+                var free = new Queue<int>(Enumerable.Range(0,5).Where(z => duel.Monsters[p,z] is null));
+                var deck = duel.decks[p].ToArray();
+                for (int i = 0; i < deck.Length && found < batch.Returned[p]; i++)
+                {
+                    Card card = deck[i];
+                    if (!duel.TryCaptureCardTarget(p,DuelZone.Deck,i,out var target))
+                        throw new InvalidOperationException("Untracked Jar #2 excavation occurrence.");
+                    if (card.IsMonster) found++;
+                    if (Jar2CanSummon(card) && free.TryDequeue(out int slot))
+                        commands.Add(new SpecialSummonCommand(p,target,slot,true));
+                    else commands.Add(new SendToGraveyardCommand(p,target));
+                }
+            }
+            commands.Add(new FinishFlipBatchCommand(position.Side,position.Target,position.WasInDefense,false,false));
+            return new(commands);
+        }
+
+        private CommandResult ResolveFlipBanish(ResolvePositionCommand position, Card card, IActionCommandSink followups)
+        {
+            if (resolvingFlipBatch || followups is not ActionQueue { PendingCount: 0 } queue ||
+                FlipBanishBurnRules.Cost(card.Id) is not { } cost)
+                return new(CommandOutcome.Rejected, "Banish burn requires isolated resolution.");
+            int side = position.Side, required = FlipBanishBurnRules.RequiredCount(card.Id);
+            DuelZone zone = cost == FlipBanishCostSource.Deck ? DuelZone.Deck : DuelZone.Hand;
+            int available = zone == DuelZone.Deck ? duel.decks[side].Count : duel.hands[side].Count;
+            var picks = new List<CardTarget>();
+            if (available >= required)
+            {
+                // Capture before sampling. The seeded RNG is shared with the
+                // existing legacy helper and is never consumed on shortfall.
+                int count = zone == DuelZone.Deck ? required : available;
+                var candidates = new CardTarget[count];
+                for (int i = 0; i < count; i++)
+                    if (!duel.TryCaptureCardTarget(side, zone, i, out candidates[i]))
+                        return new(CommandOutcome.Rejected, "Untracked banishment cost occurrence.");
+                if (zone == DuelZone.Deck) picks.AddRange(candidates);
+                else foreach (int i in FlipBanishBurnRules.SampleHandIndices(available, required, duel.effectRandom))
+                    picks.Add(candidates[i]);
+            }
+            flipBanish = new(card.Id, side, cost, required, picks);
+            resolvingFlipBatch = true;
+            queue.EnqueueBatch(picks.Select(t => new BanishCommand(side, t)));
+            queue.ScheduleContinuation(_ =>
+            {
+                var finish = new FinishFlipBatchCommand(side, position.Target, position.WasInDefense, false, false);
+                // Damage is admitted only once every required occurrence has
+                // actually been banished and its presentation has completed.
+                return new(flipBanish!.Removed.Count == required
+                    ? [new DamageCommand(1 - side, FlipBanishBurnRules.BurnDamage), finish]
+                    : [finish]);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult PrepareGraveyardBanishSummon(PrepareGraveyardBanishSummonCommand prepare, IActionCommandSink followups)
+        {
+            var cost = new CardTarget?[] { prepare.First, prepare.Second, prepare.Third }.OfType<CardTarget>().ToArray();
+            if (banishSummon is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanGraveyardBanishSummon(prepare.Source, prepare.Slot, cost))
+                return new(CommandOutcome.Rejected, "Inherent summon source, cost or destination changed.");
+            banishSummon = prepare;
+            banishSummonCosts.Clear();
+            foreach (var target in cost) banishSummonCosts.Enqueue(target);
+            banishSummonPaid = 0;
+            queue.EnqueueBatch(cost.Select(t => new BanishCommand(prepare.Side,t)));
+            queue.ScheduleContinuation(_ =>
+            {
+                var finish = new FinishGraveyardBanishSummonCommand(prepare.Side);
+                return new(banishSummonPaid == cost.Length
+                    ? [new SpecialSummonCommand(prepare.Side,prepare.Source,prepare.Slot,false,prepare.Defense), finish]
+                    : [finish]);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult FinishGraveyardBanishSummon(int side)
+        {
+            if (banishSummon is not { } current || current.Side != side)
+                return new(CommandOutcome.Rejected, "No reserved inherent summon.");
+            banishSummon = null;
+            banishSummonCosts.Clear();
+            banishSummonPaid = 0;
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult BanishFromSource(CardTarget target)
+        {
+            if (!duel.TryResolveCardTarget(target, out int index, out var card))
+                return new(CommandOutcome.Skipped, "Banishment occurrence gone.");
+            if (target.Zone == DuelZone.Deck && index != 0)
+                return new(CommandOutcome.Skipped, "Only the current top occurrence may be banished from Deck.");
+            if (target.Zone is not (DuelZone.Deck or DuelZone.Hand or DuelZone.Graveyard))
+                return new(CommandOutcome.Rejected, "Unsupported banishment zone.");
+            if (flipBanish is { } batch && (!batch.Expected.TryPeek(out var expected) || expected != target))
+                return new(CommandOutcome.Rejected, "Unexpected reserved banishment occurrence.");
+            if (banishSummon is not null && (!banishSummonCosts.TryPeek(out var expectedCost) || expectedCost != target))
+                return new(CommandOutcome.Rejected, "Unexpected inherent summon cost occurrence.");
+            if (target.Zone == DuelZone.Deck) duel.decks[target.Side].Dequeue();
+            else if (target.Zone == DuelZone.Graveyard) duel.graves[target.Side].RemoveAt(index);
+            else duel.hands[target.Side].RemoveAt(index);
+            duel.banished[target.Side].Add(card);
+            if (flipBanish is { } current)
+            {
+                current.Expected.Dequeue();
+                current.Removed.Add(card);
+            }
+            if (banishSummon is not null)
+            {
+                banishSummonCosts.Dequeue();
+                banishSummonPaid++;
+            }
+            // Neither discard, draw nor GY arrival: no corresponding event.
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ResolveLadybug(ResolvePositionCommand position, IActionCommandSink followups)
@@ -835,11 +1117,20 @@ public sealed partial class DemoDuel
             // This primitive deliberately sends only the top occurrence.
             // Arbitrary Deck search-to-GY remains a separate producer.
             if (!duel.TryCaptureCardTarget(target.Side, DuelZone.Deck, 0, out var top) || top != target)
+            {
+                if (jar2 is not null) throw new InvalidOperationException("Reserved Jar #2 excavation occurrence changed.");
                 return new(CommandOutcome.Skipped, "Expected deck top occurrence gone.");
+            }
             if (flipDeckFlow is { IsMill: true } mill &&
                 (!mill.Expected.TryDequeue(out var expected) || expected != target))
                 return new(CommandOutcome.Rejected, "Unexpected reserved mill occurrence.");
-            duel.graves[target.Side].Add(duel.decks[target.Side].Dequeue());
+            Card sent = duel.decks[target.Side].Dequeue();
+            duel.graves[target.Side].Add(sent);
+            if (jar2 is { } excavation)
+            {
+                excavation.Sent[target.Side]++;
+                if (sent.IsMonster) excavation.Found[target.Side]++;
+            }
             if (flipDeckFlow is { IsMill: true } current && current.Side == target.Side) current.Moved++;
             return new(CommandOutcome.Applied);
         }
@@ -859,6 +1150,23 @@ public sealed partial class DemoDuel
             if (!resolvingFlipBatch) return new(CommandOutcome.Rejected, "No pending FLIP batch.");
             resolvingJar = false;
             resolvingFlipBatch = false;
+            if (jar2 is { } excavation)
+            {
+                jar2 = null;
+                duel.LastMorphingJar2 = Array.AsReadOnly(Enumerable.Range(0,2).Select(p => new DemoExcavationResult(
+                    p,excavation.Returned[p],excavation.Summoned[p]+excavation.Sent[p],excavation.Found[p],
+                    excavation.Summoned[p],excavation.Sent[p],excavation.Found[p]<excavation.Returned[p])).ToArray());
+                // The original FLIP source may now be in another zone or
+                // face-down again. Preserve the original position event.
+                duel.FinishManualPosition(excavation.Change,resolveFlip:false,out var jar2Detail);
+                return new(CommandOutcome.Applied,jar2Detail);
+            }
+            if (flipBanish is { } burn)
+            {
+                flipBanish = null;
+                duel.LastFlipBanishBurn = new(burn.Effect, burn.Owner, burn.Source, burn.Required,
+                    Array.AsReadOnly(burn.Removed.ToArray()), burn.DamageApplied ? FlipBanishBurnRules.BurnDamage : 0, burn.DamageApplied);
+            }
             if (flipDeckFlow is { } flow)
             {
                 flipDeckFlow = null;
@@ -954,10 +1262,24 @@ public sealed partial class DemoDuel
         private CommandResult SpecialSummonFromSource(SpecialSummonCommand summon)
         {
             if (!duel.TryResolveCardTarget(summon.Source, out int index, out var card))
+            {
+                if (jar2 is not null) throw new InvalidOperationException("Reserved Jar #2 summon occurrence changed.");
                 return new(CommandOutcome.Skipped, "Special Summon source occurrence gone.");
+            }
+            if (jar2 is not null && (summon.Source.Zone != DuelZone.Deck || index != 0 ||
+                !Jar2CanSummon(card) || !summon.FaceDownDefense || duel.Monsters[summon.Side,summon.Slot] is not null))
+                throw new InvalidOperationException("Reserved Jar #2 summon conditions changed.");
             if (!card.IsMonster || duel.Monsters[summon.Side, summon.Slot] is not null)
                 return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
-            if (summon.Source.Zone == DuelZone.Graveyard)
+            if (summon.Source.Zone == DuelZone.Hand)
+            {
+                if (banishSummon is not { } paidSummon || paidSummon.Source != summon.Source ||
+                    paidSummon.Slot != summon.Slot || paidSummon.Defense != summon.FaceUpDefense || summon.FaceDownDefense ||
+                    banishSummonPaid != GraveyardBanishSummonRules.QueuedRequiredCount(card) || banishSummonCosts.Count != 0)
+                    return new(CommandOutcome.Rejected, "Hand Special Summon requires the reserved fully paid procedure.");
+                duel.hands[summon.Side].RemoveAt(index);
+            }
+            else if (summon.Source.Zone == DuelZone.Graveyard)
                 duel.graves[summon.Side].RemoveAt(index);
             else if (summon.Source.Zone == DuelZone.Deck)
             {
@@ -968,7 +1290,12 @@ public sealed partial class DemoDuel
             else return new(CommandOutcome.Rejected, "Unsupported Special Summon source.");
 
             // Position is supplied by the admitted effect. No generic summon response is introduced here.
-            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, summon.FaceDownDefense);
+            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, summon.FaceDownDefense, summon.FaceUpDefense);
+            if (jar2 is { } excavation)
+            {
+                excavation.Found[summon.Side]++;
+                excavation.Summoned[summon.Side]++;
+            }
             if (reservedDeckSearch.Contains(summon.Source)) deckSearchMoved = true;
             return new(CommandOutcome.Applied);
         }
