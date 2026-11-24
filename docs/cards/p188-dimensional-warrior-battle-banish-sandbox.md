@@ -50,7 +50,8 @@ vs banish, suppression-independent effect, Sangan, Giant Germ,
 Spear Cretin and Immortal Thunder negative Graveyard triggers,
 direct attack, ordinary combat and Mirror Force cancellation.
 
-Status initially **Partial** until .NET CI. Passing CI certifies
+Status **Done no sandbox** após build .NET 10 e **3.340 verificações C#**
+aprovadas no PR #60, incluindo 15 casos de P188. Passing CI certifies
 only this bounded sandbox behavior. **Verified** still requires
 an observed original-executable duel and suitable Ghidra
 callback/dispatch analysis.

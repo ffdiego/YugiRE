@@ -1308,7 +1308,7 @@
       "resourceIds": [
         255
       ],
-      "status": "Partial",
+      "status": "Done",
       "mechanics": [
         "Dimensional Warrior (255): when it battles a monster, apply normal damage calculation first, then banish both physical combatant occurrences",
         "Shared banished zone with Fusion Gate and P051/P052; no sending battlers to Graveyard",
@@ -1327,7 +1327,7 @@
         "Native P188 primary callback 0058CC00 is catalogued in the SQLite but not decompiled; timing and any suppression/negation rules require native evidence.",
         "Historical 2004 Joey card text says both are removed from play on attacking/being attacked; later rulings indicate after damage calculation; sandbox chooses the latter ordering.",
         "Only direct monster-versus-monster battle with both original combatants still present is modeled; chains, unrelated replacement of slots mid-resolution, return-from-banish, owner/controller divergence and exact timing not native-verified.",
-        "Build and synthetic C# checks initially pending."
+        "Full .NET 10 solution built and 3,340 synthetic checks passed (15 P188 cases) in PR #60; no native original parity verified."
       ]
     }
   ]

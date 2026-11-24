@@ -2,18 +2,18 @@
 
 Métrica de cartas jogáveis no sandbox C#, não paridade com o executável original.
 
-- **Trilogia:** 380/771 = 49.29%
-- **Joey:** 117/350 = 33.43%
+- **Trilogia:** 381/771 = 49.42%
+- **Joey:** 118/350 = 33.71%
 - **Partial:** 8; **Verified:** 0 (trilogia).
 
 ## Por categoria
 
 | Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Trilogia | Monster | 499 | 342 | 3 | 154 | 0 | 68.54% |
+| Trilogia | Monster | 499 | 343 | 3 | 153 | 0 | 68.74% |
 | Trilogia | Spell | 172 | 33 | 4 | 135 | 0 | 19.19% |
 | Trilogia | Trap | 100 | 5 | 1 | 94 | 0 | 5.00% |
-| Joey | Monster | 194 | 103 | 2 | 89 | 0 | 53.09% |
+| Joey | Monster | 194 | 104 | 2 | 88 | 0 | 53.61% |
 | Joey | Spell | 84 | 12 | 1 | 71 | 0 | 14.29% |
 | Joey | Trap | 72 | 2 | 1 | 69 | 0 | 2.78% |
 
