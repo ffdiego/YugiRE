@@ -492,16 +492,29 @@ public sealed partial class DemoDuel
         try
         {
             foreach (int tribute in tributes) RemoveMonster(player, tribute, isTribute: true);
-            Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
+            CommitNormalPlacement(index, player, zone, faceDown);
         }
         finally { resolvingSummon = false; }
+        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
+        FinishNormalPlacement(player, zone, faceDown, ref message);
+        return true;
+    }
+
+    private void CommitNormalPlacement(int index, int player, int zone, bool faceDown)
+    {
+        Monsters[player, zone] = hands[player][index];
+        hands[player].RemoveAt(index);
+        summoned = true;
         DefensePosition[player, zone] = faceDown;
         MonsterFaceDown[player, zone] = faceDown;
         MonsterWasFlipped[player, zone] = false;
         MonsterNormalSummoned?.Invoke(new(player, zone, Monsters[player, zone]!, faceDown));
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
-        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
+    }
+
+    private void FinishNormalPlacement(int player, int zone, bool faceDown, ref string message)
+    {
         if (!faceDown)
         {
             // Normal Summon response takes precedence over the optional P165
@@ -518,7 +531,6 @@ public sealed partial class DemoDuel
                 message += " Resolve the pending card search.";
         }
         else BeginNextQueuedDeckSearch();
-        return true;
     }
     public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
     public bool CanBeginBattle => !ActionsBlocked && Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn;

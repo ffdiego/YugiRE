@@ -26,6 +26,10 @@ public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Def
 // Neither of these stages claims a one-to-one native opcode mapping.
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
+internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
+    CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
+internal sealed record TributeCommand(int Side, CardTarget Target) : DuelCommand(Side);
+internal sealed record FinishNormalPlacementCommand(int Side, CardTarget Target, bool FaceDown) : DuelCommand(Side);
 
 internal static class DuelCommandValidation
 {
@@ -41,6 +45,17 @@ internal static class DuelCommandValidation
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand);
+                break;
+            case PrepareNormalPlacementCommand prepare when prepare.Slot is >= 0 and < 5:
+                Target(prepare.Source, prepare.Side, DuelZone.Hand);
+                if (prepare.FirstTribute is { } first) Target(first, prepare.Side, DuelZone.Monster);
+                if (prepare.SecondTribute is { } second) Target(second, prepare.Side, DuelZone.Monster);
+                break;
+            case TributeCommand tribute:
+                Target(tribute.Target, tribute.Side, DuelZone.Monster);
+                break;
+            case FinishNormalPlacementCommand finish:
+                Target(finish.Target, finish.Side, DuelZone.Monster);
                 break;
             case DamageCommand damage when damage.Amount > 0:
             case HealCommand { Amount: > 0 }:

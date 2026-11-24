@@ -41,6 +41,44 @@ public sealed partial class DemoDuel
         return true;
     }
 
+    /// <summary>Opt-in normal Summon or monster Set; all costs validated before admission.</summary>
+    public bool TryQueueNormalPlacement(int index, int zone, bool faceDown, out string message,
+        IReadOnlyList<int>? tributeZones = null)
+    {
+        message = "Choose a legal Normal Summon/Set and distinct tracked tributes.";
+        if (primitiveActionQueue is not { IsBusy: false } queue || !CanSummonFromHand(index) ||
+            !TryCaptureCardTarget(ActivePlayer, DuelZone.Hand, index, out var source)) return false;
+        int side = ActivePlayer;
+        int[] slots = tributeZones?.ToArray() ?? [];
+        if (zone is < 0 or >= 5 || slots.Length != NormalTributes(Hand[index]) ||
+            slots.Distinct().Count() != slots.Length ||
+            (Monsters[side, zone] is not null && !slots.Contains(zone))) return false;
+        var targets = new List<CardTarget>();
+        foreach (int slot in slots)
+        {
+            if (slot is < 0 or >= 5 || !CanQueueMonsterRemoval(side, slot) ||
+                !TryCaptureCardTarget(side, DuelZone.Monster, slot, out var target)) return false;
+            targets.Add(target);
+        }
+        queue.Enqueue(new PrepareNormalPlacementCommand(side, source, zone, faceDown,
+            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null), ActionOrigin.Player);
+        message = "Normal placement admitted.";
+        return true;
+    }
+
+    /// <summary>Opt-in Set of a non-monster in its usual leftmost/dedicated zone.</summary>
+    public bool TryQueueSpellTrapSet(int index, out string message)
+    {
+        message = "Choose a legal Spell/Trap Set and an idle queue.";
+        if (primitiveActionQueue is not { IsBusy: false } queue || !CanSetFromHand(index) ||
+            Hand[index].IsMonster || !TryCaptureCardTarget(ActivePlayer, DuelZone.Hand, index, out var source)) return false;
+        bool field = FieldSpellRules.Supports(Hand[index].Id);
+        queue.Enqueue(new SetCommand(ActivePlayer, source, field ? DuelZone.FieldSpell : DuelZone.SpellTrap,
+            field ? 0 : FirstFreeSpellZone()), ActionOrigin.Player);
+        message = "Set admitted.";
+        return true;
+    }
+
     // The legacy removal helper can also mutate LP or remove attached equips.
     // Explicitly refuse those cases until those effects have their own commands.
     // Graveyard choices are deferred and handed off after all removals finish.
@@ -61,6 +99,8 @@ public sealed partial class DemoDuel
 
         private Wipe? wipe;
         private bool finishScheduled;
+        private PrepareNormalPlacementCommand? placement;
+        private readonly HashSet<CardTarget> paidTributes = [];
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
@@ -68,6 +108,8 @@ public sealed partial class DemoDuel
             // The executor itself must use only the legacy rule blockers.
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
+            if (command is FinishNormalPlacementCommand finish)
+                return FinishPlacement(finish);
             if (duel.LegacyActionsBlocked)
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
@@ -89,6 +131,16 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case ActivateRaigekiCommand activate:
                     return ActivateRaigeki(activate, followups);
+                case PrepareNormalPlacementCommand prepare:
+                    return PreparePlacement(prepare, followups);
+                case TributeCommand tribute:
+                    return PayTribute(tribute);
+                case SummonCommand summon:
+                    return PlaceMonster(summon.Source, summon.Slot, false, followups);
+                case SetCommand set when set.Destination == DuelZone.Monster:
+                    return PlaceMonster(set.Source, set.Slot, true, followups);
+                case SetCommand set:
+                    return SetSpellTrap(set);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return SendHandToGraveyard(send.Target, discard: false);
                 case DiscardCommand discard:
@@ -131,6 +183,122 @@ public sealed partial class DemoDuel
                 .Concat(targets.Select(t => (DuelCommand)new DestroyCommand(t.Side, t))));
             wipe = new(side, targets);
             ScheduleFinish(side, followups);
+            return new(CommandOutcome.Applied);
+        }
+
+        private static CardTarget[] Tributes(PrepareNormalPlacementCommand command) =>
+            new CardTarget?[] { command.FirstTribute, command.SecondTribute }
+                .OfType<CardTarget>().ToArray();
+
+        private bool CanPlace(int side, Card card) =>
+            duel.ActivePlayer == side && duel.Phase == DemoPhase.Main && !duel.summoned &&
+            card.IsMonster && !NormalSummonRules.RequiresSpecialSummon(card);
+
+        private CommandResult PreparePlacement(PrepareNormalPlacementCommand prepare, IActionCommandSink followups)
+        {
+            if (placement is not null || wipe is not null || finishScheduled ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Normal placement requires an isolated batch.");
+            if (!duel.TryResolveCardTarget(prepare.Source, out _, out var card))
+                return new(CommandOutcome.Skipped, "Hand occurrence gone.");
+            var targets = Tributes(prepare);
+            if (!CanPlace(prepare.Side, card) || targets.Length != NormalTributes(card) ||
+                targets.Distinct().Count() != targets.Length)
+                return new(CommandOutcome.Rejected, "Illegal normal placement or tribute count.");
+            var slots = new List<int>();
+            foreach (var target in targets)
+            {
+                if (!duel.TryResolveCardTarget(target, out int slot, out _) ||
+                    !duel.CanQueueMonsterRemoval(target.Side, slot))
+                    return new(CommandOutcome.Rejected, "Tribute no longer eligible.");
+                slots.Add(slot);
+            }
+            if (duel.Monsters[prepare.Side, prepare.Slot] is not null && !slots.Contains(prepare.Slot))
+                return new(CommandOutcome.Rejected, "Destination occupied.");
+            DuelCommand move = prepare.FaceDown
+                ? new SetCommand(prepare.Side, prepare.Source, DuelZone.Monster, prepare.Slot)
+                : new SummonCommand(prepare.Side, prepare.Source, prepare.Slot);
+            queue.EnqueueBatch(targets.Select(t => (DuelCommand)new TributeCommand(t.Side, t)).Append(move));
+            placement = prepare;
+            paidTributes.Clear();
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult PayTribute(TributeCommand tribute)
+        {
+            if (placement is not { } current || !Tributes(current).Contains(tribute.Target) ||
+                paidTributes.Contains(tribute.Target))
+                return new(CommandOutcome.Rejected, "No matching unpaid tribute.");
+            if (!duel.TryResolveCardTarget(tribute.Target, out int slot, out _) ||
+                !duel.CanQueueMonsterRemoval(tribute.Side, slot))
+            {
+                // External mutation during a reserved batch is unsupported.
+                // Fault rather than allow a partially paid summon to proceed.
+                throw new InvalidOperationException("Reserved tribute changed during placement.");
+            }
+            duel.deferringFieldRemovalTriggers = true;
+            try { duel.RemoveMonster(tribute.Side, slot, isTribute: true); }
+            finally { duel.deferringFieldRemovalTriggers = false; }
+            paidTributes.Add(tribute.Target);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult PlaceMonster(CardTarget source, int slot, bool faceDown, IActionCommandSink followups)
+        {
+            if (placement is { } current && (current.Source != source || current.Slot != slot ||
+                current.FaceDown != faceDown || !paidTributes.SetEquals(Tributes(current))))
+                throw new InvalidOperationException("Reserved normal placement does not match paid costs.");
+            if (!duel.TryResolveCardTarget(source, out int index, out var card) ||
+                !CanPlace(source.Side, card) || duel.Monsters[source.Side, slot] is not null ||
+                NormalTributes(card) != paidTributes.Count)
+            {
+                if (placement is not null)
+                    throw new InvalidOperationException("Reserved normal placement invalidated after admission.");
+                return new(CommandOutcome.Rejected, "Illegal placement or unpaid cost.");
+            }
+            // Direct, unprepared commands may only place level 1–4 monsters.
+            // A response/choice is opened on a later pass, after the summon gate.
+            duel.CommitNormalPlacement(index, source.Side, slot, faceDown);
+            placement = null;
+            paidTributes.Clear();
+            var target = source with { Zone = DuelZone.Monster };
+            followups.ScheduleContinuation(_ => new([new FinishNormalPlacementCommand(source.Side, target, faceDown)]));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult FinishPlacement(FinishNormalPlacementCommand finish)
+        {
+            if (!duel.TryResolveCardTarget(finish.Target, out int slot, out _))
+                return new(CommandOutcome.Skipped, "Placed occurrence gone.");
+            string message = "";
+            duel.FinishNormalPlacement(finish.Side, slot, finish.FaceDown, ref message);
+            return new(CommandOutcome.Applied, message);
+        }
+
+        private CommandResult SetSpellTrap(SetCommand set)
+        {
+            if (!duel.TryResolveCardTarget(set.Source, out int index, out var card))
+                return new(CommandOutcome.Skipped, "Hand occurrence gone.");
+            if (duel.ActivePlayer != set.Side || duel.Phase != DemoPhase.Main ||
+                card.ClassCode is not (21 or 22 or 23) || DestinyBoardRules.IsMessage(card.Id))
+                return new(CommandOutcome.Rejected, "Illegal Spell/Trap Set.");
+            bool field = FieldSpellRules.Supports(card.Id);
+            if (field)
+            {
+                if (set.Destination != DuelZone.FieldSpell || duel.FieldSpells[set.Side] is not null)
+                    return new(CommandOutcome.Rejected, "Invalid Field Spell destination.");
+                duel.FieldSpells[set.Side] = card;
+                duel.FieldSpellFaceDown[set.Side] = true;
+            }
+            else
+            {
+                if (set.Destination != DuelZone.SpellTrap || duel.Spells[set.Side, set.Slot] is not null)
+                    return new(CommandOutcome.Rejected, "Invalid Spell/Trap destination.");
+                duel.Spells[set.Side, set.Slot] = card;
+                duel.SpellFaceDown[set.Side, set.Slot] = true;
+                duel.spellSetTurn[set.Side, set.Slot] = duel.Turn;
+            }
+            duel.hands[set.Side].RemoveAt(index);
             return new(CommandOutcome.Applied);
         }
 

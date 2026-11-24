@@ -35,3 +35,9 @@ ActionQueueRemovalChecks: duas cópias idênticas da magia e de monstros, ambos 
 ## Próxima fatia
 
 Implementar os demais adaptadores tipados: Summon/Set/Flip/ChangePosition, envio de outras zonas, custos e consequências vinculadas, sem mutar fora dos comandos; separar escolhas legadas do executor e migrar a admissão comum. Um novo roteiro nativo só se necessário, SQLite primeiro. A02 segue Parcial até os critérios e testes passarem; A06/C12 são a migração incremental dos produtores legados, A08 extrai cartas. A03/A04/A05 ainda bloqueados.
+
+## A02.3 — placement e correção de regressão
+
+CI 45317261823: build e novos testes de A02.2 passaram; a suíte parou em NormalSummonCinematicChecks, porque a instância importada não é mais a referência de catálogo. Fixtures de identidade foram ajustadas para capturar a instância real da mão/campo/decisão, não para substituir identidade por igualdade de valor. A validação integral ainda precisa rodar.
+
+TryQueueNormalPlacement prepara Summon/Set de monstro, valida todos os alvos de tributo/destino, revalida no executor, e produz Tribute por ocorrência seguido de Summon/Set. Cada custo usa RemoveMonster com isTribute, sem efeitos vinculados não migrados; a colocação compartilha CommitNormalPlacement com o fluxo legado. Após gate, FinishNormalPlacement libera resposta de invocação e buscas usando o mesmo helper legado. Alteração externa durante lote reservado gera fault; não é transação com rollback. TryQueueSpellTrapSet cobre magia/armadilha/Field Spell, sem ativação. Comandos continuam opt-in; Flip/ChangePosition e respostas legadas são próximas fatias. Testes ActionQueuePlacementChecks abrangem ambos os lados, Set/face-up, tributos, campo cheio, gates e trace idêntico. Não há promoção de paridade nativa.

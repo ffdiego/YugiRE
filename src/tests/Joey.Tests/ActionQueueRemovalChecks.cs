@@ -141,6 +141,8 @@ internal static class ActionQueueRemovalChecks
         check(discard.Hand.Count == 0 && discard.Graveyard(0).Count == 2 && discards == 1,
             "A02 hand compaction preserves target IDs; discard distinct from ordinary send");
 
+        ActionQueuePlacementChecks.Run(check);
+
         var immortal = DemoDuel.FromPartialObservation(0, [raigeki], Slots(),
             Slots(Monster(461)), 8000);
         immortal.MonsterWasFlipped[1, 0] = true;
