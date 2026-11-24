@@ -125,3 +125,40 @@ não há nova extração de assembly requerida para a
 geometria ordinária. O ramo especial 0x48A, blend/pivô
 dos flashes e mapeamento semântico ficam como lacunas
 delimitadas. Nenhum Draw adicional está integrado.
+
+
+## V08 — compositor e revisão isolada
+
+NativeCardStatusComposition encadeia as passagens ordinárias tipo,
+atributo, B e A. Dentro de B/A preserva sprite principal, unidades
+primeiro e transição. Gate de face-up/região e gate específico de B
+são separados; objetos inativos ou em movimento não desenham.
+O ramo especial 0x48A e os flashes 10..13 ficam fora até resolver
+o compositor virtual +0x50 e a ligação semântica.
+
+NativeCardStatusResources usa o manifesto do DAT em runtime,
+verifica os quatro índices de foco, existência dos recursos e
+divisores explícitos dos índices 4..9. Não deduz divisores por
+largura nem aceita múltiplos inteiros sem saber qual usar.
+O extrator Python agora preserva os campos auxiliares textuais.
+
+Revisão isolada: escolher ID real de um monstro do catálogo, descritor
+hexadecimal, flags hexadecimais, tipo efetivo, atributo efetivo e
+estado 0/3/4 (não é uma declaração sobre efeitos do monstro).
+Exemplo com um ID do catálogo local,
+slot 2, face-up, A=12, B=3, estado 3:
+
+    dotnet run --project src/Joey.App -- ../passion/data.dat --review-card-status=ID,8080,00F0,2,3,3
+
+Substituir ID pelo resource ID numérico. F7 avança um update e
+contador global sintético, F8 reinicia, F12 exporta PNG e JSON
+com a ordem, recurso e coordenadas de cada pass, Esc encerra.
+Perspectiva 1 permite testar o outro lado; descritor 0080 testa
+face-down. Nenhum comando de duelo é produzido. Dimensões da
+miniatura são lidas da arte real. Política de blend/colorkey
+existente é apenas a adaptação de revisão; não é paridade.
+
+Sem DAT original aqui, sintaxe e dimensões reais ainda precisam ser
+exercitadas. Sem dados do Core de flags e identidade efetiva, não
+disparar no fluxo normal. São subpasses de 004194D0 e não três
+novos objetos no inventário. Cobertura segue 19/34, 0 Verified.

@@ -35,6 +35,7 @@ class CardStatusManifestTests(unittest.TestCase):
         self.assertEqual(report["entries"][13]["role"],
                          "attack-defense-decrease-flash-B")
         self.assertEqual(report["entries"][13]["width"], 23)
+        self.assertEqual(report["entries"][4]["auxiliaryFields"], ["000000"])
         self.assertEqual(report["missingImageMetadata"], [])
         self.assertTrue(report["indexAnchorsVerified"])
 
