@@ -15,7 +15,8 @@ public sealed partial class DemoDuel
             throw new InvalidOperationException("A duel already owns an action queue.");
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
             () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer() ||
-                admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery()) && PendingEndDiscards == 0);
+                admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
+                admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch()) && PendingEndDiscards == 0);
     }
 
     /// <summary>
@@ -188,11 +189,17 @@ public sealed partial class DemoDuel
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
         private bool resolvingGraveyardRecovery;
+        private CardTarget? reservedDeckSearch;
+        private bool deckSearchMoved;
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is ResolveDeckSearchCommand search)
+                return ResolveDeckSearch(search, followups);
+            if (command is FinishDeckSearchCommand finishSearch)
+                return FinishDeckSearch(finishSearch.Side);
             if (command is ResolveGraveyardRecoveryCommand recovery)
                 return ResolveGraveyardRecovery(recovery, followups);
             if (command is FinishGraveyardRecoveryCommand)
@@ -215,7 +222,7 @@ public sealed partial class DemoDuel
             // even if Exodia is found mid-batch. Only this reserved batch may
             // continue its draws after a winner has been set.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || finishDrawSpell || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearch is { } selected && selected.Side == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
@@ -271,7 +278,9 @@ public sealed partial class DemoDuel
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case MoveToHandCommand move:
-                    return MoveGraveyardCardToHand(move.Source);
+                    return MoveSelectedCardToHand(move.Source);
+                case ShuffleDeckCommand shuffle:
+                    return ShuffleDeck(shuffle.Side);
                 case ReturnToHandCommand bounce:
                     return ReturnQueuedMonster(bounce.Target, followups);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -699,6 +708,45 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
+        private CommandResult ResolveDeckSearch(ResolveDeckSearchCommand answer, IActionCommandSink followups)
+        {
+            if (reservedDeckSearch is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanQueuedDeckSearch(answer.Request, answer.Target))
+                return new(CommandOutcome.Rejected, "Deck search request or target changed.");
+
+            duel.PendingCardSelection = null;
+            duel.selectedBatchIndices.Clear();
+            reservedDeckSearch = answer.Target;
+            deckSearchMoved = false;
+            queue.Enqueue(new MoveToHandCommand(answer.Side, answer.Target));
+            // The movement records success. Only then emit the shuffle; a
+            // stale selection never consumes RNG or shuffles a different deck.
+            followups.ScheduleContinuation(_ => new(deckSearchMoved
+                ? [new ShuffleDeckCommand(answer.Side), new FinishDeckSearchCommand(answer.Side)]
+                : [new FinishDeckSearchCommand(answer.Side)]));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ShuffleDeck(int side)
+        {
+            Card[] cards = duel.decks[side].ToArray();
+            duel.effectRandom.Shuffle(cards);
+            duel.decks[side].Clear();
+            foreach (var card in cards) duel.decks[side].Enqueue(card);
+            duel.DeckShuffled?.Invoke(side);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult FinishDeckSearch(int side)
+        {
+            if (reservedDeckSearch is not { } target || target.Side != side)
+                return new(CommandOutcome.Rejected, "No matching deck search to finalize.");
+            reservedDeckSearch = null;
+            deckSearchMoved = false;
+            duel.BeginNextQueuedDeckSearch();
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult ResolveGraveyardRecovery(ResolveGraveyardRecoveryCommand answer, IActionCommandSink followups)
         {
             if (resolvingGraveyardRecovery || followups is not ActionQueue { PendingCount: 0 } queue ||
@@ -715,12 +763,21 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult MoveGraveyardCardToHand(CardTarget source)
+        private CommandResult MoveSelectedCardToHand(CardTarget source)
         {
             if (!duel.TryResolveCardTarget(source, out int index, out var card))
-                return new(CommandOutcome.Skipped, "Graveyard occurrence gone.");
-            duel.graves[source.Side].RemoveAt(index);
+                return new(CommandOutcome.Skipped, "Selected occurrence gone.");
+            if (source.Zone == DuelZone.Graveyard)
+                duel.graves[source.Side].RemoveAt(index);
+            else if (source.Zone == DuelZone.Deck)
+            {
+                Card[] remaining = duel.decks[source.Side].Where((_, i) => i != index).ToArray();
+                duel.decks[source.Side].Clear();
+                foreach (var other in remaining) duel.decks[source.Side].Enqueue(other);
+            }
+            else return new(CommandOutcome.Rejected, "Unsupported source zone.");
             duel.hands[source.Side].Add(card);
+            if (reservedDeckSearch == source) deckSearchMoved = true;
             // Recovery is not a draw; do not emit the deck-draw event.
             duel.CheckExodia(source.Side);
             return new(CommandOutcome.Applied);
