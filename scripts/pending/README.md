@@ -140,8 +140,8 @@ Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22
 - Comando: `bash scripts/pending/14-card-effect-taxonomy.sh /caminho/para/data.dat`.
 - Saída privada: `scratch/card-taxonomy.json` (IDs, fingerprints, famílias, rotas e status atuais; sem descrições).
 - Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
-- Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.
-- Estado: aguardando execução local; classificador testado com fixtures sintéticas, integração .NET ainda não executada. Nunca executar o modo `--taxonomy-input` diretamente ou redirecionar sua saída para arquivo: a descrição deve ficar no pipe privado do classificador.
+- Encerramento: conferir as 771 entradas por ID, máscara e categoria e validar o fingerprint com `docs/cards/pack-index.json`. O SQLite v2 contém 442 identidades. O DAT local fornece as descrições para a triagem.
+- Estado: execução concluída em Fedora/.NET 10. Rotas validadas no lote local: 264 sem efeito aplicável, 433 fila/resposta, 72 revisão e duas candidatas triviais. A compra já consta como Done e a cura permanece Pending. Mantenha a saída `--taxonomy-input` no pipe privado do classificador. A classificação preserva os status do manifesto e a saída em `scratch/` contém somente metadados.
 
 ### 12 — C07: chegada ao cemitério e causa do descarte
 
