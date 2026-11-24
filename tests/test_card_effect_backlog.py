@@ -35,6 +35,14 @@ class BacklogTests(unittest.TestCase):
         self.assertEqual(totals['review'], {'Pending': 1})
         self.assertEqual(families['review'], {'unclassified': {'Pending': 1}})
 
+    def test_accepts_legacy_simple_draw_label_without_counting_a_search(self):
+        taxonomy = taxonomy_fixture()
+        expected = summarize(taxonomy, {}, 7)
+        taxonomy['cards'][0]['families'] = ['draw', 'search']
+
+        self.assertEqual(summarize(taxonomy, {}, 7), expected)
+        self.assertEqual(taxonomy['cards'][0]['families'], ['draw', 'search'])
+
     def test_pack_filter_and_verified_exclusion(self):
         totals, _, updated = summarize(taxonomy_fixture(), {10: 'Verified', 12: 'Partial'}, 4)
         self.assertEqual(updated, 1)
