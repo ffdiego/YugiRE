@@ -278,10 +278,10 @@ static partial class Game
         }
         if (hoverHand < 0 || !allowActions) return overHand;
         hand = hoverHand; attacker = -1;
-        if (Raylib.IsMouseButtonPressed(MouseButton.Right) &&
+        if (PointerPressed(MouseButton.Right) &&
             duel.PendingEndDiscards == 0 && CanToggleHandAction(hoverHand))
             setHandAction = !setHandAction;
-        if (Raylib.IsMouseButtonPressed(MouseButton.Left) && HandActionEnabled(hoverHand))
+        if (PointerPressed(MouseButton.Left) && HandActionEnabled(hoverHand))
             UseHandAction(hoverHand);
         return true;
     }
@@ -391,13 +391,13 @@ static partial class Game
                         DrawFieldSelectionFrame(geometry, own);
                 }
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput && duel.PendingSpellTrapTarget is null &&
-                    Raylib.IsMouseButtonPressed(MouseButton.Left) && Hit(fieldRect) &&
+                    PointerPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
                     BeginCardActivation(fieldCard, fieldRect);
                 else if (!blockInput && Hit(fieldRect) && duel.CanUseFusionGate(player))
                 {
                     Label("Click Fusion Gate to Fusion Summon", 10, 587, 11, Gold);
-                    if (Raylib.IsMouseButtonPressed(MouseButton.Left) && duel.BeginFusionGate(player, out message))
+                    if (PointerPressed(MouseButton.Left) && duel.BeginFusionGate(player, out message))
                         ClearDuelSelection();
                 }
             }
@@ -456,7 +456,7 @@ static partial class Game
                     DrawEffectStamp(DatGraphics.AttackSword, NativeAttackFrame.SwordAnchor(zone, own),
                         0, 0x10000, 0xa0);
                 if (blockInput || duel.PendingSpellTrapTarget is not null ||
-                    !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
+                    !PointerPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {
                     if (duel.PendingFlipTarget is not null)
@@ -528,7 +528,7 @@ static partial class Game
 
     static void ReadFlipSpellTrapTarget(PendingFlipSpellTrapTargets pending)
     {
-        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        if (!PointerPressed(MouseButton.Left)) return;
         foreach (var target in pending.EligibleTargets)
         {
             var area = target.IsFieldZone ? FieldZoneBounds(target.Player) :
@@ -548,7 +548,7 @@ static partial class Game
             duel.CancelSpellTrapTarget(out message);
             return;
         }
-        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        if (!PointerPressed(MouseButton.Left)) return;
         foreach (var target in pending.EligibleTargets)
         {
             var area = target.IsFieldZone ? FieldZoneBounds(target.Player) : ZoneBounds(target.Player, target.Zone, true);
@@ -720,19 +720,31 @@ static partial class Game
     }
     static void DrawDuelDebug(bool selectingCard)
     {
-        if (Button("Ocultar debug", 262, 8, 142, 30)) duelDebug = false;
-        if (Button("< Menu", 411, 8, 85, 30)) screen = "menu";
-        if (Button("Reset", 501, 8, 75, 30))
+        // Buttons are rendered here but the input owner was resolved
+        // before any duel click. Only the diagnostic handler acts on it.
+        static void DrawControl(string caption, CardBounds r, bool enabled = true) =>
+            Button(caption,r.X,r.Y,r.Width,r.Height,enabled);
+
+        DrawControl("Ocultar debug", DebugOverlayState.HideBounds);
+        DrawControl("< Menu", DebugOverlayState.MenuBounds);
+        DrawControl("Reset", DebugOverlayState.ResetBounds);
+        if (debugOverlay.PressedControl == DebugOverlayControl.Menu) screen = "menu";
+        if (debugOverlay.PressedControl == DebugOverlayControl.Reset)
         {
             if (labSession is not null) StartConsoleLab(labOriginalLines);
             else if (alphaCpu is null) StartDemo(); else StartAlpha();
         }
-        if (alphaCpu is null && Button(optionalEffectPrompts == EffectPromptMode.Ask
-                ? "Prompts: ON" : "Prompts: OFF", 583, 8, 172, 30, !selectingCard))
-            optionalEffectPrompts = optionalEffectPrompts == EffectPromptMode.Ask
-                ? EffectPromptMode.Off : EffectPromptMode.Ask;
-        Raylib.DrawRectangle(262, 42, 502, 26, Panel);
-        Label(TextLines(message, 490, 12)[0], 268, 49, 12);
+        if (alphaCpu is null)
+        {
+            DrawControl(optionalEffectPrompts == EffectPromptMode.Ask
+                ? "Prompts: ON" : "Prompts: OFF", DebugOverlayState.PromptsBounds, !selectingCard);
+            if (!selectingCard && debugOverlay.PressedControl == DebugOverlayControl.Prompts)
+                optionalEffectPrompts = optionalEffectPrompts == EffectPromptMode.Ask
+                    ? EffectPromptMode.Off : EffectPromptMode.Ask;
+        }
+        var panel = DebugOverlayState.MessageBounds;
+        Raylib.DrawRectangle(panel.X,panel.Y,panel.Width,panel.Height,Panel);
+        Label(TextLines(message,490,12)[0],panel.X+6,panel.Y+7,12);
     }
 
 }

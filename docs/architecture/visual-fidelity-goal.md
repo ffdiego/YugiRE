@@ -111,3 +111,7 @@ O aceite final de cada componente deve apontar para evidência + teste/captura +
 - `scripts/run-archive-query.sh` e `scripts/QueryArchive.java`: consultas read-only ao Ghidra.
 
 Não versionar `joey_pc.exe`, `data.dat`, saves, dump integral proprietário ou capturas privadas. Documentar endereços VA junto ao fingerprint do executável relevante. Refatorações de visual não podem modificar regras do `Joey.Core`; validar com testes existentes e revisão de captura onde possível.
+
+### V13 — propriedade dos cliques do overlay
+
+`DebugOverlayState` é estado local do App (sem relógio ou Core). Antes de desenhar/processar o duelo, captura os presses esquerdo/direito sobre controles e painel de mensagem visíveis. Hide oculta no próprio frame, mas conserva a captura até o próximo frame; hitboxes ausentes não capturam. `PointerPressed` protege os caminhos de clique de campo, mão, fase, seleção e botões compartilhados sem alterar os clocks. F3 e menu alternam a mesma instância. Reset/menu/prompts são comandos explícitos de diagnóstico, não ações implícitas ao esconder. Não modifica posições de elementos nativos; os retângulos de diagnóstico existentes permanecem provisórios. Testes sintéticos não substituem comparação de frames e smoke gráfico.

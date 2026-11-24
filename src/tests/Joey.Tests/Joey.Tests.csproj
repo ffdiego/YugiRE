@@ -5,4 +5,7 @@
     <None Include="../../../docs/research/card-static-sweep/12-receitas-de-fusao.jsonl" Link="Fixtures/12-receitas-de-fusao.jsonl" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../../native_hooks/decks/demo-?.json" Link="Fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../Joey.App/DebugOverlayState.cs" Link="DebugOverlayState.cs" />
+  </ItemGroup>
 </Project>
