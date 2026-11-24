@@ -110,3 +110,5 @@ Para completar: conferir assembly de 0041F870, 0040E260,
 Usar inspeção de DAT existente para chain.txt e affect.txt,
 preservando ordem, parâmetros e dimensões. Não repetir
 a importação do bundle de decompilações transientes.
+
+Coleta dirigida: `scripts/pending/17-chain-affect-assembly.sh` solicita apenas assembly dos quatro pontos acima. Ainda não executada; sem alterações no banco privado nesta fatia.

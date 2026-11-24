@@ -240,9 +240,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
 
 - [ ] **V23 — Corrente (0041F870).** Status: `Aguardando evidência`.
-  NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Recurso/recortes dos dígitos, assembly e integração A03 pendentes. [Contrato](docs/research/native-chain-affect-contract-2026-11-24.md).
+  NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Recurso/recortes dos dígitos, assembly e integração A03 pendentes (roteiro 17). [Contrato](docs/research/native-chain-affect-contract-2026-11-24.md).
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`.
-  NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes. Mesmo contrato.
+  NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
 
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 

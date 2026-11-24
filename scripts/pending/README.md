@@ -197,3 +197,11 @@ Ambiente: Ghidra local, projeto e EXE original com fingerprint validado pelo exp
     bash scripts/pending/16-coin-dice-break-ghidra.sh
 
 Saída privada: scratch/ghidra-coin-dice-break-contract.zip. Validar vtables +8/+C, contadores, recortes, camada e argumentos reais (não inferir faces/RNG pelo nome do banco); integrar novas evidências em SQLite cumulativo após receber o ZIP. Para coin.txt/dice.txt/break.txt, usar --inspect-visual-dat existente e preservar campos numéricos. Ver [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md). Não repetir bundles 01–04.
+
+## V23/V24 — 17-chain-affect-assembly.sh (aguardando Fedora)
+
+Ambiente: Ghidra headless, mesmo projeto e EXE atestado. O SQLite já contém as decompilações transitórias de Update/Draw; não repetir os bundles 01–04 nem reexportar todos os métodos virtuais. Este roteiro pede assembly apenas das quatro funções com operandos, seletor e jump tables ainda ambíguos.
+
+    bash scripts/pending/17-chain-affect-assembly.sh
+
+Saída privada: scratch/ghidra-chain-affect-assembly.zip. Confirmar as chaves de lookup de chain.txt, pass decimal, composição scratch e dispatch de affect.txt. Para os dois manifests, reutilizar --inspect-visual-dat e preservar a ordem/campos/dimensões. Importar evidência compatível em cópia SQLite após receber a coleta; sem marcar Draw como implementada. Ver [contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
