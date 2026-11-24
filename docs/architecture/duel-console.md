@@ -59,3 +59,16 @@ A admissão aplica as regras existentes de legalidade e idade do Set. A
 execução revalida as duas ocorrências antes de gastar a carta. Um alvo
 substituído antes da ativação cancela a ação sem gastar a fonte. A forma
 sem alvo continua usando o fluxo anterior.
+
+## A06 — Seleção pendente para a mão
+
+`choices` mostra o dono, a origem e os índices das ocorrências elegíveis
+para as buscas Deck → Mão e recuperações Cemitério → Mão já migradas.
+`select-hand INDEX` responde à escolha atual e
+`select-hand decline` recusa uma busca opcional. Os índices são posições
+da carta na zona de origem. O console resolve a ocorrência e deixa o
+produtor do Core revalidar pedido, dono e filtro.
+
+O roteiro admite leituras enquanto espera e retoma as operações depois da
+resposta. Um EOF com seleção pendente produz trace incompleto. O App usa as
+mesmas permissões de entrada para responder pelo console de laboratório.

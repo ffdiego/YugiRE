@@ -49,6 +49,7 @@ internal static class DuelConsoleChecks
         DuelConsoleLabEditChecks.Run(check);
         DuelConsoleLegalChecks.Run(check);
         DuelConsoleTargetedChecks.Run(check);
+        DuelConsoleHandSelectionChecks.Run(check);
         DuelConsoleScriptChecks.Run(check);
         DuelConsoleTraceChecks.Run(check);
         using var input = new StringReader("state\ndraw 2\ndestroy 1 0\ndamage 300 1\nheal 100 0\ndiff\n");

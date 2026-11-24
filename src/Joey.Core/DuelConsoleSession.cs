@@ -8,11 +8,17 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
     public ActionQueue Queue { get; }
+    public bool HasPendingChoice => Queue.PendingDecision is not null || PendingHandSelection is not null;
+
+    private PendingCardSelection? PendingHandSelection =>
+        duel.PendingCardSelection is { Destination: CardSelectionDestination.Hand, MaxSelections: 1 } request
+            ? request
+            : null;
 
     public static DemoDuel EmptyLabDuel() => DemoDuel.FromPartialObservation(0, [], new Card?[5],
         new Card?[5], 8000, equipmentContextResolved: true);
@@ -31,7 +37,10 @@ public sealed class DuelConsoleSession
         string op = words[0].ToLowerInvariant();
         if (op == "help" && words.Length == 1) return new(true, Help);
         if (op == "trace" && words.Length == 1)
-            return new(true, ActionTraceJson.Serialize(ActionTraceJson.Capture(Queue, "laboratory-console")));
+        {
+            var trace = ActionTraceJson.Capture(Queue, "laboratory-console");
+            return new(true, ActionTraceJson.Serialize(trace with { Complete = trace.Complete && !HasPendingChoice }));
+        }
         if (op == "state" && words.Length == 1)
         {
             baseline = Snapshot();
@@ -45,6 +54,7 @@ public sealed class DuelConsoleSession
                 .Select(p => "- " + p.First + "\n+ " + p.Second);
             return new(true, string.Join("\n", changes.DefaultIfEmpty("No changes.")));
         }
+        if (op == "choices" && words.Length == 1) return ReadHandChoices();
         if (op == "decision" && words.Length == 3)
         {
             if (!long.TryParse(words[1], NumberStyles.None, CultureInfo.InvariantCulture, out long id) ||
@@ -56,6 +66,7 @@ public sealed class DuelConsoleSession
         }
         if (Queue.IsBusy) return new(false, "Queue busy; wait or answer its pending decision.");
         if (duel.GameOver) return new(false, "Duel ended.");
+        if (op == "select-hand") return SelectHandCard(words);
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
         if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "attack")
@@ -138,6 +149,17 @@ public sealed class DuelConsoleSession
             return new(true, $"Admitted {batch.Length} command(s).", true);
         }
         catch (InvalidOperationException ex) { return new(false, ex.Message); }
+    }
+
+    public bool AllowsPendingChoiceInput(string line)
+    {
+        var words = line.Split((char[]?)null, 2, StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0) return false;
+        string operation = words[0].ToLowerInvariant();
+        if (operation is "state" or "diff" or "trace" or "help") return true;
+        return Queue.PendingDecision is not null
+            ? operation == "decision"
+            : PendingHandSelection is not null && operation is ("choices" or "select-hand");
     }
 
     private DuelConsoleResult ExecuteLegal(string op, string[] words)
@@ -237,6 +259,44 @@ public sealed class DuelConsoleSession
 
         bool enqueued = duel.TryQueueTargetedSpellTrap(source, target, out string message, ActionOrigin.Console);
         return new(enqueued, message, enqueued);
+    }
+
+    private DuelConsoleResult ReadHandChoices()
+    {
+        if (Queue.IsBusy || PendingHandSelection is not { } request)
+            return new(false, "No pending hand selection available.");
+        var choices = request.Source == CardSelectionSource.Deck
+            ? duel.QueuedDeckSearchCandidates(request).Select(item => (item.SourceIndex, item.Card))
+            : duel.QueuedGraveyardRecoveryCandidates(request).Select(item => (item.SourceIndex, item.Card));
+        var lines = choices.Select(item => $"{item.SourceIndex}: {item.Card.Id}").ToArray();
+        string prompt = $"Side {request.Owner} {request.Source} → Hand (source indices):";
+        if (request.MinSelections == 0) prompt += " select-hand decline is available.";
+        return new(true, string.Join("\n", new[] { prompt }.Concat(lines)));
+    }
+
+    private DuelConsoleResult SelectHandCard(string[] words)
+    {
+        if (PendingHandSelection is not { } request)
+            return new(false, "No pending hand selection available.");
+        if (words.Length != 2)
+            return new(false, "Expected select-hand INDEX|decline.");
+
+        bool fromDeck = request.Source == CardSelectionSource.Deck;
+        CardTarget? target = null;
+        if (words[1] != "decline")
+        {
+            if (!Index(words[1], out int index) ||
+                !duel.TryCaptureCardTarget(request.Owner, fromDeck ? DuelZone.Deck : DuelZone.Graveyard,
+                    index, out var selected))
+                return new(false, "Choose a tracked source index for the pending request.");
+            target = selected;
+        }
+
+        string message;
+        bool accepted = fromDeck
+            ? duel.TryQueueDeckSearch(request, target, out message, ActionOrigin.Console)
+            : duel.TryQueueGraveyardRecovery(request, target, out message, ActionOrigin.Console);
+        return new(accepted, message, accepted);
     }
 
     private static bool Index(string value, out int index) =>

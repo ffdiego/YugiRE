@@ -114,6 +114,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
   *Fatia de isolamento:* durante `Tick`, só o executor emite pelo sink. Continuações devolvem comandos no passo e callbacks de apresentação observam o comando e liberam o gate. `ActionQueueChecks` exercita tentativas nos três callbacks e na continuação, além do caminho autorizado de follow-up. O executor recebe um sink próprio, disponível durante a execução. Callbacks que recebem a fila pública não podem inserir comandos durante o tick. A migração das famílias e dos estados pendentes continua aberta.
   *Fatia de ativação com alvo:* o console App/Lab admite ativações direcionadas já migradas. A localização textual resolve para a ocorrência física antes de entrar na fila, com revalidação na execução. A admissão segue distinta de uma seleção interativa no tabuleiro.
+  *Fatia de respostas para a mão:* o console lista e responde as seleções Deck/Cemitério → Mão já migradas. O script espera resposta explícita e sinaliza trace incompleto enquanto a escolha estiver pendente.
 
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
   Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em [A01](docs/architecture/action-queue.md); roteiro 11 em `scripts/pending/` preparado, ainda não executado.
