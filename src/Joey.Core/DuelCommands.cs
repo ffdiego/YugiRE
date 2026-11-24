@@ -15,6 +15,7 @@ public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one c
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
 public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelCommand(Side);
+public sealed record BanishCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
@@ -178,6 +179,9 @@ internal static class DuelCommandValidation
             case SendToGraveyardCommand send:
                 Target(send.Target, send.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Monster,
                     DuelZone.SpellTrap, DuelZone.FieldSpell, DuelZone.Banished);
+                break;
+            case BanishCommand banish:
+                Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand);
                 break;
             case DiscardCommand discard:
                 Target(discard.Target, discard.Side, DuelZone.Hand);

@@ -138,7 +138,8 @@ public sealed partial class DemoDuel
         DemoFlipEffect.RecoverFromGraveyard or DemoFlipEffect.OptionalDrawOne or
         DemoFlipEffect.DestroyTwoSetSpellTraps or DemoFlipEffect.ReturnTwoSpellTraps or
         DemoFlipEffect.RecruitSameNameFaceDown or DemoFlipEffect.MillOpponentDeck or
-        DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour;
+        DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour or
+        DemoFlipEffect.BanishThreeDeckBurn800 or DemoFlipEffect.BanishTwoRandomHandBurn800;
 
     // Snapshot linked consequences before the producer admits any removals.
     // Each is a normal typed command, in the legacy per-removal order.
@@ -204,6 +205,17 @@ public sealed partial class DemoDuel
             public int Discarded { get; set; }
         }
         private FlipDeckFlow? flipDeckFlow;
+        private sealed class FlipBanishBatch(ushort effect, int owner, FlipBanishCostSource source, int required, IEnumerable<CardTarget> expected)
+        {
+            public ushort Effect { get; } = effect;
+            public int Owner { get; } = owner;
+            public FlipBanishCostSource Source { get; } = source;
+            public int Required { get; } = required;
+            public Queue<CardTarget> Expected { get; } = new(expected);
+            public List<Card> Removed { get; } = [];
+            public bool DamageApplied { get; set; }
+        }
+        private FlipBanishBatch? flipBanish;
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
@@ -267,6 +279,9 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case DamageCommand damage:
                     duel.ChangeLife(damage.Side, -damage.Amount);
+                    if (flipBanish is { } paid && paid.Removed.Count == paid.Required &&
+                        damage.Side == 1 - paid.Owner && damage.Amount == FlipBanishBurnRules.BurnDamage)
+                        paid.DamageApplied = true;
                     return new(CommandOutcome.Applied);
                 case HealCommand heal:
                     duel.ChangeLife(heal.Side, heal.Amount);
@@ -307,6 +322,8 @@ public sealed partial class DemoDuel
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
+                case BanishCommand banish:
+                    return BanishFromSource(banish.Target);
                 case DiscardCommand discard:
                     var discarded = SendHandToGraveyard(discard.Target, discard: true);
                     if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
@@ -634,6 +651,17 @@ public sealed partial class DemoDuel
                         return new(CommandOutcome.Rejected, "Untracked deck-flow occurrence.");
             }
 
+            if (flip && !duel.FlipEffectsNegated && FlipBanishBurnRules.Cost(card.Id) is { } cost)
+            {
+                DuelZone zone = cost == FlipBanishCostSource.Deck ? DuelZone.Deck : DuelZone.Hand;
+                int available = zone == DuelZone.Deck ? duel.decks[side].Count : duel.hands[side].Count;
+                int required = FlipBanishBurnRules.RequiredCount(card.Id);
+                if (available >= required)
+                    for (int i = 0; i < (zone == DuelZone.Deck ? required : available); i++)
+                        if (!duel.TryCaptureCardTarget(side, zone, i, out _))
+                            return new(CommandOutcome.Rejected, "Untracked banishment cost occurrence.");
+            }
+
             var change = duel.CommitManualPosition(side, slot);
             followups.ScheduleContinuation(_ => new([new ResolvePositionCommand(side, target,
                 change.WasFaceDown, change.WasInDefense)]));
@@ -679,6 +707,8 @@ public sealed partial class DemoDuel
                 return ResolveFlipDeckFlow(position, card, followups);
             if (card.Id == FlipEffectRules.FourStarredLadybugOfDoom)
                 return ResolveLadybug(position, followups);
+            if (FlipBanishBurnRules.Cost(card.Id) is not null)
+                return ResolveFlipBanish(position, card, followups);
             if (card.Id == FlipEffectRules.MorphingJar)
             {
                 if (followups is not ActionQueue { PendingCount: 0 } queue)
@@ -716,6 +746,65 @@ public sealed partial class DemoDuel
             // execute its answer here. A06/C12 migrate the response path.
             duel.FinishManualPosition(change, resolveFlip: true, out var detail);
             return new(CommandOutcome.Applied, detail);
+        }
+
+        private CommandResult ResolveFlipBanish(ResolvePositionCommand position, Card card, IActionCommandSink followups)
+        {
+            if (resolvingFlipBatch || followups is not ActionQueue { PendingCount: 0 } queue ||
+                FlipBanishBurnRules.Cost(card.Id) is not { } cost)
+                return new(CommandOutcome.Rejected, "Banish burn requires isolated resolution.");
+            int side = position.Side, required = FlipBanishBurnRules.RequiredCount(card.Id);
+            DuelZone zone = cost == FlipBanishCostSource.Deck ? DuelZone.Deck : DuelZone.Hand;
+            int available = zone == DuelZone.Deck ? duel.decks[side].Count : duel.hands[side].Count;
+            var picks = new List<CardTarget>();
+            if (available >= required)
+            {
+                // Capture before sampling. The seeded RNG is shared with the
+                // existing legacy helper and is never consumed on shortfall.
+                int count = zone == DuelZone.Deck ? required : available;
+                var candidates = new CardTarget[count];
+                for (int i = 0; i < count; i++)
+                    if (!duel.TryCaptureCardTarget(side, zone, i, out candidates[i]))
+                        return new(CommandOutcome.Rejected, "Untracked banishment cost occurrence.");
+                if (zone == DuelZone.Deck) picks.AddRange(candidates);
+                else foreach (int i in FlipBanishBurnRules.SampleHandIndices(available, required, duel.effectRandom))
+                    picks.Add(candidates[i]);
+            }
+            flipBanish = new(card.Id, side, cost, required, picks);
+            resolvingFlipBatch = true;
+            queue.EnqueueBatch(picks.Select(t => new BanishCommand(side, t)));
+            queue.ScheduleContinuation(_ =>
+            {
+                var finish = new FinishFlipBatchCommand(side, position.Target, position.WasInDefense, false, false);
+                // Damage is admitted only once every required occurrence has
+                // actually been banished and its presentation has completed.
+                return new(flipBanish!.Removed.Count == required
+                    ? [new DamageCommand(1 - side, FlipBanishBurnRules.BurnDamage), finish]
+                    : [finish]);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult BanishFromSource(CardTarget target)
+        {
+            if (!duel.TryResolveCardTarget(target, out int index, out var card))
+                return new(CommandOutcome.Skipped, "Banishment occurrence gone.");
+            if (target.Zone == DuelZone.Deck && index != 0)
+                return new(CommandOutcome.Skipped, "Only the current top occurrence may be banished from Deck.");
+            if (target.Zone is not (DuelZone.Deck or DuelZone.Hand))
+                return new(CommandOutcome.Rejected, "Unsupported banishment zone.");
+            if (flipBanish is { } batch && (!batch.Expected.TryPeek(out var expected) || expected != target))
+                return new(CommandOutcome.Rejected, "Unexpected reserved banishment occurrence.");
+            if (target.Zone == DuelZone.Deck) duel.decks[target.Side].Dequeue();
+            else duel.hands[target.Side].RemoveAt(index);
+            duel.banished[target.Side].Add(card);
+            if (flipBanish is { } current)
+            {
+                current.Expected.Dequeue();
+                current.Removed.Add(card);
+            }
+            // Neither discard, draw nor GY arrival: no corresponding event.
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ResolveLadybug(ResolvePositionCommand position, IActionCommandSink followups)
@@ -859,6 +948,12 @@ public sealed partial class DemoDuel
             if (!resolvingFlipBatch) return new(CommandOutcome.Rejected, "No pending FLIP batch.");
             resolvingJar = false;
             resolvingFlipBatch = false;
+            if (flipBanish is { } burn)
+            {
+                flipBanish = null;
+                duel.LastFlipBanishBurn = new(burn.Effect, burn.Owner, burn.Source, burn.Required,
+                    Array.AsReadOnly(burn.Removed.ToArray()), burn.DamageApplied ? FlipBanishBurnRules.BurnDamage : 0, burn.DamageApplied);
+            }
             if (flipDeckFlow is { } flow)
             {
                 flipDeckFlow = null;
