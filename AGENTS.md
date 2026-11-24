@@ -26,6 +26,10 @@ O trabalho está organizado em três trilhas em [`PLANS.md`](PLANS.md), com iten
 
 **Fidelidade e esforço:** regras triviais de cartas se implementam rápido a partir do texto do DAT, sem validação nativa exaustiva. O rigor fica em VISUALS (assembly-first) e na fila de ações: toda mudança de estado observável deve ser um comando tipado executado um de cada vez, e **nenhuma regra nova deve resolver ações fora da fila** depois que `A02` existir. Enquanto `A02` não existir, registre cada carta implementada fora da fila em `C12` para migração posterior.
 
+## Motor orientado a comandos e console (ACTIONS)
+
+O console (A04) é um produtor da mesma API de comandos tipados usada por jogador, CPU, efeitos, scripts e testes. A origem determina autorização, não execução: uma vez admitido, um comando equivalente passa pela mesma fila, executor, gatilhos, eventos e gate visual. O console de laboratório pode solicitar operações privilegiadas explicitamente, sem transformar isso em jogadas legais nem modificar o estado diretamente. `state`/`diff` são leituras. Parser e runner reutilizáveis em headless, com UI opcional no Joey.App. Validar identidade/condições na execução; distinguir destruição, descarte e envio ao cemitério. Perfis de apresentação podem mudar duração, não o resultado ou a sequência lógica. A04 ainda é plano, não funcionalidade entregue.
+
 ## Meta permanente de fidelidade visual
 
 **O alvo do `Joey.App`/`Joey.LookAndFeel` é reproduzir a apresentação do Joey original em nível de pixel e update observável; não reproduzir o código que a implementa.** É aceitável usar raylib, uma timeline de eventos e algoritmos C# diferentes se o resultado for equivalente. A liberdade arquitetural do Core **não** autoriza inventar coordenadas, tamanhos, pivôs, ângulos, ordem de desenho, duração ou sequência de animações.
@@ -60,7 +64,9 @@ Ferramentas existentes: SQLite nativo enriquecido, `scripts/run-archive-query.sh
 
 ## Extrações nativas que dependem de outra máquina
 
-A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de extração executáveis mas não executadas**, para Ghidra/Windows e outras evidências indisponíveis neste ambiente. Ler seu `README.md` antes de executar, atualizar o estado após obter um ZIP e nunca marcar um item como concluído só porque o script foi escrito. Não executar automaticamente as tarefas pendentes durante builds, CI ou testes. Se uma análise visual travar por evidência ausente, adicionar um script direcionado com endereços e saída esperada, registrar a pendência e avançar em uma frente independente.
+A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de extração executáveis mas não executadas**, para Ghidra/Windows e outras evidências indisponíveis neste ambiente. Ler seu `README.md` antes de executar, atualizar o estado após obter um ZIP e nunca marcar um item como concluído só porque o script foi escrito. Não executar automaticamente as tarefas pendentes durante builds, CI ou testes. Esta política vale para **ACTIONS, CARDS e VISUALS**. Se qualquer frente depender do Windows (Frida/executável/DAT) ou Fedora (Ghidra/projeto local) indisponível, adicionar um script direcionado, indicar ID da trilha, ambiente, pré-requisitos, evidência esperada e saída em `scratch/`, registrar no README e avançar em uma tarefa independente.
+
+**SQLite primeiro, enriquecimento preferencial:** antes de pedir outra coleta, consultar a versão mais recente do banco, bundles e docs existentes (efeitos triviais de cartas continuam dispensando RE exaustiva). Quando possível, importar novas evidências estáticas em uma cópia cumulativa do SQLite compartilhado, validando fingerprint, origem, integridade e preservação dos dados anteriores; usar/estender importadores testados conforme o formato. Dados dinâmicos/frames que não se ajustem ao banco ficam em artefatos privados com referências. Uma sessão escritora integra o snapshot, demais agentes consultam somente leitura. Registrar a versão e auditoria; não versionar o banco nem dumps. Ver [guia SQLite](docs/research/joey-knowledge-sqlite.md).
 
 ## Arquitetura
 

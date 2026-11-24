@@ -83,6 +83,15 @@ de entrada virtualmente despachado por vtables.
 - O SQLite não contém os pixels do DAT nem captura de frames do jogo.
   Não chamar inferências decompiladas de fidelidade validada.
 
+## Atualização cumulativa compartilhada
+
+ACTIONS, CARDS e VISUALS consultam a mesma versão privada mais recente do banco, preferencialmente em modo somente leitura. A investigação estática deve enriquecer o acervo quando possível, evitando exportações repetidas do mesmo endereço. Os importadores existentes, descritos em [enriquecimento visual](sqlite-visual-vtable-enrichment.md), cobrem formatos específicos; um importador genérico de bundles ainda deve ser implementado/testado quando necessário.
+
+- Manter o snapshot original intacto e gerar uma nova cópia cumulativa, por um único escritor. Validar `metadata.executable_sha256`, identidade das funções/endereços, proveniência (bundle, ferramenta, data e modo de extração), contagens/deltas e `PRAGMA integrity_check`. Não substituir evidência válida por registros ausentes ou ambíguos; registrar conflitos explicitamente.
+- Priorizar funções/decompilações/disassembly, referências, ponteiros, vtables e tabelas recuperadas. Dados de execução podem ser indexados quando houver schema apropriado; imagens, traces brutos e dumps grandes continuam privados, com metadados/referências, sem forçar sua conversão para SQL.
+- Identificar snapshot de entrada e saída, relatório de importação e lacunas; compartilhar o SQLite fora do Git (arquivo privado em `scratch/` ou anexo). Versionar apenas scripts, testes sintéticos, documentação e resumos permitidos. As contagens acima são o inventário histórico do arquivo de 21/11, não o estado de todas as cópias enriquecidas.
+- Se a informação exigir Windows/Fedora indisponível, registrar uma tarefa direcionada em [scripts/pending](../../scripts/pending/README.md), com ID da trilha. Coleta e importação são estados distintos; não elevar cartas ou visuais a Verified somente por ampliar o banco.
+
 ## Política de trabalho
 
 1. Identificar a função/efeito pelo inventário nativo e consultar
