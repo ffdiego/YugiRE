@@ -96,13 +96,23 @@ def validate_output_paths(inputs: list[Path], outputs: list[Path]) -> None:
         if path.exists():
             stat = path.stat()
             source_inodes.add((stat.st_dev, stat.st_ino))
+    output_paths = set()
+    output_inodes = set()
     for output in outputs:
-        if output.resolve() in source_paths:
+        resolved = output.resolve()
+        if resolved in source_paths:
             raise ValueError(f"Output would overwrite an input: {output}")
+        if resolved in output_paths:
+            raise ValueError(f"Output would overwrite another output: {output}")
+        output_paths.add(resolved)
         if output.exists():
             stat = output.stat()
-            if (stat.st_dev, stat.st_ino) in source_inodes:
+            identity = (stat.st_dev, stat.st_ino)
+            if identity in source_inodes:
                 raise ValueError(f"Output would overwrite an input: {output}")
+            if identity in output_inodes:
+                raise ValueError(f"Output would overwrite another output: {output}")
+            output_inodes.add(identity)
 
 
 def compare_files(native_path: Path, yugire_path: Path, output_dir: Path, threshold: int = 0, *,
