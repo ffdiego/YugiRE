@@ -273,7 +273,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`.
   Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 - [ ] **V20 — Banco coin (00457520).** Status: `Aguardando evidência`.
-  Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. Máscara/reflexos ainda pendentes. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
+  Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. NativeCoinPassLayout recupera keys 0/1/2, recortes de giro/sombra, âncoras, halo e fade global, sinaliza ramo scratch/reflexo; remap, compositor e partículas ainda pendentes. Sem renderer. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas 8E/8F, camada e início recuperados; nome do banco não comprova semântica de RNG. Roteiro 16; [contrato](docs/research/native-coin-dice-break-contract-2026-11-23.md).
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`.
   Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT/cosseno original. Remap/blend e integração A03 pendentes; não contar review como gameplay. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).

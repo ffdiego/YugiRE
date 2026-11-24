@@ -97,3 +97,15 @@ Testes sintéticos verificam limites, todos os índices e lados,
 recortes, fade, repetição de Draw, âncoras, bits/defasagem e
 partículas. Coverage 20/34, nenhum novo Verified; o dado
 tem renderer de revisão, ainda não disparado no duelo.
+
+## V20 complemento — passes primários da moeda
+
+Reconsulta direta do SQLite v2 (SHA e quick_check acima, confirmados nesta sessão), instruções 00457520..00457D01. Não repetir bundle 16. Não usar ordem de arquivo como remap.
+
+- 00457727..00457774: em 1<=local<256, divisor P do banco key0, frame=(6+trunc(local*(bit?5P:4P+trunc(P/2))/256))%P. A tabela literal de 14 entradas 00457754..004577E0 é 1,2,3,3,2,1,0,1,2,3,3,2,1,0 para sombra key1; usar dimensão/divisor próprio. Adapter aceita P=14 e sombra >=4 por segurança (não afirmar manifesto observado).
+- 00457824..004578F5: sombra usa recorte, sem escala, offset trunc(bounce*25/256) em ambos os eixos; metade largura/altura próprias. Virtual +4C. 004578F8..004579E1: key0 frame selecionado, dimensões escaladas por S/256, origem X=centerX-H/2, Y=centerY-H/2+trunc(-50*bounce/256). Ambas usam metade ALTURA escalada, não largura. Virtual +4C. Ordem sombra e moeda.
+- 004579ED..00457A22: fora do giro, nada quando local<=-128; -128<local<-64 usa 512+4local, caso restante usa 256, exceto global counter-end>-64: 4*(end-counter). Virtual +48. 00457AD6..00457B05 sombra key1 frame0 usa metade largura do frame em X/Y e +1 nos dois. 00457B08..00457BB3 key0 frame13 se local>0 e bit0, senão frame6. Âncora pela metade largura, sem +1. Não interpretar bit como cara/coroa.
+- 00457BD2..00457CDB: halo key2 inteiro entre 256<=local<320, dimensões *(2local-256)/256 e argumento 4*(320-local). Origem central por largura e altura próprias; slot +48. Este argumento não é alpha Raylib confirmado.
+- 00457CDE..00457D01: compara bit com objeto+1C e diferença global counter-end; se -320<=diff<-192 entra ramo scratch keys3/4; fora desse intervalo salta ao ramo key5, cujo loop ainda tem gates de visibilidade. NativeCoinPassLayout expõe apenas gates, não simula os passes omitidos. Resta mapear parâmetros/compositor +94/+A0 e partículas. O campo +1C não é resultado sorteado nem um flag booleano confirmado; adapter restringe ao domínio 0/1 recuperável. Não ligar ao duelo, não criar gate A03, não contar novo Draw.
+
+Testes sintéticos usam dimensões assimétricas para detectar trocas de eixos, verificam recortes por bit, halo/fade, ausência pré-lançamento e defasagem. Sem DAT real nem comparação de frames. Coverage continua 20/34.
