@@ -222,7 +222,7 @@ public sealed partial class DemoDuel
             // even if Exodia is found mid-batch. Only this reserved batch may
             // continue its draws after a winner has been set.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand shuffle && reservedDeckSearch is { } selected && selected.Side == shuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearch is { } selected && selected.Side == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
