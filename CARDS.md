@@ -243,6 +243,18 @@ Magician of Faith e Mask of Darkness usam `QueuedGraveyardRecoveryCandidates` e 
 
 Sangan/Witch usam `QueuedDeckSearchCandidates` e `TryQueueDeckSearch`. MoveToHandCommand aceita Deck e GY; ShuffleDeckCommand separado após transferência bem-sucedida. UI/CPU e paridade nativa ainda pendentes. [Contrato](docs/cards/c12-queued-deck-search.md).
 
+### Recrutamento elemental na fila (C12)
+
+P164: Mystic Tomato, Giant Rat, Shining Angel, UFO Turtle, Mother Grizzly, Flying Kamakiri #1 usam `TryQueueDeckRecruitment` após a batalha legada. Invocação especial em ataque e shuffle separados, recusa sem RNG. [Contrato](docs/cards/c12-queued-elemental-recruiters.md).
+
+### Recrutamento de mesmo nome na fila (C12)
+
+Nimble Momonga, Giant Germ e Bubonic Vermin usam `TryQueueSameNameRecruitment`; cada cópia tem uma invocação separada, com posição exigida e shuffle único após o lote. LP de batalha e FLIP de ataque ainda legados. [Contrato](docs/cards/c12-queued-same-name-recruitment.md).
+
+### Ressurreição na fila (C12)
+
+Spear Cretin usa `TryQueueGraveyardRevival`: um monstro do próprio GY por solicitação, excluindo a ocorrência disparadora, ataque face-up ou defesa face-down. A próxima escolha aguarda o gate. [Contrato](docs/cards/c12-queued-graveyard-revival.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |

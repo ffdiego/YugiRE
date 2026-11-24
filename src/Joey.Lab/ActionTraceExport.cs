@@ -22,6 +22,25 @@ public static class ActionTraceExport
 
     // A real rule-produced trace. Not a claim of native parity; synthetic
     // catalogue entries for a deterministic pilot; no original DAT required.
+    public static int RunBattlePilot(string[] args, TextWriter output, TextWriter error)
+    {
+        if(args.Length!=0) { error.WriteLine("Usage: action-trace-battle-pilot"); return 2; }
+        Card monster=new(24,24,"Fixture monster","",(3u<<20)|(4u<<25)|(140u<<9));
+        var duel=DemoDuel.FromPartialObservation(1,[],new Card?[5],new Card?[5],8000,side1Deck:[monster]);
+        var queue=duel.CreatePrimitiveActionQueue();
+        bool Drain()
+        {
+            for(int i=0;i<128 && queue.IsBusy;i++)queue.Tick();
+            return !queue.IsBusy;
+        }
+        queue.Enqueue(new DrawCommand(1),ActionOrigin.Test);
+        if(!Drain() || !duel.TryQueueNormalPlacement(0,2,false,out _) || !Drain() ||
+            !duel.BeginBattle(out _) || !duel.TryQueueDirectAttack(2,out _) || !Drain())
+        { error.WriteLine("Synthetic direct battle pilot did not complete."); return 1; }
+        output.WriteLine(Serialize(Capture(queue,"synthetic-rule-pilot-draw-summon-direct-attack")));
+        return 0;
+    }
+
     public static int RunPilot(string[] args, TextWriter output, TextWriter error)
     {
         if (args.Length != 0) { error.WriteLine("Usage: action-trace-pilot"); return 2; }

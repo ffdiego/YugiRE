@@ -3,7 +3,7 @@ namespace Joey.Core;
 /// <summary>Comparable four-word representation, not a native binary log.
 /// Unmapped and unsuccessful commands remain visible, with their sequence.</summary>
 public sealed record ProjectedAction(long Sequence, string Command, string Origin, string Outcome,
-    int Side, string Mapping, ushort[]? Args, string Detail, PlacementObservation? Placement = null);
+    int Side, string Mapping, ushort[]? Args, string Detail, PlacementObservation? Placement = null, DirectAttackObservation? DirectAttack = null);
 
 public static class ActionTraceProjection
 {
@@ -31,14 +31,23 @@ public static class ActionTraceProjection
                     DamageCommand d when d.Amount is > 0 and <= ushort.MaxValue => [(ushort)(side | 0x43), (ushort)d.Amount, 0, 1],
                     HealCommand h when h.Amount is > 0 and <= ushort.MaxValue => [(ushort)(side | 0x42), (ushort)h.Amount, 0, 1],
                     SummonCommand or SetCommand => PlacementWords(command, result.Placement),
+                    DeclareDirectAttackCommand attack => DirectAttackWords(attack, result.DirectAttack),
                     _ => null
                 };
                 if (words is not null) mapping = "mapped";
             }
             rows.Add(new(e.Sequence, command.GetType().Name, e.Origin.ToString(), result.Outcome.ToString(),
-                command.Side, mapping, words, result.Detail, result.Placement));
+                command.Side, mapping, words, result.Detail, result.Placement, result.DirectAttack));
         }
         return rows.AsReadOnly();
+    }
+
+    private static ushort[]? DirectAttackWords(DeclareDirectAttackCommand command, DirectAttackObservation? a)
+    {
+        if (a is null || a.Attacker != command.Attacker || a.Attacker.Side != command.Side ||
+            a.Attacker.Zone != DuelZone.Monster || a.ResourceId == 0 || a.Slot is < 0 or >= 5 ||
+            a.RequestedDamage is < 0 or > ushort.MaxValue) return null;
+        return [(ushort)((command.Side << 15) | 0x34), (ushort)a.Slot, 1, 0];
     }
 
     private static ushort[]? PlacementWords(DuelCommand command, PlacementObservation? p)

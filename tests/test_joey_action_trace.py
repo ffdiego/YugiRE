@@ -63,6 +63,24 @@ class TraceTests(unittest.TestCase):
         self.assertIsNone(canonical([0xcf,1071,0x502,1]))
         self.assertIsNone(canonical([0xce,1114,4,0x101]))
 
+    def test_historical_direct_attack_with_gaps(self):
+        import csv
+        with (ROOT/"docs/evidence/replays/relinquished_commands.csv").open(newline="") as f:
+            rows=list(csv.DictReader(f))
+        left=[{"index":int(x["record_index"]),"args":[int(x["raw_opcode_hex"],16),
+               *[int(x[f"argument_{i}"]) for i in (1,2,3)]]} for x in rows[956:962]]
+        attack=row(1,"DeclareDirectAttackCommand",[0x8034,0,1,0])
+        attack["directAttack"]={"attacker":{"side":1,"zone":2,"occurrence":{"value":1}},
+             "resourceId":24,"slot":0,"requestedDamage":1400}
+        right=[attack,row(2,"DamageCommand",[0x43,1400,0,1])]
+        report=compare(left,document(right),0,6,0,2,"ydr-record")
+        self.assertEqual(report["status"],"inconclusive")
+        self.assertEqual(report["differences"],[])
+        self.assertEqual(len(report["nativeUnmapped"]),4)
+        self.assertEqual([x["nativeIndex"] for x in report["nativeProjected"]],[956,961])
+        right[1]["args"][1]=1300
+        self.assertEqual(compare(left,document(right),0,6,0,2,"ydr-record")["status"],"mismatch")
+
     def test_bad_capture_and_fabricated_mapping(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=pathlib.Path(tmp)/"capture.jsonl"
