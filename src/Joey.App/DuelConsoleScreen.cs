@@ -78,7 +78,9 @@ static partial class Game
     static bool CheckQueuedAutomaticDraw(DuelLookAndFeel style)
     {
         Card card = new(24, 24, "Draw fixture", "", (3u << 20) | (4u << 25));
-        duel = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000,
+        int handLimit = DemoDuel.EndTurnHandLimit;
+        duel = DemoDuel.FromPartialObservation(0, Enumerable.Repeat(card, handLimit).ToArray(),
+            new Card?[5], new Card?[5], 8000,
             side0Deck: [card], side1Deck: [card]);
         alphaCpu = new(1);
         alphaBlocked = false;
@@ -109,25 +111,32 @@ static partial class Game
         }
 
         AdvanceDuelPhases(elapsed);
-        if (!queuedTurnDraw || duel.Hand.Count != 0 || displayedPhase != DuelPhaseDisplay.Draw)
+        if (!queuedTurnDraw || duel.Hand.Count != handLimit || displayedPhase != DuelPhaseDisplay.Draw)
             return Failed("admission");
         AdvanceQueuedDuel();
-        if (duel.Hand.Count != 1 || queue.IsBusy != style.PlayAnimations)
+        if (duel.Hand.Count != handLimit + 1 || queue.IsBusy != style.PlayAnimations)
             return Failed("execution");
         if (style.PlayAnimations)
         {
             if (!CardEffectsBusy || queue.Active?.Command is not TurnDrawCommand)
                 return Failed("transfer");
             AdvanceFrame();
-            if (displayedPhase != DuelPhaseDisplay.Draw || duel.Hand.Count != 1)
+            if (displayedPhase != DuelPhaseDisplay.Draw || duel.Hand.Count != handLimit + 1)
                 return Failed("gate");
         }
         AdvancePhases();
-        if (PhaseBusy || queue.IsBusy || duel.Hand.Count != 1 || displayedPhase != DuelPhaseDisplay.Main1 ||
-            !duel.EndTurn(out _)) return Failed("first Main Phase");
+        if (PhaseBusy || queue.IsBusy || duel.Hand.Count != handLimit + 1 || displayedPhase != DuelPhaseDisplay.Main1 ||
+            !TryChooseDuelPhase(DuelPhaseDisplay.End) || displayedPhase != DuelPhaseDisplay.Main1)
+            return Failed("first Main Phase");
+        AdvancePhases();
+        if (PhaseBusy || queue.IsBusy || displayedPhase != DuelPhaseDisplay.End || !duel.HasQueuedEndDiscard ||
+            duel.PendingEndDiscards != 1 || duel.ActivePlayer != 0) return Failed("End Phase");
+        UseHandAction(handLimit);
+        if (!queue.IsBusy || duel.Hand.Count != handLimit + 1) return Failed("discard admission");
         AdvancePhases();
         if (PhaseBusy || queue.IsBusy || duel.ActivePlayer != 1 || duel.Hand.Count != 1 ||
-            !duel.EndTurn(out _)) return Failed("second Main Phase");
+            duel.HandFor(0).Count != handLimit || !duel.EndTurn(out _))
+            return Failed("second Main Phase");
         AdvancePhases();
         var draws = queue.Trace.Where(item => item.Stage == ActionTraceStage.Completed &&
             item.Entry.Command is TurnDrawCommand).Select(item => item.Entry.Origin);

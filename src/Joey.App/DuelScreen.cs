@@ -130,7 +130,10 @@ static partial class Game
         var card = ViewHand[index];
         if (duel.PendingEndDiscards > 0)
         {
-            if (duel.DiscardForEndTurn(index, out message)) ClearDuelSelection();
+            bool discarded = duel.HasQueuedEndDiscard
+                ? duel.TryQueueEndTurnDiscard(index, out message)
+                : duel.DiscardForEndTurn(index, out message);
+            if (discarded) ClearDuelSelection();
             return;
         }
         var action = CurrentHandAction(index);
@@ -632,7 +635,8 @@ static partial class Game
 
         if (actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
         // Refresh eligibility after any turn-changing input in this frame.
-        actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
+        actionInput &= !PhaseBusy && queuedDuel?.IsBusy != true &&
+            CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
         bool handInput = actionInput && handHovered;
         actionInput &= queuedDuel?.IsBusy != true;

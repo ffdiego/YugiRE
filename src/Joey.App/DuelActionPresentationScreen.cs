@@ -14,15 +14,18 @@ static partial class Game
     sealed class AppActionPresentationGate : ICommandPresentationGate
     {
         private readonly ActiveCommandPresentation<ActionVisualSnapshot> active = new();
+        private int startedTurn;
 
-        // The automatic draw batch runs during the Draw notice. Its transfer
-        // and follow-ups still wait for their own visual events to finish.
-        private static bool WaitingForPhase => PhaseBusy && !queuedTurnDraw;
+        // Draw has its own batch. A committed turn advance must release the
+        // queue before the new turn can admit that batch.
+        private bool WaitingForPhase => PhaseBusy && !queuedTurnDraw &&
+            (active.Sequence is null || startedTurn == duel.Turn);
 
         public bool CanAdvance => !visualReviewPaused && !MotionBusy && !WaitingForPhase;
 
         public void OnStarting(QueuedDuelCommand command)
         {
+            startedTurn = duel.Turn;
             commandCardEffects.Begin(command.Sequence);
             var description = duel.DescribeActionPresentation(command.Command);
             Rectangle? origin = null;

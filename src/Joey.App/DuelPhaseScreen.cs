@@ -15,7 +15,8 @@ static partial class Game
     static bool RedPhaseSide => displayedTurn != 0 && (displayedTurn & 1) == 0;
     static bool TurnFlipping => drawNoticePending && turnFlipElapsed < NativePhaseTurnFlip.Updates;
     static bool PhaseBusy => !duel.GameOver && (phaseUpdates > 0 ||
-        drawNoticePending || displayedTurn != duel.Turn || displayedPhase is DuelPhaseDisplay.Draw or DuelPhaseDisplay.Standby);
+        drawNoticePending || displayedTurn != duel.Turn || displayedPhase is DuelPhaseDisplay.Draw or DuelPhaseDisplay.Standby ||
+        labSession is null && queuedDuel is not null && displayedPhase != LogicalPhase());
 
     static void ResetDuelPhases()
     {
@@ -150,16 +151,32 @@ static partial class Game
                 bounds, System.Numerics.Vector2.Zero, 0, Color.White);
             if (!enabled || !Hit(bounds) || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
 
-            bool accepted = phase switch
+            TryChooseDuelPhase(phase);
+        }
+    }
+
+    static bool TryChooseDuelPhase(DuelPhaseDisplay phase)
+    {
+        bool accepted = queuedDuel is not null
+            ? phase switch
+            {
+                DuelPhaseDisplay.Battle => duel.TryQueueBattlePhaseChange(true, out message),
+                DuelPhaseDisplay.Main2 => duel.TryQueueBattlePhaseChange(false, out message),
+                DuelPhaseDisplay.End => duel.TryQueueEndTurn(out message),
+                _ => false
+            }
+            : phase switch
             {
                 DuelPhaseDisplay.Battle => duel.BeginBattle(out message),
                 DuelPhaseDisplay.Main2 => duel.EndBattle(out message),
-                _ => duel.EndTurn(out message)
+                DuelPhaseDisplay.End => duel.EndTurn(out message),
+                _ => false
             };
-            if (!accepted) continue;
-            ShowPhase(phase);
-            ClearDuelSelection();
-        }
+        if (!accepted) return false;
+        // The queue must start before the presentation observes the phase.
+        if (queuedDuel is null) ShowPhase(phase);
+        ClearDuelSelection();
+        return true;
     }
 
     static void DrawPhaseNotice()

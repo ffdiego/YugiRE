@@ -92,5 +92,7 @@ O App também admite esse lote automaticamente com `--queued-actions`.
 O aviso de Draw pode acompanhar a fila, que continua respeitando pausas
 e movimentos. Standby e Main aguardam a resolução do lote inteiro.
 O teste de startup sem janela cobre Classic e Instant, a compra dos
-dois lados e a perda por falta de cartas. O App padrão ainda usa a
-abertura legada e o Lab usa comandos explícitos.
+dois lados e a perda por falta de cartas. No modo experimental, os botões
+Battle, Main2 e End admitem os produtores comuns e permitem que a apresentação
+observe a mudança depois da execução. O descarte obrigatório usa a mesma fila.
+O App padrão ainda usa o caminho legado e o Lab usa comandos explícitos.
