@@ -96,3 +96,32 @@ dos ícones continua Pending.** Falta o DAT real (nomes, colunas e
 dimensões dos sprites), semântica das flags de campo e composição
 nativa comparada. Não alterar o denominador do badge: os subpasses
 pertencem a 004194D0, não a novos objetos Draw independentes.
+
+
+## Fechamento de integração (23/11)
+
+A revisão cruzada confirma a ordem dos passes dos indicadores
+A/B: sprite principal, numeração amarela, sprite de
+transição se estado apropriado e t>=256. A somente
+prossegue se valor não zero **ou** estado 3
+(`0041A0FB..0041A103`); B tem teste equivalente para
+estado 4 (`0041A443..0041A44F`), além da região <0xA.
+A ordem global é tipo/atributo, B, A após os números.
+
+O bundle não traz `data.dat` nem as entradas do `card.txt`.
+O extrator atual `summarize_native_card_status_dat.py`
+lista nomes e dimensões mas ainda não registra o inteiro
+auxiliar de cada entrada; **preservar/validar as colunas
+originais** (consumidor usa divisor) antes de conectar
+`NativeStatusAtlas`. O relatório integral de
+`--inspect-visual-dat` preserva texto do manifesto.
+Não usar as dimensões sintéticas dos testes como fatos DAT.
+Não inventar significado das flags A/B; o bundle prova
+as operações 0x5F/0x60/0x69, não os efeitos de carta
+que as acionam.
+
+A coleta de 17 funções e 12 janelas foi consumida;
+não há nova extração de assembly requerida para a
+geometria ordinária. O ramo especial 0x48A, blend/pivô
+dos flashes e mapeamento semântico ficam como lacunas
+delimitadas. Nenhum Draw adicional está integrado.

@@ -47,3 +47,48 @@ Saída: `scratch/ghidra-chain-disabled-contract.zip` (não versionar). Relaciona
 ## 23/11 — bundle de assembly recebido (5/5 funções)
 
 `004531C0` consulta a textura de índice `(contador/2)%6` diretamente: seis imagens inteiras, não seis recortes de um único atlas. `004531E7` resolve o centro com os três campos do descritor via `0045C140`. `0045324E` testa 0x40 no byte `obj+0x15`, que é a parte alta da palavra de descritor iniciada em `obj+0x14`; a máscara correta é **0x4000**. No ramo não rotacionado (`0045328B..004532B0`), o destino é centro menos metade das dimensões da imagem. No outro (`00453254..00453279`), passa ângulo 90, escala 0x10000 para `00422540` e troca os meios-eixos. `NativeDisabledChainFrame` e testes atualizados. Ainda faltam o manifesto real `disable.txt`, a resolução absoluta do centro e a ligação do gatilho de jogo; Draw continua Pending.
+
+
+## Fechamento cruzado dos bundles de 23/11
+
+O dispatcher `005B9470`, presente no bundle card-status,
+tem o caso **0x72 → 00408730**. Não é mais apenas
+um chamador candidato. A rotina `00408730`
+(bundle chain-disabled) mostra:
+
+1. `00408761..0040878E`: se houver objeto de apresentação
+   bloqueando a fila, retorna sem avançar o comando.
+2. `0040878E..004087CB`: exige fase baixa
+   `DAT_00A558AC&0x7f==0`, zona <=10 e ocupante
+   com ID não zero (`fieldRecord&0xfff`). Caso
+   inválido limpa o bit 0x4000 da variável de comando.
+3. `004087D1..004087FB`: chama
+   `00570710(side,zone,5,lowWordA550A4)`. A criação
+   visual é condicionada a lowWord diferente de zero e
+   highWord igual a zero. O papel semântico dos dois
+   parâmetros ainda não é provado; não equiparar a qualquer
+   cancelamento de corrente no Core.
+4. `00408801..004088C6`: constrói descritor de lado,
+   região e slot. Para zona <10, região =
+   `(zone/5)*5` e slot = `zone%5`; zona 10 usa
+   região 10, slot 0. O descritor copia a condição
+   de posição do campo para 0x4000, como confirmou o Draw.
+5. Constrói/encaminha objeto `00452F20` e incrementa
+   o estado baixo do comando conforme o ramo normal.
+
+`004531C0` chama `0045C140(desc&1,(desc>>1)&31,
+(desc>>6)&255)`. O bundle mostra que as regiões usuais
+de campo delegam a `0045C280`; regiões 0xB..0xE
+possuem casos especiais (mão e posições com deslocamentos).
+O retorno é par EAX/EDX. Para o efeito 0x72, as
+regiões construídas são 0,5,10. Portanto pode-se
+reusar geometria de zonas confirmada, sem inventar
+um centro global para o indicador. Não alegar que os
+valores absolutos de `0045C280` vieram nesse bundle.
+
+O contrato do objeto (24 Updates, seis imagens inteiras,
+rotacionar 90 graus para 0x4000) está consolidado.
+Ainda falta o manifesto original `disable.txt`, conferir
+a semântica de `00570710`/opcode 0x72 na engine e validar
+a composição de `00422540`. A coleta Ghidra anterior
+está concluída; não repeti-la. Draw continua Pending.

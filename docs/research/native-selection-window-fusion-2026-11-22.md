@@ -30,7 +30,7 @@ Portanto, deslocamentos horizontais = `[-128, -64, 0, +64, +128]`. O valor globa
 O Draw de transição em `0043B280` contém:
 
 ```text
-cosineIndex = ((abs(counter) + 256) / 2 - 128) & 511
+cosineIndex = ((256 - abs(counter)) / 2 - 128) & 511
 scaleFixed8 = DAT_00A52EE8[cosineIndex] >> 8
 ```
 
@@ -286,3 +286,150 @@ os mesmos 512 inteiros. Não confundir `Math.Cos` duplo padrão
 com `FCOS` de precisão estendida e regras de `__ftol` sem teste
 diferencial. A geometria de `NativeSelectionWindow` permanece
 parametrizada pelo `ReadOnlySpan<int>` recebido, sem heurística.
+
+
+## 10. Fechamento do bundle recebido em 23/11/2026
+
+`ghidra-selection-fusion-contract.zip`: 6/6 decompilações
+(incluindo cinco recuperadas por função transitória), três
+leituras de memória completas, SHA-256 original confirmado.
+**Atenção à granularidade da evidência:** o pedido foi de
+512 instruções por VA, não o corpo inteiro de cada função.
+Em `0043B280` o trecho termina em `0043B8AA`; em
+`004524F0` termina em `00452B91`. As fases posteriores descritas
+pelo pseudocódigo são identificadas como tal, não como assembly
+integral. Não solicitar o mesmo ZIP novamente.
+
+### Janela de seleção
+
+- `005DB570` contém o int32 525, confirmado pelos bytes
+  `0D 02 00 00`. Em conjunto com o Y=300 do construtor,
+  o alvo estático da janela é (525,300). Não usar esse valor
+  como centro de todas as animações de fusão.
+- `0043B2A9..0043B2E4`: escolhe o código de região conforme
+  modo (pseudocódigo: 1→12, 2→13, 3→14, 4→15,
+  demais→-1), chama `0045C140(side,region,0)` e recebe
+  EAX=X, EDX=Y. O modo não é índice de textura.
+- `0043B2E6..0043B383` confirma o índice
+  `((256-abs(t))/2-128)&511`, divisão assinada para zero,
+  fator `C[index]>>8` e uso desse mesmo fator para
+  interpolar centro, largura e altura. O valor já está
+  correto em `NativeSelectionWindow`; não reimplementar.
+  Exemplos: t=256 → índice 384; t=32 → 496;
+  t=-1 → 511; t=0 → 0 (o Draw real usa o ramo estável).
+- O ramo estável inicia em `0043B3F9`. A decompilação
+  identifica o desenho de fundo e cinco objetos/slots,
+  variantes por byte `obj+0x1FC`, escolha de ícones em
+  função do modo 0x29 ou flag 0x800, e numeração por
+  `00480690`. Não fechar os recortes/posições restantes
+  só com variáveis de stack ambíguas.
+
+### Tabela de cosseno, compartilhada pelas animações
+
+O gerador `0055DCF0` contém explicitamente, em
+`0055DD0B..0055DD3C`:
+
+```text
+for i in 0..511:
+    C[i] = convert_005C3E40(FCOS(i * pi * (1/256)) * double_at_005DCD00)
+```
+
+Os dois primeiros doubles vieram no dump:
+`005DCCF8=pi` e `005DCCB0=1/256`. A multiplicação final
+por `005DCD00`, omitida no pseudocódigo resumido anteriormente,
+é real. Seu valor e a conversão ainda não foram extraídos.
+Não presumir que o fator é 65536, nem que a precisão/rounding
+de Math.Cos reproduz x87. A tabela `00A52EE8` é construída
+em runtime. Um dump privado após `00A536E8=1` pode resolver
+os 512 valores de uma vez e também serve às duas fusões.
+
+### Fusão geral — 004524E0 / 004524F0
+
+Update `004524E0` incrementa `obj+0x14` em **4**; não desativa
+o objeto nessa rotina. Draw `004524F0` obtém/cria superfície
+800×600 (`0045253A..00452552`), faz um pass sobre ela e usa
+`DAT_005DB278/005DB27C` como centro do efeito, **não** a
+âncora de seleção 525. As coordenadas desses globals
+não constam dos três reads.
+
+Com t=contador, a=acumulador de ângulo em `obj+0x18`,
+C(i)=C[i&511], os ramos do sprite de índice 1
+(`0045257E..00452686`) são:
+
+| t | Escala X/Y | Intensidade | Mutação de a NO DRAW |
+| --- | --- | --- | --- |
+| <128 | t << 9 | C(t-128)<<8 >>16 | a -= C(t-128)<<3 >>16 |
+| 128..383 | 65536 | 256 | a -= 8 |
+| 384..447 | (448-t)<<10 | C(2*t-256)<<8 >>16 | a -= 8 |
+| >=448 | 0 | 0 | a -= 8 |
+
+Shifts acima seguem aritmética x86 de 32 bits. A rotina chama
+`00422C00` com os dois eixos iguais. Em t=4 dispara
+`005C03D0(0x10000020,0)`; t=384 chama
+`005C03D0(0x10000021,0)`. Ainda não atribuir nomes de som
+ou outros recursos a esses IDs.
+
+De 384 a 447 há um pass adicional do recurso 2
+(`004526A7..00452752`): escala `2*C(2*t+128)+32768`,
+intensidade `C(2*t-256)>>8`. O trecho
+`0045275A..00452938` gera outros sprites orbitais:
+limite de idade quantizado por 32, saturado em 256;
+escolha por módulo 12 em `005DB280`; posições via
+a tabela trigonométrica. A tabela de doze seletores
+e seu mapeamento ao manifesto fusion.txt não vieram.
+
+Fases das cartas, recuperadas do **pseudocódigo** completo
+do retry, com assembly até o início da segunda fase:
+
+| t | Composição das cartas |
+| --- | --- |
+| 0..31 | fixa a orientação orbital inicial e desenha materiais |
+| 32..127 | materiais distribuídos em órbita de raio fixo |
+| 128..383 | materiais convergem por fator de cosseno e ângulo variável |
+| 384..511 | carta resultante central, com pass adicional de composição |
+| 512+ | resultado central sem o pass adicional |
+
+No final do pseudocódigo, `00403D70(obj+0x10,t)` é chamado
+a cada Draw e o objeto fica inativo em t>=640, limpa flag
+de `DAT_005F3400+5` se presente e chama `0044BA00`.
+Se partir de zero e avançar ininterruptamente em passos de
+4, atingir 640 leva 160 updates; **não** equivale a 160 frames
+ou duração absoluta comprovada. O assembly fornecido não
+alcança esse epílogo, que deve ser conferido antes do port.
+
+### Fusão vinculada a objeto de carta — 004877B0 / 004877F0
+
+A segunda família tem contrato diferente. Update
+`004877B0..004877E1` soma **8**, exceto se
+`obj+0x10==0 && t>=128`, quando deixa o contador parado.
+`obj+4 = (t<384)`. Não atribuir a flag a uma decisão
+do Core sem rastrear seu escritor.
+
+Draw `004877F0..0048791C` lê a carta associada em
+`obj+0x20`, retorna se ela está inativa e usa seus
+campos +0x30/+0x34 como centro. Recurso 0 do banco
+do objeto é selecionado em `004878C1..004878E0`.
+A transformação chama `00422C00` com escala nos
+dois eixos e ângulo negativo do acumulador a.
+
+| t | Escala | Intensidade | Mutação de a NO DRAW |
+| --- | --- | --- | --- |
+| <128 | t<<9 | (160*C(t-128))>>16 | a += (C(t-128)<<2)>>16 |
+| 128 | 65536 | 160 | a += 4 |
+| 129..255 | 65536 | (176*C((t-128)/2))>>16 | a += ((C((t-128)/2-128)<<2)>>16)+4 |
+| >=256 | (t-128)<<9 | mesma fórmula | mesma fórmula |
+
+A divisão é inteira; essas fórmulas vêm do trecho
+`0048781D..004878BB`. A duração mínima é 48 updates
+se não ocorrer espera, e não há duração máxima dedutível
+sem conhecer a liberação da flag. Ambas as fusões mutam
+o ângulo dentro de Draw, não somente no Update. Portar
+essas mutações usando o relógio de apresentação exige
+decisão explícita de cadência, não misturar com o Core.
+
+**Encerramento desta rodada:** nenhuma integração de fusão
+foi realizada. Faltam tabela C exata, dados de fusão do
+DAT (ordem/dimensões), constantes de centro e seletores,
+proveniência da flag de espera, compositor e comparação
+pareada. Os contratos e endereços já recuperados são
+suficientes para retomar sem redescobrir as duas famílias.

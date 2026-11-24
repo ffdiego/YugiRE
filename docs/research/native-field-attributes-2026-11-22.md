@@ -135,3 +135,25 @@ Compartilhar resultados privadamente e não commitar os assets.
 ## 23/11 — conferência pelo assembly recebido
 
 `ghidra-field-attributes-contract.zip`: 8/8 funções, SHA-256 original confirmado. `004196D6..004196F6` e `004199D0..004199DE` demonstram duas divisões inteiras separadas para o afastamento dos números. `00419864..0041987B` e `0048036E..00480374` confirmam o separador com âncora direita `X+glifo/2`, da qual o helper subtrai uma largura. `00419612..00419630` confirma Y ±46 menos metade da altura da fonte; intensidades 160/256 também confirmadas. `NativeFieldAttributeFrame.Compose` agora usa a aritmética exata no renderer existente (diferença de 1 px para glifos ímpares). Flashes de mudança de atributo seguem o delta anterior ao smoothing; ver [status](native-card-status-digits-2026-11-22.md). Sem validação pareada de pixels, mantém Partial.
+
+
+## Fechamento da revisão de assembly (23/11)
+
+`00419549..0041956A` confirma a chamada de ocupante
+e o gate de identidade. `00419570..004195CB` calcula
+os dois deltas antes da suavização, salva-os e aplica
+`target+trunc((displayed-target)*7/8)` nos acumuladores.
+`00419632..004196CB` confirma que a variante de DEF é
+escolhida comparando o **valor suavizado** ao base, e
+não a direção do delta. A distinção é importante quando
+o efeito expira: o número ainda pode estar acima do base
+enquanto o flash indica redução.
+
+O teste de lado (`00419612..00419630`) confirma:
+mesma perspectiva → Y+46, adversário → Y-46; top =
+esse centro menos altura da fonte/2. O blend ainda não
+foi reconstruído: 160/256 são intensidades nativas
+passadas ao helper, não prova de alpha raylib idêntico.
+A comparação de pixels e cadência permanece pendente.
+Não solicitar novamente o bundle 03: o contrato já foi
+absorvido em código e testes no commit d03038e.

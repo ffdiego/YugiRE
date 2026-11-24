@@ -63,7 +63,11 @@ não afirmar equivalência binária da tabela gerada em C# ainda.
 com o valor da tabela deslocado em 8 bits. O assembly usa
 correção de sinal antes de SAR para truncar em direção a zero.
 As duas famílias de fusão têm seus Updates e Draws recuperados;
-a análise individual dessas rotinas continua pendente.
+a revisão final documenta as fases, relógios, fórmulas de escala,
+recursos 0/1/2 e acumuladores de ângulo em
+[native-selection-window-fusion](native-selection-window-fusion-2026-11-22.md).
+O assembly longo é limitado a 512 instruções; o epílogo da fusão geral
+permanece sustentado pelo pseudocódigo, não por assembly integral.
 
 ## Estado
 
@@ -74,3 +78,41 @@ analisar seleção/fusão com o assembly já entregue ou finalizar
 a integração da corrente desativada quando os metadados DAT
 e o gatilho estiverem estabelecidos. Não solicitar novamente
 os quatro bundles já recebidos.
+
+
+## Handoff — encerrar este lote de quatro arquivos
+
+**Escopo fechado:** consolidar os quatro ZIPs entregues,
+não iniciar novas implementações. O commit anterior
+`d03038e` já contém a correção de geometria numérica
+e os contratos de status/corrente; todos os jobs .NET,
+Python/Node e badges passaram nessa revisão.
+
+| Frente | Conhecimento estático absorvido | Próxima dependência, fora deste lote |
+| --- | --- | --- |
+| selection-fusion | Âncora 525, lookup correto, fases de duas fusões, relógios 4/8, espera e mutações no Draw | Cosseno runtime, manifest fusion/list, constantes de centro e tabela de seletores, flag de espera |
+| chain-disabled | Opcode 0x72, gates, descritor (0/5/10), centro por 0045C140, seis recursos e rotação | disable.txt original, semântica do comando, integração |
+| field-attributes | Gates, suavização, seleção de atlas, posição e intensidades, delta do flash | Comparação original/client e blend/cadência |
+| card-status | Gates, campos, opcodes, tempo, recortes, X/Y e ordem de passes | card.txt com colunas reais, flags semânticas, compositor/integração |
+
+**Retomar pelo repositório, não pelos ZIPs desde o início.**
+Para o próximo chat, ler este documento e os quatro links
+de pesquisa; usar `PLANS.md` como fila de implementação.
+Manter `Joey.LookAndFeel` separado de `Joey.Core`, usar
+assembly como autoridade para geometria, distinguir
+pseudocódigo de assembly e validação em jogo. Não versionar
+os bundles privados, EXE, DAT ou dumps. Os quatro roteiros
+ficam arquivados em scripts/pending com estado de coleta
+concluída; não é necessário executá-los novamente.
+
+**Cobertura visual na entrega:** 19/34 Partial, 0 Verified.
+Nenhuma mudança na classificação por esta consolidação
+documental. O avanço de conhecimento não deve inflar o badge.
+
+### Links de retomada
+
+- [Seleção e fusão](native-selection-window-fusion-2026-11-22.md)
+- [Corrente desativada](native-chain-disabled-2026-11-22.md)
+- [ATK/DEF](native-field-attributes-2026-11-22.md)
+- [Geometria do status](native-card-status-digits-2026-11-22.md)
+- [Estados e flags de status](native-card-status-overlays-2026-11-22.md)

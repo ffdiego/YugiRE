@@ -1,96 +1,59 @@
-# scripts/pending — investigações nativas aguardando execução
+# scripts/pending — fila de coleta de evidência nativa
 
-Esta pasta guarda **roteiros de coleta de evidência, não implementações incompletas**. Eles não são invocados por `build`, `CI`, testes ou pelo loop normal de desenvolvimento. Cada script é autocontido, roda a partir de qualquer diretório, usa o projeto Ghidra **local** e escreve somente sob `scratch/` (ignorado pelo Git). **Não versionar o ZIP, o executável, o DAT nem dumps de memória.**
+Os quatro roteiros de 22/11 foram executados e seus ZIPs privados
+recebidos em 23/11/2026. **Coleta concluída, conhecimento consolidado.**
+Os scripts são preservados para reproduzir evidências quando
+necessário; não são executados por build, CI ou desenvolvimento
+normal. Não versionar ZIPs, executável, DAT ou dumps de memória.
 
-## Fila
+| Roteiro | Bundle recebido | Estado da coleta |
+| --- | --- | --- |
+| `01-selection-fusion-ghidra.sh` | `ghidra-selection-fusion-contract.zip` | Concluída (6/6, 3 reads) |
+| `02-chain-disabled-ghidra.sh` | `ghidra-chain-disabled-contract.zip` | Concluída (5/5) |
+| `03-field-attributes-ghidra.sh` | `ghidra-field-attributes-contract.zip` | Concluída (8/8) |
+| `04-card-status-ghidra.sh` | `ghidra-card-status-contract.zip` | Concluída (17/17, 12 janelas) |
 
-| Roteiro | Pré-requisito | Produz | Estado |
-| --- | --- | --- | --- |
-| `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Bundle recebido em 23/11** |
-| `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Bundle recebido em 23/11** |
-| `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Bundle recebido em 23/11** |
-| `04-card-status-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-card-status-contract.zip` | **Bundle recebido em 23/11** |
+Manifestos confirmam o fingerprint original e missing=[].
+Para os limites do disassembly e contratos extraídos,
+ver [handoff dos quatro bundles](../../docs/research/visual-contract-bundles-2026-11-23.md).
+**Não confundir coleta concluída com Draw implementado/Verified.**
 
-### Seleção/fusão: o que já sabemos e o que NÃO sabemos
+## Dependências restantes, não repetir os quatro scripts
 
-O primeiro roteiro obtém assembly de `0043B280`, `0055DCF0`, `004524E0/004524F0`, `004877B0/004877F0` e bytes estáticos da âncora e constantes do gerador x87. **Importante:** `00A52EE8` é uma tabela trigonométrica gerada em tempo de execução por `0055DCF0`; não espere obter seus 512 valores definitivos lendo apenas o PE no Ghidra. Depois da extração, recuperar os valores da tabela **após sua inicialização** com uma captura runtime ou reconstrução x87 comprovada. Consultar `docs/research/native-selection-window-fusion-2026-11-22.md`.
+- Seleção/fusão: tabela runtime `00A52EE8` depois de
+  `00A536E8=1`; constantes de centro, tabela de seletores e
+  manifesto fusion/list; flag de espera. O ZIP não contém
+  o valor de `005DCD00` nem a conversão `005C3E40`.
+- Corrente desativada: `disable.txt` original, semântica do
+  comando 0x72, integração da rotação e validação.
+- ATK/DEF: comparação pareada em 800×600 e blend/cadência.
+- Status: `card.txt` original incluindo o inteiro auxiliar de
+  cada entrada (divisor de colunas); semântica de flags A/B,
+  ramo especial e composição. Geometria ordinária já resolvida.
 
-### Corrente desativada: próxima família visual independente
+## Metadados DAT — coleta separada, quando necessário
 
-O segundo roteiro traz construtor, caminho de disparo e assembly de Update/Draw do objeto `005DB374`, que usa `j/duel/chain/disable.txt`. A decompilação já confirma `004531A0`: contador +1 por Update, desativa após 24; `004531C0`: quadro `(contador/2)%6`, com modo de composição alternativo por bit 0x40 do descritor. Ainda **não** conhecemos o índice do sprite no manifesto, as coordenadas efetivas de `0045C140`, o ponto exato de disparo e a rotação, portanto não inventar a apresentação. Essa é uma candidata a uma nova Draw no badge, **somente** após integração C# efetiva.
-
-### Metadados do DAT para corrente desativada (sem Ghidra)
-
-O escopo do inspetor `--inspect-visual-dat` já inclui `j\duel\chain\`. Na máquina com o `data.dat` original, executar:
+Na máquina com o DAT original, o relatório integral já pode
+ser extraído sem Ghidra:
 
 ```bash
 dotnet run --project src/Joey.App -- /caminho/para/data.dat --inspect-visual-dat
 python3 scripts/summarize_native_chain_dat.py
-```
-
-O segundo comando cria `scratch/visual-review/chain-manifests.json`, filtrando apenas o texto dos manifests e as dimensões das imagens (sem pixels, hashes de imagem ou arte gráfica). Verificar seu conteúdo e compartilhar este JSON **privadamente**, junto do ZIP de Ghidra. Não versionar nenhum dos dois. A extração dos metadados **não** identifica automaticamente o papel/ordem dos sprites: isso depende de `004531C0`, `0045C140` e do manifesto real.
-
-### ATK/DEF — conferir a composição nativa antes da validação visual
-
-O terceiro roteiro exporta assembly de `00418A80`, `00418EF0`, `004194D0`, `00417F40`, `00480200`, `00480230`, `00480300` e `00480500`. No cliente já estão integrados os três bitmaps originais `duel_fontm` e o split de opacidades 160/256; faltam comparar coordenadas absolutas, mascaramento, modo de blend e ordem Update/Draw. **Não** interpretar a existência desse roteiro como extração executada. O manifesto e dimensões dos BMPs podem ser inspecionados separadamente com `--inspect-visual-dat`. Ver [`native-field-attributes`](../../docs/research/native-field-attributes-2026-11-22.md).
-
-### Indicadores de estado de carta e flashes de ATK/DEF
-
-**Parte resolvida sem novo DAT:** `0041A070` e `0041A3B0` usam a entrada 8 do `font/number.txt` (`duel_fontm_y.bmp`, 70×10 pixels, glifos 7×10). O primeiro centraliza via `00480690`, o segundo desenha à direita via `004803C0`; `NativeCardStatusDigits` já implementa ambos os cálculos. O **próximo bundle é especificamente para descobrir o produtor de EBX/EDI e `iStack_6c`** nas chamadas virtuais e as dimensões/nomes reais dos ícones; não para redescobrir os algarismos. Ver [evidência da numeração](../../docs/research/native-card-status-digits-2026-11-22.md).
-
-
-O quarto roteiro exporta assembly dos subpasses `00419B70`, `0041A070`,
-`0041A3B0`, a animação `00418B60`, os comandos nativos `0040B270` e
-`0040B370`, o dispatcher `005B9470`, o carregador da miniatura
-`00418560` e funções do banco de sprites `duel/card/card.txt`. É
-independente do roteiro 03 (glifos ATK/DEF). No Windows, `--inspect-visual-dat`
-já exporta os metadados de `j\\duel\\card\\`; em seguida rode:
-
-```bash
 python3 scripts/summarize_native_card_status_dat.py
 ```
 
-Para rastrear `EBX`, `EDI` e `iStack_6c`, o quarto roteiro também
-inclui **12** chamadas `--instruction-window VA:COUNT` nos
-endereços exatos de retorno que aparecem nas decompilações dos
-Draws A/B. O exportador e o `QueryArchive.java` agora incluem
-marcadores de início/fim e verificam que a janela não foi deslocada
-pelo fallback do Ghidra. O ZIP contém esses trechos no arquivo
-`instruction-windows.txt`, com status em `manifest.json`.
-Isso **não significa** que o Ghidra já rodou nem que os X foram
-resolvidos: ainda aguardamos o bundle real.
+As saídas em `scratch/visual-review/` são privadas.
+O relatório integral de manifests preserva os inteiros
+auxiliares de cada entrada; o resumo de card-status ainda
+não registra as colunas. Não deduzi-las só pela dimensão
+do bitmap. Inspecionar o texto antes da integração.
 
-Ele cria `scratch/visual-review/card-status-manifests.json`, com índices
-0..13, caminhos e dimensões sem pixels. A leitura falha se as quatro
-âncoras conhecidas do manifesto não coincidirem com o contrato de
-`00418EF0`; não tentar corrigir índices por estimativa. Os sprites
-desenhados e sua semântica visual ainda exigem disassembly e inspeção DAT.
-Ver [pesquisa dos indicadores](../../docs/research/native-card-status-overlays-2026-11-22.md).
+## Protocolo de novas coletas
 
-## Uso
-
-Depois de atualizar a `main` na máquina com Ghidra, executar apenas o roteiro pertinente, por exemplo:
-
-```bash
-bash scripts/pending/01-selection-fusion-ghidra.sh
-```
-
-O exportador `scripts/export_ghidra_visual_bundle.py` valida o SHA-256 de `joey_pc.exe`, executa o Ghidra em modo `-readOnly` com rollback e inclui decompilações/disassembly em um ZIP privado. Se `GHIDRA_INSTALL_DIR` não aponta à instalação correta, ajustá-la antes de executar. Fazer upload **somente do ZIP gerado** na conversa apropriada.
-
-## Protocolo para novas pendências
-
-Cada novo roteiro deve especificar: hipótese/objetivo, endereços-alvo, dependências, comando reprodutível, artefato esperado e critério de encerramento. Depois de processar o ZIP e registrar conclusões em `docs/research/`, atualizar esta fila para **concluído** ou remover o roteiro de pending em commit separado; não abandonar scripts silenciosamente. Scripts de uso geral permanecem em `scripts/`.
-
-
-## Recebimento e triagem — 23/11/2026
-
-Quatro ZIPs privados recebidos, todos com o SHA-256 esperado, `missing=[]` e memória solicitada completa. Não executar de novo os quatro roteiros sem motivo.
-
-| Bundle | Funções | Situação após triagem |
-| --- | ---: | --- |
-| selection-fusion | 6/6 | Âncora estática 525; gerador x87 confirmado, demais Draws a aprofundar |
-| chain-disabled | 5/5 | Seis recursos sequenciais, pivô no centro e ramo rotacionado de 90 graus identificados; DAT e gatilho ainda pendentes |
-| field-attributes | 8/8 | Geometria dos números e arredondamento conferidos; modelo integrado corrigido |
-| card-status | 17/17, 12/12 janelas | Coordenadas A/B, tipo e atributo resolvidas; falta DAT/flags/composição |
-
-O texto acima que descrevia a coleta como futura registra o estado anterior. Para a investigação de status, o assembly já foi consumido e as fórmulas finais estão em [native-card-status-digits](../../docs/research/native-card-status-digits-2026-11-22.md). Os outros bundles não exigem nova coleta para iniciar a próxima análise. Ver [triagem](../../docs/research/visual-contract-bundles-2026-11-23.md).
+Cada novo roteiro deve especificar hipótese, endereços,
+dependências, comando, artefato e critério de encerramento.
+O exportador valida SHA-256, usa Ghidra -readOnly com
+rollback e grava sob scratch/. Depois de consumir um bundle,
+registrar conclusões em docs/research e marcar coleta como
+concluída nesta fila. Novas pendências devem corresponder
+a evidências específicas, não reexecutar coletas completas.
