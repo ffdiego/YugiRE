@@ -1642,6 +1642,30 @@
         "Done in bounded headless C# scope after CI; full ownership/control, unmodeled continuous effects, chains and UI/CPU pending.",
         "Native candidate 0057B530 recovered; primary 00589E60 absent in v2. No native differential validation."
       ]
+    },
+    {
+      "id": "spelltrap.return.targeted-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1539
+      ],
+      "mechanics": [
+        "Queue-backed activation from Hand or Set, select one opposing Spell/Trap or Field Spell occurrence",
+        "Spend source, return selected occurrence and unlink modeled equipment; dependent Destiny Board cleanup only after successful return"
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapTargetRules.cs",
+        "src/Joey.Core/DemoQueuedTargetedSpellTrap.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedTargetedSpellTrapChecks.cs",
+        "docs/cards/c02-spiritualism.md"
+      ],
+      "limitations": [
+        "Bounded headless sandbox; activation/effect cannot be negated per card text, but general negation and chains are not modeled here. UI/CPU and native comparison pending.",
+        "P262 identity and callback addresses recovered from catalog; candidate, primary and target preparation bodies absent in cumulative v2."
+      ]
     }
   ]
 }
