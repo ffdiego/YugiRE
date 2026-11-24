@@ -71,8 +71,8 @@ Quando o efeito de encerramento do sandbox tem uma mensagem disponível,
 a fila captura a ocorrência da mão ou do deck em um comando de colocação.
 O comando revalida o efeito, a fonte e o slot. A colocação precede a troca
 e o duelo termina ali em caso de vitória. O fluxo legado reaproveita
-a mesma escolha e colocação. Compra automática, demais oportunidades
-de fase e mapeamento no replay nativo ficam em fatias próprias de A07.
+a mesma escolha e colocação. Demais oportunidades de fase e mapeamento
+no replay nativo ficam em fatias próprias de A07.
 
 ## A07 — Compra legal e retorno de Standby no sandbox
 
@@ -87,3 +87,10 @@ uma vez. Com a ocorrência ainda no cemitério e um slot livre, um
 `SpecialSummonCommand` separado invoca em defesa revelada. Campo cheio ou
 fonte ausente consome a promessa com o custo já pago. O caminho admite
 a compra manual no sandbox e deixa em aberto os gates nativos completos.
+
+O App também admite esse lote automaticamente com `--queued-actions`.
+O aviso de Draw pode acompanhar a fila, que continua respeitando pausas
+e movimentos. Standby e Main aguardam a resolução do lote inteiro.
+O teste de startup sem janela cobre Classic e Instant, a compra dos
+dois lados e a perda por falta de cartas. O App padrão ainda usa a
+abertura legada e o Lab usa comandos explícitos.

@@ -11,6 +11,7 @@ static partial class Game
     static int displayedTurn, phaseUpdates;
     static int turnFlipElapsed;
     static bool drawNoticePending;
+    static bool queuedTurnDraw;
     static bool RedPhaseSide => displayedTurn != 0 && (displayedTurn & 1) == 0;
     static bool TurnFlipping => drawNoticePending && turnFlipElapsed < NativePhaseTurnFlip.Updates;
     static bool PhaseBusy => !duel.GameOver && (phaseUpdates > 0 ||
@@ -22,7 +23,7 @@ static partial class Game
         displayedPhase = DuelPhaseDisplay.Draw;
         phaseUpdates = 0;
         turnFlipElapsed = NativePhaseTurnFlip.Updates;
-        drawNoticePending = false;
+        drawNoticePending = queuedTurnDraw = false;
         phaseClock.Reset();
     }
 
@@ -64,7 +65,7 @@ static partial class Game
         }
         if (phaseUpdates > 0)
             phaseUpdates = Math.Max(0, phaseUpdates - phaseClock.Advance(elapsed, presentation.Style));
-        if (MotionBusy || phaseUpdates > 0 || duel.GameOver) return;
+        if (MotionBusy || phaseUpdates > 0 || duel.GameOver || queuedTurnDraw) return;
 
         if (displayedTurn != duel.Turn)
         {
@@ -85,14 +86,23 @@ static partial class Game
         }
         if (drawNoticePending)
         {
+            if (queuedDuel?.IsBusy == true) return;
             drawNoticePending = false;
             ShowPhase(DuelPhaseDisplay.Draw);
             if (duel.CanDraw)
             {
-                duel.Draw(out message);
-                ClearDuelSelection();
+                if (queuedDuel is not null)
+                {
+                    var origin = alphaCpu?.Player == duel.ActivePlayer ? ActionOrigin.Cpu : ActionOrigin.Player;
+                    queuedTurnDraw = duel.TryQueueTurnDraw(out _, origin);
+                }
+                else
+                {
+                    duel.Draw(out message);
+                    ClearDuelSelection();
+                }
             }
-            if (presentation.Style.PlayAnimations) return;
+            if (presentation.Style.PlayAnimations || queuedTurnDraw) return;
         }
         if (displayedPhase == DuelPhaseDisplay.Draw)
         {

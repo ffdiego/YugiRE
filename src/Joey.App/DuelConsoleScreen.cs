@@ -1,4 +1,5 @@
 using Joey.Core;
+using Joey.LookAndFeel;
 using Raylib_cs;
 
 static partial class Game
@@ -64,8 +65,76 @@ static partial class Game
             Console.Error.WriteLine("Legacy phase driver no longer performs its automatic draw.");
             return 1;
         }
-        Console.WriteLine("Laboratory startup phase regression passed.");
+        if (!CheckQueuedAutomaticDraw(new DuelLookAndFeel()) ||
+            !CheckQueuedAutomaticDraw(new InstantLookAndFeel()))
+        {
+            Console.Error.WriteLine("Queued automatic draw phase regression failed.");
+            return 1;
+        }
+        Console.WriteLine("Laboratory and queued automatic draw phase regressions passed.");
         return 0;
+    }
+
+    static bool CheckQueuedAutomaticDraw(DuelLookAndFeel style)
+    {
+        Card card = new(24, 24, "Draw fixture", "", (3u << 20) | (4u << 25));
+        duel = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000,
+            side0Deck: [card], side1Deck: [card]);
+        alphaCpu = new(1);
+        alphaBlocked = false;
+        presentation.SetStyle(style);
+        ResetDuelPresentation();
+        var queue = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate());
+        queuedDuel = queue;
+        var elapsed = TimeSpan.FromMilliseconds(17);
+
+        void AdvanceFrame()
+        {
+            AdvanceCardEffects(elapsed);
+            AdvanceDuelPhases(elapsed);
+            AdvanceQueuedDuel();
+        }
+
+        void AdvancePhases()
+        {
+            for (int i = 0; i < 500 && (PhaseBusy || queue.IsBusy); i++) AdvanceFrame();
+        }
+
+        bool Failed(string stage)
+        {
+            Console.Error.WriteLine($"Automatic draw {style.GetType().Name} failed at {stage}. " +
+                $"Turn {duel.Turn}, display {displayedPhase}, updates {phaseUpdates}, " +
+                $"hand {duel.Hand.Count}, queued {queue.IsBusy}, motion {MotionBusy}, message {message}");
+            return false;
+        }
+
+        AdvanceDuelPhases(elapsed);
+        if (!queuedTurnDraw || duel.Hand.Count != 0 || displayedPhase != DuelPhaseDisplay.Draw)
+            return Failed("admission");
+        AdvanceQueuedDuel();
+        if (duel.Hand.Count != 1 || queue.IsBusy != style.PlayAnimations)
+            return Failed("execution");
+        if (style.PlayAnimations)
+        {
+            if (!CardEffectsBusy || queue.Active?.Command is not TurnDrawCommand)
+                return Failed("transfer");
+            AdvanceFrame();
+            if (displayedPhase != DuelPhaseDisplay.Draw || duel.Hand.Count != 1)
+                return Failed("gate");
+        }
+        AdvancePhases();
+        if (PhaseBusy || queue.IsBusy || duel.Hand.Count != 1 || displayedPhase != DuelPhaseDisplay.Main1 ||
+            !duel.EndTurn(out _)) return Failed("first Main Phase");
+        AdvancePhases();
+        if (PhaseBusy || queue.IsBusy || duel.ActivePlayer != 1 || duel.Hand.Count != 1 ||
+            !duel.EndTurn(out _)) return Failed("second Main Phase");
+        AdvancePhases();
+        var draws = queue.Trace.Where(item => item.Stage == ActionTraceStage.Completed &&
+            item.Entry.Command is TurnDrawCommand).Select(item => item.Entry.Origin);
+        if (duel.Winner != 1 || queue.IsBusy || alphaBlocked ||
+            !draws.SequenceEqual(new[] { ActionOrigin.Player, ActionOrigin.Cpu, ActionOrigin.Player }))
+            return Failed("deck out");
+        return true;
     }
 
     static void LabLog(string text)

@@ -15,7 +15,11 @@ static partial class Game
     {
         private readonly ActiveCommandPresentation<ActionVisualSnapshot> active = new();
 
-        public bool CanAdvance => !visualReviewPaused && !MotionBusy && !PhaseBusy;
+        // The automatic draw batch runs during the Draw notice. Its transfer
+        // and follow-ups still wait for their own visual events to finish.
+        private static bool WaitingForPhase => PhaseBusy && !queuedTurnDraw;
+
+        public bool CanAdvance => !visualReviewPaused && !MotionBusy && !WaitingForPhase;
 
         public void OnStarting(QueuedDuelCommand command)
         {
@@ -31,8 +35,14 @@ static partial class Game
         public bool CanComplete(QueuedDuelCommand command, CommandResult result)
         {
             if (!active.TryRelease(command.Sequence, result.Outcome == CommandOutcome.Applied,
-                BeginActionVisual, () => MotionBusy || PhaseBusy)) return false;
+                BeginActionVisual, () => MotionBusy || WaitingForPhase)) return false;
             commandCardEffects.Release(command.Sequence);
+            if (queuedTurnDraw && command.Command is TurnDrawCommand)
+            {
+                message = result.Detail.Length != 0 ? result.Detail :
+                    duel.ExodiaWinner == command.Command.Side ? "Exodia complete: all five Forbidden One pieces in hand." : "Drew one card.";
+                ClearDuelSelection();
+            }
             return true;
         }
     }
@@ -100,7 +110,11 @@ static partial class Game
                 if (answer is { } choice) queue.SubmitDecision(request.Id, choice);
             }
             queue.Tick();
-            if (!queue.IsBusy) queuedPreviewSource = null;
+            if (!queue.IsBusy)
+            {
+                queuedPreviewSource = null;
+                queuedTurnDraw = false;
+            }
         }
         catch (InvalidOperationException ex)
         {
