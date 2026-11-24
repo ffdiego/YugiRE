@@ -29,6 +29,15 @@ public static class FlipBanishBurnRules
         _ => 0
     };
 
+    internal static int[] SampleHandIndices(int count, int required, Random random)
+    {
+        if (required < 0 || count < required)
+            throw new ArgumentOutOfRangeException(nameof(required));
+        int[] indices = Enumerable.Range(0, count).ToArray();
+        random.Shuffle(indices);
+        return indices.Take(required).ToArray();
+    }
+
     /// <summary>
     /// This operation is atomic with respect to card-zone mutations.
     /// When the required number of occurrences does not exist, no cards
@@ -63,9 +72,7 @@ public static class FlipBanishBurnRules
             // Seeded sandbox permutation; original native RNG is NOT asserted.
             // Sample indices without replacement, then remove descending to
             // avoid shifting an unchosen occurrence or losing duplicate copies.
-            int[] indices = Enumerable.Range(0, hand.Count).ToArray();
-            random.Shuffle(indices);
-            int[] selected = indices.Take(required).ToArray();
+            int[] selected = SampleHandIndices(hand.Count, required, random);
             removed = selected.Select(index => hand[index]).ToArray();
             foreach (int index in selected.OrderByDescending(index => index))
                 hand.RemoveAt(index);

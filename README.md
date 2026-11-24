@@ -31,7 +31,7 @@ a comparação dinâmica completa de um duelo normal ainda está pendente.
 As badges independentes representam [ACTIONS, CARDS e VISUALS](PLANS.md):
 
 - **ACTIONS:** marcos numerados concluídos da trilha A no PLANS.md (checkbox `[x]` e status `Concluído`); mede o roadmap do scheduler, não a porcentagem de opcodes ou regras do motor.
-- **CARDS:** cartas jogáveis na trilogia (Done+Verified, 771 cartas).
+- **CARDS:** cartas jogáveis na trilogia (Done+Verified, 771 cartas), com contagem de Partial separada; migrações C12 de cartas já Done não aumentam esse percentual.
 - **VISUALS:** funções Draw nativas com implementação C# (Partial+Done+Verified, dentre as identificadas); mede cobertura de implementação, **não fidelidade nativa comprovada**.
 
 Os denominadores de ACTIONS e VISUALS podem aumentar conforme novos marcos ou rotinas forem identificados. Não comparar as três porcentagens como estimativa de esforço restante.

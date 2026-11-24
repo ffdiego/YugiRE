@@ -106,10 +106,13 @@ internal static class ActionQueueFlipChecks
         check(immortal.Life[0] == 11000 && iq.Trace.Count(t => t.Stage == ActionTraceStage.Executed &&
             t.Entry.Command is HealCommand) == 1, "A02 Immortal FLIP gain is its own command");
 
-        var unsupported = DemoDuel.FromPartialObservation(0, [], Slots(Monster(FlipEffectRules.MorphingJar2)), Slots(), 8000);
-        unsupported.MonsterFaceDown[0, 0] = unsupported.DefensePosition[0, 0] = true;
-        unsupported.CreatePrimitiveActionQueue();
-        check(!unsupported.TryQueueChangePosition(0, out _) && unsupported.MonsterFaceDown[0, 0],
-            "A02 unmigrated bulk FLIP rejected before reveal");
+        var jar2 = DemoDuel.FromPartialObservation(0, [], Slots(Monster(FlipEffectRules.MorphingJar2)), Slots(), 8000);
+        jar2.MonsterFaceDown[0, 0] = jar2.DefensePosition[0, 0] = true;
+        var jq2 = jar2.CreatePrimitiveActionQueue();
+        check(jar2.TryQueueChangePosition(0, out _) && jar2.MonsterFaceDown[0, 0],
+            "C12 migrated Jar #2 admission leaves field unchanged");
+        Drain(jq2);
+        check(jar2.LastMorphingJar2[0].SpecialSummoned == 1 && jar2.MonsterFaceDown[0,0],
+            "C12 Jar #2 completes through queue");
     }
 }

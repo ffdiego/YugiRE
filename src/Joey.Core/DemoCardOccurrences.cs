@@ -24,7 +24,10 @@ public sealed partial class DemoDuel
         if (side is not (0 or 1) || index < 0) return false;
         Card? card = zone switch
         {
+            DuelZone.Deck when index < decks[side].Count => decks[side].ElementAt(index),
             DuelZone.Hand when index < hands[side].Count => hands[side][index],
+            DuelZone.Graveyard when index < graves[side].Count => graves[side][index],
+            DuelZone.Banished when index < banished[side].Count => banished[side][index],
             DuelZone.Monster when index < 5 => Monsters[side, index],
             DuelZone.SpellTrap when index < 5 => Spells[side, index],
             DuelZone.FieldSpell when index == 0 => FieldSpells[side],
@@ -44,7 +47,10 @@ public sealed partial class DemoDuel
         if (side is not (0 or 1)) return false;
         int count = target.Zone switch
         {
+            DuelZone.Deck => decks[side].Count,
             DuelZone.Hand => hands[side].Count,
+            DuelZone.Graveyard => graves[side].Count,
+            DuelZone.Banished => banished[side].Count,
             DuelZone.Monster or DuelZone.SpellTrap => 5,
             DuelZone.FieldSpell => 1,
             _ => 0
@@ -56,7 +62,10 @@ public sealed partial class DemoDuel
             index = i;
             card = target.Zone switch
             {
+                DuelZone.Deck => decks[side].ElementAt(i),
                 DuelZone.Hand => hands[side][i],
+                DuelZone.Graveyard => graves[side][i],
+                DuelZone.Banished => banished[side][i],
                 DuelZone.Monster => Monsters[side, i]!,
                 DuelZone.SpellTrap => Spells[side, i]!,
                 DuelZone.FieldSpell => FieldSpells[side]!,

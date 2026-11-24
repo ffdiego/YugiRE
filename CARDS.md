@@ -2,7 +2,7 @@
 
 Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem de cartas do DAT nem uma lista de callbacks decompilados. Atualize após implementar e testar, com escopo explícito.
 
-**[Painel de progresso no GitHub](docs/cards/PLAYABILITY.md):** a badge no README apresenta a cobertura total e a cobertura de Joey. O GitHub Actions atualiza esses indicadores após mudanças no manifest.
+**[Painel de progresso no GitHub](docs/cards/PLAYABILITY.md):** a badge no README apresenta Done+Verified da trilogia e a contagem separada de Partial; a cobertura de Joey consta no relatório. O GitHub Actions atualiza esses indicadores após mudanças no manifest.
 
 **Gerador detalhado local:** `python scripts/card_playability.py --dat ../passion/data.dat` gera `scratch/card-playability/PROGRESS.md`, `summary.json` e CSV com as cartas de cada pack. Os IDs implementados ficam em [`docs/cards/playability-manifest.json`](docs/cards/playability-manifest.json); os critérios de contagem em [`docs/cards/playability-progress.md`](docs/cards/playability-progress.md). O registry antigo mede engenharia reversa, não a jogabilidade atual.
 
@@ -26,7 +26,9 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Dream Clown (119), gatilho de posição | **Done** (escopo sandbox, testes .NET CI) | `MonsterPositionEffectRules.cs`, `DemoDuel.ChangePosition`, `PositionChangeEffectChecks.cs` | Ataque → defesa inicia seleção e destruição de monstro adversário. Seletor legado compartilhado com FLIP, gatilho distinto de FLIP; sem chain ou paridade nativa. |
 | P168 / Bubonic Vermin (1307) | **Done** (sandbox, regressões .NET no CI) | `FlipEffectRules.cs`, `DemoDuel`, `BubonicVerminChecks.cs`, seletor de cartas existente | FLIP opcional: Deck → campo, 1 cópia por resource ID em defesa oculta. Gate de Royal Command integrado; sem chains ou paridade dinâmica. |
-| P252 — Dark Necrofear (1514) | **Partial** | `GraveyardBanishSummonRules.cs`, `DemoDuel.SpecialSummonByGraveyardBanish` | Custo de 3 Fiends no próprio GY, invocação especial Core; UI/CPU, Spirit Elimination, End Phase/equipamento e controle ainda pendentes. |
+| P252 — Dark Necrofear (1514) | **Partial** | `GraveyardBanishSummonRules.cs`, `DemoQueuedGraveyardBanishSummon.cs`, `QueuedGraveyardBanishSummonChecks.cs` | Custo de 3 Fiends no próprio GY, invocação especial Core na fila; UI/CPU, Spirit Elimination, End Phase/equipamento e controle ainda pendentes. |
+| C16 — Soul of Purity and Light, Spirit of Flames, recurso 1518 | **Done** (escopo headless C#) | [Atributos de batalha](docs/cards/c16-elemental-battle-attributes.md), `ElementalBattleAttributeChecks.cs` | Invocação por fila e modificadores de ATK em batalha; produtores UI/CPU e paridade nativa pendentes. |
+| C16 — Aqua Spirit e Garuda (1517/1519) | **Partial** | [Contrato C16](docs/cards/c16-queued-graveyard-banish-summon.md) | Procedimento de invocação; efeitos de Standby pendentes. |
 | P188 — Dimensional Warrior (255) | **Done** (escopo sandbox, testes .NET CI) | `DimensionalWarriorRules.cs`, `DemoDuel.FinishDeferredBattle`, `DimensionalWarriorChecks.cs` | Dois combatentes banidos após cálculo de dano; sem efeitos de cemitério; callback primário `0058CC00` não decompilado nem validado em duelo nativo. |
 | FLIP P065 (The Immortal of Thunder, 461) | **Done** (sandbox histórico, testes .NET no CI) | `ImmortalThunderRules.cs`, `FlipEffectRules.cs`, `DemoDuel.RemoveMonster`, `ImmortalThunderChecks.cs` | +3000 no FLIP e -5000 na saída para GY **após revelação** da ocorrência; timing/negação/controle nativos ainda não verificados. |
 | FLIPs P051/P052 (Lady Assailant e Fire Sorcerer) | **Done** (sandbox validado no CI .NET) | `FlipBanishBurnRules.cs`, `FlipEffectRules.cs`, `FlipBanishBurnChecks.cs` | Custo por banimento Deck/Hand, dano 800 compartilhado e RNG determinístico sandbox. Sem paridade de seleção aleatória nativa nem callback de disponibilidade decompilado. |
@@ -229,7 +231,35 @@ Raigeki, Dark Hole e os sete destruidores por tipo usam `TryQueueMonsterWipe` na
 
 ### Destruição de S/T na fila (C12)
 
-Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T e cascata de Destiny Board para efeitos seletivos ainda pendentes. [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T ainda limitada; MST e Remove Trap usam consulta de candidatos e admissão de ocorrências, incluindo cascata Destiny Board, sem prompt bloqueante. [Contrato seletivas](docs/cards/c12-queued-targeted-spelltrap.md). [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+
+### FLIPs seletivos na fila (C12)
+
+Man-Eater Bug, Hane-Hane e Penguin Soldier: `TryQueueMonsterFlipAnswer` aceita ocorrências de fonte/alvos após Flip Summon; cada destruição/retorno e vínculo tem comando próprio. A revelação em batalha mantém resposta legada até migração da Damage Step. [Contrato](docs/cards/c12-queued-monster-flips.md).
+
+### Recuperação de GY na fila (C12)
+
+Magician of Faith e Mask of Darkness usam `QueuedGraveyardRecoveryCandidates` e `TryQueueGraveyardRecovery`; `MoveToHandCommand` preserva ocorrência e não é compra. Resposta de Flip Summon manual, batalha/UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-graveyard-recovery.md).
+
+### Busca Deck → mão na fila (C12)
+
+Sangan/Witch usam `QueuedDeckSearchCandidates` e `TryQueueDeckSearch`. MoveToHandCommand aceita Deck e GY; ShuffleDeckCommand separado após transferência bem-sucedida. UI/CPU e paridade nativa ainda pendentes. [Contrato](docs/cards/c12-queued-deck-search.md).
+
+### Recrutamento elemental na fila (C12)
+
+P164: Mystic Tomato, Giant Rat, Shining Angel, UFO Turtle, Mother Grizzly, Flying Kamakiri #1 usam `TryQueueDeckRecruitment` após a batalha legada. Invocação especial em ataque e shuffle separados, recusa sem RNG. [Contrato](docs/cards/c12-queued-elemental-recruiters.md).
+
+### Recrutamento de mesmo nome na fila (C12)
+
+Nimble Momonga, Giant Germ e Bubonic Vermin usam `TryQueueSameNameRecruitment`; cada cópia tem uma invocação separada, com posição exigida e shuffle único após o lote. LP de batalha e FLIP de ataque ainda legados. [Contrato](docs/cards/c12-queued-same-name-recruitment.md).
+
+### Ressurreição na fila (C12)
+
+Spear Cretin usa `TryQueueGraveyardRevival`: um monstro do próprio GY por solicitação, excluindo a ocorrência disparadora, ataque face-up ou defesa face-down. A próxima escolha aguarda o gate. [Contrato](docs/cards/c12-queued-graveyard-revival.md).
+
+### Movimentação do deck na fila (C12)
+
+Needle Worm e Hiro's Shadow Scout: Flip Summon manual emite movimentações individuais, com auditoria `LastDeckFlow` após o gate. Mill não é compra; Scout descarta apenas Spells recém-compradas. Batalha/reveal externo continuam legados. [Contrato](docs/cards/c12-queued-flip-deck-flow.md).
 
 ## Evidências nativas (não confundir com paridade C# completa)
 
