@@ -24,7 +24,7 @@ internal static class ActionTraceProjectionChecks
                 for(int i=0;i<128 && q.IsBusy;i++)
                 {
                     gate.Release=false;q.Tick();
-                    if(delayed && q.IsBusy)
+                    if(delayed && q.Active is not null)
                     {
                         var before=ActionTraceExport.Serialize(ActionTraceExport.Capture(q,"test"));
                         q.Tick();
