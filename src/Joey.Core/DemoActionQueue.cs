@@ -328,6 +328,10 @@ public sealed partial class DemoDuel
                     return duel.ExecuteQueuedDirectAttack(attack, followups);
                 case DeclareTargetedAttackCommand attack:
                     return duel.ExecuteQueuedTargetedAttack(attack, followups);
+                case RevealBattleDefenderCommand reveal:
+                    return duel.RevealQueuedBattleDefender(reveal, followups);
+                case ResolveRevealedBattleCommand revealed:
+                    return duel.ResolveQueuedRevealedBattle(revealed, followups);
                 case SnapshotBattleRemovalCommand snapshot:
                     return duel.SnapshotQueuedBattleRemoval(snapshot);
                 case ChangeBattlePhaseCommand phase:
