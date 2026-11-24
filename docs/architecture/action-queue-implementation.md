@@ -95,4 +95,6 @@ O teste de startup sem janela cobre Classic e Instant, a compra dos
 dois lados e a perda por falta de cartas. No modo experimental, os botões
 Battle, Main2 e End admitem os produtores comuns e permitem que a apresentação
 observe a mudança depois da execução. O descarte obrigatório usa a mesma fila.
-O App padrão ainda usa o caminho legado e o Lab usa comandos explícitos.
+A CPU experimental usa os mesmos produtores de fase com origem `Cpu`; as
+demais decisões seguem o fluxo existente. O App padrão usa o caminho legado
+e o Lab usa comandos explícitos.

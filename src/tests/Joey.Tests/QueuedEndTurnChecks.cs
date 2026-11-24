@@ -102,6 +102,29 @@ internal static class QueuedEndTurnChecks
             "A07 ordinary end turn advances through the second command");
 
         CheckEndPhaseMessage(check, card);
+        CheckCpuTurn(check);
+    }
+
+    private static void CheckCpuTurn(Action<bool, string> check)
+    {
+        Card inert = new(25, 25, "Inert CPU fixture", "", 22u << 20);
+        var duel = DemoDuel.FromPartialObservation(1, Enumerable.Repeat(inert, 7).ToArray(),
+            new Card?[5], new Card?[5], 8000, side1Deck: [inert]);
+        var queue = duel.CreatePrimitiveActionQueue();
+        var cpu = new CpuDuelController(1);
+        CpuAction[] actions = [CpuAction.Draw, CpuAction.BeginBattle, CpuAction.EndBattle, CpuAction.EndTurn,
+            CpuAction.Discard, CpuAction.Discard];
+        foreach (var action in actions)
+        {
+            var step = cpu.Step(duel, queueTurnActions: true);
+            check(step.Status == CpuStepStatus.Acted && step.Action == action && queue.IsBusy &&
+                queue.Trace.Last().Entry.Origin == ActionOrigin.Cpu,
+                $"A07 CPU admits {action} to the duel's queue");
+            Drain(queue);
+        }
+        check(duel.Turn == 3 && duel.ActivePlayer == 0 &&
+            duel.HandFor(1).Count == DemoDuel.EndTurnHandLimit && duel.Graveyard(1).Count == 2,
+            "A07 CPU finishes its turn after the actual discards and advances exactly once");
     }
 
     private static void CheckEndPhaseMessage(Action<bool, string> check, Card filler)

@@ -78,10 +78,11 @@ static partial class Game
     static bool CheckQueuedAutomaticDraw(DuelLookAndFeel style)
     {
         Card card = new(24, 24, "Draw fixture", "", (3u << 20) | (4u << 25));
+        Card inert = new(25, 25, "Inert CPU fixture", "", 22u << 20);
         int handLimit = DemoDuel.EndTurnHandLimit;
         duel = DemoDuel.FromPartialObservation(0, Enumerable.Repeat(card, handLimit).ToArray(),
             new Card?[5], new Card?[5], 8000,
-            side0Deck: [card], side1Deck: [card]);
+            side0Deck: [card], side1Deck: [inert]);
         alphaCpu = new(1);
         alphaBlocked = false;
         presentation.SetStyle(style);
@@ -135,12 +136,24 @@ static partial class Game
         if (!queue.IsBusy || duel.Hand.Count != handLimit + 1) return Failed("discard admission");
         AdvancePhases();
         if (PhaseBusy || queue.IsBusy || duel.ActivePlayer != 1 || duel.Hand.Count != 1 ||
-            duel.HandFor(0).Count != handLimit || !duel.EndTurn(out _))
-            return Failed("second Main Phase");
+            duel.HandFor(0).Count != handLimit) return Failed("second Main Phase");
+        if (alphaCpu.Step(duel, queueTurnActions: true).Action != CpuAction.BeginBattle)
+            return Failed("CPU Battle admission");
+        AdvancePhases();
+        if (PhaseBusy || queue.IsBusy || displayedPhase != DuelPhaseDisplay.Battle ||
+            alphaCpu.Step(duel, queueTurnActions: true).Action != CpuAction.EndBattle)
+            return Failed("CPU Main2 admission");
+        AdvancePhases();
+        if (PhaseBusy || queue.IsBusy || displayedPhase != DuelPhaseDisplay.Main2 ||
+            alphaCpu.Step(duel, queueTurnActions: true).Action != CpuAction.EndTurn)
+            return Failed("CPU End Phase admission");
         AdvancePhases();
         var draws = queue.Trace.Where(item => item.Stage == ActionTraceStage.Completed &&
             item.Entry.Command is TurnDrawCommand).Select(item => item.Entry.Origin);
-        if (duel.Winner != 1 || queue.IsBusy || alphaBlocked ||
+        int cpuPhases = queue.Trace.Count(item => item.Stage == ActionTraceStage.Completed &&
+            item.Entry.Origin == ActionOrigin.Cpu && item.Entry.Command is ChangeBattlePhaseCommand or EndTurnCommand &&
+            item.Result?.Outcome == CommandOutcome.Applied);
+        if (duel.Winner != 1 || queue.IsBusy || alphaBlocked || cpuPhases != 3 ||
             !draws.SequenceEqual(new[] { ActionOrigin.Player, ActionOrigin.Cpu, ActionOrigin.Player }))
             return Failed("deck out");
         return true;

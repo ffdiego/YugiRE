@@ -4,7 +4,7 @@ using Raylib_cs;
 
 static partial class Game
 {
-    // Explicit pilot. Legacy CPU and unmigrated human actions remain unchanged.
+    // Explicit pilot. Unmigrated actions retain their existing producers.
     static bool useQueuedActions;
     static ActionQueue? queuedDuel;
     static CardTarget? queuedPreviewSource;
