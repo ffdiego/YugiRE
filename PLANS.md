@@ -229,7 +229,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Coordenadas/dimensões/ângulos e contagem de updates por estado/quadro-chave contra o Joey original; registrar valores ainda provisórios em vez de arredondar silenciosamente. Usar `compare_visual_frames.py` e o log de `V01`.
 - [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`.
   Seleção nativa (`0043B280`, ver V11), ajuda `0045E4A0`, efeito de estado persistente `0040E260`, quebra/remoção alternativa `00450FD0`, ativação alternativa `00450AD0`, corrente `0041F870`, remoção/exclusão `0043DBE0`, moeda `00457520`, dado `00456B90`, Vija `004584C0`, Layerfont A/B `00455FF0`/`00456360`. Cada rotina vira um item novo (`V20`, `V21`...) quando começar. Estado: [cobertura visual](docs/architecture/VISUAL_COVERAGE.md).
-- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Aguardando evidência`.
+- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`.
+  NativeSurfaceCopy porta cópia opaca/escala/clipping e quatro formatos de surface+74h (004AD9C0/00547180), sem assumir blend ou máscara. Roteiro 24 lê vtable 005DC6EC e alvos ainda desconhecidos; confirmar assembly das fronteiras. [Contrato](docs/research/native-surface-copy-contract-2026-11-24.md).
   Confirmar cadência, tabela de cosseno x16.16 (ver `V01`) e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
 - [ ] **V18 — Áudio e vozes.** Status: `Pronto`.
   Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política; ainda não existe player), preservando a apresentação clássica.

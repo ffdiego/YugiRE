@@ -171,6 +171,7 @@ NativeTurnNoticeChecks.Run(Check, Reject);
 NativeSelectionOriginChecks.Run(Check);
 NativeBankEffectChecks.Run(Check, Reject);
 NativeExclusionDrawChecks.Run(Check, Reject);
+NativeSurfaceCopyChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);

@@ -261,3 +261,17 @@ Saída privada: scratch/ghidra-turn-notice-draw-contract.zip. Verificar vtables,
 ### Nota de numeração paralela
 
 O número 16 foi reservado em duas branches independentes antes da integração: `16-cards-revival-spells-ghidra.sh` (CARDS, nova coleta não incluída no bundle visual) e `16-coin-dice-break-ghidra.sh` (VISUALS, coleta recebida). Preservar os nomes e referências históricas; distinguir pelo nome completo e ID da trilha, não considerar a coleta CARDS concluída por coincidência de número. Não reutilizar números em novas tarefas.
+
+## V17/V30 — 24-native-surface-vtable-ghidra.sh (aguardando Fedora)
+
+Nova coleta específica, não repetir 20: o Draw 004584C0 já está no SQLite v2.
+A vtable de superfície 005DC6EC é conhecida por 004A9CC0, mas o alvo +98
+(005DC784), +4C e +E0 não estão resolvidos. Ler 228 bytes e confirmar
+recorrência de clipping e cadeia de alocação.
+    
+    bash scripts/pending/24-native-surface-vtable-ghidra.sh
+
+Saída privada scratch/ghidra-native-surface-vtable-contract.zip.
+Após validar/importar, resolver targets da vtable e consultar primeiro o
+SQLite; coletar código adicional somente se ausente. Não presumir formato
+da scratch pela flag 1, nem substituir +98 por alpha. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md).
