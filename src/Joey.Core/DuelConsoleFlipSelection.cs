@@ -13,6 +13,8 @@ public sealed partial class DuelConsoleSession
         : PendingHandSelection is not null ? "Pending hand selection requires select-hand."
         : duel.PendingFlipTarget is not null ? "Pending monster FLIP requires select-flip."
         : duel.PendingFlipSpellTrapTargets is not null ? "Pending Spell/Trap FLIP requires select-st-pair."
+        : PendingFieldSelection is { Source: CardSelectionSource.Deck } ? "Pending recruitment requires select-recruit."
+        : PendingFieldSelection is { Source: CardSelectionSource.Graveyard } ? "Pending revival requires select-revive."
         : "No pending choice.";
 
     private DuelConsoleResult ReadFlipChoices()
