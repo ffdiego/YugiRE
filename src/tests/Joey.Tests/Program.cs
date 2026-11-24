@@ -186,6 +186,7 @@ NativeTurnNoticeChecks.Run(Check, Reject);
 NativeNoticeProjectionChecks.Run(Check);
 NativeSelectionOriginChecks.Run(Check);
 NativeBankEffectChecks.Run(Check, Reject);
+NativeCoinPassChecks.Run(Check, Reject);
 NativeExclusionDrawChecks.Run(Check, Reject);
 NativeSurfaceCopyChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
