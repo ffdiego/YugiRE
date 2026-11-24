@@ -229,3 +229,7 @@ Ghidra local, mesmo projeto/EXE. O snapshot atual não possui Draw 004584C0; con
     bash scripts/pending/20-vija-selection-origins-ghidra.sh
 
 Saída privada: scratch/ghidra-vija-selection-origins.zip. Conferir Draw, máscaras, ordem de letras, 005DA410, 005DB414/424 e centros 005DB5B0:80. Para vija.txt use --inspect-visual-dat, sem pixels. Importar evidência em nova cópia SQLite cumulativa. [Contrato](../../docs/research/native-vija-selection-origins-2026-11-24.md).
+
+### Importação cumulativa (todas as coletas VISUALS)
+
+Após receber ZIPs válidos, usar `scripts/import_visual_evidence.py` com `--source`, `--bundle` (repetível) e `--output` apontando a uma nova cópia. O importador histórico de métodos virtuais não aceita batches cumulativos. Ver [procedimento e consultas](../../docs/research/visual-evidence-cumulative-import.md). Não versionar evidência privada.
