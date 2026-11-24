@@ -244,6 +244,31 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`.
   NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
 
+- [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Aguardando evidência`.
+  NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas 48/49/18. Draw ausente; roteiro 18. [Contrato](docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+- [ ] **V26 — Exclusão (0043DBE0).** Status: `Aguardando evidência`.
+  NativeExclusionStart: descritor, argumento mascarado face-up, contador 64 e camada 0x120. Update vazio, Draw e produtor não mapeados. Não inventar duração nem disparar para todo banimento. Roteiro 18; mesmo contrato.
+
+### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
+
+ACTIONS é responsável por conectar ActionQueue / IPresentationGate à apresentação.
+VISUALS preserva Joey.LookAndFeel independente do Core/raylib, entrega
+componentes reutilizáveis de um efeito e Draws; não cria novo FIFO de ações
+ou efeitos nem implementa uma ponte paralela. A03 deve migrar os adaptadores
+legados PresentationSequence no App, sem duplicar mutações ou enfileiramento.
+
+**Pontos de atenção arquitetural para A03:** (1) visível/ativo não significa
+bloqueante: V23 aguarda em 128 visível e não bloqueia; V24 é contextual e não
+deve bloquear; (2) CanComplete é uma consulta, não um Update/Draw: V11 tem
+mutação no Draw, V26 Update vazio e duração ainda desconhecida; não avançar
+efeitos ao consultar gates nem inventar timeout; (3) remoções/transferências
+precisam de snapshot visível por ocorrência e geometria antes da execução
+(ActionQueue executa antes de CanComplete); (4) ao migrar, impedir emissão
+dupla pelos eventos DemoDuel e pelo comando ativo. A03 define a política de
+cancelamento/Instant e identidade por Sequence, inclusive comandos Skipped/
+Rejected, sem obrigar LookAndFeel a conhecer tipos do Core. Não bloquear
+comando por objeto que ainda não tem Draw/contrato de conclusão.
+
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 
 - **Fila de ações** no `Joey.Core` (ACTIONS `A02`): comandos tipados, um ativo por vez, gate de apresentação injetável.

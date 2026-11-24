@@ -205,3 +205,11 @@ Ambiente: Ghidra headless, mesmo projeto e EXE atestado. O SQLite já contém as
     bash scripts/pending/17-chain-affect-assembly.sh
 
 Saída privada: scratch/ghidra-chain-affect-assembly.zip. Confirmar as chaves de lookup de chain.txt, pass decimal, composição scratch e dispatch de affect.txt. Para os dois manifests, reutilizar --inspect-visual-dat e preservar a ordem/campos/dimensões. Importar evidência compatível em cópia SQLite após receber a coleta; sem marcar Draw como implementada. Ver [contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
+
+## V25/V26 — 18-alternative-activation-exclusion-ghidra.sh (aguardando Fedora)
+
+Ghidra local, EXE/projeto atestado. SQLite já consultado: dois Draws ausentes, construtores disponíveis; Update de exclusão no-op.
+
+    bash scripts/pending/18-alternative-activation-exclusion-ghidra.sh
+
+Saída privada: scratch/ghidra-alternative-activation-exclusion.zip. Confirmar slots da vtable, fases, recortes e gate de término (inclusive possível mutação no Draw), ABI e mascaramento de exclusão. Recuperar xrefs do construtor se disponíveis, não atribuir opcode por nome de asset. Usar --inspect-visual-dat para exclusion.txt. Importar evidências compatíveis em SQLite cumulativo após receber ZIP. [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
