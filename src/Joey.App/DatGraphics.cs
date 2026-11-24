@@ -230,6 +230,7 @@ sealed class DatGraphics : IDisposable
             name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
+            NativeExclusionResources.IsParticleBitmap(name) || // diagnostic keying
             NativeDiceResources.IsDiceBitmap(name) || // diagnostic green-key path; native blend pending
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||

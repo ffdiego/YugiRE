@@ -250,9 +250,11 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`.
   NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
 
-- [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Aguardando evidência`.
+- [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`.
+  Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT/cosseno. Integração A03 e comparação pendentes.
   NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas 48/49/18. Draw ausente; roteiro 18. [Contrato](docs/research/native-alternative-activation-exclusion-2026-11-24.md).
-- [ ] **V26 — Exclusão (0043DBE0).** Status: `Aguardando evidência`.
+- [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`.
+  Bundle 18 recebido: NativeExclusionTimeline porta 24 Draws, ordem mini/feixes/partículas/halo, fim e mascaramento; revisão --review-exclusion=ID,HEX (oculto exige ID 0). Remap/blend e integração A03 pendentes.
   NativeExclusionStart: descritor, argumento mascarado face-up, contador 64 e camada 0x120. Update vazio, Draw e produtor não mapeados. Não inventar duração nem disparar para todo banimento. Roteiro 18; mesmo contrato.
 
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`.

@@ -83,3 +83,75 @@ Coleta 18-alternative-activation-exclusion-ghidra.sh: Draws ausentes, vtables, c
 e entrada da alternativa para confirmar ABI e argumentos.
 Para exclusion.txt, reutilizar --inspect-visual-dat.
 Sem nova Draw integrada: cobertura 20/34, zero Verified.
+
+
+## Bundle 18 recebido — Draws e revisão local
+
+Fonte: SQLite cumulativo v2 (SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4).
+Bundle 0acb4d4ca588f4a9294c26c05a2c5916b9d3ce6c9455190bc570ea06512ff64f,
+janelas 00450AD0 e 0043DBE0 (assembly batch-000 e retries).
+Vtables lidas: 005DB304 = 004508F0,00403080,00450A90,00450AD0;
+005DACB4 = 0043DA90,0043DBD0,004481F0,0043DBE0.
+Não repetir roteiro 18.
+
+### V25
+
+00450ADE..00450B19: scale8=C(t)>>9 para t<0, senão 128;
+intensidade=2*scale se t<256, senão C(t-256)>>8.
+00450B1F..00450C03 resolve índice +12C via banco DAT_005F2FF8
+(data/card/list_card.txt, confirmado pelo literal 005EB89C em
+0043D8F1), mede width/height, escala ambos por SAR 8, centra
+em (525,300), blit virtual +48. É a carta GRANDE, não mini.
+00450C06..00450C19 chama 004505D0 (ativação normal) depois da
+carta se 0<=t<=256. Scratch inicializado pelo construtor
+00450260, descritor 8016, metade de width/height do banco grande
+(005F2FFC/3000). Mantém categoria calculada por 00402690.
+Não deduzir categoria pelo recurso na revisão; parâmetro
+explícito diagnóstico. Update +16 até >=385, pedido de som no
+Update cujo input é zero (33 updates). Draw não muda contador.
+
+### V26
+
+0043D9CA..0043D9F8 mascara identidade se bit15 não setado,
+inicializa t=64. 0043DA56..0043DA63 pede som 10000024.
+0043DC08..0043DC10 soma 8 NO DRAW, resolve 0045C140
+(side,region,slot), mesmo centro para todos os passes.
+0043DC2E..0043DC92: t<128 desenha mini (banco 005F2FF4,
+mini/list_card.txt), 180*(side XOR (A54E5C&1)).
+Ignora bit de defesa nesse passo. 0043DDE2..0043DEF3:
+t<=128, três passes key1, intensidade C(2*t-256)>>8,
+width=originalWidth*intensity>>8, height original,
+centros X+(i-1)*(originalWidth+1).
+0043DCA8..0043DDD2: t>128, mede key2, desenha key
+(t/8)%6+2, scale8=128+(C(t-128)>>9), intensidade
+C(t-128)>>7. Medir key2 mesmo quando quadro diferente.
+0043DF01..0043E042: t>=96, key0 por último, escala 256
+até 128, senão mesma escala anterior. Intensidade
+C(4*t)>>8 até 128, depois C(t-128)>>8.
+0043E045..0043E05D: t>=256 libera índice do banco mini
+e só ENTÃO limpa ativo; 24 Draws desde t=64.
+A consulta SampleNextDraw não consome um Draw nem libera
+recurso. NativeExclusionStart impede construção pública
+com identidade não mascarada. Sem novo gate ou fila.
+
+Revisões diagnósticas em 800x600:
+```bash
+dotnet run --project src/Joey.App -- ../passion/data.dat --review-alternative=250,0 --native-cosine=scratch/visual-review/native-cosine.json
+dotnet run --project src/Joey.App -- ../passion/data.dat --review-exclusion=250,8080 --native-cosine=scratch/visual-review/native-cosine.json
+dotnet run --project src/Joey.App -- ../passion/data.dat --review-exclusion=0,0080 --native-cosine=scratch/visual-review/native-cosine.json
+```
+250 é exemplo de resource ID; usar carta existente no DAT.
+F7 = Update em alternativa, Draw em exclusão; F9 = Draw
+isolado em exclusão; F8 reinicia; F12 PNG/JSON. A revisão
+de exclusão limita descritores às regiões de campo conhecidas;
+ID 0 obrigatório quando oculto. NativeExclusionResources
+valida a ordem hipotética do manifesto contra nomes dos oito
+recursos do inventário (hikacard 58x80, hikatate 15x144,
+ryusi1..6 50x72), não afirma leitura do DAT nesta sessão.
+Se ordem real/remap divergir, rejeita. Compositor Raylib,
+cor-chave, arredondamento dos sprites e scratch reutilizam
+política de revisão, não prova de pixels. Nenhum disparo de
+som real. Não contabilizar as revisões como Draw no duelo.
+A03 fornece evento/snapshot e integração, não criar fila
+paralela. Testes sintéticos de passes, fronteiras, duas
+perspectivas, visibilidade e mutação de Draw.
