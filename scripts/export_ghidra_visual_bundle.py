@@ -219,9 +219,11 @@ def run_query(ghidra: Path, work: Path, name: str, arguments: list[str],
             )
             console.write_text(completed.stdout, encoding="utf-8")
             ok = completed.returncode == 0 and output.is_file() and output.stat().st_size > 0
-            if ok and not output.read_text(encoding="utf-8", errors="replace").startswith(
-                    "SHA256: " + EXPECTED_SHA256):
-                return False, "Unexpected executable fingerprint"
+            if ok:
+                with output.open(encoding="utf-8", errors="replace") as report:
+                    fingerprint = report.readline().rstrip("\r\n")
+                if fingerprint != "SHA256: " + EXPECTED_SHA256:
+                    return False, "Unexpected executable fingerprint"
             return ok, "ok" if ok else "Headless failed; inspect " + console.name
         except subprocess.TimeoutExpired as exc:
             console.write_text(str(exc), encoding="utf-8")
@@ -291,8 +293,9 @@ def main(argv=None) -> int:
     output = (ROOT / args.output).resolve() if not args.output.is_absolute() else args.output
     output.parent.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    work = ROOT / "scratch" / ("ghidra-visual-" + stamp)
-    work.mkdir(parents=True, exist_ok=True)
+    scratch = ROOT / "scratch"
+    scratch.mkdir(exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix=f"ghidra-visual-{stamp}-", dir=scratch))
     print(f"Exporting {len(selected)} functions to {work}", flush=True)
     acquired: set[str] = set()
     attempts: list[dict] = []
@@ -303,7 +306,7 @@ def main(argv=None) -> int:
                                query_arguments(group, args.disassemble,
                                                instruction_count=args.instruction_count),
                                args.timeout)
-        found = extract_functions(work / (name + ".txt"))
+        found = extract_functions(work / (name + ".txt")) & set(group) if ok else set()
         acquired.update(found)
         attempts.append({"name": name, "targets": group, "resolved": sorted(found),
                          "ok": ok, "message": reason})
@@ -317,7 +320,7 @@ def main(argv=None) -> int:
                 query_arguments([address], args.disassemble, transient=True,
                                 instruction_count=args.instruction_count),
                 args.timeout)
-            found = extract_functions(work / (name + ".txt"))
+            found = extract_functions(work / (name + ".txt")) & {address} if ok else set()
             acquired.update(found)
             attempts.append({"name": name, "targets": [address], "resolved": sorted(found),
                              "ok": ok, "message": reason})
@@ -371,13 +374,15 @@ def main(argv=None) -> int:
     (work / "README.txt").write_text(
         "YugiRE Ghidra visual bundle. Upload this ZIP privately in a new chat.\n"
         "Start with manifest.json; review numbered batches and unresolved targets.\n"
-        "Every report contains the joey_pc.exe SHA256. No game binaries are included.\n",
+        "Accepted reports contain the joey_pc.exe SHA256. No game binaries are included.\n"
+        "Rejected reports stay in the local scratch work directory.\n",
         encoding="utf-8"
     )
+    rejected_reports = {attempt["name"] + ".txt" for attempt in attempts if not attempt["ok"]}
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED,
                          compresslevel=6) as archive:
         for path in sorted(work.iterdir()):
-            if path.is_file():
+            if path.is_file() and path.name not in rejected_reports:
                 archive.write(path, arcname=path.name)
     print(f"ZIP: {output} | {len(acquired & set(selected))}/{len(selected)} functions "
           f"| unresolved: {len(missing)}")
