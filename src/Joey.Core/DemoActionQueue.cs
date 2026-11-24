@@ -284,6 +284,9 @@ public sealed partial class DemoDuel
                 return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
+            // Only a reserved battle snapshot may finish after lethal LP.
+            if (command is FinishBattleRemovalCommand battleFinish)
+                return duel.FinishQueuedBattleRemoval(battleFinish);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
             if (command is FinishNormalPlacementCommand finish)
@@ -307,6 +310,14 @@ public sealed partial class DemoDuel
             {
                 case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
                 case LabMoveCommand move: return duel.ExecuteLabMove(move);
+                case DeclareDirectAttackCommand attack:
+                    return duel.ExecuteQueuedDirectAttack(attack, followups);
+                case DeclareTargetedAttackCommand attack:
+                    return duel.ExecuteQueuedTargetedAttack(attack, followups);
+                case SnapshotBattleRemovalCommand snapshot:
+                    return duel.SnapshotQueuedBattleRemoval(snapshot);
+                case ChangeBattlePhaseCommand phase:
+                    return duel.ExecuteQueuedBattlePhaseChange(phase);
                 case DrawCommand draw:
                     if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
                         return DrawForShadowScout(flow);
@@ -622,12 +633,14 @@ public sealed partial class DemoDuel
             }
             // Direct, unprepared commands may only place level 1–4 monsters.
             // A response/choice is opened on a later pass, after the summon gate.
+            var observation = new PlacementObservation(source, card.Id, index, DuelZone.Monster,
+                slot, faceDown, faceDown, paidTributes.Count);
             duel.CommitNormalPlacement(index, source.Side, slot, faceDown);
             placement = null;
             paidTributes.Clear();
             var target = source with { Zone = DuelZone.Monster };
             followups.ScheduleContinuation(_ => new([new FinishNormalPlacementCommand(source.Side, target, faceDown)]));
-            return new(CommandOutcome.Applied);
+            return new(CommandOutcome.Applied) { Placement = observation };
         }
 
         private CommandResult FinishPlacement(FinishNormalPlacementCommand finish)
@@ -663,7 +676,8 @@ public sealed partial class DemoDuel
                 duel.spellSetTurn[set.Side, set.Slot] = duel.Turn;
             }
             duel.hands[set.Side].RemoveAt(index);
-            return new(CommandOutcome.Applied);
+            return new(CommandOutcome.Applied) { Placement = new(set.Source, card.Id, index,
+                set.Destination, set.Slot, true, false, 0) };
         }
 
         private CommandResult MovePosition(CardTarget target, bool flip, bool? defense, IActionCommandSink followups)

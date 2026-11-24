@@ -63,5 +63,7 @@ jobs:
         run: dotnet build YugiRE.sln --configuration Release
       - name: Execute Joey.Tests fixture suite
         run: dotnet run --project src/tests/Joey.Tests --configuration Release --no-build
+      - name: Compare the exported battle pilot with an archived command window
+        run: python3 scripts/tests/check_action_trace_archive.py src/Joey.Lab/bin/Release/net10.0/Joey.Lab.dll
       - name: Check graphical laboratory startup without DAT or display
         run: dotnet run --project src/Joey.App --configuration Release --no-build -- --check-console-startup

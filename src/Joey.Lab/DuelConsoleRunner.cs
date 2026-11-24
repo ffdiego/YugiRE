@@ -7,11 +7,26 @@ public static class DuelConsoleRunner
 {
     public static int Run(string[] args, TextReader input, TextWriter output, TextWriter error)
     {
+        const string traceOption = "--trace-output=";
+        var traceOptions = args.Where(a => a.StartsWith(traceOption, StringComparison.Ordinal)).ToArray();
+        string? tracePath = traceOptions.Length == 1 ? traceOptions[0][traceOption.Length..] : null;
+        if (traceOptions.Length > 0 && string.IsNullOrWhiteSpace(tracePath))
+        {
+            error.WriteLine("Expected one nonempty --trace-output=path.");
+            return 2;
+        }
+        args = args.Where(a => !a.StartsWith(traceOption, StringComparison.Ordinal)).ToArray();
         bool fixture = args.Length is 1 or 2 && args[0] == "--fixture";
         bool dat = args.Length is 2 or 3 && args[0] == "--dat";
         if (!fixture && !dat)
         {
-            error.WriteLine("Usage: duel-console --fixture [script.txt] | --dat data.dat [script.txt]");
+            error.WriteLine("Usage: duel-console (--fixture | --dat data.dat) [script.txt] [--trace-output=path]");
+            return 2;
+        }
+        int scriptIndex = fixture ? 1 : 2;
+        if (tracePath is not null && args.Length == scriptIndex)
+        {
+            error.WriteLine("--trace-output requires a script file.");
             return 2;
         }
         try
@@ -26,10 +41,20 @@ public static class DuelConsoleRunner
                 // Start from an empty ongoing duel, not invented catalogue cards.
                 duel = DuelConsoleSession.EmptyLabDuel();
             }
-            int scriptIndex = fixture ? 1 : 2;
-            if (args.Length == scriptIndex) return RunLines(duel, catalog, input, output, error);
+            if (args.Length == scriptIndex)
+                return RunLines(duel, catalog, input, output, error);
             using var script = File.OpenText(args[scriptIndex]);
-            return RunScript(new DuelConsoleSession(duel, cards: catalog), script, output, error);
+            var session = new DuelConsoleSession(duel, cards: catalog);
+            // Reserve new output before executing; never overwrite existing data.
+            using var traceOutput = tracePath is null ? null :
+                new StreamWriter(new FileStream(tracePath, FileMode.CreateNew, FileAccess.Write, FileShare.None));
+            int result = RunScript(session, script, output, error);
+            if (traceOutput is not null)
+            {
+                var document = ActionTraceJson.Capture(session.Queue, "laboratory-script");
+                traceOutput.WriteLine(ActionTraceJson.Serialize(document with { Complete = document.Complete && result == 0 }));
+            }
+            return result;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         { error.WriteLine(ex.Message); return 2; }
