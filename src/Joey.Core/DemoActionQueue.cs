@@ -14,7 +14,8 @@ public sealed partial class DemoDuel
         if (primitiveActionQueue is not null)
             throw new InvalidOperationException("A duel already owns an action queue.");
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
-            () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer()) && PendingEndDiscards == 0);
+            () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer() ||
+                admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery()) && PendingEndDiscards == 0);
     }
 
     /// <summary>
@@ -186,11 +187,16 @@ public sealed partial class DemoDuel
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
+        private bool resolvingGraveyardRecovery;
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is ResolveGraveyardRecoveryCommand recovery)
+                return ResolveGraveyardRecovery(recovery, followups);
+            if (command is FinishGraveyardRecoveryCommand)
+                return FinishGraveyardRecovery();
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
             if (command is FinishFieldRemovalCommand)
@@ -264,6 +270,8 @@ public sealed partial class DemoDuel
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
+                case MoveToHandCommand move:
+                    return MoveGraveyardCardToHand(move.Source);
                 case ReturnToHandCommand bounce:
                     return ReturnQueuedMonster(bounce.Target, followups);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -688,6 +696,42 @@ public sealed partial class DemoDuel
             duel.graves[target.Side].Add(card);
             // Match legacy activation (no discard notification for a spent Spell).
             if (discard) duel.HandTransferred?.Invoke(new(target.Side, index, card, FromDeck: false));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveGraveyardRecovery(ResolveGraveyardRecoveryCommand answer, IActionCommandSink followups)
+        {
+            if (resolvingGraveyardRecovery || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanQueuedGraveyardRecovery(answer.Request, answer.Target, out var movement))
+                return new(CommandOutcome.Rejected, "Graveyard recovery request or target changed.");
+
+            // No movement when consuming the answer; the selected occurrence
+            // is moved only by the next command after the presentation gate.
+            duel.PendingCardSelection = null;
+            duel.selectedBatchIndices.Clear();
+            resolvingGraveyardRecovery = true;
+            if (movement is not null) queue.Enqueue(movement);
+            followups.ScheduleContinuation(_ => new([new FinishGraveyardRecoveryCommand(answer.Side)]));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult MoveGraveyardCardToHand(CardTarget source)
+        {
+            if (!duel.TryResolveCardTarget(source, out int index, out var card))
+                return new(CommandOutcome.Skipped, "Graveyard occurrence gone.");
+            duel.graves[source.Side].RemoveAt(index);
+            duel.hands[source.Side].Add(card);
+            // Recovery is not a draw; do not emit the deck-draw event.
+            duel.CheckExodia(source.Side);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult FinishGraveyardRecovery()
+        {
+            if (!resolvingGraveyardRecovery)
+                return new(CommandOutcome.Rejected, "No recovery to finalize.");
+            resolvingGraveyardRecovery = false;
+            duel.BeginNextQueuedDeckSearch();
             return new(CommandOutcome.Applied);
         }
 

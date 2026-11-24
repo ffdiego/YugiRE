@@ -25,6 +25,7 @@ public sealed partial class DemoDuel
         Card? card = zone switch
         {
             DuelZone.Hand when index < hands[side].Count => hands[side][index],
+            DuelZone.Graveyard when index < graves[side].Count => graves[side][index],
             DuelZone.Monster when index < 5 => Monsters[side, index],
             DuelZone.SpellTrap when index < 5 => Spells[side, index],
             DuelZone.FieldSpell when index == 0 => FieldSpells[side],
@@ -45,6 +46,7 @@ public sealed partial class DemoDuel
         int count = target.Zone switch
         {
             DuelZone.Hand => hands[side].Count,
+            DuelZone.Graveyard => graves[side].Count,
             DuelZone.Monster or DuelZone.SpellTrap => 5,
             DuelZone.FieldSpell => 1,
             _ => 0
@@ -57,6 +59,7 @@ public sealed partial class DemoDuel
             card = target.Zone switch
             {
                 DuelZone.Hand => hands[side][i],
+                DuelZone.Graveyard => graves[side][i],
                 DuelZone.Monster => Monsters[side, i]!,
                 DuelZone.SpellTrap => Spells[side, i]!,
                 DuelZone.FieldSpell => FieldSpells[side]!,
