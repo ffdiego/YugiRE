@@ -275,3 +275,12 @@ Saída privada scratch/ghidra-native-surface-vtable-contract.zip.
 Após validar/importar, resolver targets da vtable e consultar primeiro o
 SQLite; coletar código adicional somente se ausente. Não presumir formato
 da scratch pela flag 1, nem substituir +98 por alpha. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md).
+
+
+## V17/V07 — 25-native-quad-raster-ghidra.sh (aguardando Fedora)
+
+Geometria candidata e dispatch recuperados de decompilação; callee sem assembly indexado. Não repetir roteiro 23 (Draw recebido) nem roteiro 24 (vtable scratch distinta).
+
+    bash scripts/pending/25-native-quad-raster-ghidra.sh
+
+Saída privada: scratch/ghidra-native-quad-raster-contract.zip. Confirmar registradores/dimensões e vértices 004223F0, distinção das transformações, fronteira 00422E30 e kernels BGR24. Importar em cópia cumulativa; não presumir alpha nem paridade por receber a coleta. [Contrato](../../docs/research/native-quad-raster-contract-2026-11-24.md).

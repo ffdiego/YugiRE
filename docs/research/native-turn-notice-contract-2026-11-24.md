@@ -67,3 +67,11 @@ Usar roteiro 23, que não repete 11 (tabelas ACTIONS A07).
 Executar --inspect-visual-dat para ler phase_name.txt local;
 confirmar ordem, recortes e blend antes de desenhar.
 Sem aumento de cobertura: 20/34, zero Verified.
+
+
+## Complemento V17 — projeção candidata
+
+O SQLite v2 contém a decompilação de 004223F0, não seu assembly.
+NativeNoticeProjection oferece geometria de quadrilátero isolada,
+com alturas distintas por lado e MulDiv; não modifica o renderer.
+O contrato e roteiro 25 estão em [rasterização](native-quad-raster-contract-2026-11-24.md).
