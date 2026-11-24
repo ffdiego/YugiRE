@@ -72,3 +72,56 @@ produtor do Core revalidar pedido, dono e filtro.
 O roteiro admite leituras enquanto espera e retoma as operações depois da
 resposta. Um EOF com seleção pendente produz trace incompleto. O App usa as
 mesmas permissões de entrada para responder pelo console de laboratório.
+
+## A06 — Respostas FLIP direcionadas
+
+O console App/Lab agora reconhece pedidos de FLIP de monstro e de pares de
+magias/armadilhas. `choices` lista lados e posições; não revela ID dos alvos
+ocultos nessa consulta (o laboratório continua tendo acesso a `state`).
+Exemplos de respostas (lados e slots zero-based):
+
+- `select-flip 1 2`: escolher monstro do lado 1, slot 2.
+- `select-flip 1 2 0 3`: dois alvos distintos, na ordem informada.
+- `select-flip decline`: resposta vazia; somente se o resolvedor permitir.
+- `select-st-pair 1 field 0 3`: zona FIELD do lado 1 e S/T slot 3 do lado 0.
+- `select-st-pair decline`: resposta vazia para supressão; não torna
+  uma seleção obrigatória opcional.
+
+As posições são traduzidas para ocorrências físicas no momento da admissão;
+os mesmos produtores `TryQueueMonsterFlipAnswer` e
+`TryQueueFlipSpellTrapPair` validam e revalidam a escolha. Nenhum resolvedor
+adicional no console. O roteiro pausa em pedido pendente e `trace` indica
+`complete: false` mesmo com fila vazia. Leituras são permitidas, operações
+não relacionadas rejeitadas. Testes sintéticos: Man-Eater Bug, Hane-Hane,
+Penguin Soldier, Greenkappa/Tornado Bird, lados 0/1, recusa, duplicatas,
+identidade e gate antes da próxima remoção. Não cobre FLIP durante combate,
+respostas de traps, fusão ou todos os pedidos Deck/GY → Field.
+
+## A06 — Recrutamento e ressurreição (Deck/GY → Field)
+
+`choices` indica o dono da seleção, índices físicos da origem, quantidade,
+posição permitida e slots livres. O dono do pedido, não o lado ativo do
+turno, determina origem e destino. O console de laboratório é autorizado a
+inspecionar ambas as zonas; não é uma interface de jogador em rede.
+
+- `select-recruit 2 4`: copia do Deck no índice 2 para slot 4, para
+  pedidos individuais (Bubonic Vermin e recrutadores elementais).
+- `select-recruit batch 2 0`: duas cópias distintas, na ordem escolhida;
+  para pedidos multi-cópia (Nimble Momonga/Giant Germ), slots livres à
+  esquerda conforme o produtor existente. `batch 2` seleciona só uma.
+- `select-recruit decline`: recusa opcional, sem shuffle.
+- `select-revive 2 4 set`: GY índice 2 para slot 4 em defesa oculta.
+  `attack` escolhe ataque aberto. Spear Cretin exige resposta; o produtor
+  exclui a ocorrência que disparou o efeito e permite outra cópia.
+
+Os adaptadores chamam TryQueueDeckRecruitment, TryQueueSameNameRecruitment
+e TryQueueGraveyardRevival, sem mutar zonas no parser. O roteiro espera
+seleção explícita, bloqueia operações alheias, e trace permanece incompleto
+até o fim de todas as escolhas e gates. Não presume que toda seleção
+Field esteja migrada: um pedido não suportado não é resolvido pelo console.
+Testes incluem Bubonic FLIP manual, respostas de recrutadores produzidas
+por combate legado já terminado, identidade, gate, shuffle único após
+invocação, posição, recusa, alvos inválidos e duas ressurreições de Spear.
+A declaração enfileirada de combate com efeitos segue limitada pelo piloto
+A05/A09; não se afirma que um roteiro de ataque já produza Mystic Tomato
+ou Nimble Momonga desde o início. Não altera o renderer.

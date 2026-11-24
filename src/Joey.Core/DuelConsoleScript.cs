@@ -45,10 +45,7 @@ public sealed class DuelConsoleScript
         if (session.HasPendingChoice &&
             (cursor == lines.Length || !session.AllowsPendingChoiceInput(lines[cursor].Text)))
         {
-            string prompt = queue.PendingDecision is { } pending
-                ? $"Decision {pending.Id} requires explicit answer."
-                : session.HasPendingEndDiscard ? "End Phase requires discard-end INDEX."
-                : "Pending hand selection requires select-hand.";
+            string prompt = session.PendingChoicePrompt;
             return new(DuelScriptStatus.WaitingForDecision, Message: prompt);
         }
         if(cursor==lines.Length) return terminal=new(DuelScriptStatus.Completed,Message:"Script completed.");
