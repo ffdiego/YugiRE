@@ -249,3 +249,7 @@ Ghidra local, projeto/EXE atestado. SQLite confirmou ordem, preloads e contadore
     bash scripts/pending/23-turn-notice-draw-ghidra.sh
 
 Saída privada: scratch/ghidra-turn-notice-draw-contract.zip. Verificar vtables, seletor de frame, âncora, composição e término; se o virtual +4 apontar para outra rotina ainda ausente, registrar VA para próxima coleta. Usar --inspect-visual-dat para phase_name.txt; importar bundle por import_visual_evidence.py. Não repetir 11/A07 nem os quatro bundles concluídos. [Contrato](../../docs/research/native-turn-notice-contract-2026-11-24.md).
+
+## Handoff recebido — 24/11/2026
+
+21 bundles privados validados e importados em nova cópia SQLite cumulativa. Inclui Ghidra 01–13, 16, 18–21, 23 e dois históricos; **não repetir estas coletas** sem lacuna específica. O 17 não veio neste ZIP. 14/15/22 não são coletas Ghidra. Estado de implementação permanece por trilha. Ver [auditoria e V07/V11](../../docs/research/pending-bundles-handoff-2026-11-24.md).

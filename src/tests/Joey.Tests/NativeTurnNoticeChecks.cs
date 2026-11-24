@@ -21,6 +21,19 @@ internal static class NativeTurnNoticeChecks
                       sample.PhaseElapsedUpdates==(i>=64 ? (int?)(i-64):null),
                     "V07: parallel notice and panel flip, then next phase");
             }
+            int first=side==perspective ? 36 : 26;
+            for(int t=0;t<384;t++)
+            {
+                var draw=changed.DrawAtCounter(t)!.Value;
+                int key=t<64 ? first : t<=320 ? first+1+Math.Min((t-64)/16,8) : first+9;
+                int angle=t<64 ? 2*(64-t) : t<=320 ? 0 : 2*(320-t);
+                check(draw.LookupKey==key && draw.AngleIndex==angle &&
+                      draw.Center==new CardPoint(525,300) &&
+                      draw.ReleasePriorKey==(key>first ? (int?)(key-1) : null),
+                    "V07: assembly selector, signed angle and release request");
+            }
+            check(changed.DrawAtCounter(384) is null && changed.DrawAtCounter(400) is null,
+                "V07: Draw deactivates at 384");
             var noPhase=new NativeTurnNoticePlan(1-side,side,perspective,-1);
             check(noPhase.PhaseStartsAtUpdate is null && noPhase.Sample(64).PhaseElapsedUpdates is null,
                 "V07: native -1 suppresses phase after panel flip");

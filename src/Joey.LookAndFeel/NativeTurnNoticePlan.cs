@@ -4,8 +4,8 @@ namespace Joey.LookAndFeel;
 /// 00481230/00481370: presentation plan for ONE phase change, supplied
 /// by the caller. The phase-buttons and new-player notice start together.
 /// No queue, wall clock, duel mutation or implementation of IPresentationGate.
-/// The 48-update banner interval is a historical static result, not newly
-/// confirmed assembly. Draw 00480C60 remains absent from the current SQLite.
+/// The 48-update banner interval is confirmed by 00480C20/00480C60
+/// in the received turn-notice bundle. Draw releases the notice at t>=384.
 /// </summary>
 public readonly record struct NativeTurnNoticePlan
 {
@@ -44,11 +44,32 @@ public readonly record struct NativeTurnNoticePlan
     // 00480BC0 preloads these five resource keys via virtual +8.
     // Do not interpret them as the complete animation's frame sequence.
     // 00480B40 similarly preloads three keys for Battle Phase.
-    public int[] PreloadKeys() => ChangesPlayer
-        ? Enumerable.Range(0,5).Select(i => 27 + RelativeSide*10 + 2*i).ToArray()
-        : NextPhase == 3
-            ? Enumerable.Range(0,3).Select(i => 13 + RelativeSide*7 + 2*i).ToArray()
-            : [];
+    public int[] PreloadKeys()
+    {
+        int relative = RelativeSide;
+        return ChangesPlayer
+            ? Enumerable.Range(0,5).Select(i => 27 + relative*10 + 2*i).ToArray()
+            : NextPhase == 3
+                ? Enumerable.Range(0,3).Select(i => 13 + relative*7 + 2*i).ToArray()
+                : [];
+    }
+
+    /// <summary>00480F35..00481024: exact logical lookup key, signed
+    /// angle for 004223F0, and the optional prior-key release request.
+    /// Preload and Draw use DIFFERENT side offsets in the original.
+    /// Do not equate logical keys with physical texture indices until
+    /// the manifest/lookup contract is validated.</summary>
+    public NativeTurnNoticeDraw? DrawAtCounter(int counter)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(counter);
+        if (!ChangesPlayer || counter >= TurnNoticeEndCounter) return null;
+        int first = 36 - 10 * RelativeSide;
+        int key, angle;
+        if (counter < 64) { key = first; angle = (64-counter)*2; }
+        else if (counter <= 320) { key = first+1+Math.Min((counter-64)/16,8); angle = 0; }
+        else { key = first+9; angle = (320-counter)*2; }
+        return new(key,angle,new CardPoint(525,300),key>first ? key-1 : null);
+    }
 
     public NativeTurnNoticeSample Sample(int elapsedUpdates)
     {
@@ -64,6 +85,9 @@ public readonly record struct NativeTurnNoticePlan
         return new(turnCounter, flipUpdate, phaseElapsed);
     }
 }
+
+public readonly record struct NativeTurnNoticeDraw(int LookupKey, int AngleIndex,
+    CardPoint Center, int? ReleasePriorKey);
 
 public readonly record struct NativeTurnNoticeSample(
     int? TurnNoticeCounter, int? ButtonFlipUpdate, int? PhaseElapsedUpdates);
