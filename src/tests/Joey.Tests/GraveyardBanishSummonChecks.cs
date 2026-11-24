@@ -18,6 +18,7 @@ internal static class GraveyardBanishSummonChecks
         var normal = Monster(500, 1500, type: 15);
         var duel = DemoDuel.FromPartialObservation(0, [necro,normal], Slots(), Slots(), 8000,
             side0Graveyard:[a,d,b,spell,c]);
+        Card physicalNecro = duel.Hand[0];
         var candidates = duel.GraveyardBanishSummonCandidates(0);
         check(NormalSummonRules.RequiresSpecialSummon(necro) &&
               !duel.CanSummonFromHand(0) && !duel.CanSetFromHand(0) &&
@@ -25,18 +26,18 @@ internal static class GraveyardBanishSummonChecks
               candidates.Select(x => x.SourceIndex).SequenceEqual([0,2,4]),
               "P252: only Fiend monsters in own GY; cannot Normal Summon or Set");
 
-        check(!duel.SpecialSummonByGraveyardBanish(0,0,necro,[candidates[0],candidates[0],candidates[2]],false,out _) &&
-              !duel.SpecialSummonByGraveyardBanish(0,0,necro,[candidates[0],candidates[1]],false,out _) &&
-              !duel.SpecialSummonByGraveyardBanish(0,0,necro,[candidates[0],candidates[1],new(1,d)],false,out _) &&
+        check(!duel.SpecialSummonByGraveyardBanish(0,0,physicalNecro,[candidates[0],candidates[0],candidates[2]],false,out _) &&
+              !duel.SpecialSummonByGraveyardBanish(0,0,physicalNecro,[candidates[0],candidates[1]],false,out _) &&
+              !duel.SpecialSummonByGraveyardBanish(0,0,physicalNecro,[candidates[0],candidates[1],new(1,d)],false,out _) &&
               !duel.SpecialSummonByGraveyardBanish(0,0,normal,candidates,false,out _) &&
               duel.Banished(0).Count == 0 && duel.Graveyard(0).Count == 5 &&
               duel.HandFor(0).SequenceEqual([necro,normal]),
               "P252: duplicate indices, insufficient cost, non-Fiend and stale hand source reject atomically");
 
-        check(duel.SpecialSummonByGraveyardBanish(0,2,necro,candidates,false,out _) &&
+        check(duel.SpecialSummonByGraveyardBanish(0,2,physicalNecro,candidates,false,out _) &&
               duel.Banished(0).SequenceEqual([a,b,c]) &&
               duel.Graveyard(0).SequenceEqual([d,spell]) &&
-              ReferenceEquals(duel.Monsters[0,2],necro) &&
+              ReferenceEquals(duel.Monsters[0,2],physicalNecro) &&
               !duel.MonsterFaceDown[0,2] && !duel.DefensePosition[0,2] &&
               duel.HandFor(0).SequenceEqual([normal]) &&
               duel.CanSummonFromHand(0),
@@ -46,7 +47,7 @@ internal static class GraveyardBanishSummonChecks
             side0Graveyard:[a,b,c]);
         check(afterNormal.Summon(0,0,0,true,out _) &&
               afterNormal.CanSpecialSummonByGraveyardBanish(0) &&
-              afterNormal.SpecialSummonByGraveyardBanish(0,1,necro,
+              afterNormal.SpecialSummonByGraveyardBanish(0,1,afterNormal.Hand[0],
                 afterNormal.GraveyardBanishSummonCandidates(0),true,out _) &&
               afterNormal.DefensePosition[0,1] && !afterNormal.MonsterFaceDown[0,1],
               "P252: Special Summon after Normal Summon, face-up Defense allowed");
@@ -66,13 +67,13 @@ internal static class GraveyardBanishSummonChecks
 
         var stale = DemoDuel.FromPartialObservation(0,[necro],Slots(),Slots(),8000,
             side0Graveyard:[a,b,c]);
-        check(!stale.SpecialSummonByGraveyardBanish(0,0,necro,[new(0,b),new(1,a),new(2,c)],false,out _) &&
+        check(!stale.SpecialSummonByGraveyardBanish(0,0,stale.Hand[0],[new(0,b),new(1,a),new(2,c)],false,out _) &&
               stale.Graveyard(0).SequenceEqual([a,b,c]),
               "P252: stale candidate identity at original index cannot mutate zones");
 
         var copy = DemoDuel.FromPartialObservation(1,[necro],Slots(),Slots(),8000,
             side1Graveyard:[a,a,a]);
-        check(copy.SpecialSummonByGraveyardBanish(0,0,necro,
+        check(copy.SpecialSummonByGraveyardBanish(0,0,copy.Hand[0],
                 copy.GraveyardBanishSummonCandidates(0),false,out _) &&
               copy.Banished(1).Count==3 && copy.Banished(0).Count==0 &&
               copy.Monsters[1,0]==necro,

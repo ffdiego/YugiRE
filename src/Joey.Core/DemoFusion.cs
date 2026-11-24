@@ -32,7 +32,7 @@ public sealed partial class DemoDuel
         if (cards is null) return;
         if (cards.Count > FusionRules.FusionDeckLimit || cards.Any(card => !FusionRules.IsFusionMonster(card)))
             throw new ArgumentException("A Fusion Deck must contain at most 15 Fusion Monsters.", nameof(cards));
-        fusionDecks[player].AddRange(cards);
+        fusionDecks[player].AddRange(cards.Select(NewOccurrence));
     }
 
     private IEnumerable<FusionSummonOption> FusionOptions(int owner)
@@ -73,6 +73,7 @@ public sealed partial class DemoDuel
     public bool CancelFusionSummon(out string message)
     {
         message = "No Fusion Summon is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingFusionSummon is null) return false;
         PendingFusionSummon = null;
         message = "Fusion selection canceled.";
@@ -88,6 +89,7 @@ public sealed partial class DemoDuel
         bool defense = false)
     {
         message = "Choose separate occurrences that match the recipe.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (GameOver || Phase != DemoPhase.Main || PendingFusionSummon is not { } pending ||
             pending.Owner != ActivePlayer ||
             pending.Options.FirstOrDefault(option => option.DeckIndex == deckIndex) is not { } choice ||

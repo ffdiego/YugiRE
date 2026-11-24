@@ -28,7 +28,7 @@ internal static class RevivalJamDecisionChecks
         var request = declined.PendingEffectDecision;
         check(request is not null && request.Source == jam &&
               request.Owner == 0 && request.LifePointCost == 1000 &&
-              declined.Graveyard(0).Any(c => ReferenceEquals(c, jam)),
+              declined.Graveyard(0).Any(c => ReferenceEquals(c, request.Source)),
             "P002: battle destruction opens optional owner LP-cost decision");
         if (request is null) throw new InvalidOperationException("Expected P002 decision.");
 
@@ -71,7 +71,7 @@ internal static class RevivalJamDecisionChecks
               accepted.PendingDelayedRevivals.Count == 1,
             "P002 native order: advancing turn alone does not revive before the Draw");
         check(accepted.Draw(out _) &&
-              ReferenceEquals(accepted.Monsters[0, 0], acceptedJam) &&
+              ReferenceEquals(accepted.Monsters[0, 0], pay.Source) &&
               accepted.DefensePosition[0, 0] && !accepted.MonsterFaceDown[0, 0] &&
               !accepted.Graveyard(0).Contains(acceptedJam) &&
               accepted.PendingDelayedRevivals.Count == 0,
@@ -94,7 +94,7 @@ internal static class RevivalJamDecisionChecks
             blocked.Monsters[0, zone] = Monster((ushort)(950 + zone), 2000 + zone);
         check(blocked.EndTurn(out _) && blocked.PendingDelayedRevivals.Count == 1 &&
               blocked.Draw(out _) && blocked.PendingDelayedRevivals.Count == 0 &&
-              blocked.Graveyard(0).Any(c => ReferenceEquals(c, blockedJam)) &&
+              blocked.Graveyard(0).Any(c => ReferenceEquals(c, blockedDecision.Source)) &&
               blocked.Life[0] == blockedLife,
             "P002: a full field at post-Draw Standby cancels revival without LP refund");
 
@@ -117,7 +117,7 @@ internal static class RevivalJamDecisionChecks
               both.EndTurn(out _) && both.Turn == 4 &&
               both.Monsters[1, 0] is null && both.PendingDelayedRevivals.Count == 1 &&
               both.Draw(out _) &&
-              ReferenceEquals(both.Monsters[1, 0], jamAttacker) &&
+              ReferenceEquals(both.Monsters[1, 0], first!.Source) &&
               both.DefensePosition[1, 0],
             "P002: owner already active at destruction waits until post-Draw Standby of next turn");
     }

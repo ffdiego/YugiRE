@@ -120,6 +120,7 @@ internal static class DestinyBoardChecks
 
         var handFirst = DemoDuel.FromPartialObservation(0, [board, letters[0]],
             new Card?[5], new Card?[5], 8000, side0Deck: [letters[0], letters[1]]);
+        Card physicalLetter = handFirst.Hand[1];
         List<DemoDestinyBoardMessagePlaced> fromHandEvents = [];
         handFirst.DestinyBoardMessagePlaced += fromHandEvents.Add;
         handFirst.SetFromHand(0, out _);
@@ -128,7 +129,7 @@ internal static class DestinyBoardChecks
         int handFirstDeckCount = handFirst.DeckCount(0);
         handFirst.NextTurn(); handFirst.NextTurn();
         check(fromHandEvents is [{ Player: 0, FromDeck: false, Card: var firstMessage }] &&
-              ReferenceEquals(firstMessage, letters[0]) &&
+              ReferenceEquals(firstMessage, physicalLetter) &&
               handFirst.HandFor(0).Count == 0 &&
               handFirst.DeckCount(0) == handFirstDeckCount &&
               handFirst.DeckSnapshot(0).SequenceEqual([letters[0], letters[1]]),
