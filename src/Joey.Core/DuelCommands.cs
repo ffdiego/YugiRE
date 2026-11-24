@@ -21,12 +21,15 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
 public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
+internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
@@ -58,10 +61,15 @@ internal static class DuelCommandValidation
             case DrawCommand:
             case FinishFieldRemovalCommand:
                 break;
+            case ShuffleDeckCommand:
+            case FinishDeckSearchCommand:
             case FinishGraveyardRecoveryCommand:
                 break;
             case MoveToHandCommand move:
-                Target(move.Source, move.Side, DuelZone.Graveyard);
+                Target(move.Source, move.Side, DuelZone.Graveyard, DuelZone.Deck);
+                break;
+            case ResolveDeckSearchCommand search when search.Request is not null && search.Request.Owner == search.Side:
+                Target(search.Target, search.Side, DuelZone.Deck);
                 break;
             case ResolveGraveyardRecoveryCommand recover when recover.Request is not null && recover.Request.Owner == recover.Side:
                 if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
