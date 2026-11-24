@@ -23,23 +23,51 @@ public sealed partial class DemoDuel
     /// </summary>
     public bool TryQueueRaigekiFromHand(int index, out string message)
     {
-        message = "Raigeki requires an idle duel queue and a legal hand activation.";
-        if (primitiveActionQueue is not { IsBusy: false } queue ||
-            !CanActivateFromHand(index) || Hand[index].Id != MonsterWipeRules.Raigeki ||
-            Hand[index].ClassCode != 22 ||
-            !TryCaptureCardTarget(ActivePlayer, DuelZone.Hand, index, out var source))
+        message = "Choose Raigeki in hand.";
+        if (index < 0 || index >= Hand.Count || Hand[index].Id != MonsterWipeRules.Raigeki)
             return false;
+        return TryQueueMonsterWipe(DuelZone.Hand, index, out message);
+    }
 
-        var targets = MonsterWipeRules.Targets(MonsterWipeRules.Raigeki, ActivePlayer, Monsters, MonsterFaceDown);
+    /// <summary>Opt-in activation of the nine existing non-targeting monster wipe spells.</summary>
+    public bool TryQueueMonsterWipe(DuelZone sourceZone, int index, out string message,
+        ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "Choose a supported monster wipe with eligible tracked targets and an idle Main Phase.";
+        if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
+            PendingEndDiscards != 0 || sourceZone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
+            !TryCaptureCardTarget(ActivePlayer, sourceZone, index, out var source) ||
+            !CanResolveQueuedMonsterWipe(source, out _, out var targets))
+            return false;
         if (targets.Any(t => !CanQueueMonsterRemoval(t.Player, t.Zone) ||
             !TryCaptureCardTarget(t.Player, DuelZone.Monster, t.Zone, out _)))
-        {
-            message = "Raigeki pilot cannot resolve an untracked occurrence or linked equipment.";
             return false;
-        }
-        queue.Enqueue(new ActivateRaigekiCommand(ActivePlayer, source), ActionOrigin.Player);
-        message = "Raigeki admitted to action queue.";
+        queue.Enqueue(new ActivateMonsterWipeCommand(ActivePlayer, source), origin);
+        message = "Monster wipe admitted.";
         return true;
+    }
+
+    private bool CanResolveQueuedMonsterWipe(CardTarget source, out Card spell,
+        out IReadOnlyList<MonsterWipeTarget> targets)
+    {
+        spell = null!;
+        targets = [];
+        if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
+            !TryResolveCardTarget(source, out int index, out spell) || spell.ClassCode != 22 ||
+            MonsterWipeRules.Scope(spell.Id) is null)
+            return false;
+        if (source.Zone == DuelZone.Hand)
+        {
+            if (FirstFreeSpellZone() < 0) return false;
+        }
+        else if (source.Zone == DuelZone.SpellTrap)
+        {
+            if (!SpellFaceDown[source.Side, index] ||
+                equipment.Any(e => e.Owner == source.Side && e.SourceZone == index)) return false;
+        }
+        else return false;
+        targets = MonsterWipeRules.Targets(spell.Id, source.Side, Monsters, MonsterFaceDown);
+        return targets.Count != 0;
     }
 
     /// <summary>Opt-in normal Summon or monster Set; all costs validated before admission.</summary>
@@ -132,9 +160,12 @@ public sealed partial class DemoDuel
 
     private sealed class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
     {
-        private sealed class Wipe(int caster, IEnumerable<CardTarget> targets)
+        private sealed class Wipe(int caster, ushort resourceId, CardTarget source, IEnumerable<CardTarget> targets)
         {
             public int Caster { get; } = caster;
+            public ushort ResourceId { get; } = resourceId;
+            public CardTarget Source { get; } = source;
+            public bool SourceSpent { get; set; }
             public HashSet<CardTarget> Targets { get; } = new(targets);
             public int[] Counts { get; } = [0, 0];
             public int FaceDown { get; set; }
@@ -163,6 +194,10 @@ public sealed partial class DemoDuel
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
             if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision);
+            // An unspent source cancels the entire reserved wipe, including linked consequences.
+            if (wipe is { SourceSpent: false } pendingWipe &&
+                (command is not SendToGraveyardCommand sendSource || sendSource.Target != pendingWipe.Source))
+                return new(CommandOutcome.Skipped, "Wipe source was not spent.");
             bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
             if (finishDrawSpell) reservedDrawSpell.Dequeue();
             // Legacy Morphing Jar draws every available card for both players,
@@ -194,8 +229,10 @@ public sealed partial class DemoDuel
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateLifePointSpellCommand lp:
                     return ActivateLifePointSpell(lp, followups);
+                case ActivateMonsterWipeCommand monsterWipe:
+                    return ActivateMonsterWipe(monsterWipe.Source, followups);
                 case ActivateRaigekiCommand activate:
-                    return ActivateRaigeki(activate, followups);
+                    return ActivateMonsterWipe(activate.Source, followups, requireRaigeki: true);
                 case PrepareNormalPlacementCommand prepare:
                     return PreparePlacement(prepare, followups);
                 case TributeCommand tribute:
@@ -213,9 +250,9 @@ public sealed partial class DemoDuel
                 case ResolvePositionCommand resolve:
                     return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
-                    return ObserveDrawSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
+                    return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
-                    return ObserveDrawSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
+                    return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -227,9 +264,11 @@ public sealed partial class DemoDuel
             }
         }
 
-        private CommandResult ObserveDrawSpellSpend(CardTarget target, CommandResult result)
+        private CommandResult ObserveFixedSpellSpend(CardTarget target, CommandResult result)
         {
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
+            if (wipe is { } current && current.Source == target)
+                current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
         }
 
@@ -294,33 +333,30 @@ public sealed partial class DemoDuel
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
-            if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null) ||
+            if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null ||
+                MonsterWipeRules.Scope(card.Id) is not null) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
-                return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw spells are migrated here.");
+                return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
             duel.graves[target.Side].Add(card);
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult ActivateRaigeki(ActivateRaigekiCommand activate, IActionCommandSink followups)
+        private CommandResult ActivateMonsterWipe(CardTarget source, IActionCommandSink followups, bool requireRaigeki = false)
         {
-            // A narrow pilot: other input is not admitted ahead of its batch.
             if (wipe is not null || finishScheduled ||
                 followups is not ActionQueue { PendingCount: 0 } queue)
-                return new(CommandOutcome.Rejected, "Raigeki requires an isolated activation.");
-            int side = activate.Side;
-            if (!duel.TryResolveCardTarget(activate.Source, out int index, out var spell))
-                return new(CommandOutcome.Skipped, "Source occurrence has left its hand.");
-            if (duel.ActivePlayer != side || duel.Phase != DemoPhase.Main ||
-                duel.FirstFreeSpellZone() < 0 || spell.Id != MonsterWipeRules.Raigeki || spell.ClassCode != 22)
-                return new(CommandOutcome.Rejected, "Raigeki is no longer legal.");
+                return new(CommandOutcome.Rejected, "Monster wipe requires an isolated activation.");
+            int side = source.Side;
+            if (!duel.TryResolveCardTarget(source, out _, out _))
+                return new(CommandOutcome.Skipped, "Wipe source occurrence gone.");
+            if (!duel.CanResolveQueuedMonsterWipe(source, out var spell, out var snapshot) ||
+                (requireRaigeki && spell.Id != MonsterWipeRules.Raigeki))
+                return new(CommandOutcome.Rejected, "Monster wipe no longer legal.");
 
-            var snapshot = MonsterWipeRules.Targets(spell.Id, side, duel.Monsters, duel.MonsterFaceDown);
-            if (snapshot.Count == 0)
-                return new(CommandOutcome.Rejected, "No eligible opposing monsters.");
             var targets = new List<CardTarget>();
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(side, activate.Source) };
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(side, source) };
             var plans = new Dictionary<CardTarget, DuelCommand[]>();
             foreach (var item in snapshot)
             {
@@ -337,7 +373,7 @@ public sealed partial class DemoDuel
             // movement happens in this activation producer.
             queue.EnqueueBatch(batch);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
-            wipe = new(side, targets);
+            wipe = new(side, spell.Id, source, targets);
             ScheduleFinish(side, followups);
             return new(CommandOutcome.Applied);
         }
@@ -669,8 +705,9 @@ public sealed partial class DemoDuel
             plannedLinks.Clear();
             if (wipe is { } current)
             {
-                duel.LastMonsterWipe = new(MonsterWipeRules.Raigeki, current.Caster,
-                    current.Counts[0], current.Counts[1], current.FaceDown);
+                if (current.SourceSpent)
+                    duel.LastMonsterWipe = new(current.ResourceId, current.Caster,
+                        current.Counts[0], current.Counts[1], current.FaceDown);
                 wipe = null;
             }
             // Legacy choice bridge only; selection mutations are still A06/C12.
