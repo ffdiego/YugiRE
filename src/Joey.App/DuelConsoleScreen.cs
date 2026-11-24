@@ -12,6 +12,8 @@ static partial class Game
     static readonly List<string> labLog=[];
     static int labTraceCursor;
     static string labLastWaiting="";
+    static readonly System.Diagnostics.Stopwatch labWallClock = new();
+    static long labLastProgressMs, labLastStallMs;
 
     static void StartConsoleLab(string[]? lines)
     {
@@ -31,6 +33,8 @@ static partial class Game
         labLog.Clear();
         labTraceCursor=0;
         labLastWaiting="";
+        labWallClock.Restart();
+        labLastProgressMs=labLastStallMs=0;
         message="Laboratory: F10 console; no CPU.";
         LabLog(message);
     }
@@ -78,9 +82,24 @@ static partial class Game
         if(Raylib.IsKeyPressed(KeyboardKey.F10)) labConsoleOpen=!labConsoleOpen;
         var trace=session.Queue.Trace;
         for(int i=labTraceCursor;i<trace.Count;i++)
-            if(trace[i].Stage==ActionTraceStage.Executed)
-                LabLog($"{trace[i].Entry.Sequence}: {trace[i].Entry.Command.GetType().Name} {trace[i].Result?.Outcome} {trace[i].Result?.Detail}");
+        {
+            var entry=trace[i];
+            if(entry.Stage==ActionTraceStage.Executed)
+                LabLog($"{entry.Entry.Sequence}: {entry.Entry.Command.GetType().Name} {entry.Result?.Outcome} {entry.Result?.Detail}");
+            if(entry.Stage is ActionTraceStage.Started or ActionTraceStage.Completed)
+                Console.WriteLine($"[lab timing] ms={labWallClock.ElapsedMilliseconds} seq={entry.Entry.Sequence} stage={entry.Stage} command={entry.Entry.Command.GetType().Name}");
+        }
+        long now=labWallClock.ElapsedMilliseconds;
+        if(labTraceCursor!=trace.Count || visualReviewPaused || session.Queue.PendingDecision is not null)
+            labLastProgressMs=labLastStallMs=now;
         labTraceCursor=trace.Count;
+        bool scriptRunning=labScript is not null && labStatus is not (DuelScriptStatus.Completed or DuelScriptStatus.Failed);
+        if((scriptRunning || session.Queue.IsBusy) && !visualReviewPaused && session.Queue.PendingDecision is null &&
+            now-labLastProgressMs>=5000 && now-labLastStallMs>=5000)
+        {
+            labLastStallMs=now;
+            Console.WriteLine($"[lab wait] ms={now} idleMs={now-labLastProgressMs} active={session.Queue.Active?.Sequence} pending={session.Queue.PendingCount} motion={MotionBusy} phase={PhaseBusy} flight={flight is not null} attack={attackCue is not null} activation={ActivationBusy} cardEffects={CardEffectsBusy} life={LifePresentationBusy} blocked={alphaBlocked} fault={session.Queue.Fault is not null}");
+        }
         if(labScript is not { } script || labStatus is DuelScriptStatus.Completed or DuelScriptStatus.Failed ||
             visualReviewPaused || MotionBusy || PhaseBusy) return;
         var step=script.Advance();
@@ -92,7 +111,11 @@ static partial class Game
             return;
         }
         labLastWaiting="";
-        if(step.Line is int n) LabLog($"[script line {n}]");
+        if(step.Line is int n)
+        {
+            labLastProgressMs=labLastStallMs=now;
+            LabLog($"[script line {n}]");
+        }
         LabLog(step.Message);
         if(step.Status is DuelScriptStatus.Completed or DuelScriptStatus.Failed)
             message=step.Status==DuelScriptStatus.Completed ? "Laboratory script completed. F10 console." : "Script stopped. F10 for log.";
