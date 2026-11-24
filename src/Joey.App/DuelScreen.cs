@@ -181,11 +181,6 @@ static partial class Game
                 if (TryQueuedFixedSpell(card, DuelZone.Hand, index, out message)) ClearDuelSelection();
                 return;
             }
-            if (queuedDuel is not null && card.Id == MonsterWipeRules.Raigeki)
-            {
-                if (duel.TryQueueRaigekiFromHand(index, out message)) ClearDuelSelection();
-                return;
-            }
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;

@@ -76,12 +76,15 @@ static partial class Game
         duel.TryCaptureCardTarget(side, DuelZone.Hand, index, out var current) && source == current;
 
     static bool IsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
-        (DrawSpellRules.Effect(card) is not null || LifePointSpellRules.Supports(card.Id));
+        (DrawSpellRules.Effect(card) is not null || LifePointSpellRules.Supports(card.Id) ||
+         MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id));
 
     static bool TryQueuedFixedSpell(Card card, DuelZone zone, int index, out string result) =>
         DrawSpellRules.Effect(card) is not null
             ? duel.TryQueueDrawSpell(zone, index, out result)
-            : duel.TryQueueLifePointSpell(zone, index, out result);
+            : LifePointSpellRules.Supports(card.Id) ? duel.TryQueueLifePointSpell(zone, index, out result)
+            : MonsterWipeRules.Scope(card.Id) is not null ? duel.TryQueueMonsterWipe(zone, index, out result)
+            : duel.TryQueueSpellTrapWipe(zone, index, out result);
 
     static void AdvanceQueuedDuel()
     {
