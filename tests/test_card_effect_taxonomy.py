@@ -2,13 +2,15 @@ import unittest
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from card_effect_taxonomy import classify, build
+from card_effect_taxonomy import classify, build, verify_reference
 
 class TaxonomyTests(unittest.TestCase):
     def test_simple(self):
         for description, family in [('Draw 2 cards.', 'draw'), ('Gain 500 Life Points.', 'heal'), ('Inflict 200 points of damage to your opponent.', 'damage')]:
             with self.subTest(description=description):
                 self.assertEqual(classify(description, 'Spell'), ([family], 'trivial-candidate'))
+        self.assertEqual(classify('Draw two cards from your deck.', 'Spell'),
+                         (['draw'], 'trivial-candidate'))
 
     def test_conservative(self):
         for description, kind, route in [('Draw 2 cards, then discard 1 card.', 'Spell', 'queue-or-response'), ('Draw 2 cards.', 'Trap', 'queue-or-response'), ('Draw 2 cards. Destroy all monsters.', 'Spell', 'review'), ('FLIP: Draw 2 cards.', 'Effect', 'queue-or-response'), ('A dragon that destroys things.', 'Normal', 'not-applicable'), ('', 'Spell', 'review')]:
@@ -31,6 +33,24 @@ class TaxonomyTests(unittest.TestCase):
         data['cards'].append(data['cards'][0])
         with self.assertRaises(ValueError):
             build(data, {}, {}, {})
+
+    def test_reference_detects_pack_drift_even_at_same_total(self):
+        reference = dict(schemaVersion=1, fields=['resourceId', 'packMask', 'kindCode'],
+                         datSha256='fixture', kinds={'1': 'Monster', '2': 'Spell'},
+                         cards=[[10, 4, 1], [11, 1, 2]])
+        result = dict(fingerprints={'datSha256': 'fixture'}, cards=[
+            dict(resourceId=10, packMask=4, kind='Effect'),
+            dict(resourceId=11, packMask=1, kind='Spell')])
+        verify_reference(result, reference)
+
+        result['cards'][0]['packMask'] = 5
+        with self.assertRaisesRegex(ValueError, '1 missing and 1 unexpected'):
+            verify_reference(result, reference)
+
+        result['cards'][0]['packMask'] = 4
+        result['fingerprints']['datSha256'] = 'different'
+        with self.assertRaisesRegex(ValueError, 'DAT fingerprint'):
+            verify_reference(result, reference)
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@ static class InfiniteCardsTests
     {
         var infinite = new Card(951, 0x593, "Infinite Cards", "", 21u << 20);
         var monster = new Card(1, 1, "Monster", "", (1u << 20) | (4u << 25));
-        var sword = new Card(2, 300, "Legendary Sword", "", 21u << 20);
+        var sword = new Card(2, 300, "Legendary Sword", "", 22u << 20);
         var duel = DemoDuel.FromDecks(Enumerable.Repeat(infinite, 40).ToArray(), Enumerable.Repeat(monster, 40).ToArray());
         check(duel.Play(0, out _) && duel.Spells[0, 0] == infinite && duel.Hand.Count == 4 &&
             duel.Graveyard(0).Count == 0 && duel.HandLimitDisabled, "Infinite Cards remains in a spell zone instead of entering the graveyard");
