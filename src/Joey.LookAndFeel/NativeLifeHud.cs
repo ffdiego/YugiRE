@@ -30,15 +30,33 @@ public static class NativeLifeHud
     }
 
     /// <summary>
-    /// An unverified, stable overlay anchor on the duel board. It is derived
-    /// from existing card-row centres rather than the LP sidebar: near
-    /// (525, 406), far (525, 194), between monster and spell/trap zones.
+    /// 0047C69A..0047C6AB: negative slot selects region 5, slot 2;
+    /// nonnegative slot selects that monster (region 0 + slot).
+    /// Resolve the proven descriptor using the client's existing field
+    /// centers. Absolute table bytes for spell slots still need comparison.
     /// </summary>
-    public static CardPoint FloatingNumberAnchor(bool nearSide)
+    public static CardPoint FloatingNumberAnchor(bool nearSide, int slot = -1) =>
+        slot == -1 ? DuelCardLayout.Center(DuelCardZone.Spell, nearSide, 2) :
+        NativeDuelLayout.MonsterCenter(slot, nearSide);
+
+    /// <summary>
+    /// 0047C6FD..0047C748 calls 00480230(delta,1,0) to measure the
+    /// entire signed number, including sign for 12-column atlases.
+    /// Pass right = center.X + totalWidth/2 and top = center.Y - height/2
+    /// to the right-to-left digit helper 004806F0. Both halves truncate.
+    /// </summary>
+    public static CardPoint FloatingNumberOrigin(CardPoint center, int delta,
+        int glyphWidth, int glyphHeight, int columns)
     {
-        var monster = DuelCardLayout.Center(DuelCardZone.Monster, nearSide, 2);
-        var spell = DuelCardLayout.Center(DuelCardZone.Spell, nearSide, 2);
-        return new((monster.X + spell.X) / 2, (monster.Y + spell.Y) / 2);
+        if (glyphWidth <= 0 || glyphHeight <= 0)
+            throw new ArgumentOutOfRangeException(nameof(glyphWidth));
+        if (columns is < 10 or > 12)
+            throw new ArgumentOutOfRangeException(nameof(columns));
+        int count = 0;
+        int remaining = delta;
+        do { count++; remaining /= 10; } while (remaining != 0);
+        if (columns == 12) count++;
+        return new(center.X + checked(count * glyphWidth) / 2, center.Y - glyphHeight / 2);
     }
 
     public static int DisplayHeightForAtlas(int atlasHeight)

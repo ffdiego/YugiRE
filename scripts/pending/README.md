@@ -207,3 +207,94 @@ dimensões das imagens referenciadas (sem pixels).
 ## A03/A04 — 22-actions-console-visual-smoke.sh (piloto validado no Windows)
 
 Roteiro 22 executado via PowerShell, headless e gráfico: 18 Applied e 106 linhas relevantes idênticas após fff5e6e. Novo roteiro `scripts/fixtures/duel-console-two-sides-smoke.txt` executou 29 Applied, sem espera >=5s; operador confirmou compras animadas de ambos lados. CI 45328386043. Manter script como regressão opcional. Não implica paridade visual nativa; A05/A07 pendentes.
+
+## V20/V21/V22 — 16-coin-dice-break-ghidra.sh (recebido no SQLite v2; histórico)
+
+Ambiente: Ghidra local, projeto e EXE original com fingerprint validado pelo exportador. Consulta SQLite já concluída: seis Update/Draw não presentes; construtores/handlers presentes com ABI ambígua.
+
+    bash scripts/pending/16-coin-dice-break-ghidra.sh
+
+Saída privada: scratch/ghidra-coin-dice-break-contract.zip. Validar vtables +8/+C, contadores, recortes, camada e argumentos reais (não inferir faces/RNG pelo nome do banco); integrar novas evidências em SQLite cumulativo após receber o ZIP. Para coin.txt/dice.txt/break.txt, usar --inspect-visual-dat existente e preservar campos numéricos. Ver [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md). Não repetir bundles 01–04.
+
+## V23/V24 — 17-chain-affect-assembly.sh (aguardando Fedora)
+
+Ambiente: Ghidra headless, mesmo projeto e EXE atestado. O SQLite já contém as decompilações transitórias de Update/Draw; não repetir os bundles 01–04 nem reexportar todos os métodos virtuais. Este roteiro pede assembly apenas das quatro funções com operandos, seletor e jump tables ainda ambíguos.
+
+    bash scripts/pending/17-chain-affect-assembly.sh
+
+Saída privada: scratch/ghidra-chain-affect-assembly.zip. Confirmar as chaves de lookup de chain.txt, pass decimal, composição scratch e dispatch de affect.txt. Para os dois manifests, reutilizar --inspect-visual-dat e preservar a ordem/campos/dimensões. Importar evidência compatível em cópia SQLite após receber a coleta; sem marcar Draw como implementada. Ver [contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
+
+## V25/V26 — 18-alternative-activation-exclusion-ghidra.sh (recebido no SQLite v2; histórico)
+
+Ghidra local, EXE/projeto atestado. SQLite já consultado: dois Draws ausentes, construtores disponíveis; Update de exclusão no-op.
+
+    bash scripts/pending/18-alternative-activation-exclusion-ghidra.sh
+
+Saída privada: scratch/ghidra-alternative-activation-exclusion.zip. Confirmar slots da vtable, fases, recortes e gate de término (inclusive possível mutação no Draw), ABI e mascaramento de exclusão. Recuperar xrefs do construtor se disponíveis, não atribuir opcode por nome de asset. Usar --inspect-visual-dat para exclusion.txt. Importar evidências compatíveis em SQLite cumulativo após receber ZIP. [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+
+## V27/V28/V29 — 19-layerfont-help-ghidra.sh (recebido no SQLite v2; histórico)
+
+Ghidra local, projeto/EXE atestado. SQLite já contém decompilações transitórias Layerfont; faltam operandos e composição confirmados em assembly. Help Update/Draw recebidos no bundle 19; ver V29.
+
+    bash scripts/pending/19-layerfont-help-ghidra.sh
+
+Saída privada: scratch/ghidra-layerfont-help-contract.zip. Confirmar dimensões/operandos de +48/+4C, gates/seleção do help e slots de vtable. Reutilizar --inspect-visual-dat para layerfont.txt e help.txt; não enviar pixels. Importar resultados em SQLite cumulativo quando recebidos. [Contrato](../../docs/research/native-layerfont-help-2026-11-24.md).
+
+## V30 / V11 — 20-vija-selection-origins-ghidra.sh (recebido no SQLite v2; histórico)
+
+Ghidra local, mesmo projeto/EXE. O snapshot atual não possui Draw 004584C0; construtor, predicado e chamadores já consultados. Janelas dirigidas apenas para ABI ambígua e memória das tabelas não coletadas.
+
+    bash scripts/pending/20-vija-selection-origins-ghidra.sh
+
+Saída privada: scratch/ghidra-vija-selection-origins.zip. Conferir Draw, máscaras, ordem de letras, 005DA410, 005DB414/424 e centros 005DB5B0:80. Para vija.txt use --inspect-visual-dat, sem pixels. Importar evidência em nova cópia SQLite cumulativa. [Contrato](../../docs/research/native-vija-selection-origins-2026-11-24.md).
+
+### Importação cumulativa (todas as coletas VISUALS)
+
+Após receber ZIPs válidos, usar `scripts/import_visual_evidence.py` com `--source`, `--bundle` (repetível) e `--output` apontando a uma nova cópia. O importador histórico de métodos virtuais não aceita batches cumulativos. Ver [procedimento e consultas](../../docs/research/visual-evidence-cumulative-import.md). Não versionar evidência privada.
+
+## V04/V06 — 21-attack-life-draw-ghidra.sh (recebido no SQLite v2; histórico)
+
+Ghidra local, projeto e EXE atestado. Os dois Draws não existem nas tabelas de decompilação do SQLite atual; produtores e Update já consultados. 
+
+    bash scripts/pending/21-attack-life-draw-ghidra.sh
+
+Saída privada: scratch/ghidra-attack-life-draw-contract.zip. Recuperar instruções de seleção de sprite/pivô e âncoras de LP por slot/-1, ABI dos produtores e vtables. Importar com import_visual_evidence.py em nova cópia. [Contrato](../../docs/research/native-attack-life-routing-2026-11-24.md). Não repetir a coleta completa do inventário.
+
+## V07 — 23-turn-notice-draw-ghidra.sh (recebido no SQLite v2; histórico)
+
+Ghidra local, projeto/EXE atestado. SQLite confirmou ordem, preloads e contadores de painel; faltam 00480C20/00480C60 e virtual +4. 
+
+    bash scripts/pending/23-turn-notice-draw-ghidra.sh
+
+Saída privada: scratch/ghidra-turn-notice-draw-contract.zip. Verificar vtables, seletor de frame, âncora, composição e término; se o virtual +4 apontar para outra rotina ainda ausente, registrar VA para próxima coleta. Usar --inspect-visual-dat para phase_name.txt; importar bundle por import_visual_evidence.py. Não repetir 11/A07 nem os quatro bundles concluídos. [Contrato](../../docs/research/native-turn-notice-contract-2026-11-24.md).
+
+## Handoff recebido — 24/11/2026
+
+21 bundles privados validados e importados em nova cópia SQLite cumulativa. Inclui Ghidra 01–13, 16, 18–21, 23 e dois históricos; **não repetir estas coletas** sem lacuna específica. O 17 não veio neste ZIP. 14/15/22 não são coletas Ghidra. Estado de implementação permanece por trilha. Ver [auditoria e V07/V11](../../docs/research/pending-bundles-handoff-2026-11-24.md).
+
+### Nota de numeração paralela
+
+O número 16 foi reservado em duas branches independentes antes da integração: `16-cards-revival-spells-ghidra.sh` (CARDS, nova coleta não incluída no bundle visual) e `16-coin-dice-break-ghidra.sh` (VISUALS, coleta recebida). Preservar os nomes e referências históricas; distinguir pelo nome completo e ID da trilha, não considerar a coleta CARDS concluída por coincidência de número. Não reutilizar números em novas tarefas.
+
+## V17/V30 — 24-native-surface-vtable-ghidra.sh (aguardando Fedora)
+
+Nova coleta específica, não repetir 20: o Draw 004584C0 já está no SQLite v2.
+A vtable de superfície 005DC6EC é conhecida por 004A9CC0, mas o alvo +98
+(005DC784), +4C e +E0 não estão resolvidos. Ler 228 bytes e confirmar
+recorrência de clipping e cadeia de alocação.
+    
+    bash scripts/pending/24-native-surface-vtable-ghidra.sh
+
+Saída privada scratch/ghidra-native-surface-vtable-contract.zip.
+Após validar/importar, resolver targets da vtable e consultar primeiro o
+SQLite; coletar código adicional somente se ausente. Não presumir formato
+da scratch pela flag 1, nem substituir +98 por alpha. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md).
+
+
+## V17/V07 — 25-native-quad-raster-ghidra.sh (aguardando Fedora)
+
+Geometria candidata e dispatch recuperados de decompilação; callee sem assembly indexado. Não repetir roteiro 23 (Draw recebido) nem roteiro 24 (vtable scratch distinta).
+
+    bash scripts/pending/25-native-quad-raster-ghidra.sh
+
+Saída privada: scratch/ghidra-native-quad-raster-contract.zip. Confirmar registradores/dimensões e vértices 004223F0, distinção das transformações, fronteira 00422E30 e kernels BGR24. Importar em cópia cumulativa; não presumir alpha nem paridade por receber a coleta. [Contrato](../../docs/research/native-quad-raster-contract-2026-11-24.md).

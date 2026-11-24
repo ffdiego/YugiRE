@@ -1188,9 +1188,31 @@ internal static class LookAndFeelChecks
         check(setQueue.Current?.Kind == "set" && setQueue.ElapsedUpdates == 0,
               "Set placement: effect starts after hand-to-field flight");
 
-        check(NativeLifeHud.FloatingNumberAnchor(nearSide: true) == new CardPoint(525, 406) &&
-              NativeLifeHud.FloatingNumberAnchor(nearSide: false) == new CardPoint(525, 194),
-              "Floating LP glyphs occupy the gap between monster/spell rows, not sidebar");
+        check(NativeLifeHud.FloatingNumberAnchor(nearSide: true) == new CardPoint(525, 460) &&
+              NativeLifeHud.FloatingNumberAnchor(nearSide: false) == new CardPoint(525, 140) &&
+              NativeLifeHud.FloatingNumberAnchor(true, 0) == NativeDuelLayout.MonsterCenter(0, true) &&
+              NativeLifeHud.FloatingNumberAnchor(false, 4) == NativeDuelLayout.MonsterCenter(4, false),
+              "V06: -1 selects central spell slot; battle slot selects monster");
+        check(NativeLifeHud.FloatingNumberOrigin(new(525,460), -250,16,40,12) == new CardPoint(557,440) &&
+              NativeLifeHud.FloatingNumberOrigin(new(525,140), 9,7,11,12) == new CardPoint(532,135) &&
+              NativeLifeHud.FloatingNumberOrigin(new(525,140), -99,7,11,10) == new CardPoint(532,135),
+              "V06: entire number centered, integer halves and sign columns");
+        var swordCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var swordFrom = new CardPoint(369,352);
+        var swordTo = new CardPoint(603,248);
+        var swordFlight = NativeAttackFrame.Sample(13,swordFrom,swordTo,true,swordCosine);
+        check(swordFlight.RotationIndex == NativeAttackFrame.AimRotation(
+                  swordTo.X-swordFlight.Position.X,swordTo.Y-swordFlight.Position.Y) &&
+              swordFlight.SwordLookupKey == 0 && swordFlight.ImpactLookupKey is null,
+              "V04: flight angle from integer position and key zero");
+        var swordHit = NativeAttackFrame.Sample(16,swordFrom,swordTo,true,swordCosine);
+        var swordLast = NativeAttackFrame.Sample(31,swordFrom,swordTo,true,swordCosine);
+        check(swordHit.SwordLookupKey == 1 && swordHit.ImpactLookupKey == 2 &&
+              swordHit.NativeIntensity == 512 && swordHit.Opacity == 255 &&
+              swordLast.NativeIntensity == 32 && swordLast.Opacity == 32 &&
+              NativeAttackFrame.SoundAtDraw(9) == 0x10000006u &&
+              NativeAttackFrame.SoundAtDraw(8) is null,
+              "V04: contact keys, raw intensity and launch sound request");
         check(NativeAttackFrame.ImpactStartUpdate == 16 &&
               NativeAttackFrame.Updates == 32,
               "Hidden defender stays face-down through sword approach and flips at impact");

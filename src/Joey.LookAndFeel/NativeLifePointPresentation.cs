@@ -17,6 +17,8 @@ public sealed class NativeLifePointPresentation
     public int RampCounter { get; private set; } = RampEnd;
     public int FlashCounter { get; private set; }
     public int PulseCounter { get; private set; }
+    public int AnchorSlot { get; private set; } = -1;
+    public bool HoldConsumption { get; private set; }
     public bool Animating => PendingDelta != 0 || RampCounter < RampEnd || FlashCounter > 0;
 
     public NativeLifePointPresentation(int currentLife) => Reset(currentLife);
@@ -28,6 +30,8 @@ public sealed class NativeLifePointPresentation
         RampCounter = RampEnd;
         FlashCounter = 0;
         PulseCounter = 0;
+        AnchorSlot = -1;
+        HoldConsumption = false;
     }
 
     public static int ClampToNativeDisplay(int value) =>
@@ -53,6 +57,37 @@ public sealed class NativeLifePointPresentation
 
         PendingDelta = target - Displayed;
         RampCounter = 0;
+        AnchorSlot = -1;
+        HoldConsumption = false;
+    }
+
+    /// <summary>
+    /// 0047C4F0: if +30 is set, this invocation only clears it
+    /// (0047C540); it does not replace delta, slot or ramp or request
+    /// another sound. Otherwise store the new request. Unlike the
+    /// legacy SetLogicalLife adapter, this does not retarget to a
+    /// logical LP total. Do not mix both input paths for one effect.
+    /// </summary>
+    public uint? RequestNativeChange(NativeLifeDeltaRequest request)
+    {
+        if (HoldConsumption)
+        {
+            HoldConsumption = false;
+            return null;
+        }
+        PendingDelta = request.Delta;
+        AnchorSlot = request.AnchorSlot;
+        HoldConsumption = request.HoldConsumption;
+        RampCounter = 0;
+        return request.Delta < 0 ? 0x10000009u : 0x1000001fu;
+    }
+
+    // 0047C550 clears remaining delta and flag, not displayed LP,
+    // the current ramp, anchor or flash. No rule mutation.
+    public void CancelNativeChange()
+    {
+        PendingDelta = 0;
+        HoldConsumption = false;
     }
 
     /// <summary>
@@ -70,7 +105,7 @@ public sealed class NativeLifePointPresentation
         {
             RampCounter += RampIncrement;
         }
-        else if (PendingDelta != 0)
+        else if (!HoldConsumption && PendingDelta != 0)
         {
             long magnitude = Math.Abs((long)PendingDelta);
             int step = magnitude >= 100 ? 100 : magnitude >= 10 ? 10 : 1;
