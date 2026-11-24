@@ -298,3 +298,20 @@ Geometria candidata e dispatch recuperados de decompilação; callee sem assembl
     bash scripts/pending/25-native-quad-raster-ghidra.sh
 
 Saída privada: scratch/ghidra-native-quad-raster-contract.zip. Confirmar registradores/dimensões e vértices 004223F0, distinção das transformações, fronteira 00422E30 e kernels BGR24. Importar em cópia cumulativa; não presumir alpha nem paridade por receber a coleta. [Contrato](../../docs/research/native-quad-raster-contract-2026-11-24.md).
+
+## A09 — actions-a09-combat-smoke.py (aguardando desktop Windows/Fedora)
+
+- Requisitos: Python 3.10+, .NET 10, DAT privado e sessão gráfica. Não requer
+  joey_pc.exe nem modifica saves. Rodar a partir da raiz:
+  `python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat`.
+- Roteiro: `scripts/fixtures/duel-console-combat-smoke.txt`; direct lado 1,
+  combate com alvo lado 0, decks não vazios, setup explícito por spawn.
+  A hipótese de ID 1351 com ATK positivo é validada pelo resultado do Lab,
+  não pela fixture sintética do CI.
+- Fechar Classic e Instant depois de Script completed. Logs em
+  `scratch/actions-combat/smoke-*/` (diretório único). Enviar os três .txt e
+  registrar se a espada aparece antes do dano/remoção; não versionar o DAT.
+- Critério: mesmo trace/state headless e visual nos dois perfis, fila livre,
+  nenhuma espera >=5s, ordenação Started/Completed serial. A comparação
+  não mede pixels nem paridade com o original. A captura nativa equivalente
+  de A09 continua pendente; este roteiro não a substitui.
