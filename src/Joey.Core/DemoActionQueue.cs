@@ -15,6 +15,7 @@ public sealed partial class DemoDuel
             throw new InvalidOperationException("A duel already owns an action queue.");
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
             () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer() ||
+                admittingQueuedFlipSpellTrapPair && CanAdmitQueuedFlipSpellTrapPair() ||
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
@@ -136,7 +137,8 @@ public sealed partial class DemoDuel
         DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne or
         DemoFlipEffect.RecoverFromGraveyard or DemoFlipEffect.OptionalDrawOne or
         DemoFlipEffect.DestroyTwoSetSpellTraps or DemoFlipEffect.ReturnTwoSpellTraps or
-        DemoFlipEffect.RecruitSameNameFaceDown;
+        DemoFlipEffect.RecruitSameNameFaceDown or DemoFlipEffect.MillOpponentDeck or
+        DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour;
 
     // Snapshot linked consequences before the producer admits any removals.
     // Each is a normal typed command, in the legacy per-removal order.
@@ -173,6 +175,8 @@ public sealed partial class DemoDuel
             public bool MonsterWipe { get; } = monsterWipe;
             public CardTarget? PrimaryTarget { get; init; }
             public bool PrimaryDestroyed { get; set; }
+            public HashSet<CardTarget>? FlipPair { get; init; }
+            public HashSet<int> BoardReturned { get; } = [];
             public HashSet<CardTarget> Targets { get; } = new(targets);
             public int[] Counts { get; } = [0, 0];
             public int FaceDown { get; set; }
@@ -187,6 +191,19 @@ public sealed partial class DemoDuel
         private CardTarget? drawSpellSource;
         private bool drawSpellSourceSpent;
         private bool resolvingFlipBatch;
+        private sealed class FlipDeckFlow(ushort effect, int controller, int requested, IEnumerable<CardTarget> expected)
+        {
+            public ushort Effect { get; } = effect;
+            public int Controller { get; } = controller;
+            public int Side => 1 - Controller;
+            public int Requested { get; } = requested;
+            public bool IsMill => Effect == FlipEffectRules.NeedleWorm;
+            public Queue<CardTarget> Expected { get; } = new(expected);
+            public List<CardTarget> NewSpells { get; } = [];
+            public int Moved { get; set; }
+            public int Discarded { get; set; }
+        }
+        private FlipDeckFlow? flipDeckFlow;
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
@@ -213,6 +230,8 @@ public sealed partial class DemoDuel
                 return ResolveGraveyardRecovery(recovery, followups);
             if (command is FinishGraveyardRecoveryCommand)
                 return FinishGraveyardRecovery();
+            if (command is ResolveFlipSpellTrapPairCommand pair)
+                return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
             if (command is FinishFieldRemovalCommand)
@@ -237,6 +256,8 @@ public sealed partial class DemoDuel
             switch (command)
             {
                 case DrawCommand draw:
+                    if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
+                        return DrawForShadowScout(flow);
                     if (duel.decks[draw.Side].Count == 0)
                     {
                         duel.Winner = 1 - draw.Side;
@@ -280,12 +301,17 @@ public sealed partial class DemoDuel
                     return MovePosition(position.Target, false, position.Defense, followups);
                 case ResolvePositionCommand resolve:
                     return ResolvePosition(resolve, followups);
+                case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Deck:
+                    return SendDeckCardToGraveyard(send.Target);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
-                    return SendHandToGraveyard(discard.Target, discard: true);
+                    var discarded = SendHandToGraveyard(discard.Target, discard: true);
+                    if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
+                        scout.NewSpells.Contains(discard.Target)) scout.Discarded++;
+                    return discarded;
                 case SpecialSummonCommand specialSummon:
                     return SpecialSummonFromSource(specialSummon);
                 case MoveToHandCommand move:
@@ -293,7 +319,7 @@ public sealed partial class DemoDuel
                 case ShuffleDeckCommand shuffle:
                     return ShuffleDeck(shuffle.Side);
                 case ReturnToHandCommand bounce:
-                    return ReturnQueuedMonster(bounce.Target, followups);
+                    return bounce.Target.Zone == DuelZone.Monster ? ReturnQueuedMonster(bounce.Target, followups) : ReturnQueuedSpellTrap(bounce.Target);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
                     return DestroyMonster(destroy.Target, followups);
                 case DestroyCommand destroy when destroy.Target.Zone is DuelZone.SpellTrap or DuelZone.FieldSpell:
@@ -599,6 +625,15 @@ public sealed partial class DemoDuel
                         if (!duel.TryCaptureCardTarget(p, DuelZone.Hand, i, out _))
                             return new(CommandOutcome.Rejected, "Untracked Morphing Jar hand occurrence.");
 
+            if (flip && !duel.FlipEffectsNegated &&
+                card.Id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout)
+            {
+                int requested = card.Id == FlipEffectRules.NeedleWorm ? 5 : 3;
+                for (int i = 0; i < Math.Min(requested, duel.decks[1 - side].Count); i++)
+                    if (!duel.TryCaptureCardTarget(1 - side, DuelZone.Deck, i, out _))
+                        return new(CommandOutcome.Rejected, "Untracked deck-flow occurrence.");
+            }
+
             var change = duel.CommitManualPosition(side, slot);
             followups.ScheduleContinuation(_ => new([new ResolvePositionCommand(side, target,
                 change.WasFaceDown, change.WasInDefense)]));
@@ -640,6 +675,10 @@ public sealed partial class DemoDuel
                 }, request));
                 return new(CommandOutcome.Applied);
             }
+            if (card.Id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout)
+                return ResolveFlipDeckFlow(position, card, followups);
+            if (card.Id == FlipEffectRules.FourStarredLadybugOfDoom)
+                return ResolveLadybug(position, followups);
             if (card.Id == FlipEffectRules.MorphingJar)
             {
                 if (followups is not ActionQueue { PendingCount: 0 } queue)
@@ -679,6 +718,132 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied, detail);
         }
 
+        private CommandResult ResolveLadybug(ResolvePositionCommand position, IActionCommandSink followups)
+        {
+            if (wipe is not null || finishScheduled || resolvingFlipBatch ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Ladybug requires isolated resolution.");
+            var targets = new List<CardTarget>();
+            var plans = new Dictionary<CardTarget, DuelCommand[]>();
+            var batch = new List<DuelCommand>();
+            foreach (var item in MonsterWipeRules.LevelFourOpponentTargets(position.Side, duel.Monsters, duel.MonsterFaceDown))
+            {
+                if (duel.IsMarkedForBattleDestruction(item.Player, item.Zone)) continue;
+                if (!duel.TryCaptureCardTarget(item.Player, DuelZone.Monster, item.Zone, out var target) ||
+                    !duel.TryPlanRemovalLinks(item.Player, item.Zone, out var links))
+                    return new(CommandOutcome.Rejected, "Untracked Ladybug target or equipment.");
+                targets.Add(target);
+                plans.Add(target, links);
+                batch.Add(new DestroyCommand(target.Side, target));
+                batch.AddRange(links);
+            }
+            queue.EnqueueBatch(batch);
+            foreach (var plan in plans) plannedLinks.Add(plan.Key, plan.Value);
+            wipe = new(position.Side, FlipEffectRules.FourStarredLadybugOfDoom, position.Target, targets) { SourceSpent = true };
+            resolvingFlipBatch = true;
+            ScheduleFinish(position.Side, followups);
+            followups.ScheduleContinuation(_ => new([new FinishFlipBatchCommand(position.Side,
+                position.Target, position.WasInDefense, false, false)]));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveFlipSpellTrapPair(ResolveFlipSpellTrapPairCommand answer, IActionCommandSink followups)
+        {
+            CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
+            if (wipe is not null || finishScheduled || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanFlipSpellTrapPair(answer.Request, targets, out var source, out var batch, out var cascade))
+                return new(CommandOutcome.Rejected, "FLIP pair request or occurrence changed.");
+            duel.PendingFlipSpellTrapTargets = null;
+            duel.flipSpellTrapSelections.Clear();
+            queue.EnqueueBatch(batch);
+            wipe = new(answer.Side, answer.Request.Source.Id, source, targets.Concat(cascade), monsterWipe: false)
+                { SourceSpent = true, FlipPair = new(targets) };
+            ScheduleFinish(answer.Side, followups);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ReturnQueuedSpellTrap(CardTarget target)
+        {
+            if (wipe is not { ResourceId: FlipEffectRules.TornadoBird, FlipPair: { } pair } current ||
+                !pair.Contains(target) || !current.Targets.Contains(target))
+                return new(CommandOutcome.Rejected, "Only reserved FLIP Spell/Trap return is migrated.");
+            if (!duel.TryResolveCardTarget(target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Spell/Trap occurrence gone.");
+            int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
+            if (!FlipSpellTrapSelectionRules.IsEligible(current.ResourceId, card, duel.IsSpellTrapFaceDown(target.Side, zone)) ||
+                !duel.SpellTrapRemovalLinkMatches(target.Side, target.Zone, slot, card))
+                return new(CommandOutcome.Rejected, "Spell/Trap return no longer eligible.");
+            if (card.Id == DestinyBoardRules.BoardResourceId && !duel.IsSpellTrapFaceDown(target.Side, zone) &&
+                DestinyBoardRules.HasActiveBoard(target.Side, duel.Spells, duel.SpellFaceDown))
+                current.BoardReturned.Add(target.Side);
+            duel.ReturnSpellTrapCardToOwnerHand(target.Side, zone);
+            current.Targets.Remove(target);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveFlipDeckFlow(ResolvePositionCommand position, Card card, IActionCommandSink followups)
+        {
+            if (resolvingFlipBatch || followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Deck flow needs isolated resolution.");
+            bool mill = card.Id == FlipEffectRules.NeedleWorm;
+            int side = 1 - position.Side, requested = mill ? 5 : 3;
+            var expected = new List<CardTarget>();
+            for (int i = 0; i < Math.Min(requested, duel.decks[side].Count); i++)
+            {
+                if (!duel.TryCaptureCardTarget(side, DuelZone.Deck, i, out var target))
+                    return new(CommandOutcome.Rejected, "Untracked deck occurrence.");
+                expected.Add(target);
+            }
+            flipDeckFlow = new(card.Id, position.Side, requested, expected);
+            resolvingFlipBatch = true;
+            queue.EnqueueBatch(expected.Select(target => mill
+                ? (DuelCommand)new SendToGraveyardCommand(side, target)
+                : new DrawCommand(side)));
+            queue.ScheduleContinuation(_ =>
+            {
+                var finish = new FinishFlipBatchCommand(position.Side, position.Target, position.WasInDefense, false, false);
+                // Read-only continuation: only successfully drawn Spell copies
+                // participate; never select matching resource IDs in old hand.
+                return new([.. flipDeckFlow!.NewSpells.Select(t => (DuelCommand)new DiscardCommand(side, t)), finish]);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult DrawForShadowScout(FlipDeckFlow flow)
+        {
+            if (!flow.Expected.TryDequeue(out var expected) ||
+                !duel.TryCaptureCardTarget(flow.Side, DuelZone.Deck, 0, out var top) || top != expected)
+                return new(CommandOutcome.Skipped, "Reserved draw occurrence changed.");
+            var card = duel.decks[flow.Side].Dequeue();
+            int index = duel.hands[flow.Side].Count;
+            duel.hands[flow.Side].Add(card);
+            flow.Moved++;
+            if (card.ClassCode == 22)
+            {
+                if (!duel.TryCaptureCardTarget(flow.Side, DuelZone.Hand, index, out var selected))
+                    throw new InvalidOperationException("Newly drawn occurrence is not tracked.");
+                flow.NewSpells.Add(selected);
+            }
+            // Emit the logical draw for presentation, but defer Exodia
+            // and shortfall until all draws and discards have finished.
+            duel.HandTransferred?.Invoke(new(flow.Side, index, card, FromDeck: true));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult SendDeckCardToGraveyard(CardTarget target)
+        {
+            // This primitive deliberately sends only the top occurrence.
+            // Arbitrary Deck search-to-GY remains a separate producer.
+            if (!duel.TryCaptureCardTarget(target.Side, DuelZone.Deck, 0, out var top) || top != target)
+                return new(CommandOutcome.Skipped, "Expected deck top occurrence gone.");
+            if (flipDeckFlow is { IsMill: true } mill &&
+                (!mill.Expected.TryDequeue(out var expected) || expected != target))
+                return new(CommandOutcome.Rejected, "Unexpected reserved mill occurrence.");
+            duel.graves[target.Side].Add(duel.decks[target.Side].Dequeue());
+            if (flipDeckFlow is { IsMill: true } current && current.Side == target.Side) current.Moved++;
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision)
         {
             if (queueDrawDecision is not { } request || request.Id != decision.DecisionId || request.Owner != decision.Side)
@@ -694,6 +859,19 @@ public sealed partial class DemoDuel
             if (!resolvingFlipBatch) return new(CommandOutcome.Rejected, "No pending FLIP batch.");
             resolvingJar = false;
             resolvingFlipBatch = false;
+            if (flipDeckFlow is { } flow)
+            {
+                flipDeckFlow = null;
+                int sent = flow.IsMill ? flow.Moved : flow.Discarded;
+                bool shortfall = !flow.IsMill && flow.Moved < flow.Requested;
+                duel.LastDeckFlow = new(flow.Effect, flow.Controller, flow.Side, flow.Requested,
+                    flow.Moved, flow.IsMill ? 0 : flow.Moved - flow.Discarded, sent, flow.Discarded, shortfall);
+                if (!flow.IsMill)
+                {
+                    duel.CheckExodia(flow.Side);
+                    if (shortfall && duel.Winner is null) duel.Winner = flow.Controller;
+                }
+            }
             if (!duel.GameOver)
             {
                 if (finish.DeckOut0 && finish.DeckOut1) duel.IsDraw = true;
@@ -969,6 +1147,20 @@ public sealed partial class DemoDuel
                 current.Targets.Contains(target);
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Spell/Trap occurrence gone.");
+
+            if (reserved && wipe is { FlipPair: { } pair } flipPair)
+            {
+                int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
+                bool hidden = duel.IsSpellTrapFaceDown(target.Side, zone);
+                if (pair.Contains(target))
+                {
+                    if (flipPair.ResourceId != FlipEffectRules.Greenkappa ||
+                        !FlipSpellTrapSelectionRules.IsEligible(flipPair.ResourceId, card, hidden))
+                        return new(CommandOutcome.Skipped, "Selected Set target no longer eligible.");
+                }
+                else if (!flipPair.BoardReturned.Contains(target.Side) || hidden || !IsDestinyBoardPiece(card))
+                    return new(CommandOutcome.Skipped, "No active Board returned for cascade.");
+            }
 
             if (reserved && wipe is { PrimaryTarget: { } primary } targeted)
             {

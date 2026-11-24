@@ -36,6 +36,7 @@ internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRevivalCommand(int Side, PendingCardSelection Request, CardTarget Target, int Slot, bool FaceDownDefense) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
+internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -100,7 +101,14 @@ internal static class DuelCommandValidation
                 if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
                 break;
             case ReturnToHandCommand bounce:
-                Target(bounce.Target, bounce.Side, DuelZone.Monster);
+                Target(bounce.Target, bounce.Side, DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ResolveFlipSpellTrapPairCommand pair when pair.Request is not null && pair.Request.Owner == pair.Side:
+                if ((pair.First is null) != (pair.Second is null) ||
+                    pair.First is { } firstPair && pair.Second == firstPair)
+                    throw new ArgumentException("Invalid FLIP Spell/Trap pair.");
+                foreach (var pairPick in new CardTarget?[] { pair.First, pair.Second }.OfType<CardTarget>())
+                    Target(pairPick, pairPick.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
                 break;
             case ResolveMonsterFlipTargetsCommand flipTargets:
                 Target(flipTargets.Source, flipTargets.Side, DuelZone.Monster);

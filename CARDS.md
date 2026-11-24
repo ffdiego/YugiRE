@@ -255,6 +255,10 @@ Nimble Momonga, Giant Germ e Bubonic Vermin usam `TryQueueSameNameRecruitment`; 
 
 Spear Cretin usa `TryQueueGraveyardRevival`: um monstro do próprio GY por solicitação, excluindo a ocorrência disparadora, ataque face-up ou defesa face-down. A próxima escolha aguarda o gate. [Contrato](docs/cards/c12-queued-graveyard-revival.md).
 
+### Movimentação do deck na fila (C12)
+
+Needle Worm e Hiro's Shadow Scout: Flip Summon manual emite movimentações individuais, com auditoria `LastDeckFlow` após o gate. Mill não é compra; Scout descarta apenas Spells recém-compradas. Batalha/reveal externo continuam legados. [Contrato](docs/cards/c12-queued-flip-deck-flow.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |
