@@ -8,9 +8,15 @@ import tempfile
 import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "experiments" / "hybrid_probe" / "compare_ydr.py"
-spec = importlib.util.spec_from_file_location("joey_compare_ydr", SCRIPT)
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
+
+
+def setUpModule():
+    global mod
+    if not SCRIPT.is_file():
+        raise unittest.SkipTest(f"Optional hybrid experiment {SCRIPT.name} is absent")
+    spec = importlib.util.spec_from_file_location("joey_compare_ydr", SCRIPT)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
 
 
 def ydr(commands, *, first_card=590):

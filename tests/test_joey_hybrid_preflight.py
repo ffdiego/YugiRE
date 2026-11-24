@@ -5,9 +5,15 @@ import struct
 import unittest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "experiments" / "hybrid_probe" / "pe_preflight.py"
-spec = importlib.util.spec_from_file_location("joey_hybrid_pe_preflight", SCRIPT)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+
+
+def setUpModule():
+    global module
+    if not SCRIPT.is_file():
+        raise unittest.SkipTest(f"Optional hybrid experiment {SCRIPT.name} is absent")
+    spec = importlib.util.spec_from_file_location("joey_hybrid_pe_preflight", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
 
 def fake_pe(machine=0x14C, image_base=0x400000):
