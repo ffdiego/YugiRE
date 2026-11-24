@@ -14,7 +14,7 @@ public sealed partial class DemoDuel
         if (primitiveActionQueue is not null)
             throw new InvalidOperationException("A duel already owns an action queue.");
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
-            () => !LegacyActionsBlocked && PendingEndDiscards == 0);
+            () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer()) && PendingEndDiscards == 0);
     }
 
     /// <summary>
@@ -136,7 +136,7 @@ public sealed partial class DemoDuel
 
     // Snapshot linked consequences before the producer admits any removals.
     // Each is a normal typed command, in the legacy per-removal order.
-    private bool TryPlanRemovalLinks(int player, int slot, out DuelCommand[] links)
+    private bool TryPlanRemovalLinks(int player, int slot, out DuelCommand[] links, bool toGraveyard = true)
     {
         links = [];
         if (Monsters[player, slot] is not Card card) return false;
@@ -149,7 +149,7 @@ public sealed partial class DemoDuel
                 return false;
             result.Add(new DestroyCommand(e.Owner, target));
         }
-        if (ImmortalThunderRules.LosesLifeOnFieldToGraveyard(card.Id, MonsterWasFlipped[player, slot]))
+        if (toGraveyard && ImmortalThunderRules.LosesLifeOnFieldToGraveyard(card.Id, MonsterWasFlipped[player, slot]))
             result.Add(new DamageCommand(player, ImmortalThunderRules.GraveyardLifeLoss));
         links = result.ToArray();
         return true;
@@ -167,6 +167,8 @@ public sealed partial class DemoDuel
             public CardTarget Source { get; } = source;
             public bool SourceSpent { get; set; }
             public bool MonsterWipe { get; } = monsterWipe;
+            public CardTarget? PrimaryTarget { get; init; }
+            public bool PrimaryDestroyed { get; set; }
             public HashSet<CardTarget> Targets { get; } = new(targets);
             public int[] Counts { get; } = [0, 0];
             public int FaceDown { get; set; }
@@ -189,6 +191,8 @@ public sealed partial class DemoDuel
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is ResolveMonsterFlipTargetsCommand flipTargets)
+                return ResolveMonsterFlipTargets(flipTargets, followups);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
             if (command is FinishNormalPlacementCommand finish)
@@ -230,6 +234,8 @@ public sealed partial class DemoDuel
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateLifePointSpellCommand lp:
                     return ActivateLifePointSpell(lp, followups);
+                case ActivateTargetedSpellTrapCommand targeted:
+                    return ActivateTargetedSpellTrap(targeted, followups);
                 case ActivateSpellTrapWipeCommand spellTrapWipe:
                     return ActivateSpellTrapWipe(spellTrapWipe.Source, followups);
                 case ActivateMonsterWipeCommand monsterWipe:
@@ -258,6 +264,8 @@ public sealed partial class DemoDuel
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
+                case ReturnToHandCommand bounce:
+                    return ReturnQueuedMonster(bounce.Target, followups);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
                     return DestroyMonster(destroy.Target, followups);
                 case DestroyCommand destroy when destroy.Target.Zone is DuelZone.SpellTrap or DuelZone.FieldSpell:
@@ -337,12 +345,33 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null ||
-                MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id)) ||
+                MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id) ||
+                SpellTrapTargetRules.Supports(card.Id)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
             duel.graves[target.Side].Add(card);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ActivateTargetedSpellTrap(ActivateTargetedSpellTrapCommand activate, IActionCommandSink followups)
+        {
+            if (wipe is not null || finishScheduled ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Targeted Spell/Trap needs isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out _) ||
+                !duel.TryResolveCardTarget(activate.Target, out _, out _))
+                return new(CommandOutcome.Skipped, "Source or selected occurrence gone.");
+            if (!duel.TryPlanTargetedSpellTrap(activate.Source, activate.Target, out var spell, out var targets))
+                return new(CommandOutcome.Rejected, "Targeted Spell/Trap no longer legal.");
+
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
+            batch.AddRange(targets.Select(target => new DestroyCommand(target.Side, target)));
+            queue.EnqueueBatch(batch);
+            wipe = new(activate.Side, spell.Id, activate.Source, targets, monsterWipe: false)
+                { PrimaryTarget = activate.Target };
+            ScheduleFinish(activate.Side, followups);
             return new(CommandOutcome.Applied);
         }
 
@@ -662,6 +691,58 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
+        private CommandResult ResolveMonsterFlipTargets(ResolveMonsterFlipTargetsCommand answer, IActionCommandSink followups)
+        {
+            if (followups is not ActionQueue { PendingCount: 0 } queue ||
+                wipe is not null || finishScheduled || !duel.CanAdmitQueuedMonsterFlipAnswer())
+                return new(CommandOutcome.Rejected, "No isolated supported FLIP selection.");
+            CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
+            if (!duel.TryPlanQueuedMonsterFlipAnswer(answer.Source, targets, out var batch, out var plans))
+                return new(CommandOutcome.Rejected, "FLIP source or target choice no longer valid.");
+
+            // Clear only this pending interaction inside its command, not at
+            // admission. Never invoke legacy FinishDeferredBattle here.
+            duel.PendingFlipTarget = null;
+            duel.flipSelections.Clear();
+            queue.EnqueueBatch(batch);
+            foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
+            linkedRemovalBatch = true;
+            ScheduleFinish(answer.Side, followups);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ReturnQueuedMonster(CardTarget target, IActionCommandSink followups)
+        {
+            if (!duel.TryResolveCardTarget(target, out int slot, out _))
+            {
+                if (plannedLinks.ContainsKey(target))
+                    throw new InvalidOperationException("Reserved return occurrence changed.");
+                return new(CommandOutcome.Skipped, "Monster occurrence gone.");
+            }
+            if (duel.IsMarkedForBattleDestruction(target.Side, slot))
+                return new(CommandOutcome.Rejected, "Battle-destroyed monsters cannot return.");
+            if (!duel.TryPlanRemovalLinks(target.Side, slot, out var links, toGraveyard: false))
+                return new(CommandOutcome.Rejected, "Untracked linked equipment.");
+            if (plannedLinks.Remove(target, out var expected))
+            {
+                if (!links.SequenceEqual(expected))
+                    throw new InvalidOperationException("Reserved return links changed.");
+            }
+            else if (links.Length > 0)
+            {
+                if (followups is not ActionQueue { PendingCount: 0 } queue || finishScheduled)
+                    return new(CommandOutcome.Rejected, "Linked return requires isolated action.");
+                queue.EnqueueBatch(links);
+                linkedRemovalBatch = true;
+            }
+
+            // Reuse the single-occurrence legacy movement (including Fusion
+            // Deck replacement). Linked equipment is handled separately.
+            duel.ReturnMonsterToHand(target.Side, slot, removeEquipment: false);
+            ScheduleFinish(target.Side, followups);
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult DestroyMonster(CardTarget target, IActionCommandSink followups)
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out _))
@@ -706,6 +787,20 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Spell/Trap occurrence gone.");
 
+            if (reserved && wipe is { PrimaryTarget: { } primary } targeted)
+            {
+                int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
+                if (target == primary)
+                {
+                    if (!SpellTrapTargetRules.Accepts(targeted.ResourceId, card,
+                        duel.IsSpellTrapFaceDown(target.Side, zone)))
+                        return new(CommandOutcome.Skipped, "Selected target no longer satisfies the effect.");
+                }
+                else if (!targeted.PrimaryDestroyed ||
+                    duel.IsSpellTrapFaceDown(target.Side, zone) || !IsDestinyBoardPiece(card))
+                    return new(CommandOutcome.Skipped, "No qualifying Destiny Board cascade.");
+            }
+
             // Outside a reserved wipe retain the previous narrow linked-equipment
             // executor: standalone S/T destruction needs Destiny Board handling.
             if (!reserved && (target.Zone != DuelZone.SpellTrap ||
@@ -719,7 +814,11 @@ public sealed partial class DemoDuel
             // equipment link. It does not run the bulk Destiny Board resolver.
             duel.DestroySpellTrapCard(target.Side,
                 target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot);
-            if (reserved) wipe!.Targets.Remove(target);
+            if (reserved)
+            {
+                wipe!.Targets.Remove(target);
+                if (wipe.PrimaryTarget == target) wipe.PrimaryDestroyed = true;
+            }
             return new(CommandOutcome.Applied);
         }
 

@@ -12,6 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 from inspect_joey_replay import read_file
+from reconstruct_joey_replay_opening import reconstruct_opening, initial_prefix_checks
 
 
 def project_record(record: dict) -> list[str]:
@@ -56,7 +57,7 @@ def build_script(records, summary, source_hash: str, start: int, count: int,
         "# YugiRE scenario from native replay: partial command projection",
         f"# YDR SHA256 {source_hash}",
         f"# Native range [{start}, {start + count}) / {len(records)} records",
-        "# Checkpoint supplied by operator; exact native state NOT inferred or verified.",
+        "# Checkpoint supplied or reconstructed; exact native state NOT verified.",
         "# Commands reproduce selected recorded operations, NOT the original rule decisions.",
         checkpoint.rstrip(), "state", *projected, "diff",
     ]
@@ -97,11 +98,12 @@ def main(argv=None) -> int:
     setup.add_argument("--checkpoint", type=Path, help="explicit console setup script for pre-slice state")
     setup.add_argument("--opening-order", type=Path,
                        help="independently observed top-to-bottom resource IDs JSON; opening draw only")
+    setup.add_argument("--native-opening", action="store_true", help="reconstruct version-1300 shuffle from YDR seed; opening draws only")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
         records, summary = read_file(args.replay)
-        if args.opening_order:
+        if args.opening_order or args.native_opening:
             # The initial pair appears after the 0x14/0x10 opening commands.
             # Do not skip arbitrary stateful records to reach a later draw.
             if args.start != 2 or args.count != 2 or len(records) < 4:
@@ -110,7 +112,17 @@ def main(argv=None) -> int:
                 {int(r["raw_opcode_hex"],16) for r in records[2:4]} != {0x61,0x8061} or \
                 any((r["argument_1"],r["argument_2"],r["argument_3"]) != (0,5,0) for r in records[2:4]):
                 raise ValueError("unrecognized opening prefix")
-            checkpoint = opening_checkpoint(summary,json.loads(args.opening_order.read_text(encoding="utf-8")))
+            if args.native_opening:
+                reconstructed = reconstruct_opening(summary)
+                first = reconstructed["shuffle_first_side"]
+                if int(records[2]["raw_opcode_hex"],16) != (0x61 | (first << 15)):
+                    raise ValueError("opening draw order disagrees with reconstructed selector")
+                checks = initial_prefix_checks(records,reconstructed)
+                if any(not item["match"] for item in checks):
+                    raise ValueError("reconstructed opening conflicts with recorded hand placement")
+                checkpoint = "# Static seed reconstruction, NOT independently observed.\n" + opening_checkpoint(summary,reconstructed["main_deck_order"])
+            else:
+                checkpoint = opening_checkpoint(summary,json.loads(args.opening_order.read_text(encoding="utf-8")))
         else:
             checkpoint = args.checkpoint.read_text(encoding="utf-8")
         result = build_script(records,summary,hashlib.sha256(args.replay.read_bytes()).hexdigest(),

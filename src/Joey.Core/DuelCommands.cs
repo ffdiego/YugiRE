@@ -21,12 +21,15 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -52,6 +55,20 @@ internal static class DuelCommandValidation
             case DrawCommand:
             case FinishFieldRemovalCommand:
                 break;
+            case ReturnToHandCommand bounce:
+                Target(bounce.Target, bounce.Side, DuelZone.Monster);
+                break;
+            case ResolveMonsterFlipTargetsCommand flipTargets:
+                Target(flipTargets.Source, flipTargets.Side, DuelZone.Monster);
+                if (flipTargets.Second is not null && flipTargets.First is null ||
+                    flipTargets.First is { } firstPick && flipTargets.Second == firstPick)
+                    throw new ArgumentException("Invalid FLIP target list.");
+                foreach (var pick in new CardTarget?[] { flipTargets.First, flipTargets.Second }.OfType<CardTarget>())
+                {
+                    if (pick.Side is not (0 or 1)) throw new ArgumentException("Invalid target side.");
+                    Target(pick, pick.Side, DuelZone.Monster);
+                }
+                break;
             case EquipCommand equip when equip.SpellSlot is >= 0 and < 5:
                 Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
@@ -62,6 +79,12 @@ internal static class DuelCommandValidation
                 break;
             case ActivateLifePointSpellCommand lp:
                 Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateTargetedSpellTrapCommand targeted:
+                Target(targeted.Source, targeted.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                if (targeted.Target.Side is not (0 or 1) || targeted.Source == targeted.Target)
+                    throw new ArgumentException("Invalid targeted Spell/Trap occurrence.");
+                Target(targeted.Target, targeted.Target.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
                 break;
             case ActivateSpellTrapWipeCommand spellTrapWipe:
                 Target(spellTrapWipe.Source, spellTrapWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);

@@ -229,7 +229,11 @@ Raigeki, Dark Hole e os sete destruidores por tipo usam `TryQueueMonsterWipe` na
 
 ### Destruição de S/T na fila (C12)
 
-Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T e cascata de Destiny Board para efeitos seletivos ainda pendentes. [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T ainda limitada; MST e Remove Trap usam consulta de candidatos e admissão de ocorrências, incluindo cascata Destiny Board, sem prompt bloqueante. [Contrato seletivas](docs/cards/c12-queued-targeted-spelltrap.md). [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+
+### FLIPs seletivos na fila (C12)
+
+Man-Eater Bug, Hane-Hane e Penguin Soldier: `TryQueueMonsterFlipAnswer` aceita ocorrências de fonte/alvos após Flip Summon; cada destruição/retorno e vínculo tem comando próprio. A revelação em batalha mantém resposta legada até migração da Damage Step. [Contrato](docs/cards/c12-queued-monster-flips.md).
 
 ## Evidências nativas (não confundir com paridade C# completa)
 

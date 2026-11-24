@@ -241,6 +241,8 @@ TimedEquipmentAndQueuedLpChecks.Run(Check);
 QueuedDrawSpellChecks.Run(Check);
 QueuedMonsterWipeChecks.Run(Check);
 QueuedSpellTrapWipeChecks.Run(Check);
+QueuedTargetedSpellTrapChecks.Run(Check);
+QueuedMonsterFlipTargetChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);
