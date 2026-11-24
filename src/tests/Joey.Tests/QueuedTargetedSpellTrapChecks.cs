@@ -20,7 +20,7 @@ internal static class QueuedTargetedSpellTrapChecks
     {
         public bool CanAdvance=>true;
         public bool Release {get;set;}=true;
-        public bool CanComplete(QueuedDuelCommand c,CommandResult result)=>c.Command is not DestroyCommand||Release;
+        public bool CanComplete(QueuedDuelCommand c,CommandResult result)=>c.Command is not (DestroyCommand or ReturnToHandCommand)||Release;
     }
     public static void Run(Action<bool,string> check)
     {
@@ -101,6 +101,85 @@ internal static class QueuedTargetedSpellTrapChecks
                     board.Graveyard(0).Select(c=>c.Id).SequenceEqual(chooseMessage?
                         new ushort[]{1541,1528}:new ushort[]{1528,1541}),
                     "Destroy primary then cascade each remaining face-up piece");
+        }
+
+        foreach(int side in new[]{0,1})
+        foreach(bool fromSet in new[]{false,true})
+        foreach(int targetKind in new[]{0,1,2})
+        {
+            int enemy=1-side;
+            var d=DemoDuel.FromPartialObservation(enemy,[Spell(300),Spell(332),Spell(1056,21)],
+                Units(),Units(),8000,equipmentContextResolved:true,
+                side0Deck:side==0?[Spell(1539),Spell(331)]:null,
+                side1Deck:side==1?[Spell(1539),Spell(331)]:null);
+            check(d.Equip(0,side,0,out _)&&d.SetFromHand(0,out _)&&d.SetFromHand(0,out _),
+                "Spiritualism setup equip, FIELD and hidden trap");
+            d.NextTurn();
+            var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
+            q.EnqueueBatch([new DrawCommand(side),new DrawCommand(side)]);Drain(q);
+            check(d.TryQueueSpellTrapSet(1,out _),"Own FIELD Set");Drain(q);
+            if(fromSet){check(d.TryQueueSpellTrapSet(0,out _),"Spiritualism Set");Drain(q);}
+            check(!(fromSet?d.ActivateSetSpell(0,out _):d.Play(0,out _)),"No legacy destroy bypass");
+            var source=Capture(d,side,fromSet?DuelZone.SpellTrap:DuelZone.Hand,0);
+            var own=Capture(d,side,DuelZone.FieldSpell,0);
+            var target=Capture(d,enemy,targetKind==2?DuelZone.FieldSpell:DuelZone.SpellTrap,targetKind==1?1:0);
+            var options=d.QueuedSpellTrapTargetCandidates(source);
+            check(options.Count==3&&options.All(c=>c.Target.Side==enemy)&&
+                !d.TryQueueTargetedSpellTrap(source,own,out _)&&!q.IsBusy,
+                "Spiritualism cannot select own S/T; enemy hidden and face-up eligible");
+            int start=q.Trace.Count;
+            check(d.TryQueueTargetedSpellTrap(source,target,out _)&&d.Graveyard(side).Count==0,
+                "Admission does not spend source");
+            q.Tick();q.Tick();
+            check(d.Graveyard(side).Single().Id==1539&&d.HandFor(enemy).Count==0,
+                "Spend first");
+            gate.Release=false;q.Tick();q.Tick();
+            check(d.HandFor(enemy).Count==1&&q.IsBusy,"Return executes once while presentation waits");
+            gate.Release=true;Drain(q);
+            var received=Capture(d,enemy,DuelZone.Hand,0);
+            check(received.Occurrence==target.Occurrence&&d.Graveyard(enemy).Count==0&&
+                d.FieldSpells[side]?.Id==331&&(d.FieldSpells[enemy] is null)==(targetKind==2)&&
+                (d.Spells[enemy,1] is null)==(targetKind==1)&&
+                d.EquipmentCards.Count==(targetKind==0?0:1)&&d.AttackValue(side,0)==(targetKind==0?1000:1300)&&
+                q.Trace.Skip(start).Count(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is ReturnToHandCommand)==1&&
+                !q.Trace.Skip(start).Any(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is DestroyCommand),
+                "Selected occurrence returns only, preserving unrelated cards and links");
+        }
+
+        foreach(bool chooseMessage in new[]{false,true})
+        foreach(bool replace in new[]{false,true})
+        {
+            var board=DemoDuel.FromPartialObservation(0,
+                [Spell(1528,21),Spell(1541)],Units(),Units(),8000,side1Deck:[Spell(1539)]);
+            board.SetFromHand(0,out _);board.NextTurn();board.NextTurn();
+            check(board.ActivateSetSpell(0,out _),"Spiritualism Board activates");
+            board.NextTurn();board.NextTurn();board.NextTurn();
+            var q=board.CreatePrimitiveActionQueue();q.Enqueue(new DrawCommand(1));Drain(q);
+            var source=Capture(board,1,DuelZone.Hand,0);
+            int slot=chooseMessage?1:0;
+            var primary=Capture(board,0,DuelZone.SpellTrap,slot);
+            check(board.TryQueueTargetedSpellTrap(source,primary,out _),"Spiritualism Board target admitted");
+            q.Tick();q.Tick();
+            if(replace)board.Spells[0,slot]=Spell(chooseMessage?(ushort)1541:(ushort)1528,chooseMessage?22:21);
+            Drain(q);
+            if(replace)
+                check(board.HandFor(0).Count==0&&board.Graveyard(0).Count==0&&
+                    board.Spells[0,0] is not null&&board.Spells[0,1] is not null,
+                    "Stale target skips return and dependent cascade");
+            else
+                check(board.HandFor(0).Single().Id==(chooseMessage?1541:1528)&&
+                    board.Graveyard(0).Single().Id==(chooseMessage?1528:1541)&&
+                    board.Spells[0,0] is null&&board.Spells[0,1] is null,
+                    "Selected Board piece returns; remaining piece destroyed by modeled Board rule");
+        }
+
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1539),Spell(332)],Units(),Units(),8000);
+            d.SetFromHand(1,out _);var q=d.CreatePrimitiveActionQueue();
+            var source=Capture(d,0,DuelZone.Hand,0);
+            check(d.QueuedSpellTrapTargetCandidates(source).Count==0&&
+                !d.TryQueueTargetedSpellTrap(source,Capture(d,0,DuelZone.FieldSpell,0),out _)&&
+                !q.IsBusy,"Own-only board is not a valid Spiritualism activation");
         }
 
         var stale=DemoDuel.FromPartialObservation(0,[Spell(1079),Spell(332)],Units(),Units(),8000);

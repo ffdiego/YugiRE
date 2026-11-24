@@ -208,6 +208,7 @@ public sealed partial class DemoDuel
             public bool MonsterWipe { get; } = monsterWipe;
             public CardTarget? PrimaryTarget { get; init; }
             public bool PrimaryDestroyed { get; set; }
+            public bool PrimaryReturned { get; set; }
             public HashSet<CardTarget>? FlipPair { get; init; }
             public HashSet<int> BoardReturned { get; } = [];
             public HashSet<CardTarget> Targets { get; } = new(targets);
@@ -537,7 +538,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
                 MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.Supports(card.Id)) ||
+                SpellTrapTargetRules.SupportsQueued(card.Id)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
@@ -559,8 +560,17 @@ public sealed partial class DemoDuel
 
             var context = new EffectContext();
             context.SendToGraveyard(activate.Source);
-            foreach (var target in targets) context.Destroy(target);
-            queue.EnqueueBatch(context.Commands);
+            if (SpellTrapTargetRules.ReturnsToHand(spell.Id))
+            {
+                queue.EnqueueBatch([.. context.Commands,
+                    new ReturnToHandCommand(activate.Target.Side, activate.Target),
+                    .. targets.Where(t => t != activate.Target).Select(t => (DuelCommand)new DestroyCommand(t.Side, t))]);
+            }
+            else
+            {
+                foreach (var target in targets) context.Destroy(target);
+                queue.EnqueueBatch(context.Commands);
+            }
             wipe = new(activate.Side, spell.Id, activate.Source, targets, monsterWipe: false)
                 { PrimaryTarget = activate.Target };
             ScheduleFinish(activate.Side, followups);
@@ -1121,13 +1131,15 @@ public sealed partial class DemoDuel
                 !current.Targets.Contains(target))
                 return new(CommandOutcome.Rejected, "Only reserved Spell/Trap return is migrated.");
             bool massReturn = SpellTrapWipeRules.ReturnsToHand(current.ResourceId);
-            if (!massReturn && (current.ResourceId != FlipEffectRules.TornadoBird ||
+            bool singleReturn = SpellTrapTargetRules.ReturnsToHand(current.ResourceId) &&
+                current.PrimaryTarget == target && SpellTrapTargetRules.AcceptsSide(current.ResourceId, current.Caster, target.Side);
+            if (!massReturn && !singleReturn && (current.ResourceId != FlipEffectRules.TornadoBird ||
                 current.FlipPair is not { } pair || !pair.Contains(target)))
                 return new(CommandOutcome.Rejected, "Not a reserved return target.");
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Spell/Trap occurrence gone.");
             int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
-            bool eligible = massReturn ? card.ClassCode is 21 or 22 :
+            bool eligible = massReturn || singleReturn ? card.ClassCode is 21 or 22 :
                 FlipSpellTrapSelectionRules.IsEligible(current.ResourceId, card, duel.IsSpellTrapFaceDown(target.Side, zone));
             if (!eligible || !duel.SpellTrapRemovalLinkMatches(target.Side, target.Zone, slot, card))
                 return new(CommandOutcome.Rejected, "Spell/Trap return no longer eligible.");
@@ -1135,6 +1147,7 @@ public sealed partial class DemoDuel
                 DestinyBoardRules.HasActiveBoard(target.Side, duel.Spells, duel.SpellFaceDown))
                 current.BoardReturned.Add(target.Side);
             duel.ReturnSpellTrapCardToOwnerHand(target.Side, zone);
+            if (singleReturn) current.PrimaryReturned = true;
             current.Targets.Remove(target);
             return new(CommandOutcome.Applied);
         }
@@ -1579,11 +1592,12 @@ public sealed partial class DemoDuel
                 int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
                 if (target == primary)
                 {
-                    if (!SpellTrapTargetRules.Accepts(targeted.ResourceId, card,
+                    if (SpellTrapTargetRules.ReturnsToHand(targeted.ResourceId) ||
+                        !SpellTrapTargetRules.Accepts(targeted.ResourceId, card,
                         duel.IsSpellTrapFaceDown(target.Side, zone)))
                         return new(CommandOutcome.Skipped, "Selected target no longer satisfies the effect.");
                 }
-                else if (!targeted.PrimaryDestroyed ||
+                else if (!(targeted.PrimaryDestroyed || targeted.PrimaryReturned) ||
                     duel.IsSpellTrapFaceDown(target.Side, zone) || !IsDestinyBoardPiece(card))
                     return new(CommandOutcome.Skipped, "No qualifying Destiny Board cascade.");
             }
