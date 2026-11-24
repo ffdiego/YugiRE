@@ -193,3 +193,7 @@ dimensões das imagens referenciadas (sem pixels).
 ### 16 — CARDS: P117/P159/P160 ressurreição
 
 `bash scripts/pending/16-cards-revival-spells-ghidra.sh` no Fedora/Ghidra local. Saída privada `scratch/ghidra-revival-spells-contract.zip`. Extrair sete callbacks ausentes nos dois SQLite, com assembly e helpers de movimentação/identidade. Confirmar propriedade/controle, seleção, custo e vínculo; não promover cobertura apenas pela coleta. Ver [lacuna](../../docs/cards/p117-p159-p160-revival-spells-gap.md).
+
+### 17 — CARDS: P253 mudança de posição elemental
+
+`bash scripts/pending/17-cards-elemental-position-ghidra.sh` — coleta complementar ao roteiro 11 de ACTIONS: callbacks 0057B1F0/0057CD40/005907D0, helpers e tabela de produtores. Saída privada `scratch/ghidra-elemental-position-contract.zip`. Confirmar dispatch, filtro, lock de Aqua e mudança de posição por efeito. [Contrato](../../docs/cards/c16-elemental-position-opportunities.md).

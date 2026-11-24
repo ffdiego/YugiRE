@@ -1495,10 +1495,13 @@
         "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
         "src/Joey.Core/DemoActionQueue.cs",
         "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
-        "docs/cards/c16-queued-graveyard-banish-summon.md"
+        "docs/cards/c16-queued-graveyard-banish-summon.md",
+        "src/Joey.Core/ElementalPositionRules.cs",
+        "src/tests/Joey.Tests/ElementalPositionRuleChecks.cs",
+        "docs/cards/c16-elemental-position-opportunities.md"
       ],
       "limitations": [
-        "Aqua Spirit/Garuda Standby position effects, UI/CPU, Spirit Elimination and native differential validation pending."
+        "Aqua Spirit Standby and Garuda End Phase position effects: pure text-based intent only, no phase/selection/executor integration yet; native callback 005907D0 missing. UI/CPU, Spirit Elimination and native differential validation pending."
       ]
     },
     {
