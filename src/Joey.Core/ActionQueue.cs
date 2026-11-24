@@ -1,7 +1,14 @@
 namespace Joey.Core;
 
 public enum CommandOutcome { Applied, Skipped, Rejected }
-public sealed record CommandResult(CommandOutcome Outcome, string Detail = "");
+// Domain-only facts captured by the executor at the successful mutation boundary.
+public sealed record PlacementObservation(CardTarget Source, ushort ResourceId, int HandIndex,
+    DuelZone Destination, int Slot, bool FaceDown, bool Defense, int PaidTributes);
+
+public sealed record CommandResult(CommandOutcome Outcome, string Detail = "")
+{
+    public PlacementObservation? Placement { get; init; }
+}
 public sealed record QueuedDuelCommand(long Sequence, DuelCommand Command, ActionOrigin Origin);
 public enum ActionTraceStage { Admitted, Started, Executed, Completed }
 public sealed record ActionTraceEntry(QueuedDuelCommand Entry, ActionTraceStage Stage, CommandResult? Result = null);

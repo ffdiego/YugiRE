@@ -49,6 +49,20 @@ class TraceTests(unittest.TestCase):
         self.assertEqual(report["status"],"projected_match")
         self.assertEqual(report["nativeProjected"][0]["nativeSequence"],7)
 
+    def test_placement_metadata_and_difference(self):
+        left=[{"index":12,"args":[0x80ce,1114,4,0x100]}]
+        right=row(1,"SetCommand",[0x80ce,1114,4,0x100])
+        right["placement"]={"source":{"side":1,"zone":1,"occurrence":{"value":9}},
+            "resourceId":1114,"handIndex":4,"destination":2,"slot":0,
+            "faceDown":True,"defense":True,"paidTributes":0}
+        self.assertEqual(compare(left,document([right]),0,1,0,1,"ydr-record")["status"],"projected_match")
+        left[0]["args"][2]=0x104
+        self.assertEqual(compare(left,document([right]),0,1,0,1,"ydr-record")["status"],"mismatch")
+        right["placement"]["handIndex"]=3
+        with self.assertRaisesRegex(ValueError,"metadata"): compare(left,document([right]),0,1,0,1,"ydr-record")
+        self.assertIsNone(canonical([0xcf,1071,0x502,1]))
+        self.assertIsNone(canonical([0xce,1114,4,0x101]))
+
     def test_bad_capture_and_fabricated_mapping(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=pathlib.Path(tmp)/"capture.jsonl"

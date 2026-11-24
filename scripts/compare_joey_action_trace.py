@@ -9,6 +9,7 @@ import argparse
 import json
 from pathlib import Path
 from inspect_joey_replay import read_file
+from joey_replay_placements import decode_placement
 
 
 def words(value, bits=16):
@@ -72,6 +73,14 @@ def canonical(args):
         return [[raw,1,1,0] for _ in range(b)]
     if op in (0x42,0x43) and a>0 and b==0 and c==1:
         return [args]
+    if op in (0xce,0xcf):
+        try:
+            p=decode_placement({"raw_opcode_hex":hex(raw),"argument_1":a,"argument_2":b,"argument_3":c})
+        except ValueError:
+            return None
+        # Comparison scope is narrower than the diagnostic decoder.
+        if op==0xce and c in (1,0x100): return [args]
+        if op==0xcf and p.zone=="spell" and c==0: return [args]
     return None
 
 
@@ -97,8 +106,20 @@ def csharp_rows(doc):
             projected=canonical(raw)
             if projected!=[raw] or raw[0]>>15!=row["side"]:
                 raise ValueError("invalid canonical C# arguments")
-            expected={0x61:"DrawCommand",0x42:"HealCommand",0x43:"DamageCommand"}[raw[0]&0xfff]
+            op=raw[0]&0xfff
+            expected={0x61:"DrawCommand",0x42:"HealCommand",0x43:"DamageCommand",
+                      0xce:"SummonCommand" if raw[3]==1 else "SetCommand",0xcf:"SetCommand"}[op]
             if row.get("command")!=expected: raise ValueError("C# command does not match its mapping")
+            if op in (0xce,0xcf):
+                p=row.get("placement")
+                if not isinstance(p,dict) or p.get("resourceId")!=raw[1] or p.get("handIndex")!=(raw[2]&255) or p.get("paidTributes")!=0:
+                    raise ValueError("C# placement metadata disagrees with arguments")
+                # DuelZone values: Hand=1, Monster=2, SpellTrap=3 (schema v1).
+                source=p.get("source")
+                if not isinstance(source,dict) or source.get("side")!=row["side"] or source.get("zone")!=1 or p.get("destination")!=(2 if op==0xce else 3) or p.get("slot")!=(raw[2]>>8)-(5 if op==0xcf else 0):
+                    raise ValueError("C# placement source or destination mismatch")
+                if p.get("faceDown")!=(raw[3]!=1) or p.get("defense")!=(op==0xce and raw[3]==0x100):
+                    raise ValueError("C# placement pose mismatch")
         elif row.get("args") is not None: raise ValueError("unmapped command cannot carry fabricated words")
         elif mapping=="non_applied" and row.get("outcome") not in ("Rejected","Skipped"):
             raise ValueError("invalid nonapplied outcome")
@@ -127,7 +148,7 @@ def compare(native,doc,native_start,native_count,cs_start,cs_count,source_kind):
             differences.append({"position":i,"native":a,"csharp":b})
     status="mismatch" if differences else ("inconclusive" if gaps_l or gaps_r or not l or not doc["complete"] else "projected_match")
     return {"schema":"yugire-action-comparison-v1","status":status,
-            "scope":"ordered projection of ordinary draws and requested LP deltas; not rule parity",
+            "scope":"ordered projection of ordinary draws, requested LP deltas and CE/CF placement; not rule parity",
             "nativeSourceKind":source_kind,"csharpScope":doc["scope"],"csharpComplete":doc["complete"],
             "nativeWindow":{"start":native_start,"count":native_count},
             "csharpWindow":{"start":cs_start,"count":cs_count},

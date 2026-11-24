@@ -42,14 +42,39 @@ internal static class ActionTraceProjectionChecks
             check(d.TryQueueNormalPlacement(0,0,false,out _),"A05.5 summon admitted");Drain();
             var doc=ActionTraceExport.Capture(q,"test");
             var mapped=doc.Rows.Where(x=>x.Mapping=="mapped").Select(x=>x.Args!).ToArray();
-            check(doc.Complete && mapped.Length==3 && mapped[0].SequenceEqual(new ushort[]{0x61,1,1,0}) &&
+            check(doc.Complete && mapped.Length==4 && mapped[0].SequenceEqual(new ushort[]{0x61,1,1,0}) &&
                 mapped[1].SequenceEqual(new ushort[]{0x8042,1000,0,1}) &&
                 mapped[2].SequenceEqual(new ushort[]{0x8043,200,0,1}) &&
-                doc.Rows.Any(x=>x.Command=="SummonCommand" && x.Mapping=="unmapped" && x.Args is null),
-                "A05.5 actual effect producer outputs and explicit unmapped summon");
+                mapped[3].SequenceEqual(new ushort[]{0xCE,24,0,1}) &&
+                doc.Rows.Any(x=>x.Command=="SummonCommand" && x.Placement is { HandIndex:0, ResourceId:24, FaceDown:false }),
+                "A05.6 actual rule producers and captured summon");
             return ActionTraceExport.Serialize(doc);
         }
-        check(Pilot(false)==Pilot(true),"A05.5 trace independent of gate speed");
+        check(Pilot(false)==Pilot(true),"A05.6 trace independent of gate speed");
+        // Non-zero source and destination positions, duplicate resources, both
+        // sides, and a stale target: no resource-id lookup after mutation.
+        foreach(int side in new[]{0,1})
+        foreach(bool set in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(side,[monster,monster,sparks],new Card?[5],new Card?[5],8000);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryCaptureCardTarget(side,DuelZone.Hand,1,out var occurrence),"A05.6 source occurrence");
+            check(d.TryQueueNormalPlacement(1,3,set,out _),"A05.6 placement admitted");
+            for(int i=0;i<100 && q.IsBusy;i++)q.Tick();
+            var mapped=ActionTraceProjection.ReadExecuted(q.Trace).Single(x=>x.Mapping=="mapped");
+            check(mapped.Args!.SequenceEqual(new ushort[]{(ushort)((side<<15)|0xCE),24,0x301,(ushort)(set?0x100:1)}) &&
+                mapped.Placement!.Source==occurrence && d.TryCaptureCardTarget(side,DuelZone.Monster,3,out var target) &&
+                target.Occurrence==occurrence.Occurrence,"A05.6 exact CE source/slot/pose and occurrence");
+            check(d.TryQueueSpellTrapSet(1,out _),"A05.6 spell set admitted");
+            for(int i=0;i<100 && q.IsBusy;i++)q.Tick();
+            var cf=ActionTraceProjection.ReadExecuted(q.Trace).Last(x=>x.Mapping=="mapped");
+            check(cf.Args!.SequenceEqual(new ushort[]{(ushort)((side<<15)|0xCF),342,0x501,0}),
+                "A05.6 CF normal Set uses physical native slot 5");
+        }
+        var unobserved=ActionTraceProjection.ReadExecuted([
+            new(new(1,new SummonCommand(0,new(new(1),0,DuelZone.Hand),0),ActionOrigin.Test),
+                ActionTraceStage.Executed,new(CommandOutcome.Applied))]);
+        check(unobserved.Single().Mapping=="unmapped","A05.6 never invents missing placement metadata");
         var empty=DemoDuel.FromPartialObservation(1,[],new Card?[5],new Card?[5],8000);
         var eq=empty.CreatePrimitiveActionQueue();eq.Enqueue(new DrawCommand(1));eq.Tick();
         check(ActionTraceExport.Capture(eq,"deckout").Rows.Single().Mapping=="unmapped",

@@ -524,12 +524,14 @@ public sealed partial class DemoDuel
             }
             // Direct, unprepared commands may only place level 1–4 monsters.
             // A response/choice is opened on a later pass, after the summon gate.
+            var observation = new PlacementObservation(source, card.Id, index, DuelZone.Monster,
+                slot, faceDown, faceDown, paidTributes.Count);
             duel.CommitNormalPlacement(index, source.Side, slot, faceDown);
             placement = null;
             paidTributes.Clear();
             var target = source with { Zone = DuelZone.Monster };
             followups.ScheduleContinuation(_ => new([new FinishNormalPlacementCommand(source.Side, target, faceDown)]));
-            return new(CommandOutcome.Applied);
+            return new(CommandOutcome.Applied) { Placement = observation };
         }
 
         private CommandResult FinishPlacement(FinishNormalPlacementCommand finish)
@@ -565,7 +567,8 @@ public sealed partial class DemoDuel
                 duel.spellSetTurn[set.Side, set.Slot] = duel.Turn;
             }
             duel.hands[set.Side].RemoveAt(index);
-            return new(CommandOutcome.Applied);
+            return new(CommandOutcome.Applied) { Placement = new(set.Source, card.Id, index,
+                set.Destination, set.Slot, true, false, 0) };
         }
 
         private CommandResult MovePosition(CardTarget target, bool flip, bool? defense, IActionCommandSink followups)
