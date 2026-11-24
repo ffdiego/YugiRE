@@ -96,3 +96,32 @@ não relacionadas rejeitadas. Testes sintéticos: Man-Eater Bug, Hane-Hane,
 Penguin Soldier, Greenkappa/Tornado Bird, lados 0/1, recusa, duplicatas,
 identidade e gate antes da próxima remoção. Não cobre FLIP durante combate,
 respostas de traps, fusão ou todos os pedidos Deck/GY → Field.
+
+## A06 — Recrutamento e ressurreição (Deck/GY → Field)
+
+`choices` indica o dono da seleção, índices físicos da origem, quantidade,
+posição permitida e slots livres. O dono do pedido, não o lado ativo do
+turno, determina origem e destino. O console de laboratório é autorizado a
+inspecionar ambas as zonas; não é uma interface de jogador em rede.
+
+- `select-recruit 2 4`: copia do Deck no índice 2 para slot 4, para
+  pedidos individuais (Bubonic Vermin e recrutadores elementais).
+- `select-recruit batch 2 0`: duas cópias distintas, na ordem escolhida;
+  para pedidos multi-cópia (Nimble Momonga/Giant Germ), slots livres à
+  esquerda conforme o produtor existente. `batch 2` seleciona só uma.
+- `select-recruit decline`: recusa opcional, sem shuffle.
+- `select-revive 2 4 set`: GY índice 2 para slot 4 em defesa oculta.
+  `attack` escolhe ataque aberto. Spear Cretin exige resposta; o produtor
+  exclui a ocorrência que disparou o efeito e permite outra cópia.
+
+Os adaptadores chamam TryQueueDeckRecruitment, TryQueueSameNameRecruitment
+e TryQueueGraveyardRevival, sem mutar zonas no parser. O roteiro espera
+seleção explícita, bloqueia operações alheias, e trace permanece incompleto
+até o fim de todas as escolhas e gates. Não presume que toda seleção
+Field esteja migrada: um pedido não suportado não é resolvido pelo console.
+Testes incluem Bubonic FLIP manual, respostas de recrutadores produzidas
+por combate legado já terminado, identidade, gate, shuffle único após
+invocação, posição, recusa, alvos inválidos e duas ressurreições de Spear.
+A declaração enfileirada de combate com efeitos segue limitada pelo piloto
+A05/A09; não se afirma que um roteiro de ataque já produza Mystic Tomato
+ou Nimble Momonga desde o início. Não altera o renderer.
