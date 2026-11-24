@@ -221,3 +221,11 @@ Ghidra local, projeto/EXE atestado. SQLite já contém decompilações transitó
     bash scripts/pending/19-layerfont-help-ghidra.sh
 
 Saída privada: scratch/ghidra-layerfont-help-contract.zip. Confirmar dimensões/operandos de +48/+4C, gates/seleção do help e slots de vtable. Reutilizar --inspect-visual-dat para layerfont.txt e help.txt; não enviar pixels. Importar resultados em SQLite cumulativo quando recebidos. [Contrato](../../docs/research/native-layerfont-help-2026-11-24.md).
+
+## V30 / V11 — 20-vija-selection-origins-ghidra.sh (aguardando Fedora)
+
+Ghidra local, mesmo projeto/EXE. O snapshot atual não possui Draw 004584C0; construtor, predicado e chamadores já consultados. Janelas dirigidas apenas para ABI ambígua e memória das tabelas não coletadas.
+
+    bash scripts/pending/20-vija-selection-origins-ghidra.sh
+
+Saída privada: scratch/ghidra-vija-selection-origins.zip. Conferir Draw, máscaras, ordem de letras, 005DA410, 005DB414/424 e centros 005DB5B0:80. Para vija.txt use --inspect-visual-dat, sem pixels. Importar evidência em nova cópia SQLite cumulativa. [Contrato](../../docs/research/native-vija-selection-origins-2026-11-24.md).

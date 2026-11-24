@@ -256,6 +256,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Aguardando evidência`.
   Construtor e camada 0xF00 conhecidos; Update/Draw ausentes no SQLite. Roteiro 19, mesmo contrato.
 
+- [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Aguardando evidência`.
+  NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Draw/máscaras/ordem completa ausentes do SQLite, não bloquear A03; roteiro 20. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). O mesmo roteiro coleta os centros faltantes de V11 sem repetir os bundles anteriores.
+
 ### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
 
 ACTIONS é responsável por conectar ActionQueue / IPresentationGate à apresentação.
