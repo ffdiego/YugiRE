@@ -30,3 +30,7 @@ A04.3 CI 45320160383 verde antes da reconciliação. A main integrou compra/LP/e
 ## Integração com A03 e C12 wipes
 
 Base atual A03 #77 inclui a main a2fce55. TryQueueActivation delega todas as quatro famílias de magia aos produtores C12 (compra, LP, destruição de monstros e de S/T); não há segundo resolvedor de wipe. A04 fica empilhado até A03 ser integrado. A05.1 (#81) gera roteiros nativos parciais consumíveis pelo mesmo frontend.
+
+## A04.4 — frontend gráfico
+
+`dotnet run --project src/Joey.App -- /path/data.dat --duel-console` inicia laboratório vazio (mesma factory do Lab), sem decisões CPU. F10 alterna overlay debug, Enter envia, F6 pausa apresentação. `--duel-script=scripts/fixtures/duel-console-visual-smoke.txt` roda roteiro; DuelConsoleScript compartilhado admite uma linha por vez quando fila livre, espera decisão explícita e para em comando rejeitado/obsoleto. Log stdout com trace e state/diff; não inventa apresentação de setup spawn/move. App usa AppActionPresentationGate; sem fila lógica adicional. Limites: legacy pending/fases ainda não migrados, setup sem animação; não é emulador YDR. Roteiro 16 pendente para validação runtime DAT. A05 #81 exporta intervalos compatíveis para esse mesmo formato.

@@ -608,15 +608,16 @@ static partial class Game
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
         AdvanceQueuedDuel();
+        AdvanceConsoleLab();
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         var fusion = duel.PendingFusionSummon;
         bool selectingCard = queuedDuel?.PendingDecision is not null || duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingFlipSpellTrapTargets is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
         bool showingMotion = MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true;
-        bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
+        bool turnInput = labSession is null && !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
-        bool choiceInput = !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
+        bool choiceInput = !labConsoleOpen && !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
         var spellTarget = duel.PendingSpellTrapTarget;
         var flipSpellTarget = duel.PendingFlipSpellTrapTargets;
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
@@ -699,7 +700,7 @@ static partial class Game
         }
         DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
-        if (!visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
+        if (!labConsoleOpen && !visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
             queuedDuel?.PendingDecision is { Owner: var decisionOwner } && decisionOwner == ViewPlayer)
             DrawEffectDecisionOverlay();
         else if (choiceInput && fusion is not null)
@@ -711,6 +712,7 @@ static partial class Game
             DrawAttackResponseOverlay();
             DrawEffectDecisionOverlay();
         }
+        DrawConsoleLab();
     }
     static void DrawDuelDebug(bool selectingCard)
     {
@@ -718,7 +720,8 @@ static partial class Game
         if (Button("< Menu", 411, 8, 85, 30)) screen = "menu";
         if (Button("Reset", 501, 8, 75, 30))
         {
-            if (alphaCpu is null) StartDemo(); else StartAlpha();
+            if (labSession is not null) StartConsoleLab(labOriginalLines);
+            else if (alphaCpu is null) StartDemo(); else StartAlpha();
         }
         if (alphaCpu is null && Button(optionalEffectPrompts == EffectPromptMode.Ask
                 ? "Prompts: ON" : "Prompts: OFF", 583, 8, 172, 30, !selectingCard))

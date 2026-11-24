@@ -103,7 +103,15 @@ static partial class Game
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
         { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data or --check-graphics for validation."); return 2; }
         duel = new(cards);
-        if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && args.Contains("--alpha")) StartAlpha();
+        string? labScriptPath = Option(args, "--duel-script=");
+        if (args.Contains("--duel-console") || labScriptPath is not null)
+        {
+            if (error.Length > 0) { Console.Error.WriteLine(error); return 1; }
+            try { StartConsoleLab(labScriptPath is null ? null : File.ReadAllLines(labScriptPath)); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+            { Console.Error.WriteLine(ex.Message); return 1; }
+        }
+        else if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();

@@ -24,15 +24,44 @@ public static class DuelConsoleRunner
                 using var archive = new Archive(args[1]);
                 catalog = Catalog.Load(archive).ToArray();
                 // Start from an empty ongoing duel, not invented catalogue cards.
-                duel = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000);
+                duel = DuelConsoleSession.EmptyLabDuel();
             }
             int scriptIndex = fixture ? 1 : 2;
             if (args.Length == scriptIndex) return RunLines(duel, catalog, input, output, error);
             using var script = File.OpenText(args[scriptIndex]);
-            return RunLines(duel, catalog, script, output, error);
+            return RunScript(new DuelConsoleSession(duel, cards: catalog), script, output, error);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         { error.WriteLine(ex.Message); return 2; }
+    }
+
+    private static int RunScript(DuelConsoleSession session, TextReader input, TextWriter output, TextWriter error)
+    {
+        IEnumerable<string> Lines()
+        {
+            while(input.ReadLine() is string line) yield return line;
+        }
+        var script=new DuelConsoleScript(session,Lines());
+        int traceCursor=0;
+        for(int passage=0;passage<Math.Max(512L,512L*(script.Count+1));passage++)
+        {
+            var step=script.Advance();
+            if(step.Status is DuelScriptStatus.Failed or DuelScriptStatus.WaitingForDecision)
+            { error.WriteLine($"Line {step.Line}: {step.Message}"); return 1; }
+            if(step.Message.Length>0) output.WriteLine(step.Message);
+            if(step.Status==DuelScriptStatus.Completed) return 0;
+            if(session.Queue.IsBusy)
+            {
+                try { session.Queue.Tick(); }
+                catch(InvalidOperationException ex) { error.WriteLine(ex.Message); return 1; }
+                var trace=session.Queue.Trace;
+                for(int i=traceCursor;i<trace.Count;i++)
+                    if(trace[i].Stage==ActionTraceStage.Executed)
+                        output.WriteLine($"{trace[i].Entry.Sequence}: {trace[i].Entry.Command.GetType().Name} {trace[i].Result?.Outcome} {trace[i].Result?.Detail}");
+                traceCursor=trace.Count;
+            }
+        }
+        error.WriteLine("Script passage limit exceeded."); return 1;
     }
 
     public static Card FixtureCard() => new(24, 24, "Console fixture monster", "", (3u << 20) | (4u << 25));

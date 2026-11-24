@@ -14,6 +14,9 @@ public sealed class DuelConsoleSession
     private string[]? baseline;
     public ActionQueue Queue { get; }
 
+    public static DemoDuel EmptyLabDuel() => DemoDuel.FromPartialObservation(0, [], new Card?[5],
+        new Card?[5], 8000, equipmentContextResolved: true);
+
     public DuelConsoleSession(DemoDuel duel, IPresentationGate? gate = null, IEnumerable<Card>? cards = null)
     {
         this.duel = duel ?? throw new ArgumentNullException(nameof(duel));
