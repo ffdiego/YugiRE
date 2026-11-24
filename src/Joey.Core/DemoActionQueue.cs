@@ -35,7 +35,7 @@ public sealed partial class DemoDuel
         return TryQueueMonsterWipe(DuelZone.Hand, index, out message);
     }
 
-    /// <summary>Opt-in activation of the nine existing non-targeting monster wipe spells.</summary>
+    /// <summary>Opt-in activation of supported non-targeting monster wipe spells.</summary>
     public bool TryQueueMonsterWipe(DuelZone sourceZone, int index, out string message,
         ActionOrigin origin = ActionOrigin.Player)
     {
@@ -60,7 +60,7 @@ public sealed partial class DemoDuel
         targets = [];
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
             !TryResolveCardTarget(source, out int index, out spell) || spell.ClassCode != 22 ||
-            MonsterWipeRules.Scope(spell.Id) is null)
+            !MonsterWipeRules.SupportsQueued(spell.Id))
             return false;
         if (source.Zone == DuelZone.Hand)
         {
@@ -72,7 +72,13 @@ public sealed partial class DemoDuel
                 equipment.Any(e => e.Owner == source.Side && e.SourceZone == index)) return false;
         }
         else return false;
-        targets = MonsterWipeRules.Targets(spell.Id, source.Side, Monsters, MonsterFaceDown);
+        targets = spell.Id == MonsterWipeRules.EternalRest
+            ? MonsterWipeRules.EquippedTargets(source.Side, Monsters, MonsterFaceDown,
+                (player, slot, monster) => equipment.Any(e => e.TargetPlayer == player &&
+                    e.TargetZone == slot && ReferenceEquals(e.TargetCard, monster) &&
+                    ReferenceEquals(Spells[e.Owner, e.SourceZone], e.Card) &&
+                    !SpellFaceDown[e.Owner, e.SourceZone]))
+            : MonsterWipeRules.Targets(spell.Id, source.Side, Monsters, MonsterFaceDown);
         return targets.Count != 0;
     }
 
@@ -91,7 +97,7 @@ public sealed partial class DemoDuel
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (LifePointSpellRules.SupportsQueued(card.Id))
             return TryQueueLifePointSpell(zone, index, out message, origin);
-        if (MonsterWipeRules.Scope(card.Id) is not null)
+        if (MonsterWipeRules.SupportsQueued(card.Id))
             return TryQueueMonsterWipe(zone, index, out message, origin);
         if (SpellTrapWipeRules.Supports(card.Id))
             return TryQueueSpellTrapWipe(zone, index, out message, origin);
@@ -486,7 +492,7 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
-                MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id) ||
+                MonsterWipeRules.SupportsQueued(card.Id) || SpellTrapWipeRules.Supports(card.Id) ||
                 SpellTrapTargetRules.Supports(card.Id)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))

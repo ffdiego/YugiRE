@@ -19,6 +19,12 @@ public static class MonsterWipeRules
 {
     public const ushort DarkHole = 335;
     public const ushort Raigeki = 336;
+    public const ushort EternalRest = 655;
+
+    // Eternal Rest needs live equipment links; never admit it through the
+    // legacy type-only resolver (Scope/Targets).
+    public static bool SupportsQueued(ushort resourceId) =>
+        resourceId == EternalRest || Scope(resourceId) is not null;
 
     public static MonsterWipeScope? Scope(ushort resourceId) => resourceId switch
     {
@@ -51,6 +57,19 @@ public static class MonsterWipeRules
             ? card => card.ClassCode == type
             : null;
         return CollectTargets(scope.Value, caster, monsters, faceDown, filter);
+    }
+
+    internal static IReadOnlyList<MonsterWipeTarget> EquippedTargets(
+        int caster, Card?[,] monsters, bool[,] faceDown, Func<int,int,Card,bool> hasLiveEquipment)
+    {
+        if (caster is < 0 or > 1) return [];
+        var result = new List<MonsterWipeTarget>();
+        for (int player = 0; player < 2; player++)
+        for (int slot = 0; slot < 5; slot++)
+            if (monsters[player, slot] is Card card && !faceDown[player, slot] &&
+                hasLiveEquipment(player, slot, card))
+                result.Add(new(player, slot, card, false));
+        return result.AsReadOnly();
     }
 
     internal static IReadOnlyList<MonsterWipeTarget> LevelFourOpponentTargets(
