@@ -61,6 +61,68 @@ internal static class QueuedTargetedAttackChecks
                 "A05.8 defender final routing mapped");
             if(!removeA) check(!d.TryQueueTargetedAttack(2,3,out _),"A05.8 attack consumed");
         }
+        foreach(int side in new[]{0,1})
+        foreach(var (atk,def,removed,loss) in new (int,int,bool,int)[]{
+            (1400,1000,true,0),(1000,1000,false,0),(1000,1400,false,400)})
+        {
+            var a=Monster(24,atk,500);var b=Monster(1351,2300,def);
+            DemoDuel State()
+            {
+                var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(a,2):Slots(b,3),
+                    side==1?Slots(a,2):Slots(b,3),8000);
+                if(side==0){d.NextTurn();d.NextTurn();}
+                d.MonsterFaceDown[1-side,3]=d.DefensePosition[1-side,3]=true;
+                return d;
+            }
+            var legacy=State();
+            check(legacy.BeginBattle(out _) && legacy.Attack(2,3,out _),"A06 hidden defender legacy comparator");
+            var d=State();var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
+            int positionChanges=0, summons=0;
+            d.MonsterPositionChanged+=_=>positionChanges++;
+            d.MonsterSpecialSummoned+=_=>summons++;
+            d.MonsterNormalSummoned+=_=>summons++;
+            check(d.BeginBattle(out _) && d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defender admitted");
+            d.TryCaptureCardTarget(1-side,DuelZone.Monster,3,out var original);
+            q.Tick();q.Tick();
+            check(d.MonsterFaceDown[1-side,3] && !d.MonsterWasFlipped[1-side,3] &&
+                d.Life.SequenceEqual([8000,8000]) && d.Graveyard(1-side).Count==0,
+                "A06 declaration gate keeps defender hidden");
+            gate.Release=true;q.Tick();
+            gate.Release=false;q.Tick();q.Tick();
+            check(q.Active?.Command.GetType().Name=="RevealBattleDefenderCommand" &&
+                !d.MonsterFaceDown[1-side,3] && d.MonsterWasFlipped[1-side,3] &&
+                d.DefensePosition[1-side,3] && d.Monsters[1-side,3] is not null &&
+                d.Life.SequenceEqual([8000,8000]) && d.Graveyard(1-side).Count==0 &&
+                positionChanges==0 && summons==0,
+                "A06 reveal gates calculation without changing pose or emitting Flip Summon");
+            gate.Release=true;q.Tick();
+            gate.Release=false;q.Tick();q.Tick();
+            check(q.Active?.Command.GetType().Name=="ResolveRevealedBattleCommand" &&
+                d.Monsters[1-side,3] is not null && d.Life.SequenceEqual([8000,8000]),
+                "A06 calculation only plans later commands");
+            gate.Release=true;
+            for(int n=0;n<50 && q.IsBusy;n++)q.Tick();
+            check(!q.IsBusy && q.Fault is null && d.Life.SequenceEqual(legacy.Life) &&
+                d.Life[side]==8000-loss && d.Life[1-side]==8000 &&
+                (d.Monsters[1-side,3] is null)==removed &&
+                d.Graveyard(1-side).Select(c=>c.Id).SequenceEqual(legacy.Graveyard(1-side).Select(c=>c.Id)) &&
+                !d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defense matrix matches legacy and consumes attack");
+            check(d.TryCaptureCardTarget(1-side,removed?DuelZone.Graveyard:DuelZone.Monster,removed?0:3,out var placed) &&
+                placed.Occurrence==original.Occurrence,"A06 reveal preserves occurrence through final destination");
+            var trace=ActionTraceProjection.ReadExecuted(q.Trace);
+            check(trace.Take(3).Select(t=>t.Command).SequenceEqual(new[]{
+                "DeclareTargetedAttackCommand","RevealBattleDefenderCommand","ResolveRevealedBattleCommand"}) &&
+                trace.Skip(1).Take(2).All(t=>t.Mapping=="unmapped"),
+                "A06 reveal/calculation remain visible and unmapped");
+        }
+
+        var hiddenEffect=DemoDuel.FromPartialObservation(1,[],Slots(Monster(601,500,500),3),
+            Slots(Monster(24,1400,500),2),8000);
+        hiddenEffect.MonsterFaceDown[0,3]=hiddenEffect.DefensePosition[0,3]=true;
+        var hq=hiddenEffect.CreatePrimitiveActionQueue();hiddenEffect.BeginBattle(out _);
+        check(!hiddenEffect.TryQueueTargetedAttack(2,3,out _) && hq.Trace.Count==0 &&
+            hiddenEffect.MonsterFaceDown[0,3],"A06 unsupported FLIP remains legacy, no partial reveal");
+
         var d2=DemoDuel.FromPartialObservation(1,[],Slots(Monster(1351,500,500),3),Slots(Monster(24,1400,500),2),8000);
         d2.Life[0]=100;var q2=d2.CreatePrimitiveActionQueue();d2.BeginBattle(out _);
         d2.TryQueueTargetedAttack(2,3,out _);for(int i=0;i<30 && q2.IsBusy;i++)q2.Tick();
