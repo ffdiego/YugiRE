@@ -49,9 +49,31 @@ internal static class NativeBankEffectChecks
         var second=repeat.Draw(cosine,Tex)!.Value;
         check(first.Center!=second.Center && first.Counter==second.Counter,
             "V21: repeated Draw at one counter is not a no-op");
-        reject(()=>new NativeDiceTimeline(0,new(525,300)),"V21: unsupported native index zero");
-        reject(()=>new NativeDiceTimeline(7,new(525,300)),"V21: unsupported native index seven");
+        foreach(int invalid in new[]{0,7})
+        {
+            bool rejected=false;
+            try { _=new NativeDiceTimeline(invalid,new(525,300)); }
+            catch(ArgumentOutOfRangeException) { rejected=true; }
+            check(rejected,"V21: unsupported native index");
+        }
         reject(()=>new NativeDiceTexture(41,40,4).Pattern(0),"V21: invalid strip dimensions");
+        // Synthetic manifest adapter test; the real file is private.
+        string[] entries=["dice_random.bmp","dice_shadow.yga",
+            "dice_ani_2453.bmp","dice_shadow2.yga",
+            "dice_ani_5621.bmp","dice_shadow2.yga","dice_dci_sha.yga",
+            "dice_decide1.bmp","dice_decide2.bmp","dice_decide3.bmp",
+            "dice_decide4.bmp","dice_decide5.bmp","dice_decide6.bmp"];
+        string[] names=entries.Select(x=>NativeDiceResources.Prefix+x).ToArray();
+        string manifest=string.Join("\n",entries.Select((x,i)=>i<6?x+" 4":x));
+        var bank=NativeDiceResources.Parse(manifest,names);
+        check(bank.Length==13 && bank[3].Path==bank[5].Path &&
+              bank[1].Parameter==4 && bank[7].Parameter is null,
+              "V21: manifest adapter preserves ordered duplicates and metadata");
+        reject(()=>NativeDiceResources.Parse(manifest,names[..^1]),"V21: missing face");
+        reject(()=>NativeDiceResources.Parse(manifest.Replace("dice_random.bmp 4","dice_random.bmp 0"),names),
+            "V21: zero strip divisor");
+        reject(()=>NativeDiceResources.Parse(manifest.Replace("dice_decide1.bmp","dice_decide2.bmp"),names),
+            "V21: reject unconfirmed final key ordering");
 
         foreach(int count in new[]{1,3})
         {
