@@ -235,6 +235,10 @@ Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O
 
 Man-Eater Bug, Hane-Hane e Penguin Soldier: `TryQueueMonsterFlipAnswer` aceita ocorrências de fonte/alvos após Flip Summon; cada destruição/retorno e vínculo tem comando próprio. A revelação em batalha mantém resposta legada até migração da Damage Step. [Contrato](docs/cards/c12-queued-monster-flips.md).
 
+### Recuperação de GY na fila (C12)
+
+Magician of Faith e Mask of Darkness usam `QueuedGraveyardRecoveryCandidates` e `TryQueueGraveyardRecovery`; `MoveToHandCommand` preserva ocorrência e não é compra. Resposta de Flip Summon manual, batalha/UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-graveyard-recovery.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |
