@@ -126,13 +126,19 @@ Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastre
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
 
-## ACTIONS — aguardando coleta
+## ACTIONS — evidência de fases
 
 | Roteiro | ID | Ambiente | Saída | Estado |
 | --- | --- | --- | --- | --- |
-| `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Aguardando execução/importação |
+| `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Coletado e importado no SQLite cumulativo v2 |
 
-Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22/11 não possui decompilações nos dez VAs-alvo. O roteiro extrai os drivers e handlers das tabelas, mais as duas tabelas brutas. Pergunta: como o índice de A577FE se liga às escritas em A577FA e aos rótulos exibidos? Encerrar a coleta após verificar fingerprint e cobertura dos alvos (ausências explícitas), importar evidências compatíveis em cópia cumulativa do SQLite e documentar o mapeamento ou a lacuna residual. Não chamar a coleta de implementação A07. Ver [A01](../../docs/architecture/action-queue.md).
+O ZIP local tem SHA-256 `c3f2fc53f0af6554aa90e65e75d2fc6a558ba5b19547f405a34c865fccea54b3`.
+No SQLite v2 o mesmo digest identifica dez resultados de decompilação, janelas de
+assembly e dois blocos de 28 bytes, em `005EFB78` e `005EFB94`. Os dois blocos
+coincidem com o EXE local de fingerprint fixado. A pergunta restante é a
+correlação entre índice do dispatcher, bits de fase e rótulos no jogo.
+Consultar a [evidência estática](../../docs/20-turn-scheduling.md#reprodução-e-evidências)
+antes de ampliar a coleta. O roteiro 11 fica disponível para reproduzir a coleta original.
 
 ### 14 — C01: taxonomia de efeitos pelo DAT local
 

@@ -286,7 +286,7 @@ static partial class Game
         for (int player = 0; player < 2; player++)
         for (int zone = 0; zone < NativeDuelLayout.MonsterSlots; zone++)
             hiddenBeforeStep[player, zone] = CaptureHiddenAttackTarget(player, zone);
-        var step = cpu.Step(duel);
+        var step = cpu.Step(duel, queueTurnActions: queuedDuel is not null);
         if (step.Status == CpuStepStatus.Blocked)
         {
             message = step.Message;

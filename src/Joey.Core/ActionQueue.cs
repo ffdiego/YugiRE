@@ -36,6 +36,12 @@ public interface IActionCommandSink
     void ScheduleContinuation(ActionContinuation continuation);
 }
 
+internal interface IActionBatchSink : IActionCommandSink
+{
+    int PendingCount { get; }
+    void EnqueueBatch(IEnumerable<DuelCommand> commands, ActionOrigin origin = ActionOrigin.Effect);
+}
+
 /// <summary>No clock, graphics library or frame count in the Core.</summary>
 public interface IPresentationGate
 {
@@ -77,8 +83,10 @@ public sealed class ActionQueue : IActionCommandSink
     private readonly HashSet<long> decisionIds = new();
     private readonly IDuelCommandExecutor executor;
     private readonly IPresentationGate gate;
+    private readonly IActionBatchSink effectSink;
     private long sequence;
     private bool ticking;
+    private bool executingCommand;
     private bool startedBatch;
     private readonly Func<bool>? externalAdmission;
     private readonly bool allowLabEdits;
@@ -91,6 +99,7 @@ public sealed class ActionQueue : IActionCommandSink
         this.gate = gate ?? ImmediatePresentationGate.Instance;
         this.externalAdmission = externalAdmission;
         this.allowLabEdits = allowLabEdits;
+        effectSink = new ExecutorSink(this);
     }
 
     public QueuedDuelCommand? Active { get; private set; }
@@ -109,7 +118,12 @@ public sealed class ActionQueue : IActionCommandSink
     public void EnqueueBatch(IEnumerable<DuelCommand> commands, ActionOrigin origin = ActionOrigin.Effect)
     {
         EnsureHealthy();
-        CheckExternalAdmission();
+        CheckAdmission();
+        AppendBatch(commands, origin);
+    }
+
+    private void AppendBatch(IEnumerable<DuelCommand> commands, ActionOrigin origin)
+    {
         if (PendingDecision is not null)
             throw new InvalidOperationException("Resolve the pending decision before admitting more work.");
         ArgumentNullException.ThrowIfNull(commands);
@@ -133,7 +147,12 @@ public sealed class ActionQueue : IActionCommandSink
     public void ScheduleContinuation(ActionContinuation continuation)
     {
         EnsureHealthy();
-        CheckExternalAdmission();
+        CheckAdmission();
+        AppendContinuation(continuation);
+    }
+
+    private void AppendContinuation(ActionContinuation continuation)
+    {
         ArgumentNullException.ThrowIfNull(continuation);
         if (PendingDecision is not null)
             throw new InvalidOperationException("Resolve the pending decision before scheduling work.");
@@ -168,8 +187,7 @@ public sealed class ActionQueue : IActionCommandSink
                 Active = next;
                 trace.Add(new(next, ActionTraceStage.Started));
                 if (gate is ICommandPresentationGate observer) observer.OnStarting(next);
-                var result = executor.Execute(next.Command, this)
-                    ?? throw new InvalidOperationException("Executor returned no result.");
+                var result = Execute(next.Command);
                 if (!Enum.IsDefined(result.Outcome))
                     throw new InvalidOperationException("Executor returned an unknown outcome.");
                 ActiveResult = result;
@@ -205,6 +223,42 @@ public sealed class ActionQueue : IActionCommandSink
         finally { ticking = false; }
     }
 
+    private CommandResult Execute(DuelCommand command)
+    {
+        executingCommand = true;
+        try
+        {
+            return executor.Execute(command, effectSink)
+                ?? throw new InvalidOperationException("Executor returned no result.");
+        }
+        finally { executingCommand = false; }
+    }
+
+    private sealed class ExecutorSink(ActionQueue queue) : IActionBatchSink
+    {
+        public int PendingCount => queue.PendingCount;
+
+        public void Enqueue(DuelCommand command, ActionOrigin origin) => EnqueueBatch([command], origin);
+
+        public void EnqueueBatch(IEnumerable<DuelCommand> commands, ActionOrigin origin)
+        {
+            RequireExecutor();
+            queue.AppendBatch(commands, origin);
+        }
+
+        public void ScheduleContinuation(ActionContinuation continuation)
+        {
+            RequireExecutor();
+            queue.AppendContinuation(continuation);
+        }
+
+        private void RequireExecutor()
+        {
+            if (!queue.executingCommand)
+                throw new InvalidOperationException("The effect sink is only available while executing a command.");
+        }
+    }
+
     private ActionTickResult TryComplete()
     {
         var current = Active!;
@@ -229,16 +283,19 @@ public sealed class ActionQueue : IActionCommandSink
             decisionContinuation = step.Next;
             return;
         }
-        EnqueueBatch(commands, ActionOrigin.Effect);
+        AppendBatch(commands, ActionOrigin.Effect);
         if (step.Next is not null) continuations.AddFirst(step.Next);
     }
 
     // DemoDuel opts into a closed admission window once a batch starts.
     // Generic scheduler tests and consumers can still use the original FIFO.
-    // Executor/continuation emissions are synchronous inside Tick.
-    private void CheckExternalAdmission()
+    // During Tick only the executor can call the sink. Continuations submit
+    // their commands in the returned step. Presentation callbacks only observe.
+    private void CheckAdmission()
     {
-        if (ticking || externalAdmission is null) return;
+        if (ticking)
+            throw new InvalidOperationException("External admission is unavailable during a tick.");
+        if (externalAdmission is null) return;
         if (!externalAdmission() || (IsBusy && startedBatch))
             throw new InvalidOperationException("Duel has a pending decision or a running action batch.");
         if (!IsBusy) startedBatch = false;

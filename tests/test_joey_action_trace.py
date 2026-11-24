@@ -31,6 +31,16 @@ class TraceTests(unittest.TestCase):
         self.assertEqual(report["status"],"mismatch")
         self.assertEqual(report["differences"][0]["csharp"]["csharpSequence"],6)
 
+    def test_legal_turn_draw_uses_the_ordinary_draw_mapping(self):
+        native = [{"index": 0, "args": [0x8061, 1, 1, 0]}]
+        legal_draw = row(1, "TurnDrawCommand", [0x8061, 1, 1, 0])
+        report = compare(native, document([legal_draw]), 0, 1, 0, 1, "ydr-record")
+        self.assertEqual(report["status"], "projected_match")
+
+        invalid = row(1, "TurnDrawCommand", [0x43, 200, 0, 1])
+        with self.assertRaisesRegex(ValueError, "command does not match"):
+            compare(native, document([invalid]), 0, 1, 0, 1, "ydr-record")
+
     def test_unknowns_and_incomplete_are_not_match(self):
         left=[{"index":0,"args":[0x43,200,0,1]},{"index":1,"args":[0x72,342,0,0]}]
         right=[row(1,"DamageCommand",[0x43,200,0,1]),row(2,"SummonCommand",None,"unmapped")]

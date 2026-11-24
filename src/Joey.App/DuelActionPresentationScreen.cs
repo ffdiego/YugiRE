@@ -4,7 +4,7 @@ using Raylib_cs;
 
 static partial class Game
 {
-    // Explicit pilot. Legacy CPU and unmigrated human actions remain unchanged.
+    // Explicit pilot. Unmigrated actions retain their existing producers.
     static bool useQueuedActions;
     static ActionQueue? queuedDuel;
     static CardTarget? queuedPreviewSource;
@@ -14,11 +14,18 @@ static partial class Game
     sealed class AppActionPresentationGate : ICommandPresentationGate
     {
         private readonly ActiveCommandPresentation<ActionVisualSnapshot> active = new();
+        private int startedTurn;
 
-        public bool CanAdvance => !visualReviewPaused && !MotionBusy && !PhaseBusy;
+        // Draw has its own batch. A committed turn advance must release the
+        // queue before the new turn can admit that batch.
+        private bool WaitingForPhase => PhaseBusy && !queuedTurnDraw &&
+            (active.Sequence is null || startedTurn == duel.Turn);
+
+        public bool CanAdvance => !visualReviewPaused && !MotionBusy && !WaitingForPhase;
 
         public void OnStarting(QueuedDuelCommand command)
         {
+            startedTurn = duel.Turn;
             commandCardEffects.Begin(command.Sequence);
             var description = duel.DescribeActionPresentation(command.Command);
             Rectangle? origin = null;
@@ -31,8 +38,14 @@ static partial class Game
         public bool CanComplete(QueuedDuelCommand command, CommandResult result)
         {
             if (!active.TryRelease(command.Sequence, result.Outcome == CommandOutcome.Applied,
-                BeginActionVisual, () => MotionBusy || PhaseBusy)) return false;
+                BeginActionVisual, () => MotionBusy || WaitingForPhase)) return false;
             commandCardEffects.Release(command.Sequence);
+            if (queuedTurnDraw && command.Command is TurnDrawCommand)
+            {
+                message = result.Detail.Length != 0 ? result.Detail :
+                    duel.ExodiaWinner == command.Command.Side ? "Exodia complete: all five Forbidden One pieces in hand." : "Drew one card.";
+                ClearDuelSelection();
+            }
             return true;
         }
     }
@@ -100,7 +113,11 @@ static partial class Game
                 if (answer is { } choice) queue.SubmitDecision(request.Id, choice);
             }
             queue.Tick();
-            if (!queue.IsBusy) queuedPreviewSource = null;
+            if (!queue.IsBusy)
+            {
+                queuedPreviewSource = null;
+                queuedTurnDraw = false;
+            }
         }
         catch (InvalidOperationException ex)
         {
