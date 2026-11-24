@@ -436,7 +436,7 @@ public sealed partial class DemoDuel
     public bool CanActivateFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main &&
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
-        (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
+        (FirstFreeSpellZone() >= 0 && ((Hand[index].ClassCode == 22 && EquipmentRules.Supports(Hand[index].Id)) ||
             (FusionRules.Supports(Hand[index]) && HasFusionCombination()) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||

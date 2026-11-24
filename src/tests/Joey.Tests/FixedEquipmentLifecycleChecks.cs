@@ -108,6 +108,6 @@ internal static class FixedEquipmentLifecycleChecks
         spoof.TryCaptureCardTarget(0,DuelZone.Hand,0,out var fake);
         spoof.TryCaptureCardTarget(0,DuelZone.Monster,0,out var tgt);
         check(spoof.QueuedEquipmentCandidates(fake).Count==0&&!spoof.TryQueueEquipment(fake,tgt,out _)&&
-            !spoof.Equip(0,0,0,out _)&&!tq.IsBusy,"Wrong card class cannot create equip link");
+            !spoof.CanActivateFromHand(0)&&!spoof.Equip(0,0,0,out _)&&!tq.IsBusy,"Wrong card class cannot create equip link");
     }
 }
