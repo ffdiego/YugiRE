@@ -58,6 +58,8 @@ internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Si
 internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateDeckSearchSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record OpenDeckSearchSpellCommand(int Side, CardTarget Source, ushort ResourceId) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -187,6 +189,12 @@ internal static class DuelCommandValidation
                 break;
             case ActivateDrawSpellCommand drawSpell:
                 Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateDeckSearchSpellCommand searchSpell:
+                Target(searchSpell.Source, searchSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case OpenDeckSearchSpellCommand openSearch when DeckSearchSpellRules.Filter(openSearch.ResourceId) is not null:
+                Target(openSearch.Source, openSearch.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateLifePointSpellCommand lp:
                 Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
