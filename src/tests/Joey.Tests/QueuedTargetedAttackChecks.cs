@@ -40,8 +40,8 @@ internal static class QueuedTargetedAttackChecks
             for(int i=0;i<30 && q.IsBusy;i++)
             {
                 gate.Release=false;q.Tick();
-                if(q.Active?.Command is SnapshotBattleRemovalCommand snap)
-                    check(d.Monsters[snap.Side,snap.Role==0?2:3] is null && d.Graveyard(snap.Side).Count==0 &&
+                if(q.Active?.Command is { } snap && snap.GetType().Name=="SnapshotBattleRemovalCommand")
+                    check(d.Monsters[snap.Side,snap.Side==side?2:3] is null && d.Graveyard(snap.Side).Count==0 &&
                         d.Life.SequenceEqual([8000,8000]),"A05.8 temporary record before LP and GY");
                 gate.Release=true;q.Tick();
             }
