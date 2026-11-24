@@ -192,6 +192,8 @@ def show_trace_status(status: dict) -> None:
           f"aiGateActive={status.get('aiGateActive', False)} "
           f"combatContextActive={status.get('combatContextActive', False)} "
           f"combatContextCount={status.get('combatContextCount', 0)} "
+          f"combatSchema={status.get('combatContextSchemaVersion', '?')} "
+          f"combatReadPoints={status.get('combatReadPointsArmed', [])} "
           f"demoActive={status.get('demoActive', False)} "
           f"deckActive={status.get('deckActive', False)} "
           f"session={status['session']} "
@@ -224,6 +226,8 @@ def save_command_trace(api: object, output: Path | None = None) -> Path:
                   "seen": status["seen"], "retained": status["retained"],
                   "overwritten": status["overwritten"],
                   "exeSha256": status.get("hostAttestedExeSha256") or status.get("deckFingerprint"),
+                  "processId": status.get("processId"),
+                  "modulePath": status.get("modulePath"),
                   "note": "Producer inputs and optional passive AI observations. "
                           "AI output buffers may represent hypothetical states."}
         destination.write(json.dumps(header, ensure_ascii=False) + "\n")
@@ -325,7 +329,7 @@ def show_help(default_side: int) -> None:
           "ai check 1; ai step 1; "
           "state; diff; hand [0|1]; "
           "watch on [100..5000 ms]; watch off; "
-          "trace on [16..20000]; trace prep on|off; trace ai on [detail|gates|combat-context]|off; "
+          "trace on [16..20000]; trace prep on|off; trace ai on [detail|gates|combat-context|combat-context-point <name>]|off; "
           "trace demo on|off; trace deck on [mt]|off; "
           "trace mark <label>; "
           "trace status; trace off; trace dump; cancel; help; stop", flush=True)
@@ -362,7 +366,11 @@ def handle_command(command: str, api: object, default_side: int,
         elif parts == ["trace", "ai", "on", "gates"]:
             show_trace_status(api.traceaistart("gates"))
         elif parts == ["trace", "ai", "on", "combat-context"]:
+            # Entry-only baseline until the Windows v2 access violation is diagnosed.
             show_trace_status(api.traceaistart("combat-context"))
+        elif len(parts) == 5 and parts[:4] == ["trace", "ai", "on", "combat-context-point"]:
+            # One interior observation address, never the complete unsafe set.
+            show_trace_status(api.traceaistart("combat-context-point:" + parts[4]))
         elif parts == ["trace", "ai", "off"]:
             show_trace_status(api.traceaistop())
         elif parts in (["trace", "deck", "on"], ["trace", "deck", "on", "mt"]):
@@ -393,7 +401,7 @@ def handle_command(command: str, api: object, default_side: int,
             show_trace_status(api.tracemark(label))
         else:
             print("[trace] Usage: trace on [16..20000] | trace prep on|off | "
-                  "trace ai on [detail|gates|combat-context]|off | trace demo on|off | "
+                  "trace ai on [detail|gates|combat-context|combat-context-point <name>]|off | trace demo on|off | "
                   "trace mark <label> | trace status | trace off | trace dump",
                   flush=True)
         return True
@@ -609,7 +617,8 @@ def main(argv: list[str] | None = None) -> int:
             print("[dual-rules] Loaded Joey EXE did not pass fingerprint checks.")
             print(json.dumps(checks["checks"], indent=2))
             return 2
-        print("[dual-rules] Exact loaded Joey EXE SHA256 confirmed.", flush=True)
+        print(f"[dual-rules] Loaded module preflight: PID={joey_pid} "
+              f"path={module_path} SHA256={checks['exe_sha256']}", flush=True)
         if args.observe_only:
             api.authorizedeckobserver(checks["exe_sha256"])
             state = api.installobserver()
