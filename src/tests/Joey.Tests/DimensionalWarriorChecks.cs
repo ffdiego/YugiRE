@@ -21,7 +21,7 @@ internal static class DimensionalWarriorChecks
         var germ = Monster(1114, 383, 1000, 1000, type: 3, level: 2);
         var sangan = Monster(47, 248, 1000, 600, type: 3, level: 3);
         var spear = Monster(1116, 516, 500, 500, type: 3, level: 2);
-        var immortal = Monster(461, 164, 1500, 1300, type: 19, level: 4);
+        var immortal = Monster(461, 164, 1500, 1200, type: 19, level: 4);
         var searched = Monster(800, 1800, 900, 2000);
 
         check(DimensionalWarriorRules.ResourceId == 255 &&
@@ -53,13 +53,14 @@ internal static class DimensionalWarriorChecks
               defending.Monsters[0, 0] is null && defending.Monsters[1, 0] is null,
               "P188: face-down Defense Warrior is revealed and banishes both, even if battle-destroyed");
 
+        var weakerDefenseAttacker = Monster(702, 1702, 800, 700);
         var defenseDamage = DemoDuel.FromPartialObservation(1, [],
-            Slots(dimensional), Slots(weaker), 8000);
+            Slots(dimensional), Slots(weakerDefenseAttacker), 8000);
         defenseDamage.DefensePosition[0, 0] = true;
         check(defenseDamage.BeginBattle(out _) && defenseDamage.Attack(0, 0, out _) &&
               defenseDamage.Life.SequenceEqual([8000, 7800]) &&
               defenseDamage.Banished(0).Single() == dimensional &&
-              defenseDamage.Banished(1).Single() == weaker,
+              defenseDamage.Banished(1).Single() == weakerDefenseAttacker,
               "P188: defense stat check and reflected battle damage occur before banishing both");
 
         var defenderAttack = DemoDuel.FromPartialObservation(1, [],
