@@ -1097,6 +1097,12 @@ public sealed partial class DemoDuel
             if (Monsters[side, zone] is Card source && !MonsterFaceDown[side, zone])
                 sum = new(sum.Attack + MonsterAuraRules.AttackDelta(source.Id, stats.AttributeCode), sum.Defense);
         }
+        // Native 0056DD30: phase-dependent elemental summon effects.
+        int opposingSouls = Enumerable.Range(0,5).Count(slot =>
+            Monsters[1-p,slot]?.Id == ElementalBattleAttributeRules.SoulOfPurityAndLight &&
+            !MonsterFaceDown[1-p,slot] && !IsMarkedForBattleDestruction(1-p,slot));
+        sum = new(sum.Attack + ElementalBattleAttributeRules.AttackDelta(
+            monster.Id, p, ActivePlayer, Phase == DemoPhase.Battle, opposingSouls), sum.Defense);
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
     }
