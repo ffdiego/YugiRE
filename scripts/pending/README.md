@@ -190,6 +190,10 @@ Para os recursos, utilizar --inspect-visual-dat já existente
 e compartilhar privadamente apenas registros de fusion.txt e
 dimensões das imagens referenciadas (sem pixels).
 
+### 16 — CARDS: P117/P159/P160 ressurreição
+
+`bash scripts/pending/16-cards-revival-spells-ghidra.sh` no Fedora/Ghidra local. Saída privada `scratch/ghidra-revival-spells-contract.zip`. Extrair sete callbacks ausentes nos dois SQLite, com assembly e helpers de movimentação/identidade. Confirmar propriedade/controle, seleção, custo e vínculo; não promover cobertura apenas pela coleta. Ver [lacuna](../../docs/cards/p117-p159-p160-revival-spells-gap.md).
+
 ## V20/V21/V22 — 16-coin-dice-break-ghidra.sh (aguardando Fedora)
 
 Ambiente: Ghidra local, projeto e EXE original com fingerprint validado pelo exportador. Consulta SQLite já concluída: seis Update/Draw não presentes; construtores/handlers presentes com ABI ambígua.
@@ -253,3 +257,7 @@ Saída privada: scratch/ghidra-turn-notice-draw-contract.zip. Verificar vtables,
 ## Handoff recebido — 24/11/2026
 
 21 bundles privados validados e importados em nova cópia SQLite cumulativa. Inclui Ghidra 01–13, 16, 18–21, 23 e dois históricos; **não repetir estas coletas** sem lacuna específica. O 17 não veio neste ZIP. 14/15/22 não são coletas Ghidra. Estado de implementação permanece por trilha. Ver [auditoria e V07/V11](../../docs/research/pending-bundles-handoff-2026-11-24.md).
+
+### Nota de numeração paralela
+
+O número 16 foi reservado em duas branches independentes antes da integração: `16-cards-revival-spells-ghidra.sh` (CARDS, nova coleta não incluída no bundle visual) e `16-coin-dice-break-ghidra.sh` (VISUALS, coleta recebida). Preservar os nomes e referências históricas; distinguir pelo nome completo e ID da trilha, não considerar a coleta CARDS concluída por coincidência de número. Não reutilizar números em novas tarefas.

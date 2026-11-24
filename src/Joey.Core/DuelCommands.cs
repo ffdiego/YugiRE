@@ -21,9 +21,28 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false) : DuelCommand(Side);
+public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
+public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
+public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
+public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
+internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
+internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
+internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
+internal sealed record ResolveGraveyardRevivalCommand(int Side, PendingCardSelection Request, CardTarget Target, int Slot, bool FaceDownDefense) : DuelCommand(Side);
+internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
+internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
+internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
+internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
+internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
+internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
@@ -46,6 +65,84 @@ internal static class DuelCommandValidation
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case DrawCommand:
             case FinishFieldRemovalCommand:
+                break;
+            case ShuffleDeckCommand:
+            case FinishDeckSearchCommand:
+            case FinishGraveyardRecoveryCommand:
+                break;
+            case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5:
+                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard);
+                break;
+            case ResolveSameNameRecruitmentCommand sameName when sameName.Request is not null && sameName.Request.Owner == sameName.Side:
+                if (sameName.Second is not null && sameName.First is null ||
+                    sameName.First is { } firstCopy && sameName.Second == firstCopy ||
+                    sameName.SingleSlot is int chosenSlot && (chosenSlot is < 0 or >= 5 ||
+                        sameName.First is null || sameName.Second is not null))
+                    throw new ArgumentException("Invalid same-name recruitment choice.");
+                foreach (var copy in new CardTarget?[] { sameName.First, sameName.Second }.OfType<CardTarget>())
+                    Target(copy, sameName.Side, DuelZone.Deck);
+                break;
+            case ResolveDeckRecruitmentCommand recruit when recruit.Request is not null && recruit.Request.Owner == recruit.Side:
+                if (recruit.Target is { } recruitPick && recruit.Slot is >= 0 and < 5)
+                    Target(recruitPick, recruit.Side, DuelZone.Deck);
+                else if (recruit.Target is not null || recruit.Slot is not null)
+                    throw new ArgumentException("Invalid recruitment choice.");
+                break;
+            case MoveToHandCommand move:
+                Target(move.Source, move.Side, DuelZone.Graveyard, DuelZone.Deck);
+                break;
+            case ResolveDeckSearchCommand search when search.Request is not null && search.Request.Owner == search.Side:
+                if (search.Target is { } searchPick) Target(searchPick, search.Side, DuelZone.Deck);
+                break;
+            case ResolveGraveyardRevivalCommand revive when revive.Request is not null && revive.Request.Owner == revive.Side && revive.Slot is >= 0 and < 5:
+                Target(revive.Target, revive.Side, DuelZone.Graveyard);
+                break;
+            case ResolveGraveyardRecoveryCommand recover when recover.Request is not null && recover.Request.Owner == recover.Side:
+                if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
+                break;
+            case ReturnToHandCommand bounce:
+                Target(bounce.Target, bounce.Side, DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ResolveFlipSpellTrapPairCommand pair when pair.Request is not null && pair.Request.Owner == pair.Side:
+                if ((pair.First is null) != (pair.Second is null) ||
+                    pair.First is { } firstPair && pair.Second == firstPair)
+                    throw new ArgumentException("Invalid FLIP Spell/Trap pair.");
+                foreach (var pairPick in new CardTarget?[] { pair.First, pair.Second }.OfType<CardTarget>())
+                    Target(pairPick, pairPick.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ResolveMonsterFlipTargetsCommand flipTargets:
+                Target(flipTargets.Source, flipTargets.Side, DuelZone.Monster);
+                if (flipTargets.Second is not null && flipTargets.First is null ||
+                    flipTargets.First is { } firstPick && flipTargets.Second == firstPick)
+                    throw new ArgumentException("Invalid FLIP target list.");
+                foreach (var pick in new CardTarget?[] { flipTargets.First, flipTargets.Second }.OfType<CardTarget>())
+                {
+                    if (pick.Side is not (0 or 1)) throw new ArgumentException("Invalid target side.");
+                    Target(pick, pick.Side, DuelZone.Monster);
+                }
+                break;
+            case EquipCommand equip when equip.SpellSlot is >= 0 and < 5:
+                Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
+                Target(equip.Target, equip.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateDrawSpellCommand drawSpell:
+                Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateLifePointSpellCommand lp:
+                Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateTargetedSpellTrapCommand targeted:
+                Target(targeted.Source, targeted.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                if (targeted.Target.Side is not (0 or 1) || targeted.Source == targeted.Target)
+                    throw new ArgumentException("Invalid targeted Spell/Trap occurrence.");
+                Target(targeted.Target, targeted.Target.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ActivateSpellTrapWipeCommand spellTrapWipe:
+                Target(spellTrapWipe.Source, spellTrapWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateMonsterWipeCommand monsterWipe:
+                Target(monsterWipe.Source, monsterWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand);

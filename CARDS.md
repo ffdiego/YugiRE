@@ -21,7 +21,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Magias normais de compra fixa `P119/P143` | **Done** (2 IDs no sandbox) | Pot of Greed (1010) e Upstart Goblin (1065). `DrawSpellRules`, `DemoDuel` e `DrawSpellChecks` cobrem mão, Set, contagens, LP e uso pela CPU. | Exigem cartas suficientes no deck. Sem correntes, negação ou comparação nativa do timing. |
-| Equipamentos `P025` | **Partial** (21 IDs) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação da mão; testes novos aguardam CI. Set, fila, supressões e interações pendentes |
+| Equipamentos `P025` | **Partial** (24 IDs, 3 apenas na fila opt-in) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs, incluindo 3 dinâmicos). UI/CPU da fila e supressões pendentes |
 | Magias de campo `P036` | **Done** (13 IDs no sandbox) | Seis magias por tipo, seis por atributo e Chorus of Sanctuary; zona FIELD, ativação/set, substituição, bônus/penalidades e combate | Regras baseadas em texto, não paridade nativa integral; Sea Serpent classCode 5 ainda é inferido |
 | Infinite Cards (`0x593`) | **Done** (sandbox) | `Demo.cs`, `InfiniteCardsTests.cs` | Controle de limite de mão, sem generalizar para engine de correntes |
 | Dream Clown (119), gatilho de posição | **Done** (escopo sandbox, testes .NET CI) | `MonsterPositionEffectRules.cs`, `DemoDuel.ChangePosition`, `PositionChangeEffectChecks.cs` | Ataque → defesa inicia seleção e destruição de monstro adversário. Seletor legado compartilhado com FLIP, gatilho distinto de FLIP; sem chain ou paridade nativa. |
@@ -218,6 +218,46 @@ Os testes executam as 57 receitas do DAT, incluindo os três Blue-Eyes White Dra
 O sandbox permite até um substituto por receita. Goddess with the Third Eye (108), Beastking of the Swamps (257), Versago the Destroyer (268) e Mystical Sheep #1 (641) estão `Done` no recorte de Polymerization e Fusion Gate. A interface desabilita materiais que não permitem completar a receita e a CPU usa a mesma regra para obter uma combinação. Com o campo cheio, o sandbox aceita qualquer combinação que libere uma vaga. A preferência do pré-teste nativo por materiais exatos nesse caso segue sem confirmação em execução. [Análise dos substitutos](docs/cards/fusion-substitutes.md)
 
 Fusion Gate (1547) é `Done` no sandbox e integra a Alpha. Depois de ser ativada na zona de campo, permite que qualquer lado use o próprio Fusion Deck e materiais em sua Main Phase. A mesma fonte permanece em campo para outras fusões e a confirmação bane os materiais, preservando a limpeza de equipamentos e sem abrir efeitos de cemitério dos materiais. A carta é ativável mesmo sem receita disponível. No executável, `005833D0` distingue a ativação do campo do uso da fusão e consulta `00580600` para este último. `00591739` entra na seleção compartilhada e os ramos `005927F0` e `005928AA` encaminham o banimento. A comparação no Joey original continua pendente. [Campanha estática P265](docs/research/card-static-sweep/06-combate-diferido-e-invocacao.jsonl)
+
+### Magias LP e compra na fila (C12)
+
+As dez magias fixas já Done têm agora caminho opt-in `TryQueueLifePointSpell` para mão/Set, com gasto e mudanças de LP em comandos separados. UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-lp-spells.md). Pot of Greed e Upstart Goblin têm `TryQueueDrawSpell`, com gasto validado antes da continuação, DrawCommand por carta e HealCommand posterior de Upstart. [Contrato](docs/cards/c12-queued-draw-spells.md). Stim-Pack e Germ Infection têm apenas aritmética estática, não ativação, até fechar A07.
+
+### Destruição de monstros na fila (C12)
+
+Raigeki, Dark Hole e os sete destruidores por tipo usam `TryQueueMonsterWipe` na mão/Set. Reutilizam `MonsterWipeRules`, remoções individuais e limpeza de equipamentos; o gasto inválido cancela o lote e as buscas de cemitério abrem após a última remoção. UI/CPU e seleção final ainda legados. [Contrato](docs/cards/c12-queued-monster-wipes.md).
+
+### Destruição de S/T na fila (C12)
+
+Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T ainda limitada; MST e Remove Trap usam consulta de candidatos e admissão de ocorrências, incluindo cascata Destiny Board, sem prompt bloqueante. [Contrato seletivas](docs/cards/c12-queued-targeted-spelltrap.md). [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+
+### FLIPs seletivos na fila (C12)
+
+Man-Eater Bug, Hane-Hane e Penguin Soldier: `TryQueueMonsterFlipAnswer` aceita ocorrências de fonte/alvos após Flip Summon; cada destruição/retorno e vínculo tem comando próprio. A revelação em batalha mantém resposta legada até migração da Damage Step. [Contrato](docs/cards/c12-queued-monster-flips.md).
+
+### Recuperação de GY na fila (C12)
+
+Magician of Faith e Mask of Darkness usam `QueuedGraveyardRecoveryCandidates` e `TryQueueGraveyardRecovery`; `MoveToHandCommand` preserva ocorrência e não é compra. Resposta de Flip Summon manual, batalha/UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-graveyard-recovery.md).
+
+### Busca Deck → mão na fila (C12)
+
+Sangan/Witch usam `QueuedDeckSearchCandidates` e `TryQueueDeckSearch`. MoveToHandCommand aceita Deck e GY; ShuffleDeckCommand separado após transferência bem-sucedida. UI/CPU e paridade nativa ainda pendentes. [Contrato](docs/cards/c12-queued-deck-search.md).
+
+### Recrutamento elemental na fila (C12)
+
+P164: Mystic Tomato, Giant Rat, Shining Angel, UFO Turtle, Mother Grizzly, Flying Kamakiri #1 usam `TryQueueDeckRecruitment` após a batalha legada. Invocação especial em ataque e shuffle separados, recusa sem RNG. [Contrato](docs/cards/c12-queued-elemental-recruiters.md).
+
+### Recrutamento de mesmo nome na fila (C12)
+
+Nimble Momonga, Giant Germ e Bubonic Vermin usam `TryQueueSameNameRecruitment`; cada cópia tem uma invocação separada, com posição exigida e shuffle único após o lote. LP de batalha e FLIP de ataque ainda legados. [Contrato](docs/cards/c12-queued-same-name-recruitment.md).
+
+### Ressurreição na fila (C12)
+
+Spear Cretin usa `TryQueueGraveyardRevival`: um monstro do próprio GY por solicitação, excluindo a ocorrência disparadora, ataque face-up ou defesa face-down. A próxima escolha aguarda o gate. [Contrato](docs/cards/c12-queued-graveyard-revival.md).
+
+### Movimentação do deck na fila (C12)
+
+Needle Worm e Hiro's Shadow Scout: Flip Summon manual emite movimentações individuais, com auditoria `LastDeckFlow` após o gate. Mill não é compra; Scout descarta apenas Spells recém-compradas. Batalha/reveal externo continuam legados. [Contrato](docs/cards/c12-queued-flip-deck-flow.md).
 
 ## Evidências nativas (não confundir com paridade C# completa)
 
