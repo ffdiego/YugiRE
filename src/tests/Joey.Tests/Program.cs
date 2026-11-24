@@ -110,6 +110,7 @@ var empty = new DemoDuel([]);
 Check(empty.Draw(out _) && empty.Winner == 1, "Drawing from empty deck ends demo");
 Check(!empty.Draw(out _) && !empty.Play(0, out _), "No actions after game over");
 GraphicsTests.Run(Check, Reject);
+DuelArtworkPolicyChecks.Run(Check, Reject);
 NativeRngTests.Run(Check);
 CpuDeckSelectionTests.Run(Check);
 CpuDifficultyProgressionTests.Run(Check);
