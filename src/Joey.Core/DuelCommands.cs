@@ -21,7 +21,7 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
-public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
+public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
 public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
@@ -29,6 +29,7 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
 internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
 internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
 internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
@@ -69,6 +70,15 @@ internal static class DuelCommandValidation
                 break;
             case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5:
                 Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck);
+                break;
+            case ResolveSameNameRecruitmentCommand sameName when sameName.Request is not null && sameName.Request.Owner == sameName.Side:
+                if (sameName.Second is not null && sameName.First is null ||
+                    sameName.First is { } firstCopy && sameName.Second == firstCopy ||
+                    sameName.SingleSlot is int chosenSlot && (chosenSlot is < 0 or >= 5 ||
+                        sameName.First is null || sameName.Second is not null))
+                    throw new ArgumentException("Invalid same-name recruitment choice.");
+                foreach (var copy in new CardTarget?[] { sameName.First, sameName.Second }.OfType<CardTarget>())
+                    Target(copy, sameName.Side, DuelZone.Deck);
                 break;
             case ResolveDeckRecruitmentCommand recruit when recruit.Request is not null && recruit.Request.Owner == recruit.Side:
                 if (recruit.Target is { } recruitPick && recruit.Slot is >= 0 and < 5)

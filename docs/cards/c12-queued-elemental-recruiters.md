@@ -14,8 +14,8 @@ somente no deck do dono e da solicitação original; ocultar lista
 do adversário. Escolha aceita target e slot livre, ou ambos null
 para recusar. Executor revalida antes de consumir request.
 
-SpecialSummonCommand é primitiva inicialmente Deck→Field face-up
-attack, não valida procedimento específico de cada carta nem cria
+SpecialSummonCommand é primitiva Deck→Field (face-up attack para P164,
+face-down defense quando exigido por outra família), não valida procedimento específico de cada carta nem cria
 janela de resposta indevida. Move a ocorrência e emite o evento
 MonsterSpecialSummoned. Reutiliza a continuação de P006 para
 ShuffleDeckCommand após transferência aplicada e finalização após
@@ -26,5 +26,5 @@ Não há aumento de cobertura nem implementação da batalha na fila.
 Testes: seis IDs, ambos os donos, filtros, cópias, slot ocupado,
 request obsoleto, recusa, gate, equivalência com seed e dois
 recrutadores destruídos juntos. Última carta não provoca deck-out.
-UI/CPU, janela de batalha, especiais de GY e múltiplos alvos pendentes.
+UI/CPU, janela de batalha e especiais de GY pendentes; múltiplas cópias no contrato de mesmo nome.
 CI pendente.

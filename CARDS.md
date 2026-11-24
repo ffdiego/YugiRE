@@ -247,6 +247,10 @@ Sangan/Witch usam `QueuedDeckSearchCandidates` e `TryQueueDeckSearch`. MoveToHan
 
 P164: Mystic Tomato, Giant Rat, Shining Angel, UFO Turtle, Mother Grizzly, Flying Kamakiri #1 usam `TryQueueDeckRecruitment` após a batalha legada. Invocação especial em ataque e shuffle separados, recusa sem RNG. [Contrato](docs/cards/c12-queued-elemental-recruiters.md).
 
+### Recrutamento de mesmo nome na fila (C12)
+
+Nimble Momonga, Giant Germ e Bubonic Vermin usam `TryQueueSameNameRecruitment`; cada cópia tem uma invocação separada, com posição exigida e shuffle único após o lote. LP de batalha e FLIP de ataque ainda legados. [Contrato](docs/cards/c12-queued-same-name-recruitment.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |

@@ -190,7 +190,7 @@ public sealed partial class DemoDuel
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
         private bool resolvingGraveyardRecovery;
-        private CardTarget? reservedDeckSearch;
+        private readonly HashSet<CardTarget> reservedDeckSearch = [];
         private int? reservedDeckSearchOwner;
         private bool deckSearchMoved;
 
@@ -198,6 +198,8 @@ public sealed partial class DemoDuel
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is ResolveSameNameRecruitmentCommand sameName)
+                return ResolveSameNameRecruitment(sameName, followups);
             if (command is ResolveDeckRecruitmentCommand recruit)
                 return ResolveDeckRecruitment(recruit, followups);
             if (command is ResolveDeckSearchCommand search)
@@ -226,7 +228,7 @@ public sealed partial class DemoDuel
             // even if Exodia is found mid-batch. Only this reserved batch may
             // continue its draws after a winner has been set.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearch is { } selected && selected.Side == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
@@ -720,7 +722,7 @@ public sealed partial class DemoDuel
                 !duel.TryPlanQueuedDeckSearch(answer.Request, answer.Target))
                 return new(CommandOutcome.Rejected, "Deck search request or target changed.");
 
-            ReserveDeckTransfer(answer.Side, answer.Target, new MoveToHandCommand(answer.Side, answer.Target), queue);
+            ReserveDeckTransfer(answer.Side, [new MoveToHandCommand(answer.Side, answer.Target)], queue);
             return new(CommandOutcome.Applied);
         }
 
@@ -731,20 +733,37 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Recruitment request, target or slot changed.");
             DuelCommand? movement = answer.Target is { } target && answer.Slot is int slot
                 ? new SpecialSummonCommand(answer.Side, target, slot) : null;
-            ReserveDeckTransfer(answer.Side, answer.Target, movement, queue);
+            ReserveDeckTransfer(answer.Side, movement is null ? [] : [movement], queue);
             return new(CommandOutcome.Applied);
         }
 
-        private void ReserveDeckTransfer(int side, CardTarget? target, DuelCommand? movement, ActionQueue queue)
+        private CommandResult ResolveSameNameRecruitment(ResolveSameNameRecruitmentCommand answer, IActionCommandSink followups)
+        {
+            CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
+            if (reservedDeckSearchOwner is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanSameNameRecruitment(answer.Request, targets, answer.SingleSlot, out var movements))
+                return new(CommandOutcome.Rejected, "Same-name recruitment request, copies or slots changed.");
+            ReserveDeckTransfer(answer.Side, movements, queue);
+            return new(CommandOutcome.Applied);
+        }
+
+        private void ReserveDeckTransfer(int side, IReadOnlyList<DuelCommand> movements, ActionQueue queue)
         {
             duel.PendingCardSelection = null;
             duel.selectedBatchIndices.Clear();
             reservedDeckSearchOwner = side;
-            reservedDeckSearch = target;
+            reservedDeckSearch.Clear();
+            foreach (var movement in movements)
+                reservedDeckSearch.Add(movement switch
+                {
+                    MoveToHandCommand toHand => toHand.Source,
+                    SpecialSummonCommand summon => summon.Source,
+                    _ => throw new InvalidOperationException("Unsupported deck transfer.")
+                });
             deckSearchMoved = false;
-            if (movement is not null) queue.Enqueue(movement);
-            // A declined or stale transfer consumes no RNG. Both search
-            // and recruitment finish only after the movement/shuffle gates.
+            if (movements.Count != 0) queue.EnqueueBatch(movements);
+            // Exactly one shuffle after the complete reserved batch if at
+            // least one transfer succeeded; none on decline or total failure.
             queue.ScheduleContinuation(_ => new(deckSearchMoved
                 ? [new ShuffleDeckCommand(side), new FinishDeckSearchCommand(side)]
                 : [new FinishDeckSearchCommand(side)]));
@@ -759,10 +778,9 @@ public sealed partial class DemoDuel
             Card[] remaining = duel.decks[summon.Side].Where((_, i) => i != index).ToArray();
             duel.decks[summon.Side].Clear();
             foreach (var other in remaining) duel.decks[summon.Side].Enqueue(other);
-            // P164 is always face-up attack. This is a movement primitive,
-            // not a generic card legality or summon-response resolver.
-            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, false);
-            if (reservedDeckSearch == summon.Source) deckSearchMoved = true;
+            // Position is supplied by the admitted effect. No generic summon response is introduced here.
+            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, summon.FaceDownDefense);
+            if (reservedDeckSearch.Contains(summon.Source)) deckSearchMoved = true;
             return new(CommandOutcome.Applied);
         }
 
@@ -781,7 +799,7 @@ public sealed partial class DemoDuel
             if (reservedDeckSearchOwner != side)
                 return new(CommandOutcome.Rejected, "No matching deck search to finalize.");
             reservedDeckSearchOwner = null;
-            reservedDeckSearch = null;
+            reservedDeckSearch.Clear();
             deckSearchMoved = false;
             duel.BeginNextQueuedDeckSearch();
             return new(CommandOutcome.Applied);
@@ -817,7 +835,7 @@ public sealed partial class DemoDuel
             }
             else return new(CommandOutcome.Rejected, "Unsupported source zone.");
             duel.hands[source.Side].Add(card);
-            if (reservedDeckSearch == source) deckSearchMoved = true;
+            if (reservedDeckSearch.Contains(source)) deckSearchMoved = true;
             // Recovery is not a draw; do not emit the deck-draw event.
             duel.CheckExodia(source.Side);
             return new(CommandOutcome.Applied);
