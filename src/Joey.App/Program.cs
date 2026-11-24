@@ -22,6 +22,10 @@ static partial class Game
     public static int Run(string[] args)
     {
         if (args is ["--check-console-startup"]) return CheckConsoleStartup();
+        if (args.Contains("--inspect-voice-dat") || Option(args,"--review-voice=") is not null)
+            return VoiceAudioReview.Run(Option(args,"--voice-dat="),
+                args.Contains("--inspect-voice-dat"), Option(args,"--review-voice="),
+                args.Contains("--mute-joey"));
         using var resources = new DatGraphics();
         graphics = resources;
         includeUnused = args.Contains("--include-unused");

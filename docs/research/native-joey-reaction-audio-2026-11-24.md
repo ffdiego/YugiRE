@@ -141,3 +141,16 @@ indexadas, portanto não deduzir entrypoints por proximidade.
 Verificar os VAs após ler vtables antes de pedir mais código.
 NativeJoeyCinematicRouting é contrato isolado de decompilação;
 nenhum renderer, player, gate ou badge novo.
+
+## V18.1 — infraestrutura de áudio e revisão isolada (24/11)
+
+SQLite v2 reaberto somente leitura, SHA256 e quick_check conferidos. 005C03D0 verifica enable global e despacha família 1 / 2. 005C0F00 usa low 12 bits e limite 00A53880; 005C1480 usa low 28 bits e limite 00A538A0, devolve a referência do Stream ativo quando já toca a mesma solicitação; senão chama 005C1500 e registra request pendente. 005C1180 conta descritores de stride 16 a partir de 005F0A30 (primeiro _Dummy.wav), com sentinela nula, separado de 005EFD48 (primeiro cursor.wav, Internal). 005C1960 usa parâmetro mínimo 5 e prepara transição a -5000 em unidades DirectSound, mas a cadência não foi confirmada. 005C0F40 converte nível 0..127 em (level*10000)/127-10000; inválido retorna 0. 005C1360/005C13F0 calculam nível Stream com dois produtos/divisões inteiros sucessivos. Não converter estes valores diretamente para ganho linear raylib; o modelo retorna valores raw.
+
+O índice versionado Voice.dat contém 132 entradas, 131 WAVs: 111 Internal, 20 Stream (inclui _dummy.wav). Ordem física NÃO é ordem das tabelas. O roteiro 27 inclui o prefixo Stream e os três métodos acima; confirmar terminador antes de assumir quantidade. NativeWaveInfo interpreta RIFF/WAVE com limites, padding, fmt/data e consistência PCM. ByteRateDurationMilliseconds é estimativa pelo cabeçalho, não a duração x87 de 005C0F80. Não reproduz o walker inseguro do original. NativeAudioRouting isola lookup, parâmetros e volume, sem tocar áudio. Os testes sintéticos incluem RIFF ímpar e inválido, famílias e truncamento.
+
+Comandos de diagnóstico (sem data.dat gráfico):
+
+    dotnet run --project src/Joey.App -- --voice-dat=/path/to/Voice.dat --inspect-voice-dat
+    dotnet run --project src/Joey.App -- --voice-dat=/path/to/Voice.dat --review-voice=joey_01.wav
+
+O primeiro grava apenas metadados/erros em scratch/visual-review/voice-metadata.json; o segundo abre dispositivo de áudio raylib, decodifica WAV Internal original em memória por nome explícito, toca uma vez, libera sound/wave/device. Sem arquivo de áudio extraído, sem janela, sem IDs presumidos, sem gate ou fila. Reprodução limitada a 120s de áudio decodificado e incompatível com --mute-joey. Não toca Stream neste modo. Não há Voice.dat real/dispositivo disponíveis no ambiente do agente; validação de áudio nativo e integração ao duelo continuam pendentes. CI anterior falhou porque Reject captura InvalidDataException, não ArgumentException; teste V31 passou a usar helper local específico, mantendo o contrato do modelo e o Reject compartilhado.

@@ -2,8 +2,16 @@ using Joey.LookAndFeel;
 
 internal static class NativeJoeyCinematicRoutingChecks
 {
-    public static void Run(Action<bool,string> check, Action<Action,string> reject)
+    public static void Run(Action<bool,string> check)
     {
+        // The shared Reject helper accepts InvalidDataException only.
+        // A missing injected RNG sample is an argument error, not corrupt DAT.
+        void RejectArgument(Action action,string name)
+        {
+            try { action(); }
+            catch (ArgumentException) { check(true,name); return; }
+            check(false,name);
+        }
         var r=NativeJoeyCinematicRouting.Summon(true,0x51,2400,1);
         check(r.Kind==NativeJoeySummonKind.Signature&&
             r.SignatureManifest==@"j\bust_up\summon.txt"&&r.ImmediateSound==0x2000000b&&
@@ -20,7 +28,7 @@ internal static class NativeJoeyCinematicRoutingChecks
             "V31: other native event types");
         check(NativeJoeyCinematicRouting.Summon(true,1,1840,1).Kind==NativeJoeySummonKind.None,
             "V31: printed ATK below threshold");
-        reject(()=>NativeJoeyCinematicRouting.Summon(true,1,1850,1),"V31: RNG sample required only for strong branch");
+        RejectArgument(()=>NativeJoeyCinematicRouting.Summon(true,1,1850,1),"V31: RNG sample required only for strong branch");
         var strong=NativeJoeyCinematicRouting.Summon(true,1,1850,1,0);
         check(strong.ReactionNumber==13&&strong.PrimarySound==0x10000028&&
             strong.SecondarySound==0x1000002c&&strong.ImmediateSound==0x2000000c&&strong.UsesPresentationRandom,
@@ -47,7 +55,7 @@ internal static class NativeJoeyCinematicRoutingChecks
             NativeJoeyCinematicRouting.ResultVariant(1000,null)==0&&
             NativeJoeyCinematicRouting.ResultVariant(1005,17)==2,
             "V31: start/result variants, no random for zero divisor");
-        reject(()=>NativeJoeyCinematicRouting.ResultVariant(1005,null),
+        RejectArgument(()=>NativeJoeyCinematicRouting.ResultVariant(1005,null),
             "V31: result RNG sample required for nonzero divisor");
     }
 }
