@@ -1119,7 +1119,8 @@ public sealed partial class DemoDuel
     public NativeAiResult<bool> EquipmentEligibility(int index, int targetPlayer, int targetZone)
     {
         if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count ||
-            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0)
+            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0 ||
+            Hand[index].ClassCode != 22 || Monsters[targetPlayer,targetZone] is not { IsMonster: true })
             return NativeAiResult<bool>.Supported(false);
         return EquipmentRules.Eligibility(Hand[index].Id, DemoEquipmentTarget(targetPlayer, targetZone));
     }
