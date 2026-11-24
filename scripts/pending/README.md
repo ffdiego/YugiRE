@@ -142,3 +142,12 @@ Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22
 - Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
 - Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.
 - Estado: aguardando execução local; classificador testado com fixtures sintéticas, integração .NET ainda não executada. Nunca executar o modo `--taxonomy-input` diretamente ou redirecionar sua saída para arquivo: a descrição deve ficar no pipe privado do classificador.
+
+### 12 — C07: chegada ao cemitério e causa do descarte
+
+- Ambiente: Fedora/Ghidra, projeto Joey original, Python 3 e Ghidra headless. Roteiro 14 reservado em C01 (#66).
+- Comando: `bash scripts/pending/12-graveyard-arrival-ghidra.sh`.
+- Saída privada: `scratch/ghidra-graveyard-arrival-contract.zip`.
+- Questão: callbacks P066/P068/P030 ausentes e argumentos do caminho 00575970 → 005759A0 → 00575AF0; separar custo, descarte adversário e envio direto. Conferir descrições DAT locais também.
+- Encerramento: resolver ou registrar ausência dos callbacks e disassembly dos chamadores; confirmar origem da flag, retorno ao topo e ordem, registrar evidências e limites em C07. Não repetir exportação geral.
+- Estado: aguardando coleta; análise inicial SQLite concluída. Ver [C07](../../docs/cards/c07-graveyard-arrival-effects.md).
