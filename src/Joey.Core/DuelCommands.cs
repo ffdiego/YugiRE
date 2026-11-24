@@ -11,6 +11,11 @@ public readonly record struct CardOccurrenceId(long Value);
 public readonly record struct CardTarget(CardOccurrenceId Occurrence, int Side, DuelZone Zone);
 
 public abstract record DuelCommand(int Side);
+public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) : DuelCommand(Side);
+public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
+internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
 public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one card
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
@@ -79,7 +84,21 @@ internal static class DuelCommandValidation
                 LabDestination(move.Destination, move.Slot, move.FaceDown, move.Defense);
                 if (move.Source.Zone == move.Destination) throw new ArgumentException("Move requires distinct zones.");
                 break;
+            case DeclareDirectAttackCommand attack:
+                Target(attack.Attacker, attack.Side, DuelZone.Monster);
+                break;
+            case DeclareTargetedAttackCommand attack:
+                Target(attack.Attacker, attack.Side, DuelZone.Monster);
+                Target(attack.Defender, 1-attack.Side, DuelZone.Monster);
+                break;
+            case SnapshotBattleRemovalCommand snapshot when snapshot.Role is 0 or 1:
+                Target(snapshot.Target,snapshot.Side,DuelZone.Monster);
+                break;
+            case FinishBattleRemovalCommand finishBattle when finishBattle.Role is 0 or 1:
+                Target(finishBattle.Target,finishBattle.Side,DuelZone.Monster);
+                break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
+            case ChangeBattlePhaseCommand { ExpectedTurn: > 0 }:
             case DrawCommand:
             case FinishFieldRemovalCommand:
                 break;

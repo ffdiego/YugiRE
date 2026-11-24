@@ -80,5 +80,26 @@ class VisualFrameMatrixTests(unittest.TestCase):
         self.assertFalse((self.output / "matrix-report.json").exists())
 
 
+    def test_rejects_outputs_shared_between_pairs(self):
+        first = self.output / "impact" / "report.json"
+        second = self.output / "second" / "report.json"
+        first.parent.mkdir(parents=True)
+        second.parent.mkdir(parents=True)
+        original = b"previous report"
+        first.write_bytes(original)
+        for link in (os.link, os.symlink):
+            with self.subTest(link=link.__name__):
+                link(first, second)
+                self.addCleanup(second.unlink, missing_ok=True)
+                process = self.run_matrix([self.pair, self.pair | {"id": "second"}])
+                self.assertEqual(process.returncode, 2, process.stderr)
+                self.assertIn("Output would overwrite another output", process.stderr)
+                self.assertEqual(first.read_bytes(), original)
+                self.assertEqual(second.read_bytes(), original)
+                self.assertFalse((first.parent / "difference.png").exists())
+                self.assertFalse((self.output / "matrix-report.json").exists())
+                second.unlink()
+
+
 if __name__ == "__main__":
     unittest.main()

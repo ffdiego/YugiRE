@@ -588,7 +588,7 @@
         "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
       ],
       "limitations": [
-        "Native timing and eligibility are not fully verified; Sea Serpent native type code 5 is provisional."
+        "The pinned DAT confirms Sea Serpent type code 5. Native duel timing and eligibility remain pending."
       ]
     },
     {

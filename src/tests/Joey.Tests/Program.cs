@@ -115,6 +115,9 @@ CpuDeckSelectionTests.Run(Check);
 CpuDifficultyProgressionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
 ActionQueueChecks.Run(Check);
+ActionTraceProjectionChecks.Run(Check);
+QueuedDirectAttackChecks.Run(Check);
+QueuedTargetedAttackChecks.Run(Check);
 ActionPresentationGateChecks.Run(Check);
 CommandScopedPresentationChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
@@ -182,6 +185,7 @@ if (args.Length > 0)
         Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
     SummonTests.OperatorTribute(cards, Check);
     NormalMonsterPlayabilityChecks.RunWithCatalog(cards, Check);
+    TypeFieldSpellChecks.RunWithCatalog(cards, Check);
     Check(NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 812)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 363)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 56)) &&
