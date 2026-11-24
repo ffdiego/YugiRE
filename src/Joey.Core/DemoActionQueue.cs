@@ -185,6 +185,8 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case EquipCommand equip:
                     return duel.ApplyQueuedEquipment(equip);
+                case ActivateLifePointSpellCommand lp:
+                    return ActivateLifePointSpell(lp, followups);
                 case ActivateRaigekiCommand activate:
                     return ActivateRaigeki(activate, followups);
                 case PrepareNormalPlacementCommand prepare:
@@ -205,6 +207,8 @@ public sealed partial class DemoDuel
                     return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return SendHandToGraveyard(send.Target, discard: false);
+                case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
+                    return SendSetLifePointSpellToGraveyard(send.Target);
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -214,6 +218,42 @@ public sealed partial class DemoDuel
                 default:
                     return new(CommandOutcome.Rejected, "Command not migrated to DemoDuel.");
             }
+        }
+
+        private CommandResult ActivateLifePointSpell(ActivateLifePointSpellCommand activate, IActionCommandSink followups)
+        {
+            if (followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "LP spell requires an isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out var card))
+                return new(CommandOutcome.Skipped, "LP spell occurrence gone.");
+            if (!duel.CanResolveQueuedLifePointSpell(activate.Source, out var change))
+                return new(CommandOutcome.Rejected, "LP spell no longer legal.");
+            // Legacy order: spend source, then caster LP, then opposing LP.
+            // No mutation in the producer. Each operation has its own gate.
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
+            AddDelta(batch, activate.Side, change.CasterDelta);
+            AddDelta(batch, 1 - activate.Side, change.OpponentDelta);
+            queue.EnqueueBatch(batch);
+            return new(CommandOutcome.Applied);
+        }
+
+        private static void AddDelta(List<DuelCommand> batch, int side, int delta)
+        {
+            if (delta > 0) batch.Add(new HealCommand(side, delta));
+            else if (delta < 0) batch.Add(new DamageCommand(side, -delta));
+        }
+
+        private CommandResult SendSetLifePointSpellToGraveyard(CardTarget target)
+        {
+            if (!duel.TryResolveCardTarget(target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
+            if (card.ClassCode != 22 || !LifePointSpellRules.Supports(card.Id) ||
+                !duel.SpellFaceDown[target.Side, slot] ||
+                duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
+                return new(CommandOutcome.Rejected, "Only unlinked set LP spells are migrated here.");
+            duel.ClearSpellTrapSlot(target.Side, slot);
+            duel.graves[target.Side].Add(card);
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ActivateRaigeki(ActivateRaigekiCommand activate, IActionCommandSink followups)

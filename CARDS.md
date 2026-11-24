@@ -219,6 +219,10 @@ O sandbox permite até um substituto por receita. Goddess with the Third Eye (10
 
 Fusion Gate (1547) é `Done` no sandbox e integra a Alpha. Depois de ser ativada na zona de campo, permite que qualquer lado use o próprio Fusion Deck e materiais em sua Main Phase. A mesma fonte permanece em campo para outras fusões e a confirmação bane os materiais, preservando a limpeza de equipamentos e sem abrir efeitos de cemitério dos materiais. A carta é ativável mesmo sem receita disponível. No executável, `005833D0` distingue a ativação do campo do uso da fusão e consulta `00580600` para este último. `00591739` entra na seleção compartilhada e os ramos `005927F0` e `005928AA` encaminham o banimento. A comparação no Joey original continua pendente. [Campanha estática P265](docs/research/card-static-sweep/06-combate-diferido-e-invocacao.jsonl)
 
+### Magias LP na fila (C12)
+
+As dez magias fixas já Done têm agora caminho opt-in `TryQueueLifePointSpell` para mão/Set, com gasto e mudanças de LP em comandos separados. UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-lp-spells.md). Stim-Pack e Germ Infection têm apenas aritmética estática, não ativação, até fechar A07.
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |
