@@ -28,6 +28,10 @@ Comandos aceitos: `continue o trabalho em <TRILHA>` (o agente escolhe o item) ou
 
 **Colaboração:** uma sessão escritora por vez em `main`; trilhas em paralelo usam branches/worktrees isolados e integram sequencialmente (ver [Colaboração](#colaboração)). ACTIONS é pré-requisito de partes de CARDS e VISUALS; os itens dependentes indicam isso em `Depende de`.
 
+## Badges das três frentes
+
+ACTIONS: marcos A concluídos / marcos A numerados (não porcentagem de opcodes); regenerar `python scripts/publish_actions_progress.py` após mudança na trilha. CARDS: Done+Verified / 771 cartas, `python scripts/publish_playability.py`. VISUALS: Draw implementadas inclusive Partial / Draw identificadas, `python scripts/publish_visual_coverage.py`. Cada métrica tem seu próprio denominador e não é estimativa de esforço restante. O workflow publica os JSONs automaticamente; commitar os gerados atualizados, nunca ajustar percentuais manualmente.
+
 ## Regras de priorização
 
 1. Priorizar o que o jogador consegue **fazer de verdade** no duelo; não medir progresso por número de callbacks mapeados.

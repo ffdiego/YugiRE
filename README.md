@@ -1,7 +1,8 @@
 # YugiRE
 
-[![Cartas jogáveis](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fall-packs.json)](docs/cards/PLAYABILITY.md)
-[![Draw C# (inclusive parciais)](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Fvisual.json)](docs/architecture/VISUAL_COVERAGE.md)
+[![ACTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Factions.json)](PLANS.md#itens-da-trilha-actions)
+[![CARDS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fall-packs.json)](docs/cards/PLAYABILITY.md)
+[![VISUALS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Fvisual.json)](docs/architecture/VISUAL_COVERAGE.md)
 
 
 Engenharia reversa e protótipo de Yu-Gi-Oh! Power of Chaos: Joey the Passion.
@@ -25,13 +26,15 @@ Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-
 O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
 a comparação dinâmica completa de um duelo normal ainda está pendente.
 
-## Progresso de cartas e apresentação
+## Progresso das três frentes
 
-O README apresenta duas métricas independentes: **cartas jogáveis na trilogia**
-(Done+Verified, 771 cartas) e **funções Draw nativas com implementação C#**
-(Partial+Done+Verified, dentre as funções identificadas). A segunda mede
-cobertura de implementação visual, **não fidelidade nativa comprovada**;
-seu denominador pode aumentar com novas descobertas.
+As badges independentes representam [ACTIONS, CARDS e VISUALS](PLANS.md):
+
+- **ACTIONS:** marcos numerados concluídos da trilha A no PLANS.md (checkbox `[x]` e status `Concluído`); mede o roadmap do scheduler, não a porcentagem de opcodes ou regras do motor.
+- **CARDS:** cartas jogáveis na trilogia (Done+Verified, 771 cartas).
+- **VISUALS:** funções Draw nativas com implementação C# (Partial+Done+Verified, dentre as identificadas); mede cobertura de implementação, **não fidelidade nativa comprovada**.
+
+Os denominadores de ACTIONS e VISUALS podem aumentar conforme novos marcos ou rotinas forem identificados. Não comparar as três porcentagens como estimativa de esforço restante.
 [Relatório visual detalhado](docs/architecture/VISUAL_COVERAGE.md).
 
 A métrica de cartas considera a união dos packs (771 registros). Os números

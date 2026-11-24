@@ -34,8 +34,9 @@ Não usar `attributes.json` no lugar de `extracted.json`: o primeiro não conté
 
 ## Badges visíveis no GitHub
 
-O README mostra duas badges dinâmicas via Shields.io, alimentadas pelos arquivos
-`docs/cards/badges/all-packs.json` (771) e `docs/cards/badges/joey.json` (350).
+O README mostra a badge CARDS via Shields.io, alimentada por
+`docs/cards/badges/all-packs.json` (771); o recorte Joey (350) permanece no relatório.
+ACTIONS e VISUALS têm métricas próprias, descritas no README e no PLANS.md.
 O relatório público `docs/cards/PLAYABILITY.md` mostra as categorias e os
 subtipos de monstros. Os valores são reproduzidos pelo comando:
 
