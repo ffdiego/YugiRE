@@ -1,6 +1,6 @@
 # C12 — Destruição de S/T na fila
 
-IDs existentes 671 Harpie's Feather Duster e 1061 Heavy Storm.
+IDs existentes 671 Harpie's Feather Duster (P094) e 1061 Heavy Storm (P141).
 Reutiliza SpellTrapWipeRules e DestroySpellTrapCard. Sem nova coleta.
 Ordem sandbox legada: adversário, depois controlador (apenas Storm);
 slots S/T 0..4 seguidos do FIELD de cada lado. Não confundir com
