@@ -103,7 +103,7 @@ def generated():
     cards, status, subtypes, sources = load()
     scopes = {k: counts(cards, status, subtypes, v) for k, v in SCOPES.items()}
     outputs = {CARDS / "PLAYABILITY.md": render_report(scopes, sources)}
-    for key, title in (("all-packs", "cartas jogáveis"),):
+    for key, title in (("all-packs", "CARDS"),):
         v = scopes[key]
         data = {"schemaVersion": 1, "label": title,
                 "message": f"{v['done']}/{v['total']} ({v['pct']:.2f}%)",

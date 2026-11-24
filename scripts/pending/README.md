@@ -48,15 +48,15 @@ auxiliares de cada entrada; o resumo de card-status ainda
 não registra as colunas. Não deduzi-las só pela dimensão
 do bitmap. Inspecionar o texto antes da integração.
 
-## Protocolo de novas coletas
+## Protocolo de novas coletas — todas as trilhas
 
-Cada novo roteiro deve especificar hipótese, endereços,
-dependências, comando, artefato e critério de encerramento.
+Fila única para ACTIONS (`A##`), CARDS (`C##`) e VISUALS (`V##`), incluindo Windows (execução/Frida/DAT) e Fedora (Ghidra/projeto local). Preservar números e histórico dos scripts 01–10; novos roteiros recebem o próximo número livre, nome descritivo e ID(s) da trilha na ficha. Cada novo roteiro deve especificar hipótese/pergunta, endereços quando aplicáveis, ambiente e dependências, comando reproduzível, artefato privado e critério de encerramento. Antes de preparar coleta, consultar o SQLite mais recente e os bundles já existentes. Enquanto a coleta estiver bloqueada, avançar em outra tarefa.
 O exportador valida SHA-256, usa Ghidra -readOnly com
 rollback e grava sob scratch/. Depois de consumir um bundle,
 registrar conclusões em docs/research e marcar coleta como
-concluída nesta fila. Novas pendências devem corresponder
-a evidências específicas, não reexecutar coletas completas.
+concluída nesta fila. Preferir integrar evidências recuperáveis em nova cópia cumulativa do SQLite, com proveniência, fingerprint, auditoria e verificação de integridade; usar ou ampliar importadores existentes conforme o formato. Capturas/frames incompatíveis permanecem em artefatos privados referenciados. Registrar snapshot de origem e destino, importação concluída ou pendente, sem confundir coleta com implementação. Consultar [guia SQLite](../../docs/research/joey-knowledge-sqlite.md). Novas pendências devem corresponder a evidências específicas, não reexecutar coletas completas.
+
+Ficha mínima para novos scripts: `número | ID da trilha | ambiente | pré-requisitos | comando | saída | pergunta | estado da coleta/importação | referência de conclusão`. Não executar automaticamente.
 
 ## Roteiros de regras de cartas — aguardando coleta
 

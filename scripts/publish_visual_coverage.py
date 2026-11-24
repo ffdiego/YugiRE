@@ -65,8 +65,8 @@ def generated() -> tuple[dict[Path, str], dict[str, int | float]]:
     verified = sum(x["status"] == "Verified" for x in rows)
     percent = round(100 * covered / total, 2) if total else 0.0
     stats = {"covered": covered, "total": total, "verified": verified, "percent": percent}
-    badge = {"schemaVersion": 1, "label": "Draw C# (parciais)",
-             "message": f"{covered}/{total} ({percent:.2f}%)",
+    badge = {"schemaVersion": 1, "label": "VISUALS",
+             "message": f"{covered}/{total} Draw ({percent:.2f}%)",
              "color": "brightgreen" if percent >= 70 else "blue" if percent >= 20 else "orange"}
     tick = chr(96)
     lines = [

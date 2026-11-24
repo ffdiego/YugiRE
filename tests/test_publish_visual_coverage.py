@@ -27,7 +27,8 @@ class VisualCoverageTests(unittest.TestCase):
                 self.assertTrue(path.is_file())
                 self.assertEqual(path.read_text(encoding="utf-8"), expected)
         badge = json.loads(next(x for p, x in outputs.items() if p.name == "visual.json"))
-        self.assertEqual(badge["message"], f"{covered}/{total} ({100 * covered / total:.2f}%)")
+        self.assertEqual(badge["label"], "VISUALS")
+        self.assertEqual(badge["message"], f"{covered}/{total} Draw ({100 * covered / total:.2f}%)")
 
 
 if __name__ == "__main__":

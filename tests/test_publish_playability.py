@@ -52,6 +52,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         one = json.loads(next(content for path, content in files.items()
                               if path.name == "all-packs.json"))
         self.assertEqual(one["schemaVersion"], 1)
+        self.assertEqual(one["label"], "CARDS")
         expected = values["all-packs"]
         self.assertEqual(one["message"],
                          f"{expected['done']}/{expected['total']} ({expected['pct']:.2f}%)")

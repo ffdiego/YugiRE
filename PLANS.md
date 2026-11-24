@@ -1,105 +1,243 @@
 # PLANS.md — YugiRE jogável primeiro
 
-> **Meta:** completar a experiência de *Joey the Passion* em C# com regras reutilizáveis e apresentação clássica, usando o original como **oráculo sob demanda**. Este plano substitui a antiga organização por trilhas de RE rigidamente dependentes. O código e a evidência já obtidos permanecem úteis.
+> **Meta:** completar a experiência de *Joey the Passion* em C# com regras reutilizáveis e apresentação clássica, usando o original como **oráculo sob demanda**. O código e a evidência já obtidos permanecem úteis.
+>
+> **Distribuição de esforço (decisão 23/11/2026):** reimplementação **funcional e rápida** das cartas — boa parte das regras é trivial e não merece validação nativa exaustiva. A fidelidade rigorosa se concentra em dois lugares: a **apresentação visual** (VISUALS) e a **fila de ações** do scheduler nativo (ACTIONS), que é a espinha dorsal que liga regras e visual.
+
+## Trilhas de trabalho (como despachar um agente)
+
+O trabalho está dividido em três trilhas. Cada item tem um ID estável (`A03`, `C07`, `V15`).
+
+| Trilha | Prefixo | Escopo | Exemplo de comando |
+| --- | --- | --- | --- |
+| **ACTIONS** | `A##` | Fila de ações / scheduler no `Joey.Core`, eventos de apresentação, console de duelo, traces comparáveis | "continue o trabalho em ACTIONS" |
+| **CARDS** | `C##` | Regras e efeitos das cartas, cobertura de jogabilidade, manifest | "continue o trabalho em CARDS" |
+| **VISUALS** | `V##` | Fidelidade visual: sprites, coordenadas, timelines, UI, comparação com o original | "continue o trabalho em VISUALS" |
+
+Comandos aceitos: `continue o trabalho em <TRILHA>` (o agente escolhe o item) ou `faça <ID>` (por exemplo, `faça V07`).
+
+**Protocolo do agente:**
+
+1. Ler esta seção, [Espinha dorsal: a fila de ações](#espinha-dorsal-a-fila-de-ações-scheduler) e a trilha pedida.
+2. Escolher o **primeiro item aberto com Status `Pronto`** da trilha (ou o ID citado); um item `Parcial` com próxima fatia executável também pode ser retomado. Respeitar `Depende de`; se estiver bloqueado ou já ocupado, avisar e pegar o próximo item elegível. Antes de editar, conferir PRs/branches ativos e identificar o ID na branch/PR.
+3. Cada item é **uma fatia vertical pequena** (regra/contrato → integração → teste → UI quando houver → `CARDS.md`/manifest quando houver). Nada de campanhas de validação antes de uma carta simples.
+4. Ao concluir: marcar `[x]`, atualizar o Status, registrar evidência e limitações. Achados novos viram **novos IDs no fim da trilha** — nunca reutilizar nem renumerar IDs (commits e docs citam `V07`, `C12`...).
+5. Relatório curto ao final: comportamento entregue, testes executados, limitações reais, próximo ID sugerido.
+
+**Status:** `Pronto` (pode começar), `Em andamento` (agente/branch identificados), `Bloqueado por X`, `Aguardando evidência` (depende de extração nativa em `scripts/pending/`), `Parcial` (existe implementação, faltam critérios), `Concluído` (critérios do item satisfeitos). Um item `Parcial` é elegível se houver uma próxima fatia executável sem dependência bloqueante.
+
+**Colaboração:** uma sessão escritora por vez em `main`; trilhas em paralelo usam branches/worktrees isolados e integram sequencialmente (ver [Colaboração](#colaboração)). ACTIONS é pré-requisito de partes de CARDS e VISUALS; os itens dependentes indicam isso em `Depende de`.
+
+## Badges das três frentes
+
+ACTIONS: marcos A concluídos / marcos A numerados (não porcentagem de opcodes); regenerar `python scripts/publish_actions_progress.py` após mudança na trilha. CARDS: Done+Verified / 771 cartas, `python scripts/publish_playability.py`. VISUALS: Draw implementadas inclusive Partial / Draw identificadas, `python scripts/publish_visual_coverage.py`. Cada métrica tem seu próprio denominador e não é estimativa de esforço restante. O workflow publica os JSONs automaticamente; commitar os gerados atualizados, nunca ajustar percentuais manualmente.
 
 ## Regras de priorização
 
 1. Priorizar o que o jogador consegue **fazer de verdade** no duelo; não medir progresso por número de callbacks mapeados.
 2. Entregar fatias verticais pequenas: mecânica + teste + integração de ativação/turno + `CARDS.md`. Quando necessário, UI/feedback mínimo.
-3. Para a maioria das cartas, começar pela descrição do DAT local e agrupamentos de perfil, não pela decompilação. Investigar nativamente apenas ambiguidades com consequência observável.
+3. Para a maioria das cartas, começar pela descrição do DAT local e agrupamentos de perfil, não pela decompilação. Investigar nativamente apenas ambiguidades com consequência observável. **Regras simples não pedem validação excessiva.**
 4. Testes de `Joey.Tests` liberam `Done` **no escopo descrito**. Traces nativos permitem `Verified` quando comparem o **mesmo comportamento**, não por mera presença de um opcode.
-5. Manter `Joey.Core` independente de Frida e de tempo de animação; não apagar o laboratório legado.
+5. Manter `Joey.Core` independente de Frida e de tempo de animação; não apagar o laboratório legado. Independência de **tempo** não significa independência de **ordem**: a ordem e a granularidade das ações seguem a fila nativa (ver ACTIONS).
 6. Para **todos os elementos visuais**, a meta é reproduzir coordenadas, dimensões, orientação, recursos, composição, contadores e duração **do Joey original**, mesmo com código de renderização e scheduler C# diferentes. A análise estática recupera parâmetros; vídeo e capturas comparam frames. Consultar [meta visual em pixels](docs/architecture/visual-fidelity-goal.md). Uma aproximação é uma pendência, não o contrato final.
-
 7. Os recursos de apresentação devem ser lidos do **`data.dat` original em runtime**; caches em memória são permitidos, mas a alpha fiel não deve usar sprites temporários/placeholders como aparência final. As animações devem preservar trocas de variante e quadros intermediários (ex.: espada inteira/espada aparentemente inserida na carta), não apenas posição inicial/final. Falta de recurso ou transição não investigada deve ser documentada e visível para revisão.
-
 8. **Modo visual limpo obrigatório:** o modo fiel parte com overlays de diagnóstico desativados. Quando os overlays estiverem ativos, disponibilizar botão clicável `Ocultar debug`, atalho `F3` e reativação pelo menu; controles essenciais de jogo não desaparecem junto com o debug. Texto provisório, contadores, FPS e botões auxiliares devem estar em camada distinta, sem modificar a geometria/timeline da cena.
 9. Revisar sobreposição e legibilidade da Alpha em 800×600 com capturas de modo limpo (sem debug) e modo diagnóstico; verificar HUD, mão, cartas, números, fases, ícones e cliques, sem cobrir sprites nativos por acidente.
+10. **Melhorias ficam para depois da validação.** Liberar resolução, animações suaves, snapshots/undo e outras evoluções não entram agora; só depois que o código estiver validado contra o original. Evitar generalizações e arquitetura além do que o item em andamento exige.
 
-## Arquitetura-alvo (propostas, não funcionalidades já existentes)
+## Espinha dorsal: a fila de ações (scheduler)
 
-- **Cálculo de atributos efetivos** a partir do estado: bases, magia de campo, equipamento, efeitos contínuos e temporários. Evitar aplicar bônus permanentes ao valor base.
-- **Efeitos declarativos simples** para dano/cura, compra/descarte, busca, destruição, retorno e mudanças de posição.
-- **Eventos de duelo/janelas de resposta** (futuros): summon, flip, ataque, dano, destruição, cemitério e transição de fase. Separar gatilho, condição, custo, alvo e resolução.
-- **Eventos de apresentação** (futuros): `Joey.Core` emite consequências de estado; `Joey.App` anima sem alterar a regra.
-- **Testes por cenário**: fixtures C# baratos; quando houver divergência real, executar uma captura curta com decks e seed reproduzíveis.
+### Por que importa
 
-## Entregas sugeridas
+No Joey original, **os comandos examinados de mudanças visíveis do duelo passam por uma fila**, com um comando ativo por vez e gates de apresentação. Generalizar esse modelo para as mudanças observáveis é a proposta do C#; a cobertura de todos os caminhos nativos ainda não foi demonstrada. É isso que garante que comprar uma carta, mandar mão → cemitério ou destruir três monstros aconteçam de forma visível e sequencial, na ordem certa e com a cadência do original.
 
-### Inventário e porcentagem de jogabilidade
+O estado atual do C# **não segue esse modelo**:
 
-- [x] Criar manifest por resource ID com status e famílias de efeito, separado do registry legado de RE.
-- [x] Criar `scripts/card_playability.py` para ler `data.dat` com Joey.Coverage, filtrar as 771 cartas dos três packs ou 350 de Joey, separar Monster/Spell/Trap e produzir CSV/JSON/Markdown com porcentagens.
-- [x] Executar no DAT original local: 771 registros nos packs, 350 apenas Joey. Snapshot de grupos e badges sem texto/arte original versionados.
-- [x] Classificar os 499 monstros por correspondência de nomes públicos e aliases históricos: 264 Normal, 193 Effect, 34 Fusion, 8 Ritual. Fonte não substitui validação da categoria do DAT.
-- [x] Publicar badge da trilogia e do Joey no README e relatório de porcentagens atualizados pelo GitHub Actions após edições do manifest.
-- [x] Resolver os 87 nomes antes não classificados usando tipos públicos, renomeações documentadas e revisão de conflitos; manter validação de categoria com DAT como etapa adicional.
-- [x] Cobrir 264 resource IDs Normal com a regra genérica em C# (invocação, tributos, set, ataque), cenários sintéticos por ID e teste opcional com registros reais do DAT.
-- [ ] Rodar `dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat` no Windows para conferir todos os 264 registros Normal usando as propriedades nativas. Divergências de categoria devem ser tratadas antes de elevar paridade.
-- [ ] Iniciar efeitos FLIP reutilizáveis para os 193 monstros de efeito (ex.: Man-Eater Bug, Morphing Jar).
-- [ ] Expandir a taxonomia para Normal/Effect/Fusion/Ritual, compra, destruição, FLIP, cemitério, negação e afins a partir dos textos locais, sem marcar como Done por inferência.
-- [ ] Atualizar o manifest após cada implementação, com evidência e testes de cenário.
+- `DemoDuel` (`Demo.cs`, mais de 2.000 linhas) resolve as regras diretamente e bloqueia ações com vários campos de estado pendente (`ActionsBlocked` combina nove condições: sete campos `Pending*`, `GameOver` e um flag de remoção adiada). Existe uma fila apenas para decisões de efeito (`queuedEffectDecisions`), não para ações.
+- A apresentação vive em outra fila independente (`PresentationSequence` no `Joey.LookAndFeel`), que "o Core nunca espera".
+- Consequência: a ordem e a granularidade das ações podem divergir do original, e cada carta nova implementada fora da fila aumenta a **dívida de migração** (ver `C12`).
 
-### Iteração A — tornar magias e equipamentos jogáveis
+### O que a evidência já mostra
 
-- [x] Integrar os cinco IDs de dano direto (`P045`) e cinco magias de recuperação de LP (338–341, 1315) em um fluxo único de ativação da mão/set; testes sintéticos para ambos os lados, LP, descarte e falhas atômicas. Escopo: **sandbox C#**, sem correntes/negação nativa.
-- [x] Introduzir zona FIELD e Sogen para Warrior (classe15), depois estender a Beast-Warrior (classe12, hipótese textual), com ativação mão/set, troca de campo, stats dinâmicos, equipamento, UI e testes. Paridade nativa geral permanece pendente.
-- [x] Expandir `P036` com as seis magias por atributo (Gaia Power, Umiiruka, Molten Destruction, Rising Air Current, Luminous Spark, Mystic Plasma Zone), compartilhando a regra declarativa +500 ATK/-400 DEF, integração na zona FIELD e testes de combate/equipamento.
-- [x] Completar Forest, Wasteland, Mountain, Umi, Yami e Chorus of Sanctuary em P036, com tabela por tipos (incluindo bônus negativos), regra por posição e testes de duelos; seis nomes/typeCode documentados. Sogen agora contempla Beast-Warrior no sandbox.
-- [ ] Confirmar Sea Serpent classCode=5 com o DAT completo e testar manualmente a interface/um duelo real no Windows. Não promover P036 a Verified sem comparação nativa.
-- [ ] Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos atualmente modelados. O perfil `P025` tem 41 callbacks catalogados; **não assumir** que 41 equipamentos já tenham a mesma regra.
-- [ ] Incorporar curas/danos adicionais em tabelas de efeitos, sem prometer tamanho de lote antes de confirmar o catálogo original.
+Fonte: [`docs/research/native-action-scheduler.md`](docs/research/native-action-scheduler.md) (análise estática; `joey_pc.exe`, base `00400000`). Itens marcados como *hipótese* **não** estão confirmados.
 
-### Iteração B — eventos e interações
+- **A engine de regras roda antes de Update/Draw dos objetos visuais** em cada frame da cena (`0044DD00` → `005C0000` → `005BC700`; Update `0045D040`, Draw `0045D170`). A cena continua atualizando e desenhando enquanto os gates impedem o avanço das regras.
+- **Dois gates:** um de apresentação **antes** da fila (`005BC740` → `005BDC40` → `0040CF20`) e outro **dentro** de cada comando ativo (bit `0x4000` do estado do handler, mantido até os objetos visuais ficarem livres — consulta `vtable[+4]` dos objetos da cena, p.ex. `004188B0` enquanto a carta se move).
+- **Fila:** buffer de 256 registros de 8 bytes (`00A550A8`). Cada registro: opcode nos 12 bits baixos, lado no bit 15 e três argumentos de 16 bits. Produtor `005B9170`; consumidor `005B9CA0` retira da frente; handler pelas tabelas `005B9AEC`/`005B9838`.
+- **No máximo um comando novo por chamada do consumidor**, que roda no máximo uma vez por `005BC700`. Alguns comandos exigem vários ticks.
+- **Produção por continuação**, sem recursão: resolução de efeito (`005BC620` → `005BBE40` → `005BB720`) e janelas de decisão (`005BC9B0`) deixam trabalho na fila para outra passagem. Vários registros podem sair de uma mesma jogada.
+- **Opcodes já observados:** `CE` invocação normal, `CF` magia colocada, `72`/`1E` brilho de ativação, `43` dano/LP, `57` tributo, `8E` descarte como custo, `B1` (ver o documento para argumentos).
+- **Em aberto:** a chamada indireta superior que liga o laço da aplicação (`00410B50`) à instância da cena; o índice da fase exibida ligado às tabelas de turno (`005EFB78/005EFB94`); o momento exato da mutação de estado dentro de cada subestado de comando.
 
-- [ ] Primitivos de compra, descarte, destruição e movimentação entre zonas.
-- [x] Primeira família `OnFlip` jogável: Man-Eater Bug e Morphing Jar, com flip summon, revelação durante batalha, seleção de alvo, suspensão/continuação de combate, descarte e compra das duas mãos; testes + UI local.
-- [x] Implementar Penguin Soldier (601, pack Joey): 0–2 alvos, auto-retorno apenas se não marcado para destruição em batalha, danos antes do FLIP, hook de revelação por efeito, interface e testes.
-- [x] Implementar Hane-Hane (540, pack Yugi): seleção obrigatória de um único alvo, fallback sem alvos, auto-retorno após Flip Summon/sobrevivência, e restrição na destruição de batalha; regressões e UI.
-- [x] Morphing Jar #2 (1163, pack Joey) no sandbox: shuffle determinístico dos Main Decks, quota de escavação distinta por jogador, especiais face-down e descarte dos inválidos; defender já condenado em batalha fica no campo até o cemitério, não volta ao deck.
-- [ ] Ampliar Morphing Jar #2 para Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 monstros invocáveis; não declarar paridade nativa até medir callbacks P182 no Windows.
-- [ ] **Próximo grupo — seleção de cartas pelo efeito (UI do Joey):** investigar a tela nativa de seleção e construir um seletor genérico de origem/destino/filtragem no Core + janela raylib. Começar por Magician of Faith (427) e Mask of Darkness (101), ambos P018, FLIP que recupera Magia/Armadilha do cemitério. Depois Sangan (47)/Witch of the Black Forest (573), ambos P006, que buscam monstros no deck ao serem enviados ao cemitério; e família Mystic Tomato (1123)/Giant Rat (1108)/Shining Angel (1117), P164, disparada após destruição em batalha. **Não rotular esses dois últimos grupos como FLIP.**
-- [ ] Refinar resolução FLIP: janelas de resposta, negadores, deck-out nativo e mais gatilhos sob demanda.
-- [ ] Gatilhos do cemitério/batalha, depois armadilhas comuns (Trap Hole, Mirror Force) e correntes/respostas, sem fingir que uma fila simples cobre todos os casos.
+### Invariantes que o C# deve preservar (contrato proposto)
 
-### Iteração C — rituais, fusões, casos especiais
+Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão marcados para confirmação em `A01`.
 
-- [ ] Aproveitar o catálogo local `docs/evidence/ritual-rules-catalog.json` como ponto de partida para `P269`; executar pelo menos um cenário jogável ponta a ponta antes de ampliar.
-- [ ] Fusões com receitas, materiais e zona apropriada; conferir restrições da versão Joey.
-- [ ] Casos emblemáticos: Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
+1. Toda mudança de estado **observável** (comprar, invocar, setar, destruir, mão/campo → cemitério, dano/cura, virar, mudar posição) é um **comando tipado** na fila. Regras não movem cartas entre zonas fora da execução de um comando.
+2. **Um comando ativo por vez.** O próximo só é retirado depois que o ativo termina (incluindo o gate visual).
+3. **Efeito com vários eventos enfileira um comando por evento**, cada um executado isoladamente (ex.: destruir 3 monstros = 3 comandos de destruição em sequência, cada um visível).
+4. **Nenhuma ação é invisível.** Não existe "teletransporte" de estado só para economizar animação; perfis Fast/Instant (`Joey.LookAndFeel`) encurtam a duração, mas **não** mudam a ordem nem a quantidade de comandos.
+5. **Continuações:** efeitos que dependem do resultado de um comando, ou de uma escolha do jogador, retomam depois, via nova passagem — sem recursão e sem resolver tudo em um passo.
+6. **O gate de apresentação é injetável.** O `Joey.Core` define comandos e espera uma liberação; o `Joey.App` libera quando a animação termina; modo headless/IA vs IA libera na hora. **A mesma sequência de comandos nos dois casos.**
+7. **Log de comandos comparável com o trace nativo** (opcode, lado, argumentos), para comparar duelos entre C# e Joey.
+8. *(hipótese, confirmar em `A01`)* O estado muda **na execução** do comando, não no enfileiramento; a granularidade dos opcodes C# pode ser mais grossa que a nativa quando o intermediário não for observável.
 
-### Iteração D — aparência e experiência
+### Itens da trilha ACTIONS
 
-**Método de trabalho para esta trilha (decisão 22/11/2026): assembly-first.** O mantenedor aponta diferenças visuais, e o agente realiza a investigação de `joey_pc.exe` antes de escolher sprites, coordenadas, cores ou timing. Capturas são oráculos de validação, não substitutos da análise da rotina. Registrar endereços, ramificações de estado, argumentos, recursos, grau de certeza e cenários de teste; deixar `Pending` quando o assembly não estiver esclarecido. Detalhes: [pendências assembly-first](docs/research/visual-assembly-first-backlog-2026-11-22.md) e [instruções aos agentes](AGENTS.md#política-obrigatória-engenharia-reversa-primeiro-para-apresentação).
+- [ ] **A01 — Consolidar o contrato do scheduler.** Status: `Pronto`.
+  Transformar `native-action-scheduler.md` em `docs/architecture/action-queue.md`: máquina de estados do comando (estágios 0/1/2), gates, formato do registro, tabela opcode → comando C# (começar por `CE`, `CF`, `72/1E`, `43`, `57`, `8E`, `B1`), lista de invariantes com grau de certeza (`assembly confirmado`/`observado`/`hipótese`). Fechar ou registrar como aberta cada hipótese acima. Sem implementar ainda.
+  *Pronto quando:* documento publicado, cada invariante com evidência ou marcada como hipótese; lista de opcodes de duelo com semântica conhecida ou `Pending`.
+- [ ] **A02 — `ActionQueue` e comandos tipados no `Joey.Core`.** Status: `Bloqueado por A01`.
+  Fila FIFO, comando ativo único, subestados, continuações e gate de conclusão injetável (`IPresentationGate`). Comandos iniciais: `Draw`, `Summon`, `Set`, `SendToGraveyard`, `Discard`, `Destroy`, `Damage`, `Heal`, `Flip`, `ChangePosition`. Reaproveitar `queuedEffectDecisions` como caso de continuação por decisão.
+  *Pronto quando:* testes de sequência reproduzem as invariantes 1–6 (ordem, um por vez, destruir 3 = 3 comandos, headless x com gate resultam na **mesma** lista de comandos).
+- [ ] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Bloqueado por A02`.
+  O comando ativo expõe a apresentação que precisa terminar; `Joey.LookAndFeel` consome o comando (não uma lista paralela) e sinaliza o gate. Substituir `PresentationSequence` paralela pela leitura dos comandos. Perfis Classic/Fast/Silent/Instant mantêm ordem e contagem.
+  *Pronto quando:* a prévia de ativação e uma invocação normal rodam guiadas pela fila, sem tempo no Core.
+- [ ] **A04 — Console de duelo no `Joey.App`.** Status: `Bloqueado por A02`.
+  Modo console que **enfileira os mesmos comandos que as cartas usarão**: spawnar carta (mão/campo/deck/cemitério), mover entre zonas, comprar, invocar/setar, destruir, mudar LP, avançar fase, forçar lado. Os nomes devem espelhar o console nativo de `native_hooks` (`draw N [lado]`, `damage N [lado]`, `state`, `diff`) para rodar o **mesmo roteiro** nos dois lados e comparar. Uso principal: implementar e depurar cartas do zero apenas por essas interfaces, com feedback visual imediato.
+  **Contrato do console:** jogador, CPU, cartas, testes, scripts e console são produtores da mesma API de comandos tipados do Core. A origem pode mudar a autorização/admissão (jogadas legais vs. operações privilegiadas de laboratório), nunca o executor, os gatilhos, a ordem ou a apresentação de um comando equivalente. `draw`, `destroy`, `damage`, `heal`, `move` etc. são propostas de interface textual; não presumir que todos já existem no console nativo. Resolver a identidade da ocorrência e revalidar na execução; distinguir destruir, descartar e enviar ao cemitério, mesmo quando o destino coincide. `spawn`/forçar fase/lado são comandos explícitos de laboratório, não mutações ocultas nem jogadas legais. Consultas `state`/`diff` são somente leitura. O parser/runner deve ser reutilizável sem raylib (scripts/testes/headless); o App é um frontend opcional. Nunca contornar a fila nem conceder privilégios de debug ao jogador/CPU.
+  *Pronto quando:* um roteiro de compra, destruição e LP é executável interativamente e headless, gera os mesmos comandos/eventos/estado final sob as mesmas condições, e cada ação é animada no App. `state`/`diff` comparáveis ao nativo para operações suportadas; testar admissões inválidas e gatilhos normais de destruição.
+- [ ] **A05 — Trace de comandos comparável.** Status: `Bloqueado por A02`.
+  Exportar o log da fila C# no mesmo formato dos registros nativos (opcode, lado, argumentos) e um comparador contra capturas do `yugilab`. Começar por invocação normal (já existem fixtures parciais) e dano/cura.
+  *Pronto quando:* um roteiro curto (draw, invocar, atacar) gera listas comparáveis e as divergências saem em relatório.
+- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Bloqueado por A02`.
+  Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
+  *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
+- [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
+  Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em `A01`.
+- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Bloqueado por A02`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
+  Novo assembly com as definições de cartas por resource ID e as famílias de efeito. Dependências: `Joey.Cards` → `Joey.Core`, nunca o contrário; `Joey.App` monta Core + Cards + LookAndFeel. O Core fica com o que vale para qualquer duelo (fases, batalha, invocação, a fila e `EffectContext`); o catálogo e o console (`A04`) criam cartas por resource ID a partir de `Joey.Cards`.
+  **`EffectContext`** expõe primitivos pequenos e combináveis (`Destroy(filtro)`, `Draw`, `Damage`, `Heal`, `Choose`, `Move`...), cada um **enfileirando comandos**; não muta o estado diretamente (invariante 1).
+  **Açúcar para cartas triviais:** helpers como `DestroyMonsters(Side)` são só açúcar sobre `Destroy(filtro)`. Eles tiram uma foto dos alvos na resolução e enfileiram **um comando `Destroy` por monstro**; um comando cujo alvo já saiu do campo quando chega a vez é descartado. Ex.: Raigeki = `DestroyMonsters(Opponent)`; Dark Hole = `DestroyMonsters(Opponent)` + `DestroyMonsters(Own)`. A **ordem** entre lados e zonas é observável e deve ser conferida no original antes de ser fixada (hipótese até medir).
+  **Efeitos com continuação** (escolha de alvo, gatilhos após a destruição, janelas de resposta) se expressam como passos esperados (`IEnumerable<Step>`; **sem snapshots por ora** — o replay vem de `seed + log de entradas`) e retomam em nova passagem da fila, sem recursão.
+  Migrar para `Joey.Cards` as regras declarativas existentes (`DirectDamageRules`, equipamentos, campo etc.) junto com `C12`.
+  *Pronto quando:* Raigeki, Dark Hole e uma carta com continuação (ex.: escolha + destruição) vivem em `Joey.Cards`, passam pelo console (`A04`) e produzem a mesma lista de comandos com e sem gate visual.
 
-**Pendências visuais novas ou refinadas, em ordem sugerida:**
+## Trilha CARDS
 
-- [ ] **Janela de seleção e fusão, foco de cobertura:** `NativeSelectionWindow` já contém cinco slots/scroll, entrada e saída, índice correto e interpolação confirmados. Bundle 01 recebido: âncora 525, gerador x87 (pi/256 e multiplicação final ainda não medida), Update/Draw das duas fusões, fases, recursos e clocks 4/8 com espera no segundo. **Coleta concluída**; falta tabela C runtime, constantes/tabela de seletores e DAT, integração e validação. Ver [contrato consolidado](docs/research/native-selection-window-fusion-2026-11-22.md) e [handoff](docs/research/visual-contract-bundles-2026-11-23.md). Não alterar badge só pelo conhecimento.
-- [ ] **LP flutuante por origem do dano/cura:** remover a escolha universal de ponto médio entre as fileiras. Rastrear `00414110` (combate), `00408470` (caso geral), `0047C4F0` (registro do delta/identificador), `0047C660` (Draw) e `004806F0` (números) até a passagem real de X/Y/slot. Comparar dano de batalha sobre monstro, dano direto/cura sobre a região de magias, ambos os lados, ataque direto e alvo face-down. **Nada de ajustar pela captura sem entender a seleção nativa de âncora.**
-- [ ] **Aviso de mudança de jogador/turno:** investigar os recursos `j/duel/phase_name/nex_e_b*.yga` / `nex_e_r*.yga`, transição e ordem relativas aos banners de fase. Seguir `00480B40`/`00480BC0`, `00480C20`, `00480C60` e seus chamadores antes de implementar o texto e a timeline no cliente.
-- [ ] **ATK/DEF em monstros no campo:** BMPs originais, separador, variantes normal/aumentado/reduzido, `0xA0/0x100` e tween 7/8 com relógio de apresentação já ligados. Gate nativo de `00418EF0 → 004194D0` modelado para movimento (`0x100`), saída (estado 5), zona, lado, face-up (`0x8000`) e identidade do ocupante (`0056DD30`); renderer e JSON F12 compartilham a visibilidade, evitando revelar atributos da CPU antes do contato da espada. Status overlays `00419B70/0041A3B0/0041A070` não são números, continuam pendentes. **Partial, não Verified:** faltam âncoras de pixels, blending, validação e sprites dos indicadores adicionais. Ver [pesquisa](docs/research/native-field-attributes-2026-11-22.md) ; bundle 03 recebido e absorvido, não repetir coleta.
-- [ ] **Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`):** bundle 17/17 funções e 12/12 janelas recebido em 23/11. `NativeStatusDrawLayout` implementa a geometria de sprites 4..9: miniatura, quadros do atlas, âncoras A/B, espelhamento tipo/atributo e flashes 10..13; testes sintéticos. `NativeCardStatusDigits` usa atlas amarelo original. **Draw Pending:** faltam metadados reais de `card.txt`, semântica das flags e integração/composição. [Contrato de assembly](docs/research/native-card-status-digits-2026-11-22.md).
-- [ ] **Cursor `Attack` na Battle Phase:** a nuvem de ataque original já aparece no hover do nosso monstro quando `Joey.Core.CanAttack(zone)` autoriza, com testes de estados negativos e sem segundo cursor; **resta validar no dispatcher original** a precedência, o hotspot e os casos de seleção de alvo. Não confundir o cursor com a espada no campo.
-- [ ] **Cursores `SetAttack`/`SetDefense`:** recuperar as condições/alternância nativas de mudança de posição e as variantes `cursor_e_setatk.yga`/`cursor_e_setdef.yga`; não exibir ação ilegal nem assumir que os nomes do DAT provam o fluxo.
-- [ ] **Corrente desativada:** bundle 02 concluído; opcode 0x72, gates, descritor e rotação 0x4000, 24 updates e seis texturas inteiras documentados. Falta disable.txt real, semântica do comando e integração. [Contrato](docs/research/native-chain-disabled-2026-11-22.md).
+> Para a maioria das cartas basta o texto do DAT local + a família mecânica. Não esperar captura Windows. Efeitos novos devem **emitir comandos** (ACTIONS) assim que `A02` existir; até lá, seguir `DemoDuel` e registrar a carta em `C12` para migração.
+
+### Concluído (histórico, sem ID)
+
+- [x] Manifest por resource ID com status e famílias de efeito, separado do registry legado de RE.
+- [x] `scripts/card_playability.py` lê `data.dat` com Joey.Coverage, filtra as 771 cartas dos três packs ou 350 de Joey, separa Monster/Spell/Trap e produz CSV/JSON/Markdown com porcentagens.
+- [x] Executado no DAT original local: 771 registros nos packs, 350 apenas Joey. Snapshot de grupos e badges sem texto/arte original versionados.
+- [x] Classificação dos 499 monstros por nomes públicos e aliases: 264 Normal, 193 Effect, 34 Fusion, 8 Ritual; 87 nomes antes não classificados resolvidos. Fonte não substitui validação da categoria do DAT.
+- [x] Badge da trilogia e do Joey no README e relatório de porcentagens atualizados pelo GitHub Actions após edições do manifest.
+- [x] 264 resource IDs Normal cobertos pela regra genérica em C# (invocação, tributos, set, ataque), com cenários sintéticos por ID e teste opcional com registros reais do DAT.
+- [x] Magias de dano direto `P045` e cinco de recuperação de LP (338–341, 1315) em fluxo único de ativação da mão/set. Escopo: sandbox C#, sem correntes/negação nativa.
+- [x] Zona FIELD, Sogen (Warrior, depois Beast-Warrior), seis magias por atributo e Forest, Wasteland, Mountain, Umi, Yami e Chorus of Sanctuary em `P036` (tabela por tipos, bônus negativos, regra por posição).
+- [x] Família `OnFlip`: Man-Eater Bug, Morphing Jar, Penguin Soldier (601), Hane-Hane (540) e Morphing Jar #2 (1163) no sandbox.
+- [x] Seletor genérico de cartas pelo efeito (`CardSelectionRules`) com UI raylib: P018 (Magician of Faith 427, Mask of Darkness 101), P006 (Sangan 47, Witch of the Black Forest 573), P164 (Mystic Tomato 1123, Giant Rat 1108, Shining Angel 1117 etc.), P168/P169, P165, P082/P088. **Não rotular P006/P164 como FLIP.**
+- [x] Armadilhas e magias de destruição: Trap Hole/Torrential Tribute (P196/P038), Magic Cylinder/Negate Attack (P200/P192), Mirror Force (P201), Dark Hole/Raigeki (P037/P039), destruição por tipo (P092); fusão por receita para 31 resultados dos packs.
+
+- [x] Lotes 6–14 integrados pelo [PR #62](https://github.com/ffdiego/YugiRE/pull/62), commit `97ec005`: Dream Clown, Bubonic Vermin, Greenkappa, Tornado Bird, Lady Assailant of Flames, Fire Sorcerer, The Immortal of Thunder e Dimensional Warrior Done no sandbox; Royal Command e Dark Necrofear Partial; Prohibition Pending. Baseline histórica: 383/771 e 119/350 Done+Verified, 9 Partial e 0 Verified. Consultar [consolidação](docs/research/card-rules-consolidation-lotes-6-14.md), manifesto atual e `scripts/pending/README.md` (05–10 ainda não coletados).
+
+### Itens abertos
+
+- [ ] **C01 — Taxonomia de efeitos por texto local.** Status: `Pronto`.
+  Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`.
+- [ ] **C02 — Lotes triviais por família.** Status: `Bloqueado por C01`.
+  Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
+- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Pronto`.
+  Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack.
+- [ ] **C04 — Equipamentos `P025`.** Status: `Pronto`.
+  Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra.
+- [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Pronto`.
+  Sem prometer tamanho de lote antes de confirmar o catálogo original.
+- [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Bloqueado por A02` (armadilhas simples sem corrente podem seguir antes).
+  As cinco já feitas reaproveitam janelas de Summon/ataque. Faltam as outras, Special Summon como gatilho e correntes/respostas, **sem fingir que uma fila simples cobre todos os casos**.
+- [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Pronto`.
+  Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda.
+- [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`.
+  Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 monstros invocáveis. Não declarar paridade nativa até medir callbacks P182 no Windows.
+- [ ] **C09 — Rituais (`P269`).** Status: `Pronto`.
+  Partir de `docs/evidence/ritual-rules-catalog.json`; executar **pelo menos um** cenário ponta a ponta antes de ampliar.
+- [ ] **C10 — Fusões restantes.** Status: `Pronto`.
+  Respostas a Special Summon e efeitos próprios de três resultados ainda Partial; conferir restrições da versão Joey.
+- [ ] **C11 — Casos emblemáticos.** Status: `Pronto`.
+  Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
+- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Bloqueado por A02/A08`.
+  Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos (invariantes 1–5). Registrar aqui as cartas implementadas fora da fila enquanto `A02` não existir. Dívida inicial inclui as famílias dos lotes 6–14 (ver nota de consolidação abaixo), além das famílias listadas neste item.
+- [ ] **C13 — Conferir os 264 Normal com o DAT real (Windows).** Status: `Aguardando evidência`.
+  `dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat`. Divergências de categoria devem ser tratadas antes de elevar paridade.
+- [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Aguardando evidência`.
+  Não promover P036 a `Verified` sem comparação nativa.
+- [ ] **C15 — Fatias `Verified`.** Status: `Bloqueado por A05`.
+  Uma carta por família comparada com captura do original (mesmo roteiro, mesmos comandos). Baixa prioridade frente a `C02`/`C03`.
+
+- [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Pronto` para contrato e fatia de seleção; coordenar alterações em `DemoDuel` com ACTIONS.
+  Reutilizar `GraveyardBanishSummonRules`, seleção genérica e zona de banimento para Dark Necrofear (P252), Soul of Purity and Light, Spirit of Flames, Aqua Spirit, Garuda the Wind Spirit e demais membros confirmados da família. Validar filtro, quantidade, identidade, custo atômico, gates e seleção UI/CPU; não declarar implementados gates ainda desconhecidos. [Contrato P252](docs/research/p252-necrofear-control-contract.md). Se A02/A08 já estiverem disponíveis, usar a API de comandos; caso contrário registrar migração em C12. Controle na End Phase fica separado.
+- [ ] **C17 — Controle de Dark Necrofear e Prohibition.** Status: `Aguardando evidência`.
+  Pendências distintas: identidade/owner/controller, saída do campo, vínculo e End Phase de P252 (roteiro 10); declaração e efetividade de Prohibition (roteiro 06). Dividir em novos IDs quando houver evidência suficiente. Royal Command permanece Partial; sua cadeia pertence a C06/C07. Não implementar por aproximação.
+
+## Trilha VISUALS
+
+> **Método (decisão 22/11/2026): assembly-first.** O mantenedor aponta diferenças visuais; o agente investiga `joey_pc.exe` antes de escolher sprites, coordenadas, cores ou timing. Capturas são oráculos de validação, não substitutos da análise da rotina. Registrar endereços, ramificações de estado, argumentos, recursos, grau de certeza e cenários de teste; deixar `Pending` quando o assembly não estiver esclarecido. Detalhes: [pendências assembly-first](docs/research/visual-assembly-first-backlog-2026-11-22.md) e [instruções aos agentes](AGENTS.md#política-obrigatória-engenharia-reversa-primeiro-para-apresentação).
+>
+> **Apresentações de ações do duelo** devem se ligar à fila em `A03`, respeitando os gates e a ordem nativa; nem toda rotina Draw representa um comando (HUD, hover e objetos persistentes podem atualizar/desenhar independentemente). VISUALS pode implementar contratos e modelos isolados antes de A03, sem introduzir uma segunda fonte de ordem de regras.
 
 **Critério de conclusão visual:** fidelidade observável de **posição/tamanho por pixel e tempo por update** em 800×600, cobrindo progressivamente todos os elementos (carta, mão, texto, HUD, LP, fases, efeitos e transições). Não é necessário reproduzir GDI/opcodes/estrutura interna, mas deve-se demonstrar de onde vieram os valores. Conferir o [contrato de fidelidade visual](docs/architecture/visual-fidelity-goal.md) e documentar divergências mensuradas.
 
-- [x] Criar `Joey.LookAndFeel` independente do Core e raylib, com perfis Classic/Fast/Silent/Instant, clock não bloqueante, overrides e integração inicial de realce de texto no `Joey.App`.
-- [x] Consolidar os achados estáticos da `analise-visual` em `Joey.LookAndFeel`: mão/hover, posições espelhadas, update de ativação e explosão, passes/alpha e critérios de despacho, com testes e ligação parcial à raylib.
-- [x] Prévia visual de ativação jogável em raylib com os quatro YGAs originais carregados do DAT local, modelo nativo de três passes, clock de protótipo e perfis Classic/Fast/Instant; testes C# e verificação opcional de assets.
-- [x] **Pausa histórica** após a prévia de ativação para priorizar Iteração B; **superada pela meta atual de alpha com fidelidade visual**, sem abandonar as regras.
-- [ ] Recuperar e aplicar o contrato nativo de renderização da carta: ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
-- [ ] Substituir placeholders remanescentes do fluxo visual padrão por **sprites originais carregados do DAT local**, usando manifests e seleção de variantes para cada estado; não versionar os assets. Testar aviso explícito de asset faltante e evitar substituição silenciosa.
-- [ ] Reconstituir estaticamente e validar a **troca de sprite da espada de ataque** ao atingir a carta, investigando os BMPs `j\\duel\\effect\\atk_icon.bmp` e `atk_icon2.bmp`, o frame/estado de transição, clipping, pivô e camada; preservar a ilusão de penetração relatada no vídeo, sem declarar seus detalhes como comprovados antes da análise.
-- [ ] Implementar `DebugOverlayEnabled` (ou equivalente) na UI: default OFF em modo fiel, botão `Ocultar debug` enquanto ativo, atalho F3 e toggle em menu para restaurar. Centralizar Draw e HitTest do overlay, sem interferir no duelo; testes do estado/toggle.
-- [ ] Fazer auditoria visual da Alpha em 800×600, separando **controles do jogo** de **diagnósticos**: corrigir layout provisório que cobre cartas, sprites e textos, e comparar capturas sem debug. A imagem recebida de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
-- [ ] Criar matriz de comparação por elemento visual e estados/quadros-chave contra Joey original: coordenadas/dimensões/ângulos e contagem de updates; registrar valores ainda provisórios em vez de arredondar silenciosamente.
-- [x] **Ferramenta de comparação visual 800×600:** `scripts/compare_visual_frames.py` compara PNGs alinhados sem redimensionar, gera diferença, máscara, overlay e métricas por painel lateral/tabuleiro; testes sintéticos em `scripts/tests/test_compare_visual_frames.py`. `VisualReviewScreen` registra a ação do mesmo sprite de cursor selecionado (incluindo `Attack`). Não implica paridade nativa dos elementos. Ver [protocolo de comparação](docs/research/visual-frame-comparison-2026-11-22.md).
-- [ ] Expandir sistematicamente a fidelidade de todas as telas/efeitos visuais, depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
-- [ ] Confirmar cadência nativa de update/draw, tabela de cossenos x16.16 e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
-- [ ] Adicionar eventos de apresentação tipados do Core, timeline de animações de cartas, transições e LP animado, sem acoplar regras ao tempo de tela.
-- [ ] Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política, pois ainda não existe player de voz), preservando a apresentação clássica.
+### Concluído (histórico, sem ID)
+
+- [x] `Joey.LookAndFeel` independente do Core e do raylib, com perfis Classic/Fast/Silent/Instant, clock não bloqueante, overrides e integração inicial de realce de texto no `Joey.App`.
+- [x] Achados estáticos da `analise-visual` consolidados em `Joey.LookAndFeel`: mão/hover, posições espelhadas, update de ativação e explosão, passes/alpha e critérios de despacho, com testes e ligação parcial à raylib.
+- [x] Prévia visual de ativação jogável em raylib com os quatro YGAs originais do DAT local, modelo nativo de três passes, clock de protótipo e perfis Classic/Fast/Instant.
+- [x] Pausa histórica após a prévia de ativação para priorizar regras; **superada** pela meta atual de alpha com fidelidade visual.
+- [x] `scripts/compare_visual_frames.py`: compara PNGs alinhados 800×600 sem redimensionar (diferença, máscara, overlay, métricas por painel). `VisualReviewScreen` registra a ação do mesmo sprite de cursor selecionado. Não implica paridade nativa. Ver [protocolo](docs/research/visual-frame-comparison-2026-11-22.md).
+
+### Itens abertos (ordem sugerida)
+
+- [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Pronto`.
+  (a) Capturar `00A52EE8` (512 valores x16.16) **depois** da inicialização em `0055DCF0` — o Ghidra estático não entrega a tabela, e hoje o C# usa `Math.Cos` (`ApproximateCosineTable`, explicitamente não bit-exata). (b) Hookar o primitivo de blit comum e registrar, por frame de duelo, `(rotina Draw, recurso/sprite, x, y, alpha/blend, ângulo/escala, quadro)` para as rotinas do inventário. Isso gera valores de referência **observados** para comparar com os extraídos do assembly e acelera V02–V16. Aproveitar a infraestrutura `native_hooks`/`yugilab`; sem versionar dumps brutos.
+  *Pronto quando:* tabela de 512 inteiros disponível em `scratch/` e carregável pelo C# no lugar da aproximação; log de Draw para um duelo curto reproduzível por seed.
+- [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`.
+  Ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
+- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Pronto`.
+  Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT local, usando manifests e seleção de variantes por estado; não versionar os assets. Aviso explícito de asset faltante; nada de substituição silenciosa.
+- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Pronto`.
+  Reconstituir estaticamente e validar a troca ao atingir a carta (`j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp`): frame/estado de transição, clipping, pivô e camada. Preservar a ilusão de penetração observada no vídeo, sem declarar seus detalhes como comprovados antes da análise. Rotina Draw `004142C0` (Partial).
+- [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`.
+  Já ligados: BMPs originais, separador, variantes normal/aumentado/reduzido, `0xA0/0x100`, tween 7/8, gate nativo de `00418EF0 → 004194D0` (movimento `0x100`, saída estado 5, zona, lado, face-up `0x8000`, identidade do ocupante `0056DD30`); renderer e JSON F12 compartilham a visibilidade, evitando revelar atributos da CPU antes do contato da espada. Faltam âncoras de pixels, blending, validação e sprites dos indicadores adicionais (overlays `00419B70/0041A3B0/0041A070` não são números). **Partial, não Verified.** Ver [pesquisa](docs/research/native-field-attributes-2026-11-22.md) ; bundle 03 recebido e absorvido em 23/11, não repetir coleta. Ver [handoff dos bundles](docs/research/visual-contract-bundles-2026-11-23.md).
+- [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Pronto`.
+  Remover a escolha universal de ponto médio entre as fileiras. Rastrear `00414110` (combate), `00408470` (caso geral), `0047C4F0` (registro do delta/identificador), `0047C660` (Draw) e `004806F0` (números) até a passagem real de X/Y/slot. Comparar dano de batalha sobre monstro, dano direto/cura sobre a região de magias, ambos os lados, ataque direto e alvo face-down. **Nada de ajustar pela captura sem entender a seleção nativa de âncora.**
+- [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Pronto`.
+  Investigar `j/duel/phase_name/nex_e_b*.yga` / `nex_e_r*.yga`, transição e ordem relativas aos banners de fase. Seguir `00480B40`/`00480BC0`, `00480C20`, `00480C60` e seus chamadores antes de implementar texto e timeline no cliente.
+- [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`.
+  Bundle 04 recebido: 17/17 funções e 12/12 janelas; `NativeStatusDrawLayout` implementa a geometria de sprites 4..9 (miniatura, quadros do atlas, âncoras A/B, espelhamento tipo/atributo e flashes 10..13); `NativeCardStatusDigits` usa atlas amarelo original. Preservar seletores, comandos `0x5F/0x60/0x69` e countdown 512→0 em 32 updates já isolados. **Draw Pending:** faltam metadados reais de `card.txt`, semântica das flags, integração e composição. [Contrato](docs/research/native-card-status-digits-2026-11-22.md); [pesquisa](docs/research/native-card-status-overlays-2026-11-22.md). Não repetir coleta 04.
+- [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`.
+  A nuvem de ataque aparece no hover quando `Joey.Core.CanAttack(zone)` autoriza (testes negativos, sem segundo cursor). **Resta validar no dispatcher original** a precedência, o hotspot e os casos de seleção de alvo. Não confundir o cursor com a espada no campo.
+- [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Pronto`.
+  Recuperar condições/alternância nativas de mudança de posição e as variantes `cursor_e_setatk.yga`/`cursor_e_setdef.yga`; não exibir ação ilegal nem assumir que os nomes do DAT provam o fluxo.
+- [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`.
+  `NativeSelectionWindow` já contém cinco slots/scroll, entrada e saída, índice correto e interpolação confirmados. Bundle 01 recebido: âncora 525, gerador x87 (pi/256 e multiplicação final ainda não medida), Update/Draw das duas fusões, fases, recursos e clocks 4/8 com espera no segundo. **Coleta concluída**; falta tabela C runtime (V01), constantes/tabela de seletores e DAT, integração e validação. As duas Draws `004524F0` e `004877F0` devem permanecer distintas. Ver [contrato](docs/research/native-selection-window-fusion-2026-11-22.md) e [handoff](docs/research/visual-contract-bundles-2026-11-23.md). Não alterar badge só pelo conhecimento.
+- [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`.
+  Bundle 02 concluído: opcode 0x72, gates, descritor, rotação 0x4000, 24 updates (dois ciclos de seis quadros), bit 0x40 e seis texturas inteiras documentados. `NativeDisabledChainTimeline` tem testes sintéticos. **Draw Pending:** falta `disable.txt` real, semântica do comando, integração e validação. Ver [contrato](docs/research/native-chain-disabled-2026-11-22.md). Não repetir coleta 02.
+- [ ] **V13 — `DebugOverlayEnabled` na UI.** Status: `Pronto`.
+  Default OFF em modo fiel, botão `Ocultar debug` enquanto ativo, atalho F3 e toggle em menu para restaurar. Centralizar Draw e HitTest do overlay, sem interferir no duelo; testes do estado/toggle.
+- [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Pronto`.
+  Separar **controles do jogo** de **diagnósticos**; corrigir layout provisório que cobre cartas, sprites e textos; comparar capturas sem debug. A imagem de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
+- [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Pronto`.
+  Coordenadas/dimensões/ângulos e contagem de updates por estado/quadro-chave contra o Joey original; registrar valores ainda provisórios em vez de arredondar silenciosamente. Usar `compare_visual_frames.py` e o log de `V01`.
+- [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`.
+  Seleção nativa (`0043B280`, ver V11), ajuda `0045E4A0`, efeito de estado persistente `0040E260`, quebra/remoção alternativa `00450FD0`, ativação alternativa `00450AD0`, corrente `0041F870`, remoção/exclusão `0043DBE0`, moeda `00457520`, dado `00456B90`, Vija `004584C0`, Layerfont A/B `00455FF0`/`00456360`. Cada rotina vira um item novo (`V20`, `V21`...) quando começar. Estado: [cobertura visual](docs/architecture/VISUAL_COVERAGE.md).
+- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Aguardando evidência`.
+  Confirmar cadência, tabela de cosseno x16.16 (ver `V01`) e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
+- [ ] **V18 — Áudio e vozes.** Status: `Pronto`.
+  Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política; ainda não existe player), preservando a apresentação clássica.
+- [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`.
+  Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
+
+## Arquitetura-alvo (propostas, não funcionalidades já existentes)
+
+- **Fila de ações** no `Joey.Core` (ACTIONS `A02`): comandos tipados, um ativo por vez, gate de apresentação injetável.
+- **Cálculo de atributos efetivos** a partir do estado: bases, magia de campo, equipamento, efeitos contínuos e temporários. Evitar aplicar bônus permanentes ao valor base.
+- **Efeitos declarativos simples** para dano/cura, compra/descarte, busca, destruição, retorno e mudanças de posição — emitindo comandos.
+- **Eventos de duelo/janelas de resposta** (futuros): summon, flip, ataque, dano, destruição, cemitério e transição de fase. Separar gatilho, condição, custo, alvo e resolução.
+- **Eventos de apresentação** (A03): `Joey.Core` emite consequências de estado como comandos; `Joey.App` anima sem alterar a regra.
+- **Console de duelo** (A04): ponto único para spawnar/mover cartas e testar efeitos, usando as mesmas interfaces das cartas.
+- **Testes por cenário**: fixtures C# baratos; quando houver divergência real, executar uma captura curta com decks e seed reproduzíveis.
 
 ## Como validar com pouco atrito
 
@@ -132,6 +270,16 @@ A captura nativa usa padrão `deck0_deck1_HHMMSSffffff-YYYYMMDD_v2.jsonl` (horá
 
 Use `Joey.Lab summarize` ou ferramentas `yugilab` somente quando houver uma pergunta; não exigir uma campanha de captura antes de implementar uma carta simples.
 
+## Evidência compartilhada — ACTIONS, CARDS e VISUALS
+
+- Antes de solicitar nova coleta nativa, consultar a versão mais recente do SQLite disponível localmente e os bundles/docs já existentes. Para CARDS, efeitos claros continuam podendo partir do DAT sem investigação nativa obrigatória. Para ACTIONS e VISUALS, preservar o rigor e confirmar assembly quando necessário.
+- Preferir enriquecer uma **nova cópia do SQLite compartilhado** com funções ausentes, disassembly, decompilações, xrefs, ponteiros, tabelas e metadados recuperáveis; reutilizar exportadores/importadores existentes ou estendê-los com testes quando não suportarem o formato. Não presumir que qualquer ZIP possa ser importado pelo importador visual existente.
+- Se faltar acesso ao Windows (execução/Frida/DAT) ou Fedora (Ghidra/projeto de análise), preparar um roteiro executável em `scripts/pending/` com ID da trilha, ambiente, pré-requisitos, comando, evidência procurada, saída privada e critério de encerramento. Registrar no README e seguir para trabalho independente. Não criar pendências para coleta já concluída.
+- Após receber a saída, validar fingerprint/proveniência, preservar dados anteriores e conflitos explícitos, executar `PRAGMA integrity_check` e testes do importador; publicar o resumo/auditoria e identificar qual snapshot privado foi produzido. Uma coleta recebida não implica implementação ou Verified. Quando dados dinâmicos/frames não couberem adequadamente no SQLite, guardar artefatos privados e registrar referência/metadados; não descartar os originais.
+- O banco é um artefato **privado e compartilhado entre as três frentes**, mantido em `scratch/` ou transferido fora do Git. Um único escritor integra cada versão; agentes consultam cópias somente leitura. Nunca versionar SQLite, EXE, DAT, dumps integrais ou traces brutos. Ver [guia SQLite](docs/research/joey-knowledge-sqlite.md) e [fila de coleta](scripts/pending/README.md).
+
 ## Colaboração
 
-Uma sessão escritora atualiza e publica em `main` após testes. Outra máquina continua com `git pull --ff-only`. Se houver múltiplos agentes escritores ao mesmo tempo, isolar branches/worktrees e integrar sequencialmente. Marcar `CARDS.md` de acordo com implementação atual, **não** com intenção, texto de carta ou trace de outra implementação.
+**Em paralelo:** usar uma branch/worktree por trilha e ID (por exemplo, `actions/A01-scheduler`, `cards/C01-taxonomia`, `visuals/V03-assets`). Reservar o item com PR draft ou coordenação explícita; não presumir que uma tarefa está livre só pelo Markdown. ACTIONS tem precedência para contratos compartilhados e alterações estruturais em `DemoDuel`; CARDS pode avançar taxonomia, tabelas e testes isolados, VISUALS modelos/recursos sem alterar regras. Integrações que atravessam trilhas exigem coordenação, não uma proibição de trabalhar. `A02` entrega a infraestrutura, não converte automaticamente todos os caminhos legados: durante A06/C12, usar adaptadores explícitos e não duplicar mutação. Depois de migrado um caminho, nenhuma regra nova pode contornar sua fila.
+
+Uma sessão escritora atualiza e publica em `main` após testes. Outra máquina continua com `git pull --ff-only`. Se houver múltiplos agentes escritores ao mesmo tempo (por exemplo, um em CARDS e outro em VISUALS), isolar branches/worktrees e integrar sequencialmente; itens de ACTIONS (`A02`, `A06`) mexem no núcleo e **não** devem rodar em paralelo com mudanças grandes em `Demo.cs`. Marcar `CARDS.md` de acordo com implementação atual, **não** com intenção, texto de carta ou trace de outra implementação.
