@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | state | diff | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | discard SIDE INDEX | send SIDE INDEX | state | diff | decision ID accept|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -51,6 +51,10 @@ public sealed class DuelConsoleSession
         }
         if (Queue.IsBusy) return new(false, "Queue busy; wait or answer its pending decision.");
         if (duel.GameOver) return new(false, "Duel ended.");
+        // Legal inputs use the same producer methods as normal play, with
+        // the source labelled Console only for tracing, not for rule bypass.
+        if (op is "summon" or "set" or "flip" or "position" or "activate")
+            return ExecuteLegal(op, words);
         DuelCommand[] batch;
         switch (op)
         {
@@ -77,6 +81,13 @@ public sealed class DuelConsoleSession
                 if (!duel.TryCaptureCardTarget(owner, DuelZone.Monster, slot, out var target))
                     return new(false, "No unique tracked monster in that slot.");
                 batch = [new DestroyCommand(owner, target)];
+                break;
+            case "discard":
+            case "send":
+                if (words.Length != 3 || !Side(words[1], out int handSide) || !Index(words[2], out int handIndex) ||
+                    !duel.TryCaptureCardTarget(handSide, DuelZone.Hand, handIndex, out var handTarget))
+                    return new(false, $"Expected {op} SIDE INDEX with a tracked hand card.");
+                batch = [op == "discard" ? new DiscardCommand(handSide, handTarget) : new SendToGraveyardCommand(handSide, handTarget)];
                 break;
             case "spawn":
                 if (words.Length < 4 ||
@@ -108,6 +119,57 @@ public sealed class DuelConsoleSession
         }
         catch (InvalidOperationException ex) { return new(false, ex.Message); }
     }
+
+    private DuelConsoleResult ExecuteLegal(string op, string[] words)
+    {
+        bool ok;
+        string message;
+        if (op is "summon" or "set")
+        {
+            if (words.Length < 2 || !Index(words[1], out int index) || index >= duel.Hand.Count)
+                return new(false, "Choose an active hand index.");
+            if (op == "set" && !duel.Hand[index].IsMonster)
+            {
+                if (words.Length != 2) return new(false, "Spell/Trap Set uses its usual zone: set INDEX.");
+                ok = duel.TryQueueSpellTrapSet(index, out message, ActionOrigin.Console);
+            }
+            else
+            {
+                if (words.Length is < 3 or > 5 || !Slot(words[2], out int slot))
+                    return new(false, "Expected summon|set INDEX SLOT [tribute slots].");
+                var tributes = new List<int>();
+                foreach (string token in words.Skip(3))
+                {
+                    if (!Slot(token, out int tribute)) return new(false, "Invalid tribute slot.");
+                    tributes.Add(tribute);
+                }
+                ok = duel.TryQueueNormalPlacement(index, slot, op == "set", out message, tributes, ActionOrigin.Console);
+            }
+        }
+        else if (op == "activate")
+        {
+            if (words.Length != 3 || words[1] is not ("hand" or "set") || !Index(words[2], out int index))
+                return new(false, "Expected activate hand|set INDEX.");
+            ok = duel.TryQueueActivation(index, words[1] == "set", out message, ActionOrigin.Console);
+        }
+        else
+        {
+            if ((op == "flip" && words.Length != 2) || (op == "position" && words.Length != 3) ||
+                !Slot(words[1], out int slot) || duel.Monsters[duel.ActivePlayer, slot] is null)
+                return new(false, "Expected flip SLOT or position SLOT attack|defense.");
+            bool hidden = duel.MonsterFaceDown[duel.ActivePlayer, slot];
+            if (op == "flip" && !hidden) return new(false, "Flip requires a face-down monster.");
+            if (op == "position" && (hidden || words[2] is not ("attack" or "defense") ||
+                duel.DefensePosition[duel.ActivePlayer, slot] == (words[2] == "defense")))
+                return new(false, "Choose a different face-up battle position; use flip for a set monster.");
+            ok = duel.TryQueueChangePosition(slot, out message, ActionOrigin.Console);
+        }
+        return new(ok, message, ok);
+    }
+
+    private static bool Index(string value, out int index) =>
+        int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out index);
+    private static bool Slot(string value, out int slot) => Index(value, out slot) && slot < 5;
 
     private static bool Zone(string name, out DuelZone zone)
     {

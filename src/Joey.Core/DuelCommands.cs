@@ -28,7 +28,10 @@ internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Dest
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+// Historical name retained for the A02 pilot; now covers the same wipe family.
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateSimpleSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record FinishSimpleSpellCommand(int Side) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
     CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
@@ -59,9 +62,13 @@ internal static class DuelCommandValidation
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case DrawCommand:
             case FinishFieldRemovalCommand:
+            case FinishSimpleSpellCommand:
+                break;
+            case ActivateSimpleSpellCommand simple:
+                Target(simple.Source, simple.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateRaigekiCommand activate:
-                Target(activate.Source, activate.Side, DuelZone.Hand);
+                Target(activate.Source, activate.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case PrepareNormalPlacementCommand prepare when prepare.Slot is >= 0 and < 5:
                 Target(prepare.Source, prepare.Side, DuelZone.Hand);
