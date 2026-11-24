@@ -105,3 +105,36 @@ a apresentação do combate aguardam A09.
 dotnet build YugiRE.sln
 python3 scripts/tests/check_action_trace_archive.py src/Joey.Lab/bin/Debug/net10.0/Joey.Lab.dll
 ```
+
+## A06 — primeiro estágio de revelação durante o Damage Step
+
+O piloto A05 (IDs 24 e 1351) também admite defensor em defesa oculta, com
+as mesmas restrições de campo isolado e sem callbacks conhecidos.
+A declaração ainda projeta 33; seu gate precede qualquer revelação.
+`RevealBattleDefenderCommand` revela a ocorrência e conserva a posição de
+defesa e o histórico de FLIP. Não é Flip Summon, não dispara evento de
+invocação ou mudança manual de posição. `ResolveRevealedBattleCommand`
+calcula o resultado após o gate de revelação, planeja os mesmos
+snapshots/dano/chegada ao GY do piloto face-up. A reserva revalida turno,
+ocorrências, slots, poses e ausência de outras cartas; substituição
+indevida interrompe a fila sem atingir a nova carta.
+
+Os dois novos comandos ficam explicitamente `unmapped` no trace. O
+SQLite cumulativo v2 (SHA-256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check ok) não tem linhas de callback para os dois IDs, o que
+justifica conservar o piloto limitado, não inferir classificação geral.
+A ordem de revelação/cálculo segue o fluxo legado C# como hipótese a
+validar em captura nativa equivalente. Não há novo cue gráfico; o
+renderer lê o estado revelado, e o gate é testado sinteticamente.
+O contrato A09 de combate face-up e suas capturas permanece independente.
+
+Próximo estágio: um FLIP real sem seleção de campo (Skelengel é candidato).
+A ordem do legado para um defensor oculto é revelar → calcular e aplicar
+dano → FLIP/decisões → remover combatentes marcados ainda presentes.
+Não reutilizar FinishManualPosition, que emite janelas de Flip Summon.
+O futuro resolvedor de batalha deverá preservar a reserva de destruição
+durante decisões; Penguin Soldier não pode devolver ocorrências marcadas.
+Precisamos tratar finalização após vitória (inclusive Exodia por compra)
+e separar dano de remoção antes de expandir para FLIPs com alvo e
+recrutadores. Não chamar FinishDeferredBattle dentro de um executor
+enfileirado: ele remove diretamente pelo fluxo legado.
