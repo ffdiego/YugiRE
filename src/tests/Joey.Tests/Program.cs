@@ -115,6 +115,8 @@ CpuDeckSelectionTests.Run(Check);
 CpuDifficultyProgressionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
 ActionQueueChecks.Run(Check);
+ActionPresentationGateChecks.Run(Check);
+CommandScopedPresentationChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
 DeckTests.Run(Check, Reject);
