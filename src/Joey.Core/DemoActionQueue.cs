@@ -160,12 +160,13 @@ public sealed partial class DemoDuel
 
     private sealed class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
     {
-        private sealed class Wipe(int caster, ushort resourceId, CardTarget source, IEnumerable<CardTarget> targets)
+        private sealed class Wipe(int caster, ushort resourceId, CardTarget source, IEnumerable<CardTarget> targets, bool monsterWipe = true)
         {
             public int Caster { get; } = caster;
             public ushort ResourceId { get; } = resourceId;
             public CardTarget Source { get; } = source;
             public bool SourceSpent { get; set; }
+            public bool MonsterWipe { get; } = monsterWipe;
             public HashSet<CardTarget> Targets { get; } = new(targets);
             public int[] Counts { get; } = [0, 0];
             public int FaceDown { get; set; }
@@ -229,6 +230,8 @@ public sealed partial class DemoDuel
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateLifePointSpellCommand lp:
                     return ActivateLifePointSpell(lp, followups);
+                case ActivateSpellTrapWipeCommand spellTrapWipe:
+                    return ActivateSpellTrapWipe(spellTrapWipe.Source, followups);
                 case ActivateMonsterWipeCommand monsterWipe:
                     return ActivateMonsterWipe(monsterWipe.Source, followups);
                 case ActivateRaigekiCommand activate:
@@ -257,8 +260,8 @@ public sealed partial class DemoDuel
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
                     return DestroyMonster(destroy.Target, followups);
-                case DestroyCommand destroy when destroy.Target.Zone == DuelZone.SpellTrap:
-                    return DestroyLinkedEquipment(destroy.Target);
+                case DestroyCommand destroy when destroy.Target.Zone is DuelZone.SpellTrap or DuelZone.FieldSpell:
+                    return DestroyQueuedSpellTrap(destroy.Target);
                 default:
                     return new(CommandOutcome.Rejected, "Command not migrated to DemoDuel.");
             }
@@ -334,12 +337,30 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null ||
-                MonsterWipeRules.Scope(card.Id) is not null) ||
+                MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
             duel.graves[target.Side].Add(card);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ActivateSpellTrapWipe(CardTarget source, IActionCommandSink followups)
+        {
+            if (wipe is not null || finishScheduled ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Spell/Trap wipe requires an isolated activation.");
+            if (!duel.TryResolveCardTarget(source, out _, out _))
+                return new(CommandOutcome.Skipped, "Wipe source occurrence gone.");
+            if (!duel.TryPlanSpellTrapWipe(source, out var spell, out var targets))
+                return new(CommandOutcome.Rejected, "Spell/Trap wipe no longer legal.");
+
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(source.Side, source) };
+            batch.AddRange(targets.Select(target => new DestroyCommand(target.Side, target)));
+            queue.EnqueueBatch(batch);
+            wipe = new(source.Side, spell.Id, source, targets, monsterWipe: false);
+            ScheduleFinish(source.Side, followups);
             return new(CommandOutcome.Applied);
         }
 
@@ -678,13 +699,27 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult DestroyLinkedEquipment(CardTarget target)
+        private CommandResult DestroyQueuedSpellTrap(CardTarget target)
         {
+            bool reserved = wipe is { MonsterWipe: false, SourceSpent: true } current &&
+                current.Targets.Contains(target);
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
-                return new(CommandOutcome.Skipped, "Equipment occurrence gone.");
-            if (!duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot && ReferenceEquals(e.Card, card)))
-                return new(CommandOutcome.Rejected, "Only linked equipment destruction is migrated here.");
-            duel.DestroySpellTrapCard(target.Side, slot);
+                return new(CommandOutcome.Skipped, "Spell/Trap occurrence gone.");
+
+            // Outside a reserved wipe retain the previous narrow linked-equipment
+            // executor: standalone S/T destruction needs Destiny Board handling.
+            if (!reserved && (target.Zone != DuelZone.SpellTrap ||
+                !duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot &&
+                    ReferenceEquals(e.Card, card))))
+                return new(CommandOutcome.Rejected, "Only reserved S/T or linked equipment destruction is migrated.");
+            if (!duel.SpellTrapRemovalLinkMatches(target.Side, target.Zone, slot, card))
+                return new(CommandOutcome.Rejected, "Spell/Trap link changed.");
+
+            // This low-level helper moves a single occurrence and removes its
+            // equipment link. It does not run the bulk Destiny Board resolver.
+            duel.DestroySpellTrapCard(target.Side,
+                target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot);
+            if (reserved) wipe!.Targets.Remove(target);
             return new(CommandOutcome.Applied);
         }
 
@@ -705,7 +740,7 @@ public sealed partial class DemoDuel
             plannedLinks.Clear();
             if (wipe is { } current)
             {
-                if (current.SourceSpent)
+                if (current.MonsterWipe && current.SourceSpent)
                     duel.LastMonsterWipe = new(current.ResourceId, current.Caster,
                         current.Counts[0], current.Counts[1], current.FaceDown);
                 wipe = null;
