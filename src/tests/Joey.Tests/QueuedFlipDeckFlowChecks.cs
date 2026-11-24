@@ -93,6 +93,33 @@ internal static class QueuedFlipDeckFlowChecks
                     first.Occurrence==captured[0].Occurrence&&!d.GameOver,"Mill preserves top identity, empty deck not loss");
             }
         }
+        // Legacy P088 checks Exodia only after all available draws and Spell
+        // discards. Completing Exodia wins even if the forced draw is short.
+        Card[] pieces=ExodiaRules.RequiredNames.Select((name,i)=>
+            Monster((ushort)(3100+i)) with {Name=name}).ToArray();
+        DemoDuel ExodiaState()
+        {
+            var d=DemoDuel.FromPartialObservation(1,pieces.Take(4).ToArray(),
+                Slots(Monster(610)),Slots(),8000,side1Deck:[pieces[4],Spell(342)]);
+            d.NextTurn();
+            d.MonsterFaceDown[0,0]=d.DefensePosition[0,0]=true;
+            return d;
+        }
+        var exLegacy=ExodiaState();exLegacy.ChangePosition(0,out _);
+        var ex=ExodiaState();var exGate=new Gate();var exq=ex.CreatePrimitiveActionQueue(exGate);
+        int wins=0;ex.ExodiaCompleted+=_=>wins++;
+        check(ex.TryQueueChangePosition(0,out _),"Scout Exodia fixture");
+        exq.Tick();exq.Tick();exq.Tick();
+        exGate.Release=false;exq.Tick();
+        check(ex.HandFor(1).Count==5&&ex.Winner is null&&wins==0&&exq.IsBusy,
+            "Exodia not published in the middle of reserved Scout draws");
+        exGate.Release=true;Drain(exq);
+        check(ex.ExodiaWinner==1&&ex.Winner==1&&wins==1&&
+            ex.LastDeckFlow is {DrawFailed:true,MovedFromDeck:2,SentToGraveyard:1}&&
+            ex.LastDeckFlow==exLegacy.LastDeckFlow&&ex.Graveyard(1).Single().Id==342&&
+            ex.HandFor(1).SequenceEqual(exLegacy.HandFor(1)),
+            "Scout completes all draws and discard; Exodia takes precedence over shortfall");
+
         var suppressed=DemoDuel.FromPartialObservation(0,[],Slots(Monster(561)),Slots(),8000,side1Deck:[Monster(24)]);
         suppressed.MonsterFaceDown[0,0]=suppressed.DefensePosition[0,0]=true;
         suppressed.Spells[1,0]=Spell(FlipEffectSuppressionRules.RoyalCommand,21);

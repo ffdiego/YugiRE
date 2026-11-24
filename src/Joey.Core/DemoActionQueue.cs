@@ -620,6 +620,15 @@ public sealed partial class DemoDuel
                         if (!duel.TryCaptureCardTarget(p, DuelZone.Hand, i, out _))
                             return new(CommandOutcome.Rejected, "Untracked Morphing Jar hand occurrence.");
 
+            if (flip && !duel.FlipEffectsNegated &&
+                card.Id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout)
+            {
+                int requested = card.Id == FlipEffectRules.NeedleWorm ? 5 : 3;
+                for (int i = 0; i < Math.Min(requested, duel.decks[1 - side].Count); i++)
+                    if (!duel.TryCaptureCardTarget(1 - side, DuelZone.Deck, i, out _))
+                        return new(CommandOutcome.Rejected, "Untracked deck-flow occurrence.");
+            }
+
             var change = duel.CommitManualPosition(side, slot);
             followups.ScheduleContinuation(_ => new([new ResolvePositionCommand(side, target,
                 change.WasFaceDown, change.WasInDefense)]));

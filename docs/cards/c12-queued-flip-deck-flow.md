@@ -25,7 +25,7 @@ indevida não autoriza consumir substitutos. Contagens auditam
 movimentos aplicados. Finalização reaproveita FinishFlipBatchCommand
 sem chamar TriggerFlip novamente. Testes ambos lados, decks 0..6,
 gate, Royal Command, identidade, eventos, final state legado,
-ordem de compras e descartes, primitiva top-only.
+ordem de compras e descartes, Exodia versus shortfall e primitiva top-only.
 
 Bistro Butcher e Masked Sorcerer estão em DealMonsterBattleDamage
 e dependem de migrar o dano de batalha (ACTIONS). Não criar segundo
