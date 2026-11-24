@@ -34,8 +34,9 @@ reutilizar a fila; não criar uma segunda fonte de mutação.
 O descritor de âncora é o ushort truncado de
 ((0xC000 | region)<<1) | side, portanto 0x8000|(region<<1)|side.
 side = bit 15 da palavra A em 00A550A0; region = 5 bits do byte
-baixo de 00A550A4 no dado, ou alto da palavra baixa de 00A550A4
-na moeda. A posição final é retornada por 0045C140, não assumir
+baixo de 00A550A4 no dado, ou byte em 00A550A6 (baixo da palavra D)
+na moeda. Corrigido com assembly recebido: 0040A809 / 0040A92E leem
+A550A6, 0040A6BB lê A550A4. O byte A550A5 não é a região da moeda. A posição final é retornada por 0045C140, não assumir
 centro da seleção (525,300). Coin passa valores derivados de
 comparações com zero e 1/3; dice passa um valor de 16 bits.
 A pilha dos construtores é mal reconstruída; não tipar ainda os

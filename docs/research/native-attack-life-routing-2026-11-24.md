@@ -75,3 +75,46 @@ confirmar os recortes/ordem e pivô da espada, o significado
 do slot -1, posição da âncora de slot e argumentos de
 004806F0. O cliente deve preservar fallback atual até
 então, sem novo deslocamento estimado.
+
+
+## Coleta 21 recebida — implementação incremental
+
+Fonte: joey-knowledge-visual-cumulative-2026-11-24-v2.zip,
+SQLite SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4.
+21 bundles e quick_check ok. Evidência de 004142C0 e 0047C660 em
+visual_evidence_functions e visual_evidence_instructions,
+ghidra-attack-life-draw-contract.zip. Não repetir roteiro 21.
+
+**Espada:** 004145BF..004145F5: state 4, t<=128 vira na origem;
+t=144 pede som 10000006 no Draw. 00414601..00414689 interpola
+centro inteiro com C(t-128)>>8, recalcula atan2 usando o centro
+interpolado (truncamento altera ângulo), não o centro inicial.
+00414694 usa chave 0, escala 65536, caminho opaco 00422840.
+0041470C..00414772, t>=256 e <512: chave 2 (impacto), escala
+(t-256)*512, intensidade bruta 2*(512-t), centro do alvo.
+004147B0..00414800: depois chave 1 (espada parcial), escala
+65536, mesma intensidade, ângulo do vetor original até alvo.
+00422C00 encaminha intensidades >255 ao compositor opaco.
+Sampler existente agora recalcula ângulo de voo e expõe chaves,
+intensidade bruta e pedido de áudio, preservando clamp de Raylib.
+Mantém o bypass legado alreadyAimed e aproximação atan2 do cliente;
+constantes x87 005DA708/728/730 ainda não lidas, não afirmar paridade
+de arredondamento. Nenhum novo relógio, disparo de áudio ou gate.
+
+**LP:** 0047C69A..0047C6AB chama 0045C140(side,5,2) se slot<0,
+ou 0045C140(side,slot,0) se slot>=0. A região 5 + slot 2 resulta
+em zona S/T central. 0047C6C8..0047C6FA escolhe a chave 6 para
+dano e 7 para cura, quantidade de colunas do manifesto (zero
+vira 10). 0047C6FD..0047C748 mede largura total por
+00480230(delta,1,0), direita = centroX + largura/2, topo =
+centroY - altura/2, ambas divisões truncadas. Passa 2*rampa
+e flag de sinal 1 para 004806F0. Não alinhar o final do número
+ao centro. NativeLifeHud e DrawLifeFloatingDigits agora usam
+esse seletor/centralização no duelo real, com a geometria de
+campo do cliente existente. O seletor está confirmado em assembly;
+os bytes da tabela de zonas S/T 005DB4E8 ainda não foram coletados,
+logo a geometria absoluta do cliente segue sujeita a comparação.
+A03 fornece slot de combate e mantém responsabilidade exclusiva
+sobre preparação/liberação de LP; SetLogicalLife legado usa -1.
+Amostras de DAT e capturas pareadas continuam necessárias.
+Cobertura permanece 20/34, nenhuma promoção para Verified.

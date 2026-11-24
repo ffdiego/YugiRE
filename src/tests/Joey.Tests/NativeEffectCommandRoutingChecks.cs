@@ -15,9 +15,9 @@ internal static class NativeEffectCommandRoutingChecks
             for (int side = 0; side <= 1; side++)
                 for (int region = 0; region < 32; region++)
                 {
-                    ushort word = (ushort)(coin ? (region << 8) | 0xe01f : 0x1fe0 | region);
+                    uint packed = coin ? (uint)(0xa5001f03 | (region << 16)) : (uint)(0xa51b1fe0 | region);
                     check(NativeEffectCommandRouting.BankAnchorDescriptor(opcode,
-                        (ushort)(side << 15 | 0x1234), word) == (0x8000 | region << 1 | side),
+                        (ushort)(side << 15 | 0x1234), packed) == (0x8000 | region << 1 | side),
                         "V20/V21: packed region and side");
                 }
         }

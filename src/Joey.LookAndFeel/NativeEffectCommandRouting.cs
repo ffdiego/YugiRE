@@ -20,15 +20,15 @@ public static class NativeEffectCommandRouting
     /// 0040A6A0 / 0040A7C0 / 0040A900 form a 16-bit descriptor:
     /// ((0xC000 | region) << 1) | side, truncated to ushort.
     /// Only side and region survive alongside bit 15. The source of the
-    /// region differs: low byte of word C for dice, high byte for coin.
+    /// region differs: low byte of word C for dice, low byte of word D for coin (A550A6).
     /// This is not necessarily an ordinary monster-zone descriptor.
     /// </summary>
-    public static ushort BankAnchorDescriptor(ushort opcode, ushort wordA, ushort wordC)
+    public static ushort BankAnchorDescriptor(ushort opcode, ushort wordA, uint packedCD)
     {
         int region = Family(opcode) switch
         {
-            NativeEffectCommandFamily.CoinBank => (wordC >> 8) & 0x1f,
-            NativeEffectCommandFamily.DiceBank => wordC & 0x1f,
+            NativeEffectCommandFamily.CoinBank => (int)((packedCD >> 16) & 0x1f),
+            NativeEffectCommandFamily.DiceBank => (int)(packedCD & 0x1f),
             _ => throw new ArgumentOutOfRangeException(nameof(opcode))
         };
         return (ushort)(0x8000 | region << 1 | wordA >> 15);
