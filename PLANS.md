@@ -116,7 +116,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *Fatia de ativação com alvo:* o console App/Lab admite ativações direcionadas já migradas. A localização textual resolve para a ocorrência física antes de entrar na fila, com revalidação na execução. A admissão segue distinta de uma seleção interativa no tabuleiro.
   *Fatia de respostas para a mão:* o console lista e responde as seleções Deck/Cemitério → Mão já migradas. O script espera resposta explícita e sinaliza trace incompleto enquanto a escolha estiver pendente.
   *Fatia de respostas FLIP:* console App/Lab lista alvos de monstros e pares S/T (incluindo FIELD) e responde pelo produtor existente, por ocorrência, sem resolução duplicada. Bloqueia operações alheias enquanto a escolha está pendente; trace incompleto até resposta. Testes ambos lados, gates, duplicatas, recusa e identidade. PR #115, CI 45404987816 aprovado; FLIP em batalha e demais seleções ainda abertas.
-  *Fatia de respostas para o campo:* console lista dono, origem, posição e slots livres e admite recrutamento individual, múltiplas cópias e ressurreição por ocorrência pelos produtores C12 existentes. Testes de escolha, gate, shuffle e donos consecutivos; combate legado é pré-condição para pedidos de recrutadores de batalha. PR #115, novo CI pendente. A06 permanece parcial.
+  *Fatia de respostas para o campo:* console lista dono, origem, posição e slots livres e admite recrutamento individual, múltiplas cópias e ressurreição por ocorrência pelos produtores C12 existentes. Testes de escolha, gate, shuffle e donos consecutivos; combate legado é pré-condição para pedidos de recrutadores de batalha. PR #115, CI 45405582157 aprovado. A06 permanece parcial.
 
   *Consolidação:* PR #98, CI 45393879231 aprovado no head 4419fe2; dois roteiros Lab/DAT relatados no PR. Integrar fatia sem marcar A06 concluído; reconciliada com evidência de fases da main 15b54a0.
 
@@ -227,8 +227,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *Pronto quando:* tabela de 512 inteiros disponível em `scratch/` e carregável pelo C# no lugar da aproximação; log de Draw para um duelo curto reproduzível por seed.
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`.
   Ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
-- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Pronto`.
+- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`.
   Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT local, usando manifests e seleção de variantes por estado; não versionar os assets. Aviso explícito de asset faltante; nada de substituição silenciosa.
+  V03.1: preflight de mappings grandes/mini para cartas jogáveis, validação de mini BMPs e verso original, sem substituição geométrica/nome no duelo; diagnóstico de registro não jogável só com --include-unused fora do duelo. Tema explícito preservado. Controles transitórios de seleção/descarte e validação DAT real ainda pendentes. [Evidência](docs/24-dat-graphics.md#v031-assets-obrigatórios-e-fallback-explícito).
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Pronto`.
   Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado no voo; sampler ajustado. Pivô/compositor e constantes x87 pendentes; [contrato](docs/research/native-attack-life-routing-2026-11-24.md).
   Reconstituir estaticamente e validar a troca ao atingir a carta (`j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp`): frame/estado de transição, clipping, pivô e camada. Preservar a ilusão de penetração observada no vídeo, sem declarar seus detalhes como comprovados antes da análise. Rotina Draw `004142C0` (Partial).

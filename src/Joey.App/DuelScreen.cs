@@ -304,9 +304,9 @@ static partial class Game
                 degrees, Color.White);
             return;
         }
-        Raylib.DrawRectangle(x, y, width, height, new Color(57, 32, 20, 255));
-        Raylib.DrawRectangleLines(x + 2, y + 2, width - 4, height - 4, Gold);
-        Raylib.DrawEllipseLines(x + width / 2, y + height / 2, width / 3f, height / 3f, Gold);
+        // Never invent a card back in the faithful duel. The explicit
+        // custom theme path above remains supported.
+        _ = DuelArtworkPolicy.RequireBack(null, NativeCardRaster.IsNativeMiniDestination(width,height));
     }
     static void DrawFieldCard(Card card, Rectangle frame, bool faceDown, bool defense = false, bool upsideDown = false) =>
         DrawDuelCard(card, DuelCardLayout.InTransit(ToCardBounds(frame), !upsideDown, defense, faceDown));
