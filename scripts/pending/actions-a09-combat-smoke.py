@@ -34,7 +34,7 @@ def inspect_log(path, graphical):
         raise ValueError(f"{path}: both attack declarations are required")
     direct = names.index("DeclareDirectAttackCommand")
     targeted = names.index("DeclareTargetedAttackCommand")
-    if targeted <= direct or names[direct + 1] != "DamageCommand":
+    if targeted <= direct or names[direct + 1:direct + 2] != ["DamageCommand"]:
         raise ValueError(f"{path}: missing direct attack damage")
     # Both combatants use the same positive-ATK card in attack position.
     if names[targeted + 1:targeted + 5] != [
@@ -42,7 +42,8 @@ def inspect_log(path, graphical):
         "FinishBattleRemovalCommand", "FinishBattleRemovalCommand"
     ]:
         raise ValueError(f"{path}: expected two removals from equal-ATK combat")
-    if not any(row.startswith("queue busy=False pending=0 active=- decision=- fault=False") for row in rows):
+    queues = [row for row in rows if row.startswith("queue busy=")]
+    if not queues or queues[-1] != "queue busy=False pending=0 active=- decision=- fault=False":
         raise ValueError(f"{path}: no idle healthy queue snapshot")
     if graphical:
         timing = [(int(m[1]), int(m[2]), m[3], m[4]) for line in lines if (m := TIMING.match(line))]
