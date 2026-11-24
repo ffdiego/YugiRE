@@ -101,9 +101,14 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Modo console que **enfileira os mesmos comandos que as cartas usarão**: spawnar carta (mão/campo/deck/cemitério), mover entre zonas, comprar, invocar/setar, destruir, mudar LP, avançar fase, forçar lado. Os nomes devem espelhar o console nativo de `native_hooks` (`draw N [lado]`, `damage N [lado]`, `state`, `diff`) para rodar o **mesmo roteiro** nos dois lados e comparar. Uso principal: implementar e depurar cartas do zero apenas por essas interfaces, com feedback visual imediato.
   **Contrato do console:** jogador, CPU, cartas, testes, scripts e console são produtores da mesma API de comandos tipados do Core. A origem pode mudar a autorização/admissão (jogadas legais vs. operações privilegiadas de laboratório), nunca o executor, os gatilhos, a ordem ou a apresentação de um comando equivalente. `draw`, `destroy`, `damage`, `heal`, `move` etc. são propostas de interface textual; não presumir que todos já existem no console nativo. Resolver a identidade da ocorrência e revalidar na execução; distinguir destruir, descartar e enviar ao cemitério, mesmo quando o destino coincide. `spawn`/forçar fase/lado são comandos explícitos de laboratório, não mutações ocultas nem jogadas legais. Consultas `state`/`diff` são somente leitura. O parser/runner deve ser reutilizável sem raylib (scripts/testes/headless); o App é um frontend opcional. Nunca contornar a fila nem conceder privilégios de debug ao jogador/CPU.
   *Pronto quando:* um roteiro de compra, destruição e LP é executável interativamente e headless, gera os mesmos comandos/eventos/estado final sob as mesmas condições, e cada ação é animada no App. `state`/`diff` comparáveis ao nativo para operações suportadas; testar admissões inválidas e gatilhos normais de destruição.
-- [ ] **A05 — Trace de comandos comparável.** Status: `Pronto`.
-  Exportar o log da fila C# no mesmo formato dos registros nativos (opcode, lado, argumentos) e um comparador contra capturas do `yugilab`. Começar por invocação normal (já existem fixtures parciais) e dano/cura.
-  *Pronto quando:* um roteiro curto (draw, invocar, atacar) gera listas comparáveis e as divergências saem em relatório.
+- [x] **A05 — Trace de comandos comparável.** Status: `Concluído`.
+  *A05.1–A05.7:* YDR, shuffle, identidade, movimentos, trace, CE/CF e ataque direto; CI 45325522858 aprovado. *A05.8:* batalha com alvo em piloto restrito, snapshots por papel 3C antes do dano e 7C destino final, matriz de combate e identidade, comparação 33/3C/7C parcial. CI 45326231602 aprovado; integração com A04 em curso, App, efeitos/FLIP/respostas e paridade dinâmica pendentes. [Contrato](docs/architecture/native-replay-scenarios.md).
+  *A05.9:* consulta `trace` compartilhada pelo console App/Lab e exportação headless de roteiros com `--trace-output=path`. O documento conserva a ordem dos comandos executados e distingue prefixos incompletos.
+  *A05.10:* o comparador valida a sequência desde o primeiro evento e confere as contagens do cabeçalho ou do rodapé antes de comparar qualquer janela JSONL.
+  *A05.11:* o console admite os ataques direto e com alvo dos pilotos. O Lab gera o trace compra → invocação → ataque → dano pelo mesmo console. A preparação da fase no piloto usa o setup existente até A07; captura dinâmica equivalente e cue de combate ainda pendentes.
+  *A05.12:* os traces C# novos declaram a contagem de linhas executadas. O comparador valida a contagem disponível e a sequência desde 1 antes de aceitar qualquer janela, inclusive quando a lacuna fica fora dela.
+  *A05.13:* o roteiro headless executa compra, invocação, entrada em batalha, ataque e saída pelo console e pela fila. O comando revalida lado e turno e mantém as regras de fase do sandbox. A projeção preserva essas linhas como `unmapped`. A07 segue aberto para o ciclo completo e a comparação nativa.
+  *Aceitação A05.14:* o CI executa o Lab e compara sua saída com a janela arquivada 281–301. Compra, invocação, ataque direto e dano concordam nos quatro registros projetáveis. O relatório mantém 17 registros do arquivo e quatro comandos C# sem mapeamento e classifica a janela como inconclusiva. Outro roteiro produz quatro divergências no relatório. O PR #81 fecha geração e comparação de traces no escopo do piloto. Estado equivalente no executável e apresentação do combate seguem em A09.
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.
   Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
@@ -118,6 +123,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *A08.1–A08.2:* `EffectContext` compõe compra, LP, envio do custo ao cemitério e destruições de ocorrências verificadas. A limpeza vinculada segue imediatamente após a destruição que a dispara. O executor continua dono da admissão, das reservas e dos gatilhos. A extração do assembly e as decisões pendentes seguem abertas no [PR #101](https://github.com/ffdiego/YugiRE/pull/101).
   *A08.3:* a continuação de compra opcional admite primeiro a resposta. O executor revalida supressão, turno e disponibilidade antes de emitir a compra dependente.
   *Pronto quando:* Raigeki, Dark Hole e uma carta com continuação (ex.: escolha + destruição) vivem em `Joey.Cards`, passam pelo console (`A04`) e produzem a mesma lista de comandos com e sem gate visual.
+
+- [ ] **A09 — Comparar combate em condição equivalente e apresentar o trace no App.** Status: `Aguardando evidência`.
+  Obter um cenário nativo com estado inicial e comandos comparáveis ao piloto A05, preservar as lacunas do trace e validar a apresentação dos comandos de combate no gate do App. A05 entrega a projeção e o relatório headless. A07 cobre fases nativas. A reprodução visual do combate permanece na trilha VISUALS.
 
 ## Trilha CARDS
 
@@ -171,7 +179,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   `dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat` validou em Fedora/.NET 10 os 264 IDs e seus cenários de invocação, tributo, Set e ataque no sandbox. A execução usou o fingerprint do índice de packs versionado.
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Parcial`.
   DAT local e teste opcional confirmam o código de classe para dois IDs dos packs. A comparação de P036 em duelo nativo permanece pendente. [Evidências](docs/cards/p036-field-spells-sandbox.md).
-- [ ] **C15 — Fatias `Verified`.** Status: `Bloqueado por A05`.
+- [ ] **C15 — Fatias `Verified`.** Status: `Aguardando evidência`.
   Uma carta por família comparada com captura do original (mesmo roteiro, mesmos comandos). Baixa prioridade frente a `C02`/`C03`.
 
 - [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Pronto` para contrato e fatia de seleção; coordenar alterações em `DemoDuel` com ACTIONS.

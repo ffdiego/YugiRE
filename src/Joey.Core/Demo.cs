@@ -533,7 +533,7 @@ public sealed partial class DemoDuel
         else BeginNextQueuedDeckSearch();
     }
     public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
-    public bool CanBeginBattle => !ActionsBlocked && Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn;
+    public bool CanBeginBattle => !ActionsBlocked && AllowsBattlePhaseChange(enterBattle: true);
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
@@ -1239,16 +1239,28 @@ public sealed partial class DemoDuel
     {
         message = "Battle unavailable on the opening turn or after game over.";
         if (!CanBeginBattle) return false;
-        Phase = DemoPhase.Battle; message = "Select your monster, then an enemy monster or Direct attack."; return true;
+        ApplyBattlePhaseChange(enterBattle: true);
+        message = "Select your monster, then an enemy monster or Direct attack.";
+        return true;
     }
 
     public bool EndBattle(out string message)
     {
         message = "Battle Phase must be active and all decisions resolved.";
-        if (ActionsBlocked || Phase != DemoPhase.Battle) return false;
-        EnterMainPhase2();
+        if (ActionsBlocked || !AllowsBattlePhaseChange(enterBattle: false)) return false;
+        ApplyBattlePhaseChange(enterBattle: false);
         message = "Main Phase 2.";
         return true;
+    }
+
+    private bool AllowsBattlePhaseChange(bool enterBattle) => enterBattle
+        ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn
+        : Phase == DemoPhase.Battle;
+
+    private void ApplyBattlePhaseChange(bool enterBattle)
+    {
+        if (enterBattle) Phase = DemoPhase.Battle;
+        else EnterMainPhase2();
     }
 
     private void EnterMainPhase2()

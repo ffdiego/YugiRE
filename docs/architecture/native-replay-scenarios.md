@@ -1,0 +1,107 @@
+# A05.1 — Cenários a partir de YDR
+
+O formato existente [YDR](../29-replay-ydr.md) guarda três listas de resource IDs por lado e registros de quatro words. Não é por si só uma lista de decisões legais. Um replay de operações resolvidas é oráculo para A05, mas não prova a regra que o produziu.
+
+`scripts/export_joey_replay_scenario.py` reusa o leitor existente e gera **o mesmo roteiro textual do console A04**, com índice/offset/opcode nativo e fingerprint do arquivo, sem identificador do save. Não cria novo formato de cenário. Modo estrito: qualquer registro não suportado aborta o intervalo inteiro, antes de abrir o arquivo de saída; não sobrescreve arquivos. O estado anterior ao intervalo é fornecido em um roteiro de checkpoint; não afirmar que o checkpoint coincide com a memória nativa. Executar em duelo vazio com DAT. Exemplo:
+
+```sh
+python scripts/export_joey_replay_scenario.py scratch/replays/duel.ydr --start 1060 --count 1 --checkpoint scratch/replays/before-1060.txt --output scratch/replays/1060-console.txt
+dotnet run --project src/Joey.Lab -- duel-console --dat /path/data.dat scratch/replays/1060-console.txt
+```
+
+O exemplo 1060 refere-se à amostra Relinquished já documentada; o checkpoint é privado, não fornecido pelo YDR. Comandos draw e LP são a primeira fatia. Opcode 0x61: docs/21-native-card-draw.md, 005B9F50/00578860/00571E30; somente (0,5,0) e (1,1,0). 0x43: 005784E0; 0x42: 005787F0, magnitude >0, args (magnitude,0,1), bit15 lado. SQLite privado quick_check OK; 00408470 confirma sinal por variante e flag final. Rejeitar variantes com bit12–14, p3=0, zero e quaisquer outros opcodes. Não inferir terminal nativo em deck-out simultâneo/curto. Para início, `--opening-order scratch/order.json --start 2 --count 2` valida prefixo 14/10 e dois draws de cinco; exige ordem **observada independentemente após shuffle**, arrays resource ID por lado {"0":[...],"1":[...]}, inventário exato com multiplicidade, listas 1/2 vazias. Não confundir ordem serializada com ordem embaralhada; seed/cabeçalho e fusão ainda precisam ser confirmados. Primeira amostra com Fusion Deck não é suportada no modo opening-order.
+
+## Próximos passos
+
+1. Obter YDR e captura correlacionada antes de uma operação de interesse (estado completo, posição das ocorrências, decks em ordem, LP, turno/fase, flags/links/decisões; não publicar bytes privados). Identificar serialização de seed e listas no carregador nativo. Ver docs/evidence/joey-native-shuffle-matching-2026-11-08.md: reconstrução high-mode confirmada com seed e palavras de deck observadas, mas não prova que o cabeçalho YDR forneça essas entradas.
+2. Expandir projeção CE/CF/8E/79 somente com decodificação por variante e identidade; distinguir movimento gravado de decisão de jogador. Não aplicar snapshot ou comandos resolvidos como prova de paridade das regras.
+3. Validar o mesmo roteiro headless e no App, relacionando os registros nativos aos comandos C# e suas continuidades. A05 fica parcial até comparador e critérios em PLANS.
+
+Testes Python sintéticos incluem flags, limites, duplicatas, privacidade, rejeição de opcode e saída atômica quanto à validação. CI pendente. Nenhum YDR privado versionado.
+
+## A05.2 — Cabeçalho e shuffle (SQLite)
+
+CI A05.1 45322168856 verde. SQLite quick_check ok, fingerprint db8fe7b7…b6de. 0044AD50 (carregador) lê 4 bytes assinatura, 8 ID, 0055D910 para DAT_005F3284 (offset 0C versão; versão do motor obtida por 0040F2E0), DAT_005F3288 (10, para >1000), DAT_005F328C (14), 0044B5E0 para DAT_005F3290 (18, 4 bytes). 0044C3E0 passa 3288/328C/3290 a 005BFEB0; este semeia 005C3BF5 e deriva bit3 de 00A54E5C do seletor 328C&1. 005B9E50 inicializa ambos decks via 00569380 e chama 00568D80 primeiro bit3, depois complemento. 00449EF0 desserializa grupo 0 em base, grupo 1 em +BE, grupo 2 em +A0; 00569380 carrega grupos 0 e 1 (A54F1E = base+BE; contagem A54F40 = base+E0) nas duas listas runtime; o nome da segunda/terceira lista permanece neutro no relatório até validar com DAT e estado nativo. A amostra contém seis na terceira lista, portanto o exportador de abertura ainda rejeita esse caso. 0044AD50 escreve as duas listas de decks em source index (3288!=0)/(3288!=1); 00569380 escolhe source index side==~3288&1, portanto ordem serializada coincide com lados do duelo para 3288=0 ou 1. 00568D80 high-mode >1000 usa 005BDDB0 (=rand*n/32767); RNG único entre lados. 005C40B7 gera seed baseado no relógio, mas campo é seed e não mero timestamp. Modo conservador apenas 1300 e seletores 0/1; erro no limite rand==32767. Reporta ordem de IDs (não words de ocorrência). Não requer DAT para relatório. Exemplo: python scripts/reconstruct_joey_replay_opening.py scratch/replays/duel.ydr. --native-opening --start 2 --count 2 gera roteiro sem checkpoint independente apenas se as listas extras vazias; ordem candidata, não paridade runtime. Na amostra publicada (seed 1793458172, primeiro lado 1), primeiros seis: lado 0 [1142,1062,1071,1425,1351,1346]; lado 1 [730,1114,347,1068,730,1114]. CF #9 mão 3=1068 e CE #12 mão 4=1114 após retirada coincidem com o CSV. 004059C0/00405CB0 leem byte baixo do segundo argumento como posição de mão. O teste de prefixo é diagnóstico e para antes da segunda troca de turno/registro desconhecido; não prova todo estado. CI novo pendente.
+
+## A05.3 — CE/CF: movimentação de mão para campo
+
+CI A05.2 45322846862 aprovado. SQLite 004059C0 (CE) e 00405CB0 (CF) leem lado word0 bit15; word1 resource ID convertido por 00402460; word2 low byte índice da mão e high byte região/slot de destino; word3 flags. 00570790 região 0xB chama 0056CFC0 (zera índice) e 0056D190 (compacta mão preservando ordem). CE chama 00568610: byte alto de word3 &1 -> bit0 de registro+6 (defesa), byte baixo &1 -> bit1 (face aberta). Ver docs/26-normal-summon-tributes.md e docs/22-battle-core.md; 005ABD00 produz flags 0x0001 summon, 0x0100 set. CF chama 005686E0: low byte &1 -> bit1 face aberta; slots 5..9 convertidos para S/T 0..4, categoria Field Spell força região 10 e slot 0, high byte controla etapas visuais/flags adicionais; não assumir que todo CF é ativação. 005796C0 produtor CF. Não confundir resource ID, posição e identidade física. CE face-down ataque, flags extras e CF face-up/field/especiais não são projetados. O parser decodifica a face e slot dos casos conhecidos, mas exporta somente CE attack/defense/set e CF Set comum, como move-id ID SIDE hand INDEX monster|spell SLOT POSE. A04 #72 a45b274 verifica ID na origem antes da admissão e revalida ocorrência ao executar. Isso não repete summon/ativação, custos ou efeitos, nem reconstitui todos os flags do estado. Não skipar 0D, fases ou outros registros desconhecidos para fingir continuidade. O teste diagnóstico de abertura pode olhar CF face-up sem projetá-lo; não afirma ausência de efeitos. Amostra redigida: #9 CF 1068 mão 3 lado 1 -> S/T 0 set, #12 CE 1114 mão 4 lado 1 -> monstro 0 set, #35 CE 1351 mão 3 lado 0 -> monstro 0 attack. #21 CF 1071 face-up, não exportado. Testes histórico/sintético verificam flags, slots e rejeição de intervalos mistos. Sem runtime DAT; CI pendente. Próximos: 0D/50–55/01–03 e estado de turno (A07), 79/8E via identidade, CF face-up sem resolver efeitos duas vezes. Não inferir o estado intermediário de Relinquished a partir da abertura apenas.
+
+## A05.4 — Identidade nativa e movimentos 8E/79
+
+CI A05.3 45323104997 aprovado; A04 move-id corrigido (8d7984b), CI 45323159840 aprovado. SQLite privado quick_check ok. 00569380 atribui ordinal crescente a partir de 1 ANTES de 00568D80, no word bits24–30, owner bit12. 005687D0 procura (ordinal*2+owner) em campos 0..10, GY 14, banished 15, deck 13, lista 12, mão 11 e cópias temporárias; retorno low byte lado atual, byte seguinte região, high word índice. Não igualar chave a ID de recurso/índice DAT/ID do Core. Reconstructor preserva chaves junto ao shuffle dos IDs; main-deck keys, não geração de tokens/extra.
+
+8E → 00408EE0: word1 bit0 lado atual, bits1–7 região, byte alto chave; word2 bit0 lado destino, bits1–7 região destino, byte alto argumento de posição; word3 flags. Resolve chave e verifica lado/região antes de mover. 00575AF0 produz mão→GY (word2 0x11c|owner), 00575A80 mão→banishment. 00570790 remove e compacta; 005708D0 despacha inserção: 0056CEF0 mão append; 0056C590 GY append do owner; 0056C640 banished append owner e metadado; deck 00568C00 topo/00568CA0 fundo (não projetado). 79 → 00404B40: word0 bit15 lado atual, word1 high byte região, low byte índice; 005700F0 usa região+índice para campo e índices de lista para 11..15; word2 ==0x10 banishment, senão GY no consumidor, mas exporta só 1/0x10. Word3 bit0 modifica flags, bit3 limpa flag adicional; não inferir motivo de descarte/destruição por inteiro. Destino owner extraído do word da ocorrência. 00576B30 confirma produção 79 e outras variantes 83/8F/95; 79 não é genericamente Destroy. Tokens 0x780..783 não entram nas listas. Flags/temporários, side transfer, deck destination, vínculos e lista 12 não cobertos.
+
+`--movement-context contexto.json --checkpoint setup.txt` habilita projeção de 8E list→hand/grave/banished e 79 campo (região 0) ou mão (11)→grave/banished; flags conservadoras 8E 0/1, 79 2/3; somente mesmo owner/controlador. O JSON contém record_index igual ao --start, sides com chaves "0" e "1", cada uma com hand/deck/grave/banished (arrays de chaves), monster/spell (5 slots null ou chave), field (1). Todas as chaves são ordinais main-deck conhecidos do YDR e únicas; arrays de zonas devem representar estado observado anterior ao intervalo e corresponder ao setup.txt. Ledger acompanha draws, CE/CF e remoções dentro do intervalo; rejeita fonte ausente, ID divergente, slot ocupado, owner diferente ou variante desconhecida. Emite move-id (setup, sem efeitos); não restaura flags/custos/links nem prova equivalência do checkpoint. Guard do Core valida ID e ocorrência capturada; não mapeia diretamente chave nativa para ID C# (duplicatas requerem fidelidade da posição do checkpoint). Não introduz segundo executor de regras. Sem contexto, 8E/79 continuam rejeitados.
+
+Amostra histórica: lado 1 primeiras seis chaves [37,23,67,65,39,21] e IDs [730,1114,347,1068,730,1114]. #27 8E chave39 (ordinal19 owner1, ID730), #28 chave23 (ordinal11 owner1, ID1114); hipótese de mão após #9/#12 é [37,23,67,39], as duas remoções por chave são coerentes com compactação. Não afirma checkpoint completo observado, nem pula registros #13..26 na projeção real. Testes fixture redigida e sintéticos verificam duas remoções, draw→CE→79→8E, chaves duplicadas/owner/flags e banishment. CI pendente. Próximo passo: correlacionar snapshot de execução nativa com chaves e posição, desenvolver comparador A05, e resolver fases/turnos A07. Sem YDR privado versionado.
+
+## A05.5 — Comparador de operações executadas
+
+CI A05.4 45323582994 verde. ActionTraceProjection lê somente Executed, conserva sequence/origin/outcome e registra não-aplicados/unmapped sem fabricar bytes. 61 ordinário (uma compra, detalhe vazio; deckout não mapeado), 42/43 magnitude solicitada dentro de uint16, não delta saturado. Não inventar correspondência para summon/ataque, orquestração, efeitos ainda não mapeados ou setup. ActionTraceExport gera JSON schema yugire-action-projection-v1, complete apenas quando fila não busy/fault; sem frames. Piloto independente de A04: `dotnet run --project src/Joey.Lab -- action-trace-pilot > scratch/action-trace.json` (fixture sintética, ativa Upstart e Sparks legalmente, invoca monstro; não injeta o log esperado como entrada). Exportador reaproveitável por A04 após integração. Não confundir com capture native produtor.
+
+`python scripts/compare_joey_action_trace.py replay.ydr scratch/action-trace.json --native-start N --native-count K --cs-start M --cs-count L` recebe janelas explícitas por índice zero-based (YDR record index ou ordinal de comandos do JSONL; C# ordinal das linhas Executed), preserva referências a record/seq. JSONL lê args 32-bit, preserva high words, rejeita gaps de seq/overwrites explícitos; não assume que captura de produtor prove execução. 61(0,5,0) normaliza em 5 unidades 61(1,1,0); 42/43 passam intactos. Ordenação compara por posição das unidades suportadas, não alinhamento heurístico. Gaps mantidos em nativeUnmapped/csharpUnmapped. Exit 0 projected_match (somente projeção da janela, sem gaps e complete C#), 1 mismatch, 2 inválido, 3 inconclusive (gaps, vazio comparável ou C# incompleto). Divergência na projeção pode coexistir com gaps; não localizar causa sem contexto. Nenhuma validação de equivalência do estado inicial ou de regras implícita. Testes C# produtor real, gate, deckout, valores fora de faixa; Python lote cinco, divergência, high words, captura histórica e gaps. CI pendente; próximo: trace arbitrário A04, snapshot pré-mutação de CE/CF sem repetir A03, mapeamento de combate e comparações reais.
+
+## A05.6 — CE/CF produzidos pelo Core
+
+CI A05.5 45324381241 aprovado. PlacementObservation é um fato de domínio no CommandResult (não relógio, evento de apresentação ou novo executor); PlaceMonster captura a carta resolvida e o índice físico antes de CommitNormalPlacement, inclusive quantidade de tributos, e SetSpellTrap captura origem/slot/face. Trace conserva ocorrência C# e metadado após mutação; sem consulta retrospectiva à mão. Projeção CE 0x0001/0x0100 somente summon/set normal sem tributo, CF 0x0000 Set S/T 5..9, não campo/face-up/tributo. Valida coerência com comando, source Hand e limites antes de mapear; comparador Python valida metadado e argumentos, preserva gaps. Testes dos dois lados, duplicatas, slot/índice não zero, Set, gate e ausência de metadata. Sem mapear setup como jogada, sem claim de paridade do estado. CI pendente. Próxima integração: expor ActionTraceExport no runner A04, coordenar dependências antes de merge; combate ainda pendente.
+
+## A05.7 — ataque direto restrito
+
+CI A05.6 45324763088 aprovado. SQLite cumulativo quick_check ok (mesmo EXE SHA256): 005A1580 stage4 emite 0x34 | side<<15, attacker slot,1,0 quando DAT_00A57840 bit2 direto; 005B8210 ramo bit2 grava ATK no dano do oponente e limita 65535; 00578540 emite 43 com magnitude,0,1. Não mapear 35 como declaração (também aparece em cancelamento). 30/31 preparam comparação/apresentação, 3C move cópias temporárias, 7C destina ao GY; ver docs/22-battle-core.md. Declaração e dano são comandos distintos; gate impede dano antes da conclusão da declaração. TryQueueDirectAttack opt-in aceita Battle Phase legal, uma ocorrência face-up em ataque ainda não usada, nenhuma outra carta no campo, nenhum efeito de dano conhecido (BattleDamageEffectRules); revalida no executor, consome ataque, usa AttackValue limitado e enfileira Damage se positivo. Não substitui Attack legado, não implementa respostas, 0C/35/30/31/56/0D nem combate com alvo, não afirma cobertura de todas as cartas. `dotnet run --project src/Joey.Lab -- action-trace-battle-pilot` gera trace de draw/summon/direct/damage a partir de fixture sintética lado1 turno2, BeginBattle legado (A07 pendente). Trace DirectAttackObservation e 34; comparador preserva lacunas. Amostra Relinquished #956..961: 8034 slot0, 0043 dano1400; projeção igual à fixture de teste Python, quatro gaps => inconclusive, não paridade. Testes gate, fase, efeito, stale, zero e lethal; CI pendente. Reconciliado com main 8c64c6d preservando CARDS recrutamento/revival. #86 ainda precisa rebase/CI, não mergear. Próximo: integrar trace e ataque no console gráfico sem reimplementar fases, validar runtime; mapear combate com alvo e etapas 3C/7C.
+
+## A05.8 — combate com alvo e registros temporários
+
+CI A05.7 45325522858 aprovado. SQLite cumulativo v2 quick_check ok: 005A1580 emite 33 (slot atacante, slot alvo, lado alvo+1); 00405020 copia 0x90 bytes do campo para registro por papel e limpa campo; 005A2740 evidência em docs/evidence/battle-comparison-caller.txt confirma 3C (slot, papel 0/1,0). 00577CF0/00405190 e 005A31A0 (evidência anterior) confirmam 7C (slot, destino 0 GY/1 banish, flag) e envio da cópia. 005A2740/005A31A0 ausentes na tabela decompilations v2; usamos exports históricos citados, não alegamos nova decompilação. 7C defensor (slot,0,1) observado #49–50 do Relinquished; atacante final fica unmapped por falta de confirmação dinâmica. 30/31 e 0C/35/56 continuam gaps.
+
+TryQueueTargetedAttack piloto explícito IDs 24 e 1351 (sem callback rows no SQLite, não classificador geral de monstros normais); dois monstros face-up, sem outras cartas em campo/equipamento. Revalida ocorrência e fase, usa matriz comum (empate zero preserva ambos), reserva até dois registros por papel, enfileira SnapshotBattleRemovalCommand, DamageCommand positivo, FinishBattleRemovalCommand. Nenhuma fila auxiliar; os registros armazenam a mesma referência de Card, invisível nas zonas comuns durante o intervalo. Gate impede dano antes de concluir retirada; GY só recebe na etapa final. Evento MonsterDestroyed na retirada, não duplicado na chegada. Lethal cleanup é política sandbox, não conclusão de paridade. Sem FLIP, resposta, recrutamento, banimento, troca de controle, efeitos/links; legado não alterado. Testes matriz ambos lados, identidade, fase/gate, lethal, fixture #49/50 (projeção isolada, não execução do efeito real). CI pendente. Próximo: validar os 3C/7C dinâmicos e ligar ataque ao console/App; A07 e efeitos continuam pendentes.
+
+## A05.9 — Trace de roteiros do console
+
+A consulta `trace` do console de laboratório, disponível no App e no Lab, imprime um snapshot JSON da fila em stdout. O schema `yugire-action-projection-v1` inclui as operações executadas em ordem, com resultado, origem e dados observados quando disponíveis. Na consulta, `complete` indica que a fila está livre e saudável. Os dados de projeção são os mesmos dos pilotos anteriores.
+
+O exemplo headless usa um arquivo de texto com `draw 1 0`, `summon 0 3` e `damage 200 1`, cada comando em uma linha.
+
+```sh
+dotnet run --project src/Joey.Lab -- duel-console --fixture scratch/trace-script.txt --trace-output=scratch/console-trace.json
+```
+
+O Lab grava um arquivo novo e conserva o prefixo executado com `complete: false` se o roteiro falhar. Com `--dat PATH` a exportação usa o mesmo schema e o catálogo indicado. Os testes C# cobrem a consulta durante o gate de apresentação, a igualdade após o gate, a origem de colocação, o prefixo após falha e a proteção de arquivos existentes. A integração do cue de combate e a comparação dinâmica permanecem pendentes.
+
+## A05.10 — Integridade da entrada JSONL
+
+O comparador exige sequência contínua a partir de 1, incluindo marcadores e sondas que ficam fora da janela de comandos. Capturas `live_duels` precisam de `capture_summary` final, com `complete: true`, `overwritten: 0` e `eventsWritten` igual ao total de eventos lidos. Snapshots históricos do buffer registram `seen`, `retained` e `overwritten` no cabeçalho e passam pela mesma conferência de contagem. Uma perda ou contagem incompatível encerra a leitura com código 2 antes da comparação. O relatório de uma entrada íntegra continua sendo uma comparação de projeções.
+
+O comando de console `attack SLOT direct|TARGET_SLOT` admite os dois pilotos de
+combate em Battle Phase. `action-trace-battle-pilot` exercita compra, invocação
+e ataque direto com o mesmo produtor, a partir de uma fixture sem DAT.
+`battle begin` e `battle end` enfileiram a transição de fase do sandbox.
+Cada comando revalida o lado e o turno e aparece como `unmapped` no trace.
+O ciclo completo e a associação de fases a registros nativos seguem em A07.
+
+O trace C# v1 é exportado desde o primeiro comando executado. O comparador
+rejeita lacunas de sequência em qualquer parte do documento, antes de
+selecionar a janela. As exportações atuais incluem `rowCount` para detectar
+um sufixo removido. Exportações v1 anteriores continuam legíveis, com a
+limitação de que o sufixo ausente não pode ser identificado pela contagem.
+
+## Aceitação do trace comparável
+
+O CI executa o Lab e chama o comparador sobre os registros 281–301 do CSV
+já versionado da amostra Relinquished. O Lab usa uma fixture sintética
+com os parâmetros necessários para projetar compra, invocação, ataque
+direto e dano. A comparação concorda nos registros 281, 290, 296 e 301.
+O relatório informa 17 registros nativos e quatro comandos C# sem
+mapeamento e retorna `inconclusive` (exit 3). A fixture padrão, com
+entradas diferentes, retorna `mismatch` (exit 1) e quatro diferenças.
+
+O CSV é aceito como fonte arquivada, com índices contíguos desde zero e
+quatro palavras de 16 bits por registro. A fixture reproduz as operações
+projetáveis da janela. O estado completo do turno, a execução pareada e
+a apresentação do combate aguardam A09.
+
+```bash
+dotnet build YugiRE.sln
+python3 scripts/tests/check_action_trace_archive.py src/Joey.Lab/bin/Debug/net10.0/Joey.Lab.dll
+```
