@@ -30,6 +30,7 @@ public sealed class CpuDuelController
     /// <summary>Who owns the current blocking choice; null means ordinary turn play.</summary>
     public static int? PendingOwner(DemoDuel duel) =>
         duel.PendingEffectDecision?.Owner ?? duel.PendingCardSelection?.Owner ??
+        duel.PendingFlipSpellTrapTargets?.Owner ??
         duel.PendingFlipTarget?.Owner ?? duel.PendingSpellTrapTarget?.Owner ?? duel.PendingFusionSummon?.Owner ??
         (duel.PendingSummonResponse is { } summon ? summon.EligibleTraps[0].Owner :
         duel.PendingAttackResponse is { } attack ? attack.EligibleTraps[0].Owner : null);
@@ -113,6 +114,20 @@ public sealed class CpuDuelController
                 handIndex: fusion.FromSet || fusion.FieldOwner is not null ? null : fusion.SourceIndex,
                 additionalSpentHandIndices: spent, fieldOwner: fusion.FieldOwner);
         }
+        if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
+        {
+            // Prefer adverse targets, while allowing own-side selections when
+            // the effect requires two cards across the entire field.
+            var choice = twoSpellTargets.EligibleTargets
+                .Where(t => !duel.SelectedFlipSpellTrapTargets.Any(s =>
+                    s.Player == t.Player && s.Zone == t.Zone))
+                .OrderBy(t => t.Player == Player ? 1 : 0)
+                .ThenBy(t => t.Zone).FirstOrDefault();
+            return choice is null
+                ? Idle(CpuStepStatus.Blocked, "Mandatory two-target FLIP has no candidate.")
+                : Act(CpuAction.Selection, (out string m) =>
+                    duel.SelectFlipSpellTrapTarget(choice.Player, choice.Zone, out m));
+        }
         if (duel.PendingCardSelection is { } selection)
         {
             var candidate = selection.EligibleCards
@@ -140,6 +155,7 @@ public sealed class CpuDuelController
                            from z in Enumerable.Range(0, 5)
                            where duel.Monsters[p, z] is not null &&
                                (!bounce || !duel.IsMarkedForBattleDestruction(p, z)) &&
+                               (flip.Effect != DemoFlipEffect.DestroyOpponentMonster || p != flip.Owner) &&
                                !duel.SelectedFlipTargets.Any(t => t.Player == p && t.Zone == z)
                            orderby p != Player descending,
                                (p == Player ? -KnownPower(duel, p, z) : KnownPower(duel, p, z)) descending, z
@@ -192,7 +208,12 @@ public sealed class CpuDuelController
                 bool wantDefense = duel.AttackValue(Player, z) < MaxVisibleEnemyAttack(duel) &&
                     duel.DefenseValue(Player, z) > duel.AttackValue(Player, z);
                 bool flipUseful = duel.MonsterFaceDown[Player, z] && FlipUseful(duel, duel.Monsters[Player, z]!);
-                if (flipUseful || !duel.MonsterFaceDown[Player, z] && duel.DefensePosition[Player, z] != wantDefense ||
+                bool positionEffectUseful = !duel.MonsterFaceDown[Player, z] &&
+                    !duel.DefensePosition[Player, z] &&
+                    MonsterPositionEffectRules.TriggersOnAttackToDefense(duel.Monsters[Player, z]!.Id) &&
+                    Enumerable.Range(0, 5).Any(e => duel.Monsters[1 - Player, e] is not null);
+                if (positionEffectUseful || flipUseful ||
+                    !duel.MonsterFaceDown[Player, z] && duel.DefensePosition[Player, z] != wantDefense ||
                     duel.MonsterFaceDown[Player, z] && !wantDefense && duel.AttackValue(Player, z) >= 1000)
                 {
                     int zone = z;
@@ -286,6 +307,15 @@ public sealed class CpuDuelController
         FlipEffectRules.FourStarredLadybugOfDoom =>
             MonsterWipeRules.LevelFourOpponentTargets(Player, d.Monsters, d.MonsterFaceDown).Count > 0,
         FlipEffectRules.Skelengel => d.DeckCount(Player) > 0,
+        FlipEffectRules.BubonicVermin =>
+            Enumerable.Range(0, 5).Any(z => d.Monsters[Player, z] is null) &&
+            d.DeckSnapshot(Player).Any(candidate => candidate.IsMonster && candidate.Id == c.Id),
+        FlipEffectRules.LadyAssailantOfFlames => d.DeckCount(Player) >= 3,
+        FlipEffectRules.FireSorcerer => d.HandFor(Player).Count >= 2,
+        FlipEffectRules.ImmortalOfThunder => d.Life[Player] <= 5000,
+        FlipEffectRules.Greenkappa or FlipEffectRules.TornadoBird =>
+            FlipSpellTrapSelectionRules.Candidates(c.Id, d.Spells,
+                d.SpellFaceDown, d.FieldSpells, d.FieldSpellFaceDown).Count >= 2,
         _ => false
     };
 }

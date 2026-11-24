@@ -57,3 +57,71 @@ rollback e grava sob scratch/. Depois de consumir um bundle,
 registrar conclusões em docs/research e marcar coleta como
 concluída nesta fila. Novas pendências devem corresponder
 a evidências específicas, não reexecutar coletas completas.
+
+## Roteiros de regras de cartas — aguardando coleta
+
+| Roteiro | Pré-requisito | Produz | Estado |
+| --- | --- | --- | --- |
+| `05-flip-spelltrap-targets-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-spelltrap-two-targets.zip` | **Aguardando execução** |
+| `06-prohibition-links-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-prohibition-links-contract.zip` | **Aguardando execução** |
+| `07-flip-banish-burn-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-banish-burn-contract.zip` | **Aguardando execução** |
+| `08-immortal-thunder-graveyard-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-immortal-thunder-contract.zip` | **Aguardando execução** |
+| `09-dimensional-warrior-banish-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-dimensional-warrior-banish.zip` | **Aguardando execução** |
+| `10-dark-necrofear-control-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-dark-necrofear-control.zip` | **Aguardando execução** |
+
+### FLIP de duas S/T (Greenkappa e Tornado Bird)
+
+O quinto roteiro investiga Greenkappa (`585`, P085) e Tornado Bird
+(`1521`, P255). Dos oito callbacks específicos catalogados, apenas
+a disponibilidade de Tornado Bird (`00583120`) está decompilada
+no SQLite atual. O ZIP deve trazer assembly ou ausência explícita
+para os outros sete endereços. Confirmar seleção de duas ocorrências,
+filtro face-down, zona FIELD, ação de retorno/destruição, possíveis
+resoluções parciais e supressão (Royal Command) antes de elevar as
+cartas a Verified. **Este roteiro ainda não foi executado**.
+Consultar [P085/P255](../../docs/cards/p085-p255-two-spelltrap-flip-sandbox.md).
+
+### Prohibition e efetividade das fontes contínuas
+
+O sexto roteiro exporta os callbacks de **Prohibition** (resource ID 1162,
+índice DAT 229): primário `0058C430` e preparação de alvo
+`00595F20`, que **não estão decompilados no SQLite atual**.
+Inclui `0056B440` e `005674E0` (ligações/identidade) e os
+contadores `00569820`/`005699F0`, além da recomputação de Jinzo,
+Royal Decree e Royal Command. Confirmar o significado dos vínculos
+de tipos 9/11, o momento da declaração e o efeito sobre cartas já
+presentes, antes de implementar Prohibition por aproximação.
+**Roteiro ainda não executado**.
+
+### FLIP P051/P052 — banimento de Deck / mão e dano 800
+
+O sétimo roteiro extrai os gates de disponibilidade e produtores do
+custo de Lady Assailant of Flames (`1435`) e Fire Sorcerer (`1436`).
+O callback de dano `00584E60` está decompilado, porém as quatro
+rotinas específicas de custo ainda não estão no SQLite. Confirmar
+consumo e ordem de seleção, RNG do modo 4, destino `0x62`,
+restrições por Royal Command e comportamento com mão/deck
+insuficientes. **Roteiro não executado.**
+
+### P065 — The Immortal of Thunder: histórico de FLIP e saída para o cemitério
+
+O roteiro 08 explora os callbacks P065 (`00581040`, `0057C5F0`,
+`00585970`), que ainda não foram decompilados, e dois helpers
+(`00576F40`, `00577CF0`) que consultam o ID `0x1CD` e bits
+da ocorrência. O objetivo é verificar exatamente **quando** a perda
+de 5000 LP é admitida e como ela interage com negação, carta
+face-down e saída por tributo/fusão. **Ainda não executado.**
+
+### P188 — Dimensional Warrior: combate e banimento duplo
+
+O roteiro 09 busca o callback primário `0058CC00` (catalogado,
+mas sem decompilação no SQLite) e as rotinas de dano e movimentação
+por zona. O objetivo é confirmar a ordem nativa entre cálculo de
+dano, efeito P188, FLIP de outro monstro, destruição normal em
+batalha e ausência de envio ao cemitério. **Ainda não executado**.
+
+### P252 — Dark Necrofear
+
+Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastrear vínculo de controle, evento de saída e pedido da End Phase. Custo de três Fiends no GY já sustentado por 0059DEF0/00599E30; não confundir com Spirit Elimination. **Ainda não executado.**
+
+Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.

@@ -36,6 +36,8 @@ public sealed partial class DemoDuel
     public event Action<DemoSpecialSummon>? MonsterSpecialSummoned;
     /// <summary>Presentation-only notice of a successful normal summon or Set.</summary>
     public event Action<DemoNormalSummon>? MonsterNormalSummoned;
+    /// <summary>Committed manual position change, not an attack reveal.</summary>
+    public event Action<DemoMonsterPositionChange>? MonsterPositionChanged;
     /// <summary>Presentation-only: an effect has already changed a deck's order.</summary>
     public event Action<int>? DeckShuffled;
     private readonly List<Card>[] hands = [[], []];
@@ -60,6 +62,9 @@ public sealed partial class DemoDuel
     public IReadOnlyList<Card> DeckSnapshot(int player) => player is 0 or 1
         ? Array.AsReadOnly(decks[player].ToArray()) : throw new ArgumentOutOfRangeException(nameof(player));
     private readonly List<Card>[] graves = [[], []];
+    // The banished zone is shared with Fusion Gate in DemoFusion.cs.
+    // FLIP banishment reuses those same physical card occurrences.
+    public DemoFlipBanishBurnResult? LastFlipBanishBurn { get; private set; }
     // Serial choice resolution shared by post-graveyard effects and P165
     // Normal/Flip Summon triggers. Preserve provenance: battle and Graveyard
     // events must not be interpreted as a Summon, or vice versa.
@@ -91,10 +96,67 @@ public sealed partial class DemoDuel
                                               bool DestroyAttacker, bool DestroyDefender);
     private BattleContinuation? deferredBattle;
     private readonly List<DemoSelectedMonster> flipSelections = [];
+    private readonly List<DemoSpellTrapTarget> flipSpellTrapSelections = [];
+    public IReadOnlyList<DemoSpellTrapTarget> SelectedFlipSpellTrapTargets =>
+        flipSpellTrapSelections.AsReadOnly();
+    public PendingFlipSpellTrapTargets? PendingFlipSpellTrapTargets { get; private set; }
     public IReadOnlyList<DemoSelectedMonster> SelectedFlipTargets => flipSelections.AsReadOnly();
     public DemoFlipTarget? PendingFlipTarget { get; private set; }
     public PendingCardSelection? PendingCardSelection { get; private set; }
     public PendingSpellTrapTarget? PendingSpellTrapTarget { get; private set; }
+    /// <summary>Live board predicate; hidden Royal Command does not suppress FLIPs.</summary>
+    public bool FlipEffectsNegated => FlipEffectSuppressionRules.RoyalCommandEffective(
+        Monsters, MonsterFaceDown, Spells, SpellFaceDown);
+
+    private enum PendingFlipChoice { MonsterTarget, CardSelection, SpellTrapTargets, OptionalDraw }
+
+    /// <summary>
+    /// Cancel an already queued FLIP when Royal Command becomes effective
+    /// before its resolver. A non-FLIP request (e.g. Sangan/Witch) is unaffected.
+    /// The caller passes the pending-request family to avoid consuming a
+    /// different kind of player interaction by mistake.
+    /// </summary>
+    private bool TryNegatePendingFlip(PendingFlipChoice expected, out string message)
+    {
+        message = "";
+        if (!FlipEffectsNegated) return false;
+        string? effectName = null;
+        switch (expected)
+        {
+            case PendingFlipChoice.MonsterTarget
+                when PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.Flip } target &&
+                     FlipEffectRules.Supports(target.SourceCard.Id):
+                effectName = target.SourceCard.Name;
+                PendingFlipTarget = null;
+                flipSelections.Clear();
+                break;
+            case PendingFlipChoice.CardSelection
+                when PendingCardSelection is { } selection &&
+                     FlipEffectRules.Supports(selection.EffectResourceId):
+                effectName = $"card {selection.EffectResourceId}";
+                PendingCardSelection = null;
+                selectedBatchIndices.Clear();
+                break;
+            case PendingFlipChoice.SpellTrapTargets
+                when PendingFlipSpellTrapTargets is { } targets &&
+                     FlipEffectRules.Supports(targets.Source.Id):
+                effectName = targets.Source.Name;
+                PendingFlipSpellTrapTargets = null;
+                flipSpellTrapSelections.Clear();
+                break;
+            case PendingFlipChoice.OptionalDraw
+                when PendingEffectDecision is { Kind: EffectDecisionKind.DrawOneOnFlip } choice:
+                effectName = choice.Source.Name;
+                PendingEffectDecision = null;
+                break;
+        }
+        if (effectName is null) return false;
+        FinishDeferredBattle();
+        BeginNextEffectDecision();
+        BeginNextQueuedDeckSearch();
+        message = $"{effectName} FLIP effect negated by Royal Command; no effect applied.";
+        return true;
+    }
     /// <summary>
     /// Determined destroyed at damage calculation, but still present during FLIP resolution.
     /// Such monsters cannot be returned to the hand by Penguin Soldier.
@@ -111,6 +173,7 @@ public sealed partial class DemoDuel
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
+        PendingFlipSpellTrapTargets is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
         PendingAttackResponse is not null || PendingEffectDecision is not null ||
         PendingSpellTrapTarget is not null || PendingFusionSummon is not null || deferringFieldRemovalTriggers;
@@ -322,6 +385,44 @@ public sealed partial class DemoDuel
         !NormalSummonRules.RequiresSpecialSummon(Hand[index]) &&
         Enumerable.Range(0, 5).Count(z => Monsters[ActivePlayer, z] != null) >= NormalTributes(Hand[index]) &&
         (NormalTributes(Hand[index]) > 0 || FirstFreeMonsterZone() >= 0);
+    /// <summary>Inherent Special Summon: P252 cost only. This does not grant
+    /// the delayed Equip/control effect or model summon negation chains.</summary>
+    public bool CanSpecialSummonByGraveyardBanish(int handIndex) =>
+        !ActionsBlocked && Phase == DemoPhase.Main &&
+        handIndex >= 0 && handIndex < Hand.Count &&
+        Hand[handIndex].IsMonster &&
+        GraveyardBanishSummonRules.RequiredCount(Hand[handIndex].Id) is int required &&
+        required > 0 && FirstFreeMonsterZone() >= 0 &&
+        GraveyardBanishSummonRules.Candidates(Hand[handIndex].Id, graves[ActivePlayer]).Count >= required;
+
+    public IReadOnlyList<CardSelectionCandidate> GraveyardBanishSummonCandidates(int handIndex) =>
+        CanSpecialSummonByGraveyardBanish(handIndex)
+            ? GraveyardBanishSummonRules.Candidates(Hand[handIndex].Id, graves[ActivePlayer])
+            : Array.Empty<CardSelectionCandidate>();
+
+    public bool SpecialSummonByGraveyardBanish(int handIndex, int zone,
+        Card expectedHandCard, IReadOnlyList<CardSelectionCandidate> cost,
+        bool defense, out string message)
+    {
+        message = "Choose a valid Special Summon, three distinct Fiends in own Graveyard and a free zone.";
+        int owner = ActivePlayer;
+        if (!CanSpecialSummonByGraveyardBanish(handIndex) ||
+            !ReferenceEquals(Hand[handIndex], expectedHandCard) ||
+            zone is < 0 or >= 5 || Monsters[owner, zone] is not null ||
+            !GraveyardBanishSummonRules.CanPay(expectedHandCard.Id, graves[owner], cost))
+            return false;
+        // Commit after the full cost, source and destination are checked.
+        // This does not consume the normal summon allowance.
+        foreach (var candidate in cost.OrderByDescending(c => c.SourceIndex))
+            graves[owner].RemoveAt(candidate.SourceIndex);
+        foreach (var candidate in cost)
+            banished[owner].Add(candidate.Card);
+        hands[owner].RemoveAt(handIndex);
+        PlaceSelectedMonster(owner, zone, expectedHandCard, false, defense);
+        message = $"{expectedHandCard.Name}: banished {cost.Count} Graveyard monsters and Special Summoned.";
+        return true;
+    }
+
     public int FirstFreeMonsterZone(IReadOnlyList<int>? tributes = null) => Enumerable.Range(0, 5)
         .FirstOrDefault(z => Monsters[ActivePlayer, z] == null || tributes?.Contains(z) == true, -1);
     public int FirstFreeSpellZone() => Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
@@ -546,6 +647,26 @@ public sealed partial class DemoDuel
         }
         if (card.ClassCode == 22 && SpellTrapWipeRules.Supports(card.Id))
             return ActivateSpellTrapWipe(card, zone, fromSet: true, out message);
+        if (card.Id == FlipEffectSuppressionRules.RoyalCommand && card.ClassCode == 21)
+        {
+            // This bounded trap window follows Destiny Board: owner Main Phase
+            // on a later turn. Opponent response/chains remain unimplemented.
+            if (spellSetTurn[p, zone] >= Turn)
+            {
+                message = "Royal Command cannot activate on its Set turn.";
+                return false;
+            }
+            if (FlipEffectSuppressionRules.JinzoFaceUp(Monsters, MonsterFaceDown))
+            {
+                message = "Jinzo prevents activation of Royal Command.";
+                return false;
+            }
+            SpellFaceDown[p, zone] = false;
+            message = FlipEffectsNegated
+                ? "Royal Command face-up: FLIP effects are negated."
+                : "Royal Command face-up: its Trap effect is currently negated.";
+            return true;
+        }
         if (card.Id == DestinyBoardRules.BoardResourceId)
         {
             // Sandbox constraint: activation from an already-set trap is
@@ -606,6 +727,116 @@ public sealed partial class DemoDuel
                 SpellTrapTargetRules.Accepts(resourceId, card, IsSpellTrapFaceDown(player, zone)))
                 yield return new(player, zone, card);
         }
+    }
+
+    /// <summary>
+    /// Select a mandatory pair of FLIP S/T targets. Picks do not mutate the
+    /// field. Final resolution rechecks both occurrences before moving either.
+    /// The same zone can be clicked again to deselect it.
+    /// </summary>
+    public bool SelectFlipSpellTrapTarget(int player, int zone, out string message)
+    {
+        message = "No eligible FLIP Spell/Trap target is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.SpellTrapTargets, out message)) return true;
+        if (PendingFlipSpellTrapTargets is not { } pending || GameOver ||
+            player is < 0 or > 1 || zone is < 0 or > SpellTrapTargetRules.FieldZone)
+            return false;
+
+        int selectedIndex = flipSpellTrapSelections.FindIndex(x =>
+            x.Player == player && x.Zone == zone);
+        if (selectedIndex >= 0)
+        {
+            flipSpellTrapSelections.RemoveAt(selectedIndex);
+            message = $"Deselected Spell/Trap target ({flipSpellTrapSelections.Count}/2).";
+            return true;
+        }
+
+        Card? current = SpellTrapCardAt(player, zone);
+        if (current is null ||
+            !pending.EligibleTargets.Any(t => t.Player == player && t.Zone == zone &&
+                ReferenceEquals(t.Card, current)) ||
+            !FlipSpellTrapSelectionRules.IsEligible(pending.Source.Id, current,
+                IsSpellTrapFaceDown(player, zone)))
+        {
+            message = "This Spell/Trap occurrence or face state is no longer eligible.";
+            return false;
+        }
+
+        flipSpellTrapSelections.Add(new(player, zone, current));
+        if (flipSpellTrapSelections.Count < PendingFlipSpellTrapTargets.RequiredCount)
+        {
+            message = "Choose one more distinct Spell/Trap target.";
+            return true;
+        }
+
+        // Transactional validation: do not remove either card when a previous
+        // pick disappeared or was replaced before the second click.
+        bool valid = flipSpellTrapSelections.Count == PendingFlipSpellTrapTargets.RequiredCount &&
+            flipSpellTrapSelections.All(t =>
+                ReferenceEquals(SpellTrapCardAt(t.Player, t.Zone), t.Card) &&
+                FlipSpellTrapSelectionRules.IsEligible(pending.Source.Id, t.Card,
+                    IsSpellTrapFaceDown(t.Player, t.Zone)));
+        if (!valid)
+        {
+            flipSpellTrapSelections.RemoveAt(flipSpellTrapSelections.Count - 1);
+            message = "A previously selected target changed; deselect it and choose again.";
+            return false;
+        }
+
+        DemoSpellTrapTarget[] targets = flipSpellTrapSelections.ToArray();
+        bool[] activeBoardLeaves = new bool[2];
+        foreach (var t in targets)
+        {
+            if (!IsSpellTrapFaceDown(t.Player, t.Zone) &&
+                t.Card.Id == DestinyBoardRules.BoardResourceId &&
+                DestinyBoardRules.HasActiveBoard(t.Player, Spells, SpellFaceDown))
+                activeBoardLeaves[t.Player] = true;
+        }
+        PendingFlipSpellTrapTargets = null;
+        flipSpellTrapSelections.Clear();
+
+        foreach (var t in targets)
+            if (pending.Operation == FlipSpellTrapOperation.Destroy)
+                DestroySpellTrapCard(t.Player, t.Zone);
+            else ReturnSpellTrapCardToOwnerHand(t.Player, t.Zone);
+
+        // Mirror the existing MST cleanup for a face-up Destiny Board leaving.
+        // Full chained-resolution equivalence remains pending native evidence.
+        for (int side = 0; side < 2; side++)
+        {
+            if (!activeBoardLeaves[side]) continue;
+            for (int z = 0; z < 5; z++)
+                if (Spells[side, z] is Card piece &&
+                    !SpellFaceDown[side, z] && IsDestinyBoardPiece(piece))
+                    DestroySpellTrapCard(side, z);
+        }
+
+        FinishDeferredBattle();
+        BeginNextQueuedDeckSearch();
+        message = pending.Operation == FlipSpellTrapOperation.Destroy
+            ? $"{pending.Source.Name} FLIP: destroyed two Set Spell/Trap Cards."
+            : $"{pending.Source.Name} FLIP: returned two Spell/Trap Cards to their owners' hands.";
+        return true;
+    }
+
+    /// <summary>Unlike RemoveEquipmentCore, a bounced equip does not enter Graveyard.</summary>
+    private void ReturnSpellTrapCardToOwnerHand(int player, int zone)
+    {
+        Card? card = SpellTrapCardAt(player, zone);
+        if (card is null) return;
+        if (zone == SpellTrapTargetRules.FieldZone)
+        {
+            FieldSpells[player] = null;
+            FieldSpellFaceDown[player] = false;
+        }
+        else
+        {
+            var link = equipment.SingleOrDefault(e => e.Owner == player &&
+                e.SourceZone == zone && ReferenceEquals(e.Card, card));
+            if (link is not null) equipment.Remove(link);
+            ClearSpellTrapSlot(player, zone);
+        }
+        hands[player].Add(card);
     }
 
     private Card? SpellTrapCardAt(int player, int zone) => zone == SpellTrapTargetRules.FieldZone
@@ -913,10 +1144,14 @@ public sealed partial class DemoDuel
         if (!CanChangePosition(zone)) return false;
         var monster = Monsters[owner, zone]!;
         bool flipped = MonsterFaceDown[owner, zone];
-        DefensePosition[owner, zone] = !DefensePosition[owner, zone];
+        bool oldDefense = DefensePosition[owner, zone];
+        DefensePosition[owner, zone] = !oldDefense;
         MonsterFaceDown[owner, zone] = false;
         changedPosition[owner, zone] = true;
         if (flipped) MonsterWasFlipped[owner, zone] = true;
+        var change = new DemoMonsterPositionChange(owner, zone, monster,
+            flipped, oldDefense, false, DefensePosition[owner, zone]);
+        MonsterPositionChanged?.Invoke(change);
         if (flipped)
         {
             TriggerFlip(owner, zone, monster, out message);
@@ -933,6 +1168,17 @@ public sealed partial class DemoDuel
                 message = $"{monster.Name} Flip Summoned: resolve its pending effect.";
             else if (message.Length == 0)
                 message = "Flip Summon: face-up attack position.";
+        }
+        else if (MonsterPositionEffectRules.Trigger(change) ==
+                 MonsterPositionTriggeredEffect.DestroyOpponentMonster)
+        {
+            if (Enumerable.Range(0, 5).Any(z => Monsters[1 - owner, z] is not null))
+            {
+                PendingFlipTarget = new(owner, zone, monster, DemoFlipEffect.DestroyOpponentMonster,
+                    DemoMonsterEffectTrigger.PositionChange);
+                message = $"{monster.Name}: choose an opposing monster to destroy.";
+            }
+            else message = $"{monster.Name}: no opposing monster to destroy.";
         }
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
@@ -1149,7 +1395,8 @@ public sealed partial class DemoDuel
         deferredBattle = battle;
         TriggerFlip(enemy, target, defender, out string flipMessage);
         BeginNextEffectDecision();
-        if (PendingFlipTarget is not null || PendingCardSelection is not null || PendingEffectDecision is not null)
+        if (PendingFlipTarget is not null || PendingCardSelection is not null ||
+            PendingFlipSpellTrapTargets is not null || PendingEffectDecision is not null)
         {
             message = $"{damageMessage} {flipMessage}";
             return true;
@@ -1219,6 +1466,21 @@ public sealed partial class DemoDuel
         BattleContinuation? battle = deferredBattle;
         if (battle is null) return;
         deferredBattle = null;
+        // P188: removal from play occurs after damage calculation, but before
+        // the normal battle-to-Graveyard movement. A monster that never
+        // reached Graveyard must not run battle-destruction or GY triggers.
+        // Identity checks prevent an unrelated replacement occupying a slot
+        // during the Damage Step from being banished by this old attack.
+        bool bothPresent =
+            ReferenceEquals(Monsters[battle.AttackerSide, battle.AttackerZone], battle.Attacker) &&
+            ReferenceEquals(Monsters[battle.DefenderSide, battle.DefenderZone], battle.Defender);
+        if (bothPresent && DimensionalWarriorRules.BanishBothAfterDamageCalculation(
+                battle.Attacker.Id, battle.Defender.Id))
+        {
+            BanishBattlingMonster(battle.AttackerSide, battle.AttackerZone, battle.Attacker);
+            BanishBattlingMonster(battle.DefenderSide, battle.DefenderZone, battle.Defender);
+            return;
+        }
         // An effect may already have removed a combatant. Never destroy an
         // unrelated monster which later occupies the same slot.
         if (battle.DestroyAttacker &&
@@ -1245,6 +1507,11 @@ public sealed partial class DemoDuel
     private void TriggerFlip(int owner, int zone, Card card, out string message)
     {
         message = "";
+        if (FlipEffectRules.Supports(card.Id) && FlipEffectsNegated)
+        {
+            message = $"{card.Name} revealed; FLIP effect negated by Royal Command.";
+            return;
+        }
         switch (FlipEffectRules.Effect(card.Id))
         {
             case DemoFlipEffect.DestroyMonster:
@@ -1272,6 +1539,47 @@ public sealed partial class DemoDuel
                 flipSelections.Clear();
                 message = $"{card.Name} FLIP (P{owner + 1}): choose exactly one monster to return to its owner's hand.";
                 break;
+            case DemoFlipEffect.DestroyTwoSetSpellTraps:
+            case DemoFlipEffect.ReturnTwoSpellTraps:
+                var effect = FlipSpellTrapSelectionRules.Effect(card.Id);
+                if (effect is null) break;
+                var spellTargets = FlipSpellTrapSelectionRules.Candidates(card.Id, Spells,
+                    SpellFaceDown, FieldSpells, FieldSpellFaceDown);
+                if (spellTargets.Count < PendingFlipSpellTrapTargets.RequiredCount)
+                {
+                    message = $"{card.Name} FLIP: fewer than two eligible Spell/Trap Cards.";
+                    break;
+                }
+                flipSpellTrapSelections.Clear();
+                PendingFlipSpellTrapTargets = new(owner, card, effect.Value,
+                    card.Id == FlipEffectRules.Greenkappa, spellTargets);
+                message = $"{card.Name} FLIP (P{owner + 1}): select exactly two " +
+                    (card.Id == FlipEffectRules.Greenkappa ? "face-down " : "") +
+                    "Spell/Trap Cards on either side.";
+                break;
+            case DemoFlipEffect.RecruitSameNameFaceDown:
+                // Bubonic Vermin: optional same-name FLIP recruit, not a battle-to-GY trigger.
+                if (!Enumerable.Range(0, 5).Any(z => Monsters[owner, z] is null))
+                {
+                    message = $"{card.Name} FLIP: no free monster zone for a recruit.";
+                    break;
+                }
+                var sameNameCandidates = CardSelectionRules.Candidates(
+                    decks[owner].ToArray(), CardSelectionFilter.SameNameMonster,
+                    requiredResourceId: card.Id);
+                if (sameNameCandidates.Count == 0)
+                {
+                    message = $"{card.Name} FLIP: no same-name monster in your Deck.";
+                    break;
+                }
+                selectedBatchIndices.Clear();
+                PendingCardSelection = new(owner, CardSelectionSource.Deck,
+                    CardSelectionDestination.Field, CardSelectionFilter.SameNameMonster,
+                    sameNameCandidates, 0, 1, card.Id,
+                    RequiredResourceId: card.Id,
+                    SummonPosition: CardSelectionPosition.FaceDownDefense);
+                message = $"{card.Name} FLIP: optionally select one same-name monster from your Deck.";
+                break;
             case DemoFlipEffect.RecoverFromGraveyard:
                 var filter = CardSelectionRules.FlipGraveyardFilter(card.Id);
                 if (filter is null) break;
@@ -1284,6 +1592,29 @@ public sealed partial class DemoDuel
                 PendingCardSelection = new(owner, CardSelectionSource.Graveyard,
                     CardSelectionDestination.Hand, filter.Value, candidates, 1, 1, card.Id);
                 message = $"{card.Name} FLIP (P{owner + 1}): choose one {filter.Value} from your graveyard.";
+                break;
+            case DemoFlipEffect.Gain3000LifePoints:
+                // P065: this is the FLIP half of the original card.
+                // Its separate field-to-Graveyard LP loss is handled centrally
+                // by RemoveMonster, conditional on this occurrence's flip history.
+                ChangeLife(owner, ImmortalThunderRules.FlipLifeGain);
+                message = $"{card.Name} FLIP: P{owner + 1} gained {ImmortalThunderRules.FlipLifeGain} LP.";
+                break;
+            case DemoFlipEffect.BanishThreeDeckBurn800:
+            case DemoFlipEffect.BanishTwoRandomHandBurn800:
+                // P051/P052 share native 00584E60 (800 LP), not their payment
+                // producer. Do not represent banishment as Graveyard movement.
+                LastFlipBanishBurn = FlipBanishBurnRules.Resolve(
+                    card.Id, owner, decks[owner], hands[owner], banished[owner], effectRandom);
+                if (LastFlipBanishBurn.Applied)
+                {
+                    Damage(1 - owner, LastFlipBanishBurn.Damage);
+                    message = $"{card.Name} FLIP: banished " +
+                        $"{LastFlipBanishBurn.BanishedCards.Count} cards from " +
+                        $"{LastFlipBanishBurn.CostSource} and inflicted {LastFlipBanishBurn.Damage} damage.";
+                }
+                else
+                    message = $"{card.Name} FLIP: unavailable banishment cost; no damage.";
                 break;
             case DemoFlipEffect.MillOpponentDeck:
                 // P082: sending cards straight from deck to GY is not a draw.
@@ -1465,6 +1796,7 @@ public sealed partial class DemoDuel
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
             return false;
@@ -1548,6 +1880,7 @@ public sealed partial class DemoDuel
     public bool SelectBatchCard(int sourceIndex, out string message)
     {
         message = "A multiple-card recruitment is not pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
               Filter: CardSelectionFilter.SameNameMonster, MinSelections: 0, MaxSelections: > 1 } pending)
@@ -1572,6 +1905,7 @@ public sealed partial class DemoDuel
     public bool FinishOptionalCardSelection(out string message)
     {
         message = "No multiple same-name recruitment is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
               Filter: CardSelectionFilter.SameNameMonster, MinSelections: 0, MaxSelections: > 1 } pending)
@@ -1627,6 +1961,7 @@ public sealed partial class DemoDuel
     public bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MinSelections: 0 } pending)
             return false;
         // Zero is the only skip option: do not silently lose already chosen copies.
@@ -1739,7 +2074,7 @@ public sealed partial class DemoDuel
     private void BeginNextQueuedDeckSearch()
     {
         if (PendingCardSelection is not null || PendingFlipTarget is not null ||
-            PendingSummonResponse is not null || PendingAttackResponse is not null ||
+            PendingFlipSpellTrapTargets is not null || PendingSummonResponse is not null || PendingAttackResponse is not null ||
             resolvingSummon || GameOver)
             return;
         BeginNextEffectDecision();
@@ -1836,10 +2171,16 @@ public sealed partial class DemoDuel
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
+        if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
             Monsters[targetPlayer, targetZone] is not Card target) return false;
 
+        if (pending.Effect == DemoFlipEffect.DestroyOpponentMonster && targetPlayer == pending.Owner)
+        {
+            message = "Select an opposing monster for this position-triggered effect.";
+            return false;
+        }
         if (pending.Effect is DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne)
         {
             if (IsMarkedForBattleDestruction(targetPlayer, targetZone))
@@ -1863,7 +2204,9 @@ public sealed partial class DemoDuel
 
         PendingFlipTarget = null;
         RemoveMonster(targetPlayer, targetZone);
-        message = $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
+        message = pending.Trigger == DemoMonsterEffectTrigger.PositionChange
+            ? $"{pending.SourceCard.Name}: destroyed {target.Name} after changing position."
+            : $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
         FinishDeferredBattle();
         return true;
     }
@@ -1879,6 +2222,7 @@ public sealed partial class DemoDuel
     private bool CompleteReturnTargets(out string message)
     {
         message = "No return-target FLIP effect is pending.";
+        if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo } pending)
             return false;
         if (pending.Effect == DemoFlipEffect.ReturnOne && flipSelections.Count != 1)
@@ -1936,6 +2280,20 @@ public sealed partial class DemoDuel
         return new(resourceId, caster, counts[0], counts[1], faceDownDestroyed);
     }
 
+    /// <summary>
+    /// A physical field-to-banish movement, not destruction, discarding or a
+    /// field-to-Graveyard event. The existing Fusion Gate out-of-play zone is
+    /// reused. Equips are cleaned by ClearMonsterSlot; neither monster GY
+    /// search nor battle destruction hooks fire.
+    /// </summary>
+    private void BanishBattlingMonster(int player, int zone, Card expected)
+    {
+        if (!ReferenceEquals(Monsters[player, zone], expected))
+            throw new InvalidOperationException("The battle source occurrence has changed.");
+        banished[player].Add(expected);
+        ClearMonsterSlot(player, zone);
+    }
+
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,
         bool isFusionMaterial = false)
     {
@@ -1945,6 +2303,13 @@ public sealed partial class DemoDuel
         bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
         ClearMonsterSlot(p, z);
+
+        // A separate sent-from-field-to-Graveyard effect. The legacy P065
+        // description conditions this on the same card having been flipped.
+        // Never apply it to a normal face-up summon, an unflipped Set card,
+        // bounce to hand, or Fusion Gate's banishment.
+        if (ImmortalThunderRules.LosesLifeOnFieldToGraveyard(removed.Id, previouslyFlipped))
+            ChangeLife(p, -ImmortalThunderRules.GraveyardLifeLoss);
 
         if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
             ChangeLife(p, 1000);
@@ -2083,7 +2448,8 @@ public sealed partial class DemoDuel
     private void BeginNextEffectDecision()
     {
         if (PendingEffectDecision is not null || PendingCardSelection is not null ||
-            PendingFlipTarget is not null || PendingSummonResponse is not null ||
+            PendingFlipTarget is not null || PendingFlipSpellTrapTargets is not null ||
+            PendingSummonResponse is not null ||
             PendingAttackResponse is not null || GameOver)
             return;
         if (queuedEffectDecisions.TryDequeue(out var request))
@@ -2099,6 +2465,7 @@ public sealed partial class DemoDuel
         message = "No matching optional effect decision is pending.";
         if (PendingEffectDecision is not { } request || request.Id != id ||
             !Enum.IsDefined(answer) || GameOver) return false;
+        if (TryNegatePendingFlip(PendingFlipChoice.OptionalDraw, out message)) return true;
         if (request.Kind == EffectDecisionKind.DrawOneOnFlip)
             return ResolveFlipDrawDecision(request, answer, out message);
         if (answer == EffectDecisionAnswer.Accept &&

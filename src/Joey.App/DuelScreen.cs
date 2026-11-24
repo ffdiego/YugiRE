@@ -345,8 +345,13 @@ static partial class Game
     static void DrawDuelField(bool blockInput, int attributeUpdates)
     {
         var pendingTarget = duel.PendingSpellTrapTarget;
-        bool CanHighlightSpell(int player, int zone) => pendingTarget is null ||
-            HumanChoice && pendingTarget.EligibleTargets.Any(target => target.Player == player && target.Zone == zone);
+        var pendingFlipSpells = duel.PendingFlipSpellTrapTargets;
+        bool CanHighlightSpell(int player, int zone) =>
+            pendingTarget is null && pendingFlipSpells is null ||
+            HumanChoice && (pendingTarget?.EligibleTargets.Any(
+                target => target.Player == player && target.Zone == zone) == true ||
+                pendingFlipSpells?.EligibleTargets.Any(
+                    target => target.Player == player && target.Zone == zone) == true);
         for (int player = 0; player < 2; player++)
         {
             bool own = player == ViewPlayer;
@@ -360,6 +365,9 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]);
                     DrawDuelCard(fieldCard, geometry);
+                    if (duel.SelectedFlipSpellTrapTargets.Any(t => t.Player == player &&
+                        t.Zone == SpellTrapTargetRules.FieldZone))
+                        DrawFieldSelectionFrame(geometry, own);
                     if (Hit(fieldRect) && CanHighlightSpell(player, SpellTrapTargetRules.FieldZone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
                 }
@@ -420,6 +428,8 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Spell, own, zone, false, duel.SpellFaceDown[player, zone]);
                     DrawDuelCard(spell, geometry);
+                    if (duel.SelectedFlipSpellTrapTargets.Any(t => t.Player == player && t.Zone == zone))
+                        DrawFieldSelectionFrame(geometry, own);
                     if (Hit(spellRect) && CanHighlightSpell(player, zone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
                 }
@@ -485,6 +495,21 @@ static partial class Game
                          duel.PendingFusionSummon is null)
                     BeginCardActivation(setSpell, spellRect);
             }
+        }
+    }
+
+    static void ReadFlipSpellTrapTarget(PendingFlipSpellTrapTargets pending)
+    {
+        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        foreach (var target in pending.EligibleTargets)
+        {
+            var area = target.IsFieldZone ? FieldZoneBounds(target.Player) :
+                ZoneBounds(target.Player, target.Zone, true);
+            if (!Hit(area)) continue;
+            if (duel.SelectFlipSpellTrapTarget(target.Player, target.Zone, out message) &&
+                duel.PendingFlipSpellTrapTargets is null)
+                ClearDuelSelection();
+            return;
         }
     }
 
@@ -559,13 +584,15 @@ static partial class Game
         AdvanceAlpha(frameElapsed);
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         var fusion = duel.PendingFusionSummon;
-        bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null || fusion is not null ||
+        bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
+            duel.PendingFlipSpellTrapTargets is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
         bool showingMotion = MotionBusy || PhaseBusy;
         bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
         var spellTarget = duel.PendingSpellTrapTarget;
+        var flipSpellTarget = duel.PendingFlipSpellTrapTargets;
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
         if (duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board, new Rectangle(0, 0, board.Width, board.Height),
@@ -582,7 +609,8 @@ static partial class Game
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
         bool handInput = actionInput && handHovered;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
-        if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
+        if (choiceInput && flipSpellTarget is not null) ReadFlipSpellTrapTarget(flipSpellTarget);
+        else if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard,
             hoverUpdates);
         // A travelling card or the CPU's turn must not freeze the sidebar.
@@ -617,10 +645,15 @@ static partial class Game
                     $"Select up to 2 ({duel.SelectedFlipTargets.Count}/2)",
                 DemoFlipEffect.ReturnOne =>
                     "Select one monster",
+                DemoFlipEffect.DestroyOpponentMonster =>
+                    "Select an opposing monster",
                 _ => "Select a FLIP target"
             };
             if (HumanChoice) Label(help, 10, 587, 11, Gold);
         }
+        else if (choiceInput && duel.PendingFlipSpellTrapTargets is { } chooseSpells)
+            Label($"Select 2 {(chooseSpells.RequireFaceDown ? "Set " : "")}S/T: " +
+                  $"{duel.SelectedFlipSpellTrapTargets.Count}/2", 10, 587, 11, Gold);
         else if (choiceInput && duel.PendingSpellTrapTarget is not null)
             Label("Choose a Spell or Trap (Backspace cancels)", 10, 587, 11, Gold);
         else if (actionInput && (choosingTributes || choosingEquip || duel.PendingEndDiscards > 0))

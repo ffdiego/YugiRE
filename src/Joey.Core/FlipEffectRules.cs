@@ -8,8 +8,14 @@ public enum DemoFlipEffect
 {
     None, DestroyMonster, ReplaceHands, ReturnUpToTwo, ReturnOne, ShuffleAndExcavate,
     RecoverFromGraveyard, MillOpponentDeck, DrawAndDiscardOpponentSpells,
-    DestroyOpponentFaceUpLevelFour, OptionalDrawOne
+    DestroyOpponentFaceUpLevelFour, OptionalDrawOne,
+    DestroyTwoSetSpellTraps, ReturnTwoSpellTraps,
+    BanishThreeDeckBurn800, BanishTwoRandomHandBurn800,
+    Gain3000LifePoints,
+    DestroyOpponentMonster, RecruitSameNameFaceDown
 }
+
+public enum DemoMonsterEffectTrigger { Flip, PositionChange }
 
 public static class FlipEffectRules
 {
@@ -24,6 +30,12 @@ public static class FlipEffectRules
     public const ushort HirosShadowScout = 610;
     public const ushort FourStarredLadybugOfDoom = 1338;
     public const ushort Skelengel = 539;
+    public const ushort Greenkappa = 585;
+    public const ushort TornadoBird = 1521;
+    public const ushort LadyAssailantOfFlames = 1435;
+    public const ushort FireSorcerer = 1436;
+    public const ushort ImmortalOfThunder = 461;
+    public const ushort BubonicVermin = 1307;
 
     public static DemoFlipEffect Effect(ushort resourceId) => resourceId switch
     {
@@ -37,18 +49,25 @@ public static class FlipEffectRules
         HirosShadowScout => DemoFlipEffect.DrawAndDiscardOpponentSpells,
         FourStarredLadybugOfDoom => DemoFlipEffect.DestroyOpponentFaceUpLevelFour,
         Skelengel => DemoFlipEffect.OptionalDrawOne,
+        Greenkappa => DemoFlipEffect.DestroyTwoSetSpellTraps,
+        TornadoBird => DemoFlipEffect.ReturnTwoSpellTraps,
+        LadyAssailantOfFlames => DemoFlipEffect.BanishThreeDeckBurn800,
+        FireSorcerer => DemoFlipEffect.BanishTwoRandomHandBurn800,
+        ImmortalOfThunder => DemoFlipEffect.Gain3000LifePoints,
+        BubonicVermin => DemoFlipEffect.RecruitSameNameFaceDown,
         _ => DemoFlipEffect.None
     };
     public static bool Supports(ushort resourceId) => Effect(resourceId) != DemoFlipEffect.None;
 }
 
 /// <summary>
-/// A FLIP waiting for target selection. Owner chooses targets in the hot-seat demo.
-/// Attack-destroyed monsters remain physically on the field until the end of
-/// the Damage Step, but cannot be returned to the hand by bounce FLIP effects.
+/// Existing monster picker; also used by position-triggered effects.
+/// Battle-destroyed monsters stay on the field until the end of the Damage Step,
+/// but cannot be returned to the hand by bounce effects.
 /// </summary>
 public sealed record DemoFlipTarget(int Owner, int SourceZone, Card SourceCard,
-                                     DemoFlipEffect Effect = DemoFlipEffect.DestroyMonster);
+    DemoFlipEffect Effect = DemoFlipEffect.DestroyMonster,
+    DemoMonsterEffectTrigger Trigger = DemoMonsterEffectTrigger.Flip);
 
 public sealed record DemoSelectedMonster(int Player, int Zone, Card Card);
 
