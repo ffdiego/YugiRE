@@ -259,6 +259,7 @@ MonsterBattleRuleChecks.Run(Check);
 EquipmentChecks.Run(Check);
 QueuedEquipmentChecks.Run(Check);
 FixedEquipmentLifecycleChecks.Run(Check);
+DynamicEquipmentLifecycleChecks.Run(Check);
 TimedEquipmentAndQueuedLpChecks.Run(Check);
 QueuedDrawSpellChecks.Run(Check);
 QueuedMonsterWipeChecks.Run(Check);
