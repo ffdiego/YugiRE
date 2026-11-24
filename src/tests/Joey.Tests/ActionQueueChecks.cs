@@ -199,5 +199,6 @@ internal static class ActionQueueChecks
         check(fast.Queue.Trace.Last().Result?.Outcome == CommandOutcome.Skipped,
             "C12 stale deck occurrence explicitly skips");
         ActionQueueRemovalChecks.Run(check);
+        DuelConsoleChecks.Run(check);
     }
 }

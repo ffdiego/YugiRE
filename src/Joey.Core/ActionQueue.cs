@@ -28,6 +28,13 @@ public interface IPresentationGate
     bool CanComplete(QueuedDuelCommand command, CommandResult result);
 }
 
+// Optional synchronous observer: capture immutable presentation input before the executor moves a card.
+// The observer must not mutate the duel or enqueue commands.
+public interface ICommandPresentationGate : IPresentationGate
+{
+    void OnStarting(QueuedDuelCommand command);
+}
+
 public sealed class ImmediatePresentationGate : IPresentationGate
 {
     public static ImmediatePresentationGate Instance { get; } = new();
@@ -59,14 +66,16 @@ public sealed class ActionQueue : IActionCommandSink
     private bool ticking;
     private bool startedBatch;
     private readonly Func<bool>? externalAdmission;
+    private readonly bool allowLabEdits;
     private ActionContinuation? decisionContinuation;
     private EffectDecisionAnswer? decisionAnswer;
 
-    public ActionQueue(IDuelCommandExecutor executor, IPresentationGate? gate = null, Func<bool>? externalAdmission = null)
+    public ActionQueue(IDuelCommandExecutor executor, IPresentationGate? gate = null, Func<bool>? externalAdmission = null, bool allowLabEdits = false)
     {
         this.executor = executor ?? throw new ArgumentNullException(nameof(executor));
         this.gate = gate ?? ImmediatePresentationGate.Instance;
         this.externalAdmission = externalAdmission;
+        this.allowLabEdits = allowLabEdits;
     }
 
     public QueuedDuelCommand? Active { get; private set; }
@@ -91,7 +100,12 @@ public sealed class ActionQueue : IActionCommandSink
         ArgumentNullException.ThrowIfNull(commands);
         if (!Enum.IsDefined(origin)) throw new ArgumentOutOfRangeException(nameof(origin));
         var batch = commands.ToArray();
-        foreach (var command in batch) DuelCommandValidation.Validate(command);
+        foreach (var command in batch)
+        {
+            DuelCommandValidation.Validate(command);
+            if ((command is LabSpawnCommand or LabMoveCommand) && (!allowLabEdits || origin is not (ActionOrigin.Console or ActionOrigin.Test)))
+                throw new InvalidOperationException("Laboratory edit requires an explicitly enabled lab queue and privileged origin.");
+        }
         if (sequence > long.MaxValue - batch.Length) throw new OverflowException("Command sequence exhausted.");
         foreach (var command in batch)
         {
@@ -138,6 +152,7 @@ public sealed class ActionQueue : IActionCommandSink
             {
                 Active = next;
                 trace.Add(new(next, ActionTraceStage.Started));
+                if (gate is ICommandPresentationGate observer) observer.OnStarting(next);
                 var result = executor.Execute(next.Command, this)
                     ?? throw new InvalidOperationException("Executor returned no result.");
                 if (!Enum.IsDefined(result.Outcome))
