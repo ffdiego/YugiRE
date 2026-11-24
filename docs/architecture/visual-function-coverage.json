@@ -53,7 +53,8 @@
     {
       "address": "0043B280",
       "family": "Seleção nativa de cartas",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/NativeSelectionListScreen.cs"
     },
     {
       "address": "0045E4A0",

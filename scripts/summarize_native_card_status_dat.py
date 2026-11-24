@@ -32,8 +32,8 @@ def canonical(value: str) -> str:
     return value.replace("/", "\\").lower()
 
 
-def manifest_names(text: str) -> list[str]:
-    result: list[str] = []
+def manifest_records(text: str) -> list[tuple[str, list[str]]]:
+    result: list[tuple[str, list[str]]] = []
     for line in text.splitlines():
         words = line.split("//", 1)[0].split()
         if not words:
@@ -42,7 +42,7 @@ def manifest_names(text: str) -> list[str]:
         # Native resource lists have one bitmap filename per non-comment
         # record, optionally followed by coordinates or other numeric data.
         if name.lower().endswith((".bmp", ".yga")):
-            result.append(name)
+            result.append((name, words[1:]))
     return result
 
 
@@ -59,7 +59,8 @@ def report_for(data: dict) -> dict:
             canonical(entry["Name"]) == MANIFEST]
     if len(hits) != 1 or not isinstance(hits[0].get("Latin1"), str):
         raise ValueError("Expected exactly one native j/duel/card/card.txt manifest")
-    names = manifest_names(hits[0]["Latin1"])
+    records = manifest_records(hits[0]["Latin1"])
+    names = [name for name, _ in records]
     if len(names) < len(INDEX_ROLES):
         raise ValueError(f"Card sprite manifest has {len(names)} images, expected >=14")
     # These four positions were previously confirmed by card Draw
@@ -78,7 +79,7 @@ def report_for(data: dict) -> dict:
 
     items = []
     missing = []
-    for index, name in enumerate(names):
+    for index, (name, auxiliary) in enumerate(records):
         relative = canonical(name)
         path = relative if relative.startswith(PREFIX) else PREFIX + relative.split("\\")[-1]
         entry = image_by_name.get(path)
@@ -87,6 +88,7 @@ def report_for(data: dict) -> dict:
             missing.append({"index": index, "resource": path})
         items.append({"index": index, "role": INDEX_ROLES.get(index, "unknown"),
                       "resource": path,
+                      "auxiliaryFields": auxiliary,
                       "width": entry.get("Width") if entry else None,
                       "height": entry.get("Height") if entry else None})
 
