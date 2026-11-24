@@ -3,9 +3,9 @@ using System.Globalization;
 namespace Joey.LookAndFeel;
 
 /// <summary>
-/// 004580F0, 00458480, 004584A0. Only constructor and gate contract.
-/// Do not use this as a playable cinematic or auto-complete the object:
-/// the actual Draw/compositor and terminal transition are still missing.
+/// 004580F0, 00458480, 004584A0. Constructor and gate contract.
+/// NativeVijaTimeline supplies the recovered Draw geometry; the native
+/// scratch compositor and live duel integration remain separate.
 /// </summary>
 public readonly record struct NativeVijaContract
 {

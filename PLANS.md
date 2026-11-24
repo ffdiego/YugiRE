@@ -264,8 +264,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Aguardando evidência`.
   Construtor e camada 0xF00 conhecidos; Update/Draw ausentes no SQLite. Roteiro 19, mesmo contrato.
 
-- [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Aguardando evidência`.
-  NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Draw/máscaras/ordem completa ausentes do SQLite, não bloquear A03; roteiro 20. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](docs/research/pending-bundles-handoff-2026-11-24.md).
+- [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`.
+  NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Roteiro 20 recebido: NativeVijaTimeline porta ordem dos passes, centros, fade, scratch e deformação por linha, 97/177 Draws. Máscara +98/remap e renderer ainda pendentes; não bloquear A03. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](docs/research/pending-bundles-handoff-2026-11-24.md).
 
 ### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
 
@@ -278,7 +278,7 @@ legados PresentationSequence no App, sem duplicar mutações ou enfileiramento.
 **Pontos de atenção arquitetural para A03:** (1) visível/ativo não significa
 bloqueante: V23 aguarda em 128 visível e não bloqueia; V24 é contextual e não
 deve bloquear; (2) CanComplete é uma consulta, não um Update/Draw: V11 tem
-mutação no Draw, V26 Update vazio e duração ainda desconhecida; não avançar
+mutação no Draw, V26 Update vazio e 24 Draws; V30 Draw incrementa +4 e flag final diverge do predicado inclusivo; não avançar
 efeitos ao consultar gates nem inventar timeout; (3) remoções/transferências
 precisam de snapshot visível por ocorrência e geometria antes da execução
 (ActionQueue executa antes de CanComplete); (4) ao migrar, impedir emissão
