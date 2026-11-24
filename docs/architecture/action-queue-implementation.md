@@ -63,3 +63,13 @@ CI integral A02.5 [45318593622](https://github.com/ffdiego/YugiRE/actions/runs/4
 O `EffectContext` interno compõe os comandos de um efeito em ordem de emissão. `Draw` gera um comando por carta e `ChangeLifePoints` traduz deltas assinados em cura ou dano, omitindo deltas nulos. O executor continua responsável pela admissão do lote e pelo gasto da carta. O gate de apresentação acompanha cada comando na fila. A continuação das compras publica o plano após o gasto e a checagem das cartas disponíveis. Para efeitos fixos de LP, o lote conserva a sequência de envio ao cemitério, LP do ativador e LP do adversário.
 
 Os cenários existentes em `QueuedDrawSpellChecks` e `TimedEquipmentAndQueuedLpChecks` exercitam mão, Set, ambos os lados, gate e ordem dos comandos. A extração das definições de cartas para outro assembly permanece em A08.
+
+## A08.2 — Planejamento de destruição
+
+O mesmo contexto recebe a ocorrência da fonte para envio ao cemitério e
+compõe um `DestroyCommand` por alvo. As magias de destruição já migradas
+usam esse plano após revalidar a fonte e capturar os alvos. Consequências
+reservadas são anexadas logo após o alvo correspondente. O executor mantém
+as reservas de vínculo, a revalidação por ocorrência e os gatilhos de fim
+do lote. O teste de destruição em massa compara o gasto e a remoção de
+equipamento antes do próximo alvo, com a mesma ordenação do sandbox.

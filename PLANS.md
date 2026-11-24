@@ -109,12 +109,13 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
   Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em [A01](docs/architecture/action-queue.md); roteiro 11 em `scripts/pending/` preparado, ainda não executado.
-- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Pronto`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
+- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
   Novo assembly com as definições de cartas por resource ID e as famílias de efeito. Dependências: `Joey.Cards` → `Joey.Core`, nunca o contrário; `Joey.App` monta Core + Cards + LookAndFeel. O Core fica com o que vale para qualquer duelo (fases, batalha, invocação, a fila e `EffectContext`); o catálogo e o console (`A04`) criam cartas por resource ID a partir de `Joey.Cards`.
   **`EffectContext`** expõe primitivos pequenos e combináveis (`Destroy(filtro)`, `Draw`, `Damage`, `Heal`, `Choose`, `Move`...), cada um **enfileirando comandos**; não muta o estado diretamente (invariante 1).
   **Açúcar para cartas triviais:** helpers como `DestroyMonsters(Side)` são só açúcar sobre `Destroy(filtro)`. Eles tiram uma foto dos alvos na resolução e enfileiram **um comando `Destroy` por monstro**; um comando cujo alvo já saiu do campo quando chega a vez é descartado. Ex.: Raigeki = `DestroyMonsters(Opponent)`; Dark Hole = `DestroyMonsters(Opponent)` + `DestroyMonsters(Own)`. A **ordem** entre lados e zonas é observável e deve ser conferida no original antes de ser fixada (hipótese até medir).
   **Efeitos com continuação** (escolha de alvo, gatilhos após a destruição, janelas de resposta) se expressam como passos esperados (`IEnumerable<Step>`; **sem snapshots por ora** — o replay vem de `seed + log de entradas`) e retomam em nova passagem da fila, sem recursão.
   Migrar para `Joey.Cards` as regras declarativas existentes (`DirectDamageRules`, equipamentos, campo etc.) junto com `C12`.
+  *A08.1–A08.2:* `EffectContext` compõe compra, LP, envio do custo ao cemitério e destruições de ocorrências verificadas. A limpeza vinculada segue imediatamente após a destruição que a dispara. O executor continua dono da admissão, das reservas e dos gatilhos. A extração do assembly e as decisões pendentes seguem abertas no [PR #101](https://github.com/ffdiego/YugiRE/pull/101).
   *Pronto quando:* Raigeki, Dark Hole e uma carta com continuação (ex.: escolha + destruição) vivem em `Joey.Cards`, passam pelo console (`A04`) e produzem a mesma lista de comandos com e sem gate visual.
 
 ## Trilha CARDS

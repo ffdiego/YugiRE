@@ -442,9 +442,10 @@ public sealed partial class DemoDuel
             // Legacy order: spend source, then caster LP, then opposing LP.
             // No mutation in the producer. Each operation has its own gate.
             var context = new EffectContext();
+            context.SendToGraveyard(activate.Source);
             context.ChangeLifePoints(activate.Side, change.CasterDelta);
             context.ChangeLifePoints(1 - activate.Side, change.OpponentDelta);
-            queue.EnqueueBatch([new SendToGraveyardCommand(activate.Side, activate.Source), .. context.Commands]);
+            queue.EnqueueBatch(context.Commands);
             return new(CommandOutcome.Applied);
         }
 
@@ -474,9 +475,10 @@ public sealed partial class DemoDuel
             if (!duel.TryPlanTargetedSpellTrap(activate.Source, activate.Target, out var spell, out var targets))
                 return new(CommandOutcome.Rejected, "Targeted Spell/Trap no longer legal.");
 
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
-            batch.AddRange(targets.Select(target => new DestroyCommand(target.Side, target)));
-            queue.EnqueueBatch(batch);
+            var context = new EffectContext();
+            context.SendToGraveyard(activate.Source);
+            foreach (var target in targets) context.Destroy(target);
+            queue.EnqueueBatch(context.Commands);
             wipe = new(activate.Side, spell.Id, activate.Source, targets, monsterWipe: false)
                 { PrimaryTarget = activate.Target };
             ScheduleFinish(activate.Side, followups);
@@ -493,9 +495,10 @@ public sealed partial class DemoDuel
             if (!duel.TryPlanSpellTrapWipe(source, out var spell, out var targets))
                 return new(CommandOutcome.Rejected, "Spell/Trap wipe no longer legal.");
 
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(source.Side, source) };
-            batch.AddRange(targets.Select(target => new DestroyCommand(target.Side, target)));
-            queue.EnqueueBatch(batch);
+            var context = new EffectContext();
+            context.SendToGraveyard(source);
+            foreach (var target in targets) context.Destroy(target);
+            queue.EnqueueBatch(context.Commands);
             wipe = new(source.Side, spell.Id, source, targets, monsterWipe: false);
             ScheduleFinish(source.Side, followups);
             return new(CommandOutcome.Applied);
@@ -514,7 +517,8 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Monster wipe no longer legal.");
 
             var targets = new List<CardTarget>();
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(side, source) };
+            var context = new EffectContext();
+            context.SendToGraveyard(source);
             var plans = new Dictionary<CardTarget, DuelCommand[]>();
             foreach (var item in snapshot)
             {
@@ -523,13 +527,12 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Rejected, "Untracked occurrence or linked equipment.");
                 targets.Add(target);
                 plans.Add(target, links);
-                batch.Add(new DestroyCommand(target.Side, target));
-                batch.AddRange(links);
+                context.Destroy(target, links);
             }
             // Use the existing sandbox target order, not an invented visual order.
             // Each actual movement receives its own command. No spell/monster
             // movement happens in this activation producer.
-            queue.EnqueueBatch(batch);
+            queue.EnqueueBatch(context.Commands);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             wipe = new(side, spell.Id, source, targets);
             ScheduleFinish(side, followups);

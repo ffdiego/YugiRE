@@ -8,6 +8,15 @@ internal sealed class EffectContext
 
     public IReadOnlyList<DuelCommand> Commands => commands;
 
+    public void SendToGraveyard(CardTarget source) =>
+        commands.Add(new SendToGraveyardCommand(source.Side, source));
+
+    public void Destroy(CardTarget target, IReadOnlyList<DuelCommand>? consequences = null)
+    {
+        commands.Add(new DestroyCommand(target.Side, target));
+        if (consequences is not null) commands.AddRange(consequences);
+    }
+
     public void Draw(int side, int count)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
