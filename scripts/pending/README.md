@@ -190,6 +190,6 @@ Para os recursos, utilizar --inspect-visual-dat já existente
 e compartilhar privadamente apenas registros de fusion.txt e
 dimensões das imagens referenciadas (sem pixels).
 
-## A03/A04 — 16-actions-console-visual-smoke.sh (aguardando execução local)
+## A03/A04 — 22-actions-console-visual-smoke.sh (aguardando execução local)
 
-`bash scripts/pending/16-actions-console-visual-smoke.sh /caminho/data.dat` (Windows Git Bash ou Fedora com .NET 10 e App/raylib). Executar no branch A04 após CI. Usa roteiro sintético conhecido, headless e App (mesmos produtores), grava logs em `scratch/actions-console/`. Observar draw, ativação Sparks/LP, Raigeki e destruições individuais, ausência de avanço durante animação; fechar App após Script completed. Comparar state/diff e comandos executados; repetir com `--fast`/`--instant` se necessário. Não constitui validação nativa pixel a pixel. Ainda não executado neste ambiente.
+`bash scripts/pending/22-actions-console-visual-smoke.sh /caminho/data.dat` (Windows Git Bash ou Fedora com .NET 10 e App/raylib). Executar no branch A04 após CI. Usa roteiro sintético conhecido, headless e App (mesmos produtores), grava logs em `scratch/actions-console/`. Observar invocação normal, draw, ativação Sparks/LP, Raigeki e destruições individuais, ausência de avanço durante animação; fechar App após Script completed. O roteiro compara state/diff e comandos executados após fechar o App; repetir com `--fast`/`--instant` se necessário. Não constitui validação nativa pixel a pixel. Ainda não executado neste ambiente.
