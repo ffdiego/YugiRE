@@ -299,6 +299,15 @@ Geometria candidata e dispatch recuperados de decompilação; callee sem assembl
 
 Saída privada: scratch/ghidra-native-quad-raster-contract.zip. Confirmar registradores/dimensões e vértices 004223F0, distinção das transformações, fronteira 00422E30 e kernels BGR24. Importar em cópia cumulativa; não presumir alpha nem paridade por receber a coleta. [Contrato](../../docs/research/native-quad-raster-contract-2026-11-24.md).
 
+
+## V09/V10 — 26-native-cursor-dispatch-ghidra.sh (aguardando Fedora)
+
+SQLite v2 consultado: máscara e ciclo em decompilação, sem assembly dos alvos ou tabela 005DD980. Não repetir outros bundles.
+
+    bash scripts/pending/26-native-cursor-dispatch-ghidra.sh
+
+Saída privada: scratch/ghidra-native-cursor-dispatch-contract.zip. Confirmar ordem, code 12/reset, operandos e vtable 005DA594. Inspecionar manifesto cursor_e.txt local sem pixels e resolver consumidor de +108h pelo SQLite primeiro. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+
 ## A09 — actions-a09-combat-smoke.py (aguardando desktop Windows/Fedora)
 
 - Requisitos: Python 3.10+, .NET 10, DAT privado e sessão gráfica. Não requer
