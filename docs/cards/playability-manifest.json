@@ -1572,6 +1572,29 @@
         "Done in the headless queue-backed sandbox after CI; no legacy activation route or full response/negation coverage.",
         "Native callbacks 00584D00 and 00593CA0 not decompiled in v2; value from public card text. No native differential validation."
       ]
+    },
+    {
+      "id": "wipe.equipped-monsters-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        655
+      ],
+      "mechanics": [
+        "Normal Spell activation from Hand or Set through the existing typed monster-wipe producer",
+        "Destroy each face-up monster with a live modeled equipment link on either side; destroy linked equipment separately"
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedMonsterWipeChecks.cs",
+        "docs/cards/c02-eternal-rest.md"
+      ],
+      "limitations": [
+        "Done in the bounded headless queue scope after CI; legacy activation unchanged, graphical/CPU integration and non-modeled equip cards pending.",
+        "No native differential validation; callback bodies unavailable in cumulative v2."
+      ]
     }
   ]
 }
