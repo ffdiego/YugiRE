@@ -199,5 +199,6 @@ internal static class ActionQueueChecks
         check(fast.Queue.Trace.Last().Result?.Outcome == CommandOutcome.Rejected,
             "A02 non-migrated DemoDuel command explicitly rejects");
         ActionQueueRemovalChecks.Run(check);
+        DuelConsoleChecks.Run(check);
     }
 }

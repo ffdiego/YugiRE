@@ -13,6 +13,7 @@ public static class Program
             output.WriteLine("Joey.Lab — offline JSONL analysis (.NET 10)");
             output.WriteLine("Usage: dotnet run --project src/Joey.Lab -- summarize capture.jsonl [--json] [--expected-sha256 HASH]");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- effect-pilot recipe.json");
+            output.WriteLine("       dotnet run --project src/Joey.Lab -- duel-console --fixture [script.txt]");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- pool-candidates --dat data.dat --output scratch/candidates.json --count 100");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- duel-sim --fixture --duels 2 --seed 42 --output scratch/sandbox.jsonl");
             output.WriteLine("       dotnet run --project src/Joey.Lab -- duel-sim --dat data.dat --manifest pool.json --duels 2 --seed 42 --output scratch/sandbox.jsonl");
@@ -22,6 +23,8 @@ public static class Program
             output.WriteLine("Reads ring-buffer and live_duels JSONL. Analysis does not evaluate missing game context; experiment delegates execution to yugilab.");
             return 0;
         }
+        if (args[0] == "duel-console")
+            return DuelConsoleRunner.Run(args[1..], Console.In, output, error);
         if (args[0] == "pool-candidates")
             return SandboxPoolCandidates.Run(args[1..], output, error);
         if (args[0] == "duel-sim")
