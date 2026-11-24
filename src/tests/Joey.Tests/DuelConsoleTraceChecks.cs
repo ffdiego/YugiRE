@@ -102,25 +102,59 @@ internal static class DuelConsoleTraceChecks
         string?[] commands = capture.RootElement.GetProperty("rows").EnumerateArray()
             .Select(row => row.GetProperty("command").GetString()).ToArray();
         check(commands.SequenceEqual(["DrawCommand", "PrepareNormalPlacementCommand", "SummonCommand",
-            "FinishNormalPlacementCommand", "DeclareDirectAttackCommand", "DamageCommand"]),
-            "A05 headless battle trace includes the queued declaration and damage");
+            "FinishNormalPlacementCommand", "ChangeBattlePhaseCommand", "DeclareDirectAttackCommand",
+            "DamageCommand", "ChangeBattlePhaseCommand"]),
+            "A05 headless battle trace includes phase transitions, declaration and damage");
+        var rows = capture.RootElement.GetProperty("rows");
+        check(rows[4].GetProperty("mapping").GetString() == "unmapped" &&
+            rows[7].GetProperty("mapping").GetString() == "unmapped",
+            "A05 sandbox phase transitions remain visible without native opcode assumptions");
+
+        var opening = new DuelConsoleSession(DuelConsoleSession.EmptyLabDuel());
+        check(!opening.Execute("battle begin").Success && opening.Queue.Trace.Count == 0,
+            "A05 opening turn rejects battle without adding queue work");
 
         var attacker = new Card(24, 24, "Attacker", "", (3u << 20) | (4u << 25) | (140u << 9));
         var defender = new Card(25, 1351, "Defender", "", (3u << 20) | (4u << 25) | (100u << 9));
         var duel = DemoDuel.FromPartialObservation(1, [], [defender, null, null, null, null],
             [null, attacker, null, null, null], 8000);
-        var console = new DuelConsoleSession(duel, new Gate());
-        check(!console.Execute("attack 1 0").Success && console.Queue.Trace.Count == 0,
-            "A05 rejects an attack outside Battle Phase");
-        check(duel.BeginBattle(out _) && !console.Execute("attack 1 direct").Success &&
-            !console.Execute("attack 1 5").Success && console.Queue.Trace.Count == 0,
+        var gate = new Gate();
+        var console = new DuelConsoleSession(duel, gate);
+        check(!console.Execute("attack 1 0").Success && !console.Execute("battle end").Success &&
+            console.Queue.Trace.Count == 0, "A05 rejects attack or battle exit outside Battle Phase");
+        console.Queue.Enqueue(new ChangeBattlePhaseCommand(1, duel.Turn - 1, EnterBattle: true));
+        console.Queue.Tick();
+        check(duel.Phase == DemoPhase.Main && console.Queue.ActiveResult?.Outcome == CommandOutcome.Rejected,
+            "A05 stale turn cannot begin Battle Phase");
+        gate.Open = true;
+        console.Queue.Tick();
+        gate.Open = false;
+        check(console.Execute("battle begin").Enqueued && duel.Phase == DemoPhase.Main,
+            "A05 phase admission leaves the duel unchanged");
+        console.Queue.Tick();
+        check(duel.Phase == DemoPhase.Battle && console.Queue.IsBusy && !console.Execute("attack 1 0").Success,
+            "A05 phase mutation applies once and attack waits for its gate");
+        gate.Open = true;
+        console.Queue.Tick();
+        int traceBeforeAttack = console.Queue.Trace.Count;
+        check(!console.Execute("attack 1 direct").Success && !console.Execute("attack 1 5").Success &&
+            console.Queue.Trace.Count == traceBeforeAttack,
             "A05 rejects blocked direct attacks and invalid target slots atomically");
         check(console.Execute("attack 1 0").Enqueued &&
-            console.Queue.Trace.Single().Entry is { Command: DeclareTargetedAttackCommand, Origin: ActionOrigin.Console },
+            console.Queue.Trace.Last().Entry is { Command: DeclareTargetedAttackCommand, Origin: ActionOrigin.Console },
             "A05 targeted console attack enters the typed queue with Console origin");
+        gate.Open = false;
         console.Queue.Tick();
         check(console.Queue.IsBusy && duel.Monsters[0, 0] is not null && duel.Life[0] == 8000,
             "A05 targeted console attack holds mutations behind its declaration gate");
+        gate.Open = true;
+        for (int i = 0; i < 20 && console.Queue.IsBusy; i++) console.Queue.Tick();
+        check(duel.Monsters[0, 0] is null && duel.Life[0] == 7600 &&
+            console.Execute("battle end").Enqueued && !duel.IsMainPhase2,
+            "A05 battle exit is admitted after combat has resolved");
+        console.Queue.Tick();
+        check(duel.IsMainPhase2 && !console.Queue.IsBusy && !console.Execute("battle begin").Success,
+            "A05 battle exit enters Main Phase 2 and rejects a second battle in the same turn");
     }
 
 }

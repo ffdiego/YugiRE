@@ -31,9 +31,7 @@ public static class ActionTraceExport
             return false;
         }
 
-        // Phase orchestration remains on the existing fixture path until A07.
-        if (!RunScript("draw 1 1", "summon 0 2") || !duel.BeginBattle(out _) ||
-            !RunScript("attack 2 direct"))
+        if (!RunScript("draw 1 1", "summon 0 2", "battle begin", "attack 2 direct", "battle end"))
         {
             error.WriteLine("Synthetic direct battle pilot did not complete.");
             return 1;

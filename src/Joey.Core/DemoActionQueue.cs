@@ -316,6 +316,8 @@ public sealed partial class DemoDuel
                     return duel.ExecuteQueuedTargetedAttack(attack, followups);
                 case SnapshotBattleRemovalCommand snapshot:
                     return duel.SnapshotQueuedBattleRemoval(snapshot);
+                case ChangeBattlePhaseCommand phase:
+                    return duel.ExecuteQueuedBattlePhaseChange(phase);
                 case DrawCommand draw:
                     if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
                         return DrawForShadowScout(flow);

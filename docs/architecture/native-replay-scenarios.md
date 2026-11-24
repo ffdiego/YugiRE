@@ -75,9 +75,10 @@ O comparador exige sequência contínua a partir de 1, incluindo marcadores e so
 
 O comando de console `attack SLOT direct|TARGET_SLOT` admite os dois pilotos de
 combate em Battle Phase. `action-trace-battle-pilot` exercita compra, invocação
-e ataque direto com o mesmo produtor, a partir de uma fixture sem DAT. A
-transição para Battle Phase ainda é preparação do piloto. A07 cobre fases
-pela fila, e o trace piloto segue aguardando comparação dinâmica equivalente.
+e ataque direto com o mesmo produtor, a partir de uma fixture sem DAT.
+`battle begin` e `battle end` enfileiram a transição de fase do sandbox.
+Cada comando revalida o lado e o turno e aparece como `unmapped` no trace.
+O ciclo completo e a associação de fases a registros nativos seguem em A07.
 
 O trace C# v1 é exportado desde o primeiro comando executado. O comparador
 rejeita lacunas de sequência em qualquer parte do documento, antes de

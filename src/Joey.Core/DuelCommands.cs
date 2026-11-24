@@ -15,6 +15,7 @@ public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) :
 public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
 public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one card
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
@@ -97,6 +98,7 @@ internal static class DuelCommandValidation
                 Target(finishBattle.Target,finishBattle.Side,DuelZone.Monster);
                 break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
+            case ChangeBattlePhaseCommand { ExpectedTurn: > 0 }:
             case DrawCommand:
             case FinishFieldRemovalCommand:
                 break;
