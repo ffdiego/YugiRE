@@ -72,10 +72,11 @@ internal static class NormalMonsterPlayabilityChecks
                   $"{label}: high-level monster never bypasses tributes");
         var duel = DemoDuel.FromPartialObservation(0, [card], Tributes(required),
             new Card?[5], 8000);
+        Card physical = duel.Hand[0];
         int zone = required == 2 ? 1 : 0;
         check(duel.CanSummonFromHand(0) &&
               duel.Summon(0, 0, zone, true, out _, paid) &&
-              ReferenceEquals(duel.Monsters[0, zone], card) && duel.Hand.Count == 0 &&
+              ReferenceEquals(duel.Monsters[0, zone], physical) && duel.Hand.Count == 0 &&
               duel.Graveyard(0).Count == required &&
               duel.AttackValue(0, zone) == card.Attack &&
               duel.DefenseValue(0, zone) == card.Defense,
