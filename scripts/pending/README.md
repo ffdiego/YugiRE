@@ -125,3 +125,12 @@ batalha e ausência de envio ao cemitério. **Ainda não executado**.
 Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastrear vínculo de controle, evento de saída e pedido da End Phase. Custo de três Fiends no GY já sustentado por 0059DEF0/00599E30; não confundir com Spirit Elimination. **Ainda não executado.**
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
+
+### 11 — C01: taxonomia de efeitos pelo DAT local
+
+- Ambiente: Windows (Git Bash) ou Fedora, Python 3 e .NET 10, DAT original local.
+- Comando: `bash scripts/pending/11-card-effect-taxonomy.sh /caminho/para/data.dat`.
+- Saída privada: `scratch/card-taxonomy.json` (IDs, fingerprints, famílias, rotas e status atuais; sem descrições).
+- Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
+- Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.
+- Estado: aguardando execução local; classificador testado com fixtures sintéticas, integração .NET ainda não executada. Nunca executar o modo `--taxonomy-input` diretamente ou redirecionar sua saída para arquivo: a descrição deve ficar no pipe privado do classificador.
