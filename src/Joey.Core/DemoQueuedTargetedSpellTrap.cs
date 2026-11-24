@@ -49,9 +49,10 @@ public sealed partial class DemoDuel
             !SpellTrapTargetRules.Supports(spell.Id))
             return false;
         if (source.Zone == DuelZone.Hand) return FirstFreeSpellZone() >= 0;
-        return source.Zone == DuelZone.SpellTrap && SpellFaceDown[source.Side, index] &&
-            !equipment.Any(e => e.Owner == source.Side && e.SourceZone == index) &&
-            (spell.Id != SpellTrapTargetRules.MysticalSpaceTyphoon || spellSetTurn[source.Side, index] < Turn);
+        int slot = index;
+        return source.Zone == DuelZone.SpellTrap && SpellFaceDown[source.Side, slot] &&
+            !equipment.Any(e => e.Owner == source.Side && e.SourceZone == slot) &&
+            (spell.Id != SpellTrapTargetRules.MysticalSpaceTyphoon || spellSetTurn[source.Side, slot] < Turn);
     }
 
     private bool TryPlanTargetedSpellTrap(CardTarget source, CardTarget target,
