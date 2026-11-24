@@ -436,7 +436,7 @@ public sealed partial class DemoDuel
     public bool CanActivateFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main &&
         index >= 0 && index < Hand.Count &&
         (FieldSpellRules.Supports(Hand[index].Id) ||
-        (FirstFreeSpellZone() >= 0 && (EquipmentRules.Supports(Hand[index].Id) ||
+        (FirstFreeSpellZone() >= 0 && ((Hand[index].ClassCode == 22 && EquipmentRules.Supports(Hand[index].Id)) ||
             (FusionRules.Supports(Hand[index]) && HasFusionCombination()) ||
             Hand[index].Id == 0x593 || LifePointSpellRules.Supports(Hand[index].Id) ||
             (DrawSpellRules.Effect(Hand[index]) is { } draw && DeckCount(ActivePlayer) >= draw.Cards) ||
@@ -1119,7 +1119,8 @@ public sealed partial class DemoDuel
     public NativeAiResult<bool> EquipmentEligibility(int index, int targetPlayer, int targetZone)
     {
         if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count ||
-            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0)
+            targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 || FirstFreeSpellZone() < 0 ||
+            Hand[index].ClassCode != 22 || Monsters[targetPlayer,targetZone] is not { IsMonster: true })
             return NativeAiResult<bool>.Supported(false);
         return EquipmentRules.Eligibility(Hand[index].Id, DemoEquipmentTarget(targetPlayer, targetZone));
     }

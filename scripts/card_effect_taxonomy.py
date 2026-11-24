@@ -7,7 +7,10 @@ from pathlib import Path
 import re
 import subprocess
 
+from card_playability import read_callbacks, read_manifest
+
 ROOT = Path(__file__).resolve().parents[1]
+MONSTER_SUBTYPES = {'Normal', 'Effect', 'Fusion', 'Ritual', 'EffectOrUnknown'}
 FAMILIES = {
     'draw': r'\bdraw\b', 'destroy': r'\bdestroy(?:ed|s)?\b',
     'flip': r'\bflip\b', 'graveyard': r'\bgraveyard\b',
@@ -40,7 +43,7 @@ def classify(description, kind):
     if kind == 'Spell':
         for name, pattern in SIMPLE.items():
             if re.fullmatch('(?:' + pattern + r')\.?', text):
-                return sorted(set(families + [name])), 'trivial-candidate'
+                return [name], 'trivial-candidate'
     return families, 'review'
 
 
@@ -63,10 +66,28 @@ def build(extracted, subtypes, callbacks, tracked):
                 routes=dict(Counter(r['route'] for r in rows)), cards=rows)
 
 
+def verify_reference(result, reference):
+    if reference['schemaVersion'] != 1 or reference['fields'] != ['resourceId', 'packMask', 'kindCode']:
+        raise ValueError('Unsupported pack reference format')
+    if result['fingerprints']['datSha256'] != reference['datSha256']:
+        raise ValueError('Local DAT fingerprint differs from the pack reference')
+
+    expected = Counter((rid, pack, reference['kinds'][str(code)])
+                       for rid, pack, code in reference['cards'])
+    observed = Counter(
+        (row['resourceId'], row['packMask'], 'Monster' if row['kind'] in MONSTER_SUBTYPES else row['kind'])
+        for row in result['cards'])
+    if expected != observed:
+        raise ValueError(f'Pack reference differs: {sum((expected - observed).values())} missing and '
+                         f'{sum((observed - expected).values())} unexpected records')
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--dat', type=Path, required=True)
     p.add_argument('--output', type=Path, default=ROOT / 'scratch/card-taxonomy.json')
+    p.add_argument('--verify-reference', action='store_true',
+                   help='Check the DAT fingerprint and pack entries against the repository inventory')
     a = p.parse_args()
     if not a.dat.is_file():
         p.error('Local DAT unavailable')
@@ -82,9 +103,14 @@ def main():
     def read(path):
         return json.loads((ROOT / path).read_text(encoding='utf-8'))
     subtypes = read('docs/cards/monster-subtypes.json')['subtypes']
-    callbacks = {r['resource_id']: r['profile'] for r in read('docs/evidence/card-callback-catalog.json')['records']}
-    tracked = {rid: g['status'] for g in read('docs/cards/playability-manifest.json')['groups'] for rid in g['resourceIds']}
+    callbacks = read_callbacks(ROOT / 'docs/evidence/card-callback-catalog.json')
+    tracked = {rid: group['status'] for rid, group in read_manifest(ROOT / 'docs/cards/playability-manifest.json').items()}
     result = build(extracted, subtypes, callbacks, tracked)
+    if a.verify_reference:
+        try:
+            verify_reference(result, read('docs/cards/pack-index.json'))
+        except ValueError as error:
+            p.error(str(error))
     a.output.parent.mkdir(parents=True, exist_ok=True)
     a.output.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(f"Classified {len(result['cards'])} pack entries: {result['routes']}")
