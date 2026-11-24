@@ -232,6 +232,12 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política; ainda não existe player), preservando a apresentação clássica.
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`.
   Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
+- [ ] **V20 — Banco coin (00457520).** Status: `Aguardando evidência`.
+  Rotas 8E/8F, camada e início recuperados; nome do banco não comprova semântica de RNG. Roteiro 16; [contrato](docs/research/native-coin-dice-break-contract-2026-11-23.md).
+- [ ] **V21 — Banco dice (00456B90).** Status: `Aguardando evidência`.
+  Rotas 90/91/92, âncora e gate recuperados; Draw/Update ausentes. Roteiro 16, mesmo contrato.
+- [ ] **V22 — Remoção break (00450FD0).** Status: `Aguardando evidência`.
+  Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
 
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 

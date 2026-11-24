@@ -189,3 +189,11 @@ até receber o ZIP; não confundir a coleta com implementação.
 Para os recursos, utilizar --inspect-visual-dat já existente
 e compartilhar privadamente apenas registros de fusion.txt e
 dimensões das imagens referenciadas (sem pixels).
+
+## V20/V21/V22 — 16-coin-dice-break-ghidra.sh (aguardando Fedora)
+
+Ambiente: Ghidra local, projeto e EXE original com fingerprint validado pelo exportador. Consulta SQLite já concluída: seis Update/Draw não presentes; construtores/handlers presentes com ABI ambígua.
+
+    bash scripts/pending/16-coin-dice-break-ghidra.sh
+
+Saída privada: scratch/ghidra-coin-dice-break-contract.zip. Validar vtables +8/+C, contadores, recortes, camada e argumentos reais (não inferir faces/RNG pelo nome do banco); integrar novas evidências em SQLite cumulativo após receber o ZIP. Para coin.txt/dice.txt/break.txt, usar --inspect-visual-dat existente e preservar campos numéricos. Ver [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md). Não repetir bundles 01–04.
