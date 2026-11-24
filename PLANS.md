@@ -262,8 +262,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Modelo Draw +4 módulo 256, modo 5/7, âncora 788/588, intensidade por C; revisão isolada com DAT/cosseno real. Compositor e integração em modo nativo ainda pendentes; roteiro 19. [Contrato](docs/research/native-layerfont-help-2026-11-24.md).
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`.
   Modelo Draw de entrada/saída condicionado a 005BDAD0/0044BA10, modo 3; revisão isolada, dimensão/compositor provisórios. Roteiro 19, mesmo contrato.
-- [ ] **V29 — Ajuda (0045E4A0).** Status: `Aguardando evidência`.
-  Construtor e camada 0xF00 conhecidos; Update/Draw ausentes no SQLite. Roteiro 19, mesmo contrato.
+- [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`.
+  Roteiro 19 recebido no SQLite v2: NativeHelpTimeline porta request por update, gates, identidade 0x3FFF, escala vertical em 4 updates, clamps e âncora contextual. Produtores 0045E240 encontrados em verificações de ações; faltam semântica dos IDs, manifest help.txt, resolução/medidas DAT, compositor +4C e integração de apresentação. Não repetir coleta 19; não contar modelo isolado como Draw. [Contrato](docs/research/native-layerfont-help-2026-11-24.md).
 
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`.
   NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Roteiro 20 recebido: NativeVijaTimeline porta ordem dos passes, centros, fade, scratch e deformação por linha, 97/177 Draws. Máscara +98/remap e renderer ainda pendentes; não bloquear A03. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](docs/research/pending-bundles-handoff-2026-11-24.md).

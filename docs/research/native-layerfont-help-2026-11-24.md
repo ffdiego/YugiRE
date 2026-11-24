@@ -52,19 +52,67 @@ dos registros de B e cor-chave ainda não provados.
 Nenhuma integração com modo de duelo ou scheduler. Não aumentar
 badge até haver uso no fluxo normal com contrato suficiente.
 
-## V29 ajuda
+## V29 ajuda — evidência cumulativa v2
 
 0044C3E0 cria 0045E250 com outros objetos persistentes do duelo.
 Construtor carrega help/help.txt, vtable 005DB630, camada 0xF00,
-obj+10=-1, +14=0, global 005EBEE4=-1. As rotinas 0045E3D0 e
-0045E4A0 não existem nas duas tabelas de decompilação do SQLite.
-Não confundir com 0041E3D0 (hit-test do campo). O índice
-histórico DAT lista help.txt 1119 bytes lógicos, 551 armazenados;
-nenhuma chave ou geometria deduzida do tamanho. Ainda não
-sabemos se o componente responde a um hover, evento de ajuda
-ou outro gatilho. Roteiro 19-layerfont-help-ghidra.sh pede apenas estas duas
-rotinas e assembly dos dois Layerfonts com slots das vtables.
-Usar --inspect-visual-dat para os manifests, não versionar assets.
+obj+10=-1, +14=0, global 005EBEE4=-1. O snapshot v2 (SHA256
+80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+integrity_check=ok) contém Update/Draw no bundle
+87ff09fe3b5b864c91373efc4c7dea874cab9c547ab47eb12dafded9401ee888,
+retry-002-0045E3D0.txt, retry-003-0045E4A0.txt, assembly indexado.
+Não repetir roteiro 19.
+
+### Produtor e Update (assembly confirmado)
+
+0045E240 grava uma única chave em 005EBEE4 (não é FIFO).
+Xrefs em 0056B5A0, 0056B7D0, 0057E490, 0057E650 e outros.
+Decompilação dos produtores indica feedback contextual de
+disponibilidade de ações: 0056B5A0 solicita 3, 0x10 ou 0x12
+em caminhos que retornam falso; 005929D0 solicita 9. Não
+atribuir texto aos IDs antes de resolver o manifesto.
+
+0045E3D7–0045E3E5 incrementa +14 em 4 enquanto <256.
+005F2FDC deve ser não zero e 005F2FE0 zero; senão fecha.
+00418B50 copia a palavra contextual. Quando já visível, mantém
+somente se chave e bits 0..13 da palavra coincidirem; a troca
+fecha imediatamente, sem reabrir no mesmo Update. Quando oculto,
+aceita chave não negativa do lado local, exceto 9 que aceita ambos,
+e virtual +2C de 005F33E0 OU 005664A0(6). Ao aceitar, guarda a
+palavra e zera o contador. Global de pedido volta a -1 em todas
+as saídas. Portanto o produtor precisa renovar o pedido a cada
+Update. Os predicados permanecem fatos fornecidos pelo chamador.
+
+### Draw e geometria (assembly confirmado)
+
+0045E4B4–0045E4D2 passa três argumentos a 0045C140:
+lado=word&1, zona=(word>>1)&31, índice=(word>>6)&255.
+O retorno EAX/EDX fornece X/Y. A decompilação perde o terceiro
+argumento e vários registradores. A altura-base H vem de
+005F3000/2 se zona=11, senão 005F3008; Y0=Y-H/2.
+0045E508–0045E528: escala 8.8 = C(8*t-128)>>8 se t<16,
+256 senão. Após quatro Updates desde a abertura, altura cheia.
+
+0045E538–0045E574 resolve a chave no manifesto e consulta dimensões
+via virtual +38 (largura w, altura h). 0045E577–0045E5B7:
+X0=min(X,800-w/2), Y1=max(Y0,h), h2=trunc(h*escala/256).
+0045E5BB–0045E62D resolve novamente a chave e chama +4C
+com X0-w/2, Y1-h/2-h2/2, par (w,h2), outros argumentos zero.
+Divisões inteiras truncam para zero. Não há clamp esquerdo
+neste trecho. O tamanho original é independente da abertura.
+NativeHelpTimeline modela esse recorte com amostra pura e
+Update explícito. Testes sintéticos cobrem ambos os lados,
+chave especial 9, identidade, renovação, gates, abertura e
+clamps; não são comparação com o original.
+
+### Lacunas
+
+Manifesto help.txt (1119 bytes lógicos no inventário histórico),
+textos/variantes, remap das chaves, dimensões reais, origem dos
+predicados, compositor +4C e fornecimento do contexto no cliente.
+Não criar mensagens por aproximação nem ligar ao Core por nome.
+A Draw segue Pending no inventário; V29 é Partial (modelo isolado).
+Sem fila paralela, sem gate de conclusão.
 
 ## A03
 
