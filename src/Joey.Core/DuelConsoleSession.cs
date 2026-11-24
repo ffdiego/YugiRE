@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | decision ID accept|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -58,6 +58,18 @@ public sealed class DuelConsoleSession
         // the source labelled Console only for tracing, not for rule bypass.
         if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip")
             return ExecuteLegal(op, words);
+        // Replay projection is a setup edit, not a legal input. Capture the
+        // occurrence only if the resource at the recorded source index matches.
+        ushort? expectedMoveId = null;
+        if (op == "move-id")
+        {
+            if (words.Length < 6 || !ushort.TryParse(words[1], NumberStyles.None,
+                CultureInfo.InvariantCulture, out ushort expected) || expected == 0)
+                return new(false, "Expected move-id ID side zone index dest [slot [position]].");
+            expectedMoveId = expected;
+            words = ["move", .. words.Skip(2)];
+            op = "move";
+        }
         DuelCommand[] batch;
         switch (op)
         {
@@ -111,6 +123,9 @@ public sealed class DuelConsoleSession
                     return new(false, "Expected move side sourceZone index destZone [slot [attack|defense|set]] (distinct zones).");
                 if (!duel.TryCaptureCardTarget(moveSide, sourceZone, sourceIndex, out var sourceTarget))
                     return new(false, "Source is not a unique tracked occurrence.");
+                if (expectedMoveId is ushort expectedId &&
+                    (!duel.TryResolveCardTarget(sourceTarget, out _, out var sourceCard) || sourceCard.Id != expectedId))
+                    return new(false, $"Replay source mismatch: expected resource {expectedId}.");
                 batch = [new LabMoveCommand(moveSide, sourceTarget, moveZone, moveSlot, moveDown, moveDefense)];
                 break;
             default: return new(false, "Unsupported command. " + Help);

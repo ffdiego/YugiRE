@@ -34,3 +34,7 @@ Base atual A03 #77 inclui a main a2fce55. TryQueueActivation delega todas as qua
 ## A04.4 — frontend gráfico
 
 `dotnet run --project src/Joey.App -- /path/data.dat --duel-console` inicia laboratório vazio (mesma factory do Lab), sem decisões CPU. F10 alterna overlay debug, Enter envia, F6 pausa apresentação. `--duel-script=scripts/fixtures/duel-console-visual-smoke.txt` roda roteiro; DuelConsoleScript compartilhado admite uma linha por vez quando fila livre, espera decisão explícita e para em comando rejeitado/obsoleto. Log stdout com trace e state/diff; não inventa apresentação de setup spawn/move. App usa AppActionPresentationGate; sem fila lógica adicional. Limites: legacy pending/fases ainda não migrados, setup sem animação; não é emulador YDR. Roteiro 22 pendente para validação runtime DAT. A05 #81 exporta intervalos compatíveis para esse mesmo formato.
+
+## A05 — guarda de origem para projeção de replay
+
+`move-id ID SIDE SOURCE_ZONE INDEX DEST_ZONE [SLOT [position]]` é a mesma operação de setup `move`, mas exige o resource ID esperado antes de admitir. Resolve a ocorrência única na mão (ou zona suportada) e captura seu ID físico, revalidado pelo executor. Não dispara efeitos nem paga tributos/consome normal summon: é uma projeção de movimento gravado, não uma nova jogada. Usar apenas no laboratório explícito. A05.3 usa esse comando para CE/CF suportados; divergência de ID interrompe o roteiro. CI de A04.4 anterior 45322528267 verde; novo CI pendente.

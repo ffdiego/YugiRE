@@ -51,5 +51,22 @@ internal static class DuelConsoleScriptChecks
         }
         check(step.Status==DuelScriptStatus.Failed && step.Line==2 && d.Life[1]==8000,
             "A04.4 rejected execution stops script before later operations");
+
+        var replayDuel=DuelConsoleSession.EmptyLabDuel();
+        var replaySession=new DuelConsoleSession(replayDuel,cards:[DuelConsoleRunner.FixtureCard()]);
+        check(replaySession.Execute("spawn 24 1 hand").Enqueued,"A04 replay fixture");
+        for(int i=0;i<100 && replaySession.Queue.IsBusy;i++) replaySession.Queue.Tick();
+        check(replayDuel.TryCaptureCardTarget(1,DuelZone.Hand,0,out var original),"A04 replay captures physical occurrence");
+        int traceCount=replaySession.Queue.Trace.Count;
+        check(!replaySession.Execute("move-id 25 1 hand 0 monster 2 set").Success &&
+            replaySession.Queue.Trace.Count==traceCount && replayDuel.HandFor(1).Count==1,
+            "A04 replay mismatched source rejects before mutation");
+        check(replaySession.Execute("move-id 24 1 hand 0 monster 2 set").Enqueued,
+            "A04 matching replay placement admitted");
+        for(int i=0;i<100 && replaySession.Queue.IsBusy;i++) replaySession.Queue.Tick();
+        check(replayDuel.TryCaptureCardTarget(1,DuelZone.Monster,2,out var placed) &&
+            placed.Occurrence==original.Occurrence && replayDuel.MonsterFaceDown[1,2] &&
+            replayDuel.DefensePosition[1,2] && replayDuel.HandFor(1).Count==0,
+            "A04 replay placement preserves occurrence and pose");
     }
 }
