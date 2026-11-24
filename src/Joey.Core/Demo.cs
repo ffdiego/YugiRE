@@ -172,7 +172,8 @@ public sealed partial class DemoDuel
     }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
-    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
+    private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue?.IsBusy == true;
+    private bool LegacyActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingFlipSpellTrapTargets is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
         PendingAttackResponse is not null || PendingEffectDecision is not null ||
@@ -280,8 +281,8 @@ public sealed partial class DemoDuel
         {
             Card[] shuffled = (player == 0 ? first : second).ToArray();
             random.Shuffle(shuffled);
-            duel.hands[player].AddRange(shuffled.Take(5));
-            foreach (var card in shuffled.Skip(5)) duel.decks[player].Enqueue(card);
+            duel.hands[player].AddRange(shuffled.Take(5).Select(duel.NewOccurrence));
+            foreach (var card in shuffled.Skip(5)) duel.decks[player].Enqueue(duel.NewOccurrence(card));
         }
         // Opening-hand win. Simultaneous Exodia opening hands are outside
         // the observed Joey replay corpus; the seeded sandbox resolves the
@@ -334,15 +335,15 @@ public sealed partial class DemoDuel
         duel.LoadFusionDeck(0, side0FusionDeck);
         duel.LoadFusionDeck(1, side1FusionDeck);
         duel.Life[activeSide] = activeLifePoints;
-        duel.hands[activeSide].AddRange(activeHand);
-        if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard);
-        if (side1Graveyard is not null) duel.graves[1].AddRange(side1Graveyard);
-        if (side0Deck is not null) foreach (var c in side0Deck) duel.decks[0].Enqueue(c);
-        if (side1Deck is not null) foreach (var c in side1Deck) duel.decks[1].Enqueue(c);
+        duel.hands[activeSide].AddRange(activeHand.Select(duel.NewOccurrence));
+        if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard.Select(duel.NewOccurrence));
+        if (side1Graveyard is not null) duel.graves[1].AddRange(side1Graveyard.Select(duel.NewOccurrence));
+        if (side0Deck is not null) foreach (var c in side0Deck) duel.decks[0].Enqueue(duel.NewOccurrence(c));
+        if (side1Deck is not null) foreach (var c in side1Deck) duel.decks[1].Enqueue(duel.NewOccurrence(c));
         for (int slot = 0; slot < 5; slot++)
         {
-            duel.Monsters[0, slot] = side0Monsters[slot];
-            duel.Monsters[1, slot] = side1Monsters[slot];
+            duel.Monsters[0, slot] = side0Monsters[slot] is Card a ? duel.NewOccurrence(a) : null;
+            duel.Monsters[1, slot] = side1Monsters[slot] is Card b ? duel.NewOccurrence(b) : null;
         }
         duel.CheckExodia(activeSide);
         return duel;
@@ -373,8 +374,9 @@ public sealed partial class DemoDuel
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
         {
-            hands[p].AddRange(monsters.Take(3)); hands[p].AddRange(spells);
-            foreach (var c in monsters.Skip(3).Concat(spells)) decks[p].Enqueue(c);
+            hands[p].AddRange(monsters.Take(3).Select(NewOccurrence));
+            hands[p].AddRange(spells.Select(NewOccurrence));
+            foreach (var c in monsters.Skip(3).Concat(spells)) decks[p].Enqueue(NewOccurrence(c));
         }
         CheckExodia(0);
         CheckExodia(1);
@@ -490,16 +492,29 @@ public sealed partial class DemoDuel
         try
         {
             foreach (int tribute in tributes) RemoveMonster(player, tribute, isTribute: true);
-            Monsters[player, zone] = Hand[index]; hands[player].RemoveAt(index); summoned = true;
+            CommitNormalPlacement(index, player, zone, faceDown);
         }
         finally { resolvingSummon = false; }
+        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
+        FinishNormalPlacement(player, zone, faceDown, ref message);
+        return true;
+    }
+
+    private void CommitNormalPlacement(int index, int player, int zone, bool faceDown)
+    {
+        Monsters[player, zone] = hands[player][index];
+        hands[player].RemoveAt(index);
+        summoned = true;
         DefensePosition[player, zone] = faceDown;
         MonsterFaceDown[player, zone] = faceDown;
         MonsterWasFlipped[player, zone] = false;
         MonsterNormalSummoned?.Invoke(new(player, zone, Monsters[player, zone]!, faceDown));
         // Native placement 0x00568610 sets the same turn lock read by 0x0056B5A0.
         changedPosition[player, zone] = true;
-        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
+    }
+
+    private void FinishNormalPlacement(int player, int zone, bool faceDown, ref string message)
+    {
         if (!faceDown)
         {
             // Normal Summon response takes precedence over the optional P165
@@ -516,7 +531,6 @@ public sealed partial class DemoDuel
                 message += " Resolve the pending card search.";
         }
         else BeginNextQueuedDeckSearch();
-        return true;
     }
     public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
     public bool CanBeginBattle => !ActionsBlocked && Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn;
@@ -737,6 +751,7 @@ public sealed partial class DemoDuel
     public bool SelectFlipSpellTrapTarget(int player, int zone, out string message)
     {
         message = "No eligible FLIP Spell/Trap target is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.SpellTrapTargets, out message)) return true;
         if (PendingFlipSpellTrapTargets is not { } pending || GameOver ||
             player is < 0 or > 1 || zone is < 0 or > SpellTrapTargetRules.FieldZone)
@@ -861,6 +876,7 @@ public sealed partial class DemoDuel
     public bool CancelSpellTrapTarget(out string message)
     {
         message = "No Spell or Trap target choice is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingSpellTrapTarget is null) return false;
         PendingSpellTrapTarget = null;
         message = "Target selection canceled.";
@@ -870,6 +886,7 @@ public sealed partial class DemoDuel
     public bool ResolveSpellTrapTarget(int player, int zone, out string message)
     {
         message = "Choose an eligible Spell or Trap still in its original zone.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (GameOver || Phase != DemoPhase.Main || PendingSpellTrapTarget is not { } pending ||
             pending.Owner != ActivePlayer || player is < 0 or > 1 ||
             zone is < 0 or > SpellTrapTargetRules.FieldZone ||
@@ -1142,6 +1159,13 @@ public sealed partial class DemoDuel
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
         int owner = ActivePlayer;
         if (!CanChangePosition(zone)) return false;
+        var change = CommitManualPosition(owner, zone);
+        FinishManualPosition(change, resolveFlip: true, out message);
+        return true;
+    }
+
+    private DemoMonsterPositionChange CommitManualPosition(int owner, int zone)
+    {
         var monster = Monsters[owner, zone]!;
         bool flipped = MonsterFaceDown[owner, zone];
         bool oldDefense = DefensePosition[owner, zone];
@@ -1152,9 +1176,17 @@ public sealed partial class DemoDuel
         var change = new DemoMonsterPositionChange(owner, zone, monster,
             flipped, oldDefense, false, DefensePosition[owner, zone]);
         MonsterPositionChanged?.Invoke(change);
-        if (flipped)
+        return change;
+    }
+
+    private void FinishManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
+    {
+        int owner = change.Player, zone = change.Zone;
+        Card monster = change.Card;
+        message = "";
+        if (change.FlipSummoned)
         {
-            TriggerFlip(owner, zone, monster, out message);
+            if (resolveFlip) TriggerFlip(owner, zone, monster, out message);
             // This route is a real Flip Summon, unlike an attack reveal or
             // RevealMonsterByEffect. P165 searches must only use this path.
             resolvingSummon = true;
@@ -1182,7 +1214,6 @@ public sealed partial class DemoDuel
         }
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
-        return true;
     }
     public bool BeginBattle(out string message)
     {
@@ -1268,6 +1299,7 @@ public sealed partial class DemoDuel
     public bool PassAttackResponse(out string message)
     {
         message = "No attack declaration is awaiting a response.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingAttackResponse is not DemoAttackResponse pending)
             return false;
         PendingAttackResponse = null;
@@ -1277,6 +1309,7 @@ public sealed partial class DemoDuel
     public bool ActivateAttackTrap(int owner, int zone, out string message)
     {
         message = "Choose an eligible set Trap in the attack response.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingAttackResponse is not DemoAttackResponse pending ||
             owner is < 0 or > 1 || zone is < 0 or >= 5 ||
             !pending.EligibleTraps.Any(option => option.Owner == owner &&
@@ -1796,6 +1829,7 @@ public sealed partial class DemoDuel
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
@@ -1880,6 +1914,7 @@ public sealed partial class DemoDuel
     public bool SelectBatchCard(int sourceIndex, out string message)
     {
         message = "A multiple-card recruitment is not pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
@@ -1905,6 +1940,7 @@ public sealed partial class DemoDuel
     public bool FinishOptionalCardSelection(out string message)
     {
         message = "No multiple same-name recruitment is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
@@ -1961,6 +1997,7 @@ public sealed partial class DemoDuel
     public bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MinSelections: 0 } pending)
             return false;
@@ -2010,6 +2047,7 @@ public sealed partial class DemoDuel
     public bool PassSummonResponse(out string message)
     {
         message = "No summon response is awaiting a decision.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingSummonResponse is null) return false;
         PendingSummonResponse = null;
         BeginNextQueuedDeckSearch();
@@ -2020,6 +2058,7 @@ public sealed partial class DemoDuel
     public bool ActivateSummonTrap(int owner, int zone, out string message)
     {
         message = "Choose an eligible set Trap during a summon response.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingSummonResponse is not DemoSummonResponse response ||
             owner is < 0 or > 1 || zone is < 0 or >= 5 ||
             !response.EligibleTraps.Any(x => x.Owner == owner && x.Zone == zone &&
@@ -2171,6 +2210,7 @@ public sealed partial class DemoDuel
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
@@ -2215,6 +2255,7 @@ public sealed partial class DemoDuel
     public bool FinishFlipTargets(out string message)
     {
         message = "No optional FLIP target selection is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnUpToTwo }) return false;
         return CompleteReturnTargets(out message);
     }
@@ -2295,20 +2336,20 @@ public sealed partial class DemoDuel
     }
 
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,
-        bool isFusionMaterial = false)
+        bool isFusionMaterial = false, bool queueLinkedConsequences = false)
     {
         Card removed = Monsters[p, z]!;
         bool faceDown = MonsterFaceDown[p, z];
         bool defense = DefensePosition[p, z];
         bool previouslyFlipped = MonsterWasFlipped[p, z];
         graves[p].Add(removed);
-        ClearMonsterSlot(p, z);
+        ClearMonsterSlot(p, z, removeEquipment: !queueLinkedConsequences);
 
         // A separate sent-from-field-to-Graveyard effect. The legacy P065
         // description conditions this on the same card having been flipped.
         // Never apply it to a normal face-up summon, an unflipped Set card,
         // bounce to hand, or Fusion Gate's banishment.
-        if (ImmortalThunderRules.LosesLifeOnFieldToGraveyard(removed.Id, previouslyFlipped))
+        if (!queueLinkedConsequences && ImmortalThunderRules.LosesLifeOnFieldToGraveyard(removed.Id, previouslyFlipped))
             ChangeLife(p, -ImmortalThunderRules.GraveyardLifeLoss);
 
         if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
@@ -2362,15 +2403,16 @@ public sealed partial class DemoDuel
         }
     }
 
-    private void ClearMonsterSlot(int player, int zone)
+    private void ClearMonsterSlot(int player, int zone, bool removeEquipment = true)
     {
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
         MonsterWasFlipped[player, zone] = false;
         changedPosition[player, zone] = attacked[player, zone] = false;
         // Attached equips go to their owners' Graveyards when the monster leaves.
-        foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
-            RemoveEquipmentCore(e.Owner, e.SourceZone);
+        if (removeEquipment)
+            foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
+                RemoveEquipmentCore(e.Owner, e.SourceZone);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
     public void NextTurn() => EndTurn(out _);
@@ -2463,6 +2505,7 @@ public sealed partial class DemoDuel
     public bool ResolveEffectDecision(long id, EffectDecisionAnswer answer, out string message)
     {
         message = "No matching optional effect decision is pending.";
+        if (primitiveActionQueue?.IsBusy == true) return false;
         if (PendingEffectDecision is not { } request || request.Id != id ||
             !Enum.IsDefined(answer) || GameOver) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.OptionalDraw, out message)) return true;

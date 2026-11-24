@@ -512,7 +512,7 @@ não substituir o compositor por equivalência pixel-perfect inferida.
 O banco compartilhado NativeFusionResources lê fusion.txt local
 em ordem, exige índices 0..2, rejeita sintaxe desconhecida.
 O modo --review-attached-fusion=ID,8080 exige a tabela real capturada
-pelo script 11; nunca utiliza o fallback aproximado. O ID é um
+pelo script 14; nunca utiliza o fallback aproximado. O ID é um
 resource ID numérico real de monstro. Para a revisão, o centro
 vem da zona selecionada; o objeto vinculado usa escala/intensidade
 e ângulo negativo do contrato, com compositor raylib explicitamente

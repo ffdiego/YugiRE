@@ -112,8 +112,64 @@ internal static class EquipmentChecks
             check(destruction.Summon(0,0,0,true,out _) && destruction.AttackValue(0,0)==1000 &&
                 destruction.DefenseValue(0,0)==1000, $"P025 {id}: reused monster slot has base stats");
         }
-        foreach (ushort id in new ushort[] { 0,302,304,305,306,308,309,311,314,315,316,318,321,322,323,
-            324,325,326,327,653,656,657,667,1012,1013,1046,1047,1058,1060,1182,1313,1419,1420,1422,1449,1450,1540,1548,1550,2300,2301,2307,65535 })
+        // All added cards use the existing activation, link, stat and cleanup path.
+        foreach (var (id, type, attribute, atk, def) in new (ushort, int, int, int, int)[]
+        {
+            (302, 3, 0, 300, 300),
+            (304, 10, 0, 300, 300),
+            (306, 0, 1, 400, -200),
+            (308, 0, 3, 400, -200),
+            (309, 13, 0, 300, 300),
+            (311, 17, 0, 300, 300),
+            (314, 1, 0, 300, 300),
+            (315, 19, 0, 300, 300),
+            (318, 12, 0, 300, 300),
+            (321, 2, 0, 300, 300),
+            (322, 18, 0, 300, 300),
+            (324, 7, 0, 300, 300),
+            (325, 9, 0, 300, 300),
+            (326, 16, 0, 300, 300),
+            (327, 14, 0, 300, 300),
+            (653, 0, 4, 700, 0),
+            (1012, 0, 4, 400, -200),
+            (1013, 0, 6, 400, -200),
+        })
+        {
+            int validType = type == 0 ? 15 : type;
+            int validAttribute = attribute == 0 ? 2 : attribute;
+            var correct = context with { DynamicType = (byte)validType, DynamicAttribute = (byte)validAttribute };
+            check(EquipmentRules.Supports(id) && EquipmentRules.Eligibility(id, correct) is { IsSupported: true, Value: true },
+                $"P025 expanded {id}: correct dynamic predicate");
+            var wrong = type != 0 ? correct with { DynamicType = (byte)(type == 1 ? 2 : 1) }
+                : correct with { DynamicAttribute = (byte)(attribute == 1 ? 2 : 1) };
+            check(EquipmentRules.Eligibility(id, wrong) is { IsSupported: true, Value: false } &&
+                EquipmentRules.Eligibility(id, correct with { FaceUp = false }).Value == false &&
+                !EquipmentRules.Eligibility(id, correct with { GenericGuardsSatisfied = null }).IsSupported,
+                $"P025 expanded {id}: incompatible, hidden and unresolved targets");
+            foreach (int owner in new[] { 0, 1 })
+            foreach (int targetSide in new[] { 0, 1 })
+            {
+                var d = Duel(id, Monster(validType, validAttribute), owner, targetSide);
+                check(d.CanActivateFromHand(0) && d.Equip(0,targetSide,0,out _) &&
+                    d.Hand.Count == 0 && d.Spells[owner,0]?.Id == id &&
+                    d.EquipmentCards.Single() is { } link && link.Owner == owner &&
+                    link.TargetPlayer == targetSide && link.TargetZone == 0,
+                    $"P025 expanded {id}: live link owner {owner}, target {targetSide}");
+                check(d.AttackValue(targetSide,0) == 1000 + atk &&
+                    d.DefenseValue(targetSide,0) == 1000 + def,
+                    $"P025 expanded {id}: correct asymmetric stats");
+                check(d.RemoveEquipment(owner,0) && d.EquipmentCards.Count == 0 &&
+                    d.Spells[owner,0] == null && d.Graveyard(owner).Single().Id == id &&
+                    d.AttackValue(targetSide,0) == 1000 && d.DefenseValue(targetSide,0) == 1000,
+                    $"P025 expanded {id}: cleanup restores stats");
+            }
+            var rejected = Duel(id, Monster(type == 0 ? validType : (type == 1 ? 2 : 1),
+                attribute == 0 ? validAttribute : (attribute == 1 ? 2 : 1)));
+            string before = State(rejected);
+            check(!rejected.Equip(0,0,0,out _) && State(rejected) == before,
+                $"P025 expanded {id}: incompatible activation is atomic");
+        }
+        foreach (ushort id in new ushort[] { 0,305,316,323,656,657,667,1046,1047,1058,1060,1182,1313,1419,1420,1422,1449,1450,1540,1548,1550,2300,2301,2307,65535 })
         {
             check(!EquipmentRules.Supports(id) && !EquipmentRules.Eligibility(id,context).IsSupported,
                 $"P025 {id}: outside whitelist even if contribution helper knows this ID");

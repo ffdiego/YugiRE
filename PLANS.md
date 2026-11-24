@@ -80,32 +80,34 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 5. **Continuações:** efeitos que dependem do resultado de um comando, ou de uma escolha do jogador, retomam depois, via nova passagem — sem recursão e sem resolver tudo em um passo.
 6. **O gate de apresentação é injetável.** O `Joey.Core` define comandos e espera uma liberação; o `Joey.App` libera quando a animação termina; modo headless/IA vs IA libera na hora. **A mesma sequência de comandos nos dois casos.**
 7. **Log de comandos comparável com o trace nativo** (opcode, lado, argumentos), para comparar duelos entre C# e Joey.
-8. *(hipótese, confirmar em `A01`)* O estado muda **na execução** do comando, não no enfileiramento; a granularidade dos opcodes C# pode ser mais grossa que a nativa quando o intermediário não for observável.
+8. O estado de jogo muda **na execução** do comando, não no enfileiramento (confirmado para CE/CF/8E; LP pode mudar durante o Update nativo, com comando ainda ativo). A generalização é contrato C#, não prova de todos os handlers; granularidade maior exige justificar que nenhum intermediário observável desaparece. Ver [A01](docs/architecture/action-queue.md).
 
 ### Itens da trilha ACTIONS
 
-- [ ] **A01 — Consolidar o contrato do scheduler.** Status: `Pronto`.
+- [x] **A01 — Consolidar o contrato do scheduler.** Status: `Concluído`.
   Transformar `native-action-scheduler.md` em `docs/architecture/action-queue.md`: máquina de estados do comando (estágios 0/1/2), gates, formato do registro, tabela opcode → comando C# (começar por `CE`, `CF`, `72/1E`, `43`, `57`, `8E`, `B1`), lista de invariantes com grau de certeza (`assembly confirmado`/`observado`/`hipótese`). Fechar ou registrar como aberta cada hipótese acima. Sem implementar ainda.
-  *Pronto quando:* documento publicado, cada invariante com evidência ou marcada como hipótese; lista de opcodes de duelo com semântica conhecida ou `Pending`.
-- [ ] **A02 — `ActionQueue` e comandos tipados no `Joey.Core`.** Status: `Bloqueado por A01`.
+  *Entregue:* [contrato da fila](docs/architecture/action-queue.md), evidência anterior conferida com o SQLite de 22/11, casos de aceitação para A02, mapa inicial de opcodes e lacunas explícitas. Sem implementação; fases seguem em A07 (roteiro 11).
+- [x] **A02 — `ActionQueue` e comandos tipados no `Joey.Core`.** Status: `Concluído`.
   Fila FIFO, comando ativo único, subestados, continuações e gate de conclusão injetável (`IPresentationGate`). Comandos iniciais: `Draw`, `Summon`, `Set`, `SendToGraveyard`, `Discard`, `Destroy`, `Damage`, `Heal`, `Flip`, `ChangePosition`. Reaproveitar `queuedEffectDecisions` como caso de continuação por decisão.
   *Pronto quando:* testes de sequência reproduzem as invariantes 1–6 (ordem, um por vez, destruir 3 = 3 comandos, headless x com gate resultam na **mesma** lista de comandos).
-- [ ] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Bloqueado por A02`.
+  *Entregue:* PR #67 integrado à main (93846a7), CI integral 45318593622 verde. A02.1–A02.5: FIFO/gates/trace, identidade por ocorrência, dez tipos iniciais com adaptadores experimentais, Raigeki e consequências vinculadas, Summon/Set com tributos, Flip/ChangePosition, Morphing Jar e decisão real Skelengel. Critérios 1–6 cobertos por testes de sequência, alvo obsoleto, gate imediato/retardado e decisão. A02 encerra infraestrutura e pilotos; não significa migração integral de cartas, App/CPU, escolhas concorrentes, fases ou paridade nativa. Ver [handoff A02](docs/architecture/action-queue-implementation.md). Migração restante em A03–A08/C12.
+
+- [ ] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Pronto`.
   O comando ativo expõe a apresentação que precisa terminar; `Joey.LookAndFeel` consome o comando (não uma lista paralela) e sinaliza o gate. Substituir `PresentationSequence` paralela pela leitura dos comandos. Perfis Classic/Fast/Silent/Instant mantêm ordem e contagem.
   *Pronto quando:* a prévia de ativação e uma invocação normal rodam guiadas pela fila, sem tempo no Core.
-- [ ] **A04 — Console de duelo no `Joey.App`.** Status: `Bloqueado por A02`.
+- [ ] **A04 — Console de duelo no `Joey.App`.** Status: `Pronto`.
   Modo console que **enfileira os mesmos comandos que as cartas usarão**: spawnar carta (mão/campo/deck/cemitério), mover entre zonas, comprar, invocar/setar, destruir, mudar LP, avançar fase, forçar lado. Os nomes devem espelhar o console nativo de `native_hooks` (`draw N [lado]`, `damage N [lado]`, `state`, `diff`) para rodar o **mesmo roteiro** nos dois lados e comparar. Uso principal: implementar e depurar cartas do zero apenas por essas interfaces, com feedback visual imediato.
   **Contrato do console:** jogador, CPU, cartas, testes, scripts e console são produtores da mesma API de comandos tipados do Core. A origem pode mudar a autorização/admissão (jogadas legais vs. operações privilegiadas de laboratório), nunca o executor, os gatilhos, a ordem ou a apresentação de um comando equivalente. `draw`, `destroy`, `damage`, `heal`, `move` etc. são propostas de interface textual; não presumir que todos já existem no console nativo. Resolver a identidade da ocorrência e revalidar na execução; distinguir destruir, descartar e enviar ao cemitério, mesmo quando o destino coincide. `spawn`/forçar fase/lado são comandos explícitos de laboratório, não mutações ocultas nem jogadas legais. Consultas `state`/`diff` são somente leitura. O parser/runner deve ser reutilizável sem raylib (scripts/testes/headless); o App é um frontend opcional. Nunca contornar a fila nem conceder privilégios de debug ao jogador/CPU.
   *Pronto quando:* um roteiro de compra, destruição e LP é executável interativamente e headless, gera os mesmos comandos/eventos/estado final sob as mesmas condições, e cada ação é animada no App. `state`/`diff` comparáveis ao nativo para operações suportadas; testar admissões inválidas e gatilhos normais de destruição.
-- [ ] **A05 — Trace de comandos comparável.** Status: `Bloqueado por A02`.
+- [ ] **A05 — Trace de comandos comparável.** Status: `Pronto`.
   Exportar o log da fila C# no mesmo formato dos registros nativos (opcode, lado, argumentos) e um comparador contra capturas do `yugilab`. Começar por invocação normal (já existem fixtures parciais) e dano/cura.
   *Pronto quando:* um roteiro curto (draw, invocar, atacar) gera listas comparáveis e as divergências saem em relatório.
-- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Bloqueado por A02`.
+- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.
   Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
-  Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em `A01`.
-- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Bloqueado por A02`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
+  Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em [A01](docs/architecture/action-queue.md); roteiro 11 em `scripts/pending/` preparado, ainda não executado.
+- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Pronto`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
   Novo assembly com as definições de cartas por resource ID e as famílias de efeito. Dependências: `Joey.Cards` → `Joey.Core`, nunca o contrário; `Joey.App` monta Core + Cards + LookAndFeel. O Core fica com o que vale para qualquer duelo (fases, batalha, invocação, a fila e `EffectContext`); o catálogo e o console (`A04`) criam cartas por resource ID a partir de `Joey.Cards`.
   **`EffectContext`** expõe primitivos pequenos e combináveis (`Destroy(filtro)`, `Draw`, `Damage`, `Heal`, `Choose`, `Move`...), cada um **enfileirando comandos**; não muta o estado diretamente (invariante 1).
   **Açúcar para cartas triviais:** helpers como `DestroyMonsters(Side)` são só açúcar sobre `Destroy(filtro)`. Eles tiram uma foto dos alvos na resolução e enfileiram **um comando `Destroy` por monstro**; um comando cujo alvo já saiu do campo quando chega a vez é descartado. Ex.: Raigeki = `DestroyMonsters(Opponent)`; Dark Hole = `DestroyMonsters(Opponent)` + `DestroyMonsters(Own)`. A **ordem** entre lados e zonas é observável e deve ser conferida no original antes de ser fixada (hipótese até medir).
@@ -139,13 +141,13 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`.
 - [ ] **C02 — Lotes triviais por família.** Status: `Bloqueado por C01`.
   Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
-- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Pronto`.
-  Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack.
-- [ ] **C04 — Equipamentos `P025`.** Status: `Pronto`.
-  Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra.
+- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`.
+  Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack. Fatia de intenções de dano de batalha P019/P023/P078/P239/P120 em [contrato C03](docs/cards/c03-battle-damage-effects.md), sem mutação nem promoção de cobertura. Integrar após evento de dano de batalha na fila A02/A06; P239/P120 exigem seleção e comandos adicionais.
+- [ ] **C04 — Equipamentos `P025`.** Status: `Parcial`.
+  Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra. Fatia de 18 IDs dos packs com bônus fixos implementada no fluxo de mão existente; ver [contrato C04](docs/cards/c04-fixed-equipment.md). Testes C# registrados, execução pendente. Set, fila e efeitos adicionais ainda abertos.
 - [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Pronto`.
   Sem prometer tamanho de lote antes de confirmar o catálogo original.
-- [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Bloqueado por A02` (armadilhas simples sem corrente podem seguir antes).
+- [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto` (armadilhas simples sem corrente podem seguir antes).
   As cinco já feitas reaproveitam janelas de Summon/ataque. Faltam as outras, Special Summon como gatilho e correntes/respostas, **sem fingir que uma fila simples cobre todos os casos**.
 - [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Pronto`.
   Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda.
@@ -159,6 +161,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 - [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Bloqueado por A02/A08`.
   Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos (invariantes 1–5). Registrar aqui as cartas implementadas fora da fila enquanto `A02` não existir. Dívida inicial inclui as famílias dos lotes 6–14 (ver nota de consolidação abaixo), além das famílias listadas neste item.
+  Dívida adicional: 21 equipamentos P025 (C04), fluxo legado de mão a migrar.
 - [ ] **C13 — Conferir os 264 Normal com o DAT real (Windows).** Status: `Aguardando evidência`.
   `dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat`. Divergências de categoria devem ser tratadas antes de elevar paridade.
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Aguardando evidência`.
@@ -190,7 +193,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 ### Itens abertos (ordem sugerida)
 
 - [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`.
-  Capturador dirigido `scripts/pending/11-visual-cosine-runtime.py` e loader `--native-cosine=` implementados; aguardam captura Windows. F12 distingue tabela aproximada e captura runtime. Log de Draw ainda pendente.
+  Capturador dirigido `scripts/pending/14-visual-cosine-runtime.py` e loader `--native-cosine=` implementados; aguardam captura Windows. F12 distingue tabela aproximada e captura runtime. Log de Draw ainda pendente.
   (a) Capturar `00A52EE8` (512 valores x16.16) **depois** da inicialização em `0055DCF0` — o Ghidra estático não entrega a tabela, e hoje o C# usa `Math.Cos` (`ApproximateCosineTable`, explicitamente não bit-exata). (b) Hookar o primitivo de blit comum e registrar, por frame de duelo, `(rotina Draw, recurso/sprite, x, y, alpha/blend, ângulo/escala, quadro)` para as rotinas do inventário. Isso gera valores de referência **observados** para comparar com os extraídos do assembly e acelera V02–V16. Aproveitar a infraestrutura `native_hooks`/`yugilab`; sem versionar dumps brutos.
   *Pronto quando:* tabela de 512 inteiros disponível em `scratch/` e carregável pelo C# no lugar da aproximação; log de Draw para um duelo curto reproduzível por seed.
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`.

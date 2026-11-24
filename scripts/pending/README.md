@@ -126,12 +126,20 @@ Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastre
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
 
-## V01 / V11 — 11-visual-cosine-runtime.py (aguardando Windows)
+## ACTIONS — aguardando coleta
+
+| Roteiro | ID | Ambiente | Saída | Estado |
+| --- | --- | --- | --- | --- |
+| `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Aguardando execução/importação |
+
+Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22/11 não possui decompilações nos dez VAs-alvo. O roteiro extrai os drivers e handlers das tabelas, mais as duas tabelas brutas. Pergunta: como o índice de A577FE se liga às escritas em A577FA e aos rótulos exibidos? Encerrar a coleta após verificar fingerprint e cobertura dos alvos (ausências explícitas), importar evidências compatíveis em cópia cumulativa do SQLite e documentar o mapeamento ou a lacuna residual. Não chamar a coleta de implementação A07. Ver [A01](../../docs/architecture/action-queue.md).
+
+## V01 / V11 — 14-visual-cosine-runtime.py (aguardando Windows)
 
 Com o executável original aberto em um duelo e Frida instalado na venv:
 
 ```powershell
-python scripts/pending/11-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
+python scripts/pending/14-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
 dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine=scratch/visual-review/native-cosine.json
 ```
 

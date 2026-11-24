@@ -114,6 +114,7 @@ NativeRngTests.Run(Check);
 CpuDeckSelectionTests.Run(Check);
 CpuDifficultyProgressionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
+ActionQueueChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
 DeckTests.Run(Check, Reject);
@@ -143,6 +144,7 @@ AttackNegationTrapChecks.Run(Check);
 CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
+BattleDamageEffectRuleChecks.Run(Check);
 BattleGraveyardEffectChecks.Run(Check);
 RevivalJamDecisionChecks.Run(Check);
 NativeP168EvidenceChecks.Run(Check);

@@ -79,12 +79,14 @@ internal static class FlipBanishBurnChecks
               "P052: same sandbox RNG seed produces same sampled occurrences");
         var random3 = DemoDuel.FromPartialObservation(0, [a,a,b,c], Slots(fire), Slots(), 8000,
             effectShuffleSeed:1122);
+        Card[] physicalCopies = random3.HandFor(0).Take(2).ToArray();
         Hide(random3,0);
         check(random3.ChangePosition(0,out _) &&
               random3.HandFor(0).Count == 2 &&
               random3.Banished(0).Count == 2 &&
-              random3.HandFor(0).Count(x => ReferenceEquals(x,a)) +
-              random3.Banished(0).Count(x => ReferenceEquals(x,a)) == 2,
+              physicalCopies.All(copy => random3.HandFor(0).Concat(random3.Banished(0))
+                  .Count(x => ReferenceEquals(x, copy)) == 1) &&
+              !ReferenceEquals(physicalCopies[0], physicalCopies[1]),
               "P052: duplicate card occurrences remain distinct hand positions");
 
         foreach (int count in new[] {0,1})
