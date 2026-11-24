@@ -1406,6 +1406,45 @@
         "No native differential replay, effect suppression, chains, special summon prohibitions, owner/controller divergence or RNG parity.",
         "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification."
       ]
+    },
+    {
+      "id": "equipment.fixed-bonus-c04",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Equip",
+        "ATK/DEF modifier"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        302,
+        304,
+        306,
+        308,
+        309,
+        311,
+        314,
+        315,
+        318,
+        321,
+        322,
+        324,
+        325,
+        326,
+        327,
+        653,
+        1012,
+        1013
+      ],
+      "evidence": [
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/NativeAiAttributes.cs",
+        "src/tests/Joey.Tests/EquipmentChecks.cs",
+        "docs/cards/c04-fixed-equipment.md"
+      ],
+      "limitations": [
+        "Legacy hand activation and ordinary cleanup only; C# tests added but not yet executed. Set activation, action queue migration, native suppression and other interactions pending."
+      ]
     }
   ]
 }
