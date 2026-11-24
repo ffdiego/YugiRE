@@ -89,7 +89,7 @@ public sealed partial class DemoDuel
             return false;
         if (DrawSpellRules.Effect(card) is not null)
             return TryQueueDrawSpell(zone, index, out message, origin);
-        if (LifePointSpellRules.Supports(card.Id))
+        if (LifePointSpellRules.SupportsQueued(card.Id))
             return TryQueueLifePointSpell(zone, index, out message, origin);
         if (MonsterWipeRules.Scope(card.Id) is not null)
             return TryQueueMonsterWipe(zone, index, out message, origin);
@@ -485,7 +485,7 @@ public sealed partial class DemoDuel
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
-            if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null ||
+            if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
                 MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id) ||
                 SpellTrapTargetRules.Supports(card.Id)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
