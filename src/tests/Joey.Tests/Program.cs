@@ -253,6 +253,7 @@ QueuedFlipDeckFlowChecks.Run(Check);
 QueuedFlipFieldChecks.Run(Check);
 QueuedFlipBanishBurnChecks.Run(Check);
 QueuedMorphingJar2Checks.Run(Check);
+QueuedGraveyardBanishSummonChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);

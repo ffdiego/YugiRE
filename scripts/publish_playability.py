@@ -74,7 +74,9 @@ def render_report(scopes, sources):
              "Métrica de cartas jogáveis no sandbox C#, não paridade com o executável original.", "",
              f"- **Trilogia:** {a['done']}/{a['total']} = {a['pct']:.2f}%",
              f"- **Joey:** {j['done']}/{j['total']} = {j['pct']:.2f}%",
-             f"- **Partial:** {a['statuses']['Partial']}; **Verified:** {a['statuses']['Verified']} (trilogia).", "",
+             f"- **Partial:** {a['statuses']['Partial']}; **Verified:** {a['statuses']['Verified']} (trilogia).",
+             f"- **Partial no Joey:** {j['statuses']['Partial']}.",
+             "A badge mostra Done+Verified e, separadamente, o número de Partial. Migração de regras já Done para a fila (C12) não altera a cobertura jogável.", "",
              "## Por categoria", "",
              "| Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |",
              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
@@ -106,7 +108,7 @@ def generated():
     for key, title in (("all-packs", "CARDS"),):
         v = scopes[key]
         data = {"schemaVersion": 1, "label": title,
-                "message": f"{v['done']}/{v['total']} ({v['pct']:.2f}%)",
+                "message": f"{v['done']}/{v['total']} ({v['pct']:.2f}%) | {v['statuses']['Partial']} partial",
                 "color": "brightgreen" if v["pct"] >= 70 else "blue" if v["pct"] >= 20 else "orange"}
         outputs[CARDS / "badges" / (key + ".json")] = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
     return outputs, scopes

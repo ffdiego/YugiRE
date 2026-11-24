@@ -1340,13 +1340,18 @@
       "status": "Partial",
       "mechanics": [
         "Core-only inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
-        "Revalidate hand source, distinct graveyard positions and free destination before changing zones"
+        "Revalidate hand source, distinct graveyard positions and free destination before changing zones",
+        "Queue-backed cost and face-up Special Summon, one command per occurrence, no summon before all costs are applied"
       ],
       "evidence": [
         "src/Joey.Core/GraveyardBanishSummonRules.cs",
         "src/Joey.Core/Demo.cs",
         "src/tests/Joey.Tests/GraveyardBanishSummonChecks.cs",
-        "docs/research/p252-necrofear-control-contract.md"
+        "docs/research/p252-necrofear-control-contract.md",
+        "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
+        "docs/cards/c16-queued-graveyard-banish-summon.md"
       ],
       "limitations": [
         "No End Phase equip/control, UI/CPU input, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
@@ -1440,10 +1445,12 @@
         "src/Joey.Core/EquipmentRules.cs",
         "src/Joey.Core/NativeAiAttributes.cs",
         "src/tests/Joey.Tests/EquipmentChecks.cs",
-        "docs/cards/c04-fixed-equipment.md"
+        "docs/cards/c04-fixed-equipment.md",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/tests/Joey.Tests/QueuedEquipmentChecks.cs"
       ],
       "limitations": [
-        "Legacy hand activation and ordinary cleanup only; C# tests added but not yet executed. Set activation, action queue migration, native suppression and other interactions pending."
+        "Legacy hand activation and queue-backed hand/Set activation with ordinary cleanup; UI/CPU queue integration, native suppression and additional interactions pending. No native parity claim."
       ]
     },
     {
@@ -1468,6 +1475,35 @@
       ],
       "limitations": [
         "Queue-backed headless hand/Set activation; UI/CPU, suppression and native comparison pending."
+      ]
+    },
+    {
+      "id": "monster.special-summon.elemental-graveyard-banish-c16",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Queue-backed inherent Special Summon from hand by banishing exactly two (1515) or one (1516–1519) eligible monsters from own Graveyard; match source attribute",
+        "Revalidate distinct occurrences, cost and free slot; separate BanishCommand per cost and SpecialSummonCommand only after full payment"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1515,
+        1516,
+        1517,
+        1518,
+        1519
+      ],
+      "evidence": [
+        "src/Joey.Core/GraveyardBanishSummonRules.cs",
+        "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
+        "docs/cards/c16-queued-graveyard-banish-summon.md"
+      ],
+      "limitations": [
+        "Core opt-in summon procedure only; continuous/Standby/position effects, UI/CPU, Spirit Elimination and native differential validation pending.",
+        "Resource 1518 belongs to the Joey pack and native cost family; exact DAT identity still needs confirmation. Tests use synthetic source attributes, not native DAT parity.",
+        "PR #93 commit 3178443 passed .NET CI; no promotion to Done."
       ]
     }
   ]
