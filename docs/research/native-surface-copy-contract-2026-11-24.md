@@ -91,3 +91,55 @@ de outros efeitos e à composição de Vija quando o
 formato estiver resolvido. O pipeline do jogo permanece
 inalterado. A03 continua responsável por scheduler,
 snapshots e tempo de vida. Cobertura 20/34.
+
+
+## V17 complemento — mistura por intensidade, tabelas de cor
+
+SQLite v2 reaberto read-only, SHA acima confirmado e quick_check=ok.
+00546D70 (chamador 004A8370 em 004A857C) inicializa quatro
+famílias de lookup; nenhuma instrução do inicializador está
+no snapshot. Cruzamento de decompilação do produtor e dos
+consumidores 00431750 (formato 3), 00432450 (4), 00433150 (5)
+e 00434B40 (7), despachados por 00422E30 quando formatos
+coincidem e intensidade signed <=255. Não é confirmação de
+assembly, nem identificação da vtable +98.
+
+- 00A2EE04[256*c+i] = floor(i*c/255), 005F6E04[256*c+i] =
+  floor(i*(255-c)/255); aqui c e i são índices 0..255.
+- 0060EF03[512*i+d] para -255<=d<=255: d*i/255 truncado
+  em direção a zero, armazenado como byte modular. O
+  inicializador preenche positivos, depois nega os bytes
+  positivos para os negativos. BGR24 usa dst+lookup(src-dst),
+  com chave comparada nos 24 bits baixos (00433150).
+  Não é floor(src*i/255)+floor(dst*(255-i)/255), nem
+  aritmética em sRGB linearizado.
+- 0062EE04 (16*65536 words): RGB565, escala cada canal
+  packed separadamente por q/15 com truncamento. 0082EE04
+  (16*65536 words): RGB555, mesma escala de 5 bits por
+  canal, duplicação para bit 15, bit extra removido no
+  valor escalado. Consumidores usam q=(i&0xf0)>>4 e
+  somam scale(src,q)+scale(dst,15-q), em ushort.
+  Pulam se src==key ou src==dst; este último evita
+  escurecer um pixel igual devido a dois truncamentos.
+- 00434B40 (7, BGRX32) compara dword inteiro com chave;
+  aplica o mesmo delta BGR e escreve quarto byte zero
+  até com intensidade 0 se houver store. Não é RGBA.
+  A variante formato 6 em 00433E50 aparece inconsistente
+  na decompilação (perde intensidade/stride); não portá-la.
+- 00422E30 em intensidade >=256 delega a 0051EBD0,
+  que tem contratos próprios; não tratar 256 como
+  saturação do kernel de intensidade. Modelar só 0..255.
+
+NativeIntensityPixel porta esses kernels de mesma cor
+em CPU, sem alocar tabelas de vários MB e sem aplicar
+gamma ou alpha do raylib. Produto/inverso, delta
+signed e escala 16-bit verificados em testes sintéticos
+(tabelas completas, chaves, limites e byte de storage).
+Não altera NativeSurfaceCopy nem assume equivalência
+entre blit retangular e raster quadrilateral. Não porta
+cross-format, source-alpha, máscaras, clipping/edges
+do polígono, scratch, nem liga ao App. Roteiro 25
+inclui agora 00546D70 para confirmação de assembly
+do inicializador; não pedir dump das tabelas reconstruídas.
+Roteiro 24 continua dono da vtable desconhecida.
+Cobertura permanece 20/34.
