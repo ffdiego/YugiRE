@@ -1411,6 +1411,21 @@ public sealed partial class DemoDuel
         BattleContinuation? battle = deferredBattle;
         if (battle is null) return;
         deferredBattle = null;
+        // P188: removal from play occurs after damage calculation, but before
+        // the normal battle-to-Graveyard movement. A monster that never
+        // reached Graveyard must not run battle-destruction or GY triggers.
+        // Identity checks prevent an unrelated replacement occupying a slot
+        // during the Damage Step from being banished by this old attack.
+        bool bothPresent =
+            ReferenceEquals(Monsters[battle.AttackerSide, battle.AttackerZone], battle.Attacker) &&
+            ReferenceEquals(Monsters[battle.DefenderSide, battle.DefenderZone], battle.Defender);
+        if (bothPresent && DimensionalWarriorRules.BanishBothAfterDamageCalculation(
+                battle.Attacker.Id, battle.Defender.Id))
+        {
+            BanishBattlingMonster(battle.AttackerSide, battle.AttackerZone, battle.Attacker);
+            BanishBattlingMonster(battle.DefenderSide, battle.DefenderZone, battle.Defender);
+            return;
+        }
         // An effect may already have removed a combatant. Never destroy an
         // unrelated monster which later occupies the same slot.
         if (battle.DestroyAttacker &&
@@ -2178,6 +2193,20 @@ public sealed partial class DemoDuel
         // P164/P168 do not fire: this was NOT battle destruction.
         BeginNextQueuedDeckSearch();
         return new(resourceId, caster, counts[0], counts[1], faceDownDestroyed);
+    }
+
+    /// <summary>
+    /// A physical field-to-banish movement, not destruction, discarding or a
+    /// field-to-Graveyard event. The existing Fusion Gate out-of-play zone is
+    /// reused. Equips are cleaned by ClearMonsterSlot; neither monster GY
+    /// search nor battle destruction hooks fire.
+    /// </summary>
+    private void BanishBattlingMonster(int player, int zone, Card expected)
+    {
+        if (!ReferenceEquals(Monsters[player, zone], expected))
+            throw new InvalidOperationException("The battle source occurrence has changed.");
+        banished[player].Add(expected);
+        ClearMonsterSlot(player, zone);
     }
 
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,

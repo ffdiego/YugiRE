@@ -128,6 +128,7 @@ FlipSuppressionIntegrationChecks.Run(Check);
 FlipDeckFlowChecks.Run(Check);
 FlipBanishBurnChecks.Run(Check);
 ImmortalThunderChecks.Run(Check);
+DimensionalWarriorChecks.Run(Check);
 RitualSearcherChecks.Run(Check);
 MonsterWipeChecks.Run(Check);
 SpellTrapWipeChecks.Run(Check);

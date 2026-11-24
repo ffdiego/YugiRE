@@ -1300,6 +1300,35 @@
         "Relationship of Royal Command to delayed loss, change of control/ownership, effect negation and priority is not proven.",
         "CI .NET 10 build and 3,325 synthetic tests passed, including 14 P065 checks, on PR #59; this is bounded sandbox only and not native Verified."
       ]
+    },
+    {
+      "id": "monster.battle.p188-dimensional-warrior-dual-banish",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "resourceIds": [
+        255
+      ],
+      "status": "Partial",
+      "mechanics": [
+        "Dimensional Warrior (255): when it battles a monster, apply normal damage calculation first, then banish both physical combatant occurrences",
+        "Shared banished zone with Fusion Gate and P051/P052; no sending battlers to Graveyard",
+        "Do not trigger Sangan/Witch, Giant Germ/Nimble Momonga, Spear Cretin or The Immortal of Thunder field-to-Graveyard effects when banished",
+        "Identity guard prevents replacing a battle participant during a pending FLIP choice from banishing another card occupying its old slot",
+        "Direct attacks do not trigger two-monster banishment, and attack-response traps can cancel the battle before damage calculation",
+        "Cleanup attached equips when a combatant leaves the field via banishment"
+      ],
+      "evidence": [
+        "src/Joey.Core/DimensionalWarriorRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DimensionalWarriorChecks.cs",
+        "docs/cards/p188-dimensional-warrior-battle-banish-sandbox.md"
+      ],
+      "limitations": [
+        "Native P188 primary callback 0058CC00 is catalogued in the SQLite but not decompiled; timing and any suppression/negation rules require native evidence.",
+        "Historical 2004 Joey card text says both are removed from play on attacking/being attacked; later rulings indicate after damage calculation; sandbox chooses the latter ordering.",
+        "Only direct monster-versus-monster battle with both original combatants still present is modeled; chains, unrelated replacement of slots mid-resolution, return-from-banish, owner/controller divergence and exact timing not native-verified.",
+        "Build and synthetic C# checks initially pending."
+      ]
     }
   ]
 }

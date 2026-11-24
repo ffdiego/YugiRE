@@ -14,6 +14,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | `06-prohibition-links-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-prohibition-links-contract.zip` | **Aguardando execução** |
 | `07-flip-banish-burn-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-banish-burn-contract.zip` | **Aguardando execução** |
 | `08-immortal-thunder-graveyard-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-immortal-thunder-contract.zip` | **Aguardando execução** |
+| `09-dimensional-warrior-banish-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-dimensional-warrior-banish.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -103,6 +104,14 @@ O roteiro 08 explora os callbacks P065 (`00581040`, `0057C5F0`,
 da ocorrência. O objetivo é verificar exatamente **quando** a perda
 de 5000 LP é admitida e como ela interage com negação, carta
 face-down e saída por tributo/fusão. **Ainda não executado.**
+
+### P188 — Dimensional Warrior: combate e banimento duplo
+
+O roteiro 09 busca o callback primário `0058CC00` (catalogado,
+mas sem decompilação no SQLite) e as rotinas de dano e movimentação
+por zona. O objetivo é confirmar a ordem nativa entre cálculo de
+dano, efeito P188, FLIP de outro monstro, destruição normal em
+batalha e ausência de envio ao cemitério. **Ainda não executado**.
 
 ## Uso
 
