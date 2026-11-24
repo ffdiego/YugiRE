@@ -73,6 +73,7 @@ def canonical(args):
         return [[raw,1,1,0] for _ in range(b)]
     if op in (0x42,0x43) and a>0 and b==0 and c==1:
         return [args]
+    if op==0x34 and 0<=a<5 and b==1 and c==0: return [args]
     if op in (0xce,0xcf):
         try:
             p=decode_placement({"raw_opcode_hex":hex(raw),"argument_1":a,"argument_2":b,"argument_3":c})
@@ -108,8 +109,15 @@ def csharp_rows(doc):
                 raise ValueError("invalid canonical C# arguments")
             op=raw[0]&0xfff
             expected={0x61:"DrawCommand",0x42:"HealCommand",0x43:"DamageCommand",
-                      0xce:"SummonCommand" if raw[3]==1 else "SetCommand",0xcf:"SetCommand"}[op]
+                      0xce:"SummonCommand" if raw[3]==1 else "SetCommand",0xcf:"SetCommand",0x34:"DeclareDirectAttackCommand"}[op]
             if row.get("command")!=expected: raise ValueError("C# command does not match its mapping")
+            if op==0x34:
+                attack=row.get("directAttack")
+                if not isinstance(attack,dict) or attack.get("slot")!=raw[1] or type(attack.get("requestedDamage")) is not int or not 0<=attack["requestedDamage"]<=65535:
+                    raise ValueError("C# direct attack metadata mismatch")
+                source=attack.get("attacker")
+                if not isinstance(source,dict) or source.get("side")!=row["side"] or source.get("zone")!=2:
+                    raise ValueError("C# direct attack source mismatch")
             if op in (0xce,0xcf):
                 p=row.get("placement")
                 if not isinstance(p,dict) or p.get("resourceId")!=raw[1] or p.get("handIndex")!=(raw[2]&255) or p.get("paidTributes")!=0:
@@ -148,7 +156,7 @@ def compare(native,doc,native_start,native_count,cs_start,cs_count,source_kind):
             differences.append({"position":i,"native":a,"csharp":b})
     status="mismatch" if differences else ("inconclusive" if gaps_l or gaps_r or not l or not doc["complete"] else "projected_match")
     return {"schema":"yugire-action-comparison-v1","status":status,
-            "scope":"ordered projection of ordinary draws, requested LP deltas and CE/CF placement; not rule parity",
+            "scope":"ordered projection of ordinary draws, requested LP deltas, CE/CF placement and direct attack declaration; not rule parity",
             "nativeSourceKind":source_kind,"csharpScope":doc["scope"],"csharpComplete":doc["complete"],
             "nativeWindow":{"start":native_start,"count":native_count},
             "csharpWindow":{"start":cs_start,"count":cs_count},

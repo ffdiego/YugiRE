@@ -5,9 +5,12 @@ public enum CommandOutcome { Applied, Skipped, Rejected }
 public sealed record PlacementObservation(CardTarget Source, ushort ResourceId, int HandIndex,
     DuelZone Destination, int Slot, bool FaceDown, bool Defense, int PaidTributes);
 
+public sealed record DirectAttackObservation(CardTarget Attacker, ushort ResourceId, int Slot, int RequestedDamage);
+
 public sealed record CommandResult(CommandOutcome Outcome, string Detail = "")
 {
     public PlacementObservation? Placement { get; init; }
+    public DirectAttackObservation? DirectAttack { get; init; }
 }
 public sealed record QueuedDuelCommand(long Sequence, DuelCommand Command, ActionOrigin Origin);
 public enum ActionTraceStage { Admitted, Started, Executed, Completed }
