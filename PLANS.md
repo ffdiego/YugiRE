@@ -112,8 +112,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.
   Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
-- [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
-  Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em [A01](docs/architecture/action-queue.md); roteiro 11 em `scripts/pending/` preparado, ainda não executado.
+- [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Parcial`.
+  A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi recebido e importado no SQLite cumulativo v2, com dez funções e duas tabelas verificadas. Continuam abertos o ciclo completo de turnos na fila e a correlação entre índice do dispatcher, bits de fase e rótulo exibido. [Evidência e lacuna](docs/20-turn-scheduling.md#reprodução-e-evidências).
 - [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Pronto`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
   Novo assembly com as definições de cartas por resource ID e as famílias de efeito. Dependências: `Joey.Cards` → `Joey.Core`, nunca o contrário; `Joey.App` monta Core + Cards + LookAndFeel. O Core fica com o que vale para qualquer duelo (fases, batalha, invocação, a fila e `EffectContext`); o catálogo e o console (`A04`) criam cartas por resource ID a partir de `Joey.Cards`.
   **`EffectContext`** expõe primitivos pequenos e combináveis (`Destroy(filtro)`, `Draw`, `Damage`, `Heal`, `Choose`, `Move`...), cada um **enfileirando comandos**; não muta o estado diretamente (invariante 1).
