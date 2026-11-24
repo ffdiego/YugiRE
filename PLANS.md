@@ -147,8 +147,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Sem prometer tamanho de lote antes de confirmar o catálogo original.
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Bloqueado por A02` (armadilhas simples sem corrente podem seguir antes).
   As cinco já feitas reaproveitam janelas de Summon/ataque. Faltam as outras, Special Summon como gatilho e correntes/respostas, **sem fingir que uma fila simples cobre todos os casos**.
-- [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Pronto`.
-  Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda.
+- [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Parcial`.
+  Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda. Fatia pura de chegada ao cemitério: P066/P044/P068/P030; [contrato C07](docs/cards/c07-graveyard-arrival-effects.md). Integração depende da causalidade e ocorrência na fila (A02/A06). Roteiro 12 fecha ambiguidades de envio direto e callbacks faltantes; não bloquear outras famílias.
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`.
   Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 monstros invocáveis. Não declarar paridade nativa até medir callbacks P182 no Windows.
 - [ ] **C09 — Rituais (`P269`).** Status: `Pronto`.

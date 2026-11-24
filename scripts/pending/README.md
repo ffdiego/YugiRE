@@ -125,3 +125,12 @@ batalha e ausência de envio ao cemitério. **Ainda não executado**.
 Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastrear vínculo de controle, evento de saída e pedido da End Phase. Custo de três Fiends no GY já sustentado por 0059DEF0/00599E30; não confundir com Spirit Elimination. **Ainda não executado.**
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
+
+### 12 — C07: chegada ao cemitério e causa do descarte
+
+- Ambiente: Fedora/Ghidra, projeto Joey original, Python 3 e Ghidra headless. Roteiro 11 reservado em C01 (#66).
+- Comando: `bash scripts/pending/12-graveyard-arrival-ghidra.sh`.
+- Saída privada: `scratch/ghidra-graveyard-arrival-contract.zip`.
+- Questão: callbacks P066/P068/P030 ausentes e argumentos do caminho 00575970 → 005759A0 → 00575AF0; separar custo, descarte adversário e envio direto. Conferir descrições DAT locais também.
+- Encerramento: resolver ou registrar ausência dos callbacks e disassembly dos chamadores; confirmar origem da flag, retorno ao topo e ordem, registrar evidências e limites em C07. Não repetir exportação geral.
+- Estado: aguardando coleta; análise inicial SQLite concluída. Ver [C07](../../docs/cards/c07-graveyard-arrival-effects.md).

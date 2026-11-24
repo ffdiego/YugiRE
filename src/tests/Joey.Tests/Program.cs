@@ -144,6 +144,7 @@ CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
 BattleGraveyardEffectChecks.Run(Check);
+GraveyardArrivalRuleChecks.Run(Check);
 RevivalJamDecisionChecks.Run(Check);
 NativeP168EvidenceChecks.Run(Check);
 HaneHaneChecks.Run(Check);
