@@ -143,12 +143,6 @@ internal static class ActionQueueRemovalChecks
 
         ActionQueuePlacementChecks.Run(check);
 
-        var immortal = DemoDuel.FromPartialObservation(0, [raigeki], Slots(),
-            Slots(Monster(461)), 8000);
-        immortal.MonsterWasFlipped[1, 0] = true;
-        immortal.CreatePrimitiveActionQueue();
-        check(!immortal.TryQueueRaigekiFromHand(0, out _) && immortal.Hand.Count == 1 &&
-            immortal.Graveyard(0).Count == 0 && immortal.Monsters[1, 0] is not null,
-            "A02 unmigrated linked LP side effect rejects before spending spell");
+        ActionQueueLinkedChecks.Run(check);
     }
 }

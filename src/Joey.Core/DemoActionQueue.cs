@@ -13,7 +13,8 @@ public sealed partial class DemoDuel
     {
         if (primitiveActionQueue is not null)
             throw new InvalidOperationException("A duel already owns an action queue.");
-        return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate);
+        return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
+            () => !LegacyActionsBlocked && PendingEndDiscards == 0);
     }
 
     /// <summary>
@@ -33,7 +34,7 @@ public sealed partial class DemoDuel
         if (targets.Any(t => !CanQueueMonsterRemoval(t.Player, t.Zone) ||
             !TryCaptureCardTarget(t.Player, DuelZone.Monster, t.Zone, out _)))
         {
-            message = "Raigeki pilot cannot resolve an untracked occurrence or a removal with unmigrated side effects.";
+            message = "Raigeki pilot cannot resolve an untracked occurrence or linked equipment.";
             return false;
         }
         queue.Enqueue(new ActivateRaigekiCommand(ActivePlayer, source), ActionOrigin.Player);
@@ -105,13 +106,29 @@ public sealed partial class DemoDuel
         DemoFlipEffect.DestroyTwoSetSpellTraps or DemoFlipEffect.ReturnTwoSpellTraps or
         DemoFlipEffect.RecruitSameNameFaceDown;
 
-    // The legacy removal helper can also mutate LP or remove attached equips.
-    // Explicitly refuse those cases until those effects have their own commands.
-    // Graveyard choices are deferred and handed off after all removals finish.
+    // Snapshot linked consequences before the producer admits any removals.
+    // Each is a normal typed command, in the legacy per-removal order.
+    private bool TryPlanRemovalLinks(int player, int slot, out DuelCommand[] links)
+    {
+        links = [];
+        if (Monsters[player, slot] is not Card card) return false;
+        var result = new List<DuelCommand>();
+        foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == slot))
+        {
+            if (!ReferenceEquals(e.TargetCard, card) ||
+                !ReferenceEquals(Spells[e.Owner, e.SourceZone], e.Card) ||
+                !TryCaptureCardTarget(e.Owner, DuelZone.SpellTrap, e.SourceZone, out var target))
+                return false;
+            result.Add(new DestroyCommand(e.Owner, target));
+        }
+        if (ImmortalThunderRules.LosesLifeOnFieldToGraveyard(card.Id, MonsterWasFlipped[player, slot]))
+            result.Add(new DamageCommand(player, ImmortalThunderRules.GraveyardLifeLoss));
+        links = result.ToArray();
+        return true;
+    }
+
     private bool CanQueueMonsterRemoval(int player, int slot) =>
-        Monsters[player, slot] is Card card &&
-        !ImmortalThunderRules.LosesLifeOnFieldToGraveyard(card.Id, MonsterWasFlipped[player, slot]) &&
-        !equipment.Any(e => e.TargetPlayer == player && e.TargetZone == slot);
+        TryPlanRemovalLinks(player, slot, out _);
 
     private sealed class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
     {
@@ -129,6 +146,9 @@ public sealed partial class DemoDuel
         private readonly HashSet<CardTarget> paidTributes = [];
         private bool resolvingJar;
         private bool resolvingFlipBatch;
+        private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
+        private bool linkedRemovalBatch;
+        private PendingEffectDecision? queueDrawDecision;
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
@@ -139,10 +159,12 @@ public sealed partial class DemoDuel
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
+            if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision);
             // Legacy Morphing Jar draws every available card for both players,
             // even if Exodia is found mid-batch. Only this reserved batch may
             // continue its draws after a winner has been set.
-            if (duel.LegacyActionsBlocked && !(resolvingJar && command is DrawCommand && duel.GameOver))
+            if (duel.LegacyActionsBlocked && !(duel.GameOver &&
+                ((resolvingJar && command is DrawCommand) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
@@ -185,6 +207,8 @@ public sealed partial class DemoDuel
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
                     return DestroyMonster(destroy.Target, followups);
+                case DestroyCommand destroy when destroy.Target.Zone == DuelZone.SpellTrap:
+                    return DestroyLinkedEquipment(destroy.Target);
                 default:
                     return new(CommandOutcome.Rejected, "Command not migrated to DemoDuel.");
             }
@@ -207,18 +231,23 @@ public sealed partial class DemoDuel
             if (snapshot.Count == 0)
                 return new(CommandOutcome.Rejected, "No eligible opposing monsters.");
             var targets = new List<CardTarget>();
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(side, activate.Source) };
+            var plans = new Dictionary<CardTarget, DuelCommand[]>();
             foreach (var item in snapshot)
             {
-                if (!duel.CanQueueMonsterRemoval(item.Player, item.Zone) ||
+                if (!duel.TryPlanRemovalLinks(item.Player, item.Zone, out var links) ||
                     !duel.TryCaptureCardTarget(item.Player, DuelZone.Monster, item.Zone, out var target))
-                    return new(CommandOutcome.Rejected, "Untracked occurrence or unmigrated removal side effects.");
+                    return new(CommandOutcome.Rejected, "Untracked occurrence or linked equipment.");
                 targets.Add(target);
+                plans.Add(target, links);
+                batch.Add(new DestroyCommand(target.Side, target));
+                batch.AddRange(links);
             }
             // Use the existing sandbox target order, not an invented visual order.
             // Each actual movement receives its own command. No spell/monster
             // movement happens in this activation producer.
-            queue.EnqueueBatch(new DuelCommand[] { new SendToGraveyardCommand(side, activate.Source) }
-                .Concat(targets.Select(t => (DuelCommand)new DestroyCommand(t.Side, t))));
+            queue.EnqueueBatch(batch);
+            foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             wipe = new(side, targets);
             ScheduleFinish(side, followups);
             return new(CommandOutcome.Applied);
@@ -244,19 +273,25 @@ public sealed partial class DemoDuel
                 targets.Distinct().Count() != targets.Length)
                 return new(CommandOutcome.Rejected, "Illegal normal placement or tribute count.");
             var slots = new List<int>();
+            var plans = new Dictionary<CardTarget, DuelCommand[]>();
+            var batch = new List<DuelCommand>();
             foreach (var target in targets)
             {
                 if (!duel.TryResolveCardTarget(target, out int slot, out _) ||
-                    !duel.CanQueueMonsterRemoval(target.Side, slot))
+                    !duel.TryPlanRemovalLinks(target.Side, slot, out var links))
                     return new(CommandOutcome.Rejected, "Tribute no longer eligible.");
                 slots.Add(slot);
+                plans.Add(target, links);
+                batch.Add(new TributeCommand(target.Side, target));
+                batch.AddRange(links);
             }
             if (duel.Monsters[prepare.Side, prepare.Slot] is not null && !slots.Contains(prepare.Slot))
                 return new(CommandOutcome.Rejected, "Destination occupied.");
             DuelCommand move = prepare.FaceDown
                 ? new SetCommand(prepare.Side, prepare.Source, DuelZone.Monster, prepare.Slot)
                 : new SummonCommand(prepare.Side, prepare.Source, prepare.Slot);
-            queue.EnqueueBatch(targets.Select(t => (DuelCommand)new TributeCommand(t.Side, t)).Append(move));
+            queue.EnqueueBatch(batch.Append(move));
+            foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             placement = prepare;
             paidTributes.Clear();
             return new(CommandOutcome.Applied);
@@ -268,14 +303,15 @@ public sealed partial class DemoDuel
                 paidTributes.Contains(tribute.Target))
                 return new(CommandOutcome.Rejected, "No matching unpaid tribute.");
             if (!duel.TryResolveCardTarget(tribute.Target, out int slot, out _) ||
-                !duel.CanQueueMonsterRemoval(tribute.Side, slot))
+                !duel.TryPlanRemovalLinks(tribute.Side, slot, out var links) ||
+                !plannedLinks.Remove(tribute.Target, out var expected) || !links.SequenceEqual(expected))
             {
                 // External mutation during a reserved batch is unsupported.
                 // Fault rather than allow a partially paid summon to proceed.
                 throw new InvalidOperationException("Reserved tribute changed during placement.");
             }
             duel.deferringFieldRemovalTriggers = true;
-            try { duel.RemoveMonster(tribute.Side, slot, isTribute: true); }
+            try { duel.RemoveMonster(tribute.Side, slot, isTribute: true, queueLinkedConsequences: true); }
             finally { duel.deferringFieldRemovalTriggers = false; }
             paidTributes.Add(tribute.Target);
             return new(CommandOutcome.Applied);
@@ -380,6 +416,27 @@ public sealed partial class DemoDuel
             }
             if (!duel.CanQueueFlip(card))
                 return new(CommandOutcome.Rejected, "Unmigrated FLIP effect.");
+            if (card.Id == FlipEffectRules.Skelengel && duel.decks[side].Count > 0)
+            {
+                var request = new PendingEffectDecision(++duel.nextEffectDecisionId, side, card,
+                    EffectDecisionKind.DrawOneOnFlip, 0, duel.Turn);
+                duel.FinishManualPosition(change, resolveFlip: false, out var message);
+                if (duel.LegacyActionsBlocked)
+                {
+                    // Existing summon response has precedence. Keep the legacy
+                    // request bridge for that combination until A06 migrates it.
+                    duel.queuedEffectDecisions.Enqueue(request);
+                    return new(CommandOutcome.Applied, message);
+                }
+                queueDrawDecision = request;
+                followups.ScheduleContinuation(_ => new([], answer =>
+                {
+                    var selected = answer ?? throw new InvalidOperationException("Missing draw answer.");
+                    DuelCommand record = new RecordFlipDrawDecisionCommand(side, request.Id, selected);
+                    return new(selected == EffectDecisionAnswer.Accept ? [record, new DrawCommand(side)] : [record]);
+                }, request));
+                return new(CommandOutcome.Applied);
+            }
             if (card.Id == FlipEffectRules.MorphingJar)
             {
                 if (followups is not ActionQueue { PendingCount: 0 } queue)
@@ -419,6 +476,16 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied, detail);
         }
 
+        private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision)
+        {
+            if (queueDrawDecision is not { } request || request.Id != decision.DecisionId || request.Owner != decision.Side)
+                return new(CommandOutcome.Rejected, "No matching queued draw decision.");
+            queueDrawDecision = null;
+            int life = duel.Life[decision.Side];
+            duel.effectDecisionHistory.Add(new(request.Id, request.Owner, request.Kind, decision.Answer, duel.Turn, life, life));
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult FinishFlipBatch(FinishFlipBatchCommand finish)
         {
             if (!resolvingFlipBatch) return new(CommandOutcome.Rejected, "No pending FLIP batch.");
@@ -452,12 +519,30 @@ public sealed partial class DemoDuel
         private CommandResult DestroyMonster(CardTarget target, IActionCommandSink followups)
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out _))
+            {
+                if (plannedLinks.ContainsKey(target))
+                    throw new InvalidOperationException("Reserved removal occurrence changed.");
                 return new(CommandOutcome.Skipped, "Monster occurrence is no longer present.");
-            if (!duel.CanQueueMonsterRemoval(target.Side, slot))
-                return new(CommandOutcome.Rejected, "Removal has unmigrated linked or LP effects.");
+            }
+            if (!duel.TryPlanRemovalLinks(target.Side, slot, out var links))
+                return new(CommandOutcome.Rejected, "Untracked linked equipment.");
+            if (plannedLinks.Remove(target, out var expected))
+            {
+                if (!links.SequenceEqual(expected))
+                    throw new InvalidOperationException("Reserved removal links changed.");
+            }
+            else if (links.Length > 0)
+            {
+                // A standalone destroy must reserve the whole linked sequence;
+                // never splice it ahead of an already admitted FIFO tail.
+                if (followups is not ActionQueue { PendingCount: 0 } queue || finishScheduled)
+                    return new(CommandOutcome.Rejected, "Linked destruction requires an isolated action.");
+                queue.EnqueueBatch(links);
+                linkedRemovalBatch = true;
+            }
             bool hidden = duel.MonsterFaceDown[target.Side, slot];
             duel.deferringFieldRemovalTriggers = true;
-            try { duel.RemoveMonster(target.Side, slot); }
+            try { duel.RemoveMonster(target.Side, slot, queueLinkedConsequences: true); }
             finally { duel.deferringFieldRemovalTriggers = false; }
             if (wipe is { } current && current.Targets.Remove(target))
             {
@@ -465,6 +550,16 @@ public sealed partial class DemoDuel
                 if (hidden) current.FaceDown++;
             }
             ScheduleFinish(target.Side, followups);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult DestroyLinkedEquipment(CardTarget target)
+        {
+            if (!duel.TryResolveCardTarget(target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Equipment occurrence gone.");
+            if (!duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot && ReferenceEquals(e.Card, card)))
+                return new(CommandOutcome.Rejected, "Only linked equipment destruction is migrated here.");
+            duel.DestroySpellTrapCard(target.Side, slot);
             return new(CommandOutcome.Applied);
         }
 
@@ -481,6 +576,8 @@ public sealed partial class DemoDuel
         {
             if (!finishScheduled) return new(CommandOutcome.Rejected, "No field removal to finalize.");
             finishScheduled = false;
+            linkedRemovalBatch = false;
+            plannedLinks.Clear();
             if (wipe is { } current)
             {
                 duel.LastMonsterWipe = new(MonsterWipeRules.Raigeki, current.Caster,

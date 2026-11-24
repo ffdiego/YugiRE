@@ -57,13 +57,16 @@ public sealed class ActionQueue : IActionCommandSink
     private readonly IPresentationGate gate;
     private long sequence;
     private bool ticking;
+    private bool startedBatch;
+    private readonly Func<bool>? externalAdmission;
     private ActionContinuation? decisionContinuation;
     private EffectDecisionAnswer? decisionAnswer;
 
-    public ActionQueue(IDuelCommandExecutor executor, IPresentationGate? gate = null)
+    public ActionQueue(IDuelCommandExecutor executor, IPresentationGate? gate = null, Func<bool>? externalAdmission = null)
     {
         this.executor = executor ?? throw new ArgumentNullException(nameof(executor));
         this.gate = gate ?? ImmediatePresentationGate.Instance;
+        this.externalAdmission = externalAdmission;
     }
 
     public QueuedDuelCommand? Active { get; private set; }
@@ -82,6 +85,7 @@ public sealed class ActionQueue : IActionCommandSink
     public void EnqueueBatch(IEnumerable<DuelCommand> commands, ActionOrigin origin = ActionOrigin.Effect)
     {
         EnsureHealthy();
+        CheckExternalAdmission();
         if (PendingDecision is not null)
             throw new InvalidOperationException("Resolve the pending decision before admitting more work.");
         ArgumentNullException.ThrowIfNull(commands);
@@ -100,6 +104,7 @@ public sealed class ActionQueue : IActionCommandSink
     public void ScheduleContinuation(ActionContinuation continuation)
     {
         EnsureHealthy();
+        CheckExternalAdmission();
         ArgumentNullException.ThrowIfNull(continuation);
         if (PendingDecision is not null)
             throw new InvalidOperationException("Resolve the pending decision before scheduling work.");
@@ -124,6 +129,7 @@ public sealed class ActionQueue : IActionCommandSink
         try
         {
             if (!gate.CanAdvance) return ActionTickResult.Blocked;
+            if (IsBusy) startedBatch = true;
 
             // Do not execute the same active command again when the gate stalls.
             if (Active is not null) return TryComplete();
@@ -195,6 +201,17 @@ public sealed class ActionQueue : IActionCommandSink
         }
         EnqueueBatch(commands, ActionOrigin.Effect);
         if (step.Next is not null) continuations.AddFirst(step.Next);
+    }
+
+    // DemoDuel opts into a closed admission window once a batch starts.
+    // Generic scheduler tests and consumers can still use the original FIFO.
+    // Executor/continuation emissions are synchronous inside Tick.
+    private void CheckExternalAdmission()
+    {
+        if (ticking || externalAdmission is null) return;
+        if (!externalAdmission() || (IsBusy && startedBatch))
+            throw new InvalidOperationException("Duel has a pending decision or a running action batch.");
+        if (!IsBusy) startedBatch = false;
     }
 
     private void EnsureHealthy()
