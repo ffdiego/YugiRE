@@ -109,9 +109,15 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *A05.12:* os traces C# novos declaram a contagem de linhas executadas. O comparador valida a contagem disponível e a sequência desde 1 antes de aceitar qualquer janela, inclusive quando a lacuna fica fora dela.
   *A05.13:* o roteiro headless executa compra, invocação, entrada em batalha, ataque e saída pelo console e pela fila. O comando revalida lado e turno e mantém as regras de fase do sandbox. A projeção preserva essas linhas como `unmapped`. A07 segue aberto para o ciclo completo e a comparação nativa.
   *Aceitação A05.14:* o CI executa o Lab e compara sua saída com a janela arquivada 281–301. Compra, invocação, ataque direto e dano concordam nos quatro registros projetáveis. O relatório mantém 17 registros do arquivo e quatro comandos C# sem mapeamento e classifica a janela como inconclusiva. Outro roteiro produz quatro divergências no relatório. O PR #81 fecha geração e comparação de traces no escopo do piloto. Estado equivalente no executável e apresentação do combate seguem em A09.
-- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.
+- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`.
   Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
+  *Fatia de isolamento:* durante `Tick`, só o executor emite pelo sink. Continuações devolvem comandos no passo e callbacks de apresentação observam o comando e liberam o gate. `ActionQueueChecks` exercita tentativas nos três callbacks e na continuação, além do caminho autorizado de follow-up. O executor recebe um sink próprio, disponível durante a execução. Callbacks que recebem a fila pública não podem inserir comandos durante o tick. A migração das famílias e dos estados pendentes continua aberta.
+  *Fatia de ativação com alvo:* o console App/Lab admite ativações direcionadas já migradas. A localização textual resolve para a ocorrência física antes de entrar na fila, com revalidação na execução. A admissão segue distinta de uma seleção interativa no tabuleiro.
+  *Fatia de respostas para a mão:* o console lista e responde as seleções Deck/Cemitério → Mão já migradas. O script espera resposta explícita e sinaliza trace incompleto enquanto a escolha estiver pendente.
+
+  *Consolidação:* PR #98, CI 45393879231 aprovado no head 4419fe2; dois roteiros Lab/DAT relatados no PR. Integrar fatia sem marcar A06 concluído; reconciliada com evidência de fases da main 15b54a0.
+
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Parcial`.
   A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi recebido e importado no SQLite cumulativo v2, com dez funções e duas tabelas verificadas. Continuam abertos o ciclo completo de turnos na fila e a correlação entre índice do dispatcher, bits de fase e rótulo exibido. [Evidência e lacuna](docs/20-turn-scheduling.md#reprodução-e-evidências).
 - [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Pronto`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.

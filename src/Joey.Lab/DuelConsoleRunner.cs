@@ -134,6 +134,6 @@ public static class DuelConsoleRunner
             catch (InvalidOperationException ex)
             { error.WriteLine("Queue fault: " + ex.Message); return 1; }
         }
-        return failed || session.Queue.IsBusy ? 1 : 0;
+        return failed || session.Queue.IsBusy || session.HasPendingChoice ? 1 : 0;
     }
 }
