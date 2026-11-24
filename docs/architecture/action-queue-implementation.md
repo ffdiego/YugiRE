@@ -57,3 +57,9 @@ Skelengel sem resposta de invocação concorrente usa PendingDecision da ActionQ
 ## Fechamento A02
 
 CI integral A02.5 [45318593622](https://github.com/ffdiego/YugiRE/actions/runs/45318593622) aprovado, PR #67 integrado à main 93846a7 (A01 #64 integrado antes). Aceitação: ActionQueueChecks cobre admissão sem mutação, FIFO/ativo único, gate global/final, três destruições, alvo obsoleto, continuação não recursiva e falha sem retry. ActionQueueRemovalChecks, ActionQueuePlacementChecks, ActionQueueFlipChecks e ActionQueueLinkedChecks exercitam estado real, ambos os lados, efeitos/tributos individuais, equivalência de trace imediato/retardado e decisão Skelengel. Os dez tipos têm caminho experimental. As regressões anteriores de identidade foram corrigidas; a suíte legada passa. Concluído o marco de infraestrutura; A03/A04/A05/A06/A08 liberados. Não promover paridade nativa, nem declarar integração App/CPU ou todos os efeitos concluídos. A07 permanece dependente da evidência de fases. Próxima prioridade operacional: A04, começando pelo parser/runner headless; integração visual exige A03.
+
+## A08.1 — Planejamento de compra e LP
+
+O `EffectContext` interno compõe os comandos de um efeito em ordem de emissão. `Draw` gera um comando por carta e `ChangeLifePoints` traduz deltas assinados em cura ou dano, omitindo deltas nulos. O executor continua responsável pela admissão do lote e pelo gasto da carta. O gate de apresentação acompanha cada comando na fila. A continuação das compras publica o plano após o gasto e a checagem das cartas disponíveis. Para efeitos fixos de LP, o lote conserva a sequência de envio ao cemitério, LP do ativador e LP do adversário.
+
+Os cenários existentes em `QueuedDrawSpellChecks` e `TimedEquipmentAndQueuedLpChecks` exercitam mão, Set, ambos os lados, gate e ordem dos comandos. A extração das definições de cartas para outro assembly permanece em A08.

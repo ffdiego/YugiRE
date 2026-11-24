@@ -63,11 +63,16 @@ internal static class TimedEquipmentAndQueuedLpChecks
                 $"LP {id}: activation producer waits before spending");
             gate.Release = true; Drain(q);
             var executed = q.Trace.Skip(before).Where(x=>x.Stage==ActionTraceStage.Executed).ToArray();
+            var expectedLifeCommands = new List<DuelCommand>(2);
+            if (own > 0) expectedLifeCommands.Add(new HealCommand(side, own));
+            if (enemy > 0) expectedLifeCommands.Add(new HealCommand(1 - side, enemy));
+            if (enemy < 0) expectedLifeCommands.Add(new DamageCommand(1 - side, -enemy));
             check(duel.Life[side]==8000+own && duel.Life[1-side]==8000+enemy &&
                 duel.Hand.Count==0 && duel.Spells[side,0] is null &&
                 duel.Graveyard(side).Single().Id==id &&
-                executed.Length==(own!=0 && enemy!=0 ? 4 : 3) &&
+                executed.Length == 2 + expectedLifeCommands.Count &&
                 executed[1].Entry.Command is SendToGraveyardCommand &&
+                executed.Skip(2).Select(x => x.Entry.Command).SequenceEqual(expectedLifeCommands) &&
                 executed.All(x=>x.Result?.Outcome==CommandOutcome.Applied),
                 $"LP {id}: ordered separate spend and LP commands, both source zones and sides");
             check(!duel.TryQueueLifePointSpell(set ? DuelZone.SpellTrap : DuelZone.Hand,0,out _),

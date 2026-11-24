@@ -422,12 +422,11 @@ public sealed partial class DemoDuel
                 // No other admitted action can run between these draws.
                 if (duel.DeckCount(activate.Side) < effect.Cards)
                     throw new InvalidOperationException("Reserved draw spell deck changed during activation.");
-                var batch = new List<DuelCommand>();
-                for (int i = 0; i < effect.Cards; i++) batch.Add(new DrawCommand(activate.Side));
-                if (effect.OpponentLifeGain > 0)
-                    batch.Add(new HealCommand(1 - activate.Side, effect.OpponentLifeGain));
-                foreach (var next in batch) reservedDrawSpell.Enqueue(next);
-                return new(batch);
+                var context = new EffectContext();
+                context.Draw(activate.Side, effect.Cards);
+                context.ChangeLifePoints(1 - activate.Side, effect.OpponentLifeGain);
+                foreach (var next in context.Commands) reservedDrawSpell.Enqueue(next);
+                return new(context.Commands);
             });
             return new(CommandOutcome.Applied);
         }
@@ -442,17 +441,11 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "LP spell no longer legal.");
             // Legacy order: spend source, then caster LP, then opposing LP.
             // No mutation in the producer. Each operation has its own gate.
-            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
-            AddDelta(batch, activate.Side, change.CasterDelta);
-            AddDelta(batch, 1 - activate.Side, change.OpponentDelta);
-            queue.EnqueueBatch(batch);
+            var context = new EffectContext();
+            context.ChangeLifePoints(activate.Side, change.CasterDelta);
+            context.ChangeLifePoints(1 - activate.Side, change.OpponentDelta);
+            queue.EnqueueBatch([new SendToGraveyardCommand(activate.Side, activate.Source), .. context.Commands]);
             return new(CommandOutcome.Applied);
-        }
-
-        private static void AddDelta(List<DuelCommand> batch, int side, int delta)
-        {
-            if (delta > 0) batch.Add(new HealCommand(side, delta));
-            else if (delta < 0) batch.Add(new DamageCommand(side, -delta));
         }
 
         private CommandResult SendSetFixedSpellToGraveyard(CardTarget target)
