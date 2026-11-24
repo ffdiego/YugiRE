@@ -64,6 +64,8 @@ internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source
 internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateDiscardMonsterSpellCommand(int Side, CardTarget Source, CardTarget Cost, CardTarget Target) : DuelCommand(Side);
+internal sealed record ResolveDiscardMonsterSpellCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
@@ -210,6 +212,15 @@ internal static class DuelCommandValidation
                 break;
             case ActivateMonsterWipeCommand monsterWipe:
                 Target(monsterWipe.Source, monsterWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateDiscardMonsterSpellCommand paidSpell when paidSpell.Source != paidSpell.Cost:
+                Target(paidSpell.Source, paidSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(paidSpell.Cost, paidSpell.Side, DuelZone.Hand);
+                Target(paidSpell.Target, paidSpell.Target.Side, DuelZone.Monster);
+                break;
+            case ResolveDiscardMonsterSpellCommand paidResolution:
+                Target(paidResolution.Source, paidResolution.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(paidResolution.Target, paidResolution.Target.Side, DuelZone.Monster);
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand);
