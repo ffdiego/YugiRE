@@ -72,3 +72,27 @@ produtor do Core revalidar pedido, dono e filtro.
 O roteiro admite leituras enquanto espera e retoma as operações depois da
 resposta. Um EOF com seleção pendente produz trace incompleto. O App usa as
 mesmas permissões de entrada para responder pelo console de laboratório.
+
+## A06 — Respostas FLIP direcionadas
+
+O console App/Lab agora reconhece pedidos de FLIP de monstro e de pares de
+magias/armadilhas. `choices` lista lados e posições; não revela ID dos alvos
+ocultos nessa consulta (o laboratório continua tendo acesso a `state`).
+Exemplos de respostas (lados e slots zero-based):
+
+- `select-flip 1 2`: escolher monstro do lado 1, slot 2.
+- `select-flip 1 2 0 3`: dois alvos distintos, na ordem informada.
+- `select-flip decline`: resposta vazia; somente se o resolvedor permitir.
+- `select-st-pair 1 field 0 3`: zona FIELD do lado 1 e S/T slot 3 do lado 0.
+- `select-st-pair decline`: resposta vazia para supressão; não torna
+  uma seleção obrigatória opcional.
+
+As posições são traduzidas para ocorrências físicas no momento da admissão;
+os mesmos produtores `TryQueueMonsterFlipAnswer` e
+`TryQueueFlipSpellTrapPair` validam e revalidam a escolha. Nenhum resolvedor
+adicional no console. O roteiro pausa em pedido pendente e `trace` indica
+`complete: false` mesmo com fila vazia. Leituras são permitidas, operações
+não relacionadas rejeitadas. Testes sintéticos: Man-Eater Bug, Hane-Hane,
+Penguin Soldier, Greenkappa/Tornado Bird, lados 0/1, recusa, duplicatas,
+identidade e gate antes da próxima remoção. Não cobre FLIP durante combate,
+respostas de traps, fusão ou todos os pedidos Deck/GY → Field.
