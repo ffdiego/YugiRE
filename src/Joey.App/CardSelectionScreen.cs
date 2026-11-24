@@ -7,14 +7,16 @@ static partial class Game
     private static int cardSelectionPage;
     private static PendingCardSelection? activeSelectionRequest;
     private static bool selectionFaceDownDefense;
+    private static SelectionListView? cardSelectionList;
 
-    // Provisional sandbox UI. Native Joey coordinates/timings remain unmapped.
+    // Native stable list when DAT supports it; legacy sandbox fallback otherwise.
     static void DrawCardSelectionOverlay()
     {
         var request = duel.PendingCardSelection;
         if (request is null)
         {
             activeSelectionRequest = null;
+            cardSelectionList = null;
             return;
         }
         if (!ReferenceEquals(request, activeSelectionRequest))
@@ -22,12 +24,18 @@ static partial class Game
             activeSelectionRequest = request;
             selectionFaceDownDefense = false;
             cardSelectionPage = 0;
+            cardSelectionList = CreateSelectionList(request.Source == CardSelectionSource.Graveyard ? 3 : 2,
+                request.Owner, request.EligibleCards.Select(option => option.Card).ToArray());
         }
 
         int lastPage = Math.Max(0, (request.EligibleCards.Count - 1) / CardSelectionPageSize);
         cardSelectionPage = Math.Clamp(cardSelectionPage, 0, lastPage);
-        Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
-        Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
+        if (cardSelectionList is { } native) DrawNativeSelectionBackground(native);
+        else
+        {
+            Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
+            Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
+        }
         Label($"P{request.Owner + 1}: {request.EffectResourceId} card selection", 250, 95, 21, Gold);
         string rule = request.RequiredAttributeCode is byte attribute
             ? $"attribute {attribute}, ATK <= 1500" : request.Filter.ToString();
@@ -40,13 +48,15 @@ static partial class Game
                     : "Optional recruit: select a monster or Skip."
             : "Select one card (mandatory).", 250, 151, 13);
 
-        for (int slot = 0; slot < CardSelectionPageSize; slot++)
+        int visibleSlots = cardSelectionList?.Window.VisibleCount ?? CardSelectionPageSize;
+        for (int slot = 0; slot < visibleSlots; slot++)
         {
-            int index = cardSelectionPage * CardSelectionPageSize + slot;
-            if (index >= request.EligibleCards.Count) break;
+            int index = cardSelectionList?.Window.CardIndexAtSlot(slot) ?? cardSelectionPage * CardSelectionPageSize + slot;
+            if (index < 0 || index >= request.EligibleCards.Count) break;
             var option = request.EligibleCards[index];
             bool chosen = duel.SelectedBatchIndices.Contains(option.SourceIndex);
-            if (DrawSelectionCard(option.Card, slot, chosen))
+            if (cardSelectionList is { } list ? DrawNativeSelectionCard(list, option.Card, slot, chosen)
+                : DrawSelectionCard(option.Card, slot, chosen))
             {
                 bool resolved = request.MaxSelections > 1
                     ? duel.SelectBatchCard(option.SourceIndex, out message)
@@ -90,6 +100,11 @@ static partial class Game
                 cardSelectionPage = 0;
                 ClearDuelSelection();
             }
+            return;
+        }
+        if (cardSelectionList is { } listView)
+        {
+            DrawNativeSelectionNavigation(listView);
             return;
         }
         if (Button("< Prev", 339, 531, 90, 30, cardSelectionPage > 0))

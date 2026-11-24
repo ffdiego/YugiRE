@@ -8,8 +8,10 @@ static partial class Game
     private static readonly List<FusionMaterial> selectedFusionMaterials = [];
     private static int fusionPage;
     private static bool fusionDefensePosition;
+    private static SelectionListView? fusionSelectionList;
+    private static bool fusionListInitialized;
 
-    // Temporary controls use the existing card-selection layout and archive artwork.
+    // Native stable list for results and materials; retain existing fusion decisions.
     static void DrawFusionSelection(PendingFusionSummon request)
     {
         if (!ReferenceEquals(request, activeFusionRequest))
@@ -25,34 +27,64 @@ static partial class Game
             return;
         }
 
-        Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
-        Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
-        Label(request.Spell.Name, 250, 95, 21, Gold);
         var result = selectedFusionResult;
         int options = result?.Materials.Count ?? request.Options.Count;
+        if (!fusionListInitialized)
+        {
+            fusionSelectionList = CreateSelectionList(1, request.Owner, result is null
+                ? request.Options.Select(option => option.Result).ToArray()
+                : result.Materials.Select(material => material.Card).ToArray());
+            fusionListInitialized = true;
+        }
+        if (fusionSelectionList is { } native) DrawNativeSelectionBackground(native);
+        else
+        {
+            Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
+            Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
+        }
+        Label(request.Spell.Name, 250, 95, 21, Gold);
         int lastPage = (options - 1) / CardSelectionPageSize;
         Label(result is null ? "Choose a Fusion Monster." : $"Choose materials for {result.Result.Name}.",
             250, 126, 16);
         if (result is not null)
-            Label(duel.FirstFreeMonsterZone() < 0
-                ? "Use a monster from the field to free a zone."
-                : "Choose materials from your hand or field.", 250, 151, 13);
-
-        for (int slot = 0; slot < CardSelectionPageSize; slot++)
         {
-            int index = fusionPage * CardSelectionPageSize + slot;
-            if (index >= options) break;
+            string help = duel.FirstFreeMonsterZone() < 0
+                ? "Use a monster from the field to free a zone."
+                : "Choose materials from your hand or field.";
+            // Preserve source-occurrence identity in the provisional help
+            // line, since identical miniature art can appear in both zones.
+            if (fusionSelectionList?.Window.SelectedCardIndex is int focus && focus >= 0 && focus < options)
+            {
+                var material = result.Materials[focus];
+                help = $"{material.Card.Name} | {material.Zone} {material.Index + 1}";
+            }
+            Label(help, 250, 151, 13);
+        }
+
+        int visibleSlots = fusionSelectionList?.Window.VisibleCount ?? CardSelectionPageSize;
+        for (int slot = 0; slot < visibleSlots; slot++)
+        {
+            int index = fusionSelectionList?.Window.CardIndexAtSlot(slot) ?? fusionPage * CardSelectionPageSize + slot;
+            if (index < 0 || index >= options) break;
             if (result is null)
             {
-                if (!DrawSelectionCard(request.Options[index].Result, slot, false)) continue;
+                bool picked = fusionSelectionList is { } list
+                    ? DrawNativeSelectionCard(list, request.Options[index].Result, slot, false)
+                    : DrawSelectionCard(request.Options[index].Result, slot, false);
+                if (!picked) continue;
                 selectedFusionResult = request.Options[index];
                 fusionPage = 0;
+                fusionSelectionList = null;
+                fusionListInitialized = false;
                 return;
             }
             var material = result.Materials[index];
             bool chosen = selectedFusionMaterials.Contains(material);
             bool selectable = chosen || duel.CanCompleteFusionSelection(result, [.. selectedFusionMaterials, material]);
-            if (!DrawSelectionCard(material.Card, slot, chosen, $"{material.Zone} {material.Index + 1}", selectable))
+            bool pickedMaterial = fusionSelectionList is { } materialList
+                ? DrawNativeSelectionCard(materialList, material.Card, slot, chosen, selectable)
+                : DrawSelectionCard(material.Card, slot, chosen, $"{material.Zone} {material.Index + 1}", selectable);
+            if (!pickedMaterial)
                 continue;
             if (chosen) selectedFusionMaterials.Remove(material);
             else selectedFusionMaterials.Add(material);
@@ -86,6 +118,11 @@ static partial class Game
             ResetFusionChoice();
             return;
         }
+        if (fusionSelectionList is { } listView)
+        {
+            DrawNativeSelectionNavigation(listView);
+            return;
+        }
         if (Button("< Prev", 339, 531, 90, 30, fusionPage > 0)) fusionPage--;
         Label($"{fusionPage + 1}/{lastPage + 1}", 474, 537, 17, Gold);
         if (Button("Next >", 614, 531, 105, 30, fusionPage < lastPage)) fusionPage++;
@@ -96,6 +133,8 @@ static partial class Game
         selectedFusionResult = null;
         selectedFusionMaterials.Clear();
         fusionPage = 0;
+        fusionSelectionList = null;
+        fusionListInitialized = false;
         fusionDefensePosition = false;
     }
 

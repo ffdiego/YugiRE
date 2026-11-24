@@ -93,6 +93,17 @@ static partial class Game
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
             activationEffect = activation.Current?.Kind.ToString() ?? "None",
             activationUpdate = activation.ElapsedUpdates,
+            selectionWindow = (duel.PendingFusionSummon is not null ? fusionSelectionList :
+                duel.PendingCardSelection is not null ? cardSelectionList : null) is { } list ? new
+            {
+                source = "native stable branch (partial)",
+                background = list.Background.Resource,
+                slotYOffset = list.Background.SlotYOffset,
+                selectedIndex = list.Window.SelectedCardIndex,
+                scrollOffset = list.Window.ScrollOffset,
+                totalCards = list.Window.TotalCards,
+                visibleCount = list.Window.VisibleCount
+            } : null,
             gameOver = duel.GameOver,
             winner = duel.Winner,
             notes = "Position, sprite selection and compositor parity must be checked in Joey."

@@ -116,6 +116,39 @@ sealed class DatGraphics : IDisposable
     public string LifeNumberSprite { get; private set; } = LifeNumberFont;
     public int?[] LifeFloatingGlyphColumns { get; } = new int?[2];
     public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
+
+    readonly Dictionary<string, NativeSelectionManifest?> selectionManifests =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    public NativeSelectionManifest? SelectionManifest(int mode, int side, int perspective)
+    {
+        string path = NativeSelectionWindow.ManifestPath(mode,
+            NativeSelectionManifest.SideVariant(side, perspective));
+        if (selectionManifests.TryGetValue(path, out var cached)) return cached;
+        try
+        {
+            var source = archive ?? throw new InvalidOperationException("No DAT open");
+            var manifest = NativeSelectionManifest.Parse(
+                System.Text.Encoding.Latin1.GetString(source.Read(path)),
+                source.Entries.Select(entry => entry.Name));
+            // Validate the actual two DAT images before replacing the legacy
+            // UI. No guessed names, sizes, or dimensions enter the layout.
+            foreach (var background in new[] { manifest.WithoutScroll, manifest.WithScroll })
+            {
+                var info = BitmapInfo.Read(source.Read(background.Resource));
+                if (info.Width <= 0 || info.Height <= 0)
+                    throw new InvalidDataException("Invalid selection background: " + background.Resource);
+            }
+            selectionManifests.Add(path, manifest);
+            return manifest;
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or KeyNotFoundException or OverflowException)
+        {
+            Console.Error.WriteLine("[selection] legacy fallback for " + path + ": " + ex.Message);
+            selectionManifests.Add(path, null);
+            return null;
+        }
+    }
     // Evict between frames, after the previous Raylib batch has been submitted.
     public void BeginFrame()
     {

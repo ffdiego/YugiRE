@@ -453,3 +453,43 @@ F12 registra a origem. A captura e validação no original ainda faltam.
 
 Testes sintéticos de branches e proveniência não demonstram fidelidade.
 **19/34 Partial, 0 Verified**: nenhuma Draw de fusão está integrada.
+
+
+## V11 — integração estável na seleção do duelo
+
+O DAT de seleção já foi inventariado (ver native-selection-dat-contract).
+Consulta aos registros existentes 0043A060, 0043ABA0 e 0043B280 no SQLite:
+o construtor compara total>5 com byte +1FC e seleciona uma das duas
+entradas do manifesto; obtém suas dimensões para +2C/+30. 0043ABA0
+lê o inteiro da entrada indexada (+4, stride 8) e subtrai metade da
+altura. O sufixo é '1' + (lado == ((~perspectiva)&1)); a inversão
+adicional de 0x29 permanece fora do escopo. No ramo estável,
+0043B280 calcula X - width/2 e Y - height/2. Essas relações são
+da decompilação existente, combinadas com a âncora/slots confirmados
+nos bundles e os três registros ordenados do DAT; não uma nova
+extração nem comparação de pixels.
+
+NativeSelectionManifest lê os dois fundos e offsets e o submanifest
+de scroll do DAT local. NativeSelectionListScreen usa o fundo em
+(525,300), miniaturas originais, cinco slots de 64px, e o índice
+absoluto após scroll, tanto para PendingCardSelection (modo 2 deck,
+3 cemitério) quanto PendingFusionSummon (modo 1 resultados e
+materiais). Core continua a validar identidade da ocorrência,
+seleções opcionais, lote, posição, materiais e receita.
+Setas físicas/Enter e clique são adaptações de input do cliente;
+não alegar correspondência com teclas nativas 3/4. F12 registra
+fundo/offset/scroll. Os botões e mensagens legados de confirmação
+são mantidos até descobrir os demais passes do objeto.
+Não interpolar a entrada/saída sem a origem e a tabela nativas:
+a UI entra diretamente no ramo estável. Não inventar scroll
+gráfico, ícones de atributo, composição ou efeitos da fusão.
+
+Se o manifesto não puder ser lido ou a miniatura não existir,
+preservar seletor anterior com log explícito. --legacy-selection
+força esse seletor para comparação. O estado inicial e as
+dimensões de cada sprite vêm dos contratos/DAT local.
+Testes sintéticos cobrem parser, lado, variante, coordenadas
+inteiras, scroll e foco; teste visual com DAT real continua
+pendente. A Draw 0043B280 agora tem integração funcional parcial
+no cliente (não Verified): cobertura 20/34, 58,82%.
+As duas Draws de fusão continuam Pending.

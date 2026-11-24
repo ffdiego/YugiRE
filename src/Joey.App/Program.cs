@@ -24,6 +24,7 @@ static partial class Game
         using var resources = new DatGraphics();
         graphics = resources;
         includeUnused = args.Contains("--include-unused");
+        useLegacySelection = args.Contains("--legacy-selection");
         DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
             : args.Contains("--fast") ? new FastLookAndFeel()
             : args.Contains("--mute-joey") ? new SilentLookAndFeel()
