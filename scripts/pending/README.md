@@ -316,3 +316,19 @@ Saída privada: scratch/ghidra-native-cursor-dispatch-contract.zip. Confirmar or
 Saída privada: scratch/ghidra-joey-reaction-audio-contract.zip. Confirma classificação de dano e duração, tabela 005DA3C0, vtables e prefixo de 0x70 descritores 005EFD48. Inclui 00403310/00414A20/004152D0/00415C90 e bloco 005DA7F0:80 para invocação, início e resultado. Se a versão anterior já foi executada, coletar só os quatro alvos e bloco adicionais. Resolver alvos no SQLite primeiro; não exportar WAV/pixels. Reutilizar --inspect-visual-dat para os manifests de busto. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
 
 V18.1: versão atual do roteiro 27 também coleta 005C1180/005C1480/005C1960 e prefixo de 21 descritores Stream em 005F0A30:336 (verificar terminador; não inferir contagem pelo DAT). Se roteiro 27 já foi executado, não repetir os alvos anteriores. Inspeção privada sem áudio: `dotnet run --project src/Joey.App -- --voice-dat=/path/to/Voice.dat --inspect-voice-dat`. Saída scratch/visual-review/voice-metadata.json, sem WAVs.
+
+
+## V18 — 28-voice-audio-windows.ps1 (aguardando Windows)
+
+Após merge do PR #117, atualizar main e rodar na raiz do repositório:
+
+    powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1
+
+Caso Voice.dat não esteja em ../passion/Voice.dat ou passion/Voice.dat,
+passar -VoiceDat com o caminho real. -SkipPlayback permite só inspeção
+e testes negativos. O default reproduz joey_01.wav, attack.wav, card_move.wav
+uma vez cada; -Samples permite selecionar outros WAVs Internal. Enviar
+scratch/voice-smoke-<timestamp>/summary.json, voice-metadata.json, logs e
+listening-notes.txt preenchido. Não enviar o DAT nem WAVs. Resultado
+de processo não comprova escuta; anotar se cada som foi audível e terminou
+corretamente. Não executar 27 no Windows só por causa deste smoke.

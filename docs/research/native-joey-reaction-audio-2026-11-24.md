@@ -154,3 +154,40 @@ Comandos de diagnóstico (sem data.dat gráfico):
     dotnet run --project src/Joey.App -- --voice-dat=/path/to/Voice.dat --review-voice=joey_01.wav
 
 O primeiro grava apenas metadados/erros em scratch/visual-review/voice-metadata.json; o segundo abre dispositivo de áudio raylib, decodifica WAV Internal original em memória por nome explícito, toca uma vez, libera sound/wave/device. Sem arquivo de áudio extraído, sem janela, sem IDs presumidos, sem gate ou fila. Reprodução limitada a 120s de áudio decodificado e incompatível com --mute-joey. Não toca Stream neste modo. Não há Voice.dat real/dispositivo disponíveis no ambiente do agente; validação de áudio nativo e integração ao duelo continuam pendentes. CI anterior falhou porque Reject captura InvalidDataException, não ArgumentException; teste V31 passou a usar helper local específico, mantendo o contrato do modelo e o Reject compartilhado.
+
+## V18.2 — requests de efeitos e seleção de música
+
+SQLite v2 SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4, quick_check ok nesta sessão. Consultadas decompilations, refs, pointers e assembly dos bundles existentes. Chamadas abaixo recuperadas sem assumir a associação do índice ao filename.
+
+| VA | Evento/ponto de disparo | Request | Evidência |
+|---|---|---|---|
+| 0044FCC0 | construtor sp_summon.txt | 1000000E | decompilação + string |
+| 00450590 / 00450A90 | Update de activate.txt, contador anterior zero, +16 | 1000000D | decompilação; assembly 00450A93..00450AA6 confirma teste e call |
+| 00450C30 | construtor break.txt | 10000008 | assembly 00450E2B..00450E3A + string |
+| 004511D0 | construtor explosion.txt | 10000007 | assembly 00451340..0045134F + string |
+| 00451950 | Update de duelstart.txt, contador anterior zero, +8 | 10000004 | decompilação, construtor 004516A0 |
+| 004580F0 | construtor Vija, modo 0 / não zero | 10000022 / 23 | assembly 004582FE..0045831A |
+| 00481230 -> 00480B40 | lado muda / mesmo lado e código de fase 3 | 10000005 / 11 | decompilação; wrapper 00404920 |
+| 00449740 | valor de display muda | 10000012 | decompilação; wrapper 004086C0 |
+| 0044EF40 | códigos 6,7,9,25 | 10000010,0F,09,0A | decompilação; múltiplos callers, sem atribuir semântica a cada código |
+
+0044C320, chamado por 0044BA00, compara LP uint16 dos lados relativos a
+(~00A54E5C)&1 e 00A54E5C&1. Diferença >=3000 seleciona Stream 8; <=-3000
+seleciona Stream 7; caso contrário global 005F3294=3 -> 6, =1 -> 5, demais -> 4.
+Todos passam parâmetro 15. Não chamar a variável de fase, não atribuir m_yuri/m_furi
+sem tabela de descritores. É um selector estático, não prova da frequência de polling.
+005C1480 reaproveita referência quando request ativo igual e está tocando; não
+recomeçar música a cada Update. NativeDuelAudioCues modela estes resultados sem
+scheduler, playback nem novo Draw. Sem alteração de badge. Coleta 27 existente
+continua necessária para resolver nomes; não abrir coleta redundante.
+
+### Validação Windows pendente
+
+Executar scripts/pending/28-voice-audio-windows.ps1 após integrar o PR.
+Build, inspeção, rejeição de recurso ausente e de mute + review, e amostras
+Internal joey_01.wav/attack.wav/card_move.wav. Saída privada scratch/voice-smoke-<timestamp>
+com summary.json, voice-metadata.json (se gerado nesta execução), logs e
+listening-notes.txt. Preencher notas de escuta: código 0 não prova som audível.
+O script não extrai nem envia WAVs/Voice.dat. Não confundir duração estimada
+com duração nativa da tabela 005C0F80. No agente, PowerShell, DAT e dispositivo
+não foram validados; aguardar execução real. Testes C# são sintéticos.

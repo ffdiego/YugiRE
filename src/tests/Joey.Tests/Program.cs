@@ -167,6 +167,7 @@ NativeCursorActionSelectorChecks.Run(Check, Reject);
 NativeJoeyReactionChecks.Run(Check);
 NativeJoeyCinematicRoutingChecks.Run(Check);
 NativeVoiceAudioChecks.Run(Check, Reject);
+NativeDuelAudioCueChecks.Run(Check);
 NativePresentationChecks.Run(Check);
 NativeFusionChecks.Run(Check, Reject);
 NativeDisabledChainChecks.Run(Check, Reject);
