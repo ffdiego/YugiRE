@@ -46,3 +46,16 @@ Operator supplied private actions-console.zip; no DAT or raw logs committed. Hea
 ## Smoke Windows — segunda execução
 
 Operador repetiu visual após fff5e6e. Comparação de 106 linhas de trace/state/diff com headless anterior: igualdade completa (ignorando whitespace final), 18 Applied, Script completed, fila vazia, LP 8000/7800, sem winner. Relato visual: decks vazios, ações do lado Joey imediatas, pausas em alguns pontos. Decks vazios são próprios do roteiro anterior (P0 uma carta, P1 zero); spawn é edição de setup, não uma invocação animada; não houve mudança de turno. Ainda não afirmar paridade visual nem ausência de stalls: log anterior não tinha tempos. Novo scripts/fixtures/duel-console-two-sides-smoke.txt: cinco cartas em cada deck, três draws por lado, summon ativo, setup explícito dos monstros adversários, Sparks/Raigeki; dois decks não vazios no final. [lab timing] ms monotônicos para Started/Completed; [lab wait] a cada 5s sem progresso com causas de bloqueio, exceto pausa voluntária/decisão. Diagnósticos não alteram trace/state e não são timings nativos. Repetir headless e gráfico com novo roteiro; confirmar compra nos dois lados e duração/ordem das animações, sem confundir setup com jogada. Não mergear até nova evidência visual.
+
+## A06 — Ativação com alvo explícito
+
+- `activate hand INDEX SIDE field` escolhe a zona de campo indicada.
+- `activate set INDEX SIDE spell SLOT` escolhe a zona de magia/armadilha.
+- `hand` e `set` aceitam ambas as formas de alvo. Os lados e slots começam
+  em zero. O lado da fonte continua sendo o jogador ativo.
+
+O mesmo console App/Lab resolve fonte e alvo como ocorrências da fila.
+A admissão aplica as regras existentes de legalidade e idade do Set. A
+execução revalida as duas ocorrências antes de gastar a carta. Um alvo
+substituído antes da ativação cancela a ação sem gastar a fonte. A forma
+sem alvo continua usando o fluxo anterior.

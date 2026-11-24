@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | battle begin|end | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -190,12 +190,7 @@ public sealed class DuelConsoleSession
                 ok = duel.TryQueueTargetedAttack(attacker, defender, out message, ActionOrigin.Console);
             else return new(false, "Expected attack SLOT direct|TARGET_SLOT.");
         }
-        else if (op == "activate")
-        {
-            if (words.Length != 3 || words[1] is not ("hand" or "set") || !Index(words[2], out int index))
-                return new(false, "Expected activate hand|set INDEX.");
-            ok = duel.TryQueueActivation(index, words[1] == "set", out message, ActionOrigin.Console);
-        }
+        else if (op == "activate") return ExecuteActivation(words);
         else
         {
             if ((op == "flip" && words.Length != 2) || (op == "position" && words.Length != 3) ||
@@ -209,6 +204,39 @@ public sealed class DuelConsoleSession
             ok = duel.TryQueueChangePosition(slot, out message, ActionOrigin.Console);
         }
         return new(ok, message, ok);
+    }
+
+    private DuelConsoleResult ExecuteActivation(string[] words)
+    {
+        const string usage = "Expected activate hand|set INDEX [SIDE field|SIDE spell SLOT].";
+        if (words.Length < 3 || words[1] is not ("hand" or "set") || !Index(words[2], out int index))
+            return new(false, usage);
+
+        bool fromSet = words[1] == "set";
+        if (words.Length == 3)
+        {
+            bool accepted = duel.TryQueueActivation(index, fromSet, out string detail, ActionOrigin.Console);
+            return new(accepted, detail, accepted);
+        }
+
+        if (words.Length is not (5 or 6) || !Side(words[3], out int side))
+            return new(false, usage);
+        DuelZone targetZone;
+        int slot = 0;
+        switch (words[4])
+        {
+            case "field" when words.Length == 5: targetZone = DuelZone.FieldSpell; break;
+            case "spell" when words.Length == 6 && Slot(words[5], out slot): targetZone = DuelZone.SpellTrap; break;
+            default: return new(false, usage);
+        }
+
+        DuelZone sourceZone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+        if (!duel.TryCaptureCardTarget(duel.ActivePlayer, sourceZone, index, out var source) ||
+            !duel.TryCaptureCardTarget(side, targetZone, slot, out var target))
+            return new(false, "Choose a tracked source and a tracked Spell/Trap target.");
+
+        bool enqueued = duel.TryQueueTargetedSpellTrap(source, target, out string message, ActionOrigin.Console);
+        return new(enqueued, message, enqueued);
     }
 
     private static bool Index(string value, out int index) =>
