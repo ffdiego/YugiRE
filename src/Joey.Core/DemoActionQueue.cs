@@ -183,6 +183,8 @@ public sealed partial class DemoDuel
                 case HealCommand heal:
                     duel.ChangeLife(heal.Side, heal.Amount);
                     return new(CommandOutcome.Applied);
+                case EquipCommand equip:
+                    return duel.ApplyQueuedEquipment(equip);
                 case ActivateRaigekiCommand activate:
                     return ActivateRaigeki(activate, followups);
                 case PrepareNormalPlacementCommand prepare:

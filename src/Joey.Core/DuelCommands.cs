@@ -21,6 +21,7 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
@@ -46,6 +47,11 @@ internal static class DuelCommandValidation
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case DrawCommand:
             case FinishFieldRemovalCommand:
+                break;
+            case EquipCommand equip when equip.SpellSlot is >= 0 and < 5:
+                Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
+                Target(equip.Target, equip.Target.Side, DuelZone.Monster);
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand);

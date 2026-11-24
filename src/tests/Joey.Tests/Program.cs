@@ -236,6 +236,7 @@ AttributeFieldSpellChecks.Run(Check);
 TypeFieldSpellChecks.Run(Check);
 MonsterBattleRuleChecks.Run(Check);
 EquipmentChecks.Run(Check);
+QueuedEquipmentChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);
