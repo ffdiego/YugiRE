@@ -22,6 +22,7 @@ def reconstruct_opening(summary: dict) -> dict:
     if len(decks)!=2:
         raise ValueError("expected two serialized decks")
     result = {}
+    keys = {}
     for side, entry in enumerate(decks):
         groups=entry["groups"]
         if len(groups)!=3 or entry["side_index"]!=side:
@@ -34,6 +35,9 @@ def reconstruct_opening(summary: dict) -> dict:
         if len(groups[0]["resource_ids"])<5:
             raise ValueError("opening requires at least five main-deck cards")
         result[str(side)]=list(groups[0]["resource_ids"])
+        # 00569380 assigns ordinal BEFORE shuffle; bit 12 is owner.
+        # 005687D0 looks up (ordinal << 1) | owner, not resource ID.
+        keys[str(side)]=[2*(i+1)+side for i in range(len(result[str(side)]))]
     state=seed
     for side in (first,1-first):
         deck=result[str(side)]
@@ -44,8 +48,10 @@ def reconstruct_opening(summary: dict) -> dict:
             if index>=remaining:
                 raise ValueError("native rand==32767 boundary unresolved; refuse reconstruction")
             deck[remaining-1],deck[index]=deck[index],deck[remaining-1]
+            k=keys[str(side)]
+            k[remaining-1],k[index]=k[index],k[remaining-1]
     return {"version":version,"association_selector":association,"shuffle_first_side":first,
-            "seed":seed,"main_deck_order":result,
+            "seed":seed,"main_deck_order":result,"main_deck_keys":keys,
             "group2_inventory":{str(i):list(d["groups"][2]["resource_ids"]) for i,d in enumerate(decks)},
             "group1_inventory":{str(i):list(d["groups"][1]["resource_ids"]) for i,d in enumerate(decks)},
             "status":"statically_reconstructed_not_runtime_verified"}

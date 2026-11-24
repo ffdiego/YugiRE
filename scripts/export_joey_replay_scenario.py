@@ -14,6 +14,7 @@ from pathlib import Path
 from inspect_joey_replay import read_file
 from reconstruct_joey_replay_opening import reconstruct_opening, initial_prefix_checks
 from joey_replay_placements import decode_placement
+from joey_replay_movements import MovementContext
 
 
 def project_record(record: dict) -> list[str]:
@@ -36,13 +37,19 @@ def project_record(record: dict) -> list[str]:
     raise ValueError(f"unsupported record 0x{raw:04X} ({a}, {b}, {c})")
 
 
-def project_slice(records: list[dict], start: int, count: int) -> list[str]:
+def project_slice(records: list[dict], start: int, count: int, movement_context=None) -> list[str]:
     if start < 0 or count < 1 or start + count > len(records):
         raise ValueError("slice is outside replay")
     result = []
     for record in records[start:start + count]:
         try:
-            commands = project_record(record)
+            op = int(record['raw_opcode_hex'],16) & 0xfff
+            if movement_context is not None and op in (0x8e,0x79):
+                commands = [movement_context.project(record)]
+            else:
+                commands = project_record(record)
+                if movement_context is not None:
+                    movement_context.apply_other(record)
         except ValueError as exc:
             raise ValueError(f"record {record['record_index']}: {exc}") from exc
         result.append(f"# native record {record['record_index']} {record['offset_hex']} {record['raw_opcode_hex']}")
@@ -51,11 +58,11 @@ def project_slice(records: list[dict], start: int, count: int) -> list[str]:
 
 
 def build_script(records, summary, source_hash: str, start: int, count: int,
-                 checkpoint: str) -> str:
+                 checkpoint: str, movement_context=None) -> str:
     if not checkpoint.strip():
         raise ValueError("explicit nonempty checkpoint script required")
     # Validate entire slice before producing any output.
-    projected = project_slice(records, start, count)
+    projected = project_slice(records, start, count, movement_context)
     lines = [
         "# YugiRE scenario from native replay: partial command projection",
         f"# YDR SHA256 {source_hash}",
@@ -103,6 +110,7 @@ def main(argv=None) -> int:
     setup.add_argument("--opening-order", type=Path,
                        help="independently observed top-to-bottom resource IDs JSON; opening draw only")
     setup.add_argument("--native-opening", action="store_true", help="reconstruct version-1300 shuffle from YDR seed; opening draws only")
+    parser.add_argument("--movement-context", type=Path, help="explicit native zone-key snapshot at --start (requires --checkpoint)")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
@@ -129,8 +137,13 @@ def main(argv=None) -> int:
                 checkpoint = opening_checkpoint(summary,json.loads(args.opening_order.read_text(encoding="utf-8")))
         else:
             checkpoint = args.checkpoint.read_text(encoding="utf-8")
+        context = None
+        if args.movement_context:
+            if not args.checkpoint:
+                raise ValueError('movement context requires an explicit checkpoint script')
+            context = MovementContext(summary,json.loads(args.movement_context.read_text(encoding='utf-8')),args.start)
         result = build_script(records,summary,hashlib.sha256(args.replay.read_bytes()).hexdigest(),
-                              args.start,args.count,checkpoint)
+                              args.start,args.count,checkpoint,context)
         # Never overwrite replay, checkpoint, or previous output.
         with args.output.open("x",encoding="utf-8",newline="\n") as out:
             out.write(result)
