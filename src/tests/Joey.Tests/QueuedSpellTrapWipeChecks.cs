@@ -74,6 +74,28 @@ internal static class QueuedSpellTrapWipeChecks
                 d.LastMonsterWipe is null,
                 $"S/T wipe {id}: own scope, source exclusion and correct graveyard order");
         }
+        // Produce F and I using the actual legacy activation/End Phase,
+        // before creating the queue. Both pieces are registered occurrences.
+        var board=DemoDuel.FromPartialObservation(0,
+            [Spell(DestinyBoardRules.BoardResourceId,21),Spell(1541)],Units(),Units(),8000,
+            side1Deck:[Spell(671)]);
+        bool boardSet=board.SetFromHand(0,out _);
+        board.NextTurn();board.NextTurn();
+        bool boardActivated=board.ActivateSetSpell(0,out _);
+        board.NextTurn();board.NextTurn();
+        check(boardSet && boardActivated && board.Spells[0,0]?.Id==1528 &&
+            board.Spells[0,1]?.Id==1541 && !board.SpellFaceDown[0,1],
+            "S/T wipe setup: active Destiny Board and a real placed message");
+        board.NextTurn();
+        var bq=board.CreatePrimitiveActionQueue();bq.Enqueue(new DrawCommand(1));Drain(bq);
+        check(board.TryQueueSpellTrapWipe(DuelZone.Hand,0,out _),"Duster on Destiny Board admitted");
+        int boardBefore=bq.Trace.Count;Drain(bq);
+        check(board.Graveyard(0).Select(c=>c.Id).SequenceEqual(new ushort[]{1528,1541}) &&
+            board.Spells[0,0] is null && board.Spells[0,1] is null &&
+            bq.Trace.Skip(boardBefore).Count(x=>x.Stage==ActionTraceStage.Executed &&
+                x.Entry.Command is DestroyCommand)==2,
+            "Destiny Board and message each receive one destruction, no double cleanup");
+
         var lone=DemoDuel.FromPartialObservation(0,[Spell(1061)],Units(),Units(),8000);
         var lq=lone.CreatePrimitiveActionQueue();
         lone.TryQueueSpellTrapSet(0,out _);Drain(lq);
