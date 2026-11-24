@@ -18,6 +18,7 @@ internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, i
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side);
+internal sealed record PlaceEndPhaseMessageCommand(int Side, int ExpectedTurn, CardTarget Source, int Slot) : DuelCommand(Side);
 internal sealed record AdvanceTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record TurnDrawCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 internal sealed record ResolveStandbyRevivalCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
@@ -239,6 +240,9 @@ internal static class DuelCommandValidation
                 break;
             case BanishCommand banish:
                 Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Graveyard);
+                break;
+            case PlaceEndPhaseMessageCommand message when message.ExpectedTurn > 0 && message.Slot is >= 0 and < 5:
+                Target(message.Source, message.Side, DuelZone.Hand, DuelZone.Deck);
                 break;
             case EndTurnDiscardCommand endDiscard when endDiscard.ExpectedTurn > 0:
                 Target(endDiscard.Target, endDiscard.Side, DuelZone.Hand);

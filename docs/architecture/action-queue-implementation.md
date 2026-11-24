@@ -67,10 +67,12 @@ Cada descarte produz a notificação usual de movimento. O último prepara
 a troca após seu gate, e um trace que termina no prompt fica incompleto.
 A execução revalida lado, turno e a ocorrência da mão.
 
-A admissão recusa uma End Phase que possa ativar o resolvedor legado do
-tabuleiro. A entrada de turno reaproveita o reset do sandbox. Compra
-automática, demais efeitos de End/Standby e mapeamento de fases no replay nativo
-ficam em fatias próprias de A07.
+Quando o efeito de encerramento do sandbox tem uma mensagem disponível,
+a fila captura a ocorrência da mão ou do deck em um comando de colocação.
+O comando revalida o efeito, a fonte e o slot. A colocação precede a troca
+e o duelo termina ali em caso de vitória. O fluxo legado reaproveita
+a mesma escolha e colocação. Compra automática, demais oportunidades
+de fase e mapeamento no replay nativo ficam em fatias próprias de A07.
 
 ## A07 — Compra legal e retorno de Standby no sandbox
 

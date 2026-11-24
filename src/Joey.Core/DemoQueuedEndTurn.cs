@@ -9,13 +9,13 @@ public sealed partial class DemoDuel
 
     public bool TryQueueEndTurn(out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Turn end requires an idle duel and supported End Phase effects.";
+        message = "Turn end requires an idle duel.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
-            HasLegacyEndPhaseEffect() || Phase == DemoPhase.End && (!queuedEndTurn || PendingEndDiscards != 0))
+            Phase == DemoPhase.End && (!queuedEndTurn || PendingEndDiscards != 0))
             return false;
 
         DuelCommand command = queuedEndTurn
-            ? new AdvanceTurnCommand(ActivePlayer, Turn)
+            ? PlanQueuedEndResolution(ActivePlayer, Turn)
             : new EndTurnCommand(ActivePlayer, Turn);
         queue.Enqueue(command, origin);
         message = queuedEndTurn ? "Turn advance admitted." : "End Phase admitted.";
@@ -41,20 +41,45 @@ public sealed partial class DemoDuel
     private bool CanExecuteQueuedEndDiscard(EndTurnDiscardCommand command) =>
         CanAdmitQueuedEndDiscard() && command.Side == ActivePlayer && command.ExpectedTurn == Turn;
 
-    private bool HasLegacyEndPhaseEffect() =>
-        DestinyBoardRules.NextMessage(1 - ActivePlayer, Spells, SpellFaceDown) is not null;
+    private DuelCommand PlanQueuedEndResolution(int endingPlayer, int turn)
+    {
+        int owner = 1 - endingPlayer;
+        if (FindEndPhaseMessage(endingPlayer) is { } next &&
+            TryCaptureCardTarget(owner, next.Source, next.Index, out var target))
+            return new PlaceEndPhaseMessageCommand(owner, turn, target, next.Slot);
+        return new AdvanceTurnCommand(endingPlayer, turn);
+    }
+
+    private CommandResult ExecuteQueuedEndMessage(PlaceEndPhaseMessageCommand command, IActionCommandSink followups)
+    {
+        if (!queuedEndTurn || Phase != DemoPhase.End || PendingEndDiscards != 0 ||
+            command.Side == ActivePlayer || command.ExpectedTurn != Turn)
+            return new(CommandOutcome.Rejected, "End Phase placement is no longer legal.");
+
+        bool placed = false;
+        if (FindEndPhaseMessage(ActivePlayer) is { } next && next.Slot == command.Slot &&
+            TryCaptureCardTarget(command.Side, next.Source, next.Index, out var target) && target == command.Source)
+        {
+            PlaceEndPhaseMessage(command.Side, next.Source, next.Index, next.Slot);
+            placed = true;
+        }
+
+        if (GameOver) queuedEndTurn = false;
+        else followups.Enqueue(new AdvanceTurnCommand(ActivePlayer, Turn));
+        return placed ? new(CommandOutcome.Applied) :
+            new(CommandOutcome.Skipped, "End Phase placement source or slot changed.");
+    }
 
     private CommandResult ExecuteQueuedEndTurn(EndTurnCommand command, IActionCommandSink followups)
     {
         if (primitiveActionQueue is not { PendingCount: 0 } || command.Side != ActivePlayer ||
-            command.ExpectedTurn != Turn || Phase == DemoPhase.End ||
-            HasLegacyEndPhaseEffect())
+            command.ExpectedTurn != Turn || Phase == DemoPhase.End)
             return new(CommandOutcome.Rejected, "End Phase is no longer legal for this side and turn.");
 
         queuedEndTurn = true;
         Phase = DemoPhase.End;
         if (PendingEndDiscards == 0)
-            followups.Enqueue(new AdvanceTurnCommand(command.Side, command.ExpectedTurn));
+            followups.Enqueue(PlanQueuedEndResolution(command.Side, command.ExpectedTurn));
         return new(CommandOutcome.Applied, "End Phase.");
     }
 
@@ -65,9 +90,6 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Rejected, "Turn advance is no longer legal.");
 
         queuedEndTurn = false;
-        if (HasLegacyEndPhaseEffect())
-            return new(CommandOutcome.Rejected, "An End Phase effect requires the existing resolver.");
-
         AdvanceTurn();
         return new(CommandOutcome.Applied, "Turn changed.");
     }

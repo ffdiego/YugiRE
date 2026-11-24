@@ -101,12 +101,47 @@ internal static class QueuedEndTurnChecks
         check(plain.Turn == 2 && plain.ActivePlayer == 1 && plain.Phase == DemoPhase.Main,
             "A07 ordinary end turn advances through the second command");
 
-        var legacy = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000);
-        ushort id = DestinyBoardRules.BoardResourceId;
-        legacy.Spells[1, 0] = new Card(id, id, "End effect fixture", "", 21u << 20);
-        var legacyQueue = legacy.CreatePrimitiveActionQueue();
-        check(!legacy.TryQueueEndTurn(out _) && legacyQueue.Trace.Count == 0 && legacy.Phase == DemoPhase.Main &&
-            legacy.EndTurn(out _) && legacy.ActivePlayer == 1,
-            "A07 an unmigrated end-phase effect stays on the existing resolver");
+        CheckEndPhaseMessage(check, card);
+    }
+
+    private static void CheckEndPhaseMessage(Action<bool, string> check, Card filler)
+    {
+        ushort boardId = DestinyBoardRules.BoardResourceId;
+        Card board = new(boardId, boardId, "End effect fixture", "", 21u << 20);
+        var messages = DestinyBoardRules.MessageResourceIds
+            .Select(id => new Card(id, id, $"Message {id}", "", 22u << 20)).ToArray();
+        var duel = DemoDuel.FromPartialObservation(0, Enumerable.Repeat(filler, 7).ToArray(),
+            new Card?[5], new Card?[5], 8000, side1Deck: [filler, messages[0], filler, messages[3]]);
+        duel.Spells[1, 0] = board;
+        var gate = new DiscardGate();
+        var session = new DuelConsoleSession(duel, gate);
+        check(duel.TryCaptureCardTarget(1, DuelZone.Deck, 1, out var source) &&
+            session.Execute("turn end").Enqueued, "A07 admit an end-phase effect without mutation");
+        Drain(session.Queue);
+        check(duel.Turn == 1 && duel.Spells[1, 1] is null && duel.PendingEndDiscards == 1 &&
+            session.Execute("discard-end 0").Enqueued, "A07 End Phase requests its mandatory discard before placement");
+        session.Queue.Tick();
+        check(duel.Spells[1, 1] is null && duel.PendingEndDiscards == 0 && session.Queue.PendingCount == 1,
+            "A07 End Phase placement waits for the mandatory discard gate");
+        gate.Release = true;
+        session.Queue.Tick();
+        session.Queue.Tick();
+        check(duel.Turn == 1 && !duel.SpellFaceDown[1, 1] &&
+            duel.TryCaptureCardTarget(1, DuelZone.SpellTrap, 1, out var placed) &&
+            placed.Occurrence == source.Occurrence && duel.DeckSnapshot(1).SequenceEqual(new[] { filler, filler, messages[3] }),
+            "A07 placement preserves the occurrence and remaining deck order before advance");
+        Drain(session.Queue);
+        check(duel.Turn == 2 && session.Execute("turn end").Enqueued, "A07 advance to the other side");
+        Drain(session.Queue);
+        check(duel.Turn == 3 && duel.Spells[1, 2] is null,
+            "A07 no placement during the owner's End Phase");
+
+        duel.Spells[1, 2] = messages[1];
+        duel.Spells[1, 3] = messages[2];
+        check(session.Execute("turn end").Enqueued, "A07 admit standing end-phase win condition");
+        Drain(session.Queue);
+        check(duel.Winner == 1 && duel.DestinyBoardWinner == 1 && duel.Turn == 3 &&
+            duel.Spells[1, 4]?.Id == messages[3].Id && !session.Queue.IsBusy,
+            "A07 completed end-phase win condition stops turn advance");
     }
 }

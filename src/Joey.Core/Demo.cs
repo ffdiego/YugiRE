@@ -211,46 +211,53 @@ public sealed partial class DemoDuel
         DestinyBoardCompleted?.Invoke(new(player, complete));
     }
 
+    private (DuelZone Source, int Index, int Slot)? FindEndPhaseMessage(int endingPlayer)
+    {
+        int owner = 1 - endingPlayer;
+        if (DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown) is not ushort resourceId)
+            return null;
+        int slot = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[owner, z] is null, -1);
+        if (slot < 0) return null;
+
+        int index = hands[owner].FindIndex(card => card.Id == resourceId);
+        if (index >= 0) return (DuelZone.Hand, index, slot);
+        int deckIndex = 0;
+        foreach (var card in decks[owner])
+        {
+            if (card.Id == resourceId) return (DuelZone.Deck, deckIndex, slot);
+            deckIndex++;
+        }
+        return null;
+    }
+
     private void ResolveDestinyBoardEndPhase(int endingPlayer)
     {
-        // The bounded sandbox auto-places ONE next message on the owner's
-        // opponent End Phase. It never shuffles the deck or spends LP.
-        for (int owner = 0; owner < 2 && !GameOver; owner++)
+        if (!GameOver && FindEndPhaseMessage(endingPlayer) is { } placement)
+            PlaceEndPhaseMessage(1 - endingPlayer, placement.Source, placement.Index, placement.Slot);
+    }
+
+    private void PlaceEndPhaseMessage(int owner, DuelZone source, int index, int slot)
+    {
+        bool fromDeck = source == DuelZone.Deck;
+        Card chosen;
+        if (fromDeck)
         {
-            if (owner == endingPlayer) continue;
-            ushort? message = DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown);
-            if (message is not ushort resourceId) continue;
-            int zone = Enumerable.Range(0, 5)
-                .FirstOrDefault(z => Spells[owner, z] is null, -1);
-            if (zone < 0) continue;
-
-            Card? chosen = null;
-            bool fromDeck = false;
-            int index = hands[owner].FindIndex(card => card.Id == resourceId);
-            if (index >= 0)
-            {
-                chosen = hands[owner][index];
-                hands[owner].RemoveAt(index);
-            }
-            else
-            {
-                // Search by card identity, preserving the relative order of
-                // all remaining deck cards and consuming no Core RNG.
-                Card[] cards = decks[owner].ToArray();
-                index = Array.FindIndex(cards, card => card.Id == resourceId);
-                if (index < 0) continue;
-                chosen = cards[index];
-                decks[owner].Clear();
-                for (int i = 0; i < cards.Length; i++)
-                    if (i != index) decks[owner].Enqueue(cards[i]);
-                fromDeck = true;
-            }
-
-            Spells[owner, zone] = chosen;
-            SpellFaceDown[owner, zone] = false;
-            DestinyBoardMessagePlaced?.Invoke(new(owner, zone, chosen, fromDeck));
-            CheckDestinyBoard(owner);
+            // Keep the deck's relative order and consume no RNG.
+            Card[] cards = decks[owner].ToArray();
+            chosen = cards[index];
+            decks[owner].Clear();
+            for (int i = 0; i < cards.Length; i++)
+                if (i != index) decks[owner].Enqueue(cards[i]);
         }
+        else
+        {
+            chosen = hands[owner][index];
+            hands[owner].RemoveAt(index);
+        }
+        Spells[owner, slot] = chosen;
+        SpellFaceDown[owner, slot] = false;
+        DestinyBoardMessagePlaced?.Invoke(new(owner, slot, chosen, fromDeck));
+        CheckDestinyBoard(owner);
     }
 
     private void CheckExodia(int player)

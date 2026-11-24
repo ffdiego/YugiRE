@@ -329,8 +329,10 @@ public sealed partial class DemoDuel
                         return new(CommandOutcome.Rejected, "End-turn discard is no longer legal.");
                     var endResult = SendHandToGraveyard(endDiscard.Target, discard: true);
                     if (endResult.Outcome == CommandOutcome.Applied && duel.PendingEndDiscards == 0)
-                        followups.Enqueue(new AdvanceTurnCommand(endDiscard.Side, endDiscard.ExpectedTurn));
+                        followups.Enqueue(duel.PlanQueuedEndResolution(endDiscard.Side, endDiscard.ExpectedTurn));
                     return endResult;
+                case PlaceEndPhaseMessageCommand endMessage:
+                    return duel.ExecuteQueuedEndMessage(endMessage, followups);
                 case AdvanceTurnCommand advanceTurn:
                     return duel.ExecuteQueuedTurnAdvance(advanceTurn);
                 case TurnDrawCommand turnDraw:
