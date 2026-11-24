@@ -140,6 +140,12 @@ execução futura. Nenhum frame foi medido nesta análise.
 tabelas e dez CALLs. [Relatório](evidence/turn-scheduling-validation.json).
 São checks estáticos, não execução do agendador.
 
+O bundle 11 está no SQLite cumulativo v2 com dez decompilações e as
+duas tabelas locais. Os blocos de 28 bytes conferem com o executável
+local. Essa verificação complementa o relatório estático e conserva a
+lacuna de associação entre índice, bits de fase e rótulo em execução.
+[Proveniência do bundle](../scripts/pending/README.md#actions--evidência-de-fases).
+
 [Modo de controle e prioridades](evidence/turn-processing-mode-selection.txt),
 [dois despachantes](evidence/turn-processing-sequence-drivers.txt),
 [despacho externo](evidence/duel-stage-dispatch.txt),
