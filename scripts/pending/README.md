@@ -15,6 +15,7 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 | `07-flip-banish-burn-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-flip-banish-burn-contract.zip` | **Aguardando execução** |
 | `08-immortal-thunder-graveyard-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-immortal-thunder-contract.zip` | **Aguardando execução** |
 | `09-dimensional-warrior-banish-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-dimensional-warrior-banish.zip` | **Aguardando execução** |
+| `10-dark-necrofear-control-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-dark-necrofear-control.zip` | **Aguardando execução** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -112,6 +113,10 @@ mas sem decompilação no SQLite) e as rotinas de dano e movimentação
 por zona. O objetivo é confirmar a ordem nativa entre cálculo de
 dano, efeito P188, FLIP de outro monstro, destruição normal em
 batalha e ausência de envio ao cemitério. **Ainda não executado**.
+
+### P252 — Dark Necrofear
+
+Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastrear vínculo de controle, evento de saída e pedido da End Phase. Custo de três Fiends no GY já sustentado por 0059DEF0/00599E30; não confundir com Spirit Elimination. **Ainda não executado.**
 
 ## Uso
 

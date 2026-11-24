@@ -1329,6 +1329,29 @@
         "Only direct monster-versus-monster battle with both original combatants still present is modeled; chains, unrelated replacement of slots mid-resolution, return-from-banish, owner/controller divergence and exact timing not native-verified.",
         "Full .NET 10 solution built and 3,340 synthetic checks passed (15 P188 cases) in PR #60; no native original parity verified."
       ]
+    },
+    {
+      "id": "monster.special-summon.p252-dark-necrofear",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "resourceIds": [
+        1514
+      ],
+      "status": "Partial",
+      "mechanics": [
+        "Core-only inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
+        "Revalidate hand source, distinct graveyard positions and free destination before changing zones"
+      ],
+      "evidence": [
+        "src/Joey.Core/GraveyardBanishSummonRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/GraveyardBanishSummonChecks.cs",
+        "docs/research/p252-necrofear-control-contract.md"
+      ],
+      "limitations": [
+        "No End Phase equip/control, UI/CPU input, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
+        "Native availability 00583050, preparation 005944D0 and primary 005906B0 not decompiled; summon cost helper 0059DEF0/00599E30/005AB640 available."
+      ]
     }
   ]
 }

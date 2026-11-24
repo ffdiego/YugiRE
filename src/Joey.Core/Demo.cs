@@ -383,6 +383,44 @@ public sealed partial class DemoDuel
         !NormalSummonRules.RequiresSpecialSummon(Hand[index]) &&
         Enumerable.Range(0, 5).Count(z => Monsters[ActivePlayer, z] != null) >= NormalTributes(Hand[index]) &&
         (NormalTributes(Hand[index]) > 0 || FirstFreeMonsterZone() >= 0);
+    /// <summary>Inherent Special Summon: P252 cost only. This does not grant
+    /// the delayed Equip/control effect or model summon negation chains.</summary>
+    public bool CanSpecialSummonByGraveyardBanish(int handIndex) =>
+        !ActionsBlocked && Phase == DemoPhase.Main &&
+        handIndex >= 0 && handIndex < Hand.Count &&
+        Hand[handIndex].IsMonster &&
+        GraveyardBanishSummonRules.RequiredCount(Hand[handIndex].Id) is int required &&
+        required > 0 && FirstFreeMonsterZone() >= 0 &&
+        GraveyardBanishSummonRules.Candidates(Hand[handIndex].Id, graves[ActivePlayer]).Count >= required;
+
+    public IReadOnlyList<CardSelectionCandidate> GraveyardBanishSummonCandidates(int handIndex) =>
+        CanSpecialSummonByGraveyardBanish(handIndex)
+            ? GraveyardBanishSummonRules.Candidates(Hand[handIndex].Id, graves[ActivePlayer])
+            : Array.Empty<CardSelectionCandidate>();
+
+    public bool SpecialSummonByGraveyardBanish(int handIndex, int zone,
+        Card expectedHandCard, IReadOnlyList<CardSelectionCandidate> cost,
+        bool defense, out string message)
+    {
+        message = "Choose a valid Special Summon, three distinct Fiends in own Graveyard and a free zone.";
+        int owner = ActivePlayer;
+        if (!CanSpecialSummonByGraveyardBanish(handIndex) ||
+            !ReferenceEquals(Hand[handIndex], expectedHandCard) ||
+            zone is < 0 or >= 5 || Monsters[owner, zone] is not null ||
+            !GraveyardBanishSummonRules.CanPay(expectedHandCard.Id, graves[owner], cost))
+            return false;
+        // Commit after the full cost, source and destination are checked.
+        // This does not consume the normal summon allowance.
+        foreach (var candidate in cost.OrderByDescending(c => c.SourceIndex))
+            graves[owner].RemoveAt(candidate.SourceIndex);
+        foreach (var candidate in cost)
+            banished[owner].Add(candidate.Card);
+        hands[owner].RemoveAt(handIndex);
+        PlaceSelectedMonster(owner, zone, expectedHandCard, false, defense);
+        message = $"{expectedHandCard.Name}: banished {cost.Count} Graveyard monsters and Special Summoned.";
+        return true;
+    }
+
     public int FirstFreeMonsterZone(IReadOnlyList<int>? tributes = null) => Enumerable.Range(0, 5)
         .FirstOrDefault(z => Monsters[ActivePlayer, z] == null || tributes?.Contains(z) == true, -1);
     public int FirstFreeSpellZone() => Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
