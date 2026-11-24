@@ -57,3 +57,17 @@ Skelengel sem resposta de invocação concorrente usa PendingDecision da ActionQ
 ## Fechamento A02
 
 CI integral A02.5 [45318593622](https://github.com/ffdiego/YugiRE/actions/runs/45318593622) aprovado, PR #67 integrado à main 93846a7 (A01 #64 integrado antes). Aceitação: ActionQueueChecks cobre admissão sem mutação, FIFO/ativo único, gate global/final, três destruições, alvo obsoleto, continuação não recursiva e falha sem retry. ActionQueueRemovalChecks, ActionQueuePlacementChecks, ActionQueueFlipChecks e ActionQueueLinkedChecks exercitam estado real, ambos os lados, efeitos/tributos individuais, equivalência de trace imediato/retardado e decisão Skelengel. Os dez tipos têm caminho experimental. As regressões anteriores de identidade foram corrigidas; a suíte legada passa. Concluído o marco de infraestrutura; A03/A04/A05/A06/A08 liberados. Não promover paridade nativa, nem declarar integração App/CPU ou todos os efeitos concluídos. A07 permanece dependente da evidência de fases. Próxima prioridade operacional: A04, começando pelo parser/runner headless; integração visual exige A03.
+
+## A07 — Encerramento de turno no sandbox
+
+`turn end` do console admite `EndTurnCommand`, que entra na End Phase.
+A troca de lado usa `AdvanceTurnCommand` separado. Com mão acima do limite,
+`discard-end INDEX` seleciona uma ocorrência para `EndTurnDiscardCommand`.
+Cada descarte produz a notificação usual de movimento. O último prepara
+a troca após seu gate, e um trace que termina no prompt fica incompleto.
+A execução revalida lado, turno e a ocorrência da mão.
+
+A admissão recusa uma End Phase que possa ativar o resolvedor legado do
+tabuleiro. A entrada de turno reaproveita o reset do sandbox. Compra
+automática, efeitos de End/Standby e mapeamento de fases no replay nativo
+ficam em fatias próprias de A07.

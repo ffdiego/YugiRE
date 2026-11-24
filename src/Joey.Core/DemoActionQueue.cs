@@ -19,7 +19,8 @@ public sealed partial class DemoDuel
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
-                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0, allowLabEdits);
+                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) &&
+                (PendingEndDiscards == 0 || admittingQueuedEndDiscard && CanAdmitQueuedEndDiscard()), allowLabEdits);
     }
 
     /// <summary>
@@ -306,6 +307,9 @@ public sealed partial class DemoDuel
                 ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
+            if (duel.HasQueuedEndDiscard && command is not EndTurnDiscardCommand)
+                return new(CommandOutcome.Rejected, "Resolve the queued end-turn discard first.");
+
             switch (command)
             {
                 case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
@@ -318,6 +322,17 @@ public sealed partial class DemoDuel
                     return duel.SnapshotQueuedBattleRemoval(snapshot);
                 case ChangeBattlePhaseCommand phase:
                     return duel.ExecuteQueuedBattlePhaseChange(phase);
+                case EndTurnCommand endTurn:
+                    return duel.ExecuteQueuedEndTurn(endTurn, followups);
+                case EndTurnDiscardCommand endDiscard:
+                    if (!duel.CanExecuteQueuedEndDiscard(endDiscard))
+                        return new(CommandOutcome.Rejected, "End-turn discard is no longer legal.");
+                    var endResult = SendHandToGraveyard(endDiscard.Target, discard: true);
+                    if (endResult.Outcome == CommandOutcome.Applied && duel.PendingEndDiscards == 0)
+                        followups.Enqueue(new AdvanceTurnCommand(endDiscard.Side, endDiscard.ExpectedTurn));
+                    return endResult;
+                case AdvanceTurnCommand advanceTurn:
+                    return duel.ExecuteQueuedTurnAdvance(advanceTurn);
                 case DrawCommand draw:
                     if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
                         return DrawForShadowScout(flow);

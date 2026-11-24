@@ -44,6 +44,9 @@ public sealed class DuelConsoleScript
         traceCursor=trace.Count;
         if(decision && (cursor==lines.Length || !lines[cursor].Text.StartsWith("decision ",StringComparison.OrdinalIgnoreCase)))
             return new(DuelScriptStatus.WaitingForDecision,Message:$"Decision {queue.PendingDecision!.Id} requires explicit answer.");
+        if (session.HasPendingEndDiscard &&
+            (cursor == lines.Length || !session.AllowsPendingEndDiscardInput(lines[cursor].Text)))
+            return new(DuelScriptStatus.WaitingForDecision, Message: "End Phase requires discard-end INDEX.");
         if(cursor==lines.Length) return terminal=new(DuelScriptStatus.Completed,Message:"Script completed.");
         var next=lines[cursor++];
         if(next.Text is "quit" or "exit")

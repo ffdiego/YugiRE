@@ -16,6 +16,9 @@ public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker,
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
+public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
+public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side);
+internal sealed record AdvanceTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one card
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
@@ -99,6 +102,8 @@ internal static class DuelCommandValidation
                 break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case ChangeBattlePhaseCommand { ExpectedTurn: > 0 }:
+            case EndTurnCommand { ExpectedTurn: > 0 }:
+            case AdvanceTurnCommand { ExpectedTurn: > 0 }:
             case DrawCommand:
             case FinishFieldRemovalCommand:
                 break;
@@ -230,6 +235,9 @@ internal static class DuelCommandValidation
                 break;
             case BanishCommand banish:
                 Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Graveyard);
+                break;
+            case EndTurnDiscardCommand endDiscard when endDiscard.ExpectedTurn > 0:
+                Target(endDiscard.Target, endDiscard.Side, DuelZone.Hand);
                 break;
             case DiscardCommand discard:
                 Target(discard.Target, discard.Side, DuelZone.Hand);

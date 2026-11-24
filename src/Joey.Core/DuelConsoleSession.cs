@@ -8,11 +8,18 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | battle begin|end | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | battle begin|end | turn end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
     public ActionQueue Queue { get; }
+    public bool HasPendingEndDiscard => duel.HasQueuedEndDiscard;
+
+    public bool AllowsPendingEndDiscardInput(string line)
+    {
+        var words = line.Split((char[]?)null, 2, StringSplitOptions.RemoveEmptyEntries);
+        return words.Length != 0 && words[0].ToLowerInvariant() is ("discard-end" or "state" or "diff" or "trace" or "help");
+    }
 
     public static DemoDuel EmptyLabDuel() => DemoDuel.FromPartialObservation(0, [], new Card?[5],
         new Card?[5], 8000, equipmentContextResolved: true);
@@ -31,7 +38,10 @@ public sealed class DuelConsoleSession
         string op = words[0].ToLowerInvariant();
         if (op == "help" && words.Length == 1) return new(true, Help);
         if (op == "trace" && words.Length == 1)
-            return new(true, ActionTraceJson.Serialize(ActionTraceJson.Capture(Queue, "laboratory-console")));
+        {
+            var document = ActionTraceJson.Capture(Queue, "laboratory-console");
+            return new(true, ActionTraceJson.Serialize(document with { Complete = document.Complete && !HasPendingEndDiscard }));
+        }
         if (op == "state" && words.Length == 1)
         {
             baseline = Snapshot();
@@ -58,7 +68,7 @@ public sealed class DuelConsoleSession
         if (duel.GameOver) return new(false, "Duel ended.");
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
-        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "attack")
+        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "turn" or "discard-end" or "attack")
             return ExecuteLegal(op, words);
         // Replay projection is a setup edit, not a legal input. Capture the
         // occurrence only if the resource at the recorded source index matches.
@@ -173,6 +183,17 @@ public sealed class DuelConsoleSession
                 return new(false, "Expected equip hand|set INDEX SIDE SLOT.");
             ok = duel.TryQueueEquipment(words[1] == "set" ? DuelZone.SpellTrap : DuelZone.Hand,
                 sourceIndex, targetSide, targetSlot, out message, ActionOrigin.Console);
+        }
+        else if (op == "turn")
+        {
+            if (words.Length != 2 || words[1] != "end") return new(false, "Expected turn end.");
+            ok = duel.TryQueueEndTurn(out message, ActionOrigin.Console);
+        }
+        else if (op == "discard-end")
+        {
+            if (words.Length != 2 || !Index(words[1], out int index))
+                return new(false, "Expected discard-end INDEX.");
+            ok = duel.TryQueueEndTurnDiscard(index, out message, ActionOrigin.Console);
         }
         else if (op == "battle")
         {

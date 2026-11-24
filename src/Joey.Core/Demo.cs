@@ -265,7 +265,8 @@ public sealed partial class DemoDuel
     // Native suppression/negation is not modeled; setting a spell does not activate it.
     public bool HandLimitDisabled => Enumerable.Range(0, 2).Any(p =>
         Enumerable.Range(0, 5).Any(z => Spells[p, z]?.Id == 0x593 && !SpellFaceDown[p, z]));
-    public int PendingEndDiscards => Phase == DemoPhase.End && !HandLimitDisabled ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
+    public int PendingEndDiscards => Phase == DemoPhase.End ? ExcessEndTurnCards : 0;
+    private int ExcessEndTurnCards => HandLimitDisabled ? 0 : Math.Max(0, Hand.Count - EndTurnHandLimit);
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
     public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979,
@@ -2451,9 +2452,9 @@ public sealed partial class DemoDuel
     public bool EndTurn(out string message)
     {
         message = "The duel has ended.";
-        if (ActionsBlocked) return false;
+        if (ActionsBlocked || queuedEndTurn) return false;
         // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
-        if (!HandLimitDisabled && Hand.Count > EndTurnHandLimit)
+        if (ExcessEndTurnCards > 0)
         {
             Phase = DemoPhase.End;
             message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
@@ -2472,7 +2473,7 @@ public sealed partial class DemoDuel
     public bool DiscardForEndTurn(int index, out string message)
     {
         message = "Select a hand card while resolving the end-phase hand limit.";
-        if (ActionsBlocked || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
+        if (ActionsBlocked || queuedEndTurn || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
         var card = hands[ActivePlayer][index];
         hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
         HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
