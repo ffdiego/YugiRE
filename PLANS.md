@@ -226,12 +226,15 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Pronto`.
   Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT local, usando manifests e seleção de variantes por estado; não versionar os assets. Aviso explícito de asset faltante; nada de substituição silenciosa.
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Pronto`.
+  Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado no voo; sampler ajustado. Pivô/compositor e constantes x87 pendentes; [contrato](docs/research/native-attack-life-routing-2026-11-24.md).
   Reconstituir estaticamente e validar a troca ao atingir a carta (`j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp`): frame/estado de transição, clipping, pivô e camada. Preservar a ilusão de penetração observada no vídeo, sem declarar seus detalhes como comprovados antes da análise. Rotina Draw `004142C0` (Partial).
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`.
   Já ligados: BMPs originais, separador, variantes normal/aumentado/reduzido, `0xA0/0x100`, tween 7/8, gate nativo de `00418EF0 → 004194D0` (movimento `0x100`, saída estado 5, zona, lado, face-up `0x8000`, identidade do ocupante `0056DD30`); renderer e JSON F12 compartilham a visibilidade, evitando revelar atributos da CPU antes do contato da espada. Faltam âncoras de pixels, blending, validação e sprites dos indicadores adicionais (overlays `00419B70/0041A3B0/0041A070` não são números). **Partial, não Verified.** Ver [pesquisa](docs/research/native-field-attributes-2026-11-22.md) ; bundle 03 recebido e absorvido em 23/11, não repetir coleta. Ver [handoff dos bundles](docs/research/visual-contract-bundles-2026-11-23.md).
-- [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Pronto`.
+- [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`.
+  NativeLifeDeltaRequest seleciona slot do lado afetado ou -1 (direto/flags 8 e 10h); entrada opt-in RequestNativeChange preserva hold de consumo, segundo pedido libera sem substituir delta e slot. A03 possui fornecimento de dados e integração, Roteiro 21 recebido: Draw confirma slot -1 → S/T central e centralização do número; renderer atualizado, geometria absoluta e fornecimento do slot de combate por A03 pendentes. [Contrato](docs/research/native-attack-life-routing-2026-11-24.md).
   Remover a escolha universal de ponto médio entre as fileiras. Rastrear `00414110` (combate), `00408470` (caso geral), `0047C4F0` (registro do delta/identificador), `0047C660` (Draw) e `004806F0` (números) até a passagem real de X/Y/slot. Comparar dano de batalha sobre monstro, dano direto/cura sobre a região de magias, ambos os lados, ataque direto e alvo face-down. **Nada de ajustar pela captura sem entender a seleção nativa de âncora.**
-- [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Pronto`.
+- [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`.
+  NativeTurnNoticePlan: aviso tipo 6 inicia junto ao giro dos botões; fase posterior começa ao atingir 512/64 updates, exceto fase -1. Preloads relativos à perspectiva e parser NativePhaseNoticeResources. Roteiro 23 recebido: Draw/Update e chaves/ângulo confirmados, DrawAtCounter implementado; NativeNoticeProjection recupera geometria candidata de 004223F0 (decompilação, ABI EBX/EBP pendente); rasterizador 0051EBD0 e predicado virtual +4 ainda não fechados. Roteiro 25. Sem integração de scheduler nem serializar mais 48 updates. [Contrato](docs/research/native-turn-notice-contract-2026-11-24.md).
   Investigar `j/duel/phase_name/nex_e_b*.yga` / `nex_e_r*.yga`, transição e ordem relativas aos banners de fase. Seguir `00480B40`/`00480BC0`, `00480C20`, `00480C60` e seus chamadores antes de implementar texto e timeline no cliente.
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`.
   Bundle 04 recebido: 17/17 funções e 12/12 janelas; `NativeStatusDrawLayout` implementa a geometria de sprites 4..9 (miniatura, quadros do atlas, âncoras A/B, espelhamento tipo/atributo e flashes 10..13); `NativeCardStatusDigits` usa atlas amarelo original. Preservar seletores, comandos `0x5F/0x60/0x69` e countdown 512→0 em 32 updates já isolados. Compositor ordenado e modo `--review-card-status=` usam os divisores do `card.txt` local e os contratos existentes; os dados sintéticos são exclusivos da revisão. **Pending no duelo:** faltam teste com DAT real, semântica A/B, compositor nativo e integração normal. São subpasses da Draw 004194D0 já contabilizada; não somar três novas Draws. [Contrato](docs/research/native-card-status-digits-2026-11-22.md); [pesquisa](docs/research/native-card-status-overlays-2026-11-22.md). Não repetir coleta 04.
@@ -252,12 +255,64 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   O comparador aceita regiões nomeadas e registra seus retângulos de divergência em coordenadas do canvas. A matriz de pares agrega diferenças de pixels e contadores fornecidos pelo operador, com limites opcionais e diagnósticos por quadro-chave. Testes com PNGs sintéticos incluídos no CI. Comparações pareadas com o executável continuam pendentes. [Protocolo](docs/research/visual-frame-comparison-2026-11-22.md).
 - [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`.
   Seleção nativa (`0043B280`, ver V11), ajuda `0045E4A0`, efeito de estado persistente `0040E260`, quebra/remoção alternativa `00450FD0`, ativação alternativa `00450AD0`, corrente `0041F870`, remoção/exclusão `0043DBE0`, moeda `00457520`, dado `00456B90`, Vija `004584C0`, Layerfont A/B `00455FF0`/`00456360`. Cada rotina vira um item novo (`V20`, `V21`...) quando começar. Estado: [cobertura visual](docs/architecture/VISUAL_COVERAGE.md).
-- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Aguardando evidência`.
+- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`.
+  NativeSurfaceCopy porta cópia opaca/escala/clipping e quatro formatos de surface+74h (004AD9C0/00547180), sem assumir blend ou máscara. Roteiro 24 lê vtable 005DC6EC e alvos ainda desconhecidos; confirmar assembly das fronteiras. Roteiro 25 separa geometria de quadrilátero de 0051EBD0 e família de intensidade 00422E30 (<256); NativeQuadRasterDispatch porta a fronteira, não o blend. [Contrato](docs/research/native-quad-raster-contract-2026-11-24.md). [Contrato](docs/research/native-surface-copy-contract-2026-11-24.md).
   Confirmar cadência, tabela de cosseno x16.16 (ver `V01`) e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
 - [ ] **V18 — Áudio e vozes.** Status: `Pronto`.
   Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política; ainda não existe player), preservando a apresentação clássica.
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`.
   Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
+- [ ] **V20 — Banco coin (00457520).** Status: `Aguardando evidência`.
+  Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. Máscara/reflexos ainda pendentes. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
+  Rotas 8E/8F, camada e início recuperados; nome do banco não comprova semântica de RNG. Roteiro 16; [contrato](docs/research/native-coin-dice-break-contract-2026-11-23.md).
+- [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`.
+  Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT/cosseno original. Remap/blend e integração A03 pendentes; não contar review como gameplay. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
+  Rotas 90/91/92, âncora e gate recuperados; Draw/Update ausentes. Roteiro 16, mesmo contrato.
+- [ ] **V22 — Remoção break (00450FD0).** Status: `Aguardando evidência`.
+  Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. 00558FB0 usa tabela viva 00A52EB4, compositor restante pendente. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
+  Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
+
+- [ ] **V23 — Corrente (0041F870).** Status: `Aguardando evidência`.
+  NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Recurso/recortes dos dígitos, assembly e integração A03 pendentes (roteiro 17). [Contrato](docs/research/native-chain-affect-contract-2026-11-24.md).
+- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`.
+  NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
+
+- [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`.
+  Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT/cosseno. Integração A03 e comparação pendentes.
+  NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas 48/49/18. Draw ausente; roteiro 18. [Contrato](docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+- [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`.
+  Bundle 18 recebido: NativeExclusionTimeline porta 24 Draws, ordem mini/feixes/partículas/halo, fim e mascaramento; revisão --review-exclusion=ID,HEX (oculto exige ID 0). Remap/blend e integração A03 pendentes.
+  NativeExclusionStart: descritor, argumento mascarado face-up, contador 64 e camada 0x120. Update vazio, Draw e produtor não mapeados. Não inventar duração nem disparar para todo banimento. Roteiro 18; mesmo contrato.
+
+- [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`.
+  Modelo Draw +4 módulo 256, modo 5/7, âncora 788/588, intensidade por C; revisão isolada com DAT/cosseno real. Compositor e integração em modo nativo ainda pendentes; roteiro 19. [Contrato](docs/research/native-layerfont-help-2026-11-24.md).
+- [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`.
+  Modelo Draw de entrada/saída condicionado a 005BDAD0/0044BA10, modo 3; revisão isolada, dimensão/compositor provisórios. Roteiro 19, mesmo contrato.
+- [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`.
+  Roteiro 19 recebido no SQLite v2: NativeHelpTimeline porta request por update, gates, identidade 0x3FFF, escala vertical em 4 updates, clamps e âncora contextual. Produtores 0045E240 encontrados em verificações de ações; faltam semântica dos IDs, manifest help.txt, resolução/medidas DAT, compositor +4C e integração de apresentação. Não repetir coleta 19; não contar modelo isolado como Draw. [Contrato](docs/research/native-layerfont-help-2026-11-24.md).
+
+- [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`.
+  NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Roteiro 20 recebido: NativeVijaTimeline porta ordem dos passes, centros, fade, scratch e deformação por linha, 97/177 Draws. Máscara +98/remap e renderer ainda pendentes; não bloquear A03. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](docs/research/pending-bundles-handoff-2026-11-24.md).
+
+### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
+
+ACTIONS é responsável por conectar ActionQueue / IPresentationGate à apresentação.
+VISUALS preserva Joey.LookAndFeel independente do Core/raylib, entrega
+componentes reutilizáveis de um efeito e Draws; não cria novo FIFO de ações
+ou efeitos nem implementa uma ponte paralela. A03 deve migrar os adaptadores
+legados PresentationSequence no App, sem duplicar mutações ou enfileiramento.
+
+**Pontos de atenção arquitetural para A03:** (1) visível/ativo não significa
+bloqueante: V23 aguarda em 128 visível e não bloqueia; V24 é contextual e não
+deve bloquear; (2) CanComplete é uma consulta, não um Update/Draw: V11 tem
+mutação no Draw, V26 Update vazio e 24 Draws; V30 Draw incrementa +4 e flag final diverge do predicado inclusivo; não avançar
+efeitos ao consultar gates nem inventar timeout; (3) remoções/transferências
+precisam de snapshot visível por ocorrência e geometria antes da execução
+(ActionQueue executa antes de CanComplete); (4) ao migrar, impedir emissão
+dupla pelos eventos DemoDuel e pelo comando ativo. A03 define a política de
+cancelamento/Instant e identidade por Sequence, inclusive comandos Skipped/
+Rejected, sem obrigar LookAndFeel a conhecer tipos do Core. Não bloquear
+comando por objeto que ainda não tem Draw/contrato de conclusão.
 
 ## Arquitetura-alvo (propostas, não funcionalidades já existentes)
 

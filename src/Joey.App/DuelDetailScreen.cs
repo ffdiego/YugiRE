@@ -201,11 +201,14 @@ static partial class Game
             var glyphs = NativeFloatingLifeDigits.Sample(counter.PendingDelta, phase,
                 glyphWidth, glyphHeight, columns, effectCosine);
             bool near = player == ViewPlayer;
-            // Place the floating hit/heal numbers on the duel board, halfway
-            // between the monster and spell/trap rows. The exact native
-            // 0045C140 origin still needs a frame-paired measurement.
-            var anchor = NativeLifeHud.FloatingNumberAnchor(near);
-            float right = anchor.X, top = anchor.Y - glyphHeight / 2f;
+            // 0047C660 resolves the slot (or central spell slot for -1),
+            // then centers the FULL signed number, not its right edge.
+            // Legacy logical-life input supplies -1; the scheduler adapter
+            // can supply a battle slot through RequestNativeChange later.
+            var anchor = NativeLifeHud.FloatingNumberAnchor(near, counter.AnchorSlot);
+            var origin = NativeLifeHud.FloatingNumberOrigin(anchor, counter.PendingDelta,
+                glyphWidth, glyphHeight, columns);
+            int right = origin.X, top = origin.Y;
             foreach (var glyph in glyphs)
                 Raylib.DrawTexturePro(texture,
                     new Rectangle(glyph.GlyphIndex * sourceGlyphWidth, 0,

@@ -8,6 +8,13 @@ public readonly record struct NativeAttackFrame(
     public const int Updates = 0x200 / UpdateIncrement;
     // The sword enters its contact/impact branch when counter t >= 0x100.
     public const int ImpactStartUpdate = 0x100 / UpdateIncrement;
+    // Assembly 00414694 / 0041470C / 004147B0: manifest keys, not filenames.
+    public int SwordLookupKey => PartialSword ? 1 : 0;
+    public int? ImpactLookupKey => PartialSword ? 2 : null;
+    public const uint LaunchSound = 0x10000006;
+    public static uint? SoundAtDraw(int update) => update == 9 ? LaunchSound : null;
+    // 00422C00 treats native intensity >255 as opaque; retain raw units.
+    public int NativeIntensity => PartialSword ? 2 * (0x200 - (0x100 + (ImpactScaleFixed16 >> 9))) : 256;
 
     public static CardPoint DirectTarget(bool nearSide) => new(525, nearSide ? 64 : 536);
 
@@ -36,7 +43,10 @@ public readonly record struct NativeAttackFrame(
             int weight = cosineFixed16[(t - 0x80) & 511] >> 8;
             var point = new CardPoint((origin.X * weight + target.X * (256 - weight)) / 256,
                 (origin.Y * weight + target.Y * (256 - weight)) / 256);
-            return new(point, start + turn, false, 0, 255);
+            // 0041465E..00414689 recalculates the direction from the
+            // integer interpolated center (not from the original source).
+            int flightAngle = AimRotation(target.X - point.X, target.Y - point.Y);
+            return new(point, flightAngle, false, 0, 255);
         }
         return new(target, start + turn, true, (t - 0x100) << 9, Math.Min(255, 2 * (0x200 - t)));
     }
