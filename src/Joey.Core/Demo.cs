@@ -172,7 +172,8 @@ public sealed partial class DemoDuel
     }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
-    private bool ActionsBlocked => GameOver || PendingFlipTarget is not null ||
+    private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue?.IsBusy == true;
+    private bool LegacyActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingFlipSpellTrapTargets is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
         PendingAttackResponse is not null || PendingEffectDecision is not null ||
@@ -280,8 +281,8 @@ public sealed partial class DemoDuel
         {
             Card[] shuffled = (player == 0 ? first : second).ToArray();
             random.Shuffle(shuffled);
-            duel.hands[player].AddRange(shuffled.Take(5));
-            foreach (var card in shuffled.Skip(5)) duel.decks[player].Enqueue(card);
+            duel.hands[player].AddRange(shuffled.Take(5).Select(duel.NewOccurrence));
+            foreach (var card in shuffled.Skip(5)) duel.decks[player].Enqueue(duel.NewOccurrence(card));
         }
         // Opening-hand win. Simultaneous Exodia opening hands are outside
         // the observed Joey replay corpus; the seeded sandbox resolves the
@@ -334,15 +335,15 @@ public sealed partial class DemoDuel
         duel.LoadFusionDeck(0, side0FusionDeck);
         duel.LoadFusionDeck(1, side1FusionDeck);
         duel.Life[activeSide] = activeLifePoints;
-        duel.hands[activeSide].AddRange(activeHand);
-        if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard);
-        if (side1Graveyard is not null) duel.graves[1].AddRange(side1Graveyard);
-        if (side0Deck is not null) foreach (var c in side0Deck) duel.decks[0].Enqueue(c);
-        if (side1Deck is not null) foreach (var c in side1Deck) duel.decks[1].Enqueue(c);
+        duel.hands[activeSide].AddRange(activeHand.Select(duel.NewOccurrence));
+        if (side0Graveyard is not null) duel.graves[0].AddRange(side0Graveyard.Select(duel.NewOccurrence));
+        if (side1Graveyard is not null) duel.graves[1].AddRange(side1Graveyard.Select(duel.NewOccurrence));
+        if (side0Deck is not null) foreach (var c in side0Deck) duel.decks[0].Enqueue(duel.NewOccurrence(c));
+        if (side1Deck is not null) foreach (var c in side1Deck) duel.decks[1].Enqueue(duel.NewOccurrence(c));
         for (int slot = 0; slot < 5; slot++)
         {
-            duel.Monsters[0, slot] = side0Monsters[slot];
-            duel.Monsters[1, slot] = side1Monsters[slot];
+            duel.Monsters[0, slot] = side0Monsters[slot] is Card a ? duel.NewOccurrence(a) : null;
+            duel.Monsters[1, slot] = side1Monsters[slot] is Card b ? duel.NewOccurrence(b) : null;
         }
         duel.CheckExodia(activeSide);
         return duel;
@@ -373,8 +374,9 @@ public sealed partial class DemoDuel
         // Fixed reproducible fixture; both players have an opening hand and a small deck.
         for (int p = 0; p < 2; p++)
         {
-            hands[p].AddRange(monsters.Take(3)); hands[p].AddRange(spells);
-            foreach (var c in monsters.Skip(3).Concat(spells)) decks[p].Enqueue(c);
+            hands[p].AddRange(monsters.Take(3).Select(NewOccurrence));
+            hands[p].AddRange(spells.Select(NewOccurrence));
+            foreach (var c in monsters.Skip(3).Concat(spells)) decks[p].Enqueue(NewOccurrence(c));
         }
         CheckExodia(0);
         CheckExodia(1);

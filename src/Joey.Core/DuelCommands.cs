@@ -22,6 +22,11 @@ public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
 
+// Pilot orchestration only; A08 moves card-specific producers out of Core.
+// Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
+
 internal static class DuelCommandValidation
 {
     public static void Validate(DuelCommand command)
@@ -32,6 +37,10 @@ internal static class DuelCommandValidation
         switch (command)
         {
             case DrawCommand:
+            case FinishFieldRemovalCommand:
+                break;
+            case ActivateRaigekiCommand activate:
+                Target(activate.Source, activate.Side, DuelZone.Hand);
                 break;
             case DamageCommand damage when damage.Amount > 0:
             case HealCommand { Amount: > 0 }:

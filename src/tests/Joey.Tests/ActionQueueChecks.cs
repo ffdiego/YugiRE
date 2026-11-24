@@ -194,9 +194,10 @@ internal static class ActionQueueChecks
             fast.Queue.Trace.Select(x => (x.Entry.Sequence, x.Entry.Command, x.Stage, x.Result))
                 .SequenceEqual(slow.Queue.Trace.Select(x => (x.Entry.Sequence, x.Entry.Command, x.Stage, x.Result))),
             "A02 real draw/LP pilot has identical logical trace and state with delayed or immediate gate");
-        fast.Queue.Enqueue(new DestroyCommand(0, a));
+        fast.Queue.Enqueue(new SetCommand(0, new(new(1), 0, DuelZone.Hand), DuelZone.Monster, 0));
         Drain(fast.Queue);
         check(fast.Queue.Trace.Last().Result?.Outcome == CommandOutcome.Rejected,
             "A02 non-migrated DemoDuel command explicitly rejects");
+        ActionQueueRemovalChecks.Run(check);
     }
 }

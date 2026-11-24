@@ -32,7 +32,7 @@ public sealed partial class DemoDuel
         if (cards is null) return;
         if (cards.Count > FusionRules.FusionDeckLimit || cards.Any(card => !FusionRules.IsFusionMonster(card)))
             throw new ArgumentException("A Fusion Deck must contain at most 15 Fusion Monsters.", nameof(cards));
-        fusionDecks[player].AddRange(cards);
+        fusionDecks[player].AddRange(cards.Select(NewOccurrence));
     }
 
     private IEnumerable<FusionSummonOption> FusionOptions(int owner)
