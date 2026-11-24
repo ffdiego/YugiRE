@@ -25,6 +25,7 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
@@ -52,6 +53,9 @@ internal static class DuelCommandValidation
                 Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
                 Target(equip.Target, equip.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateLifePointSpellCommand lp:
+                Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand);
