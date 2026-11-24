@@ -1067,6 +1067,19 @@ public sealed partial class DemoDuel
             // A sandbox identity check, not a reconstruction of the native selection key.
             if (!ReferenceEquals(e.TargetCard, monster) || !ReferenceEquals(Spells[e.Owner, e.SourceZone], e.Card) ||
                 SpellFaceDown[e.Owner, e.SourceZone]) continue;
+            if (DynamicEquipmentRules.Supports(e.Card.Id))
+            {
+                int faceUpMonsters = Enumerable.Range(0, 5).Count(slot =>
+                    Monsters[e.Owner, slot] is not null && !MonsterFaceDown[e.Owner, slot]);
+                int spellTraps = Enumerable.Range(0, 5).Count(slot => Spells[e.Owner, slot] is not null)
+                    + (FieldSpells[e.Owner] is null ? 0 : 1);
+                var contribution = DynamicEquipmentRules.Evaluate(e.Card.Id, monster.Attack,
+                    Life[e.Owner], Life[1 - e.Owner], faceUpMonsters, spellTraps);
+                if (contribution.BaseAttack is int replacement) stats = stats with { Attack = replacement };
+                sum = new(unchecked(sum.Attack + contribution.Delta.Attack),
+                    unchecked(sum.Defense + contribution.Delta.Defense));
+                continue;
+            }
             var delta = NativeAiAttributes.EquipmentDelta(e.Card.Id, stats, monster.Id);
             if (!delta.IsSupported) throw new InvalidOperationException("Unsupported equipment in demo link list");
             sum = new(unchecked(sum.Attack + delta.Value.Attack), unchecked(sum.Defense + delta.Value.Defense));

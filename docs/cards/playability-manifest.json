@@ -1445,6 +1445,30 @@
       "limitations": [
         "Legacy hand activation and ordinary cleanup only; C# tests added but not yet executed. Set activation, action queue migration, native suppression and other interactions pending."
       ]
+    },
+    {
+      "id": "equipment.dynamic-c04",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Equip",
+        "Dynamic ATK/DEF modifier"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        656,
+        1449,
+        1450
+      ],
+      "evidence": [
+        "src/Joey.Core/DynamicEquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/tests/Joey.Tests/QueuedEquipmentChecks.cs",
+        "docs/cards/c04-queued-dynamic-equipment.md"
+      ],
+      "limitations": [
+        "Queue-backed headless hand/Set activation; UI/CPU, suppression and native comparison pending."
+      ]
     }
   ]
 }
