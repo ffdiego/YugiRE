@@ -169,6 +169,7 @@ NativeVijaChecks.Run(Check, Reject);
 NativeLifeDeltaChecks.Run(Check);
 NativeTurnNoticeChecks.Run(Check, Reject);
 NativeSelectionOriginChecks.Run(Check);
+NativeBankEffectChecks.Run(Check, Reject);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);

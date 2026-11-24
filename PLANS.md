@@ -236,10 +236,13 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`.
   Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 - [ ] **V20 — Banco coin (00457520).** Status: `Aguardando evidência`.
+  Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. Máscara/reflexos ainda pendentes. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas 8E/8F, camada e início recuperados; nome do banco não comprova semântica de RNG. Roteiro 16; [contrato](docs/research/native-coin-dice-break-contract-2026-11-23.md).
-- [ ] **V21 — Banco dice (00456B90).** Status: `Aguardando evidência`.
+- [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`.
+  Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT/cosseno original. Remap/blend e integração A03 pendentes; não contar review como gameplay. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas 90/91/92, âncora e gate recuperados; Draw/Update ausentes. Roteiro 16, mesmo contrato.
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Aguardando evidência`.
+  Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. 00558FB0 usa tabela viva 00A52EB4, compositor restante pendente. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
 
 - [ ] **V23 — Corrente (0041F870).** Status: `Aguardando evidência`.
