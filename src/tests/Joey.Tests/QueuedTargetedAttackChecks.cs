@@ -116,6 +116,27 @@ internal static class QueuedTargetedAttackChecks
                 "A06 reveal/calculation remain visible and unmapped");
         }
 
+        foreach(bool afterReveal in new[]{false,true})
+        {
+            var stale=DemoDuel.FromPartialObservation(1,[],Slots(Monster(1351,500,500),3),
+                Slots(Monster(24,1400,500),2),8000);
+            stale.MonsterFaceDown[0,3]=stale.DefensePosition[0,3]=true;
+            var gate=new Gate();var sq=stale.CreatePrimitiveActionQueue(gate);
+            check(stale.BeginBattle(out _) && stale.TryQueueTargetedAttack(2,3,out _),"A06 stale fixture admitted");
+            sq.Tick();sq.Tick();gate.Release=true;sq.Tick();
+            if(afterReveal)
+            {
+                gate.Release=false;sq.Tick();sq.Tick();gate.Release=true;sq.Tick();
+            }
+            var replacement=Monster(1351,500,500);
+            stale.Monsters[0,3]=replacement;
+            bool fault=false;
+            try {sq.Tick();} catch(InvalidOperationException){fault=true;}
+            check(fault && sq.Fault is not null && ReferenceEquals(stale.Monsters[0,3],replacement) &&
+                stale.Life.SequenceEqual([8000,8000]) && stale.Graveyard(0).Count==0,
+                "A06 same-ID replacement faults safely before next stage");
+        }
+
         var hiddenEffect=DemoDuel.FromPartialObservation(1,[],Slots(Monster(601,500,500),3),
             Slots(Monster(24,1400,500),2),8000);
         hiddenEffect.MonsterFaceDown[0,3]=hiddenEffect.DefensePosition[0,3]=true;
