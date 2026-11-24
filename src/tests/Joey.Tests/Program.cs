@@ -267,6 +267,7 @@ QueuedMonsterWipeChecks.Run(Check);
 QueuedSpellTrapWipeChecks.Run(Check);
 QueuedTargetedSpellTrapChecks.Run(Check);
 QueuedMonsterFlipTargetChecks.Run(Check);
+DuelConsoleFlipSelectionChecks.Run(Check);
 QueuedGraveyardRecoveryChecks.Run(Check);
 QueuedDeckSearchChecks.Run(Check);
 QueuedDeckRecruitmentChecks.Run(Check);
