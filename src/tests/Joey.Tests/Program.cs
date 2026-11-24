@@ -179,6 +179,7 @@ NativeContextEffectChecks.Run(Check);
 NativeAlternativeActivationChecks.Run(Check);
 NativeLayerFontChecks.Run(Check, Reject);
 NativeHelpChecks.Run(Check);
+NativeHelpProducerChecks.Run(Check);
 NativeVijaChecks.Run(Check, Reject);
 NativeLifeDeltaChecks.Run(Check);
 NativeTurnNoticeChecks.Run(Check, Reject);
