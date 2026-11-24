@@ -17,6 +17,14 @@ ROW_FIELDS = {'internalIndex', 'resourceId', 'packMask', 'kind', 'families', 'ro
 FINGERPRINT_FIELDS = {'datSha256', 'cardIdSha256', 'namesSha256', 'propertiesSha256'}
 
 
+def effect_families(route, families):
+    # Early schema-v1 exports also matched the generic "from your deck"
+    # search pattern on simple draws. Retain the original route.
+    if route == 'trivial-candidate' and families == ['draw', 'search']:
+        return ['draw']
+    return families
+
+
 def validate_taxonomy(taxonomy):
     fields = {'schemaVersion', 'fingerprints', 'packSha256', 'routes', 'cards'}
     if (not isinstance(taxonomy, dict) or taxonomy.keys() != fields or
@@ -51,6 +59,7 @@ def validate_taxonomy(taxonomy):
                 any(not isinstance(family, str) or family not in FAMILIES for family in families) or
                 len(families) != len(set(families))):
             raise ValueError('Invalid C01 taxonomy kind, route, status or families')
+        families = effect_families(route, families)
         if ((kind == 'Normal') != (route == 'not-applicable') or
                 (route == 'not-applicable' and families) or
                 (route == 'trivial-candidate' and
@@ -80,7 +89,7 @@ def summarize(taxonomy, statuses, mask):
         if route not in totals or status not in UNFINISHED:
             continue
         totals[route][status] += 1
-        for family in row['families'] or ['unclassified']:
+        for family in effect_families(route, row['families']) or ['unclassified']:
             by_family[route][family][status] += 1
     return totals, by_family, updated
 
