@@ -104,6 +104,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **A05 — Trace de comandos comparável.** Status: `Parcial`.
   *A05.1–A05.7:* YDR, shuffle, identidade, movimentos, trace, CE/CF e ataque direto; CI 45325522858 aprovado. *A05.8:* batalha com alvo em piloto restrito, snapshots por papel 3C antes do dano e 7C destino final, matriz de combate e identidade, comparação 33/3C/7C parcial. CI 45326231602 aprovado; integração com A04 em curso, App, efeitos/FLIP/respostas e paridade dinâmica pendentes. [Contrato](docs/architecture/native-replay-scenarios.md).
   *A05.9:* consulta `trace` compartilhada pelo console App/Lab e exportação headless de roteiros com `--trace-output=path`. O documento conserva a ordem dos comandos executados e distingue prefixos incompletos. A05 permanece parcial enquanto faltam o cue de combate e a comparação dinâmica.
+  *A05.10:* o comparador valida a sequência desde o primeiro evento e confere as contagens do cabeçalho ou do rodapé antes de comparar qualquer janela JSONL.
   Exportar o log da fila C# no mesmo formato dos registros nativos (opcode, lado, argumentos) e um comparador contra capturas do `yugilab`. Começar por invocação normal (já existem fixtures parciais) e dano/cura.
   *Pronto quando:* um roteiro curto (draw, invocar, atacar) gera listas comparáveis e as divergências saem em relatório.
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.

@@ -96,6 +96,51 @@ class TraceTests(unittest.TestCase):
         self.assertIsNone(canonical([0x807c,0,1,1])) # banish variant
         self.assertIsNone(canonical([0x33,0,1,1])) # wrong defender side
 
+    def test_live_capture_requires_complete_lossless_footer_with_exact_event_count(self):
+        header = {"kind": "metadata", "mode": "live_duels", "formatVersion": 2}
+        events = [
+            {"kind": "command", "seq": 1, "args": [97, 1, 1, 0]},
+            {"kind": "marker", "seq": 2, "label": "fixture-end"},
+        ]
+        footer = {"kind": "capture_summary", "complete": True, "overwritten": 0, "eventsWritten": 2}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "live.jsonl"
+
+            def read(rows):
+                path.write_text("\n".join(json.dumps(row) for row in rows), encoding="utf-8")
+                return native_rows(path)
+
+            self.assertEqual(read([header, *events, footer]), (
+                "producer-command-ordinal", [{"index": 0, "sequence": 1, "args": [97, 1, 1, 0]}]))
+            with self.assertRaisesRegex(ValueError, "missing.*footer"):
+                read([header, *events])
+            with self.assertRaisesRegex(ValueError, "event count"):
+                read([header, events[0], footer])
+            for bad_footer in (dict(footer, complete=False), dict(footer, overwritten=1)):
+                with self.subTest(bad_footer=bad_footer), self.assertRaisesRegex(ValueError, "loss/incomplete"):
+                    read([header, *events, bad_footer])
+            with self.assertRaisesRegex(ValueError, "after footer"):
+                read([header, *events, footer, {"kind": "marker", "seq": 3}])
+
+    def test_footerless_capture_requires_lossless_snapshot_counts(self):
+        header = {"kind": "metadata", "seen": 2, "retained": 2, "overwritten": 0}
+        event = {"kind": "command", "seq": 1, "args": [97, 1, 1, 0]}
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "snapshot.jsonl"
+
+            def read(rows):
+                path.write_text("\n".join(json.dumps(row) for row in rows), encoding="utf-8")
+                return native_rows(path)
+
+            with self.assertRaisesRegex(ValueError, "event counts"):
+                read([header, event])
+            with self.assertRaisesRegex(ValueError, "sequence gap"):
+                read([header, dict(event, seq=2)])
+            with self.assertRaisesRegex(ValueError, "overwritten or unknown"):
+                read([dict(header, overwritten=1), event])
+            with self.assertRaisesRegex(ValueError, "duplicate capture metadata"):
+                read([header, event, header])
+
     def test_bad_capture_and_fabricated_mapping(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=pathlib.Path(tmp)/"capture.jsonl"

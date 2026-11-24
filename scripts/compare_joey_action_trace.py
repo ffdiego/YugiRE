@@ -25,35 +25,57 @@ def native_rows(path):
             r["argument_1"],r["argument_2"],r["argument_3"]]} for r in records]
     if path.suffix.lower()!=".jsonl":
         raise ValueError("native input must be .ydr or .jsonl")
-    result=[]
-    metadata=None
-    previous=None
-    footer=False
-    with path.open(encoding="utf-8") as f:
-        for line in f:
-            if not line.strip(): continue
-            row=json.loads(line)
-            if not isinstance(row,dict): raise ValueError("capture row must be object")
-            kind=row.get("kind")
+    result = []
+    metadata = None
+    event_count = 0
+    footer = None
+    with path.open(encoding="utf-8") as stream:
+        for line in stream:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError("capture row must be object")
+            kind = row.get("kind")
             if metadata is None:
-                if kind!="metadata": raise ValueError("capture metadata required")
-                metadata=row
-                if row.get("overwritten",0)!=0: raise ValueError("capture has overwritten events")
+                if kind != "metadata":
+                    raise ValueError("capture metadata required")
+                metadata = row
+                if "overwritten" in row and (type(row["overwritten"]) is not int or row["overwritten"] != 0):
+                    raise ValueError("capture has overwritten or unknown events")
                 continue
-            if footer: raise ValueError("capture content after footer")
-            if kind=="capture_summary":
-                if row.get("overwritten",0)!=0 or row.get("complete") is False:
-                    raise ValueError("capture footer reports loss/incomplete run")
-                footer=True
+            if footer is not None:
+                raise ValueError("capture content after footer")
+            if kind == "capture_summary":
+                footer = row
                 continue
-            seq=row.get("seq")
-            if type(seq) is not int or seq<1 or (previous is not None and seq!=previous+1):
+            if kind == "metadata":
+                raise ValueError("duplicate capture metadata")
+            seq = row.get("seq")
+            if type(seq) is not int or seq != event_count + 1:
                 raise ValueError("capture sequence gap")
-            previous=seq
-            if kind=="command":
-                result.append({"index":len(result),"sequence":seq,"args":words(row.get("args"),32)})
-    if metadata is None: raise ValueError("capture metadata required")
-    return "producer-command-ordinal",result
+            event_count += 1
+            if kind == "command":
+                result.append({"index": len(result), "sequence": seq, "args": words(row.get("args"), 32)})
+
+    if metadata is None:
+        raise ValueError("capture metadata required")
+    if metadata.get("mode") == "live_duels" and footer is None:
+        raise ValueError("live capture is missing its capture_summary footer")
+    if footer is not None:
+        if (footer.get("complete") is not True or type(footer.get("overwritten")) is not int or
+                footer["overwritten"] != 0):
+            raise ValueError("capture footer reports loss/incomplete run")
+        if type(footer.get("eventsWritten")) is not int or footer["eventsWritten"] != event_count:
+            raise ValueError("capture footer event count does not match the file")
+    else:
+        # Bounded snapshots declare the exact total in the metadata and have
+        # no footer. Check every event, including the non-command probes.
+        if type(metadata.get("overwritten")) is not int:
+            raise ValueError("ring-buffer capture is missing its overwrite count")
+        if any(type(metadata.get(name)) is not int or metadata[name] != event_count for name in ("seen", "retained")):
+            raise ValueError("ring-buffer event counts do not match the file")
+    return "producer-command-ordinal", result
 
 
 def window(rows,start,count):

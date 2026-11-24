@@ -61,10 +61,14 @@ TryQueueTargetedAttack piloto explícito IDs 24 e 1351 (sem callback rows no SQL
 
 A consulta `trace` do console de laboratório, disponível no App e no Lab, imprime um snapshot JSON da fila em stdout. O schema `yugire-action-projection-v1` inclui as operações executadas em ordem, com resultado, origem e dados observados quando disponíveis. Na consulta, `complete` indica que a fila está livre e saudável. Os dados de projeção são os mesmos dos pilotos anteriores.
 
-Para exportar um roteiro headless, criar um arquivo de texto com `draw 1 0`, `summon 0 3` e `damage 200 1`, cada comando em uma linha, e executar:
+O exemplo headless usa um arquivo de texto com `draw 1 0`, `summon 0 3` e `damage 200 1`, cada comando em uma linha.
 
 ```sh
 dotnet run --project src/Joey.Lab -- duel-console --fixture scratch/trace-script.txt --trace-output=scratch/console-trace.json
 ```
 
 O Lab grava um arquivo novo e conserva o prefixo executado com `complete: false` se o roteiro falhar. Com `--dat PATH` a exportação usa o mesmo schema e o catálogo indicado. Os testes C# cobrem a consulta durante o gate de apresentação, a igualdade após o gate, a origem de colocação, o prefixo após falha e a proteção de arquivos existentes. A integração do cue de combate e a comparação dinâmica permanecem pendentes.
+
+## A05.10 — Integridade da entrada JSONL
+
+O comparador exige sequência contínua a partir de 1, incluindo marcadores e sondas que ficam fora da janela de comandos. Capturas `live_duels` precisam de `capture_summary` final, com `complete: true`, `overwritten: 0` e `eventsWritten` igual ao total de eventos lidos. Snapshots históricos do buffer registram `seen`, `retained` e `overwritten` no cabeçalho e passam pela mesma conferência de contagem. Uma perda ou contagem incompatível encerra a leitura com código 2 antes da comparação. O relatório de uma entrada íntegra continua sendo uma comparação de projeções.
