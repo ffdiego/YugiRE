@@ -46,7 +46,7 @@ public sealed partial class DemoDuel
         index = -1;
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
             !TryResolveCardTarget(source, out index, out spell) || spell.ClassCode != 22 ||
-            !SpellTrapTargetRules.Supports(spell.Id))
+            !SpellTrapTargetRules.SupportsQueued(spell.Id))
             return false;
         if (source.Zone == DuelZone.Hand) return FirstFreeSpellZone() >= 0;
         int slot = index;
@@ -67,10 +67,11 @@ public sealed partial class DemoDuel
             return false;
         int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
         bool hidden = IsSpellTrapFaceDown(target.Side, zone);
-        if (!SpellTrapTargetRules.Accepts(spell.Id, card, hidden)) return false;
+        if (!SpellTrapTargetRules.AcceptsSide(spell.Id, source.Side, target.Side) ||
+            !SpellTrapTargetRules.Accepts(spell.Id, card, hidden)) return false;
 
         var result = new List<CardTarget> { target };
-        // Preserve the existing selective-destruction cleanup: removing any
+        // Preserve the existing selective-removal cleanup: removing any
         // face-up piece while a board is active also removes the other face-up
         // pieces on the same side, after the primary target.
         if (!hidden && IsDestinyBoardPiece(card) &&
