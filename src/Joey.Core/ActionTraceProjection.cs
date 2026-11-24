@@ -3,7 +3,8 @@ namespace Joey.Core;
 /// <summary>Comparable four-word representation, not a native binary log.
 /// Unmapped and unsuccessful commands remain visible, with their sequence.</summary>
 public sealed record ProjectedAction(long Sequence, string Command, string Origin, string Outcome,
-    int Side, string Mapping, ushort[]? Args, string Detail, PlacementObservation? Placement = null, DirectAttackObservation? DirectAttack = null);
+    int Side, string Mapping, ushort[]? Args, string Detail, PlacementObservation? Placement = null, DirectAttackObservation? DirectAttack = null,
+    TargetedAttackObservation? TargetedAttack = null, BattleRemovalObservation? BattleRemoval = null);
 
 public static class ActionTraceProjection
 {
@@ -32,14 +33,37 @@ public static class ActionTraceProjection
                     HealCommand h when h.Amount is > 0 and <= ushort.MaxValue => [(ushort)(side | 0x42), (ushort)h.Amount, 0, 1],
                     SummonCommand or SetCommand => PlacementWords(command, result.Placement),
                     DeclareDirectAttackCommand attack => DirectAttackWords(attack, result.DirectAttack),
+                    DeclareTargetedAttackCommand attack => TargetedAttackWords(attack,result.TargetedAttack),
+                    SnapshotBattleRemovalCommand snapshot => RemovalWords(snapshot.Target,snapshot.Role,result.BattleRemoval,false),
+                    FinishBattleRemovalCommand finish => RemovalWords(finish.Target,finish.Role,result.BattleRemoval,true),
                     _ => null
                 };
                 if (words is not null) mapping = "mapped";
             }
             rows.Add(new(e.Sequence, command.GetType().Name, e.Origin.ToString(), result.Outcome.ToString(),
-                command.Side, mapping, words, result.Detail, result.Placement, result.DirectAttack));
+                command.Side, mapping, words, result.Detail, result.Placement, result.DirectAttack, result.TargetedAttack, result.BattleRemoval));
         }
         return rows.AsReadOnly();
+    }
+
+    private static ushort[]? TargetedAttackWords(DeclareTargetedAttackCommand command,TargetedAttackObservation? a)
+    {
+        if(a is null || a.Attacker!=command.Attacker || a.Defender!=command.Defender ||
+            a.Attacker.Side!=command.Side || a.Defender.Side!=1-command.Side ||
+            a.Attacker.Zone!=DuelZone.Monster || a.Defender.Zone!=DuelZone.Monster ||
+            a.AttackerSlot is <0 or >=5 || a.DefenderSlot is <0 or >=5) return null;
+        return [(ushort)((command.Side<<15)|0x33),(ushort)a.AttackerSlot,(ushort)a.DefenderSlot,(ushort)(a.Defender.Side+1)];
+    }
+
+    private static ushort[]? RemovalWords(CardTarget target,int role,BattleRemovalObservation? a,bool finish)
+    {
+        if(a is null || a.Target!=target || a.Role!=role || target.Zone!=DuelZone.Monster ||
+            a.ResourceId==0 || a.Slot is <0 or >=5 || role is not (0 or 1)) return null;
+        // Only defender 7C has an observed ordinary variant in the fixture.
+        // Keep attacker routing visible but unmapped pending dynamic evidence.
+        if(finish && role!=1) return null;
+        return [(ushort)((target.Side<<15)|(finish?0x7c:0x3c)),(ushort)a.Slot,
+            (ushort)(finish?0:role),(ushort)(finish?1:0)];
     }
 
     private static ushort[]? DirectAttackWords(DeclareDirectAttackCommand command, DirectAttackObservation? a)

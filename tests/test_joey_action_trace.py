@@ -81,6 +81,21 @@ class TraceTests(unittest.TestCase):
         right[1]["args"][1]=1300
         self.assertEqual(compare(left,document(right),0,6,0,2,"ydr-record")["status"],"mismatch")
 
+    def test_battle_removal_fixture(self):
+        import csv
+        with (ROOT/"docs/evidence/replays/relinquished_commands.csv").open(newline="") as f:
+            rows=list(csv.DictReader(f))
+        left=[{"index":int(x["record_index"]),"args":[int(x["raw_opcode_hex"],16),
+               *[int(x[f"argument_{i}"]) for i in (1,2,3)]]} for x in rows[49:51]]
+        snapshot=row(1,"SnapshotBattleRemovalCommand",[0x803c,0,1,0])
+        finish=row(2,"FinishBattleRemovalCommand",[0x807c,0,0,1])
+        for x in (snapshot,finish):
+            x["battleRemoval"]={"target":{"side":1,"zone":2,"occurrence":{"value":7}},
+                "resourceId":1114,"slot":0,"role":1}
+        self.assertEqual(compare(left,document([snapshot,finish]),0,2,0,2,"ydr-record")["status"],"projected_match")
+        self.assertIsNone(canonical([0x807c,0,1,1])) # banish variant
+        self.assertIsNone(canonical([0x33,0,1,1])) # wrong defender side
+
     def test_bad_capture_and_fabricated_mapping(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=pathlib.Path(tmp)/"capture.jsonl"

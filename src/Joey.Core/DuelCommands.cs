@@ -12,6 +12,9 @@ public readonly record struct CardTarget(CardOccurrenceId Occurrence, int Side, 
 
 public abstract record DuelCommand(int Side);
 public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) : DuelCommand(Side);
+public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
+internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one card
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
@@ -32,7 +35,7 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 // Neither of these stages claims a one-to-one native opcode mapping.
 internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
 internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
-internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
+internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRevivalCommand(int Side, PendingCardSelection Request, CardTarget Target, int Slot, bool FaceDownDefense) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
@@ -65,6 +68,16 @@ internal static class DuelCommandValidation
             case DeclareDirectAttackCommand attack:
                 Target(attack.Attacker, attack.Side, DuelZone.Monster);
                 break;
+            case DeclareTargetedAttackCommand attack:
+                Target(attack.Attacker, attack.Side, DuelZone.Monster);
+                Target(attack.Defender, 1-attack.Side, DuelZone.Monster);
+                break;
+            case SnapshotBattleRemovalCommand snapshot when snapshot.Role is 0 or 1:
+                Target(snapshot.Target,snapshot.Side,DuelZone.Monster);
+                break;
+            case FinishBattleRemovalCommand finishBattle when finishBattle.Role is 0 or 1:
+                Target(finishBattle.Target,finishBattle.Side,DuelZone.Monster);
+                break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case DrawCommand:
             case FinishFieldRemovalCommand:
@@ -95,7 +108,7 @@ internal static class DuelCommandValidation
                 Target(move.Source, move.Side, DuelZone.Graveyard, DuelZone.Deck);
                 break;
             case ResolveDeckSearchCommand search when search.Request is not null && search.Request.Owner == search.Side:
-                Target(search.Target, search.Side, DuelZone.Deck);
+                if (search.Target is { } searchPick) Target(searchPick, search.Side, DuelZone.Deck);
                 break;
             case ResolveGraveyardRevivalCommand revive when revive.Request is not null && revive.Request.Owner == revive.Side && revive.Slot is >= 0 and < 5:
                 Target(revive.Target, revive.Side, DuelZone.Graveyard);
