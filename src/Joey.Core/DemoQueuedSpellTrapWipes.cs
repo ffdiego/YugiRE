@@ -28,7 +28,7 @@ public sealed partial class DemoDuel
         targets = [];
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
             !TryResolveCardTarget(source, out int sourceIndex, out spell) ||
-            spell.ClassCode != 22 || !SpellTrapWipeRules.Supports(spell.Id))
+            spell.ClassCode != 22 || !SpellTrapWipeRules.SupportsQueued(spell.Id))
             return false;
         if (source.Zone == DuelZone.Hand)
         {
@@ -42,9 +42,9 @@ public sealed partial class DemoDuel
         else return false;
 
         // Match the legacy sandbox: opposing side first, then own side
-        // (Heavy Storm only); S/T slots 0..4 followed by the FIELD slot.
+        // (Heavy Storm / Giant Trunade); S/T slots 0..4 followed by FIELD.
         var result = new List<CardTarget>();
-        int[] sides = SpellTrapWipeRules.HitsOwnSide(spell.Id)
+        int[] sides = SpellTrapWipeRules.HitsOwnSideQueued(spell.Id)
             ? [1 - source.Side, source.Side] : [1 - source.Side];
         foreach (int side in sides)
         for (int zone = 0; zone <= SpellTrapTargetRules.FieldZone; zone++)

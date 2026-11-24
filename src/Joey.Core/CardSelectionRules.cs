@@ -3,7 +3,7 @@ namespace Joey.Core;
 /// <summary>Position in the source zone (not the DAT catalog index) identifies each copy.</summary>
 public enum CardSelectionSource { Deck, Graveyard }
 public enum CardSelectionDestination { Hand, Field }
-public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500, SameNameMonster, AnyMonster, RitualSpell, RitualMonster }
+public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500, SameNameMonster, AnyMonster, RitualSpell, RitualMonster, Polymerization }
 public enum CardSelectionPosition { FaceUpAttack, FaceDownDefense }
 public sealed record CardSelectionCandidate(int SourceIndex, Card Card);
 
@@ -74,6 +74,7 @@ public static class CardSelectionRules
         CardSelectionFilter.AnyMonster => card.IsMonster,
         CardSelectionFilter.RitualSpell => RitualSearchRules.IsRitualSpell(card),
         CardSelectionFilter.RitualMonster => RitualSearchRules.IsRitualMonster(card),
+        CardSelectionFilter.Polymerization => FusionRules.Supports(card),
         _ => false
     };
 

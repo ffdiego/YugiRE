@@ -16,7 +16,7 @@ internal static class QueuedSpellTrapWipeChecks
         public bool CanAdvance => true;
         public bool Release {get;set;} = true;
         public bool CanComplete(QueuedDuelCommand command,CommandResult result) =>
-            command.Command is not DestroyCommand || Release;
+            command.Command is not (DestroyCommand or ReturnToHandCommand) || Release;
     }
     public static void Run(Action<bool,string> check)
     {
@@ -74,6 +74,70 @@ internal static class QueuedSpellTrapWipeChecks
                 d.LastMonsterWipe is null,
                 $"S/T wipe {id}: own scope, source exclusion and correct graveyard order");
         }
+        foreach(int side in new[]{0,1})
+        foreach(bool set in new[]{false,true})
+        {
+            int enemy=1-side;
+            Card[] deck=[Spell(1080),Spell(1057,21),Spell(331)];
+            var d=DemoDuel.FromPartialObservation(enemy,[Spell(300),Spell(1056,21),Spell(332)],
+                Units(),Units(),8000,equipmentContextResolved:true,
+                side0Deck:side==0?deck:null,side1Deck:side==1?deck:null);
+            check(d.Equip(0,side,0,out _)&&d.SetFromHand(0,out _)&&
+                d.SetFromHand(0,out _)&&d.EndTurn(out _),"Trunade setup");
+            var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
+            q.EnqueueBatch([new DrawCommand(side),new DrawCommand(side),new DrawCommand(side)]);Drain(q);
+            check(d.TryQueueSpellTrapSet(1,out _),"Trunade own trap");Drain(q);
+            check(d.TryQueueSpellTrapSet(1,out _),"Trunade own FIELD");Drain(q);
+            int index=0;
+            if(set){check(d.TryQueueSpellTrapSet(0,out _),"Trunade Set");Drain(q);index=1;}
+            check(!(set?d.ActivateSetSpell(index,out _):d.Play(index,out _)),
+                "No legacy destruction route");
+            bool equipCaptured=d.TryCaptureCardTarget(enemy,DuelZone.SpellTrap,0,out var equip);
+            bool trapCaptured=d.TryCaptureCardTarget(side,DuelZone.SpellTrap,0,out var trap);
+            check(equipCaptured&&trapCaptured,"Capture return identities");
+            int start=q.Trace.Count;
+            check(d.TryQueueActivation(index,set,out _)&&d.EquipmentCards.Count==1,
+                "Trunade generic admission is nonmutating");
+            q.Tick();q.Tick();
+            check(d.Graveyard(side).Single().Id==1080&&d.EquipmentCards.Count==1,
+                "Spend source before return");
+            gate.Release=false;q.Tick();q.Tick();
+            check(d.EquipmentCards.Count==0&&d.AttackValue(side,0)==1000&&q.IsBusy&&
+                d.Spells[enemy,1] is not null,"Return gate and equipment unlink");
+            gate.Release=true;Drain(q);
+            check(d.HandFor(enemy).Select(c=>c.Id).SequenceEqual(new ushort[]{300,1056,332})&&
+                d.HandFor(side).Select(c=>c.Id).SequenceEqual(new ushort[]{1057,331})&&
+                d.Graveyard(enemy).Count==0&&d.Graveyard(side).Single().Id==1080&&
+                d.FieldSpells.All(c=>c is null)&&d.Spells.Cast<Card?>().All(c=>c is null)&&
+                d.Monsters[0,0] is not null&&d.Monsters[1,0] is not null&&d.LastMonsterWipe is null,
+                "All other S/T returned to their respective hands; monsters preserved");
+            check(d.TryCaptureCardTarget(enemy,DuelZone.Hand,0,out var returnedEquip)&&returnedEquip.Occurrence==equip.Occurrence&&
+                d.TryCaptureCardTarget(side,DuelZone.Hand,0,out var returnedTrap)&&returnedTrap.Occurrence==trap.Occurrence&&
+                q.Trace.Skip(start).Count(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is ReturnToHandCommand)==5&&
+                !q.Trace.Skip(start).Any(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is DestroyCommand),
+                "Exactly one return per occurrence; never a destruction");
+        }
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1080)],Units(),Units(),8000);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueSpellTrapSet(0,out _),"Trunade lone Set");Drain(q);
+            check(!d.TryQueueActivation(0,true,out _)&&!q.IsBusy,"Trunade excludes its own source");
+        }
+        foreach(bool staleSource in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(1,[Spell(1056,21)],Units(),Units(),8000,
+                side0Deck:[Spell(1080)]);
+            d.SetFromHand(0,out _);d.NextTurn();
+            var q=d.CreatePrimitiveActionQueue();q.Enqueue(new DrawCommand(0));Drain(q);
+            check(d.TryQueueSpellTrapSet(0,out _),"Trunade stale Set");Drain(q);
+            check(d.TryQueueActivation(0,true,out _),"Trunade stale admitted");q.Tick();
+            if(staleSource)d.Spells[0,0]=Spell(1080);
+            else {q.Tick();d.Spells[1,0]=Spell(1056,21);}
+            Drain(q);
+            check(d.Spells[1,0]?.Id==1056&&d.HandFor(1).Count==0&&
+                d.Graveyard(0).Count==(staleSource?0:1),"Trunade never returns replacement or spends stale source");
+        }
+
         // Produce F and I using the actual legacy activation/End Phase,
         // before creating the queue. Both pieces are registered occurrences.
         var board=DemoDuel.FromPartialObservation(0,
@@ -95,6 +159,21 @@ internal static class QueuedSpellTrapWipeChecks
             bq.Trace.Skip(boardBefore).Count(x=>x.Stage==ActionTraceStage.Executed &&
                 x.Entry.Command is DestroyCommand)==2,
             "Destiny Board and message each receive one destruction, no double cleanup");
+
+        var returnBoard=DemoDuel.FromPartialObservation(0,
+            [Spell(DestinyBoardRules.BoardResourceId,21),Spell(1541)],Units(),Units(),8000,
+            side1Deck:[Spell(1080)]);
+        returnBoard.SetFromHand(0,out _);
+        returnBoard.NextTurn();returnBoard.NextTurn();
+        check(returnBoard.ActivateSetSpell(0,out _),"Trunade Board activation");
+        returnBoard.NextTurn();returnBoard.NextTurn();returnBoard.NextTurn();
+        var tbq=returnBoard.CreatePrimitiveActionQueue();tbq.Enqueue(new DrawCommand(1));Drain(tbq);
+        check(returnBoard.TryQueueActivation(0,false,out _),"Trunade on Board admitted");
+        Drain(tbq);
+        check(returnBoard.Graveyard(0).Count==0&&
+            returnBoard.HandFor(0).Select(c=>c.Id).Order().SequenceEqual(new ushort[]{1528,1541})&&
+            returnBoard.Spells[0,0] is null&&returnBoard.Spells[0,1] is null,
+            "Mass return moves both Board pieces without selective destruction cascade");
 
         var lone=DemoDuel.FromPartialObservation(0,[Spell(1061)],Units(),Units(),8000);
         var lq=lone.CreatePrimitiveActionQueue();

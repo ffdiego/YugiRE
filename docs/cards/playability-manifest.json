@@ -1595,6 +1595,53 @@
         "Done in the bounded headless queue scope after CI; legacy activation unchanged, graphical/CPU integration and non-modeled equip cards pending.",
         "No native differential validation; callback bodies unavailable in cumulative v2."
       ]
+    },
+    {
+      "id": "deck.search.fusion-sage-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1040
+      ],
+      "mechanics": [
+        "Queue-backed activation from Hand or Set; spend the source before mandatory Deck to Hand selection",
+        "Select a Polymerization occurrence (1003 or 1034), transfer and shuffle once after successful movement"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedDeckSearchSpells.cs",
+        "src/Joey.Core/DemoQueuedDeckSearch.cs",
+        "src/tests/Joey.Tests/QueuedDeckSearchChecks.cs",
+        "docs/cards/c02-fusion-sage.md"
+      ],
+      "limitations": [
+        "Done in bounded headless queue scope after CI; graphical and CPU activation, response/negation and native comparison pending.",
+        "Availability 00581040 returns 1; primary 005892D0 absent in cumulative v2. Filter is domain rule, not recovered native callback."
+      ]
+    },
+    {
+      "id": "spelltrap.return.mass-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1080
+      ],
+      "mechanics": [
+        "Queue-backed activation from Hand or Set; spend source before returning remaining Spell/Trap and Field Spell occurrences on both sides",
+        "Return each occurrence to its side's hand using existing unlink and return executor, never destruction"
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapWipeRules.cs",
+        "src/Joey.Core/DemoQueuedSpellTrapWipes.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedSpellTrapWipeChecks.cs",
+        "docs/cards/c02-giant-trunade.md"
+      ],
+      "limitations": [
+        "Done in bounded headless C# scope after CI; full ownership/control, unmodeled continuous effects, chains and UI/CPU pending.",
+        "Native candidate 0057B530 recovered; primary 00589E60 absent in v2. No native differential validation."
+      ]
     }
   ]
 }

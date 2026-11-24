@@ -4,6 +4,13 @@ public static class SpellTrapWipeRules
 {
     public const ushort HarpiesFeatherDuster = 671;
     public const ushort HeavyStorm = 1061;
+    public const ushort GiantTrunade = 1080;
+
+    // Return is supported only by the queued producer. Do not route the
+    // new card through the legacy destruction resolver.
+    public static bool SupportsQueued(ushort resourceId) => Supports(resourceId) || ReturnsToHand(resourceId);
+    internal static bool ReturnsToHand(ushort resourceId) => resourceId == GiantTrunade;
+    internal static bool HitsOwnSideQueued(ushort resourceId) => HitsOwnSide(resourceId) || ReturnsToHand(resourceId);
 
     public static bool Supports(ushort resourceId) => resourceId is HarpiesFeatherDuster or HeavyStorm;
 

@@ -95,11 +95,13 @@ public sealed partial class DemoDuel
             return false;
         if (DrawSpellRules.Effect(card) is not null)
             return TryQueueDrawSpell(zone, index, out message, origin);
+        if (DeckSearchSpellRules.Filter(card.Id) is not null)
+            return TryQueueDeckSearchSpell(zone, index, out message, origin);
         if (LifePointSpellRules.SupportsQueued(card.Id))
             return TryQueueLifePointSpell(zone, index, out message, origin);
         if (MonsterWipeRules.SupportsQueued(card.Id))
             return TryQueueMonsterWipe(zone, index, out message, origin);
-        if (SpellTrapWipeRules.Supports(card.Id))
+        if (SpellTrapWipeRules.SupportsQueued(card.Id))
             return TryQueueSpellTrapWipe(zone, index, out message, origin);
         return false;
     }
@@ -221,6 +223,8 @@ public sealed partial class DemoDuel
         private readonly Queue<DuelCommand> reservedDrawSpell = new();
         private CardTarget? drawSpellSource;
         private bool drawSpellSourceSpent;
+        private CardTarget? searchSpellSource;
+        private bool searchSpellSourceSpent;
         private bool resolvingFlipBatch;
         private sealed class FlipDeckFlow(ushort effect, int controller, int requested, IEnumerable<CardTarget> expected)
         {
@@ -368,6 +372,10 @@ public sealed partial class DemoDuel
                     return duel.ApplyQueuedEquipment(equip);
                 case ActivateDrawSpellCommand drawSpell:
                     return ActivateDrawSpell(drawSpell, followups);
+                case ActivateDeckSearchSpellCommand searchSpell:
+                    return ActivateDeckSearchSpell(searchSpell, followups);
+                case OpenDeckSearchSpellCommand openSearch:
+                    return OpenDeckSearchSpell(openSearch);
                 case ActivateLifePointSpellCommand lp:
                     return ActivateLifePointSpell(lp, followups);
                 case ActivateTargetedSpellTrapCommand targeted:
@@ -431,9 +439,45 @@ public sealed partial class DemoDuel
         private CommandResult ObserveFixedSpellSpend(CardTarget target, CommandResult result)
         {
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
+            if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (wipe is { } current && current.Source == target)
                 current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
+        }
+
+        private CommandResult ActivateDeckSearchSpell(ActivateDeckSearchSpellCommand activate, IActionCommandSink followups)
+        {
+            if (searchSpellSource is not null || reservedDeckSearchOwner is not null ||
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Search spell requires isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out var card))
+                return new(CommandOutcome.Skipped, "Search spell occurrence gone.");
+            if (!duel.CanResolveDeckSearchSpell(activate.Source, out _))
+                return new(CommandOutcome.Rejected, "Search spell no longer legal.");
+            searchSpellSource = activate.Source;
+            searchSpellSourceSpent = false;
+            queue.EnqueueBatch([new SendToGraveyardCommand(activate.Side, activate.Source),
+                new OpenDeckSearchSpellCommand(activate.Side, activate.Source, card.Id)]);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult OpenDeckSearchSpell(OpenDeckSearchSpellCommand open)
+        {
+            if (searchSpellSource != open.Source)
+                return new(CommandOutcome.Rejected, "No matching reserved search spell.");
+            bool spent = searchSpellSourceSpent;
+            searchSpellSource = null;
+            searchSpellSourceSpent = false;
+            if (!spent) return new(CommandOutcome.Skipped, "Search spell was not spent.");
+            if (DeckSearchSpellRules.Filter(open.ResourceId) is not { } filter)
+                return new(CommandOutcome.Rejected, "Unknown search spell.");
+            var candidates = CardSelectionRules.Candidates(duel.decks[open.Side].ToArray(), filter);
+            if (candidates.Count == 0)
+                return new(CommandOutcome.Skipped, "No eligible cards remain.");
+            duel.selectedBatchIndices.Clear();
+            duel.PendingCardSelection = new(open.Side, CardSelectionSource.Deck,
+                CardSelectionDestination.Hand, filter, candidates, 1, 1, open.ResourceId);
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ActivateDrawSpell(ActivateDrawSpellCommand activate, IActionCommandSink followups)
@@ -492,7 +536,7 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
-                MonsterWipeRules.SupportsQueued(card.Id) || SpellTrapWipeRules.Supports(card.Id) ||
+                MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
                 SpellTrapTargetRules.Supports(card.Id)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
@@ -535,8 +579,13 @@ public sealed partial class DemoDuel
 
             var context = new EffectContext();
             context.SendToGraveyard(source);
-            foreach (var target in targets) context.Destroy(target);
-            queue.EnqueueBatch(context.Commands);
+            if (SpellTrapWipeRules.ReturnsToHand(spell.Id))
+                queue.EnqueueBatch([.. context.Commands, .. targets.Select(t => (DuelCommand)new ReturnToHandCommand(t.Side, t))]);
+            else
+            {
+                foreach (var target in targets) context.Destroy(target);
+                queue.EnqueueBatch(context.Commands);
+            }
             wipe = new(source.Side, spell.Id, source, targets, monsterWipe: false);
             ScheduleFinish(source.Side, followups);
             return new(CommandOutcome.Applied);
@@ -1068,14 +1117,19 @@ public sealed partial class DemoDuel
 
         private CommandResult ReturnQueuedSpellTrap(CardTarget target)
         {
-            if (wipe is not { ResourceId: FlipEffectRules.TornadoBird, FlipPair: { } pair } current ||
-                !pair.Contains(target) || !current.Targets.Contains(target))
-                return new(CommandOutcome.Rejected, "Only reserved FLIP Spell/Trap return is migrated.");
+            if (wipe is not { MonsterWipe: false, SourceSpent: true } current ||
+                !current.Targets.Contains(target))
+                return new(CommandOutcome.Rejected, "Only reserved Spell/Trap return is migrated.");
+            bool massReturn = SpellTrapWipeRules.ReturnsToHand(current.ResourceId);
+            if (!massReturn && (current.ResourceId != FlipEffectRules.TornadoBird ||
+                current.FlipPair is not { } pair || !pair.Contains(target)))
+                return new(CommandOutcome.Rejected, "Not a reserved return target.");
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Spell/Trap occurrence gone.");
             int zone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
-            if (!FlipSpellTrapSelectionRules.IsEligible(current.ResourceId, card, duel.IsSpellTrapFaceDown(target.Side, zone)) ||
-                !duel.SpellTrapRemovalLinkMatches(target.Side, target.Zone, slot, card))
+            bool eligible = massReturn ? card.ClassCode is 21 or 22 :
+                FlipSpellTrapSelectionRules.IsEligible(current.ResourceId, card, duel.IsSpellTrapFaceDown(target.Side, zone));
+            if (!eligible || !duel.SpellTrapRemovalLinkMatches(target.Side, target.Zone, slot, card))
                 return new(CommandOutcome.Rejected, "Spell/Trap return no longer eligible.");
             if (card.Id == DestinyBoardRules.BoardResourceId && !duel.IsSpellTrapFaceDown(target.Side, zone) &&
                 DestinyBoardRules.HasActiveBoard(target.Side, duel.Spells, duel.SpellFaceDown))
