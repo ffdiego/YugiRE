@@ -1890,6 +1890,8 @@ public sealed partial class DemoDuel
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
             return false;
 
+        // Queue-only search spells must resolve through their occurrence-based producer.
+        if (DeckSearchSpellRules.Filter(pending.EffectResourceId) is not null) return false;
         int owner = pending.Owner;
         Card[] deckSnapshot = pending.Source == CardSelectionSource.Deck
             ? decks[owner].ToArray() : [];

@@ -70,6 +70,64 @@ internal static class QueuedDeckSearchChecks
                 executed.Count(c=>c is ShuffleDeckCommand)==1,"One shuffle after search movement");
         }
 
+        foreach (int side in new[]{0,1})
+        foreach (bool set in new[]{false,true})
+        {
+            Card[] deck=[Spell(1003),Spell(1034),Spell(1003),Spell(1547),Monster(1003)];
+            var d=DemoDuel.FromPartialObservation(side,[Spell(1040)],Slots(),Slots(),8000,
+                side0Deck:side==0?deck:[Monster(24)],side1Deck:side==1?deck:[Monster(24)]);
+            var gate=new Gate();
+            var q=d.CreatePrimitiveActionQueue(gate);
+            if(set){check(d.TryQueueSpellTrapSet(0,out _),"Fusion Sage Set");Drain(q);}
+            check(!(set?d.ActivateSetSpell(0,out _):d.Play(0,out _)),"No legacy activation bypass");
+            check(d.TryQueueActivation(0,set,out _)&&d.PendingCardSelection is null&&
+                d.Graveyard(side).Count==0,"Fusion Sage admission does not spend or search");
+            q.Tick();q.Tick();
+            check(d.Graveyard(side).Single().Id==1040&&d.PendingCardSelection is null,
+                "Spend exact spell before opening the search");
+            Drain(q);
+            var request=d.PendingCardSelection ?? throw new InvalidOperationException("Missing Fusion Sage search.");
+            var candidates=d.QueuedDeckSearchCandidates(request);
+            check(request.Owner==side&&request.Filter==CardSelectionFilter.Polymerization&&
+                request.MinSelections==1&&candidates.Select(c=>c.SourceIndex).SequenceEqual(new[]{0,1,2}),
+                "Both Polymerization IDs, neither Fusion Gate nor wrong class");
+            var chosen=candidates[2];
+            check(!d.ResolveCardSelection(chosen.SourceIndex,out _)&&
+                !d.SkipOptionalCardSelection(out _)&&!d.TryQueueDeckSearch(request,null,out _)&&
+                !d.TryQueueDeckSearch(request,chosen.Target with {Side=1-side},out _),
+                "Mandatory exact-owner queued response only");
+            int shuffled=0,drawn=0;
+            d.DeckShuffled+=p=>{if(p==side)shuffled++;};
+            d.HandTransferred+=_=>drawn++;
+            check(d.TryQueueDeckSearch(request,chosen.Target,out _),"Fusion Sage choose duplicate occurrence");
+            q.Tick();gate.Release=false;q.Tick();q.Tick();
+            check(d.HandFor(side).Count==1&&shuffled==0&&q.IsBusy,"Gate before shuffle");
+            gate.Release=true;Drain(q);
+            check(d.TryCaptureCardTarget(side,DuelZone.Hand,0,out var received)&&
+                received.Occurrence==chosen.Target.Occurrence&&shuffled==1&&drawn==0&&
+                d.PendingCardSelection is null&&d.DeckCount(side)==4&&d.DeckCount(1-side)==1&&
+                !d.TryQueueDeckSearch(request,chosen.Target,out _),"Fusion Sage transfer once, shuffle once, no draw");
+        }
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1040)],Slots(),Slots(),8000,
+                side0Deck:[Spell(1547),Monster(1003)]);
+            var q=d.CreatePrimitiveActionQueue();
+            check(!d.TryQueueActivation(0,false,out _)&&!q.IsBusy&&d.Hand.Count==1,
+                "No matching Spell: activation rejected");
+        }
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1040)],Slots(),Slots(),8000,
+                side0Deck:[Spell(1003)]);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueSpellTrapSet(0,out _),"Stale Sage Set");Drain(q);
+            check(d.TryQueueActivation(0,true,out _),"Stale Sage admitted");
+            q.Tick();
+            d.Spells[0,0]=Spell(1040);
+            Drain(q);
+            check(d.PendingCardSelection is null&&d.Graveyard(0).Count==0&&d.DeckCount(0)==1,
+                "Failed source spend must not open a search");
+        }
+
         var chain=DemoDuel.FromPartialObservation(0,[Spell(335)],Slots(Monster(47)),Slots(Monster(573)),8000,
             side0Deck:[Monster(24)],side1Deck:[Monster(25)]);
         var cq=chain.CreatePrimitiveActionQueue();chain.TryQueueMonsterWipe(DuelZone.Hand,0,out _);Drain(cq);

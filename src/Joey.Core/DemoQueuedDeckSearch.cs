@@ -11,7 +11,8 @@ public sealed partial class DemoDuel
         PendingCardSelection is { Source: CardSelectionSource.Deck,
             Destination: CardSelectionDestination.Hand, MaxSelections: 1 } pending &&
         ((pending.MinSelections == 1 && CardSelectionRules.OnFieldToGraveyardFilter(pending.EffectResourceId) == pending.Filter) ||
-         (pending.MinSelections == 0 && RitualSearchRules.OnNormalOrFlipSummon(pending.EffectResourceId) == pending.Filter)) &&
+         (pending.MinSelections == 0 && RitualSearchRules.OnNormalOrFlipSummon(pending.EffectResourceId) == pending.Filter) ||
+         (pending.MinSelections == 1 && DeckSearchSpellRules.Filter(pending.EffectResourceId) == pending.Filter)) &&
         PendingFlipTarget is null && PendingFlipSpellTrapTargets is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&
         PendingEffectDecision is null && PendingSpellTrapTarget is null &&
@@ -40,7 +41,7 @@ public sealed partial class DemoDuel
     public bool TryQueueDeckSearch(PendingCardSelection request, CardTarget? target,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose an eligible occurrence, or decline an optional Ritual search.";
+        message = "Choose an eligible occurrence, or decline an optional search.";
         if (primitiveActionQueue is not { IsBusy: false } queue ||
             !TryPlanQueuedDeckSearch(request, target)) return false;
         admittingQueuedDeckSearch = true;
