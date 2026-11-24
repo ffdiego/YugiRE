@@ -227,6 +227,9 @@ public sealed partial class DemoDuel
             public int[] Sent { get; } = [0, 0];
         }
         private Jar2Batch? jar2;
+        private PrepareGraveyardBanishSummonCommand? banishSummon;
+        private readonly Queue<CardTarget> banishSummonCosts = new();
+        private int banishSummonPaid;
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
         private PendingEffectDecision? queueDrawDecision;
@@ -239,6 +242,8 @@ public sealed partial class DemoDuel
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is FinishGraveyardBanishSummonCommand finishBanishSummon)
+                return FinishGraveyardBanishSummon(finishBanishSummon.Side);
             if (command is ResolveSameNameRecruitmentCommand sameName)
                 return ResolveSameNameRecruitment(sameName, followups);
             if (command is ResolveDeckRecruitmentCommand recruit)
@@ -333,6 +338,8 @@ public sealed partial class DemoDuel
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
+                case PrepareGraveyardBanishSummonCommand prepareBanish:
+                    return PrepareGraveyardBanishSummon(prepareBanish, followups);
                 case BanishCommand banish:
                     return BanishFromSource(banish.Target);
                 case DiscardCommand discard:
@@ -894,23 +901,62 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
+        private CommandResult PrepareGraveyardBanishSummon(PrepareGraveyardBanishSummonCommand prepare, IActionCommandSink followups)
+        {
+            var cost = new CardTarget?[] { prepare.First, prepare.Second, prepare.Third }.OfType<CardTarget>().ToArray();
+            if (banishSummon is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanGraveyardBanishSummon(prepare.Source, prepare.Slot, cost))
+                return new(CommandOutcome.Rejected, "Inherent summon source, cost or destination changed.");
+            banishSummon = prepare;
+            banishSummonCosts.Clear();
+            foreach (var target in cost) banishSummonCosts.Enqueue(target);
+            banishSummonPaid = 0;
+            queue.EnqueueBatch(cost.Select(t => new BanishCommand(prepare.Side,t)));
+            queue.ScheduleContinuation(_ =>
+            {
+                var finish = new FinishGraveyardBanishSummonCommand(prepare.Side);
+                return new(banishSummonPaid == cost.Length
+                    ? [new SpecialSummonCommand(prepare.Side,prepare.Source,prepare.Slot,false,prepare.Defense), finish]
+                    : [finish]);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult FinishGraveyardBanishSummon(int side)
+        {
+            if (banishSummon is not { } current || current.Side != side)
+                return new(CommandOutcome.Rejected, "No reserved inherent summon.");
+            banishSummon = null;
+            banishSummonCosts.Clear();
+            banishSummonPaid = 0;
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult BanishFromSource(CardTarget target)
         {
             if (!duel.TryResolveCardTarget(target, out int index, out var card))
                 return new(CommandOutcome.Skipped, "Banishment occurrence gone.");
             if (target.Zone == DuelZone.Deck && index != 0)
                 return new(CommandOutcome.Skipped, "Only the current top occurrence may be banished from Deck.");
-            if (target.Zone is not (DuelZone.Deck or DuelZone.Hand))
+            if (target.Zone is not (DuelZone.Deck or DuelZone.Hand or DuelZone.Graveyard))
                 return new(CommandOutcome.Rejected, "Unsupported banishment zone.");
             if (flipBanish is { } batch && (!batch.Expected.TryPeek(out var expected) || expected != target))
                 return new(CommandOutcome.Rejected, "Unexpected reserved banishment occurrence.");
+            if (banishSummon is not null && (!banishSummonCosts.TryPeek(out var expectedCost) || expectedCost != target))
+                return new(CommandOutcome.Rejected, "Unexpected inherent summon cost occurrence.");
             if (target.Zone == DuelZone.Deck) duel.decks[target.Side].Dequeue();
+            else if (target.Zone == DuelZone.Graveyard) duel.graves[target.Side].RemoveAt(index);
             else duel.hands[target.Side].RemoveAt(index);
             duel.banished[target.Side].Add(card);
             if (flipBanish is { } current)
             {
                 current.Expected.Dequeue();
                 current.Removed.Add(card);
+            }
+            if (banishSummon is not null)
+            {
+                banishSummonCosts.Dequeue();
+                banishSummonPaid++;
             }
             // Neither discard, draw nor GY arrival: no corresponding event.
             return new(CommandOutcome.Applied);
@@ -1187,7 +1233,15 @@ public sealed partial class DemoDuel
                 throw new InvalidOperationException("Reserved Jar #2 summon conditions changed.");
             if (!card.IsMonster || duel.Monsters[summon.Side, summon.Slot] is not null)
                 return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
-            if (summon.Source.Zone == DuelZone.Graveyard)
+            if (summon.Source.Zone == DuelZone.Hand)
+            {
+                if (banishSummon is not { } paidSummon || paidSummon.Source != summon.Source ||
+                    paidSummon.Slot != summon.Slot || paidSummon.Defense != summon.FaceUpDefense || summon.FaceDownDefense ||
+                    banishSummonPaid != GraveyardBanishSummonRules.QueuedRequiredCount(card) || banishSummonCosts.Count != 0)
+                    return new(CommandOutcome.Rejected, "Hand Special Summon requires the reserved fully paid procedure.");
+                duel.hands[summon.Side].RemoveAt(index);
+            }
+            else if (summon.Source.Zone == DuelZone.Graveyard)
                 duel.graves[summon.Side].RemoveAt(index);
             else if (summon.Source.Zone == DuelZone.Deck)
             {
@@ -1198,7 +1252,7 @@ public sealed partial class DemoDuel
             else return new(CommandOutcome.Rejected, "Unsupported Special Summon source.");
 
             // Position is supplied by the admitted effect. No generic summon response is introduced here.
-            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, summon.FaceDownDefense);
+            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, summon.FaceDownDefense, summon.FaceUpDefense);
             if (jar2 is { } excavation)
             {
                 excavation.Found[summon.Side]++;

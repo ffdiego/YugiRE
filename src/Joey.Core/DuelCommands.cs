@@ -22,7 +22,7 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
-public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false) : DuelCommand(Side);
+public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false, bool FaceUpDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
 public sealed record ReturnToDeckCommand(int Side, CardTarget Target) : DuelCommand(Side);
@@ -31,6 +31,8 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record PrepareGraveyardBanishSummonCommand(int Side, CardTarget Source, int Slot, bool Defense, CardTarget First, CardTarget? Second, CardTarget? Third) : DuelCommand(Side);
+internal sealed record FinishGraveyardBanishSummonCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
 internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
 internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
@@ -70,10 +72,20 @@ internal static class DuelCommandValidation
                 break;
             case ShuffleDeckCommand:
             case FinishDeckSearchCommand:
+            case FinishGraveyardBanishSummonCommand:
             case FinishGraveyardRecoveryCommand:
                 break;
-            case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5:
-                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard);
+            case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5 && !(summonFromDeck.FaceDownDefense && summonFromDeck.FaceUpDefense):
+                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Hand);
+                break;
+            case PrepareGraveyardBanishSummonCommand prepareBanish when prepareBanish.Slot is >= 0 and < 5:
+                Target(prepareBanish.Source, prepareBanish.Side, DuelZone.Hand);
+                if (prepareBanish.Third is not null && prepareBanish.Second is null)
+                    throw new ArgumentException("Missing cost occurrence.");
+                var costCopies = new CardTarget?[] { prepareBanish.First, prepareBanish.Second, prepareBanish.Third }.OfType<CardTarget>().ToArray();
+                if (costCopies.Distinct().Count() != costCopies.Length)
+                    throw new ArgumentException("Duplicate cost occurrence.");
+                foreach (var costCopy in costCopies) Target(costCopy, prepareBanish.Side, DuelZone.Graveyard);
                 break;
             case ResolveSameNameRecruitmentCommand sameName when sameName.Request is not null && sameName.Request.Owner == sameName.Side:
                 if (sameName.Second is not null && sameName.First is null ||
@@ -185,7 +197,7 @@ internal static class DuelCommandValidation
                     DuelZone.SpellTrap, DuelZone.FieldSpell, DuelZone.Banished);
                 break;
             case BanishCommand banish:
-                Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand);
+                Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Graveyard);
                 break;
             case DiscardCommand discard:
                 Target(discard.Target, discard.Side, DuelZone.Hand);
