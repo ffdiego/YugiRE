@@ -135,6 +135,6 @@ static partial class Game
         if (name.Length < card.Name.Length) name = name[..^3] + "...";
         Label(name, x, y + 116, 12);
         if (source is not null) Label(source, x, y + 131, 12, Gold);
-        return hovered && Raylib.IsMouseButtonPressed(MouseButton.Left);
+        return hovered && PointerPressed(MouseButton.Left);
     }
 }

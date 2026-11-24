@@ -86,7 +86,7 @@ static partial class Game
         if (chosen || !selectable)
             Raylib.DrawRectangleLinesEx(rect, chosen ? 3 : 1, chosen ? Color.Lime : Color.Gray);
         if (!selectable) return false;
-        if (Hit(rect) && Raylib.IsMouseButtonPressed(MouseButton.Left))
+        if (Hit(rect) && PointerPressed(MouseButton.Left))
         {
             view.Window.FocusVisibleSlot(slot);
             return true;

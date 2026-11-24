@@ -149,7 +149,7 @@ static partial class Game
             }
             Raylib.DrawTexturePro(graphics.Texture(spriteName), new Rectangle(sourceX, sourceY, frameWidth, frameHeight),
                 bounds, System.Numerics.Vector2.Zero, 0, Color.White);
-            if (!enabled || !Hit(bounds) || !Raylib.IsMouseButtonPressed(MouseButton.Left)) continue;
+            if (!enabled || !Hit(bounds) || !PointerPressed(MouseButton.Left)) continue;
 
             TryChooseDuelPhase(phase);
         }

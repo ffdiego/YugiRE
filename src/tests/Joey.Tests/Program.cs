@@ -161,6 +161,7 @@ ExodiaChecks.Run(Check);
 DestinyBoardChecks.Run(Check);
 LookAndFeelChecks.Run(Check);
 CursorLegalityChecks.Run(Check);
+DebugOverlayChecks.Run(Check);
 NativeCursorActionSelectorChecks.Run(Check, Reject);
 NativePresentationChecks.Run(Check);
 NativeFusionChecks.Run(Check, Reject);
