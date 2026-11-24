@@ -249,6 +249,13 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Aguardando evidência`.
   NativeExclusionStart: descritor, argumento mascarado face-up, contador 64 e camada 0x120. Update vazio, Draw e produtor não mapeados. Não inventar duração nem disparar para todo banimento. Roteiro 18; mesmo contrato.
 
+- [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`.
+  Modelo Draw +4 módulo 256, modo 5/7, âncora 788/588, intensidade por C; revisão isolada com DAT/cosseno real. Compositor e integração em modo nativo ainda pendentes; roteiro 19. [Contrato](docs/research/native-layerfont-help-2026-11-24.md).
+- [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`.
+  Modelo Draw de entrada/saída condicionado a 005BDAD0/0044BA10, modo 3; revisão isolada, dimensão/compositor provisórios. Roteiro 19, mesmo contrato.
+- [ ] **V29 — Ajuda (0045E4A0).** Status: `Aguardando evidência`.
+  Construtor e camada 0xF00 conhecidos; Update/Draw ausentes no SQLite. Roteiro 19, mesmo contrato.
+
 ### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
 
 ACTIONS é responsável por conectar ActionQueue / IPresentationGate à apresentação.

@@ -213,3 +213,11 @@ Ghidra local, EXE/projeto atestado. SQLite já consultado: dois Draws ausentes, 
     bash scripts/pending/18-alternative-activation-exclusion-ghidra.sh
 
 Saída privada: scratch/ghidra-alternative-activation-exclusion.zip. Confirmar slots da vtable, fases, recortes e gate de término (inclusive possível mutação no Draw), ABI e mascaramento de exclusão. Recuperar xrefs do construtor se disponíveis, não atribuir opcode por nome de asset. Usar --inspect-visual-dat para exclusion.txt. Importar evidências compatíveis em SQLite cumulativo após receber ZIP. [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+
+## V27/V28/V29 — 19-layerfont-help-ghidra.sh (aguardando Fedora)
+
+Ghidra local, projeto/EXE atestado. SQLite já contém decompilações transitórias Layerfont; faltam operandos e composição confirmados em assembly. Help Update/Draw ausentes.
+
+    bash scripts/pending/19-layerfont-help-ghidra.sh
+
+Saída privada: scratch/ghidra-layerfont-help-contract.zip. Confirmar dimensões/operandos de +48/+4C, gates/seleção do help e slots de vtable. Reutilizar --inspect-visual-dat para layerfont.txt e help.txt; não enviar pixels. Importar resultados em SQLite cumulativo quando recebidos. [Contrato](../../docs/research/native-layerfont-help-2026-11-24.md).

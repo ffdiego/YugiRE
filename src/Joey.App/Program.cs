@@ -69,7 +69,8 @@ static partial class Game
             graphics.LoadArtwork(cards);
             ConfigureCardStatusReview(args, archive);
             ConfigureFusionReview(args, archive);
-            if (new[] { statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null }.Count(active => active) > 1)
+            ConfigureLayerFontReview(args, archive);
+            if (new[] { statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, layerFontReviewMode is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
@@ -83,7 +84,7 @@ static partial class Game
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--inspect-visual-dat")) return 1;
-        if ((Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null) && error.Length > 0) return 1;
+        if ((Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || Option(args, "--review-layerfont=") is not null) && error.Length > 0) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
@@ -102,7 +103,7 @@ static partial class Game
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
         { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data or --check-graphics for validation."); return 2; }
         duel = new(cards);
-        if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && args.Contains("--alpha")) StartAlpha();
+        if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && layerFontReviewMode is null && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();
@@ -132,6 +133,12 @@ static partial class Game
                     ValidateCardStatusReview();
                     screen = "status-review";
                     Console.WriteLine("[V08 review] F7 step, F8 reset, F12 capture, Escape exit; synthetic state, blend not verified");
+                }
+                if (layerFontReviewMode is not null)
+                {
+                    foreach (string resource in layerFontReviewResources) _ = graphics.Texture(resource);
+                    screen = "layerfont-review";
+                    Console.WriteLine("[V27/V28 review] F5 display gate, F7 one Draw, F8 reset, F12 capture; provisional compositor");
                 }
                 if (fusionReviewCard is not null)
                 {
@@ -171,7 +178,12 @@ static partial class Game
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
             mouse = (Raylib.GetMousePosition() - origin) / scale;
             Raylib.BeginTextureMode(canvas); Raylib.ClearBackground(Background);
-            if (screen == "fusion-review")
+            if (screen == "layerfont-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawLayerFontReview();
+            }
+            else if (screen == "fusion-review")
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawFusionReview();
@@ -236,13 +248,14 @@ static partial class Game
             }
 
             Raylib.EndTextureMode();
-            if ((screen is "duel" or "chain-review" or "status-review" or "fusion-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
+            if ((screen is "duel" or "chain-review" or "status-review" or "fusion-review" or "layerfont-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
                 try
                 {
                     if (screen == "chain-review") CaptureDisabledChainReview(canvas);
                     else if (screen == "status-review") CaptureCardStatusReview(canvas);
                     else if (screen == "fusion-review") CaptureFusionReview(canvas);
+                    else if (screen == "layerfont-review") CaptureLayerFontReview(canvas);
                     else CaptureVisualReview(canvas);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
