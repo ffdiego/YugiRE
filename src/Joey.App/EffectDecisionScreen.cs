@@ -20,9 +20,20 @@ static partial class Game
         }
     }
 
+    static bool ResolvePresentedDecision(long id, EffectDecisionAnswer answer)
+    {
+        if (queuedDuel?.PendingDecision is { } pending)
+        {
+            if (pending.Id != id || !queuedDuel.SubmitDecision(id, answer)) return false;
+            message = "Decision admitted.";
+            return true;
+        }
+        return duel.ResolveEffectDecision(id, answer, out message);
+    }
+
     static void DrawEffectDecisionOverlay()
     {
-        if (duel.PendingEffectDecision is not { } request) return;
+        if ((queuedDuel?.PendingDecision ?? duel.PendingEffectDecision) is not { } request) return;
         bool draw = request.Kind == EffectDecisionKind.DrawOneOnFlip;
         Raylib.DrawRectangle(238, 126, 535, 340, new Color(7, 15, 28, 250));
         Raylib.DrawRectangleLines(238, 126, 535, 340, Gold);
@@ -33,13 +44,13 @@ static partial class Game
         if (!draw) Label($"LP: {duel.Life[request.Owner]}", 258, 259, 15);
         if (Button(draw ? "Draw" : "Pay LP", 258, 332, 205, 40))
         {
-            if (duel.ResolveEffectDecision(request.Id, EffectDecisionAnswer.Accept, out message))
+            if (ResolvePresentedDecision(request.Id, EffectDecisionAnswer.Accept))
                 ClearDuelSelection();
             return;
         }
         if (Button("Decline", 490, 332, 205, 40))
         {
-            if (duel.ResolveEffectDecision(request.Id, EffectDecisionAnswer.Decline, out message))
+            if (ResolvePresentedDecision(request.Id, EffectDecisionAnswer.Decline))
                 ClearDuelSelection();
         }
     }

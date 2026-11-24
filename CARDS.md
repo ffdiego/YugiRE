@@ -223,6 +223,14 @@ Fusion Gate (1547) é `Done` no sandbox e integra a Alpha. Depois de ser ativada
 
 As dez magias fixas já Done têm agora caminho opt-in `TryQueueLifePointSpell` para mão/Set, com gasto e mudanças de LP em comandos separados. UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-lp-spells.md). Pot of Greed e Upstart Goblin têm `TryQueueDrawSpell`, com gasto validado antes da continuação, DrawCommand por carta e HealCommand posterior de Upstart. [Contrato](docs/cards/c12-queued-draw-spells.md). Stim-Pack e Germ Infection têm apenas aritmética estática, não ativação, até fechar A07.
 
+### Destruição de monstros na fila (C12)
+
+Raigeki, Dark Hole e os sete destruidores por tipo usam `TryQueueMonsterWipe` na mão/Set. Reutilizam `MonsterWipeRules`, remoções individuais e limpeza de equipamentos; o gasto inválido cancela o lote e as buscas de cemitério abrem após a última remoção. UI/CPU e seleção final ainda legados. [Contrato](docs/cards/c12-queued-monster-wipes.md).
+
+### Destruição de S/T na fila (C12)
+
+Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T e cascata de Destiny Board para efeitos seletivos ainda pendentes. [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |

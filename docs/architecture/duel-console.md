@@ -26,3 +26,7 @@ CI A04.2 completo aprovado (45319725401). summon INDEX SLOT [tribute slots], set
 ## Reconciliação com C12
 
 A04.3 CI 45320160383 verde antes da reconciliação. A main integrou compra/LP/equipamento; removidos ActivateSimpleSpell/FinishSimpleSpell duplicados da branch A04. TryQueueActivation encaminha compra/LP para os produtores C12 e mantém a generalização de wipes. Novo equip hand|set INDEX SIDE SLOT encaminha TryQueueEquipment; nenhum executor paralelo. Preservados os testes de CARDS e os testes headless do console. CI da reconciliação pendente. A03 segue em PR independente #77. A04 parcial.
+
+## Integração com A03 e C12 wipes
+
+Base atual A03 #77 inclui a main a2fce55. TryQueueActivation delega todas as quatro famílias de magia aos produtores C12 (compra, LP, destruição de monstros e de S/T); não há segundo resolvedor de wipe. A04 fica empilhado até A03 ser integrado. A05.1 (#81) gera roteiros nativos parciais consumíveis pelo mesmo frontend.

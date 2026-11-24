@@ -31,6 +31,8 @@ internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Dest
 // Neither of these stages claims a one-to-one native opcode mapping.
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
@@ -74,8 +76,14 @@ internal static class DuelCommandValidation
             case ActivateLifePointSpellCommand lp:
                 Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
+            case ActivateSpellTrapWipeCommand spellTrapWipe:
+                Target(spellTrapWipe.Source, spellTrapWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateMonsterWipeCommand monsterWipe:
+                Target(monsterWipe.Source, monsterWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
             case ActivateRaigekiCommand activate:
-                Target(activate.Source, activate.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(activate.Source, activate.Side, DuelZone.Hand);
                 break;
             case PrepareNormalPlacementCommand prepare when prepare.Slot is >= 0 and < 5:
                 Target(prepare.Source, prepare.Side, DuelZone.Hand);
