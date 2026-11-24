@@ -16,6 +16,7 @@ public sealed partial class DemoDuel
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
             () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer() ||
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
+                admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
                 admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0);
     }
@@ -206,6 +207,8 @@ public sealed partial class DemoDuel
                 return ResolveDeckSearch(search, followups);
             if (command is FinishDeckSearchCommand finishSearch)
                 return FinishDeckSearch(finishSearch.Side);
+            if (command is ResolveGraveyardRevivalCommand revival)
+                return ResolveGraveyardRevival(revival, followups);
             if (command is ResolveGraveyardRecoveryCommand recovery)
                 return ResolveGraveyardRecovery(recovery, followups);
             if (command is FinishGraveyardRecoveryCommand)
@@ -284,7 +287,7 @@ public sealed partial class DemoDuel
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case SpecialSummonCommand specialSummon:
-                    return SpecialSummonFromDeck(specialSummon);
+                    return SpecialSummonFromSource(specialSummon);
                 case MoveToHandCommand move:
                     return MoveSelectedCardToHand(move.Source);
                 case ShuffleDeckCommand shuffle:
@@ -769,15 +772,22 @@ public sealed partial class DemoDuel
                 : [new FinishDeckSearchCommand(side)]));
         }
 
-        private CommandResult SpecialSummonFromDeck(SpecialSummonCommand summon)
+        private CommandResult SpecialSummonFromSource(SpecialSummonCommand summon)
         {
             if (!duel.TryResolveCardTarget(summon.Source, out int index, out var card))
-                return new(CommandOutcome.Skipped, "Deck occurrence gone.");
+                return new(CommandOutcome.Skipped, "Special Summon source occurrence gone.");
             if (!card.IsMonster || duel.Monsters[summon.Side, summon.Slot] is not null)
                 return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
-            Card[] remaining = duel.decks[summon.Side].Where((_, i) => i != index).ToArray();
-            duel.decks[summon.Side].Clear();
-            foreach (var other in remaining) duel.decks[summon.Side].Enqueue(other);
+            if (summon.Source.Zone == DuelZone.Graveyard)
+                duel.graves[summon.Side].RemoveAt(index);
+            else if (summon.Source.Zone == DuelZone.Deck)
+            {
+                Card[] remaining = duel.decks[summon.Side].Where((_, i) => i != index).ToArray();
+                duel.decks[summon.Side].Clear();
+                foreach (var other in remaining) duel.decks[summon.Side].Enqueue(other);
+            }
+            else return new(CommandOutcome.Rejected, "Unsupported Special Summon source.");
+
             // Position is supplied by the admitted effect. No generic summon response is introduced here.
             duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, summon.FaceDownDefense);
             if (reservedDeckSearch.Contains(summon.Source)) deckSearchMoved = true;
@@ -805,20 +815,33 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
+        private CommandResult ResolveGraveyardRevival(ResolveGraveyardRevivalCommand answer, IActionCommandSink followups)
+        {
+            if (resolvingGraveyardRecovery || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanGraveyardRevival(answer.Request, answer.Target, answer.Slot, answer.FaceDownDefense, out var movement))
+                return new(CommandOutcome.Rejected, "Revival request, occurrence or destination changed.");
+            ReserveGraveyardTransfer(answer.Side, movement, queue);
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult ResolveGraveyardRecovery(ResolveGraveyardRecoveryCommand answer, IActionCommandSink followups)
         {
             if (resolvingGraveyardRecovery || followups is not ActionQueue { PendingCount: 0 } queue ||
                 !duel.TryPlanQueuedGraveyardRecovery(answer.Request, answer.Target, out var movement))
                 return new(CommandOutcome.Rejected, "Graveyard recovery request or target changed.");
 
-            // No movement when consuming the answer; the selected occurrence
-            // is moved only by the next command after the presentation gate.
+            ReserveGraveyardTransfer(answer.Side, movement, queue);
+            return new(CommandOutcome.Applied);
+        }
+
+        private void ReserveGraveyardTransfer(int side, DuelCommand? movement, ActionQueue queue)
+        {
+            // Consume the request separately from moving the occurrence.
             duel.PendingCardSelection = null;
             duel.selectedBatchIndices.Clear();
             resolvingGraveyardRecovery = true;
             if (movement is not null) queue.Enqueue(movement);
-            followups.ScheduleContinuation(_ => new([new FinishGraveyardRecoveryCommand(answer.Side)]));
-            return new(CommandOutcome.Applied);
+            queue.ScheduleContinuation(_ => new([new FinishGraveyardRecoveryCommand(side)]));
         }
 
         private CommandResult MoveSelectedCardToHand(CardTarget source)

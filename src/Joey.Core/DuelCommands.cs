@@ -33,6 +33,7 @@ internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSe
 internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
 internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
 internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
+internal sealed record ResolveGraveyardRevivalCommand(int Side, PendingCardSelection Request, CardTarget Target, int Slot, bool FaceDownDefense) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
@@ -69,7 +70,7 @@ internal static class DuelCommandValidation
             case FinishGraveyardRecoveryCommand:
                 break;
             case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5:
-                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck);
+                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard);
                 break;
             case ResolveSameNameRecruitmentCommand sameName when sameName.Request is not null && sameName.Request.Owner == sameName.Side:
                 if (sameName.Second is not null && sameName.First is null ||
@@ -91,6 +92,9 @@ internal static class DuelCommandValidation
                 break;
             case ResolveDeckSearchCommand search when search.Request is not null && search.Request.Owner == search.Side:
                 Target(search.Target, search.Side, DuelZone.Deck);
+                break;
+            case ResolveGraveyardRevivalCommand revive when revive.Request is not null && revive.Request.Owner == revive.Side && revive.Slot is >= 0 and < 5:
+                Target(revive.Target, revive.Side, DuelZone.Graveyard);
                 break;
             case ResolveGraveyardRecoveryCommand recover when recover.Request is not null && recover.Request.Owner == recover.Side:
                 if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
