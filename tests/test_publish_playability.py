@@ -40,6 +40,9 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(status.get(540), "Done")  # Hane-Hane mandatory single return
         self.assertEqual(status.get(1163), "Done")  # Morphing Jar #2 excavation
         self.assertEqual(status.get(332), "Done")
+        self.assertEqual(status.get(1006), "Done")
+        self.assertEqual(status.get(655), "Done")  # queued Eternal Rest
+        self.assertIsNone(status.get(346))  # dual damage/duel outcome still pending
         for rid in (300,301,302,304,306,307,308,309,311,314,315,318,321,322,324,325,326,327,653,1012,1013):
             self.assertEqual(status.get(rid), "Done")
         for rid in (656,1449,1450):

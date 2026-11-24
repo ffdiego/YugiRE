@@ -1548,6 +1548,53 @@
         "Done in explicit headless C# duel scope via opt-in queue summon API and legacy battle path. Graphical/CPU producer integration belongs to ACTIONS; no native differential validation.",
         "Native effect suppression, ownership/controller changes, Spirit Elimination, special summon responses pending. Resource 1518 verified as Joey pack ID and native effect branch; DAT name still to confirm."
       ]
+    },
+    {
+      "id": "lp.heal.blue-medicine-c05",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1006
+      ],
+      "mechanics": [
+        "Queue-backed Normal Spell activation from Hand or Set during own Main Phase",
+        "Spend the exact occurrence to own Graveyard, then HealCommand +400 LP"
+      ],
+      "evidence": [
+        "src/Joey.Core/LifePointSpellRules.cs",
+        "src/Joey.Core/DemoQueuedLifePointSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/TimedEquipmentAndQueuedLpChecks.cs",
+        "docs/cards/c05-queued-blue-medicine.md"
+      ],
+      "limitations": [
+        "Done in the headless queue-backed sandbox after CI; no legacy activation route or full response/negation coverage.",
+        "Native callbacks 00584D00 and 00593CA0 not decompiled in v2; value from public card text. No native differential validation."
+      ]
+    },
+    {
+      "id": "wipe.equipped-monsters-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        655
+      ],
+      "mechanics": [
+        "Normal Spell activation from Hand or Set through the existing typed monster-wipe producer",
+        "Destroy each face-up monster with a live modeled equipment link on either side; destroy linked equipment separately"
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedMonsterWipeChecks.cs",
+        "docs/cards/c02-eternal-rest.md"
+      ],
+      "limitations": [
+        "Done in the bounded headless queue scope after CI; legacy activation unchanged, graphical/CPU integration and non-modeled equip cards pending.",
+        "No native differential validation; callback bodies unavailable in cumulative v2."
+      ]
     }
   ]
 }

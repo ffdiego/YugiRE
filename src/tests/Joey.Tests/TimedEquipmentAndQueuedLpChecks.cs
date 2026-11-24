@@ -41,7 +41,7 @@ internal static class TimedEquipmentAndQueuedLpChecks
 
         foreach (var (id, own, enemy) in new (ushort,int,int)[] {
             (342,0,-200),(343,0,-500),(344,0,-600),(345,0,-800),(1007,0,-300),
-            (338,500,0),(339,600,0),(340,800,0),(341,1000,0),(1315,1000,1000)})
+            (338,500,0),(339,600,0),(340,800,0),(341,1000,0),(1315,1000,1000),(1006,400,0)})
         foreach (int side in new[] {0,1})
         foreach (bool set in new[] {false,true})
         {
@@ -77,6 +77,25 @@ internal static class TimedEquipmentAndQueuedLpChecks
                 $"LP {id}: ordered separate spend and LP commands, both source zones and sides");
             check(!duel.TryQueueLifePointSpell(set ? DuelZone.SpellTrap : DuelZone.Hand,0,out _),
                 $"LP {id}: spent occurrence not reusable");
+        }
+        check(LifePointSpellRules.SupportsQueued(1006)&&!LifePointSpellRules.Supports(1006)&&
+            LifePointSpellRules.ResolveDemo(1006,0) is null&&LifePointSpellRules.ResolveQueued(1006,2) is null,
+            "Blue Medicine uses only the queued producer and validates the side");
+        foreach(int side in new[]{0,1})
+        foreach(bool set in new[]{false,true})
+        {
+            var blue=DemoDuel.FromPartialObservation(side,[Spell(1006)],new Card?[5],new Card?[5],8000);
+            var bq=blue.CreatePrimitiveActionQueue();
+            if(set){check(blue.TryQueueSpellTrapSet(0,out _),"Blue Medicine Set");Drain(bq);}
+            check(!(set?blue.ActivateSetSpell(0,out _):blue.Play(0,out _))&&
+                blue.Graveyard(side).Count==0&&blue.Life[side]==8000,
+                "No legacy bypass for the new effect");
+            check(blue.TryCaptureCardTarget(side,set?DuelZone.SpellTrap:DuelZone.Hand,0,out var source)&&
+                blue.TryQueueActivation(0,set,out _),"Shared queue activation dispatches Blue Medicine");
+            Drain(bq);
+            check(blue.TryCaptureCardTarget(side,DuelZone.Graveyard,0,out var spent)&&
+                spent.Occurrence==source.Occurrence&&blue.Life[side]==8400&&blue.Life[1-side]==8000,
+                "Blue Medicine preserves the spent occurrence and heals exactly 400");
         }
         var stale = DemoDuel.FromPartialObservation(0,[Spell(342)],new Card?[5],new Card?[5],8000);
         var sq=stale.CreatePrimitiveActionQueue();
