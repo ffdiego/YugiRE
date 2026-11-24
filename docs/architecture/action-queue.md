@@ -70,7 +70,7 @@ Demais opcodes são Pending (não catalogados por A01); não interpretar como no
 | 7. Log comparável | Registro de oito bytes e contêiner/replay confirmados; correspondência C# parcial a construir em A05. |
 | 8. Mutação na execução | Confirmado para CE/CF/8E; LP incremental no Update enquanto ativo (SQLite 0047C560 → 00573FB0). Generalização além dos casos e equivalência de granularidade permanecem hipóteses; C# aplica mutação no executor. |
 
-## Casos de aceitação de A02 (a implementar)
+## Casos de aceitação de A02 (implementados nos pilotos; CI 45318593622 verde)
 
 | Cenário | Critério |
 | --- | --- |
