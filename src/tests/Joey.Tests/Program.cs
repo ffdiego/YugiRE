@@ -165,6 +165,7 @@ CursorLegalityChecks.Run(Check);
 DebugOverlayChecks.Run(Check);
 NativeCursorActionSelectorChecks.Run(Check, Reject);
 NativeJoeyReactionChecks.Run(Check);
+NativeJoeyCinematicRoutingChecks.Run(Check, Reject);
 NativePresentationChecks.Run(Check);
 NativeFusionChecks.Run(Check, Reject);
 NativeDisabledChainChecks.Run(Check, Reject);

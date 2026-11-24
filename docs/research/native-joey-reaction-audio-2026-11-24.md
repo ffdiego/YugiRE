@@ -85,3 +85,59 @@ de coletar outros. Reutilizar --inspect-visual-dat para os manifests
 bust_up/reaction*.txt; para posição e composição, aguardar
 Draw/Update. Não criar assets, não alterar denominador de Draw
 sem inventário comprovado, nem marcar Verified. V18 sem player.
+
+
+## Complemento — invocações, início e resultado
+
+00403310 foi relida no SQLite v2. O accessor 004027B0 lê classe e
+ATK do catálogo (bits 9..17 multiplicados por 10, exceções de classe);
+não usa ATK efetivo no campo. O lado que não passa pelo teste
+(~00A54E5C)&1 usa outro conjunto de requests: tipos 1/2, limiar
+2000, reaction01 ou sound-only 0x10000054; tipo 4 chama diretamente
+0x10000058; tipo 5 reaction01 + 0x10000055. Não equiparar números
+de tipo a Normal/Special/Flip sem recuperar os chamadores.
+
+No lado selecionado, IDs 0x51/0x2E8 saltam para construtor 00414A20
+antes do teste de ATK/tipo. Ele carrega summon.txt ou summon2.txt,
+faz preload via virtual +8 de todas as entradas, chama 005C0460(0)
+e pede 0x2000000B. Isto não demonstra a duração da cena. Os outros
+IDs especiais seguem 00403310: 0xF (Time Wizard) -> som61;
+0x44 -> reaction02/som32; 0x2EF (Jinzo) -> som65 para tipo1/2,
+som2F nos demais; 0x4CF -> som62; 0x2F8 -> som63;
+0x2F9 -> som2E; 0x52E (The Legendary Fisherman) marca variante.
+Os IDs e nomes acima só foram associados quando constavam em
+card_identities; identidade de 0x2E8 segue não resolvida.
+Tipo3 genérico -> som4D, sem sobrescrever os casos explícitos.
+
+ATK>0x739 e tipo1/2 no lado selecionado consomem uma amostra
+de 0055C140; reaction13 com som28/2A (bit0) e segunda fala
+2C/2B (tipo) se não havia ID especial. IDs 0x2EF/0x2F9/0x52E
+substituem por reaction08/som29; Jinzo com secundário65 usa
+65 como primário e zera secundário. Mesmo nesses overrides a
+amostra RNG já foi consumida. Em seguida request imediato
+0x2000000C e construção 00416A00 com dois IDs. Modelo exige
+amostra injetada só quando necessária; nunca chama RNG do Core.
+
+004152D0 usa start.txt, preload de todas as entradas e
+RNG %3 em +10. 00415C90 consulta 0044B9F0 (global 005F3254):
+2 -> lose.txt + 0x10000059; 3 -> draw.txt + 0x1000005C;
+demais -> win.txt + 0x1000005D. Não inferir orientação do
+resultado do C# por estes rótulos. Preload de todas entradas;
+lê parâmetro do banco, usa unsigned %1000; só consome RNG
+se divisor diferente de zero e grava RNG%divisor em +18.
+O significado do campo de manifesto ainda não está confirmado.
+Os construtores podem configurar modo 3 e contador 0x20;
+não usar isso como duração do Draw.
+
+O índice público versionado data.dat-index.json contém 17
+manifests: activate, start, draw/lose/win, summon/summon2 e
+reaction01,02,04,05,06,07,08,10,12,13. As lacunas 03/09/11
+não devem ser sintetizadas. O roteiro 27 passa a coletar o
+bloco de vtables 005DA7F0..005DA83F e os quatro entrypoints
+adicionais; nenhum alvo Draw/Update foi encontrado em
+visual_virtual_methods ou decompilações transitórias deste
+intervalo. O espaço 00416BAB..00417A4F não contém funções
+indexadas, portanto não deduzir entrypoints por proximidade.
+Verificar os VAs após ler vtables antes de pedir mais código.
+NativeJoeyCinematicRouting é contrato isolado de decompilação;
+nenhum renderer, player, gate ou badge novo.

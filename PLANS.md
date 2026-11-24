@@ -299,7 +299,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`.
   NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Roteiro 20 recebido: NativeVijaTimeline porta ordem dos passes, centros, fade, scratch e deformação por linha, 97/177 Draws. Máscara +98/remap e renderer ainda pendentes; não bloquear A03. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](docs/research/pending-bundles-handoff-2026-11-24.md).
 - [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`.
-  Modelo de roteamento de dano 00403900, distinção som-only/bust-up 00402E00, duração raw 00416B80. Roteiro 27 recupera tabela de severidade→manifesto e vtable 005DA840; posição, compositor, Update/Draw e gate ainda ausentes. [Contrato](docs/research/native-joey-reaction-audio-2026-11-24.md).
+  Modelo de roteamento de dano 00403900, distinção som-only/bust-up 00402E00, duração raw 00416B80. Roteiro 27 recupera tabela de severidade→manifesto e vtable 005DA840; posição, compositor, Update/Draw e gate ainda ausentes. NativeJoeyCinematicRouting porta 00403310 (ATK original, lado, códigos de evento e duas falas), 004152D0 e 00415C90 (start/result e variantes RNG), sem integração; roteiro 27 ampliado para vtables destas cenas. [Contrato](docs/research/native-joey-reaction-audio-2026-11-24.md).
 
 ### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
 

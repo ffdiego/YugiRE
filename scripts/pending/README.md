@@ -313,4 +313,4 @@ Saída privada: scratch/ghidra-native-cursor-dispatch-contract.zip. Confirmar or
 
     bash scripts/pending/27-joey-reaction-audio-ghidra.sh
 
-Saída privada: scratch/ghidra-joey-reaction-audio-contract.zip. Confirma classificação de dano e duração, tabela 005DA3C0, vtables e prefixo de 0x70 descritores 005EFD48. Resolver alvos no SQLite primeiro; não exportar WAV/pixels. Reutilizar --inspect-visual-dat para os manifests de busto. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
+Saída privada: scratch/ghidra-joey-reaction-audio-contract.zip. Confirma classificação de dano e duração, tabela 005DA3C0, vtables e prefixo de 0x70 descritores 005EFD48. Inclui 00403310/00414A20/004152D0/00415C90 e bloco 005DA7F0:80 para invocação, início e resultado. Se a versão anterior já foi executada, coletar só os quatro alvos e bloco adicionais. Resolver alvos no SQLite primeiro; não exportar WAV/pixels. Reutilizar --inspect-visual-dat para os manifests de busto. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
