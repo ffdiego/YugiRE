@@ -56,3 +56,15 @@ CI A05.6 45324763088 aprovado. SQLite cumulativo quick_check ok (mesmo EXE SHA25
 CI A05.7 45325522858 aprovado. SQLite cumulativo v2 quick_check ok: 005A1580 emite 33 (slot atacante, slot alvo, lado alvo+1); 00405020 copia 0x90 bytes do campo para registro por papel e limpa campo; 005A2740 evidência em docs/evidence/battle-comparison-caller.txt confirma 3C (slot, papel 0/1,0). 00577CF0/00405190 e 005A31A0 (evidência anterior) confirmam 7C (slot, destino 0 GY/1 banish, flag) e envio da cópia. 005A2740/005A31A0 ausentes na tabela decompilations v2; usamos exports históricos citados, não alegamos nova decompilação. 7C defensor (slot,0,1) observado #49–50 do Relinquished; atacante final fica unmapped por falta de confirmação dinâmica. 30/31 e 0C/35/56 continuam gaps.
 
 TryQueueTargetedAttack piloto explícito IDs 24 e 1351 (sem callback rows no SQLite, não classificador geral de monstros normais); dois monstros face-up, sem outras cartas em campo/equipamento. Revalida ocorrência e fase, usa matriz comum (empate zero preserva ambos), reserva até dois registros por papel, enfileira SnapshotBattleRemovalCommand, DamageCommand positivo, FinishBattleRemovalCommand. Nenhuma fila auxiliar; os registros armazenam a mesma referência de Card, invisível nas zonas comuns durante o intervalo. Gate impede dano antes de concluir retirada; GY só recebe na etapa final. Evento MonsterDestroyed na retirada, não duplicado na chegada. Lethal cleanup é política sandbox, não conclusão de paridade. Sem FLIP, resposta, recrutamento, banimento, troca de controle, efeitos/links; legado não alterado. Testes matriz ambos lados, identidade, fase/gate, lethal, fixture #49/50 (projeção isolada, não execução do efeito real). CI pendente. Próximo: validar os 3C/7C dinâmicos e ligar ataque ao console/App; A07 e efeitos continuam pendentes.
+
+## A05.9 — Trace de roteiros do console
+
+A consulta `trace` do console de laboratório, disponível no App e no Lab, imprime um snapshot JSON da fila em stdout. O schema `yugire-action-projection-v1` inclui as operações executadas em ordem, com resultado, origem e dados observados quando disponíveis. Na consulta, `complete` indica que a fila está livre e saudável. Os dados de projeção são os mesmos dos pilotos anteriores.
+
+Para exportar um roteiro headless, criar um arquivo de texto com `draw 1 0`, `summon 0 3` e `damage 200 1`, cada comando em uma linha, e executar:
+
+```sh
+dotnet run --project src/Joey.Lab -- duel-console --fixture scratch/trace-script.txt --trace-output=scratch/console-trace.json
+```
+
+O Lab grava um arquivo novo e conserva o prefixo executado com `complete: false` se o roteiro falhar. Com `--dat PATH` a exportação usa o mesmo schema e o catálogo indicado. Os testes C# cobrem a consulta durante o gate de apresentação, a igualdade após o gate, a origem de colocação, o prefixo após falha e a proteção de arquivos existentes. A integração do cue de combate e a comparação dinâmica permanecem pendentes.

@@ -1,24 +1,11 @@
-using System.Text.Json;
 using Joey.Core;
 
 namespace Joey.Lab;
 
-public sealed record ActionTraceDocument(string Schema, bool Complete, string Scope,
-    IReadOnlyList<ProjectedAction> Rows);
-
 public static class ActionTraceExport
 {
-    private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true };
-
-    public static ActionTraceDocument Capture(ActionQueue queue, string scope)
-    {
-        ArgumentNullException.ThrowIfNull(queue);
-        if (string.IsNullOrWhiteSpace(scope)) throw new ArgumentException("Trace scope is required.", nameof(scope));
-        return new("yugire-action-projection-v1", !queue.IsBusy && queue.Fault is null, scope,
-            ActionTraceProjection.ReadExecuted(queue.Trace));
-    }
-
-    public static string Serialize(ActionTraceDocument document) => JsonSerializer.Serialize(document, Json);
+    public static ActionTraceDocument Capture(ActionQueue queue, string scope) => ActionTraceJson.Capture(queue, scope);
+    public static string Serialize(ActionTraceDocument document) => ActionTraceJson.Serialize(document);
 
     // A real rule-produced trace. Not a claim of native parity; synthetic
     // catalogue entries for a deterministic pilot; no original DAT required.
