@@ -87,3 +87,45 @@ python3 -m unittest scripts/tests/test_compare_visual_frames.py -v
 Testes sintéticos cobrem frames iguais, diferenças na fronteira x=229/230,
 limiares RGB e de regressão, regiões sobrepostas, opacidade e proteção dos
 arquivos de entrada.
+
+## Matriz de quadros-chave
+
+Salve a lista de pares em `scratch/visual-review/pairs.json`. Os caminhos
+relativos apontam para arquivos a partir da pasta do manifesto. Cada `id`
+identifica o cenário e o quadro-chave no relatório.
+
+```json
+{
+  "schemaVersion": 1,
+  "pairs": [
+    {
+      "id": "example-impact",
+      "reference": "reference-impact.png",
+      "candidate": "candidate-impact.png",
+      "referenceUpdate": 16,
+      "candidateUpdate": 17,
+      "threshold": 0,
+      "maxMismatchedPixels": 12,
+      "maxUpdateDelta": 1
+    }
+  ]
+}
+```
+
+```bash
+python scripts/compare_visual_frame_matrix.py scratch/visual-review/pairs.json \
+  --output scratch/visual-review/matrix
+```
+
+O `matrix-report.json` agrega os resultados e aponta para os diagnósticos
+gravados na subpasta de cada par. `updateDelta` é `candidateUpdate - referenceUpdate`.
+Use contadores aferidos desde o mesmo evento de início. A ferramenta registra
+os valores fornecidos. A correspondência de estado e a origem de cada contador
+dependem das capturas. Os campos `threshold`, `maxMismatchedPixels` e
+`maxUpdateDelta` são opcionais. O limiar RGB padrão é 0 e o limite de updates
+usa o valor absoluto da diferença. O comando processa todos os pares válidos e
+retorna 1 quando algum excede um limite declarado.
+
+```bash
+python -m unittest discover -s scripts/tests -p 'test_compare_visual_frame*.py' -v
+```

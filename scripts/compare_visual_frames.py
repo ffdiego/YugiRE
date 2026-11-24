@@ -88,12 +88,26 @@ def analyze(native: Image.Image, yugire: Image.Image, threshold: int = 0, *,
     return summary, difference, mask, overlay
 
 
+def validate_output_paths(inputs: list[Path], outputs: list[Path]) -> None:
+    # Resolve symlinks and compare existing inodes to catch hard links too.
+    source_paths = {path.resolve() for path in inputs}
+    source_inodes = set()
+    for path in source_paths:
+        if path.exists():
+            stat = path.stat()
+            source_inodes.add((stat.st_dev, stat.st_ino))
+    for output in outputs:
+        if output.resolve() in source_paths:
+            raise ValueError(f"Output would overwrite an input: {output}")
+        if output.exists():
+            stat = output.stat()
+            if (stat.st_dev, stat.st_ino) in source_inodes:
+                raise ValueError(f"Output would overwrite an input: {output}")
+
+
 def compare_files(native_path: Path, yugire_path: Path, output_dir: Path, threshold: int = 0, *,
                   regions: dict[str, tuple[int, int, int, int]] | None = None) -> dict:
-    src = [native_path.resolve(), yugire_path.resolve()]
-    outputs = [(output_dir / filename).resolve() for filename in OUTPUT_FILES]
-    if any(path in src for path in outputs):
-        raise ValueError("Output would overwrite an input image")
+    validate_output_paths([native_path, yugire_path], [output_dir / name for name in OUTPUT_FILES])
     native = load_image(native_path)
     yugire = load_image(yugire_path)
     result, difference, mask, overlay = analyze(native, yugire, threshold, regions=regions)
