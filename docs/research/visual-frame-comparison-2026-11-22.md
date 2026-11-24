@@ -28,6 +28,17 @@ ou iguais a N (0 a 255). Com threshold 0, qualquer canal RGB distinto conta
 como pixel divergente. A métrica de erro médio, por sua vez, mantém todos os
 erros RGB, inclusive os abaixo do threshold.
 
+Para inspecionar elementos pontuais, repita `--region NOME X0 Y0 X1 Y1`.
+O canto inferior direito é exclusivo e os retângulos podem se sobrepor. As
+regiões adicionais mantêm as métricas globais e as duas regiões padrão.
+O relatório registra o retângulo de cada região e os limites de divergência
+em coordenadas do canvas.
+
+Em uma regressão com frames alinhados, `--max-mismatched-pixels 0` exige
+igualdade dentro do limiar RGB selecionado. O processo retorna 1 quando
+ultrapassa o limite e ainda grava todos os diagnósticos. Sem esse argumento,
+a contagem de diferenças é informativa e o processo retorna 0.
+
 ### Saídas (sempre locais, em `scratch/`)
 
 | Arquivo | Significado |
@@ -74,4 +85,47 @@ python3 -m unittest scripts/tests/test_compare_visual_frames.py -v
 ```
 
 Testes sintéticos cobrem frames iguais, diferenças na fronteira x=229/230,
-threshold, limites de região, opacidade e bloqueio contra sobrescrita.
+limiares RGB e de regressão, regiões sobrepostas, opacidade e proteção dos
+arquivos de entrada.
+
+## Matriz de quadros-chave
+
+Salve a lista de pares em `scratch/visual-review/pairs.json`. Os caminhos
+relativos apontam para arquivos a partir da pasta do manifesto. Cada `id`
+identifica o cenário e o quadro-chave no relatório.
+
+```json
+{
+  "schemaVersion": 1,
+  "pairs": [
+    {
+      "id": "example-impact",
+      "reference": "reference-impact.png",
+      "candidate": "candidate-impact.png",
+      "referenceUpdate": 16,
+      "candidateUpdate": 17,
+      "threshold": 0,
+      "maxMismatchedPixels": 12,
+      "maxUpdateDelta": 1
+    }
+  ]
+}
+```
+
+```bash
+python scripts/compare_visual_frame_matrix.py scratch/visual-review/pairs.json \
+  --output scratch/visual-review/matrix
+```
+
+O `matrix-report.json` agrega os resultados e aponta para os diagnósticos
+gravados na subpasta de cada par. `updateDelta` é `candidateUpdate - referenceUpdate`.
+Use contadores aferidos desde o mesmo evento de início. A ferramenta registra
+os valores fornecidos. A correspondência de estado e a origem de cada contador
+dependem das capturas. Os campos `threshold`, `maxMismatchedPixels` e
+`maxUpdateDelta` são opcionais. O limiar RGB padrão é 0 e o limite de updates
+usa o valor absoluto da diferença. O comando processa todos os pares válidos e
+retorna 1 quando algum excede um limite declarado.
+
+```bash
+python -m unittest discover -s scripts/tests -p 'test_compare_visual_frame*.py' -v
+```

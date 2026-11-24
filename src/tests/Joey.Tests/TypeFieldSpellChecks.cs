@@ -32,6 +32,17 @@ internal static class TypeFieldSpellChecks
         string.Join(",", Enumerable.Range(0, 2)
             .Select(p => string.Join(",", d.Graveyard(p).Select(c => c.Id)))));
 
+    public static void RunWithCatalog(IReadOnlyList<Card> cards, Action<bool, string> check)
+    {
+        // Two known Sea Serpent resources from different packs.
+        ushort[] seaSerpentIds = [352, 447];
+        foreach (ushort id in seaSerpentIds)
+        {
+            Card? entry = cards.SingleOrDefault(card => card.Id == id);
+            check(entry is { ClassCode: 5 }, $"Original DAT: Sea Serpent #{id} has class code 5");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         foreach (var rule in Cases)
