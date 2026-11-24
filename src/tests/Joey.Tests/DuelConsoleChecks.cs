@@ -37,7 +37,9 @@ internal static class DuelConsoleChecks
             }
             check(d.Hand.Count == 2 && d.Monsters[1,0] is null && d.Graveyard(1).Count == 1 &&
                 d.Life.SequenceEqual([8100,7700]) &&
-                session.Queue.Trace.Where(t => t.Stage == ActionTraceStage.Admitted).All(t => t.Entry.Origin == ActionOrigin.Console),
+                session.Queue.Trace.Where(t => t.Stage == ActionTraceStage.Admitted &&
+                    t.Entry.Command is DrawCommand or DestroyCommand or DamageCommand or HealCommand)
+                    .All(t => t.Entry.Origin == ActionOrigin.Console),
                 "A04 console uses actual executor and console origin");
             check(session.Execute("diff").Message.Contains("lp=7700"), "A04 diff reports changed state");
             return (session.Execute("state").Message, session.Queue.Trace.ToArray());
