@@ -11,22 +11,8 @@ static partial class Game
 
     static void CaptureVisualReview(RenderTexture2D canvas)
     {
-        // Read the 800x600 render target, not the potentially resized window.
-        // Explicit F12 is the only trigger; no automatic captures or storage.
-        string folder = Path.Combine("scratch", "visual-review");
-        Directory.CreateDirectory(folder);
-        string basename = "yugire-" + DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff");
-        string png = Path.Combine(folder, basename + ".png");
-        string json = Path.Combine(folder, basename + ".json");
-
-        Image image = Raylib.LoadImageFromTexture(canvas.Texture);
-        try
-        {
-            Raylib.ImageFlipVertical(ref image);
-            if (!Raylib.ExportImage(image, png))
-                throw new IOException("raylib could not export the 800x600 canvas");
-        }
-        finally { Raylib.UnloadImage(image); }
+        string basename = SaveVisualReviewImage(canvas, "yugire");
+        string json = basename + ".json";
 
         // Recording counters makes comparing frames with an original-game
         // screenshot easier. This metadata is about YugiRE, not a native trace.
@@ -113,7 +99,25 @@ static partial class Game
         };
         File.WriteAllText(json, JsonSerializer.Serialize(snapshot,
             new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
-        Console.WriteLine($"[visual-review] {Path.GetFullPath(png)}");
         Console.WriteLine($"[visual-review] {Path.GetFullPath(json)}");
+    }
+
+    static string SaveVisualReviewImage(RenderTexture2D canvas, string prefix)
+    {
+        string folder = Path.Combine("scratch", "visual-review");
+        Directory.CreateDirectory(folder);
+        string basename = Path.Combine(folder, prefix + "-" +
+            DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
+        string png = basename + ".png";
+        Image image = Raylib.LoadImageFromTexture(canvas.Texture);
+        try
+        {
+            Raylib.ImageFlipVertical(ref image);
+            if (!Raylib.ExportImage(image, png))
+                throw new IOException("raylib could not export the 800x600 canvas");
+        }
+        finally { Raylib.UnloadImage(image); }
+        Console.WriteLine($"[visual-review] {Path.GetFullPath(png)}");
+        return basename;
     }
 }

@@ -154,6 +154,7 @@ LookAndFeelChecks.Run(Check);
 CursorLegalityChecks.Run(Check);
 NativePresentationChecks.Run(Check);
 NativeFusionChecks.Run(Check, Reject);
+NativeDisabledChainChecks.Run(Check, Reject);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);

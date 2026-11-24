@@ -63,6 +63,7 @@ static partial class Game
                 return VisualManifestProbe.Export(inspected);
             }
             var archive = graphics.Open(path);
+            ConfigureDisabledChainReview(args, archive);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
@@ -77,6 +78,7 @@ static partial class Game
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--inspect-visual-dat")) return 1;
+        if (Option(args, "--review-disabled-chain=") is not null && error.Length > 0) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
@@ -95,7 +97,7 @@ static partial class Game
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
         { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data or --check-graphics for validation."); return 2; }
         duel = new(cards);
-        if (error.Length == 0 && args.Contains("--alpha")) StartAlpha();
+        if (error.Length == 0 && disabledChainReviewTarget is null && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();
@@ -114,6 +116,12 @@ static partial class Game
                 // Native detail uses an English GDI face, not the default
                 // raylib bitmap font; keep this confined to the sidebar.
                 duelTheme.LoadNativeDetailFonts();
+                if (disabledChainReviewTarget is not null)
+                {
+                    foreach (string resource in disabledChainReviewResources) _ = graphics.Texture(resource);
+                    screen = "chain-review";
+                    Console.WriteLine("[V12 review] F7 step, F8 reset, F12 capture, Escape exit; blend not verified");
+                }
             }
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException)
@@ -146,7 +154,12 @@ static partial class Game
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
             mouse = (Raylib.GetMousePosition() - origin) / scale;
             Raylib.BeginTextureMode(canvas); Raylib.ClearBackground(Background);
-            if (screen == "menu")
+            if (screen == "chain-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawDisabledChainReview();
+            }
+            else if (screen == "menu")
             {
                 if (graphics.Menu is { } menu && error.Length == 0)
                 {
@@ -196,9 +209,13 @@ static partial class Game
             }
 
             Raylib.EndTextureMode();
-            if (screen == "duel" && Raylib.IsKeyPressed(KeyboardKey.F12))
+            if ((screen is "duel" or "chain-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
-                try { CaptureVisualReview(canvas); }
+                try
+                {
+                    if (screen == "chain-review") CaptureDisabledChainReview(canvas);
+                    else CaptureVisualReview(canvas);
+                }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
                 { Console.Error.WriteLine("[visual-review] screenshot failed: " + ex.Message); }
             }
