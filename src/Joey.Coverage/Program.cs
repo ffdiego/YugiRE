@@ -3,8 +3,10 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Joey.Core;
 
-// Read-only bridge: descriptions consumed by Catalog.Load never leave this process.
-if (args.Length != 1) throw new ArgumentException("Usage: Joey.Coverage <data.dat>");
+// Default output is unchanged; C01 opts into a private in-memory local pipe only.
+if (args.Length != 1 && !(args.Length == 2 && args[1] == "--taxonomy-input"))
+    throw new ArgumentException("Usage: Joey.Coverage <data.dat> [--taxonomy-input]");
+bool taxonomyInput = args.Length == 2;
 using var archive = new Archive(args[0]);
 string Hash(byte[] b) => Convert.ToHexStringLower(SHA256.HashData(b));
 var ids = archive.Read(@"bin#\card_id.bin");
@@ -22,10 +24,14 @@ var cards = loaded.Select(c => new {
     pack = BinaryPrimitives.ReadUInt16LittleEndian(pack.AsSpan(c.Index * 2))
 }).ToArray();
 using var dat = File.OpenRead(args[0]);
+object outputCards = taxonomyInput
+    ? loaded.Select(c => new { internalIndex = c.Index, resourceId = c.Id, classCode = c.ClassCode,
+        pack = BinaryPrimitives.ReadUInt16LittleEndian(pack.AsSpan(c.Index * 2)), description = c.Description }).ToArray()
+    : cards;
 Console.Write(JsonSerializer.Serialize(new {
     fingerprints = new {
         datSha256 = Convert.ToHexStringLower(SHA256.HashData(dat)),
         cardIdSha256 = Hash(ids), namesSha256 = Hash(archive.Read(@"bin#\card_nameeng.bin")),
         propertiesSha256 = Hash(archive.Read(@"bin#\card_prop.bin"))
-    }, packSha256 = Hash(pack), cards, helperAliases
+    }, packSha256 = Hash(pack), cards = outputCards, helperAliases
 }));

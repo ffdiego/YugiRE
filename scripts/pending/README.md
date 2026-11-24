@@ -134,12 +134,30 @@ Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scri
 
 Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22/11 não possui decompilações nos dez VAs-alvo. O roteiro extrai os drivers e handlers das tabelas, mais as duas tabelas brutas. Pergunta: como o índice de A577FE se liga às escritas em A577FA e aos rótulos exibidos? Encerrar a coleta após verificar fingerprint e cobertura dos alvos (ausências explícitas), importar evidências compatíveis em cópia cumulativa do SQLite e documentar o mapeamento ou a lacuna residual. Não chamar a coleta de implementação A07. Ver [A01](../../docs/architecture/action-queue.md).
 
-## V01 / V11 — 14-visual-cosine-runtime.py (aguardando Windows)
+### 14 — C01: taxonomia de efeitos pelo DAT local
+
+- Ambiente: Windows (Git Bash) ou Fedora, Python 3 e .NET 10, DAT original local.
+- Comando: `bash scripts/pending/14-card-effect-taxonomy.sh /caminho/para/data.dat`.
+- Saída privada: `scratch/card-taxonomy.json` (IDs, fingerprints, famílias, rotas e status atuais; sem descrições).
+- Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
+- Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.
+- Estado: aguardando execução local; classificador testado com fixtures sintéticas, integração .NET ainda não executada. Nunca executar o modo `--taxonomy-input` diretamente ou redirecionar sua saída para arquivo: a descrição deve ficar no pipe privado do classificador.
+
+### 12 — C07: chegada ao cemitério e causa do descarte
+
+- Ambiente: Fedora/Ghidra, projeto Joey original, Python 3 e Ghidra headless. Roteiro 14 reservado em C01 (#66).
+- Comando: `bash scripts/pending/12-graveyard-arrival-ghidra.sh`.
+- Saída privada: `scratch/ghidra-graveyard-arrival-contract.zip`.
+- Questão: callbacks P066/P068/P030 ausentes e argumentos do caminho 00575970 → 005759A0 → 00575AF0; separar custo, descarte adversário e envio direto. Conferir descrições DAT locais também.
+- Encerramento: resolver ou registrar ausência dos callbacks e disassembly dos chamadores; confirmar origem da flag, retorno ao topo e ordem, registrar evidências e limites em C07. Não repetir exportação geral.
+- Estado: aguardando coleta; análise inicial SQLite concluída. Ver [C07](../../docs/cards/c07-graveyard-arrival-effects.md).
+
+## V01 / V11 — 15-visual-cosine-runtime.py (aguardando Windows)
 
 Com o executável original aberto em um duelo e Frida instalado na venv:
 
 ```powershell
-python scripts/pending/14-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
+python scripts/pending/15-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
 dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine=scratch/visual-review/native-cosine.json
 ```
 

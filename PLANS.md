@@ -137,8 +137,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 ### Itens abertos
 
-- [ ] **C01 — Taxonomia de efeitos por texto local.** Status: `Pronto`.
-  Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`.
+- [ ] **C01 — Taxonomia de efeitos por texto local.** Status: `Parcial` (aguardando execução DAT do roteiro 14).
+  Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`. Classificador inicial em `scripts/card_effect_taxonomy.py` com testes sintéticos; falta gerar e revisar as 771 entradas reais. Roteiro `scripts/pending/14-card-effect-taxonomy.sh`. Não confundir candidato trivial com ausência da fila de A02 ou status Done.
 - [ ] **C02 — Lotes triviais por família.** Status: `Bloqueado por C01`.
   Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
 - [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`.
@@ -149,8 +149,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Sem prometer tamanho de lote antes de confirmar o catálogo original.
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto` (armadilhas simples sem corrente podem seguir antes).
   As cinco já feitas reaproveitam janelas de Summon/ataque. Faltam as outras, Special Summon como gatilho e correntes/respostas, **sem fingir que uma fila simples cobre todos os casos**.
-- [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Pronto`.
-  Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda.
+- [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Parcial`.
+  Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda. Fatia pura de chegada ao cemitério: P066/P044/P068/P030; [contrato C07](docs/cards/c07-graveyard-arrival-effects.md). Integração depende da causalidade e ocorrência na fila (A02/A06). Roteiro 12 fecha ambiguidades de envio direto e callbacks faltantes; não bloquear outras famílias.
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`.
   Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 monstros invocáveis. Não declarar paridade nativa até medir callbacks P182 no Windows.
 - [ ] **C09 — Rituais (`P269`).** Status: `Pronto`.
@@ -193,7 +193,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 ### Itens abertos (ordem sugerida)
 
 - [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`.
-  Capturador dirigido `scripts/pending/14-visual-cosine-runtime.py` e loader `--native-cosine=` implementados; aguardam captura Windows. F12 distingue tabela aproximada e captura runtime. Log de Draw ainda pendente.
+  Capturador dirigido `scripts/pending/15-visual-cosine-runtime.py` e loader `--native-cosine=` implementados; aguardam captura Windows. F12 distingue tabela aproximada e captura runtime. Log de Draw ainda pendente.
   (a) Capturar `00A52EE8` (512 valores x16.16) **depois** da inicialização em `0055DCF0` — o Ghidra estático não entrega a tabela, e hoje o C# usa `Math.Cos` (`ApproximateCosineTable`, explicitamente não bit-exata). (b) Hookar o primitivo de blit comum e registrar, por frame de duelo, `(rotina Draw, recurso/sprite, x, y, alpha/blend, ângulo/escala, quadro)` para as rotinas do inventário. Isso gera valores de referência **observados** para comparar com os extraídos do assembly e acelera V02–V16. Aproveitar a infraestrutura `native_hooks`/`yugilab`; sem versionar dumps brutos.
   *Pronto quando:* tabela de 512 inteiros disponível em `scratch/` e carregável pelo C# no lugar da aproximação; log de Draw para um duelo curto reproduzível por seed.
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`.
