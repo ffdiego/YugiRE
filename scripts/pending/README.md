@@ -189,3 +189,7 @@ até receber o ZIP; não confundir a coleta com implementação.
 Para os recursos, utilizar --inspect-visual-dat já existente
 e compartilhar privadamente apenas registros de fusion.txt e
 dimensões das imagens referenciadas (sem pixels).
+
+### 16 — CARDS: P117/P159/P160 ressurreição
+
+`bash scripts/pending/16-cards-revival-spells-ghidra.sh` no Fedora/Ghidra local. Saída privada `scratch/ghidra-revival-spells-contract.zip`. Extrair sete callbacks ausentes nos dois SQLite, com assembly e helpers de movimentação/identidade. Confirmar propriedade/controle, seleção, custo e vínculo; não promover cobertura apenas pela coleta. Ver [lacuna](../../docs/cards/p117-p159-p160-revival-spells-gap.md).

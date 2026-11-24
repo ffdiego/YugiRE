@@ -31,7 +31,7 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 // Neither of these stages claims a one-to-one native opcode mapping.
 internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
 internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
-internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
+internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRevivalCommand(int Side, PendingCardSelection Request, CardTarget Target, int Slot, bool FaceDownDefense) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
@@ -91,7 +91,7 @@ internal static class DuelCommandValidation
                 Target(move.Source, move.Side, DuelZone.Graveyard, DuelZone.Deck);
                 break;
             case ResolveDeckSearchCommand search when search.Request is not null && search.Request.Owner == search.Side:
-                Target(search.Target, search.Side, DuelZone.Deck);
+                if (search.Target is { } searchPick) Target(searchPick, search.Side, DuelZone.Deck);
                 break;
             case ResolveGraveyardRevivalCommand revive when revive.Request is not null && revive.Request.Owner == revive.Side && revive.Slot is >= 0 and < 5:
                 Target(revive.Target, revive.Side, DuelZone.Graveyard);
