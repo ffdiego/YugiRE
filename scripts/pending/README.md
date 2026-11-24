@@ -126,10 +126,18 @@ Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastre
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
 
-### 11 — C01: taxonomia de efeitos pelo DAT local
+## ACTIONS — aguardando coleta
+
+| Roteiro | ID | Ambiente | Saída | Estado |
+| --- | --- | --- | --- | --- |
+| `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Aguardando execução/importação |
+
+Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22/11 não possui decompilações nos dez VAs-alvo. O roteiro extrai os drivers e handlers das tabelas, mais as duas tabelas brutas. Pergunta: como o índice de A577FE se liga às escritas em A577FA e aos rótulos exibidos? Encerrar a coleta após verificar fingerprint e cobertura dos alvos (ausências explícitas), importar evidências compatíveis em cópia cumulativa do SQLite e documentar o mapeamento ou a lacuna residual. Não chamar a coleta de implementação A07. Ver [A01](../../docs/architecture/action-queue.md).
+
+### 14 — C01: taxonomia de efeitos pelo DAT local
 
 - Ambiente: Windows (Git Bash) ou Fedora, Python 3 e .NET 10, DAT original local.
-- Comando: `bash scripts/pending/11-card-effect-taxonomy.sh /caminho/para/data.dat`.
+- Comando: `bash scripts/pending/14-card-effect-taxonomy.sh /caminho/para/data.dat`.
 - Saída privada: `scratch/card-taxonomy.json` (IDs, fingerprints, famílias, rotas e status atuais; sem descrições).
 - Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
 - Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.

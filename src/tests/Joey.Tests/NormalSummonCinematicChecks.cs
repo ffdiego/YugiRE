@@ -13,6 +13,7 @@ internal static class NormalSummonCinematicChecks
         var summoned = new DemoDuel([redEyes]);
         summoned.Monsters[0, 0] = weak;
         summoned.Monsters[0, 1] = weak;
+        Card physicalRedEyes = summoned.Hand[0];
         List<DemoNormalSummon> normalEvents = [];
         List<DemoMonsterTribute> tributes = [];
         summoned.MonsterNormalSummoned += normalEvents.Add;
@@ -25,16 +26,17 @@ internal static class NormalSummonCinematicChecks
         check(summoned.Summon(0, 0, 2, true, out _, [0, 1]) &&
               tributes.Select(t => t.Zone).SequenceEqual([0, 1]) &&
               normalEvents is [{ Player: 0, Zone: 2, FaceDown: false, Card: var card }] &&
-              ReferenceEquals(card, redEyes) &&
+              ReferenceEquals(card, physicalRedEyes) &&
               summoned.Monsters[0, 2] == redEyes,
               "Signature summon: normal-summon cue fires once after committed tributes");
 
         var faceDown = new DemoDuel([weak]);
+        Card physicalWeak = faceDown.Hand[0];
         List<DemoNormalSummon> sets = [];
         faceDown.MonsterNormalSummoned += sets.Add;
         check(faceDown.Summon(0, 0, 3, true, out _, faceDown: true) &&
               sets is [{ Player: 0, Zone: 3, FaceDown: true, Card: var setCard }] &&
-              ReferenceEquals(setCard, weak) &&
+              ReferenceEquals(setCard, physicalWeak) &&
               faceDown.MonsterFaceDown[0, 3],
               "Normal summon cue: an ordinary monster Set is explicitly face-down");
 
