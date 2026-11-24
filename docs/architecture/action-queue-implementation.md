@@ -73,3 +73,11 @@ reservadas são anexadas logo após o alvo correspondente. O executor mantém
 as reservas de vínculo, a revalidação por ocorrência e os gatilhos de fim
 do lote. O teste de destruição em massa compara o gasto e a remoção de
 equipamento antes do próximo alvo, com a mesma ordenação do sandbox.
+
+## A08.3 — Resposta antes da compra opcional
+
+A continuação de compra opcional produz a resposta como comando próprio.
+O executor só emite `DrawCommand` depois de revalidar a resposta aceita,
+a supressão vigente, o turno e a disponibilidade da carta. A regressão
+ativa a supressão entre a admissão e a execução da resposta e verifica
+que mão, deck e histórico permanecem intactos.

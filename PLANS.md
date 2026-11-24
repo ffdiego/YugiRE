@@ -116,6 +116,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   **Efeitos com continuação** (escolha de alvo, gatilhos após a destruição, janelas de resposta) se expressam como passos esperados (`IEnumerable<Step>`; **sem snapshots por ora** — o replay vem de `seed + log de entradas`) e retomam em nova passagem da fila, sem recursão.
   Migrar para `Joey.Cards` as regras declarativas existentes (`DirectDamageRules`, equipamentos, campo etc.) junto com `C12`.
   *A08.1–A08.2:* `EffectContext` compõe compra, LP, envio do custo ao cemitério e destruições de ocorrências verificadas. A limpeza vinculada segue imediatamente após a destruição que a dispara. O executor continua dono da admissão, das reservas e dos gatilhos. A extração do assembly e as decisões pendentes seguem abertas no [PR #101](https://github.com/ffdiego/YugiRE/pull/101).
+  *A08.3:* a continuação de compra opcional admite primeiro a resposta. O executor revalida supressão, turno e disponibilidade antes de emitir a compra dependente.
   *Pronto quando:* Raigeki, Dark Hole e uma carta com continuação (ex.: escolha + destruição) vivem em `Joey.Cards`, passam pelo console (`A04`) e produzem a mesma lista de comandos com e sem gate visual.
 
 ## Trilha CARDS

@@ -289,7 +289,7 @@ public sealed partial class DemoDuel
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
-            if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision);
+            if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision, followups);
             // An unspent source cancels the entire reserved wipe, including linked consequences.
             if (wipe is { SourceSpent: false } pendingWipe &&
                 (command is not SendToGraveyardCommand sendSource || sendSource.Target != pendingWipe.Source))
@@ -753,8 +753,7 @@ public sealed partial class DemoDuel
                 followups.ScheduleContinuation(_ => new([], answer =>
                 {
                     var selected = answer ?? throw new InvalidOperationException("Missing draw answer.");
-                    DuelCommand record = new RecordFlipDrawDecisionCommand(side, request.Id, selected);
-                    return new(selected == EffectDecisionAnswer.Accept ? [record, new DrawCommand(side)] : [record]);
+                    return new([new RecordFlipDrawDecisionCommand(side, request.Id, selected)]);
                 }, request));
                 return new(CommandOutcome.Applied);
             }
@@ -1117,11 +1116,20 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision)
+        private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision, IActionCommandSink followups)
         {
             if (queueDrawDecision is not { } request || request.Id != decision.DecisionId || request.Owner != decision.Side)
                 return new(CommandOutcome.Rejected, "No matching queued draw decision.");
+
             queueDrawDecision = null;
+            if (duel.FlipEffectsNegated)
+                return new(CommandOutcome.Skipped, "Optional draw effect is now negated.");
+            if (duel.LegacyActionsBlocked || request.CreatedTurn != duel.Turn ||
+                (decision.Answer == EffectDecisionAnswer.Accept && duel.DeckCount(decision.Side) == 0))
+                return new(CommandOutcome.Rejected, "Optional draw is no longer legal.");
+
+            if (decision.Answer == EffectDecisionAnswer.Accept)
+                followups.Enqueue(new DrawCommand(decision.Side));
             int life = duel.Life[decision.Side];
             duel.effectDecisionHistory.Add(new(request.Id, request.Owner, request.Kind, decision.Answer, duel.Turn, life, life));
             return new(CommandOutcome.Applied);
