@@ -65,6 +65,27 @@ Ferramentas existentes: SQLite nativo enriquecido, `scripts/run-archive-query.sh
 
 **Exemplos pendentes:** números de LP flutuantes são posicionados pelo contexto/argumentos do Draw (dano de batalha não é idêntico a dano direto); anúncio de troca de jogador usa recursos próprios; atributos ATK/DEF têm visibilidade e cores dependentes do estado; cursor de ataque e cursores de posição só aparecem para ações permitidas. Ver [fila de investigação visual](docs/research/visual-assembly-first-backlog-2026-11-22.md) e `PLANS.md`.
 
+## Fonte privada compartilhada de engenharia reversa
+
+**ACTIONS, CARDS e VISUALS devem consultar primeiro o snapshot cumulativo
+`joey-knowledge-visual-cumulative-2026-11-24-v2.zip` (24/11/2026), que
+contém `joey-knowledge-visual-cumulative.sqlite` e a auditoria.**
+Em conversas ChatGPT, procurar o arquivo nas fontes do projeto YugiRE
+ou na Biblioteca privada do mantenedor pelo nome exato; em máquinas locais,
+usar a cópia em `scratch/`. Não pedir reenvio sem tentar localizar a fonte.
+Validar o hash do SQLite e o fingerprint do EXE conforme o
+[guia de consultas](docs/research/joey-knowledge-sqlite.md).
+O ZIP sem o sufixo `2026-11-24-v2` contém apenas 19 dos 21 bundles,
+apesar da auditoria antiga; não usá-lo como snapshot completo.
+Antes de considerar uma VA ausente, consultar `decompilations`,
+`visual_transient_decompilations`, `visual_evidence_functions`,
+`visual_evidence_instructions` e, quando pertinente,
+`visual_evidence_memory` e relatórios brutos. Não repetir coletas
+já presentes, inclusive quando o endereço não existe em `functions`.
+Ao publicar uma nova versão privada, atualizar o guia com nome, hash,
+auditoria, contagens e lacunas; manter as versões anteriores somente como histórico.
+Nunca versionar o SQLite ou os ZIPs no GitHub.
+
 ## Extrações nativas que dependem de outra máquina
 
 A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de extração executáveis mas não executadas**, para Ghidra/Windows e outras evidências indisponíveis neste ambiente. Ler seu `README.md` antes de executar, atualizar o estado após obter um ZIP e nunca marcar um item como concluído só porque o script foi escrito. Não executar automaticamente as tarefas pendentes durante builds, CI ou testes. Esta política vale para **ACTIONS, CARDS e VISUALS**. Se qualquer frente depender do Windows (Frida/executável/DAT) ou Fedora (Ghidra/projeto local) indisponível, adicionar um script direcionado, indicar ID da trilha, ambiente, pré-requisitos, evidência esperada e saída em `scratch/`, registrar no README e avançar em uma tarefa independente.
