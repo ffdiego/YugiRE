@@ -241,3 +241,11 @@ Ghidra local, projeto e EXE atestado. Os dois Draws não existem nas tabelas de 
     bash scripts/pending/21-attack-life-draw-ghidra.sh
 
 Saída privada: scratch/ghidra-attack-life-draw-contract.zip. Recuperar instruções de seleção de sprite/pivô e âncoras de LP por slot/-1, ABI dos produtores e vtables. Importar com import_visual_evidence.py em nova cópia. [Contrato](../../docs/research/native-attack-life-routing-2026-11-24.md). Não repetir a coleta completa do inventário.
+
+## V07 — 23-turn-notice-draw-ghidra.sh (aguardando Fedora)
+
+Ghidra local, projeto/EXE atestado. SQLite confirmou ordem, preloads e contadores de painel; faltam 00480C20/00480C60 e virtual +4. 
+
+    bash scripts/pending/23-turn-notice-draw-ghidra.sh
+
+Saída privada: scratch/ghidra-turn-notice-draw-contract.zip. Verificar vtables, seletor de frame, âncora, composição e término; se o virtual +4 apontar para outra rotina ainda ausente, registrar VA para próxima coleta. Usar --inspect-visual-dat para phase_name.txt; importar bundle por import_visual_evidence.py. Não repetir 11/A07 nem os quatro bundles concluídos. [Contrato](../../docs/research/native-turn-notice-contract-2026-11-24.md).
