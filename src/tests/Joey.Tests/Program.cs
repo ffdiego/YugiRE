@@ -249,6 +249,7 @@ QueuedDeckRecruitmentChecks.Run(Check);
 QueuedSameNameRecruitmentChecks.Run(Check);
 QueuedGraveyardRevivalChecks.Run(Check);
 QueuedRitualSearchChecks.Run(Check);
+QueuedFlipDeckFlowChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);
