@@ -36,7 +36,22 @@ def load_image(path: Path) -> Image.Image:
         return rgba.convert("RGB")
 
 
-def analyze(native: Image.Image, yugire: Image.Image, threshold: int = 0) -> tuple[dict, Image.Image, Image.Image, Image.Image]:
+def mismatch_metrics(mask: Image.Image, x: int = 0, y: int = 0) -> dict:
+    total = mask.width * mask.height
+    mismatch = mask.histogram()[255]
+    bounds = mask.getbbox()
+    return {
+        "totalPixels": total,
+        "mismatchedPixels": mismatch,
+        "mismatchPercent": round(100 * mismatch / total, 6),
+        "mismatchBoundsExclusive": [bounds[0] + x, bounds[1] + y, bounds[2] + x, bounds[3] + y]
+        if bounds else None,
+    }
+
+
+def analyze(native: Image.Image, yugire: Image.Image, threshold: int = 0, *,
+            regions: dict[str, tuple[int, int, int, int]] | None = None
+            ) -> tuple[dict, Image.Image, Image.Image, Image.Image]:
     """Return JSON-friendly summary, raw abs-RGB diff, binary mask and 50/50 overlay."""
     if not 0 <= threshold <= 255:
         raise ValueError("threshold must be in [0,255]")
@@ -44,62 +59,58 @@ def analyze(native: Image.Image, yugire: Image.Image, threshold: int = 0) -> tup
         raise ValueError("Both frames must be exactly 800x600")
     if native.mode != "RGB" or yugire.mode != "RGB":
         raise ValueError("Pass RGB images; load_image validates alpha and converts inputs")
+    regions = {} if regions is None else regions
+    for name, (x0, y0, x1, y1) in regions.items():
+        if not name.strip() or name in REGIONS:
+            raise ValueError(f"Invalid or reserved region name: {name!r}")
+        if not (0 <= x0 < x1 <= CANVAS[0] and 0 <= y0 < y1 <= CANVAS[1]):
+            raise ValueError(f"Region {name!r} must be a nonempty rectangle within the canvas")
     difference = ImageChops.difference(native, yugire)
-    mask = Image.new("RGB", CANVAS, (0, 0, 0))
-    # One traversal for counts, bounds and region metrics; no image scaling.
-    mismatch = 0
-    max_channel_delta = 0
-    bounds = [800, 600, -1, -1]
-    region = {k: {"mismatchedPixels": 0, "totalPixels": (x1-x0)*(y1-y0)}
-              for k, (x0, y0, x1, y1) in REGIONS.items()}
-    mask_pixels: list[tuple[int, int, int]] = []
-    pixel_bytes = difference.tobytes()
-    for i in range(0, len(pixel_bytes), 3):
-        r, g, b = pixel_bytes[i], pixel_bytes[i + 1], pixel_bytes[i + 2]
-        delta = max(r, g, b)
-        if delta > max_channel_delta:
-            max_channel_delta = delta
-        if delta > threshold:
-            x, y = (i // 3) % 800, (i // 3) // 800
-            mismatch += 1
-            bounds[0] = min(bounds[0], x)
-            bounds[1] = min(bounds[1], y)
-            bounds[2] = max(bounds[2], x)
-            bounds[3] = max(bounds[3], y)
-            region["sidebar" if x < 230 else "board"]["mismatchedPixels"] += 1
-            mask_pixels.append((255, 0, 0))
-        else:
-            mask_pixels.append((0, 0, 0))
-    mask.putdata(mask_pixels)
-    for data in region.values():
-        data["mismatchPercent"] = round(100 * data["mismatchedPixels"] / data["totalPixels"], 6)
-    pixel_total = CANVAS[0] * CANVAS[1]
+    red, green, blue = difference.split()
+    max_delta = ImageChops.lighter(ImageChops.lighter(red, green), blue)
+    mismatches = max_delta.point([0] * (threshold + 1) + [255] * (255 - threshold))
+    region = {}
+    for name, box in (REGIONS | regions).items():
+        region[name] = {"boundsExclusive": list(box), **mismatch_metrics(mismatches.crop(box), *box[:2])}
     summary = {
         "schemaVersion": 1,
-        "width": 800, "height": 600,
+        "width": CANVAS[0], "height": CANVAS[1],
         "threshold": threshold,
-        "totalPixels": pixel_total,
-        "mismatchedPixels": mismatch,
-        "mismatchPercent": round(100 * mismatch / pixel_total, 6),
-        # Half-open rectangle convenient for deterministic crops.
-        "mismatchBoundsExclusive": [bounds[0], bounds[1], bounds[2]+1, bounds[3]+1] if mismatch else None,
+        **mismatch_metrics(mismatches),
         "meanAbsoluteRgbChannelError": round(sum(ImageStat.Stat(difference).mean) / 3, 6),
-        "maxChannelDelta": max_channel_delta,
+        "maxChannelDelta": max_delta.getextrema()[1],
         "regions": region,
         "limitations": "Pixel comparison only; assumes matching scene, perspective, update and 800x600 crop. The F12 YugiRE canvas excludes its window cursor.",
     }
+    black = Image.new("L", CANVAS)
+    mask = Image.merge("RGB", (mismatches, black, black))
     overlay = Image.blend(native, yugire, 0.5)
     return summary, difference, mask, overlay
 
 
-def compare_files(native_path: Path, yugire_path: Path, output_dir: Path, threshold: int = 0) -> dict:
-    src = [native_path.resolve(), yugire_path.resolve()]
-    outputs = [(output_dir / filename).resolve() for filename in OUTPUT_FILES]
-    if any(path in src for path in outputs):
-        raise ValueError("Output would overwrite an input image")
+def validate_output_paths(inputs: list[Path], outputs: list[Path]) -> None:
+    # Resolve symlinks and compare existing inodes to catch hard links too.
+    source_paths = {path.resolve() for path in inputs}
+    source_inodes = set()
+    for path in source_paths:
+        if path.exists():
+            stat = path.stat()
+            source_inodes.add((stat.st_dev, stat.st_ino))
+    for output in outputs:
+        if output.resolve() in source_paths:
+            raise ValueError(f"Output would overwrite an input: {output}")
+        if output.exists():
+            stat = output.stat()
+            if (stat.st_dev, stat.st_ino) in source_inodes:
+                raise ValueError(f"Output would overwrite an input: {output}")
+
+
+def compare_files(native_path: Path, yugire_path: Path, output_dir: Path, threshold: int = 0, *,
+                  regions: dict[str, tuple[int, int, int, int]] | None = None) -> dict:
+    validate_output_paths([native_path, yugire_path], [output_dir / name for name in OUTPUT_FILES])
     native = load_image(native_path)
     yugire = load_image(yugire_path)
-    result, difference, mask, overlay = analyze(native, yugire, threshold)
+    result, difference, mask, overlay = analyze(native, yugire, threshold, regions=regions)
     result["nativeFrame"] = str(native_path)
     result["yugireFrame"] = str(yugire_path)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -117,14 +128,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=Path("scratch/visual-review/comparison"))
     parser.add_argument("--threshold", type=int, default=0,
                         help="Compare max per-channel difference > threshold (0..255)")
+    parser.add_argument("--region", action="append", nargs=5, metavar=("NAME", "X0", "Y0", "X1", "Y1"),
+                        default=[], help="Include a named region with exclusive right/bottom edges (repeatable)")
+    parser.add_argument("--max-mismatched-pixels", type=int,
+                        help="Return exit code 1 when the reported mismatch count exceeds this limit")
     args = parser.parse_args(argv)
     try:
-        result = compare_files(args.native, args.yugire, args.output, args.threshold)
+        if args.max_mismatched_pixels is not None and args.max_mismatched_pixels < 0:
+            raise ValueError("Mismatch limit must be nonnegative")
+        regions = {}
+        for name, *coords in args.region:
+            if name in regions:
+                raise ValueError(f"Duplicate region name: {name!r}")
+            regions[name] = tuple(map(int, coords))
+        result = compare_files(args.native, args.yugire, args.output, args.threshold, regions=regions)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     print(f"{result['mismatchedPixels']}/{result['totalPixels']} pixels differ "
           f"({result['mismatchPercent']:.4f}%), max channel delta "
           f"{result['maxChannelDelta']}; {args.output / 'report.json'}")
+    if args.max_mismatched_pixels is not None and result["mismatchedPixels"] > args.max_mismatched_pixels:
+        print(f"Mismatch count exceeds limit of {args.max_mismatched_pixels} pixels")
+        return 1
     return 0
 
 
