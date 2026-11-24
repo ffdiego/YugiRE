@@ -94,7 +94,7 @@ foreach (int defense in new[] { 500, 1000, 2000 })
     Check(defenseDuel.Attack(0, 0, out _) && defenseDuel.Monsters[0, 0] != null && (defenseDuel.Monsters[1, 0] == null) == (defense < 1000) && defenseDuel.Life[0] == (defense > 1000 ? 7000 : 8000) && defenseDuel.Life[1] == 8000, $"ATK 1000 against DEF {defense}: correct casualties and damage");
 }
 var warrior = new Card(9, 9, "Warrior", "", (15u << 20) | (100u << 9) | 100u);
-var sword = new Card(10, 300, "Legendary Sword", "", 21u << 20);
+var sword = new Card(10, 300, "Legendary Sword", "", 22u << 20);
 var equipped = new DemoDuel([warrior, strong, weak, sword]);
 Check(!equipped.Equip(3, 0, 0, out _) && equipped.Hand.Count == 4, "Cannot equip empty zone; preserve hand");
 equipped.Summon(0, 0, 0, true, out _);
@@ -242,6 +242,7 @@ TypeFieldSpellChecks.Run(Check);
 MonsterBattleRuleChecks.Run(Check);
 EquipmentChecks.Run(Check);
 QueuedEquipmentChecks.Run(Check);
+FixedEquipmentLifecycleChecks.Run(Check);
 TimedEquipmentAndQueuedLpChecks.Run(Check);
 QueuedDrawSpellChecks.Run(Check);
 QueuedMonsterWipeChecks.Run(Check);

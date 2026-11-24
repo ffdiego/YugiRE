@@ -65,7 +65,7 @@ static class SummonTests
         check(!wrong.Summon(0, 0, 0, true, out _, [0, 1]) && !wrong.Summon(0, 1, 0, true, out _, [0, 1]) &&
             wrong.Monsters[1, 0] == low && wrong.Hand.Count == 1, "Opponent monsters cannot be used as ordinary demo tributes");
         var warrior = new Card(4, 4, "Warrior", "", (15u << 20) | (4u << 25));
-        var sword = new Card(5, 300, "Legendary Sword", "", 21u << 20);
+        var sword = new Card(5, 300, "Legendary Sword", "", 22u << 20);
         var equipped = new DemoDuel([warrior, boss, sword]);
         equipped.Summon(0, 0, 0, true, out _); equipped.Equip(1, 0, 0, out _);
         equipped.NextTurn(); equipped.NextTurn();
