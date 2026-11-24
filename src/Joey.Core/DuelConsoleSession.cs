@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | discard SIDE INDEX | send SIDE INDEX | state | diff | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | decision ID accept|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -53,7 +53,7 @@ public sealed class DuelConsoleSession
         if (duel.GameOver) return new(false, "Duel ended.");
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
-        if (op is "summon" or "set" or "flip" or "position" or "activate")
+        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip")
             return ExecuteLegal(op, words);
         DuelCommand[] batch;
         switch (op)
@@ -145,6 +145,14 @@ public sealed class DuelConsoleSession
                 }
                 ok = duel.TryQueueNormalPlacement(index, slot, op == "set", out message, tributes, ActionOrigin.Console);
             }
+        }
+        else if (op == "equip")
+        {
+            if (words.Length != 5 || words[1] is not ("hand" or "set") || !Index(words[2], out int sourceIndex) ||
+                !Side(words[3], out int targetSide) || !Slot(words[4], out int targetSlot))
+                return new(false, "Expected equip hand|set INDEX SIDE SLOT.");
+            ok = duel.TryQueueEquipment(words[1] == "set" ? DuelZone.SpellTrap : DuelZone.Hand,
+                sourceIndex, targetSide, targetSlot, out message, ActionOrigin.Console);
         }
         else if (op == "activate")
         {

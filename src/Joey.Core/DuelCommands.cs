@@ -21,17 +21,17 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
-// Explicit fixture edits are not legal summons, draws, sends or destroys.
+// Explicit setup edits, separate from gameplay commands.
 internal sealed record LabSpawnCommand(int Side, Card Template, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
 internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
-// Historical name retained for the A02 pilot; now covers the same wipe family.
+internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
-internal sealed record ActivateSimpleSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
-internal sealed record FinishSimpleSpellCommand(int Side) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
     CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
@@ -62,10 +62,17 @@ internal static class DuelCommandValidation
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case DrawCommand:
             case FinishFieldRemovalCommand:
-            case FinishSimpleSpellCommand:
                 break;
-            case ActivateSimpleSpellCommand simple:
-                Target(simple.Source, simple.Side, DuelZone.Hand, DuelZone.SpellTrap);
+            case EquipCommand equip when equip.SpellSlot is >= 0 and < 5:
+                Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
+                Target(equip.Target, equip.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateDrawSpellCommand drawSpell:
+                Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateLifePointSpellCommand lp:
+                Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand, DuelZone.SpellTrap);

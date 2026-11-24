@@ -46,9 +46,18 @@ public static class EquipmentRules
     public static bool Supports(ushort resourceId) =>
         types.ContainsKey(resourceId) || attributes.ContainsKey(resourceId);
 
-    public static NativeAiResult<bool> Eligibility(ushort resourceId, EquipmentTargetContext? target)
+    // Keep the legacy UI whitelist unchanged. New dynamic cards require the queue.
+    public static bool SupportsQueued(ushort resourceId) => Supports(resourceId) || DynamicEquipmentRules.Supports(resourceId);
+
+    public static NativeAiResult<bool> Eligibility(ushort resourceId, EquipmentTargetContext? target) =>
+        Evaluate(resourceId, target, queued: false);
+
+    public static NativeAiResult<bool> QueuedEligibility(ushort resourceId, EquipmentTargetContext? target) =>
+        Evaluate(resourceId, target, queued: true);
+
+    private static NativeAiResult<bool> Evaluate(ushort resourceId, EquipmentTargetContext? target, bool queued)
     {
-        if (!Supports(resourceId))
+        if (!(queued ? SupportsQueued(resourceId) : Supports(resourceId)))
             return NativeAiResult<bool>.Unsupported("Equipment outside the audited fixed-bonus IDs");
         if (target is null || target.Player is null || target.Zone is null ||
             target.InternalIndex is null || target.ResourceId is null || target.FaceUp is null ||
@@ -57,9 +66,9 @@ public static class EquipmentRules
         bool common = target.Player is >= 0 and <= 1 && target.Zone is >= 0 and < 5 &&
             target.InternalIndex is > 0 and <= 0xfff && target.ResourceId != ushort.MaxValue &&
             target.FaceUp.Value && target.GenericGuardsSatisfied.Value;
-        bool specific = types.TryGetValue(resourceId, out byte type)
+        bool specific = queued && DynamicEquipmentRules.Supports(resourceId) || (types.TryGetValue(resourceId, out byte type)
             ? target.DynamicType == type
-            : attributes.TryGetValue(resourceId, out byte attribute) && target.DynamicAttribute == attribute;
+            : attributes.TryGetValue(resourceId, out byte attribute) && target.DynamicAttribute == attribute);
         return NativeAiResult<bool>.Supported(common && specific);
     }
 }

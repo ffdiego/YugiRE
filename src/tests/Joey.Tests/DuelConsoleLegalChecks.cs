@@ -73,6 +73,16 @@ internal static class DuelConsoleLegalChecks
             check(immediate.State == gated.State && immediate.Trace.SequenceEqual(gated.Trace),
                 "A04.3 same legal script with immediate/gated execution");
         }
+        var equipMonster = new Card(42,77,"Warrior","",(15u<<20)|(4u<<25)|(100u<<9)|100u);
+        var sword = new Card(300,300,"Legendary Sword","",22u<<20);
+        var e = DemoDuel.FromPartialObservation(0,[sword],Slots(equipMonster),Slots(),8000,equipmentContextResolved:true);
+        var ec = new DuelConsoleSession(e);
+        check(!ec.Execute("equip hand 0 1 0").Success && ec.Execute("equip hand 0 0 0").Enqueued &&
+            e.EquipmentCards.Count == 0,"A04.3 equip admission uses C12 legality without mutation");
+        for(int i=0;i<100 && ec.Queue.IsBusy;i++) ec.Queue.Tick();
+        check(e.EquipmentCards.Count==1 && e.AttackValue(0,0)==1300 &&
+            ec.Queue.Trace.Any(t=>t.Entry.Command is EquipCommand && t.Entry.Origin==ActionOrigin.Console),
+            "A04.3 console uses shared equipment executor");
         var f = DemoDuel.FromPartialObservation(0, [low], Slots(jar, low), Slots(), 8000,
             side0Deck: Enumerable.Repeat(low,6).ToArray(), side1Deck: Enumerable.Repeat(low,6).ToArray());
         f.MonsterFaceDown[0,0] = f.DefensePosition[0,0] = true;

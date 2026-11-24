@@ -25,13 +25,6 @@ public sealed partial class DemoDuel
             TryQueueActivation(index, fromSet: false, out message, origin);
     }
 
-    // The supported subset has no activation response window in the legacy
-    // sandbox. Other effects fail closed rather than calling Play/ActivateSetSpell.
-    private static bool QueueActivationSupported(Card card, int side) =>
-        (card.ClassCode == 22 && MonsterWipeRules.Scope(card.Id) is not null) ||
-        DrawSpellRules.Effect(card) is not null ||
-        (card.ClassCode is 21 or 22 && LifePointSpellRules.ResolveDemo(card.Id, side) is not null);
-
     public bool TryQueueActivation(int index, bool fromSet, out string message,
         ActionOrigin origin = ActionOrigin.Player)
     {
@@ -39,30 +32,22 @@ public sealed partial class DemoDuel
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked || Phase != DemoPhase.Main)
             return false;
         int side = ActivePlayer;
-        Card? card;
-        if (fromSet)
-        {
-            if (index is < 0 or >= 5 || !SpellFaceDown[side, index]) return false;
-            card = Spells[side, index];
-        }
-        else
-        {
-            if (!CanActivateFromHand(index)) return false;
-            card = Hand[index];
-        }
-        if (card is null || !QueueActivationSupported(card, side) ||
-            !TryCaptureCardTarget(side, fromSet ? DuelZone.SpellTrap : DuelZone.Hand, index, out var source))
+        DuelZone zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+        if (!TryCaptureCardTarget(side, zone, index, out var source) ||
+            !TryResolveCardTarget(source, out _, out var card) || card.ClassCode != 22)
             return false;
-        if (DrawSpellRules.Effect(card) is { } draw && decks[side].Count < draw.Cards) return false;
-        if (card.ClassCode == 22 && MonsterWipeRules.Scope(card.Id) is not null)
-        {
-            var targets = MonsterWipeRules.Targets(card.Id, side, Monsters, MonsterFaceDown);
-            if (targets.Count == 0 || targets.Any(t => !CanQueueMonsterRemoval(t.Player, t.Zone) ||
-                !TryCaptureCardTarget(t.Player, DuelZone.Monster, t.Zone, out _))) return false;
-            queue.Enqueue(new ActivateRaigekiCommand(side, source), origin);
-        }
-        else queue.Enqueue(new ActivateSimpleSpellCommand(side, source), origin);
-        message = "Activation admitted.";
+        // C12 owns these two families; the console is only a producer.
+        if (DrawSpellRules.Effect(card) is not null)
+            return TryQueueDrawSpell(zone, index, out message, origin);
+        if (LifePointSpellRules.Supports(card.Id))
+            return TryQueueLifePointSpell(zone, index, out message, origin);
+        if (MonsterWipeRules.Scope(card.Id) is null ||
+            (fromSet ? !SpellFaceDown[side,index] : !CanActivateFromHand(index))) return false;
+        var targets = MonsterWipeRules.Targets(card.Id, side, Monsters, MonsterFaceDown);
+        if (targets.Count == 0 || targets.Any(t => !CanQueueMonsterRemoval(t.Player,t.Zone) ||
+            !TryCaptureCardTarget(t.Player,DuelZone.Monster,t.Zone,out _))) return false;
+        queue.Enqueue(new ActivateRaigekiCommand(side,source),origin);
+        message = "Monster wipe admitted.";
         return true;
     }
 
@@ -170,41 +155,37 @@ public sealed partial class DemoDuel
         private PrepareNormalPlacementCommand? placement;
         private readonly HashSet<CardTarget> paidTributes = [];
         private bool resolvingJar;
+        private readonly Queue<DuelCommand> reservedDrawSpell = new();
+        private CardTarget? drawSpellSource;
+        private bool drawSpellSourceSpent;
         private bool resolvingFlipBatch;
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
-        private bool simpleSpellBatch;
         private PendingEffectDecision? queueDrawDecision;
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
-            if (command is FinishSimpleSpellCommand)
-            {
-                if (!simpleSpellBatch) return new(CommandOutcome.Rejected, "No simple spell batch.");
-                simpleSpellBatch = false;
-                return new(CommandOutcome.Applied);
-            }
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
             if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision);
+            bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
+            if (finishDrawSpell) reservedDrawSpell.Dequeue();
             // Legacy Morphing Jar draws every available card for both players,
             // even if Exodia is found mid-batch. Only this reserved batch may
             // continue its draws after a winner has been set.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || wipe is not null || placement is not null || linkedRemovalBatch || simpleSpellBatch)))
+                ((resolvingJar && command is DrawCommand) || finishDrawSpell || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
             {
-                case LabSpawnCommand spawn:
-                    return duel.ExecuteLabSpawn(spawn);
-                case LabMoveCommand move:
-                    return duel.ExecuteLabMove(move);
+                case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
+                case LabMoveCommand move: return duel.ExecuteLabMove(move);
                 case DrawCommand draw:
                     if (duel.decks[draw.Side].Count == 0)
                     {
@@ -219,10 +200,14 @@ public sealed partial class DemoDuel
                 case HealCommand heal:
                     duel.ChangeLife(heal.Side, heal.Amount);
                     return new(CommandOutcome.Applied);
+                case EquipCommand equip:
+                    return duel.ApplyQueuedEquipment(equip);
+                case ActivateDrawSpellCommand drawSpell:
+                    return ActivateDrawSpell(drawSpell, followups);
+                case ActivateLifePointSpellCommand lp:
+                    return ActivateLifePointSpell(lp, followups);
                 case ActivateRaigekiCommand activate:
                     return ActivateRaigeki(activate, followups);
-                case ActivateSimpleSpellCommand simple:
-                    return ActivateSimpleSpell(simple, followups);
                 case PrepareNormalPlacementCommand prepare:
                     return PreparePlacement(prepare, followups);
                 case TributeCommand tribute:
@@ -240,9 +225,9 @@ public sealed partial class DemoDuel
                 case ResolvePositionCommand resolve:
                     return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
-                    return SendHandToGraveyard(send.Target, discard: false);
-                case SendToGraveyardCommand setSource when setSource.Target.Zone == DuelZone.SpellTrap:
-                    return SpendSetSpell(setSource.Target);
+                    return ObserveDrawSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
+                case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
+                    return ObserveDrawSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -254,6 +239,83 @@ public sealed partial class DemoDuel
             }
         }
 
+        private CommandResult ObserveDrawSpellSpend(CardTarget target, CommandResult result)
+        {
+            if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
+            return result;
+        }
+
+        private CommandResult ActivateDrawSpell(ActivateDrawSpellCommand activate, IActionCommandSink followups)
+        {
+            if (reservedDrawSpell.Count != 0 || drawSpellSource is not null ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Draw spell requires isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out _))
+                return new(CommandOutcome.Skipped, "Draw spell occurrence gone.");
+            if (!duel.CanResolveQueuedDrawSpell(activate.Source, out var effect))
+                return new(CommandOutcome.Rejected, "Draw spell no longer legal.");
+            // Spending is a separate command; the continuation below is pure
+            // with respect to duel state and emits effects only after a successful spend.
+            drawSpellSource = activate.Source;
+            drawSpellSourceSpent = false;
+            queue.Enqueue(new SendToGraveyardCommand(activate.Side, activate.Source));
+            queue.ScheduleContinuation(_ =>
+            {
+                bool spent = drawSpellSourceSpent;
+                drawSpellSource = null;
+                drawSpellSourceSpent = false;
+                if (!spent || duel.GameOver) return new([]);
+                // Recheck availability before issuing the reserved batch.
+                // No other admitted action can run between these draws.
+                if (duel.DeckCount(activate.Side) < effect.Cards)
+                    throw new InvalidOperationException("Reserved draw spell deck changed during activation.");
+                var batch = new List<DuelCommand>();
+                for (int i = 0; i < effect.Cards; i++) batch.Add(new DrawCommand(activate.Side));
+                if (effect.OpponentLifeGain > 0)
+                    batch.Add(new HealCommand(1 - activate.Side, effect.OpponentLifeGain));
+                foreach (var next in batch) reservedDrawSpell.Enqueue(next);
+                return new(batch);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ActivateLifePointSpell(ActivateLifePointSpellCommand activate, IActionCommandSink followups)
+        {
+            if (followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "LP spell requires an isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out var card))
+                return new(CommandOutcome.Skipped, "LP spell occurrence gone.");
+            if (!duel.CanResolveQueuedLifePointSpell(activate.Source, out var change))
+                return new(CommandOutcome.Rejected, "LP spell no longer legal.");
+            // Legacy order: spend source, then caster LP, then opposing LP.
+            // No mutation in the producer. Each operation has its own gate.
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
+            AddDelta(batch, activate.Side, change.CasterDelta);
+            AddDelta(batch, 1 - activate.Side, change.OpponentDelta);
+            queue.EnqueueBatch(batch);
+            return new(CommandOutcome.Applied);
+        }
+
+        private static void AddDelta(List<DuelCommand> batch, int side, int delta)
+        {
+            if (delta > 0) batch.Add(new HealCommand(side, delta));
+            else if (delta < 0) batch.Add(new DamageCommand(side, -delta));
+        }
+
+        private CommandResult SendSetFixedSpellToGraveyard(CardTarget target)
+        {
+            if (!duel.TryResolveCardTarget(target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
+            if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null ||
+                MonsterWipeRules.Scope(card.Id) is not null) ||
+                !duel.SpellFaceDown[target.Side, slot] ||
+                duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
+                return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
+            duel.ClearSpellTrapSlot(target.Side, slot);
+            duel.graves[target.Side].Add(card);
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult ActivateRaigeki(ActivateRaigekiCommand activate, IActionCommandSink followups)
         {
             // A narrow pilot: other input is not admitted ahead of its batch.
@@ -263,8 +325,10 @@ public sealed partial class DemoDuel
             int side = activate.Side;
             if (!duel.TryResolveCardTarget(activate.Source, out int index, out var spell))
                 return new(CommandOutcome.Skipped, "Source occurrence has left its hand.");
-            if (!ActivationSourceLegal(activate.Source, index) ||
-                MonsterWipeRules.Scope(spell.Id) is null || spell.ClassCode != 22)
+            if (duel.ActivePlayer != side || duel.Phase != DemoPhase.Main ||
+                MonsterWipeRules.Scope(spell.Id) is null || spell.ClassCode != 22 ||
+                (activate.Source.Zone == DuelZone.Hand ? duel.FirstFreeSpellZone() < 0 :
+                    !duel.SpellFaceDown[side,index] || duel.equipment.Any(e => e.Owner == side && e.SourceZone == index)))
                 return new(CommandOutcome.Rejected, "Monster wipe is no longer legal.");
 
             var snapshot = MonsterWipeRules.Targets(spell.Id, side, duel.Monsters, duel.MonsterFaceDown);
@@ -290,58 +354,6 @@ public sealed partial class DemoDuel
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             wipe = new(spell.Id, side, targets);
             ScheduleFinish(side, followups);
-            return new(CommandOutcome.Applied);
-        }
-
-        private bool ActivationSourceLegal(CardTarget source, int index) =>
-            duel.ActivePlayer == source.Side && duel.Phase == DemoPhase.Main &&
-            (source.Zone == DuelZone.Hand ? duel.FirstFreeSpellZone() >= 0 :
-                source.Zone == DuelZone.SpellTrap && duel.SpellFaceDown[source.Side, index] &&
-                !duel.equipment.Any(e => e.Owner == source.Side && e.SourceZone == index));
-
-        private CommandResult SpendSetSpell(CardTarget source)
-        {
-            if (!duel.TryResolveCardTarget(source, out int index, out var card))
-                return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
-            if (!ActivationSourceLegal(source, index) || !QueueActivationSupported(card, source.Side))
-                return new(CommandOutcome.Rejected, "Not a supported set activation source.");
-            duel.ClearSpellTrapSlot(source.Side, index);
-            duel.graves[source.Side].Add(card);
-            return new(CommandOutcome.Applied);
-        }
-
-        private CommandResult ActivateSimpleSpell(ActivateSimpleSpellCommand command, IActionCommandSink followups)
-        {
-            if (simpleSpellBatch || wipe is not null || placement is not null || finishScheduled ||
-                followups is not ActionQueue { PendingCount: 0 } queue)
-                return new(CommandOutcome.Rejected, "Simple spell needs an isolated batch.");
-            if (!duel.TryResolveCardTarget(command.Source, out int index, out var card))
-                return new(CommandOutcome.Skipped, "Spell occurrence gone.");
-            int side = command.Side;
-            if (!ActivationSourceLegal(command.Source, index) || !QueueActivationSupported(card, side))
-                return new(CommandOutcome.Rejected, "Spell is no longer legal.");
-            var commands = new List<DuelCommand> { new SendToGraveyardCommand(side, command.Source) };
-            if (DrawSpellRules.Effect(card) is { } draw)
-            {
-                if (duel.decks[side].Count < draw.Cards)
-                    return new(CommandOutcome.Rejected, "Not enough cards in deck.");
-                for (int i = 0; i < draw.Cards; i++) commands.Add(new DrawCommand(side));
-                if (draw.OpponentLifeGain > 0) commands.Add(new HealCommand(1 - side, draw.OpponentLifeGain));
-            }
-            else if (LifePointSpellRules.ResolveDemo(card.Id, side) is { } delta)
-            {
-                void AddDelta(int player, int value)
-                {
-                    if (value > 0) commands.Add(new HealCommand(player, value));
-                    else if (value < 0) commands.Add(new DamageCommand(player, -value));
-                }
-                AddDelta(side, delta.CasterDelta);
-                AddDelta(1 - side, delta.OpponentDelta);
-            }
-            else return new(CommandOutcome.Rejected, "Not a migrated simple spell.");
-            queue.EnqueueBatch(commands);
-            simpleSpellBatch = true;
-            followups.ScheduleContinuation(_ => new([new FinishSimpleSpellCommand(side)]));
             return new(CommandOutcome.Applied);
         }
 
