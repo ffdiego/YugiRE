@@ -185,6 +185,7 @@ if (args.Length > 0)
         Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
     SummonTests.OperatorTribute(cards, Check);
     NormalMonsterPlayabilityChecks.RunWithCatalog(cards, Check);
+    TypeFieldSpellChecks.RunWithCatalog(cards, Check);
     Check(NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 812)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 363)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 56)) &&

@@ -31,25 +31,15 @@ jobs:
         run: python -m unittest discover -s yugilab/tests -p 'test_*.py' -v
       - name: Native capture and deck offline checks
         run: python -m unittest discover -s native_hooks/tests -p 'test_*.py' -v
-      - name: Repository Python offline checks (untracked hybrid experiments optional)
+      - name: Synthetic frame comparison checks
+        run: |
+          python -m pip install Pillow
+          python -m unittest discover -s scripts/tests -p 'test_compare_visual_frame*.py' -v
+      - name: Repository Python offline checks
         shell: bash
         run: |
           set -euo pipefail
           for test in tests/test_*.py; do
-            case "$test" in
-              tests/test_joey_compare_ydr.py)
-                if [[ ! -f experiments/hybrid_probe/compare_ydr.py ]]; then
-                  echo "::notice::Skipping $test: experiments/hybrid_probe/compare_ydr.py is not versioned in this checkout"
-                  continue
-                fi
-                ;;
-              tests/test_joey_hybrid_preflight.py)
-                if [[ ! -f experiments/hybrid_probe/pe_preflight.py ]]; then
-                  echo "::notice::Skipping $test: experiments/hybrid_probe/pe_preflight.py is not versioned in this checkout"
-                  continue
-                fi
-                ;;
-            esac
             python -m unittest discover -s tests -p "$(basename "$test")" -v
           done
       - name: Native state sampler JavaScript tests

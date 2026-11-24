@@ -170,6 +170,12 @@ de entrada virtualmente despachado por vtables.
 
 ## Atualização cumulativa compartilhada
 
+A cada coleta, `export_ghidra_visual_bundle.py` cria um diretório exclusivo
+em `scratch/`. O manifesto só contabiliza funções solicitadas com decompilação
+concluída em relatórios cujo fingerprint foi aceito. Saídas reprovadas ficam
+no diretório local para diagnóstico. O ZIP inclui os motivos de rejeição em
+`manifest.json` e preserva a evidência aceita de uma coleta parcial.
+
 ACTIONS, CARDS e VISUALS consultam a mesma versão privada mais recente do banco, preferencialmente em modo somente leitura. A investigação estática deve enriquecer o acervo quando possível, evitando exportações repetidas do mesmo endereço. O importador cumulativo `scripts/import_visual_evidence.py` foi desenvolvido na PR #74 (consultar a branch se ainda não integrada); os importadores históricos descritos em [enriquecimento visual](sqlite-visual-vtable-enrichment.md) cobrem formatos específicos. Registrar a versão real de cada fonte; novos bundles entram em uma cópia cumulativa validada.
 
 - Manter o snapshot original intacto e gerar uma nova cópia cumulativa, por um único escritor. Validar `metadata.executable_sha256`, identidade das funções/endereços, proveniência (bundle, ferramenta, data e modo de extração), contagens/deltas e `PRAGMA integrity_check`. Não substituir evidência válida por registros ausentes ou ambíguos; registrar conflitos explicitamente.

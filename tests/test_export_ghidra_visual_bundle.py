@@ -1,10 +1,17 @@
 """Focused Ghidra export selection is testable without the game or Ghidra."""
+from contextlib import redirect_stdout
+from io import StringIO
+import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+import zipfile
 
+from scripts import export_ghidra_visual_bundle as exporter
 from scripts.export_ghidra_visual_bundle import (
     ROOT, choose_targets, instruction_windows, validate_instruction_window_dump,
     memory_queries, query_arguments, validate_memory_dump,
@@ -12,6 +19,65 @@ from scripts.export_ghidra_visual_bundle import (
 
 
 class FocusedVisualExportTests(unittest.TestCase):
+    def test_query_checks_the_entire_fingerprint_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory)
+            report = work / "batch.txt"
+            for suffix, accepted in (("", True), ("0", False), (" wrong", False)):
+                with self.subTest(suffix=suffix):
+                    report.write_text(f"SHA256: {exporter.EXPECTED_SHA256}{suffix}\n", encoding="utf-8")
+                    completed = subprocess.CompletedProcess([], 0, "")
+                    with patch.object(exporter.subprocess, "run", return_value=completed):
+                        ok, _ = exporter.run_query(work, work, "batch", [], 30)
+                    self.assertEqual(ok, accepted)
+
+    def test_rejected_batch_cannot_satisfy_targets_or_enter_the_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            support = root / "support"
+            support.mkdir()
+            (support / "analyzeHeadless").touch()
+            output = root / "bundle.zip"
+            recovered = False
+
+            def query(_ghidra, work, name, _arguments, _timeout):
+                report = work / (name + ".txt")
+                if name == "batch-000":
+                    report.write_text("SHA256: wrong\nFUNCTION Sample @00100000\n", encoding="utf-8")
+                    return False, "Unexpected executable fingerprint"
+                self.assertEqual(name, "retry-000-00100000")
+                result = "FUNCTION Sample @00100000\nvoid Sample() {}\n" if recovered else (
+                    "DECOMPILE_FAILED 00100000 Timeout\n")
+                report.write_text(f"SHA256: {exporter.EXPECTED_SHA256}\n"
+                                  f"{result}FUNCTION Unrelated @00100010\n", encoding="utf-8")
+                return True, "ok"
+
+            with (patch.object(exporter, "ROOT", root), patch.object(exporter, "run_query", side_effect=query),
+                  patch.dict(os.environ, {"GHIDRA_INSTALL_DIR": str(root)}), redirect_stdout(StringIO())):
+                status = exporter.main(["--output", str(output), "--targets", "00100000", "--retry-missing"])
+                recovered = True
+                second = root / "recovered.zip"
+                recovered_status = exporter.main([
+                    "--output", str(second), "--targets", "00100000", "--retry-missing"])
+
+            self.assertEqual(status, 1)
+            with zipfile.ZipFile(output) as bundle:
+                manifest = json.loads(bundle.read("manifest.json"))
+                self.assertEqual(manifest["decompiled"], [])
+                self.assertEqual(manifest["missing"], ["00100000"])
+                self.assertEqual(manifest["attempts"][0]["resolved"], [])
+                self.assertEqual(manifest["attempts"][0]["message"], "Unexpected executable fingerprint")
+                self.assertNotIn("batch-000.txt", bundle.namelist())
+                self.assertIn("retry-000-00100000.txt", bundle.namelist())
+            self.assertEqual(recovered_status, 0)
+            with zipfile.ZipFile(second) as bundle:
+                manifest = json.loads(bundle.read("manifest.json"))
+                self.assertEqual(manifest["decompiled"], ["00100000"])
+                self.assertEqual(manifest["missing"], [])
+                self.assertEqual(manifest["attempts"][1]["resolved"], ["00100000"])
+                self.assertNotIn("batch-000.txt", bundle.namelist())
+            self.assertEqual(len(list((root / "scratch").glob("*/batch-000.txt"))), 2)
+
     def test_explicit_targets_are_normalized_sorted_and_deduplicated(self):
         self.assertEqual(
             choose_targets(["0044f390", "0044EFD0", "0044efd0"], 3),
