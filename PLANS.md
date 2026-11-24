@@ -80,14 +80,14 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 5. **Continuações:** efeitos que dependem do resultado de um comando, ou de uma escolha do jogador, retomam depois, via nova passagem — sem recursão e sem resolver tudo em um passo.
 6. **O gate de apresentação é injetável.** O `Joey.Core` define comandos e espera uma liberação; o `Joey.App` libera quando a animação termina; modo headless/IA vs IA libera na hora. **A mesma sequência de comandos nos dois casos.**
 7. **Log de comandos comparável com o trace nativo** (opcode, lado, argumentos), para comparar duelos entre C# e Joey.
-8. *(hipótese, confirmar em `A01`)* O estado muda **na execução** do comando, não no enfileiramento; a granularidade dos opcodes C# pode ser mais grossa que a nativa quando o intermediário não for observável.
+8. O estado de jogo muda **na execução** do comando, não no enfileiramento (confirmado para CE/CF/8E; LP pode mudar durante o Update nativo, com comando ainda ativo). A generalização é contrato C#, não prova de todos os handlers; granularidade maior exige justificar que nenhum intermediário observável desaparece. Ver [A01](docs/architecture/action-queue.md).
 
 ### Itens da trilha ACTIONS
 
-- [ ] **A01 — Consolidar o contrato do scheduler.** Status: `Pronto`.
+- [x] **A01 — Consolidar o contrato do scheduler.** Status: `Concluído`.
   Transformar `native-action-scheduler.md` em `docs/architecture/action-queue.md`: máquina de estados do comando (estágios 0/1/2), gates, formato do registro, tabela opcode → comando C# (começar por `CE`, `CF`, `72/1E`, `43`, `57`, `8E`, `B1`), lista de invariantes com grau de certeza (`assembly confirmado`/`observado`/`hipótese`). Fechar ou registrar como aberta cada hipótese acima. Sem implementar ainda.
-  *Pronto quando:* documento publicado, cada invariante com evidência ou marcada como hipótese; lista de opcodes de duelo com semântica conhecida ou `Pending`.
-- [ ] **A02 — `ActionQueue` e comandos tipados no `Joey.Core`.** Status: `Bloqueado por A01`.
+  *Entregue:* [contrato da fila](docs/architecture/action-queue.md), evidência anterior conferida com o SQLite de 22/11, casos de aceitação para A02, mapa inicial de opcodes e lacunas explícitas. Sem implementação; fases seguem em A07 (roteiro 11).
+- [ ] **A02 — `ActionQueue` e comandos tipados no `Joey.Core`.** Status: `Pronto`.
   Fila FIFO, comando ativo único, subestados, continuações e gate de conclusão injetável (`IPresentationGate`). Comandos iniciais: `Draw`, `Summon`, `Set`, `SendToGraveyard`, `Discard`, `Destroy`, `Damage`, `Heal`, `Flip`, `ChangePosition`. Reaproveitar `queuedEffectDecisions` como caso de continuação por decisão.
   *Pronto quando:* testes de sequência reproduzem as invariantes 1–6 (ordem, um por vez, destruir 3 = 3 comandos, headless x com gate resultam na **mesma** lista de comandos).
 - [ ] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Bloqueado por A02`.
@@ -104,7 +104,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
-  Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em `A01`.
+  Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em [A01](docs/architecture/action-queue.md); roteiro 11 em `scripts/pending/` preparado, ainda não executado.
 - [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Bloqueado por A02`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
   Novo assembly com as definições de cartas por resource ID e as famílias de efeito. Dependências: `Joey.Cards` → `Joey.Core`, nunca o contrário; `Joey.App` monta Core + Cards + LookAndFeel. O Core fica com o que vale para qualquer duelo (fases, batalha, invocação, a fila e `EffectContext`); o catálogo e o console (`A04`) criam cartas por resource ID a partir de `Joey.Cards`.
   **`EffectContext`** expõe primitivos pequenos e combináveis (`Destroy(filtro)`, `Draw`, `Damage`, `Heal`, `Choose`, `Move`...), cada um **enfileirando comandos**; não muta o estado diretamente (invariante 1).
