@@ -88,3 +88,8 @@ sem reservá-la na fila até que seu Draw tenha duração e
 sprites validados. Ver [limites/testes da implementação]
 (../cards/destiny-board-sandbox.md). A cobertura Draw
 permanece **19/31**, zero `Verified`.
+
+
+## Complemento V31/V18 (24/11)
+
+Roteamento de dano 00403900 e som-only/bust-up 00402E00, duração 00416B80 e índice 005C0F00 isolados em NativeJoeyReaction. Ver [contrato e roteiro 27](native-joey-reaction-audio-2026-11-24.md). Sem renderer nem áudio real; não bloquear fila com parâmetro de duração isolado.

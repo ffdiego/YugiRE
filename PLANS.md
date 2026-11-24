@@ -262,8 +262,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`.
   NativeSurfaceCopy porta cópia opaca/escala/clipping e quatro formatos de surface+74h (004AD9C0/00547180), sem assumir blend ou máscara. Roteiro 24 lê vtable 005DC6EC e alvos ainda desconhecidos; confirmar assembly das fronteiras. Roteiro 25 separa geometria de quadrilátero de 0051EBD0 e família de intensidade 00422E30 (<256); NativeQuadRasterDispatch porta a fronteira, não o blend. [Contrato](docs/research/native-quad-raster-contract-2026-11-24.md). [Contrato](docs/research/native-surface-copy-contract-2026-11-24.md).
   Confirmar cadência, tabela de cosseno x16.16 (ver `V01`) e pixel blending com capturas Windows; não traduzir contadores estáticos em milissegundos sem medição.
-- [ ] **V18 — Áudio e vozes.** Status: `Pronto`.
-  Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política; ainda não existe player), preservando a apresentação clássica.
+- [ ] **V18 — Áudio e vozes.** Status: `Parcial`.
+  Reproduzir vozes/áudio a partir dos arquivos locais do usuário (a opção `--mute-joey` só configura a política; ainda não existe player), preservando a apresentação clássica. NativeJoeyReaction porta índice de descritor e parâmetro de duração (decompilação), sem player; tabela de nomes e x87 no roteiro 27. [Contrato](docs/research/native-joey-reaction-audio-2026-11-24.md).
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`.
   Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 - [ ] **V20 — Banco coin (00457520).** Status: `Aguardando evidência`.
@@ -297,6 +297,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`.
   NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Roteiro 20 recebido: NativeVijaTimeline porta ordem dos passes, centros, fade, scratch e deformação por linha, 97/177 Draws. Máscara +98/remap e renderer ainda pendentes; não bloquear A03. [Contrato](docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](docs/research/pending-bundles-handoff-2026-11-24.md).
+- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`.
+  Modelo de roteamento de dano 00403900, distinção som-only/bust-up 00402E00, duração raw 00416B80. Roteiro 27 recupera tabela de severidade→manifesto e vtable 005DA840; posição, compositor, Update/Draw e gate ainda ausentes. [Contrato](docs/research/native-joey-reaction-audio-2026-11-24.md).
 
 ### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
 

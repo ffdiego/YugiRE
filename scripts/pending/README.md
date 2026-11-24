@@ -307,3 +307,10 @@ SQLite v2 consultado: máscara e ciclo em decompilação, sem assembly dos alvos
     bash scripts/pending/26-native-cursor-dispatch-ghidra.sh
 
 Saída privada: scratch/ghidra-native-cursor-dispatch-contract.zip. Confirmar ordem, code 12/reset, operandos e vtable 005DA594. Inspecionar manifesto cursor_e.txt local sem pixels e resolver consumidor de +108h pelo SQLite primeiro. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+
+
+## V31/V18 — 27-joey-reaction-audio-ghidra.sh (aguardando Fedora)
+
+    bash scripts/pending/27-joey-reaction-audio-ghidra.sh
+
+Saída privada: scratch/ghidra-joey-reaction-audio-contract.zip. Confirma classificação de dano e duração, tabela 005DA3C0, vtables e prefixo de 0x70 descritores 005EFD48. Resolver alvos no SQLite primeiro; não exportar WAV/pixels. Reutilizar --inspect-visual-dat para os manifests de busto. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
