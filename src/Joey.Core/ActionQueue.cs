@@ -66,14 +66,16 @@ public sealed class ActionQueue : IActionCommandSink
     private bool ticking;
     private bool startedBatch;
     private readonly Func<bool>? externalAdmission;
+    private readonly bool allowLabEdits;
     private ActionContinuation? decisionContinuation;
     private EffectDecisionAnswer? decisionAnswer;
 
-    public ActionQueue(IDuelCommandExecutor executor, IPresentationGate? gate = null, Func<bool>? externalAdmission = null)
+    public ActionQueue(IDuelCommandExecutor executor, IPresentationGate? gate = null, Func<bool>? externalAdmission = null, bool allowLabEdits = false)
     {
         this.executor = executor ?? throw new ArgumentNullException(nameof(executor));
         this.gate = gate ?? ImmediatePresentationGate.Instance;
         this.externalAdmission = externalAdmission;
+        this.allowLabEdits = allowLabEdits;
     }
 
     public QueuedDuelCommand? Active { get; private set; }
@@ -98,7 +100,12 @@ public sealed class ActionQueue : IActionCommandSink
         ArgumentNullException.ThrowIfNull(commands);
         if (!Enum.IsDefined(origin)) throw new ArgumentOutOfRangeException(nameof(origin));
         var batch = commands.ToArray();
-        foreach (var command in batch) DuelCommandValidation.Validate(command);
+        foreach (var command in batch)
+        {
+            DuelCommandValidation.Validate(command);
+            if ((command is LabSpawnCommand or LabMoveCommand) && (!allowLabEdits || origin is not (ActionOrigin.Console or ActionOrigin.Test)))
+                throw new InvalidOperationException("Laboratory edit requires an explicitly enabled lab queue and privileged origin.");
+        }
         if (sequence > long.MaxValue - batch.Length) throw new OverflowException("Command sequence exhausted.");
         foreach (var command in batch)
         {

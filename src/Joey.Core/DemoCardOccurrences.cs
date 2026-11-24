@@ -39,6 +39,10 @@ public sealed partial class DemoDuel
         return true;
     }
 
+    // Read-only guard for explicit laboratory producer.
+    internal bool MatchesOccurrenceResource(CardTarget target, ushort resourceId) =>
+        TryResolveCardTarget(target, out _, out var card) && card.Id == resourceId;
+
     private bool TryResolveCardTarget(CardTarget target, out int index, out Card card)
     {
         index = -1;

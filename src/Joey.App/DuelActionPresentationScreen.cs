@@ -92,7 +92,7 @@ static partial class Game
         try
         {
             // Only one scheduler passage per frame; the Core never reads time.
-            if (queue.PendingDecision is { } request)
+            if (labSession is null && queue.PendingDecision is { } request)
             {
                 var answer = EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
                     effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip

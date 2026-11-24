@@ -9,7 +9,7 @@ public sealed partial class DemoDuel
     /// Existing App/CPU entrypoints remain legacy; do not mix their decisions
     /// with admitted queue work. Direct array writes are fixture-only.
     /// </summary>
-    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null)
+    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false)
     {
         if (primitiveActionQueue is not null)
             throw new InvalidOperationException("A duel already owns an action queue.");
@@ -19,7 +19,7 @@ public sealed partial class DemoDuel
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
-                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0);
+                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0, allowLabEdits);
     }
 
     /// <summary>
@@ -75,9 +75,31 @@ public sealed partial class DemoDuel
         return targets.Count != 0;
     }
 
+    /// <summary>Dispatch to the single C12 producer for each supported activation family.</summary>
+    public bool TryQueueActivation(int index, bool fromSet, out string message,
+        ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "Choose a legal, migrated spell activation.";
+        if (primitiveActionQueue is not { IsBusy: false } || ActionsBlocked || Phase != DemoPhase.Main)
+            return false;
+        DuelZone zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+        if (!TryCaptureCardTarget(ActivePlayer, zone, index, out var source) ||
+            !TryResolveCardTarget(source, out _, out var card) || card.ClassCode != 22)
+            return false;
+        if (DrawSpellRules.Effect(card) is not null)
+            return TryQueueDrawSpell(zone, index, out message, origin);
+        if (LifePointSpellRules.Supports(card.Id))
+            return TryQueueLifePointSpell(zone, index, out message, origin);
+        if (MonsterWipeRules.Scope(card.Id) is not null)
+            return TryQueueMonsterWipe(zone, index, out message, origin);
+        if (SpellTrapWipeRules.Supports(card.Id))
+            return TryQueueSpellTrapWipe(zone, index, out message, origin);
+        return false;
+    }
+
     /// <summary>Opt-in normal Summon or monster Set; all costs validated before admission.</summary>
     public bool TryQueueNormalPlacement(int index, int zone, bool faceDown, out string message,
-        IReadOnlyList<int>? tributeZones = null)
+        IReadOnlyList<int>? tributeZones = null, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a legal Normal Summon/Set and distinct tracked tributes.";
         if (primitiveActionQueue is not { IsBusy: false } queue || !CanSummonFromHand(index) ||
@@ -95,27 +117,27 @@ public sealed partial class DemoDuel
             targets.Add(target);
         }
         queue.Enqueue(new PrepareNormalPlacementCommand(side, source, zone, faceDown,
-            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null), ActionOrigin.Player);
+            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null), origin);
         message = "Normal placement admitted.";
         return true;
     }
 
     /// <summary>Opt-in Set of a non-monster in its usual leftmost/dedicated zone.</summary>
-    public bool TryQueueSpellTrapSet(int index, out string message)
+    public bool TryQueueSpellTrapSet(int index, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a legal Spell/Trap Set and an idle queue.";
         if (primitiveActionQueue is not { IsBusy: false } queue || !CanSetFromHand(index) ||
             Hand[index].IsMonster || !TryCaptureCardTarget(ActivePlayer, DuelZone.Hand, index, out var source)) return false;
         bool field = FieldSpellRules.Supports(Hand[index].Id);
         queue.Enqueue(new SetCommand(ActivePlayer, source, field ? DuelZone.FieldSpell : DuelZone.SpellTrap,
-            field ? 0 : FirstFreeSpellZone()), ActionOrigin.Player);
+            field ? 0 : FirstFreeSpellZone()), origin);
         message = "Set admitted.";
         return true;
     }
 
     /// <summary>Opt-in manual position change or Flip Summon. Battle and
     /// effect-driven reveals are distinct legacy paths, not this command.</summary>
-    public bool TryQueueChangePosition(int zone, out string message)
+    public bool TryQueueChangePosition(int zone, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a legal position change supported by the queue pilot.";
         if (primitiveActionQueue is not { IsBusy: false } queue || !CanChangePosition(zone) ||
@@ -124,7 +146,7 @@ public sealed partial class DemoDuel
         if (MonsterFaceDown[side, zone] && !CanQueueFlip(Monsters[side, zone]!)) return false;
         DuelCommand command = MonsterFaceDown[side, zone] ? new FlipCommand(side, target)
             : new ChangePositionCommand(side, target, !DefensePosition[side, zone]);
-        queue.Enqueue(command, ActionOrigin.Player);
+        queue.Enqueue(command, origin);
         message = "Position change admitted.";
         return true;
     }
@@ -283,6 +305,8 @@ public sealed partial class DemoDuel
 
             switch (command)
             {
+                case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
+                case LabMoveCommand move: return duel.ExecuteLabMove(move);
                 case DrawCommand draw:
                     if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
                         return DrawForShadowScout(flow);
