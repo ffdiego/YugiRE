@@ -29,6 +29,22 @@ static partial class Game
             : args.Contains("--mute-joey") ? new SilentLookAndFeel()
             : new DuelLookAndFeel();
         presentation.SetStyle(style);
+        if (Option(args, "--native-cosine=") is string cosinePath)
+        {
+            try
+            {
+                effectCosine = NativeCosineCapture.Read(cosinePath);
+                effectCosineFromNativeCapture = true;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine("[visual] " + ex.Message);
+                return 1;
+            }
+        }
+        Console.WriteLine(effectCosineFromNativeCapture
+            ? "[visual] using private native cosine capture"
+            : "[visual] using approximate cosine table (not native parity)");
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));

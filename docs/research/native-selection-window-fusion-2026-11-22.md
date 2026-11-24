@@ -433,3 +433,23 @@ DAT (ordem/dimensões), constantes de centro e seletores,
 proveniência da flag de espera, compositor e comparação
 pareada. Os contratos e endereços já recuperados são
 suficientes para retomar sem redescobrir as duas famílias.
+
+## Port incremental V01/V11
+
+`NativeGeneralFusionTimeline` e `NativeAttachedFusionTimeline` usam
+os contratos já consolidados, sem redescobrir funções. O primeiro
+fornece escala/intensidade de recursos 1 e 2 e acumulador; o segundo
+fornece o pass 0, ângulo negativo, gate de carta ativa e espera em 128.
+O ângulo inicial é fornecido pelo chamador; Update e Draw são separados.
+Não modelamos órbitas, centro, seletor do manifesto, epílogo, compositor
+ou origem da flag de liberação como se fossem conhecidos.
+
+V01: a captura privada da tabela pode ser carregada em Joey.App com
+`--native-cosine=...` (ver scripts/pending/README.md). Os efeitos que
+já usam effectCosine passam a consumir os 512 valores sem regeneração;
+sem opção, o fallback permanece explicitamente aproximado. Um arquivo
+inválido aborta com erro, não troca silenciosamente de tabela.
+F12 registra a origem. A captura e validação no original ainda faltam.
+
+Testes sintéticos de branches e proveniência não demonstram fidelidade.
+**19/34 Partial, 0 Verified**: nenhuma Draw de fusão está integrada.

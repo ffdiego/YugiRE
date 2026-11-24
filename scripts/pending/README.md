@@ -125,3 +125,19 @@ batalha e ausência de envio ao cemitério. **Ainda não executado**.
 Roteiro 10: recuperar disponibilidade, preparação e callback primário, rastrear vínculo de controle, evento de saída e pedido da End Phase. Custo de três Fiends no GY já sustentado por 0059DEF0/00599E30; não confundir com Spirit Elimination. **Ainda não executado.**
 
 Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scripts/pending/05-flip-spelltrap-targets-ghidra.sh`). Não versionar bundles privados.
+
+## V01 / V11 — 11-visual-cosine-runtime.py (aguardando Windows)
+
+Com o executável original aberto em um duelo e Frida instalado na venv:
+
+```powershell
+python scripts/pending/11-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
+dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine=scratch/visual-review/native-cosine.json
+```
+
+Valida SHA-256 e PID, lê somente 512 inteiros em 00A52EE8 após
+00A536E8=1, confirma duas amostras iguais; não altera memória do jogo
+nem termina o processo. Saída privada: scratch/visual-review/native-cosine.json.
+Não sobrescreve captura anterior. Critério: captura válida carregada pelo
+cliente e F12 indicando native-runtime-capture. O log de Draw de V01
+continua pendente. Não é necessário repetir os bundles 01–04.
