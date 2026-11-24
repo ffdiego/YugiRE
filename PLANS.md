@@ -137,8 +137,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 ### Itens abertos
 
-- [ ] **C01 — Taxonomia de efeitos por texto local.** Status: `Pronto`.
-  Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`.
+- [ ] **C01 — Taxonomia de efeitos por texto local.** Status: `Parcial` (aguardando execução DAT do roteiro 14).
+  Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`. Classificador inicial em `scripts/card_effect_taxonomy.py` com testes sintéticos; falta gerar e revisar as 771 entradas reais. Roteiro `scripts/pending/14-card-effect-taxonomy.sh`. Não confundir candidato trivial com ausência da fila de A02 ou status Done.
 - [ ] **C02 — Lotes triviais por família.** Status: `Bloqueado por C01`.
   Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
 - [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`.
