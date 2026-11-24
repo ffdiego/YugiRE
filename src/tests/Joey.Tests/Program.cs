@@ -245,6 +245,7 @@ QueuedTargetedSpellTrapChecks.Run(Check);
 QueuedMonsterFlipTargetChecks.Run(Check);
 QueuedGraveyardRecoveryChecks.Run(Check);
 QueuedDeckSearchChecks.Run(Check);
+QueuedDeckRecruitmentChecks.Run(Check);
 EffectPilotChecks.Run(Check);
 SandboxDuelChecks.Run(Check);
 CpuDuelChecks.Run(Check);

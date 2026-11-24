@@ -243,6 +243,10 @@ Magician of Faith e Mask of Darkness usam `QueuedGraveyardRecoveryCandidates` e 
 
 Sangan/Witch usam `QueuedDeckSearchCandidates` e `TryQueueDeckSearch`. MoveToHandCommand aceita Deck e GY; ShuffleDeckCommand separado após transferência bem-sucedida. UI/CPU e paridade nativa ainda pendentes. [Contrato](docs/cards/c12-queued-deck-search.md).
 
+### Recrutamento elemental na fila (C12)
+
+P164: Mystic Tomato, Giant Rat, Shining Angel, UFO Turtle, Mother Grizzly, Flying Kamakiri #1 usam `TryQueueDeckRecruitment` após a batalha legada. Invocação especial em ataque e shuffle separados, recusa sem RNG. [Contrato](docs/cards/c12-queued-elemental-recruiters.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |

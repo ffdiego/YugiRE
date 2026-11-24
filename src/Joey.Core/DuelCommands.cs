@@ -21,6 +21,7 @@ public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
 public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
@@ -28,6 +29,7 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
 internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
 internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
@@ -64,6 +66,15 @@ internal static class DuelCommandValidation
             case ShuffleDeckCommand:
             case FinishDeckSearchCommand:
             case FinishGraveyardRecoveryCommand:
+                break;
+            case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5:
+                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck);
+                break;
+            case ResolveDeckRecruitmentCommand recruit when recruit.Request is not null && recruit.Request.Owner == recruit.Side:
+                if (recruit.Target is { } pick && recruit.Slot is >= 0 and < 5)
+                    Target(pick, recruit.Side, DuelZone.Deck);
+                else if (recruit.Target is not null || recruit.Slot is not null)
+                    throw new ArgumentException("Invalid recruitment choice.");
                 break;
             case MoveToHandCommand move:
                 Target(move.Source, move.Side, DuelZone.Graveyard, DuelZone.Deck);

@@ -16,7 +16,8 @@ public sealed partial class DemoDuel
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
             () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer() ||
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
-                admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch()) && PendingEndDiscards == 0);
+                admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
+                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) && PendingEndDiscards == 0);
     }
 
     /// <summary>
@@ -190,12 +191,15 @@ public sealed partial class DemoDuel
         private PendingEffectDecision? queueDrawDecision;
         private bool resolvingGraveyardRecovery;
         private CardTarget? reservedDeckSearch;
+        private int? reservedDeckSearchOwner;
         private bool deckSearchMoved;
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
+            if (command is ResolveDeckRecruitmentCommand recruit)
+                return ResolveDeckRecruitment(recruit, followups);
             if (command is ResolveDeckSearchCommand search)
                 return ResolveDeckSearch(search, followups);
             if (command is FinishDeckSearchCommand finishSearch)
@@ -277,6 +281,8 @@ public sealed partial class DemoDuel
                     return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
+                case SpecialSummonCommand specialSummon:
+                    return SpecialSummonFromDeck(specialSummon);
                 case MoveToHandCommand move:
                     return MoveSelectedCardToHand(move.Source);
                 case ShuffleDeckCommand shuffle:
@@ -710,20 +716,53 @@ public sealed partial class DemoDuel
 
         private CommandResult ResolveDeckSearch(ResolveDeckSearchCommand answer, IActionCommandSink followups)
         {
-            if (reservedDeckSearch is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+            if (reservedDeckSearchOwner is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
                 !duel.TryPlanQueuedDeckSearch(answer.Request, answer.Target))
                 return new(CommandOutcome.Rejected, "Deck search request or target changed.");
 
+            ReserveDeckTransfer(answer.Side, answer.Target, new MoveToHandCommand(answer.Side, answer.Target), queue);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveDeckRecruitment(ResolveDeckRecruitmentCommand answer, IActionCommandSink followups)
+        {
+            if (reservedDeckSearchOwner is not null || followups is not ActionQueue { PendingCount: 0 } queue ||
+                !duel.TryPlanQueuedDeckRecruitment(answer.Request, answer.Target, answer.Slot))
+                return new(CommandOutcome.Rejected, "Recruitment request, target or slot changed.");
+            DuelCommand? movement = answer.Target is { } target && answer.Slot is int slot
+                ? new SpecialSummonCommand(answer.Side, target, slot) : null;
+            ReserveDeckTransfer(answer.Side, answer.Target, movement, queue);
+            return new(CommandOutcome.Applied);
+        }
+
+        private void ReserveDeckTransfer(int side, CardTarget? target, DuelCommand? movement, ActionQueue queue)
+        {
             duel.PendingCardSelection = null;
             duel.selectedBatchIndices.Clear();
-            reservedDeckSearch = answer.Target;
+            reservedDeckSearchOwner = side;
+            reservedDeckSearch = target;
             deckSearchMoved = false;
-            queue.Enqueue(new MoveToHandCommand(answer.Side, answer.Target));
-            // The movement records success. Only then emit the shuffle; a
-            // stale selection never consumes RNG or shuffles a different deck.
-            followups.ScheduleContinuation(_ => new(deckSearchMoved
-                ? [new ShuffleDeckCommand(answer.Side), new FinishDeckSearchCommand(answer.Side)]
-                : [new FinishDeckSearchCommand(answer.Side)]));
+            if (movement is not null) queue.Enqueue(movement);
+            // A declined or stale transfer consumes no RNG. Both search
+            // and recruitment finish only after the movement/shuffle gates.
+            queue.ScheduleContinuation(_ => new(deckSearchMoved
+                ? [new ShuffleDeckCommand(side), new FinishDeckSearchCommand(side)]
+                : [new FinishDeckSearchCommand(side)]));
+        }
+
+        private CommandResult SpecialSummonFromDeck(SpecialSummonCommand summon)
+        {
+            if (!duel.TryResolveCardTarget(summon.Source, out int index, out var card))
+                return new(CommandOutcome.Skipped, "Deck occurrence gone.");
+            if (!card.IsMonster || duel.Monsters[summon.Side, summon.Slot] is not null)
+                return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
+            Card[] remaining = duel.decks[summon.Side].Where((_, i) => i != index).ToArray();
+            duel.decks[summon.Side].Clear();
+            foreach (var other in remaining) duel.decks[summon.Side].Enqueue(other);
+            // P164 is always face-up attack. This is a movement primitive,
+            // not a generic card legality or summon-response resolver.
+            duel.PlaceSelectedMonster(summon.Side, summon.Slot, card, false);
+            if (reservedDeckSearch == summon.Source) deckSearchMoved = true;
             return new(CommandOutcome.Applied);
         }
 
@@ -739,8 +778,9 @@ public sealed partial class DemoDuel
 
         private CommandResult FinishDeckSearch(int side)
         {
-            if (reservedDeckSearch is not { } target || target.Side != side)
+            if (reservedDeckSearchOwner != side)
                 return new(CommandOutcome.Rejected, "No matching deck search to finalize.");
+            reservedDeckSearchOwner = null;
             reservedDeckSearch = null;
             deckSearchMoved = false;
             duel.BeginNextQueuedDeckSearch();
