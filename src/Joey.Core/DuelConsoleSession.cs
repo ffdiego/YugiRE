@@ -8,13 +8,13 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed partial class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
     public ActionQueue Queue { get; }
     public bool HasPendingEndDiscard => duel.HasQueuedEndDiscard;
-    public bool HasPendingChoice => Queue.PendingDecision is not null || PendingHandSelection is not null || HasPendingEndDiscard || HasPendingFlipSelection;
+    public bool HasPendingChoice => Queue.PendingDecision is not null || PendingHandSelection is not null || HasPendingEndDiscard || HasPendingFlipSelection || PendingFieldSelection is not null;
 
     public bool AllowsPendingEndDiscardInput(string line)
     {
@@ -61,7 +61,7 @@ public sealed partial class DuelConsoleSession
                 .Select(p => "- " + p.First + "\n+ " + p.Second);
             return new(true, string.Join("\n", changes.DefaultIfEmpty("No changes.")));
         }
-        if (op == "choices" && words.Length == 1) return HasPendingFlipSelection ? ReadFlipChoices() : ReadHandChoices();
+        if (op == "choices" && words.Length == 1) return HasPendingFlipSelection ? ReadFlipChoices() : PendingFieldSelection is not null ? ReadFieldChoices() : ReadHandChoices();
         if (op == "decision" && words.Length == 3)
         {
             if (!long.TryParse(words[1], NumberStyles.None, CultureInfo.InvariantCulture, out long id) ||
@@ -77,6 +77,8 @@ public sealed partial class DuelConsoleSession
         if (op == "select-hand") return SelectHandCard(words);
         if (op == "select-flip") return SelectMonsterFlip(words);
         if (op == "select-st-pair") return SelectSpellTrapPair(words);
+        if (op == "select-recruit") return SelectRecruitment(words);
+        if (op == "select-revive") return SelectRevival(words);
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
         if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "turn" or "discard-end" or "attack")
@@ -172,7 +174,9 @@ public sealed partial class DuelConsoleSession
             : PendingHandSelection is not null ? operation is ("choices" or "select-hand")
             : HasPendingEndDiscard ? operation == "discard-end"
             : duel.PendingFlipTarget is not null ? operation is ("choices" or "select-flip")
-            : duel.PendingFlipSpellTrapTargets is not null && operation is ("choices" or "select-st-pair");
+            : duel.PendingFlipSpellTrapTargets is not null ? operation is ("choices" or "select-st-pair")
+            : PendingFieldSelection is { Source: CardSelectionSource.Deck } ? operation is ("choices" or "select-recruit")
+            : PendingFieldSelection is { Source: CardSelectionSource.Graveyard } && operation is ("choices" or "select-revive");
     }
 
     private DuelConsoleResult ExecuteLegal(string op, string[] words)
