@@ -65,6 +65,63 @@ internal static class QueuedMonsterWipeChecks
                 check((d.Monsters[p,z] is null)==expected.Any(t=>t.Player==p&&t.Zone==z),
                     $"Wipe {id}: untouched hidden/type/own slots remain");
         }
+        // Eternal Rest is based on live links, not catalogue type or the
+        // number of equipment cards. Exercise both controllers and sources.
+        foreach (int side in new[] {0,1})
+        foreach (bool set in new[] {false,true})
+        {
+            var warrior=Monster(24,15);
+            var d=DemoDuel.FromPartialObservation(side,
+                [Spell(300),Spell(300),Spell(300),Spell(655)],
+                Slots(warrior,warrior),Slots(warrior,warrior),8000,
+                equipmentContextResolved:true);
+            var gate=new Gate();
+            var q=d.CreatePrimitiveActionQueue(gate);
+            foreach(int targetSide in new[]{side,side,1-side})
+            {
+                check(d.TryQueueEquipment(DuelZone.Hand,0,targetSide,0,out _),
+                    "Eternal Rest equipment setup");
+                Drain(q);
+            }
+            check(d.EquipmentCards.Count==3,"Two links to one monster, one to the other");
+            if(set){check(d.TryQueueSpellTrapSet(0,out _),"Eternal Rest Set");Drain(q);}
+            int sourceSlot=set?Enumerable.Range(0,5).Single(z=>d.Spells[side,z]?.Id==655):0;
+            check(!(set?d.ActivateSetSpell(sourceSlot,out _):d.Play(0,out _)),
+                "Eternal Rest must not bypass the queue");
+            int start=q.Trace.Count;
+            check(d.TryQueueActivation(sourceSlot,set,out _),"Eternal Rest generic admission");
+            q.Tick(); q.Tick();
+            check(d.Graveyard(side).Any(c=>c.Id==655)&&d.EquipmentCards.Count==3,
+                "Source is spent before the first destruction");
+            gate.Release=false; q.Tick(); q.Tick();
+            check(q.IsBusy&&d.LastMonsterWipe is null,
+                "Eternal Rest holds each destruction at its presentation gate");
+            gate.Release=true; Drain(q);
+            check(d.Monsters[0,0] is null&&d.Monsters[1,0] is null&&
+                d.Monsters[0,1] is not null&&d.Monsters[1,1] is not null&&
+                d.EquipmentCards.Count==0&&d.Graveyard(side).Count(c=>c.Id==300)==3&&
+                d.LastMonsterWipe is {EffectResourceId:655,TotalDestroyed:2},
+                "Eternal Rest destroys only equipped monsters on both sides and cleans all links");
+            check(q.Trace.Skip(start).Count(x=>x.Stage==ActionTraceStage.Executed&&
+                x.Entry.Command is DestroyCommand)==5,
+                "Each monster and each linked equipment is destroyed exactly once");
+        }
+        {
+            var warrior=Monster(24,15);
+            var d=DemoDuel.FromPartialObservation(0,[Spell(300),Spell(655)],
+                Slots(warrior),Slots(warrior),8000,equipmentContextResolved:true);
+            var q=d.CreatePrimitiveActionQueue();
+            check(!d.TryQueueActivation(1,false,out _)&&!q.IsBusy,
+                "Eternal Rest rejects a field with no equipped monster");
+            check(d.TryQueueEquipment(DuelZone.Hand,0,0,0,out _),"Stale link setup");
+            Drain(q);
+            d.Spells[0,0]=Spell(300); // a distinct fixture occurrence, not the linked source
+            check(!d.TryQueueActivation(0,false,out _)&&!q.IsBusy&&d.Hand.Count==1,
+                "A replaced equipment occurrence cannot make its old monster eligible");
+        }
+        check(MonsterWipeRules.SupportsQueued(655)&&MonsterWipeRules.Scope(655) is null,
+            "Eternal Rest only uses the queue-backed link-aware selector");
+
         var sangan=Monster(47,3,47);
         var witch=Monster(573,18,573);
         var normal=Monster(24,15);
