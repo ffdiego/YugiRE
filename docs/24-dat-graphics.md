@@ -139,3 +139,11 @@ Os IDs 0x776–0x778 das exceções do acessor de categoria referem-se a esses
 registros; não são os tokens comuns `token_in/ku/sh` das entradas seguintes.
 A existência dos nomes e dessas exceções não comprova efeitos jogáveis dos
 Deuses nessa versão. Não foi feita investigação adicional de seus callbacks.
+
+## V03.1 — Assets obrigatórios e fallback explícito
+
+SQLite cumulativo v2 validado (SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4, quick_check ok). Decompilação 0041A800 confirma inicialização de dois bancos independentes via card/list_card.txt e mini/list_card.txt; não é nova prova de assembly ou de geometria. Mantemos os contratos de dimensões, rotação, seleção e os caminhos dos assets existentes; não alteramos o rasterizador. O manifesto histórico confirma o catálogo de 1114 associações.
+
+O App valida a presença das duas associações para cada carta do pool jogável antes de abrir a janela. O modo --check-graphics passa a incluir os BMPs mini/ e os dois versos originais, com validação de dimensão 50x72 do verso mini. O startup gráfico pre-carrega esse verso quando usa o tema nativo. Não substitui imagem ausente por nome de carta no duelo nem desenha um verso geométrico. Tema explicitamente fornecido continua permitido; o fallback textual só existe na inspeção opt-in --include-unused para registro fora do pool e fora do duelo, com mensagem no console. Assets de token que constam do manifesto não são placeholders inventados pelo cliente e não são removidos.
+
+Testes sintéticos do policy App-local (link no projeto de testes) verificam seleção de banco, rejeição de mapping ausente e restrição do fallback. Não foi executado o DAT real nesta sessão. Restam controles transitórios essenciais, incluindo descarte e destaques de alvos, cuja substituição precisa de evidência do dispatcher e dos passes nativos; preservar jogabilidade. Sem aumento de cobertura Draw.

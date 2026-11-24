@@ -8,4 +8,7 @@
   <ItemGroup>
     <Compile Include="../../Joey.App/DebugOverlayState.cs" Link="DebugOverlayState.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../Joey.App/DuelArtworkPolicy.cs" Link="DuelArtworkPolicy.cs" />
+  </ItemGroup>
 </Project>

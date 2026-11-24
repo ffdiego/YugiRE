@@ -223,8 +223,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *Pronto quando:* tabela de 512 inteiros disponível em `scratch/` e carregável pelo C# no lugar da aproximação; log de Draw para um duelo curto reproduzível por seed.
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`.
   Ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e posição legível do ATK/DEF **acima no adversário e abaixo no próprio**.
-- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Pronto`.
+- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`.
   Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT local, usando manifests e seleção de variantes por estado; não versionar os assets. Aviso explícito de asset faltante; nada de substituição silenciosa.
+  V03.1: preflight de mappings grandes/mini para cartas jogáveis, validação de mini BMPs e verso original, sem substituição geométrica/nome no duelo; diagnóstico de registro não jogável só com --include-unused fora do duelo. Tema explícito preservado. Controles transitórios de seleção/descarte e validação DAT real ainda pendentes. [Evidência](docs/24-dat-graphics.md#v031-assets-obrigatórios-e-fallback-explícito).
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Pronto`.
   Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado no voo; sampler ajustado. Pivô/compositor e constantes x87 pendentes; [contrato](docs/research/native-attack-life-routing-2026-11-24.md).
   Reconstituir estaticamente e validar a troca ao atingir a carta (`j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp`): frame/estado de transição, clipping, pivô e camada. Preservar a ilusão de penetração observada no vídeo, sem declarar seus detalhes como comprovados antes da análise. Rotina Draw `004142C0` (Partial).
