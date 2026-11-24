@@ -25,6 +25,7 @@ public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Def
 public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
+public sealed record ReturnToDeckCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
@@ -100,6 +101,9 @@ internal static class DuelCommandValidation
                 break;
             case ResolveGraveyardRecoveryCommand recover when recover.Request is not null && recover.Request.Owner == recover.Side:
                 if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
+                break;
+            case ReturnToDeckCommand returnDeck:
+                Target(returnDeck.Target, returnDeck.Side, DuelZone.Monster);
                 break;
             case ReturnToHandCommand bounce:
                 Target(bounce.Target, bounce.Side, DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
