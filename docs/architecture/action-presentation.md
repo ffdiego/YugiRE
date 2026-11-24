@@ -11,3 +11,7 @@ CI A03.1 45321012210 aprovado. CommandPresentationSteps<T> vincula a sequência 
 ## Reconciliação com C12 (main a2fce55)
 
 A03.2 CI 45321381706 aprovado. A projeção contempla ActivateMonsterWipeCommand/ActivateSpellTrapWipeCommand, sem reintroduzir o resolvedor A02. App chama os produtores C12 de mão/Set. CI da reconciliação pendente. O console A04 utilizará o mesmo gate via branch empilhada; validar a apresentação no DAT local antes de concluir o marco.
+
+## Fechamento do piloto A03
+
+Smoke Windows no branch A04 descendente de A03: primeira execução expôs compra automática legada em deck vazio; correção A04 fff5e6e. Segunda execução 18 Applied, trace/state idêntico ao headless; terceira eceef63 (CI 45328386043) 29 Applied, 29 Started/Completed, sem wait >=5s, 8000/7800, fila vazia. Operador confirmou as compras do Joey animadas; spawns instantâneos são setup. Sequência de compras, summon, ativação e remoções demonstrada em runtime DAT. A03 conclui critério de piloto; demais ações e perfis/fidelidade completa continuam incrementais. Sem logs brutos/DAT versionados.

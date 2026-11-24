@@ -1,0 +1,103 @@
+namespace Joey.Core;
+
+public sealed partial class DemoDuel
+{
+    private bool admittingQueuedFlipSpellTrapPair;
+
+    private bool CanAdmitQueuedFlipSpellTrapPair() =>
+        !GameOver && deferredBattle is null && Phase == DemoPhase.Main &&
+        PendingFlipSpellTrapTargets is { } pending &&
+        FlipSpellTrapSelectionRules.Effect(pending.Source.Id) == pending.Operation &&
+        PendingFlipTarget is null && PendingCardSelection is null &&
+        PendingSummonResponse is null && PendingAttackResponse is null &&
+        PendingEffectDecision is null && PendingSpellTrapTarget is null &&
+        PendingFusionSummon is null && !deferringFieldRemovalTriggers && PendingEndDiscards == 0;
+
+    public IReadOnlyList<QueuedSpellTrapCandidate> QueuedFlipSpellTrapCandidates(PendingFlipSpellTrapTargets request)
+    {
+        if (primitiveActionQueue?.IsBusy == true || !CanAdmitQueuedFlipSpellTrapPair() ||
+            !ReferenceEquals(PendingFlipSpellTrapTargets, request) || FlipEffectsNegated)
+            return [];
+        var result = new List<QueuedSpellTrapCandidate>();
+        foreach (var candidate in request.EligibleTargets)
+        {
+            bool field = candidate.Zone == SpellTrapTargetRules.FieldZone;
+            if (TryCaptureCardTarget(candidate.Player, field ? DuelZone.FieldSpell : DuelZone.SpellTrap,
+                field ? 0 : candidate.Zone, out var target) &&
+                TryResolveFlipSpellTrapPick(request, target, out _, out _))
+                result.Add(new(target, candidate.Zone, candidate.Card, IsSpellTrapFaceDown(candidate.Player,candidate.Zone)));
+        }
+        return result.AsReadOnly();
+    }
+
+    public bool TryQueueFlipSpellTrapPair(PendingFlipSpellTrapTargets request, IReadOnlyList<CardTarget> targets,
+        out string message, ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "Choose exactly two eligible distinct Spell/Trap occurrences.";
+        if (primitiveActionQueue is not { IsBusy: false } queue || targets is null ||
+            !TryPlanFlipSpellTrapPair(request, targets, out _, out _, out _)) return false;
+        var answer = new ResolveFlipSpellTrapPairCommand(request.Owner, request,
+            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null);
+        admittingQueuedFlipSpellTrapPair = true;
+        try { queue.Enqueue(answer, origin); }
+        finally { admittingQueuedFlipSpellTrapPair = false; }
+        message = "FLIP pair admitted.";
+        return true;
+    }
+
+    private bool TryResolveFlipSpellTrapPick(PendingFlipSpellTrapTargets request, CardTarget target,
+        out Card card, out int zone)
+    {
+        card = null!;
+        zone = -1;
+        if (target.Zone is not (DuelZone.SpellTrap or DuelZone.FieldSpell) ||
+            !TryResolveCardTarget(target, out int slot, out card) ||
+            !SpellTrapRemovalLinkMatches(target.Side, target.Zone, slot, card)) return false;
+        int visualZone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
+        Card selectedCard = card;
+        zone = visualZone;
+        return request.EligibleTargets.Any(t => t.Player == target.Side && t.Zone == visualZone &&
+            ReferenceEquals(t.Card, selectedCard)) &&
+            FlipSpellTrapSelectionRules.IsEligible(request.Source.Id, card, IsSpellTrapFaceDown(target.Side, visualZone));
+    }
+
+    private bool TryPlanFlipSpellTrapPair(PendingFlipSpellTrapTargets request, IReadOnlyList<CardTarget> targets,
+        out CardTarget source, out DuelCommand[] batch, out CardTarget[] cascade)
+    {
+        source = default;
+        batch = [];
+        cascade = [];
+        if (!CanAdmitQueuedFlipSpellTrapPair() || !ReferenceEquals(PendingFlipSpellTrapTargets, request) ||
+            flipSpellTrapSelections.Count != 0 || targets.Count > 2 ||
+            targets.Distinct().Count() != targets.Count || targets.Count == 1) return false;
+        int sourceSlot = Enumerable.Range(0,5).FirstOrDefault(z => ReferenceEquals(Monsters[request.Owner,z],request.Source), -1);
+        if (sourceSlot < 0 || !TryCaptureCardTarget(request.Owner,DuelZone.Monster,sourceSlot,out source)) return false;
+        if (FlipEffectsNegated) return true;
+        if (targets.Count != 2) return false;
+        var commands = new List<DuelCommand>();
+        var extra = new List<CardTarget>();
+        var boardSides = new HashSet<int>();
+        foreach (var target in targets)
+        {
+            if (!TryResolveFlipSpellTrapPick(request,target,out var card,out int zone)) return false;
+            bool bounce = request.Operation == FlipSpellTrapOperation.ReturnToOwnerHand;
+            commands.Add(bounce ? new ReturnToHandCommand(target.Side,target) : new DestroyCommand(target.Side,target));
+            if (bounce && card.Id == DestinyBoardRules.BoardResourceId &&
+                !IsSpellTrapFaceDown(target.Side,zone) &&
+                DestinyBoardRules.HasActiveBoard(target.Side,Spells,SpellFaceDown)) boardSides.Add(target.Side);
+        }
+        foreach (int side in boardSides.Order())
+        for (int z = 0; z < 5; z++)
+        {
+            if (Spells[side,z] is not Card piece || SpellFaceDown[side,z] || !IsDestinyBoardPiece(piece)) continue;
+            if (!TryCaptureCardTarget(side,DuelZone.SpellTrap,z,out var target) ||
+                !SpellTrapRemovalLinkMatches(side,DuelZone.SpellTrap,z,piece)) return false;
+            if (targets.Contains(target)) continue;
+            extra.Add(target);
+            commands.Add(new DestroyCommand(side,target));
+        }
+        cascade = extra.ToArray();
+        batch = commands.ToArray();
+        return true;
+    }
+}

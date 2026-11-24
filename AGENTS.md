@@ -27,7 +27,7 @@ O trabalho está organizado em três trilhas em [`PLANS.md`](PLANS.md), com iten
 
 **Fidelidade e esforço:** regras triviais de cartas se implementam rápido a partir do texto do DAT, sem validação nativa exaustiva. O rigor fica em VISUALS (assembly-first) e na fila de ações: toda mudança de estado observável deve ser um comando tipado executado um de cada vez, e **nenhuma regra nova deve resolver ações fora da fila** depois que `A02` existir. Enquanto `A02` não existir, registre cada carta implementada fora da fila em `C12` para migração posterior.
 
-**Badges das três frentes:** ACTIONS mede marcos A numerados com `[x]` e status `Concluído` no PLANS.md; ao editar a trilha, executar `python scripts/publish_actions_progress.py`. CARDS mede Done+Verified no catálogo de 771 cartas; VISUALS mede Draw implementadas inclusive Partial, não fidelidade. Manter os três geradores e seus testes consistentes com as fontes.
+**Badges das três frentes:** ACTIONS mede marcos A numerados com `[x]` e status `Concluído` no PLANS.md; ao editar a trilha, executar `python scripts/publish_actions_progress.py`. CARDS mede Done+Verified no catálogo de 771 cartas e exibe Partial separadamente; VISUALS mede Draw implementadas inclusive Partial, não fidelidade. Manter os três geradores e seus testes consistentes com as fontes.
 
 ## Motor orientado a comandos e console (ACTIONS)
 
@@ -65,6 +65,27 @@ Ferramentas existentes: SQLite nativo enriquecido, `scripts/run-archive-query.sh
 
 **Exemplos pendentes:** números de LP flutuantes são posicionados pelo contexto/argumentos do Draw (dano de batalha não é idêntico a dano direto); anúncio de troca de jogador usa recursos próprios; atributos ATK/DEF têm visibilidade e cores dependentes do estado; cursor de ataque e cursores de posição só aparecem para ações permitidas. Ver [fila de investigação visual](docs/research/visual-assembly-first-backlog-2026-11-22.md) e `PLANS.md`.
 
+## Fonte privada compartilhada de engenharia reversa
+
+**ACTIONS, CARDS e VISUALS devem consultar primeiro o snapshot cumulativo
+`joey-knowledge-visual-cumulative-2026-11-24-v2.zip` (24/11/2026), que
+contém `joey-knowledge-visual-cumulative.sqlite` e a auditoria.**
+Em conversas ChatGPT, procurar o arquivo nas fontes do projeto YugiRE
+ou na Biblioteca privada do mantenedor pelo nome exato; em máquinas locais,
+usar a cópia em `scratch/`. Não pedir reenvio sem tentar localizar a fonte.
+Validar o hash do SQLite e o fingerprint do EXE conforme o
+[guia de consultas](docs/research/joey-knowledge-sqlite.md).
+O ZIP sem o sufixo `2026-11-24-v2` contém apenas 19 dos 21 bundles,
+apesar da auditoria antiga; não usá-lo como snapshot completo.
+Antes de considerar uma VA ausente, consultar `decompilations`,
+`visual_transient_decompilations`, `visual_evidence_functions`,
+`visual_evidence_instructions` e, quando pertinente,
+`visual_evidence_memory` e relatórios brutos. Não repetir coletas
+já presentes, inclusive quando o endereço não existe em `functions`.
+Ao publicar uma nova versão privada, atualizar o guia com nome, hash,
+auditoria, contagens e lacunas; manter as versões anteriores somente como histórico.
+Nunca versionar o SQLite ou os ZIPs no GitHub.
+
 ## Extrações nativas que dependem de outra máquina
 
 A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de extração executáveis mas não executadas**, para Ghidra/Windows e outras evidências indisponíveis neste ambiente. Ler seu `README.md` antes de executar, atualizar o estado após obter um ZIP e nunca marcar um item como concluído só porque o script foi escrito. Não executar automaticamente as tarefas pendentes durante builds, CI ou testes. Esta política vale para **ACTIONS, CARDS e VISUALS**. Se qualquer frente depender do Windows (Frida/executável/DAT) ou Fedora (Ghidra/projeto local) indisponível, adicionar um script direcionado, indicar ID da trilha, ambiente, pré-requisitos, evidência esperada e saída em `scratch/`, registrar no README e avançar em uma tarefa independente.
@@ -85,7 +106,7 @@ A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de ext
 - **Pending:** sem regra implementada. **Partial:** primitivo ou integração parcial. **Done:** comportamento completo **no escopo anunciado** em `Joey.Core`, exercitável no duelo e coberto por testes C#. **Verified:** adicionalmente comparado com observação do Joey original. Um teste sintético não vira `Verified`.
 - Marque as limitações de escopo (por exemplo, ausência de correntes, efeitos globais ou interação com outras cartas); não declare todo o catálogo de monstros pronto apenas porque a invocação e o combate básicos funcionam.
 - Prefira fatias menores que deixem o jogo melhor no fim da sessão. Um número grande de cartas listadas sem ativação jogável não é progresso funcional.
-- A cada carta nova, atualizar `CARDS.md` e `docs/cards/playability-manifest.json` com resource ID exato, família, status e evidência de teste. A badge CARDS e o relatório `docs/cards/PLAYABILITY.md` são gerados por `python scripts/publish_playability.py`. O workflow `playability-badges.yml` recalcula as três badges em pushes na `main`. Regenerar os arquivos afetados antes do commit para o CI; nunca editar manualmente os percentuais.
+- A cada carta nova (inclusive procedimento opt-in incompleto, como Partial), atualizar `CARDS.md` e `docs/cards/playability-manifest.json` com resource ID exato, família, status e evidência de teste. A badge CARDS e o relatório `docs/cards/PLAYABILITY.md` são gerados por `python scripts/publish_playability.py`. O workflow `playability-badges.yml` recalcula as três badges em pushes na `main`. Regenerar os arquivos afetados antes do commit para o CI; nunca editar manualmente os percentuais.
 - Os 264 recursos classificados como `Normal` são `Done` apenas para a mecânica básica de invocação/set/tributos/batalha testada em C#. Isso **não** torna efeito, fusão ou ritual completos nem confere `Verified`. Se o DAT real divergir da classificação de referência, revisar o inventário antes de confiar na badge. Não declarar Done por catálogo/callback ou invocação genérica de monstros.
 - Para medir porcentagem: `python scripts/card_playability.py --dat ../passion/data.dat`. Denominador é a união de packs (771 registros) ou Joey (350), não os 1.114 registros nem o número de callbacks. Sem DAT local, não inventar percentuais.
 - Efeitos FLIP no sandbox passam por `FlipEffectRules` e pelo gatilho em `DemoDuel` (Flip Summon/revelação no combate/efeito). Dano e marcação de destruição de combate precedem FLIP; cards marcados não podem voltar à mão com Penguin Soldier (601), ainda que permaneçam na zona até o fim da etapa. Pending targets bloqueiam ações; `FinishFlipTargets` fecha 0–1 alvos opcionais. Hane-Hane (540) exige exatamente um alvo legal e compartilha apenas a infraestrutura de bounce com Penguin Soldier (601), que é opcional com 0–2 alvos. Morphing Jar (590) descarta mãos e compra cinco; Morphing Jar #2 (1163) é um FLIP **distinto**, que embaralha monstros para Main Decks e escava até quotas por dono. O código do sandbox está em `DemoDuel.ResolveMorphingJar2`; não inferir Extra Deck, tokens nem posse fora do controlador. Já existe seletor genérico `CardSelectionRules` com integração raylib para P018 (427/101), P006 (47/573) e P164 (1123/1108/1117); somente P018 é ativado por FLIP. O próximo recorte de custo de invocação especial está em C16; consultar o manifesto e a [consolidação dos lotes 6–14](docs/research/card-rules-consolidation-lotes-6-14.md) antes de reimplementar cartas.

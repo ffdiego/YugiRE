@@ -24,8 +24,8 @@ public sealed partial class DemoDuel
         if (side is not (0 or 1) || index < 0) return false;
         Card? card = zone switch
         {
-            DuelZone.Hand when index < hands[side].Count => hands[side][index],
             DuelZone.Deck when index < decks[side].Count => decks[side].ElementAt(index),
+            DuelZone.Hand when index < hands[side].Count => hands[side][index],
             DuelZone.Graveyard when index < graves[side].Count => graves[side][index],
             DuelZone.Banished when index < banished[side].Count => banished[side][index],
             DuelZone.Monster when index < 5 => Monsters[side, index],
@@ -39,7 +39,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    // Read-only guard for the explicit laboratory producer; keep resolution private.
+    // Read-only guard for explicit laboratory producer.
     internal bool MatchesOccurrenceResource(CardTarget target, ushort resourceId) =>
         TryResolveCardTarget(target, out _, out var card) && card.Id == resourceId;
 
@@ -51,8 +51,8 @@ public sealed partial class DemoDuel
         if (side is not (0 or 1)) return false;
         int count = target.Zone switch
         {
-            DuelZone.Hand => hands[side].Count,
             DuelZone.Deck => decks[side].Count,
+            DuelZone.Hand => hands[side].Count,
             DuelZone.Graveyard => graves[side].Count,
             DuelZone.Banished => banished[side].Count,
             DuelZone.Monster or DuelZone.SpellTrap => 5,
@@ -66,8 +66,8 @@ public sealed partial class DemoDuel
             index = i;
             card = target.Zone switch
             {
-                DuelZone.Hand => hands[side][i],
                 DuelZone.Deck => decks[side].ElementAt(i),
+                DuelZone.Hand => hands[side][i],
                 DuelZone.Graveyard => graves[side][i],
                 DuelZone.Banished => banished[side][i],
                 DuelZone.Monster => Monsters[side, i]!,

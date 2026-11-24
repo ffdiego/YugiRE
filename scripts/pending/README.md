@@ -190,6 +190,10 @@ Para os recursos, utilizar --inspect-visual-dat já existente
 e compartilhar privadamente apenas registros de fusion.txt e
 dimensões das imagens referenciadas (sem pixels).
 
-## A03/A04 — 22-actions-console-visual-smoke.sh (aguardando execução local)
+### 16 — CARDS: P117/P159/P160 ressurreição
 
-`bash scripts/pending/22-actions-console-visual-smoke.sh /caminho/data.dat` (Windows Git Bash ou Fedora com .NET 10 e App/raylib). Executar no branch A04 após CI. Usa roteiro sintético conhecido, headless e App (mesmos produtores), grava logs em `scratch/actions-console/`. Observar invocação normal, draw, ativação Sparks/LP, Raigeki e destruições individuais, ausência de avanço durante animação; fechar App após Script completed. O roteiro compara state/diff e comandos executados após fechar o App; repetir com `--fast`/`--instant` se necessário. Não constitui validação nativa pixel a pixel. Ainda não executado neste ambiente.
+`bash scripts/pending/16-cards-revival-spells-ghidra.sh` no Fedora/Ghidra local. Saída privada `scratch/ghidra-revival-spells-contract.zip`. Extrair sete callbacks ausentes nos dois SQLite, com assembly e helpers de movimentação/identidade. Confirmar propriedade/controle, seleção, custo e vínculo; não promover cobertura apenas pela coleta. Ver [lacuna](../../docs/cards/p117-p159-p160-revival-spells-gap.md).
+
+## A03/A04 — 22-actions-console-visual-smoke.sh (piloto validado no Windows)
+
+Roteiro 22 executado via PowerShell, headless e gráfico: 18 Applied e 106 linhas relevantes idênticas após fff5e6e. Novo roteiro `scripts/fixtures/duel-console-two-sides-smoke.txt` executou 29 Applied, sem espera >=5s; operador confirmou compras animadas de ambos lados. CI 45328386043. Manter script como regressão opcional. Não implica paridade visual nativa; A05/A07 pendentes.
