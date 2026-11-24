@@ -68,17 +68,21 @@ public readonly record struct NativeFieldAttributeFrame(
             throw new ArgumentOutOfRangeException(nameof(attack), "Attributes must be nonnegative.");
 
         int top = center.Y - normalGlyphHeight / 2;
+        // 004196D6..004196F6 and 004199D0..004199DE use two
+        // separate signed integer halves. For odd glyph widths this
+        // differs by one pixel from 3 * normalGlyphWidth.
+        int distance = normalGlyphWidth / 2 + checked(5 * normalGlyphWidth) / 2;
         string defenseSprite = NativeFieldAttributeFonts.ForValue(defense, originalDefense);
         string attackSprite = NativeFieldAttributeFonts.ForValue(attack, originalAttack);
         var defensePass = new NativeFieldNumberPass(
             defenseSprite, NativeFieldAttributeFonts.Columns(defenseSprite),
-            defense, center.X + 3 * normalGlyphWidth, top,
+            defense, center.X + distance, top,
             defensePosition ? ActiveOpacity : InactiveOpacity);
         var attackPass = new NativeFieldNumberPass(
             attackSprite, NativeFieldAttributeFonts.Columns(attackSprite),
-            attack, center.X - 3 * normalGlyphWidth, top,
+            attack, center.X - distance, top,
             defensePosition ? InactiveOpacity : ActiveOpacity);
-        return new(defensePass, center.X - normalGlyphWidth / 2, top,
+        return new(defensePass, center.X + normalGlyphWidth / 2 - normalGlyphWidth, top,
             InactiveOpacity, attackPass);
     }
 

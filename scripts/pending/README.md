@@ -6,10 +6,10 @@ Esta pasta guarda **roteiros de coleta de evidência, não implementações inco
 
 | Roteiro | Pré-requisito | Produz | Estado |
 | --- | --- | --- | --- |
-| `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Aguardando execução** |
-| `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Aguardando execução** |
-| `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Aguardando execução** |
-| `04-card-status-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-card-status-contract.zip` | **Aguardando execução** |
+| `01-selection-fusion-ghidra.sh` | Fedora/Linux com Ghidra e `ghidra-projects/Joey.gpr` | `scratch/ghidra-selection-fusion-contract.zip` | **Bundle recebido em 23/11** |
+| `02-chain-disabled-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-chain-disabled-contract.zip` | **Bundle recebido em 23/11** |
+| `03-field-attributes-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-field-attributes-contract.zip` | **Bundle recebido em 23/11** |
+| `04-card-status-ghidra.sh` | Mesmo ambiente Ghidra | `scratch/ghidra-card-status-contract.zip` | **Bundle recebido em 23/11** |
 
 ### Seleção/fusão: o que já sabemos e o que NÃO sabemos
 
@@ -80,3 +80,17 @@ O exportador `scripts/export_ghidra_visual_bundle.py` valida o SHA-256 de `joey_
 ## Protocolo para novas pendências
 
 Cada novo roteiro deve especificar: hipótese/objetivo, endereços-alvo, dependências, comando reprodutível, artefato esperado e critério de encerramento. Depois de processar o ZIP e registrar conclusões em `docs/research/`, atualizar esta fila para **concluído** ou remover o roteiro de pending em commit separado; não abandonar scripts silenciosamente. Scripts de uso geral permanecem em `scripts/`.
+
+
+## Recebimento e triagem — 23/11/2026
+
+Quatro ZIPs privados recebidos, todos com o SHA-256 esperado, `missing=[]` e memória solicitada completa. Não executar de novo os quatro roteiros sem motivo.
+
+| Bundle | Funções | Situação após triagem |
+| --- | ---: | --- |
+| selection-fusion | 6/6 | Âncora estática 525; gerador x87 confirmado, demais Draws a aprofundar |
+| chain-disabled | 5/5 | Seis recursos sequenciais, pivô no centro e ramo rotacionado de 90 graus identificados; DAT e gatilho ainda pendentes |
+| field-attributes | 8/8 | Geometria dos números e arredondamento conferidos; modelo integrado corrigido |
+| card-status | 17/17, 12/12 janelas | Coordenadas A/B, tipo e atributo resolvidas; falta DAT/flags/composição |
+
+O texto acima que descrevia a coleta como futura registra o estado anterior. Para a investigação de status, o assembly já foi consumido e as fórmulas finais estão em [native-card-status-digits](../../docs/research/native-card-status-digits-2026-11-22.md). Os outros bundles não exigem nova coleta para iniciar a próxima análise. Ver [triagem](../../docs/research/visual-contract-bundles-2026-11-23.md).

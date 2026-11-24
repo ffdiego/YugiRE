@@ -23,9 +23,7 @@ sugerem azul/vermelho para buff/debuff, mas a cor pixel a pixel ainda
 requer captura do original.
 
 A ordem do Draw é **DEF, separador, ATK**. A base horizontal é
-`obj+0x30`; DEF fica em `X+3*larguraGlifoNormal`, ATK em
-`X-3*larguraGlifoNormal`, separador na coluna 10 em
-`X-larguraGlifoNormal/2`. `00480500` desenha os algarismos da direita
+`obj+0x30`; DEF fica em `X+D`, ATK em `X-D`, onde `D = larguraGlifoNormal/2 + (5*larguraGlifoNormal)/2` (duas divisões inteiras). O separador na coluna 10 tem início em `X+larguraGlifoNormal/2-larguraGlifoNormal`. `00480500` desenha os algarismos da direita
 para a esquerda, centralizados pela largura real do atlas escolhido.
 A origem vertical usa `obj+0x34` e um deslocamento dependente de lado,
 com altura da fonte. A UI preserva seu centro atual até verificarmos
@@ -132,3 +130,8 @@ Para dimensões dos BMPs originais, executar `--inspect-visual-dat`
 no Windows com `data.dat` e consultar o manifesto `number.txt`
 no relatório `scratch/visual-review/dat-manifests.json`.
 Compartilhar resultados privadamente e não commitar os assets.
+
+
+## 23/11 — conferência pelo assembly recebido
+
+`ghidra-field-attributes-contract.zip`: 8/8 funções, SHA-256 original confirmado. `004196D6..004196F6` e `004199D0..004199DE` demonstram duas divisões inteiras separadas para o afastamento dos números. `00419864..0041987B` e `0048036E..00480374` confirmam o separador com âncora direita `X+glifo/2`, da qual o helper subtrai uma largura. `00419612..00419630` confirma Y ±46 menos metade da altura da fonte; intensidades 160/256 também confirmadas. `NativeFieldAttributeFrame.Compose` agora usa a aritmética exata no renderer existente (diferença de 1 px para glifos ímpares). Flashes de mudança de atributo seguem o delta anterior ao smoothing; ver [status](native-card-status-digits-2026-11-22.md). Sem validação pareada de pixels, mantém Partial.

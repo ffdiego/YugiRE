@@ -9,7 +9,7 @@ namespace Joey.LookAndFeel;
 /// Unlike field ATK/DEF, these Draws use the non-opacity path:
 /// 00480690 centers a digit group; 004803C0 draws right-to-left from
 /// a right-edge cursor. This class captures glyph positions only and
-/// does not assert the missing status icon x-position/texture geometry.
+/// leaves the sprite geometry to NativeStatusDrawLayout.
 /// </summary>
 public static class NativeCardStatusDigits
 {
@@ -62,22 +62,6 @@ public static class NativeCardStatusDigits
         return [.. passes];
     }
 
-    /// <summary>
-    /// Symbolic x formulas visible in the imperfect Ghidra decompilation.
-    /// EBX is deliberately an INPUT, not assumed to be a particular
-    /// sprite's width: its provenance needs assembly register tracing.
-    ///
-    /// 0041A070 calls 00480690 at objX - EBX/2 + iStack_6c + 6;
-    /// the decompiler does not prove where iStack_6c was last written.
-    /// 0041A3B0 calls 004803C0 at objX + EBX/2 - 3.
-    /// These formulas must NOT be used for final client placement until
-    /// EBX and the post-draw offset are proved for each pass.
-    /// </summary>
-    public static NativeCardStatusHorizontalOperands HorizontalFromDecompilerOperands(
-        int objectX, int firstStatusEbx, int firstPostDrawOffset, int secondStatusEbx) =>
-        new(checked(objectX - firstStatusEbx / 2 + firstPostDrawOffset + 6),
-            checked(objectX + secondStatusEbx / 2 - 3));
-
     private static int ValidatedGlyphWidth(int width, int height)
     {
         if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
@@ -99,9 +83,3 @@ public static class NativeCardStatusDigits
 public readonly record struct NativeCardStatusDigitPass(
     int Digit, CardBounds Source, CardPoint Destination);
 
-/// <summary>
-/// Symbolic X operands from 0041A070/0041A3B0. Their EBX provenance is
-/// unresolved; this is an algebra check, not absolute visual geometry.
-/// </summary>
-public readonly record struct NativeCardStatusHorizontalOperands(
-    int FirstCenteredDigitX, int SecondRightEdgeX);

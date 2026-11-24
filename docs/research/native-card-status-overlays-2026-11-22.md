@@ -190,3 +190,8 @@ antes de desenhar qualquer um desses novos indicadores.
 Os Draws novos continuam **Pending**; inventário de cobertura
 permanece `19/34 Partial, 0 Verified`. Os outros indicadores de
 `duel/card/icon.txt` continuam fora desse inventário.
+
+
+## 23/11 — bundle de assembly recebido
+
+As 17 funções e 12 janelas exatas foram recuperadas no bundle privado `ghidra-card-status-contract.zip`. As fórmulas de X não dependem mais dos registradores indefinidos do decompilador: largura de miniatura em `DAT_005F3004`, largura de quadro pelo divisor de colunas do manifesto, deslocamentos específicos A/B e espelhamento dos ícones de tipo/atributo. A segunda rotina tem gate adicional `(descriptor & 0x3e) < 0x0a`. Ver [contrato geométrico e novos testes](native-card-status-digits-2026-11-22.md). Esta evidência substitui as hipóteses/lacunas de X acima. Falta correlacionar os metadados reais do DAT e os eventos semânticos do Core; não há novo Draw integrado.

@@ -221,10 +221,19 @@ internal static class NativePresentationChecks
               "Native disabled chain: two cycles of six indices, two updates each; stop at 24");
         check(NativeDisabledChainFrame.FromCounter(11, 0u) ==
                   new NativeDisabledChainFrame(11, 5, false) &&
-              NativeDisabledChainFrame.FromCounter(12, 0x40u) ==
+              NativeDisabledChainFrame.FromCounter(12, 0x4000u) ==
                   new NativeDisabledChainFrame(12, 0, true) &&
-              !NativeDisabledChainFrame.FromCounter(13, 0x20u).DescriptorBit40,
-              "Native disabled chain: descriptor bit 0x40 branches independently of frame index");
+              !NativeDisabledChainFrame.FromCounter(13, 0x0040u).DescriptorBit4000 &&
+              !NativeDisabledChainFrame.FromCounter(13, 0x20u).DescriptorBit4000,
+              "Native disabled chain: descriptor bit 0x4000 branches independently of frame index");
+        var plainDisabled = NativeDisabledChainFrame.FromCounter(0, 0);
+        var rotatedDisabled = NativeDisabledChainFrame.FromCounter(0, 0x4000);
+        check(plainDisabled.Degrees == 0 && rotatedDisabled.Degrees == 90 &&
+              plainDisabled.BoundsAt(new CardPoint(525, 352), 60, 30) ==
+                  new CardBounds(495, 337, 60, 30) &&
+              rotatedDisabled.BoundsAt(new CardPoint(525, 352), 60, 30) ==
+                  new CardBounds(510, 322, 30, 60),
+              "Native disabled chain: full texture centered, defense swaps extents and rotates 90 degrees");
         bool chainBeforeRejected = false, chainAfterRejected = false;
         try { NativeDisabledChainFrame.FromCounter(-1, 0u); }
         catch (ArgumentOutOfRangeException) { chainBeforeRejected = true; }
@@ -235,7 +244,7 @@ internal static class NativePresentationChecks
               "Native disabled chain: invalid Draw counters rejected; inactive Update is stable");
         disabledChain.Reset();
         check(disabledChain.Active && disabledChain.Counter == 0 &&
-              disabledChain.Sample(0x40u) is { FrameIndex: 0, DescriptorBit40: true },
+              disabledChain.Sample(0x4000u) is { FrameIndex: 0, DescriptorBit4000: true },
               "Native disabled chain: reset reconstructs first frame without milliseconds");
 
         check(NativeVisualDispatch.Participates(true, 0b0101, 0b0001) &&

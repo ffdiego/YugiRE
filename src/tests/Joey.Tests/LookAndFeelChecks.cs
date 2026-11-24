@@ -541,15 +541,68 @@ internal static class LookAndFeelChecks
                   0, new CardBounds(0, 0, 7, 10), new CardPoint(521, 378)),
               "Native status numeric B: right-anchored digit, zero renders one glyph");
 
-        // Horizontal X has *symbolic* register/stack operands from the
-        // decompiler. Test only their algebra, never an invented sprite
-        // width or screen-space location. iStack_6c may be written by
-        // a virtual call; its source still requires assembly.
-        check(NativeCardStatusDigits.HorizontalFromDecompilerOperands(
-                  objectX: 525, firstStatusEbx: 30, firstPostDrawOffset: 4,
-                  secondStatusEbx: 26) ==
-                  new NativeCardStatusHorizontalOperands(520, 535),
-              "Native status X: preserve the unresolved EBX/post-draw operands in layout equations");
+        // Assembly received in ghidra-card-status-contract.zip:
+        // main atlas widths are divided by the manifest count before
+        // the draw and the mini-card width supplies both edge anchors.
+        // Use synthetic sprite dimensions, not invented DAT facts.
+        var firstLayout = NativeStatusDrawLayout.First(525, 383, 50,
+            new NativeCardStatusFrame(6, 2, 15, 7, 4),
+            new NativeStatusAtlas(72, 15, 6), new NativeStatusAtlas(160, 19, 8));
+        check(firstLayout.Main == new NativeStatusSpritePass(6,
+                  new CardBounds(24, 0, 12, 15), new CardPoint(500, 375)) &&
+              firstLayout.NumberAnchor == new CardPoint(518, 383) &&
+              firstLayout.NumberCentered &&
+              firstLayout.Transition == new NativeStatusSpritePass(7,
+                  new CardBounds(80, 0, 20, 19), new CardPoint(508, 374)),
+              "Native status A: mini width, source frame width, rounded Y and transition center");
+        var secondLayout = NativeStatusDrawLayout.Second(525, 321, 50,
+            new NativeCardStatusFrame(8, 1, 7, 9, 3),
+            new NativeStatusAtlas(48, 13, 4), new NativeStatusAtlas(128, 17, 8));
+        check(secondLayout.Main == new NativeStatusSpritePass(8,
+                  new CardBounds(12, 0, 12, 13), new CardPoint(527, 315)) &&
+              secondLayout.NumberAnchor == new CardPoint(547, 321) &&
+              !secondLayout.NumberCentered &&
+              secondLayout.Transition == new NativeStatusSpritePass(9,
+                  new CardBounds(48, 0, 16, 17), new CardPoint(535, 313)),
+              "Native status B: right edge minus frame+8, tail centered at right-4");
+        check(NativeStatusDrawLayout.SecondRegionEligible(0x8008) &&
+              !NativeStatusDrawLayout.SecondRegionEligible(0x800a),
+              "Native status B has additional descriptor region gate");
+        // 00419B70 uses code-1 in the atlas and opposite mirrored
+        // mini-card edges. These dimensions are synthetic test fixtures.
+        var typeIcon = NativeStatusDrawLayout.IdentityIcon(false, 5,
+            new CardPoint(525, 352), 50, statusSameSide, new NativeStatusAtlas(240, 15, 20));
+        var attrIcon = NativeStatusDrawLayout.IdentityIcon(true, 6,
+            new CardPoint(525, 352), 50, statusOtherSide, new NativeStatusAtlas(72, 15, 6));
+        check(typeIcon == new NativeStatusSpritePass(5,
+                  new CardBounds(48, 0, 12, 15), new CardPoint(494, 309)) &&
+              attrIcon == new NativeStatusSpritePass(4,
+                  new CardBounds(60, 0, 12, 15), new CardPoint(494, 381)),
+              "Native identity change icons: effective code minus one, mirrored edges");
+        check(NativeStatusDrawLayout.AttributeFlash(545, 393, 200, 6) ==
+                  new NativeStatusFlash(11, new CardPoint(545, 383), 256) &&
+              NativeStatusDrawLayout.AttributeFlash(505, 393, -200, 6) ==
+                  new NativeStatusFlash(13, new CardPoint(505, 387), 256) &&
+              NativeStatusDrawLayout.AttributeFlash(505, 393, 0, 6) is null,
+              "Native stat flash: sign of pre-smoothing delta, global-counter bob and intensity");
+
+        bool missingTailDimensionsRejected = false;
+        try
+        {
+            _ = NativeStatusDrawLayout.First(525, 383, 50,
+                new NativeCardStatusFrame(6, 2, 15, 7, 4),
+                new NativeStatusAtlas(72, 15, 6));
+        }
+        catch (ArgumentException) { missingTailDimensionsRejected = true; }
+        check(missingTailDimensionsRejected, "Native status transition requires its actual atlas dimensions");
+        var oddFieldFont = NativeFieldAttributeFrame.Compose(new CardPoint(525, 398),
+            7, 11, 1200, 1000, 1200, 1000, false);
+        check(oddFieldFont.Defense.CenterX == 545 &&
+              oddFieldFont.Attack.CenterX == 505 &&
+              oddFieldFont.SeparatorX == 521 &&
+              oddFieldFont.SeparatorY == 393,
+              "Native ATK/DEF odd glyph width uses two separate divisions and right-anchored separator");
+
         bool invalidStatusDigitAtlasRejected = false;
         try
         {

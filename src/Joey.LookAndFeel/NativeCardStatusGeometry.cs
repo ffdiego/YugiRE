@@ -4,8 +4,8 @@ namespace Joey.LookAndFeel;
 /// Vertical reference lines of card status overlays from 00419B70,
 /// 0041A070 and 0041A3B0. DAT_005F3008 is the height of the
 /// miniature-card image bank (loaded by 00418560), NOT number glyphs.
-/// Horizontal geometry remains unresolved because Ghidra reports
-/// unaff_EBX / unaff_EDI for important sprite dimensions.
+/// Horizontal sprite placement is now resolved by NativeStatusDrawLayout
+/// using the original mini-card width and manifest frame dimensions.
 /// </summary>
 public readonly record struct NativeCardStatusGeometry(
     int SideMultiplier, int IdentityChangeY, int StatusY)
