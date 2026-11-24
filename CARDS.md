@@ -227,6 +227,10 @@ As dez magias fixas já Done têm agora caminho opt-in `TryQueueLifePointSpell` 
 
 Raigeki, Dark Hole e os sete destruidores por tipo usam `TryQueueMonsterWipe` na mão/Set. Reutilizam `MonsterWipeRules`, remoções individuais e limpeza de equipamentos; o gasto inválido cancela o lote e as buscas de cemitério abrem após a última remoção. UI/CPU e seleção final ainda legados. [Contrato](docs/cards/c12-queued-monster-wipes.md).
 
+### Destruição de S/T na fila (C12)
+
+Harpie's Feather Duster e Heavy Storm usam `TryQueueSpellTrapWipe` (mão/Set). O lote reserva ocorrências, exclui a fonte e remove S/T e FIELD por comando, incluindo vínculos. Destruição avulsa de S/T e cascata de Destiny Board para efeitos seletivos ainda pendentes. [Contrato](docs/cards/c12-queued-spelltrap-wipes.md).
+
 ## Evidências nativas (não confundir com paridade C# completa)
 
 | Resource ID | Carta / família | Estado do conhecimento |
