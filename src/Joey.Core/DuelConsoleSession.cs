@@ -8,12 +8,19 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
     public ActionQueue Queue { get; }
-    public bool HasPendingChoice => Queue.PendingDecision is not null || PendingHandSelection is not null;
+    public bool HasPendingEndDiscard => duel.HasQueuedEndDiscard;
+    public bool HasPendingChoice => Queue.PendingDecision is not null || PendingHandSelection is not null || HasPendingEndDiscard;
+
+    public bool AllowsPendingEndDiscardInput(string line)
+    {
+        var words = line.Split((char[]?)null, 2, StringSplitOptions.RemoveEmptyEntries);
+        return words.Length != 0 && words[0].ToLowerInvariant() is ("discard-end" or "state" or "diff" or "trace" or "help");
+    }
 
     private PendingCardSelection? PendingHandSelection =>
         duel.PendingCardSelection is { Destination: CardSelectionDestination.Hand, MaxSelections: 1 } request
@@ -69,7 +76,7 @@ public sealed class DuelConsoleSession
         if (op == "select-hand") return SelectHandCard(words);
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
-        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "attack")
+        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "turn" or "discard-end" or "attack")
             return ExecuteLegal(op, words);
         // Replay projection is a setup edit, not a legal input. Capture the
         // occurrence only if the resource at the recorded source index matches.
@@ -159,7 +166,8 @@ public sealed class DuelConsoleSession
         if (operation is "state" or "diff" or "trace" or "help") return true;
         return Queue.PendingDecision is not null
             ? operation == "decision"
-            : PendingHandSelection is not null && operation is ("choices" or "select-hand");
+            : PendingHandSelection is not null ? operation is ("choices" or "select-hand")
+            : HasPendingEndDiscard && operation == "discard-end";
     }
 
     private DuelConsoleResult ExecuteLegal(string op, string[] words)
@@ -195,6 +203,20 @@ public sealed class DuelConsoleSession
                 return new(false, "Expected equip hand|set INDEX SIDE SLOT.");
             ok = duel.TryQueueEquipment(words[1] == "set" ? DuelZone.SpellTrap : DuelZone.Hand,
                 sourceIndex, targetSide, targetSlot, out message, ActionOrigin.Console);
+        }
+        else if (op == "turn")
+        {
+            if (words.Length != 2 || words[1] is not ("draw" or "end"))
+                return new(false, "Expected turn draw|end.");
+            ok = words[1] == "draw"
+                ? duel.TryQueueTurnDraw(out message, ActionOrigin.Console)
+                : duel.TryQueueEndTurn(out message, ActionOrigin.Console);
+        }
+        else if (op == "discard-end")
+        {
+            if (words.Length != 2 || !Index(words[1], out int index))
+                return new(false, "Expected discard-end INDEX.");
+            ok = duel.TryQueueEndTurnDiscard(index, out message, ActionOrigin.Console);
         }
         else if (op == "battle")
         {

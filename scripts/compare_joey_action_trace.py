@@ -157,10 +157,11 @@ def csharp_rows(doc):
             if projected!=[raw] or raw[0]>>15!=row["side"]:
                 raise ValueError("invalid canonical C# arguments")
             op=raw[0]&0xfff
-            expected={0x61:"DrawCommand",0x42:"HealCommand",0x43:"DamageCommand",
+            expected={0x61:("DrawCommand", "TurnDrawCommand"),0x42:"HealCommand",0x43:"DamageCommand",
                       0xce:"SummonCommand" if raw[3]==1 else "SetCommand",0xcf:"SetCommand",0x34:"DeclareDirectAttackCommand",0x33:"DeclareTargetedAttackCommand",
                       0x3c:"SnapshotBattleRemovalCommand",0x7c:"FinishBattleRemovalCommand"}[op]
-            if row.get("command")!=expected: raise ValueError("C# command does not match its mapping")
+            accepted = expected if isinstance(expected, tuple) else (expected,)
+            if row.get("command") not in accepted: raise ValueError("C# command does not match its mapping")
             if op==0x33:
                 attack=row.get("targetedAttack")
                 if not isinstance(attack,dict) or attack.get("attackerSlot")!=raw[1] or attack.get("defenderSlot")!=raw[2]:

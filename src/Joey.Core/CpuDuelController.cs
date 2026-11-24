@@ -8,7 +8,7 @@ public sealed record CpuStep(CpuStepStatus Status, CpuAction Action, int Player,
 
 /// <summary>
 /// Deterministic alpha strategy, NOT a reproduction of Joey's native selector.
-/// One Step commits at most one engine action; no clocks, sleeps or UI callbacks.
+/// One Step commits or admits one engine action. The host drives any opted-in queue.
 /// Responds to its own choices even during the opponent's turn. Create per duel/side.
 /// </summary>
 public sealed class CpuDuelController
@@ -37,7 +37,9 @@ public sealed class CpuDuelController
 
     private delegate bool Operation(out string message);
 
-    public CpuStep Step(DemoDuel duel)
+    public CpuStep Step(DemoDuel duel) => Step(duel, queueTurnActions: false);
+
+    public CpuStep Step(DemoDuel duel, bool queueTurnActions)
     {
         ArgumentNullException.ThrowIfNull(duel);
         if (!ReferenceEquals(duel, observedDuel) || observedTurn != duel.Turn)
@@ -167,14 +169,29 @@ public sealed class CpuDuelController
                 return Act(CpuAction.Selection, (out string m) => duel.ResolveFlipTarget(targets[0].Player, targets[0].Zone, out m));
             return Idle(CpuStepStatus.Blocked, "Mandatory FLIP has no legal target.");
         }
+        bool DrawTurnCard(out string pending) => queueTurnActions
+            ? duel.TryQueueTurnDraw(out pending, ActionOrigin.Cpu)
+            : duel.Draw(out pending);
+        bool EnterBattle(out string pending) => queueTurnActions
+            ? duel.TryQueueBattlePhaseChange(true, out pending, ActionOrigin.Cpu)
+            : duel.BeginBattle(out pending);
+        bool LeaveBattle(out string pending) => queueTurnActions
+            ? duel.TryQueueBattlePhaseChange(false, out pending, ActionOrigin.Cpu)
+            : duel.EndBattle(out pending);
+        bool EndTurn(out string pending) => queueTurnActions
+            ? duel.TryQueueEndTurn(out pending, ActionOrigin.Cpu)
+            : duel.EndTurn(out pending);
+
         if (duel.PendingEndDiscards > 0)
         {
             int discard = Enumerable.Range(0, duel.Hand.Count).OrderBy(i => CardValue(duel.Hand[i])).ThenBy(i => i).First();
-            return Act(CpuAction.Discard, (out string m) => duel.DiscardForEndTurn(discard, out m));
+            return Act(CpuAction.Discard, (out string m) => duel.HasQueuedEndDiscard
+                ? duel.TryQueueEndTurnDiscard(discard, out m, ActionOrigin.Cpu)
+                : duel.DiscardForEndTurn(discard, out m));
         }
         if (tacticalActions >= TacticalActionLimit)
-            return Act(CpuAction.EndTurn, duel.EndTurn);
-        if (duel.CanDraw) return Act(CpuAction.Draw, duel.Draw);
+            return Act(CpuAction.EndTurn, EndTurn);
+        if (duel.CanDraw) return Act(CpuAction.Draw, DrawTurnCard);
         if (duel.Phase == DemoPhase.Main)
         {
             int gate = Enumerable.Range(0, 2).FirstOrDefault(duel.CanUseFusionGate, -1);
@@ -253,7 +270,7 @@ public sealed class CpuDuelController
                 (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);
             if (trapIndex >= 0)
                 return Act(CpuAction.Set, (out string m) => duel.SetFromHand(trapIndex, out m), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
-            if (duel.CanBeginBattle) return Act(CpuAction.BeginBattle, duel.BeginBattle);
+            if (duel.CanBeginBattle) return Act(CpuAction.BeginBattle, EnterBattle);
         }
         if (duel.Phase == DemoPhase.Battle)
         {
@@ -273,9 +290,9 @@ public sealed class CpuDuelController
                 if (enemies.Length > 0 && target < 0) continue;
                 return Act(CpuAction.Attack, (out string m) => duel.Attack(source, target, out m), duel.Monsters[Player, source], source, target);
             }
-            return Act(CpuAction.EndBattle, duel.EndBattle);
+            return Act(CpuAction.EndBattle, LeaveBattle);
         }
-        return Act(CpuAction.EndTurn, duel.EndTurn);
+        return Act(CpuAction.EndTurn, EndTurn);
     }
 
     private bool ShouldClearSpellTraps(DemoDuel duel, ushort resourceId)

@@ -47,6 +47,7 @@ public sealed class DuelConsoleScript
         {
             string prompt = queue.PendingDecision is { } pending
                 ? $"Decision {pending.Id} requires explicit answer."
+                : session.HasPendingEndDiscard ? "End Phase requires discard-end INDEX."
                 : "Pending hand selection requires select-hand.";
             return new(DuelScriptStatus.WaitingForDecision, Message: prompt);
         }

@@ -211,46 +211,53 @@ public sealed partial class DemoDuel
         DestinyBoardCompleted?.Invoke(new(player, complete));
     }
 
+    private (DuelZone Source, int Index, int Slot)? FindEndPhaseMessage(int endingPlayer)
+    {
+        int owner = 1 - endingPlayer;
+        if (DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown) is not ushort resourceId)
+            return null;
+        int slot = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[owner, z] is null, -1);
+        if (slot < 0) return null;
+
+        int index = hands[owner].FindIndex(card => card.Id == resourceId);
+        if (index >= 0) return (DuelZone.Hand, index, slot);
+        int deckIndex = 0;
+        foreach (var card in decks[owner])
+        {
+            if (card.Id == resourceId) return (DuelZone.Deck, deckIndex, slot);
+            deckIndex++;
+        }
+        return null;
+    }
+
     private void ResolveDestinyBoardEndPhase(int endingPlayer)
     {
-        // The bounded sandbox auto-places ONE next message on the owner's
-        // opponent End Phase. It never shuffles the deck or spends LP.
-        for (int owner = 0; owner < 2 && !GameOver; owner++)
+        if (!GameOver && FindEndPhaseMessage(endingPlayer) is { } placement)
+            PlaceEndPhaseMessage(1 - endingPlayer, placement.Source, placement.Index, placement.Slot);
+    }
+
+    private void PlaceEndPhaseMessage(int owner, DuelZone source, int index, int slot)
+    {
+        bool fromDeck = source == DuelZone.Deck;
+        Card chosen;
+        if (fromDeck)
         {
-            if (owner == endingPlayer) continue;
-            ushort? message = DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown);
-            if (message is not ushort resourceId) continue;
-            int zone = Enumerable.Range(0, 5)
-                .FirstOrDefault(z => Spells[owner, z] is null, -1);
-            if (zone < 0) continue;
-
-            Card? chosen = null;
-            bool fromDeck = false;
-            int index = hands[owner].FindIndex(card => card.Id == resourceId);
-            if (index >= 0)
-            {
-                chosen = hands[owner][index];
-                hands[owner].RemoveAt(index);
-            }
-            else
-            {
-                // Search by card identity, preserving the relative order of
-                // all remaining deck cards and consuming no Core RNG.
-                Card[] cards = decks[owner].ToArray();
-                index = Array.FindIndex(cards, card => card.Id == resourceId);
-                if (index < 0) continue;
-                chosen = cards[index];
-                decks[owner].Clear();
-                for (int i = 0; i < cards.Length; i++)
-                    if (i != index) decks[owner].Enqueue(cards[i]);
-                fromDeck = true;
-            }
-
-            Spells[owner, zone] = chosen;
-            SpellFaceDown[owner, zone] = false;
-            DestinyBoardMessagePlaced?.Invoke(new(owner, zone, chosen, fromDeck));
-            CheckDestinyBoard(owner);
+            // Keep the deck's relative order and consume no RNG.
+            Card[] cards = decks[owner].ToArray();
+            chosen = cards[index];
+            decks[owner].Clear();
+            for (int i = 0; i < cards.Length; i++)
+                if (i != index) decks[owner].Enqueue(cards[i]);
         }
+        else
+        {
+            chosen = hands[owner][index];
+            hands[owner].RemoveAt(index);
+        }
+        Spells[owner, slot] = chosen;
+        SpellFaceDown[owner, slot] = false;
+        DestinyBoardMessagePlaced?.Invoke(new(owner, slot, chosen, fromDeck));
+        CheckDestinyBoard(owner);
     }
 
     private void CheckExodia(int player)
@@ -265,7 +272,8 @@ public sealed partial class DemoDuel
     // Native suppression/negation is not modeled; setting a spell does not activate it.
     public bool HandLimitDisabled => Enumerable.Range(0, 2).Any(p =>
         Enumerable.Range(0, 5).Any(z => Spells[p, z]?.Id == 0x593 && !SpellFaceDown[p, z]));
-    public int PendingEndDiscards => Phase == DemoPhase.End && !HandLimitDisabled ? Math.Max(0, Hand.Count - EndTurnHandLimit) : 0;
+    public int PendingEndDiscards => Phase == DemoPhase.End ? ExcessEndTurnCards : 0;
+    private int ExcessEndTurnCards => HandLimitDisabled ? 0 : Math.Max(0, Hand.Count - EndTurnHandLimit);
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
     public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979,
@@ -532,7 +540,8 @@ public sealed partial class DemoDuel
         }
         else BeginNextQueuedDeckSearch();
     }
-    public bool CanDraw => !ActionsBlocked && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
+    public bool CanDraw => !ActionsBlocked && AllowsTurnDraw;
+    private bool AllowsTurnDraw => Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
     public bool CanBeginBattle => !ActionsBlocked && AllowsBattlePhaseChange(enterBattle: true);
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
@@ -560,9 +569,11 @@ public sealed partial class DemoDuel
     {
         message = "Draw available once per turn in main phase.";
         if (!CanDraw) return false;
-        if (decks[ActivePlayer].Count == 0) { Winner = 1 - ActivePlayer; message = "Empty deck: active player loses (demo policy)."; return true; }
-        DrawToHand(ActivePlayer);
-        drawn = true;
+        if (!TakeTurnDraw())
+        {
+            message = "Empty deck: active player loses (demo policy).";
+            return true;
+        }
         if (ExodiaWinner == ActivePlayer)
         {
             message = "Exodia complete: all five Forbidden One pieces in hand.";
@@ -573,6 +584,18 @@ public sealed partial class DemoDuel
         ResolvePostDrawStandbyEffects();
         message = "Drew one card."; return true;
     }
+    private bool TakeTurnDraw()
+    {
+        if (decks[ActivePlayer].Count == 0)
+        {
+            Winner = 1 - ActivePlayer;
+            return false;
+        }
+        DrawToHand(ActivePlayer);
+        drawn = true;
+        return true;
+    }
+
     public bool Play(int index, out string message)
     {
         message = "Choose a supported spell. Equipment needs a compatible face-up monster.";
@@ -2451,9 +2474,9 @@ public sealed partial class DemoDuel
     public bool EndTurn(out string message)
     {
         message = "The duel has ended.";
-        if (ActionsBlocked) return false;
+        if (ActionsBlocked || queuedEndTurn) return false;
         // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
-        if (!HandLimitDisabled && Hand.Count > EndTurnHandLimit)
+        if (ExcessEndTurnCards > 0)
         {
             Phase = DemoPhase.End;
             message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
@@ -2472,7 +2495,7 @@ public sealed partial class DemoDuel
     public bool DiscardForEndTurn(int index, out string message)
     {
         message = "Select a hand card while resolving the end-phase hand limit.";
-        if (ActionsBlocked || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
+        if (ActionsBlocked || queuedEndTurn || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
         var card = hands[ActivePlayer][index];
         hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
         HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
