@@ -21,6 +21,7 @@ static partial class Game
     static string previousDuelMessage = "";
     public static int Run(string[] args)
     {
+        if (args is ["--check-console-startup"]) return CheckConsoleStartup();
         using var resources = new DatGraphics();
         graphics = resources;
         includeUnused = args.Contains("--include-unused");

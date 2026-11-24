@@ -35,6 +35,35 @@ static partial class Game
         LabLog(message);
     }
 
+    // Exercise the real App phase driver without loading DAT or opening
+    // a raylib window. This is the regression for the first-frame deck-out.
+    static int CheckConsoleStartup()
+    {
+        StartConsoleLab(null);
+        var session = labSession!;
+        string before = session.Execute("state").Message;
+        for (int i = 0; i < 120; i++) AdvanceDuelPhases(TimeSpan.FromMilliseconds(17));
+        if (duel.GameOver || PhaseBusy || session.Queue.IsBusy ||
+            session.Queue.Trace.Count != 0 || session.Execute("state").Message != before ||
+            displayedTurn != duel.Turn || displayedPhase != LogicalPhase())
+        {
+            Console.Error.WriteLine("Laboratory startup mutated state or blocked the scheduler.");
+            return 1;
+        }
+
+        // Ensure the regular legacy mode still runs its automatic draw path.
+        duel = DuelConsoleSession.EmptyLabDuel();
+        ResetDuelPresentation();
+        AdvanceDuelPhases(TimeSpan.FromMilliseconds(17));
+        if (duel.Winner != 1)
+        {
+            Console.Error.WriteLine("Legacy phase driver no longer performs its automatic draw.");
+            return 1;
+        }
+        Console.WriteLine("Laboratory startup phase regression passed.");
+        return 0;
+    }
+
     static void LabLog(string text)
     {
         if(string.IsNullOrWhiteSpace(text)) return;

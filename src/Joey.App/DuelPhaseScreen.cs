@@ -35,8 +35,27 @@ static partial class Game
         phaseClock.Reset();
     }
 
+    static DuelPhaseDisplay LogicalPhase() => duel.Phase switch
+    {
+        DemoPhase.Battle => DuelPhaseDisplay.Battle,
+        DemoPhase.End => DuelPhaseDisplay.End,
+        _ => duel.IsMainPhase2 ? DuelPhaseDisplay.Main2 : DuelPhaseDisplay.Main1
+    };
+
     static void AdvanceDuelPhases(TimeSpan elapsed)
     {
+        // A laboratory starts from an explicit checkpoint, often with an empty
+        // deck. Presentation must not become a second command producer.
+        // Until A07 owns phase transitions, mirror the logical phase only.
+        if (labSession is not null)
+        {
+            displayedTurn = duel.Turn;
+            displayedPhase = LogicalPhase();
+            phaseUpdates = 0;
+            drawNoticePending = false;
+            turnFlipElapsed = NativePhaseTurnFlip.Updates;
+            return;
+        }
         if (TurnFlipping)
         {
             int updates = phaseClock.Advance(elapsed, presentation.Style);
@@ -80,12 +99,7 @@ static partial class Game
             ShowPhase(DuelPhaseDisplay.Standby);
             if (phaseUpdates > 0) return;
         }
-        var phase = duel.Phase switch
-        {
-            DemoPhase.Battle => DuelPhaseDisplay.Battle,
-            DemoPhase.End => DuelPhaseDisplay.End,
-            _ => duel.IsMainPhase2 ? DuelPhaseDisplay.Main2 : DuelPhaseDisplay.Main1
-        };
+        var phase = LogicalPhase();
         if (displayedPhase != phase) ShowPhase(phase);
     }
 

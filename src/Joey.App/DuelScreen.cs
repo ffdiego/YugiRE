@@ -602,7 +602,7 @@ static partial class Game
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
-        if (!visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
+        if (labSession is null && !visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
             (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         for (int player = 0; player < 2; player++)
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
