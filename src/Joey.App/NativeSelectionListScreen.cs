@@ -1,6 +1,7 @@
 using Joey.Core;
 using Joey.LookAndFeel;
 using Raylib_cs;
+using System.Numerics;
 
 static partial class Game
 {
@@ -14,6 +15,7 @@ static partial class Game
         public NativeSelectionManifest Manifest { get; } = manifest;
         public NativeSelectionWindow Window { get; } = new(count);
         public NativeSelectionBackground Background => Manifest.Background(Window.TotalCards);
+        public Vector2? LastPointer { get; set; }
 
         public void EnterStableBranch()
         {
@@ -38,13 +40,32 @@ static partial class Game
         return view;
     }
 
-    static void DrawNativeSelectionBackground(SelectionListView view)
+    static void DrawNativeSelectionBackground(SelectionListView view, Func<int, Card> candidateAt)
     {
         var texture = graphics.Texture(view.Background.Resource);
         var bounds = NativeSelectionManifest.BackgroundBounds(texture.Width, texture.Height);
         Raylib.DrawTexture(texture, bounds.X, bounds.Y, Color.White);
         if (Raylib.IsKeyPressed(KeyboardKey.Right)) view.Window.MoveNext();
         else if (Raylib.IsKeyPressed(KeyboardKey.Left)) view.Window.MovePrevious();
+        else if (view.LastPointer != mouse)
+        {
+            // Client mouse adapter, not a claim about native input.
+            // Focus before drawing all cards, so there is only one frame.
+            for (int slot = 0; slot < view.Window.VisibleCount; slot++)
+            {
+                int index = view.Window.CardIndexAtSlot(slot);
+                var card = candidateAt(index);
+                var art = graphics.Texture(graphics.Artwork.MiniFor(card)!);
+                var cardBounds = NativeSelectionManifest.SlotBounds(slot, texture.Height,
+                    view.Background.SlotYOffset, art.Width, art.Height);
+                if (Hit(ToRectangle(cardBounds)))
+                {
+                    view.Window.FocusVisibleSlot(slot);
+                    break;
+                }
+            }
+        }
+        view.LastPointer = mouse;
     }
 
     static bool DrawNativeSelectionCard(SelectionListView view, Card card, int slot,

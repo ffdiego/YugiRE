@@ -36,13 +36,18 @@ static partial class Game
                 : result.Materials.Select(material => material.Card).ToArray());
             fusionListInitialized = true;
         }
-        if (fusionSelectionList is { } native) DrawNativeSelectionBackground(native);
+        if (fusionSelectionList is { } native)
+            DrawNativeSelectionBackground(native, i => result is null ? request.Options[i].Result : result.Materials[i].Card);
         else
         {
             Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
             Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
         }
-        Label(request.Spell.Name, 250, 95, 21, Gold);
+        string heading = request.Spell.Name;
+        if (result is null && fusionSelectionList?.Window.SelectedCardIndex is int selectedIndex &&
+            selectedIndex >= 0 && selectedIndex < options)
+            heading = request.Options[selectedIndex].Result.Name;
+        Label(heading, 250, 95, 21, Gold);
         int lastPage = (options - 1) / CardSelectionPageSize;
         Label(result is null ? "Choose a Fusion Monster." : $"Choose materials for {result.Result.Name}.",
             250, 126, 16);

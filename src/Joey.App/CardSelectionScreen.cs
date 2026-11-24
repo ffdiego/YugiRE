@@ -30,13 +30,20 @@ static partial class Game
 
         int lastPage = Math.Max(0, (request.EligibleCards.Count - 1) / CardSelectionPageSize);
         cardSelectionPage = Math.Clamp(cardSelectionPage, 0, lastPage);
-        if (cardSelectionList is { } native) DrawNativeSelectionBackground(native);
+        if (cardSelectionList is { } native)
+            DrawNativeSelectionBackground(native, i => request.EligibleCards[i].Card);
         else
         {
             Raylib.DrawRectangle(230, 80, 555, 502, new Color(9, 17, 26, 246));
             Raylib.DrawRectangleLines(230, 80, 555, 502, Gold);
         }
-        Label($"P{request.Owner + 1}: {request.EffectResourceId} card selection", 250, 95, 21, Gold);
+        string heading = $"P{request.Owner + 1}: {request.EffectResourceId} card selection";
+        // Preserve the name that the legacy list printed below each card,
+        // using the existing provisional heading (no new native geometry).
+        if (cardSelectionList?.Window.SelectedCardIndex is int focus && focus >= 0 &&
+            focus < request.EligibleCards.Count)
+            heading = request.EligibleCards[focus].Card.Name;
+        Label(heading, 250, 95, 21, Gold);
         string rule = request.RequiredAttributeCode is byte attribute
             ? $"attribute {attribute}, ATK <= 1500" : request.Filter.ToString();
         Label($"{request.Source} -> {request.Destination} | {rule}", 250, 126, 17);
