@@ -1,0 +1,60 @@
+using Joey.LookAndFeel;
+
+internal static class NativeHelpChecks
+{
+    public static void Run(Action<bool,string> check)
+    {
+        var help = new NativeHelpTimeline();
+        var local = new NativeHelpTarget((ushort)((3 << 6) | (5 << 1)));
+        var opponent = new NativeHelpTarget((ushort)(local.Word | 1));
+        int[] c = new int[512];
+        c[384] = 0; c[416] = 16384; c[448] = 32768; c[480] = 49152;
+        void Step(int key, NativeHelpTarget target, bool enabled = true,
+            bool suppressed = false, bool gate = true, bool alternate = false) =>
+            help.AdvanceUpdate(key, target, 0, enabled, suppressed, gate, alternate);
+
+        check(!help.Visible && help.Sample(0,0,80,80,101,41,c) is null,
+            "V29: hidden initially");
+        Step(3,opponent);
+        check(!help.Visible,"V29: ordinary requests require local side");
+        Step(3,local,gate:false);
+        check(!help.Visible,"V29: both native predicates false");
+        Step(3,local,gate:false,alternate:true);
+        check(help.Visible && help.Counter==0 && help.Target.Index==3 &&
+            help.Target.Zone==5,"V29: alternate predicate opens with raw target");
+        check(help.Sample(790,100,80,80,101,41,c)==new CardBounds(700,40,101,0),
+            "V29: right clamp, opening height zero");
+        for(int i=1;i<=4;i++)
+        {
+            Step(3,local);
+            int h=41*i/4;
+            check(help.Counter==i*4 &&
+                help.Sample(790,100,80,80,101,41,c)==new CardBounds(700,40-h/2,101,h),
+                "V29: native vertical opening without Draw mutation");
+        }
+        check(help.Sample(0,10,80,80,101,41,c)==new CardBounds(-50,1,101,41),
+            "V29: top clamp and no left clamp in native Draw");
+        Step(3,new NativeHelpTarget((ushort)(local.Word|0xc000)));
+        check(help.Visible,"V29: top two descriptor bits ignored");
+        Step(3,new NativeHelpTarget((ushort)(local.Word ^ 0x40)));
+        check(!help.Visible,"V29: identity change closes");
+        Step(9,opponent);
+        check(help.Visible && help.MessageKey==9,"V29: special key 9 accepts opponent");
+        Step(4,local);
+        check(!help.Visible,"V29: changed key closes without same-update reopen");
+        Step(4,local);
+        for(int i=0;i<70;i++) Step(4,local);
+        check(help.Counter==256 && help.Visible,"V29: counter saturates");
+        Step(-1,local);
+        check(!help.Visible,"V29: request must be renewed");
+        Step(4,local,enabled:false);
+        check(!help.Visible,"V29: native enable gate");
+        var hand = new NativeHelpTarget(11 << 1);
+        Step(4,hand);
+        for(int i=0;i<4;i++) Step(4,hand);
+        check(help.Sample(200,150,80,100,100,40,c)==new CardBounds(150,90,100,40),
+            "V29: hand source is halved before anchor subtraction");
+        Step(4,hand,suppressed:true);
+        check(!help.Visible,"V29: native suppression closes");
+    }
+}

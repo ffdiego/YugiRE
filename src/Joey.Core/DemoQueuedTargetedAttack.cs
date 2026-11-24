@@ -56,7 +56,7 @@ public sealed partial class DemoDuel
     {
         if(!TryResolveCardTarget(command.Attacker,out _,out _) || !TryResolveCardTarget(command.Defender,out _,out _))
             return new(CommandOutcome.Skipped,"Declared combatant gone.");
-        if(followups is not ActionQueue { PendingCount:0 } queue ||
+        if(followups is not IActionBatchSink { PendingCount:0 } queue ||
             !TryPlanTargetedAttack(command.Attacker,command.Defender,out var a,out var b))
             return new(CommandOutcome.Rejected,"Targeted battle no longer satisfies pilot restrictions.");
 

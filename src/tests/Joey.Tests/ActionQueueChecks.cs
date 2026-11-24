@@ -9,6 +9,23 @@ internal static class ActionQueueChecks
         public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
     }
 
+    private sealed class ObservingGate : ICommandPresentationGate
+    {
+        public Action Observe { get; set; } = () => { };
+        public bool CanAdvance
+        {
+            get { Observe(); return true; }
+        }
+
+        public void OnStarting(QueuedDuelCommand command) => Observe();
+
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result)
+        {
+            Observe();
+            return true;
+        }
+    }
+
     // Deliberately isolated queue test, not a second implementation of card rules.
     // The production adapter is exercised separately on DemoDuel below.
     private sealed class RecordingExecutor : IDuelCommandExecutor
@@ -45,6 +62,22 @@ internal static class ActionQueueChecks
         {
             Calls++;
             if (command is DrawCommand) followups.Enqueue(new DamageCommand(1, 100));
+            return new(CommandOutcome.Applied);
+        }
+    }
+
+    private sealed class CallbackExecutor(Action notify) : IDuelCommandExecutor
+    {
+        public IActionCommandSink? CapturedSink { get; private set; }
+
+        public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
+        {
+            CapturedSink = followups;
+            if (command is DrawCommand)
+            {
+                notify();
+                followups.Enqueue(new HealCommand(0, 50));
+            }
             return new(CommandOutcome.Applied);
         }
     }
@@ -119,6 +152,46 @@ internal static class ActionQueueChecks
             "A02 executor can append but not recursively execute");
         Drain(queue);
         check(followup.Calls == 2, "A02 appended command executes next passage");
+
+        var presenting = new ObservingGate();
+        var guardedExecutor = new RecordingExecutor();
+        queue = new ActionQueue(guardedExecutor, presenting);
+        int rejectedAdmissions = 0;
+        void AttemptAdmission()
+        {
+            try { queue.Enqueue(new HealCommand(0, 1)); }
+            catch (InvalidOperationException) { rejectedAdmissions++; }
+        }
+        presenting.Observe = AttemptAdmission;
+        queue.Enqueue(new DrawCommand(0));
+        queue.ScheduleContinuation(_ =>
+        {
+            AttemptAdmission();
+            return new([new DamageCommand(1, 100)]);
+        });
+        Drain(queue);
+        check(rejectedAdmissions == 8 && !queue.IsBusy &&
+            guardedExecutor.Executed.SequenceEqual([new DrawCommand(0), new DamageCommand(1, 100)]),
+            "A06 presentation only observes and continuations admit through their returned step");
+
+        bool callbackRejected = false;
+        var callbackExecutor = new CallbackExecutor(() =>
+        {
+            try { queue.Enqueue(new DamageCommand(1, 100)); }
+            catch (InvalidOperationException) { callbackRejected = true; }
+        });
+        queue = new ActionQueue(callbackExecutor);
+        queue.Enqueue(new DrawCommand(0));
+        queue.Tick();
+        bool retainedSinkRejected = false;
+        try { callbackExecutor.CapturedSink!.Enqueue(new DamageCommand(1, 100)); }
+        catch (InvalidOperationException) { retainedSinkRejected = true; }
+
+        Drain(queue);
+        check(callbackRejected && retainedSinkRejected &&
+            queue.Trace.Where(t => t.Stage == ActionTraceStage.Executed).Select(t => t.Entry.Command)
+                .SequenceEqual([new DrawCommand(0), new HealCommand(0, 50)]),
+            "A06 executor sink permits only in-scope follow-ups and blocks external callback writes");
 
         var source = new Card(1, 1, "Decision fixture", "", 1u << 20);
         var request = new PendingEffectDecision(1, 0, source, EffectDecisionKind.DrawOneOnFlip, 0, 1);
