@@ -109,3 +109,36 @@ python3 scripts/tests/check_action_trace_archive.py src/Joey.Lab/bin/Debug/net10
 ## A09.1 — gate da declaração de combate
 
 A declaração direta e com alvo tem descritor lógico somente leitura antes da mutação, com slot físico de origem e destino (-1 direto), resolvendo as ocorrências existentes. O App reaproveita BeginAttackCue/NativeAttackFrame e o relógio existentes; o console não tem mira manual, então usa alreadyAimed=false. Gate da declaração aguarda o cue antes de SnapshotBattleRemoval/Damage. Nenhum parâmetro de sprite, duração ou layout foi alterado. A animação só começa se a declaração foi Applied. Regressão no --check-console-startup: ataques diretos/com alvo no lado 1, Classic/Instant, LP/defensor intactos durante cue, repetição do gate não reinicia cue, destino lógico e trace idênticos, estado final correto. CI pendente; sem DAT/display, não é validação visual nem captura nativa equivalente. Combatentes limitados ao piloto A05; demais regras de combate e VISUALS continuam independentes.
+
+## A09.2 — ambos os lados e smoke DAT
+
+CI A09.1 45400089826 e primeira regressão espelhada A09.2 45402454877 aprovados.
+O teste real do gate App agora cobre os dois lados (turno 2 para o lado 1,
+avanço legal ao turno 3 para o lado 0), ataque direto/com alvo, Classic/Instant,
+destino lógico espelhado, nenhuma alteração de LP/defensor durante o cue e
+mesmo trace final. Não altera parâmetros de LookAndFeel.
+
+O roteiro privado executável `scripts/pending/actions-a09-combat-smoke.py`
+roda o mesmo checkpoint de laboratório no Lab, App Classic e App Instant.
+A fixture usa o ID 1351 já observado em CE na amostra arquivada, com hipótese
+explícita de monstro jogável de ATK positivo no DAT local: falha cedo se a
+hipótese não vale; não modifica o catálogo nem contorna a legalidade.
+O ataque direto é do lado 1; depois da troca de turno, duas ocorrências
+iguais face-up em ataque combatem no lado 0, com duas remoções e sem dano
+adicional. Os decks mantêm uma carta cada. Spawn é setup, não summon.
+O verificador exige completion, comandos Applied sem lacunas, as duas
+declarações, dano direto, duas remoções em cada etapa, fila final vazia,
+ausência de waits e ordem Started/Completed serial. Compara todas as linhas
+de trace/state entre os três perfis. A duração medida é wall-clock do App,
+não update nativo nem teste de pixels.
+
+```powershell
+python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat
+```
+
+Fechar cada janela somente após Script completed. Logs ficam em
+`scratch/actions-combat/smoke-*/`; a opção `--logs DIR` repete a comparação
+sem abrir o App. Enviar a pasta de logs e relatar se o cue precede
+dano/destruição. Smoke com DAT ainda não executado; captura de estado e
+comandos equivalentes no joey_pc.exe continua uma obrigação independente.
+Nenhuma elevação da badge ou alegação de paridade nativa.
