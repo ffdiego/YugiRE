@@ -28,6 +28,17 @@ ou iguais a N (0 a 255). Com threshold 0, qualquer canal RGB distinto conta
 como pixel divergente. A métrica de erro médio, por sua vez, mantém todos os
 erros RGB, inclusive os abaixo do threshold.
 
+Para inspecionar elementos pontuais, repita `--region NOME X0 Y0 X1 Y1`.
+O canto inferior direito é exclusivo e os retângulos podem se sobrepor. As
+regiões adicionais mantêm as métricas globais e as duas regiões padrão.
+O relatório registra o retângulo de cada região e os limites de divergência
+em coordenadas do canvas.
+
+Em uma regressão com frames alinhados, `--max-mismatched-pixels 0` exige
+igualdade dentro do limiar RGB selecionado. O processo retorna 1 quando
+ultrapassa o limite e ainda grava todos os diagnósticos. Sem esse argumento,
+a contagem de diferenças é informativa e o processo retorna 0.
+
 ### Saídas (sempre locais, em `scratch/`)
 
 | Arquivo | Significado |
@@ -74,4 +85,5 @@ python3 -m unittest scripts/tests/test_compare_visual_frames.py -v
 ```
 
 Testes sintéticos cobrem frames iguais, diferenças na fronteira x=229/230,
-threshold, limites de região, opacidade e bloqueio contra sobrescrita.
+limiares RGB e de regressão, regiões sobrepostas, opacidade e proteção dos
+arquivos de entrada.

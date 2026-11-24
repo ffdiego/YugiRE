@@ -224,8 +224,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Default OFF em modo fiel, botão `Ocultar debug` enquanto ativo, atalho F3 e toggle em menu para restaurar. Centralizar Draw e HitTest do overlay, sem interferir no duelo; testes do estado/toggle.
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Pronto`.
   Separar **controles do jogo** de **diagnósticos**; corrigir layout provisório que cobre cartas, sprites e textos; comparar capturas sem debug. A imagem de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
-- [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Pronto`.
+- [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`.
   Coordenadas/dimensões/ângulos e contagem de updates por estado/quadro-chave contra o Joey original; registrar valores ainda provisórios em vez de arredondar silenciosamente. Usar `compare_visual_frames.py` e o log de `V01`.
+  O comparador aceita regiões nomeadas e registra seus retângulos de divergência em coordenadas do canvas. O limite opcional de pixels divergentes dá código de saída para regressões e preserva os diagnósticos. Testado com PNGs sintéticos. A comparação de estados e updates fica pendente. [Protocolo](docs/research/visual-frame-comparison-2026-11-22.md).
 - [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`.
   Seleção nativa (`0043B280`, ver V11), ajuda `0045E4A0`, efeito de estado persistente `0040E260`, quebra/remoção alternativa `00450FD0`, ativação alternativa `00450AD0`, corrente `0041F870`, remoção/exclusão `0043DBE0`, moeda `00457520`, dado `00456B90`, Vija `004584C0`, Layerfont A/B `00455FF0`/`00456360`. Cada rotina vira um item novo (`V20`, `V21`...) quando começar. Estado: [cobertura visual](docs/architecture/VISUAL_COVERAGE.md).
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Aguardando evidência`.
