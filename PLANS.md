@@ -279,7 +279,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT/cosseno original. Remap/blend e integração A03 pendentes; não contar review como gameplay. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas 90/91/92, âncora e gate recuperados; Draw/Update ausentes. Roteiro 16, mesmo contrato.
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Aguardando evidência`.
-  Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. 00558FB0 usa tabela viva 00A52EB4, compositor restante pendente. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
+  Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. NativeBreakScatter reconstrói tabela 00A52EB4 via CRT srand(0)/rand, 256 bytes; porta blocos 4x2 e fases de dispersão, projeção com divisor injetado. Roteiro 29 confirma ABI/x87 de 00558FB0 e gerador; compositor restante pendente. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
 
 - [ ] **V23 — Corrente (0041F870).** Status: `Aguardando evidência`.
