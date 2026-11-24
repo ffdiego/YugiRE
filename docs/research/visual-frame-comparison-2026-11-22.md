@@ -52,7 +52,7 @@ O relatório separa **sidebar** `x=[0,230)` do **board** `x=[230,800)`.
 Essa divisão vem de `DuelSurfaceLayout.Board`, e não foi inferida das
 capturas. Não é ainda um detector de cartas, sprites nem regiões dinâmicas.
 O utilitário rejeita entradas de tamanho errado, pixels transparentes ou
-um caminho de saída que sobrescreveria as imagens de entrada.
+caminhos de saída que apontam para uma imagem de entrada ou para a mesma saída, inclusive com links simbólicos e hard links.
 
 ## Limites e prioridades
 
