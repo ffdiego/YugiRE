@@ -19,8 +19,8 @@ da carta fonte via 00402460/00402650. Não inferir os efeitos seguintes.
 O catálogo de identidades v2 não tem linha 1518; ID inferido da
 família consecutiva, confirmar nome/atributo DAT antes de promoção.
 A regra executável usa atributo real da fonte DAT, não nomes.
-P252 já Partial, as outras cinco ainda não habilitadas no manifesto:
-somente procedimento opt-in, não efeito completo. Mantém API legada
+Os seis constam como Partial no manifesto: somente procedimento opt-in,
+não efeito completo. Mantém API legada
 ID-only restrita a Dark Necrofear para não expor cartas incompletas
 na UI/CPU. Spirit Elimination, efeitos contínuos/Standby, mudança de
 controle C17 e janelas de resposta continuam pendentes.
@@ -36,5 +36,5 @@ pode interromper custo sem rollback; não invocar sem pagamento completo.
 
 Testes dos seis IDs, lados, posições, duplicatas, filtros, custo/slot
 inválidos, gate, origem da mão, após Normal Summon e tentativa de
-burlar custo. CI pendente. Não promover manifesto até efeitos ou
-escopo de Partial documentado em inventário comum.
+burlar custo. CI do commit 3178443 aprovado. O manifesto registra o escopo Partial;
+não promover a Done antes de completar os efeitos e integração.
