@@ -139,10 +139,10 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 ### Itens abertos
 
-- [ ] **C01 — Taxonomia de efeitos por texto local.** Status: `Parcial` (aguardando execução DAT do roteiro 14).
-  Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`. Classificador inicial em `scripts/card_effect_taxonomy.py` com testes sintéticos; falta gerar e revisar as 771 entradas reais. Roteiro `scripts/pending/14-card-effect-taxonomy.sh`. Não confundir candidato trivial com ausência da fila de A02 ou status Done.
-- [ ] **C02 — Lotes triviais por família.** Status: `Bloqueado por C01`.
-  Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
+- [x] **C01 — Taxonomia de efeitos por texto local.** Status: `Concluído`.
+  Roteiro 14 executado com o DAT local em Fedora/.NET 10. O fingerprint e as 771 entradas conferem com `docs/cards/pack-index.json`. Rotas: 264 sem efeito aplicável, 433 com fila/resposta, 72 para revisão e duas candidatas triviais (uma de compra já Done e uma de cura Pending). A classificação serve para triagem, preserva os status do manifesto e mantém as descrições apenas no pipe privado. [Reprodução e limites](scripts/pending/README.md#14--c01-taxonomia-de-efeitos-pelo-dat-local).
+- [ ] **C02 — Lotes triviais por família.** Status: `Pronto`.
+  Usar a triagem de C01 e confirmar a mecânica antes de implementar. Priorizar a candidata de cura Pending com C05 e revisar manualmente os casos sem rota conclusiva antes de ampliar o lote. Usar primitivos reutilizáveis na fila, cenários por família/ID e atualizar `CARDS.md` e o manifesto a cada entrega.
 - [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`.
   Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack. Fatia de intenções de dano de batalha P019/P023/P078/P239/P120 em [contrato C03](docs/cards/c03-battle-damage-effects.md), sem mutação nem promoção de cobertura. Integrar após evento de dano de batalha na fila A02/A06; P239/P120 exigem seleção e comandos adicionais.
 - [ ] **C04 — Equipamentos `P025`.** Status: `Parcial`.
