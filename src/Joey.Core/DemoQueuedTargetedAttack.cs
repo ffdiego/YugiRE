@@ -9,7 +9,8 @@ public sealed partial class DemoDuel
         public bool Detached { get; set; }
     }
     private readonly BattleReservation?[] queuedBattleRemoved = new BattleReservation?[2];
-    private (CardTarget Attacker, CardTarget Defender)? queuedBattleReveal;
+    private sealed record BattleRevealReservation(BattleReservation Attacker, BattleReservation Defender, int Turn);
+    private BattleRevealReservation? queuedBattleReveal;
 
     // Explicit first pilot IDs without callback rows in the cumulative RE DB.
     // Not a general normal-monster classifier: the DAT has no proven bit for it.
@@ -18,7 +19,7 @@ public sealed partial class DemoDuel
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Targeted battle pilot requires a supported face-up attacker and supported defender and no other field cards.";
+        message = "Targeted battle pilot requires a supported face-up attacker, supported defender and no other field cards.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
             PendingEndDiscards != 0 || !CanAttack(attackerSlot) ||
             !TryCaptureCardTarget(ActivePlayer,DuelZone.Monster,attackerSlot,out var attacker) ||
@@ -38,16 +39,10 @@ public sealed partial class DemoDuel
             GameOver || Phase!=DemoPhase.Battle || queuedBattleReveal is not null || queuedBattleRemoved.Any(x=>x is not null) ||
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
-            attacked[p,s] || MonsterFaceDown[p,s] || DefensePosition[p,s] || MonsterFaceDown[e,t] && !DefensePosition[e,t] ||
+            attacked[p,s] || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsPlainBattlePilot(ac) || !IsPlainBattlePilot(bc) || equipment.Count!=0)
             return false;
-        for(int side=0;side<2;side++)
-        {
-            if(FieldSpells[side] is not null) return false;
-            for(int z=0;z<5;z++)
-                if(Spells[side,z] is not null || z!=(side==p?s:t) && Monsters[side,z] is not null)
-                    return false;
-        }
+        if (!IsIsolatedBattleField(p,s,t)) return false;
         a=new(attacker,s,ac,false);
         b=new(defender,t,bc,DefensePosition[e,t]);
         return true;
@@ -66,23 +61,46 @@ public sealed partial class DemoDuel
         {
             // Reveal is a separate operation after the declaration gate.
             // Never turn this into a Flip Summon or invoke its triggers.
-            queuedBattleReveal=(a.Target,b.Target);
+            queuedBattleReveal=new(a,b,Turn);
             queue.Enqueue(new RevealBattleDefenderCommand(b.Target.Side,a.Target,b.Target));
         }
         else QueuePlainBattleOutcome(a,b,queue);
         return new(CommandOutcome.Applied) { TargetedAttack=new(a.Target,b.Target,a.Slot,b.Slot) };
     }
 
+    private bool IsIsolatedBattleField(int attackerSide,int source,int target)
+    {
+        if (equipment.Count!=0) return false;
+        for (int side=0;side<2;side++)
+        {
+            if (FieldSpells[side] is not null) return false;
+            for (int z=0;z<5;z++)
+                if (Spells[side,z] is not null || z!=(side==attackerSide?source:target) && Monsters[side,z] is not null)
+                    return false;
+        }
+        return true;
+    }
+
+    private bool ValidateBattleReveal(BattleRevealReservation reserved,bool faceDown)
+    {
+        var a=reserved.Attacker; var b=reserved.Defender;
+        int p=a.Target.Side,e=b.Target.Side;
+        return Turn==reserved.Turn && ActivePlayer==p && Phase==DemoPhase.Battle && !GameOver &&
+            TryResolveCardTarget(a.Target,out int source,out var ac) && source==a.Slot && ReferenceEquals(ac,a.Card) &&
+            TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
+            attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
+            MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
+            IsPlainBattlePilot(ac) && IsPlainBattlePilot(bc) && IsIsolatedBattleField(p,source,target);
+    }
+
     private CommandResult RevealQueuedBattleDefender(RevealBattleDefenderCommand command,IActionCommandSink followups)
     {
-        if (queuedBattleReveal is not { } reserved || reserved.Attacker!=command.Attacker ||
-            reserved.Defender!=command.Defender || followups is not IActionBatchSink { PendingCount:0 } queue)
+        if (queuedBattleReveal is not { } reserved || reserved.Attacker.Target!=command.Attacker ||
+            reserved.Defender.Target!=command.Defender || followups is not IActionBatchSink { PendingCount:0 } queue)
             return new(CommandOutcome.Rejected,"No matching reserved battle reveal.");
-        if (!TryResolveCardTarget(command.Defender,out int slot,out var card) ||
-            !TryResolveCardTarget(command.Attacker,out int source,out _) ||
-            !attacked[command.Attacker.Side,source] || !MonsterFaceDown[command.Side,slot] ||
-            !DefensePosition[command.Side,slot] || !IsPlainBattlePilot(card))
+        if (!ValidateBattleReveal(reserved,faceDown:true))
             throw new InvalidOperationException("Reserved battle reveal changed.");
+        int slot=reserved.Defender.Slot;
         MonsterFaceDown[command.Side,slot]=false;
         MonsterWasFlipped[command.Side,slot]=true;
         queue.Enqueue(new ResolveRevealedBattleCommand(command.Attacker.Side,command.Attacker,command.Defender));
@@ -91,18 +109,13 @@ public sealed partial class DemoDuel
 
     private CommandResult ResolveQueuedRevealedBattle(ResolveRevealedBattleCommand command,IActionCommandSink followups)
     {
-        if (queuedBattleReveal is not { } reserved || reserved.Attacker!=command.Attacker ||
-            reserved.Defender!=command.Defender || followups is not IActionBatchSink { PendingCount:0 } queue)
+        if (queuedBattleReveal is not { } reserved || reserved.Attacker.Target!=command.Attacker ||
+            reserved.Defender.Target!=command.Defender || followups is not IActionBatchSink { PendingCount:0 } queue)
             return new(CommandOutcome.Rejected,"No matching reserved revealed battle.");
-        if (!TryResolveCardTarget(command.Attacker,out int source,out var attacker) ||
-            !TryResolveCardTarget(command.Defender,out int target,out var defender) ||
-            !attacked[command.Side,source] || MonsterFaceDown[command.Defender.Side,target] ||
-            !DefensePosition[command.Defender.Side,target] ||
-            !IsPlainBattlePilot(attacker) || !IsPlainBattlePilot(defender))
+        if (!ValidateBattleReveal(reserved,faceDown:false))
             throw new InvalidOperationException("Reserved revealed combatant changed.");
         queuedBattleReveal=null;
-        QueuePlainBattleOutcome(new(command.Attacker,source,attacker,false),
-            new(command.Defender,target,defender,true),queue);
+        QueuePlainBattleOutcome(reserved.Attacker,reserved.Defender,queue);
         return new(CommandOutcome.Applied);
     }
 
@@ -125,7 +138,6 @@ public sealed partial class DemoDuel
         queue.EnqueueBatch(batch);
         queuedBattleRemoved[0]=removeA?a:null;
         queuedBattleRemoved[1]=removeB?b:null;
-
     }
 
     private CommandResult SnapshotQueuedBattleRemoval(SnapshotBattleRemovalCommand command)
