@@ -9,6 +9,23 @@ internal static class ActionQueueChecks
         public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
     }
 
+    private sealed class ObservingGate : ICommandPresentationGate
+    {
+        public Action Observe { get; set; } = () => { };
+        public bool CanAdvance
+        {
+            get { Observe(); return true; }
+        }
+
+        public void OnStarting(QueuedDuelCommand command) => Observe();
+
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result)
+        {
+            Observe();
+            return true;
+        }
+    }
+
     // Deliberately isolated queue test, not a second implementation of card rules.
     // The production adapter is exercised separately on DemoDuel below.
     private sealed class RecordingExecutor : IDuelCommandExecutor
@@ -119,6 +136,27 @@ internal static class ActionQueueChecks
             "A02 executor can append but not recursively execute");
         Drain(queue);
         check(followup.Calls == 2, "A02 appended command executes next passage");
+
+        var presenting = new ObservingGate();
+        var guardedExecutor = new RecordingExecutor();
+        queue = new ActionQueue(guardedExecutor, presenting);
+        int rejectedAdmissions = 0;
+        void AttemptAdmission()
+        {
+            try { queue.Enqueue(new HealCommand(0, 1)); }
+            catch (InvalidOperationException) { rejectedAdmissions++; }
+        }
+        presenting.Observe = AttemptAdmission;
+        queue.Enqueue(new DrawCommand(0));
+        queue.ScheduleContinuation(_ =>
+        {
+            AttemptAdmission();
+            return new([new DamageCommand(1, 100)]);
+        });
+        Drain(queue);
+        check(rejectedAdmissions == 8 && !queue.IsBusy &&
+            guardedExecutor.Executed.SequenceEqual([new DrawCommand(0), new DamageCommand(1, 100)]),
+            "A06 presentation only observes and continuations admit through their returned step");
 
         var source = new Card(1, 1, "Decision fixture", "", 1u << 20);
         var request = new PendingEffectDecision(1, 0, source, EffectDecisionKind.DrawOneOnFlip, 0, 1);

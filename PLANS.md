@@ -104,9 +104,11 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **A05 — Trace de comandos comparável.** Status: `Pronto`.
   Exportar o log da fila C# no mesmo formato dos registros nativos (opcode, lado, argumentos) e um comparador contra capturas do `yugilab`. Começar por invocação normal (já existem fixtures parciais) e dano/cura.
   *Pronto quando:* um roteiro curto (draw, invocar, atacar) gera listas comparáveis e as divergências saem em relatório.
-- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.
+- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`.
   Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
   *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
+  *Fatia de isolamento:* durante `Tick`, só o executor emite pelo sink. Continuações devolvem comandos no passo e callbacks de apresentação observam o comando e liberam o gate. `ActionQueueChecks` exercita tentativas nos três callbacks e na continuação, além do caminho autorizado de follow-up. A migração das famílias e dos estados pendentes continua aberta.
+
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Aguardando evidência`.
   Ligar a fase exibida às tabelas de turno nativas (`005EFB78/005EFB94`) e ao despacho de `005BC620`. Depende de fechar a pendência registrada em [A01](docs/architecture/action-queue.md); roteiro 11 em `scripts/pending/` preparado, ainda não executado.
 - [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Pronto`; coordenar a migração com A06/C12, antes de expandir o catálogo por essa nova API.
