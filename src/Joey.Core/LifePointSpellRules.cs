@@ -13,6 +13,17 @@ public static class LifePointSpellRules
         DirectDamageRules.Amount(resourceId).HasValue ||
         resourceId is 338 or 339 or 340 or 341 or 1315;
 
+    public const ushort BlueMedicine = 1006;
+
+    // New rules are admitted only by the typed action producer.
+    // Keep the legacy Play/ActivateSetSpell whitelist unchanged.
+    public static bool SupportsQueued(ushort resourceId) =>
+        resourceId == BlueMedicine || Supports(resourceId);
+
+    public static LifePointSpellChange? ResolveQueued(ushort resourceId, int caster) =>
+        caster is not (0 or 1) ? null :
+        resourceId == BlueMedicine ? new LifePointSpellChange(400, 0) : ResolveDemo(resourceId, caster);
+
     /// <summary>
     /// Resolve a simple spell in the two-player C# demo (no chains, negation,
     /// activation costs or response windows). Values are signed LP deltas.

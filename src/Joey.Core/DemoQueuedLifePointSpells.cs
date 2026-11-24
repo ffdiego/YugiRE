@@ -2,7 +2,7 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
-    /// <summary>Opt-in queue admission for the ten existing fixed LP spells.
+    /// <summary>Opt-in queue admission for fixed LP spells.
     /// Source identity and legality are rechecked at execution.</summary>
     public bool TryQueueLifePointSpell(DuelZone sourceZone, int index, out string message,
         ActionOrigin origin = ActionOrigin.Player)
@@ -22,7 +22,7 @@ public sealed partial class DemoDuel
         change = default;
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
             !TryResolveCardTarget(source, out int index, out var card) || card.ClassCode != 22 ||
-            LifePointSpellRules.ResolveDemo(card.Id, source.Side) is not { } plan)
+            LifePointSpellRules.ResolveQueued(card.Id, source.Side) is not { } plan)
             return false;
         if (source.Zone == DuelZone.Hand)
         {
