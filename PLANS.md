@@ -141,8 +141,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
 - [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Pronto`.
   Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack.
-- [ ] **C04 — Equipamentos `P025`.** Status: `Pronto`.
-  Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra.
+- [ ] **C04 — Equipamentos `P025`.** Status: `Parcial`.
+  Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra. Fatia de 18 IDs dos packs com bônus fixos implementada no fluxo de mão existente; ver [contrato C04](docs/cards/c04-fixed-equipment.md). Testes C# registrados, execução pendente. Set, fila e efeitos adicionais ainda abertos.
 - [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Pronto`.
   Sem prometer tamanho de lote antes de confirmar o catálogo original.
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Bloqueado por A02` (armadilhas simples sem corrente podem seguir antes).
@@ -158,7 +158,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`.
   Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 - [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Bloqueado por A02/A08`.
-  Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos (invariantes 1–5). Registrar aqui as cartas implementadas fora da fila enquanto `A02` não existir. Dívida inicial inclui as famílias dos lotes 6–14 (ver nota de consolidação abaixo), além das famílias listadas neste item.
+  Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos (invariantes 1–5). Registrar aqui as cartas implementadas fora da fila enquanto `A02` não existir. Dívida inclui equipamentos P025 (21 IDs, C04), ainda no fluxo legado de mão. Dívida inicial inclui as famílias dos lotes 6–14 (ver nota de consolidação abaixo), além das famílias listadas neste item.
 - [ ] **C13 — Conferir os 264 Normal com o DAT real (Windows).** Status: `Aguardando evidência`.
   `dotnet run --project src/tests/Joey.Tests -- ../passion/data.dat`. Divergências de categoria devem ser tratadas antes de elevar paridade.
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Aguardando evidência`.
