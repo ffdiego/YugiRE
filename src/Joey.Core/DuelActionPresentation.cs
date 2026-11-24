@@ -17,6 +17,12 @@ public sealed partial class DemoDuel
         int slot;
         switch (command)
         {
+            case ActivateDrawSpellCommand draw:
+                target = draw.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
+            case ActivateLifePointSpellCommand lp:
+                target = lp.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
             case ActivateRaigekiCommand activation:
                 target = activation.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

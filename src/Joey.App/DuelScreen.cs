@@ -149,6 +149,11 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Set)
         {
+            if (queuedDuel is not null && !FieldSpellRules.Supports(card.Id))
+            {
+                if (duel.TryQueueSpellTrapSet(index, out message)) ClearDuelSelection();
+                return;
+            }
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (duel.SetFromHand(index, out message))
@@ -171,6 +176,11 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Activate)
         {
+            if (queuedDuel is not null && IsQueuedFixedSpell(card))
+            {
+                if (TryQueuedFixedSpell(card, DuelZone.Hand, index, out message)) ClearDuelSelection();
+                return;
+            }
             if (queuedDuel is not null && card.Id == MonsterWipeRules.Raigeki)
             {
                 if (duel.TryQueueRaigekiFromHand(index, out message)) ClearDuelSelection();
@@ -489,6 +499,11 @@ static partial class Game
                     }
                     else if (own && monster != null)
                     {
+                        if (queuedDuel is not null)
+                        {
+                            duel.TryQueueChangePosition(zone, out message);
+                            continue;
+                        }
                         bool reveal = duel.MonsterFaceDown[player, zone];
                         if (duel.ChangePosition(zone, out message) && reveal)
                         {
@@ -501,10 +516,14 @@ static partial class Game
                         }
                     }
                 }
-                else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell &&
-                         duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
-                         duel.PendingFusionSummon is null)
-                    BeginCardActivation(setSpell, spellRect);
+                else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell)
+                {
+                    if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
+                        TryQueuedFixedSpell(setSpell, DuelZone.SpellTrap, zone, out message);
+                    else if (duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
+                             duel.PendingFusionSummon is null)
+                        BeginCardActivation(setSpell, spellRect);
+                }
             }
         }
     }
@@ -596,7 +615,7 @@ static partial class Game
         AdvanceQueuedDuel();
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         var fusion = duel.PendingFusionSummon;
-        bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
+        bool selectingCard = queuedDuel?.PendingDecision is not null || duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingFlipSpellTrapTargets is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
         bool showingMotion = MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true;
@@ -620,6 +639,8 @@ static partial class Game
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
         bool handInput = actionInput && handHovered;
+        actionInput &= queuedDuel?.IsBusy != true;
+        choiceInput &= queuedDuel?.IsBusy != true;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         if (choiceInput && flipSpellTarget is not null) ReadFlipSpellTrapTarget(flipSpellTarget);
         else if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
@@ -683,7 +704,10 @@ static partial class Game
         }
         DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
-        if (choiceInput && fusion is not null)
+        if (!visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
+            queuedDuel?.PendingDecision is { Owner: var decisionOwner } && decisionOwner == ViewPlayer)
+            DrawEffectDecisionOverlay();
+        else if (choiceInput && fusion is not null)
             DrawFusionSelection(fusion);
         else if (choiceInput && HumanChoice && pendingOwner is not null)
         {

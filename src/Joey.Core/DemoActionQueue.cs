@@ -145,6 +145,9 @@ public sealed partial class DemoDuel
         private PrepareNormalPlacementCommand? placement;
         private readonly HashSet<CardTarget> paidTributes = [];
         private bool resolvingJar;
+        private readonly Queue<DuelCommand> reservedDrawSpell = new();
+        private CardTarget? drawSpellSource;
+        private bool drawSpellSourceSpent;
         private bool resolvingFlipBatch;
         private readonly Dictionary<CardTarget, DuelCommand[]> plannedLinks = new();
         private bool linkedRemovalBatch;
@@ -160,11 +163,13 @@ public sealed partial class DemoDuel
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
             if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision);
+            bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
+            if (finishDrawSpell) reservedDrawSpell.Dequeue();
             // Legacy Morphing Jar draws every available card for both players,
             // even if Exodia is found mid-batch. Only this reserved batch may
             // continue its draws after a winner has been set.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishDrawSpell || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
@@ -185,6 +190,10 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case EquipCommand equip:
                     return duel.ApplyQueuedEquipment(equip);
+                case ActivateDrawSpellCommand drawSpell:
+                    return ActivateDrawSpell(drawSpell, followups);
+                case ActivateLifePointSpellCommand lp:
+                    return ActivateLifePointSpell(lp, followups);
                 case ActivateRaigekiCommand activate:
                     return ActivateRaigeki(activate, followups);
                 case PrepareNormalPlacementCommand prepare:
@@ -204,7 +213,9 @@ public sealed partial class DemoDuel
                 case ResolvePositionCommand resolve:
                     return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
-                    return SendHandToGraveyard(send.Target, discard: false);
+                    return ObserveDrawSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
+                case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
+                    return ObserveDrawSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
                 case DiscardCommand discard:
                     return SendHandToGraveyard(discard.Target, discard: true);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
@@ -214,6 +225,82 @@ public sealed partial class DemoDuel
                 default:
                     return new(CommandOutcome.Rejected, "Command not migrated to DemoDuel.");
             }
+        }
+
+        private CommandResult ObserveDrawSpellSpend(CardTarget target, CommandResult result)
+        {
+            if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
+            return result;
+        }
+
+        private CommandResult ActivateDrawSpell(ActivateDrawSpellCommand activate, IActionCommandSink followups)
+        {
+            if (reservedDrawSpell.Count != 0 || drawSpellSource is not null ||
+                followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Draw spell requires isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out _))
+                return new(CommandOutcome.Skipped, "Draw spell occurrence gone.");
+            if (!duel.CanResolveQueuedDrawSpell(activate.Source, out var effect))
+                return new(CommandOutcome.Rejected, "Draw spell no longer legal.");
+            // Spending is a separate command; the continuation below is pure
+            // with respect to duel state and emits effects only after a successful spend.
+            drawSpellSource = activate.Source;
+            drawSpellSourceSpent = false;
+            queue.Enqueue(new SendToGraveyardCommand(activate.Side, activate.Source));
+            queue.ScheduleContinuation(_ =>
+            {
+                bool spent = drawSpellSourceSpent;
+                drawSpellSource = null;
+                drawSpellSourceSpent = false;
+                if (!spent || duel.GameOver) return new([]);
+                // Recheck availability before issuing the reserved batch.
+                // No other admitted action can run between these draws.
+                if (duel.DeckCount(activate.Side) < effect.Cards)
+                    throw new InvalidOperationException("Reserved draw spell deck changed during activation.");
+                var batch = new List<DuelCommand>();
+                for (int i = 0; i < effect.Cards; i++) batch.Add(new DrawCommand(activate.Side));
+                if (effect.OpponentLifeGain > 0)
+                    batch.Add(new HealCommand(1 - activate.Side, effect.OpponentLifeGain));
+                foreach (var next in batch) reservedDrawSpell.Enqueue(next);
+                return new(batch);
+            });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ActivateLifePointSpell(ActivateLifePointSpellCommand activate, IActionCommandSink followups)
+        {
+            if (followups is not ActionQueue { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "LP spell requires an isolated activation.");
+            if (!duel.TryResolveCardTarget(activate.Source, out _, out var card))
+                return new(CommandOutcome.Skipped, "LP spell occurrence gone.");
+            if (!duel.CanResolveQueuedLifePointSpell(activate.Source, out var change))
+                return new(CommandOutcome.Rejected, "LP spell no longer legal.");
+            // Legacy order: spend source, then caster LP, then opposing LP.
+            // No mutation in the producer. Each operation has its own gate.
+            var batch = new List<DuelCommand> { new SendToGraveyardCommand(activate.Side, activate.Source) };
+            AddDelta(batch, activate.Side, change.CasterDelta);
+            AddDelta(batch, 1 - activate.Side, change.OpponentDelta);
+            queue.EnqueueBatch(batch);
+            return new(CommandOutcome.Applied);
+        }
+
+        private static void AddDelta(List<DuelCommand> batch, int side, int delta)
+        {
+            if (delta > 0) batch.Add(new HealCommand(side, delta));
+            else if (delta < 0) batch.Add(new DamageCommand(side, -delta));
+        }
+
+        private CommandResult SendSetFixedSpellToGraveyard(CardTarget target)
+        {
+            if (!duel.TryResolveCardTarget(target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
+            if (card.ClassCode != 22 || !(LifePointSpellRules.Supports(card.Id) || DrawSpellRules.Effect(card) is not null) ||
+                !duel.SpellFaceDown[target.Side, slot] ||
+                duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
+                return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw spells are migrated here.");
+            duel.ClearSpellTrapSlot(target.Side, slot);
+            duel.graves[target.Side].Add(card);
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ActivateRaigeki(ActivateRaigekiCommand activate, IActionCommandSink followups)

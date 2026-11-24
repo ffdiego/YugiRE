@@ -19,6 +19,7 @@ static partial class Game
 
         public void OnStarting(QueuedDuelCommand command)
         {
+            commandCardEffects.Begin(command.Sequence);
             var description = duel.DescribeActionPresentation(command.Command);
             Rectangle? origin = null;
             if (description is { Source.Zone: DuelZone.Hand } hand)
@@ -27,9 +28,13 @@ static partial class Game
             active.Capture(command.Sequence, description is null ? null : new(description, origin));
         }
 
-        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
-            active.TryRelease(command.Sequence, result.Outcome == CommandOutcome.Applied,
-                BeginActionVisual, () => MotionBusy || PhaseBusy);
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result)
+        {
+            if (!active.TryRelease(command.Sequence, result.Outcome == CommandOutcome.Applied,
+                BeginActionVisual, () => MotionBusy || PhaseBusy)) return false;
+            commandCardEffects.Release(command.Sequence);
+            return true;
+        }
     }
 
     static void BeginActionVisual(ActionVisualSnapshot snapshot)
@@ -42,7 +47,7 @@ static partial class Game
             case ActionPresentationKind.Activate:
                 // Producer has emitted followups, but no source movement or
                 // damage/destruction yet. Show the existing travel + glow.
-                queuedPreviewSource = a.Source;
+                queuedPreviewSource = presentation.Style.PlayAnimations ? a.Source : null;
                 BeginCardActivation(a.Card, ZoneBounds(side, slot, true), snapshot.Origin, near);
                 break;
             case ActionPresentationKind.Summon:
@@ -70,12 +75,27 @@ static partial class Game
         queuedPreviewSource is { } source && source.Side == side && source.Zone == DuelZone.Hand &&
         duel.TryCaptureCardTarget(side, DuelZone.Hand, index, out var current) && source == current;
 
+    static bool IsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
+        (DrawSpellRules.Effect(card) is not null || LifePointSpellRules.Supports(card.Id));
+
+    static bool TryQueuedFixedSpell(Card card, DuelZone zone, int index, out string result) =>
+        DrawSpellRules.Effect(card) is not null
+            ? duel.TryQueueDrawSpell(zone, index, out result)
+            : duel.TryQueueLifePointSpell(zone, index, out result);
+
     static void AdvanceQueuedDuel()
     {
         if (queuedDuel is not { IsBusy: true } queue || visualReviewPaused || alphaBlocked) return;
         try
         {
             // Only one scheduler passage per frame; the Core never reads time.
+            if (queue.PendingDecision is { } request)
+            {
+                var answer = EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
+                    effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip
+                        ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline);
+                if (answer is { } choice) queue.SubmitDecision(request.Id, choice);
+            }
             queue.Tick();
             if (!queue.IsBusy) queuedPreviewSource = null;
         }
