@@ -25,6 +25,7 @@ static partial class Game
         graphics = resources;
         includeUnused = args.Contains("--include-unused");
         useLegacySelection = args.Contains("--legacy-selection");
+        useQueuedActions = args.Contains("--queued-actions");
         DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
             : args.Contains("--fast") ? new FastLookAndFeel()
             : args.Contains("--mute-joey") ? new SilentLookAndFeel()

@@ -92,7 +92,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *Pronto quando:* testes de sequência reproduzem as invariantes 1–6 (ordem, um por vez, destruir 3 = 3 comandos, headless x com gate resultam na **mesma** lista de comandos).
   *Entregue:* PR #67 integrado à main (93846a7), CI integral 45318593622 verde. A02.1–A02.5: FIFO/gates/trace, identidade por ocorrência, dez tipos iniciais com adaptadores experimentais, Raigeki e consequências vinculadas, Summon/Set com tributos, Flip/ChangePosition, Morphing Jar e decisão real Skelengel. Critérios 1–6 cobertos por testes de sequência, alvo obsoleto, gate imediato/retardado e decisão. A02 encerra infraestrutura e pilotos; não significa migração integral de cartas, App/CPU, escolhas concorrentes, fases ou paridade nativa. Ver [handoff A02](docs/architecture/action-queue-implementation.md). Migração restante em A03–A08/C12.
 
-- [ ] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Pronto`.
+- [ ] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Parcial`.
+  *A03.1:* gate com snapshot tipado pré-mutação, latch único em LookAndFeel e piloto App opt-in `--alpha --queued-actions` para Raigeki e invocação normal/Set. Reutiliza os frames existentes; sem relógio no Core. Testes dos perfis e ordem; CI pendente. Ver [contrato](docs/architecture/action-presentation.md).
   O comando ativo expõe a apresentação que precisa terminar; `Joey.LookAndFeel` consome o comando (não uma lista paralela) e sinaliza o gate. Substituir `PresentationSequence` paralela pela leitura dos comandos. Perfis Classic/Fast/Silent/Instant mantêm ordem e contagem.
   *Pronto quando:* a prévia de ativação e uma invocação normal rodam guiadas pela fila, sem tempo no Core.
 - [ ] **A04 — Console de duelo no `Joey.App`.** Status: `Pronto`.

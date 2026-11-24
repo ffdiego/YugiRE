@@ -171,6 +171,11 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Activate)
         {
+            if (queuedDuel is not null && card.Id == MonsterWipeRules.Raigeki)
+            {
+                if (duel.TryQueueRaigekiFromHand(index, out message)) ClearDuelSelection();
+                return;
+            }
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
@@ -192,6 +197,12 @@ static partial class Game
     {
         var card = ViewHand[index];
         int zone = duel.FirstFreeMonsterZone(tributeZones);
+        if (queuedDuel is not null)
+        {
+            if (!duel.TryQueueNormalPlacement(index, zone, setHandAction, out message, tributeZones)) return false;
+            ClearDuelSelection();
+            return true;
+        }
         var origin = HandBounds(index);
         if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
         ShowPlayedCardDetail(card);
@@ -545,7 +556,7 @@ static partial class Game
         var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == focused ? 1 : 0);
         foreach (int index in drawOrder)
         {
-            if (IncomingTransferInFlight(ViewPlayer, index, visible[index])) continue;
+            if (IncomingTransferInFlight(ViewPlayer, index, visible[index]) || IsQueuedPreviewCard(ViewPlayer, index)) continue;
             var rect = ToRectangle(handLayouts[ViewPlayer].Bounds(index, visible.Count, HandLiftAt(index)));
             DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
             if (index == focused) DrawHandSelectionFrame(rect, nearSide: true);
@@ -577,17 +588,18 @@ static partial class Game
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
-        if (!visualReviewPaused && !MotionBusy && !PhaseBusy &&
+        if (!visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
             (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         for (int player = 0; player < 2; player++)
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
+        AdvanceQueuedDuel();
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         var fusion = duel.PendingFusionSummon;
         bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingFlipSpellTrapTargets is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
-        bool showingMotion = MotionBusy || PhaseBusy;
+        bool showingMotion = MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true;
         bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
         bool choiceInput = !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;

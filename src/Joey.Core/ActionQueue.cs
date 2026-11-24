@@ -28,6 +28,13 @@ public interface IPresentationGate
     bool CanComplete(QueuedDuelCommand command, CommandResult result);
 }
 
+// Optional synchronous observer: capture immutable presentation input before the executor moves a card.
+// The observer must not mutate the duel or enqueue commands.
+public interface ICommandPresentationGate : IPresentationGate
+{
+    void OnStarting(QueuedDuelCommand command);
+}
+
 public sealed class ImmediatePresentationGate : IPresentationGate
 {
     public static ImmediatePresentationGate Instance { get; } = new();
@@ -138,6 +145,7 @@ public sealed class ActionQueue : IActionCommandSink
             {
                 Active = next;
                 trace.Add(new(next, ActionTraceStage.Started));
+                if (gate is ICommandPresentationGate observer) observer.OnStarting(next);
                 var result = executor.Execute(next.Command, this)
                     ?? throw new InvalidOperationException("Executor returned no result.");
                 if (!Enum.IsDefined(result.Outcome))
