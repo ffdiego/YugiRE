@@ -27,6 +27,7 @@ public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target
 // Neither of these stages claims a one-to-one native opcode mapping.
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -62,6 +63,12 @@ internal static class DuelCommandValidation
                 break;
             case ActivateLifePointSpellCommand lp:
                 Target(lp.Source, lp.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateTargetedSpellTrapCommand targeted:
+                Target(targeted.Source, targeted.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                if (targeted.Target.Side is not (0 or 1) || targeted.Source == targeted.Target)
+                    throw new ArgumentException("Invalid targeted Spell/Trap occurrence.");
+                Target(targeted.Target, targeted.Target.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
                 break;
             case ActivateSpellTrapWipeCommand spellTrapWipe:
                 Target(spellTrapWipe.Source, spellTrapWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
