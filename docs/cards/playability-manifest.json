@@ -1487,10 +1487,7 @@
       ],
       "status": "Partial",
       "resourceIds": [
-        1515,
-        1516,
         1517,
-        1518,
         1519
       ],
       "evidence": [
@@ -1501,9 +1498,37 @@
         "docs/cards/c16-queued-graveyard-banish-summon.md"
       ],
       "limitations": [
-        "Core opt-in summon procedure only; continuous/Standby/position effects, UI/CPU, Spirit Elimination and native differential validation pending.",
-        "Resource 1518 belongs to the Joey pack and native cost family; exact DAT identity still needs confirmation. Tests use synthetic source attributes, not native DAT parity.",
-        "PR #93 commit 3178443 passed .NET CI; no promotion to Done."
+        "Aqua Spirit/Garuda Standby position effects, UI/CPU, Spirit Elimination and native differential validation pending."
+      ]
+    },
+    {
+      "id": "monster.special-summon.elemental-battle-attributes-c16",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1515,
+        1516,
+        1518
+      ],
+      "mechanics": [
+        "Queue-backed inherent Special Summon by banishing own Graveyard monsters matching source attribute (2 for 1515, 1 for 1516/1518)",
+        "Soul of Purity and Light lowers opposing monsters' ATK by 300 per face-up source during opponent Battle Phase",
+        "Spirit of Flames gains 300 ATK during own Battle Phase; resource 1518 gains 300 ATK during opponent Battle Phase",
+        "Recalculate stats and use in actual battle; no additional mutation outside queue for continuous modifiers"
+      ],
+      "evidence": [
+        "src/Joey.Core/GraveyardBanishSummonRules.cs",
+        "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
+        "src/Joey.Core/ElementalBattleAttributeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/QueuedGraveyardBanishSummonChecks.cs",
+        "src/tests/Joey.Tests/ElementalBattleAttributeChecks.cs",
+        "docs/cards/c16-elemental-battle-attributes.md"
+      ],
+      "limitations": [
+        "Done in explicit headless C# duel scope via opt-in queue summon API and legacy battle path. Graphical/CPU producer integration belongs to ACTIONS; no native differential validation.",
+        "Native effect suppression, ownership/controller changes, Spirit Elimination, special summon responses pending. Resource 1518 verified as Joey pack ID and native effect branch; DAT name still to confirm."
       ]
     }
   ]
