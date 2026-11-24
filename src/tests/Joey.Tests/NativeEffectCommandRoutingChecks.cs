@@ -21,8 +21,10 @@ internal static class NativeEffectCommandRoutingChecks
                         "V20/V21: packed region and side");
                 }
         }
-        reject(() => NativeEffectCommandRouting.BankAnchorDescriptor(0x4f,0,0),
-            "V22: break descriptor comes from its own producer");
+        bool rejected = false;
+        try { _ = NativeEffectCommandRouting.BankAnchorDescriptor(0x4f, 0, 0); }
+        catch (ArgumentOutOfRangeException) { rejected = true; }
+        check(rejected, "V22: break descriptor comes from its own producer");
         for (int slot=0;slot<256;slot++)
             check(NativeEffectCommandRouting.BreakLayer((ushort)(0xc016 | slot<<6)) ==
                   0x201+slot*0x10, "V22: region 11 layer uses full slot byte");

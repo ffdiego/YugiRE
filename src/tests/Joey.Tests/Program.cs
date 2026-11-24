@@ -162,6 +162,7 @@ NativeCardStatusCompositionChecks.Run(Check, Reject);
 NativeSelectionManifestChecks.Run(Check, Reject);
 NativeFusionResourceChecks.Run(Check, Reject);
 NativeEffectCommandRoutingChecks.Run(Check, Reject);
+NativeContextEffectChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
