@@ -194,6 +194,10 @@ dimensões das imagens referenciadas (sem pixels).
 
 `bash scripts/pending/16-cards-revival-spells-ghidra.sh` no Fedora/Ghidra local. Saída privada `scratch/ghidra-revival-spells-contract.zip`. Extrair sete callbacks ausentes nos dois SQLite, com assembly e helpers de movimentação/identidade. Confirmar propriedade/controle, seleção, custo e vínculo; não promover cobertura apenas pela coleta. Ver [lacuna](../../docs/cards/p117-p159-p160-revival-spells-gap.md).
 
+### 17 — CARDS: P253 mudança de posição elemental
+
+`bash scripts/pending/17-cards-elemental-position-ghidra.sh` — coleta complementar ao roteiro 11 de ACTIONS: callbacks 0057B1F0/0057CD40/005907D0, helpers e tabela de produtores. Saída privada `scratch/ghidra-elemental-position-contract.zip`. Confirmar dispatch, filtro, lock de Aqua e mudança de posição por efeito. [Contrato](../../docs/cards/c16-elemental-position-opportunities.md).
+
 ## A03/A04 — 22-actions-console-visual-smoke.sh (piloto validado no Windows)
 
 Roteiro 22 executado via PowerShell, headless e gráfico: 18 Applied e 106 linhas relevantes idênticas após fff5e6e. Novo roteiro `scripts/fixtures/duel-console-two-sides-smoke.txt` executou 29 Applied, sem espera >=5s; operador confirmou compras animadas de ambos lados. CI 45328386043. Manter script como regressão opcional. Não implica paridade visual nativa; A05/A07 pendentes.
