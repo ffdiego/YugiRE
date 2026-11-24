@@ -71,8 +71,8 @@ internal static class DuelCommandValidation
                 Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck);
                 break;
             case ResolveDeckRecruitmentCommand recruit when recruit.Request is not null && recruit.Request.Owner == recruit.Side:
-                if (recruit.Target is { } pick && recruit.Slot is >= 0 and < 5)
-                    Target(pick, recruit.Side, DuelZone.Deck);
+                if (recruit.Target is { } recruitPick && recruit.Slot is >= 0 and < 5)
+                    Target(recruitPick, recruit.Side, DuelZone.Deck);
                 else if (recruit.Target is not null || recruit.Slot is not null)
                     throw new ArgumentException("Invalid recruitment choice.");
                 break;
