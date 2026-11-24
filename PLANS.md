@@ -136,8 +136,9 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
   *Reconciliação:* PR #101 preserva A06/A07; CI anterior 45392730663 verde, extração de Joey.Cards ainda pendente.
 
-- [ ] **A09 — Comparar combate em condição equivalente e apresentar o trace no App.** Status: `Aguardando evidência`.
+- [ ] **A09 — Comparar combate em condição equivalente e apresentar o trace no App.** Status: `Parcial`.
   Obter um cenário nativo com estado inicial e comandos comparáveis ao piloto A05, preservar as lacunas do trace e validar a apresentação dos comandos de combate no gate do App. A05 entrega a projeção e o relatório headless. A07 cobre fases nativas. A reprodução visual do combate permanece na trilha VISUALS.
+  *A09.1:* projeção somente leitura da declaração de ataque direto/com alvo; App usa o cue de espada existente no gate da declaração, antes de remoção/dano, sem novo relógio ou fila. Roteiro sem mira manual usa alreadyAimed=false. Regressão App sem DAT/display Classic/Instant, CI pendente; smoke gráfico e captura nativa equivalente ainda necessários.
 
 ## Trilha CARDS
 

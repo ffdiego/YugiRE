@@ -1,6 +1,6 @@
 namespace Joey.Core;
 
-public enum ActionPresentationKind { Activate, Summon, Set, Flip }
+public enum ActionPresentationKind { Activate, Summon, Set, Flip, DirectAttack, TargetedAttack }
 
 /// <summary>Read-only projection of the command's source BEFORE mutation.
 /// Contains domain data, not graphics coordinates or duration.</summary>
@@ -17,6 +17,17 @@ public sealed partial class DemoDuel
         int slot;
         switch (command)
         {
+            case DeclareDirectAttackCommand attack:
+                if (!TryResolveCardTarget(attack.Attacker, out int attackerSlot, out var attacker))
+                    return null;
+                return new(ActionPresentationKind.DirectAttack, attacker, attack.Attacker,
+                    attackerSlot, DuelZone.Monster, -1);
+            case DeclareTargetedAttackCommand attack:
+                if (!TryResolveCardTarget(attack.Attacker, out int sourceSlot, out var source) ||
+                    !TryResolveCardTarget(attack.Defender, out int defenderSlot, out _))
+                    return null;
+                return new(ActionPresentationKind.TargetedAttack, source, attack.Attacker,
+                    sourceSlot, DuelZone.Monster, defenderSlot);
             case ActivateDrawSpellCommand draw:
                 target = draw.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

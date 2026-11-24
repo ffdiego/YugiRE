@@ -71,7 +71,12 @@ static partial class Game
             Console.Error.WriteLine("Queued automatic draw phase regression failed.");
             return 1;
         }
-        Console.WriteLine("Laboratory and queued automatic draw phase regressions passed.");
+        if (!CheckQueuedCombatPresentation())
+        {
+            Console.Error.WriteLine("Queued combat presentation regression failed.");
+            return 1;
+        }
+        Console.WriteLine("Laboratory, queued automatic draw and combat presentation regressions passed.");
         return 0;
     }
 
@@ -156,6 +161,71 @@ static partial class Game
         if (duel.Winner != 1 || queue.IsBusy || alphaBlocked || cpuPhases != 3 ||
             !draws.SequenceEqual(new[] { ActionOrigin.Player, ActionOrigin.Cpu, ActionOrigin.Player }))
             return Failed("deck out");
+        return true;
+    }
+
+    // The real App gate and existing sword cue run without loading DAT or
+    // creating a window. No claim about pixel fidelity from this regression.
+    static bool CheckQueuedCombatPresentation()
+    {
+        var elapsed = TimeSpan.FromMilliseconds(17);
+        foreach (bool targeted in new[] { false, true })
+        {
+            ActionTraceEntry[]? reference = null;
+            foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
+            {
+                Card attackerCard = new(24, 24, "Attack fixture", "", (3u << 20) | (4u << 25) | (140u << 9));
+                Card defenderCard = new(1351, 1351, "Defense fixture", "", (3u << 20) | (4u << 25) | (100u << 9));
+                duel = DemoDuel.FromPartialObservation(1, [], targeted ? [null, null, null, defenderCard, null] : new Card?[5],
+                    [null, null, attackerCard, null, null], 8000);
+                alphaCpu = new(1);
+                alphaBlocked = false;
+                presentation.SetStyle(style);
+                ResetDuelPresentation();
+                labSession = new DuelConsoleSession(duel, new AppActionPresentationGate());
+                var queue = labSession.Queue;
+                queuedDuel = queue;
+                AdvanceDuelPhases(elapsed);
+                if (!labSession.Execute("battle begin").Enqueued) return false;
+                AdvanceQueuedDuel();
+                AdvanceDuelPhases(elapsed);
+                if (queue.IsBusy || !labSession.Execute(targeted ? "attack 2 3" : "attack 2 direct").Enqueued)
+                    return false;
+                AdvanceQueuedDuel();
+                if (duel.Life[0] != 8000 || targeted && duel.Monsters[0, 3] is null)
+                    return false;
+                if (style.PlayAnimations)
+                {
+                    if (attackCue is not { AlreadyAimed: false } cue ||
+                        cue.Target != (targeted ? NativeDuelLayout.MonsterCenter(3, true) : NativeAttackFrame.DirectTarget(false)) ||
+                        queue.Active?.Command is not (DeclareDirectAttackCommand or DeclareTargetedAttackCommand))
+                        return false;
+                    // Without advancing the clock, repeated gate checks must
+                    // neither restart the cue nor allow destruction/damage.
+                    for (int i = 0; i < 4; i++) AdvanceQueuedDuel();
+                    if (!ReferenceEquals(cue, attackCue) || attackUpdates != 0 ||
+                        duel.Life[0] != 8000 || targeted && duel.Monsters[0, 3] is null)
+                        return false;
+                }
+                else if (attackCue is not null) return false;
+
+                for (int frame = 0; frame < 600 && queue.IsBusy; frame++)
+                {
+                    if (CanPlayCardEffects) AdvanceCardEffects(elapsed);
+                    AdvanceDuelPhases(elapsed);
+                    AdvanceAlpha(elapsed);
+                    AdvanceQueuedDuel();
+                    AdvanceLifePresentation(elapsed);
+                }
+                if (queue.IsBusy || alphaBlocked || attackCue is not null ||
+                    duel.Life[0] != (targeted ? 7600 : 6600) ||
+                    targeted && (duel.Monsters[0, 3] is not null || duel.Graveyard(0).Count != 1))
+                    return false;
+                var trace = queue.Trace.ToArray();
+                if (reference is not null && !trace.SequenceEqual(reference)) return false;
+                reference = trace;
+            }
+        }
         return true;
     }
 

@@ -105,3 +105,7 @@ a apresentação do combate aguardam A09.
 dotnet build YugiRE.sln
 python3 scripts/tests/check_action_trace_archive.py src/Joey.Lab/bin/Debug/net10.0/Joey.Lab.dll
 ```
+
+## A09.1 — gate da declaração de combate
+
+A declaração direta e com alvo tem descritor lógico somente leitura antes da mutação, com slot físico de origem e destino (-1 direto), resolvendo as ocorrências existentes. O App reaproveita BeginAttackCue/NativeAttackFrame e o relógio existentes; o console não tem mira manual, então usa alreadyAimed=false. Gate da declaração aguarda o cue antes de SnapshotBattleRemoval/Damage. Nenhum parâmetro de sprite, duração ou layout foi alterado. A animação só começa se a declaração foi Applied. Regressão no --check-console-startup: ataques diretos/com alvo no lado 1, Classic/Instant, LP/defensor intactos durante cue, repetição do gate não reinicia cue, destino lógico e trace idênticos, estado final correto. CI pendente; sem DAT/display, não é validação visual nem captura nativa equivalente. Combatentes limitados ao piloto A05; demais regras de combate e VISUALS continuam independentes.
