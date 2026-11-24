@@ -141,6 +141,23 @@ class TraceTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate capture metadata"):
                 read([header, event, header])
 
+    def test_csharp_gap_outside_comparison_window_is_rejected(self):
+        native = [{"index": 0, "args": [0x61, 1, 1, 0]}]
+        draw = row(1, "DrawCommand", [0x61, 1, 1, 0])
+        corrupt = row(3, "DrawCommand", [0x61, 1, 1, 0])
+        for rows in ([draw, corrupt], [corrupt]):
+            with self.subTest(rows=rows), self.assertRaisesRegex(ValueError, "C# sequence gap"):
+                compare(native, document(rows), 0, 1, 0, 1, "ydr-record")
+
+    def test_csharp_row_count_detects_a_missing_suffix(self):
+        native = [{"index": 0, "args": [0x61, 1, 1, 0]}]
+        doc = document([row(1, "DrawCommand", [0x61, 1, 1, 0])])
+        for bad_count in (2, True, None):
+            with self.subTest(count=bad_count), self.assertRaisesRegex(ValueError, "C# trace row count"):
+                compare(native, dict(doc, rowCount=bad_count), 0, 1, 0, 1, "ydr-record")
+        report = compare(native, dict(doc, rowCount=1), 0, 1, 0, 1, "ydr-record")
+        self.assertEqual(report["status"], "projected_match")
+
     def test_bad_capture_and_fabricated_mapping(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=pathlib.Path(tmp)/"capture.jsonl"

@@ -78,3 +78,9 @@ combate em Battle Phase. `action-trace-battle-pilot` exercita compra, invocaçã
 e ataque direto com o mesmo produtor, a partir de uma fixture sem DAT. A
 transição para Battle Phase ainda é preparação do piloto. A07 cobre fases
 pela fila, e o trace piloto segue aguardando comparação dinâmica equivalente.
+
+O trace C# v1 é exportado desde o primeiro comando executado. O comparador
+rejeita lacunas de sequência em qualquer parte do documento, antes de
+selecionar a janela. As exportações atuais incluem `rowCount` para detectar
+um sufixo removido. Exportações v1 anteriores continuam legíveis, com a
+limitação de que o sufixo ausente não pode ser identificado pela contagem.

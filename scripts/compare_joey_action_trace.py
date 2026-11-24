@@ -117,12 +117,14 @@ def csharp_rows(doc):
         raise ValueError("trace scope required")
     rows=doc.get("rows")
     if not isinstance(rows,list): raise ValueError("C# trace rows required")
-    previous=0
-    for row in rows:
-        if not isinstance(row,dict): raise ValueError("invalid trace row")
-        seq=row.get("sequence")
-        if type(seq) is not int or seq<=previous: raise ValueError("nonincreasing C# sequence")
-        previous=seq
+    if "rowCount" in doc and (type(doc["rowCount"]) is not int or doc["rowCount"] != len(rows)):
+        raise ValueError("C# trace row count does not match the document")
+    for expected_sequence, row in enumerate(rows, start=1):
+        if not isinstance(row, dict):
+            raise ValueError("invalid trace row")
+        sequence = row.get("sequence")
+        if type(sequence) is not int or sequence != expected_sequence:
+            raise ValueError(f"C# sequence gap: expected {expected_sequence}")
         mapping=row.get("mapping")
         if mapping not in ("mapped","unmapped","non_applied"): raise ValueError("unknown mapping status")
         if type(row.get("side")) is not int or row["side"] not in (0,1): raise ValueError("invalid C# side")

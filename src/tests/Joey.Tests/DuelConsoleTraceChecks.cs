@@ -43,6 +43,7 @@ internal static class DuelConsoleTraceChecks
             var rows = doc.GetProperty("rows");
             check(doc.GetProperty("schema").GetString() == "yugire-action-projection-v1" &&
                 doc.GetProperty("complete").GetBoolean() &&
+                doc.GetProperty("rowCount").GetInt32() == rows.GetArrayLength() &&
                 rows.EnumerateArray().Select(r => r.GetProperty("command").GetString()).SequenceEqual(
                     ["DrawCommand", "PrepareNormalPlacementCommand", "SummonCommand", "FinishNormalPlacementCommand"]) &&
                 rows[1].GetProperty("mapping").GetString() == "unmapped" &&
@@ -75,7 +76,8 @@ internal static class DuelConsoleTraceChecks
             check(Run("--fixture", script, $"--trace-output={partial}") == 1, "A05 Lab rejects invalid script");
             using (var snapshot = JsonDocument.Parse(File.ReadAllText(partial)))
                 check(!snapshot.RootElement.GetProperty("complete").GetBoolean() &&
-                    snapshot.RootElement.GetProperty("rows").GetArrayLength() == 1,
+                    snapshot.RootElement.GetProperty("rows").GetArrayLength() == 1 &&
+                    snapshot.RootElement.GetProperty("rowCount").GetInt32() == 1,
                     "A05 failed script exports its incomplete executed prefix");
 
             string unused = Path.Combine(directory, "unused.json");

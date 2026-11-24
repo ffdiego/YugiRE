@@ -106,6 +106,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   *A05.9:* consulta `trace` compartilhada pelo console App/Lab e exportação headless de roteiros com `--trace-output=path`. O documento conserva a ordem dos comandos executados e distingue prefixos incompletos. A05 permanece parcial enquanto faltam o cue de combate e a comparação dinâmica.
   *A05.10:* o comparador valida a sequência desde o primeiro evento e confere as contagens do cabeçalho ou do rodapé antes de comparar qualquer janela JSONL.
   *A05.11:* o console admite os ataques direto e com alvo dos pilotos. O Lab gera o trace compra → invocação → ataque → dano pelo mesmo console. A preparação da fase no piloto usa o setup existente até A07; captura dinâmica equivalente e cue de combate ainda pendentes.
+  *A05.12:* os traces C# novos declaram a contagem de linhas executadas. O comparador valida a contagem disponível e a sequência desde 1 antes de aceitar qualquer janela, inclusive quando a lacuna fica fora dela.
   Exportar o log da fila C# no mesmo formato dos registros nativos (opcode, lado, argumentos) e um comparador contra capturas do `yugilab`. Começar por invocação normal (já existem fixtures parciais) e dano/cura.
   *Pronto quando:* um roteiro curto (draw, invocar, atacar) gera listas comparáveis e as divergências saem em relatório.
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Pronto`.

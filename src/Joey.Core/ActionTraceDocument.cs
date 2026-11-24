@@ -3,7 +3,10 @@ using System.Text.Json;
 namespace Joey.Core;
 
 public sealed record ActionTraceDocument(string Schema, bool Complete, string Scope,
-    IReadOnlyList<ProjectedAction> Rows);
+    IReadOnlyList<ProjectedAction> Rows)
+{
+    public int RowCount => Rows.Count;
+}
 
 /// <summary>One trace schema for both graphical and headless laboratory hosts.</summary>
 public static class ActionTraceJson
