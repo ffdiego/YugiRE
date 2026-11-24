@@ -72,3 +72,9 @@ O Lab grava um arquivo novo e conserva o prefixo executado com `complete: false`
 ## A05.10 — Integridade da entrada JSONL
 
 O comparador exige sequência contínua a partir de 1, incluindo marcadores e sondas que ficam fora da janela de comandos. Capturas `live_duels` precisam de `capture_summary` final, com `complete: true`, `overwritten: 0` e `eventsWritten` igual ao total de eventos lidos. Snapshots históricos do buffer registram `seen`, `retained` e `overwritten` no cabeçalho e passam pela mesma conferência de contagem. Uma perda ou contagem incompatível encerra a leitura com código 2 antes da comparação. O relatório de uma entrada íntegra continua sendo uma comparação de projeções.
+
+O comando de console `attack SLOT direct|TARGET_SLOT` admite os dois pilotos de
+combate em Battle Phase. `action-trace-battle-pilot` exercita compra, invocação
+e ataque direto com o mesmo produtor, a partir de uma fixture sem DAT. A
+transição para Battle Phase ainda é preparação do piloto. A07 cobre fases
+pela fila, e o trace piloto segue aguardando comparação dinâmica equivalente.

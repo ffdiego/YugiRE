@@ -50,6 +50,8 @@ internal static class DuelConsoleTraceChecks
                 "A05 console trace contains observed placement in the established schema");
         }
 
+        CheckBattleConsole(check);
+
         string directory = Directory.CreateTempSubdirectory("yugire-trace-").FullName;
         try
         {
@@ -87,4 +89,36 @@ internal static class DuelConsoleTraceChecks
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    private static void CheckBattleConsole(Action<bool, string> check)
+    {
+        using var output = new StringWriter();
+        using var error = new StringWriter();
+        check(ActionTraceExport.RunBattlePilot([], output, error) == 0 && error.ToString().Length == 0,
+            "A05 Lab runs draw, summon and direct attack through the shared console");
+        using var capture = JsonDocument.Parse(output.ToString());
+        string?[] commands = capture.RootElement.GetProperty("rows").EnumerateArray()
+            .Select(row => row.GetProperty("command").GetString()).ToArray();
+        check(commands.SequenceEqual(["DrawCommand", "PrepareNormalPlacementCommand", "SummonCommand",
+            "FinishNormalPlacementCommand", "DeclareDirectAttackCommand", "DamageCommand"]),
+            "A05 headless battle trace includes the queued declaration and damage");
+
+        var attacker = new Card(24, 24, "Attacker", "", (3u << 20) | (4u << 25) | (140u << 9));
+        var defender = new Card(25, 1351, "Defender", "", (3u << 20) | (4u << 25) | (100u << 9));
+        var duel = DemoDuel.FromPartialObservation(1, [], [defender, null, null, null, null],
+            [null, attacker, null, null, null], 8000);
+        var console = new DuelConsoleSession(duel, new Gate());
+        check(!console.Execute("attack 1 0").Success && console.Queue.Trace.Count == 0,
+            "A05 rejects an attack outside Battle Phase");
+        check(duel.BeginBattle(out _) && !console.Execute("attack 1 direct").Success &&
+            !console.Execute("attack 1 5").Success && console.Queue.Trace.Count == 0,
+            "A05 rejects blocked direct attacks and invalid target slots atomically");
+        check(console.Execute("attack 1 0").Enqueued &&
+            console.Queue.Trace.Single().Entry is { Command: DeclareTargetedAttackCommand, Origin: ActionOrigin.Console },
+            "A05 targeted console attack enters the typed queue with Console origin");
+        console.Queue.Tick();
+        check(console.Queue.IsBusy && duel.Monsters[0, 0] is not null && duel.Life[0] == 8000,
+            "A05 targeted console attack holds mutations behind its declaration gate");
+    }
+
 }

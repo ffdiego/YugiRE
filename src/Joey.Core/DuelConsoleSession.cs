@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX | equip hand|set INDEX SIDE SLOT | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -58,7 +58,7 @@ public sealed class DuelConsoleSession
         if (duel.GameOver) return new(false, "Duel ended.");
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
-        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip")
+        if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "attack")
             return ExecuteLegal(op, words);
         // Replay projection is a setup edit, not a legal input. Capture the
         // occurrence only if the resource at the recorded source index matches.
@@ -173,6 +173,16 @@ public sealed class DuelConsoleSession
                 return new(false, "Expected equip hand|set INDEX SIDE SLOT.");
             ok = duel.TryQueueEquipment(words[1] == "set" ? DuelZone.SpellTrap : DuelZone.Hand,
                 sourceIndex, targetSide, targetSlot, out message, ActionOrigin.Console);
+        }
+        else if (op == "attack")
+        {
+            if (words.Length != 3 || !Slot(words[1], out int attacker))
+                return new(false, "Expected attack SLOT direct|TARGET_SLOT.");
+            if (words[2] == "direct")
+                ok = duel.TryQueueDirectAttack(attacker, out message, ActionOrigin.Console);
+            else if (Slot(words[2], out int defender))
+                ok = duel.TryQueueTargetedAttack(attacker, defender, out message, ActionOrigin.Console);
+            else return new(false, "Expected attack SLOT direct|TARGET_SLOT.");
         }
         else if (op == "activate")
         {

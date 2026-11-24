@@ -14,17 +14,31 @@ public static class ActionTraceExport
         if(args.Length!=0) { error.WriteLine("Usage: action-trace-battle-pilot"); return 2; }
         Card monster=new(24,24,"Fixture monster","",(3u<<20)|(4u<<25)|(140u<<9));
         var duel=DemoDuel.FromPartialObservation(1,[],new Card?[5],new Card?[5],8000,side1Deck:[monster]);
-        var queue=duel.CreatePrimitiveActionQueue();
-        bool Drain()
+        var console = new DuelConsoleSession(duel);
+        bool RunScript(params string[] lines)
         {
-            for(int i=0;i<128 && queue.IsBusy;i++)queue.Tick();
-            return !queue.IsBusy;
+            var script = new DuelConsoleScript(console, lines);
+            for (int i = 0; i < 128; i++)
+            {
+                console.Queue.Tick();
+                switch (script.Advance().Status)
+                {
+                    case DuelScriptStatus.Completed: return true;
+                    case DuelScriptStatus.Failed:
+                    case DuelScriptStatus.WaitingForDecision: return false;
+                }
+            }
+            return false;
         }
-        queue.Enqueue(new DrawCommand(1),ActionOrigin.Test);
-        if(!Drain() || !duel.TryQueueNormalPlacement(0,2,false,out _) || !Drain() ||
-            !duel.BeginBattle(out _) || !duel.TryQueueDirectAttack(2,out _) || !Drain())
-        { error.WriteLine("Synthetic direct battle pilot did not complete."); return 1; }
-        output.WriteLine(Serialize(Capture(queue,"synthetic-rule-pilot-draw-summon-direct-attack")));
+
+        // Phase orchestration remains on the existing fixture path until A07.
+        if (!RunScript("draw 1 1", "summon 0 2") || !duel.BeginBattle(out _) ||
+            !RunScript("attack 2 direct"))
+        {
+            error.WriteLine("Synthetic direct battle pilot did not complete.");
+            return 1;
+        }
+        output.WriteLine(Serialize(Capture(console.Queue, "synthetic-rule-pilot-draw-summon-direct-attack")));
         return 0;
     }
 
