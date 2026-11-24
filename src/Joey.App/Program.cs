@@ -79,6 +79,7 @@ static partial class Game
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
             playableCards = CardListResources.ForPacks(orderedCards, packs);
+            DuelArtworkPolicy.ValidateMappings(playableCards, graphics.Artwork.For, graphics.Artwork.MiniFor);
             if (!includeUnused) orderedCards = playableCards;
             joeyCards = CardListResources.ForPacks(playableCards, packs, 4);
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
@@ -131,6 +132,8 @@ static partial class Game
                 duelTheme.LoadDatArt(graphics,
                     board ?? (duelTheme.Board is null ? DatGraphics.DuelBoard : null),
                     back ?? (duelTheme.CardBack is null ? DatGraphics.DuelBack : null));
+                if (duelTheme.UsesNativeCardBack)
+                    _ = graphics.Texture(DatGraphics.MiniCardBack);
                 // Native detail uses an English GDI face, not the default
                 // raylib bitmap font; keep this confined to the sidebar.
                 duelTheme.LoadNativeDetailFonts();
@@ -351,16 +354,23 @@ static partial class Game
         }
         Label(line, x, y, size);
     }
+    static readonly HashSet<(int Index, bool Miniature)> reportedMissingInspectionArtwork = [];
     static void DrawArtwork(Card card, int x, int y, int w, int h, int degrees = 0)
     {
         // Native 0041A800 loads independent card/ and mini/ catalogs. Do
         // not downscale a 200x290 texture to 50x72 for the field: the
         // original game ships precomputed 50x72 card miniatures.
-        string? name = NativeCardRaster.IsNativeMiniDestination(w, h)
-            ? graphics.Artwork.MiniFor(card)
-            : graphics.Artwork.For(card);
-        if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
-        var texture = graphics.Texture(name);
+        bool miniature = NativeCardRaster.IsNativeMiniDestination(w, h);
+        string? name = miniature ? graphics.Artwork.MiniFor(card) : graphics.Artwork.For(card);
+        if (name is null && DuelArtworkPolicy.AllowInspectionFallback(includeUnused, screen == "duel",
+            playableCards.Any(c => c.Index == card.Index)))
+        {
+            if (reportedMissingInspectionArtwork.Add((card.Index, miniature)))
+                Console.Error.WriteLine($"[artwork inspection] Missing original image for ID {card.Id}, index {card.Index}, mini={miniature}");
+            Wrap("Missing art: " + card.Name, x + 3, y + 3, w - 6, 14);
+            return;
+        }
+        var texture = graphics.Texture(DuelArtworkPolicy.Require(card, name, miniature));
         // Integer-sized destination avoids a fractional 49.655-pixel wide
         // field card fitted into a 50x72 viewport.
         var (width, height) = NativeCardRaster.Project(

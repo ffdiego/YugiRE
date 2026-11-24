@@ -260,6 +260,9 @@ sealed class DatGraphics : IDisposable
             .Append(DuelDetailBackground).Append(DuelDetailLine)
             .Append(DuelDetailScrollbar).Append(DuelStartEnglish)
             .Append(AttackSword).Append(AttackSwordPartial)
+            .Append(DuelBack).Append(MiniCardBack)
+            .Concat(archive.Entries.Where(e => e.Name.StartsWith(@"mini\", StringComparison.OrdinalIgnoreCase) &&
+                e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name))
             .Distinct(StringComparer.OrdinalIgnoreCase);
         int count = 0;
         foreach (string name in names)
@@ -267,6 +270,9 @@ sealed class DatGraphics : IDisposable
             var image = ReadImage(name);
             try
             {
+                if (name.Equals(MiniCardBack, StringComparison.OrdinalIgnoreCase) &&
+                    (image.Width != DuelCardLayout.MiniWidth || image.Height != DuelCardLayout.MiniHeight))
+                    throw new InvalidDataException($"Unexpected native miniature back dimensions: {name}");
                 if (PhaseButtons.Contains(name) && (image.Width != 80 || image.Height != 150))
                     throw new InvalidDataException($"Unexpected phase button atlas: {name}");
                 if ((PhaseFlipToBlue.Contains(name) || PhaseFlipToRed.Contains(name)) &&
