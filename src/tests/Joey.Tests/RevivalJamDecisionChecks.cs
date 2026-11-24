@@ -21,8 +21,69 @@ internal static class RevivalJamDecisionChecks
         return duel;
     }
 
+    private sealed class TurnDrawGate : IPresentationGate
+    {
+        public bool Release { get; set; }
+        public bool CanAdvance => true;
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
+            command.Command is not TurnDrawCommand || Release;
+    }
+
+    private static void Drain(ActionQueue queue)
+    {
+        for (int i = 0; i < 12 && queue.IsBusy; i++) queue.Tick();
+        if (queue.IsBusy) throw new InvalidOperationException("Standby revival did not drain.");
+    }
+
+    private static void CheckQueuedRevival(Action<bool, string> check, bool fieldFull)
+    {
+        var jam = Monster(RevivalJamRules.ResourceId, 1060);
+        var duel = DestroyJam(jam);
+        var decision = duel.PendingEffectDecision!;
+        check(duel.ResolveEffectDecision(decision.Id, EffectDecisionAnswer.Accept, out _),
+            "A07 fixture schedules a paid revival");
+        int life = duel.Life[0];
+        if (fieldFull)
+            for (int zone = 0; zone < 5; zone++)
+                duel.Monsters[0, zone] = Monster((ushort)(950 + zone), 2000 + zone);
+        var gate = new TurnDrawGate();
+        var session = new DuelConsoleSession(duel, gate);
+        check(session.Execute("turn end").Enqueued, "A07 admit end turn with a future standby revival");
+        Drain(session.Queue);
+
+        check(duel.TryCaptureCardTarget(0, DuelZone.Graveyard, 0, out var source) &&
+            session.Execute("turn draw").Enqueued && duel.Hand.Count == 0 &&
+            duel.PendingDelayedRevivals.Count == 1,
+            "A07 legal draw captures turn without consuming the standby promise");
+        session.Queue.Tick();
+        session.Queue.Tick();
+        check(duel.Hand.Count == 1 && duel.PendingDelayedRevivals.Count == 1 &&
+            duel.Graveyard(0).Contains(jam) && session.Queue.IsBusy,
+            "A07 a closed draw gate holds standby processing");
+        gate.Release = true;
+        session.Queue.Tick();
+        check(duel.PendingDelayedRevivals.Count == 1 && duel.Graveyard(0).Contains(jam),
+            "A07 completing the draw leaves standby for its own tick");
+        Drain(session.Queue);
+        check(duel.PendingDelayedRevivals.Count == 0 && duel.Life[0] == life && duel.Hand.Count == 1,
+            "A07 standby consumes the paid promise once");
+        if (fieldFull)
+            check(duel.Graveyard(0).Contains(jam) &&
+                !session.Queue.Trace.Any(entry => entry.Entry.Command is SpecialSummonCommand),
+                "A07 a full field consumes the promise without summoning");
+        else
+            check(ReferenceEquals(duel.Monsters[0, 0], decision.Source) && duel.DefensePosition[0, 0] &&
+                !duel.MonsterFaceDown[0, 0] &&
+                duel.TryCaptureCardTarget(0, DuelZone.Monster, 0, out var summoned) &&
+                summoned.Occurrence == source.Occurrence,
+                "A07 standby summons the same graveyard occurrence face up in defense");
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        CheckQueuedRevival(check, fieldFull: false);
+        CheckQueuedRevival(check, fieldFull: true);
+
         var jam = Monster(RevivalJamRules.ResourceId, 1060);
         var declined = DestroyJam(jam);
         var request = declined.PendingEffectDecision;

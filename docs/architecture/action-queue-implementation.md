@@ -57,3 +57,44 @@ Skelengel sem resposta de invocação concorrente usa PendingDecision da ActionQ
 ## Fechamento A02
 
 CI integral A02.5 [45318593622](https://github.com/ffdiego/YugiRE/actions/runs/45318593622) aprovado, PR #67 integrado à main 93846a7 (A01 #64 integrado antes). Aceitação: ActionQueueChecks cobre admissão sem mutação, FIFO/ativo único, gate global/final, três destruições, alvo obsoleto, continuação não recursiva e falha sem retry. ActionQueueRemovalChecks, ActionQueuePlacementChecks, ActionQueueFlipChecks e ActionQueueLinkedChecks exercitam estado real, ambos os lados, efeitos/tributos individuais, equivalência de trace imediato/retardado e decisão Skelengel. Os dez tipos têm caminho experimental. As regressões anteriores de identidade foram corrigidas; a suíte legada passa. Concluído o marco de infraestrutura; A03/A04/A05/A06/A08 liberados. Não promover paridade nativa, nem declarar integração App/CPU ou todos os efeitos concluídos. A07 permanece dependente da evidência de fases. Próxima prioridade operacional: A04, começando pelo parser/runner headless; integração visual exige A03.
+
+## A07 — Encerramento de turno no sandbox
+
+`turn end` do console admite `EndTurnCommand`, que entra na End Phase.
+A troca de lado usa `AdvanceTurnCommand` separado. Com mão acima do limite,
+`discard-end INDEX` seleciona uma ocorrência para `EndTurnDiscardCommand`.
+Cada descarte produz a notificação usual de movimento. O último prepara
+a troca após seu gate, e um trace que termina no prompt fica incompleto.
+A execução revalida lado, turno e a ocorrência da mão.
+
+Quando o efeito de encerramento do sandbox tem uma mensagem disponível,
+a fila captura a ocorrência da mão ou do deck em um comando de colocação.
+O comando revalida o efeito, a fonte e o slot. A colocação precede a troca
+e o duelo termina ali em caso de vitória. O fluxo legado reaproveita
+a mesma escolha e colocação. Demais oportunidades de fase e mapeamento
+no replay nativo ficam em fatias próprias de A07.
+
+## A07 — Compra legal e retorno de Standby no sandbox
+
+`turn draw` usa `TurnDrawCommand` com lado e turno esperados. Uma compra
+bem-sucedida emite a projeção usual de uma carta (`0x61`). A perda por
+deck vazio aplica a regra do sandbox e fica sem projeção. A operação
+privilegiada `draw N [SIDE]` preserva a permissão de compra legal do turno.
+
+Depois do gate de compra, a fila processa cada retorno atrasado vencido
+do lado ativo, na ordem do resolvedor legado. Cada promessa é consumida
+uma vez. Com a ocorrência ainda no cemitério e um slot livre, um
+`SpecialSummonCommand` separado invoca em defesa revelada. Campo cheio ou
+fonte ausente consome a promessa com o custo já pago. O caminho admite
+a compra manual no sandbox e deixa em aberto os gates nativos completos.
+
+O App também admite esse lote automaticamente com `--queued-actions`.
+O aviso de Draw pode acompanhar a fila, que continua respeitando pausas
+e movimentos. Standby e Main aguardam a resolução do lote inteiro.
+O teste de startup sem janela cobre Classic e Instant, a compra dos
+dois lados e a perda por falta de cartas. No modo experimental, os botões
+Battle, Main2 e End admitem os produtores comuns e permitem que a apresentação
+observe a mudança depois da execução. O descarte obrigatório usa a mesma fila.
+A CPU experimental usa os mesmos produtores de fase com origem `Cpu`; as
+demais decisões seguem o fluxo existente. O App padrão usa o caminho legado
+e o Lab usa comandos explícitos.

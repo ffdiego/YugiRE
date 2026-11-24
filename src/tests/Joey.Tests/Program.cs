@@ -117,6 +117,7 @@ NativeDefaultQueuePacketTests.Run(Check);
 ActionQueueChecks.Run(Check);
 ActionTraceProjectionChecks.Run(Check);
 QueuedDirectAttackChecks.Run(Check);
+QueuedEndTurnChecks.Run(Check);
 QueuedTargetedAttackChecks.Run(Check);
 ActionPresentationGateChecks.Run(Check);
 CommandScopedPresentationChecks.Run(Check);
