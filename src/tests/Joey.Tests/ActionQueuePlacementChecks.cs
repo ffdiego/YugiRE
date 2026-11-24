@@ -79,6 +79,7 @@ internal static class ActionQueuePlacementChecks
                 immediate.Paid.SequenceEqual(delayed.Paid) && immediate.Placed.SequenceEqual(delayed.Placed),
                 "A02 immediate and gated placement have identical trace and events");
         }
+        ActionQueueFlipChecks.Run(check);
         var simple = DemoDuel.FromPartialObservation(0, [low, spell], new Card?[5], new Card?[5], 8000);
         var simpleQueue = simple.CreatePrimitiveActionQueue();
         check(simple.TryQueueNormalPlacement(0, 2, false, out _), "A02 no-tribute normal summon admitted");

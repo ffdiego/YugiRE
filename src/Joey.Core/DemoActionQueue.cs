@@ -79,6 +79,32 @@ public sealed partial class DemoDuel
         return true;
     }
 
+    /// <summary>Opt-in manual position change or Flip Summon. Battle and
+    /// effect-driven reveals are distinct legacy paths, not this command.</summary>
+    public bool TryQueueChangePosition(int zone, out string message)
+    {
+        message = "Choose a legal position change supported by the queue pilot.";
+        if (primitiveActionQueue is not { IsBusy: false } queue || !CanChangePosition(zone) ||
+            !TryCaptureCardTarget(ActivePlayer, DuelZone.Monster, zone, out var target)) return false;
+        int side = ActivePlayer;
+        if (MonsterFaceDown[side, zone] && !CanQueueFlip(Monsters[side, zone]!)) return false;
+        DuelCommand command = MonsterFaceDown[side, zone] ? new FlipCommand(side, target)
+            : new ChangePositionCommand(side, target, !DefensePosition[side, zone]);
+        queue.Enqueue(command, ActionOrigin.Player);
+        message = "Position change admitted.";
+        return true;
+    }
+
+    // These effects either emit explicit commands or only open a legacy
+    // selection/prompt. Never run a legacy bulk mutation from this path.
+    private bool CanQueueFlip(Card card) => FlipEffectsNegated ||
+        FlipEffectRules.Effect(card.Id) is DemoFlipEffect.None or DemoFlipEffect.ReplaceHands or
+        DemoFlipEffect.Gain3000LifePoints or DemoFlipEffect.DestroyMonster or
+        DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne or
+        DemoFlipEffect.RecoverFromGraveyard or DemoFlipEffect.OptionalDrawOne or
+        DemoFlipEffect.DestroyTwoSetSpellTraps or DemoFlipEffect.ReturnTwoSpellTraps or
+        DemoFlipEffect.RecruitSameNameFaceDown;
+
     // The legacy removal helper can also mutate LP or remove attached equips.
     // Explicitly refuse those cases until those effects have their own commands.
     // Graveyard choices are deferred and handed off after all removals finish.
@@ -101,6 +127,8 @@ public sealed partial class DemoDuel
         private bool finishScheduled;
         private PrepareNormalPlacementCommand? placement;
         private readonly HashSet<CardTarget> paidTributes = [];
+        private bool resolvingJar;
+        private bool resolvingFlipBatch;
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
@@ -110,7 +138,11 @@ public sealed partial class DemoDuel
                 return FinishRemoval();
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
-            if (duel.LegacyActionsBlocked)
+            if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
+            // Legacy Morphing Jar draws every available card for both players,
+            // even if Exodia is found mid-batch. Only this reserved batch may
+            // continue its draws after a winner has been set.
+            if (duel.LegacyActionsBlocked && !(resolvingJar && command is DrawCommand && duel.GameOver))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             switch (command)
@@ -141,6 +173,12 @@ public sealed partial class DemoDuel
                     return PlaceMonster(set.Source, set.Slot, true, followups);
                 case SetCommand set:
                     return SetSpellTrap(set);
+                case FlipCommand flip:
+                    return MovePosition(flip.Target, true, null, followups);
+                case ChangePositionCommand position:
+                    return MovePosition(position.Target, false, position.Defense, followups);
+                case ResolvePositionCommand resolve:
+                    return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return SendHandToGraveyard(send.Target, discard: false);
                 case DiscardCommand discard:
@@ -300,6 +338,104 @@ public sealed partial class DemoDuel
             }
             duel.hands[set.Side].RemoveAt(index);
             return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult MovePosition(CardTarget target, bool flip, bool? defense, IActionCommandSink followups)
+        {
+            if (placement is not null || wipe is not null || finishScheduled || resolvingFlipBatch ||
+                followups is not ActionQueue { PendingCount: 0 })
+                return new(CommandOutcome.Rejected, "Position change requires an isolated action.");
+            if (!duel.TryResolveCardTarget(target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Monster occurrence gone.");
+            int side = target.Side;
+            if (side != duel.ActivePlayer || duel.Phase != DemoPhase.Main || duel.changedPosition[side, slot] ||
+                duel.MonsterFaceDown[side, slot] != flip ||
+                (!flip && defense != !duel.DefensePosition[side, slot]) ||
+                (flip && !duel.CanQueueFlip(card)))
+                return new(CommandOutcome.Rejected, "Illegal or unmigrated position change.");
+            // Verify every hand occurrence before revealing a Morphing Jar.
+            if (flip && !duel.FlipEffectsNegated && card.Id == FlipEffectRules.MorphingJar)
+                for (int p = 0; p < 2; p++)
+                    for (int i = 0; i < duel.hands[p].Count; i++)
+                        if (!duel.TryCaptureCardTarget(p, DuelZone.Hand, i, out _))
+                            return new(CommandOutcome.Rejected, "Untracked Morphing Jar hand occurrence.");
+
+            var change = duel.CommitManualPosition(side, slot);
+            followups.ScheduleContinuation(_ => new([new ResolvePositionCommand(side, target,
+                change.WasFaceDown, change.WasInDefense)]));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolvePosition(ResolvePositionCommand position, IActionCommandSink followups)
+        {
+            if (!duel.TryResolveCardTarget(position.Target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "Position occurrence gone.");
+            int side = position.Side;
+            var change = new DemoMonsterPositionChange(side, slot, card, position.WasFaceDown,
+                position.WasInDefense, duel.MonsterFaceDown[side, slot], duel.DefensePosition[side, slot]);
+            if (!change.FlipSummoned || duel.FlipEffectsNegated)
+            {
+                duel.FinishManualPosition(change, resolveFlip: true, out var message);
+                return new(CommandOutcome.Applied, message);
+            }
+            if (!duel.CanQueueFlip(card))
+                return new(CommandOutcome.Rejected, "Unmigrated FLIP effect.");
+            if (card.Id == FlipEffectRules.MorphingJar)
+            {
+                if (followups is not ActionQueue { PendingCount: 0 } queue)
+                    return new(CommandOutcome.Rejected, "Morphing Jar needs isolated resolution.");
+                var commands = new List<DuelCommand>();
+                for (int p = 0; p < 2; p++)
+                    for (int i = 0; i < duel.hands[p].Count; i++)
+                    {
+                        if (!duel.TryCaptureCardTarget(p, DuelZone.Hand, i, out var handTarget))
+                            throw new InvalidOperationException("Reserved Morphing Jar hand changed.");
+                        commands.Add(new DiscardCommand(p, handTarget));
+                    }
+                bool out0 = duel.decks[0].Count < 5, out1 = duel.decks[1].Count < 5;
+                for (int p = 0; p < 2; p++)
+                    for (int i = 0; i < Math.Min(5, duel.decks[p].Count); i++)
+                        commands.Add(new DrawCommand(p));
+                queue.EnqueueBatch(commands);
+                resolvingJar = true;
+                resolvingFlipBatch = true;
+                followups.ScheduleContinuation(_ => new([new FinishFlipBatchCommand(side,
+                    position.Target, position.WasInDefense, out0, out1)]));
+                return new(CommandOutcome.Applied);
+            }
+            if (card.Id == FlipEffectRules.ImmortalOfThunder)
+            {
+                followups.Enqueue(new HealCommand(side, ImmortalThunderRules.FlipLifeGain));
+                followups.ScheduleContinuation(_ => new([new FinishFlipBatchCommand(side,
+                    position.Target, position.WasInDefense, false, false)]));
+                // The common finish stage skips legacy FLIP mutations.
+                resolvingFlipBatch = true;
+                return new(CommandOutcome.Applied);
+            }
+
+            // Choice-only effects can open a legacy request, but cannot
+            // execute its answer here. A06/C12 migrate the response path.
+            duel.FinishManualPosition(change, resolveFlip: true, out var detail);
+            return new(CommandOutcome.Applied, detail);
+        }
+
+        private CommandResult FinishFlipBatch(FinishFlipBatchCommand finish)
+        {
+            if (!resolvingFlipBatch) return new(CommandOutcome.Rejected, "No pending FLIP batch.");
+            resolvingJar = false;
+            resolvingFlipBatch = false;
+            if (!duel.GameOver)
+            {
+                if (finish.DeckOut0 && finish.DeckOut1) duel.IsDraw = true;
+                else if (finish.DeckOut0) duel.Winner = 1;
+                else if (finish.DeckOut1) duel.Winner = 0;
+            }
+            if (!duel.TryResolveCardTarget(finish.Target, out int slot, out var card))
+                return new(CommandOutcome.Skipped, "FLIP source gone.");
+            var change = new DemoMonsterPositionChange(finish.Side, slot, card, true, finish.WasInDefense,
+                duel.MonsterFaceDown[finish.Side, slot], duel.DefensePosition[finish.Side, slot]);
+            duel.FinishManualPosition(change, resolveFlip: false, out var detail);
+            return new(CommandOutcome.Applied, detail);
         }
 
         private CommandResult SendHandToGraveyard(CardTarget target, bool discard)

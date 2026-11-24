@@ -30,6 +30,8 @@ internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source
     CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
 internal sealed record TributeCommand(int Side, CardTarget Target) : DuelCommand(Side);
 internal sealed record FinishNormalPlacementCommand(int Side, CardTarget Target, bool FaceDown) : DuelCommand(Side);
+internal sealed record ResolvePositionCommand(int Side, CardTarget Target, bool WasFaceDown, bool WasInDefense) : DuelCommand(Side);
+internal sealed record FinishFlipBatchCommand(int Side, CardTarget Target, bool WasInDefense, bool DeckOut0, bool DeckOut1) : DuelCommand(Side);
 
 internal static class DuelCommandValidation
 {
@@ -56,6 +58,12 @@ internal static class DuelCommandValidation
                 break;
             case FinishNormalPlacementCommand finish:
                 Target(finish.Target, finish.Side, DuelZone.Monster);
+                break;
+            case ResolvePositionCommand position:
+                Target(position.Target, position.Side, DuelZone.Monster);
+                break;
+            case FinishFlipBatchCommand jar:
+                Target(jar.Target, jar.Side, DuelZone.Monster);
                 break;
             case DamageCommand damage when damage.Amount > 0:
             case HealCommand { Amount: > 0 }:

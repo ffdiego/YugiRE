@@ -1156,6 +1156,13 @@ public sealed partial class DemoDuel
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
         int owner = ActivePlayer;
         if (!CanChangePosition(zone)) return false;
+        var change = CommitManualPosition(owner, zone);
+        FinishManualPosition(change, resolveFlip: true, out message);
+        return true;
+    }
+
+    private DemoMonsterPositionChange CommitManualPosition(int owner, int zone)
+    {
         var monster = Monsters[owner, zone]!;
         bool flipped = MonsterFaceDown[owner, zone];
         bool oldDefense = DefensePosition[owner, zone];
@@ -1166,9 +1173,17 @@ public sealed partial class DemoDuel
         var change = new DemoMonsterPositionChange(owner, zone, monster,
             flipped, oldDefense, false, DefensePosition[owner, zone]);
         MonsterPositionChanged?.Invoke(change);
-        if (flipped)
+        return change;
+    }
+
+    private void FinishManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
+    {
+        int owner = change.Player, zone = change.Zone;
+        Card monster = change.Card;
+        message = "";
+        if (change.FlipSummoned)
         {
-            TriggerFlip(owner, zone, monster, out message);
+            if (resolveFlip) TriggerFlip(owner, zone, monster, out message);
             // This route is a real Flip Summon, unlike an attack reveal or
             // RevealMonsterByEffect. P165 searches must only use this path.
             resolvingSummon = true;
@@ -1196,7 +1211,6 @@ public sealed partial class DemoDuel
         }
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
-        return true;
     }
     public bool BeginBattle(out string message)
     {

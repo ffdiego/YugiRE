@@ -28,10 +28,11 @@ internal static class FusionChecks
               duel.Graveyard(0).Count == 0 && duel.Play(2, out _),
             "Fusion: cancel preserves hand, field, Fusion Deck and Graveyard");
         var choice = duel.PendingFusionSummon!.Options.Single();
+        Card physicalWizard = duel.Monsters[0, 1]!;
         duel.Monsters[0, 1] = wizard with { };
         check(!duel.ResolveFusionSummon(0, choice.SuggestedMaterials, out _) && duel.Hand.Count == 3,
             "Fusion: confirmation rejects a material occurrence replaced after selection");
-        duel.Monsters[0, 1] = wizard;
+        duel.Monsters[0, 1] = physicalWizard;
         check(duel.ResolveFusionSummon(0, choice.SuggestedMaterials, out _) && duel.Hand.SequenceEqual([filler]) &&
               duel.Monsters[0, 0] == thousand && !duel.DefensePosition[0, 0] &&
               duel.Monsters[0, 1] is null && !duel.MonsterFaceDown[0, 1] &&
@@ -116,11 +117,12 @@ internal static class FusionChecks
               duel.BeginFusionGate(0, out _),
             "Fusion Gate: cancel preserves Gate and its materials");
         var first = duel.PendingFusionSummon!.Options.Single(option => option.Result == king);
+        Card physicalGate = duel.FieldSpells[0]!;
         duel.FieldSpells[0] = gate with { };
         check(!duel.ResolveFusionSummon(first.DeckIndex, first.SuggestedMaterials, out _) &&
               duel.Banished(0).Count == 0 && duel.Hand.Count == 3,
             "Fusion Gate: a replacement in the same Field Zone invalidates the pending source");
-        duel.FieldSpells[0] = gate;
+        duel.FieldSpells[0] = physicalGate;
         check(duel.ResolveFusionSummon(first.DeckIndex, first.SuggestedMaterials, out _) &&
               duel.Monsters[0, 0] == king && duel.FieldSpells[0] == gate &&
               duel.Banished(0).SequenceEqual([witch, faith]) && duel.Graveyard(0).Count == 0 &&
