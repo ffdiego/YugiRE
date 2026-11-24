@@ -12,7 +12,7 @@ Fonte interna: `docs/evidence/card-callback-catalog.json`, com índices internos
 | 330 | 287 | Wasteland | Dinosaur (9), Zombie (2), Rock (6): +200 ATK/DEF |
 | 331 | 1004 | Mountain | Dragon (1), Winged Beast (16), Thunder (19): +200 ATK/DEF |
 | 332 | 490 | Sogen | Warrior (15), Beast-Warrior (12): +200 ATK/DEF |
-| 333 | 86 | Umi | Fish (8), Sea Serpent (5, inferido), Thunder (19), Aqua (14): +200 ATK/DEF; Machine (7) e Pyro (4): -200 ATK/DEF |
+| 333 | 86 | Umi | Fish (8), Sea Serpent (5), Thunder (19), Aqua (14): +200 ATK/DEF; Machine (7) e Pyro (4): -200 ATK/DEF |
 | 334 | 1008 | Yami | Fiend (3), Spellcaster (18): +200 ATK/DEF; Fairy (17): -200 ATK/DEF |
 | 1069 | 460 | Chorus of Sanctuary | +500 DEF de monstro **em posição de defesa** |
 | 1125 | 134 | Gaia Power | EARTH: +500 ATK, -400 DEF |
@@ -38,7 +38,7 @@ O `Card.ClassCode` em `Archive.cs` vem de `(Properties >> 20) & 31`. Os exemplos
 - 10 Insect (Man-Eater Bug); 11 Beast (Giant Rat); 12 Beast-Warrior (Mother Grizzly); 13 Plant (Mystic Tomato); 14 Aqua (Penguin Soldier)
 - 15 Warrior (The Legendary Fisherman); 16 Winged Beast (Sonic Bird); 17 Fairy (Shining Angel); 18 Spellcaster (Magician of Faith); 19 Thunder (Thunder Dragon)
 
-**Ressalva do tipo 5:** a associação Sea Serpent = 5 decorre da ordem clássica dos 20 tipos, mas **não há monstro desse tipo amostrado no catálogo de callbacks local**. A regra Umi utiliza 5 como hipótese de sandbox; consultar `data.dat` original e registrar ao menos um exemplo real antes de afirmar verificação local.
+O DAT de referência confirma `classCode=5` nas entradas dos packs: Takriminos (ID 352, índice 535) e Spike Seadra (ID 447, índice 451). As fichas oficiais classificam as duas cartas como Sea Serpent. `TypeFieldSpellChecks.RunWithCatalog` verifica o código no teste opcional com DAT. [Takriminos no catálogo oficial](https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=4359&ope=2&request_locale=en) · [Spike Seadra no catálogo oficial](https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=4454&ope=2&request_locale=en).
 
 Os códigos de atributo vêm de `Properties >> 29` e dos filtros de equipamentos em `NativeAiAttributes.cs`:
 LIGHT=1 (Elf's Light), DARK=2 (Sword of Dark Destruction), WATER=3 (Steel Shell), FIRE=4 (Burning Spear), EARTH=5 (Invigoration), WIND=6 (Gust Fan).
@@ -55,4 +55,4 @@ LIGHT=1 (Elf's Light), DARK=2 (Sword of Dark Destruction), WATER=3 (Steel Shell)
 
 `FieldSpellChecks`, `AttributeFieldSpellChecks` e `TypeFieldSpellChecks` cobrem tipos/atributos/posições, ambos os jogadores, ativação/set, substituição, dano real de batalha, clamp, cemitério e composições com equipamento. Não exigem DAT original.
 
-Pendências: confirmar Sea Serpent=5 no DAT; validar manualmente a visualização; investigar sob demanda janelas de resposta, negação, efeitos de outras cartas que alteram tipos/atributos, faces ocultas, efeitos contínuos e discrepâncias históricas das regras. **Done (sandbox) não é Verified (Joey original).**
+Pendências em duelo nativo: comparar o modificador para a classe 5, validar a visualização e investigar janelas de resposta, negação, efeitos de mudança de tipo/atributo, faces ocultas e efeitos contínuos. O status continua Done no sandbox.

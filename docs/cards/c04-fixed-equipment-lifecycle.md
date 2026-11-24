@@ -22,4 +22,4 @@ Não promover os três dinâmicos nesta fatia. Não Verified:
 supressão geral, transformação de tipo/atributo, proprietário vs
 controlador e integração de UI/CPU com a fila são lacunas compartilhadas.
 O catálogo já identifica os 21 IDs jogáveis e os filtros fixos.
-CI pendente.
+CI aprovado no PR #96 (execução 45331195608).
