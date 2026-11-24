@@ -73,7 +73,7 @@ internal static class QueuedEquipmentChecks
                 duel.Graveyard(owner).Single().Id == id && duel.AttackValue(targetSide,0) == 1000,
                 "Queued equipment destruction clears link and restores base");
         }
-        var mage = DemoDuel.FromPartialObservation(0, [Spell(1450), Spell(300), Spell(328)],
+        var mage = DemoDuel.FromPartialObservation(0, [Spell(1450), Spell(300), Spell(FieldSpellRules.SogenId)],
             [Monster(42), null, null, null, null], new Card?[5], 8000, equipmentContextResolved:true);
         var mq = mage.CreatePrimitiveActionQueue();
         check(mage.TryQueueEquipment(DuelZone.Hand,0,0,0,out _), "Mage Power admitted");
