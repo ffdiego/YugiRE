@@ -2404,10 +2404,10 @@ public sealed partial class DemoDuel
             MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense));
     }
 
-    private void ReturnMonsterToHand(int player, int zone)
+    private void ReturnMonsterToHand(int player, int zone, bool removeEquipment = true)
     {
         Card card = Monsters[player, zone]!;
-        ClearMonsterSlot(player, zone);
+        ClearMonsterSlot(player, zone, removeEquipment);
         if (FusionRules.IsFusionMonster(card)) fusionDecks[player].Add(card);
         else
         {
