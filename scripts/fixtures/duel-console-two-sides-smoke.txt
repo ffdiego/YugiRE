@@ -1,0 +1,24 @@
+# Synthetic checkpoint, not a native opening. Spawn is intentionally immediate.
+# Both decks remain nonempty after the scripted draws.
+spawn 1123 0 deck
+spawn 342 0 deck
+spawn 336 0 deck
+spawn 81 0 deck
+spawn 81 0 deck
+spawn 81 1 deck
+spawn 81 1 deck
+spawn 1123 1 deck
+spawn 342 1 deck
+spawn 336 1 deck
+# Real queued draw operations on both sides (three cards each).
+draw 3 0
+draw 3 1
+# Active side can summon legally. Opponent field is setup only, not a turn.
+summon 0 2
+spawn 81 1 monster 0
+spawn 81 1 monster 1 set
+state
+activate hand 0
+activate hand 0
+diff
+state

@@ -19,20 +19,28 @@ public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one c
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
 public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelCommand(Side);
+public sealed record BanishCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
-public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false) : DuelCommand(Side);
+public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false, bool FaceUpDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
+public sealed record ReturnToDeckCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
+// Explicit setup edits, separate from gameplay commands.
+internal sealed record LabSpawnCommand(int Side, Card Template, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
+internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
+
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record PrepareGraveyardBanishSummonCommand(int Side, CardTarget Source, int Slot, bool Defense, CardTarget First, CardTarget? Second, CardTarget? Third) : DuelCommand(Side);
+internal sealed record FinishGraveyardBanishSummonCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
 internal sealed record ResolveDeckRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? Target, int? Slot) : DuelCommand(Side);
 internal sealed record ResolveDeckSearchCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
@@ -40,6 +48,7 @@ internal sealed record FinishDeckSearchCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRevivalCommand(int Side, PendingCardSelection Request, CardTarget Target, int Slot, bool FaceDownDefense) : DuelCommand(Side);
 internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
+internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -65,6 +74,15 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
+            case LabSpawnCommand spawn when spawn.Template is not null:
+                LabDestination(spawn.Destination, spawn.Slot, spawn.FaceDown, spawn.Defense);
+                break;
+            case LabMoveCommand move:
+                Target(move.Source, move.Side, DuelZone.Hand, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Banished,
+                    DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                LabDestination(move.Destination, move.Slot, move.FaceDown, move.Defense);
+                if (move.Source.Zone == move.Destination) throw new ArgumentException("Move requires distinct zones.");
+                break;
             case DeclareDirectAttackCommand attack:
                 Target(attack.Attacker, attack.Side, DuelZone.Monster);
                 break;
@@ -84,10 +102,20 @@ internal static class DuelCommandValidation
                 break;
             case ShuffleDeckCommand:
             case FinishDeckSearchCommand:
+            case FinishGraveyardBanishSummonCommand:
             case FinishGraveyardRecoveryCommand:
                 break;
-            case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5:
-                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard);
+            case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5 && !(summonFromDeck.FaceDownDefense && summonFromDeck.FaceUpDefense):
+                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Hand);
+                break;
+            case PrepareGraveyardBanishSummonCommand prepareBanish when prepareBanish.Slot is >= 0 and < 5:
+                Target(prepareBanish.Source, prepareBanish.Side, DuelZone.Hand);
+                if (prepareBanish.Third is not null && prepareBanish.Second is null)
+                    throw new ArgumentException("Missing cost occurrence.");
+                var costCopies = new CardTarget?[] { prepareBanish.First, prepareBanish.Second, prepareBanish.Third }.OfType<CardTarget>().ToArray();
+                if (costCopies.Distinct().Count() != costCopies.Length)
+                    throw new ArgumentException("Duplicate cost occurrence.");
+                foreach (var costCopy in costCopies) Target(costCopy, prepareBanish.Side, DuelZone.Graveyard);
                 break;
             case ResolveSameNameRecruitmentCommand sameName when sameName.Request is not null && sameName.Request.Owner == sameName.Side:
                 if (sameName.Second is not null && sameName.First is null ||
@@ -116,8 +144,18 @@ internal static class DuelCommandValidation
             case ResolveGraveyardRecoveryCommand recover when recover.Request is not null && recover.Request.Owner == recover.Side:
                 if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
                 break;
+            case ReturnToDeckCommand returnDeck:
+                Target(returnDeck.Target, returnDeck.Side, DuelZone.Monster);
+                break;
             case ReturnToHandCommand bounce:
-                Target(bounce.Target, bounce.Side, DuelZone.Monster);
+                Target(bounce.Target, bounce.Side, DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ResolveFlipSpellTrapPairCommand pair when pair.Request is not null && pair.Request.Owner == pair.Side:
+                if ((pair.First is null) != (pair.Second is null) ||
+                    pair.First is { } firstPair && pair.Second == firstPair)
+                    throw new ArgumentException("Invalid FLIP Spell/Trap pair.");
+                foreach (var pairPick in new CardTarget?[] { pair.First, pair.Second }.OfType<CardTarget>())
+                    Target(pairPick, pairPick.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
                 break;
             case ResolveMonsterFlipTargetsCommand flipTargets:
                 Target(flipTargets.Source, flipTargets.Side, DuelZone.Monster);
@@ -188,6 +226,9 @@ internal static class DuelCommandValidation
                 Target(send.Target, send.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Monster,
                     DuelZone.SpellTrap, DuelZone.FieldSpell, DuelZone.Banished);
                 break;
+            case BanishCommand banish:
+                Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Graveyard);
+                break;
             case DiscardCommand discard:
                 Target(discard.Target, discard.Side, DuelZone.Hand);
                 break;
@@ -203,6 +244,19 @@ internal static class DuelCommandValidation
             default:
                 throw new ArgumentException("Unknown command or invalid arguments.", nameof(command));
         }
+    }
+
+    private static void LabDestination(DuelZone zone, int slot, bool faceDown, bool defense)
+    {
+        bool valid = zone switch
+        {
+            DuelZone.Monster => slot is >= 0 and < 5 && (!faceDown || defense),
+            DuelZone.SpellTrap => slot is >= 0 and < 5 && faceDown && !defense,
+            DuelZone.FieldSpell => slot == 0 && faceDown && !defense,
+            DuelZone.Hand or DuelZone.Deck or DuelZone.Graveyard or DuelZone.Banished => slot == -1 && !faceDown && !defense,
+            _ => false
+        };
+        if (!valid) throw new ArgumentException("Invalid laboratory destination.");
     }
 
     private static void Target(CardTarget target, int side, params DuelZone[] allowed)

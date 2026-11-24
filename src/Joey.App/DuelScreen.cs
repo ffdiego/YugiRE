@@ -149,6 +149,11 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Set)
         {
+            if (queuedDuel is not null && !FieldSpellRules.Supports(card.Id))
+            {
+                if (duel.TryQueueSpellTrapSet(index, out message)) ClearDuelSelection();
+                return;
+            }
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (duel.SetFromHand(index, out message))
@@ -171,6 +176,11 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Activate)
         {
+            if (queuedDuel is not null && IsQueuedFixedSpell(card))
+            {
+                if (TryQueuedFixedSpell(card, DuelZone.Hand, index, out message)) ClearDuelSelection();
+                return;
+            }
             int zone = duel.FirstFreeSpellZone();
             var origin = HandBounds(index);
             if (!duel.Play(index, out message)) return;
@@ -192,6 +202,12 @@ static partial class Game
     {
         var card = ViewHand[index];
         int zone = duel.FirstFreeMonsterZone(tributeZones);
+        if (queuedDuel is not null)
+        {
+            if (!duel.TryQueueNormalPlacement(index, zone, setHandAction, out message, tributeZones)) return false;
+            ClearDuelSelection();
+            return true;
+        }
         var origin = HandBounds(index);
         if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
         ShowPlayedCardDetail(card);
@@ -478,6 +494,11 @@ static partial class Game
                     }
                     else if (own && monster != null)
                     {
+                        if (queuedDuel is not null)
+                        {
+                            duel.TryQueueChangePosition(zone, out message);
+                            continue;
+                        }
                         bool reveal = duel.MonsterFaceDown[player, zone];
                         if (duel.ChangePosition(zone, out message) && reveal)
                         {
@@ -490,10 +511,14 @@ static partial class Game
                         }
                     }
                 }
-                else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell &&
-                         duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
-                         duel.PendingFusionSummon is null)
-                    BeginCardActivation(setSpell, spellRect);
+                else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell)
+                {
+                    if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
+                        TryQueuedFixedSpell(setSpell, DuelZone.SpellTrap, zone, out message);
+                    else if (duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
+                             duel.PendingFusionSummon is null)
+                        BeginCardActivation(setSpell, spellRect);
+                }
             }
         }
     }
@@ -545,7 +570,7 @@ static partial class Game
         var drawOrder = Enumerable.Range(0, visible.Count).OrderBy(index => index == focused ? 1 : 0);
         foreach (int index in drawOrder)
         {
-            if (IncomingTransferInFlight(ViewPlayer, index, visible[index])) continue;
+            if (IncomingTransferInFlight(ViewPlayer, index, visible[index]) || IsQueuedPreviewCard(ViewPlayer, index)) continue;
             var rect = ToRectangle(handLayouts[ViewPlayer].Bounds(index, visible.Count, HandLiftAt(index)));
             DrawArtwork(visible[index], (int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
             if (index == focused) DrawHandSelectionFrame(rect, nearSide: true);
@@ -577,20 +602,22 @@ static partial class Game
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
-        if (!visualReviewPaused && !MotionBusy && !PhaseBusy &&
+        if (labSession is null && !visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
             (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         for (int player = 0; player < 2; player++)
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
+        AdvanceQueuedDuel();
+        AdvanceConsoleLab();
         var pendingOwner = CpuDuelController.PendingOwner(duel);
         var fusion = duel.PendingFusionSummon;
-        bool selectingCard = duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
+        bool selectingCard = queuedDuel?.PendingDecision is not null || duel.PendingEffectDecision is not null || duel.PendingCardSelection is not null ||
             duel.PendingFlipSpellTrapTargets is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
-        bool showingMotion = MotionBusy || PhaseBusy;
-        bool turnInput = !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
+        bool showingMotion = MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true;
+        bool turnInput = labSession is null && !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
-        bool choiceInput = !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
+        bool choiceInput = !labConsoleOpen && !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
         var spellTarget = duel.PendingSpellTrapTarget;
         var flipSpellTarget = duel.PendingFlipSpellTrapTargets;
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
@@ -608,6 +635,8 @@ static partial class Game
         actionInput &= !PhaseBusy && CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates, actionInput);
         bool handInput = actionInput && handHovered;
+        actionInput &= queuedDuel?.IsBusy != true;
+        choiceInput &= queuedDuel?.IsBusy != true;
         bool flipInput = choiceInput && duel.PendingFlipTarget is not null;
         if (choiceInput && flipSpellTarget is not null) ReadFlipSpellTrapTarget(flipSpellTarget);
         else if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
@@ -671,7 +700,10 @@ static partial class Game
         }
         DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
-        if (choiceInput && fusion is not null)
+        if (!labConsoleOpen && !visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
+            queuedDuel?.PendingDecision is { Owner: var decisionOwner } && decisionOwner == ViewPlayer)
+            DrawEffectDecisionOverlay();
+        else if (choiceInput && fusion is not null)
             DrawFusionSelection(fusion);
         else if (choiceInput && HumanChoice && pendingOwner is not null)
         {
@@ -680,6 +712,7 @@ static partial class Game
             DrawAttackResponseOverlay();
             DrawEffectDecisionOverlay();
         }
+        DrawConsoleLab();
     }
     static void DrawDuelDebug(bool selectingCard)
     {
@@ -687,7 +720,8 @@ static partial class Game
         if (Button("< Menu", 411, 8, 85, 30)) screen = "menu";
         if (Button("Reset", 501, 8, 75, 30))
         {
-            if (alphaCpu is null) StartDemo(); else StartAlpha();
+            if (labSession is not null) StartConsoleLab(labOriginalLines);
+            else if (alphaCpu is null) StartDemo(); else StartAlpha();
         }
         if (alphaCpu is null && Button(optionalEffectPrompts == EffectPromptMode.Ask
                 ? "Prompts: ON" : "Prompts: OFF", 583, 8, 172, 30, !selectingCard))

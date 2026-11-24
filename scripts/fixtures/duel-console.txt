@@ -1,0 +1,6 @@
+state
+draw 2
+destroy 1 0
+damage 300 1
+heal 100 0
+diff
