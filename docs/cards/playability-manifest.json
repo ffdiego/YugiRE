@@ -1352,6 +1352,60 @@
         "No End Phase equip/control, UI/CPU input, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
         "Native availability 00583050, preparation 005944D0 and primary 005906B0 not decompiled; summon cost helper 0059DEF0/00599E30/005AB640 available."
       ]
+    },
+    {
+      "id": "monster.effect.position-change-destruction",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Manual face-up attack to face-up defense transition triggers Dream Clown",
+        "Select and destroy one opposing monster; preserve distinct FLIP triggers"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        119
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterPositionEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/PositionChangeEffectChecks.cs",
+        "docs/cards/p071-dream-clown-position-sandbox.md"
+      ],
+      "limitations": [
+        "C# .NET 10 solution build and synthetic Joey.Tests suite passed in PR #53 (3,228 checks); this is sandbox coverage, not native Joey parity.",
+        "Legacy PendingFlipTarget reused for position-triggered selection; chain, negation, immunity, native timing and behavior not verified.",
+        "Native 00575210 request producer and 00585C80 shared primary callback are static evidence; Dream Clown target preparation 00593970 absent from SQLite decompilation.",
+        "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification."
+      ]
+    },
+    {
+      "id": "monster.flip.same-name-deck-recruit",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Bubonic Vermin FLIP on Flip Summon, battle reveal or effect reveal",
+        "Optional select zero or one same-name monster from own Main Deck",
+        "Special Summon selected copy in face-down Defense Position",
+        "Shuffle own Main Deck once after successful selection",
+        "Preserve damage calculation before FLIP and pending battle continuation"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1307
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/tests/Joey.Tests/BubonicVerminChecks.cs",
+        "docs/cards/p168-bubonic-vermin-flip-sandbox.md"
+      ],
+      "limitations": [
+        "C# .NET 10 solution build and Joey.Tests suite passed in PR #54 (3,238 synthetic checks, including 13 Bubonic Vermin checks); sandbox only, not original Joey parity.",
+        "Primary native callback 0058B040 (P168) is not decompiled in the current SQLite; shared same-ID filter 00599E30 is decompiled and historical DAT specifies the FLIP behavior.",
+        "No native differential replay, effect suppression, chains, special summon prohibitions, owner/controller divergence or RNG parity.",
+        "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification."
+      ]
     }
   ]
 }
