@@ -42,11 +42,15 @@ public sealed class DuelConsoleScript
                     $"Command {t.Entry.Sequence} {t.Result?.Outcome}: {t.Result?.Detail}");
         }
         traceCursor=trace.Count;
-        if(decision && (cursor==lines.Length || !lines[cursor].Text.StartsWith("decision ",StringComparison.OrdinalIgnoreCase)))
-            return new(DuelScriptStatus.WaitingForDecision,Message:$"Decision {queue.PendingDecision!.Id} requires explicit answer.");
-        if (session.HasPendingEndDiscard &&
-            (cursor == lines.Length || !session.AllowsPendingEndDiscardInput(lines[cursor].Text)))
-            return new(DuelScriptStatus.WaitingForDecision, Message: "End Phase requires discard-end INDEX.");
+        if (session.HasPendingChoice &&
+            (cursor == lines.Length || !session.AllowsPendingChoiceInput(lines[cursor].Text)))
+        {
+            string prompt = queue.PendingDecision is { } pending
+                ? $"Decision {pending.Id} requires explicit answer."
+                : session.HasPendingEndDiscard ? "End Phase requires discard-end INDEX."
+                : "Pending hand selection requires select-hand.";
+            return new(DuelScriptStatus.WaitingForDecision, Message: prompt);
+        }
         if(cursor==lines.Length) return terminal=new(DuelScriptStatus.Completed,Message:"Script completed.");
         var next=lines[cursor++];
         if(next.Text is "quit" or "exit")

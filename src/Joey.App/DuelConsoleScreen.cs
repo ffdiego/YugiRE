@@ -181,11 +181,11 @@ static partial class Game
                 Console.WriteLine($"[lab timing] ms={labWallClock.ElapsedMilliseconds} seq={entry.Entry.Sequence} stage={entry.Stage} command={entry.Entry.Command.GetType().Name}");
         }
         long now=labWallClock.ElapsedMilliseconds;
-        if(labTraceCursor!=trace.Count || visualReviewPaused || (session.Queue.PendingDecision is not null || session.HasPendingEndDiscard))
+        if(labTraceCursor!=trace.Count || visualReviewPaused || session.HasPendingChoice)
             labLastProgressMs=labLastStallMs=now;
         labTraceCursor=trace.Count;
         bool scriptRunning=labScript is not null && labStatus is not (DuelScriptStatus.Completed or DuelScriptStatus.Failed);
-        if((scriptRunning || session.Queue.IsBusy) && !visualReviewPaused && session.Queue.PendingDecision is null && !session.HasPendingEndDiscard &&
+        if((scriptRunning || session.Queue.IsBusy) && !visualReviewPaused && !session.HasPendingChoice &&
             now-labLastProgressMs>=5000 && now-labLastStallMs>=5000)
         {
             labLastStallMs=now;
@@ -240,9 +240,7 @@ static partial class Game
         {
             var line=labInput.Trim();labInput="";
             LabLog("> "+line);
-            if(labStatus==DuelScriptStatus.WaitingForDecision &&
-                !(session.HasPendingEndDiscard ? session.AllowsPendingEndDiscardInput(line) :
-                    line.StartsWith("decision ",StringComparison.OrdinalIgnoreCase)))
+            if(labStatus==DuelScriptStatus.WaitingForDecision && !session.AllowsPendingChoiceInput(line))
                 LabLog("Answer the pending decision before resuming the script.");
             else if(MotionBusy || PhaseBusy || visualReviewPaused)
                 LabLog("Presentation busy or paused; retry when ready.");

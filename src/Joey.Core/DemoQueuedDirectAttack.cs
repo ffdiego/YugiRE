@@ -45,7 +45,7 @@ public sealed partial class DemoDuel
     {
         if (!TryResolveCardTarget(attack.Attacker,out _,out _))
             return new(CommandOutcome.Skipped,"Declared attacker occurrence gone.");
-        if (followups is not ActionQueue { PendingCount: 0 } ||
+        if (followups is not IActionBatchSink { PendingCount: 0 } ||
             !TryPlanQueuedDirectAttack(attack.Attacker,out int slot,out var card,out int damage))
             return new(CommandOutcome.Rejected,"Direct attack no longer satisfies pilot restrictions.");
         attacked[attack.Side,slot]=true;
