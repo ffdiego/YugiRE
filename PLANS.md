@@ -140,8 +140,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Gerar, a partir das descrições do DAT local, a tabela de famílias mecânicas (compra, destruição, FLIP, cemitério, negação, stat boost, busca, retorno, mudança de posição etc.) com marcação de **trivial** (sem janela de resposta) vs. **precisa de fila/resposta**. Sem marcar `Done` por inferência. Esta tabela alimenta `C02`.
 - [ ] **C02 — Lotes triviais por família.** Status: `Bloqueado por C01`.
   Implementar em lote as famílias marcadas como triviais, com primitivos reutilizáveis e tabelas declarativas (um teste de cenário por família + um por ID, como nos 264 Normal), **sem** validação nativa. Atualizar `CARDS.md` e o manifest a cada lote. É o item que mais aumenta o número de cartas jogáveis por unidade de esforço.
-- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Pronto`.
-  Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack.
+- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`.
+  Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack. Fatia de intenções de dano de batalha P019/P023/P078/P239/P120 em [contrato C03](docs/cards/c03-battle-damage-effects.md), sem mutação nem promoção de cobertura. Integrar após evento de dano de batalha na fila A02/A06; P239/P120 exigem seleção e comandos adicionais.
 - [ ] **C04 — Equipamentos `P025`.** Status: `Pronto`.
   Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra.
 - [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Pronto`.

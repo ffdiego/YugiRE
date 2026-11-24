@@ -144,6 +144,7 @@ AttackNegationTrapChecks.Run(Check);
 CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
+BattleDamageEffectRuleChecks.Run(Check);
 BattleGraveyardEffectChecks.Run(Check);
 RevivalJamDecisionChecks.Run(Check);
 NativeP168EvidenceChecks.Run(Check);
