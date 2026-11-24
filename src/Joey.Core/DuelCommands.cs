@@ -22,6 +22,10 @@ public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
 
+// Explicit fixture edits are not legal summons, draws, sends or destroys.
+internal sealed record LabSpawnCommand(int Side, Card Template, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
+internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
+
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -43,6 +47,15 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
+            case LabSpawnCommand spawn when spawn.Template is not null:
+                LabDestination(spawn.Destination, spawn.Slot, spawn.FaceDown, spawn.Defense);
+                break;
+            case LabMoveCommand move:
+                Target(move.Source, move.Side, DuelZone.Hand, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Banished,
+                    DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                LabDestination(move.Destination, move.Slot, move.FaceDown, move.Defense);
+                if (move.Source.Zone == move.Destination) throw new ArgumentException("Move requires distinct zones.");
+                break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case DrawCommand:
             case FinishFieldRemovalCommand:
@@ -97,6 +110,19 @@ internal static class DuelCommandValidation
             default:
                 throw new ArgumentException("Unknown command or invalid arguments.", nameof(command));
         }
+    }
+
+    private static void LabDestination(DuelZone zone, int slot, bool faceDown, bool defense)
+    {
+        bool valid = zone switch
+        {
+            DuelZone.Monster => slot is >= 0 and < 5 && (!faceDown || defense),
+            DuelZone.SpellTrap => slot is >= 0 and < 5 && faceDown && !defense,
+            DuelZone.FieldSpell => slot == 0 && faceDown && !defense,
+            DuelZone.Hand or DuelZone.Deck or DuelZone.Graveyard or DuelZone.Banished => slot == -1 && !faceDown && !defense,
+            _ => false
+        };
+        if (!valid) throw new ArgumentException("Invalid laboratory destination.");
     }
 
     private static void Target(CardTarget target, int side, params DuelZone[] allowed)

@@ -92,3 +92,47 @@ Ainda falta o manifesto original `disable.txt`, conferir
 a semântica de `00570710`/opcode 0x72 na engine e validar
 a composição de `00422540`. A coleta Ghidra anterior
 está concluída; não repeti-la. Draw continua Pending.
+
+
+## V12 — implementação isolada para comparação
+
+Consulta ao SQLite privado joey-knowledge-visual-decoded.sqlite
+(fingerprint igual ao anterior): a decompilação de 00570710
+mostra um setter genérico de bit em 00A55E00 (stride de 0x90
+por zona, 0xD44 por lado). Parâmetro 4 zero limpa; não zero
+seta. 00408730 fornece índice de bit 5. A escrita não depende
+do argumento alto, que condiciona a criação visual.
+00578390/005783C0 são produtores de 0x72, e 005BAFD0 chama
+o segundo no case 1, antes de avaliar os callbacks do elo
+nos cases 2/3. Não é evidência de uma negação genérica.
+As assinaturas decompiladas de 004022E0 e os argumentos
+perdidos em 00578390/005783C0 exigem assembly ou trace
+antes de ligar a semântica ao Core. Nenhuma extração dos
+quatro bundles foi repetida.
+
+O cliente passa a oferecer uma revisão isolada com os
+recursos lidos de disable.txt no DAT local, ordem original
+das seis imagens, centros por região e perspectiva,
+rotação de 90 graus e limites inteiros. Não há jogo, input
+de duelo, placeholder ou duração inventada nesse modo.
+
+Exemplo: lado 0, região 0, slot 2, bit 0x4000:
+```powershell
+dotnet run --project src/Joey.App -- ..\passion\data.dat --review-disabled-chain=4080 --review-perspective=0
+```
+F7 avança exatamente um Update (até 24); F8 reinicia; F12
+grava PNG e JSON em scratch/visual-review; Escape encerra.
+Use 0080 para a variante sem rotação, ou perspectiva 1
+para a outra orientação do campo. O parser aceita a
+convenção filename + inteiros opcionais já usada em outros
+manifests; se a sintaxe real divergir, falha explicitamente.
+Não temos o arquivo disable.txt real para executar esse modo
+aqui. Blend/colorkey e equivalência de pixels permanecem
+não verificados, usando a política já existente do cliente
+somente na revisão isolada. O gatilho de duelo e integração
+com ACTIONS seguem pendentes.
+
+Testes sintéticos de ambos os lados, 11 zonas, bit 0x4000,
+dimensões ímpares, ordem de manifesto, gates e set/clear.
+A Draw é exercitável pelo modo de revisão, mas ainda não
+integrada ao fluxo normal: **Pending, cobertura 19/34**.

@@ -133,3 +133,59 @@ Executar somente o roteiro necessário com Ghidra local (por exemplo, `bash scri
 | `11-actions-turn-phases-ghidra.sh` | A07 | Fedora/Ghidra local, projeto e EXE com fingerprint fixado pelo exportador | `scratch/ghidra-actions-turn-phases.zip` | Aguardando execução/importação |
 
 Executar `bash scripts/pending/11-actions-turn-phases-ghidra.sh`. O SQLite de 22/11 não possui decompilações nos dez VAs-alvo. O roteiro extrai os drivers e handlers das tabelas, mais as duas tabelas brutas. Pergunta: como o índice de A577FE se liga às escritas em A577FA e aos rótulos exibidos? Encerrar a coleta após verificar fingerprint e cobertura dos alvos (ausências explícitas), importar evidências compatíveis em cópia cumulativa do SQLite e documentar o mapeamento ou a lacuna residual. Não chamar a coleta de implementação A07. Ver [A01](../../docs/architecture/action-queue.md).
+
+### 14 — C01: taxonomia de efeitos pelo DAT local
+
+- Ambiente: Windows (Git Bash) ou Fedora, Python 3 e .NET 10, DAT original local.
+- Comando: `bash scripts/pending/14-card-effect-taxonomy.sh /caminho/para/data.dat`.
+- Saída privada: `scratch/card-taxonomy.json` (IDs, fingerprints, famílias, rotas e status atuais; sem descrições).
+- Pergunta: quais cartas dos packs são candidatas a lotes triviais e quais exigem revisão/continuações/respostas?
+- Encerramento: conferir 771 registros, fingerprint do DAT, amostras e candidatos; não promover cobertura. O SQLite contém 442 identidades e não tem descrições do DAT.
+- Estado: aguardando execução local; classificador testado com fixtures sintéticas, integração .NET ainda não executada. Nunca executar o modo `--taxonomy-input` diretamente ou redirecionar sua saída para arquivo: a descrição deve ficar no pipe privado do classificador.
+
+### 12 — C07: chegada ao cemitério e causa do descarte
+
+- Ambiente: Fedora/Ghidra, projeto Joey original, Python 3 e Ghidra headless. Roteiro 14 reservado em C01 (#66).
+- Comando: `bash scripts/pending/12-graveyard-arrival-ghidra.sh`.
+- Saída privada: `scratch/ghidra-graveyard-arrival-contract.zip`.
+- Questão: callbacks P066/P068/P030 ausentes e argumentos do caminho 00575970 → 005759A0 → 00575AF0; separar custo, descarte adversário e envio direto. Conferir descrições DAT locais também.
+- Encerramento: resolver ou registrar ausência dos callbacks e disassembly dos chamadores; confirmar origem da flag, retorno ao topo e ordem, registrar evidências e limites em C07. Não repetir exportação geral.
+- Estado: aguardando coleta; análise inicial SQLite concluída. Ver [C07](../../docs/cards/c07-graveyard-arrival-effects.md).
+
+## V01 / V11 — 15-visual-cosine-runtime.py (aguardando Windows)
+
+Com o executável original aberto em um duelo e Frida instalado na venv:
+
+```powershell
+python scripts/pending/15-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
+dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine=scratch/visual-review/native-cosine.json
+```
+
+Valida SHA-256 e PID, lê somente 512 inteiros em 00A52EE8 após
+00A536E8=1, confirma duas amostras iguais; não altera memória do jogo
+nem termina o processo. Saída privada: scratch/visual-review/native-cosine.json.
+Não sobrescreve captura anterior. Critério: captura válida carregada pelo
+cliente e F12 indicando native-runtime-capture. O log de Draw de V01
+continua pendente. Não é necessário repetir os bundles 01–04.
+
+
+## V11/V17 — 13-fusion-remaining-contract-ghidra.sh (aguardando Fedora)
+
+Apenas lacunas novas: dados de centro 005DB278/27C e janela de
+seletores 005DB280 (48 bytes brutos, NÃO presumir tipo/stride);
+fator final x87 005DCD00; compositor 00422C00/00422840/00422E30
+e caminho de liberação 00486CE0/00487930/00487DF0.
+Pré-requisito: Ghidra local e mesmo projeto/fingerprint de Joey.
+Executar:
+
+    bash scripts/pending/13-fusion-remaining-contract-ghidra.sh
+
+Saída privada scratch/ghidra-fusion-remaining-contract.zip.
+Não repetir as seis funções do bundle 01; o epílogo ainda exige
+assembly se a evidência existente não bastar. Conferir tipo/stride
+dos seletores, relação dos centros com a perspectiva, regra de
+transformação e escritor da flag. Importação SQLite pendente
+até receber o ZIP; não confundir a coleta com implementação.
+Para os recursos, utilizar --inspect-visual-dat já existente
+e compartilhar privadamente apenas registros de fusion.txt e
+dimensões das imagens referenciadas (sem pixels).

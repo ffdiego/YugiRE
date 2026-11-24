@@ -11,22 +11,8 @@ static partial class Game
 
     static void CaptureVisualReview(RenderTexture2D canvas)
     {
-        // Read the 800x600 render target, not the potentially resized window.
-        // Explicit F12 is the only trigger; no automatic captures or storage.
-        string folder = Path.Combine("scratch", "visual-review");
-        Directory.CreateDirectory(folder);
-        string basename = "yugire-" + DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff");
-        string png = Path.Combine(folder, basename + ".png");
-        string json = Path.Combine(folder, basename + ".json");
-
-        Image image = Raylib.LoadImageFromTexture(canvas.Texture);
-        try
-        {
-            Raylib.ImageFlipVertical(ref image);
-            if (!Raylib.ExportImage(image, png))
-                throw new IOException("raylib could not export the 800x600 canvas");
-        }
-        finally { Raylib.UnloadImage(image); }
+        string basename = SaveVisualReviewImage(canvas, "yugire");
+        string json = basename + ".json";
 
         // Recording counters makes comparing frames with an original-game
         // screenshot easier. This metadata is about YugiRE, not a native trace.
@@ -40,6 +26,7 @@ static partial class Game
             width = 800,
             height = 600,
             style = presentation.Style.Name,
+            cosineSource = effectCosineFromNativeCapture ? "native-runtime-capture" : "approximate",
             paused = visualReviewPaused,
             reviewStep = visualReviewStep,
             debugVisible = duelDebug,
@@ -106,13 +93,42 @@ static partial class Game
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
             activationEffect = activation.Current?.Kind.ToString() ?? "None",
             activationUpdate = activation.ElapsedUpdates,
+            selectionWindow = (duel.PendingFusionSummon is not null ? fusionSelectionList :
+                duel.PendingCardSelection is not null ? cardSelectionList : null) is { } list ? new
+            {
+                source = "native stable branch (partial)",
+                background = list.Background.Resource,
+                slotYOffset = list.Background.SlotYOffset,
+                selectedIndex = list.Window.SelectedCardIndex,
+                scrollOffset = list.Window.ScrollOffset,
+                totalCards = list.Window.TotalCards,
+                visibleCount = list.Window.VisibleCount
+            } : null,
             gameOver = duel.GameOver,
             winner = duel.Winner,
             notes = "Position, sprite selection and compositor parity must be checked in Joey."
         };
         File.WriteAllText(json, JsonSerializer.Serialize(snapshot,
             new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
-        Console.WriteLine($"[visual-review] {Path.GetFullPath(png)}");
         Console.WriteLine($"[visual-review] {Path.GetFullPath(json)}");
+    }
+
+    static string SaveVisualReviewImage(RenderTexture2D canvas, string prefix)
+    {
+        string folder = Path.Combine("scratch", "visual-review");
+        Directory.CreateDirectory(folder);
+        string basename = Path.Combine(folder, prefix + "-" +
+            DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
+        string png = basename + ".png";
+        Image image = Raylib.LoadImageFromTexture(canvas.Texture);
+        try
+        {
+            Raylib.ImageFlipVertical(ref image);
+            if (!Raylib.ExportImage(image, png))
+                throw new IOException("raylib could not export the 800x600 canvas");
+        }
+        finally { Raylib.UnloadImage(image); }
+        Console.WriteLine($"[visual-review] {Path.GetFullPath(png)}");
+        return basename;
     }
 }

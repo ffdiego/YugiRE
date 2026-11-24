@@ -46,6 +46,7 @@ internal static class DuelConsoleChecks
         }
         var a = Pilot(false); var b = Pilot(true);
         check(a.State == b.State && a.Trace.SequenceEqual(b.Trace), "A04 same script immediate/gated trace and state");
+        DuelConsoleLabEditChecks.Run(check);
         using var input = new StringReader("state\ndraw 2\ndestroy 1 0\ndamage 300 1\nheal 100 0\ndiff\n");
         using var output = new StringWriter(); using var error = new StringWriter();
         check(DuelConsoleRunner.Run(["--fixture"], input, output, error) == 0 &&

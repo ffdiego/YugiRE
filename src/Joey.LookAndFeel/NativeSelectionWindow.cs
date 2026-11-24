@@ -11,6 +11,8 @@ public readonly record struct NativeSelectionTransitionFrame(
 /// </summary>
 public sealed class NativeSelectionWindow
 {
+    // 0043A060: DAT_005DB570 = 525 (bundle bytes 0D 02 00 00), Y = 300.
+    public static readonly CardPoint TargetCenter = new(525, 300);
     public const int VisibleSlots = 5;
     public const int SlotXSpacing = 0x40;
     public const int EntranceStartCounter = 0x100;
@@ -106,6 +108,14 @@ public sealed class NativeSelectionWindow
         else if (ScrollOffset > 0)
             ScrollOffset--;
         else return false;
+        return true;
+    }
+
+    /// <summary>Client mouse adapter. It changes focus, not scroll or rules.</summary>
+    public bool FocusVisibleSlot(int slot)
+    {
+        if (!EntranceComplete || CardIndexAtSlot(slot) < 0) return false;
+        SelectedSlot = slot;
         return true;
     }
 

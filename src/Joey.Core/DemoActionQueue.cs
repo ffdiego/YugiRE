@@ -9,12 +9,12 @@ public sealed partial class DemoDuel
     /// Existing App/CPU entrypoints remain legacy; do not mix their decisions
     /// with admitted queue work. Direct array writes are fixture-only.
     /// </summary>
-    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null)
+    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false)
     {
         if (primitiveActionQueue is not null)
             throw new InvalidOperationException("A duel already owns an action queue.");
         return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
-            () => !LegacyActionsBlocked && PendingEndDiscards == 0);
+            () => !LegacyActionsBlocked && PendingEndDiscards == 0, allowLabEdits);
     }
 
     /// <summary>
@@ -169,6 +169,10 @@ public sealed partial class DemoDuel
 
             switch (command)
             {
+                case LabSpawnCommand spawn:
+                    return duel.ExecuteLabSpawn(spawn);
+                case LabMoveCommand move:
+                    return duel.ExecuteLabMove(move);
                 case DrawCommand draw:
                     if (duel.decks[draw.Side].Count == 0)
                     {

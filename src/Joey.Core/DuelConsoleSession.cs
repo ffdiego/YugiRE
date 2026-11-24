@@ -8,15 +8,17 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | state | diff | decision ID accept|decline | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | state | diff | decision ID accept|decline | help";
     private readonly DemoDuel duel;
+    private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
     public ActionQueue Queue { get; }
 
-    public DuelConsoleSession(DemoDuel duel, IPresentationGate? gate = null)
+    public DuelConsoleSession(DemoDuel duel, IPresentationGate? gate = null, IEnumerable<Card>? cards = null)
     {
         this.duel = duel ?? throw new ArgumentNullException(nameof(duel));
-        Queue = duel.CreatePrimitiveActionQueue(gate);
+        catalog = (cards ?? []).GroupBy(c => c.Id).Where(g => g.Count() == 1).ToDictionary(g => g.Key, g => g.Single());
+        Queue = duel.CreatePrimitiveActionQueue(gate, allowLabEdits: true);
     }
 
     public DuelConsoleResult Execute(string line)
@@ -76,6 +78,27 @@ public sealed class DuelConsoleSession
                     return new(false, "No unique tracked monster in that slot.");
                 batch = [new DestroyCommand(owner, target)];
                 break;
+            case "spawn":
+                if (words.Length < 4 ||
+                    !ushort.TryParse(words[1], NumberStyles.None, CultureInfo.InvariantCulture, out var resource) ||
+                    !Side(words[2], out int spawnSide) ||
+                    !Destination(words, 3, out var spawnZone, out int spawnSlot, out bool spawnDown, out bool spawnDefense))
+                    return new(false, "Expected spawn ID side zone [slot [attack|defense|set]].");
+                if (!catalog.TryGetValue(resource, out var template))
+                    return new(false, "Unknown or ambiguous resource ID in the selected catalogue.");
+                batch = [new LabSpawnCommand(spawnSide, template, spawnZone, spawnSlot, spawnDown, spawnDefense)];
+                break;
+            case "move":
+                if (words.Length < 5 || !Side(words[1], out int moveSide) ||
+                    !Zone(words[2], out var sourceZone) ||
+                    !int.TryParse(words[3], NumberStyles.None, CultureInfo.InvariantCulture, out int sourceIndex) ||
+                    !Destination(words, 4, out var moveZone, out int moveSlot, out bool moveDown, out bool moveDefense) ||
+                    sourceZone == moveZone)
+                    return new(false, "Expected move side sourceZone index destZone [slot [attack|defense|set]] (distinct zones).");
+                if (!duel.TryCaptureCardTarget(moveSide, sourceZone, sourceIndex, out var sourceTarget))
+                    return new(false, "Source is not a unique tracked occurrence.");
+                batch = [new LabMoveCommand(moveSide, sourceTarget, moveZone, moveSlot, moveDown, moveDefense)];
+                break;
             default: return new(false, "Unsupported command. " + Help);
         }
         try
@@ -84,6 +107,38 @@ public sealed class DuelConsoleSession
             return new(true, $"Admitted {batch.Length} command(s).", true);
         }
         catch (InvalidOperationException ex) { return new(false, ex.Message); }
+    }
+
+    private static bool Zone(string name, out DuelZone zone)
+    {
+        zone = name.ToLowerInvariant() switch
+        {
+            "hand" => DuelZone.Hand, "deck" => DuelZone.Deck, "grave" => DuelZone.Graveyard,
+            "banished" => DuelZone.Banished, "monster" => DuelZone.Monster,
+            "spell" => DuelZone.SpellTrap, "field" => DuelZone.FieldSpell, _ => (DuelZone)(-1)
+        };
+        return Enum.IsDefined(zone);
+    }
+
+    private static bool Destination(string[] words, int offset, out DuelZone zone, out int slot,
+        out bool faceDown, out bool defense)
+    {
+        slot = -1; faceDown = defense = false;
+        if (!Zone(words[offset], out zone)) return false;
+        int remaining = words.Length - offset - 1;
+        if (zone == DuelZone.FieldSpell)
+        { slot = 0; faceDown = true; return remaining == 0; }
+        if (zone is not (DuelZone.Monster or DuelZone.SpellTrap)) return remaining == 0;
+        if (remaining is < 1 or > 2 ||
+            !int.TryParse(words[offset + 1], NumberStyles.None, CultureInfo.InvariantCulture, out slot) || slot > 4)
+            return false;
+        if (zone == DuelZone.SpellTrap)
+        { faceDown = true; return remaining == 1 || words[offset + 2] == "set"; }
+        string position = remaining == 2 ? words[offset + 2] : "attack";
+        if (position is not ("attack" or "defense" or "set")) return false;
+        faceDown = position == "set";
+        defense = position != "attack";
+        return true;
     }
 
     private static bool Positive(string text, out int n) =>
@@ -98,20 +153,21 @@ public sealed class DuelConsoleSession
             $"queue busy={Queue.IsBusy} pending={Queue.PendingCount} active={Queue.Active?.Sequence.ToString() ?? "-"} decision={Queue.PendingDecision?.Id.ToString() ?? "-"} fault={Queue.Fault is not null}",
             $"legacy choice: card={duel.PendingCardSelection is not null} flip={duel.PendingFlipTarget is not null} flipSpell={duel.PendingFlipSpellTrapTargets is not null} summon={duel.PendingSummonResponse is not null} attack={duel.PendingAttackResponse is not null} effect={duel.PendingEffectDecision is not null} spell={duel.PendingSpellTrapTarget is not null} fusion={duel.PendingFusionSummon is not null} endDiscards={duel.PendingEndDiscards}"
         };
-        static string CardKey(Card? card) => card is null ? "-" : $"{card.Id}/{card.Index}";
+        string CardKey(int side, DuelZone zone, int index, Card? card) => card is null ? "-" :
+            $"{card.Id}/{card.Index}#" + (duel.TryCaptureCardTarget(side, zone, index, out var target) ? target.Occurrence.Value.ToString(CultureInfo.InvariantCulture) : "?");
         for (int p = 0; p < 2; p++)
         {
             rows.Add($"side {p} lp={duel.Life[p]}");
-            rows.Add($"side {p} hand={string.Join(",", duel.HandFor(p).Select(CardKey))}");
-            rows.Add($"side {p} deck={string.Join(",", duel.DeckSnapshot(p).Select(CardKey))}");
-            rows.Add($"side {p} grave={string.Join(",", duel.Graveyard(p).Select(CardKey))}");
-            rows.Add($"side {p} banished={string.Join(",", duel.Banished(p).Select(CardKey))}");
-            rows.Add($"side {p} fusion={string.Join(",", duel.FusionDeck(p).Select(CardKey))}");
-            rows.Add($"side {p} field={CardKey(duel.FieldSpells[p])}:{duel.FieldSpellFaceDown[p]}");
+            rows.Add($"side {p} hand={string.Join(",", duel.HandFor(p).Select((card,i) => CardKey(p, DuelZone.Hand, i, card)))}");
+            rows.Add($"side {p} deck={string.Join(",", duel.DeckSnapshot(p).Select((card,i) => CardKey(p, DuelZone.Deck, i, card)))}");
+            rows.Add($"side {p} grave={string.Join(",", duel.Graveyard(p).Select((card,i) => CardKey(p, DuelZone.Graveyard, i, card)))}");
+            rows.Add($"side {p} banished={string.Join(",", duel.Banished(p).Select((card,i) => CardKey(p, DuelZone.Banished, i, card)))}");
+            rows.Add($"side {p} fusion={string.Join(",", duel.FusionDeck(p).Select(card => $"{card.Id}/{card.Index}"))}");
+            rows.Add($"side {p} field={CardKey(p, DuelZone.FieldSpell, 0, duel.FieldSpells[p])}:{duel.FieldSpellFaceDown[p]}");
             for (int z = 0; z < 5; z++)
             {
-                rows.Add($"side {p} monster {z}={CardKey(duel.Monsters[p,z])}:{duel.MonsterFaceDown[p,z]}:{duel.DefensePosition[p,z]}");
-                rows.Add($"side {p} spell {z}={CardKey(duel.Spells[p,z])}:{duel.SpellFaceDown[p,z]}");
+                rows.Add($"side {p} monster {z}={CardKey(p, DuelZone.Monster, z, duel.Monsters[p,z])}:{duel.MonsterFaceDown[p,z]}:{duel.DefensePosition[p,z]}");
+                rows.Add($"side {p} spell {z}={CardKey(p, DuelZone.SpellTrap, z, duel.Spells[p,z])}:{duel.SpellFaceDown[p,z]}");
             }
         }
         return rows.ToArray();

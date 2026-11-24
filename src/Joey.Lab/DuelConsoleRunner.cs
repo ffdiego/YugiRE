@@ -2,39 +2,54 @@ using Joey.Core;
 
 namespace Joey.Lab;
 
-/// <summary>First headless frontend. Synthetic fixture only; no hidden game writes.</summary>
+/// <summary>Headless laboratory frontend; fixture or local DAT catalogue.</summary>
 public static class DuelConsoleRunner
 {
     public static int Run(string[] args, TextReader input, TextWriter output, TextWriter error)
     {
-        if (args.Length is < 1 or > 2 || args[0] != "--fixture")
+        bool fixture = args.Length is 1 or 2 && args[0] == "--fixture";
+        bool dat = args.Length is 2 or 3 && args[0] == "--dat";
+        if (!fixture && !dat)
         {
-            error.WriteLine("Usage: duel-console --fixture [script.txt]");
+            error.WriteLine("Usage: duel-console --fixture [script.txt] | --dat data.dat [script.txt]");
             return 2;
         }
-        if (args.Length == 1) return RunLines(input, output, error);
         try
         {
-            using var script = File.OpenText(args[1]);
-            return RunLines(script, output, error);
+            DemoDuel duel;
+            IReadOnlyList<Card> catalog;
+            if (fixture) { duel = Fixture(); catalog = [FixtureCard()]; }
+            else
+            {
+                using var archive = new Archive(args[1]);
+                catalog = Catalog.Load(archive).ToArray();
+                // Start from an empty ongoing duel, not invented catalogue cards.
+                duel = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000);
+            }
+            int scriptIndex = fixture ? 1 : 2;
+            if (args.Length == scriptIndex) return RunLines(duel, catalog, input, output, error);
+            using var script = File.OpenText(args[scriptIndex]);
+            return RunLines(duel, catalog, script, output, error);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         { error.WriteLine(ex.Message); return 2; }
     }
 
+    public static Card FixtureCard() => new(24, 24, "Console fixture monster", "", (3u << 20) | (4u << 25));
+
     public static DemoDuel Fixture()
     {
-        var monster = new Card(24, 24, "Console fixture monster", "", (3u << 20) | (4u << 25));
+        var monster = FixtureCard();
         Card?[] slots = [monster, null, null, null, null];
         return DemoDuel.FromPartialObservation(0, [], slots, slots, 8000,
             side0Deck: Enumerable.Repeat(monster, 10).ToArray(),
             side1Deck: Enumerable.Repeat(monster, 10).ToArray());
     }
 
-    private static int RunLines(TextReader input, TextWriter output, TextWriter error)
+    private static int RunLines(DemoDuel duel, IReadOnlyList<Card> catalog, TextReader input, TextWriter output, TextWriter error)
     {
-        var session = new DuelConsoleSession(Fixture());
-        output.WriteLine("YugiRE laboratory console (synthetic fixture, zero-based sides/slots).");
+        var session = new DuelConsoleSession(duel, cards: catalog);
+        output.WriteLine("YugiRE laboratory console (zero-based sides/slots; spawn/move are setup edits).");
         output.WriteLine(DuelConsoleSession.Help);
         bool failed = false;
         while (input.ReadLine() is string line)
