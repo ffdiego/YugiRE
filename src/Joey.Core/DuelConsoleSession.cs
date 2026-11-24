@@ -124,7 +124,7 @@ public sealed class DuelConsoleSession
                 if (!duel.TryCaptureCardTarget(moveSide, sourceZone, sourceIndex, out var sourceTarget))
                     return new(false, "Source is not a unique tracked occurrence.");
                 if (expectedMoveId is ushort expectedId &&
-                    (!duel.TryResolveCardTarget(sourceTarget, out _, out var sourceCard) || sourceCard.Id != expectedId))
+                    !duel.MatchesOccurrenceResource(sourceTarget, expectedId))
                     return new(false, $"Replay source mismatch: expected resource {expectedId}.");
                 batch = [new LabMoveCommand(moveSide, sourceTarget, moveZone, moveSlot, moveDown, moveDefense)];
                 break;
