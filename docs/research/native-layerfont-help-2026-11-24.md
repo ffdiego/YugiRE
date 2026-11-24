@@ -122,3 +122,63 @@ são criados pelo opcode 10h (não se trata de um comando de texto
 separado) e podem exigir vida útil independente do gate.
 Não criar FIFO visual nem mapear modo nativo para modo de
 duelo do sandbox por nome. Cobertura ainda 20/34, 0 Verified.
+
+
+## V29.1 — produtores da ajuda contextual (24/11)
+
+SQLite cumulativo v2, SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4, quick_check ok, leitura somente. Consultados 15 xrefs a 0045E240, decompilations dos produtores e card_identities; assembly de Update/Draw já recebido no bundle 19. Os produtores seguintes são portas de **decompilação**, não uma nova prova de assembly.
+
+| Chave raw | Produtor | Condição observada (não é o texto da imagem) |
+|---|---|---|
+| 0 | 005AAB90/005AAE00 | contagem de tributos elegíveis <1 para nível 5/6 ou <2 para demais níveis altos |
+| 3 | 0056B5A0 | flag 20000 no slot ocupado |
+| 4 | 0057E490/0057E650/005A0530/005A0800/005A08F0 | probe de ativação; outros checks podem substituir |
+| 7/8 | 005A0530 | fase raw 3, bit do slot em 00A55D70 limpo/set; 7 antecede 0056B730 |
+| 9 | 005929D0 | zona hover 0..11, sem teste de lado |
+| 0B | 005AAB90/005AAE00 | 0056A000==0 (sem zona elegível) ou 005AAB30 falso depois de contar tributos |
+| 10 | 0056B5A0/005AAB90/005AAE00/etc | 0056B440 retorna não zero (Prohibition, ID 48A) |
+| 11 | 005AAB90/005AAE00 | falha de 00570A70/00570B40 (restrições de invocação) |
+| 12 | 0056B5A0 | grupo de restrições de posição (ver abaixo) |
+| 13 | 0056B7D0 | saída comum de restrição de ataque; não atribuir motivo único |
+| 14 | 0057EAC0/0057E490/0057E650 | restrição associada a tipo/carta, Jinzo/Royal Command ou Cold Wave |
+| 15/16 | 0057E880 | restrição de resposta/ativação, dois pontos distintos |
+| 17 | 00570A10 via 005AAB90/005AAE00, 0057EAC0 | custo deve ser estritamente menor que LP (inclui Chain Energy) |
+
+0056B5A0: slot vazio retorna sem write; flag 20000 gera 3; grupo de
+005709D0(3CA), 0056D790(15C/4DC), 005699C0(536) com exceção
+do próprio 536, 0056DB30(540), 005699C0(148) condicionado a
+bits de slot e 0056F6D0 -> 12; só depois 0056B440 -> 10.
+IDs confirmados: Mesmeric Control, Spellbinding Circle, Shadow
+Spell, Thousand-Eyes Restrict, Goblin Attack Force, Dragon Capture Jar.
+Não copiar regras em LookAndFeel: receber fatos agregados do chamador.
+
+005AAB90: zero/não monstro não escreve; Prohibition ->10;
+00570A10 false ->17 (00570A10 também testa Prohibition e
+Chain Energy ID436, 500 por ocorrência); 00567A00 não zero
+retorna sem write. 00570A70 falso ->11 mas continua; pode
+ser sobrescrito por 0 ou 0B nas restrições de nível/tributo/zona.
+0056A000 conta slots vazios elegíveis através de 00569F70;
+0056A200/290 contam tributos com filtros diferentes (inclui
+Mask of Restrict); 005AAB30 testa zona existente ou liberável.
+00570A70 testa flag 100000 e Jam Breeding Machine/Last Warrior;
+00570B40->00570AF0 usa flag 200000 e Jam/Jowgen/Last Warrior.
+Não juntar 005AAB90 e 005AAE00: latter possui casos de IDs especiais
+e saídas distintas. A porta só cobre as escritas do primeiro, não
+máscara de ações permitidas. 0057EAC0 usa lado por XOR dos bits
+0/14 do descritor; custo de 0057C450 + Chain Energy quando zone=11.
+Não duplicar cálculo de custo ou semântica de cartas.
+
+NativeHelpMailbox representa 005EBEE4 com sentinela -1, overwrite
+e Consume reset. O produtor sem write preserva o pedido anterior;
+key 0 é válido. Range 0..23 é a política do modelo limitada às
+chaves observadas, não uma checagem feita por 0045E240.
+NativeHelpProducers recebe resultados de predicados, não estado Core.
+Testes sintéticos cobrem precedência, ausência de write, lado,
+limiares e igualdade de custo. Não substituir o cálculo legal do
+cursor nem integrar ao App antes de resolver o manifesto.
+
+Índice versionado data.dat-index.json: 24 YGA ingleses
+help01_e.yga..help24_e.yga; não supor key+1 até inspecionar
+help.txt (pode ter parâmetros/remap). O comando já existente
+--inspect-visual-dat inclui help.txt e dimensões/hash; não abrir
+nova coleta Ghidra, não solicitar assets/pixels. Draw continua Pending.
