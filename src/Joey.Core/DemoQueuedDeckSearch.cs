@@ -9,8 +9,9 @@ public sealed partial class DemoDuel
     private bool CanAdmitQueuedDeckSearch() =>
         !GameOver && deferredBattle is null &&
         PendingCardSelection is { Source: CardSelectionSource.Deck,
-            Destination: CardSelectionDestination.Hand, MinSelections: 1, MaxSelections: 1 } pending &&
-        CardSelectionRules.OnFieldToGraveyardFilter(pending.EffectResourceId) == pending.Filter &&
+            Destination: CardSelectionDestination.Hand, MaxSelections: 1 } pending &&
+        ((pending.MinSelections == 1 && CardSelectionRules.OnFieldToGraveyardFilter(pending.EffectResourceId) == pending.Filter) ||
+         (pending.MinSelections == 0 && RitualSearchRules.OnNormalOrFlipSummon(pending.EffectResourceId) == pending.Filter)) &&
         PendingFlipTarget is null && PendingFlipSpellTrapTargets is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&
         PendingEffectDecision is null && PendingSpellTrapTarget is null &&
@@ -36,10 +37,10 @@ public sealed partial class DemoDuel
         return result.AsReadOnly();
     }
 
-    public bool TryQueueDeckSearch(PendingCardSelection request, CardTarget target,
+    public bool TryQueueDeckSearch(PendingCardSelection request, CardTarget? target,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose an eligible occurrence from the current Sangan/Witch search.";
+        message = "Choose an eligible occurrence, or decline an optional Ritual search.";
         if (primitiveActionQueue is not { IsBusy: false } queue ||
             !TryPlanQueuedDeckSearch(request, target)) return false;
         admittingQueuedDeckSearch = true;
@@ -49,10 +50,14 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    private bool TryPlanQueuedDeckSearch(PendingCardSelection request, CardTarget target) =>
-        CanAdmitQueuedDeckSearch() && ReferenceEquals(PendingCardSelection, request) &&
-        target.Side == request.Owner && target.Zone == DuelZone.Deck &&
-        TryResolveCardTarget(target, out _, out var card) &&
-        request.EligibleCards.Any(c => ReferenceEquals(c.Card, card)) &&
-        CardSelectionRules.IsEligible(card, request.Filter);
+    private bool TryPlanQueuedDeckSearch(PendingCardSelection request, CardTarget? target)
+    {
+        if (!CanAdmitQueuedDeckSearch() || !ReferenceEquals(PendingCardSelection, request))
+            return false;
+        if (target is not { } chosen) return request.MinSelections == 0;
+        return chosen.Side == request.Owner && chosen.Zone == DuelZone.Deck &&
+            TryResolveCardTarget(chosen, out _, out var card) &&
+            request.EligibleCards.Any(c => ReferenceEquals(c.Card, card)) &&
+            CardSelectionRules.IsEligible(card, request.Filter);
+    }
 }

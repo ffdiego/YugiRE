@@ -725,7 +725,8 @@ public sealed partial class DemoDuel
                 !duel.TryPlanQueuedDeckSearch(answer.Request, answer.Target))
                 return new(CommandOutcome.Rejected, "Deck search request or target changed.");
 
-            ReserveDeckTransfer(answer.Side, [new MoveToHandCommand(answer.Side, answer.Target)], queue);
+            ReserveDeckTransfer(answer.Side, answer.Target is { } chosen
+                ? [new MoveToHandCommand(answer.Side, chosen)] : [], queue);
             return new(CommandOutcome.Applied);
         }
 
