@@ -24,22 +24,41 @@ static class SummonTests
         {
             var high = Monster(level, 2);
             var duel = new DemoDuel([high]); duel.Monsters[0, 0] = low;
+            var tributeEvents = new List<DemoMonsterTribute>();
+            var destructionEvents = new List<DemoMonsterDestruction>();
+            duel.MonsterTributed += tributeEvents.Add;
+            duel.MonsterDestroyed += destructionEvents.Add;
             check(!duel.Summon(0, 0, 1, true, out _) && duel.Hand.Count == 1 && duel.Monsters[0, 0] == low,
                 $"Level {level} cannot bypass the one-tribute requirement");
+            check(tributeEvents.Count == 0 && destructionEvents.Count == 0,
+                $"Level {level}: rejected summon emits no tribute/destruction presentation");
             check(duel.Summon(0, 0, 0, true, out _, [0]) && duel.Monsters[0, 0] == high && duel.Hand.Count == 0 &&
                 duel.Graveyard(0).SequenceEqual([low]), $"Level {level} pays one tribute and reuses its occupied zone");
+            check(tributeEvents.SingleOrDefault() is { Player: 0, Zone: 0, Card: var paid }
+                    && ReferenceEquals(paid, low) && destructionEvents.Count == 0,
+                $"Level {level}: committed tribute emits one source snapshot, not a destruction event");
         }
         var boss = Monster(7, 3);
         var full = new DemoDuel([boss, boss]);
+        var fullTributes = new List<DemoMonsterTribute>();
+        var fullDestructions = new List<DemoMonsterDestruction>();
+        full.MonsterTributed += fullTributes.Add;
+        full.MonsterDestroyed += fullDestructions.Add;
         for (int zone = 0; zone < 5; zone++) full.Monsters[0, zone] = low;
         check(!full.Summon(0, 0, 0, true, out _, [0, 0]) && !full.Summon(0, 0, 0, true, out _, [-1, 0]) &&
             !full.Summon(0, 0, 0, true, out _, [0, 5]) && full.Hand.Count == 2 && full.Graveyard(0).Count == 0,
             "Invalid or repeated tribute slots never pay a partial cost");
+        check(fullTributes.Count == 0 && fullDestructions.Count == 0,
+            "Invalid tribute transactions never emit visual events");
         check(!full.Summon(0, 0, 4, true, out _, [0, 1]) && full.Monsters[0, 0] == low && full.Monsters[0, 1] == low,
             "Occupied destination outside tribute selection is rejected before payment");
         check(full.Summon(0, 0, 1, true, out _, [0, 1]) && full.Monsters[0, 0] == null && full.Monsters[0, 1] == boss &&
             full.Graveyard(0).Count == 2 && full.Hand.Count == 1 && full.Life.SequenceEqual(new[] { 8000, 8000 }),
             "Full field can pay two tributes without LP damage or requiring a preexisting vacancy");
+        check(fullTributes.Select(e => e.Zone).SequenceEqual([0, 1]) &&
+              fullTributes.All(e => ReferenceEquals(e.Card, low)) &&
+              fullDestructions.Count == 0,
+              "Two committed tributes produce two ordered visual events without explosions");
         check(!full.Summon(0, 0, 2, true, out _, [2, 3]) && full.Monsters[0, 2] == low && full.Graveyard(0).Count == 2,
             "Second normal summon is rejected before spending additional tributes");
         var wrong = new DemoDuel([boss]); wrong.Monsters[1, 0] = low; wrong.Monsters[1, 1] = low;

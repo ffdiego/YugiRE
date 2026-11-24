@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import os
+import re
 from pathlib import Path
 import time
 from typing import Any, Callable
@@ -50,6 +51,22 @@ def enrich(event: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+CAPTURE_FORMAT_VERSION = 2  # JSONL envelope, not the observation schemas.
+
+
+def capture_filename(deck_labels: dict[str, str] | None = None,
+                     at: datetime | None = None) -> str:
+    """Readable local time plus micros to avoid worker collisions; PID stays in metadata."""
+    labels = deck_labels or {}
+    def safe(value: str) -> str:
+        name = re.sub(r"[^A-Za-z0-9-]", "-", value).strip("-")[:40]
+        return name or "default"
+    now = at or datetime.now().astimezone()
+    timestamp = now.strftime("%H%M%S%f-%Y%m%d")
+    return (f"{safe(labels.get('0', 'deck0'))}_"
+            f"{safe(labels.get('1', 'deck1'))}_{timestamp}_v{CAPTURE_FORMAT_VERSION}.jsonl")
+
+
 class LiveDuelCapture:
     """Trace file is created before game resumes and remains open until cleanup."""
 
@@ -57,11 +74,22 @@ class LiveDuelCapture:
                  deck_plans: dict[str, Any], speed_value: int | None,
                  output_dir: Path | None = None,
                  rng_seed_base: int | None = None,
-                 rng_seed_start_index: int = 0) -> None:
+                 rng_seed_start_index: int = 0,
+                 trace_state: bool = False,
+                 trace_battle_attributes: bool = False,
+                 deck_labels: dict[str, str] | None = None) -> None:
         self.api = api
         self.target_duels = target_duels
         self.written = 0
         self.terminals_written = 0
+        self.trace_state = trace_state
+        self.trace_battle_attributes = trace_battle_attributes
+        self.battle_attribute_samples = 0
+        self.battle_attribute_read_errors = 0
+        self.state_samples = 0
+        self.state_baselines = 0
+        self.state_deltas = 0
+        self.state_read_errors = 0
         self.seed_applied_count = 0
         self.seed_applied_indices: list[int] = []
         self.rng_seed_base = rng_seed_base
@@ -72,12 +100,11 @@ class LiveDuelCapture:
         self.output_dir = (output_dir or
                            Path(__file__).resolve().parent.parent / "scratch" / "traces")
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        now = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-%f")
-        self.path = self.output_dir / f"duels-{now}-pid{pid}.jsonl"
+        self.path = self.output_dir / capture_filename(deck_labels)
         self.stream = self.path.open("x", encoding="utf-8")
         self.session = self.api.tracestatus()["session"]
         header = {
-            "kind": "metadata", "formatVersion": 2, "mode": "live_duels",
+            "kind": "metadata", "formatVersion": CAPTURE_FORMAT_VERSION, "mode": "live_duels",
             "processId": pid, "requestedDuels": target_duels,
             "speedValue": speed_value, "deckPlans": deck_plans,
             "rngSeedOverride": ({"baseSeed": rng_seed_base,
@@ -85,6 +112,16 @@ class LiveDuelCapture:
                                  "algorithm": "mix32-v1"}
                                 if rng_seed_base is not None else None),
             "session": self.session, "startedUtc": datetime.now(timezone.utc).isoformat(),
+            **({"stateTrace": {"schema": "joey-command-entry-state-delta-v1",
+                                "enabled": True,
+                                "samplingPoint": "command_producer_onEnter",
+                                "nonAtomic": True}}
+               if trace_state else {}),
+            **({"battleAttributesTrace": {"schema": "joey-command-entry-battle-attributes-v1",
+                                          "enabled": True,
+                                          "samplePoint": "command_producer_onEnter_0x31",
+                                          "nonAtomic": True}}
+               if trace_battle_attributes else {}),
             "note": "Masked 0x0004 counts terminal commands, not known winners. "
                     "Original command arguments and all passive probes retained."
         }
@@ -113,6 +150,22 @@ class LiveDuelCapture:
             self.stream.write(json.dumps(normalized, ensure_ascii=False) + "\n")
             self.next_seq += 1
             self.written += 1
+            if self.trace_state and normalized.get("kind") == "command":
+                if normalized.get("stateSampled") is True:
+                    self.state_samples += 1
+                observation = normalized.get("stateObservation")
+                if isinstance(observation, dict):
+                    if observation.get("kind") == "baseline":
+                        self.state_baselines += 1
+                    elif observation.get("kind") == "delta":
+                        self.state_deltas += 1
+                if normalized.get("stateReadError") is not None:
+                    self.state_read_errors += 1
+            if self.trace_battle_attributes and normalized.get("kind") == "command":
+                if normalized.get("battleAttributesObservation") is not None:
+                    self.battle_attribute_samples += 1
+                if normalized.get("battleAttributesReadError") is not None:
+                    self.battle_attribute_read_errors += 1
             if normalized.get("kind") == "command" and (
                     normalized.get("opcodeMasked") == "0x0004"):
                 self.terminals_written += 1
@@ -166,6 +219,10 @@ class LiveDuelCapture:
                     f"expected {expected}, got {self.seed_applied_indices}")
         if stopped_status["overwritten"]:
             raise RuntimeError("Agent discarded events before final export")
+        if self.trace_state and requested_complete and (
+                self.state_baselines < self.target_duels or self.state_samples == 0):
+            raise RuntimeError("Command-entry state trace lacks a baseline for "
+                               "each completed duel; refusing complete capture")
         # Existing trace acknowledgement prevents duplicate exports in launcher finally.
         self.api.traceacknowledge(self.session, stopped_status["seen"])
         summary = {
@@ -176,6 +233,14 @@ class LiveDuelCapture:
             "complete": requested_complete and
                         self.terminals_written >= self.target_duels,
             "finishedUtc": datetime.now(timezone.utc).isoformat(),
+            **({"stateTrace": {"samples": self.state_samples,
+                                "baselines": self.state_baselines,
+                                "deltas": self.state_deltas,
+                                "readErrors": self.state_read_errors}}
+               if self.trace_state else {}),
+            **({"battleAttributesTrace": {"samples": self.battle_attribute_samples,
+                                          "readErrors": self.battle_attribute_read_errors}}
+               if self.trace_battle_attributes else {}),
             "note": "Completed duels counted by terminal opcode 0x0004/0x8004. "
                     "Winner and card legality not decoded."
         }

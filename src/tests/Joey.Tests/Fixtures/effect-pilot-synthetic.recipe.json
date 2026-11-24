@@ -1,0 +1,325 @@
+{
+  "pilotVersion": 1,
+  "sources": [
+    {
+      "id": "synthetic",
+      "path": "effect-pilot-synthetic-observations.json",
+      "format": "json",
+      "sha256": "ea59cbc2e03a02b2bfb1d30b95bfcd6929050716138a4b729cf288c2eb2fbed9"
+    }
+  ],
+  "cases": [
+    {
+      "id": "synthetic-sparks",
+      "scenario": "Sparks",
+      "evidenceKind": "Synthetic",
+      "inputs": {
+        "sourceResourceId": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/sourceResourceId"
+        },
+        "sourceInternalIndex": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/sourceInternalIndex"
+        },
+        "sourcePlayer": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/sourcePlayer"
+        },
+        "requestFlags": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/requestFlags"
+        },
+        "preparedTarget": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/preparedTarget"
+        },
+        "lifeBefore0": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/lifeBefore0"
+        },
+        "lifeBefore1": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/lifeBefore1"
+        },
+        "sandboxApplicable": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/inputs/sandboxApplicable"
+        },
+        "exeSha256": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/exeSha256"
+        },
+        "windowIsolated": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/windowIsolated"
+        }
+      },
+      "observed": {
+        "preparedTarget": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/preparedTarget"
+        },
+        "commandTarget": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/commandTarget"
+        },
+        "damageAmount": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/damageAmount"
+        },
+        "activationAccepted": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/activationAccepted"
+        },
+        "lifeAfter0": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/lifeAfter0"
+        },
+        "lifeAfter1": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/lifeAfter1"
+        },
+        "sourceInHandAfter": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/sourceInHandAfter"
+        },
+        "sourceInGraveyardAfter": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sparks/observed/sourceInGraveyardAfter"
+        }
+      }
+    },
+    {
+      "id": "synthetic-sword",
+      "scenario": "LegendarySword",
+      "evidenceKind": "Synthetic",
+      "inputs": {
+        "sourceResourceId": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/sourceResourceId"
+        },
+        "sourceInternalIndex": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/sourceInternalIndex"
+        },
+        "sourcePlayer": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/sourcePlayer"
+        },
+        "targetPlayer": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/targetPlayer"
+        },
+        "targetZone": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/targetZone"
+        },
+        "targetInternalIndex": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/targetInternalIndex"
+        },
+        "targetResourceId": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/targetResourceId"
+        },
+        "faceUp": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/faceUp"
+        },
+        "dynamicType": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/dynamicType"
+        },
+        "dynamicAttribute": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/dynamicAttribute"
+        },
+        "genericGuardsSatisfied": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/genericGuardsSatisfied"
+        },
+        "attackBefore": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/attackBefore"
+        },
+        "defenseBefore": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/defenseBefore"
+        },
+        "noOtherModifiers": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/noOtherModifiers"
+        },
+        "sandboxApplicable": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/sandboxApplicable"
+        },
+        "equipmentRemovalConfirmed": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/inputs/equipmentRemovalConfirmed"
+        },
+        "exeSha256": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/exeSha256"
+        },
+        "windowIsolated": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/windowIsolated"
+        }
+      },
+      "observed": {
+        "targetEligible": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/targetEligible"
+        },
+        "activationAccepted": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/activationAccepted"
+        },
+        "attackAfter": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/attackAfter"
+        },
+        "defenseAfter": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/defenseAfter"
+        },
+        "linkCountAfter": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/linkCountAfter"
+        },
+        "linkOwner": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/linkOwner"
+        },
+        "linkSourceZone": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/linkSourceZone"
+        },
+        "linkTargetPlayer": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/linkTargetPlayer"
+        },
+        "linkTargetZone": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/linkTargetZone"
+        },
+        "equipmentPresentAfter": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/equipmentPresentAfter"
+        },
+        "linkCountAfterRemoval": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/linkCountAfterRemoval"
+        },
+        "equipmentPresentAfterRemoval": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/equipmentPresentAfterRemoval"
+        },
+        "equipmentInGraveyardAfterRemoval": {
+          "origin": "Observed",
+          "source": "synthetic",
+          "line": 1,
+          "pointer": "/sword/observed/equipmentInGraveyardAfterRemoval"
+        }
+      }
+    }
+  ]
+}

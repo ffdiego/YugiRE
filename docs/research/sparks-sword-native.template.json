@@ -1,0 +1,171 @@
+{
+  "pilotVersion": 1,
+  "sources": [],
+  "cases": [
+    {
+      "id": "sparks-pending-native",
+      "scenario": "Sparks",
+      "evidenceKind": "Native",
+      "inputs": {
+        "sourceResourceId": {
+          "origin": "Missing"
+        },
+        "sourceInternalIndex": {
+          "origin": "Missing"
+        },
+        "sourcePlayer": {
+          "origin": "Missing"
+        },
+        "requestFlags": {
+          "origin": "Missing"
+        },
+        "preparedTarget": {
+          "origin": "Missing"
+        },
+        "lifeBefore0": {
+          "origin": "Missing"
+        },
+        "lifeBefore1": {
+          "origin": "Missing"
+        },
+        "sandboxApplicable": {
+          "origin": "Missing"
+        },
+        "exeSha256": {
+          "origin": "Missing"
+        },
+        "windowIsolated": {
+          "origin": "Missing"
+        }
+      },
+      "observed": {
+        "preparedTarget": {
+          "origin": "Missing"
+        },
+        "commandTarget": {
+          "origin": "Missing"
+        },
+        "damageAmount": {
+          "origin": "Missing"
+        },
+        "activationAccepted": {
+          "origin": "Missing"
+        },
+        "lifeAfter0": {
+          "origin": "Missing"
+        },
+        "lifeAfter1": {
+          "origin": "Missing"
+        },
+        "sourceInHandAfter": {
+          "origin": "Missing"
+        },
+        "sourceInGraveyardAfter": {
+          "origin": "Missing"
+        }
+      }
+    },
+    {
+      "id": "legendarysword-pending-native",
+      "scenario": "LegendarySword",
+      "evidenceKind": "Native",
+      "inputs": {
+        "sourceResourceId": {
+          "origin": "Missing"
+        },
+        "sourceInternalIndex": {
+          "origin": "Missing"
+        },
+        "sourcePlayer": {
+          "origin": "Missing"
+        },
+        "targetPlayer": {
+          "origin": "Missing"
+        },
+        "targetZone": {
+          "origin": "Missing"
+        },
+        "targetInternalIndex": {
+          "origin": "Missing"
+        },
+        "targetResourceId": {
+          "origin": "Missing"
+        },
+        "faceUp": {
+          "origin": "Missing"
+        },
+        "dynamicType": {
+          "origin": "Missing"
+        },
+        "dynamicAttribute": {
+          "origin": "Missing"
+        },
+        "genericGuardsSatisfied": {
+          "origin": "Missing"
+        },
+        "attackBefore": {
+          "origin": "Missing"
+        },
+        "defenseBefore": {
+          "origin": "Missing"
+        },
+        "noOtherModifiers": {
+          "origin": "Missing"
+        },
+        "sandboxApplicable": {
+          "origin": "Missing"
+        },
+        "equipmentRemovalConfirmed": {
+          "origin": "Missing"
+        },
+        "exeSha256": {
+          "origin": "Missing"
+        },
+        "windowIsolated": {
+          "origin": "Missing"
+        }
+      },
+      "observed": {
+        "targetEligible": {
+          "origin": "Missing"
+        },
+        "activationAccepted": {
+          "origin": "Missing"
+        },
+        "attackAfter": {
+          "origin": "Missing"
+        },
+        "defenseAfter": {
+          "origin": "Missing"
+        },
+        "linkCountAfter": {
+          "origin": "Missing"
+        },
+        "linkOwner": {
+          "origin": "Missing"
+        },
+        "linkSourceZone": {
+          "origin": "Missing"
+        },
+        "linkTargetPlayer": {
+          "origin": "Missing"
+        },
+        "linkTargetZone": {
+          "origin": "Missing"
+        },
+        "equipmentPresentAfter": {
+          "origin": "Missing"
+        },
+        "linkCountAfterRemoval": {
+          "origin": "Missing"
+        },
+        "equipmentPresentAfterRemoval": {
+          "origin": "Missing"
+        },
+        "equipmentInGraveyardAfterRemoval": {
+          "origin": "Missing"
+        }
+      }
+    }
+  ]
+}

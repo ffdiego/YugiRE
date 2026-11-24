@@ -43,15 +43,22 @@ static partial class Game
         }
         return 0;
     }
-    static DemoDuel NewDemo() => useImportedDeck && importedDeck?.HasDuelSize == true
-        ? DemoDuel.FromDecks(deckGroups[0], deckGroups[0]) : new(cards);
+    static DemoDuel NewDemo()
+    {
+        if (!useImportedDeck || importedDeck?.HasDuelSize != true) return new(cards);
+        var fusion = deckGroups[DeckFile.FusionGroup].Where(FusionRules.IsFusionMonster).ToArray();
+        return DemoDuel.FromDecks(deckGroups[0], deckGroups[0],
+            firstFusionDeck: fusion, secondFusionDeck: fusion);
+    }
     static void StartDemo()
     {
-        tributeZones.Clear();
-        duel = NewDemo(); screen = "duel"; hand = attacker = -1; handPage = 0;
-        ClearDuelSelection(); Array.Clear(handLift);
-        message = useImportedDeck ? "Imported main deck for both local players. Only selected effects work in this demo." :
-            "Local two-player demo. Draw or summon, then enter battle.";
+        alphaCpu = null;
+        duel = NewDemo();
+        ResetDuelPresentation();
+        QueueDuelOpening();
+        QueueInitialExodiaOpening();
+        message = useImportedDeck ? "Imported Main and Fusion Deck for both local players." :
+            "Local two-player demo. Select phases on the left of the field.";
     }
     static void DrawDeck()
     {
@@ -71,7 +78,8 @@ static partial class Game
         }
         for (int group = 0; group < 3; group++)
         {
-            string caption = (group == 0 ? "Main" : $"List {group}") + $" ({deckGroups[group].Count})";
+            string name = group switch { 0 => "Main", DeckFile.FusionGroup => "Fusion", _ => $"List {group}" };
+            string caption = $"{name} ({deckGroups[group].Count})";
             if (Button(caption, 225 + group * 180, 85, 175, 23)) { deckGroup = group; deckPage = deckSelected = 0; }
             if (deckGroup == group) Raylib.DrawRectangleLines(225 + group * 180, 85, 175, 23, Color.White);
         }
@@ -102,6 +110,6 @@ static partial class Game
         }
         if (Button("Play this deck", 225, 532, 165, 28, importedDeck.HasDuelSize)) { useImportedDeck = true; StartDemo(); }
         if (Button("Demo fixture", 600, 532, 175, 28)) { useImportedDeck = false; StartDemo(); }
-        Label("Read-only deck / demo uses main list for both players", 225, 590, 12, Color.Black);
+        Label("Both players use the Main Deck and Fusion Monsters from List 1", 225, 590, 12, Color.Black);
     }
 }

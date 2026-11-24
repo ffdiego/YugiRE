@@ -965,6 +965,18 @@ function recordAiConsoleTrace(request, phase, details = {}) {
 let deckObserver = null;
 let deckFingerprint = null;
 let lastTraceLifePoints = null;
+let traceStateSampler = null;
+let traceStateEnabled = false;
+let previousTraceState = null;
+let previousTraceStateSeq = null;
+let traceStateSamples = 0;
+let traceStateBaselines = 0;
+let traceStateDeltas = 0;
+let traceStateReadFailures = 0;
+let traceBattleAttributesEnabled = false;
+let traceBattleAttributeSampler = null;
+let traceBattleAttributeSamples = 0;
+let traceBattleAttributeReadFailures = 0;
 
 // Every observation is taken on the original producer's onEnter, before
 // that command is queued, NOT after the command's effects have resolved.
@@ -1001,6 +1013,113 @@ function sampleTraceLifePoints(event, opcode) {
     if (forced) event.lifePointsReadError = String(error);
   }
 }
+// Attach NO additional native hook. Sample documented player memory on each
+// existing command-producer entry and emit an initial baseline plus deltas.
+// A change may occur after the preceding producer: it is not caused by the
+// command whose event carries the observed difference.
+function sampleTraceState(event, opcode) {
+  if (!traceStateEnabled) return false;
+  try {
+    const running = kDuelRunning.readU16();
+    if (running === 0 && opcode !== 0x0004) {
+      previousTraceState = null;
+      previousTraceStateSeq = null;
+      return false;
+    }
+    const current = traceStateSampler.capture();
+    if (previousTraceState === null) {
+      event.stateObservation = {
+        kind:'baseline', samplePoint:'command_producer_onEnter',
+        nonAtomic:true, sides:current.sides
+      };
+      traceStateBaselines++;
+    } else {
+      const changes = traceStateSampler.diff(previousTraceState, current);
+      if (changes.length > 0) {
+        event.stateObservation = {
+          kind:'delta', samplePoint:'command_producer_onEnter',
+          nonAtomic:true, previousSampleSeq:previousTraceStateSeq, changes
+        };
+        traceStateDeltas++;
+      }
+    }
+    previousTraceState = current;
+    event.stateSampled = true;
+    traceStateSamples++;
+    if (opcode === 0x0004) {
+      previousTraceState = null;
+      previousTraceStateSeq = null;
+    }
+    return true;
+  } catch (error) {
+    traceStateReadFailures++;
+    previousTraceState = null;
+    previousTraceStateSeq = null;
+    event.stateReadError = String(error);
+    return false;
+  }
+}
+
+// Read two native 16-byte computed battle blocks at the existing 0x31
+// producer entry. Do not attach another hook, call Joey functions or infer
+// that a field spell caused the numbers. Data may be transient.
+function sampleTraceBattleAttributes(event, opcode) {
+  if (!traceBattleAttributesEnabled || opcode !== 0x0031) return;
+  try {
+    event.battleAttributesObservation = traceBattleAttributeSampler.capture();
+    traceBattleAttributeSamples++;
+  } catch (error) {
+    event.battleAttributesReadError = String(error);
+    traceBattleAttributeReadFailures++;
+  }
+}
+
+function startTraceBattleAttributes() {
+  if (!installed || !observerOnly || commandTraceHook === null || !traceStateEnabled)
+    throw new Error('Battle attributes require an observer-only state trace');
+  if (traceBattleAttributesEnabled)
+    throw new Error('Battle attributes already enabled');
+  if (typeof createNativeBattleAttributeSampler !== 'function')
+    throw new Error('Missing read-only battle attribute sampler source');
+  const addr = n => va('0x' + n.toString(16));
+  traceBattleAttributeSampler = createNativeBattleAttributeSampler(
+    n => addr(n).readU16(),
+    n => addr(n).readS32(),
+    n => addr(n).readU32());
+  traceBattleAttributesEnabled = true;
+  return traceStatus();
+}
+function stopTraceBattleAttributes() {
+  traceBattleAttributesEnabled = false;
+  traceBattleAttributeSampler = null;
+  return traceStatus();
+}
+
+function startTraceState() {
+  if (!installed || !observerOnly || commandTraceHook === null)
+    throw new Error('State trace requires an active observer-only command trace');
+  if (traceStateEnabled) throw new Error('State trace already enabled');
+  if (typeof createNativeStateSampler !== 'function')
+    throw new Error('Missing read-only state sampler source');
+  // This is an opt-in extension of the existing producer listener. No
+  // native calls, DLL loading, command injection or new Interceptor.
+  const addr = n => va('0x' + n.toString(16));
+  traceStateSampler = createNativeStateSampler(
+    n => addr(n).readU8(), n => addr(n).readU16(), n => addr(n).readU32());
+  traceStateEnabled = true;
+  previousTraceState = null;
+  previousTraceStateSeq = null;
+  return traceStatus();
+}
+function stopTraceState() {
+  stopTraceBattleAttributes();
+  traceStateEnabled = false;
+  previousTraceState = null;
+  previousTraceStateSeq = null;
+  traceStateSampler = null;
+  return traceStatus();
+}
+
 function startDeckProbe(captureMt = false) {
   if (!installed || !observerOnly || commandTraceHook === null)
     throw new Error('Deck probe requires --observe-only and trace on');
@@ -1021,6 +1140,14 @@ function stopDeckProbe() {
 function traceStatus() {
   return {
     active: commandTraceHook !== null,
+    stateActive: traceStateEnabled,
+    stateSamples: traceStateSamples,
+    stateBaselines: traceStateBaselines,
+    stateDeltas: traceStateDeltas,
+    stateReadFailures: traceStateReadFailures,
+    battleAttributesActive: traceBattleAttributesEnabled,
+    battleAttributeSamples: traceBattleAttributeSamples,
+    battleAttributeReadFailures: traceBattleAttributeReadFailures,
     // Host attestation exists independently of whether deck tracing was armed.
     hostAttestedExeSha256: deckFingerprint,
     processId: Process.id, modulePath: main.path,
@@ -2300,6 +2427,8 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
                args[2].toUInt32(), args[3].toUInt32()]
       };
       sampleTraceLifePoints(event, raw & 0x7FFF);
+      const stateWasSampled = sampleTraceState(event, raw & 0x7FFF);
+      sampleTraceBattleAttributes(event, raw & 0x7FFF);
       if ((raw & 0x7FFF) === 0x0086 &&
           this.returnAddress.equals(va('0x00574804'))) {
         // FUN_005747E0 (x86) pushes exactly four DWORD parameters,
@@ -2354,6 +2483,8 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
         }
       }
       recordTraceEvent(event);
+      if (stateWasSampled && (raw & 0x7FFF) !== 0x0004)
+        previousTraceStateSeq = event.seq;
     }
   });
   traceBuffer = [];
@@ -2363,6 +2494,12 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
   traceDrained = 0;
   traceCompletedDuels = 0;
   lastTraceLifePoints = null;
+  traceStateSamples = 0;
+  traceStateBaselines = 0;
+  traceStateDeltas = 0;
+  traceStateReadFailures = 0;
+  traceBattleAttributeSamples = 0;
+  traceBattleAttributeReadFailures = 0;
   traceCapacity = capacity;
   traceSession++;
   commandTraceHook = hook;
@@ -2372,6 +2509,7 @@ function startCommandTrace(capacity = kTraceDefaultCapacity) {
 function stopCommandTrace() {
   // The probe must stop before anyone can export this bounded buffer.
   lastTraceLifePoints = null;
+  stopTraceState();
   stopDeckProbe();
   stopDemoProbe();
   stopAiProbe();
@@ -2597,6 +2735,10 @@ rpc.exports = {
   duelstate: duelState,
   tracestatus: traceStatus,
   tracestart: startCommandTrace,
+  tracestateon: startTraceState,
+  tracestateoff: stopTraceState,
+  tracebattleattributeson: startTraceBattleAttributes,
+  tracebattleattributesoff: stopTraceBattleAttributes,
   tracestop: stopCommandTrace,
   traceprepstart: startSummonPrepProbe,
   traceaistart: startAiProbe,

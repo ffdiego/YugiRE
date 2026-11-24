@@ -1,0 +1,1450 @@
+{
+  "schemaVersion": 1,
+  "description": "Playability in Joey.Core/DemoDuel, NOT native RE parity. Resource IDs are exact and are not normalized.",
+  "statuses": [
+    "Pending",
+    "Partial",
+    "Done",
+    "Verified"
+  ],
+  "groups": [
+    {
+      "id": "monster.elemental-aura",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Continuous ATK modifier"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        491,
+        523,
+        526,
+        597,
+        608,
+        627
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterAuraRules.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ],
+      "limitations": [
+        "Sandbox uses the DAT attribute. Native dynamic attribute changes and effect suppression are outside scope."
+      ]
+    },
+    {
+      "id": "monster.direct-attack",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Direct attack through opposing monsters"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        386,
+        396,
+        397,
+        421,
+        487,
+        634
+      ],
+      "evidence": [
+        "src/Joey.Core/DirectAttackRules.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ]
+    },
+    {
+      "id": "monster.fusion-direct-attack",
+      "kind": "Monster",
+      "subtype": "Fusion",
+      "mechanics": [
+        "Fusion Summon with Baby Dragon and Alligator’s Sword",
+        "Attribute-filtered direct attack"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        812
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl",
+        "src/Joey.Core/DirectAttackRules.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ],
+      "limitations": [
+        "Sandbox scope includes Polymerization, Fusion Gate and one substitute per recipe. Native chains and timing are pending.",
+        "Face-down defender handling follows static evidence."
+      ]
+    },
+    {
+      "id": "monster.fusion-exact-materials",
+      "kind": "Monster",
+      "subtype": "Fusion",
+      "mechanics": [
+        "Polymerization uses distinct materials from the controller’s hand or field, with up to one substitute",
+        "Special Summon from its own Fusion Deck into an empty or freed Monster Zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        14,
+        36,
+        42,
+        68,
+        91,
+        132,
+        167,
+        188,
+        214,
+        216,
+        222,
+        293,
+        369,
+        379,
+        384,
+        388,
+        408,
+        436,
+        457,
+        464,
+        486,
+        494,
+        507,
+        532,
+        571,
+        612,
+        617,
+        706,
+        1404,
+        1445
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl"
+      ],
+      "limitations": [
+        "Sandbox scope includes Polymerization, Fusion Gate and one substitute per recipe. Native chains and timing are pending."
+      ]
+    },
+    {
+      "id": "monster.fusion-pending-on-field-effects",
+      "kind": "Monster",
+      "subtype": "Fusion",
+      "mechanics": [
+        "Fusion Summon through Polymerization or Fusion Gate, with exact materials or one substitute"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1241,
+        1334,
+        1526
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl"
+      ],
+      "limitations": [
+        "The distinct monster effects of Chimera, Thousand-Eyes Restrict and The Last Warrior are pending."
+      ]
+    },
+    {
+      "id": "monster.fusion-material-substitute",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "One occurrence can replace a single required Fusion Material from the hand or field through Polymerization or Fusion Gate"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        108,
+        257,
+        268,
+        641
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/cards/fusion-substitutes.md"
+      ],
+      "limitations": [
+        "Sandbox accepts any legal combination that frees a zone. The native full-board precheck requires runtime comparison."
+      ]
+    },
+    {
+      "id": "spell.polymerization",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Choose a result and distinct materials from the controller’s hand or field, including up to one substitute",
+        "Send materials to the Graveyard and Special Summon the result",
+        "Activate from hand or Set during a Main Phase"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1003,
+        1034
+      ],
+      "evidence": [
+        "src/Joey.Core/FusionRules.cs",
+        "src/Joey.Core/DemoFusion.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/12-receitas-de-fusao.jsonl",
+        "src/Joey.App/FusionSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Sandbox scope. Native chain windows and generic destination replacement effects are pending."
+      ]
+    },
+    {
+      "id": "spell.fusion-gate",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Activate the Field Spell from the hand or Set",
+        "Either player can reuse the face-up Gate during their Main Phase",
+        "Banish Fusion Materials instead of sending them to the Graveyard"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1547
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoFusion.cs",
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/Joey.App/FusionSelectionScreen.cs",
+        "src/tests/Joey.Tests/FusionChecks.cs",
+        "docs/research/card-static-sweep/06-combate-diferido-e-invocacao.jsonl"
+      ],
+      "limitations": [
+        "Sandbox field replacement and Phase policy. Native chain timing, field suppression and banishment replacement effects are pending."
+      ]
+    },
+    {
+      "id": "lp.damage",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "LP damage"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        342,
+        343,
+        344,
+        345,
+        1007
+      ],
+      "evidence": [
+        "src/Joey.Core/LifePointSpellRules.cs",
+        "src/tests/Joey.Tests/LifePointSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "lp.heal",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "LP recovery"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        338,
+        339,
+        340,
+        341,
+        1315
+      ],
+      "evidence": [
+        "src/Joey.Core/LifePointSpellRules.cs",
+        "src/tests/Joey.Tests/LifePointSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "spell.fixed-self-draw",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Pot of Greed: draw two cards",
+        "Upstart Goblin: draw one card and grant opponent 1000 LP",
+        "Activate from hand or set Spell/Trap zone without consuming the turn's draw"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1010,
+        1065
+      ],
+      "evidence": [
+        "src/Joey.Core/DrawSpellRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DrawSpellChecks.cs"
+      ],
+      "limitations": [
+        "C# sandbox: activation requires enough cards to complete the draw immediately.",
+        "Effects use local DAT descriptions. P119/P143 callback timing, chains and negation remain unverified."
+      ]
+    },
+    {
+      "id": "spell.spell-trap-wipe",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Destroy all Spell and Trap Cards on the affected side or sides, including the Field Spell zone",
+        "Activate from hand or from own set Spell/Trap zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        671,
+        1061
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/SpellTrapWipeChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl",
+        "docs/research/card-static-sweep/03-controle-e-eventos.jsonl"
+      ],
+      "limitations": [
+        "Sandbox activation requires another eligible card. Chains, native protection and native timing are outside scope."
+      ]
+    },
+    {
+      "id": "spell.targeted-face-up-trap-destruction",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Destroy one selected face-up Trap on either side",
+        "Activate from hand or Set during own Main Phase"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1004
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapTargetRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/DuelScreen.cs",
+        "src/tests/Joey.Tests/SpellTrapWipeChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "C# sandbox scope. Native chains, timing and protection are pending."
+      ]
+    },
+    {
+      "id": "spell.targeted-quick-play-spell-trap-destruction",
+      "kind": "Spell",
+      "subtype": "Quick-Play",
+      "mechanics": [
+        "Destroy one selected Spell or Trap on either side, including a Field Spell",
+        "Activate from hand or from an earlier Set during own Main Phase"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1079
+      ],
+      "evidence": [
+        "src/Joey.Core/SpellTrapTargetRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/DuelScreen.cs",
+        "src/tests/Joey.Tests/SpellTrapWipeChecks.cs",
+        "docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl"
+      ],
+      "limitations": [
+        "Quick-Play response windows outside the controller's Main Phase and chain interaction are pending.",
+        "Target choice and cancellation precede commitment in the C# sandbox."
+      ]
+    },
+    {
+      "id": "spell.monster-wipe-nontargeting",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Dark Hole: destroy all monsters on both fields",
+        "Raigeki: destroy all opponent monsters",
+        "Destroy face-up and face-down monsters without FLIP reveal",
+        "Trigger monster field-to-GY effects only after the full non-targeting wipe resolves",
+        "Activate from hand or from own set Spell/Trap zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        335,
+        336
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/MonsterWipeChecks.cs",
+        "docs/cards/p037-p039-monster-wipe-sandbox.md"
+      ],
+      "limitations": [
+        "C# sandbox only: no chain, negation, immunity or target replacement.",
+        "Exact native callback P037/P039 timing, graveyard trigger ordering and visual parity not verified."
+      ]
+    },
+    {
+      "id": "monster.flip.destroy-opponent-level-four",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP: destroy opposing face-up Level 4 monsters without selecting targets"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1338
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "docs/research/card-static-sweep/05-janelas-invocacao-batalha.jsonl"
+      ],
+      "limitations": [
+        "Sandbox uses the DAT level and keeps monsters already marked by battle on the battle removal path. Native phase timing, suppression and protection remain outside this scope."
+      ]
+    },
+    {
+      "id": "monster.battle-damage-draw",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "When the monster inflicts positive battle damage, draw for the specified player"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        219,
+        522
+      ],
+      "evidence": [
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "Sandbox resolves these mandatory draws immediately after nonlethal battle damage. Original request order and deck-out timing remain unverified."
+      ]
+    },
+    {
+      "id": "monster.flip.optional-draw",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP: the controller may draw one card"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        539
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/EffectDecisions.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "Sandbox uses its optional effect prompt and skips the offer when the deck is empty. Native prompt ordering and suppression remain unverified."
+      ]
+    },
+    {
+      "id": "spell.monster-wipe-face-up-type",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "mechanics": [
+        "Non-targeting destruction of all face-up monsters of the specified type on both fields",
+        "Activate from hand or own set Spell/Trap zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        652,
+        659,
+        661,
+        662,
+        663,
+        1036,
+        1037
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/MonsterWipeChecks.cs",
+        "docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl"
+      ],
+      "limitations": [
+        "Uses the DAT type in the sandbox. Dynamic type changes, native protection and chains are outside scope.",
+        "Sandbox activation requires at least one eligible monster. Native activation with an empty destruction mask remains unverified."
+      ]
+    },
+    {
+      "id": "trap.summon-response",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Trap Hole destroys an opponent monster after Normal/Flip Summon with current ATK >=1000",
+        "Torrential Tribute destroys all monsters on either player's Normal/Flip Summon",
+        "Previously Set Trap and explicit optional response window",
+        "One Trap activation or Pass per bounded response",
+        "Queued field-to-Graveyard and summon effects survive destruction"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1002,
+        1425
+      ],
+      "evidence": [
+        "src/Joey.Core/SummonTrapRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/SummonResponseScreen.cs",
+        "src/tests/Joey.Tests/SummonTrapChecks.cs",
+        "docs/cards/p196-p038-summon-trap-reactions-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only, no full chain/priority/negation, Jinzo/immunity or native timing parity.",
+        "Torrential response to Special Summons and simultaneous FLIP chain timing remain pending."
+      ]
+    },
+    {
+      "id": "trap.attack-declaration-response",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Mirror Force: respond to an opponent's declared monster attack before damage",
+        "Destroy all opponent face-up Attack Position monsters, not only the attacker",
+        "Response to direct attacks and attacks into face-down defenders",
+        "Pass resumes the same declared attack without reopening the response window",
+        "Card-effect destruction queues field-to-Graveyard triggers, not battle-only recruiters"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1056
+      ],
+      "evidence": [
+        "src/Joey.Core/AttackTrapRules.cs",
+        "src/Joey.Core/MonsterWipeRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/AttackResponseScreen.cs",
+        "src/tests/Joey.Tests/AttackTrapChecks.cs",
+        "docs/cards/p201-mirror-force-attack-response-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox-only one-response window; no chain builder, negation, priority alternation, invalidated-attack replay, changed control or native timing parity.",
+        "Activation is not proof of original callback P201's dynamic behavior."
+      ]
+    },
+    {
+      "id": "trap.attack-damage-negation",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Magic Cylinder: negate opponent-declared attack and inflict current attacker ATK as reflected effect damage",
+        "Negate Attack: negate declared attack and end current Battle Phase",
+        "Both activate as previously Set Traps in attack declaration response window",
+        "Other attackers may attack after Magic Cylinder but not after Negate Attack",
+        "Only one Trap choice or Pass in bounded sandbox window"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        960,
+        1214
+      ],
+      "evidence": [
+        "src/Joey.Core/AttackTrapRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/AttackNegationTrapChecks.cs",
+        "docs/cards/p200-p192-attack-traps-sandbox.md",
+        "docs/research/native-attack-response-pilot.md"
+      ],
+      "limitations": [
+        "Sandbox only, no chain/priority/Counter Trap negation, attack replay or targeting invalidation.",
+        "P200 and P192 card text corresponds to historical/official rules, not differential native effect capture."
+      ]
+    },
+    {
+      "id": "field.type",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Field modifier",
+        "Monster type"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        329,
+        330,
+        331,
+        332,
+        333,
+        334
+      ],
+      "evidence": [
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
+      ],
+      "limitations": [
+        "Native timing and eligibility are not fully verified; Sea Serpent native type code 5 is provisional."
+      ]
+    },
+    {
+      "id": "field.attribute",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Field modifier",
+        "Attribute"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1125,
+        1126,
+        1127,
+        1128,
+        1129,
+        1130
+      ],
+      "evidence": [
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/tests/Joey.Tests/AttributeFieldSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "field.position",
+      "kind": "Spell",
+      "subtype": "Field",
+      "mechanics": [
+        "Field modifier",
+        "Battle position"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1069
+      ],
+      "evidence": [
+        "src/Joey.Core/FieldSpellRules.cs",
+        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
+      ]
+    },
+    {
+      "id": "equipment",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Equip",
+        "ATK/DEF modifier"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        300,
+        301,
+        307
+      ],
+      "evidence": [
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/tests/Joey.Tests/EquipmentChecks.cs"
+      ],
+      "limitations": [
+        "Only selected equipment eligibility and lifecycle cases in the sandbox; not full native interactions."
+      ]
+    },
+    {
+      "id": "hand.limit",
+      "kind": "Spell",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Hand limit"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1427
+      ],
+      "evidence": [
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/InfiniteCardsTests.cs"
+      ]
+    },
+    {
+      "id": "monster.normal",
+      "kind": "Monster",
+      "subtype": "Normal",
+      "mechanics": [
+        "Normal Summon and Set",
+        "Tributes",
+        "Attack and Defense Position",
+        "Basic combat"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        12,
+        13,
+        16,
+        17,
+        18,
+        19,
+        21,
+        23,
+        25,
+        26,
+        27,
+        31,
+        32,
+        33,
+        34,
+        37,
+        38,
+        40,
+        41,
+        44,
+        49,
+        50,
+        51,
+        52,
+        54,
+        58,
+        59,
+        61,
+        63,
+        64,
+        65,
+        67,
+        70,
+        73,
+        77,
+        79,
+        80,
+        81,
+        84,
+        90,
+        93,
+        95,
+        96,
+        99,
+        110,
+        112,
+        116,
+        118,
+        124,
+        126,
+        128,
+        130,
+        131,
+        135,
+        141,
+        146,
+        154,
+        155,
+        156,
+        157,
+        159,
+        160,
+        164,
+        168,
+        169,
+        171,
+        174,
+        177,
+        185,
+        192,
+        193,
+        199,
+        200,
+        207,
+        209,
+        212,
+        213,
+        217,
+        220,
+        233,
+        235,
+        243,
+        244,
+        246,
+        248,
+        250,
+        254,
+        264,
+        273,
+        274,
+        275,
+        277,
+        278,
+        279,
+        280,
+        281,
+        290,
+        291,
+        292,
+        295,
+        296,
+        298,
+        299,
+        350,
+        352,
+        353,
+        354,
+        356,
+        357,
+        358,
+        360,
+        361,
+        362,
+        365,
+        376,
+        377,
+        378,
+        382,
+        389,
+        390,
+        394,
+        395,
+        400,
+        402,
+        411,
+        414,
+        423,
+        429,
+        432,
+        437,
+        438,
+        439,
+        443,
+        446,
+        447,
+        453,
+        458,
+        465,
+        467,
+        469,
+        479,
+        490,
+        497,
+        510,
+        512,
+        514,
+        516,
+        518,
+        519,
+        528,
+        531,
+        536,
+        537,
+        538,
+        541,
+        542,
+        543,
+        545,
+        548,
+        551,
+        554,
+        556,
+        558,
+        560,
+        566,
+        568,
+        574,
+        580,
+        581,
+        584,
+        592,
+        596,
+        604,
+        605,
+        607,
+        611,
+        613,
+        614,
+        620,
+        623,
+        629,
+        630,
+        631,
+        635,
+        636,
+        637,
+        642,
+        646,
+        648,
+        649,
+        704,
+        705,
+        707,
+        710,
+        722,
+        724,
+        725,
+        734,
+        736,
+        737,
+        745,
+        746,
+        756,
+        760,
+        794,
+        795,
+        798,
+        800,
+        837,
+        1050,
+        1051,
+        1052,
+        1053,
+        1165,
+        1166,
+        1167,
+        1168,
+        1169,
+        1171,
+        1173,
+        1174,
+        1308,
+        1309,
+        1310,
+        1331,
+        1333,
+        1335,
+        1339,
+        1342,
+        1343,
+        1345,
+        1346,
+        1347,
+        1348,
+        1349,
+        1401,
+        1402,
+        1403,
+        1406,
+        1407,
+        1408,
+        1409,
+        1410,
+        1412,
+        1440,
+        1443,
+        1501,
+        1502,
+        1503,
+        1504,
+        1505,
+        1506,
+        1507,
+        1508,
+        1509,
+        2000,
+        2034
+      ],
+      "evidence": [
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.Core/NormalSummonRules.cs",
+        "src/tests/Joey.Tests/NormalMonsterPlayabilityChecks.cs"
+      ],
+      "limitations": [
+        "Done means playable in the bounded C# sandbox: normal monsters have no individual activated effects. Native engine parity, responses, complex interactions and exact historical card type flags are not verified.",
+        "Classified by public card identity; optional RunWithCatalog against original data.dat checks each resource's category, level, and basic actions."
+      ]
+    },
+    {
+      "id": "monster.flip.basic",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP reveal",
+        "Targeted destruction",
+        "Hand discard",
+        "Draw five",
+        "Battle continuation",
+        "Return up to two monsters to owner's hand",
+        "Battle destruction determination before FLIP",
+        "Hane-Hane mandatory single-target return, with no-legal-target fallback",
+        "Morphing Jar #2: reshuffle field monsters into owner's Main Deck and excavate monsters quota",
+        "Excavated Level 4-or-lower monster Set by effect; high-level or unsupported cards sent to graveyard"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        500,
+        540,
+        590,
+        601,
+        1163
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "src/tests/Joey.Tests/HaneHaneChecks.cs",
+        "src/tests/Joey.Tests/MorphingJar2Checks.cs"
+      ],
+      "limitations": [
+        "Done is scoped to the C# sandbox: five FLIP monsters. Morphing Jar #2 returns eligible Main Deck monsters from each player's field, shuffles deterministically, excavates up to its monster quota, Sets eligible Level 4-or-lower monsters and sends other excavated cards to graveyards.",
+        "Battle-destroyed combatants are excluded from shuffle; damage is calculated before FLIP and marked cards go to graveyard at the end of the simplified Damage Step.",
+        "Fusion Monsters return to the Fusion Deck without increasing the excavation quota. Tokens, divergent ownership/control, chained responses, replacement effects and native timing remain pending.",
+        "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior."
+      ]
+    },
+    {
+      "id": "monster.flip.graveyard-recovery",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP reveal",
+        "Select Spell or Trap from own Graveyard",
+        "Return selected card to hand",
+        "Deferred battle continuation"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        101,
+        427
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/CardSelectionScreen.cs",
+        "src/tests/Joey.Tests/CardSelectionChecks.cs"
+      ],
+      "limitations": [
+        "Sandbox only: no chain/negation or verified native visual timing.",
+        "Deck search and field summon not yet implemented."
+      ]
+    },
+    {
+      "id": "monster.flip.deck-disruption",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Needle Worm: FLIP mills top five cards of opponent's Main Deck directly to GY",
+        "Hiro's Shadow Scout: FLIP opponent draws three and discards only newly drawn Spell cards",
+        "FLIP Summon, combat revelation and effect revelation",
+        "Short mill does not defeat; failed forced draw defeats drawer (sandbox policy)"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        561,
+        610
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/DeckFlowRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipDeckFlowChecks.cs",
+        "docs/cards/p082-p088-flip-deck-flow-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox synthetic tests only; native P082/P088 callback behavior not differentially validated.",
+        "No chains/negation, draw/discard reaction triggers, substituted GY destination or native ordering/timing validation."
+      ]
+    },
+    {
+      "id": "monster.effect.ritual-on-summon-search",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Trigger on Normal Summon face-up or Flip Summon (not battle/effect reveal)",
+        "Optional Deck to Hand selection of Ritual Spell or Ritual Monster",
+        "Filter by 16 original ritual spell/monster pairs and matching DAT class",
+        "Source-position validation; shuffle Main Deck only on successful choice"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1109,
+        1122
+      ],
+      "evidence": [
+        "src/Joey.Core/RitualSearchRules.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/RitualSearcherChecks.cs",
+        "docs/cards/p165-ritual-search-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox rules, not replay-verified against Joey's native callback P165.",
+        "Does not implement Ritual Summoning, chains, negation, modified selection restrictions or native shuffle/timing parity."
+      ]
+    },
+    {
+      "id": "monster.effect.field-to-graveyard-search",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Field-to-Graveyard trigger (battle, effect or tribute)",
+        "Deck search for monster ATK <=1500 or DEF <=1500",
+        "Return selected card to owner's hand",
+        "Seeded deterministic sandbox deck shuffle",
+        "Queued multiple simultaneous search triggers"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        47,
+        573
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DeckSearcherChecks.cs",
+        "docs/cards/p006-deck-search-sandbox.md"
+      ],
+      "limitations": [
+        "Done applies to the C# sandbox only; native callback P006 is catalogued but not yet differentially validated.",
+        "No chain, negation, replaced destination, controller/owner separation, or original deck RNG parity. Banlist affects deck construction, not search eligibility."
+      ]
+    },
+    {
+      "id": "monster.effect.battle-attribute-recruiter",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Sent to Graveyard after battle destruction",
+        "Optional search of Main Deck for same Attribute monster ATK <=1500",
+        "Special Summon selected monster to free field slot in face-up attack",
+        "May decline selection without shuffling",
+        "Serializes simultaneous battle triggers"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1108,
+        1110,
+        1117,
+        1119,
+        1120,
+        1123
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/BattleRecruiterChecks.cs",
+        "docs/cards/p164-battle-recruiters-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only; native callback P164 catalogued, differential effects not confirmed",
+        "No chain/negation, altered control, replaced graveyard destination, intrinsic special summon restrictions or native RNG/visual parity"
+      ]
+    },
+    {
+      "id": "monster.effect.battle-same-name-recruiter",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Battle destruction and sent to Graveyard",
+        "Nimble Momonga gains 1000 LP or Giant Germ deals 500 damage",
+        "Optional select zero to two same-name monsters in Main Deck",
+        "Atomic Special Summon of chosen copies, face-down DEF or face-up ATK",
+        "Shuffle remaining deck once after chosen copies"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1114,
+        1115
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/CardSelectionScreen.cs",
+        "src/tests/Joey.Tests/BattleGraveyardEffectChecks.cs",
+        "docs/cards/p168-p169-battle-graveyard-sandbox.md"
+      ],
+      "limitations": [
+        "C# sandbox with historical card text; no differential Joey native effect confirmation.",
+        "No chains/negation, owner/control divergence, destination replacement, native RNG or UI timing parity."
+      ]
+    },
+    {
+      "id": "monster.effect.delayed-flipped-graveyard-revival",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Track previous FLIP independently from immediate FLIP activation",
+        "Trigger when previously flipped Spear Cretin leaves field for Graveyard",
+        "Each player may select a monster in own Graveyard other than the source occurrence",
+        "Special Summon face-up ATK or face-down DEF to free zone"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1116
+      ],
+      "evidence": [
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.App/CardSelectionScreen.cs",
+        "src/tests/Joey.Tests/BattleGraveyardEffectChecks.cs",
+        "docs/cards/p168-p169-battle-graveyard-sandbox.md"
+      ],
+      "limitations": [
+        "Sandbox only, no differential native parity.",
+        "No chains/negation, special summon restrictions, altered controller/owner, exact legacy simultaneous-event priority or native UI."
+      ]
+    },
+    {
+      "id": "monster.flip.two-spelltrap-targets",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Greenkappa FLIP: select exactly two face-down Spell/Trap Cards and destroy",
+        "Tornado Bird FLIP: select exactly two Spell/Trap Cards, including face-up and face-down, and return to owner's hand",
+        "Both sides and the Field Spell zone",
+        "Two distinct occurrence targets, validated before moving either card",
+        "Preserve pending battle continuation and handle equipment/active Destiny Board dependencies"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        585,
+        1521
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipSpellTrapSelectionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipSpellTrapSelectionChecks.cs",
+        "docs/cards/p085-p255-two-spelltrap-flip-sandbox.md"
+      ],
+      "limitations": [
+        "C# .NET 10 full solution build and Joey.Tests suite passed in PR #55 (3,242 synthetic checks, including 14 new two-target FLIP checks); only bounded sandbox coverage, not native Joey parity.",
+        "Native 00583120 and 0056A320 substantiate Tornado Bird availability including FIELD, while seven of eight card callback functions remain missing from this SQLite.",
+        "No differential native duel validation, chains, effect negation (Royal Command), altered control/ownership, linked-resolver edge cases, or native visual/timing parity."
+      ]
+    },
+    {
+      "id": "trap.continuous.royal-command-flip-suppression",
+      "kind": "Trap",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Face-up Royal Command suppresses FLIP effect admission from flip summon, attack reveal or external reveal",
+        "Face-down Royal Command has no suppression until activated after its Set turn",
+        "Face-up Jinzo or Royal Decree negates Royal Command's continuous effect",
+        "Queued monster target, card selection, or optional FLIP draw are rechecked before resolution",
+        "Negated FLIP does not undo its reveal, damage calculation, or pending battle destruction"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1530
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectSuppressionRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/RoyalCommandSuppressionChecks.cs",
+        "docs/cards/royal-command.md"
+      ],
+      "limitations": [
+        "Bounded Royal Command implementation compiled and passed 3,254 synthetic checks (22 new Royal Command cases) in PR #56 CI; additional non-FLIP and multiple-source cases appended for follow-up CI. Partial due to absent chain timing and native differential validation.",
+        "Royal Command can be activated from Set on its owner's later Main Phase only; no opponent turn Trap responses or full priority/chains.",
+        "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
+        "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions."
+      ]
+    },
+    {
+      "id": "monster.flip.banish-cost-burn-800",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Lady Assailant of Flames (1435): FLIP banishes exactly three top cards of controller's own Deck and inflicts 800 damage",
+        "Fire Sorcerer (1436): FLIP banishes two distinct random cards from controller's own Hand and inflicts 800 damage",
+        "Separate banished zone retains original occurrences; no Graveyard/discard/draw callbacks",
+        "Cost unavailable below 3 Deck or 2 Hand cards produces no mutation or burn in the bounded sandbox",
+        "Respect shared Royal Command FLIP admission gate; preserve battle continuation and CPU availability heuristic"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1435,
+        1436
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipBanishBurnRules.cs",
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipBanishBurnChecks.cs",
+        "docs/cards/p051-p052-flip-banish-burn-sandbox.md"
+      ],
+      "limitations": [
+        "Callbacks 00582E60 / 00582EA0 and preparation 0057DDD0 / 0057DDF0 are not decompiled in provided SQLite; constraints from existing static sweep and legacy card texts.",
+        "Primary 00584E60 is decompiled and confirms 800 damage, but not native availability/cost order.",
+        "RNG is .NET sandbox seeded, not Joey RNG; no chain reactions, special banish redirection, counterplay priority or native differential replay.",
+        ".NET 10 solution build and 3,311 synthetic tests passed in PR #58 (16 P051/P052 checks); only bounded sandbox coverage, not Verified against Joey original."
+      ]
+    },
+    {
+      "id": "monster.flip.immortal-thunder-flip-life-graveyard-loss",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "resourceIds": [
+        461
+      ],
+      "status": "Done",
+      "mechanics": [
+        "The Immortal of Thunder (461) FLIP: gain 3000 LP for its current controller/owner in bounded sandbox",
+        "After that same monster occurrence has been flipped, any subsequent field-to-Graveyard movement loses 5000 LP for that owner",
+        "Retain per-occurrence flip flag through battle and other Graveyard removals; clear it on field exit",
+        "Unflipped Set monsters and normal face-up summons do not meet the historical flip condition",
+        "Return to Hand or Fusion Gate banishment does not cause the field-to-Graveyard loss",
+        "Royal Command FLIP admission suppresses gain without undoing the actual flip"
+      ],
+      "evidence": [
+        "src/Joey.Core/ImmortalThunderRules.cs",
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/ImmortalThunderChecks.cs",
+        "docs/cards/p065-immortal-thunder-sandbox.md"
+      ],
+      "limitations": [
+        "Native P065 availability 00581040, preparation 0057C5F0 and primary 00585970 are catalogued but absent from current SQLite decompilations.",
+        "Historical text requires flipping before the 5000 LP penalty, whereas the current official TCG card text does not spell out this qualification; the original Joey implementation must be observed.",
+        "Relationship of Royal Command to delayed loss, change of control/ownership, effect negation and priority is not proven.",
+        "CI .NET 10 build and 3,325 synthetic tests passed, including 14 P065 checks, on PR #59; this is bounded sandbox only and not native Verified."
+      ]
+    },
+    {
+      "id": "monster.battle.p188-dimensional-warrior-dual-banish",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "resourceIds": [
+        255
+      ],
+      "status": "Done",
+      "mechanics": [
+        "Dimensional Warrior (255): when it battles a monster, apply normal damage calculation first, then banish both physical combatant occurrences",
+        "Shared banished zone with Fusion Gate and P051/P052; no sending battlers to Graveyard",
+        "Do not trigger Sangan/Witch, Giant Germ/Nimble Momonga, Spear Cretin or The Immortal of Thunder field-to-Graveyard effects when banished",
+        "Identity guard prevents replacing a battle participant during a pending FLIP choice from banishing another card occupying its old slot",
+        "Direct attacks do not trigger two-monster banishment, and attack-response traps can cancel the battle before damage calculation",
+        "Cleanup attached equips when a combatant leaves the field via banishment"
+      ],
+      "evidence": [
+        "src/Joey.Core/DimensionalWarriorRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/DimensionalWarriorChecks.cs",
+        "docs/cards/p188-dimensional-warrior-battle-banish-sandbox.md"
+      ],
+      "limitations": [
+        "Native P188 primary callback 0058CC00 is catalogued in the SQLite but not decompiled; timing and any suppression/negation rules require native evidence.",
+        "Historical 2004 Joey card text says both are removed from play on attacking/being attacked; later rulings indicate after damage calculation; sandbox chooses the latter ordering.",
+        "Only direct monster-versus-monster battle with both original combatants still present is modeled; chains, unrelated replacement of slots mid-resolution, return-from-banish, owner/controller divergence and exact timing not native-verified.",
+        "Full .NET 10 solution built and 3,340 synthetic checks passed (15 P188 cases) in PR #60; no native original parity verified."
+      ]
+    },
+    {
+      "id": "monster.special-summon.p252-dark-necrofear",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "resourceIds": [
+        1514
+      ],
+      "status": "Partial",
+      "mechanics": [
+        "Core-only inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
+        "Revalidate hand source, distinct graveyard positions and free destination before changing zones"
+      ],
+      "evidence": [
+        "src/Joey.Core/GraveyardBanishSummonRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/GraveyardBanishSummonChecks.cs",
+        "docs/research/p252-necrofear-control-contract.md"
+      ],
+      "limitations": [
+        "No End Phase equip/control, UI/CPU input, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
+        "Native availability 00583050, preparation 005944D0 and primary 005906B0 not decompiled; summon cost helper 0059DEF0/00599E30/005AB640 available."
+      ]
+    },
+    {
+      "id": "monster.effect.position-change-destruction",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Manual face-up attack to face-up defense transition triggers Dream Clown",
+        "Select and destroy one opposing monster; preserve distinct FLIP triggers"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        119
+      ],
+      "evidence": [
+        "src/Joey.Core/MonsterPositionEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/PositionChangeEffectChecks.cs",
+        "docs/cards/p071-dream-clown-position-sandbox.md"
+      ],
+      "limitations": [
+        "C# .NET 10 solution build and synthetic Joey.Tests suite passed in PR #53 (3,228 checks); this is sandbox coverage, not native Joey parity.",
+        "Legacy PendingFlipTarget reused for position-triggered selection; chain, negation, immunity, native timing and behavior not verified.",
+        "Native 00575210 request producer and 00585C80 shared primary callback are static evidence; Dream Clown target preparation 00593970 absent from SQLite decompilation.",
+        "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification."
+      ]
+    },
+    {
+      "id": "monster.flip.same-name-deck-recruit",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "Bubonic Vermin FLIP on Flip Summon, battle reveal or effect reveal",
+        "Optional select zero or one same-name monster from own Main Deck",
+        "Special Summon selected copy in face-down Defense Position",
+        "Shuffle own Main Deck once after successful selection",
+        "Preserve damage calculation before FLIP and pending battle continuation"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1307
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/tests/Joey.Tests/BubonicVerminChecks.cs",
+        "docs/cards/p168-bubonic-vermin-flip-sandbox.md"
+      ],
+      "limitations": [
+        "C# .NET 10 solution build and Joey.Tests suite passed in PR #54 (3,238 synthetic checks, including 13 Bubonic Vermin checks); sandbox only, not original Joey parity.",
+        "Primary native callback 0058B040 (P168) is not decompiled in the current SQLite; shared same-ID filter 00599E30 is decompiled and historical DAT specifies the FLIP behavior.",
+        "No native differential replay, effect suppression, chains, special summon prohibitions, owner/controller divergence or RNG parity.",
+        "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification."
+      ]
+    },
+    {
+      "id": "equipment.fixed-bonus-c04",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Equip",
+        "ATK/DEF modifier"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        302,
+        304,
+        306,
+        308,
+        309,
+        311,
+        314,
+        315,
+        318,
+        321,
+        322,
+        324,
+        325,
+        326,
+        327,
+        653,
+        1012,
+        1013
+      ],
+      "evidence": [
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/NativeAiAttributes.cs",
+        "src/tests/Joey.Tests/EquipmentChecks.cs",
+        "docs/cards/c04-fixed-equipment.md"
+      ],
+      "limitations": [
+        "Legacy hand activation and ordinary cleanup only; C# tests added but not yet executed. Set activation, action queue migration, native suppression and other interactions pending."
+      ]
+    }
+  ]
+}

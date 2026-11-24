@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "measurement": "distinct native Draw entrypoints identified in duel renderer inventory",
+  "functions": [
+    {
+      "address": "00449850",
+      "family": "Campo e troca de cenário",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelScreen.cs"
+    },
+    {
+      "address": "0046F7A0",
+      "family": "Painel de detalhes",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelDetailScreen.cs"
+    },
+    {
+      "address": "00418EF0",
+      "family": "Cartas e mão",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelScreen.cs"
+    },
+    {
+      "address": "0043C980",
+      "family": "Deck, cemitério e pilhas",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelScreen.cs"
+    },
+    {
+      "address": "004194D0",
+      "family": "Atributos ATK/DEF",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelScreen.cs"
+    },
+    {
+      "address": "0047C660",
+      "family": "LP, dano e placar",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelDetailScreen.cs"
+    },
+    {
+      "address": "00481420",
+      "family": "Fases, botões e troca de cor",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelPhaseScreen.cs"
+    },
+    {
+      "address": "00480C60",
+      "family": "Avisos de fase e novo jogador",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelPhaseScreen.cs"
+    },
+    {
+      "address": "0043B280",
+      "family": "Seleção nativa de cartas",
+      "status": "Partial",
+      "client": "src/Joey.App/NativeSelectionListScreen.cs"
+    },
+    {
+      "address": "0045E4A0",
+      "family": "Ajuda",
+      "status": "Pending"
+    },
+    {
+      "address": "0040E260",
+      "family": "Efeito de estado persistente",
+      "status": "Pending"
+    },
+    {
+      "address": "004142C0",
+      "family": "Combate declarado e espada",
+      "status": "Partial",
+      "client": "src/Joey.App/AlphaDuelScreen.cs"
+    },
+    {
+      "address": "004514B0",
+      "family": "Explosão de destruição",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "00450FD0",
+      "family": "Quebra / remoção alternativa",
+      "status": "Pending"
+    },
+    {
+      "address": "0044F390",
+      "family": "Set",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "0044FA10",
+      "family": "Invocação normal",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "00450100",
+      "family": "Invocação especial",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "004505D0",
+      "family": "Ativação no campo",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelActivationScreen.cs"
+    },
+    {
+      "address": "00450AD0",
+      "family": "Ativação alternativa",
+      "status": "Pending"
+    },
+    {
+      "address": "00451980",
+      "family": "Abertura",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "00451E60",
+      "family": "Resultado do duelo",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelResultScreen.cs"
+    },
+    {
+      "address": "004524F0",
+      "family": "Fusão",
+      "status": "Pending"
+    },
+    {
+      "address": "004877F0",
+      "family": "Fusão",
+      "status": "Pending"
+    },
+    {
+      "address": "00453560",
+      "family": "Embaralhamento",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "0041F870",
+      "family": "Corrente",
+      "status": "Pending"
+    },
+    {
+      "address": "004531C0",
+      "family": "Indicador de corrente desativada",
+      "status": "Pending"
+    },
+    {
+      "address": "0043DBE0",
+      "family": "Remoção / exclusão",
+      "status": "Pending"
+    },
+    {
+      "address": "004870B0",
+      "family": "Sacrifício",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "00457520",
+      "family": "Moeda",
+      "status": "Pending"
+    },
+    {
+      "address": "00456B90",
+      "family": "Dado",
+      "status": "Pending"
+    },
+    {
+      "address": "00454010",
+      "family": "Exodia",
+      "status": "Partial",
+      "client": "src/Joey.App/DuelCardEffectsScreen.cs"
+    },
+    {
+      "address": "004584C0",
+      "family": "Vija",
+      "status": "Pending"
+    },
+    {
+      "address": "00455FF0",
+      "family": "Layerfont A",
+      "status": "Pending"
+    },
+    {
+      "address": "00456360",
+      "family": "Layerfont B",
+      "status": "Pending"
+    }
+  ]
+}

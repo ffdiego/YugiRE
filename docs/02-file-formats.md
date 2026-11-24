@@ -178,7 +178,7 @@ Todos os 100 bytes são consumidos por esse layout; os 43 IDs têm roundtrip vá
 
 Capacidades observadas em 0x00449EF0: 80 para lista 0 e 15 para cada outra. Em memória, relativamente ao destino da função, IDs convertidos da lista 0 começam em +0x00 e contador em +0xDC; lista 1 começa em +0xBE e contador em +0xE0; lista 2 começa em +0xA0 e contador em +0xDE. Portanto a ordem das listas no arquivo difere de sua ordem física no objeto. O layout interno ocupa ao menos 0xE2 bytes.
 
-0x0044AA00 exige contador principal entre 40 e 80 e os dois outros até 15. Lista 0 como deck principal tem confiança alta pelo contexto e limites. Lista 1 como fusões é hipótese média, coerente com a única carta desta amostra; papel da lista 2 não foi confirmado. Não impor nomenclatura moderna de extra deck/side deck por analogia.
+0x0044AA00 exige contador principal entre 40 e 80 e os dois outros até 15. A lista 0 é o Main Deck. Nos 58 presets CPU/FUL, as 161 cópias da lista 1 são todas de categoria nativa 2. Nenhuma das 2.454 cópias da lista 0 nem das 355 da lista 2 tem essa categoria nesses presets. O cruzamento sustenta o uso da lista 1 como Fusion Deck. O papel da lista 2 permanece aberto. [Verificação com o DAT](../src/tests/Joey.Tests/CpuDeckSelectionTests.cs)
 
 0x0044A550 pode validar o cabeçalho por **0x0045CD20**, que compara somente o primeiro byte e o DWORD em +4 com valores do objeto chamador. A origem/semântica desses valores não foi rastreada; bytes 1–3 também não foram explicados. Não rotular +4 como checksum nem data. O parser auxiliar preserva o cabeçalho sem atribuir semântica e rejeita limites/truncamento em vez de reproduzir os clamps do jogo.
 

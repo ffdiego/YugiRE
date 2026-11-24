@@ -74,5 +74,30 @@ class YugiLabCliTests(unittest.TestCase):
             run.assert_not_called()
 
 
+    def test_battle_attributes_require_state_and_obey_pilot_limits(self):
+        valid = ["--exe", "joey_pc.exe", "--duels", "1",
+                 "--trace-state", "--trace-battle-attributes"]
+        with patch.object(yugilab, "_run_native_launcher", return_value=0) as run, \
+             redirect_stdout(io.StringIO()):
+            self.assertEqual(yugilab.main(valid), 0)
+        forwarded = run.call_args.args[0]
+        self.assertIn("--trace-battle-attributes", forwarded)
+        self.assertIn("--trace-state", forwarded)
+
+        for tail in [
+            ["--trace-battle-attributes"],
+            ["--trace-state", "--trace-battle-attributes", "--workers", "2"],
+            ["--trace-state", "--trace-battle-attributes", "--duels", "4"],
+            ["--trace-state", "--trace-battle-attributes", "--trace-ai"],
+        ]:
+            args = ["--exe", "joey_pc.exe", "--duels", "2"] + tail
+            with self.subTest(args=args), \
+                 patch.object(yugilab, "_run_native_launcher") as run, \
+                 redirect_stderr(io.StringIO()), \
+                 self.assertRaises(SystemExit):
+                yugilab.main(args)
+            run.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

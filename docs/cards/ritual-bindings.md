@@ -381,3 +381,7 @@ o executor dos callbacks. Isso resolve a dúvida anterior de ordenação entre
 a preparação do estado 99 e o encerramento no estado 98 no caminho local.
 Continuam abertos o timing em frames, invalidação de ocorrências e respostas
 específicas de outras cartas.
+
+## Reuso no motor: buscadores P165 (sandbox)
+
+O PR #16 implementa **Sonic Bird** (resourceId 1122) e **Senju of the Thousand Hands** (1109) como buscas opcionais no **Normal Summon ou Flip Summon**, reutilizando os IDs exatos dos 16 pares desta tabela. O código preserva a categoria original da carta (Spell classe 22, monstro classe 1–20) e consulta o deck pela identidade do recurso, sem confundir buscar com executar o Ritual. Não considera revelação por ataque ou efeito externo como Flip Summon. Ver [P165](p165-ritual-search-sandbox.md) e `RitualSearcherChecks.cs`.

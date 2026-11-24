@@ -1,0 +1,52 @@
+{
+  "cards": [
+    {
+      "branchBytes": "8a5f06bec800000083e3015653e8b335ffff83c4086633c05f5e5b",
+      "branchVa": "0x00584f1b",
+      "callbackRow": 66,
+      "damage": 200,
+      "internalIndex": 755,
+      "resourceId": 342
+    },
+    {
+      "branchBytes": "8a5f06bef401000083e3015653e88c35ffff83c4086633c05f5e5b",
+      "branchVa": "0x00584f42",
+      "callbackRow": 67,
+      "damage": 500,
+      "internalIndex": 769,
+      "resourceId": 343
+    },
+    {
+      "branchBytes": "8a5f06be5802000083e3015653e87035ffff83c4086633c05f5e5b",
+      "branchVa": "0x00584f5e",
+      "callbackRow": 68,
+      "damage": 600,
+      "internalIndex": 738,
+      "resourceId": 344
+    },
+    {
+      "branchBytes": "8a5f06be2003000083e3015653e82735ffff83c4086633c05f5e5b",
+      "branchVa": "0x00584fa7",
+      "callbackRow": 69,
+      "damage": 800,
+      "internalIndex": 557,
+      "resourceId": 345
+    },
+    {
+      "branchBytes": "8a5f06be2c01000083e3015653e85834ffff83c4086633c05f5e5b",
+      "branchVa": "0x00585076",
+      "callbackRow": 172,
+      "damage": 300,
+      "internalIndex": 1049,
+      "resourceId": 1007
+    }
+  ],
+  "exeSha256": "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de",
+  "imageBase": "0x00400000",
+  "kind": "StaticAnalysis",
+  "limitations": [
+    "Not a native observation or differential validation.",
+    "Caller legality, timing, suppression semantics and animation remain outside this check."
+  ],
+  "method": "PE section mapping, exact bytes and relative-call checks; no game execution"
+}

@@ -5,6 +5,27 @@
 
 # YugiLab — laboratório de duelos do Joey
 
+## Execução curta (recomendada)
+
+Na raiz do repo, no **Windows**, com `native_hooks/.venv-frida` preparado:
+
+```powershell
+python scripts/duelos.py
+python scripts/duelos.py .\\scratch\\batch-A.json .\\scratch\\batch-B.json --battle-attributes
+# Para mais de 3 duelos, sem estado:
+python scripts/duelos.py --duels 10 --workers 2 --no-state
+```
+
+O atalho usa o launcher nativo e detecta o Python da venv. Padrões:
+`../passion/joey_pc.exe` (ajustar com `--exe`), 3 duelos, seed 12345,
+velocidade 2400, `--trace-state`, saída `scratch/captures`.
+Use `--dry-run` e `--help` para inspecionar. O JSONL passa a seguir
+`deck0_deck1_HHMMSSffffff-YYYYMMDD_v2.jsonl` (stem dos decks, horário local,
+microssegundos e a versão de `metadata.formatVersion`). O PID permanece em
+`metadata.processId`. Capturas antigas seguem válidas e podem ser analisadas.
+`--trace-state` segue limitado a 3 duelos/1 worker, sem `--trace-ai`.
+
+
 O **YugiLab** é a interface para executar e gravar uma quantidade
 determinada de duelos automaticamente. O código de hooking, DLL C++,
 instrumentação Frida e experimentos nativos continua em

@@ -1,12 +1,13 @@
+using Joey.LookAndFeel;
 using Joey.Core;
 
 static class HandActionTests
 {
     public static void Run(Action<bool, string> check)
     {
-        check(HandPresentation.CenterX(0, 6) == 366 && HandPresentation.CenterX(5, 6) == 684,
+        check(HandPresentation.CenterX(0, 6) == 319 && HandPresentation.CenterX(5, 6) == 731,
             "Native hand span distributes six card centers around x=525");
-        check(HandPresentation.CenterX(0, 1) == 521 && HandPresentation.CenterX(4, 5) == 653,
+        check(HandPresentation.CenterX(0, 1) == 521 && HandPresentation.CenterX(4, 5) == 731,
             "Native single-card and five-card integer spacing are preserved");
         check(HandPresentation.Approach(600, 568) == 592 && HandPresentation.Approach(592, 568) == 586,
             "Native hover advances one quarter of the remaining distance per update");

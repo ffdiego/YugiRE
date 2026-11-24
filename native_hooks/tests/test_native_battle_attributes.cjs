@@ -1,0 +1,40 @@
+// Pure memory fixture: documented 16-byte battle stat blocks. No Frida runtime.
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const source = fs.readFileSync(path.resolve(__dirname, '../native_battle_attributes.js'), 'utf8');
+const context = {};
+vm.runInNewContext(source, context, {filename:'native_battle_attributes.js'});
+const words = new Map();
+const get = n => words.get(n) ?? 0;
+const base = 0x00A57844;
+words.set(0x00A57840, 0x05);
+words.set(base, 0x0021);
+words.set(base+2, 490);
+words.set(base+4, 1400);
+words.set(base+8, 1200);
+words.set(base+12, 200);
+words.set(base+16, 0x0010);
+words.set(base+18, 124);
+words.set(base+20, 0xFFFFFE0C); // -500 signed
+words.set(base+24, 1700);
+words.set(base+28, 0);
+const sampler = context.createNativeBattleAttributeSampler(
+  n=>get(n)&0xFFFF, n=>get(n)|0, n=>get(n)>>>0);
+const result = sampler.capture();
+assert.equal(result.schema, 'joey-command-entry-battle-attributes-v1');
+assert.equal(result.selectorWord, 5);
+assert.equal(result.blocks.length, 2);
+assert.equal(result.blocks[0].cardIndexWord, 490);
+assert.equal(result.blocks[0].calculatedAttack, 1400);
+assert.equal(result.blocks[0].damageWord, 200);
+assert.equal(result.blocks[1].cardIndexWord, 124);
+assert.equal(result.blocks[1].calculatedAttack, -500);
+assert.equal(result.blocks[1].calculatedDefense, 1700);
+assert.equal(result.blocks[1].damageWord, 0);
+assert.ok(result.interpretationLimit.includes('not proof'));
+words.set(base+20, 1000001);
+assert.throws(()=>sampler.capture(), /Invalid battle attribute block/);
+console.log('PASS: read-only native battle attribute blocks and invalid-value gate');

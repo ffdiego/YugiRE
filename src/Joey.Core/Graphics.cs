@@ -60,8 +60,18 @@ public sealed record MenuResources(SceneSprite Buttons)
 public sealed class CardArtwork
 {
     readonly Dictionary<int, string> names = [];
+    readonly Dictionary<int, string> miniNames = [];
     public int Count => names.Count;
     public string? For(Card card) => names.GetValueOrDefault(card.Index);
+    public string? MiniFor(Card card) => miniNames.GetValueOrDefault(card.Index);
+
+    public static string MiniResourceName(string largeResource)
+    {
+        if (!largeResource.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Expected a card/ resource", nameof(largeResource));
+        return @"mini\" + largeResource[@"card\".Length..];
+    }
+
     public static CardArtwork Load(Archive archive, IReadOnlyCollection<Card> cards)
     {
         var result = new CardArtwork();
@@ -69,7 +79,8 @@ public sealed class CardArtwork
         var entries = archive.Entries.Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         string text = Encoding.Latin1.GetString(archive.Read(@"card\list_card.txt"));
         // The shipped manifest explicitly supplies both table index and public card ID.
-        foreach (Match match in Regex.Matches(text, @"(?m)^//\s*(\d{4}):\[(\d{4})\][^\r\n]*\r?\n([A-Za-z0-9_]+\.bmp)\r?$", RegexOptions.IgnoreCase))
+        const string pattern = @"(?m)^//\s*(\d{4}):\[(\d{4})\][^\r\n]*\r?\n([A-Za-z0-9_]+\.bmp)\r?$";
+        foreach (Match match in Regex.Matches(text, pattern, RegexOptions.IgnoreCase))
         {
             int index = int.Parse(match.Groups[1].Value), id = int.Parse(match.Groups[2].Value);
             if (!byIndex.TryGetValue(index, out var card)) continue; // Includes the back/sentinel entry.
@@ -78,6 +89,26 @@ public sealed class CardArtwork
             if (!entries.Contains(name)) throw new InvalidDataException($"Missing artwork resource {name}");
             if (!result.names.TryAdd(index, name)) throw new InvalidDataException($"Duplicate artwork index {index}");
         }
+        // Joey 0041A800 initializes two distinct card image banks:
+        // card/list_card.txt (large) and mini/list_card.txt (50x72).
+        // Mini resources are NOT a runtime filter over the full-size BMP.
+        string miniText = Encoding.Latin1.GetString(archive.Read(@"mini\list_card.txt"));
+        foreach (Match match in Regex.Matches(miniText, pattern, RegexOptions.IgnoreCase))
+        {
+            int index = int.Parse(match.Groups[1].Value), id = int.Parse(match.Groups[2].Value);
+            if (!byIndex.TryGetValue(index, out var card)) continue;
+            if (card.Id != id) throw new InvalidDataException($"Mini-art manifest ID mismatch at index {index}");
+            string name = @"mini\" + match.Groups[3].Value;
+            if (!entries.Contains(name)) throw new InvalidDataException($"Missing mini-art resource {name}");
+            if (!result.names.TryGetValue(index, out string? largeName) ||
+                !name.Equals(MiniResourceName(largeName), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException($"Large/mini art mismatch at index {index}: {name}");
+            if (!result.miniNames.TryAdd(index, name))
+                throw new InvalidDataException($"Duplicate miniature artwork index {index}");
+        }
+        if (result.miniNames.Count != result.names.Count)
+            throw new InvalidDataException(
+                $"Artwork manifests disagree: {result.names.Count} large vs {result.miniNames.Count} mini");
         return result;
     }
 }

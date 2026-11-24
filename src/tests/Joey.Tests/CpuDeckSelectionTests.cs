@@ -15,6 +15,7 @@ static class CpuDeckSelectionTests
         var playableIndices = CardListResources.ForPacks(cards, archive.Read(@"bin#\card_pack.bin"))
             .Select(card => card.Index).ToHashSet();
         int previousEditionCopies = 0;
+        int fusionCopies = 0;
         HashSet<string> mainMultisets = [];
         Dictionary<string, DeckFile> decks = [];
         foreach (string path in names)
@@ -22,6 +23,11 @@ static class CpuDeckSelectionTests
             var deck = DeckFile.Read(archive.Read(path[5..].Replace('/', '\\')));
             decks[path] = deck;
             var main = deck.Resolve(0, cards);
+            var fusion = deck.Resolve(DeckFile.FusionGroup, cards);
+            check(main.All(card => !FusionRules.IsFusionMonster(card)) && fusion.All(FusionRules.IsFusionMonster) &&
+                  deck.Resolve(2, cards).All(card => !FusionRules.IsFusionMonster(card)),
+                $"Original CPU resource stores Fusion Monsters exclusively in list 1: {path}");
+            fusionCopies += fusion.Count;
             mainMultisets.Add(string.Join(",", deck.Groups[0].Order()));
             check(deck.HasDuelSize && main.All(card => playableIndices.Contains(card.Index)),
                 $"Original CPU resource has valid playable main: {path}");
@@ -32,6 +38,7 @@ static class CpuDeckSelectionTests
         }
         check(decks.Count == 58 && mainMultisets.Count == 58 && previousEditionCopies == 401,
             "All 58 selected DAT resources resolve; FUL includes 401 previous-edition main copies in total");
+        check(fusionCopies == 161, "Original CPU resources contain 161 Fusion Monster copies in list 1");
         foreach (var (letter, resource) in new[] { ("A", "0GE1"), ("B", "0VAL"), ("C", "0UMI") })
         {
             using var captured = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, $"Fixtures/demo-{letter}.json")));

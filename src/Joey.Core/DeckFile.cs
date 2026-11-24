@@ -7,6 +7,7 @@ namespace Joey.Core;
 public sealed class DeckFile
 {
     public const int MaximumBytes = 8 + 3 * 2 + (80 + 15 + 15) * 2;
+    public const int FusionGroup = 1;
     public string HeaderHex { get; }
     public IReadOnlyList<IReadOnlyList<ushort>> Groups { get; }
     public bool HasDuelSize => Groups[0].Count is >= 40 and <= 80;

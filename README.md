@@ -1,5 +1,10 @@
 # YugiRE
 
+[![ACTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Factions.json)](PLANS.md#itens-da-trilha-actions)
+[![CARDS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Fcards%2Fbadges%2Fall-packs.json)](docs/cards/PLAYABILITY.md)
+[![VISUALS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fffdiego%2FYugiRE%2Fmain%2Fdocs%2Farchitecture%2Fbadges%2Fvisual.json)](docs/architecture/VISUAL_COVERAGE.md)
+
+
 Engenharia reversa e protótipo de Yu-Gi-Oh! Power of Chaos: Joey the Passion.
 
 Abra `YugiRE.sln` no Visual Studio e escolha `Joey.App` como projeto de
@@ -20,6 +25,87 @@ Seleção de decks da CPU: [algoritmo, estrelas, pools e RNG](docs/research/cpu-
 [validação passiva no Windows](docs/research/cpu-deck-selection-windows-validation.md).
 O seletor, o RNG compartilhado e a progressão têm transcrições isoladas em C#;
 a comparação dinâmica completa de um duelo normal ainda está pendente.
+
+## Progresso das três frentes
+
+As badges independentes representam [ACTIONS, CARDS e VISUALS](PLANS.md):
+
+- **ACTIONS:** marcos numerados concluídos da trilha A no PLANS.md (checkbox `[x]` e status `Concluído`); mede o roadmap do scheduler, não a porcentagem de opcodes ou regras do motor.
+- **CARDS:** cartas jogáveis na trilogia (Done+Verified, 771 cartas).
+- **VISUALS:** funções Draw nativas com implementação C# (Partial+Done+Verified, dentre as identificadas); mede cobertura de implementação, **não fidelidade nativa comprovada**.
+
+Os denominadores de ACTIONS e VISUALS podem aumentar conforme novos marcos ou rotinas forem identificados. Não comparar as três porcentagens como estimativa de esforço restante.
+[Relatório visual detalhado](docs/architecture/VISUAL_COVERAGE.md).
+
+A métrica de cartas considera a união dos packs (771 registros). Os números
+específicos de Joey (350) seguem no relatório detalhado, mas sem badge
+separada. O manifest versionado
+`docs/cards/playability-manifest.json` lista as implementações documentadas;
+o gerador cruza resource IDs e catálogo do DAT local, sem versionar dados do jogo.
+
+```powershell
+python scripts/card_playability.py --dat ../passion/data.dat
+# Relatório: scratch/card-playability/PROGRESS.md
+# Inventário: scratch/card-playability/cards.csv
+```
+
+[Painel atualizado automaticamente](docs/cards/PLAYABILITY.md),
+[efeitos FLIP jogáveis](docs/cards/flip-sandbox.md),
+[arquitetura Joey.LookAndFeel](docs/architecture/look-and-feel.md),
+[contrato visual recuperado via Ghidra](docs/architecture/native-visual-contract.md),
+[prévia de ativação de magia na raylib](docs/architecture/activation-preview.md),
+[procedimento e critérios](docs/cards/playability-progress.md) e
+[inventário de funcionalidades](CARDS.md). Os 264 monstros classificados como
+Normal foram testados em cenários de invocação, set, tributos e ataque como uma
+família compartilhada; monstros de efeito, rituais e fusões não ganham `Done`
+por essa infraestrutura. A verificação de cada registro real do `data.dat`
+continua disponível na suíte com DAT. `Done` em C# não significa paridade nativa.
+
+## Histórico de cobertura por engenharia reversa (snapshot antigo)
+
+Estado do [Card Coverage Registry](docs/coverage/integration-report.md), no baseline
+revisado `12f560f` (preservado nesta integração):
+
+| Medida | Cartas |
+| --- | ---: |
+| Catalogadas (todos os registros não sentinela) | 1.114 |
+| Com anotações revisadas | 11 |
+| Com implementação parcial documentada | 9 |
+| Dos pilotos com efeitos específicos disponíveis no demo | 8 |
+| Integralmente validadas | 0 |
+
+As oito cartas dos pilotos são cinco magias P045 — Sparks, Hinotama, Final Flame,
+Ookazi e Raimei — e três equipamentos P025 — Legendary Sword, Beast Fangs e Sword
+of Dark Destruction. Axe Raider completa as nove implementações parciais por seu
+escopo de atributos de IA; Witch of the Black Forest e Zombyra the Dark conservam
+implementação desconhecida. O comportamento legado de Infinite Cards no demo
+fica fora desse conjunto de pilotos revisados.
+
+**Cartas e mecânicas são contagens diferentes:** o snapshot registra nove mecânicas
+e 27 vínculos entre cartas e mecânicas. Uma primitiva aritmética implementada não
+fecha ativação, seleção de alvo, vínculo, retirada e interações da carta inteira.
+Os pilotos têm cobertura **sintética** em escopos limitados; isso não demonstra
+**paridade nativa**. Todos os inventários de cartas permanecem `Open` e a validação
+integral permanece `Unknown`, sem promoção automática pelo comparador diferencial.
+
+- [Painel visual de progresso por carta](docs/coverage/progress.md) — snapshot auditado, independente de validação nativa.
+- [Observação passiva e limitada de Sparks (14/11/2026)](docs/evidence/sparks-2026-11-14-passive-observation.md) — hashes/cronologia, sem captura bruta versionada e sem promoção de cobertura.
+- [Relatório de cobertura e validação da integração](docs/coverage/integration-report.md).
+- [Geração do snapshot atual e dos relatórios completos](docs/coverage/integration-report.md#reproduzir-o-snapshot-e-os-relatorios)
+  e [contrato do gerador](docs/coverage/generator.md).
+- [Prioridades estruturais de investigação e seus limites](docs/coverage/integration-report.md#prioridades-de-investigacao).
+- [Escopo P045](docs/cards/p045-direct-damage.md),
+  [escopo P025](docs/cards/p025-implementation.md) e
+  [piloto diferencial Sparks/Legendary Sword](docs/research/handoffs/native-sparks-sword-pilot.md).
+
+## Duelos headless no protótipo C# (novo piloto)
+
+O `Joey.Lab duel-sim` executa partidas automáticas e determinísticas **no sandbox C#**, 
+com snapshots antes/depois e JSONL marcado `nativeParity:false`. Para começar
+sem DAT, use `--fixture`; para construir o pool de 100 cartas, 
+`pool-candidates` oferece somente uma lista **não revisada** a partir do DAT.
+Nenhuma carta recebe validação nativa pela execução do runner.
+[Procedimento, limites e revisão do pool](docs/research/headless-sandbox-duels-v1.md).
 
 ## Joey.Lab — análise offline em .NET
 

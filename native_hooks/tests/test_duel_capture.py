@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from duel_capture import LiveDuelCapture, collect_duels, enrich
+from duel_capture import LiveDuelCapture, collect_duels, enrich, capture_filename
 
 
 def command(seq: int, opcode: int) -> dict:
@@ -62,6 +62,110 @@ class FakeLiveAgent:
 
 
 class LiveDuelCaptureTests(unittest.TestCase):
+    def test_named_capture_keeps_stems_and_envelope_version(self):
+        from datetime import datetime, timezone
+        name = capture_filename({"0": "spell-round-03-A", "1": "My Deck!"},
+                                datetime(2026, 11, 17, 20, 30, 15, 123456,
+                                         tzinfo=timezone.utc))
+        self.assertEqual(name, "spell-round-03-A_My-Deck_203015123456-20261117_v2.jsonl")
+        self.assertNotIn("/", capture_filename({"0": "../oops", "1": "B"}))
+
+    def test_named_file_keeps_pid_in_metadata(self):
+        agent = FakeLiveAgent([], 0)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 789, 1, {}, 600, Path(td),
+                                      deck_labels={"0": "A", "1": "B"})
+            try:
+                self.assertTrue(capture.path.name.startswith("A_B_"))
+                self.assertTrue(capture.path.name.endswith("_v2.jsonl"))
+                header = json.loads(capture.path.read_text().splitlines()[0])
+                self.assertEqual(header["processId"], 789)
+                self.assertEqual(header["formatVersion"], 2)
+            finally:
+                capture.close()
+
+    def test_state_trace_footer_and_no_extra_seq_numbers(self):
+        events = [
+            {**command(1, 0xCF), "stateSampled": True,
+             "stateObservation": {"kind": "baseline", "nonAtomic": True,
+                                  "samplePoint": "command_producer_onEnter",
+                                  "sides": [{"side": 0}, {"side": 1}]}},
+            {**command(2, 0x0042), "stateSampled": True,
+             "stateObservation": {"kind": "delta", "nonAtomic": True,
+                                  "previousSampleSeq": 1,
+                                  "changes": [{"side": 0, "graveyardCount":
+                                               {"before": 0, "after": 1}}]}},
+            {**command(3, 0x0004), "stateSampled": True},
+        ]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 4001, 1, {}, 2400,
+                                      Path(td), trace_state=True)
+            try:
+                capture.drain()
+                summary = capture.finish(agent.tracestop(), True)
+                self.assertTrue(summary["complete"])
+                self.assertEqual(summary["eventsWritten"], 3)
+                self.assertEqual(summary["stateTrace"],
+                                 {"samples": 3, "baselines": 1, "deltas": 1,
+                                  "readErrors": 0})
+                lines = [json.loads(line)
+                         for line in capture.path.read_text(encoding="utf-8").splitlines()]
+                self.assertTrue(lines[0]["stateTrace"]["enabled"])
+                self.assertEqual([e["seq"] for e in lines[1:-1]], [1, 2, 3])
+            finally:
+                capture.close()
+
+    def test_opt_in_battle_stats_metadata_and_footer_counters(self):
+        events = [
+            {**command(1, 0x0031), "stateSampled": True,
+             "stateObservation": {"kind": "baseline",
+                                  "samplePoint": "command_producer_onEnter",
+                                  "nonAtomic": True,
+                                  "sides": [{"side": 0}, {"side": 1}]},
+             "battleAttributesObservation": {
+                 "schema": "joey-command-entry-battle-attributes-v1",
+                 "samplePoint": "command_producer_onEnter_0x31",
+                 "nonAtomic": True, "selectorWord": 0,
+                 "blocks": [{"cardIndexWord": 124, "calculatedAttack": 1400},
+                            {"cardIndexWord": 169, "calculatedAttack": 1500}]}},
+            {**command(2, 0x0031), "stateSampled": True,
+             "battleAttributesReadError": "synthetic read failure"},
+            {**command(3, 0x0004), "stateSampled": True},
+        ]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 1001, 1, {}, 600, Path(td),
+                                      trace_state=True, trace_battle_attributes=True)
+            try:
+                capture.drain()
+                summary = capture.finish(agent.tracestop(), True)
+                self.assertEqual(summary["battleAttributesTrace"],
+                                 {"samples": 1, "readErrors": 1})
+                rows = [json.loads(line) for line
+                        in capture.path.read_text(encoding="utf-8").splitlines()]
+                self.assertEqual(rows[0]["battleAttributesTrace"]["schema"],
+                                 "joey-command-entry-battle-attributes-v1")
+                self.assertEqual(rows[1]["battleAttributesObservation"]
+                                 ["blocks"][0]["cardIndexWord"], 124)
+                self.assertEqual(rows[-1]["battleAttributesTrace"]["readErrors"], 1)
+            finally:
+                capture.close()
+
+    def test_state_trace_rejects_capture_without_baseline(self):
+        events = [{**command(1, 0x0004), "stateSampled": True,
+                   "stateReadError": "simulated unreadable memory"}]
+        agent = FakeLiveAgent(events, 1)
+        with tempfile.TemporaryDirectory() as td:
+            capture = LiveDuelCapture(agent, 4001, 1, {}, 2400,
+                                      Path(td), trace_state=True)
+            try:
+                capture.drain()
+                with self.assertRaisesRegex(RuntimeError, "lacks a baseline"):
+                    capture.finish(agent.tracestop(), True)
+            finally:
+                capture.close()
+
     def test_live_drain_then_finalize_preserves_exact_event_order(self):
         events = [command(i, 0x0004 if i in (13, 45, 74) else 0x0001)
                   for i in range(1, 75)]

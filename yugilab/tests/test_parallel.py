@@ -43,7 +43,10 @@ class ParallelLabTests(unittest.TestCase):
                     target = int(argv[argv.index("--duels") + 1])
                     folder = Path(argv[argv.index("--output-dir") + 1])
                     folder.mkdir(parents=True, exist_ok=True)
-                    capture = folder / f"duels-20000101-pid{self.pid}.jsonl"
+                    # Alternate old and new conventions: both are resolved by metadata PID.
+                    filename = (f"A_B_120000{self.pid:06d}-20000101_v2.jsonl"
+                                if self.pid % 2 else f"duels-20000101-pid{self.pid}.jsonl")
+                    capture = folder / filename
                     header = {"kind": "metadata", "processId": self.pid,
                               "requestedDuels": target}
                     summary = {"kind": "capture_summary",

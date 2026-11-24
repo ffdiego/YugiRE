@@ -4,7 +4,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const path = require('node:path');
-const source = fs.readFileSync(path.resolve(__dirname, '../yugire_dual_loader.js'), 'utf8');
+const source = fs.readFileSync(path.resolve(__dirname, '../native_state_sampler.js'), 'utf8')
+  + '\n' + fs.readFileSync(path.resolve(__dirname, '../native_battle_attributes.js'), 'utf8')
+  + '\n' + fs.readFileSync(path.resolve(__dirname, '../yugire_dual_loader.js'), 'utf8');
 
 function fixture(options = {}) {
   let currentThread = 778;
@@ -85,6 +87,7 @@ function fixture(options = {}) {
       return this.readU32() & 0xffff;
     }
     readU8() { return this.readU32() & 0xff; }
+    readS32() { return this.readU32() | 0; }
     writeU32(value) { memory.set(this.n, value); }
     readPointer() { return new Pointer(this.readU32()); }
     writePointer(value) {
@@ -1297,6 +1300,80 @@ combatStopped.api.tracestop();
 assert.equal(combatStopped.api.traceevents(0,100).filter(e=>e.kind==='combat_context').length,1);
 combatStopped.api.restore();
 console.log('PASS: bounded passive combat context, wrapper outputs, seed, nulls, thread/nesting/caller correlation, rollback and mode gates');
+
+
+// Opt-in command-entry state instrumentation uses the EXISTING producer
+// listener, and must not perturb sequence numbers or the default trace.
+const stateTrace = fixture();
+stateTrace.api.armstartupobserver();
+stateTrace.api.tracestart(64);
+assert.equal(stateTrace.api.tracestatus().stateActive, false);
+assert.equal(stateTrace.api.tracestateon().stateActive, true);
+stateTrace.command(0xCF, 0x00000523, 0, 0, 0x57977F);
+const field5 = 0x00A55D64 + 0x10 + 5 * 0x90;
+stateTrace.memory.set(field5, 414);
+stateTrace.memory.set(0x00A55D64 + 6, 1);
+stateTrace.command(0x42, 1000, 0, 1, 0x578823);
+stateTrace.command(0x04, 0, 0, 0, 0x5bc545);
+const traceStatus = stateTrace.api.tracestatus();
+assert.equal(traceStatus.stateSamples, 3);
+assert.equal(traceStatus.stateBaselines, 1);
+assert.ok(traceStatus.stateDeltas >= 1);
+assert.equal(traceStatus.completedDuels, 1);
+stateTrace.api.tracestop();
+const stateEvents = stateTrace.api.traceevents(0,32);
+const stateCommands = stateEvents.filter(x => x.kind === 'command');
+assert.equal(stateCommands.length, 3);
+assert.equal(stateCommands[0].stateObservation.kind, 'baseline');
+assert.equal(stateCommands[1].stateObservation.kind, 'delta');
+assert.equal(stateCommands[1].stateObservation.previousSampleSeq, stateCommands[0].seq);
+assert.equal(stateCommands[1].stateObservation.changes[0].graveyardCount.after, 1);
+assert.equal(stateCommands[1].stateObservation.changes[0].fieldSlots[0].after.cardIndex, 414);
+assert.equal(stateCommands[2].stateSampled, true);
+assert.equal(stateTrace.api.tracestatus().stateActive, false);
+stateTrace.api.restore();
+console.log('PASS: opt-in state baseline/deltas preserve command seq and terminate with trace');
+
+
+// Passive 0x31 snapshots reuse the command producer: opt-in, state-trace
+// dependency, no extra hook, no interpretation of attacker/defender sides.
+const batt = fixture();
+batt.api.armstartupobserver();
+batt.api.tracestart(64);
+assert.throws(()=>batt.api.tracebattleattributeson(), /state trace/);
+batt.api.tracestateon();
+assert.equal(batt.api.tracebattleattributeson().battleAttributesActive, true);
+const combatBase = 0x00A57844;
+batt.memory.set(0x00A57840, 1);
+batt.memory.set(combatBase, 0x10);
+batt.memory.set(combatBase + 2, 124);
+batt.memory.set(combatBase + 4, 1600);
+batt.memory.set(combatBase + 8, 1700);
+batt.memory.set(combatBase + 12, 200);
+batt.memory.set(combatBase + 0x10, 0x20);
+batt.memory.set(combatBase + 0x12, 169);
+batt.memory.set(combatBase + 0x14, 1400);
+batt.memory.set(combatBase + 0x18, 800);
+batt.memory.set(combatBase + 0x1C, 200);
+batt.command(0x30, 0, 0, 0);
+batt.command(0x31, 0, 200, 0);
+let battles = batt.api.tracelivepeek(20).events.filter(x=>x.kind === 'command');
+assert.equal(battles.length, 2);
+assert.equal(battles[0].battleAttributesObservation, undefined);
+assert.equal(battles[1].battleAttributesObservation.blocks[0].cardIndexWord, 124);
+assert.equal(battles[1].battleAttributesObservation.blocks[0].calculatedAttack, 1600);
+assert.equal(battles[1].battleAttributesObservation.blocks[1].calculatedDefense, 800);
+assert.equal(batt.api.tracestatus().battleAttributeSamples, 1);
+batt.memory.set(combatBase + 4, 1000001);
+batt.command(0x31, 0, 200, 0);
+battles = batt.api.tracelivepeek(20).events.filter(x=>x.kind === 'command');
+assert.match(battles[2].battleAttributesReadError, /Invalid battle attribute block/);
+assert.equal(batt.api.tracestatus().battleAttributeReadFailures, 1);
+assert.equal(batt.api.tracestatus().battleAttributeSamples, 1);
+batt.api.tracestop();
+assert.equal(batt.api.tracestatus().battleAttributesActive, false);
+batt.api.restore();
+console.log('PASS: opt-in read-only battle stats on existing 0x31, no hook or failed-read crash');
 
 // Instruction witnesses are synthetic CPU contexts, not dynamic validation.
 // The combined set is prohibited in live Windows; only explicit synthetic

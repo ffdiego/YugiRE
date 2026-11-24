@@ -61,13 +61,27 @@ def _last_json_line(path: Path) -> dict | None:
     return None
 
 
+def _capture_pid(path: Path) -> int | None:
+    """Use JSONL metadata, not a filename pattern, to associate a worker."""
+    try:
+        with path.open(encoding="utf-8") as stream:
+            header = json.loads(stream.readline())
+        if isinstance(header, dict) and header.get("kind") == "metadata":
+            value = header.get("processId")
+            return value if type(value) is int else None
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        pass
+    return None
+
+
 def _worker_capture(worker: Worker, captures: Path) -> dict:
     log_content = worker.log.read_text(encoding="utf-8", errors="replace")
     matches = PID_PATTERN.findall(log_content)
     pid = int(matches[-1]) if matches else None
     verified_exits = {int(value) for value in VERIFIED_EXIT_PATTERN.findall(log_content)}
     exit_verified = pid is not None and pid in verified_exits
-    files = (list(captures.glob(f"duels-*-pid{pid}.jsonl"))
+    files = ([path for path in captures.glob("*.jsonl")
+              if path.is_file() and _capture_pid(path) == pid]
              if pid is not None else [])
     record = {
         "worker": worker.number,

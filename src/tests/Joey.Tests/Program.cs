@@ -57,6 +57,12 @@ Check(demo.Attack(0, 0, out _) && demo.Life[1] == 6000 && demo.Monsters[1, 0] ==
 demo.NextTurn();
 Check(demo.BeginBattle(out _) && demo.Attack(0, -1, out _) && demo.Life[1] == 4000, "Direct attack damages LP");
 Check(!demo.Attack(0, -1, out _), "Attacker cannot attack twice");
+Check(demo.EndBattle(out _) && demo.IsMainPhase2 && !demo.CanDraw &&
+      !demo.CanBeginBattle && !demo.CanAttack(0) && !demo.EndBattle(out _),
+      "Main Phase 2 follows Battle without reopening attacks or the normal draw");
+demo.NextTurn();
+Check(!demo.IsMainPhase2 && demo.CanDraw && demo.CanBeginBattle,
+      "Next turn restores its own draw and Battle Phase eligibility");
 var equal = new DemoDuel([weak, weak, weak]);
 equal.Summon(0, 0, 0, true, out _); equal.NextTurn(); equal.Summon(0, 1, 0, true, out _); equal.BeginBattle(out _);
 Check(equal.Attack(0, 0, out _) && equal.Monsters[0, 0] == null && equal.Monsters[1, 0] == null && equal.Life[0] == 8000, "Equal attack destroys both without damage");
@@ -108,11 +114,54 @@ NativeRngTests.Run(Check);
 CpuDeckSelectionTests.Run(Check);
 CpuDifficultyProgressionTests.Run(Check);
 NativeDefaultQueuePacketTests.Run(Check);
+ActionQueueChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
 DeckTests.Run(Check, Reject);
 EndTurnTests.Run(Check);
 SummonTests.Run(Check);
+NormalSummonCinematicChecks.Run(Check);
+NormalMonsterPlayabilityChecks.Run(Check);
+FlipMonsterChecks.Run(Check);
+PositionChangeEffectChecks.Run(Check);
+BubonicVerminChecks.Run(Check);
+CardConsolidationChecks.Run(Check);
+FlipSpellTrapSelectionChecks.Run(Check);
+RoyalCommandSuppressionChecks.Run(Check);
+FlipSuppressionIntegrationChecks.Run(Check);
+FlipDeckFlowChecks.Run(Check);
+FlipBanishBurnChecks.Run(Check);
+ImmortalThunderChecks.Run(Check);
+DimensionalWarriorChecks.Run(Check);
+GraveyardBanishSummonChecks.Run(Check);
+RitualSearcherChecks.Run(Check);
+MonsterWipeChecks.Run(Check);
+SpellTrapWipeChecks.Run(Check);
+FusionChecks.Run(Check);
+SummonTrapChecks.Run(Check);
+AttackTrapChecks.Run(Check);
+AttackNegationTrapChecks.Run(Check);
+CardSelectionChecks.Run(Check);
+DeckSearcherChecks.Run(Check);
+BattleRecruiterChecks.Run(Check);
+BattleDamageEffectRuleChecks.Run(Check);
+BattleGraveyardEffectChecks.Run(Check);
+GraveyardArrivalRuleChecks.Run(Check);
+RevivalJamDecisionChecks.Run(Check);
+NativeP168EvidenceChecks.Run(Check);
+HaneHaneChecks.Run(Check);
+MorphingJar2Checks.Run(Check);
+ExodiaChecks.Run(Check);
+DestinyBoardChecks.Run(Check);
+LookAndFeelChecks.Run(Check);
+CursorLegalityChecks.Run(Check);
+NativePresentationChecks.Run(Check);
+NativeFusionChecks.Run(Check, Reject);
+NativeDisabledChainChecks.Run(Check, Reject);
+NativeCardStatusCompositionChecks.Run(Check, Reject);
+NativeSelectionManifestChecks.Run(Check, Reject);
+NativeFusionResourceChecks.Run(Check, Reject);
+ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 if (args.Length > 0)
@@ -125,10 +174,12 @@ if (args.Length > 0)
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_id.bin"))).Equals("A36CDE2192FA85D9CCBCDB0DDB8BA8494A5199EA31D11A50A70B5FD32BF5879C"), "Original ID resource hash");
     Check(Convert.ToHexString(SHA256.HashData(archive.Read(@"bin#\card_nameeng.bin"))).Equals("74848D0B2CD7D5FAC7A767075BD5B01E0366183CE934AFA6070CE24394A24032"), "Original names resource hash");
     var cards = Catalog.Load(archive);
+    FusionChecks.RunCatalog(cards, Check);
     CpuDeckSelectionTests.RunWithArchive(archive, cards, Check);
     DifferentialNormalSummonTests.RunWithCatalog(cards, Check,
         Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
     SummonTests.OperatorTribute(cards, Check);
+    NormalMonsterPlayabilityChecks.RunWithCatalog(cards, Check);
     Check(NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 812)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 363)) &&
         NormalSummonRules.RequiresSpecialSummon(cards.Single(c => c.Id == 56)) &&
@@ -177,6 +228,17 @@ if (args.Length > 0)
     DeckTraceChecks.Run(Check,traceArchive);
 }
 else DeckTraceChecks.Run(Check);
+DirectDamageChecks.Run(Check);
+LifePointSpellChecks.Run(Check);
+DrawSpellChecks.Run(Check);
+FieldSpellChecks.Run(Check);
+AttributeFieldSpellChecks.Run(Check);
+TypeFieldSpellChecks.Run(Check);
+MonsterBattleRuleChecks.Run(Check);
+EquipmentChecks.Run(Check);
+EffectPilotChecks.Run(Check);
+SandboxDuelChecks.Run(Check);
+CpuDuelChecks.Run(Check);
 AiRankingChecks.Run(Check);
 AiCombatChecks.Run(Check);
 AiAttributeChecks.Run(Check);
@@ -187,6 +249,7 @@ LabCaptureChecks.Run(Check);
 if (args.Length > 0)
 {
     using var attributeArchive = new Archive(args[0]);
+    CpuDuelChecks.RunCatalog(Check, attributeArchive);
     AiAttributeChecks.RunCatalog(Check,attributeArchive);
     AiCandidateSearchChecks.RunCatalog(Check,attributeArchive);
 }

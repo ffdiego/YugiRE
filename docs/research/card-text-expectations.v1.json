@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "kind": "ExternalCardTextExpectations",
+  "basis": "Official modern Yu-Gi-Oh! TCG card descriptions are hypotheses for Joey PC; not native behavior or historical rules proofs",
+  "reviewedAt": "2026-11-16",
+  "cards": [
+    {
+      "internalIndex": 969,
+      "resourceId": 1315,
+      "name": "Rain of Mercy",
+      "source": {
+        "kind": "OfficialTCGCardDatabase",
+        "url": "https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=5151&ope=2&request_locale=en",
+        "locale": "en"
+      },
+      "summaryPt": "Magia normal: aumenta os pontos de vida de ambos os jogadores em 1.000.",
+      "expectedMechanics": [
+        {
+          "trigger": "SpellResolution",
+          "effect": "IncreaseLifePoints",
+          "targets": "BothPlayers",
+          "amountEach": 1000
+        }
+      ],
+      "nativeUncertainties": [
+        "Ativação legal e cadeia no Joey",
+        "Timing de movimento da magia ao cemitério",
+        "Interações com armadilhas contínuas"
+      ]
+    },
+    {
+      "internalIndex": 414,
+      "resourceId": 1306,
+      "name": "Skull Invitation",
+      "source": {
+        "kind": "OfficialTCGCardDatabase",
+        "url": "https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=4961&ope=2&request_locale=en",
+        "locale": "en"
+      },
+      "summaryPt": "Armadilha contínua: enquanto ativa, cada carta enviada ao cemitério provoca 300 de dano ao dono daquela carta.",
+      "expectedMechanics": [
+        {
+          "trigger": "CardSentToGraveyard",
+          "requires": "ThisTrapActive",
+          "effect": "DamageCardOwner",
+          "amountPerCard": 300
+        }
+      ],
+      "nativeUncertainties": [
+        "Provar que a armadilha estava ativa no campo",
+        "Identificar a carta enviada e seu dono",
+        "Distinguir dano por cemitério de outras fontes"
+      ]
+    }
+  ],
+  "interactionHypotheses": [
+    {
+      "id": "RainToGraveyardWhileSkullActive",
+      "sourceCardIndices": [
+        969,
+        414
+      ],
+      "summaryPt": "A magia Rain of Mercy, ao ir para o cemitério com Skull Invitation ativa, pode provocar 300 de dano ao dono da magia.",
+      "requiredNativeEvidence": [
+        "Skull Invitation ativa no instante do movimento",
+        "Rain of Mercy enviada ao cemitério naquele momento",
+        "Identidade do dono da magia e alvo do comando de dano",
+        "Ausência ou separação de outros gatilhos de dano de 300"
+      ],
+      "conclusion": "Unverified",
+      "sourceBasis": "Derived from two current TCG descriptions; not proven in Joey native trace"
+    }
+  ]
+}

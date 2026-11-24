@@ -34,7 +34,7 @@ evidência de sorteio de deck. Ver [plano de análise da IA](06-ai.md).
 **0x005BC700** indexa a tabela de DWORDs em **0x005EFBB0** pelo byte alto do
 word 0x00A577FC. Entradas observadas: 0x005B9F50, **0x005BC620**,
 0x005BC3C0, zero. Quando o handler retorna valor não zero, incrementa esse
-estado alto e limpa 0x00A577FE por meio da atualização do DWORD sobreposto.
+estado alto e zera apenas o byte alto de 0x00A577FE, preservando o baixo.
 Os significados completos da primeira e terceira rotina não são atribuídos
 neste checkpoint. Não confundir esse seletor com o estado privado do Ritual.
 
@@ -46,6 +46,24 @@ dispatcher. Enquanto bit 0x4000 em 0x00A558AC continua definido, retorna 1.
 A etapa final também verifica flags de sincronização e novos comandos.
 Não se pode reduzir essa função a “fila vazia?” nem contar um comando por
 frame; o último comando concluído pode permitir progresso na mesma passagem.
+
+## Retirada e continuação da fila local
+
+O produtor `005B9170` anexa quatro words de 16 bits em
+`00A550A8 + contagem * 8`, até 256 entradas. O consumidor `005B9CA0`
+retira da frente, em ordem FIFO. O byte alto de `00A5780E` indica o estado:
+
+| Estado | Trabalho |
+| --- | --- |
+| 0 | Copia o primeiro registro para `00A550A0`, decrementa a contagem e desloca os restantes um registro para a esquerda. Inicializa a execução do comando corrente. |
+| 1 | Chama `005B9470` para processar o **mesmo** comando corrente. O bit `0x4000` em `00A558AC` mantém esse estágio enquanto estiver ativo. |
+| 2 | Espera a condição de sincronização `00A58260 & 0x100`, volta ao estágio 0 e ainda bloqueia o avanço se houver comando na fila. Há uma condição adicional para reapresentação em `005BC580`. |
+
+O caminho remoto de `005B9BF0` e a reapresentação têm condições próprias.
+Na alpha, a ordem visual de Trap Hole segue a observação do vídeo sem
+reimplementar o protocolo de comandos. O modelo de fases do sandbox ainda é
+simplificado. [Consumidor](evidence/duel-command-queue-gate.txt) ·
+[Produtor](evidence/command-queue-entrypoints.txt)
 
 ## Prioridade dos trabalhos pendentes
 

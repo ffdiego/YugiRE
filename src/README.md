@@ -69,15 +69,34 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   Fusões, Rituais e monstros especiais reconhecidos pelo gate nativo são
   recusados para invocação normal; seus procedimentos especiais não estão implementados.
   Evidência e limites: [invocação normal](../docs/26-normal-summon-tributes.md).
-- Activate ativa Sparks, Ookazi ou Infinite Cards da mão. Infinite Cards ocupa
-  uma zona de magia e elimina o limite da mão de ambos os jogadores enquanto
-  estiver no campo; negação e destruição dessa magia ainda não são simuladas.
-  Set coloca cartas viradas para baixo, sem ativar seus efeitos. Clique em uma
-  magia setada para ativá-la, quando seu efeito já estiver implementado.
-  Para Legendary Sword, use Activate e clique em um Warrior aberto no campo
-  de qualquer jogador. Ela ocupa uma zona de magia própria e concede +300/+300.
+- Activate permite as cinco magias de dano P045: **Sparks (200)**,
+  **Hinotama (500)**, **Final Flame (600)**, **Ookazi (800)** e **Raimei (300)**.
+  No demo, elas causam dano ao oponente e seguem ao cemitério. Podem ser ativadas
+  da mão ou após Set, clicando na magia setada. Set sozinho não resolve o efeito.
+  A API escalar preserva desconhecidos e a guarda do pedido; a ativação imediata,
+  flags=0 e o alvo usual são políticas do demo, sem cadeias ou negação nativa.
+- Os três equipamentos P025 são ativados **da mão**: use Activate e selecione
+  um monstro compatível face-up de qualquer jogador. Precisam de uma zona de
+  magia própria livre; falha na revalidação não consome carta nem ocupa zona.
+  Ativação de equipamento já setado com seleção de alvo ainda não é suportada.
+
+  | Equipamento (ID de recurso) | Restrição resolvida | ATK / DEF |
+  | --- | --- | --- |
+  | Legendary Sword (300) | Tipo dinâmico 15 (Warrior) | +300 / +300 |
+  | Beast Fangs (307) | Tipo dinâmico 11 | +300 / +300 |
+  | Sword of Dark Destruction (301) | Atributo dinâmico 2 | +400 / −200 |
+
+  O sandbox usa classe/atributo estáticos sob política explícita sem remapeamentos
+  ou bloqueios externos. A API exige contexto completo; desconhecido retorna
+  `Unsupported`. ATK/DEF acumulam deltas separados antes do clamp final em zero.
+  Destruir o alvo limpa equipamentos dos dois donos; reutilizar slots não herda
+  bônus. Retirada isolada existe como operação do sandbox, sem novo efeito de
+  carta na interface. Supressão, efeitos globais e troca de controle ficam fora.
+- Infinite Cards mantém o comportamento legado: ocupa uma zona de magia e elimina
+  o limite de mão dos dois jogadores enquanto ativa. Não integra o conjunto de
+  oito cartas dos pilotos P045/P025 nem recebe nova cobertura nesta integração.
   Os demais efeitos são recusados. A apresentação está pausada; evidências e
-  roteiro para retomar em [duelo e animação da mão](../docs/visual/duel-hand-pause.md).
+  roteiro em [duelo e animação da mão](../docs/visual/duel-hand-pause.md).
 - Battle inicia combate após o primeiro turno. Clique em um monstro próprio,
   depois em um monstro inimigo; Direct attack funciona se o adversário não
   tiver monstros. Cada monstro ataca uma vez. Em Main, Cancel e clique num monstro próprio para alternar ataque/defesa
@@ -90,6 +109,16 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   Infinite Cards ativa dispensa esse descarte; outros efeitos de fim de turno ainda não são simulados.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
+
+## Alpha vs CPU
+
+Escolha **Alpha - vs CPU** no menu ou execute da raiz:
+
+```bash
+dotnet run --project src/Joey.App -- ../passion/data.dat --alpha
+```
+
+O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Use `--fast` ou `--instant` para acelerar ou `--alpha-headless` para simular um duelo no terminal. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
 
 ## Importar e comparar um deck original
 
@@ -277,12 +306,13 @@ o demo C# ainda não modela todas as exceções e efeitos.
 IDs, ordem e duplicatas. Importar esse deck para os dois jogadores do demo
 e embaralhá-lo com semente fixa são escolhas locais de demonstração.
 
-Legendary Sword usa a regra de seleção e bônus de `../docs/cards/legendary-sword.md`
-e limpeza comum de `../docs/cards/equipment-cleanup.md`. O tipo estático 15 é
-usado como aproximação do tipo dinâmico, pois não há modificadores de tipo
-neste sandbox. Ao destruir o alvo, cada equipamento vai ao cemitério de seu
-dono; reutilizar a zona não mantém o bônus. Exceções de efeitos, Banisher,
-fichas e negação não são reproduzidas.
+Os três equipamentos reutilizam `NativeAiAttributes.EquipmentDelta` e o caminho
+comum de [Legendary Sword](../docs/cards/legendary-sword.md) e
+[limpeza de equipamentos](../docs/cards/equipment-cleanup.md).
+O [contrato e as políticas P025](../docs/cards/p025-implementation.md) separam
+as propriedades dinâmicas resolvidas da aproximação estática do demo. Ao destruir
+o alvo, cada equipamento vai ao cemitério de seu dono. Exceções de efeitos,
+Banisher, fichas, remapeamento e negação não são reproduzidos.
 
 Os nomes, atributos, fundos e ilustrações vêm do DAT. O menu usa os cinco
 botões originais e suas dimensões; Card List usa também título e botão Back
@@ -292,12 +322,11 @@ nativos de 55×87 pixels. A busca e os controles e posições das cartas no duel
 ainda são temporários. O menu usa dois quadros estáticos em lugar da animação.
 Alguns registros apontam para imagens compartilhadas de placeholder no próprio
 DAT; isso não significa que tenhamos uma ilustração exclusiva para cada carta.
-Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md). Sparks/Ookazi causam 200/800 ao oponente (RE: `../docs/cards/sparks-ookazi.md`).
+Evidências e limites: [gráficos DAT](../docs/24-dat-graphics.md) e
+[cinco magias de dano P045](../docs/cards/p045-direct-damage.md).
 Ativação imediata sem correntes, cemitério, combate, bloqueio de batalha no
 primeiro turno, derrota por deck vazio e vitória por LP são políticas do demo,
-Ainda não atribuídas ao motor original. Há colocação virada para baixo, mas não há IA, efeitos de monstros,
-armadilhas, compra automática ou multiplayer em rede. Textos de cartas exibidos
-não implicam que seus efeitos estejam implementados.
+ainda não atribuídas ao motor original. A Alpha usa compra automática para a CPU e o sandbox oferece efeitos de monstros e armadilhas selecionados. O progresso por carta está em [CARDS.md](../CARDS.md).
 
 ## Validação
 
@@ -313,17 +342,15 @@ dotnet run --project Joey.App -- --check-graphics
 ```
 
 `Joey.Tests` é um executável de verificações, sem framework externo; falha com
-código diferente de zero. `dotnet test` não substitui esse comando. São 117
-verificações sintéticas, mais 24 contra o DAT e seis contra o deck de referência
-opcionais (o terceiro comando de testes acima usa a amostra de 42/1/0).
+código diferente de zero. `dotnet test` não substitui esse comando. Os argumentos
+DAT e deck habilitam verificações adicionais com os artefatos locais originais.
 
-Nesta sessão: compilação concluída; 147 verificações C# e 25 testes Python
-existentes passaram. A leitura real encontrou 3568 entradas DAT e 1114 registros
-sem a sentinela; isso não declara 1114 cartas jogáveis. ID/nome descomprimidos
-foram comparados aos hashes existentes e Blue-Eyes aos atributos conhecidos.
-`--check-graphics` decodificou 793 BMPs com o Raylib sem criar janela,
-e o manifesto associou os 1114 registros por índice e ID.
-Os testes PowerShell existentes requerem `pwsh`, ausente neste ambiente.
+A validação desta integração e os comandos reproduzíveis estão no
+[relatório do registry](../docs/coverage/integration-report.md#validacao-da-integracao):
+1.051 checks Core/Lab/App com DAT/deck, 853 offline e 58 testes Python do registry,
+com geração real dos relatórios. `--check-data` lê 1.114 registros não sentinela;
+`--check-graphics` decodifica 793 BMPs sem abrir uma janela. Esses comandos não
+substituem um smoke test interativo nem demonstram 1.114 cartas jogáveis.
 
 Para comparar memória do original no Windows, há também
 `scripts/Get-JoeyDuelSnapshot.ps1`, descrito em
@@ -332,16 +359,17 @@ já aberto e produz JSON com LP, quantidade na mão e flags dos monstros, sem
 alterar o jogo. O código C# de interop compilou; a execução PowerShell/Windows
 ainda precisa ser conferida no ambiente do usuário.
 
-Não houve validação visual: sessão SSH sem DISPLAY/WAYLAND_DISPLAY. O modo
-`--check-data` valida os dados sem abrir a janela; execução gráfica nesta
-condição encerra com código 2 e mensagem explicativa. Dependências nativas
-vinculadas diretamente foram encontradas por `ldd`; isso não prova que o
-contexto gráfico inicializa. NuGet pode emitir NU1900 se a rede estiver
-indisponível para consulta de vulnerabilidades.
+O smoke test gráfico continua pendente: esta sessão não dispõe de
+DISPLAY/WAYLAND_DISPLAY utilizável; a execução normal informa a ausência de
+sessão gráfica e termina com código 2. Sockets locais não garantem acesso ou
+autenticação. A validação de dados e imagens passou sem janela. NuGet pode
+emitir NU1900 quando a consulta de vulnerabilidades estiver indisponível.
 
-Roteiro visual pendente: abrir a janela, percorrer os três destinos do menu,
-pesquisar Blue-Eyes e Parasite, mudar páginas, tentar zonas inválidas,
-invocar em zona livre, avançar turno, reiniciar e redimensionar a janela.
+Roteiro visual pendente: abrir a janela em um desktop, percorrer os destinos do
+menu, pesquisar cartas, mudar páginas e redimensionar; carregar um deck local com
+as cinco magias/três equipamentos, testar seleção nos dois lados, alvo incompatível,
+ativação de magia setada, ATK/DEF e limpeza. Não executar o Joey original para esse
+smoke test; ele diz respeito apenas ao protótipo `Joey.App`.
 
 Conferência posterior por RE: a comparação nativa só destrói ambos em empate
 de ATK **positivo** ([evidência](../docs/22-battle-core.md)). O protótipo foi corrigido para manter ambos em 0 contra 0,

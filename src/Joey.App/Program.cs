@@ -1,3 +1,4 @@
+using Joey.LookAndFeel;
 using Joey.Core;
 using Raylib_cs;
 using System.Numerics;
@@ -7,19 +8,44 @@ return Game.Run(args);
 static partial class Game
 {
     static readonly Color Background = new(16, 23, 35, 255), Panel = new(29, 42, 57, 255), Gold = new(230, 185, 93, 255);
-    static List<Card> cards = [], orderedCards = [], joeyCards = [];
+    static List<Card> cards = [], orderedCards = [], joeyCards = [], playableCards = [];
     static bool joeyOnly;
     static readonly List<int> tributeZones = [];
     static string screen = "menu", search = "", error = "", message = "Select a hand card, then a monster zone.";
-    static int page, selected, hand = -1, attacker = -1, handPage;
+    static int page, selected, hand = -1, attacker = -1;
     static DemoDuel duel = null!;
     static DatGraphics graphics = null!;
+    static DuelTheme duelTheme = null!;
     static bool includeUnused;
+    static readonly DuelPresentationClock presentation = new(new DuelLookAndFeel());
+    static string previousDuelMessage = "";
     public static int Run(string[] args)
     {
         using var resources = new DatGraphics();
         graphics = resources;
         includeUnused = args.Contains("--include-unused");
+        useLegacySelection = args.Contains("--legacy-selection");
+        DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
+            : args.Contains("--fast") ? new FastLookAndFeel()
+            : args.Contains("--mute-joey") ? new SilentLookAndFeel()
+            : new DuelLookAndFeel();
+        presentation.SetStyle(style);
+        if (Option(args, "--native-cosine=") is string cosinePath)
+        {
+            try
+            {
+                effectCosine = NativeCosineCapture.Read(cosinePath);
+                effectCosineFromNativeCapture = true;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine("[visual] " + ex.Message);
+                return 1;
+            }
+        }
+        Console.WriteLine(effectCosineFromNativeCapture
+            ? "[visual] using private native cosine capture"
+            : "[visual] using approximate cosine table (not native parity)");
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
@@ -32,18 +58,38 @@ static partial class Game
                 }
             }
             if (path == null) throw new FileNotFoundException("data.dat not found. Pass its path: dotnet run -- /path/to/data.dat");
+            if (args.Contains("--inspect-visual-dat"))
+            {
+                using var inspected = new Archive(path);
+                return VisualManifestProbe.Export(inspected);
+            }
             var archive = graphics.Open(path);
+            ConfigureDisabledChainReview(args, archive);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
+            ConfigureCardStatusReview(args, archive);
+            ConfigureFusionReview(args, archive);
+            if (new[] { statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null }.Count(active => active) > 1)
+                throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
-            if (!includeUnused) orderedCards = CardListResources.ForPacks(orderedCards, archive.Read(@"bin#\card_pack.bin"));
-            joeyCards = CardListResources.ForPacks(orderedCards, archive.Read(@"bin#\card_pack.bin"), 4);
+            byte[] packs = archive.Read(@"bin#\card_pack.bin");
+            playableCards = CardListResources.ForPacks(orderedCards, packs);
+            if (!includeUnused) orderedCards = playableCards;
+            joeyCards = CardListResources.ForPacks(playableCards, packs, 4);
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
             Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
             InitializeDeck(args, path);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
+        if (args.Contains("--inspect-visual-dat")) return 1;
+        if ((Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null) && error.Length > 0) return 1;
+        if (args.Contains("--alpha-headless"))
+        {
+            if (error.Length > 0) return 1;
+            try { return RunAlphaHeadless(); }
+            catch (InvalidDataException ex) { Console.Error.WriteLine(ex.Message); return 1; }
+        }
         if (args.Contains("--check-deck")) return CheckDeck();
         if (args.Contains("--check-data")) return error.Length == 0 ? 0 : 1;
         if (args.Contains("--check-graphics"))
@@ -56,10 +102,66 @@ static partial class Game
         if (OperatingSystem.IsLinux() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")))
         { Console.Error.WriteLine("No graphical session available. Run from a desktop terminal; use --check-data or --check-graphics for validation."); return 2; }
         duel = new(cards);
+        if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
+        duelTheme = new();
+        try
+        {
+            if (Option(args, "--duel-theme=") is string directory) duelTheme.Load(directory);
+            string? board = Option(args, "--duel-board-dat=");
+            string? back = Option(args, "--duel-back-dat=");
+            if (error.Length > 0 && (board is not null || back is not null))
+                throw new InvalidDataException(error);
+            if (error.Length == 0)
+            {
+                duelTheme.LoadDatArt(graphics,
+                    board ?? (duelTheme.Board is null ? DatGraphics.DuelBoard : null),
+                    back ?? (duelTheme.CardBack is null ? DatGraphics.DuelBack : null));
+                // Native detail uses an English GDI face, not the default
+                // raylib bitmap font; keep this confined to the sidebar.
+                duelTheme.LoadNativeDetailFonts();
+                if (disabledChainReviewTarget is not null)
+                {
+                    foreach (string resource in disabledChainReviewResources) _ = graphics.Texture(resource);
+                    screen = "chain-review";
+                    Console.WriteLine("[V12 review] F7 step, F8 reset, F12 capture, Escape exit; blend not verified");
+                }
+                if (statusReviewCard is not null)
+                {
+                    ValidateCardStatusReview();
+                    screen = "status-review";
+                    Console.WriteLine("[V08 review] F7 step, F8 reset, F12 capture, Escape exit; synthetic state, blend not verified");
+                }
+                if (fusionReviewCard is not null)
+                {
+                    _ = graphics.Texture(fusionReviewResources[0]);
+                    screen = "fusion-review";
+                    Console.WriteLine("[V11 review] F5 release, F6 associated card, F7 update+draw, F8 reset, F9 draw only, F12 capture, Escape exit");
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or KeyNotFoundException)
+        {
+            Console.Error.WriteLine(ex.Message);
+            duelTheme.Dispose();
+            graphics.Dispose();
+            Raylib.CloseWindow();
+            return 1;
+        }
         Raylib.SetExitKey(KeyboardKey.Null); Raylib.SetTargetFPS(60);
+        // For the entire lifetime of an initialized DAT application, the
+        // window uses ONE original YGA cursor. Hide the operating-system
+        // pointer once at the window level, not inside the duel renderer.
+        bool useNativeCursor = error.Length == 0;
+        if (useNativeCursor)
+        {
+            _ = graphics.Texture(NativeDuelCursor.DefaultPointer);
+            Raylib.HideCursor();
+        }
         var canvas = Raylib.LoadRenderTexture(800, 600);
+        // Keep the 800x600 original DAT pixels discrete when scaling the window.
+        Raylib.SetTextureFilter(canvas.Texture, TextureFilter.Point);
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
@@ -69,7 +171,22 @@ static partial class Game
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
             mouse = (Raylib.GetMousePosition() - origin) / scale;
             Raylib.BeginTextureMode(canvas); Raylib.ClearBackground(Background);
-            if (screen == "menu")
+            if (screen == "fusion-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawFusionReview();
+            }
+            else if (screen == "status-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawCardStatusReview();
+            }
+            else if (screen == "chain-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawDisabledChainReview();
+            }
+            else if (screen == "menu")
             {
                 if (graphics.Menu is { } menu && error.Length == 0)
                 {
@@ -82,7 +199,11 @@ static partial class Game
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
-                    if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+                    if (Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
+                    if (screen == "menu" && Button(duelDebug ? "Ocultar debug" : "Ativar debug", 535, 576, 175, 22))
+                        duelDebug = !duelDebug;
+                    if (alphaError.Length > 0) Wrap(alphaError, 535, 475, 240, 13);
+                    if (screen == "menu" && Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
                         if (hover == 0) StartDemo();
                         if (hover == 1) screen = "deck";
@@ -100,19 +221,49 @@ static partial class Game
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
                 if (screen == "cards") DrawCards();
-                else if (screen == "duel") DrawDuel();
+                else if (screen == "duel")
+                {
+                    if (Raylib.IsKeyPressed(KeyboardKey.F3)) duelDebug = !duelDebug;
+                    if (Raylib.IsKeyPressed(KeyboardKey.F6))
+                    {
+                        visualReviewPaused = !visualReviewPaused;
+                        Console.WriteLine(visualReviewPaused ? "[visual-review] paused" : "[visual-review] resumed");
+                    }
+                    visualReviewStep = visualReviewPaused && Raylib.IsKeyPressed(KeyboardKey.F7);
+                    DrawDuel();
+                }
                 else if (screen == "deck") DrawDeck();
             }
 
             Raylib.EndTextureMode();
+            if ((screen is "duel" or "chain-review" or "status-review" or "fusion-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
+            {
+                try
+                {
+                    if (screen == "chain-review") CaptureDisabledChainReview(canvas);
+                    else if (screen == "status-review") CaptureCardStatusReview(canvas);
+                    else if (screen == "fusion-review") CaptureFusionReview(canvas);
+                    else CaptureVisualReview(canvas);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+                { Console.Error.WriteLine("[visual-review] screenshot failed: " + ex.Message); }
+            }
             Raylib.BeginDrawing(); Raylib.ClearBackground(Color.Black);
-            Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height), new Rectangle(origin.X, origin.Y, width * scale, height * scale), Vector2.Zero, 0, Color.White);
+            Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height),
+                new Rectangle(origin.X, origin.Y, width * scale, height * scale),
+                Vector2.Zero, 0, Color.White);
+            if (useNativeCursor) DrawWindowCursor(scale);
             Raylib.EndDrawing();
         }
+        if (useNativeCursor) Raylib.ShowCursor();
         Raylib.UnloadRenderTexture(canvas);
+        duelTheme.Dispose();
         graphics.Dispose(); Raylib.CloseWindow(); return 0;
     }
+    static string? Option(string[] args, string prefix) =>
+        args.FirstOrDefault(arg => arg.StartsWith(prefix, StringComparison.Ordinal))?[prefix.Length..];
     static Vector2 mouse;
+    static bool duelDebug;
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)
     {
         bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(x, y, w, h));
@@ -120,31 +271,48 @@ static partial class Game
         Raylib.DrawRectangleLines(x, y, w, h, enabled ? Gold : Color.Gray);
         int font = w < 150 ? 14 : 18;
         string caption = text;
-        while (caption.Length > 0 && Raylib.MeasureText(caption, font) > w - 16) caption = caption[..^1];
+        while (caption.Length > 0 && MeasureLabel(caption, font) > w - 16) caption = caption[..^1];
         if (caption.Length < text.Length && caption.Length > 3) caption = caption[..^3] + "...";
         Label(caption, x + 8, y + (h - font) / 2, font, enabled ? Color.White : Color.Gray);
         return enabled && hover && Raylib.IsMouseButtonPressed(MouseButton.Left);
     }
-    static void Label(string text, int x, int y, int size = 20, Color? color = null) => Raylib.DrawText(text, x, y, size, color ?? Color.White);
+    static int MeasureLabel(string text, int size) => screen == "duel" && duelTheme.Text is Font font
+        ? (int)MathF.Ceiling(Raylib.MeasureTextEx(font, text, size, 1).X)
+        : Raylib.MeasureText(text, size);
+    static void Label(string text, int x, int y, int size = 20, Color? color = null)
+    {
+        if (screen == "duel" && duelTheme.Text is Font font)
+            Raylib.DrawTextEx(font, text, new(x, y), size, 1, color ?? Color.White);
+        else
+            Raylib.DrawText(text, x, y, size, color ?? Color.White);
+    }
     static void Wrap(string text, int x, int y, int width, int size)
     {
         string line = "";
         foreach (var word in text.Replace('\r', ' ').Replace('\n', ' ').Split(' '))
         {
-            if (Raylib.MeasureText(line + word, size) > width && line.Length > 0) { Label(line, x, y, size); y += size + 5; line = ""; }
+            if (MeasureLabel(line + word, size) > width && line.Length > 0) { Label(line, x, y, size); y += size + 5; line = ""; }
             line += word + " ";
         }
         Label(line, x, y, size);
     }
-    static void DrawArtwork(Card card, int x, int y, int w, int h)
+    static void DrawArtwork(Card card, int x, int y, int w, int h, int degrees = 0)
     {
-        string? name = graphics.Artwork.For(card);
+        // Native 0041A800 loads independent card/ and mini/ catalogs. Do
+        // not downscale a 200x290 texture to 50x72 for the field: the
+        // original game ships precomputed 50x72 card miniatures.
+        string? name = NativeCardRaster.IsNativeMiniDestination(w, h)
+            ? graphics.Artwork.MiniFor(card)
+            : graphics.Artwork.For(card);
         if (name == null) { Wrap(card.Name, x + 3, y + 3, w - 6, 14); return; }
         var texture = graphics.Texture(name);
-        float scale = Math.Min(w / (float)texture.Width, h / (float)texture.Height);
+        // Integer-sized destination avoids a fractional 49.655-pixel wide
+        // field card fitted into a 50x72 viewport.
+        var (width, height) = NativeCardRaster.Project(
+            texture.Width, texture.Height, w, h, degrees);
         Raylib.DrawTexturePro(texture, new Rectangle(0, 0, texture.Width, texture.Height),
-            new Rectangle(x + (w - texture.Width * scale) / 2, y + (h - texture.Height * scale) / 2,
-                texture.Width * scale, texture.Height * scale), Vector2.Zero, 0, Color.White);
+            new Rectangle(x + w / 2f, y + h / 2f, width, height),
+            new Vector2(width / 2f, height / 2f), degrees, Color.White);
     }
     static void DrawCards()
     {
@@ -230,7 +398,7 @@ static partial class Game
             string line = "";
             foreach (var word in paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             {
-                if (line.Length > 0 && Raylib.MeasureText(line + " " + word, size) > width) { lines.Add(line); line = ""; }
+                if (line.Length > 0 && MeasureLabel(line + " " + word, size) > width) { lines.Add(line); line = ""; }
                 line = line.Length == 0 ? word : line + " " + word;
             }
             lines.Add(line);
