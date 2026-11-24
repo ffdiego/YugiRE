@@ -38,3 +38,7 @@ Base atual A03 #77 inclui a main a2fce55. TryQueueActivation delega todas as qua
 ## A05 — guarda de origem para projeção de replay
 
 `move-id ID SIDE SOURCE_ZONE INDEX DEST_ZONE [SLOT [position]]` é a mesma operação de setup `move`, mas exige o resource ID esperado antes de admitir. Resolve a ocorrência única na mão (ou zona suportada) e captura seu ID físico, revalidado pelo executor. Não dispara efeitos nem paga tributos/consome normal summon: é uma projeção de movimento gravado, não uma nova jogada. Usar apenas no laboratório explícito. A05.3 usa esse comando para CE/CF suportados; divergência de ID interrompe o roteiro. CI de A04.4 anterior 45322528267 verde; novo CI pendente.
+
+## Integração A04/A05 — trace estruturado
+
+Branch de integração une #72/#77/#81 e main 431dccf preservando produtores CARDS recentes. A05.6 CI 45324763088 aprovado. `trace` é consulta somente leitura, disponível no console gráfico e headless, usa ActionTraceJson (schema comum); imprime snapshot do trace Executed, inclusive comandos setup/unmapped e estado busy/fault. Para arquivo: `dotnet run --project src/Joey.Lab -- duel-console --dat data.dat cenario.txt --trace-output=scratch/trace.json`. Exige roteiro, recusa sobrescrever, resultado de falha torna complete=false mesmo que fila esteja livre. Sem autoaprovação de regra; comparar janela explícita. App usa F10 e `trace`, JSON no stdout. Testes de query, summon real, setup, arquivo e falha. CI integrado pendente; PR de integração não substitui validação visual nem merge automático dos três marcos.
