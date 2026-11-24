@@ -166,6 +166,7 @@ NativeContextEffectChecks.Run(Check);
 NativeAlternativeActivationChecks.Run(Check);
 NativeLayerFontChecks.Run(Check, Reject);
 NativeVijaChecks.Run(Check, Reject);
+NativeLifeDeltaChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);

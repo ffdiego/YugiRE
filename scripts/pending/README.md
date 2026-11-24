@@ -233,3 +233,11 @@ Saída privada: scratch/ghidra-vija-selection-origins.zip. Conferir Draw, másca
 ### Importação cumulativa (todas as coletas VISUALS)
 
 Após receber ZIPs válidos, usar `scripts/import_visual_evidence.py` com `--source`, `--bundle` (repetível) e `--output` apontando a uma nova cópia. O importador histórico de métodos virtuais não aceita batches cumulativos. Ver [procedimento e consultas](../../docs/research/visual-evidence-cumulative-import.md). Não versionar evidência privada.
+
+## V04/V06 — 21-attack-life-draw-ghidra.sh (aguardando Fedora)
+
+Ghidra local, projeto e EXE atestado. Os dois Draws não existem nas tabelas de decompilação do SQLite atual; produtores e Update já consultados. 
+
+    bash scripts/pending/21-attack-life-draw-ghidra.sh
+
+Saída privada: scratch/ghidra-attack-life-draw-contract.zip. Recuperar instruções de seleção de sprite/pivô e âncoras de LP por slot/-1, ABI dos produtores e vtables. Importar com import_visual_evidence.py em nova cópia. [Contrato](../../docs/research/native-attack-life-routing-2026-11-24.md). Não repetir a coleta completa do inventário.
