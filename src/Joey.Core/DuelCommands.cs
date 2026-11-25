@@ -15,6 +15,8 @@ public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) :
 public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record RevealBattleDefenderCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record ResolveRevealedBattleCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
+internal sealed record OpenBattleFlipDrawCommand(int Side, CardTarget Defender) : DuelCommand(Side);
+internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
@@ -108,6 +110,12 @@ internal static class DuelCommandValidation
             case ResolveRevealedBattleCommand resolve:
                 Target(resolve.Attacker,resolve.Side,DuelZone.Monster);
                 Target(resolve.Defender,1-resolve.Side,DuelZone.Monster);
+                break;
+            case OpenBattleFlipDrawCommand openBattleFlip:
+                Target(openBattleFlip.Defender,openBattleFlip.Side,DuelZone.Monster);
+                break;
+            case FinishBattleFlipCommand finishBattleFlip:
+                Target(finishBattleFlip.Defender,finishBattleFlip.Side,DuelZone.Monster);
                 break;
             case SnapshotBattleRemovalCommand snapshot when snapshot.Role is 0 or 1:
                 Target(snapshot.Target,snapshot.Side,DuelZone.Monster);
