@@ -41,8 +41,8 @@ static partial class Game
         queuedDuel is not null && IsFissure(ViewHand[index])
             ? duel.TryCaptureCardTarget(ViewPlayer, DuelZone.Hand, index, out var source) &&
               duel.QueuedTargetedMonsterSpellCandidates(source).Count != 0
-            : queuedDuel is not null && DeckSearchSpellRules.Filter(ViewHand[index].Id) is not null
-                ? duel.CanQueueDeckSearchSpell(DuelZone.Hand, index)
+            : queuedDuel is not null && DemoDuel.SupportsQueuedFixedSpell(ViewHand[index])
+                ? duel.CanQueueFixedSpellActivation(DuelZone.Hand, index)
                 : duel.CanActivateFromHand(index);
 
     static (CardTarget Source, IReadOnlyList<QueuedTargetedMonsterSpellCandidate> Choices, int Turn)? fissureSelection;
@@ -214,7 +214,7 @@ static partial class Game
             }
             if (queuedDuel is not null && IsQueuedFixedSpell(card))
             {
-                if (TryQueuedFixedSpell(card, DuelZone.Hand, index, out message)) ClearDuelSelection();
+                if (TryQueuedFixedSpell(DuelZone.Hand, index, out message)) ClearDuelSelection();
                 return;
             }
             int zone = duel.FirstFreeSpellZone();
@@ -569,7 +569,7 @@ static partial class Game
                     if (queuedDuel is not null && IsFissure(setSpell))
                         StartQueuedFissure(zone, fromSet: true);
                     else if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
-                        TryQueuedFixedSpell(setSpell, DuelZone.SpellTrap, zone, out message);
+                        TryQueuedFixedSpell(DuelZone.SpellTrap, zone, out message);
                     else if (duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
                              duel.PendingFusionSummon is null)
                         BeginCardActivation(setSpell, spellRect);
