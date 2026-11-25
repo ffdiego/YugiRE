@@ -118,3 +118,49 @@ A03 fornece slot de combate e mantém responsabilidade exclusiva
 sobre preparação/liberação de LP; SetLogicalLife legado usa -1.
 Amostras de DAT e capturas pareadas continuam necessárias.
 Cobertura permanece 20/34, nenhuma promoção para Verified.
+
+## V06.1 — trajetória e fronteiras por glifo (25/11)
+
+Fonte privada v4-visuals, SQLite SHA256
+2085bc65dbc79fb2ec64645d2536bf0b56dde7bfedf4d173e32acb060b43722c,
+quick_check ok, fingerprint esperado. Coleta 33 confirma centros
+005DB560/005DB510. Âncora geral (525,460)/(525,140); combate usa
+o centro do slot afetado, não o centro entre fileiras. A03 ainda
+precisa fornecer slot no fluxo real, que continua com -1 legado.
+
+004806F0 não tinha janela própria, mas suas 216 instruções
+(004806F0..0048096C) estão integralmente nas janelas anteriores
+00480200/00480230/004803C0/00480690 do bundle 502c6177c5e694e384d03ead56f7e9b435758b22abbd4de253e3e78fcb8bd2db,
+batch-001.txt, e também no bundle beeb78df561a42a33177d4c098368bd33d07b2901f2923b77eb391858c2e6fcd.
+Consulta por address, não apenas window_address. Sem nova coleta.
+
+- 004806F8..00480708: counter global <=0 retorna sem desenhar.
+- 0048070B..00480736: counter >=256 encaminha para 004803C0,
+  caminho estático que não calcula atraso nem deslocamento.
+- 0048073D..004807A3: módulos de magnitude em ordem inversa;
+  sinal 11 negativo, 10 positivo quando flag ativa, só com >=12 colunas.
+- 004807F2..00480803: atraso inteiro 64/(n-1), ou zero se n<2.
+- 00480858..00480873: decrementa X pela largura; JL pula apenas
+  phase <0. Phase ==0 de um glifo posterior JÁ desenha em Y base.
+- 00480879..004808A9: phase<128, y=top-(C[(2*phase-128)&511]*h >>16).
+- 004808AB..004808FB: 128<=phase<192, amplitude h/4,
+  índice (4*phase-128)&511; >=192 usa top.
+- 00480914: virtual +8, sem alpha interpolado; color key/raster
+  ainda precisam comparação. 00480917..0048094D reduz phase por atraso.
+
+DAT: number.txt entradas 6/7, damage00/01.bmp, 192x40, 12
+colunas, 16x40 por glifo. 0047C748 passa 2*rampa (0..512).
+O sampler anterior já tinha as curvas e recortes; omitira phase
+individual zero e não distinguia o caminho estático do animado.
+O App limitava artificialmente o contador a 256. Agora preserva
+2*rampa; >=256 remove atraso, sem mudar a aparência estacionária.
+Não altera relógio, fila, regras, som ou hold. Phase é metadado,
+não opacidade. Cinquenta checks adicionais incluindo todos os
+32 updates da rampa e os 12 centros (dois gerais, dez monstros).
+Referências numéricas geradas independentemente em Python com
+a tabela privada de 512 valores: zero divergências da fórmula
+Math.Cos truncada (comparação Python equivalente, não execução .NET).
+Exemplo -10: t32 glifos 0 e 1 em y=-28 e 0; t64 0/1/- em
+y=-40/-28/0; t160 primeiro glifo em -10. C# CI pendente, sem
+SDK local. Não declarar Verified; falta slot de batalha via A03,
+comparação gráfica/cadência e composição.
