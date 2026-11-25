@@ -130,7 +130,12 @@ static partial class Game
             Console.Error.WriteLine("Queued CPU combat presentation regression failed.");
             return 1;
         }
-        Console.WriteLine("Laboratory, queued automatic draw and combat presentation regressions passed.");
+        if (!CheckBanishSummonSelection())
+        {
+            Console.Error.WriteLine("Queued inherent summon selection regression failed.");
+            return 1;
+        }
+        Console.WriteLine("Laboratory, queued automatic draw, combat presentation and inherent summon selection regressions passed.");
         return 0;
     }
 

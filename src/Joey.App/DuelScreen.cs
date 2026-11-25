@@ -177,7 +177,7 @@ static partial class Game
         index < 0 || index >= ViewHand.Count ? null :
         NativeDuelCursor.HandAction(
             ViewHand[index].IsMonster,
-            duel.CanSummonFromHand(index),
+            duel.CanSummonFromHand(index) || CanStartBanishSummon(index),
             duel.CanSetFromHand(index),
             CanActivateHandCard(index),
             setHandAction,
@@ -258,6 +258,7 @@ static partial class Game
         fissureSelection = null;
         queuedSpellTrapSelection = null;
         queuedEquipChoice = null;
+        banishSummonChoice = null;
         handActionsWereEnabled = false;
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
@@ -281,7 +282,7 @@ static partial class Game
         if (action is null) return;
         if (card.IsMonster)
         {
-            if (!duel.CanSummonFromHand(index)) return;
+            if (TryStartBanishSummon(index) || !duel.CanSummonFromHand(index)) return;
             int needed = DemoDuel.NormalTributes(card);
             if (needed > 0)
             {
@@ -404,7 +405,7 @@ static partial class Game
         }
         bool overHand = next >= 0;
         if (choosingTributes || choosingEquip || fissureSelection is not null ||
-            queuedSpellTrapSelection is not null) next = -1;
+            queuedSpellTrapSelection is not null || banishSummonChoice is not null) next = -1;
         if (next != hoverHand || (allowActions && !handActionsWereEnabled))
         {
             hoverHand = next;
@@ -826,7 +827,8 @@ static partial class Game
         if (!joeySpeaking) UpdateCpuHandHover(hoverUpdates);
         else hoverCpuHand = -1;
         if (alphaCpu is not null) DrawCpuHand();
-        DrawPhasePanel(turnInput && queuedSpellTrapSelection is null && queuedEquipChoice is null);
+        DrawPhasePanel(turnInput && queuedSpellTrapSelection is null && queuedEquipChoice is null &&
+            banishSummonChoice is null);
 
         if (fissureSelection is { } fissure && fissure.Turn != duel.Turn ||
             queuedSpellTrapSelection is { } spellChoice &&
@@ -835,16 +837,20 @@ static partial class Game
             queuedEquipChoice is { } equipChoice &&
                 (equipChoice.Turn != duel.Turn || duel.Phase != DemoPhase.Main ||
                  queuedDuel?.IsBusy != false || pendingOwner is not null) ||
+            banishSummonChoice is { } banishChoice &&
+                (banishChoice.Turn != duel.Turn || duel.GameOver || duel.Phase != DemoPhase.Main ||
+                 queuedDuel?.IsBusy != false || pendingOwner is not null) ||
             actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && queuedDuel?.IsBusy != true &&
             CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool selectingQueuedSpellTrap = queuedSpellTrapSelection is not null;
         bool selectingQueuedEquip = queuedEquipChoice is not null;
+        var shownBanishChoice = banishSummonChoice;
         if (selectingQueuedSpellTrap && actionInput && !joeySpeaking) ReadQueuedSpellTrapTarget();
         else if (selectingQueuedEquip && actionInput && !joeySpeaking) ReadQueuedEquipChoice();
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates,
-            actionInput && !selectingQueuedSpellTrap && !selectingQueuedEquip);
+            actionInput && !selectingQueuedSpellTrap && !selectingQueuedEquip && shownBanishChoice is null);
         bool handInput = actionInput && handHovered;
         actionInput &= queuedDuel?.IsBusy != true;
         choiceInput &= queuedDuel?.IsBusy != true;
@@ -853,7 +859,7 @@ static partial class Game
         else if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard ||
             selectingQueuedSpellTrap || queuedSpellTrapSelection is not null ||
-            selectingQueuedEquip || queuedEquipChoice is not null,
+            selectingQueuedEquip || queuedEquipChoice is not null || banishSummonChoice is not null,
             hoverUpdates);
         // A travelling card or the CPU's turn must not freeze the sidebar.
         // Only an actual Joey speech cue may suppress inspection.
@@ -919,6 +925,9 @@ static partial class Game
         if (!ConsoleCapturesInput && !visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
             queuedDuel?.PendingDecision is { Owner: var decisionOwner } && decisionOwner == ViewPlayer)
             DrawEffectDecisionOverlay();
+        else if (actionInput && !joeySpeaking && shownBanishChoice is not null &&
+                 ReferenceEquals(shownBanishChoice, banishSummonChoice))
+            DrawBanishSummonSelection(shownBanishChoice);
         else if (choiceInput && fusion is not null)
             DrawFusionSelection(fusion);
         else if (choiceInput && HumanChoice && pendingOwner is not null)

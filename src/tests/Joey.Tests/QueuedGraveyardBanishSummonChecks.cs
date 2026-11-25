@@ -91,5 +91,60 @@ internal static class QueuedGraveyardBanishSummonChecks
             true,out _),"Special Summon after Normal Summon");
         Drain(aq);
         check(after.Monsters[0,1]?.Id==1517&&after.DefensePosition[0,1]&&after.Hand.Count==0,"Face-up Defense supported");
+
+        foreach (int side in new[] { 0, 1 })
+        {
+            var source = Monster(1515, attr: 1, category: 1);
+            var eligible = Monster(24);
+            var filler = new Card(65000, 65000, "Inert Spell", "", 22u << 20);
+            Card[] graveyard = [eligible, Monster(25, attr: 2), eligible];
+            foreach (var origin in new[] { ActionOrigin.Console, ActionOrigin.Cpu })
+            {
+                var duel = DemoDuel.FromPartialObservation(side, [source], Slots(), Slots(), 8000,
+                    side0Graveyard: side == 0 ? graveyard : [], side1Graveyard: side == 1 ? graveyard : [],
+                    side0Deck: [filler], side1Deck: [filler]);
+                check(duel.Draw(out _), "Producer fixture draws before the CPU Main Phase");
+                var gate = new Gate { Release = false };
+                var console = new DuelConsoleSession(duel, gate);
+                var queue = console.Queue;
+                duel.TryCaptureCardTarget(side, DuelZone.Hand, 0, out var handTarget);
+                duel.TryCaptureCardTarget(side, DuelZone.Graveyard, 0, out var firstCost);
+                duel.TryCaptureCardTarget(side, DuelZone.Graveyard, 2, out var lastCost);
+
+                bool admitted;
+                if (origin == ActionOrigin.Console)
+                {
+                    check(!console.Execute("summon-banish 0 0 defense 0 0").Success &&
+                        !console.Execute("summon-banish 0 0 defense 0 1").Success &&
+                        !console.Execute("summon-banish 0 0 set 0 2").Success &&
+                        !queue.IsBusy, "Console rejects duplicate, ineligible and face-down banishment summons");
+                    admitted = console.Execute("summon-banish 0 0 defense 2 0").Enqueued;
+                }
+                else
+                {
+                    var step = new CpuDuelController(side).Step(duel, queueTurnActions: true);
+                    admitted = step.Status == CpuStepStatus.Acted && step.Action == CpuAction.Summon;
+                    check(admitted, $"CPU admits the inherent summon (got {step.Action}: {step.Message})");
+                }
+
+                check(admitted && duel.Hand.Count == 2 && duel.Graveyard(side).Count == 3
+                    && queue.Trace.Single().Entry.Origin == origin, "Producer admits with the correct origin and no mutation");
+                for (int tick = 0; tick < 8; tick++) queue.Tick();
+                var expectedFirst = origin == ActionOrigin.Console ? lastCost : firstCost;
+                check(queue.IsBusy && duel.Hand.Count == 2 && duel.Monsters[side, 0] is null &&
+                    duel.Banished(side).Count == 1 &&
+                    duel.TryCaptureCardTarget(side, DuelZone.Banished, 0, out var banished) &&
+                    banished.Occurrence == expectedFirst.Occurrence,
+                    "Producer preserves the selected cost occurrence and waits at its gate");
+
+                gate.Release = true;
+                Drain(queue);
+                check(duel.TryCaptureCardTarget(side, DuelZone.Monster, 0, out var placed) &&
+                    placed.Occurrence == handTarget.Occurrence && !duel.MonsterFaceDown[side, 0] &&
+                    duel.DefensePosition[side, 0] == (origin == ActionOrigin.Console) &&
+                    duel.Banished(side).Count == 2 && duel.Graveyard(side).Single().Id == 25,
+                    "Console and CPU summon the same physical card after paying the eligible cost");
+            }
+        }
     }
 }
