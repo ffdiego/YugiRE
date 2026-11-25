@@ -29,17 +29,22 @@ static partial class Game
             // Gameplay eligibility comes from Core (phase, attack used,
             // face-down/defense and pending actions); no speculative
             // offsets, sprite images or temporary cursors are introduced.
-            if (duel.Phase == DemoPhase.Battle)
+            for (int zone = 0; zone < NativeDuelLayout.MonsterSlots; zone++)
             {
-                for (int zone = 0; zone < NativeDuelLayout.MonsterSlots; zone++)
-                {
-                    if (!Hit(ZoneBounds(ViewPlayer, zone, spell: false))) continue;
-                    var action = NativeDuelCursor.FieldMonsterAttackAction(
-                        ownMonster: duel.Monsters[ViewPlayer, zone] is not null,
-                        canAttack: duel.CanAttack(zone),
-                        choosingTarget: attacker >= 0);
-                    return NativeDuelCursor.CursorSprite(action);
-                }
+                if (!Hit(ZoneBounds(ViewPlayer, zone, spell: false))) continue;
+                bool own = duel.Monsters[ViewPlayer, zone] is not null;
+                // Do not advertise a position change over a pending target
+                // selection: the click would be consumed by that selection.
+                bool choosingTarget = attacker >= 0 ||
+                    duel.PendingFlipTarget is not null || duel.PendingSpellTrapTarget is not null;
+                var action = duel.Phase == DemoPhase.Battle
+                    ? NativeDuelCursor.FieldMonsterAttackAction(
+                        own, duel.CanAttack(zone), choosingTarget)
+                    : NativeDuelCursor.FieldMonsterPositionAction(
+                        own, duel.CanChangePosition(zone),
+                        duel.MonsterFaceDown[ViewPlayer, zone],
+                        duel.DefensePosition[ViewPlayer, zone], choosingTarget);
+                return NativeDuelCursor.CursorSprite(action);
             }
         }
 
