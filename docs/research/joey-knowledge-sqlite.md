@@ -1,6 +1,31 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
-## Snapshot de referência atual — 25/11/2026, v6
+## Complemento cumulativo v7 — centros do campo (25/11/2026)
+
+Depois de identificar a base v6, use a cópia privada
+`scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v7.zip`
+para consultar a coleta 33 de V02/V05/V06. O ZIP inclui o banco
+`joey-knowledge-visual-cumulative.sqlite`, a auditoria v7 em
+`visual-evidence-import-audit.json` e a auditoria anterior em
+`visual-evidence-import-audit-v6.json`.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379` |
+| SHA-256 do ZIP v7 | `e54e84aea26d6152ea4b55068a120cc85c089151290d9f67c303d6715b42b192` |
+| SHA-256 do EXE | `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+A comparação por conteúdo confirmou a preservação das linhas v6 nas
+27 tabelas. A v7 acrescenta o bundle 33, dois relatórios, uma coleta da
+função `0045C280` e os blocos de 80 bytes em `005DB510` e `005DB560`.
+As contagens que mudaram são 34 bundles, 226 relatórios, 362 registros de
+funções (291 VAs distintas) e 39 blocos de memória. As demais contagens da
+v6 continuam válidas. As constantes x87 do roteiro 32/V04 seguem
+pendentes. [Contrato dos centros do campo](native-field-attributes-2026-11-22.md#v052--coleta-33-recebida-e-consolidada-25112026).
+
+## Snapshot de referência v6 — 25/11/2026
 
 Para as três trilhas, usar o arquivo privado
 `joey-knowledge-visual-cumulative-2026-11-24-v6.zip`,
