@@ -334,11 +334,11 @@ de processo não comprova escuta; anotar se cada som foi audível e terminou
 corretamente. Não executar 27 no Windows só por causa deste smoke.
 
 
-## V22 — 29-native-break-scatter-ghidra.sh (aguardando Fedora)
+## V22 — 29-native-break-scatter-ghidra.sh (recebido no v5-visuals; histórico)
 
-    bash scripts/pending/29-native-break-scatter-ghidra.sh
+    bash scripts/completed/29-native-break-scatter-ghidra.sh
 
-Saída privada scratch/ghidra-native-break-scatter-contract.zip. SQLite v2 confirma decompilação do CRT srand(0)/rand e tabela de 256 bytes; não pedir dump runtime dessa tabela nem repetir Draw 00450FD0 do bundle 16. Confirmar expressão x87/ftol, ABI e pushes de 00558FB0, gerador e rotina CRT. Roteiro 24 cobre vtable de superfície. Roteiro 29 também lê 005B9AEC:256 e 005B9838:692 para distinguir índice comprimido 4F do opcode bruto e rastrear produtores. Se a versão anterior já foi executada, coletar apenas as duas tabelas. [Contrato](../../docs/research/native-bank-effect-draws-2026-11-24.md#v22-complemento--dispersão-determinística-da-carta).
+Saída privada scratch/ghidra-native-break-scatter-contract.zip. SQLite v2 confirma decompilação do CRT srand(0)/rand e tabela de 256 bytes; não pedir dump runtime dessa tabela nem repetir Draw 00450FD0 do bundle 16. Confirmar expressão x87/ftol, ABI e pushes de 00558FB0, gerador e rotina CRT. Roteiro 24 cobre vtable de superfície. Roteiro 29 também lê 005B9AEC:256 e 005B9838:692 para distinguir índice comprimido 4F do opcode bruto e rastrear produtores. Recebido em 25/11 com as duas tabelas completas; não repetir. FSQRT/ftol truncante confirmados. [Contrato](../../docs/research/native-bank-effect-draws-2026-11-24.md#v22-complemento--dispersão-determinística-da-carta).
 
 V17 complemento (roteiro 25): inclui 00546D70 para confirmar inicialização das tabelas de mistura recuperadas em decompilação. Se roteiro 25 já foi executado, coletar somente o novo alvo. Não exportar tabelas vivas de vários MB; são reconstruíveis. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--mistura-por-intensidade-tabelas-de-cor).
 
