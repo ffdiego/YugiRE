@@ -193,6 +193,7 @@ NativeNoticeProjectionChecks.Run(Check);
 NativeSelectionOriginChecks.Run(Check);
 NativeBankEffectChecks.Run(Check, Reject);
 NativeBreakScatterChecks.Run(Check);
+NativeBreakFieldReviewChecks.Run(Check);
 NativeCoinPassChecks.Run(Check, Reject);
 NativeCoinResourceChecks.Run(Check, Reject);
 NativeCoinExtraChecks.Run(Check);
