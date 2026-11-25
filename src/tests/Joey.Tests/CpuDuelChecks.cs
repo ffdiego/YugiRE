@@ -37,6 +37,30 @@ internal static class CpuDuelChecks
         cpu.Step(win);
         check(cpu.Step(win).Action == CpuAction.Spell && win.Winner == 1, "CPU: lethal spell wins");
 
+        var direct = State(1, [], own: strong);
+        var legacyDirect = State(1, [], own: strong);
+        var directQueue = direct.CreatePrimitiveActionQueue();
+        check(direct.BeginBattle(out _) && legacyDirect.BeginBattle(out _) &&
+            cpu.Step(direct, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
+            direct.Life[0] == 8000 && directQueue.IsBusy &&
+            cpu.Step(legacyDirect) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 },
+            "CPU: direct attack admission defers damage in queued mode");
+        for (int tick = 0; tick < 10 && directQueue.IsBusy; tick++) directQueue.Tick();
+        var directTrace = directQueue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed).ToArray();
+        check(!directQueue.IsBusy && direct.Life.SequenceEqual(legacyDirect.Life) &&
+            directTrace.Select(entry => entry.Entry.Command.GetType()).SequenceEqual(
+                new[] { typeof(DeclareDirectAttackCommand), typeof(DamageCommand) }) &&
+            directTrace[0].Entry.Origin == ActionOrigin.Cpu,
+            "CPU: direct declaration and damage match legacy final life points");
+
+        var unsupportedDirect = State(1, [], own: strong);
+        unsupportedDirect.Spells[1, 0] = Spell(999);
+        var unsupportedQueue = unsupportedDirect.CreatePrimitiveActionQueue();
+        check(unsupportedDirect.BeginBattle(out _) &&
+            cpu.Step(unsupportedDirect, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack } &&
+            unsupportedDirect.Life[0] == 8000 - strong.Attack && !unsupportedQueue.IsBusy,
+            "CPU: a direct attack outside the isolated pilot keeps its legacy execution");
+
         var activation = State(1, [Spell(342)], deck: [weak]);
         activation.Spells[1, 0] = Spell(1002, 21);
         cpu.Step(activation);
