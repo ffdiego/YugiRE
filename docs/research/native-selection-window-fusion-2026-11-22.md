@@ -528,3 +528,55 @@ O novo roteiro 13 pede apenas evidências ainda ausentes, e não
 reexecuta bundle 01. DAT original não disponível aqui; revisão
 gráfica ainda não executada. Ambas Draws de fusão permanecem
 Pending; seleção 0043B280 Partial, cobertura 20/34, 0 Verified.
+
+
+## V11 complemento — camada de efeitos da fusão geral (v3)
+
+SQLite v3 extraído localmente e aberto read-only, SHA256
+9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
+quick_check=ok, executable_sha256 db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de.
+Consultadas visual_dat_manifests/images, visual_evidence_memory,
+visual_evidence_instructions e decompilação de 004524F0/00422C00.
+Não repetir bundle 01. Dados de memória: 005DB278 = 400,
+005DB27C = 300; 005DB280 (48 bytes) = 3,4,5,4,3,0,6,7,8,7,6,0.
+A fusão geral usa centro **400,300**, não 525,300 da seleção.
+O manifesto contém mark 76x86, uzu 274x274, cir 194x194,
+fu_kira_a1/a2/a3 10/14/18 quadrados, b1/b2/b3 10/16/22.
+NativeFusionResources valida ordem/dimensões para revisão;
+ordem do manifesto ainda é adapter diagnóstico, não prova da remap.
+
+00452630..00452686: key1, centro acima e ângulo mutado
+pelo Draw. 00452691..0045269F solicita som 10000021 em t=384;
+00452569..0045257B solicita 10000020 em t=4. 004526A7..
+00452752: key2 adicional em 384<=t<448, mesma rotação;
+escalas/intensidade já portadas em NativeGeneralFusionTimeline.
+Não confundir requests com playback.
+
+0045275A..00452932: group=min(t&~31,256), age=t-group.
+Enquanto group>0, se age<128: selector=t/4-group+t;
+quatro posições j=0..3 (contador EBP += 0x200, dividido
+por 4 no cálculo de ângulo), key=table[(selector+j)%12].
+Zero pula o sprite. angle=j*128+2*group-t+drawAngle;
+radius=C(age)>>7; center=(400+(C(angle)*radius>>16),
+300+(C(angle-128)*radius>>16)). Retângulo usa metade
+da largura/altura reais, truncada, sem escala.
+Após grupo: group-=32, **age+=32** (00452925), não +8
+do pseudocódigo. A passagem dos brilhos começa em t=32
+e acaba antes de t=384; não persistir grupos por wall-clock.
+
+NativeGeneralFusionEffect compõe esses passes e preserva
+a ordem espiral, círculo, grupos. Draw muta ângulo uma vez;
+F9 repete Draw, F7 avança 4 e Draw, F8 reinicia, F12
+PNG/JSON. --review-general-fusion é revisão somente da
+camada de efeitos sobre fundo existente. O limite 448
+é escolha do review porque os passes de efeito cessam;
+não é término do objeto nativo (materiais/resultado e
+desativação posterior em 00452ED7+). A geometria de
+materiais de 00452938..00452B91 já tem assembly parcial,
+mas ainda não está desenhada. Não substituir o fundo
+scratch 800x600 por falsa composição: revisão usa board
+existente e identifica a omissão; tint, verde-chave
+dos BMP e rotação Raylib são provisórios. Sem mudanças
+de Core/A03, sem nova cobertura Draw. Testes sintéticos
+de memória/seletores, dimensões e contadores; CI/desktop
+ainda pendentes.

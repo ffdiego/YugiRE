@@ -178,6 +178,7 @@ NativeDisabledChainChecks.Run(Check, Reject);
 NativeCardStatusCompositionChecks.Run(Check, Reject);
 NativeSelectionManifestChecks.Run(Check, Reject);
 NativeFusionResourceChecks.Run(Check, Reject);
+NativeGeneralFusionEffectChecks.Run(Check, Reject);
 NativeEffectCommandRoutingChecks.Run(Check, Reject);
 NativeContextEffectChecks.Run(Check);
 NativeAlternativeActivationChecks.Run(Check);

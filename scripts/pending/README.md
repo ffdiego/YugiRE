@@ -395,3 +395,5 @@ ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
 V20.2 — revisão de moeda (Windows/Fedora desktop): `dotnet run --project src/Joey.App -- /path/to/data.dat --review-coin=3,5,400,100,1`. F7 avança, F8 reinicia, F12 captura PNG/JSON. Verificar uma/três moedas e ambos os bits; recortes/halo e flags de reflexão no JSON. Reflexão/brilhos não implementados; não repetir coleta 16. Validação manual pendente, sem dados privados versionados.
 
 V20.3: o review de moeda agora inclui brilho key5 e JSON schema 2 com o plano de reflexão. A reflexão continua omitida até resolver +94/+A0. Roteiro 24 já abrange esses offsets da vtable; não repetir a coleta 16.
+
+V11 — camada de efeitos da fusão geral: `dotnet run --project src/Joey.App -- /path/to/data.dat --review-general-fusion`. F7 Update+Draw, F9 Draw, F8 reset, F12 PNG/JSON. Confirmar espiral/círculo/brilhos; materiais, resultado e scratch omitidos. Roteiro 13 não precisa repetir 005DB278/005DB280 já disponíveis no v3; falta assembly posterior a 00452B91/composição.
