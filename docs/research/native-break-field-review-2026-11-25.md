@@ -1,12 +1,19 @@
 # V22 — quebra em campo: passes, gate e revisão (25/11/2026)
 
-Fonte: SQLite cumulativo v3 SHA256 9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
-quick_check ok, aberto read-only. ZIP 29 SHA256
-2c8f9bea150a4de82d7b76e324ee5977337525e65904f785a6d6546f43586844,
-fingerprint EXE confere. Sem nova coleta ou publicação de dados privados.
-A projeção radial FSQRT + __ftol já pertence ao PR #160;
-a auditoria dos opcodes brutos pertence ao #167 (CI 45550784369 verde).
-Esta fatia usa a sobrecarga de divisor explícito comum à main e #160.
+Consulta read-only no SQLite cumulativo v7 com `quick_check=ok`.
+O fingerprint EXE é `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
+O ZIP 29 tem SHA256 `2c8f9bea150a4de82d7b76e324ee5977337525e65904f785a6d6546f43586844`.
+A reconciliação incorpora a projeção de #160 e a revisão de #168
+sobre o roteamento bruto já integrado por #167.
+
+`00559110..0055911B` executa FILD e FSQRT e chama o auxiliar
+`005C3E40`, que usa o modo x87 de truncamento e restaura a palavra
+de controle. `00559121..00559139` normaliza cada componente com
+divisão assinada quando o divisor é diferente de zero. No cliente,
+`NativeBreakScatter.RadialDivisor` usa a raiz inteira e
+`NativeBreakFieldReview` chama a mesma projeção que os testes de
+geometria. Em 50×72, com origem (100,200), o primeiro fragmento
+em parâmetro 128 começa em (94,192).
 
 ## O objeto não bloqueia enquanto estiver meramente visível
 
@@ -44,6 +51,9 @@ nas demais. Este último usa o banco mini e as variantes
 a revisão aceita todas essas representações de campo, e o snapshot de combate descrito abaixo.
 Não usar NativeDisabledChainTarget para validar Break:
 seu produtor usa apenas regiões canônicas 0/5/10.
+Os centros de monstros e S/T foram conferidos nos blocos
+`005DB560` e `005DB510` da coleta 33. Para FIELD, a coleta 20
+registra os dois pares em `005DB5E0` dentro do bloco `005DB5B0`.
 
 0045115B..004511BB mede a superfície JÁ orientada e chama
 00558FB0 com parâmetro 256-(C(t/2-128)>>8), modo 0, 255, 0.
