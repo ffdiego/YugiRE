@@ -114,6 +114,26 @@ internal static class QueuedBattleManEaterChecks
             }
             check(Pilot(false).SequenceEqual(Pilot(true)),"A06 Man-Eater trace independent of gate");
         }
+        // A fixture-only write replacing a removed combatant must not
+        // redirect the reserved battle cleanup to the new occupant.
+        var stale=DemoDuel.FromPartialObservation(1,[],Slots(Monster(500),3),Slots(Monster(24,1400),2),8000);
+        stale.MonsterFaceDown[0,3]=stale.DefensePosition[0,3]=true;
+        var staleGate=new Gate();var staleConsole=new DuelConsoleSession(stale,staleGate);
+        var sq=staleConsole.Queue;
+        stale.BeginBattle(out _);
+        check(staleConsole.Execute("attack 2 3").Enqueued,"A06 stale Man-Eater fixture admitted");
+        Drain(sq);
+        check(staleConsole.Execute("select-flip 0 3").Enqueued,"A06 stale Man-Eater self target admitted");
+        staleGate.Release=false;Until(sq,()=>sq.Active?.Command is DestroyCommand);
+        var replacement=Monster(500);
+        stale.Monsters[0,3]=replacement;
+        staleGate.Release=true;
+        bool fault=false;
+        try{Drain(sq);}catch(InvalidOperationException){fault=sq.Fault is not null;}
+        check(fault&&ReferenceEquals(stale.Monsters[0,3],replacement)&&stale.Graveyard(0).Count==1&&
+            !sq.Trace.Any(t=>t.Entry.Command.GetType().Name=="SnapshotBattleRemovalCommand"),
+            "A06 stale post-effect replacement faults instead of receiving battle removal");
+
         var lethal=DemoDuel.FromPartialObservation(1,[],Slots(Monster(500),3),Slots(Monster(24,600),2),100);
         lethal.MonsterFaceDown[0,3]=lethal.DefensePosition[0,3]=true;
         var lq=lethal.CreatePrimitiveActionQueue();lethal.BeginBattle(out _);
