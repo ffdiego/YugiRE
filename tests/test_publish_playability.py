@@ -46,6 +46,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(status.get(1080), "Done")  # queued Giant Trunade
         self.assertEqual(status.get(1539), "Done")  # queued Spiritualism
         self.assertEqual(status.get(1023), "Done")  # queued Tribute to The Doomed
+        self.assertEqual(status.get(1211), "Done")  # queued Thousand Knives
         self.assertIsNone(status.get(346))  # dual damage/duel outcome still pending
         for rid in (300,301,302,304,306,307,308,309,311,314,315,318,321,322,324,325,326,327,653,1012,1013):
             self.assertEqual(status.get(rid), "Done")
