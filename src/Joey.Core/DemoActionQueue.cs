@@ -547,10 +547,15 @@ public sealed partial class DemoDuel
             targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
             if (!paid || duel.LegacyActionsBlocked)
                 return new(CommandOutcome.Skipped, "Unpaid, unspent or blocked spell.");
-            if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
-                return new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
             if (followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Isolated destruction required.");
+            // Independent resolution clause, not an activation cost. It
+            // still applies when the selected monster has become ineligible.
+            bool skipDraw = reserved.ResourceId == TargetedMonsterSpellRules.OfferingsToTheDoomed;
+            if (skipDraw) duel.ScheduleNextDrawPhaseSkip(reserved.Source.Side);
+            if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
+                return skipDraw ? new(CommandOutcome.Applied, "Next Draw Phase skipped; target no longer eligible.") :
+                    new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
             // Existing standalone DestroyMonster reserves live linked
             // consequences at execution, and opens deferred triggers only
             // after those commands drain. No replacement is selected.

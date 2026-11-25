@@ -570,7 +570,7 @@ public sealed partial class DemoDuel
     {
         message = "Draw available once per turn in main phase.";
         if (!CanDraw) return false;
-        if (!TakeTurnDraw())
+        if (!TakeTurnDraw(out bool skipped))
         {
             message = "Empty deck: active player loses (demo policy).";
             return true;
@@ -583,10 +583,16 @@ public sealed partial class DemoDuel
         // Native human trace: Draw precedes Revival Jam's return (P002).
         // This is a bounded synthetic Standby hook; no full phase engine yet.
         ResolvePostDrawStandbyEffects();
-        message = "Drew one card."; return true;
+        message = skipped ? "Draw Phase skipped." : "Drew one card."; return true;
     }
-    private bool TakeTurnDraw()
+    private bool TakeTurnDraw(out bool skipped)
     {
+        skipped = ConsumeDueDrawPhaseSkip();
+        if (skipped)
+        {
+            drawn = true; // the turn-draw opportunity is consumed, without movement
+            return true;
+        }
         if (decks[ActivePlayer].Count == 0)
         {
             Winner = 1 - ActivePlayer;
@@ -2518,10 +2524,11 @@ public sealed partial class DemoDuel
     }
     private void AdvanceTurn()
     {
+        ExpireDrawPhaseSkipOnTurnExit();
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
         battlePhaseEndedThisTurn = false;
         Array.Clear(attacked); Array.Clear(changedPosition);
-        // An actual Standby opportunity follows a successful Draw; see
+        // A Standby opportunity follows the turn-draw opportunity (including a skipped Draw Phase); see
         // ResolvePostDrawStandbyEffects, not the turn increment itself.
     }
 

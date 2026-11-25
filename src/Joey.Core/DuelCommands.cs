@@ -243,7 +243,7 @@ internal static class DuelCommandValidation
                 break;
             case ActivateConditionalMonsterSpellCommand conditionalSpell:
                 Target(conditionalSpell.Source, conditionalSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
-                Target(conditionalSpell.Target, 1 - conditionalSpell.Side, DuelZone.Monster);
+                Target(conditionalSpell.Target, conditionalSpell.Target.Side, DuelZone.Monster);
                 break;
             case ResolveTargetedMonsterSpellCommand paidResolution:
                 Target(paidResolution.Source, paidResolution.Side, DuelZone.Hand, DuelZone.SpellTrap);
