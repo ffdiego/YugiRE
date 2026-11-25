@@ -10,7 +10,7 @@ static partial class Game
 {
     static string? breakReviewCardPath;
     static string breakReviewShinePath=NativeBreakResources.Shine;
-    static NativeDisabledChainTarget breakReviewTarget;
+    static NativeBreakFieldTarget breakReviewTarget;
     static int breakReviewPerspective;
     static NativeBreakTimeline breakReviewTimeline=new();
 
@@ -22,7 +22,7 @@ static partial class Game
             !ushort.TryParse(fields[1],NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture,out ushort descriptor))
             throw new InvalidDataException("Break review expects --review-break=ID,HEX; use ID 0 for hidden cards.");
         try { breakReviewTarget=new(descriptor); }
-        catch(ArgumentException ex) { throw new InvalidDataException("Break review currently supports field regions 0/5/10 only.",ex); }
+        catch(ArgumentException ex) { throw new InvalidDataException("Break review currently supports field region+slot 0..10 only.",ex); }
         if(Option(args,"--review-perspective=") is string perspective &&
             (!int.TryParse(perspective,out breakReviewPerspective) || breakReviewPerspective is <0 or >1))
             throw new InvalidDataException("Perspective must be 0 or 1.");
