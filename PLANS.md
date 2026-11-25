@@ -125,7 +125,7 @@ Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Roteiro 32: fechar constantes x87/__ftol; ligar quadrilátero após confirmar formato/key e compositor; comparar frames. [Detalhes](docs/plans/VISUALS.md#v04)
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Centros confirmados (coleta 33); comparar pixels, blending e cadência. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Centros e trajetória recuperados; slot de combate via A03 e comparação gráfica/cadência. [Detalhes](docs/plans/VISUALS.md#v06)
-- [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Rasterizador 0051EBD0 e predicado virtual +4; compositor/timeline; conferir App atual. [Detalhes](docs/plans/VISUALS.md#v07)
+- [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Predicado +4 confirmado; rasterizador 0051EBD0 (coleta 25), compositor e integração via A03/A07. [Detalhes](docs/plans/VISUALS.md#v07)
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Banco DAT confirmado; semântica A/B, compositor, integração e validação. [Detalhes](docs/plans/VISUALS.md#v08)
 - [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`. Manifesto confirmado; precedência e hotspot no dispatcher. [Detalhes](docs/plans/VISUALS.md#v09)
 - [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Nuvens de posição integradas; validar desktop, code → asset/hotspot e prioridade. [Detalhes](docs/plans/VISUALS.md#v10)
