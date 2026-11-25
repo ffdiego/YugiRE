@@ -2,6 +2,13 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
+    /// <summary>Admit an attack against a field slot or -1 for a direct attack.
+    /// Both pilots preserve their individual eligibility and revalidation.</summary>
+    public bool TryQueueAttack(int attackerSlot, int defenderSlot, out string message,
+        ActionOrigin origin = ActionOrigin.Player) => defenderSlot == -1
+            ? TryQueueDirectAttack(attackerSlot, out message, origin)
+            : TryQueueTargetedAttack(attackerSlot, defenderSlot, out message, origin);
+
     /// <summary>Opt-in battle pilot. Single face-up attacker, empty other
     /// monster/spell/field slots, no known battle-damage callback. The legacy
     /// battle/response path remains available outside this bounded pilot.</summary>
