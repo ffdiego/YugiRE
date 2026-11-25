@@ -35,13 +35,38 @@ static partial class Game
         return new(card.X, card.Y - 32, card.Width, 27);
     }
 
+    static bool IsFissure(Card card) => card.ClassCode == 22 && card.Id == TargetedMonsterSpellRules.Fissure;
+
+    static bool CanActivateHandCard(int index) =>
+        queuedDuel is not null && IsFissure(ViewHand[index])
+            ? duel.TryCaptureCardTarget(ViewPlayer, DuelZone.Hand, index, out var source) &&
+              duel.QueuedTargetedMonsterSpellCandidates(source).Count != 0
+            : duel.CanActivateFromHand(index);
+
+    static (CardTarget Source, IReadOnlyList<QueuedTargetedMonsterSpellCandidate> Choices, int Turn)? fissureSelection;
+
+    static void StartQueuedFissure(int index, bool fromSet)
+    {
+        ClearDuelSelection();
+        if (duel.TryQueueActivation(index, fromSet, out message)) return;
+        if (!duel.TryCaptureCardTarget(ViewPlayer, fromSet ? DuelZone.SpellTrap : DuelZone.Hand, index, out var source))
+            return;
+        var choices = duel.QueuedTargetedMonsterSpellCandidates(source);
+        if (choices.Count != 0)
+            fissureSelection = (source, choices, duel.Turn);
+    }
+
+    static bool IsFissureTarget(int player, int zone) =>
+        fissureSelection is { } selection && duel.TryCaptureCardTarget(player, DuelZone.Monster, zone, out var target) &&
+        selection.Choices.Any(choice => choice.Target == target);
+
     static NativeCursorAction? CurrentHandAction(int index) =>
         index < 0 || index >= ViewHand.Count ? null :
         NativeDuelCursor.HandAction(
             ViewHand[index].IsMonster,
             duel.CanSummonFromHand(index),
             duel.CanSetFromHand(index),
-            duel.CanActivateFromHand(index),
+            CanActivateHandCard(index),
             setHandAction,
             duel.PendingEndDiscards > 0);
 
@@ -51,7 +76,7 @@ static partial class Game
             ViewHand[index].IsMonster,
             duel.CanSummonFromHand(index),
             duel.CanSetFromHand(index),
-            duel.CanActivateFromHand(index));
+            CanActivateHandCard(index));
     static bool Hit(Rectangle rect) => Raylib.CheckCollisionPointRec(mouse, rect);
 
     // card.txt holds both large hand and small board selection frames.
@@ -117,6 +142,7 @@ static partial class Game
     static void ClearDuelSelection()
     {
         hand = attacker = hoverHand = hoverCpuHand = -1;
+        fissureSelection = null;
         handActionsWereEnabled = false;
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
@@ -179,6 +205,11 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Activate)
         {
+            if (queuedDuel is not null && IsFissure(card))
+            {
+                StartQueuedFissure(index, fromSet: false);
+                return;
+            }
             if (queuedDuel is not null && IsQueuedFixedSpell(card))
             {
                 if (TryQueuedFixedSpell(card, DuelZone.Hand, index, out message)) ClearDuelSelection();
@@ -248,7 +279,7 @@ static partial class Game
                 next = slot;
         }
         bool overHand = next >= 0;
-        if (choosingTributes || choosingEquip) next = -1;
+        if (choosingTributes || choosingEquip || fissureSelection is not null) next = -1;
         if (next != hoverHand || (allowActions && !handActionsWereEnabled))
         {
             hoverHand = next;
@@ -261,7 +292,7 @@ static partial class Game
                         ViewHand[next].IsMonster,
                         duel.CanSummonFromHand(next),
                         duel.CanSetFromHand(next),
-                        duel.CanActivateFromHand(next),
+                        CanActivateHandCard(next),
                         requestSet: false,
                         discarding: duel.PendingEndDiscards > 0)
                     == NativeCursorAction.Set;
@@ -390,11 +421,12 @@ static partial class Game
                     if (Hit(fieldRect) && CanHighlightSpell(player, SpellTrapTargetRules.FieldZone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
                 }
-                if (own && duel.FieldSpellFaceDown[player] && !blockInput && duel.PendingSpellTrapTarget is null &&
+                if (own && duel.FieldSpellFaceDown[player] && !blockInput && fissureSelection is null &&
+                    duel.PendingSpellTrapTarget is null &&
                     PointerPressed(MouseButton.Left) && Hit(fieldRect) &&
                     duel.ActivateSetFieldSpell(out message))
                     BeginCardActivation(fieldCard, fieldRect);
-                else if (!blockInput && Hit(fieldRect) && duel.CanUseFusionGate(player))
+                else if (!blockInput && fissureSelection is null && Hit(fieldRect) && duel.CanUseFusionGate(player))
                 {
                     Label("Click Fusion Gate to Fusion Summon", 10, 587, 11, Gold);
                     if (PointerPressed(MouseButton.Left) && duel.BeginFusionGate(player, out message))
@@ -416,7 +448,8 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster, own, zone,
                         duel.DefensePosition[player, zone], duel.MonsterFaceDown[player, zone]);
                     DrawDuelCard(monster, geometry);
-                    if (Hit(monsterRect) && pendingTarget is null && !IsJoeySpeaking())
+                    if (Hit(monsterRect) && pendingTarget is null && !IsJoeySpeaking() &&
+                        (fissureSelection is null || IsFissureTarget(player, zone)))
                         DrawFieldSelectionFrame(geometry, own);
                     // The Core may have flipped an enemy defender logically
                     // before the sword reaches it. Reuse the same presentation
@@ -457,6 +490,16 @@ static partial class Game
                         0, 0x10000, 0xa0);
                 if (blockInput || duel.PendingSpellTrapTarget is not null ||
                     !PointerPressed(MouseButton.Left)) continue;
+                if (fissureSelection is { } fissure)
+                {
+                    if (Hit(monsterRect) && IsFissureTarget(player, zone) &&
+                        duel.TryCaptureCardTarget(player, DuelZone.Monster, zone, out var target))
+                    {
+                        duel.TryQueueTargetedMonsterSpell(fissure.Source, target, out message);
+                        ClearDuelSelection();
+                    }
+                    continue;
+                }
                 if (Hit(monsterRect))
                 {
                     if (duel.PendingFlipTarget is { } flipRequest)
@@ -521,7 +564,9 @@ static partial class Game
                 }
                 else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell)
                 {
-                    if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
+                    if (queuedDuel is not null && IsFissure(setSpell))
+                        StartQueuedFissure(zone, fromSet: true);
+                    else if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
                         TryQueuedFixedSpell(setSpell, DuelZone.SpellTrap, zone, out message);
                     else if (duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
                              duel.PendingFusionSummon is null)
@@ -640,7 +685,8 @@ static partial class Game
         if (alphaCpu is not null) DrawCpuHand();
         DrawPhasePanel(turnInput);
 
-        if (actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
+        if (fissureSelection is { } fissure && fissure.Turn != duel.Turn ||
+            actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && queuedDuel?.IsBusy != true &&
             CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;

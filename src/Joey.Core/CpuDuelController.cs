@@ -27,6 +27,25 @@ public sealed class CpuDuelController
         Player = player;
     }
 
+    private static (CardTarget Source, CardTarget Target)? FindFissure(DemoDuel duel, int player)
+    {
+        foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
+        {
+            int count = zone == DuelZone.Hand ? duel.Hand.Count : 5;
+            for (int index = 0; index < count; index++)
+            {
+                Card? card = zone == DuelZone.Hand ? duel.Hand[index] : duel.Spells[player, index];
+                if (card is not { ClassCode: 22, Id: TargetedMonsterSpellRules.Fissure } ||
+                    !duel.TryCaptureCardTarget(player, zone, index, out var source)) continue;
+                // Deterministic CPU tie choice. The selected occurrence still
+                // passes the same legality checks as a player's choice.
+                if (duel.QueuedTargetedMonsterSpellCandidates(source).FirstOrDefault() is { } choice)
+                    return (source, choice.Target);
+            }
+        }
+        return null;
+    }
+
     /// <summary>Who owns the current blocking choice; null means ordinary turn play.</summary>
     public static int? PendingOwner(DemoDuel duel) =>
         duel.PendingEffectDecision?.Owner ?? duel.PendingCardSelection?.Owner ??
@@ -273,6 +292,9 @@ public sealed class CpuDuelController
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
                 source: duel.FirstFreeSpellZone(), handIndex: spell);
+            if (queueTurnActions && FindFissure(duel, Player) is { } fissure)
+                return Act(CpuAction.Selection, (out string m) =>
+                    duel.TryQueueTargetedMonsterSpell(fissure.Source, fissure.Target, out m, ActionOrigin.Cpu));
             int fusionSpell = Enumerable.Range(0, duel.Hand.Count)
                 .FirstOrDefault(i => FusionRules.Supports(duel.Hand[i]) && duel.CanActivateFromHand(i), -1);
             if (fusionSpell >= 0)

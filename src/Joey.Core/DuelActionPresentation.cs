@@ -40,6 +40,9 @@ public sealed partial class DemoDuel
             case ActivateSpellTrapWipeCommand spellWipe:
                 target = spellWipe.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
+            case ActivateConditionalMonsterSpellCommand conditional:
+                target = conditional.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
             case ActivateRaigekiCommand activation:
                 target = activation.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

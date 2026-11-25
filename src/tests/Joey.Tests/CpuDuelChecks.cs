@@ -15,8 +15,45 @@ internal static class CpuDuelChecks
             side == 0 ? grave : null, side == 1 ? grave : null,
             side == 0 ? deck : null, side == 1 ? deck : null);
 
+    private static void QueuedFissure(Action<bool, string> check)
+    {
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool fromSet in new[] { false, true })
+        {
+            Card fissure = Spell(TargetedMonsterSpellRules.Fissure);
+            Card?[] enemy = [Monster(24, 700), Monster(24, 700), Monster(1351, 900), Monster(24, 100), null];
+            var duel = DemoDuel.FromPartialObservation(side, [fissure], side == 0 ? Slots() : enemy,
+                side == 0 ? enemy : Slots(), 8000, side0Deck: [Monster(24)], side1Deck: [Monster(24)]);
+            duel.MonsterFaceDown[1 - side, 3] = true;
+            duel.DefensePosition[1 - side, 3] = true;
+            if (fromSet) check(duel.SetFromHand(0, out _), "C12 Fissure fixture Set");
+            check(duel.Draw(out _), "C12 Fissure fixture draw before Main");
+            var queue = duel.CreatePrimitiveActionQueue();
+            var cpu = new CpuDuelController(side);
+            check(duel.TryCaptureCardTarget(1 - side, DuelZone.Monster, 0, out var first) &&
+                duel.TryCaptureCardTarget(1 - side, DuelZone.Monster, 1, out var second) &&
+                first.Occurrence != second.Occurrence, "C12 Fissure has two tracked minimum occurrences");
+
+            check(cpu.Step(duel, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Selection } &&
+                queue.IsBusy && duel.Graveyard(side).Count == 0 && duel.Monsters[1 - side, 0] is not null,
+                "C12 CPU chooses tied Fissure target without mutating during admission");
+            var entry = queue.Trace.Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
+            var presentation = duel.DescribeActionPresentation(entry.Command);
+            check(entry.Origin == ActionOrigin.Cpu && presentation is { Kind: ActionPresentationKind.Activate } &&
+                presentation.Source.Zone == (fromSet ? DuelZone.SpellTrap : DuelZone.Hand) &&
+                presentation.SourceIndex == 0 && presentation.DestinationSlot == 0,
+                "C12 activation presentation reads the same Fissure source for UI and CPU");
+            for (int tick = 0; tick < 40 && queue.IsBusy; tick++) queue.Tick();
+            check(!queue.IsBusy && queue.Fault is null && duel.Monsters[1 - side, 0] is null &&
+                duel.Monsters[1 - side, 1] is not null && duel.Monsters[1 - side, 2] is not null &&
+                duel.Monsters[1 - side, 3] is not null && duel.Graveyard(side).Single().Id == fissure.Id,
+                "C12 CPU resolves exactly the chosen minimum through Fissure queue");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        QueuedFissure(check);
         var origin = new CardBounds(400, 520, 108, 153);
         var destination = NativeDuelLayout.MonsterBounds(0, true);
         var halfway = CardTravel.Sample(origin, destination, 4);
