@@ -119,7 +119,7 @@ Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Controles transitórios de seleção/descarte e validação DAT. [Detalhes](docs/plans/VISUALS.md#v03)
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Pronto`. Pivô/compositor e constantes x87 (roteiro 21). [Detalhes](docs/plans/VISUALS.md#v04)
-- [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Roteiro 33 para tabelas de centros; comparar pixels, blending e cadência. [Detalhes](docs/plans/VISUALS.md#v05)
+- [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Centros confirmados (coleta 33); comparar pixels, blending e cadência. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Geometria absoluta e slot de combate via A03. [Detalhes](docs/plans/VISUALS.md#v06)
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Rasterizador 0051EBD0 e predicado virtual +4; compositor/timeline; conferir App atual. [Detalhes](docs/plans/VISUALS.md#v07)
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Sprites, blending e validação. [Detalhes](docs/plans/VISUALS.md#v08)
