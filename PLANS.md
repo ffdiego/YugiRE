@@ -295,8 +295,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 - [ ] **V23 — Corrente (0041F870).** Status: `Aguardando evidência`.
   NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Recurso/recortes dos dígitos, assembly e integração A03 pendentes (roteiro 17). [Contrato](docs/research/native-chain-affect-contract-2026-11-24.md).
-- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`.
-  NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
+- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`.
+  NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Roteiro 17 confirma scratch 50×50, recortes verticais e recomposição por troca de seletor. A ordem dos recursos vem do DAT no snapshot v3. Faltam ramos de vínculos e integração do compositor nativo. [Contrato do scratch](docs/research/native-affect-scratch-2026-11-24.md).
 
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`.
   Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT. Integração A03 e comparação pendentes.

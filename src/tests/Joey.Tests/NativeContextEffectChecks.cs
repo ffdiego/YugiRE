@@ -61,6 +61,31 @@ internal static class NativeContextEffectChecks
         affect.AdvanceNativeUpdate(17);
         affect.AdvanceNativeUpdate(18);
         check(affect.Counter == 0, "V24: new object resets even if same resource ID");
+        var draw = new NativeAffectDraw(50, 50, 69);
+        for (int i = 0; i < 18; i++) affect.AdvanceNativeUpdate(18);
+        check(draw.Sample(affect, 1, new(369,352), cosine) is
+                { Center: { X: 369, Y: 352 }, Rebuild: { IconIndex: 1 } unwrapped } &&
+              unwrapped.BackgroundCopies.SequenceEqual(new NativeAffectCopy[] {
+                  new(new(0,18,50,50), new(0,0))
+              }), "V24: copy a vertical rectangle into a scratch sized from icon 1");
+        affect.AdvanceNativeUpdate(18);
+        check(draw.Sample(affect, 1, new(681,248), cosine).Rebuild is null,
+            "V24: anchor and phase changes reuse the scratch for the same selector");
+        affect.AdvanceNativeUpdate(18);
+        check(draw.Sample(affect, 2, new(681,248), cosine).Rebuild is
+                { IconIndex: 2 } wrapped &&
+              wrapped.BackgroundCopies.SequenceEqual(new NativeAffectCopy[] {
+                  new(new(0,0,50,1), new(0,49)),
+                  new(new(0,20,50,49), new(0,0))
+              }), "V24: copy the wrapped head before the tail on selector change");
+        check(draw.Sample(affect, 1, new(369,352), cosine).Rebuild?.IconIndex == 1,
+            "V24: one scratch is shared by successive selector draws in the same update");
+
+        string[] names = ["loop_blue.bmp", "ico_equip.bmp", "ico_conti.bmp", "ico_field.bmp",
+            "ico_kousoku.bmp", "ico_power.bmp"];
+        string[] paths = names.Select(name => @"j\duel\effect\" + name).ToArray();
+        check(NativeAffectDraw.Resources(string.Join("\r\n", names.Select(name => name + "\t// comment")),
+            paths).SequenceEqual(paths), "V24: manifest preserves loop and icon selector order");
         foreach(int kind in new[]{1,2,4,5,6})
         {
             check(NativeAffectTimeline.IncomingLinkSelector(0,0x52,kind)==5 &&
