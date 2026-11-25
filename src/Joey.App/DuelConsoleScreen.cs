@@ -120,9 +120,14 @@ static partial class Game
             Console.Error.WriteLine("Queued automatic draw phase regression failed.");
             return 1;
         }
-        if (!CheckQueuedCombatPresentation() || !CheckQueuedCpuDirectAttack())
+        if (!CheckQueuedCombatPresentation())
         {
-            Console.Error.WriteLine("Queued combat presentation regression failed.");
+            Console.Error.WriteLine("Queued player and console combat presentation regression failed.");
+            return 1;
+        }
+        if (!CheckQueuedCpuAttack(targeted: false) || !CheckQueuedCpuAttack(targeted: true))
+        {
+            Console.Error.WriteLine("Queued CPU combat presentation regression failed.");
             return 1;
         }
         Console.WriteLine("Laboratory, queued automatic draw and combat presentation regressions passed.");
@@ -219,7 +224,7 @@ static partial class Game
     {
         var elapsed = TimeSpan.FromMilliseconds(17);
         foreach (int side in new[] { 0, 1 })
-        foreach (var (targeted, playerInput) in new[] { (false, false), (true, false), (false, true) })
+        foreach (var (targeted, playerInput) in new[] { (false, false), (true, false), (false, true), (true, true) })
         {
             ActionTraceEntry[]? reference = null;
             foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
@@ -258,7 +263,7 @@ static partial class Game
                 if (playerInput)
                 {
                     attacker = 2;
-                    CommitHumanAttack(-1);
+                    CommitHumanAttack(targeted ? 3 : -1);
                     if (!queue.IsBusy || attackCue is not null || duel.Life[enemy] != 8000) return false;
                 }
                 else if (!labSession.Execute(targeted ? "attack 2 3" : "attack 2 direct").Enqueued)
@@ -268,7 +273,7 @@ static partial class Game
                     return false;
                 if (style.PlayAnimations)
                 {
-                    if (attackCue is not { AlreadyAimed: false } cue ||
+                    if (attackCue is not { } cue || cue.AlreadyAimed != (playerInput && targeted && side == 0) ||
                         cue.Target != (targeted ? NativeDuelLayout.MonsterCenter(3, enemy == 0) : NativeAttackFrame.DirectTarget(side == 0)) ||
                         queue.Active?.Command is not (DeclareDirectAttackCommand or DeclareTargetedAttackCommand))
                         return false;
@@ -295,7 +300,8 @@ static partial class Game
                     return false;
                 var trace = queue.Trace.ToArray();
                 if (playerInput && !trace.Any(entry => entry.Stage == ActionTraceStage.Completed &&
-                    entry.Entry.Command is DeclareDirectAttackCommand && entry.Entry.Origin == ActionOrigin.Player &&
+                    entry.Entry.Command is (DeclareDirectAttackCommand or DeclareTargetedAttackCommand) &&
+                    entry.Entry.Origin == ActionOrigin.Player &&
                     entry.Result?.Outcome == CommandOutcome.Applied)) return false;
                 if (reference is not null && !trace.SequenceEqual(reference)) return false;
                 reference = trace;
@@ -304,25 +310,34 @@ static partial class Game
         return true;
     }
 
-    static bool CheckQueuedCpuDirectAttack()
+    static bool CheckQueuedCpuAttack(bool targeted)
     {
         Card card = new(24, 24, "CPU attack fixture", "", (3u << 20) | (4u << 25) | (140u << 9));
-        DemoDuel Setup() => DemoDuel.FromPartialObservation(1, [], new Card?[5],
+        Card defender = new(1351, 1351, "CPU defense fixture", "", (3u << 20) | (4u << 25) | (100u << 9));
+        Card?[] enemies = targeted ? [null, null, null, defender, null] : new Card?[5];
+        DemoDuel Setup() => DemoDuel.FromPartialObservation(1, [], enemies,
             [null, null, card, null, null], 8000);
 
+        bool Failed(string stage)
+        {
+            Console.Error.WriteLine($"Queued CPU attack (targeted={targeted}) failed at {stage}.");
+            return false;
+        }
+
         var headless = Setup();
-        if (!headless.BeginBattle(out _)) return false;
+        if (!headless.BeginBattle(out _)) return Failed("headless phase");
         var headlessQueue = headless.CreatePrimitiveActionQueue();
         if (new CpuDuelController(1).Step(headless, queueTurnActions: true).Action != CpuAction.Attack)
-            return false;
+            return Failed("headless admission");
         for (int tick = 0; tick < 10 && headlessQueue.IsBusy; tick++) headlessQueue.Tick();
-        if (headlessQueue.IsBusy || headless.Life[0] != 6600) return false;
+        if (headlessQueue.IsBusy || headless.Life[0] != (targeted ? 7600 : 6600) ||
+            targeted && headless.Graveyard(0).Count != 1) return Failed("headless result");
 
         var elapsed = TimeSpan.FromMilliseconds(17);
         foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
         {
             duel = Setup();
-            if (!duel.BeginBattle(out _)) return false;
+            if (!duel.BeginBattle(out _)) return Failed("App phase");
             alphaCpu = new(1);
             alphaBlocked = false;
             cpuDelay = TimeSpan.Zero;
@@ -334,27 +349,31 @@ static partial class Game
             queuedDuel = queue;
 
             AdvanceAlpha(elapsed);
-            if (!queue.IsBusy || attackCue is not null || duel.Life[0] != 8000) return false;
+            if (!queue.IsBusy || attackCue is not null || duel.Life[0] != 8000) return Failed("App admission or early damage");
             AdvanceQueuedDuel();
-            if (duel.Life[0] != 8000) return false;
+            if (duel.Life[0] != 8000) return Failed("App admission or early damage");
             if (style.PlayAnimations)
             {
                 if (attackCue is not { AlreadyAimed: false, NearSide: false } cue ||
-                    queue.Active?.Command is not DeclareDirectAttackCommand) return false;
+                    queue.Active?.Command is not (DeclareDirectAttackCommand or DeclareTargetedAttackCommand)) return Failed("cue start");
                 for (int tick = 0; tick < 4; tick++) AdvanceQueuedDuel();
                 if (!ReferenceEquals(cue, attackCue) || attackUpdates != 0 || duel.Life[0] != 8000)
-                    return false;
+                    return Failed("cue observed twice or damage before gate");
             }
-            else if (attackCue is not null) return false;
+            else if (attackCue is not null) return Failed("Instant cue");
 
             for (int frame = 0; frame < 600 && queue.IsBusy; frame++)
             {
+                if (CanPlayCardEffects) AdvanceCardEffects(elapsed);
+                AdvanceDuelPhases(elapsed);
                 AdvanceAlpha(elapsed);
                 AdvanceQueuedDuel();
                 AdvanceLifePresentation(elapsed);
             }
             if (queue.IsBusy || alphaBlocked || attackCue is not null || !duel.Life.SequenceEqual(headless.Life) ||
-                alphaCpu.ActionsThisTurn != 1 || !queue.Trace.SequenceEqual(headlessQueue.Trace)) return false;
+                alphaCpu.ActionsThisTurn != 1 || !queue.Trace.SequenceEqual(headlessQueue.Trace) ||
+                !duel.Graveyard(0).SequenceEqual(headless.Graveyard(0)))
+                return Failed($"App result and trace parity in {style.GetType().Name}");
         }
         return true;
     }
