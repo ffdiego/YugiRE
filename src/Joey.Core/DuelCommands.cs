@@ -51,6 +51,9 @@ internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Dest
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record PrepareRitualSummonCommand(int Side, CardTarget Spell, CardTarget Monster,
+    int Slot, bool Defense, IReadOnlyList<CardTarget> Materials) : DuelCommand(Side);
+internal sealed record FinishRitualSummonCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareGraveyardBanishSummonCommand(int Side, CardTarget Source, int Slot, bool Defense, CardTarget First, CardTarget? Second, CardTarget? Third) : DuelCommand(Side);
 internal sealed record FinishGraveyardBanishSummonCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveSameNameRecruitmentCommand(int Side, PendingCardSelection Request, CardTarget? First, CardTarget? Second, int? SingleSlot) : DuelCommand(Side);
@@ -143,9 +146,16 @@ internal static class DuelCommandValidation
             case FinishDeckSearchCommand:
             case FinishGraveyardBanishSummonCommand:
             case FinishGraveyardRecoveryCommand:
+            case FinishRitualSummonCommand:
                 break;
             case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5 && !(summonFromDeck.FaceDownDefense && summonFromDeck.FaceUpDefense):
                 Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Hand);
+                break;
+            case PrepareRitualSummonCommand ritual when ritual.Slot is >= 0 and < 5:
+                Target(ritual.Spell, ritual.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(ritual.Monster, ritual.Side, DuelZone.Hand);
+                foreach (var material in ritual.Materials)
+                    Target(material, ritual.Side, DuelZone.Hand, DuelZone.Monster);
                 break;
             case PrepareGraveyardBanishSummonCommand prepareBanish when prepareBanish.Slot is >= 0 and < 5:
                 Target(prepareBanish.Source, prepareBanish.Side, DuelZone.Hand);
@@ -258,7 +268,7 @@ internal static class DuelCommandValidation
                 if (prepare.SecondTribute is { } second) Target(second, prepare.Side, DuelZone.Monster);
                 break;
             case TributeCommand tribute:
-                Target(tribute.Target, tribute.Side, DuelZone.Monster);
+                Target(tribute.Target, tribute.Side, DuelZone.Hand, DuelZone.Monster);
                 break;
             case FinishNormalPlacementCommand finish:
                 Target(finish.Target, finish.Side, DuelZone.Monster);

@@ -192,8 +192,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda. Fatia pura de chegada ao cemitério: P066/P044/P068/P030; [contrato C07](docs/cards/c07-graveyard-arrival-effects.md). Integração depende da causalidade e ocorrência na fila (A02/A06). Roteiro 12 fecha ambiguidades de envio direto e callbacks faltantes; não bloquear outras famílias.
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`.
   Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 monstros invocáveis. Não declarar paridade nativa até medir callbacks P182 no Windows.
-- [ ] **C09 — Rituais (`P269`).** Status: `Pronto`.
-  Partir de `docs/evidence/ritual-rules-catalog.json`; executar **pelo menos um** cenário ponta a ponta antes de ampliar.
+- [ ] **C09 — Rituais (`P269`).** Status: `Parcial`.
+  C09.1 implementa as 16 receitas P269 headless com mão/Set, tributos próprios e colocação por ocorrência. Oito magias e sete monstros do índice Done no escopo indicado após CI; Relinquished Partial. Produtores UI/CPU, efeito próprio de Relinquished, interações, restrições de reviver e comparação nativa pendentes. [Contrato](docs/cards/c09-queued-ritual-summon.md).
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`.
   Respostas a Special Summon e efeitos próprios de três resultados ainda Partial; conferir restrições da versão Joey.
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`.
