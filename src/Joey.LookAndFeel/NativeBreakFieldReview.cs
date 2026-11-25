@@ -19,7 +19,8 @@ public static class NativeBreakResources
 
 /// <summary>0045C280 normalizes region+slot when their sum is below 11.
 /// Unlike the disabled-chain producer, Break may encode a direct field
-/// region 0..10 with slot zero. Do not reject those native descriptors.</summary>
+/// region 0..10 with slot zero. Combat snapshot 00578030 emits B=region:FF;
+/// for monster regions 0..4, 0045C280 ignores slot FF and uses region.</summary>
 public readonly record struct NativeBreakFieldTarget
 {
     public ushort Descriptor { get; }
@@ -27,16 +28,18 @@ public readonly record struct NativeBreakFieldTarget
     public int Region => (Descriptor >> 1) & 31;
     public int Slot => (Descriptor >> 6) & 255;
     public int CombinedZone => Region+Slot;
+    public bool IsCombatSnapshot => Slot==0xff && Region<5;
+    public int FieldZone => IsCombatSnapshot?Region:CombinedZone;
     public NativeBreakFieldTarget(ushort descriptor)
     {
         Descriptor=descriptor;
-        if(Region>10 || CombinedZone>10)
+        if(Region>10 || FieldZone>10)
             throw new ArgumentException("Not a field-only break descriptor.",nameof(descriptor));
     }
     public CardPoint Center(int perspective)
     {
         if(perspective is <0 or >1)throw new ArgumentOutOfRangeException(nameof(perspective));
-        int zone=CombinedZone;
+        int zone=FieldZone;
         return DuelCardLayout.Center(zone<5?DuelCardZone.Monster:zone<10?DuelCardZone.Spell:DuelCardZone.Field,
             Side==perspective,zone%5);
     }
@@ -52,7 +55,8 @@ public sealed record NativeBreakFieldFrame(int Counter,bool BlocksRelease,int Ro
 /// The source rectangles below address an unrotated texture; the host
 /// rotates each cropped tile, without changing its destination extent.
 /// Neither color-key behavior nor virtual +AC/+C compositing is modeled.
-/// Hand (0041F130), region FF and live movement are deliberately excluded.</summary>
+/// Hand (0041F130), other non-field zones and live movement are excluded.
+/// Slot FF in monster regions uses the native combat-snapshot center.</summary>
 public static class NativeBreakFieldReview
 {
     public static NativeBreakFieldFrame? Sample(NativeBreakTimeline timeline,CardPoint center,
