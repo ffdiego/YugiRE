@@ -47,6 +47,109 @@ internal static class NativeTurnNoticeChecks
                 "V07: standard phase path");
         }
 
+        // 005DBB30 -> 004812B0: the panel predicate is distinct
+        // from the notice object's +4 and from its Draw lifetime.
+        var initial=NativePhasePanelState.Initial;
+        check(initial==new NativePhasePanelState(512,256)&&!initial.IsBusy,
+            "V07: panel constructor starts idle");
+        check(new NativePhasePanelState(511,256).IsBusy &&
+            new NativePhasePanelState(512,127).IsBusy &&
+            !new NativePhasePanelState(512,128).IsBusy,
+            "V07: exact busy predicate thresholds, either counter can block");
+        foreach(int phase in new[]{0,1,2,3,4,5})
+        {
+            int releaseAt=phase==3?24:16;
+            var same=new NativeTurnNoticePlan(0,0,0,phase);
+            var state=initial.Begin(same);
+            check(state==new NativePhasePanelState(512,0),
+                "V07: same side resets only phase counter");
+            for(int i=0;i<=releaseAt;i++)
+            {
+                check(state.IsBusy==(i<releaseAt),
+                    $"V07: same-side phase {phase} busy at update {i}");
+                if(i==releaseAt)break;
+                var step=state.Advance(phase);
+                check(!step.ReleasePanelResources&&!step.StartsPhaseNotice,
+                    "V07: phase updates do not issue another start");
+                state=step.State;
+            }
+            check(state.PhaseCounter==128,
+                "V07: phase gate releases at 128 rather than end of banner");
+
+            var turn=new NativeTurnNoticePlan(0,1,0,phase);
+            state=initial.Begin(turn);
+            check(state==new NativePhasePanelState(0,256),
+                "V07: player change preserves the previous phase counter");
+            for(int i=1;i<=64+releaseAt;i++)
+            {
+                var step=state.Advance(phase);
+                state=step.State;
+                check(step.ReleasePanelResources==(i==64)&&
+                    step.StartsPhaseNotice==(i==64),
+                    "V07: panel completion requests resource release and next phase once");
+                check(state.IsBusy==(i<64+releaseAt),
+                    $"V07: turn then phase {phase} busy at update {i}");
+                if(i<64)check(state.PhaseCounter==256,"V07: previous phase counter is frozen during flip");
+                if(i==64)check(state.PhaseCounter==0,"V07: phase starts at zero on flip completion");
+            }
+        }
+        var none=new NativeTurnNoticePlan(1,0,0,-1);
+        var final=initial.Begin(none);
+        NativePhasePanelStep last=default;
+        for(int i=0;i<64;i++) { last=final.Advance(-1);final=last.State; }
+        check(last.ReleasePanelResources&&!last.StartsPhaseNotice&&
+            final==initial&&!final.IsBusy,
+            "V07: -1 suppresses next notice and retains old phase counter");
+        var interrupted=new NativePhasePanelState(512,64).Begin(none);
+        for(int i=0;i<64;i++)interrupted=interrupted.Advance(-1).State;
+        check(interrupted==new NativePhasePanelState(512,64)&&interrupted.IsBusy,
+            "V07: -1 does not forcibly release a previously incomplete phase");
+        for(int i=0;i<8;i++)interrupted=interrupted.Advance(-1).State;
+        check(interrupted.PhaseCounter==128&&!interrupted.IsBusy,
+            "V07: retained counter resumes after flip");
+        check(new NativePhasePanelState(512,1016).Advance(0).State==initial,
+            "V07: panel idle animation wraps from 1024 to 256");
+        bool invalidPhase=false;
+        try { initial.Advance(6); } catch(ArgumentOutOfRangeException) { invalidPhase=true; }
+        check(invalidPhase,"V07: panel phase input outside -1..5");
+
+        // V07.2: confirmed raw selector and ordered +10/+8/+B0 passes.
+        var cosine=NativeCosineCapture.GenerateTable();
+        foreach(bool second in new[]{false,true})
+        for(int phase=0;phase<6;phase++)
+        {
+            int key=phase+(second?6:0);
+            var start=NativePhaseBannerDraw.AtCounter(phase,second,0,cosine);
+            check(start.SequenceEqual(new NativePhaseBannerPass[]{
+                new(key,new(461,300),NativePhaseBannerRoute.Intensity,0),
+                new(key,new(589,300),NativePhaseBannerRoute.Intensity,0)}),
+                "V07: two intensity passes start at +/-64");
+            var entrance=NativePhaseBannerDraw.AtCounter(phase,second,32,cosine);
+            check(entrance[0].Center==new CardPoint(480,300)&&
+                entrance[1].Center==new CardPoint(570,300)&&
+                entrance.All(p=>p.Operand==96),
+                "V07: entrance centers and raw intensity");
+            for(int counter=64;counter<=128;counter+=4)
+            {
+                var passes=NativePhaseBannerDraw.AtCounter(phase,second,counter,cosine);
+                if(phase==3&&counter<120)
+                    check(passes.SequenceEqual(new NativePhaseBannerPass[]{
+                        new(12+(second?7:0)+(counter-64)/8,new(525,300),NativePhaseBannerRoute.Base,0)}),
+                        "V07: seven battle sparkle keys at four-counter update cadence");
+                else
+                    check(passes.Length==2&&passes[0]==new NativePhaseBannerPass(key,new(525,300),NativePhaseBannerRoute.Base,0)&&
+                        passes[1].LookupKey==key&&passes[1].Center==new CardPoint(525,300)&&
+                        passes[1].Route==NativePhaseBannerRoute.UnresolvedB0&&
+                        passes[1].Operand==(counter==128?256:65536-counter*2),
+                        "V07: opaque base precedes unresolved B0, preserve low word");
+            }
+            var fade=NativePhaseBannerDraw.AtCounter(phase,second,136,cosine);
+            check(fade.SequenceEqual(new NativePhaseBannerPass[]{
+                new(key,new(525,300),NativePhaseBannerRoute.Intensity,254)})&&
+                NativePhaseBannerDraw.AtCounter(phase,second,256,cosine).Length==0,
+                "V07: one cosine fade pass; draw ends at counter 256");
+        }
+
         // Synthetic order deliberately unrelated to filenames. No claim
         // about the actual proprietary manifest's order in this fixture.
         string[] names=Enumerable.Range(0,46).Select(i=>$"sprite_{i}_e.yga").ToArray();

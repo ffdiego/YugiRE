@@ -29,6 +29,21 @@ A amostra já é suficiente para montar um agrupador de
 eventos por turno; não fornece distribuições da IA nem
 evidência de sorteio de deck. Ver [plano de análise da IA](06-ai.md).
 
+## Projeção da troca de turno em A07
+
+O subestado 1 de `005A8A50` emite em `005A8A70–005A8A82` o comando
+`03` com o bit 15 obtido de `00A577FA & 1`, antes da troca de lado, e
+três operandos zero. A tabela `005B9AEC`, índice `03 - 1`, seleciona o
+stub `005B94A8`, que salta para `004048C0`. O consumidor incrementa o
+contador, alterna o bit do lado e zera o sequenciador `00A577FE`.
+A decompilação do consumidor e o bundle 11 do produtor estão no SQLite v3.
+
+Nos 38 registros `03` do CSV arquivado, o bit 15 coincide com o do último
+início de turno `01`, e os três operandos são zero. O comparador associa
+a forma exata a `AdvanceTurnCommand` aplicado. A entrada em End Phase e
+o descarte continuam sem projeção, assim como a limpeza `02` do replay.
+Os testes comparam os dois lados e mantêm a lacuna de limpeza no relatório.
+
 ## Dois níveis de tabelas, com estados diferentes
 
 **0x005BC700** indexa a tabela de DWORDs em **0x005EFBB0** pelo byte alto do

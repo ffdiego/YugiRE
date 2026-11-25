@@ -113,6 +113,7 @@ def canonical(args):
     if any(v>65535 for v in args) or args[0]&0x7000: return None
     raw,a,b,c=args
     op=raw&0xfff
+    if op==0x03 and (a,b,c)==(0,0,0): return [args]
     if op==0x61 and c==0 and (a,b) in ((0,5),(1,1)):
         return [[raw,1,1,0] for _ in range(b)]
     if op in (0x42,0x43) and a>0 and b==0 and c==1:
@@ -157,7 +158,7 @@ def csharp_rows(doc):
             if projected!=[raw] or raw[0]>>15!=row["side"]:
                 raise ValueError("invalid canonical C# arguments")
             op=raw[0]&0xfff
-            expected={0x61:("DrawCommand", "TurnDrawCommand"),0x42:"HealCommand",0x43:"DamageCommand",
+            expected={0x03:"AdvanceTurnCommand",0x61:("DrawCommand", "TurnDrawCommand"),0x42:"HealCommand",0x43:"DamageCommand",
                       0xce:"SummonCommand" if raw[3]==1 else "SetCommand",0xcf:"SetCommand",0x34:"DeclareDirectAttackCommand",0x33:"DeclareTargetedAttackCommand",
                       0x3c:"SnapshotBattleRemovalCommand",0x7c:"FinishBattleRemovalCommand"}[op]
             accepted = expected if isinstance(expected, tuple) else (expected,)

@@ -102,6 +102,20 @@ public static class NativeDuelCursor
         ownMonster && canAttack && !choosingTarget ? NativeCursorAction.Attack : null;
 
     /// <summary>
+    /// The DAT manifest identifies flip, setdef and setatk as distinct
+    /// actions. 005A0530 offers position changes in main phases and
+    /// 0059FF00 dispatches codes 5/6 to the same position handler.
+    /// Client adapter only: Core supplies permission and current position.
+    /// Native action-code mapping/priority and hotspot remain pending.
+    /// </summary>
+    public static NativeCursorAction? FieldMonsterPositionAction(
+        bool ownMonster, bool canChangePosition, bool faceDown, bool defense,
+        bool choosingTarget) =>
+        !ownMonster || !canChangePosition || choosingTarget ? null :
+        faceDown ? NativeCursorAction.Flip :
+        defense ? NativeCursorAction.SetAttack : NativeCursorAction.SetDefense;
+
+    /// <summary>
     /// Right-click cycles only if two real choices are legal. Traps on hand
     /// cannot Activate, so their only available action is Set.
     /// </summary>

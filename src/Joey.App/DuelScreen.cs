@@ -590,16 +590,20 @@ static partial class Game
                     // before the sword reaches it. Reuse the same presentation
                     // gate as F12: do not expose that enemy's new attributes
                     // beneath the captured face-down card or in diagnostics.
-                    bool showAttributes = NativeFieldAttributeVisibility.ShouldDrawClient(
-                        own, duel.MonsterFaceDown[player, zone],
+                    var attributeDisposition = NativeFieldAttributeVisibility.ClassifyClient(
+                        occupied: true, ownMonster: own, faceDown: duel.MonsterFaceDown[player, zone],
                         settled: true, hiddenDefenderBeforeImpact:
                             IsHiddenAttackTargetBeforeImpact(player, zone));
-                    if (showAttributes && geometry.AttributesCenter is { } center)
+                    if (attributeDisposition == NativeFieldAttributeDisposition.Advance &&
+                        geometry.AttributesCenter is { } center)
                         DrawFieldAttributes(player, zone, monster, center, attributeUpdates);
-                    else
+                    else if (attributeDisposition == NativeFieldAttributeDisposition.ResetToBase)
                         fieldAttributeTimelines[player, zone]?.Reset();
                 }
-                if (monster is null || InFlight(player, zone, false))
+                else if (NativeFieldAttributeVisibility.ClassifyClient(
+                    occupied: monster is not null, ownMonster: own, faceDown: false,
+                    settled: false, hiddenDefenderBeforeImpact: false)
+                    == NativeFieldAttributeDisposition.ResetToBase)
                     fieldAttributeTimelines[player, zone]?.Reset();
 
                 if (own && (attacker == zone || tributeZones.Contains(zone)))

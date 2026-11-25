@@ -47,3 +47,15 @@ dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine
 ```
 
 Os 512 valores são lidos em duas amostras estáveis. O JSON fica em `scratch/visual-review/`.
+
+## V02/V05/V06 — [33-native-field-centers-ghidra.sh](33-native-field-centers-ghidra.sh)
+
+Coleta validada em 25/11/2026. O bundle privado
+`ghidra-native-field-centers-contract.zip` (SHA-256
+`0f1b6ad94406438aa5f52f9c7347895a4f7bdb3e2d82c8072b8fee09861c3c3d`)
+contém uma função e dois blocos de memória, com quatro bytes de
+sobreposição idênticos. Confirma os centros dos monstros e das zonas
+de Spell/Trap e a ordenação invertida do lado adversário.
+A importação foi validada no snapshot paralelo v4-visuals. A consolidação
+desse bundle na linha cumulativa posterior a v6 está pendente.
+[Contrato V05](../../docs/research/native-field-attributes-2026-11-22.md).

@@ -57,11 +57,17 @@ internal static class QueuedEndTurnChecks
                 "A07 hand reaches the limit before the queued turn advance");
             gate.Release = true;
             session.Queue.Tick();
-            check(duel.Turn == turn && !duel.CanDraw, "A07 releasing discard leaves the advance for another tick");
+            check(duel.Turn == turn && !duel.CanDraw &&
+                ActionTraceProjection.ReadExecuted(session.Queue.Trace).All(row => row.Mapping == "unmapped"),
+                "A07 releasing discard leaves the native turn advance for another tick");
             Drain(session.Queue);
             check(duel.Turn == turn + 1 && duel.ActivePlayer == 1 - side && duel.Phase == DemoPhase.Main &&
                 !duel.HasQueuedEndDiscard && duel.CanDraw,
                 "A07 turn advance releases the next player's actions");
+            var advance = ActionTraceProjection.ReadExecuted(session.Queue.Trace).Single(row => row.Mapping == "mapped");
+            check(advance.Command == "AdvanceTurnCommand" &&
+                advance.Args!.SequenceEqual(new ushort[] { (ushort)((side << 15) | 0x03), 0, 0, 0 }),
+                "A07 opcode 03 uses the side ending its turn and zero operands");
         }
 
         var draws = DemoDuel.FromPartialObservation(0, [], new Card?[5], new Card?[5], 8000,
