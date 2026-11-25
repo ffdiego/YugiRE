@@ -286,12 +286,37 @@ public sealed class CpuDuelController
             if (gateInHand >= 0 && duel.HasFusionCombination())
                 return Act(CpuAction.Spell, (out string m) => duel.Play(gateInHand, out m), duel.Hand[gateInHand],
                     handIndex: gateInHand, fieldOwner: Player);
-            int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
-                duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
-                    ShouldClearSpellTraps(duel, duel.Hand[i].Id) ||
-                    DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
-            if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
-                source: duel.FirstFreeSpellZone(), handIndex: spell);
+            if (queueTurnActions)
+            {
+                // Preserve the existing LP/draw/S/T-clear priorities. The
+                // typed producer owns all movement and its presentation.
+                foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
+                {
+                    int count = zone == DuelZone.Hand ? duel.Hand.Count : 5;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var candidate = zone == DuelZone.Hand ? duel.Hand[i] : duel.Spells[Player, i];
+                        if (candidate is null || candidate.ClassCode != 22 ||
+                            !(LifePointSpellRules.SupportsQueued(candidate.Id) ||
+                              ShouldClearSpellTraps(duel, candidate.Id, queued: true,
+                                  excludedSlot: zone == DuelZone.SpellTrap ? i : -1) ||
+                              DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards) ||
+                            !duel.CanQueueFixedSpellActivation(zone, i)) continue;
+                        int index = i;
+                        return Act(CpuAction.Spell, (out string m) =>
+                            duel.TryQueueActivation(index, zone == DuelZone.SpellTrap, out m, ActionOrigin.Cpu));
+                    }
+                }
+            }
+            else
+            {
+                int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
+                    duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
+                        ShouldClearSpellTraps(duel, duel.Hand[i].Id) ||
+                        DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
+                if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
+                    source: duel.FirstFreeSpellZone(), handIndex: spell);
+            }
             if (queueTurnActions && FindFissure(duel, Player) is { } fissure)
                 return Act(CpuAction.Selection, (out string m) =>
                     duel.TryQueueTargetedMonsterSpell(fissure.Source, fissure.Target, out m, ActionOrigin.Cpu));
@@ -395,11 +420,13 @@ public sealed class CpuDuelController
         return Act(CpuAction.EndTurn, EndTurn);
     }
 
-    private bool ShouldClearSpellTraps(DemoDuel duel, ushort resourceId)
+    private bool ShouldClearSpellTraps(DemoDuel duel, ushort resourceId, bool queued = false, int excludedSlot = -1)
     {
-        if (!SpellTrapWipeRules.Supports(resourceId)) return false;
-        int own = SpellTrapWipeRules.HitsOwnSide(resourceId)
-            ? SpellTrapWipeRules.CountOnSide(Player, duel.Spells, duel.FieldSpells) : 0;
+        if (!(queued ? SpellTrapWipeRules.SupportsQueued(resourceId) : SpellTrapWipeRules.Supports(resourceId)))
+            return false;
+        bool hitsOwnSide = queued ? SpellTrapWipeRules.HitsOwnSideQueued(resourceId) : SpellTrapWipeRules.HitsOwnSide(resourceId);
+        int own = hitsOwnSide
+            ? SpellTrapWipeRules.CountOnSide(Player, duel.Spells, duel.FieldSpells, excludedSlot) : 0;
         return SpellTrapWipeRules.CountOnSide(1 - Player, duel.Spells, duel.FieldSpells) > own;
     }
 
