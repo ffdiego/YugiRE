@@ -81,15 +81,14 @@ Ferramentas existentes: SQLite nativo enriquecido, `scripts/run-archive-query.sh
 ## Fonte privada compartilhada de engenharia reversa
 
 **ACTIONS, CARDS e VISUALS devem consultar primeiro o snapshot cumulativo
-`joey-knowledge-visual-cumulative-2026-11-24-v2.zip` (24/11/2026), que
+`joey-knowledge-visual-cumulative-2026-11-24-v6.zip` (atualizado em 25/11/2026), que
 contém `joey-knowledge-visual-cumulative.sqlite` e a auditoria.**
 Em conversas ChatGPT, procurar o arquivo nas fontes do projeto YugiRE
 ou na Biblioteca privada do mantenedor pelo nome exato; em máquinas locais,
 usar a cópia em `scratch/`. Não pedir reenvio sem tentar localizar a fonte.
 Validar o hash do SQLite e o fingerprint do EXE conforme o
 [guia de consultas](docs/research/joey-knowledge-sqlite.md).
-O ZIP sem o sufixo `2026-11-24-v2` contém apenas 19 dos 21 bundles,
-apesar da auditoria antiga; não usá-lo como snapshot completo.
+O snapshot mais recente nesta máquina está em `scratch/coord-evidence/`. Consulte o guia para localizar uma versão anterior validada quando a mais recente não estiver disponível.
 Antes de considerar uma VA ausente, consultar `decompilations`,
 `visual_transient_decompilations`, `visual_evidence_functions`,
 `visual_evidence_instructions` e, quando pertinente,

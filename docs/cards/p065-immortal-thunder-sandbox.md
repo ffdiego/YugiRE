@@ -60,10 +60,10 @@ field removals.
 .NET 10 e **3.325 verificações sintéticas** passaram no CI do PR #59,
 incluindo **14 verificações P065**. Ainda não há comparação com o Joey original.
 
-## Pending native extraction
+## Native evidence and follow-up
 
-`scripts/pending/08-immortal-thunder-graveyard-ghidra.sh`
-will request assembly/decomp of `00581040`, `0057C5F0`,
+The cumulative SQLite includes the bundle from
+`scripts/completed/08-immortal-thunder-graveyard-ghidra.sh`, which requested assembly and decompilation of `00581040`, `0057C5F0`,
 `00585970`, `00576F40`, `00577CF0`, `0056AF90`,
 `005784E0` and callback / card movement queue helpers.
 

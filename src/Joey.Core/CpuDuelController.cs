@@ -118,6 +118,21 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
         {
+            if (queueTurnActions && duel.UsesQueuedFlipSpellTrapSelection(twoSpellTargets))
+            {
+                if (duel.FlipEffectsNegated)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TrySelectQueuedFlipSpellTrapTarget(twoSpellTargets, -1, -1, out m, ActionOrigin.Cpu));
+                var queuedChoice = duel.QueuedFlipSpellTrapCandidates(twoSpellTargets)
+                    .Where(c => !duel.SelectedFlipSpellTrapTargets.Any(s =>
+                        s.Player == c.Target.Side && s.Zone == c.Zone))
+                    .OrderBy(c => c.Target.Side == Player ? 1 : 0)
+                    .ThenBy(c => c.Zone).FirstOrDefault();
+                return queuedChoice is null
+                    ? Idle(CpuStepStatus.Blocked, "Mandatory queued Spell/Trap pair has no candidate.")
+                    : Act(CpuAction.Selection, (out string m) => duel.TrySelectQueuedFlipSpellTrapTarget(
+                        twoSpellTargets, queuedChoice.Target.Side, queuedChoice.Zone, out m, ActionOrigin.Cpu));
+            }
             // Prefer adverse targets, while allowing own-side selections when
             // the effect requires two cards across the entire field.
             var choice = twoSpellTargets.EligibleTargets
@@ -176,6 +191,26 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipTarget is { } flip)
         {
+            if (queueTurnActions && duel.UsesQueuedMonsterFlipSelection(flip))
+            {
+                if (duel.FlipEffectsNegated)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
+                var choice = duel.QueuedMonsterFlipCandidates()
+                    .Where(c => !duel.SelectedFlipTargets.Any(t => t.Player == c.Target.Side && t.Zone == c.Zone))
+                    .Where(c => flip.Effect != DemoFlipEffect.ReturnUpToTwo || c.Target.Side != Player)
+                    .OrderByDescending(c => c.Target.Side != Player)
+                    .ThenByDescending(c => c.Target.Side == Player ? -KnownPower(duel, Player, c.Zone) :
+                        KnownPower(duel, c.Target.Side, c.Zone))
+                    .ThenBy(c => c.Zone).FirstOrDefault();
+                if (choice is not null)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TrySelectQueuedMonsterFlipTarget(flip, choice.Target.Side, choice.Zone, out m, ActionOrigin.Cpu));
+                if (flip.Effect == DemoFlipEffect.ReturnUpToTwo)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
+                return Idle(CpuStepStatus.Blocked, "Mandatory queued FLIP has no legal target.");
+            }
             bool bounce = flip.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
             var targets = (from p in Enumerable.Range(0, 2)
                            from z in Enumerable.Range(0, 5)
@@ -205,6 +240,12 @@ public sealed class CpuDuelController
         bool EndTurn(out string pending) => queueTurnActions
             ? duel.TryQueueEndTurn(out pending, ActionOrigin.Cpu)
             : duel.EndTurn(out pending);
+        bool AttackFrom(int source, int target, out string pending)
+        {
+            if (target == -1 && queueTurnActions && duel.TryQueueDirectAttack(source, out pending, ActionOrigin.Cpu))
+                return true;
+            return duel.Attack(source, target, out pending);
+        }
 
         if (duel.PendingEndDiscards > 0)
         {
@@ -304,7 +345,7 @@ public sealed class CpuDuelController
             {
                 int power = duel.AttackValue(Player, source);
                 if (power > 0 && duel.CanAttackDirectly(source))
-                    return Act(CpuAction.Attack, (out string m) => duel.Attack(source, -1, out m),
+                    return Act(CpuAction.Attack, (out string m) => AttackFrom(source, -1, out m),
                         duel.Monsters[Player, source], source, -1);
                 var enemies = Enumerable.Range(0, 5).Where(z => duel.Monsters[enemy, z] is not null).ToArray();
                 int target = enemies.Where(z => power > KnownPower(duel, enemy, z))
@@ -312,7 +353,7 @@ public sealed class CpuDuelController
                         ? power - duel.AttackValue(enemy, z) + 1000 : 500)
                     .ThenBy(z => z).FirstOrDefault(-1);
                 if (enemies.Length > 0 && target < 0) continue;
-                return Act(CpuAction.Attack, (out string m) => duel.Attack(source, target, out m), duel.Monsters[Player, source], source, target);
+                return Act(CpuAction.Attack, (out string m) => AttackFrom(source, target, out m), duel.Monsters[Player, source], source, target);
             }
             return Act(CpuAction.EndBattle, LeaveBattle);
         }

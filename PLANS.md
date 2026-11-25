@@ -142,7 +142,7 @@ Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Remap/blend e integração A03. [Detalhes](docs/plans/VISUALS.md#v21)
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Aguardando evidência`. Compositor/projeção break, sem alterar regras. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
-- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`. Scratch, jump tables, manifest e composição; conferir PR #139. [Detalhes](docs/plans/VISUALS.md#v24)
+- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Resolver os ramos restantes de vínculos e integrar o compositor nativo. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Remap/blend e integração A03; não disparar em todo banimento. [Detalhes](docs/plans/VISUALS.md#v26)
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
