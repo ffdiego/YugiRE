@@ -203,6 +203,7 @@ NativeSurfaceColorLayoutChecks.Run(Check);
 NativePackedAlphaPixelChecks.Run(Check);
 NativeQuadScanlineChecks.Run(Check, Reject);
 NativeRotatedQuadChecks.Run(Check);
+NativeSwordAngleChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
