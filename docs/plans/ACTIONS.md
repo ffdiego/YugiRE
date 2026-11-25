@@ -104,6 +104,8 @@ Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o O
 
 *Evidência do P164 (PR #138):* o roteiro 31 recuperou o callback e confirmou o opcode de embaralhamento `60`, com seed produzida pelo RNG nativo. O trace C# conserva `ShuffleDeckCommand` como `unmapped`. [Contrato](../architecture/native-replay-scenarios.md#roteiro-31--callback-p164-e-shuffle-no-trace).
 
+*Produtores de ataque (C12.1):* o App, a CPU e o console admitem ataques diretos ou contra um slot por `TryQueueAttack`, que reusa os dois pilotos existentes. Quando o alvo já foi mirado pelo jogador, o gate preserva a etapa inicial da animação que a interface já aplicava. O executor, as restrições de campo e as regras de combate permanecem as mesmas. Testes do App exercitam ataque com alvo humano e CPU em Classic/Instant, comparando fila e estado final ao headless. Sem carta nova, sem alteração de `Demo.cs` e sem ampliar a cobertura nativa. A admissão fora do piloto conserva o caminho anterior até a migração dos casos restantes.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
