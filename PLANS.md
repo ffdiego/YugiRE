@@ -92,7 +92,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Pronto`. UI/CPU dos procedimentos existentes em C12; efeitos pós-invocação depois. [Detalhes](docs/plans/CARDS.md#c16)
 - [ ] **C17 — Controle de Dark Necrofear e Prohibition.** Status: `Aguardando evidência`. Dark Necrofear/Prohibition dependem de evidência; não implementar por aproximação. [Detalhes](docs/plans/CARDS.md#c17)
 
-- [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Pronto`. Enriquecer a taxonomia C01 com risco por slots + semântica; consultar SQLite primeiro, exportar apenas lacunas relevantes; triagem independente pode avançar antes de C12.1, implementação nova não. [Detalhes](docs/plans/CARDS.md#c18)
+- [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Parcial`. Inventário de slots reproduzido; script offline com manifest atual e C01 opcional. Falta executar a taxonomia real e revisar semântica por família; novas cartas aguardam C12.1. [Detalhes](docs/plans/CARDS.md#c18)
 
 ### C12 — migrar as famílias Done para a fila de ações
 

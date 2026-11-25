@@ -158,7 +158,7 @@ Pendências distintas: identidade/owner/controller, saída do campo, vínculo e 
 
 <a id="c18"></a>
 
-**Objetivo:** orientar o custo de investigação, não substituir a interpretação do DAT ou o teste funcional. Fonte de slots: `docs/evidence/card-callback-catalog.json` (primary, candidate, availability, preparation, target_preparation). A proposta de 25/11 registra 443 entradas: 0 = 15, 1 = 94, 2 = 134, 3 = 146, 4 = 47, 5 = 7. Contagens preliminares da proposta, a reproduzir com o catálogo atual antes de publicar a classificação; não representam os 771 IDs jogáveis.
+**Objetivo:** orientar o custo de investigação, não substituir a interpretação do DAT ou o teste funcional. Fonte de slots: `docs/evidence/card-callback-catalog.json` (primary, candidate, availability, preparation, target_preparation). A proposta de 25/11 registra 443 entradas: 0 = 15, 1 = 94, 2 = 134, 3 = 146, 4 = 47, 5 = 7. Contagens reproduzidas em 25/11 cruzando os 269 perfis com os 443 registros de callback do catálogo versionado; não representam os 771 IDs jogáveis.
 
 | Slots preenchidos | Risco inicial |
 | --- | --- |
@@ -172,3 +172,23 @@ Ajustar pelo comportamento: dano/cura/compra simples e bônus fixo tendem a baix
 **Fluxo:** cruzar por resource ID (não índice interno), preservar os casos sem correspondência e os status de playability; acrescentar risco inicial, risco ajustado, justificativa e lacunas à taxonomia C01. Começar pela descrição local e evidências existentes; usar o SQLite cumulativo/bundles antes de pedir Ghidra. Para dúvidas materiais, investigar os predicados availability/candidate e demais callbacks pertinentes por família, agrupando apenas as lacunas em scripts/pending. Não exigir exportação de todas as cartas de risco maior, nem promover uma hipótese a Verified. Se a dúvida impedir regra confiável, registrar Partial/Pending e seguir com outra família. Não versionar texto proprietário do DAT.
 
 **Pronto quando:** a classificação é reproduzível e testada (incluindo 0 slots, IDs ausentes e ajustes por mecânica), com contagens auditáveis, exemplos, justificativas e fila de dúvidas direcionadas. C18 pode avançar antes de C12.1 como triagem/testes independentes; nenhuma nova implementação de cartas antes do gate. Depois, usar o risco para ordenar lotes e registrar testes por ID/família, sem tornar C18 inteiro pré-requisito de uma carta clara.
+
+### C18.1 — Inventário reproduzível e triagem semântica opcional
+
+Base `66f1fe1`, catálogo versionado e pack-index (771 entradas únicas nesta revisão). O cruzamento exato por resource ID e manifest vigente encontrou:
+
+| Slots | Pending | Partial | Done |
+| --- | ---: | ---: | ---: |
+| 0 | 12 | 0 | 2 |
+| 1 | 58 | 2 | 29 |
+| 2 | 74 | 0 | 41 |
+| 3 | 88 | 2 | 45 |
+| 4 | 36 | 5 | 5 |
+| 5 | 6 | 0 | 1 |
+| Sem registro | 48 | 0 | 317 |
+
+Sem Verified nesta base. Dos 48 Pending sem registro, 31 pertencem ao pack Joey e todos são classificados Effect no inventário de subtipos. Ausência de registro NÃO prova ausência de efeito; revisar regras por ID e callbacks globais existentes antes de solicitar Ghidra.
+
+`python scripts/card_effect_risk.py` cruza os metadados públicos sem DAT/EXE e escreve somente IDs, slots, risco inicial, status atual e motivos em scratch. `python scripts/card_effect_risk.py --taxonomy scratch/card-taxonomy.json --pack joey` usa C01 real (valida fingerprints/referência) e eleva risco por famílias detectadas. Não baixa risco alto automaticamente e distingue ausência de registro, zero slots e Normal. O campo `reviewResourceIds` orienta a revisão, não prescreve extração nativa. O C01 é triagem lexical: vitória especial, timing contínuo, custos e efeitos específicos ainda exigem leitura semântica do texto local; nenhum resultado automático serve como ruling. O script não altera o manifesto, o catálogo nem as badges. Sem C01 local, a classificação semântica permanece explicitamente não avaliada. Testes offline em `tests/test_card_effect_risk.py` cobrem joins, fingerprints, risco, registros inválidos e a distribuição real. CI pendente na criação do PR.
+
+Próximo passo: rodar com o C01 local já produzido, agrupar candidatos por família e revisar os casos ambíguos usando SQLite. Não repetir extração se scratch/card-taxonomy.json já existir; não implementar novas cartas enquanto C12.1 não fechar.
