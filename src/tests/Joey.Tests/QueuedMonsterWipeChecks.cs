@@ -136,7 +136,7 @@ internal static class QueuedMonsterWipeChecks
             int targetSide=own?side:1-side;
             var warrior=Monster(24,15);
             var d=DemoDuel.FromPartialObservation(side,
-                [Spell(300),Spell(1023),Spell(1023),Monster(25,15)],
+                [Spell(300),Spell(1023),Spell(1023),Monster(25,15,25)],
                 Slots(warrior,warrior),Slots(warrior,warrior),8000,
                 equipmentContextResolved:true);
             var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
