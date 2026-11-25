@@ -391,3 +391,5 @@ ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
   nenhuma espera >=5s, ordenação Started/Completed serial. A comparação
   não mede pixels nem paridade com o original. A captura nativa equivalente
   de A09 continua pendente; este roteiro não a substitui.
+
+V20.2 — revisão de moeda (Windows/Fedora desktop): `dotnet run --project src/Joey.App -- /path/to/data.dat --review-coin=3,5,400,100,1`. F7 avança, F8 reinicia, F12 captura PNG/JSON. Verificar uma/três moedas e ambos os bits; recortes/halo e flags de reflexão no JSON. Reflexão/brilhos não implementados; não repetir coleta 16. Validação manual pendente, sem dados privados versionados.

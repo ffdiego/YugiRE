@@ -232,6 +232,7 @@ sealed class DatGraphics : IDisposable
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             NativeExclusionResources.IsParticleBitmap(name) || // diagnostic keying
             name.StartsWith(NativeDisabledChainResources.Prefix, StringComparison.OrdinalIgnoreCase) || // diagnostic green key for V23 BMPs
+            NativeCoinResources.IsCoinFaceBitmap(name) || // diagnostic green key; native compositor pending
             NativeDiceResources.IsDiceBitmap(name) || // diagnostic green-key path; native blend pending
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||

@@ -153,3 +153,47 @@ Modelo não desenha partículas/carta e não substitui o gate de A03.
 Roteiro 29 coleta callee 00558FB0 e gerador específico, sem pedir
 a tabela runtime já reconstruível. Roteiro 24 continua dono da
 vtable de superfície. Sem mudança da cobertura 20/34.
+
+
+## V20.2 — revisão com recursos confirmados no SQLite v3
+
+Nesta sessão foi aberto somente leitura o snapshot privado
+joey-knowledge-visual-cumulative-2026-11-24-v3.zip, SQLite SHA256
+9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
+PRAGMA quick_check=ok e metadata executable_sha256 igual ao alvo.
+Tabelas visual_dat_manifests e visual_dat_images confirmam
+coin.txt e seis imagens sem erro. Não copiar o manifesto inteiro
+nem arquivos gráficos para Git.
+
+| Key por ordem do manifesto | Nome | Dimensões | Divisor |
+|---|---|---|---|
+| 0 | coin_rotate.bmp | 560x40 | 14 |
+| 1 | coin_sha.yga | 168x42 | 4 |
+| 2 | coin_ripple.yga | 64x64 | 1 |
+| 3 | coin_mask.bmp | 40x40 | 1 |
+| 4 | coin_ref.bmp | 69x40 | 1 |
+| 5 | coin_kirari.yga | 56x14 | 4 |
+
+O divisor 14 antes era uma hipótese restrita do adapter; agora
+é dado do DAT. 00457366..00457385 em assembly divide a largura
+do recurso pelo parâmetro e aloca scratch desse tamanho por
+altura (40x40 no manifesto observado); flag 1 não identifica
+o formato. 00457520 e NativeCoinPassLayout já recuperam 0/1/2.
+A revisão usa ordem do manifesto como remap diagnóstico; a
+vtable/compositor final não estão confirmados. Não preencher
+reflexo e brilho por aproximação; gates constam do JSON mas
+passes 3/4/5 não são desenhados. Key verde no BMP da moeda,
+YGA pelo decoder existente e tint linear são diagnóstico,
+não garantia de fidelidade. Nenhum gate, RNG de regras, áudio
+automático ou integração do duelo.
+
+    dotnet run --project src/Joey.App -- /path/to/data.dat --review-coin=3,5,400,100,1
+
+COUNT 1/3; BITS decimal fornecido pelo operador (não sortear,
+não nomear cara/coroa); X/Y origem lógica; HIGHLIGHT raw 0/1.
+F7 Update+Sample, F8 reset, F12 PNG/JSON (inclui flags dos passes
+omitidos, request sonoro e fonte do cosseno), Escape sai.
+Cosseno segue loader/default capturado do Codex. Confirmar no
+desktop; testes sintéticos exercitam parser, dimensões, as
+timelines 96/128 e limites dos recortes. Sem alteração de
+badge porque review isolado não conta como Draw do duelo.
