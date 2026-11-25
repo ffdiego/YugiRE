@@ -102,6 +102,8 @@ Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o O
 
   *Consolidação:* PR #98, CI 45393879231 aprovado no head 4419fe2; dois roteiros Lab/DAT relatados no PR. Integrar fatia sem marcar A06 concluído; reconciliada com evidência de fases da main 15b54a0.
 
+*Evidência do P164 (PR #138):* o roteiro 31 recuperou o callback e confirmou o opcode de embaralhamento `60`, com seed produzida pelo RNG nativo. O trace C# conserva `ShuffleDeckCommand` como `unmapped`. [Contrato](../architecture/native-replay-scenarios.md#roteiro-31--callback-p164-e-shuffle-no-trace).
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
