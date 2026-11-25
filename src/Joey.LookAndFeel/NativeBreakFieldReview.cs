@@ -17,6 +17,31 @@ public static class NativeBreakResources
     }
 }
 
+/// <summary>0045C280 normalizes region+slot when their sum is below 11.
+/// Unlike the disabled-chain producer, Break may encode a direct field
+/// region 0..10 with slot zero. Do not reject those native descriptors.</summary>
+public readonly record struct NativeBreakFieldTarget
+{
+    public ushort Descriptor { get; }
+    public int Side => Descriptor & 1;
+    public int Region => (Descriptor >> 1) & 31;
+    public int Slot => (Descriptor >> 6) & 255;
+    public int CombinedZone => Region+Slot;
+    public NativeBreakFieldTarget(ushort descriptor)
+    {
+        Descriptor=descriptor;
+        if(Region>10 || CombinedZone>10)
+            throw new ArgumentException("Not a field-only break descriptor.",nameof(descriptor));
+    }
+    public CardPoint Center(int perspective)
+    {
+        if(perspective is <0 or >1)throw new ArgumentOutOfRangeException(nameof(perspective));
+        int zone=CombinedZone;
+        return DuelCardLayout.Center(zone<5?DuelCardZone.Monster:zone<10?DuelCardZone.Spell:DuelCardZone.Field,
+            Side==perspective,zone%5);
+    }
+}
+
 public readonly record struct NativeBreakFragment(CardBounds Source,CardBounds Destination);
 public sealed record NativeBreakFieldFrame(int Counter,bool BlocksRelease,int RotationDegrees,
     CardBounds OrientedCardBounds,int DistortionParameter,NativeBreakScatterKind Kind,
@@ -36,7 +61,7 @@ public static class NativeBreakFieldReview
         if(width is <1 or >4096 || height is <1 or >4096)
             throw new ArgumentOutOfRangeException(nameof(width));
         // Only these descriptors have established field centers in the review.
-        _=new NativeDisabledChainTarget(descriptor);
+        _=new NativeBreakFieldTarget(descriptor);
         int rotation=NativeBreakTimeline.CardRotationDegrees(descriptor,perspectiveBit);
         if(!timeline.Active)return null;
         bool swap=rotation is 90 or 270;
