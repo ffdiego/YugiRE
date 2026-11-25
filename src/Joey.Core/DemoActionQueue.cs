@@ -330,8 +330,10 @@ public sealed partial class DemoDuel
                 marked.Target==afterWin.Target && marked.Card.Id==FlipEffectRules.Skelengel)
                 return duel.SnapshotQueuedBattleRemoval(afterWin);
             // Only a reserved battle snapshot may finish after lethal LP.
+            if (command is OpenBattleRecruitmentCommand)
+                return duel.OpenQueuedBattleRecruitment();
             if (command is FinishBattleRemovalCommand battleFinish)
-                return duel.FinishQueuedBattleRemoval(battleFinish);
+                return duel.FinishQueuedBattleRemoval(battleFinish, followups);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
             if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
@@ -547,10 +549,15 @@ public sealed partial class DemoDuel
             targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
             if (!paid || duel.LegacyActionsBlocked)
                 return new(CommandOutcome.Skipped, "Unpaid, unspent or blocked spell.");
-            if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
-                return new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
             if (followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Isolated destruction required.");
+            // Independent resolution clause, not an activation cost. It
+            // still applies when the selected monster has become ineligible.
+            bool skipDraw = reserved.ResourceId == TargetedMonsterSpellRules.OfferingsToTheDoomed;
+            if (skipDraw) duel.ScheduleNextDrawPhaseSkip(reserved.Source.Side);
+            if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
+                return skipDraw ? new(CommandOutcome.Applied, "Next Draw Phase skipped; target no longer eligible.") :
+                    new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
             // Existing standalone DestroyMonster reserves live linked
             // consequences at execution, and opens deferred triggers only
             // after those commands drain. No replacement is selected.
@@ -1558,7 +1565,9 @@ public sealed partial class DemoDuel
             reservedDeckSearchOwner = null;
             reservedDeckSearch.Clear();
             deckSearchMoved = false;
+            bool battleRecruitment = duel.queuedBattleRecruitmentRequest is not null;
             duel.BeginNextQueuedDeckSearch();
+            if (battleRecruitment) duel.RefreshQueuedBattleRecruitmentRequest();
             return new(CommandOutcome.Applied);
         }
 

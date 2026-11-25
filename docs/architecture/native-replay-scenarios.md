@@ -236,3 +236,76 @@ obrigatória, identidade, gates, ordem e contagem de comandos/eventos.
 Compara legado não terminal; mantém política de não abrir prompt após
 dano letal. Campo isolado, sem outros monstros/armadilhas/equipamentos.
 Sem novo opcode, alteração do renderer ou confirmação dinâmica nativa.
+
+## A06 — Recrutadores elementais P164 no combate enfileirado
+
+SQLite cumulativo v2 (SHA-256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check ok): Mystic Tomato 1123/row262, Giant Rat 1108/251,
+Shining Angel 1117/258, UFO Turtle 1110/253, Mother Grizzly 1119/259,
+Flying Kamakiri #1 1120/260 compartilham availability 00581770 e
+primary 0058AC10. Nenhum corpo nos índices functions, decompilations
+ou visual_evidence_functions. Filtro, posição e causalidade seguem
+CardSelectionRules e o fluxo legado C# previamente documentado.
+Roteiro pendente 31 reúne estas duas VAs e cinco ausentes dos FLIPs
+anteriores; não duplica corpos já disponíveis.
+
+O piloto isolado admite os seis como atacante/defensor, inclusive
+defesa oculta. A chegada FinishBattleRemovalCommand registra o gatilho
+P164 apenas após a ocorrência entrar no GY e se o duelo não terminou.
+OpenBattleRecruitmentCommand, em continuação após o último gate de
+chegada, reutiliza BeginNextQueuedDeckSearch para publicar o pedido.
+Empates com dois recrutadores esperam ambas as chegadas e processam
+atacante antes de defensor, como o legado C#; não é ordem nativa provada.
+A resposta pelo console reutiliza o produtor Deck → Field já existente,
+com uma invocação em ataque face-up, seguida de um shuffle só se houve
+movimento. O pedido seguinte só abre após conclusão da transferência.
+Recusa não move/embaralha. Guardas bloqueiam o accept/skip legado
+para pedidos produzidos por esse caminho; pedidos de batalha legada
+continuam compatíveis. Man-Eater Bug destruindo o atacante recrutador
+por efeito não ativa P164. Sem outras cartas em campo, recrutadores
+P168 ou efeitos de LP adicionais.
+
+A01/A05 projeções existentes não são estendidas por inferência: a
+chegada final de P164 e o novo opener permanecem unmapped (variante
+7C ordinária não comprova callback). CI inicial 45523672687:
+51.135 checks C#, Python/Node verdes. Matriz de 48 combinações
+(seis IDs, dois donos, dois papéis, aceitar/recusar), dois empates
+espelhados, pose oculta, ausência de elegíveis, lethal, causalidade
+por efeito. Teste adicional de projeção e CI reconciliado pendentes.
+
+## A09.1 — gate da declaração de combate
+
+A declaração direta e com alvo tem descritor lógico somente leitura antes da mutação, com slot físico de origem e destino (-1 direto), resolvendo as ocorrências existentes. O App reaproveita BeginAttackCue/NativeAttackFrame e o relógio existentes; o console não tem mira manual, então usa alreadyAimed=false. Gate da declaração aguarda o cue antes de SnapshotBattleRemoval/Damage. Nenhum parâmetro de sprite, duração ou layout foi alterado. A animação só começa se a declaração foi Applied. Regressão no --check-console-startup: ataques diretos/com alvo no lado 1, Classic/Instant, LP/defensor intactos durante cue, repetição do gate não reinicia cue, destino lógico e trace idênticos, estado final correto. CI pendente; sem DAT/display, não é validação visual nem captura nativa equivalente. Combatentes limitados ao piloto A05; demais regras de combate e VISUALS continuam independentes.
+
+## A09.2 — ambos os lados e smoke DAT
+
+CI A09.1 45400089826 e primeira regressão espelhada A09.2 45402454877 aprovados.
+O teste real do gate App agora cobre os dois lados (turno 2 para o lado 1,
+avanço legal ao turno 3 para o lado 0), ataque direto/com alvo, Classic/Instant,
+destino lógico espelhado, nenhuma alteração de LP/defensor durante o cue e
+mesmo trace final. Não altera parâmetros de LookAndFeel.
+
+O roteiro privado executável `scripts/pending/actions-a09-combat-smoke.py`
+roda o mesmo checkpoint de laboratório no Lab, App Classic e App Instant.
+A fixture usa o ID 1351 já observado em CE na amostra arquivada, com hipótese
+explícita de monstro jogável de ATK positivo no DAT local: falha cedo se a
+hipótese não vale; não modifica o catálogo nem contorna a legalidade.
+O ataque direto é do lado 1; depois da troca de turno, duas ocorrências
+iguais face-up em ataque combatem no lado 0, com duas remoções e sem dano
+adicional. Os decks mantêm uma carta cada. Spawn é setup, não summon.
+O verificador exige completion, comandos Applied sem lacunas, as duas
+declarações, dano direto, duas remoções em cada etapa, fila final vazia,
+ausência de waits e ordem Started/Completed serial. Compara todas as linhas
+de trace/state entre os três perfis. A duração medida é wall-clock do App,
+não update nativo nem teste de pixels.
+
+```powershell
+python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat
+```
+
+Fechar cada janela somente após Script completed. Logs ficam em
+`scratch/actions-combat/smoke-*/`; a opção `--logs DIR` repete a comparação
+sem abrir o App. Enviar a pasta de logs e relatar se o cue precede
+dano/destruição. Smoke com DAT ainda não executado; captura de estado e
+comandos equivalentes no joey_pc.exe continua uma obrigação independente.
+Nenhuma elevação da badge ou alegação de paridade nativa.

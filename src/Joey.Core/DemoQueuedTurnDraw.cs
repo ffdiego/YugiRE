@@ -19,12 +19,12 @@ public sealed partial class DemoDuel
             command.ExpectedTurn != Turn || !AllowsTurnDraw)
             return new(CommandOutcome.Rejected, "Turn draw is no longer legal for this side and turn.");
 
-        if (!TakeTurnDraw())
+        if (!TakeTurnDraw(out bool skipped))
             return new(CommandOutcome.Applied, "Empty deck: active player loses (demo policy).");
 
         if (!GameOver && FindDueStandbyRevival() >= 0)
             followups.Enqueue(new ResolveStandbyRevivalCommand(command.Side, command.ExpectedTurn));
-        return new(CommandOutcome.Applied);
+        return new(CommandOutcome.Applied, skipped ? "Draw Phase skipped." : "");
     }
 
     private int FindDueStandbyRevival() =>

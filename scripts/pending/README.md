@@ -342,9 +342,52 @@ Saída privada scratch/ghidra-native-break-scatter-contract.zip. SQLite v2 confi
 
 V17 complemento (roteiro 25): inclui 00546D70 para confirmar inicialização das tabelas de mistura recuperadas em decompilação. Se roteiro 25 já foi executado, coletar somente o novo alvo. Não exportar tabelas vivas de vários MB; são reconstruíveis. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--mistura-por-intensidade-tabelas-de-cor).
 
-### 30 — CARDS C02.5–C02.7: destruição seletiva (P074/P077/P114)
+### 30 — CARDS C02.5–C02.8: destruição seletiva (P074/P077/P105/P114)
 
 - Ambiente: Fedora/Ghidra com projeto do executável original já configurado; `bash scripts/pending/30-cards-selective-destruction-ghidra.sh`.
-- Saída privada: `scratch/ghidra-selective-destruction-contract.zip`; seis endereços ausentes no SQLite cumulativo v2 (SHA-256 `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4`).
-- Pergunta: legalidade/candidatos de Tribute e Thousand Knives; cálculo do menor ATK, desempate e fase da escolha de Fissure. Não repetir callbacks já recuperados (00585C80/00583510/005944D0).
+- Saída privada: `scratch/ghidra-selective-destruction-contract.zip`; oito endereços ausentes no SQLite cumulativo v2 (SHA-256 `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4`).
+- Pergunta: legalidade/candidatos de Tribute e Thousand Knives; cálculo do menor ATK, desempate e fase da escolha de Fissure; registro/consumo da penalidade Draw Phase de Offerings (00587950/0057AE20). Não repetir callbacks já recuperados (00585C80/00583510/005944D0).
 - Encerramento: corpo/assembly ou ausência explícita para cada endereço, interpretar filtros e despacho, importar cumulativamente com auditoria e quick_check. Coleta/importação **pendentes**, não bloqueiam escopo sandbox. [Contrato Fissure](../../docs/cards/c02-fissure.md).
+
+V17 complemento source-alpha (roteiro 25): kernels 00438100/00438E30 e base 00530220, janelas dos loops 00438CD4/00439A04/00530DFE. Se já executado, coletar somente novos alvos/janelas. Não mapear YGA para formato por hipótese. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--source-alpha-nos-formatos-1213).
+
+V17 complemento carga (roteiro 24): inclui 004AB460/004AB950/004AD580/004AA8D0, para confirmar upload alpha e chave convertida. Se já executou roteiro 24, enviar resultado existente e coletar só novos alvos. Não assumir vínculo YGA ou formato da scratch. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--ordem-de-canais-carga-alpha-e-cor-chave-2411).
+
+V17 complemento packed-alpha (roteiro 25): novos alvos 004365C0/00437360/0052F570/00439B60/00424FC0. Confirmar loops e ABI; se coleta 25 já executada, pedir somente os novos alvos. Não confundir same-format e destino opaco. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--alpha-packed-1011-e-destino-opaco).
+
+V17.3: roteiro 25 já contém 0052CF10/00433150, usados pelo novo sampler 20-bit. Não solicitar nova coleta; confirmar loops de edge/span e clipping do bundle existente.
+
+## A06 — 31-actions-battle-callbacks-ghidra.sh (aguardando Fedora)
+
+SQLite cumulativo v2 consultado: as sete VAs de P164 (elementais),
+P118 (Skelengel) e P087 (Penguin Soldier; candidate compartilhado com
+Man-Eater Bug) não constam em functions, decompilations ou
+visual_evidence_functions. Não repetir o primary de Man-Eater já indexado.
+
+    bash scripts/pending/31-actions-battle-callbacks-ghidra.sh
+
+Ambiente: Fedora/Ghidra headless, projeto e EXE atestados pelo exportador,
+Python 3. Saída privada scratch/ghidra-actions-battle-callbacks.zip.
+Confirmar ABI, origem do gatilho por batalha, operandos de identidade e
+ordem das chamadas/seleções; recuperar os corpos com assembly e referências,
+importar em nova cópia SQLite cumulativa pelo importador de evidência.
+A coleta estática não prova sozinha a ordem dinâmica de dois recrutadores
+ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
+[contrato](../../docs/architecture/native-replay-scenarios.md#a06--recrutadores-elementais-p164-no-combate-enfileirado).
+
+## A09 — actions-a09-combat-smoke.py (aguardando desktop Windows/Fedora)
+
+- Requisitos: Python 3.10+, .NET 10, DAT privado e sessão gráfica. Não requer
+  joey_pc.exe nem modifica saves. Rodar a partir da raiz:
+  `python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat`.
+- Roteiro: `scripts/fixtures/duel-console-combat-smoke.txt`; direct lado 1,
+  combate com alvo lado 0, decks não vazios, setup explícito por spawn.
+  A hipótese de ID 1351 com ATK positivo é validada pelo resultado do Lab,
+  não pela fixture sintética do CI.
+- Fechar Classic e Instant depois de Script completed. Logs em
+  `scratch/actions-combat/smoke-*/` (diretório único). Enviar os três .txt e
+  registrar se a espada aparece antes do dano/remoção; não versionar o DAT.
+- Critério: mesmo trace/state headless e visual nos dois perfis, fila livre,
+  nenhuma espera >=5s, ordenação Started/Completed serial. A comparação
+  não mede pixels nem paridade com o original. A captura nativa equivalente
+  de A09 continua pendente; este roteiro não a substitui.

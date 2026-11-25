@@ -54,7 +54,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Accept one occurrence and a free monster slot, or decline
-    /// with both arguments null. The completed legacy battle is the producer.</summary>
+    /// with both arguments null. Requests may originate from a completed queued or legacy battle.</summary>
     public bool TryQueueDeckRecruitment(PendingCardSelection request, CardTarget? target, int? slot,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {

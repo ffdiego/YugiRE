@@ -164,7 +164,7 @@ static partial class Game
     }
 
     static void BeginAttackCue(int player, int source, int target,
-        HiddenAttackTarget? hiddenTarget = null)
+        HiddenAttackTarget? hiddenTarget = null, bool? alreadyAimed = null)
     {
         if (!presentation.Style.PlayAnimations) return;
         bool near = player == ViewPlayer;
@@ -172,7 +172,7 @@ static partial class Game
         var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : NativeAttackFrame.DirectTarget(near);
         attackClock.Reset();
         attackUpdates = 0;
-        attackCue = new(from, to, near, target >= 0 && (alphaCpu is null || player == 0), hiddenTarget);
+        attackCue = new(from, to, near, alreadyAimed ?? (target >= 0 && (alphaCpu is null || player == 0)), hiddenTarget);
     }
 
     static bool IsHiddenAttackTargetBeforeImpact(int player, int zone) =>

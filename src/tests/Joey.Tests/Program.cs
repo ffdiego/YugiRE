@@ -123,6 +123,7 @@ QueuedTargetedAttackChecks.Run(Check);
 QueuedBattleFlipChecks.Run(Check);
 QueuedBattlePenguinChecks.Run(Check);
 QueuedBattleManEaterChecks.Run(Check);
+QueuedBattleRecruiterChecks.Run(Check);
 ActionPresentationGateChecks.Run(Check);
 CommandScopedPresentationChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
@@ -194,6 +195,10 @@ NativeCoinPassChecks.Run(Check, Reject);
 NativeExclusionDrawChecks.Run(Check, Reject);
 NativeSurfaceCopyChecks.Run(Check);
 NativeIntensityPixelChecks.Run(Check);
+NativeSourceAlphaPixelChecks.Run(Check);
+NativeSurfaceColorLayoutChecks.Run(Check);
+NativePackedAlphaPixelChecks.Run(Check);
+NativeQuadScanlineChecks.Run(Check, Reject);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
