@@ -12,7 +12,9 @@ static partial class Game
     sealed record HandTransfer(DemoHandTransfer Transfer, CardBounds? Departure = null) : CardEffect;
     sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins, bool Field = false) : CardEffect;
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
-    sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
+    sealed record SpecialSummonPlacement(DemoSpecialSummon Summon, bool RevealDetailOnStart) : CardEffect;
+    sealed record GeneralFusionPlacement(DemoSpecialSummon Summon, NativeFusionPlayback Playback,
+        string[] Miniatures, CardBounds[] Sizes) : CardEffect;
     sealed record DuelOpening : CardEffect;
     sealed record ShuffleDeck(int Player) : CardEffect;
     // Use the same FIFO as card animations. A cinematic with unknown Draw
@@ -82,9 +84,11 @@ static partial class Game
         };
         duel.MonsterSpecialSummoned += summon =>
         {
-            ShowPlayedCardDetail(summon.Card, hiddenFromPlayer:
-                summon.Player != ViewPlayer && summon.FaceDownDefense);
-            QueueCardEffect(new SpecialSummonPlacement(summon), NativeSpecialSummonFrame.Updates);
+            bool generalFusionQueued = TryQueueGeneralFusion(summon);
+            if (!generalFusionQueued)
+                ShowPlayedCardDetail(summon.Card, hiddenFromPlayer:
+                    summon.Player != ViewPlayer && summon.FaceDownDefense);
+            QueueCardEffect(new SpecialSummonPlacement(summon, generalFusionQueued), NativeSpecialSummonFrame.Updates);
         };
         duel.DeckShuffled += player =>
             QueueCardEffect(new ShuffleDeck(player), NativeShuffleFrame.Updates);
@@ -208,7 +212,16 @@ static partial class Game
             if(cue is { } sound)PlayDuelSound(sound);
         }
         int remaining = current.Updates - cardEffects.ElapsedUpdates;
-        cardEffects.Advance(Math.Min(updates, remaining));
+        int consumed = Math.Min(updates, remaining);
+        if (current.Kind is GeneralFusionPlacement fusion)
+            fusion.Playback.AdvanceTo(
+                Math.Min(NativeFusionPlayback.LastSample, cardEffects.ElapsedUpdates + consumed),
+                effectCosine, key => fusion.Sizes[key],
+                cue => PlayDuelSound(cue == 0x10000020u ? DuelSoundCue.FusionStart : DuelSoundCue.FusionResult));
+        if (consumed > 0 && cardEffects.ElapsedUpdates == 0 &&
+            current.Kind is SpecialSummonPlacement { RevealDetailOnStart: true } special)
+            ShowPlayedCardDetail(special.Summon.Card);
+        cardEffects.Advance(consumed);
         // Pay tribute(s) visually before revealing the new summon flight.
         // The flight has already been committed logically by Joey.Core.
         if (current.Kind is TributePlacement && !HasQueuedTributesFor(((TributePlacement)current.Kind).Tribute.Player))
@@ -294,6 +307,9 @@ static partial class Game
                 break;
             case NormalSummonPlacement summon:
                 DrawNormalSummon(summon, cardEffects.ElapsedUpdates);
+                break;
+            case GeneralFusionPlacement fusion:
+                DrawLiveGeneralFusion(fusion);
                 break;
             case SpecialSummonPlacement special:
                 DrawSpecialSummon(special.Summon, cardEffects.ElapsedUpdates);

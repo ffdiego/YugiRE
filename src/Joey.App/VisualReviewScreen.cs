@@ -76,7 +76,7 @@ static partial class Game
                         NativeFieldAttributeVisibility.ShouldDrawClient(
                             player == ViewPlayer,
                             duel.MonsterFaceDown[player, zone],
-                            settled: !InFlight(player, zone, spell: false),
+                            settled: !InFlight(player, zone, spell: false) && !FusionResultHidden(player, zone),
                             hiddenDefenderBeforeImpact:
                                 IsHiddenAttackTargetBeforeImpact(player, zone)))
                     .Select(zone => new
