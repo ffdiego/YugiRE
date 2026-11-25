@@ -14,6 +14,7 @@ static partial class Game
     static NativeCoinResource[] coinReviewResources=[];
     static NativeDiceTexture[] coinReviewTextures=[];
     static NativeCoinDraw[] coinReviewFrame=[];
+    static NativeCoinExtras[] coinReviewExtras=[];
 
     static void ConfigureCoinReview(string[] args,Archive archive)
     {
@@ -35,7 +36,7 @@ static partial class Game
 
     static void InitializeCoinReview()
     {
-        coinReviewTextures=coinReviewResources.Take(3).Select(record=>
+        coinReviewTextures=coinReviewResources.Select(record=>
         {
             var texture=graphics.Texture(record.Path);
             return NativeCoinResources.ValidateTexture(record,texture.Width,texture.Height);
@@ -51,6 +52,8 @@ static partial class Game
                 NativeCoinPassLayout.Sample(timeline,i,coinReviewHighlight,effectCosine,
                     key=>coinReviewTextures[key])).ToArray()
             : [];
+        coinReviewExtras=coinReviewFrame.Select((frame,index)=>
+            NativeCoinExtraLayout.Sample(timeline,index,frame,key=>coinReviewTextures[key])).ToArray();
     }
 
     static void DrawCoinReview()
@@ -69,8 +72,10 @@ static partial class Game
         if(duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board,new Rectangle(0,0,board.Width,board.Height),
                 ToRectangle(DuelSurfaceLayout.Board),Vector2.Zero,0,Color.White);
-        foreach(var draw in coinReviewFrame)
-        foreach(var pass in draw.Passes)
+        // Per coin: primary passes, reflection (omitted until +94/+A0
+        // resolved), then gated sparkles, preserving native order.
+        for(int index=0;index<coinReviewFrame.Length;index++)
+        foreach(var pass in coinReviewFrame[index].Passes.Concat(coinReviewExtras[index].Sparkles))
         {
             if(pass.Destination.Width<=0||pass.Destination.Height<=0)continue;
             Raylib.DrawTexturePro(graphics.Texture(coinReviewResources[pass.Key].Path),
@@ -84,11 +89,11 @@ static partial class Game
         string basename=SaveVisualReviewImage(canvas,"coin");
         File.WriteAllText(basename+".json",JsonSerializer.Serialize(new
         {
-            schemaVersion=1,routine="00457520",count=coinReviewCount,
+            schemaVersion=2,routine="00457520",count=coinReviewCount,
             resultBits=coinReviewBits,origin=coinReviewOrigin,highlightBit=coinReviewHighlight,
-            counter=coinReview!.Counter,active=coinReview.Active,frame=coinReviewFrame,
+            counter=coinReview!.Counter,active=coinReview.Active,frame=coinReviewFrame,extras=coinReviewExtras,
             resources=coinReviewResources,cosineSource=effectCosineSource,
-            compositor="diagnostic raylib tint/key; bank remap, scratch reflection and sparkles not rendered",
+            compositor="diagnostic raylib tint/key; bank remap unverified; scratch reflection plan only, sparkles rendered diagnostically",
             audio="request only, not played"
         },new JsonSerializerOptions{WriteIndented=true})+Environment.NewLine);
     }
