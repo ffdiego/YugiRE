@@ -44,6 +44,63 @@ internal static class CpuDuelChecks
             activation.Spells[1, 1] is null && activation.Graveyard(1).Last().Id == 342,
             "CPU: spell activation reports its display zone even after the spell leaves the field");
 
+
+        // C12: preserve the CPU's existing selection policy, but admit fixed
+        // LP/draw/wipe spells through the same producer as the queued player.
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort id in new ushort[] { 342, 1010, SpellTrapWipeRules.HarpiesFeatherDuster })
+        {
+            DemoDuel Prepare()
+            {
+                var d = State(side, [Spell(id)], deck: [Spell(9100), Spell(9101), Spell(9102), Spell(9103)]);
+                if (id == SpellTrapWipeRules.HarpiesFeatherDuster)
+                {
+                    d.Spells[1 - side, 0] = Spell(1002, 21);
+                    d.SpellFaceDown[1 - side, 0] = true;
+                }
+                return d;
+            }
+            var legacy = Prepare();
+            var legacyCpu = new CpuDuelController(side);
+            check(legacyCpu.Step(legacy).Action == CpuAction.Draw &&
+                legacyCpu.Step(legacy).Action == CpuAction.Spell, $"C12 CPU {id}: legacy baseline");
+            var queued = Prepare();
+            var q = queued.CreatePrimitiveActionQueue();
+            var queuedCpu = new CpuDuelController(side);
+            void Drain()
+            {
+                for (int i = 0; i < 100 && q.IsBusy; i++) q.Tick();
+                if (q.IsBusy) throw new InvalidOperationException("C12 CPU queue did not drain.");
+            }
+            check(queuedCpu.Step(queued, queueTurnActions: true).Action == CpuAction.Draw,
+                $"C12 CPU {id}: queued turn draw");
+            Drain();
+            var oldHand = queued.Hand.ToArray();
+            var oldLife = queued.Life.ToArray();
+            int oldDeck = queued.DeckCount(side), before = q.Trace.Count;
+            var step = queuedCpu.Step(queued, queueTurnActions: true);
+            check(step is { Status: CpuStepStatus.Acted, Action: CpuAction.Spell, HandIndex: 0 } &&
+                q.IsBusy && queued.Hand.SequenceEqual(oldHand) &&
+                queued.Life.SequenceEqual(oldLife) && queued.DeckCount(side) == oldDeck &&
+                queued.Graveyard(side).Count == 0 &&
+                (id != SpellTrapWipeRules.HarpiesFeatherDuster || queued.Spells[1 - side, 0] is not null),
+                $"C12 CPU {id}: admission only, no immediate legacy mutation");
+            var entry = q.Trace.Skip(before).First(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(entry.Origin == ActionOrigin.Cpu &&
+                (id == 342 ? entry.Command is ActivateLifePointSpellCommand :
+                 id == 1010 ? entry.Command is ActivateDrawSpellCommand :
+                 entry.Command is ActivateSpellTrapWipeCommand) &&
+                queued.DescribeActionPresentation(entry.Command)?.Kind == ActionPresentationKind.Activate,
+                $"C12 CPU {id}: same command and presentation as player");
+            Drain();
+            check(queued.Hand.SequenceEqual(legacy.Hand) && queued.Life.SequenceEqual(legacy.Life) &&
+                queued.DeckCount(side) == legacy.DeckCount(side) &&
+                queued.Graveyard(side).SequenceEqual(legacy.Graveyard(side)) &&
+                queued.Graveyard(1 - side).SequenceEqual(legacy.Graveyard(1 - side)) &&
+                queued.Spells[1 - side, 0] == legacy.Spells[1 - side, 0],
+                $"C12 CPU {id}: same final state as legacy");
+        }
+
         var summonTrap = State(0, [strong]);
         var destroyed = new List<DemoMonsterDestruction>();
         summonTrap.MonsterDestroyed += destroyed.Add;

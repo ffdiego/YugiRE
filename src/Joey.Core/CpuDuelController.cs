@@ -206,7 +206,12 @@ public sealed class CpuDuelController
                 duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
                     ShouldClearSpellTraps(duel, duel.Hand[i].Id) ||
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
-            if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
+            if (spell >= 0) return Act(CpuAction.Spell,
+                // The queued producer is authoritative in queue mode. Never
+                // fall back to immediate legacy mutation on rejected admission.
+                (out string m) => queueTurnActions
+                    ? duel.TryQueueActivation(spell, false, out m, ActionOrigin.Cpu)
+                    : duel.Play(spell, out m), duel.Hand[spell],
                 source: duel.FirstFreeSpellZone(), handIndex: spell);
             int fusionSpell = Enumerable.Range(0, duel.Hand.Count)
                 .FirstOrDefault(i => FusionRules.Supports(duel.Hand[i]) && duel.CanActivateFromHand(i), -1);

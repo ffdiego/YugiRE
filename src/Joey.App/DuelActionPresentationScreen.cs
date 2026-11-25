@@ -98,11 +98,7 @@ static partial class Game
          MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id));
 
     static bool TryQueuedFixedSpell(Card card, DuelZone zone, int index, out string result) =>
-        DrawSpellRules.Effect(card) is not null
-            ? duel.TryQueueDrawSpell(zone, index, out result)
-            : LifePointSpellRules.Supports(card.Id) ? duel.TryQueueLifePointSpell(zone, index, out result)
-            : MonsterWipeRules.Scope(card.Id) is not null ? duel.TryQueueMonsterWipe(zone, index, out result)
-            : duel.TryQueueSpellTrapWipe(zone, index, out result);
+        duel.TryQueueActivation(index, zone == DuelZone.SpellTrap, out result);
 
     static void AdvanceQueuedDuel()
     {

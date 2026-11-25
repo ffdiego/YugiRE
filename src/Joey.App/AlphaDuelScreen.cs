@@ -310,6 +310,9 @@ static partial class Game
             BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone,
                 continued.TargetZone is >= 0 and < NativeDuelLayout.MonsterSlots
                     ? hiddenBeforeStep[1 - continued.AttackingPlayer, continued.TargetZone] : null);
+        // Queued fixed spells are presented once by AppActionPresentationGate.
+        // The CPU step only admitted the command; its hand has not moved yet.
+        if (step.Action == CpuAction.Spell && queuedDuel?.IsBusy == true) return;
         if (step.Card is not Card card) return;
         if (step.Action is CpuAction.Set or CpuAction.Summon or
             CpuAction.Spell or CpuAction.Equip or CpuAction.Response)
