@@ -82,7 +82,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto`. Migrar armadilhas existentes em C12; novas respostas/correntes depois. [Detalhes](docs/plans/CARDS.md#c06)
 - [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Parcial`. Integrar gatilhos já implementados à fila em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c07)
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`. Fusion/Extra Deck, tokens, controle e seleção >5; depois de C12. [Detalhes](docs/plans/CARDS.md#c08)
-- [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Produtores UI/CPU de rituais existentes em C12; efeito próprio de Relinquished e restrições depois. [Detalhes](docs/plans/CARDS.md#c09)
+- [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Produtor clicável do Ritual em C12; efeito próprio de Relinquished e restrições depois. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
 - [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Integrar rituais e respostas de combate/armadilhas antes de validar a fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)

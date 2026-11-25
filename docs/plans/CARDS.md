@@ -84,7 +84,7 @@ Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 mon
 
 <a id="c09"></a>
 
-C09.1 implementa as 16 receitas P269 headless com mão/Set, tributos próprios e colocação por ocorrência. Oito magias e sete monstros do índice Done no escopo indicado após CI; Relinquished Partial. Produtores UI/CPU, efeito próprio de Relinquished, interações, restrições de reviver e comparação nativa pendentes. [Contrato](../../docs/cards/c09-queued-ritual-summon.md).
+C09.1 implementa as 16 receitas P269 headless com mão/Set, tributos próprios e colocação por ocorrência. Oito magias e sete monstros do índice Done no escopo indicado após CI; Relinquished Partial. Seletor clicável da escolha já disponível para CPU/console, efeito próprio de Relinquished, interações, restrições de reviver e comparação nativa pendentes. [Contrato](../../docs/cards/c09-queued-ritual-summon.md).
 
 ## C10 — Fusões restantes
 
@@ -307,3 +307,15 @@ trace. Ainda falta comparação pareada do componente e do cursor,
 incluindo transições e controles de confirmação originais. Demo.cs
 2618 → 2618. O gate C12.1 segue aberto em rituais e respostas de
 armadilhas/combate. CI obrigatório.
+
+### C12.1 — Produtor de Ritual na CPU (C09)
+
+A CPU em modo fila usa `TryQueueRitualSummon` para fontes de mão ou
+Set. A sugestão preserva a ocorrência do resultado e escolhe um custo
+sem tributos redundantes por subtotais de nível e presença no campo. Com campo cheio, tributa
+primeiro um material do campo e usa a zona liberada. A política de escolha é do sandbox. O critério
+de custo vem do executor e das evidências `00599570/005995E0`.
+Testes nos dois lados cobrem mão/Set, vaga livre/campo cheio, cópias,
+custo por ocorrência e gate antes da colocação. Demo.cs tem 2618 linhas
+antes e depois. O formato de sugestão da CPU ainda espera o produtor
+clicável. Sem mudança de heurística no modo legado. CI obrigatório.

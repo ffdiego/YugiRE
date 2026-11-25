@@ -30,7 +30,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Tribute to The Doomed (1023/P074) | **Done** (sandbox na fila, condicionado ao CI) | [C02.5](docs/cards/c02-tribute-to-the-doomed.md), `QueuedMonsterWipeChecks.cs` | Descarte explícito de outra ocorrência, gasto e destruição seletiva, ambos lados e poses; consequências por comando. Sem correntes ou paridade nativa. |
 | Thousand Knives (1211/P077) | **Done** (sandbox na fila, condicionado ao CI) | [C02.6](docs/cards/c02-thousand-knives.md), `QueuedMonsterWipeChecks.cs` | Dark Magician próprio face-up (34/1210/2034), alvo adversário, gasto e destruição seletiva sem custo. Guarda nativa especial e correntes pendentes. |
 | Fissure (1001/P114) | **Done** (sandbox na fila, condicionado ao CI) | [C02.7](docs/cards/c02-fissure.md), `QueuedMonsterWipeChecks.cs` | Menor ATK efetivo adversário face-up, único automático, empate por ocorrência explícita. Sem correntes, ordem/prompt nativo não recuperados. |
-| Rituais P269 | **Done** (8 magias, 7 monstros Ritual no sandbox headless, condicionado ao CI); **Partial** (Relinquished, 730) | [C09](docs/cards/c09-queued-ritual-summon.md), `QueuedRitualSummonChecks.cs` | Materiais próprios da mão/campo por ocorrência, gasto e tributos na fila. UI/CPU, restrições de reviver, interações e efeito de 730 pendentes. |
+| Rituais P269 | **Done** (8 magias, 7 monstros Ritual no sandbox headless, condicionado ao CI); **Partial** (Relinquished, 730) | [C09](docs/cards/c09-queued-ritual-summon.md), `QueuedRitualSummonChecks.cs` | Materiais próprios da mão/campo por ocorrência, gasto e tributos na fila. CPU em modo fila e console produzem a escolha. Seletor do tabuleiro, restrições de reviver, interações e efeito de 730 pendentes. |
 | Offerings to the Doomed (1451/P105) | **Done** (sandbox na fila, condicionado ao CI) | [C02.8](docs/cards/c02-offerings-to-the-doomed.md), `QueuedMonsterWipeChecks.cs`, `RevivalJamDecisionChecks.cs` | Quick-Play na Main própria, alvo face-up de qualquer lado, skip da próxima Draw Phase sem bloquear compras por efeito ou Standby. Correntes/turno adversário pendentes. |
 | Final Destiny (1067/P144) | **Done** (sandbox na fila, condicionado ao CI) | [C02.9](docs/cards/c02-final-destiny.md), `QueuedSpellTrapWipeChecks.cs` | Cinco descartes por ocorrência, gasto e destruição integral de ambos os campos; equipamentos sem duplicação. Sem correntes ou paridade nativa. |
 | Modificadores temporários P123 (1015/1016/1075/1076/1082) | **Done** (sandbox headless na fila, condicionado ao CI) | [C02.9](docs/cards/c02-p123-temporary-stats.md), `QueuedTemporaryStatChecks.cs` | ATK/DEF por ocorrência até avanço de turno, Quick-Play de mão ou Set anterior. Sem correntes, Damage Step, UI/CPU ou comparação dinâmica. |
@@ -281,7 +281,7 @@ Needle Worm e Hiro's Shadow Scout: Flip Summon manual emite movimentações indi
 | 1315 | Rain of Mercy | Aumento de 1000 LP observado em captura do original; efeito simples agora jogável no sandbox, sem paridade completa |
 | 1306 | Skull Invitation | Correlação de perdas de 300 LP e controle negativo observacional |
 | 1353 | Burning Land | Ticks de 500 LP relatados em evidência, ainda sem regra C# completa |
-| — | Rituais `P269` | Dados de rituais em `docs/evidence/ritual-rules-catalog.json`; falta jogabilidade |
+| — | Rituais `P269` | CPU/console já admitem pela fila; seletor clicável em C09/C12 |
 
 ## Primeiro cenário de magia de campo
 

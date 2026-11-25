@@ -23,19 +23,14 @@ public sealed partial class DemoDuel
         var (side, spell, monster, slot, _, materials) = prepare;
         if (side != ActivePlayer || LegacyActionsBlocked || PendingEndDiscards != 0 ||
             Phase != DemoPhase.Main || slot is < 0 or >= 5 ||
-            spell.Zone is not (DuelZone.Hand or DuelZone.SpellTrap) || monster.Side != side ||
+            monster.Side != side ||
             monster.Zone != DuelZone.Hand || materials.Count == 0 ||
             materials.Distinct().Count() != materials.Count ||
             (FirstFreeMonsterZone() < 0 && materials[0].Zone != DuelZone.Monster) ||
-            !TryResolveCardTarget(spell, out int spellIndex, out var spellCard) ||
-            !RitualSearchRules.TryGetBinding(spellCard, out var binding) ||
+            !TryGetQueuedRitualBinding(spell, out var binding) ||
             !TryResolveCardTarget(monster, out _, out var monsterCard) ||
             !monsterCard.IsMonster || monsterCard.Id != binding.MonsterId)
             return false;
-        if (spell.Zone == DuelZone.Hand ? FirstFreeSpellZone() < 0 :
-            !SpellFaceDown[side, spellIndex] || equipment.Any(e => e.Owner == side && e.SourceZone == spellIndex))
-            return false;
-
         int level = 0;
         int minimum = int.MaxValue;
         bool releasesDestination = false;
@@ -51,6 +46,104 @@ public sealed partial class DemoDuel
 
         return level >= binding.RequiredLevel && level - minimum < binding.RequiredLevel &&
             (Monsters[side, slot] is null || releasesDestination);
+    }
+
+    private bool TryGetQueuedRitualBinding(CardTarget spell, out RitualSearchRules.Binding binding)
+    {
+        binding = default;
+        if (spell.Side != ActivePlayer || spell.Zone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
+            !TryResolveCardTarget(spell, out int index, out var card) ||
+            !RitualSearchRules.TryGetBinding(card, out binding)) return false;
+        return spell.Zone == DuelZone.Hand ? FirstFreeSpellZone() >= 0 :
+            SpellFaceDown[spell.Side, index] && !equipment.Any(e => e.Owner == spell.Side && e.SourceZone == index);
+    }
+
+    internal PrepareRitualSummonCommand? SuggestQueuedRitualSummon()
+    {
+        if (primitiveActionQueue is not { IsBusy: false } || ActionsBlocked || Phase != DemoPhase.Main)
+            return null;
+
+        int side = ActivePlayer;
+        int freeSlot = FirstFreeMonsterZone();
+        RitualMaterial[]? monstersInHand = null;
+        RitualMaterial[]? materials = null;
+        foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
+        {
+            int count = zone == DuelZone.Hand ? Hand.Count : 5;
+            for (int index = 0; index < count; index++)
+            {
+                var card = zone == DuelZone.Hand ? Hand[index] : Spells[side, index];
+                if (card is null || !RitualSearchRules.IsRitualSpell(card) ||
+                    !TryCaptureCardTarget(side, zone, index, out var spell) ||
+                    !TryGetQueuedRitualBinding(spell, out var binding)) continue;
+
+                monstersInHand ??= RitualMaterials(DuelZone.Hand).ToArray();
+                foreach (var monster in monstersInHand.Where(material => Hand[material.Index].Id == binding.MonsterId))
+                {
+                    materials ??= monstersInHand.Concat(RitualMaterials(DuelZone.Monster))
+                        .OrderByDescending(material => material.Level).ToArray();
+                    var plan = SuggestRitualMaterials(spell, monster.Target, materials, binding.RequiredLevel, freeSlot);
+                    if (plan is not null) return plan;
+                }
+            }
+        }
+        return null;
+    }
+
+    private sealed record RitualMaterial(CardTarget Target, int Index, int Level);
+
+    private IEnumerable<RitualMaterial> RitualMaterials(DuelZone zone)
+    {
+        int count = zone == DuelZone.Hand ? Hand.Count : 5;
+        for (int index = 0; index < count; index++)
+        {
+            var card = zone == DuelZone.Hand ? Hand[index] : Monsters[ActivePlayer, index];
+            if (card is not { IsMonster: true, Level: > 0 } ||
+                !TryCaptureCardTarget(ActivePlayer, zone, index, out var target) ||
+                zone == DuelZone.Monster && !TryPlanRemovalLinks(ActivePlayer, index, out _)) continue;
+            yield return new(target, index, card.Level);
+        }
+    }
+
+    private PrepareRitualSummonCommand? SuggestRitualMaterials(CardTarget spell, CardTarget monster,
+        IReadOnlyList<RitualMaterial> materials, int requiredLevel, int freeSlot)
+    {
+        // Retain one unfinished selection per subtotal and field presence.
+        // Materials arrive largest first, so the one reaching the threshold
+        // is the smallest and its absence proves the selection is minimal.
+        var partial = new RitualMaterial[requiredLevel, 2][];
+        partial[0, 0] = [];
+        foreach (var material in materials)
+        {
+            if (material.Target == monster) continue;
+            bool fromField = material.Target.Zone == DuelZone.Monster;
+            for (int subtotal = requiredLevel - 1; subtotal >= 0; subtotal--)
+            for (int hasField = 0; hasField < 2; hasField++)
+            {
+                if (partial[subtotal, hasField] is not { } chosen) continue;
+                int level = subtotal + material.Level;
+                int nextHasField = fromField ? 1 : hasField;
+                if (level < requiredLevel)
+                {
+                    partial[level, nextHasField] ??= [.. chosen, material];
+                    continue;
+                }
+                if (freeSlot < 0 && nextHasField == 0) continue;
+
+                RitualMaterial[] cost = [.. chosen, material];
+                int slot = freeSlot;
+                if (slot < 0)
+                {
+                    var first = cost.First(item => item.Target.Zone == DuelZone.Monster);
+                    slot = first.Index;
+                    cost = [first, .. cost.Where(item => item != first)];
+                }
+                var plan = new PrepareRitualSummonCommand(spell.Side, spell, monster, slot, false,
+                    Array.AsReadOnly(cost.Select(item => item.Target).ToArray()));
+                if (CanPrepareRitualSummon(plan)) return plan;
+            }
+        }
+        return null;
     }
 
     private sealed partial class PrimitiveActionExecutor

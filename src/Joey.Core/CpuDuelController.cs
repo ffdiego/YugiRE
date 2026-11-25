@@ -375,6 +375,10 @@ public sealed class CpuDuelController
                     return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
             }
 
+            if (queueTurnActions && duel.SuggestQueuedRitualSummon() is { } ritual)
+                return Act(CpuAction.Spell, (out string m) => duel.TryQueueRitualSummon(
+                    ritual.Spell, ritual.Monster, ritual.Slot, ritual.Materials, ritual.Defense, out m, ActionOrigin.Cpu));
+
             for (int z = 0; z < 5; z++)
             {
                 if (!duel.CanChangePosition(z)) continue;
