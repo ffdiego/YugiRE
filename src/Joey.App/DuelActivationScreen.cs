@@ -58,7 +58,14 @@ static partial class Game
     static void AdvanceSpellActivation(TimeSpan elapsed)
     {
         if (!ActivationBusy) return;
-        activation.Advance(activationClock.Advance(elapsed, presentation.Style));
+        int updates=activationClock.Advance(elapsed,presentation.Style);
+        if(updates>0 && activation.Current is { } step)
+        {
+            if(step.Kind==ActivationStage.Glow && activation.ElapsedUpdates==0 ||
+                step.Kind==ActivationStage.Travel && updates>step.Updates-activation.ElapsedUpdates)
+                PlayDuelSound(DuelSoundCue.Activation);
+        }
+        activation.Advance(updates);
         if (!ActivationBusy) activationCard = null;
     }
 

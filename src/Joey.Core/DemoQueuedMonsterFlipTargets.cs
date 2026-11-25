@@ -14,6 +14,90 @@ public sealed partial class DemoDuel
         pending.Trigger == DemoMonsterEffectTrigger.Flip &&
         pending.Effect is DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
 
+    // UI/CPU pre-admission selection is not a duel command. Retain the
+    // exact occurrence for the first optional pick, not a mutable slot.
+    private (DemoFlipTarget Request, CardTarget Source, CardTarget Target)? queuedFlipFirstPick;
+
+    public bool UsesQueuedMonsterFlipSelection(DemoFlipTarget request) =>
+        primitiveActionQueue is not null && ReferenceEquals(PendingFlipTarget, request) &&
+        deferredBattle is null && IsQueuedMonsterFlip(request) &&
+        (Phase == DemoPhase.Main || HasQueuedBattleTargetChoice);
+
+    private bool TryGetQueuedFlipSource(DemoFlipTarget request, out CardTarget source)
+    {
+        source = default;
+        return UsesQueuedMonsterFlipSelection(request) &&
+            primitiveActionQueue is { IsBusy: false } && CanAdmitQueuedMonsterFlipAnswer() &&
+            TryCaptureCardTarget(request.Owner, DuelZone.Monster, request.SourceZone, out source) &&
+            TryResolveCardTarget(source, out _, out var card) && ReferenceEquals(card, request.SourceCard);
+    }
+
+    public bool TrySelectQueuedMonsterFlipTarget(DemoFlipTarget request, int player, int zone,
+        out string message, ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "Choose a current eligible FLIP target.";
+        if (!TryGetQueuedFlipSource(request, out var source)) return false;
+        if (FlipEffectsNegated)
+            return TryQueueMonsterFlipAnswer(source, [], out message, origin);
+
+        var choice = QueuedMonsterFlipCandidates().FirstOrDefault(c => c.Target.Side == player && c.Zone == zone);
+        if (choice is null) return false;
+        if (request.Effect != DemoFlipEffect.ReturnUpToTwo)
+            return TryQueueMonsterFlipAnswer(source, [choice.Target], out message, origin);
+
+        if (queuedFlipFirstPick is { } first && ReferenceEquals(first.Request, request))
+        {
+            if (first.Source != source ||
+                !TryPlanQueuedMonsterFlipAnswer(source, [first.Target], out _, out _))
+            {
+                // A stale pick cannot silently transfer a replacement card.
+                queuedFlipFirstPick = null;
+                flipSelections.Clear();
+                message = "First FLIP target changed; choose again.";
+                return false;
+            }
+            if (!TryQueueMonsterFlipAnswer(source, [first.Target, choice.Target], out message, origin))
+                return false;
+            queuedFlipFirstPick = null;
+            return true;
+        }
+
+        if (flipSelections.Count != 0 ||
+            !TryPlanQueuedMonsterFlipAnswer(source, [choice.Target], out _, out _)) return false;
+        queuedFlipFirstPick = (request, source, choice.Target);
+        flipSelections.Add(new(player, zone, choice.Card));
+        message = "FLIP: selected 1/2 target(s). Choose another or Done.";
+        return true;
+    }
+
+    public bool TryFinishQueuedMonsterFlipSelection(DemoFlipTarget request, out string message,
+        ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "No optional queued FLIP selection.";
+        if (!TryGetQueuedFlipSource(request, out var source)) return false;
+        if (FlipEffectsNegated)
+            return TryQueueMonsterFlipAnswer(source, [], out message, origin);
+        if (request.Effect != DemoFlipEffect.ReturnUpToTwo) return false;
+
+        CardTarget[] targets = [];
+        if (queuedFlipFirstPick is { } first && ReferenceEquals(first.Request, request))
+        {
+            if (first.Source != source ||
+                !TryPlanQueuedMonsterFlipAnswer(source, [first.Target], out _, out _))
+            {
+                queuedFlipFirstPick = null;
+                flipSelections.Clear();
+                message = "First FLIP target changed; choose again.";
+                return false;
+            }
+            targets = [first.Target];
+        }
+        else if (flipSelections.Count != 0) return false;
+        if (!TryQueueMonsterFlipAnswer(source, targets, out message, origin)) return false;
+        queuedFlipFirstPick = null;
+        return true;
+    }
+
     private bool CanAdmitQueuedMonsterFlipAnswer() =>
         !GameOver && deferredBattle is null && (Phase == DemoPhase.Main ||
             HasQueuedBattleTargetChoice && queuedBattleReveal is { } battle && ValidateBattleReveal(battle,faceDown:false)) &&

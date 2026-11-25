@@ -66,12 +66,21 @@ internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSele
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
+internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target,
+    int ExpectedTurn) : DuelCommand(Side);
+internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateDeckSearchSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record OpenDeckSearchSpellCommand(int Side, CardTarget Source, ushort ResourceId) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateFinalDestinyCommand(int Side, CardTarget Source, CardTarget First,
+    CardTarget Second, CardTarget Third, CardTarget Fourth, CardTarget Fifth) : DuelCommand(Side)
+{
+    public CardTarget[] Costs => [First,Second,Third,Fourth,Fifth];
+}
+internal sealed record ResolveFinalDestinyCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateDiscardMonsterSpellCommand(int Side, CardTarget Source, CardTarget Cost, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateConditionalMonsterSpellCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
@@ -224,6 +233,14 @@ internal static class DuelCommandValidation
                 if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
                 Target(equip.Target, equip.Target.Side, DuelZone.Monster);
                 break;
+            case ActivateTemporaryStatCommand modifier when modifier.ExpectedTurn > 0:
+                Target(modifier.Source, modifier.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(modifier.Target, modifier.Target.Side, DuelZone.Monster);
+                break;
+            case ResolveTemporaryStatCommand modifier:
+                Target(modifier.Source, modifier.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(modifier.Target, modifier.Target.Side, DuelZone.Monster);
+                break;
             case ActivateDrawSpellCommand drawSpell:
                 Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
@@ -241,6 +258,15 @@ internal static class DuelCommandValidation
                 if (targeted.Target.Side is not (0 or 1) || targeted.Source == targeted.Target)
                     throw new ArgumentException("Invalid targeted Spell/Trap occurrence.");
                 Target(targeted.Target, targeted.Target.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ActivateFinalDestinyCommand finalDestiny:
+                Target(finalDestiny.Source,finalDestiny.Side,DuelZone.Hand,DuelZone.SpellTrap);
+                if(finalDestiny.Costs.Distinct().Count()!=5 || finalDestiny.Costs.Contains(finalDestiny.Source))
+                    throw new ArgumentException("Invalid Final Destiny costs.");
+                foreach(var payment in finalDestiny.Costs) Target(payment,finalDestiny.Side,DuelZone.Hand);
+                break;
+            case ResolveFinalDestinyCommand finalDestinyResolve:
+                Target(finalDestinyResolve.Source,finalDestinyResolve.Side,DuelZone.Hand,DuelZone.SpellTrap);
                 break;
             case ActivateSpellTrapWipeCommand spellTrapWipe:
                 Target(spellTrapWipe.Source, spellTrapWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);

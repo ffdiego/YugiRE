@@ -153,3 +153,95 @@ Modelo não desenha partículas/carta e não substitui o gate de A03.
 Roteiro 29 coleta callee 00558FB0 e gerador específico, sem pedir
 a tabela runtime já reconstruível. Roteiro 24 continua dono da
 vtable de superfície. Sem mudança da cobertura 20/34.
+
+
+## V20.2 — revisão com recursos confirmados no SQLite v3
+
+Nesta sessão foi aberto somente leitura o snapshot privado
+joey-knowledge-visual-cumulative-2026-11-24-v3.zip, SQLite SHA256
+9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
+PRAGMA quick_check=ok e metadata executable_sha256 igual ao alvo.
+Tabelas visual_dat_manifests e visual_dat_images confirmam
+coin.txt e seis imagens sem erro. Não copiar o manifesto inteiro
+nem arquivos gráficos para Git.
+
+| Key por ordem do manifesto | Nome | Dimensões | Divisor |
+|---|---|---|---|
+| 0 | coin_rotate.bmp | 560x40 | 14 |
+| 1 | coin_sha.yga | 168x42 | 4 |
+| 2 | coin_ripple.yga | 64x64 | 1 |
+| 3 | coin_mask.bmp | 40x40 | 1 |
+| 4 | coin_ref.bmp | 69x40 | 1 |
+| 5 | coin_kirari.yga | 56x14 | 4 |
+
+O divisor 14 antes era uma hipótese restrita do adapter; agora
+é dado do DAT. 00457366..00457385 em assembly divide a largura
+do recurso pelo parâmetro e aloca scratch desse tamanho por
+altura (40x40 no manifesto observado); flag 1 não identifica
+o formato. 00457520 e NativeCoinPassLayout já recuperam 0/1/2.
+A revisão usa ordem do manifesto como remap diagnóstico; a
+vtable/compositor final não estão confirmados. Não preencher
+reflexo e brilho por aproximação; gates constam do JSON mas
+passes 3/4/5 não são desenhados. Key verde no BMP da moeda,
+YGA pelo decoder existente e tint linear são diagnóstico,
+não garantia de fidelidade. Nenhum gate, RNG de regras, áudio
+automático ou integração do duelo.
+
+    dotnet run --project src/Joey.App -- /path/to/data.dat --review-coin=3,5,400,100,1
+
+COUNT 1/3; BITS decimal fornecido pelo operador (não sortear,
+não nomear cara/coroa); X/Y origem lógica; HIGHLIGHT raw 0/1.
+F7 Update+Sample, F8 reset, F12 PNG/JSON (inclui flags dos passes
+omitidos, request sonoro e fonte do cosseno), Escape sai.
+Cosseno segue loader/default capturado do Codex. Confirmar no
+desktop; testes sintéticos exercitam parser, dimensões, as
+timelines 96/128 e limites dos recortes. Sem alteração de
+badge porque review isolado não conta como Draw do duelo.
+
+
+## V20.3 — reflexo e cinco brilhos: assembly do Draw
+
+SQLite v3 SHA256 9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
+quick_check=ok nesta sessão. Releitura de visual_evidence_instructions
+00457520..004580DA (deduplicada por VA/instrução), cotejada com
+visual_evidence_functions e dimensões/manifesto. Nenhuma coleta nova.
+
+Correção de V20: 00457CE7 salta todos os extras se bit != +1C.
+A reflexão ocorre em -320<=diff<-192, diff=counter-end.
+00457EAE recarrega diff e cai em 00457EB2, mesmo após refletir;
+não há exclusão mútua. 00457EB2..004580A2 sempre percorre os
+cinco brilhos se chegou ao ramo de extras (fora do giro e
+de local<=-128). O boolean SparkleBranchReached só indica
+entrada no loop, não visibilidade.
+
+Reflexo: 00457D07..00457DA1 obtém dimensões key3/4.
+00457DA9 chama 004B1160(scratch,0), cuja decompilação indica
+preenchimento com chave corrente +70h e retângulo default.
+00457DE2..00457E1F copia key4 opacamente via 004AD9C0, em
+scratch+0B4h, x=trunc((maskW+refW)*(640+2*diff)/256)-refW,
+y=0, demais parâmetros zero. DAT: scratch 40x40 (quadro
+da moeda), mask 40x40, reflexo 69x40. x=-69 em diff=-320;
+x=-15 em -256; x=33 em -200. 00457E4D..00457E7C chama
+scratch virtual +94 com key3 e argumentos (0,255,0,255,0).
+00457E82..00457EA8 compõe scratch via destino +A0 em
+(cx-maskW/2,cy-maskW/2), mais três zeros. Não atribuir alpha,
+blend ou máscara RGB aos argumentos sem resolver os slots.
+NativeCoinReflection preserva esse plano; ainda não desenha.
+
+Brilhos: 00457EB2..00457ED0 inicia t=diff+256, j=0; em cada
+iteração t-=16, j++, fase+=3, até fase=15. Desenha apenas
+0<=t<64. 00457F2B..00457FB3 tabela [3,2,1,0,0,1,2,3],
+indexada por t/8. key5: 56x14, quatro quadros 14x14.
+00457FE3..00458079: recuperado rastreando deslocamentos
+ESP após pushes. x=cx+j*faceW/4-sparkW/2-faceW/2;
+y=cy+((3*j+2*coinIndex)%8)*faceH/8-sparkH/2-faceH/2.
+Virtual +4C, rect fonte, destino-size null, flag zero.
+As dimensões são do quadro original, não da moeda escalada.
+Todos usam clock global; posição Y difere por índice.
+A revisão desenha key5 com compositor raylib diagnóstico,
+não substitui a reflexão por sprite inventado. F12 schema 2
+inclui extras, plano e passes. Testes de overlap, fronteiras,
+seletores, índices e âncoras. Roteiro 24 já inclui vtable
+005DC6EC (até +E0), portanto abrange +94/+A0 se esta for
+a vtable da scratch; não solicitar coleta redundante.
+Sem integração de duelo, sem novo Draw/coverage.

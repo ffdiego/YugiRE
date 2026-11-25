@@ -65,10 +65,68 @@ internal static class QueuedMonsterFlipTargetChecks
                 "Exactly one return command per selected monster");
         }
 
+
+        foreach (int side in new[]{0,1})
+        foreach (ushort id in new ushort[]{500,540,601})
+        {
+            int enemy=1-side;
+            var own=Slots(Monster(id));var opposing=Slots(Monster(24),Monster(25));
+            var d=DemoDuel.FromPartialObservation(side,[],side==0?own:opposing,side==1?own:opposing,8000);
+            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
+            var q=d.CreatePrimitiveActionQueue();d.TryQueueChangePosition(0,out _);Drain(q);
+            var request=d.PendingFlipTarget!;
+            check(d.UsesQueuedMonsterFlipSelection(request)&&
+                !d.TrySelectQueuedMonsterFlipTarget(request with {},enemy,0,out _),
+                "Shared producer rejects stale request identity");
+            var controller=new CpuDuelController(side);
+            var step=controller.Step(d,queueTurnActions:true);
+            check(step.Status==CpuStepStatus.Acted&&d.PendingFlipTarget==request&&d.Monsters[enemy,0] is not null,
+                "CPU choice never moves target at admission");
+            if(id==601)
+            {
+                check(!q.IsBusy&&d.SelectedFlipTargets.Count==1&&
+                    !d.TrySelectQueuedMonsterFlipTarget(request,enemy,0,out _),
+                    "Penguin first selection is only a distinct pre-admission pick");
+                step=controller.Step(d,queueTurnActions:true);
+                check(step.Status==CpuStepStatus.Acted,"CPU admits second target");
+            }
+            check(q.IsBusy&&!d.TrySelectQueuedMonsterFlipTarget(request,enemy,0,out _),
+                "Busy producer rejects a second input");
+            Drain(q);
+            check(d.PendingFlipTarget is null&&d.Monsters[enemy,0] is null&&
+                (d.Monsters[enemy,1] is null)==(id==601)&&
+                q.Trace.Any(t=>t.Stage==ActionTraceStage.Executed&&t.Entry.Origin==ActionOrigin.Cpu&&
+                    t.Entry.Command.GetType().Name=="ResolveMonsterFlipTargetsCommand"),
+                "CPU choice uses same queued answer and origin");
+        }
+
+        var one=DemoDuel.FromPartialObservation(0,[],Slots(Monster(601)),Slots(Monster(24)),8000);
+        one.MonsterFaceDown[0,0]=one.DefensePosition[0,0]=true;
+        var oq=one.CreatePrimitiveActionQueue();one.TryQueueChangePosition(0,out _);Drain(oq);
+        var op=one.PendingFlipTarget!;
+        check(one.TrySelectQueuedMonsterFlipTarget(op,1,0,out _)&&!oq.IsBusy&&
+            one.TryFinishQueuedMonsterFlipSelection(op,out _)&&oq.IsBusy&&one.Monsters[1,0] is not null,
+            "Player may finish with one chosen occurrence before any move");
+        Drain(oq);
+        check(one.PendingFlipTarget is null&&one.HandFor(1).Single().Id==24&&one.Monsters[0,0] is not null,
+            "One-target player answer completes through queue");
+
+        var replace=DemoDuel.FromPartialObservation(0,[],Slots(Monster(601)),Slots(Monster(24)),8000);
+        replace.MonsterFaceDown[0,0]=replace.DefensePosition[0,0]=true;
+        var rq=replace.CreatePrimitiveActionQueue();replace.TryQueueChangePosition(0,out _);Drain(rq);
+        var rp=replace.PendingFlipTarget!;
+        check(replace.TrySelectQueuedMonsterFlipTarget(rp,1,0,out _),"First occurrence captured");
+        replace.Monsters[1,0]=Monster(24);
+        check(!replace.TryFinishQueuedMonsterFlipSelection(rp,out _)&&!rq.IsBusy&&
+            replace.PendingFlipTarget==rp&&replace.SelectedFlipTargets.Count==0&&replace.Monsters[1,0] is not null,
+            "Same-ID replacement invalidates staged pick without movement");
+        check(replace.TryFinishQueuedMonsterFlipSelection(rp,out _),"Player can recover with zero targets");
+        Drain(rq);
+
         var zero=DemoDuel.FromPartialObservation(0,[],Slots(Monster(601)),Slots(Monster(24)),8000);
         zero.MonsterFaceDown[0,0]=zero.DefensePosition[0,0]=true;
         var zq=zero.CreatePrimitiveActionQueue();zero.TryQueueChangePosition(0,out _);Drain(zq);
-        check(zero.TryQueueMonsterFlipAnswer(Capture(zero,0,0),[],out _),"Penguin may select zero");
+        check(zero.TryFinishQueuedMonsterFlipSelection(zero.PendingFlipTarget!,out _),"Penguin may select zero");
         Drain(zq);
         check(zero.PendingFlipTarget is null&&zero.Monsters[0,0] is not null&&zero.Monsters[1,0] is not null,
             "Empty Penguin answer moves nothing");
