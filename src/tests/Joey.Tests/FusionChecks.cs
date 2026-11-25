@@ -252,13 +252,16 @@ internal static class FusionChecks
             var d = DemoDuel.FromPartialObservation(enemy, [gateCard],
                 side == 0 ? [first, null, null, null, null] : empty,
                 side == 1 ? [first, null, null, null, null] : empty, 8000,
+                equipmentContextResolved: true,
                 side0Deck: side == 0 ? [sword, second] : null,
                 side1Deck: side == 1 ? [sword, second] : null,
                 side0FusionDeck: side == 0 ? [result] : null,
                 side1FusionDeck: side == 1 ? [result] : null);
-            check(d.Play(0, out _) && d.EndTurn(out _) && d.Draw(out _) &&
-                d.Equip(0, side, 0, out _) && d.EndTurn(out _) && d.EndTurn(out _) &&
-                d.Draw(out _) && d.BeginFusionGate(enemy, out _), "Queued opposing Gate linked fixture");
+            check(d.Play(0, out _) && d.EndTurn(out _) && d.Draw(out _),
+                "Queued opposing Gate linked fixture: activate and draw");
+            check(d.Equip(0, side, 0, out _), "Queued opposing Gate linked fixture: equip");
+            check(d.EndTurn(out _) && d.EndTurn(out _) && d.Draw(out _) && d.BeginFusionGate(enemy, out _),
+                "Queued opposing Gate linked fixture: second material and selection");
             var request = d.PendingFusionSummon!;
             var q = d.CreatePrimitiveActionQueue();
             check(d.TryQueueFusionSummon(request, 0, request.Options.Single().SuggestedMaterials, out _),
