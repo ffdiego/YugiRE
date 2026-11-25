@@ -118,7 +118,8 @@ public sealed partial class DemoDuel
                 else RemoveMonster(owner, material.Index, isFusionMaterial: true);
             }
             fusionDecks[owner].RemoveAt(deckIndex);
-            PlaceSelectedMonster(owner, destination, choice.Result, false, faceUpDefense: defense);
+            PlaceSelectedMonster(owner, destination, choice.Result, false, faceUpDefense: defense,
+                fusionMaterials: Array.AsReadOnly(materials.Select(m => m.Card).ToArray()));
         }
         finally { deferringFieldRemovalTriggers = false; }
 
