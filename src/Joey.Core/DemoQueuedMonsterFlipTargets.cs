@@ -15,7 +15,8 @@ public sealed partial class DemoDuel
         pending.Effect is DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
 
     private bool CanAdmitQueuedMonsterFlipAnswer() =>
-        !GameOver && deferredBattle is null && Phase == DemoPhase.Main &&
+        !GameOver && deferredBattle is null && (Phase == DemoPhase.Main ||
+            HasQueuedBattleTargetChoice && queuedBattleReveal is { } battle && ValidateBattleReveal(battle,faceDown:false)) &&
         PendingFlipTarget is { } pending && IsQueuedMonsterFlip(pending) &&
         PendingFlipSpellTrapTargets is null && PendingCardSelection is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&
@@ -40,12 +41,12 @@ public sealed partial class DemoDuel
         return result.AsReadOnly();
     }
 
-    /// <summary>Resolve a manual FLIP selection through the queue. Battle
-    /// FLIPs retain the old response path until queued Damage Step exists.</summary>
+    /// <summary>Resolve a supported manual or reserved battle FLIP through the queue.
+    /// Other battle FLIPs retain their legacy path.</summary>
     public bool TryQueueMonsterFlipAnswer(CardTarget source, IReadOnlyList<CardTarget> targets,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose a supported pending manual FLIP and valid distinct occurrences.";
+        message = "Choose a supported pending FLIP and valid distinct occurrences.";
         if (primitiveActionQueue is not { IsBusy: false } queue ||
             !CanAdmitQueuedMonsterFlipAnswer() || targets is null ||
             !TryPlanQueuedMonsterFlipAnswer(source, targets, out _, out _))
