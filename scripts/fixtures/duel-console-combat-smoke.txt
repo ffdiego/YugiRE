@@ -1,0 +1,23 @@
+# A09.2 synthetic checkpoint; resource 1351 occurs in the archived CE sample.
+# Spawn is privileged setup, not a legal summon or a native replay.
+spawn 1351 0 deck
+spawn 1351 0 deck
+spawn 1351 1 deck
+spawn 1351 1 deck
+turn end
+turn draw
+spawn 1351 1 monster 2
+battle begin
+state
+attack 2 direct
+state
+battle end
+turn end
+turn draw
+spawn 1351 0 monster 3
+battle begin
+state
+attack 3 2
+state
+battle end
+state
