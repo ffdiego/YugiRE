@@ -1612,7 +1612,12 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "FLIP source or target choice no longer valid.");
 
             var battle = duel.HasQueuedBattleTargetChoice ? duel.queuedBattleReveal : null;
-            if (battle is not null) battle.ExpectedReturns.UnionWith(targets);
+            if (battle is not null)
+            {
+                DuelZone destination=duel.PendingFlipTarget!.Effect==DemoFlipEffect.DestroyMonster
+                    ? DuelZone.Graveyard : DuelZone.Hand;
+                foreach (var target in targets) battle.ExpectedEffectMoves.Add(target,destination);
+            }
             // Clear only this pending interaction inside its command, not at
             // admission. Never invoke legacy FinishDeferredBattle here.
             duel.PendingFlipTarget = null;
