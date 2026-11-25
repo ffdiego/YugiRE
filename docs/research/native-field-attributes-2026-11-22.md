@@ -157,3 +157,47 @@ passadas ao helper, não prova de alpha raylib idêntico.
 A comparação de pixels e cadência permanece pendente.
 Não solicitar novamente o bundle 03: o contrato já foi
 absorvido em código e testes no commit d03038e.
+
+## V05.1 — ciclo de vida dos acumuladores e âncoras (SQLite v3)
+
+Consulta read-only de joey-knowledge-visual-cumulative-2026-11-24-v3.zip,
+SHA256 SQLite 9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed;
+quick_check=ok, fingerprint EXE confirmado. Assembly de 00418B10,
+004194D0, 0045C280 disponível. Não repetir bundle 03.
+
+Há três resultados distintos, não apenas visível/oculto:
+- 00418EF0 não chama 004194D0 quando inativo, em movimento ou
+  estado 5: os acumuladores +4C/+50 são preservados.
+- 004194F6..00419525 (região+slot>10) e 0041952A..00419543
+  -> 00419B07..00419B29 (região != 0 ou adversário oculto)
+  regravam ATK/DEF básicos via 004027B0/00402800.
+- 00419568..0041956A (identidade divergente) pula para 00419B2C,
+  sem passar pelo reset. 00419570..004195CB avança somente no
+  caminho elegível. 00418B10 semeia a base na atribuição de carta.
+
+NativeFieldAttributeDisposition codifica Advance/Preserve/ResetToBase
+e mantém os predicados booleanos para consumidores existentes.
+No DuelScreen, slot ocupado em movimento deixa de descartar o cache;
+vacância e adversário oculto estabilizado continuam a resetar. A próxima
+amostra valida identidade por referência como antes. Não introduz
+avanço durante movimento nem altera o gate da captura F12. A adaptação
+do cliente por slot não é um modelo completo da identidade do objeto
+nativo, especialmente transferências entre slots. Dez checks sintéticos
+cobrem ambos os lados, privacidade, posição, interrupção, substituição
+e geometria. CI novo a confirmar; não declarar paridade de cadência.
+
+DAT v3: normal 77x10/11, azul e vermelho 70x10/10, portanto
+todos os glifos têm 7x10. 00419612..00419630 confirma Y +/-46,
+topo Y +/-46 - 5. Para o centro X=525, afastamento 3+17=20;
+ATK centrado em 505, DEF em 545, separador começa em 521.
+O histórico native-visual-contract.md registra centros Y=352/248,
+dando top 393/197; esses Y ainda não foram reatestados pelos
+bytes do snapshot v3. 00418B60 obtém posição de 0045C140,
+e 0045C280 (0045C2C3..0045C2D8 / 0045C2D9..0045C2EE) usa
+índice region+slot + 5*ladoRelativo para as regiões 0..4/5..9.
+As duas tabelas de dez pares são 005DB560 e 005DB4E8. O segundo
+banco usa índices 5..14: seus dez pares efetivamente acessados
+começam em 005DB510 (005DB4E8+5*8), não no endereço-base.
+A coleta 33 deve ler 005DB560:80 e 005DB510:80; 005DB570:4
+(X central) já existe. Preservar layout atual até reatestar
+a tabela; composição e cadência continuam Partial.
