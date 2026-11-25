@@ -120,6 +120,21 @@ dotnet run --project src/Joey.App -- ../passion/data.dat --alpha
 
 O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Fast (60 updates/s, 2x Classic) é o perfil padrão; use `--classic` para a cadência de referência (30 updates/s), `--fast` para solicitá-lo explicitamente, `--instant` para ignorar animações ou `--alpha-headless` para simular um duelo no terminal. O perfil explícito `--mute-joey` continua selecionando Silent. O cliente gráfico mostra somente warnings e erros do raylib por padrão; `--raylib-verbose` restaura os logs INFO, inclusive carregamento de texturas. Os logs do console de duelo não são filtrados. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
 
+## Áudio do cliente
+
+O App procura Voice.dat na mesma pasta de data.dat. Para outro caminho:
+
+```powershell
+dotnet run --project src/Joey.App -- --alpha "--voice-dat=C:\Jogos\Joey\Voice.dat"
+```
+
+`--no-audio` desativa tudo; `--no-music` desativa apenas música.
+O laboratório usa os mesmos cues do duelo. Primeira integração por nomes
+reais do DAT, associações semânticas provisórias, sem falas do Joey,
+trilha dinâmica ou fade nativo. Música repete por buffer decodificado.
+Se arquivo/dispositivo faltar, o jogo continua e imprime [audio].
+Nenhum áudio é exportado do DAT.
+
 ## Importar e comparar um deck original
 
 O inspetor procura `deck.ydc` ao lado de `data.dat`. Para outra localização,

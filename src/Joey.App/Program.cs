@@ -54,6 +54,7 @@ static partial class Game
             }
         }
         Console.WriteLine($"[visual] cosine source: {effectCosineSource}");
+        string? dataArchivePath = null;
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
@@ -93,6 +94,7 @@ static partial class Game
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
             Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
             InitializeDeck(args, path);
+            dataArchivePath = path;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
@@ -219,10 +221,13 @@ static partial class Game
         var canvas = Raylib.LoadRenderTexture(800, 600);
         // Keep the 800x600 original DAT pixels discrete when scaling the window.
         Raylib.SetTextureFilter(canvas.Texture, TextureFilter.Point);
+        using var audio = error.Length == 0 ? DuelAudioPlayer.Open(Option(args,"--voice-dat="),dataArchivePath,args.Contains("--no-audio")) : null;
+        duelAudio = audio;
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
             const int width = 800, height = 600;
+            duelAudio?.UpdateMusic(args.Contains("--no-music") ? null : DuelSoundAssets.Music(screen));
             graphics.BeginFrame();
             float scale = Math.Min(Raylib.GetScreenWidth() / (float)width, Raylib.GetScreenHeight() / (float)height);
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
@@ -345,6 +350,8 @@ static partial class Game
             if (useNativeCursor) DrawWindowCursor(scale);
             Raylib.EndDrawing();
         }
+        duelAudio = null;
+        audio?.Dispose();
         if (useNativeCursor) Raylib.ShowCursor();
         Raylib.UnloadRenderTexture(canvas);
         duelTheme.Dispose();
