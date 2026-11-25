@@ -202,7 +202,7 @@ static partial class Game
             // 192x40 atlas, so preserve the 16x40 source samples. The 32px
             // height cap was an invented resize, not a verified native rule.
             int glyphWidth = sourceGlyphWidth, glyphHeight = sourceGlyphHeight;
-            int phase = Math.Min(0x100, counter.RampCounter * 2);
+            int phase = counter.RampCounter * 2; // native Draw forwards the full ramp
             var glyphs = NativeFloatingLifeDigits.Sample(counter.PendingDelta, phase,
                 glyphWidth, glyphHeight, columns, effectCosine);
             bool near = player == ViewPlayer;

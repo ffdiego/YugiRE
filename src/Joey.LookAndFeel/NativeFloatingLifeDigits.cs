@@ -43,12 +43,17 @@ public static class NativeFloatingLifeDigits
         if (columns == 12 && (pendingDelta < 0 || showPositiveSign))
             digits.Add(pendingDelta < 0 ? 11 : 10);
 
-        int delay = digits.Count < 2 ? 0 : 0x40 / (digits.Count - 1);
+        // 0048070B..00480736 delegates to the static helper at >=256.
+        // All glyphs use the same top at that point, without per-digit delay.
+        bool stationary = floatCounter >= StaticFromCounter;
+        int delay = stationary || digits.Count < 2 ? 0 : 0x40 / (digits.Count - 1);
         var result = new List<NativeFloatingLifeGlyph>(digits.Count);
         for (int i = 0; i < digits.Count; i++)
         {
             int phase = floatCounter - delay * i;
-            if (phase <= 0) continue;
+            // Global counter zero returns before building digits. Once in the
+            // animated helper, the per-glyph JL at 00480873 skips only <0.
+            if (phase < 0) continue;
             int yOffset = 0;
             if (phase < 0x80)
             {

@@ -11,8 +11,8 @@ public readonly record struct NativeFieldDisplayedAttributes(int Attack, int Def
 /// whole presentation updates supplied by PresentationTickClock to avoid
 /// doubling the easing speed or advancing during F6 pause.
 ///
-/// Caller owns visibility and should Reset when the slot is vacated, the
-/// card is moving, or an opponent's hidden attributes are not displayed.
+/// Caller owns visibility: Reset when the slot is vacated or a settled
+/// opponent is hidden; skip Sample (preserve) during movement.
 /// Reference identity distinguishes replacement by another card with the
 /// same ATK/DEF (and allows a summoned card with a buff to ease from base).
 /// </summary>
