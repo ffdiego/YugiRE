@@ -103,6 +103,23 @@ public sealed partial class DemoDuel
             return TryQueueMonsterWipe(zone, index, out message, origin);
         if (SpellTrapWipeRules.SupportsQueued(card.Id))
             return TryQueueSpellTrapWipe(zone, index, out message, origin);
+        if (card.Id == TargetedMonsterSpellRules.Fissure)
+        {
+            // For a unique legal minimum no caller choice is necessary.
+            // A tie requires the explicit occurrence API; never use slot order.
+            var choices = QueuedTargetedMonsterSpellCandidates(source);
+            if (choices.Count == 1)
+            {
+                int enemy = 1-source.Side;
+                int minimum = AttackValue(enemy,choices[0].Zone);
+                int tied = Enumerable.Range(0,5).Count(z => Monsters[enemy,z] is not null &&
+                    !MonsterFaceDown[enemy,z] && AttackValue(enemy,z) == minimum);
+                if (tied == 1)
+                    return TryQueueTargetedMonsterSpell(source,choices[0].Target,out message,origin);
+            }
+            message = choices.Count == 0 ? "No eligible face-up opponent monster." :
+                "Choose one of the tied minimum-ATK monsters explicitly.";
+        }
         return false;
     }
 
@@ -226,7 +243,7 @@ public sealed partial class DemoDuel
         private bool drawSpellSourceSpent;
         private CardTarget? searchSpellSource;
         private bool searchSpellSourceSpent;
-        private sealed record TargetedMonsterSpellReservation(CardTarget Source, CardTarget? Cost, CardTarget Target);
+        private sealed record TargetedMonsterSpellReservation(CardTarget Source, CardTarget? Cost, CardTarget Target, ushort ResourceId);
         private TargetedMonsterSpellReservation? targetedMonsterSpell;
         private bool targetedMonsterSpellPaid;
         private bool targetedMonsterSpellSpent;
@@ -496,7 +513,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Discard-cost spell needs isolated activation.");
             if (!duel.TryPlanTargetedMonsterSpell(activate.Source,activate.Cost,activate.Target))
                 return new(CommandOutcome.Rejected, "Source, cost or target no longer legal.");
-            targetedMonsterSpell = new(activate.Source,activate.Cost,activate.Target);
+            targetedMonsterSpell = new(activate.Source,activate.Cost,activate.Target,TargetedMonsterSpellRules.TributeToTheDoomed);
             targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
             queue.EnqueueBatch([new DiscardCommand(activate.Side,activate.Cost),
                 new SendToGraveyardCommand(activate.Side,activate.Source),
@@ -509,9 +526,10 @@ public sealed partial class DemoDuel
             if (targetedMonsterSpell is not null || wipe is not null || finishScheduled ||
                 followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Conditional spell needs isolated activation.");
-            if (!duel.TryPlanTargetedMonsterSpell(activate.Source,null,activate.Target))
+            if (!duel.TryPlanTargetedMonsterSpell(activate.Source,null,activate.Target) ||
+                !duel.TryResolveCardTarget(activate.Source,out _,out var spell))
                 return new(CommandOutcome.Rejected, "Source, condition or target no longer legal.");
-            targetedMonsterSpell = new(activate.Source,null,activate.Target);
+            targetedMonsterSpell = new(activate.Source,null,activate.Target,spell.Id);
             targetedMonsterSpellPaid = true; // no payment required
             targetedMonsterSpellSpent = false;
             queue.EnqueueBatch([new SendToGraveyardCommand(activate.Side,activate.Source),
@@ -529,8 +547,8 @@ public sealed partial class DemoDuel
             targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
             if (!paid || duel.LegacyActionsBlocked)
                 return new(CommandOutcome.Skipped, "Unpaid, unspent or blocked spell.");
-            if (!duel.IsTargetedMonsterSpellTarget(resolve.Target))
-                return new(CommandOutcome.Skipped, "Selected monster or links no longer valid.");
+            if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
+                return new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
             if (followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Isolated destruction required.");
             // Existing standalone DestroyMonster reserves live linked
@@ -1612,7 +1630,12 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "FLIP source or target choice no longer valid.");
 
             var battle = duel.HasQueuedBattleTargetChoice ? duel.queuedBattleReveal : null;
-            if (battle is not null) battle.ExpectedReturns.UnionWith(targets);
+            if (battle is not null)
+            {
+                DuelZone destination=duel.PendingFlipTarget!.Effect==DemoFlipEffect.DestroyMonster
+                    ? DuelZone.Graveyard : DuelZone.Hand;
+                foreach (var target in targets) battle.ExpectedEffectMoves.Add(target,destination);
+            }
             // Clear only this pending interaction inside its command, not at
             // admission. Never invoke legacy FinishDeferredBattle here.
             duel.PendingFlipTarget = null;

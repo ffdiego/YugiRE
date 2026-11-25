@@ -4,7 +4,8 @@ public static class TargetedMonsterSpellRules
 {
     public const ushort TributeToTheDoomed = 1023;
     public const ushort ThousandKnives = 1211;
-    public static bool Supports(Card card) => card.ClassCode == 22 && card.Id is TributeToTheDoomed or ThousandKnives;
+    public const ushort Fissure = 1001;
+    public static bool Supports(Card card) => card.ClassCode == 22 && card.Id is TributeToTheDoomed or ThousandKnives or Fissure;
     // DAT inventory: 34, 1210 (no pack), 2034. Alternate art is still Dark Magician.
     public static bool IsDarkMagician(Card card) => card.IsMonster && card.Id is 34 or 1210 or 2034;
     public static bool RequiresDiscard(Card card) =>
@@ -34,6 +35,28 @@ public sealed partial class DemoDuel
         target.Zone == DuelZone.Monster && TryResolveCardTarget(target, out int slot, out _) &&
         TryPlanRemovalLinks(target.Side, slot, out _);
 
+    // Compute the minimum over ALL face-up opponents, before filtering
+    // tracked occurrences/links. An untracked minimum must not promote
+    // a higher-ATK monster. Use the same live calculation as combat.
+    private bool IsLowestFaceUpOpponent(int caster, CardTarget target)
+    {
+        if (target.Side != 1-caster || target.Zone != DuelZone.Monster ||
+            !TryResolveCardTarget(target,out int slot,out _) || MonsterFaceDown[target.Side,slot])
+            return false;
+        int attack = AttackValue(target.Side,slot);
+        return !Enumerable.Range(0,5).Any(z => Monsters[target.Side,z] is not null &&
+            !MonsterFaceDown[target.Side,z] && AttackValue(target.Side,z) < attack);
+    }
+
+    private bool IsMonsterSpellChoice(ushort id, int caster, CardTarget target) =>
+        IsTargetedMonsterSpellTarget(target) && (id switch
+        {
+            TargetedMonsterSpellRules.Fissure => IsLowestFaceUpOpponent(caster,target),
+            TargetedMonsterSpellRules.ThousandKnives => target.Side != caster,
+            TargetedMonsterSpellRules.TributeToTheDoomed => true,
+            _ => false
+        });
+
     // Cost and target lists are independent read-only views. The UI must not
     // expose a hidden opposing monster's Card identity.
     public IReadOnlyList<QueuedDiscardSpellCost> QueuedDiscardSpellCosts(CardTarget source)
@@ -55,8 +78,7 @@ public sealed partial class DemoDuel
         for (int p = 0; p < 2; p++)
         for (int z = 0; z < 5; z++)
             if (Monsters[p,z] is Card card && TryCaptureCardTarget(p,DuelZone.Monster,z,out var target) &&
-                IsTargetedMonsterSpellTarget(target) &&
-                (spell.Id != TargetedMonsterSpellRules.ThousandKnives || p != source.Side))
+                IsMonsterSpellChoice(spell.Id,source.Side,target))
                 result.Add(new(target,z,card,MonsterFaceDown[p,z]));
         return result.AsReadOnly();
     }
@@ -64,9 +86,9 @@ public sealed partial class DemoDuel
     private bool TryPlanTargetedMonsterSpell(CardTarget source, CardTarget? cost, CardTarget target)
     {
         if (!CanResolveTargetedMonsterSpellSource(source,out var spell) ||
-            !IsTargetedMonsterSpellTarget(target)) return false;
-        if (spell.Id == TargetedMonsterSpellRules.ThousandKnives)
-            return cost is null && target.Side != source.Side;
+            !IsMonsterSpellChoice(spell.Id,source.Side,target)) return false;
+        if (spell.Id is TargetedMonsterSpellRules.ThousandKnives or TargetedMonsterSpellRules.Fissure)
+            return cost is null;
         return TargetedMonsterSpellRules.RequiresDiscard(spell) &&
             cost is { } payment && payment != source && payment.Side == source.Side &&
             payment.Zone == DuelZone.Hand && TryResolveCardTarget(payment,out _,out _);
@@ -75,11 +97,11 @@ public sealed partial class DemoDuel
     public bool TryQueueTargetedMonsterSpell(CardTarget source, CardTarget target,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose a legal conditional spell and a tracked opposing monster.";
+        message = "Choose a legal no-discard monster destruction spell and eligible occurrence.";
         if (primitiveActionQueue is not { IsBusy:false } queue || ActionsBlocked ||
             !TryPlanTargetedMonsterSpell(source,null,target)) return false;
         queue.Enqueue(new ActivateConditionalMonsterSpellCommand(source.Side,source,target),origin);
-        message = "Conditional monster spell admitted.";
+        message = "Monster destruction spell admitted.";
         return true;
     }
 

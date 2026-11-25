@@ -122,6 +122,7 @@ QueuedEndTurnChecks.Run(Check);
 QueuedTargetedAttackChecks.Run(Check);
 QueuedBattleFlipChecks.Run(Check);
 QueuedBattlePenguinChecks.Run(Check);
+QueuedBattleManEaterChecks.Run(Check);
 ActionPresentationGateChecks.Run(Check);
 CommandScopedPresentationChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
@@ -196,6 +197,7 @@ NativeIntensityPixelChecks.Run(Check);
 NativeSourceAlphaPixelChecks.Run(Check);
 NativeSurfaceColorLayoutChecks.Run(Check);
 NativePackedAlphaPixelChecks.Run(Check);
+NativeQuadScanlineChecks.Run(Check, Reject);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
