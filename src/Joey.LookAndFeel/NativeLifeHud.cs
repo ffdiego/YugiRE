@@ -33,7 +33,8 @@ public static class NativeLifeHud
     /// 0047C69A..0047C6AB: negative slot selects region 5, slot 2;
     /// nonnegative slot selects that monster (region 0 + slot).
     /// Resolve the proven descriptor using the client's existing field
-    /// centers. Absolute table bytes for spell slots still need comparison.
+    /// centers. Recipe 33 confirmed the absolute table bytes in v4-visuals;
+    /// paired frame validation of the renderer is still pending.
     /// </summary>
     public static CardPoint FloatingNumberAnchor(bool nearSide, int slot = -1) =>
         slot == -1 ? DuelCardLayout.Center(DuelCardZone.Spell, nearSide, 2) :

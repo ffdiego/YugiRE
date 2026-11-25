@@ -162,3 +162,54 @@ Sem DAT original aqui, sintaxe e dimensões reais ainda precisam ser
 exercitadas. Sem dados do Core de flags e identidade efetiva, não
 disparar no fluxo normal. São subpasses de 004194D0 e não três
 novos objetos no inventário. Cobertura segue 19/34, 0 Verified.
+
+## V08.1 — banco DAT real e gates ordinários (25/11/2026)
+
+Fonte privada v4-visuals, SHA256 SQLite
+2085bc65dbc79fb2ec64645d2536bf0b56dde7bfedf4d173e32acb060b43722c;
+quick_check ok. visual_dat_manifests, visual_dat_images, source_id
+visual-dat-20261124 (dat-manifests.json SHA256
+208a458484306d9249be1ed04a126b213aae8a4aaf79ee7e8b4c7bed3fe3a34b).
+O manifesto original de 424 bytes está no SQLite em CP932; ler o texto
+sem comentários para nomes/divisores. Não repetir --inspect-visual-dat.
+
+| Índice | Recurso | Atlas | Colunas | Quadro |
+| --- | --- | --- | --- | --- |
+| 4 | icon_zokusei.bmp | 160x16 | 10 | 16x16 |
+| 5 | icon_syuzoku.bmp | 320x16 | 20 | 16x16 |
+| 6 | pas_eff_suna.bmp | 78x13 | 6 | 13x13 |
+| 7 | pas_eff.bmp | 192x24 | 8 | 24x24 |
+| 8 | pas_eff_skul.bmp | 44x12 | 4 | 11x12 |
+| 9 | pas_eff2.bmp | 192x24 | 8 | 24x24 |
+| 10/11 | yaji_ue1/2.bmp | 12x11 cada | sem divisor | 12x11 |
+| 12/13 | yaji_sita1/2.bmp | 12x11 cada | sem divisor | 12x11 |
+
+Os nomes e comentários identificam ampulheta (A) e caveira (B);
+não provam a correspondência com toda mecânica de carta. A faixa
+de atributo efetivo 1..6 não implica um atlas de seis colunas:
+o divisor real é 10. As setas seguem não desenhadas enquanto o
+contrato virtual +50 não for resolvido.
+
+Assembly: 004194F6..00419525 retorna antes de qualquer subpass
+se região+slot>10. 00419B7D..00419B85 e 00419B87..00419BCD
+confirmam que a identidade efetiva ordinária só é lida para região
+<5; em outras regiões existem ramos excepcionais de 0x479/0x47A,
+0x48A e 0x5A8 (não portados). A mantém seu gate próprio e B
+continua restrito a região<5. NativeCardStatusComposition corrige
+os dois gates ausentes; não usa o gate numérico ATK/DEF para
+suprimir status em outros casos. Testes exercitam limite inclusivo
+10 e região S/T. Referências assembly: batch-000.txt, bundles
+502c6177c5e694e384d03ead56f7e9b435758b22abbd4de253e3e78fcb8bd2db
+e beeb78df561a42a33177d4c098368bd33d07b2901f2923b77eb391858c2e6fcd.
+
+NativeCardStatusResources.ValidateEvidenceBank/Atlas verificam
+a sequência e dimensões exatas de 4..13 contra os metadados.
+CardStatusReviewScreen passa a validar texturas reais em runtime,
+inclusive as setas, mantendo carregamento via DAT local. Testes
+usam fixtures de nomes/dimensões atestados e miniatura 50x72
+do cliente, rejeitam banco reordenado, divisor incorreto,
+variante ausente e dimensões erradas; exercitam geometria de A/B
+e tipo/atributo. Não há captura real neste ambiente. Não
+alterar o duelo normal até mapear fatos do Core; não inferir
+flags pelos nomes dos sprites. Nenhuma nova Draw contabilizada,
+CI pendente, comparação gráfica e composição ainda pendentes.

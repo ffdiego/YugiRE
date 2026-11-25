@@ -7,7 +7,8 @@ public readonly record struct NativeStatusResource(string Path, int Columns);
 /// <summary>
 /// Runtime card.txt bank. The first four confirmed focus entries anchor
 /// the indices; the remaining filenames and divisors come only from DAT.
-/// The actual private card.txt has not been exercised in this environment.
+/// The metadata contract below is attested by the private v4-visuals DAT
+/// inventory. Textures still come from the caller's local archive.
 /// </summary>
 public static class NativeCardStatusResources
 {
@@ -51,5 +52,42 @@ public static class NativeCardStatusResources
             if (resources[i].Columns < minimumColumns[i - 4])
                 throw new InvalidDataException("Status atlas cannot contain the native frame range: " + resources[i].Path);
         return resources.ToArray();
+    }
+
+    // v4-visuals visual_dat_manifests + visual_dat_images: exact metadata
+    // for this executable's original bank, no pixel data stored here.
+    private static readonly (string Name, NativeStatusAtlas Atlas)[] Evidence =
+    [
+        ("icon_zokusei.bmp", new(160,16,10)),
+        ("icon_syuzoku.bmp", new(320,16,20)),
+        ("pas_eff_suna.bmp", new(78,13,6)),
+        ("pas_eff.bmp", new(192,24,8)),
+        ("pas_eff_skul.bmp", new(44,12,4)),
+        ("pas_eff2.bmp", new(192,24,8)),
+        ("yaji_ue1.bmp", new(12,11,0)),
+        ("yaji_ue2.bmp", new(12,11,0)),
+        ("yaji_sita1.bmp", new(12,11,0)),
+        ("yaji_sita2.bmp", new(12,11,0))
+    ];
+
+    public static void ValidateEvidenceBank(IReadOnlyList<NativeStatusResource> bank)
+    {
+        if (bank.Count != 14)
+            throw new InvalidDataException("Unexpected original card.txt bank size.");
+        for (int i = 4; i < 14; i++)
+        {
+            var expected = Evidence[i - 4];
+            if (!bank[i].Path.Equals(Prefix + expected.Name, StringComparison.OrdinalIgnoreCase) ||
+                bank[i].Columns != expected.Atlas.Columns)
+                throw new InvalidDataException("Unexpected original status bank entry " + i);
+        }
+    }
+
+    public static void ValidateEvidenceAtlas(int index, NativeStatusAtlas actual)
+    {
+        if (index is < 4 or > 13)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        if (actual != Evidence[index - 4].Atlas)
+            throw new InvalidDataException("Unexpected original status dimensions: " + Evidence[index - 4].Name);
     }
 }

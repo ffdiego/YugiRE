@@ -48,18 +48,17 @@ static partial class Game
         statusReviewResources = NativeCardStatusResources.Parse(
             Encoding.Latin1.GetString(archive.Read(NativeCardStatusResources.Manifest)),
             archive.Entries.Select(entry => entry.Name));
+        NativeCardStatusResources.ValidateEvidenceBank(statusReviewResources);
         if (graphics.Artwork.MiniFor(statusReviewCard) is null)
             throw new InvalidDataException("Selected card has no original miniature.");
     }
 
     static void ValidateCardStatusReview()
     {
-        for (int i = 4; i <= 9; i++)
-        {
-            var atlas = StatusReviewAtlas(i);
-            if (atlas.Width <= 0 || atlas.Height <= 0 || atlas.Width % atlas.Columns != 0)
-                throw new InvalidDataException("Invalid status atlas dimensions: " + statusReviewResources[i].Path);
-        }
+        // Match actual runtime textures to the captured metadata, including
+        // arrow resources not yet drawn. This is not a pixel comparison.
+        for (int i = 4; i <= 13; i++)
+            NativeCardStatusResources.ValidateEvidenceAtlas(i, StatusReviewAtlas(i));
         var font = graphics.Texture(NativeCardStatusDigits.FontResource);
         if (font.Width != NativeCardStatusDigits.EvidenceAtlasWidth ||
             font.Height != NativeCardStatusDigits.EvidenceAtlasHeight)

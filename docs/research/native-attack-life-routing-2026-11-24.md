@@ -118,3 +118,131 @@ A03 fornece slot de combate e mantém responsabilidade exclusiva
 sobre preparação/liberação de LP; SetLogicalLife legado usa -1.
 Amostras de DAT e capturas pareadas continuam necessárias.
 Cobertura permanece 20/34, nenhuma promoção para Verified.
+
+## V04.2 — geometria do blit rotacionado (assembly confirmado)
+
+SQLite v3 extraído e consultado localmente: SHA256
+9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
+integrity_check=ok, fingerprint EXE igual ao acima. O bundle
+ghidra-fusion-remaining-contract.zip, batch-000.txt, contém as
+janelas 00422840 e 00422C00. Não repetir essa coleta.
+
+0042284E..00422896 e 00422C47..00422C96: virtual +38 devolve
+dimensões; cada eixo usa MulDiv(dimensão-1, escala, 65536).
+Escala zero ou resultado zero retorna sem desenho. A textura
+é descrita separadamente pelo retângulo +18/+1C/+20/+24,
+com endpoints direito/inferior decrementados.
+004228CD..00422A02: C=cos[a&511], S=cos[(a-128)&511];
+offsets X=-trunc(w/2), trunc((w+1)/2), Y análogo.
+Cada vértice (x,y) relativo ao centro fornecido pelo chamador
+torna-se (cx+((x*C-y*S)>>16), cy+((y*C+x*S)>>16)).
+O SAR é aritmético, inclusive para valores negativos. Os
+quatro pontos fonte/destino são cíclicos TL,TR,BR,BL.
+00422C00..00422C46: intensidade >=256 encaminha ao caminho
+base; abaixo disso repete a geometria e chama 00422E30.
+Isso não significa que a composição base ignore color key.
+
+DAT v3 confirma attack.txt (chaves 0/1: atk_icon.bmp e
+atk_icon2.bmp, ambas 35x71; 2: atk_eff.yga; 3: dmg_ref.yga).
+Para 35x71, escala 65536 e ângulo 0, os offsets inclusivos
+são (-17,-35),(17,-35),(17,35),(-17,35). O primeiro quadro
+do impacto (t=256) tem escala zero, logo chave 2 não desenha.
+A âncora do ataque direto também foi confirmada: 004142FC
+lê 005DB570=525 (memória v3); 00414302..0041430E usa Y=64
+se atacante == perspectiva local e Y=536 caso contrário.
+Isso não altera o destino de ataques a monstros.
+
+NativeRotatedQuad porta a geometria no domínio de escalas
+não negativas e dimensões limitadas, recebe a tabela de cosseno,
+sinaliza degeneração e não substitui o raster. Testes sintéticos
+cobrem 0/90/180/45 graus, wrap, escala, crop e ausência de
+blit. Não há integração com o Draw normal nesta fatia:
+ângulo x87 (005DA708/728/730), formato/key de superfície e
+comparação gráfica continuam em aberto. Nenhuma mudança ao
+Core, gate, scheduler ou inventário. Sem crédito Verified.
+
+## V04.3 — operandos x87 e perspectiva
+
+Reconsulta local somente leitura do SQLite v3 (mesmo SHA256,
+quick_check ok, fingerprint EXE confirmado). Assembly do Draw
+004142C0 confirma, com dx=targetX-originX, dy=targetY-originY:
+
+- 00414812..0041485C, quando targetSide == (~localPerspective & 1):
+  atan2(dx,-dy) * D[005DA730] / D[005DA708], convertido por
+  005C3E40, depois trunc(raw * counter / 128).
+- 0041485E..0041489B, caso contrário:
+  atan2(dx,dy) * D[005DA728] / D[005DA708], convertido pelo
+  mesmo helper, depois 256 + trunc(raw * counter / 128).
+- 0041465E..00414689: voo, dx=targetX-currentX,
+  dy=targetY-currentY, atan2(dx,-dy) com D[005DA730].
+  O centro corrente já foi truncado na interpolação.
+- 00414777..004147AE: impacto usa vetor origin→target e
+  D[005DA730]; não reaproveitar o último índice do voo.
+
+FPATAN recebe ST1=dx e ST0=±dy. CDQ/AND 0x7F/ADD/SAR 7
+trunca o produto signed em direção a zero; não confundir com
+SAR da transformação geométrica. A preparação é definida em
+0..128 e a origem do branch é o lado do alvo, não o sinal de dy.
+
+NativeSwordAngle encapsula apenas o roteamento de operandos e
+interpolação; delegate explícito fornece a conversão, sem
+presumir pi, fator, double versus x87 estendido, ou arredondamento.
+Sete checks com retorno sentinela validam os dois lados e a
+distinção voo/impacto, não a conversão em si. Nenhuma alteração
+ao sampler/renderer normal, que conserva a aproximação existente.
+
+Lacuna efetivamente consultada: nenhum intervalo de
+visual_evidence_memory contém 005DA708, 005DA728 ou 005DA730
+(o bloco 005DA710:16 não cobre nenhum dos três). Relatórios
+brutos têm referências por instrução, sem bytes dessas constantes.
+005C3E40 tem decompilação identificada como CRT __ftol e
+ROUND(in_ST0), mas nenhuma instrução indexada. Não inferir
+truncamento/nearest pelo nome nem pela representação do Ghidra.
+Roteiro 32 coleta somente 24 bytes e helper; sem repetir 21.
+CI anterior V04.2 passou (run 45543687589); novos checks aguardam CI.
+
+## V06.1 — trajetória e fronteiras por glifo (25/11)
+
+Fonte privada v4-visuals, SQLite SHA256
+2085bc65dbc79fb2ec64645d2536bf0b56dde7bfedf4d173e32acb060b43722c,
+quick_check ok, fingerprint esperado. Coleta 33 confirma centros
+005DB560/005DB510. Âncora geral (525,460)/(525,140); combate usa
+o centro do slot afetado, não o centro entre fileiras. A03 ainda
+precisa fornecer slot no fluxo real, que continua com -1 legado.
+
+004806F0 não tinha janela própria, mas suas 216 instruções
+(004806F0..0048096C) estão integralmente nas janelas anteriores
+00480200/00480230/004803C0/00480690 do bundle 502c6177c5e694e384d03ead56f7e9b435758b22abbd4de253e3e78fcb8bd2db,
+batch-001.txt, e também no bundle beeb78df561a42a33177d4c098368bd33d07b2901f2923b77eb391858c2e6fcd.
+Consulta por address, não apenas window_address. Sem nova coleta.
+
+- 004806F8..00480708: counter global <=0 retorna sem desenhar.
+- 0048070B..00480736: counter >=256 encaminha para 004803C0,
+  caminho estático que não calcula atraso nem deslocamento.
+- 0048073D..004807A3: módulos de magnitude em ordem inversa;
+  sinal 11 negativo, 10 positivo quando flag ativa, só com >=12 colunas.
+- 004807F2..00480803: atraso inteiro 64/(n-1), ou zero se n<2.
+- 00480858..00480873: decrementa X pela largura; JL pula apenas
+  phase <0. Phase ==0 de um glifo posterior JÁ desenha em Y base.
+- 00480879..004808A9: phase<128, y=top-(C[(2*phase-128)&511]*h >>16).
+- 004808AB..004808FB: 128<=phase<192, amplitude h/4,
+  índice (4*phase-128)&511; >=192 usa top.
+- 00480914: virtual +8, sem alpha interpolado; color key/raster
+  ainda precisam comparação. 00480917..0048094D reduz phase por atraso.
+
+DAT: number.txt entradas 6/7, damage00/01.bmp, 192x40, 12
+colunas, 16x40 por glifo. 0047C748 passa 2*rampa (0..512).
+O sampler anterior já tinha as curvas e recortes; omitira phase
+individual zero e não distinguia o caminho estático do animado.
+O App limitava artificialmente o contador a 256. Agora preserva
+2*rampa; >=256 remove atraso, sem mudar a aparência estacionária.
+Não altera relógio, fila, regras, som ou hold. Phase é metadado,
+não opacidade. Cinquenta checks adicionais incluindo todos os
+32 updates da rampa e os 12 centros (dois gerais, dez monstros).
+Referências numéricas geradas independentemente em Python com
+a tabela privada de 512 valores: zero divergências da fórmula
+Math.Cos truncada (comparação Python equivalente, não execução .NET).
+Exemplo -10: t32 glifos 0 e 1 em y=-28 e 0; t64 0/1/- em
+y=-40/-28/0; t160 primeiro glifo em -10. C# CI pendente, sem
+SDK local. Não declarar Verified; falta slot de batalha via A03,
+comparação gráfica/cadência e composição.

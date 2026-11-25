@@ -157,3 +157,86 @@ passadas ao helper, não prova de alpha raylib idêntico.
 A comparação de pixels e cadência permanece pendente.
 Não solicitar novamente o bundle 03: o contrato já foi
 absorvido em código e testes no commit d03038e.
+
+## V05.1 — ciclo de vida dos acumuladores e âncoras (SQLite v3)
+
+Consulta read-only de joey-knowledge-visual-cumulative-2026-11-24-v3.zip,
+SHA256 SQLite 9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed;
+quick_check=ok, fingerprint EXE confirmado. Assembly de 00418B10,
+004194D0, 0045C280 disponível. Não repetir bundle 03.
+
+Há três resultados distintos, não apenas visível/oculto:
+- 00418EF0 não chama 004194D0 quando inativo, em movimento ou
+  estado 5: os acumuladores +4C/+50 são preservados.
+- 004194F6..00419525 (região+slot>10) e 0041952A..00419543
+  -> 00419B07..00419B29 (região != 0 ou adversário oculto)
+  regravam ATK/DEF básicos via 004027B0/00402800.
+- 00419568..0041956A (identidade divergente) pula para 00419B2C,
+  sem passar pelo reset. 00419570..004195CB avança somente no
+  caminho elegível. 00418B10 semeia a base na atribuição de carta.
+
+NativeFieldAttributeDisposition codifica Advance/Preserve/ResetToBase
+e mantém os predicados booleanos para consumidores existentes.
+No DuelScreen, slot ocupado em movimento deixa de descartar o cache;
+vacância e adversário oculto estabilizado continuam a resetar. A próxima
+amostra valida identidade por referência como antes. Não introduz
+avanço durante movimento nem altera o gate da captura F12. A adaptação
+do cliente por slot não é um modelo completo da identidade do objeto
+nativo, especialmente transferências entre slots. Dez checks sintéticos
+cobrem ambos os lados, privacidade, posição, interrupção, substituição
+e geometria. CI novo a confirmar; não declarar paridade de cadência.
+
+DAT v3: normal 77x10/11, azul e vermelho 70x10/10, portanto
+todos os glifos têm 7x10. 00419612..00419630 confirma Y +/-46,
+topo Y +/-46 - 5. Para o centro X=525, afastamento 3+17=20;
+ATK centrado em 505, DEF em 545, separador começa em 521.
+O histórico native-visual-contract.md registra centros Y=352/248,
+dando top 393/197; esses Y ainda não foram reatestados pelos
+bytes do snapshot v3. 00418B60 obtém posição de 0045C140,
+e 0045C280 (0045C2C3..0045C2D8 / 0045C2D9..0045C2EE) usa
+índice region+slot + 5*ladoRelativo para as regiões 0..4/5..9.
+As duas tabelas de dez pares são 005DB560 e 005DB4E8. O segundo
+banco usa índices 5..14: seus dez pares efetivamente acessados
+começam em 005DB510 (005DB4E8+5*8), não no endereço-base.
+A coleta 33 deve ler 005DB560:80 e 005DB510:80; 005DB570:4
+(X central) já existe. Preservar layout atual até reatestar
+a tabela; composição e cadência continuam Partial.
+
+## V05.2 — coleta 33 recebida e consolidada (25/11/2026)
+
+Bundle privado ghidra-native-field-centers-contract.zip, SHA256
+0f1b6ad94406438aa5f52f9c7347895a4f7bdb3e2d82c8072b8fee09861c3c3d.
+Manifest e ambos os relatórios têm o fingerprint EXE esperado.
+1/1 decompilação, 2/2 reads, sem missing. 0045C280 confirma
+side relativo, soma região+slot, e índice +5 para adversário.
+Dados little-endian int32:
+
+| Banco | Slots 0..4 próprios | Slots 0..4 adversários |
+| --- | --- | --- |
+| 005DB560, monstros | (369,352), (447,352), (525,352), (603,352), (681,352) | (681,248), (603,248), (525,248), (447,248), (369,248) |
+| 005DB510, S/T | (369,460), (447,460), (525,460), (603,460), (681,460) | (681,140), (603,140), (525,140), (447,140), (369,140) |
+
+O valor prévio em 005DB570 coincide byte a byte. Os centros históricos
+do cliente estão confirmados, sem deslocamento novo. O Y dos atributos
+é 398/202 e o topo do glifo normal de 10px é 393/197. V06 slot -1
+usa a S/T central, (525,460)/(525,140); não confundir a origem do
+blit com centro. V02 dimensões/rotação e V06 composição não estão
+validadas pela tabela de centros.
+
+Acrescentadas 50 verificações ao teste V05.1: vinte centros em dez
+combinações de lado/slot e quarenta gates/âncoras com posição e
+face-down. CI da fatia anterior aprovado (45544506962), novo CI
+pendente. Nenhuma alteração adicional à geometria do renderer.
+
+Snapshot privado joey-knowledge-visual-cumulative-2026-11-25-v4-visuals.zip:
+SQLite SHA256 2085bc65dbc79fb2ec64645d2536bf0b56dde7bfedf4d173e32acb060b43722c;
+ZIP SHA256 a9cfc0b516486d4e82a8f062227b8431bb1226f3b4ff7ea1f5f056b9e5612e87.
+Base v3 preservada: +1 bundle (22), +2 reports (177), +1 registro
+de função (282, 215 VAs distintas), +2 chunks (26), instruções
+167494 inalteradas. Integrity_check ok, foreign_key_check vazio;
+auditoria registra contagens antes/depois de todas as tabelas.
+Importação focada compatível com schema do importador; CLI e suíte
+Python do repo não foram executados neste ambiente. O v4-visuals
+não inclui v4-actions (coleta 31); conciliar os dois ramos cumulativos,
+não sobrescrever o snapshot global. Roteiro 33 movido para completed.
+Não repetir coleta; falta comparação gráfica e mistura/cadência.
