@@ -42,6 +42,16 @@ Em uma sessão com `/goal` ou missão autônoma de múltiplos marcos, manter **u
 
 A autorização de Git não substitui o sandbox, as permissões do ambiente nem as proteções da branch. Respeitar bloqueios e não contorná-los; não fazer force push, descartar trabalho alheio, publicar artefatos privados ou executar mudanças destrutivas fora do escopo. Consultar o mantenedor para operações destrutivas, decisões arquiteturais relevantes fora dos contratos acordados ou conflitos sem resolução segura.
 
+### Goal automático
+
+Quando o mantenedor solicitar a continuidade do projeto sem especificar uma tarefa pontual (por exemplo, `continue o trabalho` ou `continue o trabalho em CARDS`):
+
+1. Se já houver um Goal ativo compatível com a solicitação, continuar sua execução; não reiniciar nem criar Goals duplicados. Respeitar qualquer mudança explícita de objetivo pelo mantenedor.
+2. Se não houver Goal ativo, selecionar autonomamente um objetivo a partir de `PLANS.md`, respeitando o Foco atual, a trilha/escopo solicitado, os gates e as dependências. Na dúvida, escolher a frente com maior ganho funcional provável por esforço e franquia.
+3. Criar o Goal pelo mecanismo nativo do Codex, quando disponível, com escopo claro e critérios mensuráveis de conclusão e validação. Se o ambiente não oferecer essa capacidade, explicitar a limitação e trabalhar autonomamente com o objetivo definido na sessão, sem afirmar que um Goal nativo foi criado.
+4. Executar sequencialmente como agente único, sem delegação por padrão, seguindo a política de execução contínua acima. Não encerrar a missão a cada checkpoint.
+5. Não pedir confirmação apenas para escolher o próximo objetivo. Não criar Goals automaticamente para perguntas, consultas ou alterações pontuais; respeitar pedidos explícitos de pausa ou encerramento.
+
 ## Motor orientado a comandos e console (ACTIONS)
 
 O console (A04) é um produtor da mesma API de comandos tipados usada por jogador, CPU, efeitos, scripts e testes. A origem determina autorização, não execução: uma vez admitido, um comando equivalente passa pela mesma fila, executor, gatilhos, eventos e gate visual. O console de laboratório pode solicitar operações privilegiadas explicitamente, sem transformar isso em jogadas legais nem modificar o estado diretamente. `state`/`diff` são leituras. Parser e runner reutilizáveis em headless, com UI opcional no Joey.App. Validar identidade/condições na execução; distinguir destruição, descarte e envio ao cemitério. Perfis de apresentação podem mudar duração, não o resultado ou a sequência lógica. A04 está concluído no escopo documentado; consultar [contrato do console](docs/architecture/duel-console.md) e o estado do App antes de anunciar atalhos ou cobertura.
