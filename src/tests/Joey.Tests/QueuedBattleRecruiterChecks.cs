@@ -108,8 +108,11 @@ internal static class QueuedBattleRecruiterChecks
         foreach(int side in new[]{0,1})
         {
             int enemy=1-side;
-            var both=DemoDuel.FromPartialObservation(side,[],Slots(Monster(1123,2),side==0?2:3),
-                Slots(Monster(1108,5),side==1?2:3),8000,
+            var third = Monster(24, 2);
+            var firstRow = Slots(Monster(1123, 2), side == 0 ? 2 : 3);
+            var secondRow = Slots(Monster(1108, 5), side == 1 ? 2 : 3);
+            firstRow[4] = secondRow[4] = third;
+            var both=DemoDuel.FromPartialObservation(side, [], firstRow, secondRow, 8000,
                 side0Deck:[Monster(24,2)],side1Deck:[Monster(1351,5)]);
             if(side==0){both.NextTurn();both.NextTurn();}
             var gate=new Gate();var console=new DuelConsoleSession(both,gate);var q=console.Queue;
@@ -127,10 +130,12 @@ internal static class QueuedBattleRecruiterChecks
                 "A06 dual P164 attacker owner first");
             Drain(q);
             check(both.PendingCardSelection?.Owner==enemy&&!both.SkipOptionalCardSelection(out _)&&
-                console.Execute("select-recruit 0 4").Enqueued,"A06 dual P164 defender owner second");
+                !console.Execute("select-recruit 0 4").Success &&
+                console.Execute("select-recruit 0 3").Enqueued,"A06 dual P164 defender owner second and occupied slot rejected");
             Drain(q);
             check(both.PendingCardSelection is null&&both.DeckCount(side)==1&&both.DeckCount(enemy)==0&&
-                both.Monsters[enemy,4] is not null&&!both.GameOver&&Complete(console),
+                both.Monsters[enemy,3] is not null && both.Monsters[side,4] == third && both.Monsters[enemy,4] == third &&
+                !both.GameOver&&Complete(console),
                 "A06 dual P164 serialized requests and last-card summon");
         }
 

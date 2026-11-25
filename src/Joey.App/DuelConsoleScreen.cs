@@ -233,6 +233,11 @@ static partial class Game
                 Card defenderCard = new(1351, 1351, "Defense fixture", "", (3u << 20) | (4u << 25) | (100u << 9));
                 Card?[] attackers = [null, null, attackerCard, null, null];
                 Card?[] defenders = targeted ? [null, null, null, defenderCard, null] : new Card?[5];
+                if (targeted)
+                {
+                    attackers[0] = attackerCard;
+                    defenders[1] = defenderCard;
+                }
                 // Start on turn 2, then advance legally to turn 3 for the near-side case.
                 int enemy = 1 - side;
                 duel = DemoDuel.FromPartialObservation(1, [], side == 0 ? attackers : defenders,
@@ -296,7 +301,8 @@ static partial class Game
                 }
                 if (queue.IsBusy || alphaBlocked || attackCue is not null || duel.Life[side] != 8000 ||
                     duel.Life[enemy] != (targeted ? 7600 : 6600) ||
-                    targeted && (duel.Monsters[enemy, 3] is not null || duel.Graveyard(enemy).Count != 1))
+                    targeted && (duel.Monsters[enemy, 3] is not null || duel.Graveyard(enemy).Count != 1 ||
+                        duel.Monsters[side, 0] != attackerCard || duel.Monsters[enemy, 1] != defenderCard))
                     return false;
                 var trace = queue.Trace.ToArray();
                 if (playerInput && !trace.Any(entry => entry.Stage == ActionTraceStage.Completed &&
@@ -314,7 +320,8 @@ static partial class Game
     {
         Card card = new(24, 24, "CPU attack fixture", "", (3u << 20) | (4u << 25) | (140u << 9));
         Card defender = new(1351, 1351, "CPU defense fixture", "", (3u << 20) | (4u << 25) | (100u << 9));
-        Card?[] enemies = targeted ? [null, null, null, defender, null] : new Card?[5];
+        Card other = new(24, 24, "Other monster fixture", "", (3u << 20) | (4u << 25) | (200u << 9));
+        Card?[] enemies = targeted ? [null, other, null, defender, null] : new Card?[5];
         DemoDuel Setup() => DemoDuel.FromPartialObservation(1, [], enemies,
             [null, null, card, null, null], 8000);
 
@@ -331,7 +338,8 @@ static partial class Game
             return Failed("headless admission");
         for (int tick = 0; tick < 10 && headlessQueue.IsBusy; tick++) headlessQueue.Tick();
         if (headlessQueue.IsBusy || headless.Life[0] != (targeted ? 7600 : 6600) ||
-            targeted && headless.Graveyard(0).Count != 1) return Failed("headless result");
+            targeted && (headless.Graveyard(0).Count != 1 || headless.Monsters[0, 1] != other))
+            return Failed("headless result");
 
         var elapsed = TimeSpan.FromMilliseconds(17);
         foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })

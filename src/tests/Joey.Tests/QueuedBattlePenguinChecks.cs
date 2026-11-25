@@ -126,6 +126,57 @@ internal static class QueuedBattlePenguinChecks
             check(Pilot(false).SequenceEqual(Pilot(true)),"A06 Penguin trace independent of presentation");
         }
 
+        foreach (int side in new[] { 0, 1 })
+        {
+            int owner = 1 - side;
+            var bouncer = Monster(FlipEffectRules.PenguinSoldier);
+            var attacker = Monster(24, 1400);
+            var bystander = Monster(1351);
+            DemoDuel State()
+            {
+                var attackers = Slots(attacker, 2);
+                attackers[0] = bystander;
+                var defenders = Slots(bouncer, 3);
+                defenders[1] = bystander;
+                var d = DemoDuel.FromPartialObservation(side, [], side == 0 ? attackers : defenders,
+                    side == 1 ? attackers : defenders, 8000);
+                if (side == 0) { d.NextTurn(); d.NextTurn(); }
+                d.MonsterFaceDown[owner, 3] = d.DefensePosition[owner, 3] = true;
+                return d;
+            }
+
+            var legacy = State();
+            check(legacy.BeginBattle(out _) && legacy.Attack(2, 3, out _) &&
+                legacy.ResolveFlipTarget(side, 0, out _) && legacy.ResolveFlipTarget(owner, 1, out _),
+                "A06 Penguin legacy selects two noncombatants on opposite sides");
+            var duel = State();
+            var gate = new Gate();
+            var session = new DuelConsoleSession(duel, gate);
+            check(duel.BeginBattle(out _) && session.Execute("attack 2 3").Enqueued,
+                "A06 Penguin admits additional supported normal monsters");
+            Drain(session.Queue);
+            bool capturedFirst = duel.TryCaptureCardTarget(side, DuelZone.Monster, 0, out var first);
+            bool capturedSecond = duel.TryCaptureCardTarget(owner, DuelZone.Monster, 1, out var second);
+            check(capturedFirst && capturedSecond && first.Occurrence != second.Occurrence &&
+                duel.QueuedMonsterFlipCandidates().Count == 3 &&
+                session.Execute($"select-flip {side} 0 {owner} 1").Enqueued,
+                "A06 Penguin targets distinguish same-resource noncombatant occurrences");
+            gate.Release = false;
+            Until(session.Queue, () => session.Queue.Active?.Command is ReturnToHandCommand);
+            check(duel.Monsters[side, 0] is null && duel.Monsters[owner, 1] is not null &&
+                duel.IsMarkedForBattleDestruction(owner, 3) && duel.Graveyard(owner).Count == 0,
+                "A06 Penguin wait after first noncombatant return preserves other targets");
+            gate.Release = true;
+            Drain(session.Queue);
+            check(duel.TryCaptureCardTarget(side, DuelZone.Hand, 0, out var firstInHand) &&
+                duel.TryCaptureCardTarget(owner, DuelZone.Hand, 0, out var secondInHand) &&
+                firstInHand.Occurrence == first.Occurrence && secondInHand.Occurrence == second.Occurrence &&
+                duel.Life.SequenceEqual(legacy.Life) && duel.Graveyard(owner).SequenceEqual(legacy.Graveyard(owner)) &&
+                duel.HandFor(side).SequenceEqual(legacy.HandFor(side)) &&
+                duel.HandFor(owner).SequenceEqual(legacy.HandFor(owner)) && duel.Monsters[side, 2] == attacker,
+                "A06 Penguin moves both extra identities before battle cleanup and matches legacy");
+        }
+
         var lethal=DemoDuel.FromPartialObservation(1,[],Slots(Monster(601),3),Slots(Monster(24,600),2),100);
         lethal.MonsterFaceDown[0,3]=lethal.DefensePosition[0,3]=true;
         var lq=lethal.CreatePrimitiveActionQueue();lethal.BeginBattle(out _);

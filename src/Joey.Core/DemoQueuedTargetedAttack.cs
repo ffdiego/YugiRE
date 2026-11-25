@@ -35,7 +35,7 @@ public sealed partial class DemoDuel
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Targeted battle pilot requires a supported face-up attacker, supported defender and no other field cards.";
+        message = "Targeted battle pilot requires supported combatants, with only supported normal monsters elsewhere on the field.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
             PendingEndDiscards != 0 || !CanAttack(attackerSlot) ||
             !TryCaptureCardTarget(ActivePlayer,DuelZone.Monster,attackerSlot,out var attacker) ||
@@ -57,9 +57,9 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             attacked[p,s] || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
-                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]) || equipment.Count!=0)
+                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]))
             return false;
-        if (!IsIsolatedBattleField(p,s,t)) return false;
+        if (!IsSupportedBattleField(p,s,t)) return false;
         a=new(attacker,s,ac,false);
         b=new(defender,t,bc,DefensePosition[e,t]);
         return true;
@@ -85,15 +85,18 @@ public sealed partial class DemoDuel
         return new(CommandOutcome.Applied) { TargetedAttack=new(a.Target,b.Target,a.Slot,b.Slot) };
     }
 
-    private bool IsIsolatedBattleField(int attackerSide,int source,int target)
+    private bool IsSupportedBattleField(int attackerSide,int source,int target)
     {
         if (equipment.Count!=0) return false;
         for (int side=0;side<2;side++)
         {
             if (FieldSpells[side] is not null) return false;
             for (int z=0;z<5;z++)
-                if (Spells[side,z] is not null || z!=(side==attackerSide?source:target) && Monsters[side,z] is not null)
-                    return false;
+            {
+                if (Spells[side,z] is not null) return false;
+                if (z != (side == attackerSide ? source : target) && Monsters[side,z] is { } other &&
+                    !IsPlainBattlePilot(other)) return false;
+            }
         }
         return true;
     }
@@ -107,7 +110,7 @@ public sealed partial class DemoDuel
             TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
             attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
             MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
-            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc)) && IsIsolatedBattleField(p,source,target);
+            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc)) && IsSupportedBattleField(p,source,target);
     }
 
     private CommandResult RevealQueuedBattleDefender(RevealBattleDefenderCommand command,IActionCommandSink followups)
@@ -186,17 +189,17 @@ public sealed partial class DemoDuel
     private bool ValidateFinishedBattleEffectMoves(BattleRevealReservation reserved)
     {
         if (Turn!=reserved.Turn || ActivePlayer!=reserved.Attacker.Target.Side || Phase!=DemoPhase.Battle ||
-            !IsIsolatedBattleField(reserved.Attacker.Target.Side,reserved.Attacker.Slot,reserved.Defender.Slot))
+            !IsSupportedBattleField(reserved.Attacker.Target.Side,reserved.Attacker.Slot,reserved.Defender.Slot))
             return false;
+        foreach (var (target, destination) in reserved.ExpectedEffectMoves)
+            if (!TryResolveCardTarget(target with { Zone = destination }, out _, out _)) return false;
+
         foreach (var combatant in new[]{reserved.Attacker,reserved.Defender})
         {
             int side=combatant.Target.Side,slot=combatant.Slot;
-            if (reserved.ExpectedEffectMoves.TryGetValue(combatant.Target,out var destination))
+            if (reserved.ExpectedEffectMoves.ContainsKey(combatant.Target))
             {
-                if (Monsters[side,slot] is not null ||
-                    !TryResolveCardTarget(combatant.Target with { Zone=destination },out _,out var returned) ||
-                    !ReferenceEquals(returned,combatant.Card))
-                    return false;
+                if (Monsters[side,slot] is not null) return false;
             }
             else if (!TryResolveCardTarget(combatant.Target,out int index,out var card) ||
                 index!=slot || !ReferenceEquals(card,combatant.Card) || MonsterFaceDown[side,slot] ||

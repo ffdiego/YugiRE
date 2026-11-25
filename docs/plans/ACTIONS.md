@@ -106,6 +106,8 @@ Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o O
 
 *Produtores de ataque (C12.1):* o App, a CPU e o console admitem ataques diretos ou contra um slot por `TryQueueAttack`, que reusa os dois pilotos existentes. Quando o alvo já foi mirado pelo jogador, o gate preserva a etapa inicial da animação que a interface já aplicava. O executor, as restrições de campo e as regras de combate permanecem as mesmas. Testes do App exercitam ataque com alvo humano e CPU em Classic/Instant, comparando fila e estado final ao headless. Sem carta nova, sem alteração de `Demo.cs` e sem ampliar a cobertura nativa. A admissão fora do piloto conserva o caminho anterior até a migração dos casos restantes.
 
+*Campo ampliado (C12.1):* os monstros normais dos IDs 24 e 1351 também podem ocupar slots fora de um ataque com alvo enfileirado. S/T, FIELD, equipamentos e espectadores de outros IDs continuam fora deste piloto. A finalização de FLIP verifica todas as ocorrências no destino escolhido, incluindo alvos fora do combate. Os testes cobrem retorno de duas cópias de Penguin Soldier em ambos os lados, recrutamento P164 com slots ocupados, rejeição de espectador não suportado e produtores jogador/console/CPU no smoke sem janela em Classic e Instant. O SQLite v6 contém `0057A930`, `005861F0` e `00594200` para P087. A preparação e o primário tratam slots e lados de múltiplos alvos. A ordem dinâmica desta fatia permanece validada no sandbox. `Demo.cs` tem 2618 linhas antes e depois. O ataque direto conserva suas restrições. Próxima lacuna de A06/C12.1: resposta a armadilhas e ampliação da classificação de campo.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
