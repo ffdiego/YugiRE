@@ -75,6 +75,7 @@ static partial class Game
             var archive = graphics.Open(path);
             ConfigureDisabledChainReview(args, archive);
             ConfigureChainReview(args, archive);
+            ConfigureTurnNotice(archive);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             ConfigureCardStatusReview(args, archive);
