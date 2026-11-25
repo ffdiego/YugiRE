@@ -55,7 +55,9 @@ internal static class QueuedDeckRecruitmentChecks
                 "Recruitment rejects occupied/invalid zone, mismatched decline, stale request and owner");
             int shuffles=0;var summons=new List<DemoSpecialSummon>();
             d.DeckShuffled+=_=>shuffles++;d.MonsterSpecialSummoned+=summons.Add;
-            check(d.TryQueueDeckRecruitment(request,pick.Target,4,out _)&&
+            check(d.UsesQueuedFieldSelection(request)&&d.TryCaptureQueuedFieldSelection(request,pick.SourceIndex,out var captured)&&
+                captured==pick.Target&&!d.TryCaptureQueuedFieldSelection(request,0,out _),"Field producer captures exact legal copy");
+            check(d.TrySubmitQueuedFieldSelection(request,[pick.Target],false,out _,destinationZone:4)&&
                 d.PendingCardSelection==request&&d.DeckCount(owner)==5&&d.Monsters[owner,4] is null,
                 "Recruitment admission leaves state unchanged");
             q.Tick();gate.Release=false;q.Tick();q.Tick();
@@ -76,7 +78,7 @@ internal static class QueuedDeckRecruitmentChecks
             var decline=State();decline.BeginBattle(out _);decline.Attack(0,0,out _);
             var dq=decline.CreatePrimitiveActionQueue();var pending=decline.PendingCardSelection!;
             var before=decline.DeckSnapshot(owner).ToArray();
-            check(decline.TryQueueDeckRecruitment(pending,null,null,out _),"Recruitment optional decline admitted");
+            check(decline.TrySubmitQueuedFieldSelection(pending,[],false,out _),"Field producer optional decline admitted");
             Drain(dq);
             check(decline.PendingCardSelection is null&&decline.DeckSnapshot(owner).SequenceEqual(before)&&
                 !dq.Trace.Any(t=>t.Entry.Command is SpecialSummonCommand or ShuffleDeckCommand),

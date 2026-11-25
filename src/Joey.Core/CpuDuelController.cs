@@ -142,6 +142,23 @@ public sealed class CpuDuelController
                         selection, candidate?.SourceIndex, out m, ActionOrigin.Cpu), candidate?.Card);
                 return Idle(CpuStepStatus.Blocked, "Mandatory queued hand selection has no candidate.");
             }
+            if (queueTurnActions && duel.UsesQueuedFieldSelection(selection))
+            {
+                int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);
+                var choices = selection.EligibleCards.OrderByDescending(c => CardValue(c.Card))
+                    .ThenBy(c => c.SourceIndex).Take(Math.Min(free, selection.MaxSelections)).ToArray();
+                var targets = new List<CardTarget>();
+                foreach (var choice in choices)
+                {
+                    if (!duel.TryCaptureQueuedFieldSelection(selection, choice.SourceIndex, out var target))
+                        return Idle(CpuStepStatus.Blocked, "Queued field selection occurrence changed.");
+                    targets.Add(target);
+                }
+                bool set = selection.MaySelectFaceDownDefense && choices.Length == 1 &&
+                    choices[0].Card.Defense > choices[0].Card.Attack;
+                return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedFieldSelection(
+                    selection, targets, set, out m, ActionOrigin.Cpu), choices.FirstOrDefault()?.Card);
+            }
             if (selection.MaxSelections > 1)
             {
                 int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);
