@@ -206,6 +206,10 @@ As 60 entradas inacabadas sem slots úteis já estão nos JSONL: 48 sem registro
 - Combate, controle, proteção, invocação restrita e Toons dependem dos contratos de ACTIONS; não antecipar com bypass. The Unfriendly Amazon (1431) continua Pendente estático; usar DAT/SQLite primeiro e coleta dirigida apenas se material.
 - Exodia (20) é Pending no manifesto nesta base apesar de regra central Mapeado. Conferir escopo realmente acionável e testes (inclusive fila e término) antes de qualquer promoção; não contar esta revisão como implementação.
 
+### C12.1 — Produtores FLIP de par S/T (Greenkappa e Tornado Bird)
+
+Greenkappa (585) e Tornado Bird (1521) já têm executor de par tipado, incluindo FIELD e limpeza de vínculos. UI/CPU passam pelo produtor compartilhado quando o prompt pertence à fila. A primeira seleção mantém a ocorrência exata e permite desmarcar; segunda seleção distinta admite os dois alvos, sem movimento imediato. Em rejeição, não chama o resolvedor legado; substituição do primeiro alvo invalida a seleção sem movimentar o segundo. Combate legado permanece separado. Testes ampliam QueuedFlipFieldChecks para FIELD, seleção/desmarcação, stale, busy, ambos os lados e origem CPU; gates e limpeza de equipamento existentes preservados. Demo.cs 2623 → 2623 linhas. Sem carta nova, sem alteração de manifesto, CI obrigatório. Coordenar com #150 e demais produtores C12.1; default continua opt-in.
+
 ### C12.1 — Auditoria de gate sobre PR #150
 
 Inspeção do head `bae311a` do draft #150, sem editar a branch reservada. CI do head passou; GitHub recusou merge enquanto draft. O título não significa gate fechado. Evidências de código:
