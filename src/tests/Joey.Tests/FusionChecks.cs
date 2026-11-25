@@ -240,6 +240,56 @@ internal static class FusionChecks
         }
         check(!tq.IsBusy && trigger.PendingCardSelection?.EffectResourceId == witch.Id &&
             trigger.Monsters[0, 0] == king, "Queued Fusion preserves deferred Witch search");
+
+        // An opposing Gate remains its owner's physical card. Only the
+        // active player's materials and Fusion Deck are paid.
+        foreach (int side in new[] { 0, 1 })
+        {
+            int enemy = 1 - side;
+            Card first = Monster(159) with { Properties = 15u << 20 | 4u << 25 };
+            Card second = Monster(160), result = Monster(42, fusion: true);
+            Card sword = new(300, 300, "Legendary Sword", "", 22u << 20);
+            var d = DemoDuel.FromPartialObservation(enemy, [gateCard],
+                side == 0 ? [first, null, null, null, null] : empty,
+                side == 1 ? [first, null, null, null, null] : empty, 8000,
+                side0Deck: side == 0 ? [sword, second] : null,
+                side1Deck: side == 1 ? [sword, second] : null,
+                side0FusionDeck: side == 0 ? [result] : null,
+                side1FusionDeck: side == 1 ? [result] : null);
+            check(d.Play(0, out _) && d.EndTurn(out _) && d.Draw(out _) &&
+                d.Equip(0, side, 0, out _) && d.EndTurn(out _) && d.EndTurn(out _) &&
+                d.Draw(out _) && d.BeginFusionGate(enemy, out _), "Queued opposing Gate linked fixture");
+            var request = d.PendingFusionSummon!;
+            var q = d.CreatePrimitiveActionQueue();
+            check(d.TryQueueFusionSummon(request, 0, request.Options.Single().SuggestedMaterials, out _),
+                "Queued opposing Gate admission");
+            for (int tick = 0; tick < 100 && q.IsBusy; tick++) q.Tick();
+            var commands = q.Trace.Where(t => t.Stage == ActionTraceStage.Executed).Select(t => t.Entry.Command).ToArray();
+            check(!q.IsBusy && q.Fault is null && d.FieldSpells[enemy] == gateCard &&
+                d.Monsters[side, 0] == result && d.Banished(side).Count == 2 &&
+                d.Banished(enemy).Count == 0 && d.Graveyard(side).Single() == sword &&
+                d.EquipmentCards.Count == 0 && d.Spells[side, 0] is null &&
+                commands.Count(c => c is DestroyCommand) == 1 &&
+                Array.FindIndex(commands, c => c is DestroyCommand) < Array.FindIndex(commands, c => c is SpecialSummonCommand),
+                "Queued Fusion Gate removes linked equipment separately and preserves the opposing Gate");
+        }
+
+        // No general permission to move a Fusion result or banish a field
+        // monster follows from extending occurrence zones/command validation.
+        var bare = DemoDuel.FromPartialObservation(0, [], [wizard, null, null, null, null],
+            empty, 8000, side0FusionDeck: [thousand]);
+        var bq = bare.CreatePrimitiveActionQueue();
+        check(bare.TryCaptureCardTarget(0, DuelZone.FusionDeck, 0, out var bareResult) &&
+            bare.TryCaptureCardTarget(0, DuelZone.Monster, 0, out var bareField),
+            "Queued Fusion unauthorized fixture");
+        bare.TryCaptureCardTarget(0, DuelZone.Monster, 0, out var fieldTarget);
+        bq.Enqueue(new SpecialSummonCommand(0, bareResult, 1));
+        bq.Enqueue(new BanishCommand(0, fieldTarget));
+        for (int tick = 0; tick < 10 && bq.IsBusy; tick++) bq.Tick();
+        check(!bq.IsBusy && bare.FusionDeck(0).Count == 1 && bare.Monsters[0, 0] == wizard &&
+            bare.Monsters[0, 1] is null && bare.Banished(0).Count == 0 &&
+            bq.Trace.Where(t => t.Stage == ActionTraceStage.Executed).All(t => t.Result?.Outcome == CommandOutcome.Rejected),
+            "Queued Fusion rejects bare Fusion Deck summon or field banishment");
     }
 
     private static void CheckFusionGate(Action<bool, string> check, Card baby, Card wizard, Card thousand, Card filler)
