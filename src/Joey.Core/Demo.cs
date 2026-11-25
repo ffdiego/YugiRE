@@ -163,6 +163,7 @@ public sealed partial class DemoDuel
     /// </summary>
     public bool IsMarkedForBattleDestruction(int player, int zone)
     {
+        if (IsQueuedBattleMarked(player, zone)) return true;
         var battle = deferredBattle;
         return battle is not null && (battle.DestroyAttacker &&
             player == battle.AttackerSide && zone == battle.AttackerZone &&
