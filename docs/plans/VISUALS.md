@@ -159,7 +159,7 @@ Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, ban
 <a id="v22"></a>
 
 Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. NativeBreakScatter reconstrói tabela 00A52EB4 via CRT srand(0)/rand, 256 bytes; porta blocos 4x2 e fases de dispersão, projeção com divisor injetado. Roteiro 29 confirma ABI/x87 de 00558FB0 e gerador; compositor restante pendente. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
-  Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
+  Índice comprimido 4F (não opcode bruto confirmado), camadas e separação de explosão identificados. Coleta 16 recebida; roteiro 29 ampliado com as tabelas de despacho para confirmar produtores e condições de gameplay. 0x79 é candidato, não evidência conclusiva. Não alterar regras.
 
 ## V23 — Corrente (0041F870)
 
