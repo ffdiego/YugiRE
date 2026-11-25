@@ -171,7 +171,7 @@ NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos brut
 
 <a id="v24"></a>
 
-NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos brutos 1F/21 (índices 19/1B); sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
+NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos brutos 1F/21 (índices 19/1B). O roteiro 17 e o DAT confirmam scratch 50×50, recortes verticais com wrap e recomposição por troca de seletor. O PR #139 porta o plano de composição e testa a ordem dos passes. Faltam ramos de vínculos, compositor e validação em tela. [Evidência](../research/native-affect-scratch-2026-11-24.md).
 
 ## V25 — Ativação alternativa (00450AD0)
 

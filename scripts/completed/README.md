@@ -1,0 +1,49 @@
+# scripts/completed — coletas executadas
+
+Execute os comandos da raiz do repositório. Os resultados continuam privados em `scratch/`. Os bundles abaixo constam da auditoria do [SQLite cumulativo](../../docs/research/joey-knowledge-sqlite.md). O inventário do banco inclui também dois bundles históricos. As coletas 01–13, 16/VISUALS, 18–21 e 23 já estavam validadas no snapshot v2 de 24/11/2026. A mesma data identifica as importações verificadas dos roteiros 17/VISUALS e 31 em v4 e das coletas restantes em v5, exceto pelo complemento 32 validado em 25/11/2026.
+
+| Roteiro | Bundle importado |
+| --- | --- |
+| [01-selection-fusion-ghidra.sh](01-selection-fusion-ghidra.sh) | `ghidra-selection-fusion-contract.zip` |
+| [02-chain-disabled-ghidra.sh](02-chain-disabled-ghidra.sh) | `ghidra-chain-disabled-contract.zip` |
+| [03-field-attributes-ghidra.sh](03-field-attributes-ghidra.sh) | `ghidra-field-attributes-contract.zip` |
+| [04-card-status-ghidra.sh](04-card-status-ghidra.sh) | `ghidra-card-status-contract.zip` |
+| [05-flip-spelltrap-targets-ghidra.sh](05-flip-spelltrap-targets-ghidra.sh) | `ghidra-flip-spelltrap-two-targets.zip` |
+| [06-prohibition-links-ghidra.sh](06-prohibition-links-ghidra.sh) | `ghidra-prohibition-links-contract.zip` |
+| [07-flip-banish-burn-ghidra.sh](07-flip-banish-burn-ghidra.sh) | `ghidra-flip-banish-burn-contract.zip` |
+| [08-immortal-thunder-graveyard-ghidra.sh](08-immortal-thunder-graveyard-ghidra.sh) | `ghidra-immortal-thunder-contract.zip` |
+| [09-dimensional-warrior-banish-ghidra.sh](09-dimensional-warrior-banish-ghidra.sh) | `ghidra-dimensional-warrior-banish.zip` |
+| [10-dark-necrofear-control-ghidra.sh](10-dark-necrofear-control-ghidra.sh) | `ghidra-dark-necrofear-control.zip` |
+| [11-actions-turn-phases-ghidra.sh](11-actions-turn-phases-ghidra.sh) | `ghidra-actions-turn-phases.zip` |
+| [12-graveyard-arrival-ghidra.sh](12-graveyard-arrival-ghidra.sh) | `ghidra-graveyard-arrival-contract.zip` |
+| [13-fusion-remaining-contract-ghidra.sh](13-fusion-remaining-contract-ghidra.sh) | `ghidra-fusion-remaining-contract.zip` |
+| [16-cards-revival-spells-ghidra.sh](16-cards-revival-spells-ghidra.sh) | `ghidra-revival-spells-contract.zip` |
+| [16-coin-dice-break-ghidra.sh](16-coin-dice-break-ghidra.sh) | `ghidra-coin-dice-break-contract.zip` |
+| [17-cards-elemental-position-ghidra.sh](17-cards-elemental-position-ghidra.sh) | `ghidra-elemental-position-contract.zip` |
+| [17-chain-affect-assembly.sh](17-chain-affect-assembly.sh) | `ghidra-chain-affect-assembly.zip` (v4) |
+| [18-alternative-activation-exclusion-ghidra.sh](18-alternative-activation-exclusion-ghidra.sh) | `ghidra-alternative-activation-exclusion.zip` |
+| [19-layerfont-help-ghidra.sh](19-layerfont-help-ghidra.sh) | `ghidra-layerfont-help-contract.zip` |
+| [20-vija-selection-origins-ghidra.sh](20-vija-selection-origins-ghidra.sh) | `ghidra-vija-selection-origins.zip` |
+| [21-attack-life-draw-ghidra.sh](21-attack-life-draw-ghidra.sh) | `ghidra-attack-life-draw-contract.zip` |
+| [23-turn-notice-draw-ghidra.sh](23-turn-notice-draw-ghidra.sh) | `ghidra-turn-notice-draw-contract.zip` |
+| [24-native-surface-vtable-ghidra.sh](24-native-surface-vtable-ghidra.sh) | `ghidra-native-surface-vtable-contract.zip` |
+| [25-native-quad-raster-ghidra.sh](25-native-quad-raster-ghidra.sh) | `ghidra-native-quad-raster-contract.zip` e `ghidra-native-quad-raster-alpha-supplement.zip` |
+| [26-native-cursor-dispatch-ghidra.sh](26-native-cursor-dispatch-ghidra.sh) | `ghidra-native-cursor-dispatch-contract.zip` |
+| [27-joey-reaction-audio-ghidra.sh](27-joey-reaction-audio-ghidra.sh) | `ghidra-joey-reaction-audio-contract.zip` |
+| [29-native-break-scatter-ghidra.sh](29-native-break-scatter-ghidra.sh) | `ghidra-native-break-scatter-contract.zip` |
+| [30-cards-selective-destruction-ghidra.sh](30-cards-selective-destruction-ghidra.sh) | `ghidra-selective-destruction-contract.zip` |
+| [31-actions-battle-callbacks-ghidra.sh](31-actions-battle-callbacks-ghidra.sh) | `ghidra-actions-battle-callbacks.zip` (v4) |
+| [32-final-destiny-ghidra.sh](32-final-destiny-ghidra.sh) | `ghidra-final-destiny-contract.zip` (C02.9, 2/2 funções, complemento do 30, v6) |
+
+As coletas 16/CARDS e 17/CARDS exportaram apenas as rotinas que ainda exigiam assembly. Os helpers omitidos já constam do snapshot anterior. A coleta 25 exportou sete funções no bundle base e oito no complemento de alpha. Os comandos preservados nos roteiros continuam reproduzindo o recorte completo.
+
+## V01/V11 — tabela de cossenos
+
+O roteiro 15 foi executado no Windows. O SQLite v3 registra 512 entradas em `00A52EE8` após a inicialização em `00A536E8`. O log de chamadas Draw continua em aberto em V01. Para reprodução da coleta original, com Frida na venv e o duelo aberto, execute:
+
+```powershell
+python scripts/completed/15-visual-cosine-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe
+dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine=scratch/visual-review/native-cosine.json
+```
+
+Os 512 valores são lidos em duas amostras estáveis. O JSON fica em `scratch/visual-review/`.

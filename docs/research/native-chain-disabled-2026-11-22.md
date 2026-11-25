@@ -36,7 +36,7 @@ Saída: `scratch/visual-review/chain-manifests.json` (inspecionar e compartilhar
 Na máquina com Ghidra:
 
 ```bash
-bash scripts/pending/02-chain-disabled-ghidra.sh
+bash scripts/completed/02-chain-disabled-ghidra.sh
 ```
 
 Saída: `scratch/ghidra-chain-disabled-contract.zip` (não versionar). Relacionar a ordem dos recursos do manifesto com o Draw real; rastrear o fluxo `00408730 -> 00452F20` e os argumentos de `0045C140`, o pass condicionado pelo bit `0x4000`, pivô, escala, blend e orientação. Só então integrar os YGAs/BMPs ao cliente e comparar com o executável em 800×600.

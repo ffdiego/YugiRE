@@ -17,7 +17,9 @@ e os 173 destinos (692 bytes) do roteiro 29, e cruzados os
 stubs abaixo com refs de chamadas do dispatcher no SQLite v3.
 Todos os mapeamentos da tabela abaixo têm uma única entrada
 bruta no domínio. Isso confirma despacho, não uma execução
-real nem semântica de todos os argumentos.
+real nem semântica de todos os argumentos. A reconciliação do PR #167
+conferiu de modo independente os 16 pares índice/stub e seus destinos
+diretamente nas seções PE do joey_pc.exe com o mesmo fingerprint.
 
 | Opcode bruto (hex) | Índice (hex) | Stub | Handler | Família |
 |---|---|---|---|---|
@@ -96,7 +98,6 @@ rejeições. Classificação de família não substitui um comando
 tipado nem a seleção da instância de apresentação em A03.
 
 Este lote não muda o scheduler, o Core, renderers, a métrica
-VISUALS ou estado Verified. C# requer CI (SDK indisponível no
-ambiente desta sessão); comparação desktop e produtores
-indiretos permanecem pendentes. Manter 160 separado até
+VISUALS ou estado Verified. Comparação desktop e produtores indiretos
+permanecem pendentes. Manter 160 separado até
 reconciliar seus detalhes de V22.
