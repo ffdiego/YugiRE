@@ -1,18 +1,22 @@
 namespace Joey.LookAndFeel;
 
-public enum NativeEffectCommandFamily { Break, CoinBank, DiceBank }
+public enum NativeEffectCommandFamily { Break, CoinBank, DiceBank, Explosion }
 
 /// <summary>
-/// Known dispatch paths of 005B9470, not gameplay semantics. In particular
+/// Raw command words, not compressed switch indices of 005B9470.
+/// Bundle 29 confirms [005B9AEC + opcode - 1] and [005B9838 + index*4].
+/// Only the low 12 bits select the route; the other bits are not part of it.
+/// In particular
 /// CoinBank/DiceBank identify DAT constructors, NOT evidence of random results.
 /// </summary>
 public static class NativeEffectCommandRouting
 {
-    public static NativeEffectCommandFamily? Family(ushort opcode) => opcode switch
+    public static NativeEffectCommandFamily? Family(ushort opcode) => (opcode & 0xfff) switch
     {
-        0x4f => NativeEffectCommandFamily.Break,
-        0x8e or 0x8f => NativeEffectCommandFamily.CoinBank,
-        0x90 or 0x91 or 0x92 => NativeEffectCommandFamily.DiceBank,
+        0x79 => NativeEffectCommandFamily.Break,
+        0x7a or 0x7c => NativeEffectCommandFamily.Explosion,
+        0xe0 or 0xe1 => NativeEffectCommandFamily.CoinBank,
+        0xe2 or 0xe3 or 0xe4 => NativeEffectCommandFamily.DiceBank,
         _ => null
     };
 
