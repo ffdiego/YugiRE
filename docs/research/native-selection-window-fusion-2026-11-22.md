@@ -628,11 +628,13 @@ acumuladores; F12 schema 2 documenta os passes, fonte
 de evidência e overlay ausente. Sem opção cards conserva
 review effects-only até 448; com opção cards, cap 640
 é último Draw de inspeção, não gate de gameplay.
-Roteiro 13 agora pede janela tardia a partir da última instrução já conhecida 00452B91, não repetir
-o Draw inteiro ou dados 005DB278/005DB280 já no v3.
-O endpoint +AC depende de resolver vtable da superfície
-(roteiro 24). Sem alteração de cobertura.
+O roteiro 13 foi concluído para as constantes e auxiliares. A
+janela tardia a partir de `00452B91` segue pendente nos snapshots
+v6 e v7. O endpoint +AC depende de confirmar a vtable da
+superfície e a passagem dos operandos nesse trecho.
 
 ## V11 integração geral no duelo
 
-DemoSpecialSummon.FusionMaterials transporta snapshot read-only dos materiais após commit (Polymerization/Fusion Gate, humano/CPU). A fila visual existente recebe GeneralFusionPlacement antes de SpecialSummonPlacement; nenhuma mutação ou decisão nova. 161 samples (0..640 inclusive) com um Draw por Update é política do cliente baseada no fim candidato, não ABI/cadência de Draw demonstrada. NativeFusionPlayback recupera samples em ordem mesmo em frames longos e emite requests 4/384 uma vez. Resultado escondido no campo e hover até terminar a sequência. Usa miniaturas reais e banco validado; se faltarem, registra erro e mantém special summon anterior, sem placeholder. Fusão geral sobre tabuleiro, scratch/overlay +AC ausentes, som fusion1/2 associação provisória. Nenhuma nova regra ou fila. Testes de snapshot e playback; integração desktop ainda pendente, cobertura conservadora.
+`DemoSpecialSummon.FusionMaterials` transporta o snapshot imutável dos materiais após o commit de Polymerization ou Fusion Gate. Na fila de ações, `GeneralFusionPlacement` e `SpecialSummonPlacement` são etapas do gate do mesmo `SpecialSummonCommand`. O resultado fica oculto no campo e no hover até a etapa de invocação especial. O perfil Instant descarta ambas as etapas, e a falta de recursos no modo animado preserva a apresentação de invocação especial. O código de regras e a ordem dos comandos vêm de #179.
+
+`NativeFusionPlayback` processa 161 amostras do contador 0 a 640. Essa é uma política de apresentação do cliente que usa o epílogo candidato da decompilação. Frames longos avançam o modelo em ordem, com requests de áudio em 4 e 384. O compositor Raylib e a associação de áudio são provisórios. O pass de superfície intermediária e `+AC` estão pendentes. Testes C# exercitam duas e três miniaturas no modelo e a retenção da continuação até liberar a invocação enfileirada, com ambos os lados e posições de ataque e defesa. `004524F0` é Partial no inventário. Falta comparar no desktop com o EXE em estado equivalente.

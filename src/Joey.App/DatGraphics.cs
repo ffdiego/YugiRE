@@ -252,6 +252,23 @@ sealed class DatGraphics : IDisposable
     public void Validate()
     {
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
+        var fusionBank = ReadGeneralFusionBank(archive!);
+        for (int index = 0; index < fusionBank.Length; index++)
+        {
+            string name = fusionBank[index];
+            if (name.EndsWith(".yga", StringComparison.OrdinalIgnoreCase))
+            {
+                var sprite = NativeYgaSprite.Decode(archive!.Read(name), static (data, size) => Archive.Decode(data, size));
+                NativeFusionResources.ValidateObservedSize(index, sprite.Width, sprite.Height);
+            }
+            else
+            {
+                var image = ReadImage(name);
+                try { NativeFusionResources.ValidateObservedSize(index, image.Width, image.Height); }
+                finally { Raylib.UnloadImage(image); }
+            }
+        }
+        Console.WriteLine($"Decoded {fusionBank.Length} general Fusion resources from the DAT.");
         var names = new[] { MenuResources.Background, MenuResources.Normal, MenuResources.Highlight,
             CardListResources.Frame, CardListResources.Left, CardListResources.Right, CardListResources.Digits,
             CardListResources.All, CardListResources.AllSelected, CardListResources.Joey, CardListResources.JoeySelected,
@@ -268,7 +285,7 @@ sealed class DatGraphics : IDisposable
             .Concat(archive.Entries.Where(e => e.Name.StartsWith(@"mini\", StringComparison.OrdinalIgnoreCase) &&
                 e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name))
             .Distinct(StringComparer.OrdinalIgnoreCase);
-        int count = 0;
+        int count = fusionBank.Length;
         foreach (string name in names)
         {
             var image = ReadImage(name);
@@ -289,23 +306,6 @@ sealed class DatGraphics : IDisposable
                     throw new InvalidDataException($"Duel sprite color key is not transparent: {name}");
             }
             finally { Raylib.UnloadImage(image); }
-            count++;
-        }
-        var fusionBank = ReadGeneralFusionBank(archive);
-        for (int index = 0; index < fusionBank.Length; index++)
-        {
-            string name = fusionBank[index];
-            if (name.EndsWith(".yga", StringComparison.OrdinalIgnoreCase))
-            {
-                var sprite = NativeYgaSprite.Decode(archive.Read(name), static (data, size) => Archive.Decode(data, size));
-                NativeFusionResources.ValidateObservedSize(index, sprite.Width, sprite.Height);
-            }
-            else
-            {
-                var image = ReadImage(name);
-                try { NativeFusionResources.ValidateObservedSize(index, image.Width, image.Height); }
-                finally { Raylib.UnloadImage(image); }
-            }
             count++;
         }
         // Also validate actual original activation sprites, with no GPU/window

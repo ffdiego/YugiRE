@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Joey.Core;
+using Joey.LookAndFeel;
 
 internal static class FusionChecks
 {
@@ -106,6 +107,7 @@ internal static class FusionChecks
     private sealed class FusionGateProbe(DemoDuel duel) : ICommandPresentationGate
     {
         public bool Release { get; set; }
+        public bool ReleasePlacement { get; set; } = true;
         public bool CanAdvance => true;
         public List<DuelActionPresentation> Cues { get; } = [];
         public void OnStarting(QueuedDuelCommand command)
@@ -113,7 +115,8 @@ internal static class FusionChecks
             if (duel.DescribeActionPresentation(command.Command) is { Kind: ActionPresentationKind.Activate } cue)
                 Cues.Add(cue);
         }
-        public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
+            Release && (ReleasePlacement || command.Command is not SpecialSummonCommand);
     }
 
     private static void CheckQueuedFusion(Action<bool, string> check, Card spell, Card baby, Card wizard,
@@ -169,6 +172,15 @@ internal static class FusionChecks
                 probe.Cues[0].Destination == (gate ? DuelZone.FieldSpell : DuelZone.SpellTrap),
                 "Queued Fusion activation gate precedes spending and all material moves");
             probe.Release = true;
+            probe.ReleasePlacement = false;
+            for (int tick = 0; tick < 100 && q.IsBusy && summons.Count == 0; tick++) q.Tick();
+            var placement = q.Active;
+            for (int tick = 0; tick < NativeFusionPlayback.Updates; tick++) q.Tick();
+            check(placement?.Command is SpecialSummonCommand && q.Active == placement &&
+                summons.Count == 1 && d.PendingCardSelection is null &&
+                !q.Trace.Any(item => item.Entry.Command.GetType().Name == "FinishFusionSummonCommand"),
+                "Queued Fusion holds the placement gate without duplicating its material snapshot or opening the continuation");
+            probe.ReleasePlacement = true;
             for (int tick = 0; tick < 100 && q.IsBusy; tick++) q.Tick();
             check(!q.IsBusy && q.Fault is null && d.Hand.SequenceEqual([filler]) &&
                 ReferenceEquals(d.Monsters[side, 0], physicalResult) &&
