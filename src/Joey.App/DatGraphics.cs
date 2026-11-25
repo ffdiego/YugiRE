@@ -109,6 +109,15 @@ sealed class DatGraphics : IDisposable
     public int?[] LifeFloatingGlyphColumns { get; } = new int?[2];
     public void LoadArtwork(List<Card> cards) => Artwork = CardArtwork.Load(archive!, cards);
 
+    public static string[] ReadGeneralFusionBank(Archive archive)
+    {
+        var bank = NativeFusionResources.Parse(
+            System.Text.Encoding.Latin1.GetString(archive.Read(NativeFusionResources.Manifest)),
+            archive.Entries.Select(entry => entry.Name));
+        NativeFusionResources.ValidateObservedBank(bank);
+        return bank;
+    }
+
     readonly Dictionary<string, NativeSelectionManifest?> selectionManifests =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -224,6 +233,7 @@ sealed class DatGraphics : IDisposable
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             NativeExclusionResources.IsParticleBitmap(name) || // diagnostic keying
             name.StartsWith(NativeDisabledChainResources.Prefix, StringComparison.OrdinalIgnoreCase) || // diagnostic green key for V23 BMPs
+            NativeFusionResources.IsOrbitalBitmap(name) || // diagnostic green key for general fusion review
             NativeCoinResources.IsCoinFaceBitmap(name) || // diagnostic green key; native compositor pending
             NativeDiceResources.IsDiceBitmap(name) || // diagnostic green-key path; native blend pending
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
@@ -279,6 +289,23 @@ sealed class DatGraphics : IDisposable
                     throw new InvalidDataException($"Duel sprite color key is not transparent: {name}");
             }
             finally { Raylib.UnloadImage(image); }
+            count++;
+        }
+        var fusionBank = ReadGeneralFusionBank(archive);
+        for (int index = 0; index < fusionBank.Length; index++)
+        {
+            string name = fusionBank[index];
+            if (name.EndsWith(".yga", StringComparison.OrdinalIgnoreCase))
+            {
+                var sprite = NativeYgaSprite.Decode(archive.Read(name), static (data, size) => Archive.Decode(data, size));
+                NativeFusionResources.ValidateObservedSize(index, sprite.Width, sprite.Height);
+            }
+            else
+            {
+                var image = ReadImage(name);
+                try { NativeFusionResources.ValidateObservedSize(index, image.Width, image.Height); }
+                finally { Raylib.UnloadImage(image); }
+            }
             count++;
         }
         // Also validate actual original activation sprites, with no GPU/window
