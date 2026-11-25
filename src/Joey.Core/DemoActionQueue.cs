@@ -96,8 +96,12 @@ public sealed partial class DemoDuel
             return false;
         DuelZone zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
         if (!TryCaptureCardTarget(ActivePlayer, zone, index, out var source) ||
-            !TryResolveCardTarget(source, out _, out var card) || card.ClassCode != 22)
+            !TryResolveCardTarget(source, out _, out var card))
             return false;
+        if (card.Id==InfiniteCardsId) return TryQueueInfiniteCards(source,out message,origin);
+        if (FieldSpellRules.Supports(card.Id))
+            return TryQueueFieldSpellActivation(zone,index,out message,origin);
+        if (card.ClassCode!=22) return false;
         if (DrawSpellRules.Effect(card) is not null)
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -256,6 +260,9 @@ public sealed partial class DemoDuel
         private int finalDestinyPaid;
         private bool finalDestinyFailed;
         private bool finalDestinySpent;
+        private CardTarget? fieldActivationSource;
+        private readonly Queue<CardTarget> fieldReplacementTargets=new();
+        private bool fieldActivationFailed;
         private bool resolvingFlipBatch;
         private sealed class FlipDeckFlow(ushort effect, int controller, int requested, IEnumerable<CardTarget> expected)
         {
@@ -478,6 +485,12 @@ public sealed partial class DemoDuel
                     return ActivateTargetedSpellTrap(targeted, followups);
                 case ActivateFinalDestinyCommand finalDestiny:
                     return ActivateFinalDestiny(finalDestiny,followups);
+                case PrepareFieldSpellActivationCommand fieldPrepare:
+                    return PrepareFieldActivation(fieldPrepare,followups);
+                case ActivateFieldSpellCommand fieldActivate:
+                    return ApplyFieldActivation(fieldActivate);
+                case ActivateInfiniteCardsCommand infinite:
+                    return duel.ApplyInfiniteCards(infinite);
                 case ActivateSpellTrapWipeCommand spellTrapWipe:
                     return ActivateSpellTrapWipe(spellTrapWipe.Source, followups);
                 case ActivateMonsterWipeCommand monsterWipe:
@@ -506,6 +519,8 @@ public sealed partial class DemoDuel
                     return SendDeckCardToGraveyard(send.Target);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
+                case SendToGraveyardCommand send when send.Target.Zone == DuelZone.FieldSpell:
+                    return RemoveReplacedField(send.Target);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
                     return ObserveFixedSpellSpend(send.Target, SpendSetActivation(send.Target));
                 case PrepareGraveyardBanishSummonCommand prepareBanish:
@@ -556,6 +571,60 @@ public sealed partial class DemoDuel
             if (wipe is { } current && current.Source == target)
                 current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
+        }
+
+        private CommandResult PrepareFieldActivation(PrepareFieldSpellActivationCommand command,IActionCommandSink followups)
+        {
+            if(fieldActivationSource is not null || wipe is not null || finishScheduled ||
+                followups is not IActionBatchSink {PendingCount:0} queue ||
+                !duel.TryPlanFieldActivation(command.Source,out var replaced))
+                return new(CommandOutcome.Rejected,"Field activation no longer legal.");
+            fieldActivationSource=command.Source;
+            fieldActivationFailed=false;
+            fieldReplacementTargets.Clear();
+            foreach(var target in replaced)fieldReplacementTargets.Enqueue(target);
+            queue.EnqueueBatch([.. replaced.Select(t=>(DuelCommand)new SendToGraveyardCommand(t.Side,t)),
+                new ActivateFieldSpellCommand(command.Side,command.Source)]);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult RemoveReplacedField(CardTarget target)
+        {
+            if(fieldActivationSource is not { } source || fieldActivationFailed ||
+                !fieldReplacementTargets.TryPeek(out var expected)||expected!=target)
+                return new(CommandOutcome.Rejected,"No reserved Field Spell replacement.");
+            if(!duel.TryPlanFieldActivation(source,out var current)||
+                !current.SequenceEqual(fieldReplacementTargets))
+            {
+                fieldActivationFailed=true;
+                return new(CommandOutcome.Skipped,"Field replacement occurrences changed.");
+            }
+            fieldReplacementTargets.Dequeue();
+            duel.SendFieldSpellToGraveyard(target.Side);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ApplyFieldActivation(ActivateFieldSpellCommand command)
+        {
+            if(fieldActivationSource!=command.Source)
+                return new(CommandOutcome.Rejected,"No matching Field Spell activation.");
+            bool valid=!fieldActivationFailed&&fieldReplacementTargets.Count==0;
+            fieldActivationSource=null;
+            fieldReplacementTargets.Clear();
+            fieldActivationFailed=false;
+            if(!valid || !duel.TryPlanFieldActivation(command.Source,out var remaining)||remaining.Length!=0 ||
+                !duel.TryResolveCardTarget(command.Source,out int index,out var card))
+                return new(CommandOutcome.Skipped,"Field activation source or replacement changed.");
+            int side=command.Side;
+            if(command.Source.Zone==DuelZone.Hand)
+            {
+                duel.hands[side].RemoveAt(index);
+                duel.FieldSpells[side]=card;
+            }
+            duel.FieldSpellFaceDown[side]=false;
+            var result=new CommandResult(CommandOutcome.Applied);
+            return command.Source.Zone==DuelZone.Hand?result with
+            {Placement=new(command.Source,card.Id,index,DuelZone.FieldSpell,0,false,false,0)}:result;
         }
 
         private CommandResult ActivateFinalDestiny(ActivateFinalDestinyCommand activate,IActionCommandSink followups)

@@ -222,7 +222,9 @@
         "src/Joey.Core/FieldSpellRules.cs",
         "src/Joey.App/FusionSelectionScreen.cs",
         "src/tests/Joey.Tests/FusionChecks.cs",
-        "docs/research/card-static-sweep/06-combate-diferido-e-invocacao.jsonl"
+        "docs/research/card-static-sweep/06-combate-diferido-e-invocacao.jsonl",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "docs/cards/c12-queued-persistent-spells.md"
       ],
       "limitations": [
         "Sandbox field replacement and Phase policy. Native chain timing, field suppression and banishment replacement effects are pending."
@@ -585,7 +587,9 @@
       ],
       "evidence": [
         "src/Joey.Core/FieldSpellRules.cs",
-        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
+        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "docs/cards/c12-queued-persistent-spells.md"
       ],
       "limitations": [
         "The pinned DAT confirms Sea Serpent type code 5. Native duel timing and eligibility remain pending."
@@ -610,7 +614,9 @@
       ],
       "evidence": [
         "src/Joey.Core/FieldSpellRules.cs",
-        "src/tests/Joey.Tests/AttributeFieldSpellChecks.cs"
+        "src/tests/Joey.Tests/AttributeFieldSpellChecks.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "docs/cards/c12-queued-persistent-spells.md"
       ]
     },
     {
@@ -627,7 +633,9 @@
       ],
       "evidence": [
         "src/Joey.Core/FieldSpellRules.cs",
-        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs"
+        "src/tests/Joey.Tests/TypeFieldSpellChecks.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "docs/cards/c12-queued-persistent-spells.md"
       ]
     },
     {
@@ -670,7 +678,9 @@
       ],
       "evidence": [
         "src/Joey.Core/Demo.cs",
-        "src/tests/Joey.Tests/InfiniteCardsTests.cs"
+        "src/tests/Joey.Tests/InfiniteCardsTests.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "docs/cards/c12-queued-persistent-spells.md"
       ]
     },
     {

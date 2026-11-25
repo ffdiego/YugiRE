@@ -23,8 +23,83 @@ internal static class FieldSpellChecks
         string.Join(",", Enumerable.Range(0, 2)
             .Select(p => string.Join(",", duel.Graveyard(p).Select(c => c.Id)))));
 
+    private sealed class ReplacementGate : IPresentationGate
+    {
+        public bool Release {get;set;}=true;
+        public bool CanAdvance=>true;
+        public bool CanComplete(QueuedDuelCommand command,CommandResult result)=>
+            command.Command is not SendToGraveyardCommand {Target.Zone:DuelZone.FieldSpell}||Release;
+    }
+    private static void Drain(ActionQueue queue)
+    {
+        for(int i=0;i<40&&queue.IsBusy;i++)queue.Tick();
+        if(queue.IsBusy)throw new InvalidOperationException("Field activation did not drain.");
+    }
+    private static void CheckQueuedFields(Action<bool,string> check)
+    {
+        ushort[] ids=[329,330,331,332,333,334,1069,1125,1126,1127,1128,1129,1130,FusionRules.FusionGate];
+        foreach(ushort id in ids)
+        foreach(int side in new[]{0,1})
+        foreach(bool set in new[]{false,true})
+        {
+            var field=new Card(id,id,"Field","",22u<<20);
+            var d=Duel(side,field);
+            var console=new DuelConsoleSession(d);
+            if(set){check(console.Execute("set 0").Enqueued,"Queued FIELD Set");Drain(console.Queue);}
+            check(console.Execute(set?"activate field":"activate hand 0").Enqueued&&d.ActiveFieldSpell is null,
+                "Queued FIELD activation admission is read-only");
+            Drain(console.Queue);
+            check(d.ActiveFieldSpell?.Id==id&&!d.FieldSpellFaceDown[side]&&d.Hand.Count==0&&
+                d.Graveyard(side).Count==0&&d.Spells.Cast<Card?>().All(c=>c is null),
+                "Queued FIELD activation keeps source and uses dedicated zone");
+        }
+        foreach(bool set in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Sogen()],Field(Warrior()),Field(Warrior()),
+                8000,side1Deck:[Sogen()]);
+            var gate=new ReplacementGate();var q=d.CreatePrimitiveActionQueue(gate);
+            check(d.TryQueueActivation(0,false,out _),"Initial queued FIELD");Drain(q);
+            d.NextTurn();q.Enqueue(new DrawCommand(1));Drain(q);
+            if(set){check(d.TryQueueSpellTrapSet(0,out _),"Opposing FIELD Set");Drain(q);}
+            check(d.TryQueueFieldSpellActivation(set?DuelZone.FieldSpell:DuelZone.Hand,0,out _)&&
+                d.AttackValue(0,0)==1000&&d.Graveyard(0).Count==0,"Replacement admission preserves prior field");
+            q.Tick();gate.Release=false;q.Tick();q.Tick();
+            check(q.IsBusy&&d.ActiveFieldSpell is null&&d.AttackValue(0,0)==800&&
+                d.Graveyard(0).Single().Id==332,"Removal applies once before activation gate");
+            gate.Release=true;Drain(q);
+            check(d.ActiveFieldSpell?.Id==332&&d.FieldSpells[0] is null&&d.AttackValue(0,0)==1000&&
+                d.AttackValue(1,0)==1000&&d.Graveyard(0).Count==1,
+                "Replacement resumes and bonus is not stacked");
+        }
+        {
+            var d=Duel(0,Sogen(),Sogen());var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueSpellTrapSet(0,out _),"Own Set FIELD");Drain(q);
+            check(d.TryQueueActivation(0,false,out _),"Own Set replacement");Drain(q);
+            check(d.Graveyard(0).Single().Id==332&&d.ActiveFieldSpell?.Id==332,"Own Set replaced exactly once");
+        }
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Sogen()],Field(Warrior()),Field(Warrior()),
+                8000,side1Deck:[Sogen()]);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueSpellTrapSet(0,out _),"Opposite Set remains");Drain(q);
+            d.NextTurn();q.Enqueue(new DrawCommand(1));Drain(q);
+            check(d.TryQueueActivation(0,false,out _),"New active field");Drain(q);
+            check(d.FieldSpellFaceDown[0]&&d.FieldSpells[0]?.Id==332&&d.Graveyard(0).Count==0&&
+                d.ActiveFieldSpell?.Id==332,"Opponent face-down field is preserved");
+        }
+        {
+            var d=Duel(0,Sogen(),Sogen());var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueActivation(0,false,out _),"Stale replacement fixture");Drain(q);
+            check(d.TryQueueActivation(0,false,out _),"Stale replacement reservation");q.Tick();
+            d.FieldSpells[0]=Sogen();Drain(q);
+            check(d.Hand.Count==1&&d.Graveyard(0).Count==0&&d.FieldSpells[0]?.Id==332,
+                "Changed field occurrence never overwritten");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        CheckQueuedFields(check);
         check(FieldSpellRules.Supports(332) && !FieldSpellRules.Supports(335) &&
               !FieldSpellRules.Supports(0) && !FieldSpellRules.Supports(2332),
               "Field Spell: support requires the exact Sogen resource ID");
