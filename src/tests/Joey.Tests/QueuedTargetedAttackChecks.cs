@@ -144,6 +144,14 @@ internal static class QueuedTargetedAttackChecks
         check(!hiddenEffect.TryQueueTargetedAttack(2,3,out _) && hq.Trace.Count==0 &&
             hiddenEffect.MonsterFaceDown[0,3],"A06 unsupported FLIP remains legacy, no partial reveal");
 
+        var withUnsupportedExtra = DemoDuel.FromPartialObservation(1, [], Slots(Monster(1351, 500, 500), 3),
+            Slots(Monster(24, 1400, 500), 2), 8000);
+        withUnsupportedExtra.Monsters[1, 0] = Monster(540, 500, 500);
+        var unsupportedQueue = withUnsupportedExtra.CreatePrimitiveActionQueue();
+        check(withUnsupportedExtra.BeginBattle(out _) && !withUnsupportedExtra.TryQueueTargetedAttack(2, 3, out _) &&
+            unsupportedQueue.Trace.Count == 0 && withUnsupportedExtra.CanAttack(2),
+            "A06 an unsupported extra monster keeps the battle outside the pilot");
+
         var d2=DemoDuel.FromPartialObservation(1,[],Slots(Monster(1351,500,500),3),Slots(Monster(24,1400,500),2),8000);
         d2.Life[0]=100;var q2=d2.CreatePrimitiveActionQueue();d2.BeginBattle(out _);
         d2.TryQueueTargetedAttack(2,3,out _);for(int i=0;i<30 && q2.IsBusy;i++)q2.Tick();
