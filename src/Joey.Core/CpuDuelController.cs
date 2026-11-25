@@ -181,6 +181,12 @@ public sealed class CpuDuelController
         bool EndTurn(out string pending) => queueTurnActions
             ? duel.TryQueueEndTurn(out pending, ActionOrigin.Cpu)
             : duel.EndTurn(out pending);
+        bool AttackFrom(int source, int target, out string pending)
+        {
+            if (target == -1 && queueTurnActions && duel.TryQueueDirectAttack(source, out pending, ActionOrigin.Cpu))
+                return true;
+            return duel.Attack(source, target, out pending);
+        }
 
         if (duel.PendingEndDiscards > 0)
         {
@@ -280,7 +286,7 @@ public sealed class CpuDuelController
             {
                 int power = duel.AttackValue(Player, source);
                 if (power > 0 && duel.CanAttackDirectly(source))
-                    return Act(CpuAction.Attack, (out string m) => duel.Attack(source, -1, out m),
+                    return Act(CpuAction.Attack, (out string m) => AttackFrom(source, -1, out m),
                         duel.Monsters[Player, source], source, -1);
                 var enemies = Enumerable.Range(0, 5).Where(z => duel.Monsters[enemy, z] is not null).ToArray();
                 int target = enemies.Where(z => power > KnownPower(duel, enemy, z))
@@ -288,7 +294,7 @@ public sealed class CpuDuelController
                         ? power - duel.AttackValue(enemy, z) + 1000 : 500)
                     .ThenBy(z => z).FirstOrDefault(-1);
                 if (enemies.Length > 0 && target < 0) continue;
-                return Act(CpuAction.Attack, (out string m) => duel.Attack(source, target, out m), duel.Monsters[Player, source], source, target);
+                return Act(CpuAction.Attack, (out string m) => AttackFrom(source, target, out m), duel.Monsters[Player, source], source, target);
             }
             return Act(CpuAction.EndBattle, LeaveBattle);
         }
