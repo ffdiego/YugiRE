@@ -35,7 +35,30 @@ internal static class NativeBreakScatterChecks
             blocks[13].NoiseX==209 && blocks[13].NoiseY==99 &&
             blocks[^1].NoiseIndexX==190 && blocks[^1].NoiseIndexY==99,
             "V22: independent row phases, byte lookup and radial origin");
-        // Inject a synthetic divisor; not an assertion about native x87.
+        // Recipe 29: FSQRT + truncating __ftol. Reference integer
+        // projections were computed independently from captured instructions.
+        foreach(int square in new[]{0,1,2,3,4,15,16,17,1921,int.MaxValue})
+        {
+            int root=NativeBreakScatter.RadialDivisor(square);
+            check((long)root*root<=square && (long)(root+1)*(root+1)>square,
+                "V22: floor square root, not nearest integer");
+        }
+        check(NativeBreakScatter.RadialDivisor(1921)==43 &&
+            NativeBreakScatter.Project(blocks[0],new CardPoint(100,200),50,72,128)==new CardBounds(94,192,4,2) &&
+            NativeBreakScatter.Project(blocks[^1],new CardPoint(100,200),50,72,128)==new CardBounds(148,275,2,2),
+            "V22: native radial normalization and clipped final block");
+        check(NativeBreakScatter.Project(blocks[0],new CardPoint(100,200),50,72,1)==new CardBounds(89,184,4,2) &&
+            NativeBreakScatter.Project(blocks[0],new CardPoint(100,200),50,72,255)==new CardBounds(99,199,4,2),
+            "V22: opposite scatter parameter boundaries");
+        var landscape=NativeBreakScatter.Blocks(72,50).First();
+        check(NativeBreakScatter.Project(landscape,new CardPoint(100,200),72,50,128)==new CardBounds(92,194,4,2),
+            "V22: native landscape projection");
+        foreach(var b in blocks)
+            check(NativeBreakScatter.Project(b,new CardPoint(100,200),50,72,128)==
+                NativeBreakScatter.Project(b,new CardPoint(100,200),50,72,128,
+                    NativeBreakScatter.RadialDivisor(b.RadiusSquared)),
+                "V22: complete portrait projection");
+        // Retain explicit-divisor diagnostic regression.
         var block=blocks[0];
         check(NativeBreakScatter.Project(block,new CardPoint(100,200),50,72,128,43)
             ==new CardBounds(94,192,4,2),
