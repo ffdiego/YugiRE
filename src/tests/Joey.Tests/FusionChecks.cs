@@ -98,8 +98,148 @@ internal static class FusionChecks
               shuffle.DeckSnapshot(1).Single() == filler && shuffle.LastMorphingJar2[1].Excavated == 0,
             "Fusion: Morphing Jar #2 returns the Fusion Monster without adding to the Main Deck quota");
 
+        CheckQueuedFusion(check, spell, baby, wizard, thousand, filler);
         CheckSubstitutes(check, spell, baby, wizard, thousand, filler);
         CheckFusionGate(check, baby, wizard, thousand, filler);
+    }
+
+    private sealed class FusionGateProbe(DemoDuel duel) : ICommandPresentationGate
+    {
+        public bool Release { get; set; }
+        public bool CanAdvance => true;
+        public List<DuelActionPresentation> Cues { get; } = [];
+        public void OnStarting(QueuedDuelCommand command)
+        {
+            if (duel.DescribeActionPresentation(command.Command) is { Kind: ActionPresentationKind.Activate } cue)
+                Cues.Add(cue);
+        }
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
+    }
+
+    private static void CheckQueuedFusion(Action<bool, string> check, Card spell, Card baby, Card wizard,
+        Card thousand, Card filler)
+    {
+        Card?[] empty = new Card?[5];
+        Card gateCard = new(1547, 1547, "Fusion Gate", "", 22u << 20);
+        foreach (int side in new[] { 0, 1 })
+        foreach (int sourceKind in new[] { 0, 1, 2 })
+        foreach (bool defense in new[] { false, true })
+        {
+            bool gate = sourceKind == 2, set = sourceKind == 1;
+            var d = DemoDuel.FromPartialObservation(side, [gate ? gateCard : spell, baby, filler],
+                side == 0 ? [wizard, null, null, null, null] : empty,
+                side == 1 ? [wizard, null, null, null, null] : empty, 8000,
+                side0FusionDeck: side == 0 ? [thousand, thousand] : null,
+                side1FusionDeck: side == 1 ? [thousand, thousand] : null);
+            d.MonsterFaceDown[side, 0] = true;
+            if (gate) check(d.Play(0, out _) && d.BeginFusionGate(side, out _), "Queued Fusion Gate fixture");
+            else if (set) check(d.SetFromHand(0, out _) && d.ActivateSetSpell(0, out _), "Queued Fusion Set fixture");
+            else check(d.Play(0, out _), "Queued Fusion hand fixture");
+            var request = d.PendingFusionSummon!;
+            var choice = request.Options[1];
+            Card physicalResult = d.FusionDeck(side)[1];
+            Card unselectedResult = d.FusionDeck(side)[0];
+            var probe = new FusionGateProbe(d);
+            var q = d.CreatePrimitiveActionQueue(probe);
+            var originalHand = d.Hand.ToArray();
+            Card physicalWizard = d.Monsters[side, 0]!;
+            check(d.TryCaptureCardTarget(side, DuelZone.FusionDeck, 1, out var resultTarget) &&
+                d.TryCaptureCardTarget(side, DuelZone.FusionDeck, 0, out var otherTarget) &&
+                resultTarget != otherTarget, "Fusion Deck tracks separate physical copies");
+            check(!d.TryQueueFusionSummon(request, 1, [choice.SuggestedMaterials[0], choice.SuggestedMaterials[0]], out _)
+                && q.Trace.Count == 0, "Queued Fusion rejects duplicate material");
+            d.Monsters[side, 0] = wizard with { };
+            check(!d.TryQueueFusionSummon(request, 1, choice.SuggestedMaterials, out _) &&
+                q.Trace.Count == 0 && d.Hand.SequenceEqual(originalHand), "Queued Fusion rejects stale same-ID material");
+            d.Monsters[side, 0] = physicalWizard;
+            int destructions = 0, tributes = 0, summons = 0;
+            d.MonsterDestroyed += _ => destructions++;
+            d.MonsterTributed += _ => tributes++;
+            d.MonsterSpecialSummoned += _ => summons++;
+            check(d.TryQueueFusionSummon(request, 1, choice.SuggestedMaterials, out _, defense) &&
+                q.IsBusy && d.PendingFusionSummon == request && d.Hand.SequenceEqual(originalHand) &&
+                d.Graveyard(side).Count == 0 && d.Banished(side).Count == 0 &&
+                !d.CancelFusionSummon(out _) && !d.TryQueueFusionSummon(request, 1, choice.SuggestedMaterials, out _),
+                "Queued Fusion admission is read-only and blocks competing input");
+            q.Tick(); q.Tick();
+            check(q.IsBusy && d.PendingFusionSummon is null && d.Hand.SequenceEqual(originalHand) &&
+                d.Monsters[side, 0] == wizard && d.FusionDeck(side).Count == 2 &&
+                d.Graveyard(side).Count == 0 && d.Banished(side).Count == 0 && probe.Cues.Count == 1 &&
+                probe.Cues[0].Destination == (gate ? DuelZone.FieldSpell : DuelZone.SpellTrap),
+                "Queued Fusion activation gate precedes spending and all material moves");
+            probe.Release = true;
+            for (int tick = 0; tick < 100 && q.IsBusy; tick++) q.Tick();
+            check(!q.IsBusy && q.Fault is null && d.Hand.SequenceEqual([filler]) &&
+                ReferenceEquals(d.Monsters[side, 0], physicalResult) &&
+                ReferenceEquals(d.FusionDeck(side).Single(), unselectedResult) &&
+                d.DefensePosition[side, 0] == defense && !d.MonsterFaceDown[side, 0] &&
+                destructions == 0 && tributes == 0 && summons == 1 &&
+                (gate ? d.FieldSpells[side] == gateCard && d.Graveyard(side).Count == 0 &&
+                    d.Banished(side).Count == 2 : d.Graveyard(side).Count == 3 &&
+                    d.Banished(side).Count == 0 && d.Spells[side, 0] is null),
+                "Queued Fusion preserves committed state, result occurrence and material semantics");
+            var executed = q.Trace.Where(t => t.Stage == ActionTraceStage.Executed).ToArray();
+            check(executed.All(t => t.Result?.Outcome == CommandOutcome.Applied) &&
+                executed.Count(t => t.Entry.Command is SendToGraveyardCommand) == (gate ? 0 : 3) &&
+                executed.Count(t => t.Entry.Command is BanishCommand) == (gate ? 2 : 0) &&
+                executed.Count(t => t.Entry.Command is SpecialSummonCommand) == 1 &&
+                executed[^2].Entry.Command is SpecialSummonCommand { Source: var summoned } && summoned == resultTarget &&
+                executed[^1].Entry.Command.GetType().Name == "FinishFusionSummonCommand",
+                "Queued Fusion moves one occurrence per command and finalizes after placement");
+        }
+
+        // A source/target replacement between admission and first execution
+        // must reject the reservation without spending a single card.
+        var stale = DemoDuel.FromPartialObservation(0, [spell, baby], [wizard, null, null, null, null],
+            empty, 8000, side0FusionDeck: [thousand]);
+        check(stale.Play(0, out _), "Queued Fusion stale fixture");
+        var staleRequest = stale.PendingFusionSummon!;
+        var staleChoice = staleRequest.Options.Single();
+        var sq = stale.CreatePrimitiveActionQueue();
+        check(stale.TryQueueFusionSummon(staleRequest, 0, staleChoice.SuggestedMaterials, out _),
+            "Queued Fusion stale admission");
+        stale.Monsters[0, 0] = wizard with { };
+        for (int tick = 0; tick < 10 && sq.IsBusy; tick++) sq.Tick();
+        check(!sq.IsBusy && sq.Fault is null && stale.PendingFusionSummon == staleRequest &&
+            stale.Hand.Count == 2 && stale.Graveyard(0).Count == 0 && stale.FusionDeck(0).Count == 1,
+            "Queued Fusion stale reservation fails before spending");
+
+        foreach (int side in new[] { 0, 1 })
+        {
+            var d = DemoDuel.FromPartialObservation(side, [spell, baby, wizard], empty, empty, 8000,
+                side0Deck: side == 0 ? [filler] : null, side1Deck: side == 1 ? [filler] : null,
+                side0FusionDeck: side == 0 ? [thousand] : null, side1FusionDeck: side == 1 ? [thousand] : null);
+            var q = d.CreatePrimitiveActionQueue();
+            var cpu = new CpuDuelController(side);
+            check(cpu.Step(d, queueTurnActions: true).Action == CpuAction.Draw, "Queued CPU Fusion draw");
+            for (int tick = 0; tick < 100 && q.IsBusy; tick++) q.Tick();
+            check(cpu.Step(d, queueTurnActions: true).Action == CpuAction.Selection &&
+                d.PendingFusionSummon is not null, "Queued CPU Fusion opens existing selection");
+            check(cpu.Step(d, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Spell, Card: null } &&
+                q.IsBusy && d.Hand.Count == 4 && d.Monsters[side, 0] is null &&
+                q.Trace.Last(t => t.Stage == ActionTraceStage.Admitted).Entry.Origin == ActionOrigin.Cpu,
+                "Queued CPU Fusion uses identical producer without legacy presentation metadata");
+            for (int tick = 0; tick < 100 && q.IsBusy; tick++) q.Tick();
+            check(!q.IsBusy && q.Fault is null && d.Monsters[side, 0] == thousand && d.Hand.Single() == filler,
+                "Queued CPU Fusion resolves on the scheduler");
+        }
+
+        Card witch = Monster(573), faith = Monster(611), king = Monster(494, fusion: true);
+        var trigger = DemoDuel.FromPartialObservation(0, [spell, faith], [witch, null, null, null, null],
+            empty, 8000, side0Deck: [baby], side0FusionDeck: [king]);
+        check(trigger.Play(0, out _), "Queued Fusion Witch fixture");
+        var tq = trigger.CreatePrimitiveActionQueue();
+        var pending = trigger.PendingFusionSummon!;
+        check(trigger.TryQueueFusionSummon(pending, 0, pending.Options[0].SuggestedMaterials, out _),
+            "Queued Fusion Witch admitted");
+        for (int tick = 0; tick < 100 && tq.IsBusy; tick++)
+        {
+            tq.Tick();
+            check(trigger.PendingCardSelection is null || trigger.Monsters[0, 0] == king,
+                "Queued Fusion field trigger opens only after placement");
+        }
+        check(!tq.IsBusy && trigger.PendingCardSelection?.EffectResourceId == witch.Id &&
+            trigger.Monsters[0, 0] == king, "Queued Fusion preserves deferred Witch search");
     }
 
     private static void CheckFusionGate(Action<bool, string> check, Card baby, Card wizard, Card thousand, Card filler)
