@@ -57,6 +57,11 @@ static partial class Game
         bool near = side == ViewPlayer;
         switch (a.Kind)
         {
+            case ActionPresentationKind.DirectAttack:
+            case ActionPresentationKind.TargetedAttack:
+                // The script does not present a separate manual aiming step.
+                BeginAttackCue(side, a.SourceIndex, slot, alreadyAimed: false);
+                break;
             case ActionPresentationKind.Activate:
                 // Producer has emitted followups, but no source movement or
                 // damage/destruction yet. Show the existing travel + glow.

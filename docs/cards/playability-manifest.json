@@ -1764,6 +1764,71 @@
         "Bounded own Main Phase sandbox after CI; other Quick-Play windows, chains, UI/CPU, native comparison pending.",
         "P105 primary 00587950/candidate 0057AE20 absent in cumulative v2; target preparation 005944D0 present."
       ]
+    },
+    {
+      "id": "spell.queued-ritual-summon",
+      "kind": "Spell",
+      "subtype": "Ritual",
+      "mechanics": [
+        "Queued Ritual Summon from hand or Set"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        675,
+        676,
+        678,
+        691,
+        698,
+        720,
+        958,
+        1416
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedRitualSummon.cs",
+        "src/tests/Joey.Tests/QueuedRitualSummonChecks.cs",
+        "docs/cards/c09-queued-ritual-summon.md"
+      ]
+    },
+    {
+      "id": "monster.queued-ritual-summon",
+      "kind": "Monster",
+      "subtype": "Ritual",
+      "mechanics": [
+        "Special-only Ritual Summon and ordinary field play"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        700,
+        701,
+        703,
+        709,
+        718,
+        721,
+        1411
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedRitualSummon.cs",
+        "src/tests/Joey.Tests/QueuedRitualSummonChecks.cs",
+        "docs/cards/c09-queued-ritual-summon.md"
+      ]
+    },
+    {
+      "id": "monster.relinquished-ritual",
+      "kind": "Monster",
+      "subtype": "Ritual",
+      "mechanics": [
+        "Queued Ritual Summon",
+        "Own effect pending"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        730
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedRitualSummon.cs",
+        "src/tests/Joey.Tests/QueuedRitualSummonChecks.cs",
+        "docs/cards/c09-queued-ritual-summon.md"
+      ]
     }
   ]
 }

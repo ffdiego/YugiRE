@@ -4,7 +4,7 @@ internal static class NativeCoinPassChecks
 {
     public static void Run(Action<bool,string> check,Action<Action,string> reject)
     {
-        int[] c=ActivationEffectPlayback.ApproximateCosineTable();
+        int[] c=NativeCosineCapture.GenerateTable();
         NativeDiceTexture Texture(int key)=>key switch
         {
             0=>new(14*40,44,14),1=>new(4*30,20,4),2=>new(50,70,1),

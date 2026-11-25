@@ -78,16 +78,9 @@ public sealed class ActivationEffectPlayback
 
     public ActivationEffectPlayback(int[]? cosineFixed16 = null)
     {
-        // The actual x87-generated DAT_00A52EE8 table must be captured for
-        // bit-exact rendering. This approximation is NOT such a capture.
-        cosine = cosineFixed16 is null ? ApproximateCosineTable() : (int[])cosineFixed16.Clone();
+        cosine = cosineFixed16 is null ? NativeCosineCapture.GenerateTable() : (int[])cosineFixed16.Clone();
         if (cosine.Length != 512) throw new ArgumentException("Expected 512 cosine values.", nameof(cosineFixed16));
     }
-
-    public static int[] ApproximateCosineTable() =>
-        Enumerable.Range(0, 512)
-            .Select(i => (int)(Math.Cos(i * Math.PI / 256.0) * 65536.0))
-            .ToArray();
 
     public void Start(CardPoint center, CardBounds scratchBounds, int category = 0,
                       DuelLookAndFeel? style = null)

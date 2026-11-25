@@ -10,14 +10,40 @@ public readonly record struct NativeWaveInfo(ushort Format, ushort Channels,
 {
     public double ByteRateDurationMilliseconds => DataBytes * 1000.0 / ByteRate;
 
-    public static NativeWaveInfo Read(ReadOnlySpan<byte> bytes)
+    public static NativeWaveInfo Read(ReadOnlySpan<byte> bytes) =>
+        ReadCore(bytes, voiceArchive: false, out _);
+
+    /// <summary>Reads an original Voice.dat entry. If canonicalEnd is set,
+    /// use that length and rewrite the RIFF size for a standalone decoder.</summary>
+    public static NativeWaveInfo ReadVoiceArchiveEntry(ReadOnlySpan<byte> bytes, out int? canonicalEnd) =>
+        ReadCore(bytes, voiceArchive: true, out canonicalEnd);
+
+    private static NativeWaveInfo ReadCore(ReadOnlySpan<byte> bytes, bool voiceArchive, out int? canonicalEnd)
     {
+        canonicalEnd = null;
         if (bytes.Length < 12 || !bytes[..4].SequenceEqual("RIFF"u8) ||
             !bytes.Slice(8,4).SequenceEqual("WAVE"u8))
             throw new InvalidDataException("Expected RIFF/WAVE header");
         long end = 8L + BinaryPrimitives.ReadUInt32LittleEndian(bytes[4..]);
         if (end < 12 || end > bytes.Length)
             throw new InvalidDataException("Truncated RIFF container");
+
+        // The Voice.dat PCM variant has fmt size 18, no extension data,
+        // and precisely 4 bytes inside/40 outside RIFF after its data
+        // chunk. Native duration reader 005C0F80 stops at the data size.
+        if (voiceArchive && end >= 50 && bytes.Length - end == 40 &&
+            bytes.Slice(12, 4).SequenceEqual("fmt "u8) &&
+            BinaryPrimitives.ReadUInt32LittleEndian(bytes[16..]) == 18 &&
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes[20..]) == 1 &&
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes[22..]) is 1 or 2 &&
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes[34..]) == 16 &&
+            BinaryPrimitives.ReadUInt16LittleEndian(bytes[36..]) == 0 &&
+            bytes.Slice(38, 4).SequenceEqual("data"u8) &&
+            46L + BinaryPrimitives.ReadUInt32LittleEndian(bytes[42..]) == end - 4)
+        {
+            end -= 4;
+            canonicalEnd = (int)end;
+        }
 
         ushort format=0,channels=0,align=0,bits=0;
         uint rate=0,byteRate=0,data=0;

@@ -24,7 +24,6 @@ static partial class Game
         string? alt=Option(args,"--review-alternative="),ex=Option(args,"--review-exclusion=");
         if(alt is null&&ex is null)return;
         if(alt is not null&&ex is not null)throw new InvalidDataException("Choose one review mode.");
-        if(!effectCosineFromNativeCapture)throw new InvalidDataException("Review requires --native-cosine=<capture.json>.");
         string[] fields=(alt??ex!).Split(',');
         if(fields.Length!=2||!ushort.TryParse(fields[0],out ushort id))
             throw new InvalidDataException("Expected card resource ID,category or hex descriptor.");
@@ -160,7 +159,7 @@ static partial class Game
             exclusionFrame=alternative?null:exclusionFrame,
             counter=alternative?altReview.Counter:exclusionReview!.Counter,
             soundRequest=alternative?altReviewSound:NativeExclusionTimeline.ConstructorSound,
-            resources=exclusionResources,cosineSource="native-runtime-capture",
+            resources=exclusionResources,cosineSource=effectCosineSource,
             compositor="diagnostic raylib tint/geometry; native raster/remap not verified"
         },new JsonSerializerOptions{WriteIndented=true})+Environment.NewLine);
     }

@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed partial class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -81,6 +81,7 @@ public sealed partial class DuelConsoleSession
         if (op == "select-revive") return SelectRevival(words);
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
+        if (op == "ritual") return ExecuteRitualSummon(words);
         if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "turn" or "discard-end" or "attack")
             return ExecuteLegal(op, words);
         // Replay projection is a setup edit, not a legal input. Capture the
@@ -183,6 +184,7 @@ public sealed partial class DuelConsoleSession
     {
         bool ok;
         string message;
+        if (op == "ritual") return ExecuteRitualSummon(words);
         if (op is "summon" or "set")
         {
             if (words.Length < 2 || !Index(words[1], out int index) || index >= duel.Hand.Count)
