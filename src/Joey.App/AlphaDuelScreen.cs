@@ -276,7 +276,7 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
-        if (target == -1 && queuedDuel is not null && duel.TryQueueDirectAttack(attacker, out message))
+        if (queuedDuel is not null && duel.TryQueueAttack(attacker, target, out message))
             return;
 
         int player = duel.ActivePlayer;
