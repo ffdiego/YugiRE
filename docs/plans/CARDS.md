@@ -217,6 +217,12 @@ Inspeção do head `bae311a` do draft #150, sem editar a branch reservada. CI do
 
 Próximo passo C12: responsável do #150 deve concluir/revisar a fatia, reconciliar com a main e PRs ACTIONS; validar defaults, disponibilidade e escolhas, ordens de comandos e rejeições sem fallback mutante em regressões UI/CPU. Não marcar item 1 fechado nem iniciar novas cartas nesta rodada.
 
+### C12.1 — Produtores de seleção de monstros FLIP (P072 e bounce)
+
+Man-Eater Bug (500), Hane-Hane (540) e Penguin Soldier (601) usam o executor tipado existente também via UI/CPU. O primeiro alvo opcional é apenas seleção de interface, guarda a ocorrência e não altera zonas; a resposta final (0/1/2 para Penguin; 1 para os demais) é um comando, com limpeza e gate já existentes. Rejeição de resposta não cai no legado; troca por outra ocorrência do mesmo ID invalida a escolha. CPU preserva sua preferência por alvos adversários e origem Cpu. A posse do prompt é separada do estado ocupado da fila. O combate legado diferido permanece no caminho anterior; o produtor também reconhece os pilotos de FLIP em batalha já reservados pela fila. Nenhuma carta nova.
+
+Testes em QueuedMonsterFlipTargetChecks: ambos os lados, três cartas, seleção stale, duplicata, busy, zero/um/dois alvos, troca da ocorrência, execução e origem CPU. Demo.cs 2623 → 2623 linhas (não se remove legado ainda; reutilização do executor). CI obrigatório; gate C12.1 permanece aberto. Coordenar alterações próximas em DuelScreen/CPU com #150 e ACTIONS.
+
 ### C12.1 — Produtores de seleção Deck/GY → Hand (P006/P165/P018/Fusion Sage)
 
 Base `bd4dc3e`. A janela CardSelectionScreen e a CPU usavam ResolveCardSelection/SkipOptionalCardSelection mesmo para prompts com executor tipado. Fusion Sage é exclusivo da fila e o clique legado era recusado; os demais podiam mutar imediatamente. Novo adaptador `DemoQueuedHandSelection.cs` compartilha admissão Player/Cpu, preserva a identidade da requisição e da ocorrência no índice mostrado, e nunca recorre ao legado após rejeição ou fila ocupada. P006 Sangan/Witch, P165 Sonic Bird/Senju, P018 Magician of Faith/Mask of Darkness e Fusion Sage (C02.2) usam a resposta existente quando no escopo suportado. P018 permanece restrito ao FLIP manual Main; batalha legada com deferredBattle, Deck→Field, GY→Field e escolhas múltiplas não são migradas nesta fatia. Sem novas cartas. Não alterar layout visual.

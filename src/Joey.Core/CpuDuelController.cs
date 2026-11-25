@@ -159,6 +159,26 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipTarget is { } flip)
         {
+            if (queueTurnActions && duel.UsesQueuedMonsterFlipSelection(flip))
+            {
+                if (duel.FlipEffectsNegated)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
+                var choice = duel.QueuedMonsterFlipCandidates()
+                    .Where(c => !duel.SelectedFlipTargets.Any(t => t.Player == c.Target.Side && t.Zone == c.Zone))
+                    .Where(c => flip.Effect != DemoFlipEffect.ReturnUpToTwo || c.Target.Side != Player)
+                    .OrderByDescending(c => c.Target.Side != Player)
+                    .ThenByDescending(c => c.Target.Side == Player ? -KnownPower(duel, Player, c.Zone) :
+                        KnownPower(duel, c.Target.Side, c.Zone))
+                    .ThenBy(c => c.Zone).FirstOrDefault();
+                if (choice is not null)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TrySelectQueuedMonsterFlipTarget(flip, choice.Target.Side, choice.Zone, out m, ActionOrigin.Cpu));
+                if (flip.Effect == DemoFlipEffect.ReturnUpToTwo)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
+                return Idle(CpuStepStatus.Blocked, "Mandatory queued FLIP has no legal target.");
+            }
             bool bounce = flip.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
             var targets = (from p in Enumerable.Range(0, 2)
                            from z in Enumerable.Range(0, 5)
