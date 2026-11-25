@@ -46,6 +46,28 @@ internal static class NativeVoiceAudioChecks
         byte[] noData=(byte[])b.Clone();
         "JUNK"u8.CopyTo(noData.AsSpan(46));
         reject(()=>NativeWaveInfo.Read(noData),"V18: reject missing data chunk");
+        byte[] voice = new byte[94];
+        b.AsSpan(0, 12).CopyTo(voice);
+        b.AsSpan(22, 24).CopyTo(voice.AsSpan(12));
+        b.AsSpan(46, 12).CopyTo(voice.AsSpan(38));
+        BinaryPrimitives.WriteUInt32LittleEndian(voice.AsSpan(4), 46);
+        BinaryPrimitives.WriteUInt32LittleEndian(voice.AsSpan(16), 18);
+        voice.AsSpan(50).Fill(42);
+        check(NativeWaveInfo.ReadVoiceArchiveEntry(voice, out int? canonicalEnd) == info &&
+            canonicalEnd == 50, "V18: Voice.dat PCM metadata ends at the data chunk");
+        check(NativeWaveInfo.ReadVoiceArchiveEntry(b, out canonicalEnd) == info &&
+            canonicalEnd is null, "V18: valid RIFF entries require no adaptation");
+        reject(() => NativeWaveInfo.Read(voice), "V18: generic RIFF rejects the Voice.dat suffix");
+        reject(() => NativeWaveInfo.ReadVoiceArchiveEntry(voice[..^1], out _),
+            "V18: Voice.dat must have the observed suffix size");
+        byte[] inconsistentVoice = (byte[])voice.Clone();
+        BinaryPrimitives.WriteUInt32LittleEndian(inconsistentVoice.AsSpan(42), 5);
+        reject(() => NativeWaveInfo.ReadVoiceArchiveEntry(inconsistentVoice, out _),
+            "V18: Voice.dat data size must reach the observed boundary");
+        inconsistentVoice = (byte[])voice.Clone();
+        BinaryPrimitives.WriteUInt16LittleEndian(inconsistentVoice.AsSpan(32), 1);
+        reject(() => NativeWaveInfo.ReadVoiceArchiveEntry(inconsistentVoice, out _),
+            "V18: Voice.dat adaptation preserves PCM validation");
         check(NativeAudioRouting.Resolve(true,0x10001045,70,20,99)==
             new NativeAudioRequest(NativeAudioBank.Internal,69,0),
             "V18: Internal uses low twelve bits, ignores stream transition");
