@@ -90,7 +90,8 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Existing fixed-effect executors; no target or cost selection at admission.</summary>
-    public static bool SupportsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
+    public static bool SupportsQueuedFixedSpell(Card card) => FieldSpellRules.Supports(card.Id) ||
+        card.Id == InfiniteCardsId || card.ClassCode == 22 &&
         (DrawSpellRules.Effect(card) is not null || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
          SpellTrapWipeRules.SupportsQueued(card.Id));
@@ -101,10 +102,12 @@ public sealed partial class DemoDuel
     {
         if (primitiveActionQueue is not { IsBusy: false } || ActionsBlocked ||
             PendingEndDiscards != 0 || Phase != DemoPhase.Main ||
-            sourceZone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
+            sourceZone is not (DuelZone.Hand or DuelZone.SpellTrap or DuelZone.FieldSpell) ||
             !TryCaptureCardTarget(ActivePlayer, sourceZone, index, out var source) ||
             !TryResolveCardTarget(source, out _, out var card) || !SupportsQueuedFixedSpell(card))
             return false;
+        if (FieldSpellRules.Supports(card.Id)) return TryPlanFieldActivation(source, out _);
+        if (card.Id == InfiniteCardsId) return CanActivateInfiniteCards(source, out _);
         if (DrawSpellRules.Effect(card) is not null)
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
