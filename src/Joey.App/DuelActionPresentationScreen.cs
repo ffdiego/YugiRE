@@ -94,18 +94,10 @@ static partial class Game
         queuedPreviewSource is { } source && source.Side == side && source.Zone == DuelZone.Hand &&
         duel.TryCaptureCardTarget(side, DuelZone.Hand, index, out var current) && source == current;
 
-    static bool IsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
-        (DrawSpellRules.Effect(card) is not null || LifePointSpellRules.Supports(card.Id) ||
-         MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id) ||
-         DeckSearchSpellRules.Filter(card.Id) is not null);
+    static bool IsQueuedFixedSpell(Card card) => DemoDuel.SupportsQueuedFixedSpell(card);
 
-    static bool TryQueuedFixedSpell(Card card, DuelZone zone, int index, out string result) =>
-        DrawSpellRules.Effect(card) is not null
-            ? duel.TryQueueDrawSpell(zone, index, out result)
-            : DeckSearchSpellRules.Filter(card.Id) is not null ? duel.TryQueueDeckSearchSpell(zone, index, out result)
-            : LifePointSpellRules.Supports(card.Id) ? duel.TryQueueLifePointSpell(zone, index, out result)
-            : MonsterWipeRules.Scope(card.Id) is not null ? duel.TryQueueMonsterWipe(zone, index, out result)
-            : duel.TryQueueSpellTrapWipe(zone, index, out result);
+    static bool TryQueuedFixedSpell(DuelZone zone, int index, out string result) =>
+        duel.TryQueueActivation(index, zone == DuelZone.SpellTrap, out result);
 
     static void AdvanceQueuedDuel()
     {
