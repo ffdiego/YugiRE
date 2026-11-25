@@ -61,7 +61,9 @@ public static class ActionTraceProjection
             a.ResourceId==0 || a.Slot is <0 or >=5 || role is not (0 or 1)) return null;
         // Only defender 7C has an observed ordinary variant in the fixture.
         // Keep attacker routing visible but unmapped pending dynamic evidence.
-        if(finish && role!=1) return null;
+        // P164 has a callback at GY arrival; the ordinary 7C variant is
+        // not established for its native routing yet.
+        if(finish && (role!=1 || CardSelectionRules.BattleRecruitAttribute(a.ResourceId) is not null)) return null;
         return [(ushort)((target.Side<<15)|(finish?0x7c:0x3c)),(ushort)a.Slot,
             (ushort)(finish?0:role),(ushort)(finish?1:0)];
     }

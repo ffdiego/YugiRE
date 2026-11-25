@@ -330,8 +330,10 @@ public sealed partial class DemoDuel
                 marked.Target==afterWin.Target && marked.Card.Id==FlipEffectRules.Skelengel)
                 return duel.SnapshotQueuedBattleRemoval(afterWin);
             // Only a reserved battle snapshot may finish after lethal LP.
+            if (command is OpenBattleRecruitmentCommand)
+                return duel.OpenQueuedBattleRecruitment();
             if (command is FinishBattleRemovalCommand battleFinish)
-                return duel.FinishQueuedBattleRemoval(battleFinish);
+                return duel.FinishQueuedBattleRemoval(battleFinish, followups);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
             if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
@@ -1558,7 +1560,9 @@ public sealed partial class DemoDuel
             reservedDeckSearchOwner = null;
             reservedDeckSearch.Clear();
             deckSearchMoved = false;
+            bool battleRecruitment = duel.queuedBattleRecruitmentRequest is not null;
             duel.BeginNextQueuedDeckSearch();
+            if (battleRecruitment) duel.RefreshQueuedBattleRecruitmentRequest();
             return new(CommandOutcome.Applied);
         }
 
