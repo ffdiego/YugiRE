@@ -181,6 +181,7 @@ NativeSelectionManifestChecks.Run(Check, Reject);
 NativeFusionResourceChecks.Run(Check, Reject);
 NativeGeneralFusionEffectChecks.Run(Check, Reject);
 NativeFusionCardTimelineChecks.Run(Check);
+NativeFusionPlaybackChecks.Run(Check);
 NativeEffectCommandRoutingChecks.Run(Check, Reject);
 NativeContextEffectChecks.Run(Check);
 NativeAlternativeActivationChecks.Run(Check);

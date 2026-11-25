@@ -80,6 +80,7 @@ static partial class Game
             ConfigureCardStatusReview(args, archive);
             ConfigureFusionReview(args, archive);
             ConfigureGeneralFusionReview(args, archive);
+            ConfigureLiveGeneralFusion(archive);
             ConfigureLayerFontReview(args, archive);
             ConfigureDiceReview(args, archive);
             ConfigureCoinReview(args, archive);

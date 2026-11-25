@@ -411,7 +411,7 @@ static partial class Game
                     Raylib.DrawRectangleLinesEx(monsterRect, 1, own ? Gold : Color.Gray);
                     Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
                 }
-                if (monster != null && !InFlight(player, zone, false))
+                if (monster != null && !InFlight(player, zone, false) && !FusionResultHidden(player,zone))
                 {
                     var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster, own, zone,
                         duel.DefensePosition[player, zone], duel.MonsterFaceDown[player, zone]);
@@ -431,7 +431,7 @@ static partial class Game
                     else
                         fieldAttributeTimelines[player, zone]?.Reset();
                 }
-                if (monster is null || InFlight(player, zone, false))
+                if (monster is null || InFlight(player, zone, false) || FusionResultHidden(player,zone))
                     fieldAttributeTimelines[player, zone]?.Reset();
 
                 if (own && (attacker == zone || tributeZones.Contains(zone)))

@@ -4,7 +4,7 @@ internal static class DuelSoundAssetChecks
 {
     internal static void Run(Action<bool,string> check)
     {
-        check(Enum.GetValues<DuelSoundCue>().Select(DuelSoundAssets.Effect).Distinct().Count()==11 &&
+        check(Enum.GetValues<DuelSoundCue>().Select(DuelSoundAssets.Effect).Distinct().Count()==13 &&
             Enum.GetValues<DuelSoundCue>().All(c=>DuelSoundAssets.Effect(c).StartsWith(DuelSoundAssets.InternalPrefix)),
             "V18: distinct named effect resources");
         check(DuelSoundAssets.Effect(DuelSoundCue.Activation).EndsWith("magic_active.wav") &&

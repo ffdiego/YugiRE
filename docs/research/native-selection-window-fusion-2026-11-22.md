@@ -632,3 +632,7 @@ Roteiro 13 agora pede janela tardia a partir da última instrução já conhecid
 o Draw inteiro ou dados 005DB278/005DB280 já no v3.
 O endpoint +AC depende de resolver vtable da superfície
 (roteiro 24). Sem alteração de cobertura.
+
+## V11 integração geral no duelo
+
+DemoSpecialSummon.FusionMaterials transporta snapshot read-only dos materiais após commit (Polymerization/Fusion Gate, humano/CPU). A fila visual existente recebe GeneralFusionPlacement antes de SpecialSummonPlacement; nenhuma mutação ou decisão nova. 161 samples (0..640 inclusive) com um Draw por Update é política do cliente baseada no fim candidato, não ABI/cadência de Draw demonstrada. NativeFusionPlayback recupera samples em ordem mesmo em frames longos e emite requests 4/384 uma vez. Resultado escondido no campo e hover até terminar a sequência. Usa miniaturas reais e banco validado; se faltarem, registra erro e mantém special summon anterior, sem placeholder. Fusão geral sobre tabuleiro, scratch/overlay +AC ausentes, som fusion1/2 associação provisória. Nenhuma nova regra ou fila. Testes de snapshot e playback; integração desktop ainda pendente, cobertura conservadora.

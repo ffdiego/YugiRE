@@ -114,7 +114,7 @@ static partial class Game
                 if (Hit(ZoneBounds(player, zone, false)) &&
                     IsHiddenAttackTargetBeforeImpact(player, zone))
                     return (null, true);
-                if (duel.Monsters[player, zone] is Card monster &&
+                if (duel.Monsters[player, zone] is Card monster && !FusionResultHidden(player,zone) &&
                     Hit(ZoneBounds(player, zone, false)))
                     return !own && duel.MonsterFaceDown[player, zone]
                         ? (null, true) : (monster, false);

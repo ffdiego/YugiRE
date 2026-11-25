@@ -37,7 +37,9 @@ internal static class FusionChecks
               duel.Monsters[0, 0] == thousand && !duel.DefensePosition[0, 0] &&
               duel.Monsters[0, 1] is null && !duel.MonsterFaceDown[0, 1] &&
               duel.Graveyard(0).SequenceEqual([spell, baby, wizard]) && duel.FusionDeck(0).Count == 0 &&
-              summons.Single().Card == thousand && duel.CanSummonFromHand(0),
+              summons.Single().Card == thousand && duel.CanSummonFromHand(0) &&
+              summons.Single().FusionMaterials is { Count: 2 } snapshots &&
+              snapshots.Select(m=>m.Id).Order().SequenceEqual(new ushort[]{3,15}),
             "Thousand Dragon: takes one hand and one face-down field material and preserves the Normal Summon");
 
         var repeat = DemoDuel.FromPartialObservation(0, [spell, dragon, dragon],
