@@ -22,11 +22,11 @@ São 33 Updates desde -128, som no nono Update; último contador
 400, objeto inativo. A ativação ordinária tem 17 Updates.
 Não inferir milissegundos nem momento de desenho a partir disso.
 
-| Opcode | Handler | Rota |
+| Opcode bruto (índice do switch) | Handler | Rota |
 |---|---|---|
-| 48 | 00406B20 | Estágio 2: normal se slot resolvido e objeto visual corresponde ao índice interno solicitado; alternativa se slot -1, objeto ausente ou identidade de recurso divergente. |
-| 49 | 00406F70 | Estágio 1 sempre instancia alternativa depois de aguardar objetos anteriores. |
-| 18 | 0040AA40 | Estágio 1 procura todas ocorrências elegíveis por identidade, flags e lado; cria objetos ordinários para elas. Se nenhuma, cria alternativa. |
+| 72 (48) | 00406B20 | Estágio 2: normal se slot resolvido e objeto visual corresponde ao índice interno solicitado; alternativa se slot -1, objeto ausente ou identidade de recurso divergente. |
+| 73 (49) | 00406F70 | Estágio 1 sempre instancia alternativa depois de aguardar objetos anteriores. |
+| 1E (18) | 0040AA40 | Estágio 1 procura todas ocorrências elegíveis por identidade, flags e lado; cria objetos ordinários para elas. Se nenhuma, cria alternativa. |
 
 Os três handlers consultam virtual +4 de objetos anteriores e
 dos novos antes de liberar 0x4000. Não identificar o gate com
@@ -155,3 +155,4 @@ som real. Não contabilizar as revisões como Draw no duelo.
 A03 fornece evento/snapshot e integração, não criar fila
 paralela. Testes sintéticos de passes, fronteiras, duas
 perspectivas, visibilidade e mutação de Draw.
+**Correção de 25/11:** [auditoria da tabela comprimida](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma as três rotas brutas de V25. Não altera V26 nem o compositor.

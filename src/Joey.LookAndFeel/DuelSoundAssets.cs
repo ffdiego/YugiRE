@@ -3,7 +3,7 @@ namespace Joey.LookAndFeel;
 public enum DuelSoundCue
 {
     Start, TurnChange, BattlePhase, CardMove, Activation, Attack,
-    Destruction, Tribute, SpecialSummon, Damage, Heal
+    Destruction, Tribute, SpecialSummon, Damage, Heal, FusionStart, FusionResult
 }
 
 /// <summary>Original DAT filenames with provisional semantic associations,
@@ -25,6 +25,8 @@ public static class DuelSoundAssets
         DuelSoundCue.SpecialSummon=>"reborn.wav",
         DuelSoundCue.Damage=>"damage.wav",
         DuelSoundCue.Heal=>"life_up.wav",
+        DuelSoundCue.FusionStart=>"fusion1.wav",
+        DuelSoundCue.FusionResult=>"fusion2.wav",
         _=>throw new ArgumentOutOfRangeException(nameof(cue))
     });
 

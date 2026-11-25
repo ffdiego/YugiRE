@@ -11,6 +11,30 @@ public static class NativeFusionResources
 {
     public const string Prefix = @"j\duel\effect\";
     public const string Manifest = Prefix + "fusion.txt";
+    private static readonly string[] ObservedNames=["fusion_mark.yga","fusion_uzu.yga","fusion_cir.yga",
+        "fu_kira_a1.bmp","fu_kira_a2.bmp","fu_kira_a3.bmp","fu_kira_b1.bmp","fu_kira_b2.bmp","fu_kira_b3.bmp"];
+    private static readonly int[] Widths=[76,274,194,10,14,18,10,16,22];
+    private static readonly int[] Heights=[86,274,194,10,14,18,10,16,22];
+
+    // Strict diagnostic adapter for the original DAT observed in v3;
+    // native bank remapping is still separate from manifest order.
+    public static void ValidateObservedBank(IReadOnlyList<string> paths)
+    {
+        if(paths.Count!=ObservedNames.Length||
+            !paths.SequenceEqual(ObservedNames.Select(n=>Prefix+n),StringComparer.OrdinalIgnoreCase))
+            throw new InvalidDataException("Unexpected fusion bank order.");
+    }
+
+    public static CardBounds ValidateObservedSize(int key,int width,int height)
+    {
+        if(key<0||key>=Widths.Length||width!=Widths[key]||height!=Heights[key])
+            throw new InvalidDataException("Unexpected fusion resource dimensions.");
+        return new(0,0,width,height);
+    }
+
+    public static bool IsOrbitalBitmap(string path)=>
+        ObservedNames.Skip(3).Any(n=>path.Equals(Prefix+n,StringComparison.OrdinalIgnoreCase));
+
 
     public static string[] Parse(string text, IEnumerable<string> archiveNames)
     {
@@ -35,7 +59,7 @@ public static class NativeFusionResources
             paths.Add(path);
         }
         // 004877F0 references index 0, 004524F0 indices 1 and 2.
-        // The number and order of the orbital resources remain unknown.
+        // Strict observed-bank validation is opt-in for the effects review.
         if (paths.Count < 3) throw new InvalidDataException("Fusion bank must contain at least indices 0..2.");
         return paths.ToArray();
     }

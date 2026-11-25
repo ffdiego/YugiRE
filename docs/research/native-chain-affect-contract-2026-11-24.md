@@ -10,9 +10,9 @@ cruza as decompilações já importadas com construtores e chamadores
 persistentes. O parser de 0040E260 avisa sobre jump tables; não
 portar os ramos ambíguos.
 
-## V23 — cadeia, opcode 08/09
+## V23 — cadeia, opcodes brutos 0A/0B (índices 08/09)
 
-005B9470 case 8 → 00408A40 → 0041F530 → 0041FD60
+005B9470 opcode 0A (case 8) → 00408A40 → 0041F530 → 0041FD60
 → 0041F5C0. O contêiner recusa nova instância se o número (+14)
 já existir. Argumentos lidos: bit 15 de word A (lado), word B
 (zona combinada), word C (número). O objeto tem 0x1C bytes;
@@ -24,7 +24,7 @@ Banco compartilhado duel/chain/chain.txt, som 0x1000001E.
 comando quando excede 4 (ou logo se criação foi recusada).
 **Não espera que a animação inteira termine.**
 
-Case 9 → 00408AB0 → 0041F550 → 0041FEA0 → 0041F800:
+Opcode 0B (case 9) → 00408AB0 → 0041F550 → 0041FEA0 → 0041F800:
 procura pelo número OU (se número pedido =0) pelo descritor
 lado/zona combinada, seta +18=1. No estado seguinte, consulta
 0041F570 que testa o virtual +4 de todos os objetos; quando
@@ -58,7 +58,7 @@ do duelo. Usa affect.txt, camada 0x101. 0044DBC0 zera o
 ponteiro de foco DAT_005F2FDC antes do hit-test, 0041E3D0
 pode preenchê-lo com o objeto visual sob o cursor; outros
 produtores 0040AD90 e 0040AF10 também selecionam objetos
-durante comandos 19/1B. Logo a identidade de foco é da
+durante comandos brutos 1F/21 (índices 19/1B). Logo a identidade de foco é da
 ocorrência visual, não do resource ID nem apenas do mouse.
 0040E010 soma 8 módulo 256; reseta para zero se o novo foco
 for não nulo e diferente do anterior. Sem foco, a contagem
@@ -140,5 +140,7 @@ As zonas da revisão ficam entre 0 e 10. O modelo usa para essas zonas
 as coordenadas de tabuleiro que `0045C280` lê em `005DB560`,
 `005DB510` e `005DB5E0`. O render Raylib aplica chave verde e alpha
 linear como aproximação diagnóstica. O compositor nativo e a conexão
-dos comandos 08/09 à fila continuam pendentes. A revisão não altera a
+dos comandos 0A/0B à fila continuam pendentes. A revisão não altera a
 cobertura das Draws integradas ao duelo.
+
+**Correção de 25/11:** a [auditoria da tabela comprimida](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma os opcodes brutos e o produtor 005BA230. Os clocks e gates acima não mudam.

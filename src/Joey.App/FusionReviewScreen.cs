@@ -85,14 +85,14 @@ static partial class Game
                 fusionReviewTarget.Side == fusionReviewPerspective, fusionReviewTarget.Slot,
                 fusionReviewTarget.Rotated, (fusionReviewTarget.Descriptor & 0x8000) == 0));
             if (fusionReviewPass is { } pass)
-                DrawAttachedFusionReviewPass(center, pass);
+                DrawFusionReviewPass(center, pass, fusionReviewResources);
         }
     }
 
-    static void DrawAttachedFusionReviewPass(CardPoint center, NativeFusionSprite pass)
+    static void DrawFusionReviewPass(CardPoint center, NativeFusionSprite pass, string[] resources)
     {
         if (pass.ScaleFixed16 <= 0 || pass.Intensity <= 0) return;
-        var texture = graphics.Texture(fusionReviewResources[pass.ResourceIndex]);
+        var texture = graphics.Texture(resources[pass.ResourceIndex]);
         // Existing client transform policy, only for isolated review.
         // Native 00422C00 uses integer MulDiv/quad and blend paths, so this
         // raylib adapter is intentionally not a pixel-parity assertion.
