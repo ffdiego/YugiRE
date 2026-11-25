@@ -31,10 +31,16 @@ public sealed partial class DuelConsoleSession
         new Card?[5], 8000, equipmentContextResolved: true);
 
     public DuelConsoleSession(DemoDuel duel, IPresentationGate? gate = null, IEnumerable<Card>? cards = null)
+        : this(duel, gate, cards, attach: false) { }
+
+    public static DuelConsoleSession Attach(DemoDuel duel, IPresentationGate? gate = null, IEnumerable<Card>? cards = null) =>
+        new(duel, gate, cards, attach: true);
+
+    private DuelConsoleSession(DemoDuel duel, IPresentationGate? gate, IEnumerable<Card>? cards, bool attach)
     {
         this.duel = duel ?? throw new ArgumentNullException(nameof(duel));
         catalog = (cards ?? []).GroupBy(c => c.Id).Where(g => g.Count() == 1).ToDictionary(g => g.Key, g => g.Single());
-        Queue = duel.CreatePrimitiveActionQueue(gate, allowLabEdits: true);
+        Queue = attach ? duel.ConsoleQueue(gate) : duel.CreatePrimitiveActionQueue(gate, allowLabEdits: true);
     }
 
     public DuelConsoleResult Execute(string line)

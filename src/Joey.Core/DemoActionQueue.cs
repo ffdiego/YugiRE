@@ -4,6 +4,11 @@ public sealed partial class DemoDuel
 {
     private ActionQueue? primitiveActionQueue;
 
+    // Explicit developer console attachment must reuse this duel's queue.
+    // An existing queue retains its original lab-edit authorization.
+    internal ActionQueue ConsoleQueue(IPresentationGate? gate) =>
+        primitiveActionQueue ?? CreatePrimitiveActionQueue(gate, allowLabEdits: true);
+
     /// <summary>
     /// One queue per duel. Effect-level operations, not a general legal input API.
     /// Existing App/CPU entrypoints remain legacy; do not mix their decisions

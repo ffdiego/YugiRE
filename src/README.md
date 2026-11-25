@@ -112,7 +112,7 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 
 ## Console de laboratório
 
-No menu, **Console lab (F10)** abre um novo tabuleiro vazio, sem CPU. F10 alterna o console durante o laboratório; Enter executa comandos. Também é possível iniciar com `dotnet run --project src/Joey.App -- --duel-console`. Não concede privilégios de laboratório a um duelo em andamento: volte ao menu com Escape e abra o laboratório. [Comandos](../docs/architecture/duel-console.md).
+No menu, **Console lab (' / F10)** abre um novo tabuleiro vazio, sem CPU. Em qualquer duelo, a tecla apóstrofo (`'`), grave ou F10 abre/retrai o console estilo Quake sobre a partida atual; Esc fecha primeiro o console. Enter executa comandos, Up/Down percorrem histórico e PgUp/PgDn rolam o log. Também é possível iniciar com `dotnet run --project src/Joey.App -- --duel-console`. A abertura em duelo local/Alpha habilita explicitamente a ferramenta de desenvolvimento no estado atual: reaproveita a fila existente ou cria a única fila se ainda estiver no modo legado. CPU e cliques ficam suspensos enquanto aberto; ações já admitidas continuam. O modo piloto de ações enfileiradas permanece ativo no duelo após fechar o console. O laboratório vazio continua separado. [Comandos](../docs/architecture/duel-console.md).
 
 ## Alpha vs CPU
 
