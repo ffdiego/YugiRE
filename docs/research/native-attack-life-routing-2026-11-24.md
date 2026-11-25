@@ -160,3 +160,43 @@ blit. Não há integração com o Draw normal nesta fatia:
 ângulo x87 (005DA708/728/730), formato/key de superfície e
 comparação gráfica continuam em aberto. Nenhuma mudança ao
 Core, gate, scheduler ou inventário. Sem crédito Verified.
+
+## V04.3 — operandos x87 e perspectiva
+
+Reconsulta local somente leitura do SQLite v3 (mesmo SHA256,
+quick_check ok, fingerprint EXE confirmado). Assembly do Draw
+004142C0 confirma, com dx=targetX-originX, dy=targetY-originY:
+
+- 00414812..0041485C, quando targetSide == (~localPerspective & 1):
+  atan2(dx,-dy) * D[005DA730] / D[005DA708], convertido por
+  005C3E40, depois trunc(raw * counter / 128).
+- 0041485E..0041489B, caso contrário:
+  atan2(dx,dy) * D[005DA728] / D[005DA708], convertido pelo
+  mesmo helper, depois 256 + trunc(raw * counter / 128).
+- 0041465E..00414689: voo, dx=targetX-currentX,
+  dy=targetY-currentY, atan2(dx,-dy) com D[005DA730].
+  O centro corrente já foi truncado na interpolação.
+- 00414777..004147AE: impacto usa vetor origin→target e
+  D[005DA730]; não reaproveitar o último índice do voo.
+
+FPATAN recebe ST1=dx e ST0=±dy. CDQ/AND 0x7F/ADD/SAR 7
+trunca o produto signed em direção a zero; não confundir com
+SAR da transformação geométrica. A preparação é definida em
+0..128 e a origem do branch é o lado do alvo, não o sinal de dy.
+
+NativeSwordAngle encapsula apenas o roteamento de operandos e
+interpolação; delegate explícito fornece a conversão, sem
+presumir pi, fator, double versus x87 estendido, ou arredondamento.
+Sete checks com retorno sentinela validam os dois lados e a
+distinção voo/impacto, não a conversão em si. Nenhuma alteração
+ao sampler/renderer normal, que conserva a aproximação existente.
+
+Lacuna efetivamente consultada: nenhum intervalo de
+visual_evidence_memory contém 005DA708, 005DA728 ou 005DA730
+(o bloco 005DA710:16 não cobre nenhum dos três). Relatórios
+brutos têm referências por instrução, sem bytes dessas constantes.
+005C3E40 tem decompilação identificada como CRT __ftol e
+ROUND(in_ST0), mas nenhuma instrução indexada. Não inferir
+truncamento/nearest pelo nome nem pela representação do Ghidra.
+Roteiro 32 coleta somente 24 bytes e helper; sem repetir 21.
+CI anterior V04.2 passou (run 45543687589); novos checks aguardam CI.
