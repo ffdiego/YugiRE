@@ -201,3 +201,42 @@ começam em 005DB510 (005DB4E8+5*8), não no endereço-base.
 A coleta 33 deve ler 005DB560:80 e 005DB510:80; 005DB570:4
 (X central) já existe. Preservar layout atual até reatestar
 a tabela; composição e cadência continuam Partial.
+
+## V05.2 — coleta 33 recebida e consolidada (25/11/2026)
+
+Bundle privado ghidra-native-field-centers-contract.zip, SHA256
+0f1b6ad94406438aa5f52f9c7347895a4f7bdb3e2d82c8072b8fee09861c3c3d.
+Manifest e ambos os relatórios têm o fingerprint EXE esperado.
+1/1 decompilação, 2/2 reads, sem missing. 0045C280 confirma
+side relativo, soma região+slot, e índice +5 para adversário.
+Dados little-endian int32:
+
+| Banco | Slots 0..4 próprios | Slots 0..4 adversários |
+| --- | --- | --- |
+| 005DB560, monstros | (369,352), (447,352), (525,352), (603,352), (681,352) | (681,248), (603,248), (525,248), (447,248), (369,248) |
+| 005DB510, S/T | (369,460), (447,460), (525,460), (603,460), (681,460) | (681,140), (603,140), (525,140), (447,140), (369,140) |
+
+O valor prévio em 005DB570 coincide byte a byte. Os centros históricos
+do cliente estão confirmados, sem deslocamento novo. O Y dos atributos
+é 398/202 e o topo do glifo normal de 10px é 393/197. V06 slot -1
+usa a S/T central, (525,460)/(525,140); não confundir a origem do
+blit com centro. V02 dimensões/rotação e V06 composição não estão
+validadas pela tabela de centros.
+
+Acrescentadas 50 verificações ao teste V05.1: vinte centros em dez
+combinações de lado/slot e quarenta gates/âncoras com posição e
+face-down. CI da fatia anterior aprovado (45544506962), novo CI
+pendente. Nenhuma alteração adicional à geometria do renderer.
+
+Snapshot privado joey-knowledge-visual-cumulative-2026-11-25-v4-visuals.zip:
+SQLite SHA256 2085bc65dbc79fb2ec64645d2536bf0b56dde7bfedf4d173e32acb060b43722c;
+ZIP SHA256 a9cfc0b516486d4e82a8f062227b8431bb1226f3b4ff7ea1f5f056b9e5612e87.
+Base v3 preservada: +1 bundle (22), +2 reports (177), +1 registro
+de função (282, 215 VAs distintas), +2 chunks (26), instruções
+167494 inalteradas. Integrity_check ok, foreign_key_check vazio;
+auditoria registra contagens antes/depois de todas as tabelas.
+Importação focada compatível com schema do importador; CLI e suíte
+Python do repo não foram executados neste ambiente. O v4-visuals
+não inclui v4-actions (coleta 31); conciliar os dois ramos cumulativos,
+não sobrescrever o snapshot global. Roteiro 33 movido para completed.
+Não repetir coleta; falta comparação gráfica e mistura/cadência.
