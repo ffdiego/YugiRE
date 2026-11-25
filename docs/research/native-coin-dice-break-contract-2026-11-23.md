@@ -1,5 +1,7 @@
 # V20/V21/V22 — bancos coin/dice e remoção break
 
+> **Errata (25/11):** a [auditoria do despacho](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma que a coluna histórica abaixo mistura índices do switch e opcodes brutos. Os opcodes reais são E0/E1 para coin, E2/E3/E4 para dice, 79 para break e 7A/7C para explosion. Os produtores de 8E/8F/90/91/92 não provam as famílias coin/dice; não usar aquelas associações na integração A03.
+
 Fonte: cópia privada joey-knowledge-visual-decoded.sqlite, quick_check ok,
 SHA256 db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de.
 Consulta read-only às tabelas decompilations, refs, strings, pointers,
