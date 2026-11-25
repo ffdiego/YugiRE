@@ -1872,6 +1872,30 @@
       "limitations": [
         "Headless idle Main and Battle windows; chain, Damage Step, UI/CPU and dynamic native comparison pending."
       ]
+    },
+    {
+      "id": "field.destroy.discard-five-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1067
+      ],
+      "mechanics": [
+        "Queue-only Hand/Set with five distinct other hand occurrences as explicit cost",
+        "After five DiscardCommands and source spend, snapshot both fields and destroy all monsters, S/T and FIELD, including hidden cards; linked equipment exactly once"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedFinalDestiny.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/tests/Joey.Tests/QueuedSpellTrapWipeChecks.cs",
+        "docs/cards/c02-final-destiny.md"
+      ],
+      "limitations": [
+        "Bounded headless sandbox after CI; no general chains, discard-trigger/replacement rules, native empty-field legality, UI/CPU or native comparison.",
+        "P144 preparation 0057D7C0 confirms count five; primary 00589970 and availability 005813D0 absent in v3."
+      ]
     }
   ]
 }
