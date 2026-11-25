@@ -32,5 +32,5 @@ chain, cost-trigger/replacement or protection rules asserted.
 Tests: both controllers, Hand/Set, five duplicates with distinct IDs,
 exact count, source exclusion, payment order, destruction gate, hidden
 monster, both fields/traps, linked equipment deduplication, preserved
-unselected card, stale source before payment and insufficient cost.
+unselected card, stale source before/during payment, insufficient cost and deferred Sangan search.
 Done bounded headless after CI; no UI/CPU or Verified.

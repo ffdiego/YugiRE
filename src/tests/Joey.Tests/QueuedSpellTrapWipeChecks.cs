@@ -77,6 +77,7 @@ internal static class QueuedSpellTrapWipeChecks
                 d.Graveyard(enemy).Count(c=>c.Id==300)==1&&d.HandFor(side).Single().Id==301,
                 "All seven field occurrences destroyed once, linked equip not duplicated, unselected hand stays");
         }
+        foreach(bool afterFirst in new[]{false,true})
         {
             var d=DemoDuel.FromPartialObservation(0,[Spell(1067),Spell(300),Spell(300),Spell(300),Spell(300),Spell(300)],
                 Units(),Units(),8000);
@@ -85,10 +86,12 @@ internal static class QueuedSpellTrapWipeChecks
             var source=Capture(d,0,DuelZone.SpellTrap,0);
             var costs=d.QueuedFinalDestinyCosts(source).Select(c=>c.Target).ToArray();
             check(d.TryQueueFinalDestiny(source,costs,out _),"Stale Final Destiny admission");q.Tick();
+            if(afterFirst)q.Tick();
             d.Spells[0,0]=Spell(1067);
             Drain(q);
-            check(d.Graveyard(0).Count==0&&d.Hand.Count==5&&d.Monsters[0,0] is not null&&d.Monsters[1,0] is not null,
-                "Invalid source before payment spends nothing");
+            check(d.Graveyard(0).Count==(afterFirst?1:0)&&d.Hand.Count==(afterFirst?4:5)&&
+                d.Monsters[0,0] is not null&&d.Monsters[1,0] is not null,
+                "Invalid source stops remaining costs, never wipes or refunds an applied discard");
         }
         {
             var d=DemoDuel.FromPartialObservation(0,[Spell(1067),Spell(300),Spell(300),Spell(300),Spell(300)],
@@ -96,6 +99,18 @@ internal static class QueuedSpellTrapWipeChecks
             var q=d.CreatePrimitiveActionQueue();
             check(d.QueuedFinalDestinyCosts(Capture(d,0,DuelZone.Hand,0)).Count==0&&
                 !d.TryQueueActivation(0,false,out _)&&!q.IsBusy,"Five other cards required");
+        }
+        {
+            var sangan=new Card(47,47,"Sangan","",(3u<<20)|(3u<<25)|(100u<<9));
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1067),Spell(300),Spell(300),Spell(300),Spell(300),Spell(300)],
+                [sangan,null,null,null,null],Units(),8000,side0Deck:[Warrior()]);
+            var q=d.CreatePrimitiveActionQueue();
+            var source=Capture(d,0,DuelZone.Hand,0);
+            check(d.TryQueueFinalDestiny(source,d.QueuedFinalDestinyCosts(source).Select(c=>c.Target).ToArray(),out _),
+                "Final Destiny Sangan trigger admitted");
+            Drain(q);
+            check(d.Monsters.Cast<Card?>().All(c=>c is null)&&d.PendingCardSelection is {Owner:0,EffectResourceId:47},
+                "All field removals finish before Sangan search opens");
         }
     }
 

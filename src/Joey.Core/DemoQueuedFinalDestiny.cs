@@ -18,7 +18,7 @@ public sealed partial class DemoDuel
     public IReadOnlyList<QueuedDiscardSpellCost> QueuedFinalDestinyCosts(CardTarget source)
     {
         if (ActionsBlocked || !IsFinalDestinySource(source) ||
-            !TryPlanFinalDestinyField(source,out _,out _,out _)) return [];
+            !TryPlanFinalDestinyField(source,out _,out var field,out _) || field.Length==0) return [];
         var choices = new List<QueuedDiscardSpellCost>();
         for (int i=0;i<hands[source.Side].Count;i++)
             if (TryCaptureCardTarget(source.Side,DuelZone.Hand,i,out var target) && target != source)
