@@ -1715,6 +1715,29 @@
         "Bounded headless sandbox after CI; UI/CPU, general chains and native target protection pending.",
         "Native primary 00585C80 shared with Tribute; availability 00581F40 and candidate 0057B680 absent in v2; no native comparison."
       ]
+    },
+    {
+      "id": "monster.destroy.minimum-attack-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1001
+      ],
+      "mechanics": [
+        "Queue-only activation from Hand or Set; lowest live ATK among face-up opponent monsters including defense",
+        "Unique minimum automatic, tied minimum explicit occurrence choice, revalidate criterion and reuse destruction"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedMonsterSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/QueuedMonsterWipeChecks.cs",
+        "docs/cards/c02-fissure.md"
+      ],
+      "limitations": [
+        "Bounded non-chain sandbox after CI; explicit tie choice supplied before spend rather than native resolution UI; no retarget on stale fixture. UI/CPU and native comparison pending.",
+        "P114 candidate and primary bodies absent in cumulative v2; native tie/selection timing not established."
+      ]
     }
   ]
 }

@@ -297,6 +297,83 @@ internal static class QueuedMonsterWipeChecks
                 "Knives condition rechecked before spend; replaced target not destroyed");
         }
 
+        // Fissure uses live ATK, not printed ATK, and ignores hidden
+        // cards even when their printed ATK is lower.
+        foreach(int fissureSide in new[]{0,1})
+        foreach(bool fissureSet in new[]{false,true})
+        {
+            int enemy=1-fissureSide;
+            var weak=new Card(70,70,"weak","",(15u<<20)|(4u<<25)|(90u<<9));
+            var middle=Monster(24,15);
+            var hidden=new Card(71,71,"hidden","",(15u<<20)|(4u<<25)|(10u<<9));
+            var d=DemoDuel.FromPartialObservation(fissureSide,[Spell(300),Spell(1001)],
+                fissureSide==0?Slots(Monster(24,15)):Slots(weak,middle,hidden),
+                fissureSide==1?Slots(Monster(24,15)):Slots(weak,middle,hidden),
+                8000,equipmentContextResolved:true);
+            var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
+            check(d.TryQueueEquipment(DuelZone.Hand,0,enemy,0,out _),"Fissure equip setup");Drain(q);
+            d.MonsterFaceDown[enemy,2]=true;
+            d.DefensePosition[enemy,1]=true;
+            if(fissureSet){check(d.TryQueueSpellTrapSet(0,out _),"Fissure Set");Drain(q);}
+            int fissureIndex=fissureSet?1:0;
+            var fissureSource=Capture(d,fissureSide,fissureSet?DuelZone.SpellTrap:DuelZone.Hand,fissureIndex);
+            var fissureTarget=Capture(d,enemy,DuelZone.Monster,1);
+            check(d.AttackValue(enemy,0)==1200&&d.AttackValue(enemy,1)==1000&&
+                d.QueuedTargetedMonsterSpellCandidates(fissureSource).Single().Target==fissureTarget&&
+                !d.TryQueueTargetedMonsterSpell(fissureSource,Capture(d,enemy,DuelZone.Monster,0),out _)&&
+                !d.TryQueueTargetedMonsterSpell(fissureSource,Capture(d,enemy,DuelZone.Monster,2),out _)&&
+                !d.TryQueueTargetedMonsterSpell(fissureSource,Capture(d,fissureSide,DuelZone.Monster,0),out _)&&
+                !(fissureSet?d.ActivateSetSpell(fissureIndex,out _):d.Play(fissureIndex,out _)),
+                "Fissure uses effective ATK even in defense and excludes hidden/own/higher");
+            check(d.TryQueueActivation(fissureIndex,fissureSet,out _),"Fissure unique minimum automatic");
+            q.Tick();q.Tick();
+            check(d.Graveyard(fissureSide).Single().Id==1001&&d.Monsters[enemy,1] is not null,
+                "Fissure source spend before destruction");
+            q.Tick();gate.Release=false;q.Tick();q.Tick();
+            check(q.IsBusy&&d.Monsters[enemy,1] is null,"Fissure gate holds applied destruction");
+            gate.Release=true;Drain(q);
+            check(d.Monsters[enemy,0]?.Id==70&&d.Monsters[enemy,2]?.Id==71&&
+                d.MonsterFaceDown[enemy,2]&&d.EquipmentCards.Count==1&&
+                d.Graveyard(enemy).Single().Id==24&&d.Monsters[fissureSide,0] is not null,
+                "Fissure preserves other monsters and their equipment");
+        }
+        foreach(int chosen in new[]{0,1})
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1001)],Slots(),
+                Slots(Monster(24,15),Monster(25,15,25)),8000);
+            var q=d.CreatePrimitiveActionQueue();
+            var fissureSource=Capture(d,0,DuelZone.Hand,0);
+            var fissureTarget=Capture(d,1,DuelZone.Monster,chosen);
+            check(d.QueuedTargetedMonsterSpellCandidates(fissureSource).Count==2&&
+                !d.TryQueueActivation(0,false,out _)&&!q.IsBusy&&d.Hand.Count==1,
+                "Fissure tie does not silently choose a slot or spend");
+            check(d.TryQueueTargetedMonsterSpell(fissureSource,fissureTarget,out _),"Fissure explicit tie choice");
+            Drain(q);
+            check(d.Monsters[1,chosen] is null&&d.Monsters[1,1-chosen] is not null&&
+                d.Graveyard(0).Single().Id==1001,"Fissure destroys only chosen tied occurrence");
+        }
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1001)],Slots(Monster(24,15)),
+                Slots(Monster(24,15)),8000);
+            d.MonsterFaceDown[1,0]=true;
+            var q=d.CreatePrimitiveActionQueue();
+            check(!d.TryQueueActivation(0,false,out _)&&!q.IsBusy&&d.Hand.Count==1,
+                "Fissure no face-up opponent means no activation");
+        }
+        foreach(bool beforeSpend in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1001)],Slots(),
+                Slots(Monster(24,15)),8000);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueActivation(0,false,out _),"Fissure stale setup");q.Tick();
+            if(!beforeSpend)q.Tick();
+            d.MonsterFaceDown[1,0]=true;
+            Drain(q);
+            check(d.Monsters[1,0] is not null&&d.Graveyard(1).Count==0&&
+                d.Graveyard(0).Count==(beforeSpend?0:1)&&d.Hand.Count==(beforeSpend?1:0),
+                "Fissure hidden before spend rejects; after spend no replacement chosen");
+        }
+
         var sangan=Monster(47,3,47);
         var witch=Monster(573,18,573);
         var normal=Monster(24,15);
