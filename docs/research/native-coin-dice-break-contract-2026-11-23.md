@@ -13,7 +13,7 @@ dump do EXE, captura do duelo ou inspeção do DAT nesta rodada.
 | 8E | 0040A7C0 | 004571D0 | coin.txt | 0x134 |
 | 8F | 0040A900 | 004571D0 | coin.txt | 0x134 |
 | 90, 91, 92 | 0040A6A0 (direto ou thunk 0040A690) | 004568C0 | dice.txt | 0xAC |
-| 4F | 00404B40 | 00450C30 | break.txt | 0x104 |
+| índice 4F (opcode a confirmar) | 00404B40 | 00450C30 | break.txt | 0x104 |
 
 O rótulo do banco **não define a semântica das regras**. Por exemplo,
 005758A0, 00575900, 00575A80, 00575AF0, 00575C40, 00575D50, 00575FE0,
@@ -62,7 +62,7 @@ Isso não prova seleção de face ou sequência do atlas principal.
 
 ## V22 break
 
-00404B40 (4F) no estado 1 consulta 00570230 e constrói 00450C30
+00404B40 (índice 4F) no estado 1 consulta 00570230 e constrói 00450C30
 apenas se há ocupante; no estado 2 ocorre atualização de flags,
 remoção e transferência; estado 3 pode notificar; estado 4 aguarda
 objetos ativos antes de liberar 0x4000. O construtor instala
@@ -93,3 +93,52 @@ Não repetir os bundles 01–04.
 NativeEffectCommandRouting porta apenas a decisão de família,
 descritor e camada conhecidos; testes sintéticos não são prova
 de paridade. Sem nova Draw integrada, badge permanece 20/34, 0 Verified.
+
+## V22 — correção de classificação e produtores candidatos (25/11)
+
+Relato do mantenedor: lembra claramente a carta se desintegrando em
+cubinhos, mas não lembra a condição de gameplay. Não afirmar regra
+por semelhança com o efeito. Consulta efetiva read-only ao SQLite
+v4-visuals (quick_check ok): decompilações 00404B40, 005B9470,
+005B9170, 00576B30, 00577CF0, 00578030, 00579330,
+00579310/00579660/00579690, 005700F0/00570230/00570790/005708D0
+e Xrefs/assembly do dispatcher. Sem execução nativa nova.
+
+**Atenção:** 4F é o índice do switch comprimido, não um
+opcode bruto já provado. 005B947E..005B9497: mascara 0xFFF,
+decrementa, rejeita >255, carrega byte [005B9AEC+opcode-1]
+e salta por dword [005B9838+index*4]. 005B966D salta a
+00404B40, 005B9672 a 00405620, 005B967C a 00405190.
+Nenhum dos dois blocos de tabela está no v4-visuals.
+O caso Ghidra 4F corresponde ao primeiro handler; 50/52
+são outros índices, não necessariamente opcodes brutos.
+Corrigir referências históricas de 4F como opcode.
+
+00404B40 usa lado em bit 15, região no byte alto de
+DAT_00A550A0 e slot no byte 16..23. Se 00570230 retorna
+ocupante, constrói Break; estado 2 remove por 00570790
+e transfere por 005708D0 a região E ou F, conforme
+low16(DAT_00A550A4)==0x10. Bits do argumento afetam
+estado/destino, não comprovam motivo de gameplay.
+Não é escolha aleatória de textura dentro de Explosion.
+
+Produtores candidatos: 00579330 enfileira 0x79 com
+região/slot empacotados (wrappers 00579310/00579660/
+00579690 passam B/D/C); 00578030 enfileira 0x79 com
+slot de combate e região FF; 00576B30 também escolhe
+0x79 em ramos específicos. 00577CF0 enfileira 0x7C
+com slot de monstro 0..4. Compatibilidade dos argumentos
+sugere investigar 79 para Break, mas **não confirma** o
+mapeamento sem os bytes de despacho. Não atribuir o
+efeito a tributo, Raigeki, banimento ou outra mecânica
+somente por nomes de funções ou regiões.
+
+Roteiro 29 existente agora inclui 005B9AEC:256 (mapa
+opcode->índice) e 005B9838:692 (173 destinos incluindo
+default AC), além da coleta do compositor já planejada.
+Após receber: localizar entradas cujo destino é o thunk
+005B966D/handler 00404B40, confirmar argumentos e seguir
+produtores reais até callbacks; comparar com os destinos
+da Explosion. Se já executou a versão anterior do 29,
+pedir apenas os dois blocos, não repetir disassembly.
+Sem alteração de regras, renderer, badge ou Verified.
