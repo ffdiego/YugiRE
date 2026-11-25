@@ -214,7 +214,7 @@ public sealed partial class DemoDuel
     private bool CanQueueMonsterRemoval(int player, int slot) =>
         TryPlanRemovalLinks(player, slot, out _);
 
-    private sealed class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
+    private sealed partial class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
     {
         private sealed class Wipe(int caster, ushort resourceId, CardTarget source, IEnumerable<CardTarget> targets, bool monsterWipe = true)
         {
@@ -338,6 +338,11 @@ public sealed partial class DemoDuel
                 return FinishRemoval();
             if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
                 return ResolveTargetedMonsterSpell(resolveDiscardSpell, followups);
+            if (command is FinishRitualSummonCommand finishRitual)
+                return FinishRitualSummon(finishRitual);
+            if (ritualSummon is { } ritual && !ritualSpellSpent &&
+                (command is not SendToGraveyardCommand spendRitual || spendRitual.Target != ritual.Spell))
+                return new(CommandOutcome.Skipped, "Ritual spell was not spent.");
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
@@ -445,6 +450,8 @@ public sealed partial class DemoDuel
                     return ActivateMonsterWipe(monsterWipe.Source, followups);
                 case ActivateRaigekiCommand activate:
                     return ActivateMonsterWipe(activate.Source, followups, requireRaigeki: true);
+                case PrepareRitualSummonCommand prepareRitual:
+                    return PrepareRitualSummon(prepareRitual, followups);
                 case PrepareNormalPlacementCommand prepare:
                     return PreparePlacement(prepare, followups);
                 case TributeCommand tribute:
@@ -499,6 +506,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ObserveFixedSpellSpend(CardTarget target, CommandResult result)
         {
+            if (ritualSummon?.Spell == target) ritualSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
@@ -657,7 +665,8 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
                 MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card)) ||
+                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) ||
+                ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
@@ -801,9 +810,18 @@ public sealed partial class DemoDuel
 
         private CommandResult PayTribute(TributeCommand tribute)
         {
-            if (placement is not { } current || !Tributes(current).Contains(tribute.Target) ||
-                paidTributes.Contains(tribute.Target))
+            bool isRitual = ritualSummon is { } ritual && ritualSpellSpent && ritual.Materials.Contains(tribute.Target);
+            bool isNormal = placement is { } normal && Tributes(normal).Contains(tribute.Target);
+            if (!(isNormal || isRitual) || paidTributes.Contains(tribute.Target))
                 return new(CommandOutcome.Rejected, "No matching unpaid tribute.");
+            if (tribute.Target.Zone == DuelZone.Hand)
+            {
+                var result = SendHandToGraveyard(tribute.Target, discard: false);
+                if (result.Outcome != CommandOutcome.Applied)
+                    throw new InvalidOperationException("Reserved hand tribute changed during Ritual Summon.");
+                paidTributes.Add(tribute.Target);
+                return result;
+            }
             if (!duel.TryResolveCardTarget(tribute.Target, out int slot, out _) ||
                 !duel.TryPlanRemovalLinks(tribute.Side, slot, out var links) ||
                 !plannedLinks.Remove(tribute.Target, out var expected) || !links.SequenceEqual(expected))
@@ -1521,9 +1539,10 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
             if (summon.Source.Zone == DuelZone.Hand)
             {
-                if (banishSummon is not { } paidSummon || paidSummon.Source != summon.Source ||
-                    paidSummon.Slot != summon.Slot || paidSummon.Defense != summon.FaceUpDefense || summon.FaceDownDefense ||
-                    banishSummonPaid != GraveyardBanishSummonRules.QueuedRequiredCount(card) || banishSummonCosts.Count != 0)
+                bool paidInherentSummon = banishSummon is { } paidSummon && paidSummon.Source == summon.Source &&
+                    paidSummon.Slot == summon.Slot && paidSummon.Defense == summon.FaceUpDefense &&
+                    banishSummonPaid == GraveyardBanishSummonRules.QueuedRequiredCount(card) && banishSummonCosts.Count == 0;
+                if (summon.FaceDownDefense || !(paidInherentSummon || IsPaidRitualSummon(summon)))
                     return new(CommandOutcome.Rejected, "Hand Special Summon requires the reserved fully paid procedure.");
                 duel.hands[summon.Side].RemoveAt(index);
             }

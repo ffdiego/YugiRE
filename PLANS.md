@@ -197,8 +197,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Janelas de resposta, negadores, deck-out nativo (hoje é política simplificada) e mais gatilhos sob demanda. Fatia pura de chegada ao cemitério: P066/P044/P068/P030; [contrato C07](docs/cards/c07-graveyard-arrival-effects.md). Integração depende da causalidade e ocorrência na fila (A02/A06). Roteiro 12 fecha ambiguidades de envio direto e callbacks faltantes; não bloquear outras famílias.
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`.
   Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 monstros invocáveis. Não declarar paridade nativa até medir callbacks P182 no Windows.
-- [ ] **C09 — Rituais (`P269`).** Status: `Pronto`.
-  Partir de `docs/evidence/ritual-rules-catalog.json`; executar **pelo menos um** cenário ponta a ponta antes de ampliar.
+- [ ] **C09 — Rituais (`P269`).** Status: `Parcial`.
+  C09.1 implementa as 16 receitas P269 headless com mão/Set, tributos próprios e colocação por ocorrência. Oito magias e sete monstros do índice Done no escopo indicado após CI; Relinquished Partial. Produtores UI/CPU, efeito próprio de Relinquished, interações, restrições de reviver e comparação nativa pendentes. [Contrato](docs/cards/c09-queued-ritual-summon.md).
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`.
   Respostas a Special Summon e efeitos próprios de três resultados ainda Partial; conferir restrições da versão Joey.
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`.
@@ -294,8 +294,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. NativeBreakScatter reconstrói tabela 00A52EB4 via CRT srand(0)/rand, 256 bytes; porta blocos 4x2 e fases de dispersão, projeção com divisor injetado. Roteiro 29 confirma ABI/x87 de 00558FB0 e gerador; compositor restante pendente. [Draws](docs/research/native-bank-effect-draws-2026-11-24.md).
   Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
 
-- [ ] **V23 — Corrente (0041F870).** Status: `Aguardando evidência`.
-  NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Recurso/recortes dos dígitos, assembly e integração A03 pendentes (roteiro 17). [Contrato](docs/research/native-chain-affect-contract-2026-11-24.md).
+- [ ] **V23 — Corrente (0041F870).** Status: `Parcial`.
+  NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Roteiro 17 e manifests v3 confirmam lista de sprites, recortes e geometria dos dígitos. Revisão isolada `--review-chain=` usa DAT, contagem manual e compositor diagnóstico. Integração à fila e comparação de pixels pendentes. [Contrato](docs/research/native-chain-affect-contract-2026-11-24.md).
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`.
   NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. Scratch, jump tables, manifest e composição ainda pendentes (roteiro 17). Mesmo contrato.
 
