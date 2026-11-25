@@ -9,11 +9,56 @@ internal static class PositionChangeEffectChecks
     private static Card?[] Slots(Card? a = null, Card? b = null) =>
         [a, b, null, null, null];
 
+    private static void CheckQueued(Action<bool, string> check, Card clown, Card ally, Card enemy)
+    {
+        var royalCommand = new Card(205, FlipEffectSuppressionRules.RoyalCommand, "Royal Command", "", 21u << 20);
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool cpu in new[] { false, true })
+        {
+            int other = 1 - side;
+            var duel = DemoDuel.FromPartialObservation(side, [],
+                side == 0 ? Slots(clown, ally) : Slots(enemy),
+                side == 1 ? Slots(clown, ally) : Slots(enemy), 8000,
+                equipmentContextResolved: true);
+            // Royal Command is a FLIP negation. It must leave the position trigger active.
+            duel.Spells[other, 0] = royalCommand;
+            var console = new DuelConsoleSession(duel);
+            var queue = console.Queue;
+            check(duel.FlipEffectsNegated && duel.TryQueueChangePosition(0, out _), "Dream Clown queues the position change");
+            for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
+
+            check(!queue.IsBusy && duel.DefensePosition[side, 0] &&
+                duel.PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.PositionChange } pending &&
+                duel.UsesQueuedMonsterFlipSelection(pending) &&
+                duel.QueuedMonsterFlipCandidates().Select(c => c.Target.Side).SequenceEqual([other]),
+                "Dream Clown exposes the opposing position target through the shared selector");
+            if (duel.PendingFlipTarget is not { } request) continue;
+
+            check(!duel.TrySelectQueuedMonsterFlipTarget(request, side, 1, out _) &&
+                !duel.ResolveFlipTarget(other, 0, out _),
+                "Dream Clown rejects allied targets and direct legacy resolution in queued mode");
+            bool admitted = cpu
+                ? new CpuDuelController(side).Step(duel, queueTurnActions: true) is
+                    { Status: CpuStepStatus.Acted, Action: CpuAction.Selection }
+                : console.Execute($"select-flip {other} 0").Enqueued;
+            check(admitted && duel.Monsters[other, 0] == enemy && duel.Graveyard(other).Count == 0,
+                "Dream Clown target admission leaves the opposing occurrence in place");
+            for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
+            check(!queue.IsBusy && duel.PendingFlipTarget is null &&
+                duel.Monsters[side, 1] == ally && duel.Monsters[other, 0] is null &&
+                duel.Graveyard(other).SequenceEqual([enemy]) &&
+                queue.Trace.Any(record => record.Entry.Command.GetType().Name == "ResolveMonsterPositionTargetCommand" &&
+                    record.Entry.Origin == (cpu ? ActionOrigin.Cpu : ActionOrigin.Console)),
+                "Dream Clown resolves exactly one opposing occurrence with a typed position effect");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         var clown = Monster(119, 201);
         var enemy = Monster(130, 202);
         var ally = Monster(131, 203);
+        CheckQueued(check, clown, ally, enemy);
         var position = new DemoMonsterPositionChange(0, 0, clown,
             WasFaceDown: false, WasInDefense: false, IsFaceDown: false, IsInDefense: true);
 

@@ -12,6 +12,8 @@ public sealed partial class DuelConsoleSession
         : PendingSummonTrapResponse is not null ? "Pending Normal Summon response requires respond-summon."
         : HasPendingEndDiscard ? "End Phase requires discard-end INDEX."
         : PendingHandSelection is not null ? "Pending hand selection requires select-hand."
+        : duel.PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.PositionChange }
+            ? "Pending monster position effect requires select-flip."
         : duel.PendingFlipTarget is not null ? "Pending monster FLIP requires select-flip."
         : duel.PendingFlipSpellTrapTargets is not null ? "Pending Spell/Trap FLIP requires select-st-pair."
         : PendingFieldSelection is { Source: CardSelectionSource.Deck } ? "Pending recruitment requires select-recruit."
@@ -24,9 +26,10 @@ public sealed partial class DuelConsoleSession
         if (duel.PendingFlipTarget is { } monster)
         {
             var candidates = duel.QueuedMonsterFlipCandidates();
-            return new(true, string.Join("\n", new[] {
-                $"Side {monster.Owner} monster FLIP; select-flip SIDE SLOT [SIDE SLOT]|decline:"
-            }.Concat(candidates.Select(c => $"{c.Target.Side} {c.Zone}: {(c.FaceDown ? "hidden" : c.Card.Id.ToString())}"))));
+            string prompt = monster.Trigger == DemoMonsterEffectTrigger.PositionChange
+                ? $"Side {monster.Owner} position effect; select-flip SIDE SLOT:"
+                : $"Side {monster.Owner} monster FLIP; select-flip SIDE SLOT [SIDE SLOT]|decline:";
+            return new(true, string.Join("\n", new[] { prompt }.Concat(candidates.Select(c => $"{c.Target.Side} {c.Zone}: {(c.FaceDown ? "hidden" : c.Card.Id.ToString())}"))));
         }
         if (duel.PendingFlipSpellTrapTargets is { } pair)
         {

@@ -330,3 +330,15 @@ produtor em ambos os lados, de mão e Set, campo cheio e vaga livre, ATK e DEF,
 cancelamento, ausência de mutação prematura e pagamento pela fila.
 Comparação pareada com o original segue pendente. Demo.cs 2618 → 2618.
 Manifesto e cobertura preservados. O gate C12.1 segue aberto.
+
+### C12.1 — Alvo da mudança de posição de Dream Clown
+
+Após a mudança de ataque para defesa, o App, a CPU e o console usam o
+seletor compartilhado e admitem um comando de posição tipado. O executor
+revalida a ocorrência adversária e usa a destruição e os vínculos da fila.
+Royal Command mantém a supressão restrita aos FLIPs. O modo legado continua
+disponível para comparação, com execução direta bloqueada enquanto o
+seletor enfileirado está ativo. Demo.cs 2612 → 2614 pelo bloqueio transitório.
+As regressões cobrem os dois lados, alvo aliado inelegível, Royal Command,
+origem CPU/console e ausência de mutação na admissão. Cobertura preservada.
+O gate C12.1 segue aberto, incluindo respostas à declaração de ataque.

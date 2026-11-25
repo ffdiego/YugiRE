@@ -2261,7 +2261,9 @@ public sealed partial class DemoDuel
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice ||
+            PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.PositionChange } position &&
+                UsesQueuedMonsterFlipSelection(position)) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||

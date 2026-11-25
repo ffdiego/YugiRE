@@ -372,7 +372,12 @@ public sealed partial class DemoDuel
             if (command is ResolveFlipSpellTrapPairCommand pair)
                 return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
-                return ResolveMonsterFlipTargets(flipTargets, followups);
+                return ResolveQueuedMonsterTargets(flipTargets.Source,
+                    new CardTarget?[] { flipTargets.First, flipTargets.Second }.OfType<CardTarget>().ToArray(),
+                    DemoMonsterEffectTrigger.Flip, followups);
+            if (command is ResolveMonsterPositionTargetCommand positionTarget)
+                return ResolveQueuedMonsterTargets(positionTarget.Source, [positionTarget.Target],
+                    DemoMonsterEffectTrigger.PositionChange, followups);
             if (command is ResolveSummonResponseCommand summonResponse)
                 return ResolveSummonResponse(summonResponse, followups);
             if (command is OpenBattleFlipDrawCommand openBattleFlip)
@@ -1843,21 +1848,21 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult ResolveMonsterFlipTargets(ResolveMonsterFlipTargetsCommand answer, IActionCommandSink followups)
+        private CommandResult ResolveQueuedMonsterTargets(CardTarget source, IReadOnlyList<CardTarget> targets,
+            DemoMonsterEffectTrigger trigger, IActionCommandSink followups)
         {
             if (followups is not IActionBatchSink { PendingCount: 0 } queue ||
-                wipe is not null || finishScheduled || !duel.CanAdmitQueuedMonsterFlipAnswer())
-                return new(CommandOutcome.Rejected, "No isolated supported FLIP selection.");
-            CardTarget[] targets = new CardTarget?[] { answer.First, answer.Second }.OfType<CardTarget>().ToArray();
-            if (!duel.TryPlanQueuedMonsterFlipAnswer(answer.Source, targets, out var batch, out var plans))
-                return new(CommandOutcome.Rejected, "FLIP source or target choice no longer valid.");
+                wipe is not null || finishScheduled || duel.PendingFlipTarget is not { } pending ||
+                pending.Trigger != trigger || !duel.CanAdmitQueuedMonsterFlipAnswer())
+                return new(CommandOutcome.Rejected, "No matching queued monster selection.");
+            if (!duel.TryPlanQueuedMonsterFlipAnswer(source, targets, out var batch, out var plans))
+                return new(CommandOutcome.Rejected, "Monster effect source or target choice no longer valid.");
 
             var battle = duel.HasQueuedBattleTargetChoice ? duel.queuedBattleReveal : null;
             if (battle is not null)
             {
-                DuelZone destination=duel.PendingFlipTarget!.Effect==DemoFlipEffect.DestroyMonster
-                    ? DuelZone.Graveyard : DuelZone.Hand;
-                foreach (var target in targets) battle.ExpectedEffectMoves.Add(target,destination);
+                var destination = IsBounce(pending) ? DuelZone.Hand : DuelZone.Graveyard;
+                foreach (var target in targets) battle.ExpectedEffectMoves.Add(target, destination);
             }
             // Clear only this pending interaction inside its command, not at
             // admission. Never invoke legacy FinishDeferredBattle here.
@@ -1866,9 +1871,9 @@ public sealed partial class DemoDuel
             queue.EnqueueBatch(batch);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             linkedRemovalBatch = true;
-            ScheduleFinish(answer.Side, followups);
+            ScheduleFinish(source.Side, followups);
             if (battle is not null)
-                followups.ScheduleContinuation(_ => new([new FinishBattleFlipCommand(answer.Side,battle.Defender.Target)]));
+                followups.ScheduleContinuation(_ => new([new FinishBattleFlipCommand(source.Side,battle.Defender.Target)]));
             return new(CommandOutcome.Applied);
         }
 
