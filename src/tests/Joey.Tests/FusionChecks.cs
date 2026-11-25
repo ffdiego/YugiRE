@@ -152,10 +152,11 @@ internal static class FusionChecks
             check(!d.TryQueueFusionSummon(request, 1, choice.SuggestedMaterials, out _) &&
                 q.Trace.Count == 0 && d.Hand.SequenceEqual(originalHand), "Queued Fusion rejects stale same-ID material");
             d.Monsters[side, 0] = physicalWizard;
-            int destructions = 0, tributes = 0, summons = 0;
+            int destructions = 0, tributes = 0;
+            var summons = new List<DemoSpecialSummon>();
             d.MonsterDestroyed += _ => destructions++;
             d.MonsterTributed += _ => tributes++;
-            d.MonsterSpecialSummoned += _ => summons++;
+            d.MonsterSpecialSummoned += summons.Add;
             check(d.TryQueueFusionSummon(request, 1, choice.SuggestedMaterials, out _, defense) &&
                 q.IsBusy && d.PendingFusionSummon == request && d.Hand.SequenceEqual(originalHand) &&
                 d.Graveyard(side).Count == 0 && d.Banished(side).Count == 0 &&
@@ -173,7 +174,9 @@ internal static class FusionChecks
                 ReferenceEquals(d.Monsters[side, 0], physicalResult) &&
                 ReferenceEquals(d.FusionDeck(side).Single(), unselectedResult) &&
                 d.DefensePosition[side, 0] == defense && !d.MonsterFaceDown[side, 0] &&
-                destructions == 0 && tributes == 0 && summons == 1 &&
+                destructions == 0 && tributes == 0 && summons.Count == 1 &&
+                summons[0].FusionMaterials is { Count: 2 } snapshots &&
+                snapshots.Zip(choice.SuggestedMaterials).All(pair => ReferenceEquals(pair.First, pair.Second.Card)) &&
                 (gate ? d.FieldSpells[side] == gateCard && d.Graveyard(side).Count == 0 &&
                     d.Banished(side).Count == 2 : d.Graveyard(side).Count == 3 &&
                     d.Banished(side).Count == 0 && d.Spells[side, 0] is null),
