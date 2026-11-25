@@ -194,6 +194,19 @@ static partial class Game
         // animation ends. SynchronizeHand performs the reflow; removing
         // the old index here would delete a different remaining card.
         // After a stall, leave the next card on its first sample.
+        if(updates>0 && cardEffects.ElapsedUpdates==0)
+        {
+            DuelSoundCue? cue=current.Kind switch
+            {
+                Destruction=>DuelSoundCue.Destruction,
+                HandTransfer=>DuelSoundCue.CardMove,
+                TributePlacement=>DuelSoundCue.Tribute,
+                SpecialSummonPlacement=>DuelSoundCue.SpecialSummon,
+                DuelOpening=>DuelSoundCue.Start,
+                _=>null
+            };
+            if(cue is { } sound)PlayDuelSound(sound);
+        }
         int remaining = current.Updates - cardEffects.ElapsedUpdates;
         cardEffects.Advance(Math.Min(updates, remaining));
         // Pay tribute(s) visually before revealing the new summon flight.

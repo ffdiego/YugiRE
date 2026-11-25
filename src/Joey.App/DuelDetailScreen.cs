@@ -24,7 +24,12 @@ static partial class Game
         // keep CPU/turn actions from starting another move mid-number.
         if (CardMotionBusy && presentation.Style.PlayAnimations) return;
         for (int player = 0; player < lifeDisplays.Length; player++)
+        {
+            long previous=(long)lifeDisplays[player].Displayed+lifeDisplays[player].PendingDelta;
+            int next=NativeLifePointPresentation.ClampToNativeDisplay(duel.Life[player]);
+            if(previous!=next)PlayDuelSound(next<previous?DuelSoundCue.Damage:DuelSoundCue.Heal);
             lifeDisplays[player].SetLogicalLife(duel.Life[player], presentation.Style.PlayAnimations);
+        }
         int updates = lifeClock.Advance(elapsed, presentation.Style);
         for (int player = 0; player < lifeDisplays.Length; player++)
             for (int update = 0; update < updates && lifeDisplays[player].Animating; update++)

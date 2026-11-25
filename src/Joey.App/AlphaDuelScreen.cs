@@ -172,6 +172,7 @@ static partial class Game
         var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : NativeAttackFrame.DirectTarget(near);
         attackClock.Reset();
         attackUpdates = 0;
+        PlayDuelSound(DuelSoundCue.Attack);
         attackCue = new(from, to, near, alreadyAimed ?? (target >= 0 && (alphaCpu is null || player == 0)), hiddenTarget);
     }
 
