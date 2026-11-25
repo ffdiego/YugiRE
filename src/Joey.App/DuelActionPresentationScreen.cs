@@ -96,11 +96,13 @@ static partial class Game
 
     static bool IsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
         (DrawSpellRules.Effect(card) is not null || LifePointSpellRules.Supports(card.Id) ||
-         MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id));
+         MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id) ||
+         DeckSearchSpellRules.Filter(card.Id) is not null);
 
     static bool TryQueuedFixedSpell(Card card, DuelZone zone, int index, out string result) =>
         DrawSpellRules.Effect(card) is not null
             ? duel.TryQueueDrawSpell(zone, index, out result)
+            : DeckSearchSpellRules.Filter(card.Id) is not null ? duel.TryQueueDeckSearchSpell(zone, index, out result)
             : LifePointSpellRules.Supports(card.Id) ? duel.TryQueueLifePointSpell(zone, index, out result)
             : MonsterWipeRules.Scope(card.Id) is not null ? duel.TryQueueMonsterWipe(zone, index, out result)
             : duel.TryQueueSpellTrapWipe(zone, index, out result);
