@@ -342,11 +342,11 @@ Saída privada scratch/ghidra-native-break-scatter-contract.zip. SQLite v2 confi
 
 V17 complemento (roteiro 25): inclui 00546D70 para confirmar inicialização das tabelas de mistura recuperadas em decompilação. Se roteiro 25 já foi executado, coletar somente o novo alvo. Não exportar tabelas vivas de vários MB; são reconstruíveis. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--mistura-por-intensidade-tabelas-de-cor).
 
-### 30 — CARDS C02.5–C02.7: destruição seletiva (P074/P077/P114)
+### 30 — CARDS C02.5–C02.8: destruição seletiva (P074/P077/P105/P114)
 
 - Ambiente: Fedora/Ghidra com projeto do executável original já configurado; `bash scripts/pending/30-cards-selective-destruction-ghidra.sh`.
-- Saída privada: `scratch/ghidra-selective-destruction-contract.zip`; seis endereços ausentes no SQLite cumulativo v2 (SHA-256 `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4`).
-- Pergunta: legalidade/candidatos de Tribute e Thousand Knives; cálculo do menor ATK, desempate e fase da escolha de Fissure. Não repetir callbacks já recuperados (00585C80/00583510/005944D0).
+- Saída privada: `scratch/ghidra-selective-destruction-contract.zip`; oito endereços ausentes no SQLite cumulativo v2 (SHA-256 `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4`).
+- Pergunta: legalidade/candidatos de Tribute e Thousand Knives; cálculo do menor ATK, desempate e fase da escolha de Fissure; registro/consumo da penalidade Draw Phase de Offerings (00587950/0057AE20). Não repetir callbacks já recuperados (00585C80/00583510/005944D0).
 - Encerramento: corpo/assembly ou ausência explícita para cada endereço, interpretar filtros e despacho, importar cumulativamente com auditoria e quick_check. Coleta/importação **pendentes**, não bloqueiam escopo sandbox. [Contrato Fissure](../../docs/cards/c02-fissure.md).
 
 V17 complemento source-alpha (roteiro 25): kernels 00438100/00438E30 e base 00530220, janelas dos loops 00438CD4/00439A04/00530DFE. Se já executado, coletar somente novos alvos/janelas. Não mapear YGA para formato por hipótese. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--source-alpha-nos-formatos-1213).

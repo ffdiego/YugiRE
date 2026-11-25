@@ -1738,6 +1738,32 @@
         "Bounded non-chain sandbox after CI; explicit tie choice supplied before spend rather than native resolution UI; no retarget on stale fixture. UI/CPU and native comparison pending.",
         "P114 candidate and primary bodies absent in cumulative v2; native tie/selection timing not established."
       ]
+    },
+    {
+      "id": "monster.destroy.skip-draw-c02",
+      "kind": "Spell",
+      "subtype": "QuickPlay",
+      "status": "Done",
+      "resourceIds": [
+        1451
+      ],
+      "mechanics": [
+        "Queue-only own Main Phase Quick-Play from Hand or prior-turn Set; any face-up monster",
+        "Independent next owner Draw Phase replacement coalesces by due turn; effect draws unaffected; preserves Standby"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedMonsterSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedTurnDraw.cs",
+        "src/tests/Joey.Tests/QueuedMonsterWipeChecks.cs",
+        "src/tests/Joey.Tests/RevivalJamDecisionChecks.cs",
+        "src/Joey.Core/DemoDrawPhaseSkips.cs",
+        "docs/cards/c02-offerings-to-the-doomed.md"
+      ],
+      "limitations": [
+        "Bounded own Main Phase sandbox after CI; other Quick-Play windows, chains, UI/CPU, native comparison pending.",
+        "P105 primary 00587950/candidate 0057AE20 absent in cumulative v2; target preparation 005944D0 present."
+      ]
     }
   ]
 }
