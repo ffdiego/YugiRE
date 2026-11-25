@@ -210,9 +210,11 @@ O SQLite cumulativo v2 (quick_check ok) confirma resource 500, internal
 753, class 10, perfil P072/row 91. Candidate 0057A930 está ausente dos
 índices de funções; primary 00585C80 possui decompilação em
 `decompilations` e target_preparation 005944D0 em
-`visual_evidence_functions`. O primary testa bit 4 do byte em +4,
-chama 00583470 para resolver alvo, testa os 12 bits baixos do registro
-de campo e encaminha a 00577880 (com ramo especial para 0x3ff/0x4bb).
+`visual_evidence_functions`. O primary testa máscara 0x04 do byte em +4, chama 00583470 para
+resolver e revalidar a identidade codificada do alvo (slot, lado e bits
+de ocorrência), testa os 12 bits baixos do registro de campo e encaminha
+a 00577880 (com ramo especial para 0x3ff/0x4bb). Esse helper forma uma
+máscara de alvo por lado/slot e chama 00576940 → 00576960 com 0xE,2.
 A preparação bifurca por flags de 00A54E5C para 00593440 ou 005B3FA0
 com resource 500. Isso sustenta o vínculo de alvo/resolução; não
 demonstra a cronologia dinâmica do Damage Step ou a causa da remoção.
