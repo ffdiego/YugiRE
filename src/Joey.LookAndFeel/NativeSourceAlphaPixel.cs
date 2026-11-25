@@ -35,10 +35,12 @@ public static class NativeSourceAlphaPixel
             return true;
         }
         byte effective=EffectiveIntensity((byte)(pixel>>24),(byte)intensity);
-        byte b=(byte)pixel,g=(byte)(pixel>>8),r=(byte)(pixel>>16);
-        destination[0]=NativeIntensityPixel.BlendChannel(b,destination[0],effective);
-        destination[1]=NativeIntensityPixel.BlendChannel(g,destination[1],effective);
-        destination[2]=NativeIntensityPixel.BlendChannel(r,destination[2],effective);
+        // Format 12 stores BGRA, 13 stores RGBA; same-format blends
+        // use storage order, not an assumed BGR channel identity.
+        byte c0=(byte)pixel,c1=(byte)(pixel>>8),c2=(byte)(pixel>>16);
+        destination[0]=NativeIntensityPixel.BlendChannel(c0,destination[0],effective);
+        destination[1]=NativeIntensityPixel.BlendChannel(c1,destination[1],effective);
+        destination[2]=NativeIntensityPixel.BlendChannel(c2,destination[2],effective);
         destination[3]=255;
         return true;
     }

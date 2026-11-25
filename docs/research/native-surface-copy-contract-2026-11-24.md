@@ -196,3 +196,68 @@ Roteiro 25 ampliado com janelas 00438CD4, 00439A04,
 reconstruídas nem repetir outro Draw. Se roteiro 25
 já foi executado, coletar somente esses três alvos/janelas.
 Cobertura Draw inalterada: 20/34.
+
+
+## V17 complemento — ordem de canais, carga alpha e cor-chave (24/11)
+
+SQLite privado v2 extraído e aberto; SHA256
+80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4
+e PRAGMA quick_check=ok conferidos. Consultadas decompilações
+004A6120, 004AA660, 004AA8D0, 004AB460, 004AB950, 004AD0E0,
+004BA020, 004AD580, 004ABA00 e 004AC000. Evidência de
+decompilação, não assembly novo. O upload de superfície
+está separado da interpretação dos arquivos YGA.
+
+004AC000 grava em surface+74h o resultado de 004A6120,
+que lê os masks de uma superfície DirectDraw. 8 bits ->2;
+16 com F800/07E0/001F ->3 (565), 7C00/03E0/001F ->4
+(555); 24 bits BGR/RGB ->5/6; 32 bits BGRX/RGBX ->7/8.
+Outros layouts ->1 (falha de ponteiro ->FFFFFFFF).
+O adapter recebe masks válidos, não tenta simular COM.
+Esta rotina não escolhe formatos alpha 10..13.
+
+004AB460 carrega a imagem para objeto intermediário e chama
+virtual +E0 para alocar, depois examina +74h. As entradas
+dos conversores são pixels de quatro bytes B,G,R,A
+(confirmados pela expressão packed de 004AB950).
+Os destinos têm stride de quatro bytes por pixel:
+- 10: 004AB950 escreve RGB565 little-endian nos bytes 0/1,
+  alpha>>4 no byte 2. Não escreve byte 3.
+- 11: 004AD0E0 escreve RGB555 little-endian nos bytes 0/1,
+  alpha>>4 no byte 2. Não escreve byte 3.
+- 12: 004BA020 copia dword, BGRA.
+- 13: 004AD580 inverte canais 0 e 2, preserva verde/alpha,
+  RGBA.
+004ABA00 aloca formatos 10..13 com pitch W*4 e flag
++78h=true. Não adivinhar byte 3 de 10/11: o helper
+preserva armazenamento fornecido. O inicializador pode
+preencher outros valores, e a política real do allocator
+ainda não está confirmada. Os kernels same-format do PR
+127 são independentes da ordem de canais: os nomes das
+variáveis eram BGR, mas os índices em 12 e 13 permanecem
+corretos. Não chamar 13 de BGRA.
+
+004AA8D0 recebe COLORREF 00BBGGRR e converte a chave:
+3/10 packed565, 4/11 packed555, 5/7/12 troca R/B,
+6/8/13 preserva low24, 2 retorna raw. FFFFFFFF é
+sentinela de erro/ausência, formatos desconhecidos idem.
+004AC1B0 grava raw +6Ch e chave convertida +70h.
+Não confundir COLORREF com 0xRRGGBB nem com o dword
+armazenado na imagem. Verde puro não distingue os
+dois layouts; testes usam chave assimétrica.
+
+NativeSurfaceColorLayout porta classificação, chave e
+conversões de upload por pixel; testes sintéticos de
+máscaras, 256 níveis de alpha por formato, quarto byte,
+e integração com NativeSourceAlphaPixel. Não muda
+NativeCpuSurface, o decoder YGA existente, nem o App.
+O caminho 004AB460 é de carga de imagem intermediária;
+a associação exata de arquivos YGA e o seletor +E0
+ainda não estão provados. 00496760 escolhe vtables
+por capacidades de CPU (00496560 CPUID/MMX), não por
+extensão. Não interpretar essa seleção como formato.
+Roteiro 24 ampliado com 004AB460/004AB950/004AD580/
+004AA8D0 para confirmar as conversões e a ABI. Após
+resolver +E0 pelo dump existente, consultar SQLite antes
+de pedir código adicional. Roteiro 25 continua dono
+dos kernels raster, não repetir. Nenhum novo Draw.
