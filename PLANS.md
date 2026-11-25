@@ -122,7 +122,7 @@ Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Âncoras em pixels, blending e validação. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Geometria absoluta e slot de combate via A03. [Detalhes](docs/plans/VISUALS.md#v06)
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Rasterizador 0051EBD0 e predicado virtual +4; compositor/timeline; conferir App atual. [Detalhes](docs/plans/VISUALS.md#v07)
-- [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Sprites, blending e validação. [Detalhes](docs/plans/VISUALS.md#v08)
+- [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Banco DAT confirmado; semântica A/B, compositor, integração e validação. [Detalhes](docs/plans/VISUALS.md#v08)
 - [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`. Precedência e hotspot no dispatcher. [Detalhes](docs/plans/VISUALS.md#v09)
 - [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Code → asset/hotspot e integração do seletor. [Detalhes](docs/plans/VISUALS.md#v10)
 - [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Seletores, overlay, validação; preservar duas Draws de fusão; conferir PR #143. [Detalhes](docs/plans/VISUALS.md#v11)
