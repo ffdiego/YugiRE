@@ -41,7 +41,7 @@ nas demais. Este último usa o banco mini e as variantes
 0/90/180/270. A fórmula do argumento é
 90*(positionBit+2*(side XOR A54E5C.bit0)).
 0045C280 normaliza região+slot quando a soma é <11;
-a revisão aceita todas essas representações de campo.
+a revisão aceita todas essas representações de campo, e o snapshot de combate descrito abaixo.
 Não usar NativeDisabledChainTarget para validar Break:
 seu produtor usa apenas regiões canônicas 0/5/10.
 
@@ -70,7 +70,7 @@ dotnet run --project src/Joey.App -- ..\passion\data.dat --review-break=0,4080 -
 250 é exemplo de resource ID existente; use um ID real.
 Descritor hexadecimal sem 0x. Bit 8000 = identidade revelada,
 bit 4000 = posição; oculto requer ID 0 e carrega apenas o verso.
-O campo deve ser região+slot 0..10. F7 avança um Update,
+O campo deve ser região+slot 0..10 ou região monstro 0..4 com slot FF. F7 avança um Update,
 F8 reinicia, F12 salva PNG e JSON com partículas, recortes,
 destinos, contador e predicado de liberação. Escape encerra.
 Não há som automático, gate real, mutação de estado ou segunda fila.
@@ -79,8 +79,60 @@ A convenção de perspectiva reutiliza as revisões existentes
 
 Limites: compositor +AC/+C, chave verde, tint, orientação de
 textura Raylib e comparação pixel a pixel ainda não verificados.
-A mão (0041F130), posições de deck/cemitério e snapshot FF
-não são aceitos neste review; a geometria viva dessas zonas exige
-contrato próprio. A03 fornece o snapshot autorizado antes da
+A mão (0041F130) e posições de deck/cemitério não são aceitas;
+a geometria viva dessas zonas exige contrato próprio. O snapshot
+FF aceita uma ocorrência explícita no review, mas sua leitura antes
+da mutação ainda depende de A03. A03 fornece o snapshot autorizado antes da
 mutação e integra apresentação sem recalcular regras.
 Sem nova Draw no duelo: V22 continua Pending no inventário.
+
+
+## Contrato do produtor: exemplos e correção do slot FF
+
+O B de 0x79 é composto por **região no byte alto, slot no baixo**,
+como 00404B40 lê A550A0>>24 e (A550A0>>16)&FF.
+005B9170 não normaliza B para opcode 79.
+00576B30 emite B=zone, ou seja, região 0, slot=zone.
+00579330 emite B=(region<<8)|slot (regiões B/C/D).
+00578030 emite B=(monsterZone<<8)|FF: **FF é slot, não
+região**. 00570230, 005700F0, 005703A0 e 00570420
+selecionam a cópia em A57864 ou A578F4 quando região+slot
+não cabe no campo e não é região especial B..F. A escolha
+usa lado e zona de A57840. O descritor resultante preserva
+a zona de monstro como região e FF como slot. 0045C280,
+nesse caso, não normaliza região+slot; cases 0..4 usam
+apenas região para o centro. NativeBreakFieldTarget porta
+esta âncora. Não consultar a carta atual do campo para
+reconstruir a identidade/posição do snapshot.
+
+Exemplo estático confirmado: Man-Eater Bug, Mystical Space
+Typhoon, Dream Clown, Driving Snow, Gust, Michizure,
+Thousand Knives e Tribute to the Doomed compartilham
+primary 00585C80 (card_callback_slots). Após validação de
+alvo e gates (incluindo 00583510 para IDs 3FF e 4BB),
+esse callback chama 00577880, que gera máscara de lado/zona,
+chama 00576940, que chama 00576960 com dest E e flags 2.
+00576960 conserva bit 1 nas flags enviadas a 00576B30
+e este emite 79 para a remoção admitida. O caminho
+confirma Break para a remoção bem-sucedida desses efeitos
+no recorte analisado; imunidades, seleção inválida e
+ramos especiais continuam possíveis.
+
+Tributos: 005ABD00 emite 57 para os slots escolhidos e
+00577B30 chama 00576960 com dest E e flags 1000h.
+00576B30 seleciona 95 nesse ramo, não 79. 005999D0
+(callback de rituais) também usa 00577B30. Isso distingue
+a apresentação de custo daquela de destruição por efeito.
+Não atribuir a 95 uma animação específica sem seu Draw.
+Nobleman of Crossout/Extermination: callback 0058C080
+chama 00577950 com flags 0 (dest F); caminho ordinário
+8F, não break obrigatório (exceções de ID/flags mantidas).
+Não confundir "enviado ao cemitério" com 79.
+
+Raigeki, Dark Hole, Mirror Force, Heavy Storm, Harpie's
+Feather Duster, Trap Hole e Fissure: o v3 tem catálogo
+de callbacks mas não funções/decompilações/Xrefs dos
+respectivos endereços primary. Ainda sem confirmação por
+essa fonte. Não preencher lacuna por semelhança de regras.
+ACTIONS deve selecionar a rota antes da apresentação e
+entregar snapshot de lado/posição/identidade autorizada.
