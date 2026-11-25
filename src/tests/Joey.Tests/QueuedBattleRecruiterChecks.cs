@@ -98,6 +98,9 @@ internal static class QueuedBattleRecruiterChecks
                 d.Graveyard(owner).SequenceEqual(legacy.Graveyard(owner))&&
                 d.Monsters[owner,4]==legacy.Monsters[owner,4]&&summons==(accept?1:0)&&shuffles==(accept?1:0),
                 "A06 P164 queued full battle matches legacy final state");
+            var shuffleRows=ActionTraceProjection.ReadExecuted(q.Trace).Where(t=>t.Command==nameof(ShuffleDeckCommand)).ToArray();
+            check(shuffleRows.Length==(accept?1:0)&&shuffleRows.All(t=>t.Side==owner&&t.Mapping=="unmapped"&&t.Args is null),
+                "A06 P164 native shuffle needs its recorded seed for exact projection");
             check(q.Trace.Where(t=>t.Stage==ActionTraceStage.Executed).All(t=>t.Result?.Outcome==CommandOutcome.Applied),
                 "A06 P164 all admitted operations applied");
         }

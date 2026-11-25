@@ -276,6 +276,9 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
+        if (target == -1 && queuedDuel is not null && duel.TryQueueDirectAttack(attacker, out message))
+            return;
+
         int player = duel.ActivePlayer;
         var hidden = CaptureHiddenAttackTarget(1 - player, target);
         if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
@@ -304,7 +307,7 @@ static partial class Game
         if ((owner ?? duel.ActivePlayer) != cpu.Player) return;
         int handCount = duel.HandFor(cpu.Player).Count;
         var pendingAttack = duel.PendingAttackResponse?.Attack;
-        // CPU Step resolves its Core action immediately. Capture hidden
+        // Legacy CPU combat resolves immediately. Capture hidden
         // targets before it can flip/destroy them; only the matching attack
         // uses its snapshot, all other CPU actions discard these references.
         var hiddenBeforeStep = new HiddenAttackTarget?[2, NativeDuelLayout.MonsterSlots];
@@ -322,7 +325,7 @@ static partial class Game
         cpuDelay = presentation.Style.Duration(step.Action == CpuAction.Attack ? DuelPresentationCue.Battle : DuelPresentationCue.CardMove);
         message = "CPU: " + (step.Action == CpuAction.BeginBattle ? "Battle phase." : step.Message);
         ClearDuelSelection();
-        if (step.Action == CpuAction.Attack && duel.PendingAttackResponse is null &&
+        if (step.Action == CpuAction.Attack && queuedDuel?.IsBusy != true && duel.PendingAttackResponse is null &&
             step.SourceZone is int attackerZone && step.TargetZone is int targetZone)
             BeginAttackCue(step.Player, attackerZone, targetZone,
                 targetZone is >= 0 and < NativeDuelLayout.MonsterSlots

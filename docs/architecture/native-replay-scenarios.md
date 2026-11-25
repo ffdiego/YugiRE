@@ -243,11 +243,9 @@ SQLite cumulativo v2 (SHA-256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc
 quick_check ok): Mystic Tomato 1123/row262, Giant Rat 1108/251,
 Shining Angel 1117/258, UFO Turtle 1110/253, Mother Grizzly 1119/259,
 Flying Kamakiri #1 1120/260 compartilham availability 00581770 e
-primary 0058AC10. Nenhum corpo nos índices functions, decompilations
-ou visual_evidence_functions. Filtro, posição e causalidade seguem
-CardSelectionRules e o fluxo legado C# previamente documentado.
-Roteiro pendente 31 reúne estas duas VAs e cinco ausentes dos FLIPs
-anteriores; não duplica corpos já disponíveis.
+primary 0058AC10. A implementação inicial usou CardSelectionRules e o
+fluxo legado C# para filtro, posição e causalidade. O roteiro 31
+recuperou esses dois corpos e cinco callbacks dos FLIPs anteriores.
 
 O piloto isolado admite os seis como atacante/defensor, inclusive
 defesa oculta. A chegada FinishBattleRemovalCommand registra o gatilho
@@ -271,7 +269,37 @@ chegada final de P164 e o novo opener permanecem unmapped (variante
 51.135 checks C#, Python/Node verdes. Matriz de 48 combinações
 (seis IDs, dois donos, dois papéis, aceitar/recusar), dois empates
 espelhados, pose oculta, ausência de elegíveis, lethal, causalidade
-por efeito. Teste adicional de projeção e CI reconciliado pendentes.
+por efeito. A integração #132 passou no CI 45523940840 e em 51.183
+checagens C# locais.
+
+### Roteiro 31 — callback P164 e shuffle no trace
+
+A coleta estática usou o EXE com SHA-256
+`db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
+O relatório `retry-004-0058AC10.txt` foi extraído do ZIP privado
+`ghidra-actions-battle-callbacks.zip` (SHA-256
+`abe6876a5e42e42dd55585ce7c847ae220538436fea1e1e8f7f38a1d00dc291e`).
+
+- `00581770–00581789` extrai o lado de `callback[+2]&1` e testa
+  `00570B40(lado)`. `0058AC10–0058AC3A` testa `callback[+4]&4`
+  e despacha a partir de `00A55C8A` nos estados `7B..80`.
+- `0058AD5A–0058AD83` chama `0040CAB0` com região `0D`, passa seu
+  retorno e o lado a `005ADA20` e retorna a continuação `7B`.
+  `0058AD54` retorna `7C` como estado do callback. A instrução
+  é um retorno local, separado do opcode `7C` no trace da fila.
+- `0058AD84–0058ADA2` emite `005B9170((lado<<15)|60h,0,0,0)`.
+  O produtor substitui os dois primeiros operandos pelas metades
+  do resultado de `_rand()` (`005B9231–005B923B`). O byte `38h`
+  em `005B9B4B` seleciona o stub `005B95F5`, que salta para
+  `00408B90`. O handler reconstrói a seed, chama `005C3BF5(seed)`
+  e chama `00568D80(lado,3)` no caminho de embaralhamento.
+
+O shuffle C# usa `effectRandom` e mantém a transferência e o shuffle
+visíveis como comandos da fila. O comparador deixa `ShuffleDeckCommand`
+como `unmapped` porque a seed gravada no replay nativo tem origem própria.
+O assembly abre a investigação da ordem entre seleção, invocação e shuffle.
+A ordem entre dois donos e a projeção do envio final de P164 ainda exigem
+um trace nativo da situação correspondente.
 
 ## A09.1 — gate da declaração de combate
 
@@ -285,7 +313,7 @@ avanço legal ao turno 3 para o lado 0), ataque direto/com alvo, Classic/Instant
 destino lógico espelhado, nenhuma alteração de LP/defensor durante o cue e
 mesmo trace final. Não altera parâmetros de LookAndFeel.
 
-O roteiro privado executável `scripts/pending/actions-a09-combat-smoke.py`
+O roteiro privado executável `scripts/regression/actions-a09-combat-smoke.py`
 roda o mesmo checkpoint de laboratório no Lab, App Classic e App Instant.
 A fixture usa o ID 1351 já observado em CE na amostra arquivada, com hipótese
 explícita de monstro jogável de ATK positivo no DAT local: falha cedo se a
@@ -300,7 +328,7 @@ de trace/state entre os três perfis. A duração medida é wall-clock do App,
 não update nativo nem teste de pixels.
 
 ```powershell
-python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat
+python scripts/regression/actions-a09-combat-smoke.py --dat ../passion/data.dat
 ```
 
 Fechar cada janela somente após Script completed. Logs ficam em
