@@ -391,9 +391,13 @@ static partial class Game
                         DrawFieldSelectionFrame(geometry, own);
                 }
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput && duel.PendingSpellTrapTarget is null &&
-                    PointerPressed(MouseButton.Left) && Hit(fieldRect) &&
-                    duel.ActivateSetFieldSpell(out message))
-                    BeginCardActivation(fieldCard, fieldRect);
+                    PointerPressed(MouseButton.Left) && Hit(fieldRect))
+                {
+                    if (queuedDuel is not null)
+                        duel.TryQueueFieldSpellActivation(DuelZone.FieldSpell, 0, out message);
+                    else if (duel.ActivateSetFieldSpell(out message))
+                        BeginCardActivation(fieldCard, fieldRect);
+                }
                 else if (!blockInput && Hit(fieldRect) && duel.CanUseFusionGate(player))
                 {
                     Label("Click Fusion Gate to Fusion Summon", 10, 587, 11, Gold);

@@ -200,7 +200,9 @@ public sealed class CpuDuelController
             int gateInHand = Enumerable.Range(0, duel.Hand.Count)
                 .FirstOrDefault(i => duel.Hand[i].Id == FusionRules.FusionGate, -1);
             if (gateInHand >= 0 && duel.HasFusionCombination())
-                return Act(CpuAction.Spell, (out string m) => duel.Play(gateInHand, out m), duel.Hand[gateInHand],
+                return Act(CpuAction.Spell, (out string m) => queueTurnActions
+                    ? duel.TryQueueActivation(gateInHand, false, out m, ActionOrigin.Cpu)
+                    : duel.Play(gateInHand, out m), duel.Hand[gateInHand],
                     handIndex: gateInHand, fieldOwner: Player);
             int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||

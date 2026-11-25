@@ -19,6 +19,11 @@ static class InfiniteCardsTests
                 check(!d.HandLimitDisabled,"Set Infinite Cards has no effect");
             }
             check(d.TryQueueActivation(0,set,out _)&&!d.HandLimitDisabled,"Infinite Cards queued admission read-only");
+            var entry = q.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(d.DescribeActionPresentation(entry.Command) is
+                { Kind: ActionPresentationKind.Activate, Destination: DuelZone.SpellTrap, DestinationSlot: 0 } cue &&
+                cue.Source.Side == side && cue.Source.Zone == (set ? DuelZone.SpellTrap : DuelZone.Hand),
+                "C12 Infinite Cards: correct presentation projection before placement");
             q.Tick();
             check(d.HandLimitDisabled&&d.Spells[side,0]?.Id==0x593&&!d.SpellFaceDown[side,0]&&
                 d.Graveyard(side).Count==0&&d.Hand.Count==0,

@@ -28,6 +28,12 @@ public sealed partial class DemoDuel
                     return null;
                 return new(ActionPresentationKind.TargetedAttack, source, attack.Attacker,
                     sourceSlot, DuelZone.Monster, defenderSlot);
+            case ActivateFieldSpellCommand field:
+                target = field.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.FieldSpell; slot = 0; break;
+            case ActivateInfiniteCardsCommand infinite:
+                target = infinite.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = infinite.Slot; break;
             case ActivateDrawSpellCommand draw:
                 target = draw.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

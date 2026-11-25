@@ -30,6 +30,18 @@ internal static class FieldSpellChecks
         public bool CanComplete(QueuedDuelCommand command,CommandResult result)=>
             command.Command is not SendToGraveyardCommand {Target.Zone:DuelZone.FieldSpell}||Release;
     }
+    private sealed class ProjectionGate(DemoDuel duel) : ICommandPresentationGate
+    {
+        public List<DuelActionPresentation> Cues { get; } = [];
+        public bool CanAdvance => true;
+        public void OnStarting(QueuedDuelCommand command)
+        {
+            if (duel.DescribeActionPresentation(command.Command) is { Kind: ActionPresentationKind.Activate } cue)
+                Cues.Add(cue);
+        }
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) => true;
+    }
+
     private static void Drain(ActionQueue queue)
     {
         for(int i=0;i<40&&queue.IsBusy;i++)queue.Tick();
@@ -52,6 +64,25 @@ internal static class FieldSpellChecks
             check(d.ActiveFieldSpell?.Id==id&&!d.FieldSpellFaceDown[side]&&d.Hand.Count==0&&
                 d.Graveyard(side).Count==0&&d.Spells.Cast<Card?>().All(c=>c is null),
                 "Queued FIELD activation keeps source and uses dedicated zone");
+        }
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool set in new[] { false, true })
+        {
+            var d = Duel(side, Sogen());
+            var gate = new ProjectionGate(d);
+            var q = d.CreatePrimitiveActionQueue(gate);
+            if (set)
+            {
+                check(d.TryQueueSpellTrapSet(0, out _), "C12 FIELD projection: Set");
+                Drain(q);
+            }
+            check(d.TryQueueFieldSpellActivation(set ? DuelZone.FieldSpell : DuelZone.Hand, 0, out _),
+                "C12 FIELD projection: admitted");
+            Drain(q);
+            check(gate.Cues.Count == 1 && gate.Cues[0] is { Destination: DuelZone.FieldSpell, DestinationSlot: 0 }
+                && gate.Cues[0].Source.Side == side &&
+                gate.Cues[0].Source.Zone == (set ? DuelZone.FieldSpell : DuelZone.Hand),
+                "C12 FIELD projection: one cue in dedicated zone");
         }
         foreach(bool set in new[]{false,true})
         {

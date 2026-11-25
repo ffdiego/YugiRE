@@ -63,10 +63,11 @@ static partial class Game
                 BeginAttackCue(side, a.SourceIndex, slot, alreadyAimed: false);
                 break;
             case ActionPresentationKind.Activate:
-                // Producer has emitted followups, but no source movement or
-                // damage/destruction yet. Show the existing travel + glow.
+                // Fixed spells preview before followups; persistent spells
+                // present their committed placement, captured before mutation.
                 queuedPreviewSource = presentation.Style.PlayAnimations ? a.Source : null;
-                BeginCardActivation(a.Card, ZoneBounds(side, slot, true), snapshot.Origin, near);
+                BeginCardActivation(a.Card, a.Destination == DuelZone.FieldSpell
+                    ? FieldZoneBounds(side) : ZoneBounds(side, slot, true), snapshot.Origin, near);
                 break;
             case ActionPresentationKind.Summon:
             case ActionPresentationKind.Set:
@@ -93,7 +94,8 @@ static partial class Game
         queuedPreviewSource is { } source && source.Side == side && source.Zone == DuelZone.Hand &&
         duel.TryCaptureCardTarget(side, DuelZone.Hand, index, out var current) && source == current;
 
-    static bool IsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
+    static bool IsQueuedFixedSpell(Card card) => FieldSpellRules.Supports(card.Id) ||
+        card.Id == 0x593 || card.ClassCode == 22 &&
         (DrawSpellRules.Effect(card) is not null || LifePointSpellRules.Supports(card.Id) ||
          MonsterWipeRules.Scope(card.Id) is not null || SpellTrapWipeRules.Supports(card.Id));
 

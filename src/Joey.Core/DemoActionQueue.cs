@@ -615,13 +615,8 @@ public sealed partial class DemoDuel
             if(!valid || !duel.TryPlanFieldActivation(command.Source,out var remaining)||remaining.Length!=0 ||
                 !duel.TryResolveCardTarget(command.Source,out int index,out var card))
                 return new(CommandOutcome.Skipped,"Field activation source or replacement changed.");
-            int side=command.Side;
-            if(command.Source.Zone==DuelZone.Hand)
-            {
-                duel.hands[side].RemoveAt(index);
-                duel.FieldSpells[side]=card;
-            }
-            duel.FieldSpellFaceDown[side]=false;
+            duel.CommitFieldActivation(command.Side,
+                command.Source.Zone == DuelZone.Hand ? index : null);
             var result=new CommandResult(CommandOutcome.Applied);
             return command.Source.Zone==DuelZone.Hand?result with
             {Placement=new(command.Source,card.Id,index,DuelZone.FieldSpell,0,false,false,0)}:result;

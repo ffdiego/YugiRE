@@ -4,6 +4,27 @@ public sealed partial class DemoDuel
 {
     private const ushort InfiniteCardsId = 0x593;
 
+    // Shared commit primitives; only admission and scheduling differ.
+    private void CommitFieldActivation(int side, int? handIndex)
+    {
+        if (handIndex is int index)
+        {
+            FieldSpells[side] = hands[side][index];
+            hands[side].RemoveAt(index);
+        }
+        FieldSpellFaceDown[side] = false;
+    }
+
+    private void CommitInfiniteCardsActivation(int side, int slot, int? handIndex)
+    {
+        if (handIndex is int index)
+        {
+            Spells[side, slot] = hands[side][index];
+            hands[side].RemoveAt(index);
+        }
+        SpellFaceDown[side, slot] = false;
+    }
+
     private bool TryPlanFieldActivation(CardTarget source,out CardTarget[] replaced)
     {
         replaced=[];
@@ -67,12 +88,8 @@ public sealed partial class DemoDuel
         if(!CanActivateInfiniteCards(command.Source,out int slot)||slot!=command.Slot ||
             !TryResolveCardTarget(command.Source,out int index,out var card))
             return new(CommandOutcome.Rejected,"Infinite Cards source or destination changed.");
-        if(command.Source.Zone==DuelZone.Hand)
-        {
-            hands[command.Side].RemoveAt(index);
-            Spells[command.Side,slot]=card;
-        }
-        SpellFaceDown[command.Side,slot]=false;
+        CommitInfiniteCardsActivation(command.Side, slot,
+            command.Source.Zone == DuelZone.Hand ? index : null);
         spellSetTurn[command.Side,slot]=0;
         var result=new CommandResult(CommandOutcome.Applied);
         return command.Source.Zone==DuelZone.Hand?result with

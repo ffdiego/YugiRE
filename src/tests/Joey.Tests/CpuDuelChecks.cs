@@ -87,9 +87,8 @@ internal static class CpuDuelChecks
                 $"C12 CPU {id}: admission only, no immediate legacy mutation");
             var entry = q.Trace.Skip(before).First(x => x.Stage == ActionTraceStage.Admitted).Entry;
             check(entry.Origin == ActionOrigin.Cpu &&
-                (id == 342 ? entry.Command is ActivateLifePointSpellCommand :
-                 id == 1010 ? entry.Command is ActivateDrawSpellCommand :
-                 entry.Command is ActivateSpellTrapWipeCommand) &&
+                entry.Command.GetType().Name == (id == 342 ? "ActivateLifePointSpellCommand" :
+                 id == 1010 ? "ActivateDrawSpellCommand" : "ActivateSpellTrapWipeCommand") &&
                 queued.DescribeActionPresentation(entry.Command)?.Kind == ActionPresentationKind.Activate,
                 $"C12 CPU {id}: same command and presentation as player");
             Drain();
