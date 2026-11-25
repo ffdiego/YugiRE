@@ -3,7 +3,7 @@ namespace Joey.Core;
 // These are logical operations, not native opcode numbers. Admission (player,
 // CPU, effect, lab) is separate from execution; a queue accepts admitted commands.
 public enum ActionOrigin { Player, Cpu, Effect, Console, Test }
-public enum DuelZone { Deck, Hand, Monster, SpellTrap, FieldSpell, Graveyard, Banished }
+public enum DuelZone { Deck, Hand, Monster, SpellTrap, FieldSpell, Graveyard, Banished, FusionDeck }
 
 // The state adapter owns allocation and resolution of occurrence IDs. Never use
 // resource ID, catalogue object reference, or current slot as an occurrence ID.
@@ -52,6 +52,10 @@ internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Dest
 
 // Pilot orchestration only; A08 moves card-specific producers out of Core.
 // Neither of these stages claims a one-to-one native opcode mapping.
+internal sealed record PrepareFusionSummonCommand(int Side, PendingFusionSummon Request, int DeckIndex,
+    IReadOnlyList<FusionMaterial> Materials, CardTarget Source, CardTarget Result,
+    IReadOnlyList<CardTarget> Payments, int Slot, bool Defense) : DuelCommand(Side);
+internal sealed record FinishFusionSummonCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareRitualSummonCommand(int Side, CardTarget Spell, CardTarget Monster,
     int Slot, bool Defense, IReadOnlyList<CardTarget> Materials) : DuelCommand(Side);
 internal sealed record FinishRitualSummonCommand(int Side) : DuelCommand(Side);
@@ -160,10 +164,19 @@ internal static class DuelCommandValidation
             case FinishDeckSearchCommand:
             case FinishGraveyardBanishSummonCommand:
             case FinishGraveyardRecoveryCommand:
+            case FinishFusionSummonCommand:
             case FinishRitualSummonCommand:
                 break;
             case SpecialSummonCommand summonFromDeck when summonFromDeck.Slot is >= 0 and < 5 && !(summonFromDeck.FaceDownDefense && summonFromDeck.FaceUpDefense):
-                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Hand);
+                Target(summonFromDeck.Source, summonFromDeck.Side, DuelZone.Deck, DuelZone.Graveyard, DuelZone.Hand, DuelZone.FusionDeck);
+                break;
+            case PrepareFusionSummonCommand fusion when fusion.Slot is >= 0 and < 5 &&
+                fusion.Request.Owner == fusion.Side && fusion.Payments.Count == fusion.Materials.Count &&
+                fusion.Payments.Count > 0 && fusion.Payments.Distinct().Count() == fusion.Payments.Count:
+                Target(fusion.Source, fusion.Request.FieldOwner ?? fusion.Side,
+                    fusion.Request.FieldOwner is null ? (fusion.Request.FromSet ? DuelZone.SpellTrap : DuelZone.Hand) : DuelZone.FieldSpell);
+                Target(fusion.Result, fusion.Side, DuelZone.FusionDeck);
+                foreach (var payment in fusion.Payments) Target(payment, fusion.Side, DuelZone.Hand, DuelZone.Monster);
                 break;
             case PrepareRitualSummonCommand ritual when ritual.Slot is >= 0 and < 5:
                 Target(ritual.Spell, ritual.Side, DuelZone.Hand, DuelZone.SpellTrap);
@@ -335,7 +348,7 @@ internal static class DuelCommandValidation
                     DuelZone.SpellTrap, DuelZone.FieldSpell, DuelZone.Banished);
                 break;
             case BanishCommand banish:
-                Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Graveyard);
+                Target(banish.Target, banish.Side, DuelZone.Deck, DuelZone.Hand, DuelZone.Graveyard, DuelZone.Monster);
                 break;
             case PlaceEndPhaseMessageCommand message when message.ExpectedTurn > 0 && message.Slot is >= 0 and < 5:
                 Target(message.Source, message.Side, DuelZone.Hand, DuelZone.Deck);
