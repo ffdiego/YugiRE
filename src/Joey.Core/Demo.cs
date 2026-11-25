@@ -1885,7 +1885,7 @@ public sealed partial class DemoDuel
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRecruitmentChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
@@ -2055,7 +2055,7 @@ public sealed partial class DemoDuel
     public bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRecruitmentChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MinSelections: 0 } pending)
             return false;
