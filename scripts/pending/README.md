@@ -374,3 +374,20 @@ importar em nova cópia SQLite cumulativa pelo importador de evidência.
 A coleta estática não prova sozinha a ordem dinâmica de dois recrutadores
 ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
 [contrato](../../docs/architecture/native-replay-scenarios.md#a06--recrutadores-elementais-p164-no-combate-enfileirado).
+
+## A09 — actions-a09-combat-smoke.py (aguardando desktop Windows/Fedora)
+
+- Requisitos: Python 3.10+, .NET 10, DAT privado e sessão gráfica. Não requer
+  joey_pc.exe nem modifica saves. Rodar a partir da raiz:
+  `python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat`.
+- Roteiro: `scripts/fixtures/duel-console-combat-smoke.txt`; direct lado 1,
+  combate com alvo lado 0, decks não vazios, setup explícito por spawn.
+  A hipótese de ID 1351 com ATK positivo é validada pelo resultado do Lab,
+  não pela fixture sintética do CI.
+- Fechar Classic e Instant depois de Script completed. Logs em
+  `scratch/actions-combat/smoke-*/` (diretório único). Enviar os três .txt e
+  registrar se a espada aparece antes do dano/remoção; não versionar o DAT.
+- Critério: mesmo trace/state headless e visual nos dois perfis, fila livre,
+  nenhuma espera >=5s, ordenação Started/Completed serial. A comparação
+  não mede pixels nem paridade com o original. A captura nativa equivalente
+  de A09 continua pendente; este roteiro não a substitui.
