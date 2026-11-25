@@ -28,6 +28,7 @@ public sealed partial class DemoDuel
             DuelZone.Hand when index < hands[side].Count => hands[side][index],
             DuelZone.Graveyard when index < graves[side].Count => graves[side][index],
             DuelZone.Banished when index < banished[side].Count => banished[side][index],
+            DuelZone.FusionDeck when index < fusionDecks[side].Count => fusionDecks[side][index],
             DuelZone.Monster when index < 5 => Monsters[side, index],
             DuelZone.SpellTrap when index < 5 => Spells[side, index],
             DuelZone.FieldSpell when index == 0 => FieldSpells[side],
@@ -55,6 +56,7 @@ public sealed partial class DemoDuel
             DuelZone.Hand => hands[side].Count,
             DuelZone.Graveyard => graves[side].Count,
             DuelZone.Banished => banished[side].Count,
+            DuelZone.FusionDeck => fusionDecks[side].Count,
             DuelZone.Monster or DuelZone.SpellTrap => 5,
             DuelZone.FieldSpell => 1,
             _ => 0
@@ -70,6 +72,7 @@ public sealed partial class DemoDuel
                 DuelZone.Hand => hands[side][i],
                 DuelZone.Graveyard => graves[side][i],
                 DuelZone.Banished => banished[side][i],
+                DuelZone.FusionDeck => fusionDecks[side][i],
                 DuelZone.Monster => Monsters[side, i]!,
                 DuelZone.SpellTrap => Spells[side, i]!,
                 DuelZone.FieldSpell => FieldSpells[side]!,
