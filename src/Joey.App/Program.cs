@@ -76,6 +76,7 @@ static partial class Game
             ConfigureDisabledChainReview(args, archive);
             ConfigureChainReview(args, archive);
             ConfigureTurnNotice(archive);
+            ValidatePlacementBank(archive);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             ConfigureCardStatusReview(args, archive);
@@ -401,6 +402,19 @@ static partial class Game
         Label(line, x, y, size);
     }
     static readonly HashSet<(int Index, bool Miniature)> reportedMissingInspectionArtwork = [];
+    static void ValidatePlacementBank(Archive archive)
+    {
+        NativePlacementAssets.Validate(System.Text.Encoding.Latin1.GetString(
+            archive.Read(NativePlacementAssets.Prefix+"set.txt")),NativePlacementAssets.SetBank());
+        NativePlacementAssets.Validate(System.Text.Encoding.Latin1.GetString(
+            archive.Read(NativePlacementAssets.Prefix+"summon.txt")),
+            [NativePlacementAssets.Rainbow,NativePlacementAssets.Star(false,0),NativePlacementAssets.Star(false,1)]);
+        NativePlacementAssets.Validate(System.Text.Encoding.Latin1.GetString(
+            archive.Read(NativePlacementAssets.Prefix+"sacrifice.txt")),
+            [NativePlacementAssets.Prefix+"card_pika_h.yga",NativePlacementAssets.Aura(false),
+             NativePlacementAssets.TributeStar(0),NativePlacementAssets.TributeStar(1)]);
+    }
+
     static void DrawArtwork(Card card, int x, int y, int w, int h, int degrees = 0)
     {
         // Native 0041A800 loads independent card/ and mini/ catalogs. Do
