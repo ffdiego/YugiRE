@@ -9,8 +9,8 @@ static partial class Game
 
     static readonly PresentationSequence<ActivationStage> activation = new();
     static readonly PresentationTickClock activationClock = new();
-    static int[] effectCosine = ActivationEffectPlayback.ApproximateCosineTable();
-    static bool effectCosineFromNativeCapture;
+    static int[] effectCosine = NativeCosineCapture.GenerateTable();
+    static string effectCosineSource = "native-equivalent-generated";
     static Card? activationCard;
     static CardBounds activationBounds, activationOrigin;
     static int activationCategory;

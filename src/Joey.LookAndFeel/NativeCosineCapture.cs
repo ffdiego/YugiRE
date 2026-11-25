@@ -2,12 +2,19 @@ using System.Text.Json;
 
 namespace Joey.LookAndFeel;
 
-/// <summary>Private V01 runtime capture, not a generated trigonometric approximation.</summary>
+/// <summary>V01 fixed-point cosine values and optional private runtime input.</summary>
 public static class NativeCosineCapture
 {
     public const string ExecutableSha256 =
         "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de";
     public const int SampleCount = 512;
+
+    // 0055DCF0 initializes 00A52EE8 with FCOS and a truncating conversion.
+    // This formula matches every sample in the v3 runtime capture.
+    public static int[] GenerateTable() =>
+        Enumerable.Range(0, SampleCount)
+            .Select(i => (int)(Math.Cos(i * Math.PI / 256.0) * 65536.0))
+            .ToArray();
 
     public static int[] Read(string path) => Parse(File.ReadAllText(path));
 
@@ -29,8 +36,7 @@ public static class NativeCosineCapture
             if (values.ValueKind != JsonValueKind.Array || values.GetArrayLength() != SampleCount)
                 throw new InvalidDataException("Expected 512 signed native cosine samples.");
             var samples = values.EnumerateArray().Select(value => value.GetInt32()).ToArray();
-            // An all-zero buffer is not the initialized FCOS table. Do not
-            // constrain amplitude or rounding before observing the original.
+            // An all-zero buffer is not the initialized FCOS table.
             if (samples.All(value => value == 0))
                 throw new InvalidDataException("Native cosine table is empty.");
             return samples;

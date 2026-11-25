@@ -191,3 +191,42 @@ listening-notes.txt. Preencher notas de escuta: código 0 não prova som audíve
 O script não extrai nem envia WAVs/Voice.dat. Não confundir duração estimada
 com duração nativa da tabela 005C0F80. No agente, PowerShell, DAT e dispositivo
 não foram validados; aguardar execução real. Testes C# são sintéticos.
+
+## V18.1 — limite do WAV no Voice.dat
+
+O snapshot v3 registra 131 entradas no smoke Windows do roteiro 28.
+O Voice.dat local com SHA-256
+`50275ac744b8d029162dcedc2d19d318b34d6d56ee8dcabec2f1a9119438d6c8`
+reproduziu as 129 rejeições `Truncated RIFF chunk header`. Das demais
+entradas, uma segue RIFF convencional e uma excede o limite de leitura
+do Archive.
+
+Nas 129 entradas, `fmt ` é o primeiro chunk e tem tamanho 18, formato PCM
+16-bit e extensão zero. São 74 mono e 55 estéreo. O chunk seguinte é
+`data`. Seu tamanho deixa um sufixo de quatro bytes dentro do limite
+declarado pelo RIFF e 40 bytes entre esse limite e o fim da entrada.
+
+O disassembly do mesmo EXE usado na captura confirma que a rotina de
+duração `005C0F80` lê o byte rate do `fmt ` em `005C10DC`, procura
+`data` em `005C10E3–005C10FE` e usa o tamanho declarado em
+`005C1100`. `005C1107–005C1115` divide tamanho por byte rate,
+multiplica por 1000.0f (`005DDA98`) e trunca em `005C3E40`. Esse
+caminho nativo termina a leitura de chunks no primeiro `data`.
+A comparação cobre o consumidor de duração. A rotina de reprodução nativa
+e o significado dos bytes do sufixo continuam em investigação.
+
+O leitor específico do Voice.dat reconhece a estrutura acima e limita
+a leitura ao fim declarado de `data`. Para o player isolado, adapta a
+cópia em memória ao tamanho RIFF correspondente antes de chamar o
+decodificador. O leitor RIFF genérico continua estrito. O teste sintético
+cobre a estrutura exata, RIFF convencional, limites de chunks e
+consistência PCM. O limite de tamanho do Archive permanece em vigor.
+
+
+A inspeção passou a aceitar 106 de 131 entradas. Das 129 rejeições
+originais, 105 passaram e 24 WAVs estéreo apresentaram dois bytes
+a mais que um múltiplo do tamanho de frame PCM (quatro bytes).
+A validação de frame continua em vigor até esclarecer como o player
+nativo trata esse caso. Um smoke Linux com o sink ALSA nulo confirmou
+a decodificação e o término do player Raylib de `joey_01.wav`.
+O teste não verifica a escuta nem outras plataformas.

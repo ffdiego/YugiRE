@@ -26,7 +26,7 @@ static partial class Game
             width = 800,
             height = 600,
             style = presentation.Style.Name,
-            cosineSource = effectCosineFromNativeCapture ? "native-runtime-capture" : "approximate",
+            cosineSource = effectCosineSource,
             paused = visualReviewPaused,
             reviewStep = visualReviewStep,
             debugVisible = duelDebug,

@@ -4,7 +4,7 @@ internal static class NativeBankEffectChecks
 {
     public static void Run(Action<bool,string> check,Action<Action,string> reject)
     {
-        int[] cosine=ActivationEffectPlayback.ApproximateCosineTable();
+        int[] cosine=NativeCosineCapture.GenerateTable();
         NativeDiceTexture Tex(int key)=>key<6 ? new(160,40,4) :
             key==6 ? new(41,44,1) : new(32,35,1);
         for(int face=1;face<=6;face++)

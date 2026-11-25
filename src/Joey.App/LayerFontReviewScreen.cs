@@ -20,8 +20,6 @@ static partial class Game
         if (Option(args,"--review-layerfont=") is not string mode) return;
         if (mode is not ("a" or "b"))
             throw new InvalidDataException("Layerfont review expects a or b.");
-        if (!effectCosineFromNativeCapture)
-            throw new InvalidDataException("Layerfont review requires --native-cosine=<capture.json>.");
         layerFontReviewResources = NativeLayerFontResources.Parse(
             Encoding.Latin1.GetString(archive.Read(NativeLayerFontResources.Manifest)),
             archive.Entries.Select(e=>e.Name));
@@ -71,7 +69,7 @@ static partial class Game
             resource=layerFontReviewResources[layerFontReviewMode=="a"?0:1],
             counter=layerFontA.Counter,value=layerFontB.Value,wantsDisplay=layerFontWantsDisplay,
             bounds=layerFontReviewBounds,intensity=layerFontReviewIntensity,
-            cosineSource="native-runtime-capture",
+            cosineSource=effectCosineSource,
             compositor="provisional raylib texture/tint; native vtable blit and B registers pending"
         },new JsonSerializerOptions{WriteIndented=true})+Environment.NewLine);
     }

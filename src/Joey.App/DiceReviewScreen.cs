@@ -22,8 +22,6 @@ static partial class Game
             !int.TryParse(fields[1],out int x) || x is <0 or >=800 ||
             !int.TryParse(fields[2],out int y) || y is <0 or >=600)
             throw new InvalidDataException("Dice review expects --review-dice=INDEX,X,Y.");
-        if(!effectCosineFromNativeCapture)
-            throw new InvalidDataException("Dice review requires --native-cosine=<capture.json>.");
         diceReviewResources=NativeDiceResources.Parse(
             Encoding.Latin1.GetString(archive.Read(NativeDiceResources.Manifest)),
             archive.Entries.Select(e=>e.Name));
@@ -88,7 +86,7 @@ static partial class Game
         File.WriteAllText(basename+".json",JsonSerializer.Serialize(new {
             schemaVersion=1,routine="00456B90",index=diceReviewIndex,origin=diceReviewOrigin,
             counter=diceReview!.Counter,center=diceReview.Center,frame=diceReviewFrame,
-            resources=diceReviewResources,cosineSource="native-runtime-capture",
+            resources=diceReviewResources,cosineSource=effectCosineSource,
             compositor="diagnostic manifest-order mapping; raylib blend/key not verified",
         },new JsonSerializerOptions{WriteIndented=true})+Environment.NewLine);
     }

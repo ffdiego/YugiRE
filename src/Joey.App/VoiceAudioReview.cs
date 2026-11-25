@@ -1,6 +1,7 @@
 using Joey.Core;
 using Joey.LookAndFeel;
 using Raylib_cs;
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -31,8 +32,13 @@ internal static class VoiceAudioReview
             if(!archive.Entries.Any(e=>e.Name.Equals(name,StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidDataException("Missing original voice resource: "+name);
             byte[] bytes=archive.Read(name);
-            var info=NativeWaveInfo.Read(bytes);
+            var info=NativeWaveInfo.ReadVoiceArchiveEntry(bytes, out int? canonicalEnd);
             Console.WriteLine($"[voice review] {name}: format={info.Format} rate={info.SampleRate} channels={info.Channels} bytes={info.DataBytes} estimated_ms={info.ByteRateDurationMilliseconds:F1}");
+            if(canonicalEnd is int length)
+            {
+                Array.Resize(ref bytes, length);
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(4), (uint)(length - 8));
+            }
             return Play(bytes);
         }
         catch(Exception ex) when(ex is IOException or InvalidDataException or
@@ -52,7 +58,7 @@ internal static class VoiceAudioReview
         {
             try
             {
-                var info=NativeWaveInfo.Read(archive.Read(e.Name));
+                var info=NativeWaveInfo.ReadVoiceArchiveEntry(archive.Read(e.Name), out _);
                 entries.Add(new(e.Name,e.Size,info,info.ByteRateDurationMilliseconds,null));
             }
             catch(Exception ex) when(ex is IOException or InvalidDataException or OverflowException)

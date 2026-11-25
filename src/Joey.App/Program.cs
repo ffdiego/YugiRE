@@ -41,7 +41,7 @@ static partial class Game
             try
             {
                 effectCosine = NativeCosineCapture.Read(cosinePath);
-                effectCosineFromNativeCapture = true;
+                effectCosineSource = "native-runtime-capture";
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
             {
@@ -49,9 +49,7 @@ static partial class Game
                 return 1;
             }
         }
-        Console.WriteLine(effectCosineFromNativeCapture
-            ? "[visual] using private native cosine capture"
-            : "[visual] using approximate cosine table (not native parity)");
+        Console.WriteLine($"[visual] cosine source: {effectCosineSource}");
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
