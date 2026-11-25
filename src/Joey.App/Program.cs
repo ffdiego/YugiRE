@@ -169,7 +169,7 @@ static partial class Game
                 {
                     InitializeCoinReview();
                     screen = "coin-review";
-                    Console.WriteLine("[V20 review] F7 step, F8 reset, F12 capture; reflection/sparkles omitted; diagnostic compositor");
+                    Console.WriteLine("[V20 review] F7 step, F8 reset, F12 capture; sparkles included; reflection plan only; diagnostic compositor");
                 }
                 if (diceReview is not null)
                 {
