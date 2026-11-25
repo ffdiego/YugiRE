@@ -19,6 +19,7 @@ internal sealed record OpenBattleFlipDrawCommand(int Side, CardTarget Defender) 
 internal sealed record OpenBattleFlipTargetsCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+internal sealed record OpenBattleRecruitmentCommand(int Side) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
@@ -141,6 +142,7 @@ internal static class DuelCommandValidation
             case ResolveStandbyRevivalCommand { ExpectedTurn: > 0 }:
             case DrawCommand:
             case FinishFieldRemovalCommand:
+            case OpenBattleRecruitmentCommand:
                 break;
             case ShuffleDeckCommand:
             case FinishDeckSearchCommand:
@@ -253,7 +255,7 @@ internal static class DuelCommandValidation
                 break;
             case ActivateConditionalMonsterSpellCommand conditionalSpell:
                 Target(conditionalSpell.Source, conditionalSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
-                Target(conditionalSpell.Target, 1 - conditionalSpell.Side, DuelZone.Monster);
+                Target(conditionalSpell.Target, conditionalSpell.Target.Side, DuelZone.Monster);
                 break;
             case ResolveTargetedMonsterSpellCommand paidResolution:
                 Target(paidResolution.Source, paidResolution.Side, DuelZone.Hand, DuelZone.SpellTrap);
