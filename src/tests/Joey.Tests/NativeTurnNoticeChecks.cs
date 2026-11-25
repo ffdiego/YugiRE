@@ -58,6 +58,28 @@ internal static class NativeTurnNoticeChecks
         check(keys[0].Path==paths[27] && keys[0].Parameter==0 &&
               keys[1].Path==paths[29] && keys[1].Parameter is null,
             "V07: preload lookup uses manifest order and preserves missing fields");
+        // Exact repeated endpoints in the observed v3 English manifest.
+        string[] turns=Enumerable.Range(0,20).Select(i=>
+        {
+            int frame=i%10;
+            char side=i<10?'b':'r',last=i<10?'r':'b';
+            return frame==9?$"nex_e_{last}.yga":$"nex_e_{side}{(frame==0?"":frame.ToString())}.yga";
+        }).ToArray();
+        var observed=records.Take(26).Concat(turns.Select(n=>
+            new NativePhaseNoticeResource(NativePhaseNoticeResources.Prefix+n,null))).ToArray();
+        NativePhaseNoticeResources.ValidateTurnNoticeBank(observed);
+        var near=new NativeTurnNoticePlan(1,0,0,0);
+        var far=new NativeTurnNoticePlan(0,1,0,0);
+        check(observed[near.DrawAtCounter(0)!.Value.LookupKey].Path.EndsWith("nex_e_r.yga")&&
+            observed[near.DrawAtCounter(376)!.Value.LookupKey].Path.EndsWith("nex_e_b.yga")&&
+            observed[far.DrawAtCounter(0)!.Value.LookupKey].Path.EndsWith("nex_e_b.yga")&&
+            observed[far.DrawAtCounter(376)!.Value.LookupKey].Path.EndsWith("nex_e_r.yga"),
+            "V07 observed manifest: start old color, end new color");
+        reject(()=>NativePhaseNoticeResources.ValidateTurnNoticeBank(observed[..^1]),
+            "V07 turn notice bank rejects missing endpoint");
+        var wrong=observed.ToArray();(wrong[27],wrong[28])=(wrong[28],wrong[27]);
+        reject(()=>NativePhaseNoticeResources.ValidateTurnNoticeBank(wrong),
+            "V07 turn notice bank rejects reordered frames");
         reject(()=>NativePhaseNoticeResources.Parse(manifest,paths[..^1]),
             "V07: missing resource rejected");
         reject(()=>NativePhaseNoticeResources.Parse(string.Join("\n",names[..45]),paths),

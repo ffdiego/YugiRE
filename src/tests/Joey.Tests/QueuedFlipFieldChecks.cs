@@ -46,8 +46,19 @@ internal static class QueuedFlipFieldChecks
                 !d.TryQueueFlipSpellTrapPair(request,[field.Target,field.Target],out _)&&
                 !d.TryQueueFlipSpellTrapPair(request with {},[field.Target,other.Target],out _),
                 "Mandatory distinct pair and exact request");
-            check(d.TryQueueFlipSpellTrapPair(request,[field.Target,other.Target],out _)&&
-                d.PendingFlipSpellTrapTargets==request&&d.FieldSpells[enemy] is not null,"Admission nonmutating");
+            check(d.UsesQueuedFlipSpellTrapSelection(request)&&
+                !d.TrySelectQueuedFlipSpellTrapTarget(request with {},enemy,field.Zone,out _),
+                "Shared pair producer rejects stale request");
+            check(d.TrySelectQueuedFlipSpellTrapTarget(request,enemy,field.Zone,out _)&&
+                !q.IsBusy&&d.SelectedFlipSpellTrapTargets.Count==1&&d.FieldSpells[enemy] is not null,
+                "First FIELD selection does not mutate state");
+            check(d.TrySelectQueuedFlipSpellTrapTarget(request,enemy,field.Zone,out _)&&
+                d.SelectedFlipSpellTrapTargets.Count==0&&!q.IsBusy,"First selection can be deselected");
+            check(d.TrySelectQueuedFlipSpellTrapTarget(request,enemy,field.Zone,out _)&&
+                d.TrySelectQueuedFlipSpellTrapTarget(request,enemy,other.Zone,out _)&&
+                d.PendingFlipSpellTrapTargets==request&&d.FieldSpells[enemy] is not null&&
+                q.IsBusy&&!d.TrySelectQueuedFlipSpellTrapTarget(request,enemy,other.Zone,out _),
+                "Admission nonmutating; busy rejects duplicate input");
             q.Tick();gate.Release=false;q.Tick();q.Tick();
             check(d.FieldSpells[enemy] is null&&d.Spells[enemy,bounce?1:0] is not null&&q.IsBusy,
                 "First movement waits for its gate");
@@ -58,6 +69,44 @@ internal static class QueuedFlipFieldChecks
                 d.EquipmentCards.Count==(bounce?0:1)&&d.AttackValue(side,1)==(bounce?1000:1300),
                 "Pair correct destinations, equip cleanup and untouched cards");
         }
+
+
+        foreach(int side in new[]{0,1})
+        foreach(ushort id in new ushort[]{585,1521})
+        {
+            int enemy=1-side;
+            var d=DemoDuel.FromPartialObservation(enemy,[Spell(332),Spell(1056,21)],
+                side==0?Slots(Monster(id)):Slots(),side==1?Slots(Monster(id)):Slots(),8000);
+            check(d.SetFromHand(0,out _)&&d.SetFromHand(0,out _),"CPU pair fixture");
+            d.NextTurn();
+            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
+            var q=d.CreatePrimitiveActionQueue();d.TryQueueChangePosition(0,out _);Drain(q);
+            var req=d.PendingFlipSpellTrapTargets!;
+            var controller=new CpuDuelController(side);
+            check(controller.Step(d,queueTurnActions:true).Status==CpuStepStatus.Acted&&
+                !q.IsBusy&&d.SelectedFlipSpellTrapTargets.Count==1,"CPU stages first pair pick");
+            check(controller.Step(d,queueTurnActions:true).Status==CpuStepStatus.Acted&&q.IsBusy&&
+                d.PendingFlipSpellTrapTargets==req&&d.FieldSpells[enemy] is not null&&d.Spells[enemy,0] is not null,
+                "CPU admits full pair before mutation");
+            Drain(q);
+            check(d.PendingFlipSpellTrapTargets is null&&d.FieldSpells[enemy] is null&&d.Spells[enemy,0] is null&&
+                q.Trace.Any(t=>t.Stage==ActionTraceStage.Executed&&t.Entry.Origin==ActionOrigin.Cpu&&
+                    t.Entry.Command.GetType().Name=="ResolveFlipSpellTrapPairCommand"),"CPU pair resolves through queue");
+        }
+
+        var stale=DemoDuel.FromPartialObservation(1,[Spell(1056,21),Spell(1056,21)],
+            Slots(Monster(585)),Slots(),8000);
+        check(stale.SetFromHand(0,out _)&&stale.SetFromHand(0,out _),"Stale pair fixture");
+        stale.NextTurn();
+        stale.MonsterFaceDown[0,0]=stale.DefensePosition[0,0]=true;
+        var sq=stale.CreatePrimitiveActionQueue();stale.TryQueueChangePosition(0,out _);Drain(sq);
+        var sr=stale.PendingFlipSpellTrapTargets!;
+        check(stale.TrySelectQueuedFlipSpellTrapTarget(sr,1,0,out _),"Stale first pick staged");
+        stale.Spells[1,0]=Spell(1056,21);
+        check(!stale.TrySelectQueuedFlipSpellTrapTarget(sr,1,1,out _)&&!sq.IsBusy&&
+            stale.PendingFlipSpellTrapTargets==sr&&stale.SelectedFlipSpellTrapTargets.Count==0&&
+            stale.Spells[1,0] is not null&&stale.Spells[1,1] is not null,
+            "Same-ID replacement invalidates first pick without moving either target");
 
         foreach(int side in new[]{0,1})
         {

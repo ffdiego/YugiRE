@@ -142,6 +142,24 @@ public static class NativePhaseNoticeResources
         return records.ToArray();
     }
 
+    // SQLite v3: the original manifest has 46 records, with two
+    // ten-entry turn-change sequences and repeated endpoint resources.
+    // Check the real order rather than sort distinct texture filenames.
+    public static void ValidateTurnNoticeBank(IReadOnlyList<NativePhaseNoticeResource> manifest)
+    {
+        if(manifest.Count!=46)throw new InvalidDataException("Unexpected phase_name bank size.");
+        for(int group=0;group<2;group++)
+        for(int frame=0;frame<10;frame++)
+        {
+            char side=group==0?'b':'r';
+            char last=group==0?'r':'b';
+            string name=frame==9?$"nex_e_{last}.yga":
+                $"nex_e_{side}{(frame==0?"":frame.ToString(System.Globalization.CultureInfo.InvariantCulture))}.yga";
+            if(!manifest[26+group*10+frame].Path.Equals(Prefix+name,StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Unexpected turn notice manifest order.");
+        }
+    }
+
     public static NativePhaseNoticeResource[] Preloads(NativeTurnNoticePlan plan,
         IReadOnlyList<NativePhaseNoticeResource> manifest) =>
         plan.PreloadKeys().Select(key => key < manifest.Count ? manifest[key] :

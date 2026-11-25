@@ -75,3 +75,7 @@ O SQLite v2 contém a decompilação de 004223F0, não seu assembly.
 NativeNoticeProjection oferece geometria de quadrilátero isolada,
 com alturas distintas por lado e MulDiv; não modifica o renderer.
 O contrato e roteiro 25 estão em [rasterização](native-quad-raster-contract-2026-11-24.md).
+
+## Integração V07 — aviso de jogador durante a virada
+
+SQLite v3, visual_dat_manifests: phase_name.txt contém 46 registros, 26..35 nex_?_b, b1..8, r; 36..45 nex_?_r, r1..8, b. Dois endpoints repetidos; não ordenar nomes nem deduplicar o manifesto. visual_dat_images confirma 18 texturas inglesas distintas de 395x65. NativePhaseNoticeResources.ValidateTurnNoticeBank valida o recorte original; DrawAtCounter usa o seletor já confirmado em assembly. DuelPhaseScreen inicia plano no mesmo ramo da virada, amostra turnFlipElapsed, deixa aviso cessar em 48 enquanto botões seguem até 64. Sem novo atraso de fase, som ou gate. Perspectiva fixa 0 para preservar as cores do painel existente no duelo local; não altera ViewPlayer. NativeNoticeProjection (candidato de decompilação) alimenta colunas de textura com interpolação linear; não é o rasterizador nativo. Fallback de recurso ausente mantém apenas giro já funcional. Testes de ordem e endpoints; desktop pendente. Sem promoção Verified.

@@ -12,6 +12,7 @@ static partial class Game
     static int turnFlipElapsed;
     static bool drawNoticePending;
     static bool queuedTurnDraw;
+    static NativeTurnNoticePlan? turnNoticePlan;
     static bool RedPhaseSide => displayedTurn != 0 && (displayedTurn & 1) == 0;
     static bool TurnFlipping => drawNoticePending && turnFlipElapsed < NativePhaseTurnFlip.Updates;
     static bool PhaseBusy => !duel.GameOver && (phaseUpdates > 0 ||
@@ -25,11 +26,13 @@ static partial class Game
         phaseUpdates = 0;
         turnFlipElapsed = NativePhaseTurnFlip.Updates;
         drawNoticePending = queuedTurnDraw = false;
+        turnNoticePlan = null;
         phaseClock.Reset();
     }
 
     static void ShowPhase(DuelPhaseDisplay phase)
     {
+        if(phase==DuelPhaseDisplay.Battle && displayedPhase!=phase)PlayDuelSound(DuelSoundCue.BattlePhase);
         displayedPhase = phase;
         phaseUpdates = presentation.Style.PlayAnimations
             ? phase == DuelPhaseDisplay.Battle ? NativePhaseNotice.BattleUpdates : NativePhaseNotice.StandardUpdates
@@ -55,6 +58,7 @@ static partial class Game
             displayedPhase = LogicalPhase();
             phaseUpdates = 0;
             drawNoticePending = false;
+            turnNoticePlan = null;
             turnFlipElapsed = NativePhaseTurnFlip.Updates;
             return;
         }
@@ -76,6 +80,12 @@ static partial class Game
                 if (phaseUpdates > 0) return;
             }
             bool animate = displayedTurn != 0 && presentation.Style.PlayAnimations;
+            if(displayedTurn!=0)PlayDuelSound(DuelSoundCue.TurnChange);
+            // Match the existing blue/red phase panel (fixed side 0
+            // reference even in the local two-player view).
+            int previousSide=displayedTurn==0?duel.ActivePlayer:(displayedTurn-1)&1;
+            int newSide=(duel.Turn-1)&1;
+            turnNoticePlan=animate?new NativeTurnNoticePlan(previousSide,newSide,0,0):null;
             displayedTurn = duel.Turn;
             drawNoticePending = true;
             if (animate)
@@ -89,6 +99,7 @@ static partial class Game
         {
             if (queuedDuel?.IsBusy == true) return;
             drawNoticePending = false;
+            turnNoticePlan = null;
             ShowPhase(DuelPhaseDisplay.Draw);
             if (duel.CanDraw)
             {
@@ -181,6 +192,8 @@ static partial class Game
 
     static void DrawPhaseNotice()
     {
+        if (TurnFlipping && turnNoticePlan is { } plan)
+            DrawTurnNotice(plan,turnFlipElapsed);
         if (phaseUpdates <= 0) return;
         var banners = RedPhaseSide ? DatGraphics.PhaseBannersRed : DatGraphics.PhaseBannersBlue;
         string asset = banners[(int)displayedPhase];

@@ -47,7 +47,9 @@ internal static class QueuedGraveyardRecoveryChecks
             try{q.Enqueue(new DrawCommand(side));check(false,"Unrelated command blocked");}
             catch(InvalidOperationException){check(true,"Unrelated command blocked");}
             int transfers=0;d.HandTransferred+=_=>transfers++;
-            check(d.TryQueueGraveyardRecovery(request,second.Target,out _)&&
+            check(d.UsesQueuedHandSelection(request)&&!d.TrySubmitQueuedHandSelection(request,null,out _)&&
+                !d.TrySubmitQueuedHandSelection(request,1,out _),"UI adapter rejects decline and wrong class");
+            check(d.TrySubmitQueuedHandSelection(request,second.SourceIndex,out _)&&
                 d.PendingCardSelection==request&&d.Graveyard(side).Count==4&&d.Hand.Count==0,
                 "Recovery admission does not move card");
             q.Tick();
@@ -62,6 +64,23 @@ internal static class QueuedGraveyardRecoveryChecks
                 d.Graveyard(1-side).Single()==desired&&transfers==0&&
                 !d.TryQueueGraveyardRecovery(request,second.Target,out _),
                 "Recovery preserves identity, other copy and opponent GY; not a draw or repeatable");
+        }
+
+        foreach(int side in new[]{0,1})
+        {
+            var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(Monster(427)):Slots(),
+                side==1?Slots(Monster(427)):Slots(),8000,
+                side0Graveyard:side==0?[Spell(342)]:[],side1Graveyard:side==1?[Spell(342)]:[]);
+            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
+            var q=d.CreatePrimitiveActionQueue();d.TryQueueChangePosition(0,out _);Drain(q);
+            var cpu=new CpuDuelController(side);
+            var step=cpu.Step(d,queueTurnActions:true);
+            check(step.Status==CpuStepStatus.Acted&&q.IsBusy&&d.Hand.Count==0&&d.Graveyard(side).Count==1,
+                "CPU recovery answer admitted without legacy mutation");
+            Drain(q);
+            check(d.Hand.Count==1&&d.PendingCardSelection is null&&d.Graveyard(side).Count==0&&
+                q.Trace.Any(t=>t.Stage==ActionTraceStage.Executed&&t.Entry.Origin==ActionOrigin.Cpu),
+                "CPU recovery uses same queue and origin");
         }
 
         var empty=DemoDuel.FromPartialObservation(0,[],Slots(Monster(427)),Slots(),8000,

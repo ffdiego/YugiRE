@@ -7,7 +7,7 @@ static partial class Game
     static IReadOnlyList<Card>[] deckGroups = [];
     static string deckPath = "", deckError = "";
     static int deckGroup, deckPage, deckSelected;
-    static bool useImportedDeck;
+    static bool useImportedDeck, useDemoFixture;
 
     static void InitializeDeck(string[] args, string archivePath)
     {
@@ -45,20 +45,33 @@ static partial class Game
     }
     static DemoDuel NewDemo()
     {
-        if (!useImportedDeck || importedDeck?.HasDuelSize != true) return new(cards);
-        var fusion = deckGroups[DeckFile.FusionGroup].Where(FusionRules.IsFusionMonster).ToArray();
-        return DemoDuel.FromDecks(deckGroups[0], deckGroups[0],
-            firstFusionDeck: fusion, secondFusionDeck: fusion);
+        if (useDemoFixture) return new(cards);
+        if (useImportedDeck && importedDeck?.HasDuelSize == true)
+        {
+            var fusion = deckGroups[DeckFile.FusionGroup].Where(FusionRules.IsFusionMonster).ToArray();
+            return DemoDuel.FromDecks(deckGroups[0], deckGroups[0],
+                firstFusionDeck: fusion, secondFusionDeck: fusion);
+        }
+        // Same playable 40-card pool as Alpha, but no CPU controller.
+        var deck = AlphaDeck.Create(playableCards);
+        var extra = AlphaDeck.CreateFusionDeck(playableCards);
+        return DemoDuel.FromDecks(deck, deck, Random.Shared.Next(), extra, extra);
     }
     static void StartDemo()
     {
+        DemoDuel next;
+        try { next = NewDemo(); }
+        catch (InvalidDataException ex) { alphaError = ex.Message; return; }
+        alphaError = "";
         alphaCpu = null;
-        duel = NewDemo();
+        alphaBlocked = false;
+        duel = next;
         ResetDuelPresentation();
         QueueDuelOpening();
+        if (!useDemoFixture) QueueOpeningDeal();
         QueueInitialExodiaOpening();
         message = useImportedDeck ? "Imported Main and Fusion Deck for both local players." :
-            "Local two-player demo. Select phases on the left of the field.";
+            useDemoFixture ? "Local test fixture (expanded starting hands)." : "Local two-player duel. Five opening cards per side.";
     }
     static void DrawDeck()
     {
@@ -73,6 +86,7 @@ static partial class Game
         {
             Wrap("Open the deck through --deck=path/to/deck.ydc, or place deck.ydc beside data.dat and press Reload.", 225, 120, 530, 20);
             Wrap(deckError, 225, 260, 530, 18);
+            if (Button("Demo fixture", 600, 532, 175, 28)) { useImportedDeck = false; useDemoFixture = true; StartDemo(); }
             Label("Read-only deck viewer / temporary interface", 225, 540, 14, Color.Black);
             return;
         }
@@ -108,8 +122,8 @@ static partial class Game
             var lines = TextLines(card.Name + "\n" + card.Description, 170, 14);
             for (int i = 0; i < Math.Min(10, lines.Count); i++) Label(lines[i], 16, 397 + i * 18, 14, Color.Black);
         }
-        if (Button("Play this deck", 225, 532, 165, 28, importedDeck.HasDuelSize)) { useImportedDeck = true; StartDemo(); }
-        if (Button("Demo fixture", 600, 532, 175, 28)) { useImportedDeck = false; StartDemo(); }
+        if (Button("Play this deck", 225, 532, 165, 28, importedDeck.HasDuelSize)) { useImportedDeck = true; useDemoFixture = false; StartDemo(); }
+        if (Button("Demo fixture", 600, 532, 175, 28)) { useImportedDeck = false; useDemoFixture = true; StartDemo(); }
         Label("Both players use the Main Deck and Fusion Monsters from List 1", 225, 590, 12, Color.Black);
     }
 }
