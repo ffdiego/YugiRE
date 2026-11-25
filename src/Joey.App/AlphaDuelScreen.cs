@@ -276,6 +276,9 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
+        if (target == -1 && queuedDuel is not null && duel.TryQueueDirectAttack(attacker, out message))
+            return;
+
         int player = duel.ActivePlayer;
         var hidden = CaptureHiddenAttackTarget(1 - player, target);
         if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
