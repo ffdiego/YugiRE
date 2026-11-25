@@ -238,5 +238,7 @@ auditoria registra contagens antes/depois de todas as tabelas.
 Importação focada compatível com schema do importador; CLI e suíte
 Python do repo não foram executados neste ambiente. O v4-visuals
 não inclui v4-actions (coleta 31); conciliar os dois ramos cumulativos,
-não sobrescrever o snapshot global. Roteiro 33 movido para completed.
+não sobrescrever o snapshot global durante a importação inicial. A
+[v7 cumulativa](joey-knowledge-sqlite.md#complemento-cumulativo-v7--centros-do-campo-25112026)
+incorporou o mesmo bundle sobre a base v6. Roteiro 33 movido para completed.
 Não repetir coleta; falta comparação gráfica e mistura/cadência.

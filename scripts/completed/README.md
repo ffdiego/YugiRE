@@ -56,6 +56,6 @@ Coleta validada em 25/11/2026. O bundle privado
 contém uma função e dois blocos de memória, com quatro bytes de
 sobreposição idênticos. Confirma os centros dos monstros e das zonas
 de Spell/Trap e a ordenação invertida do lado adversário.
-A importação foi validada no snapshot paralelo v4-visuals. A consolidação
-desse bundle na linha cumulativa posterior a v6 está pendente.
+A importação foi validada no snapshot paralelo v4-visuals e consolidada na
+[v7 compartilhada](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v7--centros-do-campo-25112026).
 [Contrato V05](../../docs/research/native-field-attributes-2026-11-22.md).
