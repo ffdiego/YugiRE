@@ -94,7 +94,7 @@ static partial class Game
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--inspect-visual-dat")) return 1;
-        if ((Option(args, "--review-chain=") is not null || Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || args.Contains("--review-general-fusion") || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-coin=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null) && error.Length > 0) return 1;
+        if ((Option(args, "--review-chain=") is not null || Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || args.Contains("--review-general-fusion") || Option(args, "--review-general-fusion-cards=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-coin=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null) && error.Length > 0) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
@@ -188,7 +188,7 @@ static partial class Game
                 {
                     InitializeGeneralFusionReview();
                     screen = "general-fusion-review";
-                    Console.WriteLine("[V11 review] General fusion effects only: F7 update+draw, F9 draw only, F8 reset, F12 capture; cards/scratch omitted");
+                    Console.WriteLine("[V11 review] General fusion review: F7 update+draw, F9 draw only, F8 reset, F12 capture; cards opt-in, scratch/result overlay omitted");
                 }
                 if (fusionReviewCard is not null)
                 {

@@ -580,3 +580,55 @@ dos BMP e rotação Raylib são provisórios. Sem mudanças
 de Core/A03, sem nova cobertura Draw. Testes sintéticos
 de memória/seletores, dimensões e contadores; CI/desktop
 ainda pendentes.
+
+
+## V11 complemento — materiais e resultado da fusão geral
+
+SQLite v3 privado conferido read-only (SHA256 9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed, quick_check ok).
+Instruções 00452938..00452B91, decompilação 004524F0 e construtor
+004520E0 relidos nesta sessão. +20 contém 2 ou 3 materiais,
++28 array, +24 resultado; o construtor obtém dimensões globais
+005F3004/005F3008 no banco mini. Não confundir identificadores
+internos de banco com resource IDs da CLI.
+
+**Assembly 00452938..00452AB4:** t<32 redefine orbitAngle
+(+1C, separado do +18 da espiral) para -128 em cada Draw.
+W'=trunc(W*t/32), H'=2H-trunc(H*t/32), recuperados de
+0045296E..0045299A, não do pseudocódigo incompleto.
+Para i=0..count-1:
+ a=orbitAngle+trunc(512*i/count)+(count==2?128:0);
+ x=400+(C(a)>>8); y=300+(C(a-128)>>8).
+Desenha a partir de (x-W'/2,y-H'/2), via +0C com dimensão
+explícita. A entrada de oito Updates a partir de zero tem
+largura zero no início, altura dupla. 32<=t<128:
+00452AB9..00452B91 confirma W/2,H/2, mesmo ângulo e centro;
+pseudocódigo confirma +0C sem escala. Não afirmar a parte
+do call que falta como assembly integral.
+
+**Candidato por decompilação, sem assembly tardio:** em
+128<=t<384, c=C((t-128)/2), aGlobal-=1+((65536-c)*64>>16)
+a cada Draw; raio=c>>8, centro via produtos C(a)*raio>>16.
+A partir de t=384, base da miniatura resultante centrada
+(400,300), com chamada adicional +AC até t<512 cuja
+semântica não foi recuperada. De t=512 em diante permanece
+o base. A decompilação mostra desativação no fim do Draw
+se t>=640, não no Update; modelo sinaliza apenas o
+predicado. Não criar scheduler/gate por este resultado.
+NativeFusionCardTimeline porta estes recortes com evidência
+separada, sem reconstruir +AC ou scratch.
+
+Review opt-in:
+    dotnet run --project src/Joey.App -- /path/to/data.dat --review-general-fusion --review-general-fusion-cards=MAT1,MAT2,RESULT
+Substituir pelos IDs decimais reais; quatro argumentos
+permitem três materiais e resultado. Não valida legalidade
+de uma fusão, usa snapshots informados. Miniaturas DAT
+50x72, não imagens grandes nem verso fictício. F7/F9
+mutam órbita uma vez por Draw; F8 reinicia ambos os
+acumuladores; F12 schema 2 documenta os passes, fonte
+de evidência e overlay ausente. Sem opção cards conserva
+review effects-only até 448; com opção cards, cap 640
+é último Draw de inspeção, não gate de gameplay.
+Roteiro 13 agora pede janela tardia a partir da última instrução já conhecida 00452B91, não repetir
+o Draw inteiro ou dados 005DB278/005DB280 já no v3.
+O endpoint +AC depende de resolver vtable da superfície
+(roteiro 24). Sem alteração de cobertura.
