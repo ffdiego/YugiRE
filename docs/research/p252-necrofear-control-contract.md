@@ -49,4 +49,4 @@ Fontes externas: https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=
 e https://yugioh.fandom.com/wiki/Card_Rulings%3ADark_Necrofear
 
 ## Pendência
-scripts/pending/10-dark-necrofear-control-ghidra.sh (não executado).
+scripts/completed/10-dark-necrofear-control-ghidra.sh (coleta importada no SQLite cumulativo).

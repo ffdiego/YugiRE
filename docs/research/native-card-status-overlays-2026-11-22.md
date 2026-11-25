@@ -181,7 +181,7 @@ Não commitar conteúdo proprietário, manifest ou imagens.
 
 O disassembly preciso de `00419B70`, `0041A070`,
 `0041A3B0`, `004194D0`, `0041A800` e o dispatcher é
-outra coleta independente: `scripts/pending/04-card-status-ghidra.sh`.
+outra coleta independente: `scripts/completed/04-card-status-ghidra.sh`.
 Ela é necessária para resolver x/y (Ghidra tem registradores
 `unaff_*`), retângulos-fonte, blend, clipping e ordem de composição,
 antes de desenhar qualquer um desses novos indicadores.

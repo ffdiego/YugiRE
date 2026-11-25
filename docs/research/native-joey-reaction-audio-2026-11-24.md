@@ -183,7 +183,7 @@ continua necessária para resolver nomes; não abrir coleta redundante.
 
 ### Validação Windows pendente
 
-Executar scripts/pending/28-voice-audio-windows.ps1 após integrar o PR.
+O smoke Windows de `scripts/pending/28-voice-audio-windows.ps1` foi executado. O SQLite v3 registra 129 rejeições por cabeçalho RIFF truncado. Os três exemplos foram rejeitados antes da reprodução.
 Build, inspeção, rejeição de recurso ausente e de mute + review, e amostras
 Internal joey_01.wav/attack.wav/card_move.wav. Saída privada scratch/voice-smoke-<timestamp>
 com summary.json, voice-metadata.json (se gerado nesta execução), logs e

@@ -124,7 +124,7 @@ no cliente precisa de comparação pareada com o nativo. Não afirmar fidelidade
 
 ## Próxima coleta (pendente)
 
-`bash scripts/pending/03-field-attributes-ghidra.sh` gera
+`bash scripts/completed/03-field-attributes-ghidra.sh` gera
 `scratch/ghidra-field-attributes-contract.zip` no Fedora/Ghidra.
 Para dimensões dos BMPs originais, executar `--inspect-visual-dat`
 no Windows com `data.dat` e consultar o manifesto `number.txt`
