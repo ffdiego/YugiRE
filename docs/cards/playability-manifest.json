@@ -1788,7 +1788,7 @@
       "kind": "Spell",
       "subtype": "Ritual",
       "mechanics": [
-        "Queued Ritual Summon from hand or Set"
+        "Queued Ritual Summon from hand or Set via CPU and console; click selector pending"
       ],
       "status": "Done",
       "resourceIds": [
