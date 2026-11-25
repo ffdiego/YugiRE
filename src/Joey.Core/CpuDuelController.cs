@@ -337,11 +337,33 @@ public sealed class CpuDuelController
                 .FirstOrDefault(i => FusionRules.Supports(duel.Hand[i]) && duel.CanActivateFromHand(i), -1);
             if (fusionSpell >= 0)
                 return Act(CpuAction.Selection, (out string m) => duel.Play(fusionSpell, out m));
-            int targeted = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
-                SpellTrapTargetRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i) &&
-                duel.SpellTrapTargets(duel.Hand[i].Id).Any(candidate => candidate.Player != Player), -1);
-            if (targeted >= 0)
-                return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
+            if (queueTurnActions)
+            {
+                foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
+                {
+                    int count = zone == DuelZone.Hand ? duel.Hand.Count : 5;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var candidate = zone == DuelZone.Hand ? duel.Hand[i] : duel.Spells[Player, i];
+                        if (candidate is not { ClassCode: 22 } ||
+                            !SpellTrapTargetRules.SupportsQueued(candidate.Id) ||
+                            !duel.TryCaptureCardTarget(Player, zone, i, out var source)) continue;
+                        var target = duel.QueuedSpellTrapTargetCandidates(source)
+                            .FirstOrDefault(c => c.Target.Side != Player);
+                        if (target is not null)
+                            return Act(CpuAction.Selection, (out string m) =>
+                                duel.TryQueueTargetedSpellTrap(source, target.Target, out m, ActionOrigin.Cpu));
+                    }
+                }
+            }
+            else
+            {
+                int targeted = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
+                    SpellTrapTargetRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i) &&
+                    duel.SpellTrapTargets(duel.Hand[i].Id).Any(candidate => candidate.Player != Player), -1);
+                if (targeted >= 0)
+                    return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
+            }
 
             for (int z = 0; z < 5; z++)
             {
