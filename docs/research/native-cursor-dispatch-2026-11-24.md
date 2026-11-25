@@ -64,3 +64,58 @@ alvos da vtable primeiro no SQLite após importar. Manifesto
 cursor_e.txt local, ordem, campos e dimensões sem pixels.
 Nenhuma nova rotina Draw contabilizada. V09/V10 Partial:
 investigação/modelo, não integração ou Verified.
+
+## V09/V10.1 — manifesto DAT e nuvens legais de posição (25/11)
+
+Consulta efetiva ao SQLite v4-visuals, SHA256
+2085bc65dbc79fb2ec64645d2536bf0b56dde7bfedf4d173e32acb060b43722c,
+quick_check ok. A coleta 26 é citada como recebida em VISUALS.md,
+mas as tabelas visual_evidence_memory/instructions deste snapshot
+não incluem 005DD980, 005DA594 ou os cinco alvos do roteiro.
+Não afirmar prioridade nativa verificada; localizar a coleta 26
+já executada antes de solicitar uma nova. Releitura das
+decompilações 005A0530, 0059FF00, 005B8910, 005BF490/4B0,
+0040F670 e 0040FED0. Pointers confirma 005DA5A0 -> 0040FED0
+(destrutor), não o consumidor de +108.
+
+visual_dat_manifests contém cursor_e.txt (611 bytes, CP932).
+A ordem real (índice zero-based) é:
+
+| Índice | Sprite (inglês) | Campo textual | Dimensão |
+| --- | --- | --- | --- |
+| 0 | cursor_pow.yga | ausente | 63x63 |
+| 1/2 | cursor00/01.yga | 007014 | 64x64 |
+| 3 | cursor_e_summon.yga | 007014 | 64x64 |
+| 4 | cursor_e_flip.yga | 007014 | 64x64 |
+| 5 | cursor_e_atk.yga | 007014 | 64x64 |
+| 6 | cursor_e_act.yga | 007014 | 64x64 |
+| 7 | cursor_e_set.yga | 007014 | 64x64 |
+| 8/9 | cursor_e_setdef/setatk.yga | 007014 | 64x64 |
+| 10 | cursor_e_draw.yga | 007014 | 64x64 |
+| 11 | cursor_e_surrender.yga | 043015 | 64x64 |
+| 12 | cursor_e_fusion.yga | 007014 | 64x64 |
+| 13/14 | cursor_ssummon_a/d.yga | 007030 | 80x80 |
+| 15 | cursor_e_over.yga | 007014 | 64x64 |
+
+Comentários japoneses distinguem ataque, flip e posição
+de defesa/ataque. O campo textual deve preservar zeros à
+esquerda; não provar hotspot ou fórmula por sua aparência.
+O sprite revive existe no DAT, mas não consta neste manifesto.
+NativeCursorManifest fornece parser/validador isolado para
+a ordem, parâmetros e dimensões atestadas; não é o dispatcher.
+A ligação ao preflight de DatGraphics.Validate não foi aplicada
+nesta fatia (operação bloqueada pelo ambiente).
+
+005A0530 oferece bits de posição nas fases 2/4 e bit de
+ataque na fase 3; 0059FF00 encaminha códigos 5/6 à mesma
+operação de posição. NativeDuelCursor.FieldMonsterPositionAction
+é uma adaptação explícita: usa CanChangePosition e estado do
+monstro do Core, Flip para oculto, SetAttack para defesa
+revelada, SetDefense para ataque revelado. GlobalCursorScreen
+usa o mesmo hit-test e gates existentes, suprime seleção de
+alvo e conserva Attack na Battle Phase. Não altera execução
+de comandos nem declara a prioridade de múltiplas ações
+nativas; hotspot continua provisório. Testes cobrem 32
+combinações de elegibilidade, inversão para diagnóstico,
+16 dimensões e rejeições do manifesto. Smoke desktop e CI
+pendentes; nenhuma nova Draw no inventário.
