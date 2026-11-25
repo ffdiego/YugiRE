@@ -80,7 +80,7 @@ A nuvem de ataque aparece no hover quando `Joey.Core.CanAttack(zone)` autoriza (
 <a id="v10"></a>
 
 Recuperar condições/alternância nativas de mudança de posição e as variantes `cursor_e_setatk.yga`/`cursor_e_setdef.yga`; não exibir ação ilegal nem assumir que os nomes do DAT provam o fluxo.
-  NativeCursorActionSelector isola ciclo de 005B8910 (máscara, ordem injetada, pedido raw 005BF490/4B0). Roteiro 26 confirma tabela 005DD980, assembly e vtable; code→asset/hotspot e integração pendentes. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+  NativeCursorActionSelector isola ciclo de 005B8910 (máscara, ordem injetada, pedido raw 005BF490/4B0). Roteiro 26 citado como recebido, porém ausente no v4-visuals consultado; localizar coleta antes de repetir. V09/V10.1: manifesto inglês e 16 dimensões confirmados; Flip/SetAttack/SetDefense no hover do duelo pelo gate CanChangePosition do Core. Parser de manifesto isolado; prioridade code→asset/hotspot, smoke e integração do preflight pendentes. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
 
 ## V11 — Janela de seleção e fusão (foco de cobertura)
 
