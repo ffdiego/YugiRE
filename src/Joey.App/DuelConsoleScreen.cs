@@ -44,6 +44,15 @@ static partial class Game
     // a raylib window. This is the regression for the first-frame deck-out.
     static int CheckConsoleStartup()
     {
+        if (SelectPresentationStyle([]) is not FastLookAndFeel ||
+            SelectPresentationStyle(["--fast"]).UpdatesPerSecond != 60 ||
+            SelectPresentationStyle(["--classic"]).GetType() != typeof(DuelLookAndFeel) ||
+            SelectPresentationStyle(["--instant", "--fast"]) is not InstantLookAndFeel ||
+            SelectPresentationStyle(["--mute-joey"]).PlayJoeyVoice)
+        {
+            Console.Error.WriteLine("Presentation CLI profile regression.");
+            return 1;
+        }
         StartConsoleLab(null);
         var session = labSession!;
         string before = session.Execute("state").Message;

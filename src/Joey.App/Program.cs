@@ -17,8 +17,16 @@ static partial class Game
     static DatGraphics graphics = null!;
     static DuelTheme duelTheme = null!;
     static bool includeUnused;
-    static readonly DuelPresentationClock presentation = new(new DuelLookAndFeel());
+    static readonly DuelPresentationClock presentation = new(new FastLookAndFeel());
     static string previousDuelMessage = "";
+    // Keep explicit legacy profile precedence; Fast is now the App default.
+    static DuelLookAndFeel SelectPresentationStyle(string[] args) =>
+        args.Contains("--instant") ? new InstantLookAndFeel()
+        : args.Contains("--fast") ? new FastLookAndFeel()
+        : args.Contains("--mute-joey") ? new SilentLookAndFeel()
+        : args.Contains("--classic") ? new DuelLookAndFeel()
+        : new FastLookAndFeel();
+
     public static int Run(string[] args)
     {
         if (args is ["--check-console-startup"]) return CheckConsoleStartup();
@@ -31,11 +39,7 @@ static partial class Game
         includeUnused = args.Contains("--include-unused");
         useLegacySelection = args.Contains("--legacy-selection");
         useQueuedActions = args.Contains("--queued-actions");
-        DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
-            : args.Contains("--fast") ? new FastLookAndFeel()
-            : args.Contains("--mute-joey") ? new SilentLookAndFeel()
-            : new DuelLookAndFeel();
-        presentation.SetStyle(style);
+        presentation.SetStyle(SelectPresentationStyle(args));
         if (Option(args, "--native-cosine=") is string cosinePath)
         {
             try
@@ -121,6 +125,9 @@ static partial class Game
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
         else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && args.Contains("--alpha")) StartAlpha();
+        // Suppress routine INFO texture/cache messages, not warnings/errors.
+        // Do not initialize raylib solely to configure logging in headless modes.
+        Raylib.SetTraceLogLevel(args.Contains("--raylib-verbose") ? TraceLogLevel.Info : TraceLogLevel.Warning);
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();

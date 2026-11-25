@@ -118,7 +118,7 @@ Escolha **Alpha - vs CPU** no menu ou execute da raiz:
 dotnet run --project src/Joey.App -- ../passion/data.dat --alpha
 ```
 
-O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Use `--fast` ou `--instant` para acelerar ou `--alpha-headless` para simular um duelo no terminal. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
+O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Fast (60 updates/s, 2x Classic) é o perfil padrão; use `--classic` para a cadência de referência (30 updates/s), `--fast` para solicitá-lo explicitamente, `--instant` para ignorar animações ou `--alpha-headless` para simular um duelo no terminal. O perfil explícito `--mute-joey` continua selecionando Silent. O cliente gráfico mostra somente warnings e erros do raylib por padrão; `--raylib-verbose` restaura os logs INFO, inclusive carregamento de texturas. Os logs do console de duelo não são filtrados. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
 
 ## Importar e comparar um deck original
 
