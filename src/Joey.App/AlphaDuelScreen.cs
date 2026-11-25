@@ -330,7 +330,8 @@ static partial class Game
             BeginAttackCue(step.Player, attackerZone, targetZone,
                 targetZone is >= 0 and < NativeDuelLayout.MonsterSlots
                     ? hiddenBeforeStep[1 - step.Player, targetZone] : null);
-        else if (step.Action == CpuAction.Response && step.Card is null && pendingAttack is { } continued)
+        else if (step.Action == CpuAction.Response && queuedDuel?.IsBusy != true &&
+                 step.Card is null && pendingAttack is { } continued)
             BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone,
                 continued.TargetZone is >= 0 and < NativeDuelLayout.MonsterSlots
                     ? hiddenBeforeStep[1 - continued.AttackingPlayer, continued.TargetZone] : null);

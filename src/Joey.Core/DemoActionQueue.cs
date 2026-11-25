@@ -26,7 +26,8 @@ public sealed partial class DemoDuel
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
                 admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment() ||
                 admittingQueuedFusion && CanAdmitQueuedFusion() ||
-                admittingQueuedSummonResponse && CanAdmitQueuedSummonResponse()) &&
+                admittingQueuedSummonResponse && CanAdmitQueuedSummonResponse() ||
+                admittingQueuedAttackResponse && CanAdmitQueuedAttackResponse()) &&
                 (PendingEndDiscards == 0 || admittingQueuedEndDiscard && CanAdmitQueuedEndDiscard()), allowLabEdits);
     }
 
@@ -378,6 +379,12 @@ public sealed partial class DemoDuel
             if (command is ResolveMonsterPositionTargetCommand positionTarget)
                 return ResolveQueuedMonsterTargets(positionTarget.Source, [positionTarget.Target],
                     DemoMonsterEffectTrigger.PositionChange, followups);
+            if (command is OpenDirectAttackResponseCommand openAttackResponse)
+                return duel.OpenDirectAttackResponse(openAttackResponse);
+            if (command is ResolveDirectAttackResponseCommand attackResponse)
+                return ResolveDirectAttackResponse(attackResponse, followups);
+            if (command is ResolveSpentAttackTrapCommand spentAttackTrap)
+                return ResolveSpentAttackTrap(spentAttackTrap, followups);
             if (command is ResolveSummonResponseCommand summonResponse)
                 return ResolveSummonResponse(summonResponse, followups);
             if (command is OpenBattleFlipDrawCommand openBattleFlip)
@@ -615,6 +622,8 @@ public sealed partial class DemoDuel
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
                 targetedMonsterSpellSpent = result.Outcome == CommandOutcome.Applied;
+            if (attackTrapPayment?.Source == target)
+                attackTrapSpent = result.Outcome == CommandOutcome.Applied;
             if (wipe is { } current && current.Source == target)
                 current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
@@ -864,7 +873,8 @@ public sealed partial class DemoDuel
                 TemporaryStatRules.For(card.Id)?.ClassCode == card.ClassCode;
             bool summonTrap = wipe is { Summon: not null } summonWipe && summonWipe.Source == target &&
                 summonWipe.ResourceId == card.Id && card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
-            if (!(fixedSpell || temporaryModifier || summonTrap) || !duel.SpellFaceDown[target.Side, slot] ||
+            bool attackTrap = attackTrapPayment?.Source == target && duel.IsQueuedDirectResponseTrap(target.Side, slot);
+            if (!(fixedSpell || temporaryModifier || summonTrap || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
