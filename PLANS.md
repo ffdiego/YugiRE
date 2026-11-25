@@ -140,7 +140,7 @@ Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Integração A03 e comparação; nome do banco não prova RNG. [Detalhes](docs/plans/VISUALS.md#v20)
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Remap/blend e integração A03. [Detalhes](docs/plans/VISUALS.md#v21)
-- [ ] **V22 — Remoção break (00450FD0).** Status: `Aguardando evidência`. Compositor/projeção e mapeamento de produtores Break (coleta 29), sem alterar regras. [Detalhes](docs/plans/VISUALS.md#v22)
+- [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Projeção e opcodes confirmados; integrar rota via A03, compositor e revisão visual. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Aguardando evidência`. Scratch, jump tables, manifest e composição; conferir PR #139. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)
