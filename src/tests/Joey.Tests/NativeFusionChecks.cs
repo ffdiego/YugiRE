@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
 using Joey.LookAndFeel;
 using System.Text.Json;
 
@@ -5,6 +7,16 @@ internal static class NativeFusionChecks
 {
     public static void Run(Action<bool, string> check, Action<Action, string> reject)
     {
+        // SHA-256 of 512 little-endian Int32 values ordered by index
+        // in the private v3 runtime capture (00A52EE8).
+        int[] generated = NativeCosineCapture.GenerateTable();
+        byte[] packed = new byte[generated.Length * sizeof(int)];
+        for (int i = 0; i < generated.Length; i++)
+            BinaryPrimitives.WriteInt32LittleEndian(packed.AsSpan(i * sizeof(int)), generated[i]);
+        check(generated.Length == 512 && Convert.ToHexStringLower(SHA256.HashData(packed)) ==
+              "c3c61d7556976734a882e61e82fe27a7e76fb897a9b7e2a1908ed07d21f3c1e9",
+            "V01: all generated samples match the v3 runtime capture");
+
         // Artificial asymmetric table to test indices and signed arithmetic,
         // never a native runtime capture.
         int[] c = new int[512];

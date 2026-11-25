@@ -26,7 +26,7 @@ internal static class NativePresentationChecks
                   .SequenceEqual(Enumerable.Range(0, 7).SelectMany(i => new int?[] { i, i })) &&
               NativePhaseNotice.BattleFrame(22) is null,
             "Battle banner: seven native sprites appear for two updates each in the slowed window");
-        var phaseMotionCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var phaseMotionCosine = NativeCosineCapture.GenerateTable();
         check(NativePhaseNotice.Motion(0, false, phaseMotionCosine) == (64, 0) &&
               NativePhaseNotice.Motion(4, false, phaseMotionCosine) == (45, 96) &&
               NativePhaseNotice.Motion(8, false, phaseMotionCosine) == (0, 255) &&
@@ -148,7 +148,7 @@ internal static class NativePresentationChecks
         check(activation.Active && activation.Counter == 0,
               "Native activation: reset permits repeatable playback");
 
-        var explosionCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var explosionCosine = NativeCosineCapture.GenerateTable();
         var initialExplosion = NativeExplosionFrame.FromCounter(0, explosionCosine);
         var layeredExplosion = NativeExplosionFrame.FromCounter(32, explosionCosine);
         var fragmentStart = NativeExplosionFrame.FromCounter(128, explosionCosine);

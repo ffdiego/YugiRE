@@ -4,7 +4,7 @@ internal static class NativeExclusionDrawChecks
 {
     public static void Run(Action<bool,string> check,Action<Action,string> reject)
     {
-        int[] cosine=ActivationEffectPlayback.ApproximateCosineTable();
+        int[] cosine=NativeCosineCapture.GenerateTable();
         var activation=new NativeAlternativeActivationTimeline();
         for(int i=0;i<33;i++)
         {

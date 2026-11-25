@@ -19,11 +19,6 @@ static partial class Game
     static void ConfigureFusionReview(string[] args, Archive archive)
     {
         if (Option(args, "--review-attached-fusion=") is not string value) return;
-        // Exact sample data is available through the already-existing
-        // pending script 11. Never substitute the approximate cosine
-        // table in this diagnostic path.
-        if (!effectCosineFromNativeCapture)
-            throw new InvalidDataException("Attached fusion review requires --native-cosine=<capture.json>.");
         string[] parts = value.Split(',');
         if (parts.Length != 2 ||
             !ushort.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out ushort id) ||
@@ -121,7 +116,7 @@ static partial class Game
             counter = fusionReviewTimeline.Counter, angle = fusionReviewTimeline.Angle,
             active = fusionReviewTimeline.Active, releaseFlag = fusionReviewReleased,
             associatedCardActive = fusionReviewCardActive, pass = fusionReviewPass,
-            cosineSource = "native-runtime-capture",
+            cosineSource = effectCosineSource,
             compositor = "existing raylib transform; native 00422C00 pixel parity pending"
         }, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
         Console.WriteLine("[visual-review] " + Path.GetFullPath(basename + ".json"));

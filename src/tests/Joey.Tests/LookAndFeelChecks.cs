@@ -963,7 +963,7 @@ internal static class LookAndFeelChecks
 
         // Exodia 00454000/00454010: the first Draw branch places five
         // DAT miniature images on a cosine ring with 16-counter stagger.
-        var exodiaCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var exodiaCosine = NativeCosineCapture.GenerateTable();
         var exodia0 = NativeExodiaOpeningFrame.FromUpdate(0, exodiaCosine);
         var exodia4 = NativeExodiaOpeningFrame.FromUpdate(4, exodiaCosine);
         var exodia8 = NativeExodiaOpeningFrame.FromUpdate(8, exodiaCosine);
@@ -1002,7 +1002,7 @@ internal static class LookAndFeelChecks
 
         // Duel opening 00451950/00451980: 40 native updates, centered
         // logo shrinks from 1.5x, stays opaque, then fades away.
-        var noticeCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var noticeCosine = NativeCosineCapture.GenerateTable();
         var start0 = NativeDuelStartFrame.FromUpdate(0, noticeCosine);
         var startMid = NativeDuelStartFrame.FromUpdate(8, noticeCosine);
         var startHold = NativeDuelStartFrame.FromUpdate(32, noticeCosine);
@@ -1047,7 +1047,7 @@ internal static class LookAndFeelChecks
         // Sacrifice 00486D80/00487060/004870B0: constructor mode 0
         // waits at 128, released mode 1 advances to 384 and eight star
         // particles launch 16 counter units apart after t=128.
-        var tributeCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var tributeCosine = NativeCosineCapture.GenerateTable();
         var tributeStart = NativeTributeFrame.FromUpdate(0, released: true, tributeCosine);
         var tributeHeld = NativeTributeFrame.FromUpdate(int.MaxValue, released: false, tributeCosine);
         var tributeRelease = NativeTributeFrame.FromUpdate(16, released: true, tributeCosine);
@@ -1080,7 +1080,7 @@ internal static class LookAndFeelChecks
         // Special Summon 004500E0/00450100: 41 native Updates, a/d
         // variants with four frames cycling every two Updates, plus card
         // overlay for 64 < t < 320.
-        var specialCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var specialCosine = NativeCosineCapture.GenerateTable();
         var special0 = NativeSpecialSummonFrame.FromUpdate(0, specialCosine);
         var special1 = NativeSpecialSummonFrame.FromUpdate(1, specialCosine);
         var special2 = NativeSpecialSummonFrame.FromUpdate(2, specialCosine);
@@ -1108,7 +1108,7 @@ internal static class LookAndFeelChecks
 
         // Normal Summon: 0044F9F0 increments by 8 through t=256,
         // and 0044FA10 has different rendering branches either side of 64.
-        var summonCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var summonCosine = NativeCosineCapture.GenerateTable();
         var summonStart = NativeNormalSummonFrame.FromUpdate(0, summonCosine);
         var summonLastExpand = NativeNormalSummonFrame.FromUpdate(8, summonCosine);
         var summonFirstWrap = NativeNormalSummonFrame.FromUpdate(9, summonCosine);
@@ -1141,7 +1141,7 @@ internal static class LookAndFeelChecks
               summonQueue.ElapsedUpdates == 0,
               "Normal summon: card landing precedes native summon visual timeline");
 
-        var setCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var setCosine = NativeCosineCapture.GenerateTable();
         var setStart = NativeSetFrame.FromUpdate(0, setCosine);
         var setMid = NativeSetFrame.FromUpdate(11, setCosine);
         var setEnd = NativeSetFrame.FromUpdate(21, setCosine);
@@ -1197,7 +1197,7 @@ internal static class LookAndFeelChecks
               NativeLifeHud.FloatingNumberOrigin(new(525,140), 9,7,11,12) == new CardPoint(532,135) &&
               NativeLifeHud.FloatingNumberOrigin(new(525,140), -99,7,11,10) == new CardPoint(532,135),
               "V06: entire number centered, integer halves and sign columns");
-        var swordCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var swordCosine = NativeCosineCapture.GenerateTable();
         var swordFrom = new CardPoint(369,352);
         var swordTo = new CardPoint(603,248);
         var swordFlight = NativeAttackFrame.Sample(13,swordFrom,swordTo,true,swordCosine);
@@ -1284,7 +1284,7 @@ internal static class LookAndFeelChecks
 
         // 004806F0: damage/heal glyphs appear successively from the
         // least significant digit, moving through two cosine Y windows.
-        var floatCosine = ActivationEffectPlayback.ApproximateCosineTable();
+        var floatCosine = NativeCosineCapture.GenerateTable();
         var floatStart = NativeFloatingLifeDigits.Sample(-250, 0, 10, 24, 12, floatCosine);
         var floatRise = NativeFloatingLifeDigits.Sample(-250, 64, 10, 24, 12, floatCosine);
         var floatBounce = NativeFloatingLifeDigits.Sample(-250, 160, 10, 24, 12, floatCosine);

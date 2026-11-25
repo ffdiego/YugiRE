@@ -41,7 +41,7 @@ internal static class NativeVijaChecks
         reject(()=>NativeVijaResources.Parse(fixture+"vija_skel.bmp\n",paths),"V30: duplicate");
         // Deliberately synthetic logical-key geometry. No assertion about
         // the private DAT's order or exact compositor pixels.
-        int[] cos=ActivationEffectPlayback.ApproximateCosineTable();
+        int[] cos=NativeCosineCapture.GenerateTable();
         NativeVijaTexture Tex(int key)=>key switch {
             0=>new(400,80,5004),1=>new(210,41,5007),
             2=>new(160,37,5000),3=>new(160,37,5031),4=>new(256,37,8031),
