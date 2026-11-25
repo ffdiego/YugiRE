@@ -121,9 +121,7 @@ internal static class LookAndFeelChecks
               NativeDuelCursor.CursorSprite(NativeCursorAction.Summon) ==
                   @"cursor\cursor_e_summon.yga" &&
               NativeDuelCursor.CursorSprite(NativeCursorAction.Set) ==
-                  @"cursor\cursor_e_set.yga" &&
-              NativeDuelCursor.PointerOrigin(new CardPoint(375, 450)) ==
-                  new CardPoint(375, 450),
+                  @"cursor\cursor_e_set.yga",
               "Global cursor: one DAT sprite per frame, with legal hover changing its variant");
         check(NativeDuelCursor.HandAction(true, true, true, false, false, false)
                   == NativeCursorAction.Summon &&

@@ -1,7 +1,6 @@
 using Joey.LookAndFeel;
 using Joey.Core;
 using Raylib_cs;
-using System.Numerics;
 
 static partial class Game
 {
@@ -58,11 +57,9 @@ static partial class Game
     /// </summary>
     static void DrawWindowCursor(float canvasScale)
     {
-        var texture = graphics.Texture(ActiveWindowCursorSprite());
-        Vector2 mousePosition = Raylib.GetMousePosition();
-        var origin = NativeDuelCursor.PointerOrigin(
-            new CardPoint((int)mousePosition.X, (int)mousePosition.Y));
-        Raylib.DrawTextureEx(texture, new Vector2(origin.X, origin.Y),
+        var frame = graphics.Cursors[ActiveWindowCursorSprite()];
+        var texture = graphics.Texture(frame.Path);
+        Raylib.DrawTextureEx(texture, frame.OriginAt(Raylib.GetMousePosition(), canvasScale),
             0f, canvasScale, Color.White);
     }
 }

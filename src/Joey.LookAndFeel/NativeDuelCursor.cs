@@ -106,7 +106,7 @@ public static class NativeDuelCursor
     /// actions. 005A0530 offers position changes in main phases and
     /// 0059FF00 dispatches codes 5/6 to the same position handler.
     /// Client adapter only: Core supplies permission and current position.
-    /// Native action-code mapping/priority and hotspot remain pending.
+    /// The raw code and hotspot mapping is documented by NativeCursorManifest.
     /// </summary>
     public static NativeCursorAction? FieldMonsterPositionAction(
         bool ownMonster, bool canChangePosition, bool faceDown, bool defense,
@@ -123,11 +123,4 @@ public static class NativeDuelCursor
         bool monster, bool canSummon, bool canSet, bool canActivate) =>
         canSet && (monster ? canSummon : canActivate);
 
-    /// <summary>
-    /// Cursor coordinates come from the full window, not the duel canvas.
-    /// The asset's precise hotspot is not yet recovered from cursor_e.txt.
-    /// Keeping the origin at the mouse point is an explicit provisional
-    /// placement until paired screenshots establish the real offset.
-    /// </summary>
-    public static CardPoint PointerOrigin(CardPoint windowMouse) => windowMouse;
 }

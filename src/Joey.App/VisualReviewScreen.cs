@@ -40,6 +40,7 @@ static partial class Game
             mouseCanvas = new { x = mouse.X, y = mouse.Y },
             mousePointerSource = "original-data.dat-window-overlay",
             cursorSprite,
+            cursorHotspot = graphics.Cursors[cursorSprite].Hotspot,
             actionCloud = NativeDuelCursor.ActionForSprite(cursorSprite)?.ToString(),
             turn = duel.Turn,
             phase = duel.Phase.ToString(),

@@ -52,6 +52,21 @@ internal static class NativeCursorActionSelectorChecks
             (i==0 ? "" : i==11 ? "\t043015" : i is 13 or 14 ? "\t007030" : "\t007014")+
             " // fixture"));
         var bank=NativeCursorManifest.ParseEnglish(manifest,paths);
+        check(NativeCursorManifest.ResourceIndex(null) == 1 &&
+              NativeCursorManifest.ResourceIndex(12, alternatePointer: true) == 2 &&
+              Enumerable.Range(0,12).All(code => NativeCursorManifest.ResourceIndex(code) == code + 3),
+            "V10: assembly-backed request-to-manifest index");
+        check(bank[NativeCursorManifest.ResourceIndex(5)].Path == NativeDuelCursor.ActionSprite(NativeCursorAction.SetDefense) &&
+              bank[NativeCursorManifest.ResourceIndex(6)].Path == NativeDuelCursor.ActionSprite(NativeCursorAction.SetAttack) &&
+              bank[NativeCursorManifest.ResourceIndex(1)].Path == NativeDuelCursor.ActionSprite(NativeCursorAction.Flip),
+            "V10: manifest confirms position and Flip action code mapping");
+        check(bank[8].Hotspot == new CardPoint(7,14) && bank[11].Hotspot == new CardPoint(43,15) &&
+              bank[13].Hotspot == new CardPoint(7,30) &&
+              bank[8].OriginAt(new(375,450), 1.5f) == new System.Numerics.Vector2(364.5f,429),
+            "V10: native hotspots are subtracted at the client's display scale");
+        var recovered = new NativeCursorActionSelector();
+        check(recovered.First(0x1fff) == 2 && recovered.Next(0x1fff, 2) == 10 &&
+              recovered.Next(0x1fff, 9) == 2, "V10: recovered priority table and wrap");
         check(bank.Length==16 && bank[0].RawParameter is null &&
               bank[5].Path==NativeDuelCursor.ActionSprite(NativeCursorAction.Attack) &&
               bank[8].Path==NativeDuelCursor.ActionSprite(NativeCursorAction.SetDefense) &&

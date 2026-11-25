@@ -336,7 +336,7 @@ static partial class Game
                 try
                 {
                     if (screen == "active-chain-review") CaptureChainReview(canvas);
-                    if (screen == "chain-review") CaptureDisabledChainReview(canvas);
+                    else if (screen == "chain-review") CaptureDisabledChainReview(canvas);
                     else if (screen == "status-review") CaptureCardStatusReview(canvas);
                     else if (screen == "fusion-review") CaptureFusionReview(canvas);
                     else if (screen == "layerfont-review") CaptureLayerFontReview(canvas);

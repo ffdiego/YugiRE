@@ -1,11 +1,14 @@
 namespace Joey.LookAndFeel;
 
 /// <summary>Logical action selector recovered from 005B8910/005BF490/005BF4B0
-/// decompilation. Caller supplies the priority table (005DD980); no guessed
-/// native ordering or DAT sprite mapping. This does not authorize actions.</summary>
+/// and the recovered priority table at 005DD980. The caller provides the
+/// available-actions mask.</summary>
 public sealed class NativeCursorActionSelector
 {
     private readonly int[] priority;
+
+    // 005DD980, 13 signed dwords from roteiro 26.
+    public NativeCursorActionSelector() : this([2, 10, 11, 3, 0, 1, 4, 5, 6, 7, 12, 8, 9]) { }
 
     public NativeCursorActionSelector(IEnumerable<int> priority)
     {

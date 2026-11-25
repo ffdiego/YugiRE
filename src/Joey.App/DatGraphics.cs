@@ -101,6 +101,7 @@ sealed class DatGraphics : IDisposable
     readonly Dictionary<string, Texture2D> textures = new(StringComparer.OrdinalIgnoreCase);
     readonly Queue<string> loaded = new();
     Archive? archive;
+    public IReadOnlyDictionary<string, NativeCursorManifestEntry> Cursors { get; private set; } = null!;
     public MenuResources? Menu { get; private set; }
     public CardListResources CardList { get; private set; } = null!;
     public CardArtwork Artwork { get; private set; } = null!;
@@ -155,6 +156,10 @@ sealed class DatGraphics : IDisposable
     {
         archive = new Archive(path);
         Menu = MenuResources.Load(archive);
+        Cursors = NativeCursorManifest.ParseEnglish(
+            System.Text.Encoding.Latin1.GetString(archive.Read(NativeDuelCursor.ManifestEnglish)),
+            archive.Entries.Select(entry => entry.Name))
+            .ToDictionary(entry => entry.Path, StringComparer.OrdinalIgnoreCase);
         CardList = CardListResources.Load(archive);
         string fonts = System.Text.Encoding.Latin1.GetString(archive.Read(LifeNumberManifest));
         LifeNumberSprite = LifeNumberFont;
@@ -293,14 +298,14 @@ sealed class DatGraphics : IDisposable
         }
         _ = NativeYgaSprite.Decode(archive.Read(AttackImpact), static (data, size) => Archive.Decode(data, size));
         count++;
-        foreach (string name in CursorActionSprites.Append(NativeDuelCursor.DefaultPointer)
-                     .Append(NativeDuelCursor.AlternatePointer))
+        foreach (string name in CursorActionSprites.Concat(Cursors.Keys).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             var sprite = NativeYgaSprite.Decode(archive.Read(name),
                 static (data, size) => Archive.Decode(data, size),
                 YgaTransparencyMode.SourceAlpha);
-            if (sprite.Width <= 0 || sprite.Height <= 0)
-                throw new InvalidDataException($"Invalid cursor YGA: {name}");
+            if (Cursors.TryGetValue(name, out var cursor) &&
+                (sprite.Width != cursor.Size || sprite.Height != cursor.Size))
+                throw new InvalidDataException($"Unexpected cursor dimensions: {name}");
             count++;
         }
         foreach (string name in SpecialSummonAttackSprites.Concat(SpecialSummonDefenseSprites)

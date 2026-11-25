@@ -1,9 +1,16 @@
+using System.Globalization;
+using System.Numerics;
+
 namespace Joey.LookAndFeel;
 
-public readonly record struct NativeCursorManifestEntry(string Path, string? RawParameter);
+public readonly record struct NativeCursorManifestEntry(string Path, string? RawParameter, CardPoint Hotspot, int Size)
+{
+    public Vector2 OriginAt(Vector2 mouse, float scale) =>
+        mouse - new Vector2(Hotspot.X, Hotspot.Y) * scale;
+}
 
 /// <summary>English cursor manifest metadata recovered from the private DAT
-/// inventory. Manifest positions are NOT native action codes or hotspots.</summary>
+/// inventory and the 0047FE90 Draw consumer.</summary>
 public static class NativeCursorManifest
 {
     private static readonly (string Name, string? Parameter, int Size)[] Evidence =
@@ -36,11 +43,20 @@ public static class NativeCursorManifest
             if (!path.Equals(@"cursor\" + expected.Name,StringComparison.OrdinalIgnoreCase) ||
                 parameter != expected.Parameter || !available.Contains(path))
                 throw new InvalidDataException("Unexpected original cursor entry: " + line);
-            entries.Add(new(path,parameter));
+            int packed = parameter is null ? 0 : int.Parse(parameter, CultureInfo.InvariantCulture);
+            entries.Add(new(path, parameter, new(packed / 1000, packed % 1000), expected.Size));
         }
         if (entries.Count != Evidence.Length)
             throw new InvalidDataException("Incomplete English cursor manifest.");
         return [.. entries];
+    }
+
+    // 0047FEF3: explicit requests add two to the object field.
+    // Base requests select entry 1 or 2 according to the input variant.
+    public static int ResourceIndex(int? actionCode, bool alternatePointer = false)
+    {
+        int request = NativeCursorActionSelector.ObjectRequest(actionCode);
+        return request == 0 ? (alternatePointer ? 2 : 1) : request + 2;
     }
 
     public static void ValidateDimensions(int index,int width,int height)

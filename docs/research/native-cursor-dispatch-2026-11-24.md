@@ -119,3 +119,34 @@ nativas; hotspot continua provisório. Testes cobrem 32
 combinações de elegibilidade, inversão para diagnóstico,
 16 dimensões e rejeições do manifesto. Smoke desktop e CI
 pendentes; nenhuma nova Draw no inventário.
+## Coleta 26 e consumidor do cursor
+
+O roteiro 26 recuperou o assembly e a prioridade em `005DD980`:
+[2, 10, 11, 3, 0, 1, 4, 5, 6, 7, 12, 8, 9].
+`005DA594+10h` aponta para `0047FE90`, localizado no EXE de
+mesmo fingerprint. `00410F31–00410F59` carrega o caminho
+`data/cursor/cursor_?.txt` e invoca o loader de recursos do objeto.
+
+`0047FEF3–0047FF15` lê o pedido de +108h. Se não nulo,
+usa índice `pedido+2`. Como `005BF490` grava `ação+1`,
+o código 5 seleciona a entrada 8 (SetDefense), o código 6
+seleciona a entrada 9 (SetAttack) e o código 1 seleciona
+a entrada 4 (Flip). Pedido zero seleciona 1 + a variante
+retornada pelo objeto de input. A ação 12 do seletor usa reset.
+
+`0047FF15–0047FF35` divide o argumento do manifesto por 1000
+e entrega quociente e resto a `0054B390`. Esse método guarda
+X/Y em +4/+8. `004800D4–004800F5` subtrai ambos da posição
+corrente antes do blit. No manifesto inglês do DAT e do SQLite
+v3, `007014` portanto indica hotspot (7,14). Surrender usa
+(43,15) e as duas entradas de invocação especial usam (7,30).
+
+O App usa o manifesto para o hotspot e para a seleção das
+variantes de posição ao apontar para um monstro próprio. A
+elegibilidade continua sendo `DemoDuel.CanChangePosition`. O
+cliente usa Flip para mudança de posição de monstro oculto e
+SetAttack/SetDefense para monstros revelados, conforme a posição
+atual. A adaptação de coordenadas escala o hotspot junto à
+textura no Raylib. Seleção de todas as opções nativas, variante
+de input no ponteiro base e comparação de pixels com o original
+seguem pendentes. Nenhuma nova rotina Draw entrou na cobertura.

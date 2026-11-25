@@ -75,14 +75,14 @@ Bundle 04 recebido: 17/17 funções e 12/12 janelas; `NativeStatusDrawLayout` im
 
 <a id="v09"></a>
 
-A nuvem de ataque aparece no hover quando `Joey.Core.CanAttack(zone)` autoriza (testes negativos, sem segundo cursor). **Resta validar no dispatcher original** a precedência, o hotspot e os casos de seleção de alvo. Não confundir o cursor com a espada no campo.
+A nuvem de ataque aparece no hover quando `Joey.Core.CanAttack(zone)` autoriza (testes negativos, sem segundo cursor). O manifesto e o Draw confirmam o hotspot. Falta comparar a precedência e os casos de seleção de alvo. Não confundir o cursor com a espada no campo.
 
 ## V10 — Cursores `SetAttack`/`SetDefense`
 
 <a id="v10"></a>
 
 Recuperar condições/alternância nativas de mudança de posição e as variantes `cursor_e_setatk.yga`/`cursor_e_setdef.yga`; não exibir ação ilegal nem assumir que os nomes do DAT provam o fluxo.
-  NativeCursorActionSelector isola ciclo de 005B8910 (máscara, ordem injetada, pedido raw 005BF490/4B0). Roteiro 26 citado como recebido, porém ausente no v4-visuals consultado; localizar coleta antes de repetir. V09/V10.1: manifesto inglês e 16 dimensões confirmados; Flip/SetAttack/SetDefense no hover do duelo pelo gate CanChangePosition do Core. Parser de manifesto isolado; prioridade code→asset/hotspot, smoke e integração do preflight pendentes. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+  NativeCursorActionSelector isola ciclo de 005B8910 (máscara, ordem injetada, pedido raw 005BF490/4B0). Roteiro 26 recuperado e cruzado com o EXE local. V09/V10.1: manifesto inglês e 16 dimensões confirmados; Flip/SetAttack/SetDefense no hover do duelo pelo gate CanChangePosition do Core. O App aplica o hotspot do manifesto inglês, confirmado no assembly de 0047FE90. A prioridade e a relação code→asset têm testes C#. Captura pareada e precedência completa pendentes. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
 
 ## V11 — Janela de seleção e fusão (foco de cobertura)
 
