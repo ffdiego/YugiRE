@@ -32,7 +32,7 @@ Execute os comandos da raiz do repositório. Os resultados continuam privados em
 | [27-joey-reaction-audio-ghidra.sh](27-joey-reaction-audio-ghidra.sh) | `ghidra-joey-reaction-audio-contract.zip` |
 | [29-native-break-scatter-ghidra.sh](29-native-break-scatter-ghidra.sh) | `ghidra-native-break-scatter-contract.zip` |
 | [30-cards-selective-destruction-ghidra.sh](30-cards-selective-destruction-ghidra.sh) | `ghidra-selective-destruction-contract.zip` |
-| [31-actions-battle-callbacks-ghidra.sh](31-actions-battle-callbacks-ghidra.sh) | `ghidra-actions-battle-callbacks.zip` (v4) |
+| [31-actions-battle-callbacks-ghidra.sh](31-actions-battle-callbacks-ghidra.sh) | `ghidra-actions-battle-callbacks.zip` (v4, [relato A06](../../docs/research/native-actions-battle-callbacks-2026-11-24.md)) |
 | [32-final-destiny-ghidra.sh](32-final-destiny-ghidra.sh) | `ghidra-final-destiny-contract.zip` (C02.9, 2/2 funções, complemento do 30, v6) |
 
 As coletas 16/CARDS e 17/CARDS exportaram apenas as rotinas que ainda exigiam assembly. Os helpers omitidos já constam do snapshot anterior. A coleta 25 exportou sete funções no bundle base e oito no complemento de alpha. Os comandos preservados nos roteiros continuam reproduzindo o recorte completo.
