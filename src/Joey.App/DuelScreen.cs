@@ -459,10 +459,15 @@ static partial class Game
                     !PointerPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {
-                    if (duel.PendingFlipTarget is not null)
+                    if (duel.PendingFlipTarget is { } flipRequest)
                     {
-                        if (monster is not null && duel.ResolveFlipTarget(player, zone, out message))
-                            ClearDuelSelection();
+                        if (monster is not null)
+                        {
+                            bool accepted = queuedDuel is not null && duel.UsesQueuedMonsterFlipSelection(flipRequest)
+                                ? duel.TrySelectQueuedMonsterFlipTarget(flipRequest, player, zone, out message)
+                                : duel.ResolveFlipTarget(player, zone, out message);
+                            if (accepted) ClearDuelSelection();
+                        }
                     }
                     else if (choosingTributes && own && monster != null)
                     {
@@ -651,11 +656,13 @@ static partial class Game
         if (!joeySpeaking) UpdateDuelDetail();
         AdvanceLifePresentation(frameElapsed);
         DrawDuelDetail();
-        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } optionalFlip &&
             Button("Done", 132, 584, 76, 16, choiceInput))
         {
-            duel.FinishFlipTargets(out message);
-            ClearDuelSelection();
+            bool accepted = queuedDuel is not null && duel.UsesQueuedMonsterFlipSelection(optionalFlip)
+                ? duel.TryFinishQueuedMonsterFlipSelection(optionalFlip, out message)
+                : duel.FinishFlipTargets(out message);
+            if (accepted) ClearDuelSelection();
         }
         DrawSidePiles();
         DrawDuelHand();
