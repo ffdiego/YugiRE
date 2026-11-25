@@ -8,6 +8,7 @@ static partial class Game
     static void DrawAttackResponseOverlay()
     {
         if (duel.PendingAttackResponse is not DemoAttackResponse response) return;
+        bool queued = duel.UsesQueuedAttackResponse(response);
         Raylib.DrawRectangle(238, 110, 535, 400, new Color(7, 15, 28, 250));
         Raylib.DrawRectangleLines(238, 110, 535, 400, Gold);
         Label("ATTACK RESPONSE", 258, 128, 22, Gold);
@@ -24,9 +25,10 @@ static partial class Game
             if (Button($"P{option.Owner + 1} Z{option.Zone + 1}: {option.Trap.Name}",
                 x, y, 238, 36))
             {
-                if (duel.ActivateAttackTrap(option.Owner, option.Zone, out message))
+                if (queued ? duel.TryQueueAttackResponse(response, option, out message)
+                    : duel.ActivateAttackTrap(option.Owner, option.Zone, out message))
                 {
-                    BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true), nearSide: option.Owner == ViewPlayer);
+                    if (!queued) BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true), nearSide: option.Owner == ViewPlayer);
                     ClearDuelSelection();
                 }
                 return;
@@ -34,9 +36,9 @@ static partial class Game
         }
         if (Button("Pass attack response", 540, 460, 205, 34))
         {
-            if (duel.PassAttackResponse(out message))
+            if (queued ? duel.TryQueueAttackResponse(response, null, out message) : duel.PassAttackResponse(out message))
             {
-                BeginAttackCue(response.Attack.AttackingPlayer, response.Attack.AttackerZone, response.Attack.TargetZone);
+                if (!queued) BeginAttackCue(response.Attack.AttackingPlayer, response.Attack.AttackerZone, response.Attack.TargetZone);
                 ClearDuelSelection();
             }
         }

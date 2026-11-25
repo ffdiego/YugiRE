@@ -110,6 +110,19 @@ Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o O
 
 *Campo ampliado (C12.1):* os monstros normais dos IDs 24 e 1351 também podem ocupar slots fora de um ataque com alvo enfileirado. S/T, FIELD, equipamentos e espectadores de outros IDs continuam fora deste piloto. A finalização de FLIP verifica todas as ocorrências no destino escolhido, incluindo alvos fora do combate. Os testes cobrem retorno de duas cópias de Penguin Soldier em ambos os lados, recrutamento P164 com slots ocupados, rejeição de espectador não suportado e produtores jogador/console/CPU no smoke sem janela em Classic e Instant. O SQLite v6 contém `0057A930`, `005861F0` e `00594200` para P087. A preparação e o primário tratam slots e lados de múltiplos alvos. A ordem dinâmica desta fatia permanece validada no sandbox. `Demo.cs` tem 2618 linhas antes e depois. O ataque direto conserva suas restrições. Próxima lacuna de A06/C12.1: resposta a armadilhas e ampliação da classificação de campo.
 
+
+*Resposta a ataque direto (C12.1):* o piloto de um atacante admite somente
+Magic Cylinder elegível nos slots de S/T adversários. O App, a CPU e
+o console compartilham o passe ou a ativação. A janela abre depois
+da declaração. A espada usa o gate do passe e o brilho usa o gate
+da ativação. A fila gasta a ocorrência Set antes de emitir o dano ao
+atacante e mantém a Battle Phase. Os testes exercitam ambos os lados,
+cópias do mesmo ID, revalidação e a sequência dos gates. O ramo mantém
+o trace da declaração sem projeção nativa. A apresentação reaproveita
+os cues existentes e ainda não foi comparada em captura pareada.
+Demo.cs 2614 → 2614. Respostas a ataques com alvo, Mirror Force, Negate
+Attack, outros S/T e campos fora do piloto continuam no fluxo legado.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

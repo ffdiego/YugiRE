@@ -17,6 +17,16 @@ public sealed partial class DemoDuel
         int slot;
         switch (command)
         {
+            case DeclareDirectAttackCommand attack when HasQueuedDirectResponse(attack.Side):
+                return null;
+            case ResolveDirectAttackResponseCommand { Source: null } response:
+                if (queuedDirectResponse is not { } pending || !UsesQueuedAttackResponse(response.Request) ||
+                    !TryResolveCardTarget(pending.Attacker, out int directSlot, out var directAttacker)) return null;
+                return new(ActionPresentationKind.DirectAttack, directAttacker, pending.Attacker,
+                    directSlot, DuelZone.Monster, -1);
+            case ResolveDirectAttackResponseCommand { Source: { } attackTrap }:
+                target = attackTrap; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = -1; break;
             case DeclareDirectAttackCommand attack:
                 if (!TryResolveCardTarget(attack.Attacker, out int attackerSlot, out var attacker))
                     return null;

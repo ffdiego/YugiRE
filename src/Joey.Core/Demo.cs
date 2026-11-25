@@ -1359,7 +1359,7 @@ public sealed partial class DemoDuel
     {
         message = "No attack declaration is awaiting a response.";
         if (primitiveActionQueue?.IsBusy == true) return false;
-        if (PendingAttackResponse is not DemoAttackResponse pending)
+        if (PendingAttackResponse is not DemoAttackResponse pending || UsesQueuedAttackResponse(pending))
             return false;
         PendingAttackResponse = null;
         return ResolveDeclaredAttack(pending.Attack, out message);
@@ -1369,7 +1369,7 @@ public sealed partial class DemoDuel
     {
         message = "Choose an eligible set Trap in the attack response.";
         if (primitiveActionQueue?.IsBusy == true) return false;
-        if (PendingAttackResponse is not DemoAttackResponse pending ||
+        if (PendingAttackResponse is not DemoAttackResponse pending || UsesQueuedAttackResponse(pending) ||
             owner is < 0 or > 1 || zone is < 0 or >= 5 ||
             !pending.EligibleTraps.Any(option => option.Owner == owner &&
                 option.Zone == zone && ReferenceEquals(option.Trap, Spells[owner, zone])) ||

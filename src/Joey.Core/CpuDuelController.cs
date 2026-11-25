@@ -118,6 +118,9 @@ public sealed class CpuDuelController
         if (duel.PendingAttackResponse is { } attack)
         {
             var trap = attack.EligibleTraps.FirstOrDefault(t => t.Owner == Player);
+            if (duel.UsesQueuedAttackResponse(attack))
+                return Act(CpuAction.Response, (out string m) =>
+                    duel.TryQueueAttackResponse(attack, trap, out m, ActionOrigin.Cpu));
             return trap is null ? Act(CpuAction.Response, duel.PassAttackResponse) :
                 Act(CpuAction.Response, (out string m) => duel.ActivateAttackTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
         }
