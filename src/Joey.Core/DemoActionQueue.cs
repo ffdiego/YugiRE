@@ -48,15 +48,17 @@ public sealed partial class DemoDuel
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
             PendingEndDiscards != 0 || sourceZone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
             !TryCaptureCardTarget(ActivePlayer, sourceZone, index, out var source) ||
-            !CanResolveQueuedMonsterWipe(source, out _, out var targets))
-            return false;
-        if (targets.Any(t => !CanQueueMonsterRemoval(t.Player, t.Zone) ||
-            !TryCaptureCardTarget(t.Player, DuelZone.Monster, t.Zone, out _)))
+            !CanAdmitQueuedMonsterWipe(source))
             return false;
         queue.Enqueue(new ActivateMonsterWipeCommand(ActivePlayer, source), origin);
         message = "Monster wipe admitted.";
         return true;
     }
+
+    private bool CanAdmitQueuedMonsterWipe(CardTarget source) =>
+        CanResolveQueuedMonsterWipe(source, out _, out var targets) &&
+        targets.All(t => CanQueueMonsterRemoval(t.Player, t.Zone) &&
+            TryCaptureCardTarget(t.Player, DuelZone.Monster, t.Zone, out _));
 
     private bool CanResolveQueuedMonsterWipe(CardTarget source, out Card spell,
         out IReadOnlyList<MonsterWipeTarget> targets)
@@ -85,6 +87,33 @@ public sealed partial class DemoDuel
                     !SpellFaceDown[e.Owner, e.SourceZone]))
             : MonsterWipeRules.Targets(spell.Id, source.Side, Monsters, MonsterFaceDown);
         return targets.Count != 0;
+    }
+
+    /// <summary>Existing fixed-effect executors; no target or cost selection at admission.</summary>
+    public static bool SupportsQueuedFixedSpell(Card card) => card.ClassCode == 22 &&
+        (DrawSpellRules.Effect(card) is not null || DeckSearchSpellRules.Filter(card.Id) is not null ||
+         LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
+         SpellTrapWipeRules.SupportsQueued(card.Id));
+
+    /// <summary>Read-only UI/CPU admission query. Reuses the same source and target
+    /// validators as the producer; does not reserve, spend or enqueue a card.</summary>
+    public bool CanQueueFixedSpellActivation(DuelZone sourceZone, int index)
+    {
+        if (primitiveActionQueue is not { IsBusy: false } || ActionsBlocked ||
+            PendingEndDiscards != 0 || Phase != DemoPhase.Main ||
+            sourceZone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
+            !TryCaptureCardTarget(ActivePlayer, sourceZone, index, out var source) ||
+            !TryResolveCardTarget(source, out _, out var card) || !SupportsQueuedFixedSpell(card))
+            return false;
+        if (DrawSpellRules.Effect(card) is not null)
+            return CanResolveQueuedDrawSpell(source, out _);
+        if (DeckSearchSpellRules.Filter(card.Id) is not null)
+            return CanResolveDeckSearchSpell(source, out _);
+        if (LifePointSpellRules.SupportsQueued(card.Id))
+            return CanResolveQueuedLifePointSpell(source, out _);
+        if (MonsterWipeRules.SupportsQueued(card.Id))
+            return CanAdmitQueuedMonsterWipe(source);
+        return TryPlanSpellTrapWipe(source, out _, out _);
     }
 
     /// <summary>Dispatch to the single C12 producer for each supported activation family.</summary>
