@@ -69,6 +69,10 @@ internal static class QueuedBattleRecruiterChecks
                 !q.Trace.Any(t=>t.Entry.Command.GetType().Name=="OpenBattleRecruitmentCommand"),
                 "A06 P164 GY arrival gate before choice");
             gate.Release=true;Drain(q);
+            var arrival=ActionTraceProjection.ReadExecuted(q.Trace).Single(t=>t.Command=="FinishBattleRemovalCommand");
+            check(arrival.Mapping=="unmapped"&&arrival.BattleRemoval?.Target==original&&
+                ActionTraceProjection.ReadExecuted(q.Trace).Single(t=>t.Command=="OpenBattleRecruitmentCommand").Mapping=="unmapped",
+                "A06 P164 native final routing remains visible but unmapped");
             var request=d.PendingCardSelection!;
             check(request is not null&&request.Owner==owner&&request.EffectResourceId==id&&
                 request.RequiredAttributeCode==attr&&request.MinSelections==0&&
