@@ -174,6 +174,7 @@ NativeVoiceAudioChecks.Run(Check, Reject);
 NativeDuelAudioCueChecks.Run(Check);
 DuelSoundAssetChecks.Run(Check);
 NativePresentationChecks.Run(Check);
+NativeFieldAttributeDispositionChecks.Run(Check);
 NativeFusionChecks.Run(Check, Reject);
 NativeDisabledChainChecks.Run(Check, Reject);
 NativeCardStatusCompositionChecks.Run(Check, Reject);
