@@ -1,0 +1,158 @@
+# ACTIONS — detalhes dos itens
+
+Histórico e contratos movidos de PLANS.md na revisão de 24/11/2026 (base `42f7813`). [Plano vivo e status atuais](../../PLANS.md). Registrar novos relatos (PR, CI, evidência, limitações) no bloco do item; não duplicar relatos no plano. Os relatos anteriores são históricos, não certificam o estado atual de uma branch.
+
+## Contexto: espinha dorsal da fila
+
+### Por que importa
+
+No Joey original, **os comandos examinados de mudanças visíveis do duelo passam por uma fila**, com um comando ativo por vez e gates de apresentação. Generalizar esse modelo para as mudanças observáveis é a proposta do C#; a cobertura de todos os caminhos nativos ainda não foi demonstrada. É isso que garante que comprar uma carta, mandar mão → cemitério ou destruir três monstros aconteçam de forma visível e sequencial, na ordem certa e com a cadência do original.
+
+O estado atual do C# **não segue esse modelo**:
+
+- `DemoDuel` (`Demo.cs`, mais de 2.000 linhas) resolve as regras diretamente e bloqueia ações com vários campos de estado pendente (`ActionsBlocked` combina nove condições: sete campos `Pending*`, `GameOver` e um flag de remoção adiada). Existe uma fila apenas para decisões de efeito (`queuedEffectDecisions`), não para ações.
+- A apresentação vive em outra fila independente (`PresentationSequence` no `Joey.LookAndFeel`), que "o Core nunca espera".
+- Consequência: a ordem e a granularidade das ações podem divergir do original, e cada carta nova implementada fora da fila aumenta a **dívida de migração** (ver `C12`).
+
+### O que a evidência já mostra
+
+Fonte: [`docs/research/native-action-scheduler.md`](../../docs/research/native-action-scheduler.md) (análise estática; `joey_pc.exe`, base `00400000`). Itens marcados como *hipótese* **não** estão confirmados.
+
+- **A engine de regras roda antes de Update/Draw dos objetos visuais** em cada frame da cena (`0044DD00` → `005C0000` → `005BC700`; Update `0045D040`, Draw `0045D170`). A cena continua atualizando e desenhando enquanto os gates impedem o avanço das regras.
+- **Dois gates:** um de apresentação **antes** da fila (`005BC740` → `005BDC40` → `0040CF20`) e outro **dentro** de cada comando ativo (bit `0x4000` do estado do handler, mantido até os objetos visuais ficarem livres — consulta `vtable[+4]` dos objetos da cena, p.ex. `004188B0` enquanto a carta se move).
+- **Fila:** buffer de 256 registros de 8 bytes (`00A550A8`). Cada registro: opcode nos 12 bits baixos, lado no bit 15 e três argumentos de 16 bits. Produtor `005B9170`; consumidor `005B9CA0` retira da frente; handler pelas tabelas `005B9AEC`/`005B9838`.
+- **No máximo um comando novo por chamada do consumidor**, que roda no máximo uma vez por `005BC700`. Alguns comandos exigem vários ticks.
+- **Produção por continuação**, sem recursão: resolução de efeito (`005BC620` → `005BBE40` → `005BB720`) e janelas de decisão (`005BC9B0`) deixam trabalho na fila para outra passagem. Vários registros podem sair de uma mesma jogada.
+- **Opcodes já observados:** `CE` invocação normal, `CF` magia colocada, `72`/`1E` brilho de ativação, `43` dano/LP, `57` tributo, `8E` descarte como custo, `B1` (ver o documento para argumentos).
+- **Em aberto:** a chamada indireta superior que liga o laço da aplicação (`00410B50`) à instância da cena; o índice da fase exibida ligado às tabelas de turno (`005EFB78/005EFB94`); o momento exato da mutação de estado dentro de cada subestado de comando.
+
+### Invariantes que o C# deve preservar (contrato proposto)
+
+Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão marcados para confirmação em `A01`.
+
+1. Toda mudança de estado **observável** (comprar, invocar, setar, destruir, mão/campo → cemitério, dano/cura, virar, mudar posição) é um **comando tipado** na fila. Regras não movem cartas entre zonas fora da execução de um comando.
+2. **Um comando ativo por vez.** O próximo só é retirado depois que o ativo termina (incluindo o gate visual).
+3. **Efeito com vários eventos enfileira um comando por evento**, cada um executado isoladamente (ex.: destruir 3 monstros = 3 comandos de destruição em sequência, cada um visível).
+4. **Nenhuma ação é invisível.** Não existe "teletransporte" de estado só para economizar animação; perfis Fast/Instant (`Joey.LookAndFeel`) encurtam a duração, mas **não** mudam a ordem nem a quantidade de comandos.
+5. **Continuações:** efeitos que dependem do resultado de um comando, ou de uma escolha do jogador, retomam depois, via nova passagem — sem recursão e sem resolver tudo em um passo.
+6. **O gate de apresentação é injetável.** O `Joey.Core` define comandos e espera uma liberação; o `Joey.App` libera quando a animação termina; modo headless/IA vs IA libera na hora. **A mesma sequência de comandos nos dois casos.**
+7. **Log de comandos comparável com o trace nativo** (opcode, lado, argumentos), para comparar duelos entre C# e Joey.
+8. O estado de jogo muda **na execução** do comando, não no enfileiramento (confirmado para CE/CF/8E; LP pode mudar durante o Update nativo, com comando ainda ativo). A generalização é contrato C#, não prova de todos os handlers; granularidade maior exige justificar que nenhum intermediário observável desaparece. Ver [A01](../../docs/architecture/action-queue.md).
+
+## A01 — Consolidar o contrato do scheduler
+
+<a id="a01"></a>
+
+Transformar `native-action-scheduler.md` em `docs/architecture/action-queue.md`: máquina de estados do comando (estágios 0/1/2), gates, formato do registro, tabela opcode → comando C# (começar por `CE`, `CF`, `72/1E`, `43`, `57`, `8E`, `B1`), lista de invariantes com grau de certeza (`assembly confirmado`/`observado`/`hipótese`). Fechar ou registrar como aberta cada hipótese acima. Sem implementar ainda.
+  *Entregue:* [contrato da fila](../../docs/architecture/action-queue.md), evidência anterior conferida com o SQLite de 22/11, casos de aceitação para A02, mapa inicial de opcodes e lacunas explícitas. Sem implementação; fases seguem em A07 (roteiro 11).
+
+## A02 — `ActionQueue` e comandos tipados no `Joey.Core`
+
+<a id="a02"></a>
+
+Fila FIFO, comando ativo único, subestados, continuações e gate de conclusão injetável (`IPresentationGate`). Comandos iniciais: `Draw`, `Summon`, `Set`, `SendToGraveyard`, `Discard`, `Destroy`, `Damage`, `Heal`, `Flip`, `ChangePosition`. Reaproveitar `queuedEffectDecisions` como caso de continuação por decisão.
+  *Pronto quando:* testes de sequência reproduzem as invariantes 1–6 (ordem, um por vez, destruir 3 = 3 comandos, headless x com gate resultam na **mesma** lista de comandos).
+  *Entregue:* PR #67 integrado à main (93846a7), CI integral 45318593622 verde. A02.1–A02.5: FIFO/gates/trace, identidade por ocorrência, dez tipos iniciais com adaptadores experimentais, Raigeki e consequências vinculadas, Summon/Set com tributos, Flip/ChangePosition, Morphing Jar e decisão real Skelengel. Critérios 1–6 cobertos por testes de sequência, alvo obsoleto, gate imediato/retardado e decisão. A02 encerra infraestrutura e pilotos; não significa migração integral de cartas, App/CPU, escolhas concorrentes, fases ou paridade nativa. Ver [handoff A02](../../docs/architecture/action-queue-implementation.md). Migração restante em A03–A08/C12.
+
+## A03 — Eventos de apresentação tipados ligados à fila
+
+<a id="a03"></a>
+
+O comando ativo expõe a apresentação que precisa terminar; `Joey.LookAndFeel` consome o comando (não uma lista paralela) e sinaliza o gate. Substituir `PresentationSequence` paralela pela leitura dos comandos. Perfis Classic/Fast/Silent/Instant mantêm ordem e contagem.
+  *Pronto quando:* a prévia de ativação e uma invocação normal rodam guiadas pela fila, sem tempo no Core.
+  *Entregue:* PR #77, gate por comando, prévia de ativação, invocação e efeitos vinculados. Smoke Windows A04 (eceef63, CI 45328386043) executou 29/29 Applied, compras de ambos lados 265–267 ms, summon 1362 ms, Sparks/Raigeki 832/830 ms, dano 2117 ms, destruições 864/867 ms, fila vazia; operador confirmou animações de compra do Joey. Correção de abertura lab permanece em A04. Fecha piloto, não migração de toda apresentação/CPU nem fidelidade de timing nativo. [Contrato](../../docs/architecture/action-presentation.md).
+
+## A04 — Console de duelo no `Joey.App`
+
+<a id="a04"></a>
+
+*Entregue:* PR #72, parser/runner compartilhado App/Lab, comandos legais e setup explicitamente privilegiado, state/diff, move-id, F10, scripts DAT. Smoke Windows: 18 comandos e 106 linhas idênticas entre gráfico e headless; correção de compra automática fff5e6e; eceef63 29/29 Applied, sem wait >=5s, decks 2/2, LP 8000/7800, operador confirmou animações dos dois lados e spawn instantâneo intencional. CI 45328386043 aprovado. Fecha critério de piloto; fase/lado, ataques e trace JSON arbitrário seguem A07/A05, sem alegar cobertura geral. [Contrato](../../docs/architecture/duel-console.md).
+  Modo console que **enfileira os mesmos comandos que as cartas usarão**: spawnar carta (mão/campo/deck/cemitério), mover entre zonas, comprar, invocar/setar, destruir, mudar LP, avançar fase, forçar lado. Os nomes devem espelhar o console nativo de `native_hooks` (`draw N [lado]`, `damage N [lado]`, `state`, `diff`) para rodar o **mesmo roteiro** nos dois lados e comparar. Uso principal: implementar e depurar cartas do zero apenas por essas interfaces, com feedback visual imediato.
+  **Contrato do console:** jogador, CPU, cartas, testes, scripts e console são produtores da mesma API de comandos tipados do Core. A origem pode mudar a autorização/admissão (jogadas legais vs. operações privilegiadas de laboratório), nunca o executor, os gatilhos, a ordem ou a apresentação de um comando equivalente. `draw`, `destroy`, `damage`, `heal`, `move` etc. são propostas de interface textual; não presumir que todos já existem no console nativo. Resolver a identidade da ocorrência e revalidar na execução; distinguir destruir, descartar e enviar ao cemitério, mesmo quando o destino coincide. `spawn`/forçar fase/lado são comandos explícitos de laboratório, não mutações ocultas nem jogadas legais. Consultas `state`/`diff` são somente leitura. O parser/runner deve ser reutilizável sem raylib (scripts/testes/headless); o App é um frontend opcional. Nunca contornar a fila nem conceder privilégios de debug ao jogador/CPU.
+  *Pronto quando:* um roteiro de compra, destruição e LP é executável interativamente e headless, gera os mesmos comandos/eventos/estado final sob as mesmas condições, e cada ação é animada no App. `state`/`diff` comparáveis ao nativo para operações suportadas; testar admissões inválidas e gatilhos normais de destruição.
+
+## A05 — Trace de comandos comparável
+
+<a id="a05"></a>
+
+*A05.1–A05.7:* YDR, shuffle, identidade, movimentos, trace, CE/CF e ataque direto; CI 45325522858 aprovado. *A05.8:* batalha com alvo em piloto restrito, snapshots por papel 3C antes do dano e 7C destino final, matriz de combate e identidade, comparação 33/3C/7C parcial. CI 45326231602 aprovado; integração com A04 em curso, App, efeitos/FLIP/respostas e paridade dinâmica pendentes. [Contrato](../../docs/architecture/native-replay-scenarios.md).
+  *A05.9:* consulta `trace` compartilhada pelo console App/Lab e exportação headless de roteiros com `--trace-output=path`. O documento conserva a ordem dos comandos executados e distingue prefixos incompletos.
+  *A05.10:* o comparador valida a sequência desde o primeiro evento e confere as contagens do cabeçalho ou do rodapé antes de comparar qualquer janela JSONL.
+  *A05.11:* o console admite os ataques direto e com alvo dos pilotos. O Lab gera o trace compra → invocação → ataque → dano pelo mesmo console. A preparação da fase no piloto usa o setup existente até A07; captura dinâmica equivalente e cue de combate ainda pendentes.
+  *A05.12:* os traces C# novos declaram a contagem de linhas executadas. O comparador valida a contagem disponível e a sequência desde 1 antes de aceitar qualquer janela, inclusive quando a lacuna fica fora dela.
+  *A05.13:* o roteiro headless executa compra, invocação, entrada em batalha, ataque e saída pelo console e pela fila. O comando revalida lado e turno e mantém as regras de fase do sandbox. A projeção preserva essas linhas como `unmapped`. A07 segue aberto para o ciclo completo e a comparação nativa.
+  *Aceitação A05.14:* o CI executa o Lab e compara sua saída com a janela arquivada 281–301. Compra, invocação, ataque direto e dano concordam nos quatro registros projetáveis. O relatório mantém 17 registros do arquivo e quatro comandos C# sem mapeamento e classifica a janela como inconclusiva. Outro roteiro produz quatro divergências no relatório. O PR #81 fecha geração e comparação de traces no escopo do piloto. Estado equivalente no executável e apresentação do combate seguem em A09.
+
+## A06 — Quebrar `DemoDuel` em motor + fila
+
+<a id="a06"></a>
+
+Mover as regras de `Demo.cs` para comandos e resolvedores pequenos; eliminar o OU de `Pending*` em favor do estado do comando ativo. Fazer **incremental**, uma família por vez, sem regressão nos testes existentes.
+  *Pronto quando:* `Demo.cs` não decide ordem de ação; testes atuais passam.
+  *Fatia de isolamento:* durante `Tick`, só o executor emite pelo sink. Continuações devolvem comandos no passo e callbacks de apresentação observam o comando e liberam o gate. `ActionQueueChecks` exercita tentativas nos três callbacks e na continuação, além do caminho autorizado de follow-up. O executor recebe um sink próprio, disponível durante a execução. Callbacks que recebem a fila pública não podem inserir comandos durante o tick. A migração das famílias e dos estados pendentes continua aberta.
+  *Fatia de ativação com alvo:* o console App/Lab admite ativações direcionadas já migradas. A localização textual resolve para a ocorrência física antes de entrar na fila, com revalidação na execução. A admissão segue distinta de uma seleção interativa no tabuleiro.
+  *Fatia de respostas para a mão:* o console lista e responde as seleções Deck/Cemitério → Mão já migradas. O script espera resposta explícita e sinaliza trace incompleto enquanto a escolha estiver pendente.
+  *Fatia de respostas FLIP:* console App/Lab lista alvos de monstros e pares S/T (incluindo FIELD) e responde pelo produtor existente, por ocorrência, sem resolução duplicada. Bloqueia operações alheias enquanto a escolha está pendente; trace incompleto até resposta. Testes ambos lados, gates, duplicatas, recusa e identidade. PR #115, CI 45404987816 aprovado; FLIP em batalha e demais seleções ainda abertas.
+  *Fatia de respostas para o campo:* console lista dono, origem, posição e slots livres e admite recrutamento individual, múltiplas cópias e ressurreição por ocorrência pelos produtores C12 existentes. Testes de escolha, gate, shuffle e donos consecutivos; combate legado é pré-condição para pedidos de recrutadores de batalha. PR #115, CI 45405582157 aprovado. A06 permanece parcial.
+  *Fatia Damage Step:* ataque contra defesa oculta dos IDs restritos A05 usa revelação e cálculo em comandos distintos, sem Flip Summon. Gates, revalidação da reserva e comparação com legado nos dois lados; novos comandos unmapped. PR #119, CI 45429034187 aprovado antes da reconciliação; paridade nativa e cue gráfico ainda pendentes.
+  *Fatia FLIP em batalha:* Skelengel (539/P118) em defesa oculta usa reserva de destruição, dano com gate, decisão opcional da fila, compra e finalização após o efeito (inclusive Exodia). CI 45515196933 aprovado; ambos lados, matriz ATK/DEF, aceitação/recusa, deck vazio, dano letal e trace independente do gate. PR #119. Continua restrito ao campo isolado; FLIPs com alvo e demais gatilhos de batalha seguem abertos.
+  *Fatia FLIP com alvos em batalha:* Penguin Soldier (601/P087) reutiliza PendingFlipTarget e retorno por ocorrência; seleção bloqueia trace/roteiro, exclui destruição marcada e retoma combate após FinishFieldRemoval e gate. Testes de ambos lados, zero/um/dois alvos e paridade com legado não terminal. PR #129, CI pendente; campo isolado e ausência de novos opcodes preservadas.
+  *Fatia destruição por efeito no Damage Step:* Man-Eater Bug (500/P072) exige alvo único, admite destruir defensor marcado e registra destino da ocorrência; cancela remoção de batalha duplicada quando a mesma carta já chegou ao GY por efeito. Testes espelhados, gates, identidade e contagem de eventos. PR #131, CI pendente. Recrutadores e campo ampliado seguem abertos.
+  *Fatia recrutamento elemental P164:* seis IDs em combate isolado, gatilho só após chegada ao GY por batalha, ambas chegadas antes da primeira escolha, invocação/embaralhamento pela fila e próximo dono serializado. CI 45523672687 verde (51.135 checks); PR #132, projeção 7C de P164 unmapped, coleta 31 pendente. P168 e demais gatilhos não ampliados.
+
+  *Consolidação:* PR #98, CI 45393879231 aprovado no head 4419fe2; dois roteiros Lab/DAT relatados no PR. Integrar fatia sem marcar A06 concluído; reconciliada com evidência de fases da main 15b54a0.
+
+*Evidência do P164 (PR #138):* o roteiro 31 recuperou o callback e confirmou o opcode de embaralhamento `60`, com seed produzida pelo RNG nativo. O trace C# conserva `ShuffleDeckCommand` como `unmapped`. [Contrato](../architecture/native-replay-scenarios.md#roteiro-31--callback-p164-e-shuffle-no-trace).
+
+## A07 — Turno e fases como comandos/estágios da fila
+
+<a id="a07"></a>
+
+A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi recebido e importado no SQLite cumulativo v2, com dez funções e duas tabelas verificadas. Continuam abertos o ciclo completo de turnos na fila e a correlação entre índice do dispatcher, bits de fase e rótulo exibido. [Evidência e lacuna](../../docs/20-turn-scheduling.md#reprodução-e-evidências).
+  *Encerramento no sandbox:* `turn end` admite entrada na End Phase e agenda a troca de jogador em outro comando. Acima do limite, `discard-end INDEX` responde por ocorrência; a troca espera o gate do último descarte. O efeito de encerramento existente também usa um comando por ocorrência após o gate de descarte e pode encerrar o duelo antes da troca. Os comandos são `unmapped` no trace nativo.
+  *Compra no sandbox:* `turn draw` reserva a compra legal do jogador ativo e revalida o turno na execução. A compra comum projeta `0x61`. A fila honra o gate da compra antes do processamento dos retornos atrasados de Standby e invoca a ocorrência do cemitério com `SpecialSummonCommand`. O modo experimental `--queued-actions` do App usa essa compra na abertura do turno e liga os botões de Battle, Main2 e End, mais o descarte obrigatório, aos mesmos produtores da fila. A CPU experimental admite as mesmas operações de fase, inclusive o descarte obrigatório. As oportunidades de fase e a correlação de sua cronologia nativa continuam abertas.
+  *Reconciliação com A06:* PR #108 integra draw/Standby/end/discard/CPU em fatia incremental, mantendo seleções do console, trace incompleto e admissão isolada. CI anterior 45398551966 verde, novo CI pendente. A07 não concluído: ciclo/cronologia nativa e visual restantes.
+
+## A08 — Extrair `Joey.Cards` e definir `EffectContext`
+
+<a id="a08"></a>
+
+Novo assembly com as definições de cartas por resource ID e as famílias de efeito. Dependências: `Joey.Cards` → `Joey.Core`, nunca o contrário; `Joey.App` monta Core + Cards + LookAndFeel. O Core fica com o que vale para qualquer duelo (fases, batalha, invocação, a fila e `EffectContext`); o catálogo e o console (`A04`) criam cartas por resource ID a partir de `Joey.Cards`.
+  **`EffectContext`** expõe primitivos pequenos e combináveis (`Destroy(filtro)`, `Draw`, `Damage`, `Heal`, `Choose`, `Move`...), cada um **enfileirando comandos**; não muta o estado diretamente (invariante 1).
+  **Açúcar para cartas triviais:** helpers como `DestroyMonsters(Side)` são só açúcar sobre `Destroy(filtro)`. Eles tiram uma foto dos alvos na resolução e enfileiram **um comando `Destroy` por monstro**; um comando cujo alvo já saiu do campo quando chega a vez é descartado. Ex.: Raigeki = `DestroyMonsters(Opponent)`; Dark Hole = `DestroyMonsters(Opponent)` + `DestroyMonsters(Own)`. A **ordem** entre lados e zonas é observável e deve ser conferida no original antes de ser fixada (hipótese até medir).
+  **Efeitos com continuação** (escolha de alvo, gatilhos após a destruição, janelas de resposta) se expressam como passos esperados (`IEnumerable<Step>`; **sem snapshots por ora** — o replay vem de `seed + log de entradas`) e retomam em nova passagem da fila, sem recursão.
+  Migrar para `Joey.Cards` as regras declarativas existentes (`DirectDamageRules`, equipamentos, campo etc.) junto com `C12`.
+  *A08.1–A08.2:* `EffectContext` compõe compra, LP, envio do custo ao cemitério e destruições de ocorrências verificadas. A limpeza vinculada segue imediatamente após a destruição que a dispara. O executor continua dono da admissão, das reservas e dos gatilhos. A extração do assembly e as decisões pendentes seguem abertas no [PR #101](https://github.com/ffdiego/YugiRE/pull/101).
+  *A08.3:* a continuação de compra opcional admite primeiro a resposta. O executor revalida supressão, turno e disponibilidade antes de emitir a compra dependente.
+  *Pronto quando:* Raigeki, Dark Hole e uma carta com continuação (ex.: escolha + destruição) vivem em `Joey.Cards`, passam pelo console (`A04`) e produzem a mesma lista de comandos com e sem gate visual.
+
+  *Reconciliação:* PR #101 preserva A06/A07; CI anterior 45392730663 verde, extração de Joey.Cards ainda pendente.
+
+## A09 — Comparar combate em condição equivalente e apresentar o trace no App
+
+<a id="a09"></a>
+
+Obter um cenário nativo com estado inicial e comandos comparáveis ao piloto A05, preservar as lacunas do trace e validar a apresentação dos comandos de combate no gate do App. A05 entrega a projeção e o relatório headless. A07 cobre fases nativas. A reprodução visual do combate permanece na trilha VISUALS.
+  *A09.1:* projeção somente leitura da declaração de ataque direto/com alvo; App usa o cue de espada existente no gate da declaração, antes de remoção/dano, sem novo relógio ou fila. Roteiro sem mira manual usa alreadyAimed=false. Regressão App sem DAT/display Classic/Instant, CI 45400089826 aprovado; smoke gráfico e captura nativa equivalente ainda necessários.
+  *A09.2:* regressão App Classic/Instant espelhada para ambos os lados, CI 45402454877 aprovado. Roteiro DAT e comparador de trace/state/ordem dos gates com testes negativos; execução real no desktop e captura equivalente do original ainda pendentes. Ver [roteiro](../../docs/architecture/native-replay-scenarios.md#a092--ambos-os-lados-e-smoke-dat).
+  *A09.3 (PR #137):* o clique de ataque direto reutiliza a admissão tipada no campo isolado. A regressão de startup exercita o manipulador nos dois lados em Classic/Instant e exige a origem Player. O smoke gráfico e o cenário nativo continuam pendentes.
+
+### Fronteira VISUALS / ACTIONS A03 (decisão do mantenedor)
+
+ACTIONS é responsável por conectar ActionQueue / IPresentationGate à apresentação.
+VISUALS preserva Joey.LookAndFeel independente do Core/raylib, entrega
+componentes reutilizáveis de um efeito e Draws; não cria novo FIFO de ações
+ou efeitos nem implementa uma ponte paralela. A03 deve migrar os adaptadores
+legados PresentationSequence no App, sem duplicar mutações ou enfileiramento.
+
+**Pontos de atenção arquitetural para A03:** (1) visível/ativo não significa
+bloqueante: V23 aguarda em 128 visível e não bloqueia; V24 é contextual e não
+deve bloquear; (2) CanComplete é uma consulta, não um Update/Draw: V11 tem
+mutação no Draw, V26 Update vazio e 24 Draws; V30 Draw incrementa +4 e flag final diverge do predicado inclusivo; não avançar
+efeitos ao consultar gates nem inventar timeout; (3) remoções/transferências
+precisam de snapshot visível por ocorrência e geometria antes da execução
+(ActionQueue executa antes de CanComplete); (4) ao migrar, impedir emissão
+dupla pelos eventos DemoDuel e pelo comando ativo. A03 define a política de
+cancelamento/Instant e identidade por Sequence, inclusive comandos Skipped/
+Rejected, sem obrigar LookAndFeel a conhecer tipos do Core. Não bloquear
+comando por objeto que ainda não tem Draw/contrato de conclusão.

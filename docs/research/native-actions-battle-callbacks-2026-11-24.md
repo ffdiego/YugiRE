@@ -4,8 +4,7 @@ Coleta privada `ghidra-actions-battle-callbacks.zip`, SHA-256
 `a090c44925b0e34b4021560f920ea25c656e4519ab9e90271e57bd5686f6b19b`,
 fingerprint EXE conforme guia. 7/7 VAs decompiladas e assembly exato
 nos retries; 7 janelas iniciais deslocadas não indexadas. Importada
-em v4-actions, consultar [guia](joey-knowledge-sqlite.md). Sem alteração
-de comportamento C# nesta consolidação.
+em v4-actions. O snapshot cumulativo atual inclui o mesmo recorte de sete VAs via bundle com digest distinto. Consulte o [guia](joey-knowledge-sqlite.md) para validar a versão utilizada.
 
 ## P164 — recrutamento elemental
 
@@ -64,7 +63,6 @@ a política existente somente com esta coleta.
 ## Limites e continuidade
 
 Roteiro 31 encerrado; 7/7 incorporadas à base, não solicitar novamente.
-PR #138 em paralelo estuda a fronteira de shuffle nativo e sua seed.
-O presente handoff não altera seu código ou documentos em disputa.
+O PR #138 documenta a fronteira de shuffle nativo e a origem da seed.
 Confirmar ordem dinâmica, aceite/recusa do FLIP P118, posição/seleção
 e comparação de replay com original em cenário dirigido quando necessário.

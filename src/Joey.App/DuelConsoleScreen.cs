@@ -4,7 +4,52 @@ using Raylib_cs;
 
 static partial class Game
 {
-    static DuelConsoleSession? labSession;
+    static DuelConsoleSession? labSession, liveConsoleSession;
+    static DuelConsoleSession? ConsoleSession => labSession ?? liveConsoleSession;
+    static float consoleHeight;
+    static bool consoleCapturedThisFrame;
+    static bool ConsoleCapturesInput => screen == "duel" && (labConsoleOpen || consoleHeight > 0 || consoleCapturedThisFrame);
+    static readonly List<string> consoleHistory=[];
+    static int consoleHistoryIndex;
+    static int consoleScroll;
+    const int ConsolePanelHeight=330;
+
+    static bool ConsoleTogglePressed() => Raylib.IsKeyPressed(KeyboardKey.Apostrophe) ||
+        Raylib.IsKeyPressed(KeyboardKey.Grave) || Raylib.IsKeyPressed(KeyboardKey.F10);
+
+    static void ResetConsoleLog()
+    {
+        labInput="";labLog.Clear();consoleHistory.Clear();consoleHistoryIndex=0;consoleScroll=0;
+        labTraceCursor=0;labLastWaiting="";
+        labWallClock.Restart();labLastProgressMs=labLastStallMs=0;
+    }
+
+    static void ReadDuelConsoleToggle()
+    {
+        consoleCapturedThisFrame=false;
+        bool toggle=ConsoleTogglePressed();
+        bool close=labConsoleOpen && Raylib.IsKeyPressed(KeyboardKey.Escape);
+        if(!toggle&&!close)return;
+        consoleCapturedThisFrame=true;
+        if(labConsoleOpen)labConsoleOpen=false;
+        else
+        {
+            if(ConsoleSession is null)
+            {
+                // Lazy attachment: leave the legacy path untouched until
+                // the operator explicitly opens the developer console.
+                liveConsoleSession=DuelConsoleSession.Attach(duel,new AppActionPresentationGate(),cards);
+                queuedDuel=liveConsoleSession.Queue;
+                labStatus=DuelScriptStatus.Completed;
+                ResetConsoleLog();
+                labTraceCursor=queuedDuel.Trace.Count;
+                LabLog("Live duel console. CPU input paused while open. Type help.");
+            }
+            labConsoleOpen=true;
+        }
+        // Discard the toggle character; never insert it into a command.
+        while(Raylib.GetCharPressed()>0) { }
+    }
     static DuelConsoleScript? labScript;
     static string[]? labOriginalLines;
     static DuelScriptStatus labStatus;
@@ -30,13 +75,8 @@ static partial class Game
         labScript=lines is null ? null : new(labSession,lines);
         labStatus=lines is null ? DuelScriptStatus.Completed : DuelScriptStatus.Advanced;
         labConsoleOpen=lines is null;
-        labInput="";
-        labLog.Clear();
-        labTraceCursor=0;
-        labLastWaiting="";
-        labWallClock.Restart();
-        labLastProgressMs=labLastStallMs=0;
-        message="Laboratory: F10 console; no CPU.";
+        ResetConsoleLog();
+        message="Laboratory: apostrophe/F10 console; no CPU.";
         LabLog(message);
     }
 
@@ -44,6 +84,15 @@ static partial class Game
     // a raylib window. This is the regression for the first-frame deck-out.
     static int CheckConsoleStartup()
     {
+        if (SelectPresentationStyle([]) is not FastLookAndFeel ||
+            SelectPresentationStyle(["--fast"]).UpdatesPerSecond != 60 ||
+            SelectPresentationStyle(["--classic"]).GetType() != typeof(DuelLookAndFeel) ||
+            SelectPresentationStyle(["--instant", "--fast"]) is not InstantLookAndFeel ||
+            SelectPresentationStyle(["--mute-joey"]).PlayJoeyVoice)
+        {
+            Console.Error.WriteLine("Presentation CLI profile regression.");
+            return 1;
+        }
         StartConsoleLab(null);
         var session = labSession!;
         string before = session.Execute("state").Message;
@@ -170,7 +219,7 @@ static partial class Game
     {
         var elapsed = TimeSpan.FromMilliseconds(17);
         foreach (int side in new[] { 0, 1 })
-        foreach (bool targeted in new[] { false, true })
+        foreach (var (targeted, playerInput) in new[] { (false, false), (true, false), (false, true) })
         {
             ActionTraceEntry[]? reference = null;
             foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
@@ -205,7 +254,14 @@ static partial class Game
                 if (!labSession.Execute("battle begin").Enqueued) return false;
                 AdvanceQueuedDuel();
                 AdvanceDuelPhases(elapsed);
-                if (queue.IsBusy || !labSession.Execute(targeted ? "attack 2 3" : "attack 2 direct").Enqueued)
+                if (queue.IsBusy) return false;
+                if (playerInput)
+                {
+                    attacker = 2;
+                    CommitHumanAttack(-1);
+                    if (!queue.IsBusy || attackCue is not null || duel.Life[enemy] != 8000) return false;
+                }
+                else if (!labSession.Execute(targeted ? "attack 2 3" : "attack 2 direct").Enqueued)
                     return false;
                 AdvanceQueuedDuel();
                 if (duel.Life[enemy] != 8000 || targeted && duel.Monsters[enemy, 3] is null)
@@ -238,6 +294,9 @@ static partial class Game
                     targeted && (duel.Monsters[enemy, 3] is not null || duel.Graveyard(enemy).Count != 1))
                     return false;
                 var trace = queue.Trace.ToArray();
+                if (playerInput && !trace.Any(entry => entry.Stage == ActionTraceStage.Completed &&
+                    entry.Entry.Command is DeclareDirectAttackCommand && entry.Entry.Origin == ActionOrigin.Player &&
+                    entry.Result?.Outcome == CommandOutcome.Applied)) return false;
                 if (reference is not null && !trace.SequenceEqual(reference)) return false;
                 reference = trace;
             }
@@ -255,15 +314,14 @@ static partial class Game
 
     static void AdvanceConsoleLab()
     {
-        if(labSession is not { } session) return;
-        if(Raylib.IsKeyPressed(KeyboardKey.F10)) labConsoleOpen=!labConsoleOpen;
+        if(ConsoleSession is not { } session) return;
         var trace=session.Queue.Trace;
         for(int i=labTraceCursor;i<trace.Count;i++)
         {
             var entry=trace[i];
             if(entry.Stage==ActionTraceStage.Executed)
                 LabLog($"{entry.Entry.Sequence}: {entry.Entry.Command.GetType().Name} {entry.Result?.Outcome} {entry.Result?.Detail}");
-            if(entry.Stage is ActionTraceStage.Started or ActionTraceStage.Completed)
+            if(labSession is not null && (entry.Stage is ActionTraceStage.Started or ActionTraceStage.Completed))
                 Console.WriteLine($"[lab timing] ms={labWallClock.ElapsedMilliseconds} seq={entry.Entry.Sequence} stage={entry.Stage} command={entry.Entry.Command.GetType().Name}");
         }
         long now=labWallClock.ElapsedMilliseconds;
@@ -271,7 +329,7 @@ static partial class Game
             labLastProgressMs=labLastStallMs=now;
         labTraceCursor=trace.Count;
         bool scriptRunning=labScript is not null && labStatus is not (DuelScriptStatus.Completed or DuelScriptStatus.Failed);
-        if((scriptRunning || session.Queue.IsBusy) && !visualReviewPaused && !session.HasPendingChoice &&
+        if(labSession is not null && (scriptRunning || session.Queue.IsBusy) && !visualReviewPaused && !session.HasPendingChoice &&
             now-labLastProgressMs>=5000 && now-labLastStallMs>=5000)
         {
             labLastStallMs=now;
@@ -298,47 +356,71 @@ static partial class Game
             message=step.Status==DuelScriptStatus.Completed ? "Laboratory script completed. F10 console." : "Script stopped. F10 for log.";
     }
 
-    // Debug-only overlay, not a claim of a native Joey screen.
+    // Retractable developer overlay. UI time is independent of native
+    // animation speed and of the Core scheduler.
     static void DrawConsoleLab()
     {
-        if(labSession is not { } session) return;
-        if(!labConsoleOpen)
-        {
-            Label($"LAB | F10 console | {labStatus}", 264, 10, 12, Gold);
-            return;
-        }
-        Raylib.DrawRectangle(245,80,545,420,new Color(7,15,28,245));
-        Raylib.DrawRectangleLines(245,80,545,420,Gold);
-        Label("LAB CONSOLE — F10 hide",255,90,16,Gold);
-        int y=118;
-        foreach(string line in labLog.TakeLast(17))
-        {
-            string display=line;
-            while(display.Length>0 && MeasureLabel(display,12)>522) display=display[..^1];
-            Label(display,255,y,12);
-            y+=18;
-        }
+        if(ConsoleSession is not { } session)return;
+        float target=labConsoleOpen?ConsolePanelHeight:0;
+        float distance=Math.Clamp(Raylib.GetFrameTime(),0f,0.1f)*1800f;
+        consoleHeight=consoleHeight<target?Math.Min(target,consoleHeight+distance):
+            Math.Max(target,consoleHeight-distance);
+        int height=(int)consoleHeight;
+        if(height==0)return;
+        int top=height-ConsolePanelHeight;
+        Raylib.DrawRectangle(0,top,800,ConsolePanelHeight,new Color(7,15,28,238));
+        Raylib.DrawRectangle(0,top+ConsolePanelHeight-2,800,2,Gold);
+        Label(labSession is null?"DUEL CONSOLE | LIVE":"DUEL CONSOLE | LAB",12,top+8,16,Gold);
+        Label("apostrophe / F10 / Esc",578,top+8,12);
         bool manual=labScript is null || labStatus is DuelScriptStatus.Completed or DuelScriptStatus.Failed or DuelScriptStatus.WaitingForDecision;
-        int ch;while((ch=Raylib.GetCharPressed())>0)
-            if(manual && ch>=32 && ch<127 && labInput.Length<256) labInput+=(char)ch;
-        if(manual && Raylib.IsKeyPressed(KeyboardKey.Backspace) && labInput.Length>0) labInput=labInput[..^1];
-        if(manual && Raylib.IsKeyPressed(KeyboardKey.Enter) && labInput.Length>0)
+        if(labConsoleOpen)
         {
-            var line=labInput.Trim();labInput="";
-            LabLog("> "+line);
-            if(labStatus==DuelScriptStatus.WaitingForDecision && !session.AllowsPendingChoiceInput(line))
-                LabLog("Answer the pending decision before resuming the script.");
-            else if(MotionBusy || PhaseBusy || visualReviewPaused)
-                LabLog("Presentation busy or paused; retry when ready.");
-            else
+            if(Raylib.IsKeyPressed(KeyboardKey.PageUp))consoleScroll=Math.Min(Math.Max(0,labLog.Count-13),consoleScroll+8);
+            if(Raylib.IsKeyPressed(KeyboardKey.PageDown))consoleScroll=Math.Max(0,consoleScroll-8);
+            if(manual&&Raylib.IsKeyPressed(KeyboardKey.Up)&&consoleHistoryIndex>0)
+                labInput=consoleHistory[--consoleHistoryIndex];
+            if(manual&&Raylib.IsKeyPressed(KeyboardKey.Down)&&consoleHistoryIndex<consoleHistory.Count)
             {
-                var result=session.Execute(line);
-                LabLog(result.Message);
+                consoleHistoryIndex++;
+                labInput=consoleHistoryIndex==consoleHistory.Count?"":consoleHistory[consoleHistoryIndex];
+            }
+            int ch;while((ch=Raylib.GetCharPressed())>0)
+                if(manual && ch>=32 && ch<127 && labInput.Length<256) labInput+=(char)ch;
+            if(manual && Raylib.IsKeyPressed(KeyboardKey.Backspace) && labInput.Length>0) labInput=labInput[..^1];
+            if(manual && Raylib.IsKeyPressed(KeyboardKey.Enter) && labInput.Length>0)
+            {
+                var line=labInput.Trim();labInput="";
+                if(line.Length>0)
+                {
+                    consoleHistory.Add(line);
+                    if(consoleHistory.Count>100)consoleHistory.RemoveAt(0);
+                    consoleHistoryIndex=consoleHistory.Count;consoleScroll=0;
+                    LabLog("> "+line);
+                    string op=line.Split((char[]?)null,2,StringSplitOptions.RemoveEmptyEntries)[0].ToLowerInvariant();
+                    bool readOrDecision=op is "state" or "diff" or "trace" or "help" or "choices" or "decision";
+                    if(labStatus==DuelScriptStatus.WaitingForDecision && !session.AllowsPendingChoiceInput(line))
+                        LabLog("Answer the pending decision before resuming the script.");
+                    else if(!readOrDecision && (MotionBusy || PhaseBusy || visualReviewPaused))
+                        LabLog("Presentation busy or paused; retry when ready.");
+                    else
+                    {
+                        var result=session.Execute(line);
+                        LabLog(result.Message);
+                        if(result.Enqueued)ClearDuelSelection();
+                    }
+                }
             }
         }
-        string prompt=manual ? "> "+labInput : "Script running; F6 pauses presentation.";
-        while(prompt.Length>0 && MeasureLabel(prompt,14)>522) prompt=prompt[1..];
-        Label(prompt,255,453,14,Gold);
-        Label($"Queue: {session.Queue.PendingCount} | active: {session.Queue.Active?.Sequence.ToString() ?? "-"} | {labStatus}",255,476,12);
+        int y=top+34;
+        foreach(string line in labLog.Take(Math.Max(0,labLog.Count-consoleScroll)).TakeLast(13))
+        {
+            string display=line;
+            while(display.Length>0 && MeasureLabel(display,14)>776)display=display[..^1];
+            Label(display,12,y,14);y+=18;
+        }
+        string prompt=manual?"> "+labInput:"Script running; F6 pauses presentation.";
+        while(prompt.Length>0 && MeasureLabel(prompt,16)>776)prompt=prompt[1..];
+        Label(prompt,12,top+278,16,Gold);
+        Label($"Queue: {session.Queue.PendingCount} | active: {session.Queue.Active?.Sequence.ToString() ?? "-"} | Up/Down history | PgUp/PgDn log",12,top+306,12);
     }
 }

@@ -183,7 +183,7 @@ continua necessária para resolver nomes; não abrir coleta redundante.
 
 ### Validação Windows pendente
 
-Executar scripts/pending/28-voice-audio-windows.ps1 após integrar o PR.
+O smoke Windows de `scripts/pending/28-voice-audio-windows.ps1` foi executado. O SQLite v3 registra 129 rejeições por cabeçalho RIFF truncado. Os três exemplos foram rejeitados antes da reprodução.
 Build, inspeção, rejeição de recurso ausente e de mute + review, e amostras
 Internal joey_01.wav/attack.wav/card_move.wav. Saída privada scratch/voice-smoke-<timestamp>
 com summary.json, voice-metadata.json (se gerado nesta execução), logs e
@@ -230,3 +230,26 @@ A validação de frame continua em vigor até esclarecer como o player
 nativo trata esse caso. Um smoke Linux com o sink ALSA nulo confirmou
 a decodificação e o término do player Raylib de `joey_01.wav`.
 O teste não verifica a escuta nem outras plataformas.
+
+
+## V18 — primeira integração audível no Alpha e laboratório
+
+SQLite v3 consultado: strings 005F07A4..005F09B4 e 005F0B20..
+005F0BBC contêm nomes de efeitos e música; não há memória dos
+descritores 005EFD48/005F0A30 nem referências de dados suficientes.
+A ordem das strings não autoriza reconstruir a tabela de IDs.
+DuelSoundAssets usa nomes do índice original Voice.dat, com
+associação semântica provisória, separada de NativeDuelAudioCues.
+Cues no início do passo visual de transferência, abertura,
+tributo, destruição, special summon, ataque, entrada Glow,
+turno/fase e novo alvo LP. Não dispara em cada Draw nem lê
+mensagens textuais. Não altera Core, resultado ou gate.
+Instant pode suprimir animações e respectivos sons.
+
+DuelAudioPlayer possui device e Archive separados, usa correção
+PCM NativeWaveInfo, cache de efeitos e uma música decodificada
+(m_menu/m_duel1), repete quando termina. Ganho 0.35 provisório.
+Sem crossfade, seleção LP dinâmica, streaming nativo ou falas.
+Falha de arquivo/dispositivo/recurso não impede partida.
+--no-audio / --no-music; --mute-joey não é mute global.
+Testes sintéticos de nomes/roteamento; CI e desktop pendentes.

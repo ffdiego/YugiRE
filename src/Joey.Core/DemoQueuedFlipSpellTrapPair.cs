@@ -4,6 +4,69 @@ public sealed partial class DemoDuel
 {
     private bool admittingQueuedFlipSpellTrapPair;
 
+    private (PendingFlipSpellTrapTargets Request, CardTarget Target)? queuedFlipSpellTrapFirstPick;
+
+    public bool UsesQueuedFlipSpellTrapSelection(PendingFlipSpellTrapTargets request) =>
+        primitiveActionQueue is not null && ReferenceEquals(PendingFlipSpellTrapTargets, request) &&
+        deferredBattle is null && Phase == DemoPhase.Main &&
+        FlipSpellTrapSelectionRules.Effect(request.Source.Id) == request.Operation;
+
+    public bool TrySelectQueuedFlipSpellTrapTarget(PendingFlipSpellTrapTargets request, int player, int zone,
+        out string message, ActionOrigin origin = ActionOrigin.Player)
+    {
+        message = "Choose a current eligible FLIP Spell/Trap target.";
+        if (!UsesQueuedFlipSpellTrapSelection(request) ||
+            primitiveActionQueue is not { IsBusy: false } || !CanAdmitQueuedFlipSpellTrapPair())
+            return false;
+
+        // The existing executor requires no legacy selections; only the
+        // presentation pick is temporarily cleared during final admission.
+        bool Admit(CardTarget[] picks, out string result)
+        {
+            var prior = flipSpellTrapSelections.ToArray();
+            flipSpellTrapSelections.Clear();
+            if (TryQueueFlipSpellTrapPair(request, picks, out result, origin))
+            {
+                queuedFlipSpellTrapFirstPick = null;
+                return true;
+            }
+            flipSpellTrapSelections.AddRange(prior);
+            return false;
+        }
+
+        if (FlipEffectsNegated)
+            return Admit([], out message);
+
+        if (queuedFlipSpellTrapFirstPick is { } first && ReferenceEquals(first.Request, request))
+        {
+            if (!TryResolveFlipSpellTrapPick(request, first.Target, out _, out int firstZone))
+            {
+                queuedFlipSpellTrapFirstPick = null;
+                flipSpellTrapSelections.Clear();
+                message = "First FLIP Spell/Trap target changed; choose again.";
+                return false;
+            }
+            if (first.Target.Side == player && firstZone == zone)
+            {
+                queuedFlipSpellTrapFirstPick = null;
+                flipSpellTrapSelections.Clear();
+                message = "Deselected Spell/Trap target (0/2).";
+                return true;
+            }
+            var second = QueuedFlipSpellTrapCandidates(request).FirstOrDefault(c =>
+                c.Target.Side == player && c.Zone == zone);
+            return second is not null && Admit([first.Target, second.Target], out message);
+        }
+        if (flipSpellTrapSelections.Count != 0) return false;
+        var choice = QueuedFlipSpellTrapCandidates(request).FirstOrDefault(c =>
+            c.Target.Side == player && c.Zone == zone);
+        if (choice is null) return false;
+        queuedFlipSpellTrapFirstPick = (request, choice.Target);
+        flipSpellTrapSelections.Add(new(player, zone, choice.Card));
+        message = "Choose one more distinct Spell/Trap target.";
+        return true;
+    }
+
     private bool CanAdmitQueuedFlipSpellTrapPair() =>
         !GameOver && deferredBattle is null && Phase == DemoPhase.Main &&
         PendingFlipSpellTrapTargets is { } pending &&

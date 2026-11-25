@@ -59,7 +59,8 @@ static partial class Game
         {
             case ActionPresentationKind.DirectAttack:
             case ActionPresentationKind.TargetedAttack:
-                // The script does not present a separate manual aiming step.
+                // Direct attacks start the full cue after the click.
+                // Queued targeted attacks currently come from the console.
                 BeginAttackCue(side, a.SourceIndex, slot, alreadyAimed: false);
                 break;
             case ActionPresentationKind.Activate:
@@ -110,7 +111,7 @@ static partial class Game
         try
         {
             // Only one scheduler passage per frame; the Core never reads time.
-            if (labSession is null && queue.PendingDecision is { } request)
+            if (labSession is null && !ConsoleCapturesInput && queue.PendingDecision is { } request)
             {
                 var answer = EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
                     effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip

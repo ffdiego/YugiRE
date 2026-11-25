@@ -50,7 +50,7 @@ static partial class Game
         alphaBlocked = false;
         cpuDelay = TimeSpan.Zero;
         ResetDuelPresentation();
-        if (useQueuedActions) queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate());
+        if (useQueuedActions) queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
         QueueDuelOpening();
         QueueOpeningDeal();
         QueueInitialExodiaOpening();
@@ -80,8 +80,11 @@ static partial class Game
     {
         screen = "duel";
         labSession = null;
+        liveConsoleSession = null;
         labScript = null;
         labConsoleOpen = false;
+        consoleHeight = 0;
+        consoleCapturedThisFrame = false;
         queuedDuel = null;
         queuedPreviewSource = null;
         ClearDuelSelection();
@@ -119,7 +122,7 @@ static partial class Game
 
     static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
     {
-        if (alphaCpu is null || !presentation.Style.PlayAnimations) return;
+        if (!presentation.Style.PlayAnimations) return;
         var planned = new CardFlight(card, hidden, !spell && hidden, player, zone, spell, origin,
             ToRectangle(DuelCardLayout.OnBoard(spell ? DuelCardZone.Spell : DuelCardZone.Monster,
                 player == ViewPlayer, zone, false, hidden).Bounds));
@@ -151,8 +154,29 @@ static partial class Game
     {
         if (flight is not { } f) return;
         static CardBounds Bounds(Rectangle rect) => new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
-        var cell = CardTravel.Sample(Bounds(f.Origin), Bounds(f.Destination), travelUpdate);
-        DrawFieldCard(f.Card, new(cell.X, cell.Y, cell.Width, cell.Height), f.Hidden, f.Defense, upsideDown: f.Player != ViewPlayer);
+        var pose=NativePlacementTravel.Sample(Bounds(f.Origin),Bounds(f.Destination),
+            f.Player==ViewPlayer,f.Defense,f.Hidden,travelUpdate,effectCosine);
+        var cell=pose.Portrait;
+        int width=(int)((long)cell.Width*pose.FaceWidthFixed16>>16);
+        if(width<=0)return;
+        bool mini=NativeCardRaster.IsNativeMiniDestination(cell.Width,cell.Height);
+        Texture2D texture;
+        if(pose.FaceDown)
+        {
+            if(mini&&duelTheme.UsesNativeCardBack)texture=graphics.Texture(DatGraphics.MiniCardBack);
+            else if(duelTheme.CardBack is Texture2D back)texture=back;
+            else return;
+        }
+        else
+        {
+            string? name=mini?graphics.Artwork.MiniFor(f.Card):graphics.Artwork.For(f.Card);
+            texture=graphics.Texture(DuelArtworkPolicy.Require(f.Card,name,mini));
+        }
+        // The pose carries native accumulators; the GPU rectangle is the
+        // explicit client approximation of 00422A20.
+        Raylib.DrawTexturePro(texture,new Rectangle(0,0,texture.Width,texture.Height),
+            new Rectangle(cell.X+cell.Width/2,cell.Y+cell.Height/2,width,cell.Height),
+            new Vector2(width/2f,cell.Height/2f),pose.AngleIndex*(360f/512),Color.White);
     }
 
     static HiddenAttackTarget? CaptureHiddenAttackTarget(int defender, int zone)
@@ -172,6 +196,7 @@ static partial class Game
         var to = target >= 0 ? NativeDuelLayout.MonsterCenter(target, !near) : NativeAttackFrame.DirectTarget(near);
         attackClock.Reset();
         attackUpdates = 0;
+        PlayDuelSound(DuelSoundCue.Attack);
         attackCue = new(from, to, near, alreadyAimed ?? (target >= 0 && (alphaCpu is null || player == 0)), hiddenTarget);
     }
 
@@ -251,6 +276,9 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
+        if (target == -1 && queuedDuel is not null && duel.TryQueueDirectAttack(attacker, out message))
+            return;
+
         int player = duel.ActivePlayer;
         var hidden = CaptureHiddenAttackTarget(1 - player, target);
         if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
@@ -272,7 +300,7 @@ static partial class Game
         // F7 steps presentation, never authorizes a new CPU decision.
         // Without this gate a paused idle duel could still mutate Joey.Core.
         if (visualReviewPaused) return;
-        if (labSession is not null || alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true) return;
+        if (labSession is not null || ConsoleCapturesInput || alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;
         int? owner = CpuDuelController.PendingOwner(duel);

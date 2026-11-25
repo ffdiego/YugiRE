@@ -67,7 +67,7 @@ Preferir consultar o SQLite/decompilações e o ZIP visual já extraído, inclus
 
 **Família identificada:** índices 4/5 são alterações de atributo/tipo; 6/7 e 8/9, duas máquinas de estado; 10..13, flashes de ATK/DEF. Os comandos originais `0x5F`, `0x60` e `0x69` alteram os campos de indicador (escrita direta, adição saturada em 15, mínimo + máscara em 7). `00418B60` faz a animação **regressiva de 512 até 0 em 32 updates**, somente quando o objeto está estabilizado. `NativeCardStatusGeometry` deriva as âncoras de Y da **altura da miniatura DAT** e calcula recortes horizontais com número de colunas explícito. O X absoluto segue pendente devido a registradores ambíguos do decompilador. Modelo e testes no `Joey.LookAndFeel`. `scripts/summarize_native_card_status_dat.py` extrai nomes/dimensões a partir do JSON de `--inspect-visual-dat`.
 
-**Estado:** *Pending* para Draw de efeitos (não conta como novo renderizador, não altera 19/34). A extração de disassembly específica está em `scripts/pending/04-card-status-ghidra.sh`; documentação em [status de cartas](native-card-status-overlays-2026-11-22.md). Só integrar os overlays ao cliente após mapear as texturas, recortes, âncoras e filtros de estados. Não inventar sprites a partir do prefixo do arquivo.
+**Estado:** *Pending* para Draw de efeitos (não conta como novo renderizador, não altera 19/34). A extração de disassembly específica está em `scripts/completed/04-card-status-ghidra.sh`; documentação em [status de cartas](native-card-status-overlays-2026-11-22.md). Só integrar os overlays ao cliente após mapear as texturas, recortes, âncoras e filtros de estados. Não inventar sprites a partir do prefixo do arquivo.
 
 ## Fronteiras e acompanhamento
 

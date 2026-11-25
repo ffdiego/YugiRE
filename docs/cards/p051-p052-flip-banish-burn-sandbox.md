@@ -59,8 +59,8 @@ states, action sequence, and RNG observation.
 
 ## Native follow-up
 
-Pending Ghidra:
-`scripts/pending/07-flip-banish-burn-ghidra.sh` should recover
+The cumulative SQLite includes the bundle from
+`scripts/completed/07-flip-banish-burn-ghidra.sh`, which requested
 `00582E60`, `00582EA0`, `0057DDD0`, `0057DDF0`,
 `005BCEA0`, `005BCC70`, `00578B80` and the command
 `0x62` consumer. Confirm whether insufficient cost skips
