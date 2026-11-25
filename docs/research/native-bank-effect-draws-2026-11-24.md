@@ -245,3 +245,29 @@ seletores, índices e âncoras. Roteiro 24 já inclui vtable
 005DC6EC (até +E0), portanto abrange +94/+A0 se esta for
 a vtable da scratch; não solicitar coleta redundante.
 Sem integração de duelo, sem novo Draw/coverage.
+
+## V22.2 — normalização radial confirmada (coleta 29)
+
+Fonte v5-visuals e fingerprint/sha no contrato de roteamento.
+00559110 FILD [raio ao quadrado], 00559114 FSQRT,
+00559116 CALL 005C3E40. A implementação inteira de __ftol
+aparece por sobreposição das janelas: FSTCW, OR AH,0Ch,
+FLDCW, FISTP qword, FLDCW restaura a palavra original.
+Logo RC=11 trunca para zero; divisor = floor(sqrt(rx²+ry²)).
+00559121..00559139 usa SHL 8/CDQ/IDIV para normalizar
+componentes apenas se divisor !=0. 005591E9..0055922E
+confirma multiplicação 32-bit, SAR 16, offsets e virtual +C
+no ramo correspondente; outros modos +8/+20/+4C.
+0055938E avança X por 4, 005593A5 avança Y por 2;
+005593A8/AB incrementam fases de ruído 38/26. CRT
+00558BF0 e 005C3C02 confirmam os bytes rand reconstruídos.
+RadialDivisor retorna raiz inteira, Project sem divisor
+injetado usa essa função; overload diagnóstico preservado.
+Testes com referência Python independente: raio² 1921 ->43,
+primeiro fragmento 50x72 origem (100,200), p=128 ->(94,192);
+último (148,275), p=1 ->(89,184), p=255 ->(99,199).
+Ainda não integra Draw nem afirma paridade de pixels.
+A composição de superfície (roteiro 24), orientação/face,
+camada e roteamento A03 precisam ser integrados. A mesma
+evidência de __ftol resolve truncamento para V04 (PR #151);
+constantes x87 de ângulo ainda precisam de seus bytes.
