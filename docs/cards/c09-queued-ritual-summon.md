@@ -8,4 +8,13 @@ A fila revalida a escolha antes de gastar a magia, emite um `TributeCommand` por
 
 O catálogo, a seleção e os pontos de entrada nativos constam no [contrato Ritual](ritual-bindings.md) e no snapshot privado v3. Os testes em `QueuedRitualSummonChecks.cs` executam os 16 pares em ambos os lados, mais Set, materiais mistos, cópias, seleção redundante, destino invalidado e espera por apresentação. A suíte opcional usa as cartas do DAT com o fingerprint registrado no índice de packs.
 
-Escopo headless C# sujeito ao CI. O console usa a mesma admissão, por exemplo `ritual hand 0 1 2 defense hand 2 field 0`. A UI de duelo e a CPU ainda não produzem a escolha Ritual. Soul Exchange, Mask of Restrict, Ground Collapse, respostas, correntes, restrições de reviver e efeito próprio de Relinquished ficam pendentes. A semântica de ordem e timing precisa de comparação em duelo nativo antes de Verified.
+O console usa a mesma admissão, por exemplo `ritual hand 0 1 2 defense hand 2 field 0`. A CPU em modo fila também produz a escolha Ritual. O App em modo fila também aceita ativação de mão ou Set e permite clicar os tributos próprios que ainda completam um custo legal. O clique direito alterna ataque e defesa aberta, e Backspace cancela. O último tributo admite o lote com a primeira vaga ou, no campo cheio, na primeira zona liberada. Controles e prompt são provisórios. Soul Exchange, Mask of Restrict, Ground Collapse, respostas, correntes, restrições de reviver e efeito próprio de Relinquished ficam pendentes. A semântica de ordem e timing precisa de comparação em duelo nativo antes de Verified.
+
+A sugestão da CPU percorre as magias da mão e Set, conserva a primeira
+ocorrência do monstro Ritual e procura um conjunto suficiente de materiais
+por subtotais de nível e presença de tributo no campo. Ordenar os níveis
+em ordem decrescente garante que retirar o último material escolhido
+devolve o subtotal a um valor abaixo do requisito. Com campo cheio, o
+primeiro comando de tributo libera a zona escolhida. Esse desempate e a
+posição de ataque são políticas do sandbox. Testes C# exercitam CPU nos
+dois lados, mão/Set, duplicatas, campo cheio/vaga livre e espera por gate.

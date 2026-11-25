@@ -109,6 +109,9 @@ public sealed class CpuDuelController
             var trap = summon.EligibleTraps.FirstOrDefault(t => t.Owner == Player &&
                 (t.Trap.Id == SummonTrapRules.TrapHole ||
                  BoardPower(duel, 1 - Player) > BoardPower(duel, Player)));
+            if (duel.UsesQueuedSummonResponse(summon))
+                return Act(CpuAction.Response, (out string m) =>
+                    duel.TryQueueSummonResponse(summon, trap, out m, ActionOrigin.Cpu));
             return trap is null ? Act(CpuAction.Response, duel.PassSummonResponse) :
                 Act(CpuAction.Response, (out string m) => duel.ActivateSummonTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
         }
@@ -374,6 +377,10 @@ public sealed class CpuDuelController
                 if (targeted >= 0)
                     return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
             }
+
+            if (queueTurnActions && duel.SuggestQueuedRitualSummon() is { } ritual)
+                return Act(CpuAction.Spell, (out string m) => duel.TryQueueRitualSummon(
+                    ritual.Spell, ritual.Monster, ritual.Slot, ritual.Materials, ritual.Defense, out m, ActionOrigin.Cpu));
 
             for (int z = 0; z < 5; z++)
             {

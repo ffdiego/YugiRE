@@ -2105,7 +2105,7 @@ public sealed partial class DemoDuel
     {
         message = "No summon response is awaiting a decision.";
         if (primitiveActionQueue?.IsBusy == true) return false;
-        if (PendingSummonResponse is null) return false;
+        if (PendingSummonResponse is not { } response || UsesQueuedSummonResponse(response)) return false;
         PendingSummonResponse = null;
         BeginNextQueuedDeckSearch();
         message = "Summon response passed.";
@@ -2116,18 +2116,12 @@ public sealed partial class DemoDuel
     {
         message = "Choose an eligible set Trap during a summon response.";
         if (primitiveActionQueue?.IsBusy == true) return false;
-        if (PendingSummonResponse is not DemoSummonResponse response ||
+        if (PendingSummonResponse is not DemoSummonResponse response || UsesQueuedSummonResponse(response) ||
             owner is < 0 or > 1 || zone is < 0 or >= 5 ||
-            !response.EligibleTraps.Any(x => x.Owner == owner && x.Zone == zone &&
-                ReferenceEquals(x.Trap, Spells[owner, zone])) ||
-            Spells[owner, zone] is not Card trap || !SpellFaceDown[owner, zone] ||
-            spellSetTurn[owner, zone] >= Turn)
+            Spells[owner, zone] is not Card trap || !IsEligibleSummonTrap(response, owner, zone, trap))
             return false;
 
         var e = response.Summon;
-        if (!ReferenceEquals(Monsters[e.Player, e.Zone], e.Monster) ||
-            !SummonTrapRules.IsEligible(trap, owner, e, AttackValue(e.Player, e.Zone)))
-            return false;
         if (trap.Id == SummonTrapRules.TorrentialTribute &&
             MonsterWipeRules.TargetsForScope(MonsterWipeScope.BothPlayers,
                 owner, Monsters, MonsterFaceDown).Count == 0)
@@ -2267,7 +2261,9 @@ public sealed partial class DemoDuel
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice ||
+            PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.PositionChange } position &&
+                UsesQueuedMonsterFlipSelection(position)) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||

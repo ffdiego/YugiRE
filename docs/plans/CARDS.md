@@ -84,7 +84,7 @@ Fusion/Extra Deck, tokens, controle de cartas alterado e seleção quando >5 mon
 
 <a id="c09"></a>
 
-C09.1 implementa as 16 receitas P269 headless com mão/Set, tributos próprios e colocação por ocorrência. Oito magias e sete monstros do índice Done no escopo indicado após CI; Relinquished Partial. Produtores UI/CPU, efeito próprio de Relinquished, interações, restrições de reviver e comparação nativa pendentes. [Contrato](../../docs/cards/c09-queued-ritual-summon.md).
+C09.1 implementa as 16 receitas P269 headless com mão/Set, tributos próprios e colocação por ocorrência. Oito magias e sete monstros do índice Done no escopo indicado após CI; Relinquished Partial. Seletor clicável da escolha já disponível para CPU/console, efeito próprio de Relinquished, interações, restrições de reviver e comparação nativa pendentes. [Contrato](../../docs/cards/c09-queued-ritual-summon.md).
 
 ## C10 — Fusões restantes
 
@@ -307,3 +307,38 @@ trace. Ainda falta comparação pareada do componente e do cursor,
 incluindo transições e controles de confirmação originais. Demo.cs
 2618 → 2618. O gate C12.1 segue aberto em rituais e respostas de
 armadilhas/combate. CI obrigatório.
+
+### C12.1 — Produtor de Ritual na CPU (C09)
+
+A CPU em modo fila usa `TryQueueRitualSummon` para fontes de mão ou
+Set. A sugestão preserva a ocorrência do resultado e escolhe um custo
+sem tributos redundantes por subtotais de nível e presença no campo. Com campo cheio, tributa
+primeiro um material do campo e usa a zona liberada. A política de escolha é do sandbox. O critério
+de custo vem do executor e das evidências `00599570/005995E0`.
+Testes nos dois lados cobrem mão/Set, vaga livre/campo cheio, cópias,
+custo por ocorrência e gate antes da colocação. Demo.cs tem 2618 linhas
+antes e depois. O formato de sugestão da CPU ainda espera o produtor
+clicável. Sem mudança de heurística no modo legado. CI obrigatório.
+
+### C12.1 — Produtor clicável de Ritual (C09)
+
+O App em modo fila seleciona os tributos da mão e do campo por ocorrência.
+A seleção mostra apenas materiais que permitem completar o custo e conserva
+a ocorrência do monstro Ritual. Cancelamento, posição e confirmação usam
+controles provisórios. O teste de startup sem janela percorre as APIs do
+produtor em ambos os lados, de mão e Set, campo cheio e vaga livre, ATK e DEF,
+cancelamento, ausência de mutação prematura e pagamento pela fila.
+Comparação pareada com o original segue pendente. Demo.cs 2618 → 2618.
+Manifesto e cobertura preservados. O gate C12.1 segue aberto.
+
+### C12.1 — Alvo da mudança de posição de Dream Clown
+
+Após a mudança de ataque para defesa, o App, a CPU e o console usam o
+seletor compartilhado e admitem um comando de posição tipado. O executor
+revalida a ocorrência adversária e usa a destruição e os vínculos da fila.
+Royal Command mantém a supressão restrita aos FLIPs. O modo legado continua
+disponível para comparação, com execução direta bloqueada enquanto o
+seletor enfileirado está ativo. Demo.cs 2612 → 2614 pelo bloqueio transitório.
+As regressões cobrem os dois lados, alvo aliado inelegível, Royal Command,
+origem CPU/console e ausência de mutação na admissão. Cobertura preservada.
+O gate C12.1 segue aberto, incluindo respostas à declaração de ataque.
