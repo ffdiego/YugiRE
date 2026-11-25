@@ -118,6 +118,21 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
         {
+            if (queueTurnActions && duel.UsesQueuedFlipSpellTrapSelection(twoSpellTargets))
+            {
+                if (duel.FlipEffectsNegated)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TrySelectQueuedFlipSpellTrapTarget(twoSpellTargets, -1, -1, out m, ActionOrigin.Cpu));
+                var queuedChoice = duel.QueuedFlipSpellTrapCandidates(twoSpellTargets)
+                    .Where(c => !duel.SelectedFlipSpellTrapTargets.Any(s =>
+                        s.Player == c.Target.Side && s.Zone == c.Zone))
+                    .OrderBy(c => c.Target.Side == Player ? 1 : 0)
+                    .ThenBy(c => c.Zone).FirstOrDefault();
+                return queuedChoice is null
+                    ? Idle(CpuStepStatus.Blocked, "Mandatory queued Spell/Trap pair has no candidate.")
+                    : Act(CpuAction.Selection, (out string m) => duel.TrySelectQueuedFlipSpellTrapTarget(
+                        twoSpellTargets, queuedChoice.Target.Side, queuedChoice.Zone, out m, ActionOrigin.Cpu));
+            }
             // Prefer adverse targets, while allowing own-side selections when
             // the effect requires two cards across the entire field.
             var choice = twoSpellTargets.EligibleTargets

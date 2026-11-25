@@ -534,8 +534,10 @@ static partial class Game
             var area = target.IsFieldZone ? FieldZoneBounds(target.Player) :
                 ZoneBounds(target.Player, target.Zone, true);
             if (!Hit(area)) continue;
-            if (duel.SelectFlipSpellTrapTarget(target.Player, target.Zone, out message) &&
-                duel.PendingFlipSpellTrapTargets is null)
+            bool accepted = queuedDuel is not null && duel.UsesQueuedFlipSpellTrapSelection(pending)
+                ? duel.TrySelectQueuedFlipSpellTrapTarget(pending, target.Player, target.Zone, out message)
+                : duel.SelectFlipSpellTrapTarget(target.Player, target.Zone, out message);
+            if (accepted && (duel.PendingFlipSpellTrapTargets is null || queuedDuel?.IsBusy == true))
                 ClearDuelSelection();
             return;
         }
