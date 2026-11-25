@@ -341,3 +341,21 @@ corretamente. Não executar 27 no Windows só por causa deste smoke.
 Saída privada scratch/ghidra-native-break-scatter-contract.zip. SQLite v2 confirma decompilação do CRT srand(0)/rand e tabela de 256 bytes; não pedir dump runtime dessa tabela nem repetir Draw 00450FD0 do bundle 16. Confirmar expressão x87/ftol, ABI e pushes de 00558FB0, gerador e rotina CRT. Roteiro 24 cobre vtable de superfície. [Contrato](../../docs/research/native-bank-effect-draws-2026-11-24.md#v22-complemento--dispersão-determinística-da-carta).
 
 V17 complemento (roteiro 25): inclui 00546D70 para confirmar inicialização das tabelas de mistura recuperadas em decompilação. Se roteiro 25 já foi executado, coletar somente o novo alvo. Não exportar tabelas vivas de vários MB; são reconstruíveis. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--mistura-por-intensidade-tabelas-de-cor).
+
+## A06 — 31-actions-battle-callbacks-ghidra.sh (aguardando Fedora)
+
+SQLite cumulativo v2 consultado: as sete VAs de P164 (elementais),
+P118 (Skelengel) e P087 (Penguin Soldier; candidate compartilhado com
+Man-Eater Bug) não constam em functions, decompilations ou
+visual_evidence_functions. Não repetir o primary de Man-Eater já indexado.
+
+    bash scripts/pending/31-actions-battle-callbacks-ghidra.sh
+
+Ambiente: Fedora/Ghidra headless, projeto e EXE atestados pelo exportador,
+Python 3. Saída privada scratch/ghidra-actions-battle-callbacks.zip.
+Confirmar ABI, origem do gatilho por batalha, operandos de identidade e
+ordem das chamadas/seleções; recuperar os corpos com assembly e referências,
+importar em nova cópia SQLite cumulativa pelo importador de evidência.
+A coleta estática não prova sozinha a ordem dinâmica de dois recrutadores
+ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
+[contrato](../../docs/architecture/native-replay-scenarios.md#a06--recrutadores-elementais-p164-no-combate-enfileirado).
