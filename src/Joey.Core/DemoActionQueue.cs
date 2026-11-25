@@ -4,6 +4,11 @@ public sealed partial class DemoDuel
 {
     private ActionQueue? primitiveActionQueue;
 
+    // Explicit developer console attachment must reuse this duel's queue.
+    // An existing queue retains its original lab-edit authorization.
+    internal ActionQueue ConsoleQueue(IPresentationGate? gate) =>
+        primitiveActionQueue ?? CreatePrimitiveActionQueue(gate, allowLabEdits: true);
+
     /// <summary>
     /// One queue per duel. Effect-level operations, not a general legal input API.
     /// Existing App/CPU entrypoints remain legacy; do not mix their decisions
@@ -214,7 +219,7 @@ public sealed partial class DemoDuel
     private bool CanQueueMonsterRemoval(int player, int slot) =>
         TryPlanRemovalLinks(player, slot, out _);
 
-    private sealed class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
+    private sealed partial class PrimitiveActionExecutor(DemoDuel duel) : IDuelCommandExecutor
     {
         private sealed class Wipe(int caster, ushort resourceId, CardTarget source, IEnumerable<CardTarget> targets, bool monsterWipe = true)
         {
@@ -247,6 +252,10 @@ public sealed partial class DemoDuel
         private TargetedMonsterSpellReservation? targetedMonsterSpell;
         private bool targetedMonsterSpellPaid;
         private bool targetedMonsterSpellSpent;
+        private ActivateFinalDestinyCommand? finalDestinyPayment;
+        private int finalDestinyPaid;
+        private bool finalDestinyFailed;
+        private bool finalDestinySpent;
         private bool resolvingFlipBatch;
         private sealed class FlipDeckFlow(ushort effect, int controller, int requested, IEnumerable<CardTarget> expected)
         {
@@ -336,8 +345,15 @@ public sealed partial class DemoDuel
                 return duel.FinishQueuedBattleRemoval(battleFinish, followups);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
+            if (command is ResolveFinalDestinyCommand finalDestinyResolve)
+                return ResolveFinalDestiny(finalDestinyResolve,followups);
             if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
                 return ResolveTargetedMonsterSpell(resolveDiscardSpell, followups);
+            if (command is FinishRitualSummonCommand finishRitual)
+                return FinishRitualSummon(finishRitual);
+            if (ritualSummon is { } ritual && !ritualSpellSpent &&
+                (command is not SendToGraveyardCommand spendRitual || spendRitual.Target != ritual.Spell))
+                return new(CommandOutcome.Skipped, "Ritual spell was not spent.");
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
@@ -358,6 +374,23 @@ public sealed partial class DemoDuel
                     (!targetedMonsterSpellPaid || paidSpell.Cost is null &&
                      !duel.TryPlanTargetedMonsterSpell(paidSpell.Source,null,paidSpell.Target)))
                     return new(CommandOutcome.Skipped, "Payment or activation condition not satisfied.");
+            }
+            if (finalDestinyPayment is { } finalPayment)
+            {
+                if (command is DiscardCommand finalDiscard)
+                {
+                    var remaining = finalPayment.Costs.Skip(finalDestinyPaid).ToArray();
+                    if (finalDestinyFailed || remaining.Length==0 || remaining[0]!=finalDiscard.Target ||
+                        !duel.CanPayFinalDestiny(finalPayment.Source,remaining))
+                    {
+                        finalDestinyFailed=true;
+                        return new(CommandOutcome.Skipped,"Reserved discard payment changed.");
+                    }
+                }
+                if (command is SendToGraveyardCommand finalSpend && finalSpend.Target == finalPayment.Source &&
+                    (finalDestinyFailed || finalDestinyPaid != FinalDestinyCost ||
+                     !duel.IsFinalDestinySource(finalPayment.Source)))
+                    return new(CommandOutcome.Skipped,"Final Destiny's complete cost was not paid.");
             }
             bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
             if (finishDrawSpell) reservedDrawSpell.Dequeue();
@@ -425,6 +458,10 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case EquipCommand equip:
                     return duel.ApplyQueuedEquipment(equip);
+                case ActivateTemporaryStatCommand temporaryStat:
+                    return ActivateTemporaryStat(temporaryStat, followups);
+                case ResolveTemporaryStatCommand temporaryStatResult:
+                    return ResolveTemporaryStat(temporaryStatResult);
                 case ActivateDrawSpellCommand drawSpell:
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateDiscardMonsterSpellCommand paidSpellActivation:
@@ -439,12 +476,16 @@ public sealed partial class DemoDuel
                     return ActivateLifePointSpell(lp, followups);
                 case ActivateTargetedSpellTrapCommand targeted:
                     return ActivateTargetedSpellTrap(targeted, followups);
+                case ActivateFinalDestinyCommand finalDestiny:
+                    return ActivateFinalDestiny(finalDestiny,followups);
                 case ActivateSpellTrapWipeCommand spellTrapWipe:
                     return ActivateSpellTrapWipe(spellTrapWipe.Source, followups);
                 case ActivateMonsterWipeCommand monsterWipe:
                     return ActivateMonsterWipe(monsterWipe.Source, followups);
                 case ActivateRaigekiCommand activate:
                     return ActivateMonsterWipe(activate.Source, followups, requireRaigeki: true);
+                case PrepareRitualSummonCommand prepareRitual:
+                    return PrepareRitualSummon(prepareRitual, followups);
                 case PrepareNormalPlacementCommand prepare:
                     return PreparePlacement(prepare, followups);
                 case TributeCommand tribute:
@@ -466,13 +507,18 @@ public sealed partial class DemoDuel
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
-                    return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
+                    return ObserveFixedSpellSpend(send.Target, SpendSetActivation(send.Target));
                 case PrepareGraveyardBanishSummonCommand prepareBanish:
                     return PrepareGraveyardBanishSummon(prepareBanish, followups);
                 case BanishCommand banish:
                     return BanishFromSource(banish.Target);
                 case DiscardCommand discard:
                     var discarded = SendHandToGraveyard(discard.Target, discard: true);
+                    if (finalDestinyPayment is not null)
+                    {
+                        if (discarded.Outcome==CommandOutcome.Applied) finalDestinyPaid++;
+                        else finalDestinyFailed=true;
+                    }
                     if (targetedMonsterSpell is { } reservedSpell && reservedSpell.Cost == discard.Target)
                         targetedMonsterSpellPaid = discarded.Outcome == CommandOutcome.Applied;
                     if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
@@ -499,6 +545,10 @@ public sealed partial class DemoDuel
 
         private CommandResult ObserveFixedSpellSpend(CardTarget target, CommandResult result)
         {
+            if (finalDestinyPayment?.Source == target) finalDestinySpent = result.Outcome == CommandOutcome.Applied;
+            if (ritualSummon?.Spell == target) ritualSpellSpent = result.Outcome == CommandOutcome.Applied;
+            if (temporaryStatActivation?.Source == target)
+                temporaryStatSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
@@ -506,6 +556,45 @@ public sealed partial class DemoDuel
             if (wipe is { } current && current.Source == target)
                 current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
+        }
+
+        private CommandResult ActivateFinalDestiny(ActivateFinalDestinyCommand activate,IActionCommandSink followups)
+        {
+            if (finalDestinyPayment is not null || wipe is not null || finishScheduled ||
+                followups is not IActionBatchSink { PendingCount:0 } queue ||
+                !duel.CanPayFinalDestiny(activate.Source,activate.Costs) ||
+                !duel.TryPlanFinalDestinyField(activate.Source,out _,out var targets,out _) || targets.Length==0)
+                return new(CommandOutcome.Rejected,"Final Destiny requires a legal field and five distinct hand costs.");
+            finalDestinyPayment=activate;
+            finalDestinyPaid=0;
+            finalDestinyFailed=finalDestinySpent=false;
+            queue.EnqueueBatch([.. activate.Costs.Select(t => (DuelCommand)new DiscardCommand(activate.Side,t)),
+                new SendToGraveyardCommand(activate.Side,activate.Source),
+                new ResolveFinalDestinyCommand(activate.Side,activate.Source)]);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveFinalDestiny(ResolveFinalDestinyCommand resolve,IActionCommandSink followups)
+        {
+            if (finalDestinyPayment is not { } payment || payment.Source != resolve.Source)
+                return new(CommandOutcome.Rejected,"No matching field wipe payment.");
+            bool paid=finalDestinyPaid==FinalDestinyCost&&!finalDestinyFailed&&finalDestinySpent;
+            finalDestinyPayment=null;
+            finalDestinyPaid=0;
+            finalDestinyFailed=finalDestinySpent=false;
+            if (!paid || duel.LegacyActionsBlocked)
+                return new(CommandOutcome.Skipped,"Field wipe cost or source spend incomplete.");
+            if (wipe is not null || finishScheduled ||
+                followups is not IActionBatchSink { PendingCount:0 } queue ||
+                !duel.TryPlanFinalDestinyField(resolve.Source,out var commands,out var targets,out var plans))
+                return new(CommandOutcome.Rejected,"Field wipe occurrences or links invalid.");
+            // Non-targeting effect: snapshot the field after successful
+            // payment, not at admission. Equipment appears only once.
+            queue.EnqueueBatch(commands);
+            foreach(var pair in plans) plannedLinks.Add(pair.Key,pair.Value);
+            wipe=new(resolve.Side,FinalDestiny,resolve.Source,targets,monsterWipe:false){SourceSpent=true};
+            ScheduleFinish(resolve.Side,followups);
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ActivateDiscardMonsterSpell(ActivateDiscardMonsterSpellCommand activate, IActionCommandSink followups)
@@ -651,16 +740,20 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult SendSetFixedSpellToGraveyard(CardTarget target)
+        private CommandResult SpendSetActivation(CardTarget target)
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
-            if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
-                MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card)) ||
-                !duel.SpellFaceDown[target.Side, slot] ||
+            bool fixedSpell = card.ClassCode == 22 && (LifePointSpellRules.SupportsQueued(card.Id) ||
+                DrawSpellRules.Effect(card) is not null || MonsterWipeRules.SupportsQueued(card.Id) ||
+                DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
+                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || card.Id == FinalDestiny ||
+                ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
+            bool temporaryModifier = temporaryStatActivation?.Source == target &&
+                TemporaryStatRules.For(card.Id)?.ClassCode == card.ClassCode;
+            if (!(fixedSpell || temporaryModifier) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
-                return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
+                return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
             duel.graves[target.Side].Add(card);
             return new(CommandOutcome.Applied);
@@ -801,9 +894,18 @@ public sealed partial class DemoDuel
 
         private CommandResult PayTribute(TributeCommand tribute)
         {
-            if (placement is not { } current || !Tributes(current).Contains(tribute.Target) ||
-                paidTributes.Contains(tribute.Target))
+            bool isRitual = ritualSummon is { } ritual && ritualSpellSpent && ritual.Materials.Contains(tribute.Target);
+            bool isNormal = placement is { } normal && Tributes(normal).Contains(tribute.Target);
+            if (!(isNormal || isRitual) || paidTributes.Contains(tribute.Target))
                 return new(CommandOutcome.Rejected, "No matching unpaid tribute.");
+            if (tribute.Target.Zone == DuelZone.Hand)
+            {
+                var result = SendHandToGraveyard(tribute.Target, discard: false);
+                if (result.Outcome != CommandOutcome.Applied)
+                    throw new InvalidOperationException("Reserved hand tribute changed during Ritual Summon.");
+                paidTributes.Add(tribute.Target);
+                return result;
+            }
             if (!duel.TryResolveCardTarget(tribute.Target, out int slot, out _) ||
                 !duel.TryPlanRemovalLinks(tribute.Side, slot, out var links) ||
                 !plannedLinks.Remove(tribute.Target, out var expected) || !links.SequenceEqual(expected))
@@ -1521,9 +1623,10 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
             if (summon.Source.Zone == DuelZone.Hand)
             {
-                if (banishSummon is not { } paidSummon || paidSummon.Source != summon.Source ||
-                    paidSummon.Slot != summon.Slot || paidSummon.Defense != summon.FaceUpDefense || summon.FaceDownDefense ||
-                    banishSummonPaid != GraveyardBanishSummonRules.QueuedRequiredCount(card) || banishSummonCosts.Count != 0)
+                bool paidInherentSummon = banishSummon is { } paidSummon && paidSummon.Source == summon.Source &&
+                    paidSummon.Slot == summon.Slot && paidSummon.Defense == summon.FaceUpDefense &&
+                    banishSummonPaid == GraveyardBanishSummonRules.QueuedRequiredCount(card) && banishSummonCosts.Count == 0;
+                if (summon.FaceDownDefense || !(paidInherentSummon || IsPaidRitualSummon(summon)))
                     return new(CommandOutcome.Rejected, "Hand Special Summon requires the reserved fully paid procedure.");
                 duel.hands[summon.Side].RemoveAt(index);
             }

@@ -45,7 +45,7 @@ internal static class QueuedRitualSearchChecks
                 "P165 filters by exact ritual ID/class and distinct copies");
             check(!d.TryQueueDeckSearch(request with {},options[1].Target,out _),"P165 stale request rejected");
             int shuffle=0;d.DeckShuffled+=_=>shuffle++;
-            check(d.TryQueueDeckSearch(request,accept?options[1].Target:null,out _)&&d.DeckCount(side)==5&&
+            check(d.TrySubmitQueuedHandSelection(request,accept?options[1].SourceIndex:null,out _)&&d.DeckCount(side)==5&&
                 d.PendingCardSelection==request,"P165 admission does not mutate");
             Drain(q);
             check(d.PendingCardSelection is null&&d.DeckSnapshot(side).SequenceEqual(legacy.DeckSnapshot(side))&&

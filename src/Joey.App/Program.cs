@@ -17,8 +17,16 @@ static partial class Game
     static DatGraphics graphics = null!;
     static DuelTheme duelTheme = null!;
     static bool includeUnused;
-    static readonly DuelPresentationClock presentation = new(new DuelLookAndFeel());
+    static readonly DuelPresentationClock presentation = new(new FastLookAndFeel());
     static string previousDuelMessage = "";
+    // Keep explicit legacy profile precedence; Fast is now the App default.
+    static DuelLookAndFeel SelectPresentationStyle(string[] args) =>
+        args.Contains("--instant") ? new InstantLookAndFeel()
+        : args.Contains("--fast") ? new FastLookAndFeel()
+        : args.Contains("--mute-joey") ? new SilentLookAndFeel()
+        : args.Contains("--classic") ? new DuelLookAndFeel()
+        : new FastLookAndFeel();
+
     public static int Run(string[] args)
     {
         if (args is ["--check-console-startup"]) return CheckConsoleStartup();
@@ -31,11 +39,7 @@ static partial class Game
         includeUnused = args.Contains("--include-unused");
         useLegacySelection = args.Contains("--legacy-selection");
         useQueuedActions = args.Contains("--queued-actions");
-        DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
-            : args.Contains("--fast") ? new FastLookAndFeel()
-            : args.Contains("--mute-joey") ? new SilentLookAndFeel()
-            : new DuelLookAndFeel();
-        presentation.SetStyle(style);
+        presentation.SetStyle(SelectPresentationStyle(args));
         if (Option(args, "--native-cosine=") is string cosinePath)
         {
             try
@@ -50,6 +54,7 @@ static partial class Game
             }
         }
         Console.WriteLine($"[visual] cosine source: {effectCosineSource}");
+        string? dataArchivePath = null;
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
@@ -69,14 +74,18 @@ static partial class Game
             }
             var archive = graphics.Open(path);
             ConfigureDisabledChainReview(args, archive);
+            ConfigureChainReview(args, archive);
+            ConfigureTurnNotice(archive);
+            ValidatePlacementBank(archive);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             ConfigureCardStatusReview(args, archive);
             ConfigureFusionReview(args, archive);
             ConfigureLayerFontReview(args, archive);
             ConfigureDiceReview(args, archive);
+            ConfigureCoinReview(args, archive);
             ConfigureAlternativeExclusionReview(args, archive);
-            if (new[] { statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, layerFontReviewMode is not null, diceReview is not null, altExReviewMode is not null }.Count(active => active) > 1)
+            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
@@ -87,11 +96,12 @@ static partial class Game
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
             Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
             InitializeDeck(args, path);
+            dataArchivePath = path;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--inspect-visual-dat")) return 1;
-        if ((Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null) && error.Length > 0) return 1;
+        if ((Option(args, "--review-chain=") is not null || Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-coin=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null) && error.Length > 0) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
@@ -118,7 +128,10 @@ static partial class Game
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
-        else if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && layerFontReviewMode is null && diceReview is null && altExReviewMode is null && args.Contains("--alpha")) StartAlpha();
+        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && args.Contains("--alpha")) StartAlpha();
+        // Suppress routine INFO texture/cache messages, not warnings/errors.
+        // Do not initialize raylib solely to configure logging in headless modes.
+        Raylib.SetTraceLogLevel(args.Contains("--raylib-verbose") ? TraceLogLevel.Info : TraceLogLevel.Warning);
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();
@@ -139,6 +152,12 @@ static partial class Game
                 // Native detail uses an English GDI face, not the default
                 // raylib bitmap font; keep this confined to the sidebar.
                 duelTheme.LoadNativeDetailFonts();
+                if (chainReview is not null)
+                {
+                    foreach (string resource in chainReviewResources) _ = graphics.Texture(resource);
+                    screen = "active-chain-review";
+                    Console.WriteLine("[V23 review] F5 release, F7 step, F8 reset, F12 capture; diagnostic compositor");
+                }
                 if (disabledChainReviewTarget is not null)
                 {
                     foreach (string resource in disabledChainReviewResources) _ = graphics.Texture(resource);
@@ -156,6 +175,12 @@ static partial class Game
                     InitializeAlternativeExclusionReview();
                     screen = "alt-ex-review";
                     Console.WriteLine("[V25/V26 review] F7 native step, F9 Draw only for exclusion, F8 reset, F12 capture");
+                }
+                if (coinReview is not null)
+                {
+                    InitializeCoinReview();
+                    screen = "coin-review";
+                    Console.WriteLine("[V20 review] F7 step, F8 reset, F12 capture; sparkles included; reflection plan only; diagnostic compositor");
                 }
                 if (diceReview is not null)
                 {
@@ -198,10 +223,13 @@ static partial class Game
         var canvas = Raylib.LoadRenderTexture(800, 600);
         // Keep the 800x600 original DAT pixels discrete when scaling the window.
         Raylib.SetTextureFilter(canvas.Texture, TextureFilter.Point);
+        using var audio = error.Length == 0 ? DuelAudioPlayer.Open(Option(args,"--voice-dat="),dataArchivePath,args.Contains("--no-audio")) : null;
+        duelAudio = audio;
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
             const int width = 800, height = 600;
+            duelAudio?.UpdateMusic(args.Contains("--no-music") ? null : DuelSoundAssets.Music(screen));
             graphics.BeginFrame();
             float scale = Math.Min(Raylib.GetScreenWidth() / (float)width, Raylib.GetScreenHeight() / (float)height);
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
@@ -212,6 +240,11 @@ static partial class Game
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawAlternativeExclusionReview();
+            }
+            else if (screen == "coin-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawCoinReview();
             }
             else if (screen == "dice-review")
             {
@@ -233,6 +266,11 @@ static partial class Game
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawCardStatusReview();
             }
+            else if (screen == "active-chain-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawChainReview();
+            }
             else if (screen == "chain-review")
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
@@ -251,13 +289,15 @@ static partial class Game
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
-                    if (Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
+                    if (Button("Console lab (\u0027 / F10)", 535, 488, 240, 38) || ConsoleTogglePressed())
+                        StartConsoleLab(null);
+                    if (screen == "menu" && Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
                     bool debugMenuClicked = screen == "menu" && Button(duelDebug ? "Ocultar debug" : "Ativar debug", 535, 576, 175, 22);
                     if (debugMenuClicked) debugOverlay.Toggle();
                     if (alphaError.Length > 0) Wrap(alphaError, 535, 475, 240, 13);
                     if (!debugMenuClicked && screen == "menu" && Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
-                        if (hover == 0) StartDemo();
+                        if (hover == 0) { useDemoFixture = false; useImportedDeck = false; StartDemo(); }
                         if (hover == 1) screen = "deck";
                         if (hover == 2) screen = "cards";
                         if (hover == 4) quit = true;
@@ -271,12 +311,13 @@ static partial class Game
             }
             else
             {
-                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
+                if (screen == "duel") ReadDuelConsoleToggle();
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput) screen = "menu";
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel")
                 {
                     debugOverlay.BeginDuelFrame(Raylib.IsKeyPressed(KeyboardKey.F3),
-                        Raylib.IsMouseButtonPressed(MouseButton.Left), Raylib.IsMouseButtonPressed(MouseButton.Right),
+                        !ConsoleCapturesInput && Raylib.IsMouseButtonPressed(MouseButton.Left), !ConsoleCapturesInput && Raylib.IsMouseButtonPressed(MouseButton.Right),
                         mouse.X, mouse.Y, alphaCpu is null);
                     if (Raylib.IsKeyPressed(KeyboardKey.F6))
                     {
@@ -290,15 +331,17 @@ static partial class Game
             }
 
             Raylib.EndTextureMode();
-            if ((screen is "duel" or "chain-review" or "status-review" or "fusion-review" or "layerfont-review" or "dice-review" or "alt-ex-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
+            if ((screen is "duel" or "active-chain-review" or "chain-review" or "status-review" or "fusion-review" or "layerfont-review" or "dice-review" or "coin-review" or "alt-ex-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
                 try
                 {
+                    if (screen == "active-chain-review") CaptureChainReview(canvas);
                     if (screen == "chain-review") CaptureDisabledChainReview(canvas);
                     else if (screen == "status-review") CaptureCardStatusReview(canvas);
                     else if (screen == "fusion-review") CaptureFusionReview(canvas);
                     else if (screen == "layerfont-review") CaptureLayerFontReview(canvas);
                     else if (screen == "dice-review") CaptureDiceReview(canvas);
+                    else if (screen == "coin-review") CaptureCoinReview(canvas);
                     else if (screen == "alt-ex-review") CaptureAlternativeExclusionReview(canvas);
                     else CaptureVisualReview(canvas);
                 }
@@ -312,6 +355,8 @@ static partial class Game
             if (useNativeCursor) DrawWindowCursor(scale);
             Raylib.EndDrawing();
         }
+        duelAudio = null;
+        audio?.Dispose();
         if (useNativeCursor) Raylib.ShowCursor();
         Raylib.UnloadRenderTexture(canvas);
         duelTheme.Dispose();
@@ -323,7 +368,7 @@ static partial class Game
     static readonly DebugOverlayState debugOverlay = new();
     static bool duelDebug => debugOverlay.Enabled;
     static bool PointerPressed(MouseButton button) =>
-        !debugOverlay.CapturesPointerPress && Raylib.IsMouseButtonPressed(button);
+        !ConsoleCapturesInput && !debugOverlay.CapturesPointerPress && Raylib.IsMouseButtonPressed(button);
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)
     {
         bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(x, y, w, h));
@@ -357,6 +402,19 @@ static partial class Game
         Label(line, x, y, size);
     }
     static readonly HashSet<(int Index, bool Miniature)> reportedMissingInspectionArtwork = [];
+    static void ValidatePlacementBank(Archive archive)
+    {
+        NativePlacementAssets.Validate(System.Text.Encoding.Latin1.GetString(
+            archive.Read(NativePlacementAssets.Prefix+"set.txt")),NativePlacementAssets.SetBank());
+        NativePlacementAssets.Validate(System.Text.Encoding.Latin1.GetString(
+            archive.Read(NativePlacementAssets.Prefix+"summon.txt")),
+            [NativePlacementAssets.Rainbow,NativePlacementAssets.Star(false,0),NativePlacementAssets.Star(false,1)]);
+        NativePlacementAssets.Validate(System.Text.Encoding.Latin1.GetString(
+            archive.Read(NativePlacementAssets.Prefix+"sacrifice.txt")),
+            [NativePlacementAssets.Prefix+"card_pika_h.yga",NativePlacementAssets.Aura(false),
+             NativePlacementAssets.TributeStar(0),NativePlacementAssets.TributeStar(1)]);
+    }
+
     static void DrawArtwork(Card card, int x, int y, int w, int h, int degrees = 0)
     {
         // Native 0041A800 loads independent card/ and mini/ catalogs. Do

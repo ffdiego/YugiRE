@@ -111,4 +111,34 @@ Usar inspeção de DAT existente para chain.txt e affect.txt,
 preservando ordem, parâmetros e dimensões. Não repetir
 a importação do bundle de decompilações transientes.
 
-Coleta dirigida: `scripts/pending/17-chain-affect-assembly.sh` solicita apenas assembly dos quatro pontos acima. Ainda não executada; sem alterações no banco privado nesta fatia.
+## V23 — passes Draw confirmados pelo roteiro 17
+
+A coleta 17 (`ghidra-chain-affect-assembly.zip`), incorporada no snapshot
+privado v4, fornece o assembly de `0041F870`. A lista de recursos lida
+no DAT e registrada no v3 contém 26 posições. A posição 0 é o atlas de
+100×22, 1 a 15 são quadros de entrada e 16 a 24 são variantes de espera.
+A posição 25 repete o recurso da posição 15. O virtual da tabela
+`005DC9F4` usado nos lookups aponta para `0043A5D0`, que apenas retorna,
+preservando a chave como índice. `00549BA0` carrega pela posição, e o
+construtor `00481D00` aplica a variante de idioma aos nomes com `?`.
+
+As passagens `0041F95D` e `0041FBCD` passam o sprite inteiro a
+`+8`, em (X − trunc(W/2), Y − trunc(H/2) − 16).
+`0041FAB1` e `0041FD1B` chamam `+48` para os dígitos em ordem
+da direita para a esquerda. Cada dígito D usa faixa horizontal
+[D × atlasW/10, (D+1) × atlasW/10), com divisão inteira. No primeiro
+dígito, o centro é (X,Y+22). Nos seguintes, X diminui de atlasW/10.
+Para contador t, a = max(0,t/4−16) até 128, ou
+16−(t−128)/4 após 128. O tamanho destino multiplica a largura
+base e a altura por (32−a)/16, com truncamento. O argumento de
+intensidade ao compositor é a×16, chegando a 256 no quadro mantido.
+
+A revisão isolada `--review-chain=23,0,2` carrega a lista inglesa do
+DAT local, confirma dimensões e oferece F7 para um Update, F5 para
+liberar, F8 para reiniciar e F12 para registrar recursos e retângulos.
+As zonas da revisão ficam entre 0 e 10. O modelo usa para essas zonas
+as coordenadas de tabuleiro que `0045C280` lê em `005DB560`,
+`005DB510` e `005DB5E0`. O render Raylib aplica chave verde e alpha
+linear como aproximação diagnóstica. O compositor nativo e a conexão
+dos comandos 08/09 à fila continuam pendentes. A revisão não altera a
+cobertura das Draws integradas ao duelo.

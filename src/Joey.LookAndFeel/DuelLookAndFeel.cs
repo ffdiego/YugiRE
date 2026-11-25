@@ -65,7 +65,7 @@ public class DuelLookAndFeel
     }
 }
 
-/// <summary>Twice as fast as the default demo. Extend to customize individual cues.</summary>
+/// <summary>Twice as fast as Classic; the default App profile. Extend to customize individual cues.</summary>
 public class FastLookAndFeel : DuelLookAndFeel
 {
     public override string Name => "Fast";
