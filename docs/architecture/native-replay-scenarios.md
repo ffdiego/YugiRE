@@ -171,3 +171,35 @@ Sem generalizar para outros FLIPs, cartas extras, armadilhas ou efeitos
 de chegada ao cemitério. OpenBattleFlipDrawCommand e FinishBattleFlipCommand
 permanecem unmapped. Não introduz tempo nem novo cue gráfico. A aceitação
 do Damage Step nativo ainda depende de uma captura equivalente.
+
+## A06 — Penguin Soldier P087 durante o Damage Step
+
+A extensão admite Penguin Soldier (601/internal 839/class 14) em defesa
+oculta contra atacante 24/1351, ainda com campo isolado. A base cumulativa
+v2 (SHA-256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check ok) registra perfil P087/row 105, candidate 0057A930,
+primary 005861F0 e target_preparation 00594200. Nenhuma das três VAs
+consta em functions, decompilations ou visual_evidence_functions.
+Isso identifica a família, não comprova a sequência nativa.
+
+OpenBattleFlipTargetsCommand abre o PendingFlipTarget existente após
+cálculo e gate de dano. O scheduler fica ocioso, mas o duelo/trace/roteiro
+permanecem bloqueados pela escolha. Só TryQueueMonsterFlipAnswer admite
+a resposta para a reserva ativa, inclusive fora da Main Phase;
+ResolveFlipTarget/FinishFlipTargets legados recusam esse pedido.
+A marca de destruição exclui Penguin se ATK > DEF. Se sobreviver,
+ele pode voltar à mão. Zero, um ou dois alvos distintos usam o mesmo
+ReturnToHandCommand e FinishFieldRemovalCommand do FLIP manual.
+A continuação FinishBattleFlipCommand só executa depois dos respectivos
+gates, verificando que as ocorrências selecionadas estão na mão e que
+os demais combatentes permanecem nos slots originais. A remoção marcada
+segue após o efeito; não se chama FinishDeferredBattle legado.
+
+Dano letal antes da seleção encerra o piloto sem abrir prompt (política
+terminal escolhida para não bloquear um duelo encerrado; não é claim
+de paridade com o legado ou o binário). Novos comandos unmapped.
+Não suporta outros monstros no campo, equipamento, resposta de armadilha,
+Man-Eater Bug ou alvos que retornem à Fusion Deck. Sem alteração de UI
+normal ou regra de CARDS. Testes usam o console e comparam ATK >, =, <
+DEF, zero/um/dois retornos, dono e identidade, recusa de alvo marcado,
+tentativa de resposta legada e gate imediato/atrasado.

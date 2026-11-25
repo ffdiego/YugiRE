@@ -302,6 +302,8 @@ public sealed partial class DemoDuel
                 return ResolveMonsterFlipTargets(flipTargets, followups);
             if (command is OpenBattleFlipDrawCommand openBattleFlip)
                 return OpenBattleFlipDraw(openBattleFlip, followups);
+            if (command is OpenBattleFlipTargetsCommand openBattleTargets)
+                return duel.OpenQueuedBattleFlipTargets(openBattleTargets, followups);
             if (command is FinishBattleFlipCommand finishBattleFlip)
                 return duel.FinishQueuedBattleFlip(finishBattleFlip, followups);
             // A draw during Skelengel FLIP can end the duel (Exodia). Its
@@ -1609,6 +1611,8 @@ public sealed partial class DemoDuel
             if (!duel.TryPlanQueuedMonsterFlipAnswer(answer.Source, targets, out var batch, out var plans))
                 return new(CommandOutcome.Rejected, "FLIP source or target choice no longer valid.");
 
+            var battle = duel.HasQueuedBattleTargetChoice ? duel.queuedBattleReveal : null;
+            if (battle is not null) battle.ExpectedReturns.UnionWith(targets);
             // Clear only this pending interaction inside its command, not at
             // admission. Never invoke legacy FinishDeferredBattle here.
             duel.PendingFlipTarget = null;
@@ -1617,6 +1621,8 @@ public sealed partial class DemoDuel
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
             linkedRemovalBatch = true;
             ScheduleFinish(answer.Side, followups);
+            if (battle is not null)
+                followups.ScheduleContinuation(_ => new([new FinishBattleFlipCommand(answer.Side,battle.Defender.Target)]));
             return new(CommandOutcome.Applied);
         }
 
