@@ -136,3 +136,45 @@ não interpretar a igualdade diretamente como lado próprio
 sem mapear a polaridade da perspectiva nativa. A base de
 Draw e preload usa offsets opostos, conforme já documentado.
 CI novo pendente; não elevar V07 a Verified.
+
+## V07.2 — passes do aviso de fase comum (25/11)
+
+Reconsulta read-only do mesmo v4-visuals, fingerprint e quick_check OK.
+As instruções 00480CA6..00480F32 da coleta 23 revelam a
+ordem dos passes tipos 0..5, distinta do aviso de troca tipo 6.
+Seja bank o resultado bruto de SETZ em 00480C94:
+chave base = phase + 6*bank. Manifesto inglês confirmado:
+0..5 azul, 6..11 vermelho; 12..18 Battle azul, 19..25
+Battle vermelho. Não mapear SETZ para jogador absoluto sem
+resolver polaridade de DAT_00A54E5C.
+
+- t<64: dois passes via +10 (00480D5A/00480D8E), centro
+  (525 -/+ (C[2t]>>10),300), intensidade bruta 3*t.
+- 64<=t<=128: Battle e floor((t-64)/8)<7 escolhe key
+  12+7*bank+floor((t-64)/8), blit +8 (00480E37).
+- Restante dessa janela: base +8 (00480E74) e outro
+  passe +B0 (00480EAE), mesma chave e centro.
+  00480E77..00480E83: MOV AL,BL; MOV DL,FE; IMUL DL;
+  PUSH EAX. Apenas AX fica confirmado: low16(signed8(t)*-2),
+  e.g. FF80 em 64 e 0100 em 128. Sem resolução da ABI
+  ou do destino +B0, não tratar como alpha, escala ou brilho
+  quantitativo; o nome do efeito é apenas descritivo.
+- 128<t<256: um passe +10, intensidade C[t-128]>>8;
+  t>=256 desativa e libera recursos.
+
+DAT v4-visuals: todos 26 BMPs ingleses presentes; Draw
+239x44, Standby 306x49, Main1 258x44, Battle e seus
+sete frames 264x44, Main2 265x44, End 216x44, ambos
+bancos. A posição do blit é centro menos metade truncada
+das dimensões. O modelo NativePhaseBannerDraw descreve
+a ordem e os argumentos sem alterar o renderer existente.
+Cobertura por testes: 12 combinações de banco/fase,
+fronteiras de entrada e saída e toda janela intermediária
+em passos de 4. Sem inventar mistura do +B0 nem mudar gate.
+Roteiro 24 já pede 228 bytes da vtable de superfície
+005DC6EC (inclui +B0 em 005DC79C); confirmar receptor e
+alvo antes de qualquer port. Não duplicar coleta.
+CI V07.1 run 45547520057: build e checks de contadores
+passaram até asserção de ArgumentOutOfRangeException,
+que Reject não captura; teste corrigido por catch explícito.
+Novo CI pendente. Nenhuma alteração à cobertura/Verified.
