@@ -83,6 +83,17 @@ internal static class NativeBreakFieldReviewChecks
             timeline.AdvanceNativeUpdate();
             check(timeline.Counter==256,"V22: terminal update idempotent");
         }
+        for(int side=0;side<2;side++)
+        for(int perspective=0;perspective<2;perspective++)
+        for(int region=0;region<=10;region++)
+        for(int slot=0;slot+region<=10;slot++)
+        {
+            int zone=region+slot;
+            var actual=new NativeBreakFieldTarget((ushort)(side | region<<1 | slot<<6));
+            var expected=NativeDisabledChainTarget.FromField(side,zone,false);
+            check(actual.Center(perspective)==expected.Center(perspective),
+                "V22: region+slot normalization preserves field center");
+        }
         foreach(ushort unsupported in new ushort[]{0x8016,0x803e,0x8154})
         {
             bool rejected=false;
