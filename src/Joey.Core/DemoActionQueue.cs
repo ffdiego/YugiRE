@@ -299,6 +299,16 @@ public sealed partial class DemoDuel
                 return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
+            if (command is OpenBattleFlipDrawCommand openBattleFlip)
+                return OpenBattleFlipDraw(openBattleFlip, followups);
+            if (command is FinishBattleFlipCommand finishBattleFlip)
+                return duel.FinishQueuedBattleFlip(finishBattleFlip, followups);
+            // A draw during Skelengel FLIP can end the duel (Exodia). Its
+            // already marked defender still needs the reserved cleanup.
+            if (duel.GameOver && command is SnapshotBattleRemovalCommand afterWin &&
+                afterWin.Role==1 && duel.queuedBattleRemoved[1] is { } marked &&
+                marked.Target==afterWin.Target && marked.Card.Id==FlipEffectRules.Skelengel)
+                return duel.SnapshotQueuedBattleRemoval(afterWin);
             // Only a reserved battle snapshot may finish after lethal LP.
             if (command is FinishBattleRemovalCommand battleFinish)
                 return duel.FinishQueuedBattleRemoval(battleFinish);
@@ -346,6 +356,10 @@ public sealed partial class DemoDuel
                     return duel.ExecuteQueuedDirectAttack(attack, followups);
                 case DeclareTargetedAttackCommand attack:
                     return duel.ExecuteQueuedTargetedAttack(attack, followups);
+                case RevealBattleDefenderCommand reveal:
+                    return duel.RevealQueuedBattleDefender(reveal, followups);
+                case ResolveRevealedBattleCommand revealed:
+                    return duel.ResolveQueuedRevealedBattle(revealed, followups);
                 case SnapshotBattleRemovalCommand snapshot:
                     return duel.SnapshotQueuedBattleRemoval(snapshot);
                 case ChangeBattlePhaseCommand phase:
@@ -1283,11 +1297,42 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
+        private CommandResult OpenBattleFlipDraw(OpenBattleFlipDrawCommand command,IActionCommandSink followups)
+        {
+            if (duel.queuedBattleReveal is not { FlipCalculated:true, FlipOpened:false } reserved ||
+                reserved.Defender.Target!=command.Defender || queueDrawDecision is not null ||
+                followups is not IActionBatchSink { PendingCount:0 })
+                return new(CommandOutcome.Rejected,"No matching calculated battle FLIP.");
+            if (!duel.ValidateBattleReveal(reserved,faceDown:false,allowEnded:true))
+                throw new InvalidOperationException("Reserved battle FLIP changed before decision.");
+            reserved.FlipOpened=true;
+            var finish=new FinishBattleFlipCommand(command.Side,command.Defender);
+            // No optional draw when damage has ended the duel or deck is empty.
+            if (duel.GameOver || duel.FlipEffectsNegated || duel.DeckCount(command.Side)==0)
+            {
+                followups.Enqueue(finish);
+                return new(CommandOutcome.Applied);
+            }
+            var request=new PendingEffectDecision(++duel.nextEffectDecisionId,command.Side,
+                reserved.Defender.Card,EffectDecisionKind.DrawOneOnFlip,0,duel.Turn);
+            queueDrawDecision=request;
+            followups.ScheduleContinuation(_ => new([],answer =>
+            {
+                var selected=answer ?? throw new InvalidOperationException("Missing battle FLIP answer.");
+                return new([new RecordFlipDrawDecisionCommand(command.Side,request.Id,selected)],
+                    _ => new([finish]));
+            },request));
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision, IActionCommandSink followups)
         {
             if (queueDrawDecision is not { } request || request.Id != decision.DecisionId || request.Owner != decision.Side)
                 return new(CommandOutcome.Rejected, "No matching queued draw decision.");
 
+            if (duel.queuedBattleReveal is { FlipCalculated:true, FlipOpened:true } battle &&
+                !duel.ValidateBattleReveal(battle,faceDown:false))
+                throw new InvalidOperationException("Reserved battle FLIP changed before answer.");
             queueDrawDecision = null;
             if (duel.FlipEffectsNegated)
                 return new(CommandOutcome.Skipped, "Optional draw effect is now negated.");
