@@ -64,3 +64,55 @@ não repete Draw 00480C60 nem substitui roteiro 24 (+98 de scratch).
 Quando recebido, consultar os kernels em função do formato
 real da superfície antes de expandir a coleta. Nenhuma alteração
 ao Core, scheduler ou badge (20/34).
+
+
+## V17.3 — scanline em ponto fixo e raster CPU BGR24 (candidato)
+
+Nesta sessão: ZIP v2 extraído em diretório temporário, SHA256 SQLite
+80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+PRAGMA quick_check=ok. Releitura direta de 0052CF10 (16377 caracteres)
+e 00433150 (16534), e dispatch 0051EBD0. Consulta de instructions
+por intervalo 0052CF10..0052DBD0 e 00433150..00433E50 retorna zero;
+as fórmulas são decompilação, não novo assembly. Não repetir roteiro 25:
+já contém ambos os kernels; confirmar seus loops com a coleta existente.
+
+A rotina escolhe topo pelo menor Y e, em empate, menor X; fundo
+pelo maior Y e maior X. Produto cruzado determina sentido das
+duas cadeias; pula arestas horizontais de topo/fundo; duplica
+último segmento para a última linha. Para quad estritamente
+convexo, a implementação equivalente percorre duas listas de
+arestas monotônicas, troca segmento no Y do vértice intermediário.
+Não generaliza polígonos côncavos, colineares ou quads degenerados.
+
+F=0x100000, H=0x80000. Para aresta A->B de dy>0 e linha y:
+ X = Ax*F+H+trunc((Bx-Ax)*F/dy)*(y-Ay)
+ U = Au*F+H+trunc((Bu-Au)*F/(dy+flag))*(y-Ay)
+ V análogo. flag=(param_9 !=0) no kernel base; não afirmar
+ semântica do chamador. A geometria não recebe flag. Top/bottom
+ inclusive, respeitando clip half-open. Vertical clip inicializa
+ acumuladores em clipTop-1, depois soma passo; para domínio sem
+ overflow, avaliar diretamente no Y atual produz mesmo valor.
+
+Por linha: L=Xl>>20, R=Xr>>20, U0=Ul>>20, V0=Vl>>20.
+Se R==L, dU=dV=0. Caso contrário
+ dU=trunc(((Ur>>20)-U0)*F/(R-L+flag))
+ dV=trunc(((Vr>>20)-V0)*F/(R-L+flag)).
+O loop usa U0+(offsetU>>20), V0+(offsetV>>20), offsets começam
+ em zero, depois somam passo. Não aplicar meia unidade no passo
+ horizontal; valores negativos usam shift aritmético.
+Clip Lf=left*F+H, Rf=right*F-H; rejeita se Xl>Rf ou Xr<Lf.
+Se Xl<Lf, cursor destino=left, skip=(Lf-Xl)>>20. Este skip pode
+ diferir de left-(Xl>>20); preservar. Se Xr>Rf, R=right-1.
+
+NativeQuadScanlines usa somente quads convexos cíclicos de quatro
+pontos e domínio limitado de coordenadas, intermediários long para
+não reproduzir endereços/overflow do x86. NativeBgr24QuadRaster
+combina o sampler com o kernel de intensidade BGR24 e caminho
+base keyed copy. Prevalida todos os samples para impedir leitura
+fora da textura e store parcial. Testes sintéticos cobrem ambos
+sentidos, flag 0/1, clip subpixel, troca de aresta, trapezoide,
+pitch, cor-chave, intensidade e rejeição. Não integrar ao App,
+não afirmar equivalência de pixels até assembly + comparação.
+Sem suporte a outros formatos, vtables, máscaras, alpha por
+pixel neste raster, perspectiva com divisão por profundidade,
+ou integração de A03. Sem mudança na cobertura Draw.
