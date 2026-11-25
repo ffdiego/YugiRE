@@ -1,4 +1,5 @@
 using Joey.Core;
+using Joey.LookAndFeel;
 using Raylib_cs;
 
 static partial class Game
@@ -57,7 +58,7 @@ static partial class Game
         var next = duel.GetRitualSelection(choice.Spell, choice.Selection.Monster, picks);
         if (next is null)
         {
-            //Removing the initial field choice on a full board may leave only hand picks.
+            // Removing the initial field choice on a full board may leave only hand picks.
             // Restart selection with the same preserved result if the spell remains available.
             next = duel.GetRitualSelection(choice.Spell, choice.Selection.Monster, []);
             if (next is not null) choice.Picks.Clear();
@@ -98,6 +99,78 @@ static partial class Game
                 ChooseRitualTribute(choice, fieldMaterial);
             return;
         }
+    }
+
+    static bool CheckRitualBoardSelection()
+    {
+        Card spell = new(670, 670, "Ritual spell", "", 22u << 20);
+        Card ritual = new(359, 359, "Ritual monster", "", (3u << 20) | (8u << 25) | (3u << 18));
+        Card handTribute = new(29, 29, "Hand tribute", "", (3u << 20) | (5u << 25));
+        Card fieldTribute = new(30, 30, "Field tribute", "", (3u << 20) | (3u << 25));
+        Card filler = new(31, 31, "Field filler", "", (3u << 20) | (1u << 25));
+
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool fromSet in new[] { false, true })
+        foreach (bool fullField in new[] { false, true })
+        foreach (bool defense in new[] { false, true })
+        {
+            Card?[] ownField = fullField
+                ? [fieldTribute, filler, filler, filler, filler]
+                : [fieldTribute, null, null, null, null];
+            duel = DemoDuel.FromPartialObservation(side, [spell, ritual, handTribute],
+                side == 0 ? ownField : new Card?[5], side == 1 ? ownField : new Card?[5],
+                8000, equipmentContextResolved: true);
+            alphaCpu = null;
+            ClearDuelSelection();
+            var queue = duel.CreatePrimitiveActionQueue();
+            queuedDuel = queue;
+
+            if (fromSet)
+            {
+                if (!duel.TryQueueSpellTrapSet(0, out _)) return false;
+                for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
+                if (queue.IsBusy || duel.Spells[side, 0] != spell) return false;
+            }
+            var zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+            if (!CanStartRitualBoardChoice(zone, 0)) return false;
+            if (fromSet)
+                TryStartRitualBoardChoice(zone, 0);
+            else
+            {
+                if (CurrentHandAction(0) != NativeCursorAction.Activate) return false;
+                UseHandAction(0);
+            }
+            if (ritualBoardChoice is not { } canceled ||
+                canceled.At(DuelZone.Monster, 0) is not { } canceledTribute) return false;
+            ClearDuelSelection();
+            if (ChooseRitualTribute(canceled, canceledTribute) || queue.IsBusy) return false;
+
+            if (!TryStartRitualBoardChoice(zone, 0) || ritualBoardChoice is not { } choice ||
+                choice.Selection.RemainingLevel != 8 ||
+                choice.At(DuelZone.Hand, fromSet ? 0 : 1) is not null ||
+                choice.At(DuelZone.Monster, 0) is not { } field) return false;
+            int handIndex = fromSet ? 1 : 2;
+            if (fullField && choice.At(DuelZone.Hand, handIndex) is not null) return false;
+            choice.Defense = defense;
+            int initialHandCount = duel.Hand.Count;
+            if (ChooseRitualTribute(choice, field) || queue.IsBusy ||
+                choice.Selection.RemainingLevel != 5 || duel.Hand.Count != initialHandCount ||
+                duel.Monsters[side, 0] != fieldTribute ||
+                choice.At(DuelZone.Hand, handIndex) is not { } handMaterial) return false;
+            if (!ChooseRitualTribute(choice, handMaterial) || !queue.IsBusy ||
+                ritualBoardChoice is not null || duel.Hand.Count != initialHandCount ||
+                duel.Monsters[side, 0] != fieldTribute ||
+                queue.Trace.LastOrDefault()?.Entry.Origin != ActionOrigin.Player) return false;
+
+            for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
+            int slot = fullField ? 0 : 1;
+            if (queue.IsBusy || duel.Hand.Count != 0 || duel.MonsterFaceDown[side, slot] ||
+                duel.DefensePosition[side, slot] != defense ||
+                !duel.TryCaptureCardTarget(side, DuelZone.Monster, slot, out var summoned) ||
+                summoned.Occurrence != choice.Selection.Monster.Occurrence ||
+                !duel.Graveyard(side).SequenceEqual([spell, fieldTribute, handTribute])) return false;
+        }
+        return true;
     }
 
     static bool IsRitualPick(DuelZone zone, int index) =>

@@ -8,7 +8,7 @@ A fila revalida a escolha antes de gastar a magia, emite um `TributeCommand` por
 
 O catálogo, a seleção e os pontos de entrada nativos constam no [contrato Ritual](ritual-bindings.md) e no snapshot privado v3. Os testes em `QueuedRitualSummonChecks.cs` executam os 16 pares em ambos os lados, mais Set, materiais mistos, cópias, seleção redundante, destino invalidado e espera por apresentação. A suíte opcional usa as cartas do DAT com o fingerprint registrado no índice de packs.
 
-Escopo headless C# sujeito ao CI. O console usa a mesma admissão, por exemplo `ritual hand 0 1 2 defense hand 2 field 0`. A CPU em modo fila também produz a escolha Ritual. O seletor clicável continua pendente. Soul Exchange, Mask of Restrict, Ground Collapse, respostas, correntes, restrições de reviver e efeito próprio de Relinquished ficam pendentes. A semântica de ordem e timing precisa de comparação em duelo nativo antes de Verified.
+O console usa a mesma admissão, por exemplo `ritual hand 0 1 2 defense hand 2 field 0`. A CPU em modo fila também produz a escolha Ritual. O App em modo fila também aceita ativação de mão ou Set e permite clicar os tributos próprios que ainda completam um custo legal. O clique direito alterna ataque e defesa aberta, e Backspace cancela. O último tributo admite o lote com a primeira vaga ou, no campo cheio, na primeira zona liberada. Controles e prompt são provisórios. Soul Exchange, Mask of Restrict, Ground Collapse, respostas, correntes, restrições de reviver e efeito próprio de Relinquished ficam pendentes. A semântica de ordem e timing precisa de comparação em duelo nativo antes de Verified.
 
 A sugestão da CPU percorre as magias da mão e Set, conserva a primeira
 ocorrência do monstro Ritual e procura um conjunto suficiente de materiais

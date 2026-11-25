@@ -88,13 +88,15 @@ Recuperar condições/alternância nativas de mudança de posição e as variant
 
 <a id="v11"></a>
 
-`NativeSelectionWindow` já contém cinco slots/scroll, entrada e saída, índice correto e interpolação confirmados. Bundle 01 recebido: âncora 525, gerador x87 (pi/256 e multiplicação final ainda não medida), Update/Draw das duas fusões, fases, recursos e clocks 4/8 com espera no segundo. **Coleta concluída**; a tabela C runtime foi confirmada em V01. Faltam constantes/tabela de seletores, integração e validação. As duas Draws `004524F0` e `004877F0` devem permanecer distintas. `NativeFusionTimeline` porta os clocks e fórmulas dos passes principais em modelos separados (ângulo mutado no Draw, espera em 128 na fusão vinculada). A seleção estável `0043B280` agora é Partial no duelo: usa fundo do manifesto, variante por total>5, slots de 64px e scroll de cinco cartas; preserva decisões de busca/fusão no Core. Controles ainda provisórios, sem transição/ícones/scroll nativos completos. Fallback `--legacy-selection`. As duas Draws de fusão continuam Pending. Banco fusion.txt e revisão isolada vinculada com flag explícita e cosseno validado; F7 Update+Draw, F9 Draw independente. Roteiro 13 pede apenas dados/compositor/liberação ausentes; não inserir pausa no scheduler por hipótese. Ver [contrato](../../docs/research/native-selection-window-fusion-2026-11-22.md) e [handoff](../../docs/research/visual-contract-bundles-2026-11-23.md). Não alterar badge só pelo conhecimento.
+`NativeSelectionWindow` modela cinco slots, scroll, entrada e saída. A seleção estável `0043B280` é Partial no duelo, com fundo do manifesto, variante por total>5 e slots de 64 px. O Core valida opções e materiais. As transições, os controles de scroll e os ícones continuam provisórios, com `--legacy-selection` disponível para comparação. Os roteiros 01 e 13 foram concluídos, e V01 confirmou a tabela C em runtime. As duas rotinas de fusão têm clocks e composição próprios. `004877F0` fica em revisão isolada, com flag de liberação controlada na revisão. [Contrato](../../docs/research/native-selection-window-fusion-2026-11-22.md)
+
+A reconciliação de #143 usa o snapshot imutável `DemoSpecialSummon.FusionMaterials` entregue em #179. A fusão geral `004524F0` desenha sobre o tabuleiro com recursos do DAT e é Partial. No caminho enfileirado, sua apresentação e a invocação especial ocupam o gate do comando de invocação. O resultado fica oculto no campo e no hover durante a primeira etapa. As fases logicamente posteriores aguardam liberação do mesmo comando. A variante sem fila usa a sequência de apresentação existente. A composição intermediária, o pass `+AC`, o epílogo e a associação de áudio seguem pendentes de validação. Falta também a comparação gráfica pareada.
 
 ## V12 — Indicador de corrente desativada (`004531C0`)
 
 <a id="v12"></a>
 
-Bundle 02 concluído: opcode 0x72, gates, descritor, rotação 0x4000, 24 updates (dois ciclos de seis quadros), bit 0x40 e seis texturas inteiras documentados. `NativeDisabledChainTimeline` tem testes sintéticos. **Draw Pending no duelo:** modo de revisão isolada `--review-disabled-chain=` agora carrega as seis entradas de `disable.txt` em runtime, usa descritor/centro/rotação e captura F12. Falta testar com DAT real, confirmar compositor e mapear o gatilho do comando para a fila; não tratar 0x72 como negação genérica. Ver [contrato](../../docs/research/native-chain-disabled-2026-11-22.md). Não repetir coleta 02.
+Bundle 02 concluído: opcode bruto 0xB1 (índice 0x72), gates, descritor, rotação 0x4000, 24 updates (dois ciclos de seis quadros), bit 0x40 e seis texturas inteiras documentados. `NativeDisabledChainTimeline` tem testes sintéticos. **Draw Pending no duelo:** modo de revisão isolada `--review-disabled-chain=` agora carrega as seis entradas de `disable.txt` em runtime, usa descritor/centro/rotação e captura F12. Falta testar com DAT real, confirmar compositor e mapear o gatilho do comando para a fila; não tratar B1 como negação genérica. Produtores 00583510/00588D90/0059CCF0/005BB720; ver [auditoria de despacho](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). Ver [contrato](../../docs/research/native-chain-disabled-2026-11-22.md). Não repetir coleta 02.
 
 ## V13 — `DebugOverlayEnabled` na UI
 
@@ -147,14 +149,14 @@ Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 <a id="v20"></a>
 
 Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. NativeCoinPassLayout recupera keys 0/1/2, recortes de giro/sombra, âncoras, halo e fade global, sinaliza ramo scratch/reflexo; SQLite v3 confirma coin.txt (14/4 divisores) e dimensões dos seis assets. NativeCoinResources e --review-coin=COUNT,BITS,X,Y,HIGHLIGHT renderizam passes 0/1/2 isoladamente com captura F12; NativeCoinExtraLayout confirma brilho key5 (cinco fases) e plano de scratch 3/4; review desenha brilho, exporta plano de reflexo sem inventar máscara. Remap, +94/+A0, composição nativa e integração A03 pendentes. Não contar revisão como Draw no duelo. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
-  Rotas 8E/8F, camada e início recuperados; nome do banco não comprova semântica de RNG. Roteiro 16; [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md).
+  Rotas brutas E0/E1 (índices 8E/8F) confirmadas por coleta 29; corrigido NativeEffectCommandRouting e testes. Produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md); [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md).
 
 ## V21 — Banco dice (00456B90)
 
 <a id="v21"></a>
 
 Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT. Remap/blend e integração A03 pendentes; não contar review como gameplay. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
-  Rotas 90/91/92, âncora e gate recuperados; Draw/Update ausentes. Roteiro 16, mesmo contrato.
+  Rotas brutas E2/E3/E4 (índices 90/91/92) confirmadas por coleta 29; produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md).
 
 ## V22 — Remoção break (00450FD0)
 
@@ -167,20 +169,20 @@ Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, ori
 
 <a id="v23"></a>
 
-NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos 08/09 e espera 128 não equivalem a bloqueio contínuo. Roteiro 17 e manifests v3 confirmam lista de sprites, recortes e geometria dos dígitos. Revisão isolada `--review-chain=` usa DAT, contagem manual e compositor diagnóstico. Integração à fila e comparação de pixels pendentes. [Contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
+NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos brutos 0A/0B (índices 08/09; produtor 005BA230) e espera 128 não equivalem a bloqueio contínuo. Roteiro 17 e manifests v3 confirmam lista de sprites, recortes e geometria dos dígitos. Revisão isolada `--review-chain=` usa DAT, contagem manual e compositor diagnóstico. Integração à fila e comparação de pixels pendentes. [Contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
 
 ## V24 — Destaque contextual affect (0040E260)
 
 <a id="v24"></a>
 
-NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos; sem recalcular regras. O roteiro 17 e o DAT confirmam scratch 50×50, recortes verticais com wrap e recomposição por troca de seletor. O PR #139 porta o plano de composição e testa a ordem dos passes. Faltam ramos de vínculos, compositor e validação em tela. [Evidência](../research/native-affect-scratch-2026-11-24.md).
+NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos brutos 1F/21 (índices 19/1B). O roteiro 17 e o DAT confirmam scratch 50×50, recortes verticais com wrap e recomposição por troca de seletor. O PR #139 porta o plano de composição e testa a ordem dos passes. Faltam ramos de vínculos, compositor e validação em tela. [Evidência](../research/native-affect-scratch-2026-11-24.md).
 
 ## V25 — Ativação alternativa (00450AD0)
 
 <a id="v25"></a>
 
 Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT. Integração A03 e comparação pendentes.
-  NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas 48/49/18. Draw ausente; roteiro 18. [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+  NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas brutas 72/73/1E (índices 48/49/18; coleta 29). Produtores e [auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
 
 ## V26 — Exclusão (0043DBE0)
 

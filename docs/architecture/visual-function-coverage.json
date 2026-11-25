@@ -127,7 +127,8 @@
     {
       "address": "004524F0",
       "family": "Fusão",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelFusionPresentation.cs"
     },
     {
       "address": "004877F0",

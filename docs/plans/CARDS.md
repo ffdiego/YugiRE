@@ -319,3 +319,14 @@ Testes nos dois lados cobrem mão/Set, vaga livre/campo cheio, cópias,
 custo por ocorrência e gate antes da colocação. Demo.cs tem 2618 linhas
 antes e depois. O formato de sugestão da CPU ainda espera o produtor
 clicável. Sem mudança de heurística no modo legado. CI obrigatório.
+
+### C12.1 — Produtor clicável de Ritual (C09)
+
+O App em modo fila seleciona os tributos da mão e do campo por ocorrência.
+A seleção mostra apenas materiais que permitem completar o custo e conserva
+a ocorrência do monstro Ritual. Cancelamento, posição e confirmação usam
+controles provisórios. O teste de startup sem janela percorre as APIs do
+produtor em ambos os lados, de mão e Set, campo cheio e vaga livre, ATK e DEF,
+cancelamento, ausência de mutação prematura e pagamento pela fila.
+Comparação pareada com o original segue pendente. Demo.cs 2618 → 2618.
+Manifesto e cobertura preservados. O gate C12.1 segue aberto.

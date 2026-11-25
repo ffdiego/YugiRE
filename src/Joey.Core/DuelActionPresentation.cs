@@ -65,6 +65,9 @@ public sealed partial class DemoDuel
             case ActivateRaigekiCommand activation:
                 target = activation.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
+            case ResolveSummonResponseCommand { Source: { } trap }:
+                target = trap; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = -1; break;
             case SummonCommand summon:
                 target = summon.Source; kind = ActionPresentationKind.Summon;
                 destination = DuelZone.Monster; slot = summon.Slot; break;

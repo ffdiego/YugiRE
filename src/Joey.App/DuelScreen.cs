@@ -582,7 +582,7 @@ static partial class Game
                     Raylib.DrawRectangleLinesEx(monsterRect, 1, own ? Gold : Color.Gray);
                     Raylib.DrawRectangleLinesEx(spellRect, 1, own ? Gold : Color.Gray);
                 }
-                if (monster != null && !InFlight(player, zone, false))
+                if (monster != null && !InFlight(player, zone, false) && !FusionResultHidden(player, zone))
                 {
                     var geometry = DuelCardLayout.OnBoard(DuelCardZone.Monster, own, zone,
                         duel.DefensePosition[player, zone], duel.MonsterFaceDown[player, zone]);

@@ -98,6 +98,7 @@ internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source
     CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
 internal sealed record TributeCommand(int Side, CardTarget Target) : DuelCommand(Side);
 internal sealed record FinishNormalPlacementCommand(int Side, CardTarget Target, bool FaceDown) : DuelCommand(Side);
+internal sealed record ResolveSummonResponseCommand(int Side, DemoSummonResponse Request, CardTarget? Source) : DuelCommand(Side);
 internal sealed record ResolvePositionCommand(int Side, CardTarget Target, bool WasFaceDown, bool WasInDefense) : DuelCommand(Side);
 internal sealed record FinishFlipBatchCommand(int Side, CardTarget Target, bool WasInDefense, bool DeckOut0, bool DeckOut1) : DuelCommand(Side);
 internal sealed record RecordFlipDrawDecisionCommand(int Side, long DecisionId, EffectDecisionAnswer Answer) : DuelCommand(Side);
@@ -111,6 +112,9 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
+            case ResolveSummonResponseCommand response when response.Request is not null:
+                if (response.Source is { } trapSource) Target(trapSource, response.Side, DuelZone.SpellTrap);
+                break;
             case LabSpawnCommand spawn when spawn.Template is not null:
                 LabDestination(spawn.Destination, spawn.Slot, spawn.FaceDown, spawn.Defense);
                 break;

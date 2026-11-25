@@ -25,7 +25,8 @@ public sealed partial class DemoDuel
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
                 admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment() ||
-                 admittingQueuedFusion && CanAdmitQueuedFusion()) &&
+                admittingQueuedFusion && CanAdmitQueuedFusion() ||
+                admittingQueuedSummonResponse && CanAdmitQueuedSummonResponse()) &&
                 (PendingEndDiscards == 0 || admittingQueuedEndDiscard && CanAdmitQueuedEndDiscard()), allowLabEdits);
     }
 
@@ -265,6 +266,7 @@ public sealed partial class DemoDuel
             public CardTarget Source { get; } = source;
             public bool SourceSpent { get; set; }
             public bool MonsterWipe { get; } = monsterWipe;
+            public DemoSummonEvent? Summon { get; init; }
             public CardTarget? PrimaryTarget { get; init; }
             public bool PrimaryDestroyed { get; set; }
             public bool PrimaryReturned { get; set; }
@@ -371,6 +373,8 @@ public sealed partial class DemoDuel
                 return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
+            if (command is ResolveSummonResponseCommand summonResponse)
+                return ResolveSummonResponse(summonResponse, followups);
             if (command is OpenBattleFlipDrawCommand openBattleFlip)
                 return OpenBattleFlipDraw(openBattleFlip, followups);
             if (command is OpenBattleFlipTargetsCommand openBattleTargets)
@@ -853,7 +857,9 @@ public sealed partial class DemoDuel
                 ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
             bool temporaryModifier = temporaryStatActivation?.Source == target &&
                 TemporaryStatRules.For(card.Id)?.ClassCode == card.ClassCode;
-            if (!(fixedSpell || temporaryModifier) || !duel.SpellFaceDown[target.Side, slot] ||
+            bool summonTrap = wipe is { Summon: not null } summonWipe && summonWipe.Source == target &&
+                summonWipe.ResourceId == card.Id && card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
+            if (!(fixedSpell || temporaryModifier || summonTrap) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
@@ -920,13 +926,19 @@ public sealed partial class DemoDuel
             if (wipe is not null || finishScheduled ||
                 followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Monster wipe requires an isolated activation.");
-            int side = source.Side;
             if (!duel.TryResolveCardTarget(source, out _, out _))
                 return new(CommandOutcome.Skipped, "Wipe source occurrence gone.");
             if (!duel.CanResolveQueuedMonsterWipe(source, out var spell, out var snapshot) ||
                 (requireRaigeki && spell.Id != MonsterWipeRules.Raigeki))
                 return new(CommandOutcome.Rejected, "Monster wipe no longer legal.");
+            return TryReserveMonsterWipe(source, spell.Id, snapshot, queue)
+                ? new(CommandOutcome.Applied)
+                : new(CommandOutcome.Rejected, "Untracked occurrence or linked equipment.");
+        }
 
+        private bool TryReserveMonsterWipe(CardTarget source, ushort resourceId,
+            IReadOnlyList<MonsterWipeTarget> snapshot, IActionBatchSink queue, DemoSummonEvent? summon = null)
+        {
             var targets = new List<CardTarget>();
             var context = new EffectContext();
             context.SendToGraveyard(source);
@@ -935,7 +947,7 @@ public sealed partial class DemoDuel
             {
                 if (!duel.TryPlanRemovalLinks(item.Player, item.Zone, out var links) ||
                     !duel.TryCaptureCardTarget(item.Player, DuelZone.Monster, item.Zone, out var target))
-                    return new(CommandOutcome.Rejected, "Untracked occurrence or linked equipment.");
+                    return false;
                 targets.Add(target);
                 plans.Add(target, links);
                 context.Destroy(target, links);
@@ -945,9 +957,9 @@ public sealed partial class DemoDuel
             // movement happens in this activation producer.
             queue.EnqueueBatch(context.Commands);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
-            wipe = new(side, spell.Id, source, targets);
-            ScheduleFinish(side, followups);
-            return new(CommandOutcome.Applied);
+            wipe = new(source.Side, resourceId, source, targets) { Summon = summon };
+            ScheduleFinish(source.Side, queue);
+            return true;
         }
 
         private static CardTarget[] Tributes(PrepareNormalPlacementCommand command) =>
@@ -1054,6 +1066,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "Placed occurrence gone.");
             string message = "";
             duel.FinishNormalPlacement(finish.Side, slot, finish.FaceDown, ref message);
+            duel.queuedSummonResponse = duel.PendingSummonResponse;
             return new(CommandOutcome.Applied, message);
         }
 
@@ -2002,9 +2015,15 @@ public sealed partial class DemoDuel
             plannedLinks.Clear();
             if (wipe is { } current)
             {
-                if (current.MonsterWipe && current.SourceSpent)
-                    duel.LastMonsterWipe = new(current.ResourceId, current.Caster,
-                        current.Counts[0], current.Counts[1], current.FaceDown);
+                if (current.SourceSpent)
+                {
+                    if (current.MonsterWipe && current.ResourceId != SummonTrapRules.TrapHole)
+                        duel.LastMonsterWipe = new(current.ResourceId, current.Caster,
+                            current.Counts[0], current.Counts[1], current.FaceDown);
+                    if (current.Summon is { } summon)
+                        duel.LastSummonTrap = new(current.ResourceId, current.Caster, summon.Player,
+                            summon.Kind, current.Counts[0] + current.Counts[1]);
+                }
                 wipe = null;
             }
             // Legacy choice bridge only; selection mutations are still A06/C12.
