@@ -374,6 +374,94 @@ internal static class QueuedMonsterWipeChecks
                 "Fissure hidden before spend rejects; after spend no replacement chosen");
         }
 
+        // Offerings: quick-play in own Main only; any face-up monster.
+        foreach(int offeringsSide in new[]{0,1})
+        foreach(bool offeringsSet in new[]{false,true})
+        foreach(bool offeringsOwn in new[]{false,true})
+        {
+            int enemy=1-offeringsSide;
+            int victimSide=offeringsOwn?offeringsSide:enemy;
+            var d=DemoDuel.FromPartialObservation(offeringsSide,[Spell(1451)],
+                Slots(Monster(24,15),Monster(25,15,25)),Slots(Monster(24,15),Monster(25,15,25)),
+                8000,side0Deck:[Monster(80,15,80),Monster(81,15,81)],
+                side1Deck:[Monster(80,15,80),Monster(81,15,81)]);
+            d.MonsterFaceDown[enemy,1]=true;
+            var q=d.CreatePrimitiveActionQueue();
+            if(offeringsSet)
+            {
+                check(d.TryQueueSpellTrapSet(0,out _),"Offerings Set");Drain(q);
+                var fresh=Capture(d,offeringsSide,DuelZone.SpellTrap,0);
+                check(d.QueuedTargetedMonsterSpellCandidates(fresh).Count==0&&
+                    !d.TryQueueTargetedMonsterSpell(fresh,Capture(d,victimSide,DuelZone.Monster,0),out _),
+                    "Offerings cannot activate during its Set turn");
+                d.NextTurn();d.NextTurn();
+            }
+            var offeringsSource=Capture(d,offeringsSide,offeringsSet?DuelZone.SpellTrap:DuelZone.Hand,0);
+            var offeringsTarget=Capture(d,victimSide,DuelZone.Monster,0);
+            int due=d.Turn+2;
+            check(d.QueuedTargetedMonsterSpellCandidates(offeringsSource).Count==3&&
+                !d.TryQueueTargetedMonsterSpell(offeringsSource,Capture(d,enemy,DuelZone.Monster,1),out _)&&
+                d.TryQueueTargetedMonsterSpell(offeringsSource,offeringsTarget,out _)&&
+                d.PendingSkippedDrawTurn(offeringsSide) is null,"Offerings valid face-up targets both sides");
+            Drain(q);
+            check(d.Monsters[victimSide,0] is null&&d.PendingSkippedDrawTurn(offeringsSide)==due&&
+                d.PendingSkippedDrawTurn(enemy) is null,"Offerings resolves destruction and owner skip");
+            // A generic effect draw does not consume a phase replacement.
+            q.Enqueue(new DrawCommand(offeringsSide));Drain(q);
+            check(d.HandFor(offeringsSide).Count==1&&d.PendingSkippedDrawTurn(offeringsSide)==due,
+                "Effect draw is unaffected before due turn");
+            d.NextTurn();
+            check(d.TryQueueTurnDraw(out _),"Opponent ordinary draw admitted");Drain(q);
+            check(d.HandFor(enemy).Count==1&&d.PendingSkippedDrawTurn(offeringsSide)==due,
+                "Opponent draw unaffected");
+            d.NextTurn();
+            int deckBefore=d.DeckCount(offeringsSide);
+            int traceStart=q.Trace.Count;
+            check(d.TryQueueTurnDraw(out _),"Due turn draw opportunity admitted");Drain(q);
+            check(!d.GameOver&&!d.CanDraw&&d.HandFor(offeringsSide).Count==1&&
+                d.DeckCount(offeringsSide)==deckBefore&&d.PendingSkippedDrawTurn(offeringsSide) is null&&
+                q.Trace.Skip(traceStart).Any(x=>x.Stage==ActionTraceStage.Executed&&
+                    x.Entry.Command is TurnDrawCommand&&x.Result?.Detail=="Draw Phase skipped."),
+                "Due Draw Phase consumed exactly once without card movement");
+            d.NextTurn();d.NextTurn();
+            check(d.Draw(out _)&&d.HandFor(offeringsSide).Count==2,"Following turn draws normally");
+        }
+        foreach(bool offeringsHide in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1451),Spell(1451)],Slots(),
+                Slots(Monster(24,15),Monster(25,15,25)),8000);
+            var q=d.CreatePrimitiveActionQueue();
+            var first=Capture(d,0,DuelZone.Hand,0);
+            check(d.TryQueueTargetedMonsterSpell(first,Capture(d,1,DuelZone.Monster,0),out _),
+                "First Offerings");Drain(q);
+            var second=Capture(d,0,DuelZone.Hand,0);
+            check(d.TryQueueTargetedMonsterSpell(second,Capture(d,1,DuelZone.Monster,1),out _),
+                "Second Offerings");q.Tick();q.Tick();
+            if(offeringsHide)d.MonsterFaceDown[1,1]=true;
+            Drain(q);
+            check((d.Monsters[1,1] is not null)==offeringsHide&&d.PendingSkippedDrawTurn(0)==3,
+                "Multiple resolved copies coalesce; hidden target still imposes skip");
+            d.NextTurn();d.NextTurn();
+            check(d.TryQueueTurnDraw(out _),"Empty deck skipped Draw Phase");Drain(q);
+            check(!d.GameOver&&d.PendingSkippedDrawTurn(0) is null&&!d.CanDraw,
+                "Skipped phase never causes deck-out");
+            d.NextTurn();d.NextTurn();
+            check(d.Draw(out _)&&d.Winner==1,"Later empty-deck draw loses normally");
+        }
+        foreach(bool staleOfferings in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1451)],Slots(),Slots(Monster(24,15)),8000);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueTargetedMonsterSpell(Capture(d,0,DuelZone.Hand,0),
+                Capture(d,1,DuelZone.Monster,0),out _),"Offerings stale test");q.Tick();
+            if(staleOfferings)d.MonsterFaceDown[1,0]=true;
+            Drain(q);
+            check(d.PendingSkippedDrawTurn(0)==(staleOfferings?(int?)null:3),
+                "Before-spend invalidity creates no skip");
+            d.NextTurn();d.NextTurn();d.NextTurn();d.NextTurn();
+            check(d.PendingSkippedDrawTurn(0) is null,"Skip expires on due turn exit without manual draw");
+        }
+
         var sangan=Monster(47,3,47);
         var witch=Monster(573,18,573);
         var normal=Monster(24,15);

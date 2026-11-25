@@ -5,7 +5,8 @@ public static class TargetedMonsterSpellRules
     public const ushort TributeToTheDoomed = 1023;
     public const ushort ThousandKnives = 1211;
     public const ushort Fissure = 1001;
-    public static bool Supports(Card card) => card.ClassCode == 22 && card.Id is TributeToTheDoomed or ThousandKnives or Fissure;
+    public const ushort OfferingsToTheDoomed = 1451;
+    public static bool Supports(Card card) => card.ClassCode == 22 && card.Id is TributeToTheDoomed or ThousandKnives or Fissure or OfferingsToTheDoomed;
     // DAT inventory: 34, 1210 (no pack), 2034. Alternate art is still Dark Magician.
     public static bool IsDarkMagician(Card card) => card.IsMonster && card.Id is 34 or 1210 or 2034;
     public static bool RequiresDiscard(Card card) =>
@@ -28,7 +29,8 @@ public sealed partial class DemoDuel
                 !MonsterFaceDown[source.Side,z] && TargetedMonsterSpellRules.IsDarkMagician(monster))) return false;
         if (source.Zone == DuelZone.Hand) return FirstFreeSpellZone() >= 0;
         return source.Zone == DuelZone.SpellTrap && SpellFaceDown[source.Side, slot] &&
-            !equipment.Any(e => e.Owner == source.Side && e.SourceZone == slot);
+            !equipment.Any(e => e.Owner == source.Side && e.SourceZone == slot) &&
+            (card.Id != TargetedMonsterSpellRules.OfferingsToTheDoomed || spellSetTurn[source.Side,slot] < Turn);
     }
 
     private bool IsTargetedMonsterSpellTarget(CardTarget target) =>
@@ -53,6 +55,8 @@ public sealed partial class DemoDuel
         {
             TargetedMonsterSpellRules.Fissure => IsLowestFaceUpOpponent(caster,target),
             TargetedMonsterSpellRules.ThousandKnives => target.Side != caster,
+            TargetedMonsterSpellRules.OfferingsToTheDoomed =>
+                TryResolveCardTarget(target,out int slot,out _) && !MonsterFaceDown[target.Side,slot],
             TargetedMonsterSpellRules.TributeToTheDoomed => true,
             _ => false
         });
@@ -87,7 +91,7 @@ public sealed partial class DemoDuel
     {
         if (!CanResolveTargetedMonsterSpellSource(source,out var spell) ||
             !IsMonsterSpellChoice(spell.Id,source.Side,target)) return false;
-        if (spell.Id is TargetedMonsterSpellRules.ThousandKnives or TargetedMonsterSpellRules.Fissure)
+        if (spell.Id is TargetedMonsterSpellRules.ThousandKnives or TargetedMonsterSpellRules.Fissure or TargetedMonsterSpellRules.OfferingsToTheDoomed)
             return cost is null;
         return TargetedMonsterSpellRules.RequiresDiscard(spell) &&
             cost is { } payment && payment != source && payment.Side == source.Side &&
