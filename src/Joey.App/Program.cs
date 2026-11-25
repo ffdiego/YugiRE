@@ -287,13 +287,15 @@ static partial class Game
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
-                    if (Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
+                    if (Button("Console lab (F10)", 535, 488, 240, 38) || Raylib.IsKeyPressed(KeyboardKey.F10))
+                        StartConsoleLab(null);
+                    if (screen == "menu" && Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
                     bool debugMenuClicked = screen == "menu" && Button(duelDebug ? "Ocultar debug" : "Ativar debug", 535, 576, 175, 22);
                     if (debugMenuClicked) debugOverlay.Toggle();
                     if (alphaError.Length > 0) Wrap(alphaError, 535, 475, 240, 13);
                     if (!debugMenuClicked && screen == "menu" && Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
-                        if (hover == 0) StartDemo();
+                        if (hover == 0) { useDemoFixture = false; useImportedDeck = false; StartDemo(); }
                         if (hover == 1) screen = "deck";
                         if (hover == 2) screen = "cards";
                         if (hover == 4) quit = true;

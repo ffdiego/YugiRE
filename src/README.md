@@ -59,7 +59,7 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   usa `card_pack.bin`, não a imagem da carta. Para inspecionar os 1114 registros
   internos, use `dotnet run -- --include-unused` (junto ao caminho DAT, se necessário).
   Esse modo mantém variantes e registros sem nome, sem inferir jogabilidade.
-- Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
+- Single Duel Mode inicia duelo local (dois jogadores manuais), com os decks de 40 cartas do Alpha e cinco cartas iniciais por lado. A mão exibida pertence ao jogador ativo, alternado por End turn.
   Draw compra uma carta por turno. Passe o mouse sobre uma carta para elevá-la
   e mostrar Summon/Activate; botão direito alterna para Set. Clique na carta
   ou no balão para confirmar. A colocação usa o primeiro slot livre à esquerda.
@@ -110,6 +110,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
+## Console de laboratório
+
+No menu, **Console lab (F10)** abre um novo tabuleiro vazio, sem CPU. F10 alterna o console durante o laboratório; Enter executa comandos. Também é possível iniciar com `dotnet run --project src/Joey.App -- --duel-console`. Não concede privilégios de laboratório a um duelo em andamento: volte ao menu com Escape e abra o laboratório. [Comandos](../docs/architecture/duel-console.md).
+
 ## Alpha vs CPU
 
 Escolha **Alpha - vs CPU** no menu ou execute da raiz:
@@ -156,7 +160,7 @@ de compatibilidade ainda desconhecido. O arquivo é aberto somente para leitura.
 os jogadores; cada jogador recebe cinco cartas e pode comprar do restante.
 Requer 40–80 cartas, conforme a checagem nativa documentada. O embaralhamento
 com semente fixa é política de demonstração, não o algoritmo original.
-**Demo fixture** retorna às cartas de teste anteriores. Reset preserva a opção
+**Demo fixture** retorna às cartas de teste anteriores, com mão ampliada intencionalmente; não é o modo normal. Reset preserva a opção
 usada ao iniciar o duelo. As listas adicionais não participam da simulação.
 Os efeitos suportados continuam limitados aos já descritos acima.
 
