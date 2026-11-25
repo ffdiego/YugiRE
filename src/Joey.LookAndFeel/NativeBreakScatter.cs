@@ -10,8 +10,8 @@ public readonly record struct NativeBreakBlock(CardBounds Source,
 
 /// <summary>Static contract recovered from decompilation of 00558FB0,
 /// 00558BC0, 0055C020, 00558BF0, 005C3BF5 and 005C3C02.
-/// The x87 radial divisor is not resolved: inject the measured divisor
-/// rather than silently substituting Math.Sqrt. No renderer or rules RNG.</summary>
+/// Recipe 29 confirms FSQRT, truncating CRT __ftol and signed IDIV.
+/// No renderer or rules RNG.</summary>
 public static class NativeBreakScatter
 {
     private static readonly byte[] noise=GenerateNoise();
@@ -55,10 +55,26 @@ public static class NativeBreakScatter
         }
     }
 
-    /// <summary>Recovered integer portion, contingent on the caller's
-    /// radial divisor from the unresolved x87 operation. Destination is
-    /// relative to the supplied image origin, not a card center.
-    /// Use only for diagnostic comparisons until ABI/rounding confirmed.</summary>
+    /// <summary>00559110..0055911B: FILD, FSQRT, then 005C3E40
+    /// forces x87 RC=11 (truncate toward zero). The argument is a
+    /// nonnegative integer, so the result is floor(sqrt(n)).
+    /// Integer corrections make the result independent of libm rounding.</summary>
+    public static int RadialDivisor(int radiusSquared)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(radiusSquared);
+        int root=(int)Math.Sqrt(radiusSquared);
+        while ((long)(root+1)*(root+1)<=radiusSquared) root++;
+        while ((long)root*root>radiusSquared) root--;
+        return root;
+    }
+
+    /// <summary>Native block placement relative to image top-left.
+    /// Composition and visibility are the caller's responsibility.</summary>
+    public static CardBounds Project(NativeBreakBlock block,CardPoint origin,
+        int width,int height,int parameter) =>
+        Project(block,origin,width,height,parameter,RadialDivisor(block.RadiusSquared));
+
+    /// <summary>Explicit divisor overload retained for diagnostic comparisons.</summary>
     public static CardBounds Project(NativeBreakBlock block,CardPoint origin,
         int width,int height,int parameter,int radialDivisor)
     {
