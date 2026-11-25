@@ -135,12 +135,17 @@ static partial class Game
             Console.Error.WriteLine("Queued inherent summon selection regression failed.");
             return 1;
         }
+        if (!CheckRitualBoardSelection())
+        {
+            Console.Error.WriteLine("Queued Ritual board selection regression failed.");
+            return 1;
+        }
         if (!CheckQueuedSummonResponse())
         {
             Console.Error.WriteLine("Queued summon response presentation regression failed.");
             return 1;
         }
-        Console.WriteLine("Laboratory, queued automatic draw, combat, inherent summon selection and summon response regressions passed.");
+        Console.WriteLine("Laboratory, queued automatic draw, combat, inherent and Ritual summon selections and summon responses passed.");
         return 0;
     }
 
