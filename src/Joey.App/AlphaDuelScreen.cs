@@ -16,7 +16,7 @@ static partial class Game
     static bool CanPlayMainOrBattle => CanPlayTurn && (alphaCpu is null || !duel.CanDraw);
 
     sealed record CardFlight(Card Card, bool Hidden, bool Defense, int Player, int Zone, bool Spell,
-        Rectangle Origin, Rectangle Destination);
+        Rectangle Origin, Rectangle Destination, bool Field = false);
     static CardFlight? flight;
     // Tribute monsters must disappear before the incoming card's travel.
     // Core already committed the summon; this only delays its visual flight.
@@ -120,12 +120,12 @@ static partial class Game
             NativeDuelLayout.MonsterCardWidth, NativeDuelLayout.MonsterCardHeight);
     }
 
-    static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden)
+    static void BeginFlight(Card card, int player, int zone, Rectangle origin, bool spell, bool hidden, bool field = false)
     {
         if (!presentation.Style.PlayAnimations) return;
         var planned = new CardFlight(card, hidden, !spell && hidden, player, zone, spell, origin,
-            ToRectangle(DuelCardLayout.OnBoard(spell ? DuelCardZone.Spell : DuelCardZone.Monster,
-                player == ViewPlayer, zone, false, hidden).Bounds));
+            ToRectangle(DuelCardLayout.OnBoard(field ? DuelCardZone.Field : spell ? DuelCardZone.Spell : DuelCardZone.Monster,
+                player == ViewPlayer, zone, false, hidden).Bounds), field);
         if (!spell && HasQueuedTributesFor(player))
         {
             deferredTributeFlight = planned;
@@ -145,10 +145,10 @@ static partial class Game
         flight = planned;
     }
 
-    static bool InFlight(int player, int zone, bool spell) =>
-        flight is { } f && (f.Player, f.Zone, f.Spell) == (player, zone, spell)
+    static bool InFlight(int player, int zone, bool spell, bool field = false) =>
+        flight is { } f && (f.Player, f.Zone, f.Spell, f.Field) == (player, zone, spell, field)
         || deferredTributeFlight is { } pending &&
-           (pending.Player, pending.Zone, pending.Spell) == (player, zone, spell);
+           (pending.Player, pending.Zone, pending.Spell, pending.Field) == (player, zone, spell, field);
 
     static void DrawFlight()
     {
@@ -334,6 +334,10 @@ static partial class Game
             BeginAttackCue(continued.AttackingPlayer, continued.AttackerZone, continued.TargetZone,
                 continued.TargetZone is >= 0 and < NativeDuelLayout.MonsterSlots
                     ? hiddenBeforeStep[1 - continued.AttackingPlayer, continued.TargetZone] : null);
+        // Queued activations are presented once by AppActionPresentationGate.
+        // The CPU step only admitted the command; its hand has not moved yet.
+        if (step.Action is CpuAction.Spell or CpuAction.Equip or CpuAction.Set or CpuAction.Summon or CpuAction.Position &&
+            queuedDuel?.IsBusy == true) return;
         if (step.Card is not Card card) return;
         if (step.Action is CpuAction.Set or CpuAction.Summon or
             CpuAction.Spell or CpuAction.Equip or CpuAction.Response)
