@@ -56,7 +56,9 @@ internal static class QueuedSameNameRecruitmentChecks
                 "Duplicate, stale and wrong response API reject");
             int shuffles=0;var summons=new List<DemoSpecialSummon>();
             d.DeckShuffled+=_=>shuffles++;d.MonsterSpecialSummoned+=summons.Add;
-            check(d.TryQueueSameNameRecruitment(request,picks,out _)&&d.DeckCount(owner)==4&&
+            check(d.UsesQueuedFieldSelection(request)&&!d.TrySubmitQueuedFieldSelection(request,[candidates[0].Target,candidates[0].Target],false,out _),
+                "Field producer rejects duplicate batch occurrence");
+            check(d.TrySubmitQueuedFieldSelection(request,picks,false,out _)&&d.DeckCount(owner)==4&&
                 d.PendingCardSelection==request,"P168 admission nonmutating");
             q.Tick();
             if(count>0)
@@ -97,8 +99,8 @@ internal static class QueuedSameNameRecruitmentChecks
                 !d.TryQueueSameNameRecruitment(request,candidates.Select(c=>c.Target).ToArray(),out _)&&
                 !d.TryQueueSameNameRecruitment(request,[candidates[1].Target],out _,singleSlot:0),
                 "Bubonic maximum one and free slot required");
-            check(d.TryQueueSameNameRecruitment(request,decline?[]:[candidates[1].Target],out _,
-                singleSlot:decline?null:4),"Bubonic answer admitted");
+            check(d.TrySubmitQueuedFieldSelection(request,decline?[]:[candidates[1].Target],false,out _,
+                destinationZone:decline?null:4),"Bubonic field producer answer admitted");
             Drain(q);
             check(d.PendingCardSelection is null&&d.DeckCount(owner)==(decline?3:2)&&
                 (decline?d.Monsters[owner,4] is null:
@@ -106,6 +108,23 @@ internal static class QueuedSameNameRecruitmentChecks
                     d.MonsterFaceDown[owner,4]&&d.DefensePosition[owner,4])&&
                 q.Trace.Count(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is ShuffleDeckCommand)==(decline?0:1),
                 "Bubonic selected copy face-down or decline without shuffle");
+        }
+
+        foreach(int side in new[]{0,1})
+        {
+            var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(Monster(1307)):Slots(),
+                side==1?Slots(Monster(1307)):Slots(),8000,
+                side0Deck:side==0?[Monster(1307)]:null,side1Deck:side==1?[Monster(1307)]:null);
+            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
+            var q=d.CreatePrimitiveActionQueue();d.TryQueueChangePosition(0,out _);Drain(q);
+            var req=d.PendingCardSelection!;
+            var step=new CpuDuelController(side).Step(d,queueTurnActions:true);
+            check(step.Status==CpuStepStatus.Acted&&q.IsBusy&&d.PendingCardSelection==req&&d.Monsters[side,1] is null,
+                "CPU field selection admits without immediate placement");
+            Drain(q);
+            check(d.PendingCardSelection is null&&d.Monsters[side,1]?.Id==1307&&d.MonsterFaceDown[side,1]&&
+                q.Trace.Any(t=>t.Stage==ActionTraceStage.Executed&&t.Entry.Origin==ActionOrigin.Cpu),
+                "CPU uses same queued field producer and fixed position");
         }
 
         var suppressed=DemoDuel.FromPartialObservation(0,[],Slots(Monster(1307)),Slots(),8000,
