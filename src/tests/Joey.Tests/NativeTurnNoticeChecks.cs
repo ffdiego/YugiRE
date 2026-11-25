@@ -109,7 +109,46 @@ internal static class NativeTurnNoticeChecks
             "V07: retained counter resumes after flip");
         check(new NativePhasePanelState(512,1016).Advance(0).State==initial,
             "V07: panel idle animation wraps from 1024 to 256");
-        reject(()=>initial.Advance(6),"V07: panel phase input outside -1..5");
+        bool invalidPhase=false;
+        try { initial.Advance(6); } catch(ArgumentOutOfRangeException) { invalidPhase=true; }
+        check(invalidPhase,"V07: panel phase input outside -1..5");
+
+        // V07.2: confirmed raw selector and ordered +10/+8/+B0 passes.
+        var cosine=NativeCosineCapture.GenerateTable();
+        foreach(bool second in new[]{false,true})
+        for(int phase=0;phase<6;phase++)
+        {
+            int key=phase+(second?6:0);
+            var start=NativePhaseBannerDraw.AtCounter(phase,second,0,cosine);
+            check(start.SequenceEqual(new NativePhaseBannerPass[]{
+                new(key,new(461,300),NativePhaseBannerRoute.Intensity,0),
+                new(key,new(589,300),NativePhaseBannerRoute.Intensity,0)}),
+                "V07: two intensity passes start at +/-64");
+            var entrance=NativePhaseBannerDraw.AtCounter(phase,second,32,cosine);
+            check(entrance[0].Center==new CardPoint(480,300)&&
+                entrance[1].Center==new CardPoint(570,300)&&
+                entrance.All(p=>p.Operand==96),
+                "V07: entrance centers and raw intensity");
+            for(int counter=64;counter<=128;counter+=4)
+            {
+                var passes=NativePhaseBannerDraw.AtCounter(phase,second,counter,cosine);
+                if(phase==3&&counter<120)
+                    check(passes.SequenceEqual(new NativePhaseBannerPass[]{
+                        new(12+(second?7:0)+(counter-64)/8,new(525,300),NativePhaseBannerRoute.Base,0)}),
+                        "V07: seven battle sparkle keys at four-counter update cadence");
+                else
+                    check(passes.Length==2&&passes[0]==new NativePhaseBannerPass(key,new(525,300),NativePhaseBannerRoute.Base,0)&&
+                        passes[1].LookupKey==key&&passes[1].Center==new CardPoint(525,300)&&
+                        passes[1].Route==NativePhaseBannerRoute.UnresolvedB0&&
+                        passes[1].Operand==(counter==128?256:65536-counter*2),
+                        "V07: opaque base precedes unresolved B0, preserve low word");
+            }
+            var fade=NativePhaseBannerDraw.AtCounter(phase,second,136,cosine);
+            check(fade.SequenceEqual(new NativePhaseBannerPass[]{
+                new(key,new(525,300),NativePhaseBannerRoute.Intensity,254)})&&
+                NativePhaseBannerDraw.AtCounter(phase,second,256,cosine).Length==0,
+                "V07: one cosine fade pass; draw ends at counter 256");
+        }
 
         // Synthetic order deliberately unrelated to filenames. No claim
         // about the actual proprietary manifest's order in this fixture.
