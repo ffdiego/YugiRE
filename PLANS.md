@@ -6,7 +6,7 @@
 
 ## Foco atual
 
-**C12 — migrar as famílias já implementadas para a fila de ações.** CARDS deve suspender novas cartas e lotes C02/C03 até C12 fechar, independentemente do status histórico dos outros itens. Qualquer carta nova, depois de C12, só entra pela fila. ACTIONS e VISUALS mantêm suas trilhas e coordenam dependências. [Critério e ordem](#c12--migrar-as-famílias-done-para-a-fila-de-ações).
+**C12 — migrar as famílias já implementadas para a fila de ações.** CARDS prioriza C12.1 (produtores UI/CPU e fila padrão); novos efeitos ficam suspensos até esse gate documentado e integrado. Após C12.1, famílias independentes podem avançar exclusivamente pela fila, sem interromper a remoção do legado restante. ACTIONS e VISUALS mantêm suas trilhas e coordenam dependências. [Critério e ordem](#c12--migrar-as-famílias-done-para-a-fila-de-ações).
 
 <a id="trilhas-de-trabalho-como-despachar-um-agente"></a>
 
@@ -14,7 +14,7 @@
 
 Três trilhas com IDs estáveis: ACTIONS (fila/scheduler, console, traces), CARDS (regras e cobertura), VISUALS (fidelidade visual). Comandos: `continue o trabalho em <TRILHA>` ou `faça <ID>`.
 
-1. Ler Foco atual, Contrato da fila e a trilha pedida. Escolher primeiro item Pronto ou Parcial executável (ou ID citado), respeitando o foco e dependências; conferir PRs/branches ativos antes de reservar o ID. CARDS começa por C12.
+1. Ler Foco atual, Contrato da fila e a trilha pedida. Escolher primeiro item Pronto ou Parcial executável (ou ID citado), respeitando o foco e dependências; conferir PRs/branches ativos antes de reservar o ID. CARDS começa por C12.1; após seu gate, priorizar famílias de risco baixo/médio (C18) com primitivas disponíveis, sem abandonar o C12 restante.
 2. Entregar uma fatia vertical pequena (regra → fila → teste → UI se aplicável → CARDS.md/manifest se aplicável).
 3. Atualizar **apenas checkbox ao concluir, Status e Próximo passo** do item no PLANS.md. Relato de fatia (PR, CI, evidência e limites) vai em `docs/plans/<TRILHA>.md` no bloco do ID. Nunca acrescentar relatos a PLANS.md.
 4. Achados novos viram IDs no fim da trilha; nunca renumerar ou reutilizar. Revisar bloqueios quando dependências fecharem.
@@ -29,8 +29,8 @@ ACTIONS: marcos A concluídos / marcos A numerados (não porcentagem de opcodes)
 ## Regras de priorização
 
 1. Priorizar o que o jogador consegue fazer de verdade; fatias verticais pequenas, não número de callbacks.
-2. Cartas simples: DAT local e família mecânica; análise nativa só para ambiguidades relevantes, sem validação excessiva.
-3. Joey.Tests libera Done no escopo descrito; Verified exige comparação do mesmo comportamento com original.
+2. CARDS: texto do DAT local e regras da edição Joey; definições declarativas por família mecânica (records/tabelas C#, sem DSL desnecessária), testes por ID e cenário de família. Triagem C18 orienta o rigor, não impede efeitos claros; análise nativa sob demanda para ambiguidades materiais.
+3. Joey.Tests libera Done no escopo completo anunciado; headless isolado não prova jogabilidade UI/CPU, e integração incompleta é Partial no escopo jogável. Verified exige comparação do mesmo comportamento com original. C14/C15 ficam adiados como campanha, salvo divergência material; validar famílias e interações por decks/traces quando houver massa crítica.
 4. Core independente de Frida e tempo de animação, mas ordem e granularidade seguem a fila nativa. Preservar laboratório de RE.
 5. Visual: pixels, dimensões, orientação, recursos, composição, contadores e duração originais ([meta](docs/architecture/visual-fidelity-goal.md)); assets DAT em runtime, caches permitidos, sem placeholders finais, preservar quadros intermediários.
 6. Debug desligado por padrão; F3/botão/menu; controles essenciais não somem. Revisar 800×600 com e sem debug.
@@ -72,11 +72,11 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 ## Trilha CARDS
 
-> Novos efeitos somente pela fila; novos lotes suspensos durante C12. [Histórico](docs/plans/CARDS.md#histórico-concluído-sem-id).
+> Novos efeitos somente pela fila; novos lotes suspensos até o gate C12.1. Depois, DAT primeiro e triagem C18 para famílias independentes. [Histórico](docs/plans/CARDS.md#histórico-concluído-sem-id).
 
 - [x] **C01 — Taxonomia de efeitos por texto local.** Status: `Concluído`. Taxonomia local concluída: 264 sem efeito, 433 fila/resposta, 72 revisão, duas candidatas triviais. [Detalhes](docs/plans/CARDS.md#c01)
-- [ ] **C02 — Lotes triviais por família.** Status: `Pronto`. Suspenso até fechar C12; preservar lotes já implementados, incluindo Final Destiny e P123. [Detalhes](docs/plans/CARDS.md#c02)
-- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`. Suspenso para efeitos novos até fechar C12; dano de batalha depende de A06/A07. [Detalhes](docs/plans/CARDS.md#c03)
+- [ ] **C02 — Lotes triviais por família.** Status: `Pronto`. Após C12.1: famílias independentes de risco baixo/médio (C18); preservar lotes já implementados, incluindo Final Destiny e P123. [Detalhes](docs/plans/CARDS.md#c02)
+- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`. Após C12.1: efeitos independentes por risco (C18); dano de batalha depende de A06/A07. [Detalhes](docs/plans/CARDS.md#c03)
 - [ ] **C04 — Equipamentos `P025`.** Status: `Parcial`. Migrar fluxos legados de mão dos equipamentos P025 (C12); demais efeitos depois. [Detalhes](docs/plans/CARDS.md#c04)
 - [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Pronto`. Blue Medicine já na fila; Tremendous Fire após C12. [Detalhes](docs/plans/CARDS.md#c05)
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto`. Migrar armadilhas existentes em C12; novas respostas/correntes depois. [Detalhes](docs/plans/CARDS.md#c06)
@@ -87,10 +87,12 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
 - [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Produtores UI/CPU e fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
-- [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Parcial`. Comparação P036 em duelo nativo pendente. [Detalhes](docs/plans/CARDS.md#c14)
-- [ ] **C15 — Fatias `Verified`.** Status: `Aguardando evidência`. Uma carta por família comparada ao original, após migração; baixa prioridade. [Detalhes](docs/plans/CARDS.md#c15)
+- [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Adiado`. Sea Serpent confirmado no DAT; comparação P036 em duelo nativo preservada, sob demanda. [Detalhes](docs/plans/CARDS.md#c14)
+- [ ] **C15 — Fatias `Verified`.** Status: `Adiado`. Comparações por família e interações em duelos dirigidos após massa crítica; antecipar divergências materiais. [Detalhes](docs/plans/CARDS.md#c15)
 - [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Pronto`. UI/CPU dos procedimentos existentes em C12; efeitos pós-invocação depois. [Detalhes](docs/plans/CARDS.md#c16)
 - [ ] **C17 — Controle de Dark Necrofear e Prohibition.** Status: `Aguardando evidência`. Dark Necrofear/Prohibition dependem de evidência; não implementar por aproximação. [Detalhes](docs/plans/CARDS.md#c17)
+
+- [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Pronto`. Enriquecer a taxonomia C01 com risco por slots + semântica; consultar SQLite primeiro, exportar apenas lacunas relevantes; triagem independente pode avançar antes de C12.1, implementação nova não. [Detalhes](docs/plans/CARDS.md#c18)
 
 ### C12 — migrar as famílias Done para a fila de ações
 
@@ -105,9 +107,11 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 4. Armadilhas de ataque/Summon (Trap Hole, Torrential Tribute, Magic Cylinder, Negate Attack, Mirror Force) e fusões: verificar no código o que já foi migrado antes de implementar; migrar apenas caminhos existentes.
 5. P117/P159/P160, Dark Necrofear e Prohibition: inventariar lacunas ([revival](docs/cards/p117-p159-p160-revival-spells-gap.md), C17); não implementar regras novas nem promover status para fechar C12. Pendências sem equivalente jogável ficam nos IDs próprios.
 
-**Pronto quando:** (a) fila padrão no App/CPU; (b) nenhuma família migrada mantém resolução legada equivalente ativa (remover ou marcar obsoleto e impedir seu uso no caminho padrão); (c) `ActionsBlocked` não depende dos `Pending*` legados dessas famílias; (d) testes atuais e regressões passam, CI verde antes da integração e cobertura jogável inalterada; (e) Demo.cs diminui por fatia, com contagem de linhas antes/depois. Se precisar de uma adaptação transitória, justificar e registrar sua remoção; não criar novo resolvedor legado.
+**Pronto quando:** (a) fila padrão no App/CPU; (b) nenhuma família migrada mantém resolução legada equivalente ativa (remover ou marcar obsoleto e impedir seu uso no caminho padrão); (c) `ActionsBlocked` não depende dos `Pending*` legados dessas famílias; (d) testes atuais e regressões passam, CI verde antes da integração e cobertura jogável preexistente preservada (ganhos de lotes independentes contabilizados separadamente); (e) Demo.cs diminui por fatia, com contagem de linhas antes/depois. Se precisar de uma adaptação transitória, justificar e registrar sua remoção; não criar novo resolvedor legado.
 
-Não abrir novos lotes C02/C03 nem implementar cartas novas enquanto C12 estiver aberto. Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
+**Gate C12.1:** a fila deve ser o caminho padrão real no App e na CPU, com paridade de cobertura jogável preexistente, regressões UI/CPU (incluindo admissão, escolhas e gates aplicáveis) e CI obrigatório verde; registrar o fechamento do item 1 com PR e evidências. Antes disso, não implementar cartas novas nem abrir lotes C02/C03. Depois, CARDS pode entregar novas famílias independentes exclusivamente pela fila, em paralelo à migração restante A06/A07/C12, sem depender de resolvedores legados, criar bypasses ou alterar contratos compartilhados sem coordenação. AÇÕES estruturais ficam com ACTIONS; CARDS pode continuar fatias de migração acordadas. O C12 continua aberto até todos os critérios originais; comparar paridade da migração com a baseline anterior ao gate, separando ganhos de cobertura dos novos lotes.
+
+Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
 
 Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 

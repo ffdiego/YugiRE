@@ -2,6 +2,8 @@
 
 Histórico e contratos movidos de PLANS.md na revisão de 24/11/2026 (base `42f7813`). [Plano vivo e status atuais](../../PLANS.md). Registrar novos relatos (PR, CI, evidência, limitações) no bloco do item; não duplicar relatos no plano. Os relatos anteriores são históricos, não certificam o estado atual de uma branch.
 
+> **Decisão 25/11/2026 — aceleração com segurança:** texto do DAT local e regras da época de Joey como ponto de partida; definições declarativas por família e testes por ID. Não exigir verificação nativa individual para Done; preservar escopo e dependências UI/CPU. Novos efeitos somente após gate C12.1 e pela fila. C18 é triagem consultiva; C14/C15 ficam adiados como campanha, não apagados. Evidência de divergência continua acionável.
+
 ## Histórico concluído (sem ID)
 
 - [x] Manifest por resource ID com status e famílias de efeito, separado do registry legado de RE.
@@ -28,7 +30,7 @@ Roteiro 14 executado com o DAT local em Fedora/.NET 10. O fingerprint e as 771 e
 
 <a id="c02"></a>
 
-Usar a triagem de C01 e confirmar a mecânica antes de implementar. Priorizar a candidata de cura Pending com C05 e revisar manualmente os casos sem rota conclusiva antes de ampliar o lote. Usar primitivos reutilizáveis na fila, cenários por família/ID e atualizar `CARDS.md` e o manifesto a cada entrega.
+Após C12.1, usar a triagem de C01/C18 e confirmar a mecânica antes de implementar. Começar por famílias independentes de baixo/médio risco com primitivas já disponíveis; não criar nova DSL. Priorizar a candidata de cura Pending com C05 e revisar manualmente os casos sem rota conclusiva antes de ampliar o lote. Usar primitivos reutilizáveis na fila, cenários por família/ID e atualizar `CARDS.md` e o manifesto a cada entrega.
   C02.1: Eternal Rest (655/P092, Kaiba) usa o mesmo executor de wipe, filtro por vínculos vivos dos dois lados e destruição individual; testes mão/Set, identidade e equipamento múltiplo. [Contrato](../../docs/cards/c02-eternal-rest.md). Done condicionado ao CI; nenhuma promoção Verified.
   C02.2: Fusion Sage (1040/P134, Joey), gasto por comando seguido de abertura de seleção Deck → Hand e reutilização do resolvedor de busca; dois IDs de Polymerization. [Contrato](../../docs/cards/c02-fusion-sage.md). Done condicionado ao CI; sem Verified.
   C02.3: Giant Trunade (1080/P152, Joey) reaproveita lote S/T e ReturnToHandCommand, com gasto separado e preservação dos vínculos/identidade. [Contrato](../../docs/cards/c02-giant-trunade.md). Done condicionado ao CI; sem Verified. Outras buscas (Last Will, Painful Choice, Thunder Dragon) não equivalem ao filtro simples de Fusion Sage; requerem gatilho, custo ou seleção múltipla.
@@ -111,9 +113,11 @@ Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 4. Armadilhas de ataque/Summon (Trap Hole, Torrential Tribute, Magic Cylinder, Negate Attack, Mirror Force) e fusões: verificar no código o que já foi migrado antes de implementar; migrar apenas caminhos existentes.
 5. P117/P159/P160, Dark Necrofear e Prohibition: inventariar lacunas ([revival](../../docs/cards/p117-p159-p160-revival-spells-gap.md), C17); não implementar regras novas nem promover status para fechar C12. Pendências sem equivalente jogável ficam nos IDs próprios.
 
-**Pronto quando:** (a) fila padrão no App/CPU; (b) nenhuma família migrada mantém resolução legada equivalente ativa (remover ou marcar obsoleto e impedir seu uso no caminho padrão); (c) `ActionsBlocked` não depende dos `Pending*` legados dessas famílias; (d) testes atuais e regressões passam, CI verde antes da integração e cobertura jogável inalterada; (e) Demo.cs diminui por fatia, com contagem de linhas antes/depois. Se precisar de uma adaptação transitória, justificar e registrar sua remoção; não criar novo resolvedor legado.
+**Pronto quando:** (a) fila padrão no App/CPU; (b) nenhuma família migrada mantém resolução legada equivalente ativa (remover ou marcar obsoleto e impedir seu uso no caminho padrão); (c) `ActionsBlocked` não depende dos `Pending*` legados dessas famílias; (d) testes atuais e regressões passam, CI verde antes da integração e cobertura jogável preexistente preservada (ganhos de lotes independentes contabilizados separadamente); (e) Demo.cs diminui por fatia, com contagem de linhas antes/depois. Se precisar de uma adaptação transitória, justificar e registrar sua remoção; não criar novo resolvedor legado.
 
-Não abrir novos lotes C02/C03 nem implementar cartas novas enquanto C12 estiver aberto. Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
+**Gate C12.1:** a fila deve ser o caminho padrão real no App e na CPU, com paridade de cobertura jogável preexistente, regressões UI/CPU (incluindo admissão, escolhas e gates aplicáveis) e CI obrigatório verde; registrar o fechamento do item 1 com PR e evidências. Antes disso, não implementar cartas novas nem abrir lotes C02/C03. Depois, CARDS pode entregar novas famílias independentes exclusivamente pela fila, em paralelo à migração restante A06/A07/C12, sem depender de resolvedores legados, criar bypasses ou alterar contratos compartilhados sem coordenação. AÇÕES estruturais ficam com ACTIONS; CARDS pode continuar fatias de migração acordadas. O C12 continua aberto até todos os critérios originais; comparar paridade da migração com a baseline anterior ao gate, separando ganhos de cobertura dos novos lotes.
+
+Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
 
 ### Histórico das fatias
 
@@ -130,13 +134,13 @@ Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos
 
 <a id="c14"></a>
 
-DAT local e teste opcional confirmam o código de classe para dois IDs dos packs. A comparação de P036 em duelo nativo permanece pendente. [Evidências](../../docs/cards/p036-field-spells-sandbox.md).
+**Adiado:** DAT local e teste opcional confirmam o código de classe para dois IDs dos packs. A comparação de P036 em duelo nativo permanece pendente. [Evidências](../../docs/cards/p036-field-spells-sandbox.md).
 
 ## C15 — Fatias `Verified`
 
 <a id="c15"></a>
 
-Uma carta por família comparada com captura do original (mesmo roteiro, mesmos comandos). Baixa prioridade frente a `C02`/`C03`.
+**Adiado:** após massa crítica, comparar famílias e interações em decks dirigidos, com cenários equivalentes, estados, comandos e resultados observáveis; seed quando reproduzível. Um teste de família não promove automaticamente todos os IDs a Verified. Divergências materiais podem antecipar a coleta e devem virar regressões.
 
 ## C16 — Seletor de custo de invocação especial por banimento
 
@@ -149,3 +153,22 @@ Reutilizar `GraveyardBanishSummonRules`, seleção genérica e zona de banimento
 <a id="c17"></a>
 
 Pendências distintas: identidade/owner/controller, saída do campo, vínculo e End Phase de P252 (roteiro 10); declaração e efetividade de Prohibition (roteiro 06). Dividir em novos IDs quando houver evidência suficiente. Royal Command permanece Partial; sua cadeia pertence a C06/C07. Não implementar por aproximação.
+
+## C18 — Triagem de risco por slots de callback e mecânica
+
+<a id="c18"></a>
+
+**Objetivo:** orientar o custo de investigação, não substituir a interpretação do DAT ou o teste funcional. Fonte de slots: `docs/evidence/card-callback-catalog.json` (primary, candidate, availability, preparation, target_preparation). A proposta de 25/11 registra 443 entradas: 0 = 15, 1 = 94, 2 = 134, 3 = 146, 4 = 47, 5 = 7. Contagens preliminares da proposta, a reproduzir com o catálogo atual antes de publicar a classificação; não representam os 771 IDs jogáveis.
+
+| Slots preenchidos | Risco inicial |
+| --- | --- |
+| 0 | Indeterminado; revisar |
+| 1 | Baixo |
+| 2 | Médio |
+| 3–5 | Maior |
+
+Ajustar pelo comportamento: dano/cura/compra simples e bônus fixo tendem a baixo; busca/FLIP com seleção a médio; correntes/negação, controle, efeitos contínuos com timing complexo, vitória especial ou texto ambíguo a maior. Um único callback não prova simplicidade; muitos callbacks não provam complexidade. Divergência observada aumenta a prioridade de investigação e vira teste de regressão.
+
+**Fluxo:** cruzar por resource ID (não índice interno), preservar os casos sem correspondência e os status de playability; acrescentar risco inicial, risco ajustado, justificativa e lacunas à taxonomia C01. Começar pela descrição local e evidências existentes; usar o SQLite cumulativo/bundles antes de pedir Ghidra. Para dúvidas materiais, investigar os predicados availability/candidate e demais callbacks pertinentes por família, agrupando apenas as lacunas em scripts/pending. Não exigir exportação de todas as cartas de risco maior, nem promover uma hipótese a Verified. Se a dúvida impedir regra confiável, registrar Partial/Pending e seguir com outra família. Não versionar texto proprietário do DAT.
+
+**Pronto quando:** a classificação é reproduzível e testada (incluindo 0 slots, IDs ausentes e ajustes por mecânica), com contagens auditáveis, exemplos, justificativas e fila de dúvidas direcionadas. C18 pode avançar antes de C12.1 como triagem/testes independentes; nenhuma nova implementação de cartas antes do gate. Depois, usar o risco para ordenar lotes e registrar testes por ID/família, sem tornar C18 inteiro pré-requisito de uma carta clara.
