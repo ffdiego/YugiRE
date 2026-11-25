@@ -19,8 +19,42 @@ internal static class QueuedDeckSearchChecks
             c.Command is not MoveToHandCommand || Release;
     }
 
+    private static void CpuFusionSage(Action<bool, string> check)
+    {
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool set in new[] { false, true })
+        {
+            Card[] deck = [Monster(24), Spell(1003), Monster(25)];
+            var duel = DemoDuel.FromPartialObservation(side, [Spell(DeckSearchSpellRules.FusionSage)],
+                Slots(), Slots(), 8000, side0Deck: side == 0 ? deck : null, side1Deck: side == 1 ? deck : null);
+            if (set) check(duel.SetFromHand(0, out _), "CPU Fusion Sage Set fixture");
+            check(duel.Draw(out _), "CPU Fusion Sage Draw fixture");
+            var queue = duel.CreatePrimitiveActionQueue();
+            var cpu = new CpuDuelController(side);
+            check(cpu.Step(duel, queueTurnActions: true) is { Status: CpuStepStatus.Acted } &&
+                queue.IsBusy && duel.PendingCardSelection is null && duel.Graveyard(side).Count == 0,
+                "CPU submits Fusion Sage without immediate spend");
+            var entry = queue.Trace.Single().Entry;
+            var presentation = duel.DescribeActionPresentation(entry.Command);
+            check(entry.Origin == ActionOrigin.Cpu && presentation is { Kind: ActionPresentationKind.Activate } &&
+                presentation.Source.Zone == (set ? DuelZone.SpellTrap : DuelZone.Hand) &&
+                presentation.DestinationSlot == 0,
+                "App gate reads correct hand/Set origin for the admitted Fusion Sage activation");
+            Drain(queue);
+            check(duel.PendingCardSelection is { EffectResourceId: DeckSearchSpellRules.FusionSage } &&
+                cpu.Step(duel, queueTurnActions: true) is { Status: CpuStepStatus.Acted } &&
+                queue.IsBusy && duel.HandFor(side).Count == 1,
+                "CPU responds to the mandatory Polymerization choice through the queue");
+            Drain(queue);
+            check(duel.PendingCardSelection is null && duel.HandFor(side).Any(c => c.Id == 1003) &&
+                duel.Graveyard(side).Single().Id == DeckSearchSpellRules.FusionSage,
+                "CPU activation and selection compose end to end.");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
+        CpuFusionSage(check);
         foreach(int side in new[]{0,1})
         foreach(ushort effect in new ushort[]{47,573})
         {
@@ -80,7 +114,9 @@ internal static class QueuedDeckSearchChecks
             var q=d.CreatePrimitiveActionQueue(gate);
             if(set){check(d.TryQueueSpellTrapSet(0,out _),"Fusion Sage Set");Drain(q);}
             check(!(set?d.ActivateSetSpell(0,out _):d.Play(0,out _)),"No legacy activation bypass");
-            check(d.TryQueueActivation(0,set,out _)&&d.PendingCardSelection is null&&
+            var sourceZone = set ? DuelZone.SpellTrap : DuelZone.Hand;
+            check(d.CanQueueDeckSearchSpell(sourceZone, 0), "Fusion Sage UI enables the correct zone");
+            check(d.TryQueueActivation(0,set,out _)&&!d.CanQueueDeckSearchSpell(sourceZone, 0)&&d.PendingCardSelection is null&&
                 d.Graveyard(side).Count==0,"Fusion Sage admission does not spend or search");
             q.Tick();q.Tick();
             check(d.Graveyard(side).Single().Id==1040&&d.PendingCardSelection is null,
@@ -116,7 +152,7 @@ internal static class QueuedDeckSearchChecks
             var d=DemoDuel.FromPartialObservation(0,[Spell(1040)],Slots(),Slots(),8000,
                 side0Deck:[Spell(1547),Monster(1003)]);
             var q=d.CreatePrimitiveActionQueue();
-            check(!d.TryQueueActivation(0,false,out _)&&!q.IsBusy&&d.Hand.Count==1,
+            check(!d.CanQueueDeckSearchSpell(DuelZone.Hand, 0)&&!d.TryQueueActivation(0,false,out _)&&!q.IsBusy&&d.Hand.Count==1,
                 "No matching Spell: activation rejected");
         }
         {

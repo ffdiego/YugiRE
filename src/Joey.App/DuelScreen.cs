@@ -35,13 +35,18 @@ static partial class Game
         return new(card.X, card.Y - 32, card.Width, 27);
     }
 
+    static bool CanActivateHandDeckSearch(int index) =>
+        queuedDuel is not null && DeckSearchSpellRules.Filter(ViewHand[index].Id) is not null
+            ? duel.CanQueueDeckSearchSpell(DuelZone.Hand, index)
+            : duel.CanActivateFromHand(index);
+
     static NativeCursorAction? CurrentHandAction(int index) =>
         index < 0 || index >= ViewHand.Count ? null :
         NativeDuelCursor.HandAction(
             ViewHand[index].IsMonster,
             duel.CanSummonFromHand(index),
             duel.CanSetFromHand(index),
-            duel.CanActivateFromHand(index),
+            CanActivateHandDeckSearch(index),
             setHandAction,
             duel.PendingEndDiscards > 0);
 
@@ -51,7 +56,7 @@ static partial class Game
             ViewHand[index].IsMonster,
             duel.CanSummonFromHand(index),
             duel.CanSetFromHand(index),
-            duel.CanActivateFromHand(index));
+            CanActivateHandDeckSearch(index));
     static bool Hit(Rectangle rect) => Raylib.CheckCollisionPointRec(mouse, rect);
 
     // card.txt holds both large hand and small board selection frames.
@@ -261,7 +266,7 @@ static partial class Game
                         ViewHand[next].IsMonster,
                         duel.CanSummonFromHand(next),
                         duel.CanSetFromHand(next),
-                        duel.CanActivateFromHand(next),
+                        CanActivateHandDeckSearch(next),
                         requestSet: false,
                         discarding: duel.PendingEndDiscards > 0)
                     == NativeCursorAction.Set;

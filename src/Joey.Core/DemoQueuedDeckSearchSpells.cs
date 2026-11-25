@@ -13,13 +13,23 @@ public sealed partial class DemoDuel
         ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Choose a supported search spell with an eligible card in your deck.";
-        if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
-            PendingEndDiscards != 0 || sourceZone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
-            !TryCaptureCardTarget(ActivePlayer, sourceZone, index, out var source) ||
-            !CanResolveDeckSearchSpell(source, out _)) return false;
+        if (primitiveActionQueue is not { IsBusy: false } queue ||
+            !TryGetQueuedDeckSearchSource(sourceZone, index, out var source)) return false;
         queue.Enqueue(new ActivateDeckSearchSpellCommand(source.Side, source), origin);
         message = "Deck search spell admitted.";
         return true;
+    }
+
+    public bool CanQueueDeckSearchSpell(DuelZone sourceZone, int index) =>
+        primitiveActionQueue is { IsBusy: false } && TryGetQueuedDeckSearchSource(sourceZone, index, out _);
+
+    private bool TryGetQueuedDeckSearchSource(DuelZone sourceZone, int index, out CardTarget source)
+    {
+        source = default;
+        return !ActionsBlocked && PendingEndDiscards == 0 &&
+            sourceZone is DuelZone.Hand or DuelZone.SpellTrap &&
+            TryCaptureCardTarget(ActivePlayer, sourceZone, index, out source) &&
+            CanResolveDeckSearchSpell(source, out _);
     }
 
     private bool CanResolveDeckSearchSpell(CardTarget source, out CardSelectionFilter filter)

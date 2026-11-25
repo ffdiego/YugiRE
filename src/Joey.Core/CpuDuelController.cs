@@ -267,6 +267,19 @@ public sealed class CpuDuelController
                     DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
             if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
                 source: duel.FirstFreeSpellZone(), handIndex: spell);
+            if (queueTurnActions)
+            {
+                int searchInHand = Enumerable.Range(0, duel.Hand.Count)
+                    .FirstOrDefault(i => duel.CanQueueDeckSearchSpell(DuelZone.Hand, i), -1);
+                if (searchInHand >= 0)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryQueueDeckSearchSpell(DuelZone.Hand, searchInHand, out m, ActionOrigin.Cpu));
+                int searchSet = Enumerable.Range(0, 5)
+                    .FirstOrDefault(i => duel.CanQueueDeckSearchSpell(DuelZone.SpellTrap, i), -1);
+                if (searchSet >= 0)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryQueueDeckSearchSpell(DuelZone.SpellTrap, searchSet, out m, ActionOrigin.Cpu));
+            }
             int fusionSpell = Enumerable.Range(0, duel.Hand.Count)
                 .FirstOrDefault(i => FusionRules.Supports(duel.Hand[i]) && duel.CanActivateFromHand(i), -1);
             if (fusionSpell >= 0)
