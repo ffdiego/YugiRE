@@ -348,3 +348,21 @@ V17 complemento (roteiro 25): inclui 00546D70 para confirmar inicialização das
 - Saída privada: `scratch/ghidra-selective-destruction-contract.zip`; oito endereços ausentes no SQLite cumulativo v2 (SHA-256 `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4`).
 - Pergunta: legalidade/candidatos de Tribute e Thousand Knives; cálculo do menor ATK, desempate e fase da escolha de Fissure; registro/consumo da penalidade Draw Phase de Offerings (00587950/0057AE20). Não repetir callbacks já recuperados (00585C80/00583510/005944D0).
 - Encerramento: corpo/assembly ou ausência explícita para cada endereço, interpretar filtros e despacho, importar cumulativamente com auditoria e quick_check. Coleta/importação **pendentes**, não bloqueiam escopo sandbox. [Contrato Fissure](../../docs/cards/c02-fissure.md).
+
+## A06 — 31-actions-battle-callbacks-ghidra.sh (aguardando Fedora)
+
+SQLite cumulativo v2 consultado: as sete VAs de P164 (elementais),
+P118 (Skelengel) e P087 (Penguin Soldier; candidate compartilhado com
+Man-Eater Bug) não constam em functions, decompilations ou
+visual_evidence_functions. Não repetir o primary de Man-Eater já indexado.
+
+    bash scripts/pending/31-actions-battle-callbacks-ghidra.sh
+
+Ambiente: Fedora/Ghidra headless, projeto e EXE atestados pelo exportador,
+Python 3. Saída privada scratch/ghidra-actions-battle-callbacks.zip.
+Confirmar ABI, origem do gatilho por batalha, operandos de identidade e
+ordem das chamadas/seleções; recuperar os corpos com assembly e referências,
+importar em nova cópia SQLite cumulativa pelo importador de evidência.
+A coleta estática não prova sozinha a ordem dinâmica de dois recrutadores
+ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
+[contrato](../../docs/architecture/native-replay-scenarios.md#a06--recrutadores-elementais-p164-no-combate-enfileirado).

@@ -16,10 +16,18 @@ public sealed partial class DemoDuel
         public Dictionary<CardTarget,DuelZone> ExpectedEffectMoves { get; } = [];
     }
     private BattleRevealReservation? queuedBattleReveal;
+    private bool queuedBattleRecruitmentOpening;
+    private PendingCardSelection? queuedBattleRecruitmentRequest;
 
     // Explicit first pilot IDs without callback rows in the cumulative RE DB.
     // Not a general normal-monster classifier: the DAT has no proven bit for it.
     private static bool IsPlainBattlePilot(Card card) => card.IsMonster && card.Id is 24 or 1351;
+
+    private static bool IsElementalBattleRecruiter(Card card) => card.IsMonster &&
+        CardSelectionRules.BattleRecruitAttribute(card.Id) is not null;
+
+    private static bool IsOrdinaryBattlePilot(Card card) =>
+        IsPlainBattlePilot(card) || IsElementalBattleRecruiter(card);
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug;
@@ -48,7 +56,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             attacked[p,s] || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
-            !IsPlainBattlePilot(ac) || !(IsPlainBattlePilot(bc) ||
+            !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
                 IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]) || equipment.Count!=0)
             return false;
         if (!IsIsolatedBattleField(p,s,t)) return false;
@@ -99,7 +107,7 @@ public sealed partial class DemoDuel
             TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
             attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
             MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
-            IsPlainBattlePilot(ac) && (IsPlainBattlePilot(bc) || IsBattleFlipPilot(bc)) && IsIsolatedBattleField(p,source,target);
+            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc)) && IsIsolatedBattleField(p,source,target);
     }
 
     private CommandResult RevealQueuedBattleDefender(RevealBattleDefenderCommand command,IActionCommandSink followups)
@@ -264,15 +272,46 @@ public sealed partial class DemoDuel
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,card.Id,slot,command.Role) };
     }
 
-    private CommandResult FinishQueuedBattleRemoval(FinishBattleRemovalCommand command)
+    private bool HasQueuedBattleRecruitmentChoice =>
+        queuedBattleRecruitmentRequest is not null &&
+        ReferenceEquals(PendingCardSelection,queuedBattleRecruitmentRequest);
+
+    private CommandResult OpenQueuedBattleRecruitment()
+    {
+        if (!queuedBattleRecruitmentOpening || queuedBattleRemoved.Any(x=>x is not null) ||
+            queuedBattleRecruitmentRequest is not null || PendingCardSelection is not null)
+            return new(CommandOutcome.Rejected,"No completed battle recruitment batch.");
+        queuedBattleRecruitmentOpening=false;
+        BeginNextQueuedDeckSearch();
+        RefreshQueuedBattleRecruitmentRequest();
+        return new(CommandOutcome.Applied);
+    }
+
+    private void RefreshQueuedBattleRecruitmentRequest()
+    {
+        // The restricted battle admits only P164 post-battle producers.
+        queuedBattleRecruitmentRequest=PendingCardSelection is { } next &&
+            IsElementalRecruitment(next) ? next : null;
+    }
+
+    private CommandResult FinishQueuedBattleRemoval(FinishBattleRemovalCommand command,IActionCommandSink followups)
     {
         var r=queuedBattleRemoved[command.Role];
         if(r is null || r.Target!=command.Target || !r.Detached)
             return new(CommandOutcome.Rejected,"No detached combatant to send.");
-        // This narrow pilot has no field-to-GY callbacks, tokens, linked
-        // effects or controller/owner changes. Preserve the Card reference.
+        // Preserve the Card reference. Only a real battle arrival can
+        // produce P164; effect DestroyCommand never uses this path.
         graves[command.Side].Add(r.Card);
         queuedBattleRemoved[command.Role]=null;
+        if (!GameOver && IsElementalBattleRecruiter(r.Card))
+        {
+            queuedDeckSearches.Enqueue((command.Side,r.Card,true,false,false));
+            queuedBattleRecruitmentOpening=true;
+        }
+        // All reserved combatants must reach GY and finish their gates
+        // before the first owner receives a recruitment request.
+        if (queuedBattleRecruitmentOpening && queuedBattleRemoved.All(x=>x is null))
+            followups.ScheduleContinuation(_ => new([new OpenBattleRecruitmentCommand(command.Side)]));
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,r.Card.Id,r.Slot,command.Role) };
     }
 }

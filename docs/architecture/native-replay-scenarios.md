@@ -236,3 +236,39 @@ obrigatória, identidade, gates, ordem e contagem de comandos/eventos.
 Compara legado não terminal; mantém política de não abrir prompt após
 dano letal. Campo isolado, sem outros monstros/armadilhas/equipamentos.
 Sem novo opcode, alteração do renderer ou confirmação dinâmica nativa.
+
+## A06 — Recrutadores elementais P164 no combate enfileirado
+
+SQLite cumulativo v2 (SHA-256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check ok): Mystic Tomato 1123/row262, Giant Rat 1108/251,
+Shining Angel 1117/258, UFO Turtle 1110/253, Mother Grizzly 1119/259,
+Flying Kamakiri #1 1120/260 compartilham availability 00581770 e
+primary 0058AC10. Nenhum corpo nos índices functions, decompilations
+ou visual_evidence_functions. Filtro, posição e causalidade seguem
+CardSelectionRules e o fluxo legado C# previamente documentado.
+Roteiro pendente 31 reúne estas duas VAs e cinco ausentes dos FLIPs
+anteriores; não duplica corpos já disponíveis.
+
+O piloto isolado admite os seis como atacante/defensor, inclusive
+defesa oculta. A chegada FinishBattleRemovalCommand registra o gatilho
+P164 apenas após a ocorrência entrar no GY e se o duelo não terminou.
+OpenBattleRecruitmentCommand, em continuação após o último gate de
+chegada, reutiliza BeginNextQueuedDeckSearch para publicar o pedido.
+Empates com dois recrutadores esperam ambas as chegadas e processam
+atacante antes de defensor, como o legado C#; não é ordem nativa provada.
+A resposta pelo console reutiliza o produtor Deck → Field já existente,
+com uma invocação em ataque face-up, seguida de um shuffle só se houve
+movimento. O pedido seguinte só abre após conclusão da transferência.
+Recusa não move/embaralha. Guardas bloqueiam o accept/skip legado
+para pedidos produzidos por esse caminho; pedidos de batalha legada
+continuam compatíveis. Man-Eater Bug destruindo o atacante recrutador
+por efeito não ativa P164. Sem outras cartas em campo, recrutadores
+P168 ou efeitos de LP adicionais.
+
+A01/A05 projeções existentes não são estendidas por inferência: a
+chegada final de P164 e o novo opener permanecem unmapped (variante
+7C ordinária não comprova callback). CI inicial 45523672687:
+51.135 checks C#, Python/Node verdes. Matriz de 48 combinações
+(seis IDs, dois donos, dois papéis, aceitar/recusar), dois empates
+espelhados, pose oculta, ausência de elegíveis, lethal, causalidade
+por efeito. Teste adicional de projeção e CI reconciliado pendentes.
