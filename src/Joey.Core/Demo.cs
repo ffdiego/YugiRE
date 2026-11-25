@@ -2268,7 +2268,7 @@ public sealed partial class DemoDuel
     public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
         if (PendingFlipTarget is not DemoFlipTarget pending ||
             targetPlayer is < 0 or > 1 || targetZone is < 0 or >= 5 ||
@@ -2313,7 +2313,7 @@ public sealed partial class DemoDuel
     public bool FinishFlipTargets(out string message)
     {
         message = "No optional FLIP target selection is pending.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice) return false;
         if (PendingFlipTarget is not { Effect: DemoFlipEffect.ReturnUpToTwo }) return false;
         return CompleteReturnTargets(out message);
     }

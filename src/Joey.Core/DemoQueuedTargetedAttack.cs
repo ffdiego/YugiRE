@@ -13,12 +13,16 @@ public sealed partial class DemoDuel
     {
         public bool FlipCalculated { get; set; }
         public bool FlipOpened { get; set; }
+        public HashSet<CardTarget> ExpectedReturns { get; } = [];
     }
     private BattleRevealReservation? queuedBattleReveal;
 
     // Explicit first pilot IDs without callback rows in the cumulative RE DB.
     // Not a general normal-monster classifier: the DAT has no proven bit for it.
     private static bool IsPlainBattlePilot(Card card) => card.IsMonster && card.Id is 24 or 1351;
+
+    private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
+        card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier;
 
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player)
@@ -45,7 +49,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             attacked[p,s] || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsPlainBattlePilot(ac) || !(IsPlainBattlePilot(bc) ||
-                bc.IsMonster && bc.Id==FlipEffectRules.Skelengel && MonsterFaceDown[e,t] && DefensePosition[e,t]) || equipment.Count!=0)
+                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]) || equipment.Count!=0)
             return false;
         if (!IsIsolatedBattleField(p,s,t)) return false;
         a=new(attacker,s,ac,false);
@@ -95,7 +99,7 @@ public sealed partial class DemoDuel
             TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
             attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
             MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
-            IsPlainBattlePilot(ac) && (IsPlainBattlePilot(bc) || bc.IsMonster && bc.Id==FlipEffectRules.Skelengel) && IsIsolatedBattleField(p,source,target);
+            IsPlainBattlePilot(ac) && (IsPlainBattlePilot(bc) || IsBattleFlipPilot(bc)) && IsIsolatedBattleField(p,source,target);
     }
 
     private CommandResult RevealQueuedBattleDefender(RevealBattleDefenderCommand command,IActionCommandSink followups)
@@ -119,7 +123,7 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Rejected,"No matching reserved revealed battle.");
         if (!ValidateBattleReveal(reserved,faceDown:false))
             throw new InvalidOperationException("Reserved revealed combatant changed.");
-        if (reserved.Defender.Card.Id==FlipEffectRules.Skelengel)
+        if (IsBattleFlipPilot(reserved.Defender.Card))
         {
             // In defense, positive delta marks the defender; negative delta
             // damages the attacker. Keep the marked card present for FLIP.
@@ -128,7 +132,9 @@ public sealed partial class DemoDuel
             reserved.FlipCalculated=true;
             queuedBattleRemoved[1]=delta>0?reserved.Defender:null;
             if(delta<0) queue.Enqueue(new DamageCommand(command.Side,Math.Min(-delta,ushort.MaxValue)));
-            queue.Enqueue(new OpenBattleFlipDrawCommand(reserved.Defender.Target.Side,reserved.Defender.Target));
+            queue.Enqueue(reserved.Defender.Card.Id==FlipEffectRules.Skelengel
+                ? new OpenBattleFlipDrawCommand(reserved.Defender.Target.Side,reserved.Defender.Target)
+                : new OpenBattleFlipTargetsCommand(reserved.Defender.Target.Side,reserved.Defender.Target));
         }
         else
         {
@@ -136,6 +142,54 @@ public sealed partial class DemoDuel
             QueuePlainBattleOutcome(reserved.Attacker,reserved.Defender,queue);
         }
         return new(CommandOutcome.Applied);
+    }
+
+    private bool HasQueuedBattleTargetChoice =>
+        queuedBattleReveal is { FlipCalculated:true, FlipOpened:true } reserved &&
+        reserved.Defender.Card.Id==FlipEffectRules.PenguinSoldier &&
+        PendingFlipTarget is { Effect:DemoFlipEffect.ReturnUpToTwo } pending &&
+        pending.Owner==reserved.Defender.Target.Side && pending.SourceZone==reserved.Defender.Slot &&
+        ReferenceEquals(pending.SourceCard,reserved.Defender.Card);
+
+    private CommandResult OpenQueuedBattleFlipTargets(OpenBattleFlipTargetsCommand command,IActionCommandSink followups)
+    {
+        if (queuedBattleReveal is not { FlipCalculated:true, FlipOpened:false } reserved ||
+            reserved.Defender.Target!=command.Defender || reserved.Defender.Card.Id!=FlipEffectRules.PenguinSoldier ||
+            followups is not IActionBatchSink { PendingCount:0 } ||
+            PendingFlipTarget is not null)
+            return new(CommandOutcome.Rejected,"No matching calculated battle target FLIP.");
+        if (!ValidateBattleReveal(reserved,faceDown:false,allowEnded:true))
+            throw new InvalidOperationException("Reserved battle FLIP changed before targets.");
+        reserved.FlipOpened=true;
+        if (GameOver || FlipEffectsNegated)
+            followups.Enqueue(new FinishBattleFlipCommand(command.Side,command.Defender));
+        else
+            PendingFlipTarget=new(command.Side,reserved.Defender.Slot,reserved.Defender.Card,DemoFlipEffect.ReturnUpToTwo);
+        return new(CommandOutcome.Applied);
+    }
+
+    private bool ValidateFinishedBattleReturns(BattleRevealReservation reserved)
+    {
+        if (Turn!=reserved.Turn || ActivePlayer!=reserved.Attacker.Target.Side || Phase!=DemoPhase.Battle ||
+            !IsIsolatedBattleField(reserved.Attacker.Target.Side,reserved.Attacker.Slot,reserved.Defender.Slot))
+            return false;
+        foreach (var combatant in new[]{reserved.Attacker,reserved.Defender})
+        {
+            int side=combatant.Target.Side,slot=combatant.Slot;
+            if (reserved.ExpectedReturns.Contains(combatant.Target))
+            {
+                if (Monsters[side,slot] is not null ||
+                    !TryResolveCardTarget(combatant.Target with { Zone=DuelZone.Hand },out _,out var returned) ||
+                    !ReferenceEquals(returned,combatant.Card))
+                    return false;
+            }
+            else if (!TryResolveCardTarget(combatant.Target,out int index,out var card) ||
+                index!=slot || !ReferenceEquals(card,combatant.Card) || MonsterFaceDown[side,slot] ||
+                DefensePosition[side,slot]!=combatant.Defense ||
+                (combatant==reserved.Attacker && !attacked[side,slot]))
+                return false;
+        }
+        return true;
     }
 
     private bool IsQueuedBattleMarked(int side,int slot) =>
@@ -149,7 +203,9 @@ public sealed partial class DemoDuel
         if (queuedBattleReveal is not { FlipCalculated:true, FlipOpened:true } reserved ||
             reserved.Defender.Target!=command.Defender || followups is not IActionBatchSink { PendingCount:0 } queue)
             return new(CommandOutcome.Rejected,"No matching opened battle FLIP.");
-        if (!ValidateBattleReveal(reserved,faceDown:false,allowEnded:true))
+        if (!(reserved.Defender.Card.Id==FlipEffectRules.PenguinSoldier
+            ? ValidateFinishedBattleReturns(reserved)
+            : ValidateBattleReveal(reserved,faceDown:false,allowEnded:true)))
             throw new InvalidOperationException("Reserved FLIP combatants changed before finish.");
         queuedBattleReveal=null;
         if (queuedBattleRemoved[1] is { } marked)
