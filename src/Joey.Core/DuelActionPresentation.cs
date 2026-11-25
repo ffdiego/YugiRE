@@ -28,6 +28,9 @@ public sealed partial class DemoDuel
                     return null;
                 return new(ActionPresentationKind.TargetedAttack, source, attack.Attacker,
                     sourceSlot, DuelZone.Monster, defenderSlot);
+            case ActivateTargetedSpellTrapCommand targeted:
+                target = targeted.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
             case ActivateDeckSearchSpellCommand search:
                 target = search.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
