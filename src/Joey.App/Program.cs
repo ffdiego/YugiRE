@@ -287,7 +287,7 @@ static partial class Game
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
-                    if (Button("Console lab (F10)", 535, 488, 240, 38) || Raylib.IsKeyPressed(KeyboardKey.F10))
+                    if (Button("Console lab (\u0027 / F10)", 535, 488, 240, 38) || ConsoleTogglePressed())
                         StartConsoleLab(null);
                     if (screen == "menu" && Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
                     bool debugMenuClicked = screen == "menu" && Button(duelDebug ? "Ocultar debug" : "Ativar debug", 535, 576, 175, 22);
@@ -309,12 +309,13 @@ static partial class Game
             }
             else
             {
-                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
+                if (screen == "duel") ReadDuelConsoleToggle();
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput) screen = "menu";
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel")
                 {
                     debugOverlay.BeginDuelFrame(Raylib.IsKeyPressed(KeyboardKey.F3),
-                        Raylib.IsMouseButtonPressed(MouseButton.Left), Raylib.IsMouseButtonPressed(MouseButton.Right),
+                        !ConsoleCapturesInput && Raylib.IsMouseButtonPressed(MouseButton.Left), !ConsoleCapturesInput && Raylib.IsMouseButtonPressed(MouseButton.Right),
                         mouse.X, mouse.Y, alphaCpu is null);
                     if (Raylib.IsKeyPressed(KeyboardKey.F6))
                     {
@@ -365,7 +366,7 @@ static partial class Game
     static readonly DebugOverlayState debugOverlay = new();
     static bool duelDebug => debugOverlay.Enabled;
     static bool PointerPressed(MouseButton button) =>
-        !debugOverlay.CapturesPointerPress && Raylib.IsMouseButtonPressed(button);
+        !ConsoleCapturesInput && !debugOverlay.CapturesPointerPress && Raylib.IsMouseButtonPressed(button);
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)
     {
         bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(x, y, w, h));
