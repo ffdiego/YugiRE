@@ -30,6 +30,7 @@ static partial class Game
 
     static void ShowPhase(DuelPhaseDisplay phase)
     {
+        if(phase==DuelPhaseDisplay.Battle && displayedPhase!=phase)PlayDuelSound(DuelSoundCue.BattlePhase);
         displayedPhase = phase;
         phaseUpdates = presentation.Style.PlayAnimations
             ? phase == DuelPhaseDisplay.Battle ? NativePhaseNotice.BattleUpdates : NativePhaseNotice.StandardUpdates
@@ -76,6 +77,7 @@ static partial class Game
                 if (phaseUpdates > 0) return;
             }
             bool animate = displayedTurn != 0 && presentation.Style.PlayAnimations;
+            if(displayedTurn!=0)PlayDuelSound(DuelSoundCue.TurnChange);
             displayedTurn = duel.Turn;
             drawNoticePending = true;
             if (animate)

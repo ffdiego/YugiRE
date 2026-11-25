@@ -605,7 +605,7 @@ static partial class Game
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
-        if (labSession is null && !visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
+        if (labSession is null && !ConsoleCapturesInput && !visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
             (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         for (int player = 0; player < 2; player++)
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
@@ -618,9 +618,9 @@ static partial class Game
             duel.PendingFlipSpellTrapTargets is not null || fusion is not null ||
             duel.PendingSummonResponse is not null || duel.PendingAttackResponse is not null;
         bool showingMotion = MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true;
-        bool turnInput = labSession is null && !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
+        bool turnInput = labSession is null && !ConsoleCapturesInput && !visualReviewPaused && !showingMotion && !alphaBlocked && CanPlayTurn && pendingOwner is null;
         bool actionInput = turnInput && CanPlayMainOrBattle;
-        bool choiceInput = !labConsoleOpen && !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
+        bool choiceInput = !ConsoleCapturesInput && !visualReviewPaused && !showingMotion && !alphaBlocked && HumanChoice;
         var spellTarget = duel.PendingSpellTrapTarget;
         var flipSpellTarget = duel.PendingFlipSpellTrapTargets;
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground), 0, 0, Color.White);
@@ -704,7 +704,7 @@ static partial class Game
         }
         DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
-        if (!labConsoleOpen && !visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
+        if (!ConsoleCapturesInput && !visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
             queuedDuel?.PendingDecision is { Owner: var decisionOwner } && decisionOwner == ViewPlayer)
             DrawEffectDecisionOverlay();
         else if (choiceInput && fusion is not null)

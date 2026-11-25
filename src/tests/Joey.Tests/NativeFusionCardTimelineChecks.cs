@@ -2,7 +2,7 @@ using Joey.LookAndFeel;
 
 internal static class NativeFusionCardTimelineChecks
 {
-    internal static void Run(Action<bool,string> check,Action<Action,string> reject)
+    internal static void Run(Action<bool,string> check)
     {
         int[] c=NativeCosineCapture.GenerateTable();
         var two=new NativeFusionCardTimeline(2);
@@ -43,7 +43,13 @@ internal static class NativeFusionCardTimelineChecks
             !two.Draw(636,50,72,c)!.Value.DeactivateAfterDraw&&
             two.Draw(640,50,72,c)!.Value.DeactivateAfterDraw,
             "V11: decompiled result overlay and final Draw boundary");
-        reject(()=>new NativeFusionCardTimeline(1),"V11: unsupported material count");
-        reject(()=>two.Draw(0,0,72,c),"V11: reject invalid mini dimensions");
+        void RejectRange(Action action,string name)
+        {
+            try { action(); }
+            catch(ArgumentOutOfRangeException) { check(true,name); return; }
+            check(false,name);
+        }
+        RejectRange(()=>new NativeFusionCardTimeline(1),"V11: unsupported material count");
+        RejectRange(()=>two.Draw(0,0,72,c),"V11: reject invalid mini dimensions");
     }
 }

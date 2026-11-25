@@ -9,7 +9,7 @@ alterar resultados, disparar compras ou introduzir delays em testes automatizado
 
 O objetivo do `Joey.LookAndFeel` é a **fidelidade de pixels e de tempo** do `joey_pc.exe` em seu canvas lógico de **800×600** — não equivalência de código, funções ou algoritmo de rasterização. Implementações em C#/raylib podem divergir internamente, desde que obtenham as **mesmas posições, dimensões, pivôs, orientações, escalas, recortes, ordem de composição, sprites e valores por update/frame** observáveis. Para a alpha, começar por cartas, ATK/DEF e ações visíveis; **a meta continua abrangendo todos os elementos visuais**.
 
-Contadores nativos, cadência nominal (Classic/Speedy), tempos efetivos e espera por decisões são medidas diferentes. Manter velocidade Classic como alvo do executável quando conhecida, sem converter contadores em milissegundos arbitrários; `Fast` e `Instant` são perfis opcionais deliberadamente não idênticos. Registrar os dados como confirmado por Ghidra, observado no vídeo/original, derivado ou provisório. Testar estados e quadros equivalentes e comparar resultados em pixels/updates. [Contrato completo de fidelidade](visual-fidelity-goal.md).
+Contadores nativos, cadência nominal (Classic/Speedy), tempos efetivos e espera por decisões são medidas diferentes. Manter velocidade Classic como alvo do executável quando conhecida, sem converter contadores em milissegundos arbitrários; `Fast` (padrão atual do App) e `Instant` são perfis deliberadamente não idênticos; `--classic` seleciona a referência temporal. Registrar os dados como confirmado por Ghidra, observado no vídeo/original, derivado ou provisório. Testar estados e quadros equivalentes e comparar resultados em pixels/updates. [Contrato completo de fidelidade](visual-fidelity-goal.md).
 
 ## Recursos visuais: DAT como fonte de verdade
 
@@ -42,7 +42,7 @@ cadência nominal recuperada, comportamento observado e timings ainda não medid
   já comprovada dos tempos nativos.
 - `DuelLookAndFeel`: classe base com métodos virtuais `BaseDuration(cue)`,
   `Duration(cue)` e propriedades de velocidade, animação e voz.
-- `FastLookAndFeel`: 2x os tempos do preset clássico.
+- `FastLookAndFeel`: 2x a cadência do preset clássico (metade da duração dos cues); padrão no App.
 - `SilentLookAndFeel`: desativa cues de voz, mas mantém animação.
 - `InstantLookAndFeel`: sem delays de animação nem de fala.
 - `HandPresentation` e `NativeDuelLayout`: mão, movimento, posições e
@@ -60,7 +60,7 @@ No `Joey.App`, `PresentationTickClock` converte o tempo entre renders em
 passos inteiros e guarda a fração para o próximo quadro. Classic aplica 30
 passos/s e Fast aplica 60 no hover da mão, no deslocamento da carta e no
 brilho de ativação. Os três usam os mesmos contadores nos dois presets.
-Instant ignora essas transições. O intervalo entre ações da CPU e os
+Fast é o padrão do App; `--classic` restaura 30 passos/s, `--fast` mantém a escolha explícita e `--instant` ignora essas transições. O intervalo entre ações da CPU e os
 outros cues continuam sob política do cliente. `--mute-joey` configura
 a preferência de voz, ainda sem player de áudio.
 

@@ -17,8 +17,16 @@ static partial class Game
     static DatGraphics graphics = null!;
     static DuelTheme duelTheme = null!;
     static bool includeUnused;
-    static readonly DuelPresentationClock presentation = new(new DuelLookAndFeel());
+    static readonly DuelPresentationClock presentation = new(new FastLookAndFeel());
     static string previousDuelMessage = "";
+    // Keep explicit legacy profile precedence; Fast is now the App default.
+    static DuelLookAndFeel SelectPresentationStyle(string[] args) =>
+        args.Contains("--instant") ? new InstantLookAndFeel()
+        : args.Contains("--fast") ? new FastLookAndFeel()
+        : args.Contains("--mute-joey") ? new SilentLookAndFeel()
+        : args.Contains("--classic") ? new DuelLookAndFeel()
+        : new FastLookAndFeel();
+
     public static int Run(string[] args)
     {
         if (args is ["--check-console-startup"]) return CheckConsoleStartup();
@@ -31,11 +39,7 @@ static partial class Game
         includeUnused = args.Contains("--include-unused");
         useLegacySelection = args.Contains("--legacy-selection");
         useQueuedActions = args.Contains("--queued-actions");
-        DuelLookAndFeel style = args.Contains("--instant") ? new InstantLookAndFeel()
-            : args.Contains("--fast") ? new FastLookAndFeel()
-            : args.Contains("--mute-joey") ? new SilentLookAndFeel()
-            : new DuelLookAndFeel();
-        presentation.SetStyle(style);
+        presentation.SetStyle(SelectPresentationStyle(args));
         if (Option(args, "--native-cosine=") is string cosinePath)
         {
             try
@@ -50,6 +54,7 @@ static partial class Game
             }
         }
         Console.WriteLine($"[visual] cosine source: {effectCosineSource}");
+        string? dataArchivePath = null;
         try
         {
             string? path = args.FirstOrDefault(a => !a.StartsWith("--"));
@@ -90,6 +95,7 @@ static partial class Game
             Console.WriteLine($"Read {archive.Entries.Count} archive entries and {cards.Count} card records from {path}");
             Console.WriteLine($"Card List: {orderedCards.Count} entries (include unused: {includeUnused})");
             InitializeDeck(args, path);
+            dataArchivePath = path;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
@@ -122,6 +128,9 @@ static partial class Game
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
         else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && args.Contains("--alpha")) StartAlpha();
+        // Suppress routine INFO texture/cache messages, not warnings/errors.
+        // Do not initialize raylib solely to configure logging in headless modes.
+        Raylib.SetTraceLogLevel(args.Contains("--raylib-verbose") ? TraceLogLevel.Info : TraceLogLevel.Warning);
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();
@@ -219,10 +228,13 @@ static partial class Game
         var canvas = Raylib.LoadRenderTexture(800, 600);
         // Keep the 800x600 original DAT pixels discrete when scaling the window.
         Raylib.SetTextureFilter(canvas.Texture, TextureFilter.Point);
+        using var audio = error.Length == 0 ? DuelAudioPlayer.Open(Option(args,"--voice-dat="),dataArchivePath,args.Contains("--no-audio")) : null;
+        duelAudio = audio;
         bool quit = false;
         while (!Raylib.WindowShouldClose() && !quit)
         {
             const int width = 800, height = 600;
+            duelAudio?.UpdateMusic(args.Contains("--no-music") ? null : DuelSoundAssets.Music(screen));
             graphics.BeginFrame();
             float scale = Math.Min(Raylib.GetScreenWidth() / (float)width, Raylib.GetScreenHeight() / (float)height);
             Vector2 origin = new((Raylib.GetScreenWidth() - width * scale) / 2, (Raylib.GetScreenHeight() - height * scale) / 2);
@@ -287,13 +299,15 @@ static partial class Game
                         Raylib.DrawTextureRec(texture, new Rectangle(0, row * 50, 400, 50),
                             new Vector2(menu.Buttons.X, menu.Buttons.Y + row * 50), enabled ? Color.White : new Color(150, 150, 150, 255));
                     }
-                    if (Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
+                    if (Button("Console lab (\u0027 / F10)", 535, 488, 240, 38) || ConsoleTogglePressed())
+                        StartConsoleLab(null);
+                    if (screen == "menu" && Button("Alpha - vs CPU", 535, 532, 240, 42)) StartAlpha();
                     bool debugMenuClicked = screen == "menu" && Button(duelDebug ? "Ocultar debug" : "Ativar debug", 535, 576, 175, 22);
                     if (debugMenuClicked) debugOverlay.Toggle();
                     if (alphaError.Length > 0) Wrap(alphaError, 535, 475, 240, 13);
                     if (!debugMenuClicked && screen == "menu" && Raylib.IsMouseButtonPressed(MouseButton.Left))
                     {
-                        if (hover == 0) StartDemo();
+                        if (hover == 0) { useDemoFixture = false; useImportedDeck = false; StartDemo(); }
                         if (hover == 1) screen = "deck";
                         if (hover == 2) screen = "cards";
                         if (hover == 4) quit = true;
@@ -307,12 +321,13 @@ static partial class Game
             }
             else
             {
-                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) screen = "menu";
+                if (screen == "duel") ReadDuelConsoleToggle();
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput) screen = "menu";
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel")
                 {
                     debugOverlay.BeginDuelFrame(Raylib.IsKeyPressed(KeyboardKey.F3),
-                        Raylib.IsMouseButtonPressed(MouseButton.Left), Raylib.IsMouseButtonPressed(MouseButton.Right),
+                        !ConsoleCapturesInput && Raylib.IsMouseButtonPressed(MouseButton.Left), !ConsoleCapturesInput && Raylib.IsMouseButtonPressed(MouseButton.Right),
                         mouse.X, mouse.Y, alphaCpu is null);
                     if (Raylib.IsKeyPressed(KeyboardKey.F6))
                     {
@@ -351,6 +366,8 @@ static partial class Game
             if (useNativeCursor) DrawWindowCursor(scale);
             Raylib.EndDrawing();
         }
+        duelAudio = null;
+        audio?.Dispose();
         if (useNativeCursor) Raylib.ShowCursor();
         Raylib.UnloadRenderTexture(canvas);
         duelTheme.Dispose();
@@ -362,7 +379,7 @@ static partial class Game
     static readonly DebugOverlayState debugOverlay = new();
     static bool duelDebug => debugOverlay.Enabled;
     static bool PointerPressed(MouseButton button) =>
-        !debugOverlay.CapturesPointerPress && Raylib.IsMouseButtonPressed(button);
+        !ConsoleCapturesInput && !debugOverlay.CapturesPointerPress && Raylib.IsMouseButtonPressed(button);
     static bool Button(string text, int x, int y, int w, int h, bool enabled = true)
     {
         bool hover = Raylib.CheckCollisionPointRec(mouse, new Rectangle(x, y, w, h));
