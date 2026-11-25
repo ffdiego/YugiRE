@@ -56,6 +56,11 @@ public sealed class CpuDuelController
 
     private delegate bool Operation(out string message);
 
+    // A CPU-owned queue decision must not wait for a human preference or click.
+    public static EffectDecisionAnswer DecideOptionalEffect(DemoDuel duel, PendingEffectDecision request) =>
+        request.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(request.Owner) > 0
+            ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
+
     public CpuStep Step(DemoDuel duel) => Step(duel, queueTurnActions: false);
 
     public CpuStep Step(DemoDuel duel, bool queueTurnActions)
@@ -95,8 +100,7 @@ public sealed class CpuDuelController
 
         if (duel.PendingEffectDecision is { } decision)
         {
-            var answer = decision.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(decision.Owner) > 0
-                ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
+            var answer = DecideOptionalEffect(duel, decision);
             return Act(CpuAction.Decision, (out string m) => duel.ResolveEffectDecision(
                 decision.Id, answer, out m));
         }
@@ -283,8 +287,11 @@ public sealed class CpuDuelController
                 return Act(CpuAction.Selection, (out string m) => duel.BeginFusionGate(gate, out m));
             int gateInHand = Enumerable.Range(0, duel.Hand.Count)
                 .FirstOrDefault(i => duel.Hand[i].Id == FusionRules.FusionGate, -1);
-            if (gateInHand >= 0 && duel.HasFusionCombination())
-                return Act(CpuAction.Spell, (out string m) => duel.Play(gateInHand, out m), duel.Hand[gateInHand],
+            if (gateInHand >= 0 && duel.HasFusionCombination() &&
+                (!queueTurnActions || duel.CanQueueFixedSpellActivation(DuelZone.Hand, gateInHand)))
+                return Act(CpuAction.Spell, (out string m) => queueTurnActions
+                    ? duel.TryQueueActivation(gateInHand, false, out m, ActionOrigin.Cpu)
+                    : duel.Play(gateInHand, out m), duel.Hand[gateInHand],
                     handIndex: gateInHand, fieldOwner: Player);
             if (queueTurnActions)
             {
@@ -381,7 +388,9 @@ public sealed class CpuDuelController
                     duel.MonsterFaceDown[Player, z] && !wantDefense && duel.AttackValue(Player, z) >= 1000)
                 {
                     int zone = z;
-                    return Act(CpuAction.Position, (out string m) => duel.ChangePosition(zone, out m), duel.Monsters[Player, zone], zone);
+                    return Act(CpuAction.Position, (out string m) => queueTurnActions
+                        ? duel.TryQueueChangePosition(zone, out m, ActionOrigin.Cpu)
+                        : duel.ChangePosition(zone, out m), duel.Monsters[Player, zone], zone);
                 }
             }
             int summonIndex = Enumerable.Range(0, duel.Hand.Count).Where(duel.CanSummonFromHand)
@@ -398,25 +407,54 @@ public sealed class CpuDuelController
                     .OrderBy(z => duel.AttackValue(Player, z)).ThenBy(z => z).Take(DemoDuel.NormalTributes(card)).ToArray();
                 bool set = FlipEffectRules.Supports(card.Id) ||
                     card.Attack < MaxVisibleEnemyAttack(duel) && card.Defense > card.Attack;
+                int destination = duel.FirstFreeMonsterZone(tributes);
                 return Act(set ? CpuAction.Set : CpuAction.Summon,
-                    (out string m) => duel.SummonLeftmost(summonIndex, set, out m, tributes), card, target: duel.FirstFreeMonsterZone(tributes), handIndex: summonIndex);
+                    (out string m) => queueTurnActions
+                        ? duel.TryQueueNormalPlacement(summonIndex, destination, set, out m, tributes, ActionOrigin.Cpu)
+                        : duel.SummonLeftmost(summonIndex, set, out m, tributes),
+                    card, target: destination, handIndex: summonIndex);
             }
-            // Equip only our own compatible monsters. Never sets an equipment it cannot activate.
-            for (int i = 0; i < duel.Hand.Count; i++)
+            // Preserve the CPU's preference for its own strongest compatible
+            // monster. In queue mode the candidates include tracked Set sources.
+            if (queueTurnActions)
             {
-                if (!EquipmentRules.Supports(duel.Hand[i].Id) || !duel.CanActivateFromHand(i)) continue;
-                int target = Enumerable.Range(0, 5).Where(z => duel.Monsters[Player, z] is not null &&
-                    duel.EquipmentEligibility(i, Player, z) is { IsSupported: true, Value: true })
-                    .OrderByDescending(z => duel.AttackValue(Player, z)).FirstOrDefault(-1);
-                if (target < 0) continue;
-                int index = i;
-                return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index],
-                    source: duel.FirstFreeSpellZone(), target: target, handIndex: index);
+                foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
+                {
+                    int count = zone == DuelZone.Hand ? duel.Hand.Count : 5;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var candidate = zone == DuelZone.Hand ? duel.Hand[i] : duel.Spells[Player, i];
+                        if (candidate is not { ClassCode: 22 } || !EquipmentRules.SupportsQueued(candidate.Id) ||
+                            !duel.TryCaptureCardTarget(Player, zone, i, out var source)) continue;
+                        var target = duel.QueuedEquipmentCandidates(source).Where(c => c.Target.Side == Player)
+                            .OrderByDescending(c => duel.AttackValue(Player, c.Slot)).ThenBy(c => c.Slot).FirstOrDefault();
+                        if (target is not null)
+                            return Act(CpuAction.Equip, (out string m) =>
+                                duel.TryQueueEquipment(source, target.Target, out m, ActionOrigin.Cpu));
+                    }
+                }
+            }
+            else
+            {
+                // Equip only our own compatible monsters. Never sets an equipment it cannot activate.
+                for (int i = 0; i < duel.Hand.Count; i++)
+                {
+                    if (!EquipmentRules.Supports(duel.Hand[i].Id) || !duel.CanActivateFromHand(i)) continue;
+                    int target = Enumerable.Range(0, 5).Where(z => duel.Monsters[Player, z] is not null &&
+                        duel.EquipmentEligibility(i, Player, z) is { IsSupported: true, Value: true })
+                        .OrderByDescending(z => duel.AttackValue(Player, z)).FirstOrDefault(-1);
+                    if (target < 0) continue;
+                    int index = i;
+                    return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index],
+                        source: duel.FirstFreeSpellZone(), target: target, handIndex: index);
+                }
             }
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);
             if (trapIndex >= 0)
-                return Act(CpuAction.Set, (out string m) => duel.SetFromHand(trapIndex, out m), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
+                return Act(CpuAction.Set, (out string m) => queueTurnActions
+                    ? duel.TryQueueSpellTrapSet(trapIndex, out m, ActionOrigin.Cpu)
+                    : duel.SetFromHand(trapIndex, out m), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
             if (duel.CanBeginBattle) return Act(CpuAction.BeginBattle, EnterBattle);
         }
         if (duel.Phase == DemoPhase.Battle)
