@@ -1666,6 +1666,55 @@
         "Bounded headless sandbox; activation/effect cannot be negated per card text, but general negation and chains are not modeled here. UI/CPU and native comparison pending.",
         "P262 identity and callback addresses recovered from catalog; candidate, primary and target preparation bodies absent in cumulative v2."
       ]
+    },
+    {
+      "id": "monster.destroy.discard-cost-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1023
+      ],
+      "mechanics": [
+        "Queue-only activation with distinct tracked source, one other hand occurrence as cost and a monster on either side",
+        "DiscardCommand then source spend; resolve only if both succeeded; DestroyCommand with existing linked consequences"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedMonsterSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/tests/Joey.Tests/QueuedMonsterWipeChecks.cs",
+        "docs/cards/c02-tribute-to-the-doomed.md"
+      ],
+      "limitations": [
+        "Bounded headless scope after CI; interactive selection/console/CPU, general chains, discard replacement/trigger rules and native target protection not modeled.",
+        "Native P074 preparation, primary and target preparation bodies available, candidate/availability absent; no native comparison."
+      ]
+    },
+    {
+      "id": "monster.destroy.conditional-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1211
+      ],
+      "mechanics": [
+        "Queue-only activation from Hand or Set, requires own face-up Dark Magician (resource IDs 34,1210,2034) and tracked opposing monster",
+        "Spend source without discard; reuse targeted destruction and linked cleanup"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedMonsterSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/tests/Joey.Tests/QueuedMonsterWipeChecks.cs",
+        "docs/cards/c02-thousand-knives.md",
+        "docs/research/card-static-sweep/14-monstros-normais.jsonl"
+      ],
+      "limitations": [
+        "Bounded headless sandbox after CI; UI/CPU, general chains and native target protection pending.",
+        "Native primary 00585C80 shared with Tribute; availability 00581F40 and candidate 0057B680 absent in v2; no native comparison."
+      ]
     }
   ]
 }

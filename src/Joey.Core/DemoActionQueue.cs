@@ -226,6 +226,10 @@ public sealed partial class DemoDuel
         private bool drawSpellSourceSpent;
         private CardTarget? searchSpellSource;
         private bool searchSpellSourceSpent;
+        private sealed record TargetedMonsterSpellReservation(CardTarget Source, CardTarget? Cost, CardTarget Target);
+        private TargetedMonsterSpellReservation? targetedMonsterSpell;
+        private bool targetedMonsterSpellPaid;
+        private bool targetedMonsterSpellSpent;
         private bool resolvingFlipBatch;
         private sealed class FlipDeckFlow(ushort effect, int controller, int requested, IEnumerable<CardTarget> expected)
         {
@@ -296,11 +300,23 @@ public sealed partial class DemoDuel
                 return ResolveFlipSpellTrapPair(pair, followups);
             if (command is ResolveMonsterFlipTargetsCommand flipTargets)
                 return ResolveMonsterFlipTargets(flipTargets, followups);
+            if (command is OpenBattleFlipDrawCommand openBattleFlip)
+                return OpenBattleFlipDraw(openBattleFlip, followups);
+            if (command is FinishBattleFlipCommand finishBattleFlip)
+                return duel.FinishQueuedBattleFlip(finishBattleFlip, followups);
+            // A draw during Skelengel FLIP can end the duel (Exodia). Its
+            // already marked defender still needs the reserved cleanup.
+            if (duel.GameOver && command is SnapshotBattleRemovalCommand afterWin &&
+                afterWin.Role==1 && duel.queuedBattleRemoved[1] is { } marked &&
+                marked.Target==afterWin.Target && marked.Card.Id==FlipEffectRules.Skelengel)
+                return duel.SnapshotQueuedBattleRemoval(afterWin);
             // Only a reserved battle snapshot may finish after lethal LP.
             if (command is FinishBattleRemovalCommand battleFinish)
                 return duel.FinishQueuedBattleRemoval(battleFinish);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
+            if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
+                return ResolveTargetedMonsterSpell(resolveDiscardSpell, followups);
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
@@ -309,6 +325,19 @@ public sealed partial class DemoDuel
             if (wipe is { SourceSpent: false } pendingWipe &&
                 (command is not SendToGraveyardCommand sendSource || sendSource.Target != pendingWipe.Source))
                 return new(CommandOutcome.Skipped, "Wipe source was not spent.");
+            // The cost must succeed before spending the spell. Recheck the
+            // complete reservation before payment; after payment do not refund
+            // just because the target disappears before resolution.
+            if (targetedMonsterSpell is { } paidSpell)
+            {
+                if (command is DiscardCommand pay && pay.Target == paidSpell.Cost &&
+                    !duel.TryPlanTargetedMonsterSpell(paidSpell.Source,paidSpell.Cost,paidSpell.Target))
+                    return new(CommandOutcome.Skipped, "Reserved activation changed before payment.");
+                if (command is SendToGraveyardCommand spend && spend.Target == paidSpell.Source &&
+                    (!targetedMonsterSpellPaid || paidSpell.Cost is null &&
+                     !duel.TryPlanTargetedMonsterSpell(paidSpell.Source,null,paidSpell.Target)))
+                    return new(CommandOutcome.Skipped, "Payment or activation condition not satisfied.");
+            }
             bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
             if (finishDrawSpell) reservedDrawSpell.Dequeue();
             // Legacy Morphing Jar draws every available card for both players,
@@ -329,6 +358,10 @@ public sealed partial class DemoDuel
                     return duel.ExecuteQueuedDirectAttack(attack, followups);
                 case DeclareTargetedAttackCommand attack:
                     return duel.ExecuteQueuedTargetedAttack(attack, followups);
+                case RevealBattleDefenderCommand reveal:
+                    return duel.RevealQueuedBattleDefender(reveal, followups);
+                case ResolveRevealedBattleCommand revealed:
+                    return duel.ResolveQueuedRevealedBattle(revealed, followups);
                 case SnapshotBattleRemovalCommand snapshot:
                     return duel.SnapshotQueuedBattleRemoval(snapshot);
                 case ChangeBattlePhaseCommand phase:
@@ -373,6 +406,10 @@ public sealed partial class DemoDuel
                     return duel.ApplyQueuedEquipment(equip);
                 case ActivateDrawSpellCommand drawSpell:
                     return ActivateDrawSpell(drawSpell, followups);
+                case ActivateDiscardMonsterSpellCommand paidSpellActivation:
+                    return ActivateDiscardMonsterSpell(paidSpellActivation, followups);
+                case ActivateConditionalMonsterSpellCommand conditionalSpell:
+                    return ActivateConditionalMonsterSpell(conditionalSpell, followups);
                 case ActivateDeckSearchSpellCommand searchSpell:
                     return ActivateDeckSearchSpell(searchSpell, followups);
                 case OpenDeckSearchSpellCommand openSearch:
@@ -415,6 +452,8 @@ public sealed partial class DemoDuel
                     return BanishFromSource(banish.Target);
                 case DiscardCommand discard:
                     var discarded = SendHandToGraveyard(discard.Target, discard: true);
+                    if (targetedMonsterSpell is { } reservedSpell && reservedSpell.Cost == discard.Target)
+                        targetedMonsterSpellPaid = discarded.Outcome == CommandOutcome.Applied;
                     if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
                         scout.NewSpells.Contains(discard.Target)) scout.Discarded++;
                     return discarded;
@@ -441,9 +480,62 @@ public sealed partial class DemoDuel
         {
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
+            if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
+                targetedMonsterSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (wipe is { } current && current.Source == target)
                 current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
+        }
+
+        private CommandResult ActivateDiscardMonsterSpell(ActivateDiscardMonsterSpellCommand activate, IActionCommandSink followups)
+        {
+            if (targetedMonsterSpell is not null || wipe is not null || finishScheduled ||
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Discard-cost spell needs isolated activation.");
+            if (!duel.TryPlanTargetedMonsterSpell(activate.Source,activate.Cost,activate.Target))
+                return new(CommandOutcome.Rejected, "Source, cost or target no longer legal.");
+            targetedMonsterSpell = new(activate.Source,activate.Cost,activate.Target);
+            targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
+            queue.EnqueueBatch([new DiscardCommand(activate.Side,activate.Cost),
+                new SendToGraveyardCommand(activate.Side,activate.Source),
+                new ResolveTargetedMonsterSpellCommand(activate.Side,activate.Source,activate.Target)]);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ActivateConditionalMonsterSpell(ActivateConditionalMonsterSpellCommand activate, IActionCommandSink followups)
+        {
+            if (targetedMonsterSpell is not null || wipe is not null || finishScheduled ||
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Conditional spell needs isolated activation.");
+            if (!duel.TryPlanTargetedMonsterSpell(activate.Source,null,activate.Target))
+                return new(CommandOutcome.Rejected, "Source, condition or target no longer legal.");
+            targetedMonsterSpell = new(activate.Source,null,activate.Target);
+            targetedMonsterSpellPaid = true; // no payment required
+            targetedMonsterSpellSpent = false;
+            queue.EnqueueBatch([new SendToGraveyardCommand(activate.Side,activate.Source),
+                new ResolveTargetedMonsterSpellCommand(activate.Side,activate.Source,activate.Target)]);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveTargetedMonsterSpell(ResolveTargetedMonsterSpellCommand resolve, IActionCommandSink followups)
+        {
+            if (targetedMonsterSpell is not { } reserved || reserved.Source != resolve.Source ||
+                reserved.Target != resolve.Target)
+                return new(CommandOutcome.Rejected, "No matching targeted spell reservation.");
+            bool paid = targetedMonsterSpellPaid && targetedMonsterSpellSpent;
+            targetedMonsterSpell = null;
+            targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
+            if (!paid || duel.LegacyActionsBlocked)
+                return new(CommandOutcome.Skipped, "Unpaid, unspent or blocked spell.");
+            if (!duel.IsTargetedMonsterSpellTarget(resolve.Target))
+                return new(CommandOutcome.Skipped, "Selected monster or links no longer valid.");
+            if (followups is not IActionBatchSink { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Isolated destruction required.");
+            // Existing standalone DestroyMonster reserves live linked
+            // consequences at execution, and opens deferred triggers only
+            // after those commands drain. No replacement is selected.
+            queue.Enqueue(new DestroyCommand(resolve.Target.Side,resolve.Target));
+            return new(CommandOutcome.Applied);
         }
 
         private CommandResult ActivateDeckSearchSpell(ActivateDeckSearchSpellCommand activate, IActionCommandSink followups)
@@ -538,7 +630,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
                 MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.SupportsQueued(card.Id)) ||
+                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
@@ -1224,11 +1316,42 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
+        private CommandResult OpenBattleFlipDraw(OpenBattleFlipDrawCommand command,IActionCommandSink followups)
+        {
+            if (duel.queuedBattleReveal is not { FlipCalculated:true, FlipOpened:false } reserved ||
+                reserved.Defender.Target!=command.Defender || queueDrawDecision is not null ||
+                followups is not IActionBatchSink { PendingCount:0 })
+                return new(CommandOutcome.Rejected,"No matching calculated battle FLIP.");
+            if (!duel.ValidateBattleReveal(reserved,faceDown:false,allowEnded:true))
+                throw new InvalidOperationException("Reserved battle FLIP changed before decision.");
+            reserved.FlipOpened=true;
+            var finish=new FinishBattleFlipCommand(command.Side,command.Defender);
+            // No optional draw when damage has ended the duel or deck is empty.
+            if (duel.GameOver || duel.FlipEffectsNegated || duel.DeckCount(command.Side)==0)
+            {
+                followups.Enqueue(finish);
+                return new(CommandOutcome.Applied);
+            }
+            var request=new PendingEffectDecision(++duel.nextEffectDecisionId,command.Side,
+                reserved.Defender.Card,EffectDecisionKind.DrawOneOnFlip,0,duel.Turn);
+            queueDrawDecision=request;
+            followups.ScheduleContinuation(_ => new([],answer =>
+            {
+                var selected=answer ?? throw new InvalidOperationException("Missing battle FLIP answer.");
+                return new([new RecordFlipDrawDecisionCommand(command.Side,request.Id,selected)],
+                    _ => new([finish]));
+            },request));
+            return new(CommandOutcome.Applied);
+        }
+
         private CommandResult RecordFlipDrawDecision(RecordFlipDrawDecisionCommand decision, IActionCommandSink followups)
         {
             if (queueDrawDecision is not { } request || request.Id != decision.DecisionId || request.Owner != decision.Side)
                 return new(CommandOutcome.Rejected, "No matching queued draw decision.");
 
+            if (duel.queuedBattleReveal is { FlipCalculated:true, FlipOpened:true } battle &&
+                !duel.ValidateBattleReveal(battle,faceDown:false))
+                throw new InvalidOperationException("Reserved battle FLIP changed before answer.");
             queueDrawDecision = null;
             if (duel.FlipEffectsNegated)
                 return new(CommandOutcome.Skipped, "Optional draw effect is now negated.");

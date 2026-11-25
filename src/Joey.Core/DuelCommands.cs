@@ -13,6 +13,10 @@ public readonly record struct CardTarget(CardOccurrenceId Occurrence, int Side, 
 public abstract record DuelCommand(int Side);
 public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) : DuelCommand(Side);
 public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
+internal sealed record RevealBattleDefenderCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
+internal sealed record ResolveRevealedBattleCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
+internal sealed record OpenBattleFlipDrawCommand(int Side, CardTarget Defender) : DuelCommand(Side);
+internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
@@ -64,6 +68,9 @@ internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source
 internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateMonsterWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateDiscardMonsterSpellCommand(int Side, CardTarget Source, CardTarget Cost, CardTarget Target) : DuelCommand(Side);
+internal sealed record ActivateConditionalMonsterSpellCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
+internal sealed record ResolveTargetedMonsterSpellCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
@@ -98,6 +105,20 @@ internal static class DuelCommandValidation
             case DeclareTargetedAttackCommand attack:
                 Target(attack.Attacker, attack.Side, DuelZone.Monster);
                 Target(attack.Defender, 1-attack.Side, DuelZone.Monster);
+                break;
+            case RevealBattleDefenderCommand reveal:
+                Target(reveal.Attacker,1-reveal.Side,DuelZone.Monster);
+                Target(reveal.Defender,reveal.Side,DuelZone.Monster);
+                break;
+            case ResolveRevealedBattleCommand resolve:
+                Target(resolve.Attacker,resolve.Side,DuelZone.Monster);
+                Target(resolve.Defender,1-resolve.Side,DuelZone.Monster);
+                break;
+            case OpenBattleFlipDrawCommand openBattleFlip:
+                Target(openBattleFlip.Defender,openBattleFlip.Side,DuelZone.Monster);
+                break;
+            case FinishBattleFlipCommand finishBattleFlip:
+                Target(finishBattleFlip.Defender,finishBattleFlip.Side,DuelZone.Monster);
                 break;
             case SnapshotBattleRemovalCommand snapshot when snapshot.Role is 0 or 1:
                 Target(snapshot.Target,snapshot.Side,DuelZone.Monster);
@@ -210,6 +231,19 @@ internal static class DuelCommandValidation
                 break;
             case ActivateMonsterWipeCommand monsterWipe:
                 Target(monsterWipe.Source, monsterWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateDiscardMonsterSpellCommand paidSpell when paidSpell.Source != paidSpell.Cost:
+                Target(paidSpell.Source, paidSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(paidSpell.Cost, paidSpell.Side, DuelZone.Hand);
+                Target(paidSpell.Target, paidSpell.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateConditionalMonsterSpellCommand conditionalSpell:
+                Target(conditionalSpell.Source, conditionalSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(conditionalSpell.Target, 1 - conditionalSpell.Side, DuelZone.Monster);
+                break;
+            case ResolveTargetedMonsterSpellCommand paidResolution:
+                Target(paidResolution.Source, paidResolution.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(paidResolution.Target, paidResolution.Target.Side, DuelZone.Monster);
                 break;
             case ActivateRaigekiCommand activate:
                 Target(activate.Source, activate.Side, DuelZone.Hand);
