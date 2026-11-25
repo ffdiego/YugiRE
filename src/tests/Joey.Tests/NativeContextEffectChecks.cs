@@ -41,6 +41,35 @@ internal static class NativeContextEffectChecks
               chain.MatchesRelease(target,1,9,0) && !chain.MatchesRelease(target,0,9,0) &&
               early.MatchesRelease(target,0,9,0), "V23: release lookup alternatives");
 
+        var number = new NativeChainTimeline(23);
+        check(NativeChainDraw.Digits(number, new(369,352), 100, 22).Length == 0,
+            "V23: initial frame has no digit passes");
+        number.AdvanceNativeUpdate();
+        check(NativeChainDraw.Digits(number, new(369,352), 100, 22).SequenceEqual(
+            new NativeChainDigit[] {
+                new(new(30,0,10,22), new(359,352,20,44), 0),
+                new(new(20,0,10,22), new(349,352,20,44), 0)
+            }), "V23: range, opening scale and right-to-left spacing");
+        for (int i = 1; i < 32; i++) number.AdvanceNativeUpdate();
+        check(NativeChainDraw.Sprite(new(369,352),75,42) == new CardBounds(332,315,75,42) &&
+              NativeChainDraw.Sprite(new(681,248),75,42) == new CardBounds(644,211,75,42),
+            "V23: whole sprite is centered above the anchor on either side");
+        check(NativeChainDraw.Digits(number, new(681,248), 100, 22)[0] ==
+              new NativeChainDigit(new(30,0,10,22), new(676,259,10,22), 256),
+            "V23: held frame retains the full unnormalized intensity");
+        number.Release();
+        number.AdvanceNativeUpdate();
+        check(NativeChainDraw.Digits(number, new(681,248), 100, 22)[0] ==
+              new NativeChainDigit(new(30,0,10,22), new(676,259,10,23), 240),
+            "V23: release grows and fades the digit");
+        string[] files = ["chain_font.bmp", .. Enumerable.Range(1,25).Select(i => $"frame_?{i}.bmp")];
+        string[] archive = files.Select(file => NativeDisabledChainResources.Prefix + file.Replace('?', 'e')).ToArray();
+        archive[^1] = archive[15];
+        files[^1] = files[15];
+        var resources = NativeChainDraw.Resources(string.Join("\r\n", files), archive, 'e');
+        check(resources.SequenceEqual(archive) && resources[25] == resources[15],
+            "V23: manifest preserves order, localization, and repeated last frame");
+
         var affect = new NativeAffectTimeline();
         affect.AdvanceNativeUpdate(0);
         check(!affect.HasFocus && affect.Counter == 8, "V24: no focus still advances");

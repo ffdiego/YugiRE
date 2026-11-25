@@ -71,6 +71,7 @@ static partial class Game
             }
             var archive = graphics.Open(path);
             ConfigureDisabledChainReview(args, archive);
+            ConfigureChainReview(args, archive);
             cards = Catalog.Load(archive);
             graphics.LoadArtwork(cards);
             ConfigureCardStatusReview(args, archive);
@@ -78,7 +79,7 @@ static partial class Game
             ConfigureLayerFontReview(args, archive);
             ConfigureDiceReview(args, archive);
             ConfigureAlternativeExclusionReview(args, archive);
-            if (new[] { statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, layerFontReviewMode is not null, diceReview is not null, altExReviewMode is not null }.Count(active => active) > 1)
+            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, layerFontReviewMode is not null, diceReview is not null, altExReviewMode is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
@@ -93,7 +94,7 @@ static partial class Game
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--inspect-visual-dat")) return 1;
-        if ((Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null) && error.Length > 0) return 1;
+        if ((Option(args, "--review-chain=") is not null || Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null) && error.Length > 0) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
@@ -120,7 +121,7 @@ static partial class Game
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
-        else if (error.Length == 0 && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && layerFontReviewMode is null && diceReview is null && altExReviewMode is null && args.Contains("--alpha")) StartAlpha();
+        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && layerFontReviewMode is null && diceReview is null && altExReviewMode is null && args.Contains("--alpha")) StartAlpha();
         Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
         Raylib.InitWindow(800, 600, "Joey RE - DAT graphics / demonstration duel");
         duelTheme = new();
@@ -141,6 +142,12 @@ static partial class Game
                 // Native detail uses an English GDI face, not the default
                 // raylib bitmap font; keep this confined to the sidebar.
                 duelTheme.LoadNativeDetailFonts();
+                if (chainReview is not null)
+                {
+                    foreach (string resource in chainReviewResources) _ = graphics.Texture(resource);
+                    screen = "active-chain-review";
+                    Console.WriteLine("[V23 review] F5 release, F7 step, F8 reset, F12 capture; diagnostic compositor");
+                }
                 if (disabledChainReviewTarget is not null)
                 {
                     foreach (string resource in disabledChainReviewResources) _ = graphics.Texture(resource);
@@ -235,6 +242,11 @@ static partial class Game
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawCardStatusReview();
             }
+            else if (screen == "active-chain-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawChainReview();
+            }
             else if (screen == "chain-review")
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
@@ -292,10 +304,11 @@ static partial class Game
             }
 
             Raylib.EndTextureMode();
-            if ((screen is "duel" or "chain-review" or "status-review" or "fusion-review" or "layerfont-review" or "dice-review" or "alt-ex-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
+            if ((screen is "duel" or "active-chain-review" or "chain-review" or "status-review" or "fusion-review" or "layerfont-review" or "dice-review" or "alt-ex-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
                 try
                 {
+                    if (screen == "active-chain-review") CaptureChainReview(canvas);
                     if (screen == "chain-review") CaptureDisabledChainReview(canvas);
                     else if (screen == "status-review") CaptureCardStatusReview(canvas);
                     else if (screen == "fusion-review") CaptureFusionReview(canvas);
