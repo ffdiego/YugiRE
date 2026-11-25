@@ -160,7 +160,8 @@ public sealed partial class DemoDuel
                         !FusionRules.IsFusionMonster(monster) || duel.Monsters[summon.Side, summon.Slot] is not null)
                         throw new InvalidOperationException("Reserved Fusion result or destination changed.");
                     duel.fusionDecks[summon.Side].RemoveAt(index);
-                    duel.PlaceSelectedMonster(summon.Side, summon.Slot, monster, false, summon.FaceUpDefense);
+                    duel.PlaceSelectedMonster(summon.Side, summon.Slot, monster, false, summon.FaceUpDefense,
+                        fusionMaterials: Array.AsReadOnly(plan.Materials.Select(m => m.Card).ToArray()));
                     result = new(CommandOutcome.Applied);
                     break;
                 default:
