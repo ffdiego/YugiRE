@@ -28,6 +28,7 @@ public static class ActionTraceProjection
                 // operation, not a successful draw. Do not infer a native word.
                 words = command switch
                 {
+                    AdvanceTurnCommand => [(ushort)(side | 0x03), 0, 0, 0],
                     DrawCommand or TurnDrawCommand when result.Detail.Length == 0 => [(ushort)(side | 0x61), 1, 1, 0],
                     DamageCommand d when d.Amount is > 0 and <= ushort.MaxValue => [(ushort)(side | 0x43), (ushort)d.Amount, 0, 1],
                     HealCommand h when h.Amount is > 0 and <= ushort.MaxValue => [(ushort)(side | 0x42), (ushort)h.Amount, 0, 1],

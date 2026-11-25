@@ -41,6 +41,21 @@ class TraceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "command does not match"):
             compare(native, document([invalid]), 0, 1, 0, 1, "ydr-record")
 
+    def test_archived_turn_advance_keeps_ending_side_and_cleanup_gap(self):
+        kind, records = native_rows(ROOT / "docs/evidence/replays/relinquished_commands.csv")
+        for side, start in ((1, 14), (0, 66)):
+            expected = [(side << 15) | 0x03, 0, 0, 0]
+            advance = row(1, "AdvanceTurnCommand", expected)
+            with self.subTest(side=side):
+                report = compare(records, document([advance]), start, 2, 0, 1, kind)
+                self.assertEqual(report["status"], "inconclusive")
+                self.assertEqual(report["differences"], [])
+                self.assertEqual([entry["nativeIndex"] for entry in report["nativeProjected"]], [start + 1])
+                self.assertEqual(len(report["nativeUnmapped"]), 1)
+                with self.assertRaisesRegex(ValueError, "command does not match"):
+                    compare(records, document([row(1, "EndTurnCommand", expected)]), start, 2, 0, 1, kind)
+        self.assertIsNone(canonical([0x8003, 0, 1, 0]))
+
     def test_unknowns_and_incomplete_are_not_match(self):
         left=[{"index":0,"args":[0x43,200,0,1]},{"index":1,"args":[0x72,342,0,0]}]
         right=[row(1,"DamageCommand",[0x43,200,0,1]),row(2,"SummonCommand",None,"unmapped")]
