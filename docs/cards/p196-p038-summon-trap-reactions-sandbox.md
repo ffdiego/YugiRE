@@ -54,6 +54,14 @@ https://www.goatformat.com/rulings7.html
   qual carta foi ativada, do jogador, evento e número de removidos.
   Não são capturas JSONL nativas.
 
+### Resposta após Normal Summon enfileirada
+
+App, CPU e console admitem a resposta pelo mesmo produtor após a colocação
+da fila. O passe reabre a próxima busca sem gastar a armadilha. Na
+ativação, o gate da apresentação precede o gasto. A fila aplica cada
+destruição e vínculo separadamente antes de abrir uma busca. O caminho de
+resposta após Flip Summon continua legado.
+
 ## Cobertura
 
 `src/tests/Joey.Tests/SummonTrapChecks.cs` testa:

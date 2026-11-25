@@ -493,6 +493,7 @@
         "Torrential Tribute destroys all monsters on either player's Normal/Flip Summon",
         "Previously Set Trap and explicit optional response window",
         "One Trap activation or Pass per bounded response",
+        "After a queued Normal Summon, App, CPU and console admit the response through the queue",
         "Queued field-to-Graveyard and summon effects survive destruction"
       ],
       "status": "Done",
@@ -502,6 +503,7 @@
       ],
       "evidence": [
         "src/Joey.Core/SummonTrapRules.cs",
+        "src/Joey.Core/DemoQueuedSummonResponse.cs",
         "src/Joey.Core/Demo.cs",
         "src/Joey.App/SummonResponseScreen.cs",
         "src/tests/Joey.Tests/SummonTrapChecks.cs",
@@ -509,7 +511,7 @@
       ],
       "limitations": [
         "Sandbox only, no full chain/priority/negation, Jinzo/immunity or native timing parity.",
-        "Torrential response to Special Summons and simultaneous FLIP chain timing remain pending."
+        "Flip Summon response still uses legacy resolution. Torrential response to Special Summons and simultaneous FLIP chain timing remain pending."
       ]
     },
     {
