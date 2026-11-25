@@ -148,7 +148,7 @@ Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos
 
 Reutilizar `GraveyardBanishSummonRules`, seleção genérica e zona de banimento para Dark Necrofear (P252), Soul of Purity and Light, Spirit of Flames, Aqua Spirit, Garuda the Wind Spirit e demais membros confirmados da família. Validar filtro, quantidade, identidade, custo atômico, gates e seleção UI/CPU; não declarar implementados gates ainda desconhecidos. [Contrato P252](../../docs/research/p252-necrofear-control-contract.md). Se A02/A08 já estiverem disponíveis, usar a API de comandos; caso contrário registrar migração em C12. Controle na End Phase fica separado. P253: contrato puro de oportunidade Aqua (Standby adversária) / Garuda (End adversária), produtores 005A76E0/005A4990, callback compartilhado ausente; [contrato](../../docs/cards/c16-elemental-position-opportunities.md). Roteiro 17 coleta complementar ao 11; integração depende A06/A07/A08. Ambos Partial.
 
-C12.1 integra os produtores CPU e console dos seis procedimentos C16 pelo executor existente. Em modo fila, após tentar a invocação normal, a CPU escolhe a primeira fonte elegível da mão, as primeiras ocorrências elegíveis do cemitério e a primeira zona livre. O console App/Lab aceita as ocorrências escolhidas pelo operador. O teste cobre ambos os lados, cópias, rejeição de custo inválido, origem e o gate entre banimento e invocação. O seletor gráfico e os efeitos posteriores pendentes continuam no escopo de C16/C17.
+C12.1 integra os produtores CPU e console dos seis procedimentos C16 pelo executor existente. Em modo fila, após tentar a invocação normal, a CPU escolhe a primeira fonte elegível da mão, as primeiras ocorrências elegíveis do cemitério e a primeira zona livre. O console App/Lab aceita as ocorrências escolhidas pelo operador. O teste cobre ambos os lados, cópias, rejeição de custo inválido, origem e o gate entre banimento e invocação. O seletor gráfico reutiliza o produtor. A comparação visual e os efeitos posteriores pendentes continuam no escopo de C16/C17.
 
 ## C17 — Controle de Dark Necrofear e Prohibition
 
@@ -291,3 +291,20 @@ Complemento: primeira CI 45678471983 verde. Caso de Gate adversário/equipamento
 ### C12.1 — Invocação inerente de C16 pela CPU e pelo console
 
 Base `067aa87` (#179). CPU em modo fila e console App/Lab usam `TryQueueGraveyardBanishSummon` com origens distintas. Cada custo aguarda o próprio gate antes da invocação. SQLite v6 validado pelo hash e fingerprint do EXE. As funções `0059DEF0` e `00599E30` constam nas decompilações, nas funções suplementares e nas janelas de assembly. A heurística CPU é do sandbox. No Lab com DAT local, Dark Necrofear foi invocado em defesa aberta após três banimentos de Kuriboh por ocorrência, na ordem selecionada. `Demo.cs` tem 2618 linhas antes e depois. O comparador legado P252 continua disponível para os testes. Próximas lacunas do gate C12.1 incluem o seletor gráfico C16, rituais e respostas de combate/armadilhas. CI obrigatório.
+
+### C12.1 — Seletor clicável de C16
+
+Base `3b0eaa7` (#180). A ação da mão abre a lista de custos quando a
+fila pode admitir o monstro. O clique registra a ocorrência localmente.
+Ao completar o custo exato, o App usa o mesmo produtor da CPU e do
+console. A lista usa os modos 7–9 de `0040C940`; o branch default de
+`0043A060` escolhe `selectlist`. Consultados o SQLite v6 e o
+disassembly no EXE de mesmo fingerprint. Sem código novo de Draw,
+recursos ou geometria nativa. Posição aberta e cancelamento reutilizam
+controles provisórios. O teste App sem janela passa pelo produtor do
+clique nos dois lados, em ATK/DEF, com custos de uma a três ocorrências,
+desmarcação, cancelamento, bloqueio de mutação na admissão e custo no
+trace. Ainda falta comparação pareada do componente e do cursor,
+incluindo transições e controles de confirmação originais. Demo.cs
+2618 → 2618. O gate C12.1 segue aberto em rituais e respostas de
+armadilhas/combate. CI obrigatório.

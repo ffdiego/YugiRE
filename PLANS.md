@@ -85,11 +85,11 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Produtores UI/CPU de rituais existentes em C12; efeito próprio de Relinquished e restrições depois. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
-- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Integrar o seletor gráfico C16, rituais e respostas de combate/armadilhas antes de validar a fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
+- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Integrar rituais e respostas de combate/armadilhas antes de validar a fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Adiado`. Sea Serpent confirmado no DAT; comparação P036 em duelo nativo preservada, sob demanda. [Detalhes](docs/plans/CARDS.md#c14)
 - [ ] **C15 — Fatias `Verified`.** Status: `Adiado`. Comparações por família e interações em duelos dirigidos após massa crítica; antecipar divergências materiais. [Detalhes](docs/plans/CARDS.md#c15)
-- [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Parcial`. Integrar seletor no tabuleiro; efeitos pós-invocação restantes depois. [Detalhes](docs/plans/CARDS.md#c16)
+- [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Parcial`. Comparar o seletor do tabuleiro com o original; efeitos pós-invocação restantes depois. [Detalhes](docs/plans/CARDS.md#c16)
 - [ ] **C17 — Controle de Dark Necrofear e Prohibition.** Status: `Aguardando evidência`. Dark Necrofear/Prohibition dependem de evidência; não implementar por aproximação. [Detalhes](docs/plans/CARDS.md#c17)
 
 - [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Parcial`. Inventário de slots reproduzido; script cruza manifest, estudos estáticos e C01 opcional. Falta executar a taxonomia real e revisar semântica por família; novas cartas aguardam C12.1. [Detalhes](docs/plans/CARDS.md#c18)

@@ -1354,12 +1354,13 @@
       ],
       "status": "Partial",
       "mechanics": [
-        "Queue-mode CPU and the App/Lab console admit the summon through its shared producer",
+        "Queue-mode board selector and CPU, plus the App/Lab console, admit the summon through its shared producer",
         "Inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
         "Revalidate hand source, distinct graveyard positions and free destination before changing zones",
         "Queue-backed cost and face-up Special Summon, one command per occurrence, no summon before all costs are applied"
       ],
       "evidence": [
+        "src/Joey.App/BanishSummonSelectionScreen.cs",
         "src/Joey.Core/GraveyardBanishSummonRules.cs",
         "src/Joey.Core/Demo.cs",
         "src/tests/Joey.Tests/GraveyardBanishSummonChecks.cs",
@@ -1370,7 +1371,7 @@
         "docs/cards/c16-queued-graveyard-banish-summon.md"
       ],
       "limitations": [
-        "No End Phase equip/control, board selector, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
+        "No End Phase equip/control, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
         "Native availability 00583050, preparation 005944D0 and primary 005906B0 not decompiled; summon cost helper 0059DEF0/00599E30/005AB640 available."
       ]
     },
@@ -1508,7 +1509,7 @@
       "kind": "Monster",
       "subtype": "Effect",
       "mechanics": [
-        "Queue-mode CPU and the App/Lab console admit the summon through its shared producer",
+        "Queue-mode board selector and CPU, plus the App/Lab console, admit the summon through its shared producer",
         "Queue-backed inherent Special Summon from hand by banishing exactly two (1515) or one (1516–1519) eligible monsters from own Graveyard; match source attribute",
         "Revalidate distinct occurrences, cost and free slot; separate BanishCommand per cost and SpecialSummonCommand only after full payment"
       ],
@@ -1518,6 +1519,7 @@
         1519
       ],
       "evidence": [
+        "src/Joey.App/BanishSummonSelectionScreen.cs",
         "src/Joey.Core/GraveyardBanishSummonRules.cs",
         "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
         "src/Joey.Core/DemoActionQueue.cs",
@@ -1528,7 +1530,7 @@
         "docs/cards/c16-elemental-position-opportunities.md"
       ],
       "limitations": [
-        "Aqua Spirit Standby and Garuda End Phase position effects: pure text-based intent only, no phase/selection/executor integration yet; native callback 005907D0 missing. Board selector, Spirit Elimination and native differential validation pending."
+        "Aqua Spirit Standby and Garuda End Phase position effects: pure text-based intent only, no phase/selection/executor integration yet; native callback 005907D0 missing. Spirit Elimination and native differential validation pending."
       ]
     },
     {
@@ -1542,13 +1544,14 @@
         1518
       ],
       "mechanics": [
-        "Queue-mode CPU and the App/Lab console admit the summon through its shared producer",
+        "Queue-mode board selector and CPU, plus the App/Lab console, admit the summon through its shared producer",
         "Queue-backed inherent Special Summon by banishing own Graveyard monsters matching source attribute (2 for 1515, 1 for 1516/1518)",
         "Soul of Purity and Light lowers opposing monsters' ATK by 300 per face-up source during opponent Battle Phase",
         "Spirit of Flames gains 300 ATK during own Battle Phase; resource 1518 gains 300 ATK during opponent Battle Phase",
         "Recalculate stats and use in actual battle; no additional mutation outside queue for continuous modifiers"
       ],
       "evidence": [
+        "src/Joey.App/BanishSummonSelectionScreen.cs",
         "src/Joey.Core/GraveyardBanishSummonRules.cs",
         "src/Joey.Core/DemoQueuedGraveyardBanishSummon.cs",
         "src/Joey.Core/ElementalBattleAttributeRules.cs",
@@ -1558,7 +1561,7 @@
         "docs/cards/c16-elemental-battle-attributes.md"
       ],
       "limitations": [
-        "Done in explicit headless C# duel scope. CPU and console admit the queue-backed summon. Board selector and native differential validation pending.",
+        "Done in explicit C# duel scope. The board selector, CPU and console admit the queue-backed summon. Native differential validation pending.",
         "Native effect suppression, ownership/controller changes, Spirit Elimination, special summon responses pending. Resource 1518 verified as Joey pack ID and native effect branch; DAT name still to confirm."
       ]
     },
