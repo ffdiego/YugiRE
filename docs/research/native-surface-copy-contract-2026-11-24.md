@@ -143,3 +143,56 @@ inclui agora 00546D70 para confirmação de assembly
 do inicializador; não pedir dump das tabelas reconstruídas.
 Roteiro 24 continua dono da vtable desconhecida.
 Cobertura permanece 20/34.
+
+
+## V17 complemento — source alpha nos formatos 12/13
+
+Consulta direta read-only do SQLite v2 (SHA256
+80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check=ok nesta sessão). 00422E30, 00438100, 00438E30,
+0051EBD0 e 00530220 têm decompilação; não há instruções
+dos dois kernels de intensidade no snapshot. Não rotular
+como confirmado em assembly.
+
+O dispatcher 00422E30, quando formatos de origem/destino
+coincidem, escolhe 00438100 para 12 e 00438E30 para 13.
+Em ambos, o loop de pixels compara apenas os 24 bits baixos
+da cor-chave; o quarto byte da origem é um multiplicador.
+As rotinas são equivalentes em matemática, embora usem
+ponteiros diferentes para os canais. Cada store:
+  effective = floor(source[3]*globalIntensity/255)
+  destination[c] += trunc((source[c]-destination[c])*effective/255)
+  destination[3] = 255
+A primeira operação usa 00A2EE04, a segunda 0060EF03.
+GlobalIntensity está no intervalo 0..255 do adapter.
+Não há skip separado para alpha zero ou intensidade zero:
+em ambos, RGB fica igual mas o quarto byte vira 255.
+Cor-chave é a única condição de skip de pixel nesse ramo.
+
+Para raw intensity >=256, 00422E30 delega 0051EBD0,
+que para formatos iguais 12/13 usa 00530220. Seu loop
+compara a chave RGB e copia o dword completo; não usa
+a tabela de blend nem testa alpha zero. Assim 255 e 256
+são semanticamente distintos, não valores equivalentes.
+A distinção dos formatos 12 e 13 no carregamento e na
+alocação de superfícies não foi recuperada. O código não
+adiciona estes formatos ao NativeCpuSurface, nem confunde
+o quarto byte do formato 7 (BGRX32) com alpha.
+
+NativeSourceAlphaPixel porta somente essa fatia de pixel;
+os testes percorrem 65536 combinações alpha/global e
+testam store/skip, truncamento, 255/256, zero alpha,
+byte de storage e rejeições. Nenhuma promessa de composição
+Porter-Duff, gamma ou equivalência com GPU/raylib. Nenhum
+renderer, clipping, cross-format, associação de YGA a um
+desses códigos ou máscara de Vija foi introduzido.
+004365C0/00437360 (10/11) permanecem pendentes: o
+decompilador apresenta expressões de indexação packed
+e stride que exigem assembly. 00439B60 é outro helper
+de 565 com quantização; não presumir o mesmo algoritmo.
+
+Roteiro 25 ampliado com janelas 00438CD4, 00439A04,
+00530DFE (loops), sem pedir dumps de tabelas já
+reconstruídas nem repetir outro Draw. Se roteiro 25
+já foi executado, coletar somente esses três alvos/janelas.
+Cobertura Draw inalterada: 20/34.
