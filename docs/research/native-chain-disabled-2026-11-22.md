@@ -52,7 +52,7 @@ Saída: `scratch/ghidra-chain-disabled-contract.zip` (não versionar). Relaciona
 ## Fechamento cruzado dos bundles de 23/11
 
 O dispatcher `005B9470`, presente no bundle card-status,
-tem o caso **0x72 → 00408730**. Não é mais apenas
+tem o índice **0x72 → 00408730**, confirmado em 25/11 como opcode bruto **0xB1**. Não é mais apenas
 um chamador candidato. A rotina `00408730`
 (bundle chain-disabled) mostra:
 
@@ -80,7 +80,7 @@ um chamador candidato. A rotina `00408730`
 (desc>>6)&255)`. O bundle mostra que as regiões usuais
 de campo delegam a `0045C280`; regiões 0xB..0xE
 possuem casos especiais (mão e posições com deslocamentos).
-O retorno é par EAX/EDX. Para o efeito 0x72, as
+O retorno é par EAX/EDX. Para o efeito 0xB1, as
 regiões construídas são 0,5,10. Portanto pode-se
 reusar geometria de zonas confirmada, sem inventar
 um centro global para o indicador. Não alegar que os
@@ -89,7 +89,7 @@ valores absolutos de `0045C280` vieram nesse bundle.
 O contrato do objeto (24 Updates, seis imagens inteiras,
 rotacionar 90 graus para 0x4000) está consolidado.
 Ainda falta o manifesto original `disable.txt`, conferir
-a semântica de `00570710`/opcode 0x72 na engine e validar
+a semântica de `00570710`/opcode 0xB1 na engine e validar
 a composição de `00422540`. A coleta Ghidra anterior
 está concluída; não repeti-la. Draw continua Pending.
 
@@ -102,12 +102,8 @@ mostra um setter genérico de bit em 00A55E00 (stride de 0x90
 por zona, 0xD44 por lado). Parâmetro 4 zero limpa; não zero
 seta. 00408730 fornece índice de bit 5. A escrita não depende
 do argumento alto, que condiciona a criação visual.
-00578390/005783C0 são produtores de 0x72, e 005BAFD0 chama
-o segundo no case 1, antes de avaliar os callbacks do elo
-nos cases 2/3. Não é evidência de uma negação genérica.
-As assinaturas decompiladas de 004022E0 e os argumentos
-perdidos em 00578390/005783C0 exigem assembly ou trace
-antes de ligar a semântica ao Core. Nenhuma extração dos
+00578390/005783C0 são produtores de 0x72 bruto (ativação V25), não do indicador. A auditoria de 25/11 identifica B1 nos produtores 00583510, 00588D90, 0059CCF0 e 005BB720. Não é evidência de uma negação genérica.
+Os argumentos e os ramos de supressão exigem validação por trace antes de ligar a semântica ao Core. Nenhuma extração dos
 quatro bundles foi repetida.
 
 O cliente passa a oferecer uma revisão isolada com os
@@ -136,3 +132,5 @@ Testes sintéticos de ambos os lados, 11 zonas, bit 0x4000,
 dimensões ímpares, ordem de manifesto, gates e set/clear.
 A Draw é exercitável pelo modo de revisão, mas ainda não
 integrada ao fluxo normal: **Pending, cobertura 19/34**.
+
+**Correção de 25/11:** [auditoria da tabela comprimida](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma B1 e os produtores. Preservar os gates de zona ocupada, C != 0, D == 0 e bit 5; não disparar para toda negação.
