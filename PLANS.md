@@ -147,6 +147,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
   Obter um cenário nativo com estado inicial e comandos comparáveis ao piloto A05, preservar as lacunas do trace e validar a apresentação dos comandos de combate no gate do App. A05 entrega a projeção e o relatório headless. A07 cobre fases nativas. A reprodução visual do combate permanece na trilha VISUALS.
   *A09.1:* projeção somente leitura da declaração de ataque direto/com alvo; App usa o cue de espada existente no gate da declaração, antes de remoção/dano, sem novo relógio ou fila. Roteiro sem mira manual usa alreadyAimed=false. Regressão App sem DAT/display Classic/Instant, CI 45400089826 aprovado; smoke gráfico e captura nativa equivalente ainda necessários.
   *A09.2:* regressão App Classic/Instant espelhada para ambos os lados, CI 45402454877 aprovado. Roteiro DAT e comparador de trace/state/ordem dos gates com testes negativos; execução real no desktop e captura equivalente do original ainda pendentes. Ver [roteiro](docs/architecture/native-replay-scenarios.md#a092--ambos-os-lados-e-smoke-dat).
+  *A09.3:* o clique de ataque direto no modo experimental usa a fila no recorte isolado já coberto pelo Core. A declaração do jogador usa o mesmo gate de espada e precede o dano. A regressão App chama o manipulador do clique e compara os perfis Classic e Instant; ataques fora do piloto seguem pelo caminho legado.
 
 ## Trilha CARDS
 

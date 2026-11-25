@@ -59,7 +59,8 @@ static partial class Game
         {
             case ActionPresentationKind.DirectAttack:
             case ActionPresentationKind.TargetedAttack:
-                // The script does not present a separate manual aiming step.
+                // Direct attacks start the full cue after the click.
+                // Queued targeted attacks currently come from the console.
                 BeginAttackCue(side, a.SourceIndex, slot, alreadyAimed: false);
                 break;
             case ActionPresentationKind.Activate:

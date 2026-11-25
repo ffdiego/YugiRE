@@ -170,7 +170,7 @@ static partial class Game
     {
         var elapsed = TimeSpan.FromMilliseconds(17);
         foreach (int side in new[] { 0, 1 })
-        foreach (bool targeted in new[] { false, true })
+        foreach (var (targeted, playerInput) in new[] { (false, false), (true, false), (false, true) })
         {
             ActionTraceEntry[]? reference = null;
             foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
@@ -205,7 +205,14 @@ static partial class Game
                 if (!labSession.Execute("battle begin").Enqueued) return false;
                 AdvanceQueuedDuel();
                 AdvanceDuelPhases(elapsed);
-                if (queue.IsBusy || !labSession.Execute(targeted ? "attack 2 3" : "attack 2 direct").Enqueued)
+                if (queue.IsBusy) return false;
+                if (playerInput)
+                {
+                    attacker = 2;
+                    CommitHumanAttack(-1);
+                    if (!queue.IsBusy || attackCue is not null || duel.Life[enemy] != 8000) return false;
+                }
+                else if (!labSession.Execute(targeted ? "attack 2 3" : "attack 2 direct").Enqueued)
                     return false;
                 AdvanceQueuedDuel();
                 if (duel.Life[enemy] != 8000 || targeted && duel.Monsters[enemy, 3] is null)
@@ -238,6 +245,9 @@ static partial class Game
                     targeted && (duel.Monsters[enemy, 3] is not null || duel.Graveyard(enemy).Count != 1))
                     return false;
                 var trace = queue.Trace.ToArray();
+                if (playerInput && !trace.Any(entry => entry.Stage == ActionTraceStage.Completed &&
+                    entry.Entry.Command is DeclareDirectAttackCommand && entry.Entry.Origin == ActionOrigin.Player &&
+                    entry.Result?.Outcome == CommandOutcome.Applied)) return false;
                 if (reference is not null && !trace.SequenceEqual(reference)) return false;
                 reference = trace;
             }
