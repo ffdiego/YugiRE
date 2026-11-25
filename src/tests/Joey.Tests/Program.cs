@@ -122,6 +122,7 @@ QueuedEndTurnChecks.Run(Check);
 QueuedTargetedAttackChecks.Run(Check);
 QueuedBattleFlipChecks.Run(Check);
 QueuedBattlePenguinChecks.Run(Check);
+QueuedBattleManEaterChecks.Run(Check);
 ActionPresentationGateChecks.Run(Check);
 CommandScopedPresentationChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
