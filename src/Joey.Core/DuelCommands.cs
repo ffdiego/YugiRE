@@ -70,6 +70,7 @@ internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSele
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
+internal sealed record ResolveMonsterPositionTargetCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target,
     int ExpectedTurn) : DuelCommand(Side);
 internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
@@ -232,6 +233,10 @@ internal static class DuelCommandValidation
                     throw new ArgumentException("Invalid FLIP Spell/Trap pair.");
                 foreach (var pairPick in new CardTarget?[] { pair.First, pair.Second }.OfType<CardTarget>())
                     Target(pairPick, pairPick.Side, DuelZone.SpellTrap, DuelZone.FieldSpell);
+                break;
+            case ResolveMonsterPositionTargetCommand positionTarget:
+                Target(positionTarget.Source, positionTarget.Side, DuelZone.Monster);
+                Target(positionTarget.Target, 1 - positionTarget.Side, DuelZone.Monster);
                 break;
             case ResolveMonsterFlipTargetsCommand flipTargets:
                 Target(flipTargets.Source, flipTargets.Side, DuelZone.Monster);

@@ -219,7 +219,7 @@ public sealed class CpuDuelController
         {
             if (queueTurnActions && duel.UsesQueuedMonsterFlipSelection(flip))
             {
-                if (duel.FlipEffectsNegated)
+                if (flip.Trigger == DemoMonsterEffectTrigger.Flip && duel.FlipEffectsNegated)
                     return Act(CpuAction.Selection, (out string m) =>
                         duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
                 var choice = duel.QueuedMonsterFlipCandidates()

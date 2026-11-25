@@ -10,9 +10,23 @@ public sealed partial class DemoDuel
     // gate. Only this method can set it, only while enqueueing the answer.
     private bool admittingQueuedMonsterFlipAnswer;
 
-    private static bool IsQueuedMonsterFlip(DemoFlipTarget pending) =>
-        pending.Trigger == DemoMonsterEffectTrigger.Flip &&
-        pending.Effect is DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
+    private static bool SupportsQueuedMonsterSelection(DemoFlipTarget pending) => pending.Trigger switch
+    {
+        DemoMonsterEffectTrigger.Flip => pending.Effect is
+            DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo,
+        DemoMonsterEffectTrigger.PositionChange => pending.Effect == DemoFlipEffect.DestroyOpponentMonster &&
+            MonsterPositionEffectRules.TriggersOnAttackToDefense(pending.SourceCard.Id),
+        _ => false
+    };
+
+    private bool SuppressesQueuedMonsterSelection(DemoFlipTarget pending) =>
+        pending.Trigger == DemoMonsterEffectTrigger.Flip && FlipEffectsNegated;
+
+    private static bool IsBounce(DemoFlipTarget pending) =>
+        pending.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
+
+    private static bool IsEligibleTargetSide(DemoFlipTarget pending, int side) =>
+        pending.Effect != DemoFlipEffect.DestroyOpponentMonster || side != pending.Owner;
 
     // UI/CPU pre-admission selection is not a duel command. Retain the
     // exact occurrence for the first optional pick, not a mutable slot.
@@ -20,7 +34,7 @@ public sealed partial class DemoDuel
 
     public bool UsesQueuedMonsterFlipSelection(DemoFlipTarget request) =>
         primitiveActionQueue is not null && ReferenceEquals(PendingFlipTarget, request) &&
-        deferredBattle is null && IsQueuedMonsterFlip(request) &&
+        deferredBattle is null && SupportsQueuedMonsterSelection(request) &&
         (Phase == DemoPhase.Main || HasQueuedBattleTargetChoice);
 
     private bool TryGetQueuedFlipSource(DemoFlipTarget request, out CardTarget source)
@@ -37,7 +51,7 @@ public sealed partial class DemoDuel
     {
         message = "Choose a current eligible FLIP target.";
         if (!TryGetQueuedFlipSource(request, out var source)) return false;
-        if (FlipEffectsNegated)
+        if (SuppressesQueuedMonsterSelection(request))
             return TryQueueMonsterFlipAnswer(source, [], out message, origin);
 
         var choice = QueuedMonsterFlipCandidates().FirstOrDefault(c => c.Target.Side == player && c.Zone == zone);
@@ -75,7 +89,7 @@ public sealed partial class DemoDuel
     {
         message = "No optional queued FLIP selection.";
         if (!TryGetQueuedFlipSource(request, out var source)) return false;
-        if (FlipEffectsNegated)
+        if (SuppressesQueuedMonsterSelection(request))
             return TryQueueMonsterFlipAnswer(source, [], out message, origin);
         if (request.Effect != DemoFlipEffect.ReturnUpToTwo) return false;
 
@@ -101,7 +115,7 @@ public sealed partial class DemoDuel
     private bool CanAdmitQueuedMonsterFlipAnswer() =>
         !GameOver && deferredBattle is null && (Phase == DemoPhase.Main ||
             HasQueuedBattleTargetChoice && queuedBattleReveal is { } battle && ValidateBattleReveal(battle,faceDown:false)) &&
-        PendingFlipTarget is { } pending && IsQueuedMonsterFlip(pending) &&
+        PendingFlipTarget is { } pending && SupportsQueuedMonsterSelection(pending) &&
         PendingFlipSpellTrapTargets is null && PendingCardSelection is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&
         PendingEffectDecision is null && PendingSpellTrapTarget is null &&
@@ -109,14 +123,14 @@ public sealed partial class DemoDuel
 
     public IReadOnlyList<QueuedMonsterFlipCandidate> QueuedMonsterFlipCandidates()
     {
-        if (primitiveActionQueue?.IsBusy == true || GameOver || FlipEffectsNegated ||
-            PendingFlipTarget is not { } pending || !IsQueuedMonsterFlip(pending)) return [];
-        bool bounce = pending.Effect != DemoFlipEffect.DestroyMonster;
+        if (primitiveActionQueue?.IsBusy == true || GameOver || PendingFlipTarget is not { } pending ||
+            !SupportsQueuedMonsterSelection(pending) || SuppressesQueuedMonsterSelection(pending)) return [];
+        bool bounce = IsBounce(pending);
         var result = new List<QueuedMonsterFlipCandidate>();
         for (int p = 0; p < 2; p++)
         for (int z = 0; z < 5; z++)
         {
-            if (Monsters[p,z] is not Card card ||
+            if (Monsters[p,z] is not Card card || !IsEligibleTargetSide(pending, p) ||
                 bounce && IsMarkedForBattleDestruction(p,z) ||
                 !TryCaptureCardTarget(p,DuelZone.Monster,z,out var target) ||
                 !TryPlanRemovalLinks(p,z,out _,toGraveyard: !bounce)) continue;
@@ -125,23 +139,26 @@ public sealed partial class DemoDuel
         return result.AsReadOnly();
     }
 
-    /// <summary>Resolve a supported manual or reserved battle FLIP through the queue.
-    /// Other battle FLIPs retain their legacy path.</summary>
+    /// <summary>Admit a target answer for a supported monster effect.
+    /// The legacy request type also carries the Dream Clown position trigger.</summary>
     public bool TryQueueMonsterFlipAnswer(CardTarget source, IReadOnlyList<CardTarget> targets,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose a supported pending FLIP and valid distinct occurrences.";
+        message = "Choose a supported monster effect and valid distinct occurrences.";
         if (primitiveActionQueue is not { IsBusy: false } queue ||
             !CanAdmitQueuedMonsterFlipAnswer() || targets is null ||
             !TryPlanQueuedMonsterFlipAnswer(source, targets, out _, out _))
             return false;
         // The caller's list is copied into immutable command values.
-        var answer = new ResolveMonsterFlipTargetsCommand(source.Side, source,
-            targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null);
+        bool position = PendingFlipTarget!.Trigger == DemoMonsterEffectTrigger.PositionChange;
+        DuelCommand answer = position
+            ? new ResolveMonsterPositionTargetCommand(source.Side, source, targets[0])
+            : new ResolveMonsterFlipTargetsCommand(source.Side, source,
+                targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null);
         admittingQueuedMonsterFlipAnswer = true;
         try { queue.Enqueue(answer, origin); }
         finally { admittingQueuedMonsterFlipAnswer = false; }
-        message = "FLIP answer admitted.";
+        message = position ? "Position effect answer admitted." : "FLIP answer admitted.";
         return true;
     }
 
@@ -157,14 +174,15 @@ public sealed partial class DemoDuel
             return false;
         // Royal Command suppresses the pending effect. Accept only an empty
         // answer in that case; no target movement or legacy battle resolver.
-        if (FlipEffectsNegated) return targets.Count == 0;
-        bool bounce = pending.Effect != DemoFlipEffect.DestroyMonster;
+        if (SuppressesQueuedMonsterSelection(pending)) return targets.Count == 0;
+        bool bounce = IsBounce(pending);
         if (targets.Count > 2 || (pending.Effect != DemoFlipEffect.ReturnUpToTwo && targets.Count != 1) ||
             targets.Distinct().Count() != targets.Count) return false;
         var result = new List<DuelCommand>();
         foreach (var target in targets)
         {
-            if (target.Zone != DuelZone.Monster || !TryResolveCardTarget(target,out int slot,out _) ||
+            if (target.Zone != DuelZone.Monster || !IsEligibleTargetSide(pending, target.Side) ||
+                !TryResolveCardTarget(target,out int slot,out _) ||
                 bounce && IsMarkedForBattleDestruction(target.Side,slot) ||
                 !TryPlanRemovalLinks(target.Side,slot,out var links,toGraveyard: !bounce))
                 return false;
