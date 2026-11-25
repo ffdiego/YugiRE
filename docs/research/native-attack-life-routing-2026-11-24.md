@@ -118,3 +118,45 @@ A03 fornece slot de combate e mantém responsabilidade exclusiva
 sobre preparação/liberação de LP; SetLogicalLife legado usa -1.
 Amostras de DAT e capturas pareadas continuam necessárias.
 Cobertura permanece 20/34, nenhuma promoção para Verified.
+
+## V04.2 — geometria do blit rotacionado (assembly confirmado)
+
+SQLite v3 extraído e consultado localmente: SHA256
+9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed,
+integrity_check=ok, fingerprint EXE igual ao acima. O bundle
+ghidra-fusion-remaining-contract.zip, batch-000.txt, contém as
+janelas 00422840 e 00422C00. Não repetir essa coleta.
+
+0042284E..00422896 e 00422C47..00422C96: virtual +38 devolve
+dimensões; cada eixo usa MulDiv(dimensão-1, escala, 65536).
+Escala zero ou resultado zero retorna sem desenho. A textura
+é descrita separadamente pelo retângulo +18/+1C/+20/+24,
+com endpoints direito/inferior decrementados.
+004228CD..00422A02: C=cos[a&511], S=cos[(a-128)&511];
+offsets X=-trunc(w/2), trunc((w+1)/2), Y análogo.
+Cada vértice (x,y) relativo ao centro fornecido pelo chamador
+torna-se (cx+((x*C-y*S)>>16), cy+((y*C+x*S)>>16)).
+O SAR é aritmético, inclusive para valores negativos. Os
+quatro pontos fonte/destino são cíclicos TL,TR,BR,BL.
+00422C00..00422C46: intensidade >=256 encaminha ao caminho
+base; abaixo disso repete a geometria e chama 00422E30.
+Isso não significa que a composição base ignore color key.
+
+DAT v3 confirma attack.txt (chaves 0/1: atk_icon.bmp e
+atk_icon2.bmp, ambas 35x71; 2: atk_eff.yga; 3: dmg_ref.yga).
+Para 35x71, escala 65536 e ângulo 0, os offsets inclusivos
+são (-17,-35),(17,-35),(17,35),(-17,35). O primeiro quadro
+do impacto (t=256) tem escala zero, logo chave 2 não desenha.
+A âncora do ataque direto também foi confirmada: 004142FC
+lê 005DB570=525 (memória v3); 00414302..0041430E usa Y=64
+se atacante == perspectiva local e Y=536 caso contrário.
+Isso não altera o destino de ataques a monstros.
+
+NativeRotatedQuad porta a geometria no domínio de escalas
+não negativas e dimensões limitadas, recebe a tabela de cosseno,
+sinaliza degeneração e não substitui o raster. Testes sintéticos
+cobrem 0/90/180/45 graus, wrap, escala, crop e ausência de
+blit. Não há integração com o Draw normal nesta fatia:
+ângulo x87 (005DA708/728/730), formato/key de superfície e
+comparação gráfica continuam em aberto. Nenhuma mudança ao
+Core, gate, scheduler ou inventário. Sem crédito Verified.
