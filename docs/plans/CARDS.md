@@ -239,6 +239,12 @@ Base `269ac62` (#161 integrado). Novo `DemoQueuedFieldSelection.cs`: produtor co
 
 Checks estendidos: QueuedDeckRecruitmentChecks, QueuedGraveyardRevivalChecks, QueuedSameNameRecruitmentChecks e QueuedRitualSearchChecks (resposta opcional P165 do #161). Ambos os lados, escolhas inválidas, cópias, 0/1/2, posição, gate e CPU. Demo.cs 2623 → 2623; produtores migrados, resolvedores legados preservados para caminhos ainda não migrados. CI obrigatório. Gate C12.1 continua aberto.
 
+### C12.1 — Ativação Fusion Sage de mão e Set
+
+Fusion Sage (1040/P134) já tem executor e o produtor de resposta obrigatória do #161. O App agora consulta a mesma disponibilidade do produtor para mostrar a ativação de mão e admite mão/Set pela fila. CPU admite a fonte legal e responde pelo fluxo existente. O gate de apresentação recebe a projeção da ativação antes do gasto. Testes C# cobrem ambos os lados, mão/Set, alvo inexistente, fila ocupada, projeção e ativação seguida de busca com CPU. Demo.cs 2622 → 2622 linhas. Sem lógica de carta nova ou alteração de cobertura. O gate C12.1 continua aberto.
+
 ### C12.1 — Produtores Fissure de mão e Set
 
 Fissure (1001) usa o executor seletivo existente. App admite mínimo único pelo dispatcher e, em empate, mantém a ocorrência da magia e oferece somente os alvos válidos do mesmo grupo. O clique revalida fonte e alvo no Core; Backspace fecha a escolha. CPU registra a primeira ocorrência válida como escolha explícita pelo mesmo produtor. A apresentação reutiliza a projeção de ativação para mostrar a fonte antes do gasto. Sem ampliação de catálogo, alterações de manifesto, mudanças em Demo.cs (2622 → 2622 linhas) ou novos critérios de alvo. #150 cobre outras famílias e deve preservar o produtor ao reconciliar. Testes automatizados cobrem CPU de mão/Set nos dois lados, empate, pose oculta inelegível, admissão, projeção de apresentação e efeito. O gate C12.1 permanece aberto.
+
+A reconciliação preserva a fatia de Fissure já integrada em `b6d7b91`: o mesmo helper de disponibilidade de mão e o produtor CPU conservam Fissure, acrescentando Fusion Sage sem fallback mutante. Novo CI obrigatório; a base antiga de #172 permanece intacta.

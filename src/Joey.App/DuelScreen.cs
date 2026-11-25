@@ -41,7 +41,9 @@ static partial class Game
         queuedDuel is not null && IsFissure(ViewHand[index])
             ? duel.TryCaptureCardTarget(ViewPlayer, DuelZone.Hand, index, out var source) &&
               duel.QueuedTargetedMonsterSpellCandidates(source).Count != 0
-            : duel.CanActivateFromHand(index);
+            : queuedDuel is not null && DeckSearchSpellRules.Filter(ViewHand[index].Id) is not null
+                ? duel.CanQueueDeckSearchSpell(DuelZone.Hand, index)
+                : duel.CanActivateFromHand(index);
 
     static (CardTarget Source, IReadOnlyList<QueuedTargetedMonsterSpellCandidate> Choices, int Turn)? fissureSelection;
 
