@@ -261,3 +261,48 @@ Roteiro 24 ampliado com 004AB460/004AB950/004AD580/
 resolver +E0 pelo dump existente, consultar SQLite antes
 de pedir código adicional. Roteiro 25 continua dono
 dos kernels raster, não repetir. Nenhum novo Draw.
+
+
+## V17 complemento — alpha packed 10/11 e destino opaco
+
+SQLite v2 reaberto read-only (SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check ok). Decompilações 004365C0, 00437360, 0052F570,
+00439B60, 00424FC0, 00546D70, 00422E30 e 0051EBD0 consultadas
+diretamente. Dispatcher 00422E30 possui janelas assembly no SQLite;
+os cinco kernels novos não têm janela própria no snapshot. Não
+atribuir a estes kernels a validação assembly do dispatcher.
+
+10/11 têm stride 4, word de cor e byte 2 com alpha 0..15. Para
+intensidade global i=0..255, e=00A2EE04[4096*a+i] =
+floor((16*a)*i/255), máximo 240. Não expandir nibble por 17.
+004365C0 (10->10) e 00437360 (11->11) comparam apenas word da
+origem com chave. Para cada canal de cor, expandem com zero fill
+(5 bits <<3, verde565 <<2), calculam floor(S*e/255) +
+floor(D*(255-e)/255), então quantizam novamente. Diferente tanto
+do delta signed usado em 12/13 quanto das escalas packed /15.
+Não pulam s==d; dois truncamentos podem alterar pixel igual.
+O store escreve só word de cor; alpha e byte 3 do destino ficam
+intactos. Não interpretar o nibble como parte de uma word RGBA4444.
+
+No caminho >=256 de 0051EBD0 para formatos iguais 10/11,
+0052F570 compara word com chave e copia word + byte2, preservando
+byte3, mesmo para alpha zero. Não é cópia de dword.
+
+O ramo destino 3/origem 10 de 00422E30 usa 00439B60; destino
+4/origem 11 usa 00424FC0. Ambos quantizam e novamente: q=e>>4,
+resultado=ScalePacked(S,q)+ScalePacked(D,15-q). 0062EE04 para
+565 e 0082EE04 para 555. Os destinos têm stride 2. Para a
+mesma origem vermelha opaca em nibble máximo, global 255,
+o blend 10->10 produz vermelho 29/31 sobre preto; 10->3
+produz 31/31. Não substituir um kernel pelo outro.
+NativePackedAlphaPixel aceita somente estes pares, não assume
+cross-format base >=256. Restrição de nibble 0..15 e argumentos
+válidos protege adapter; não reproduz indexação fora da tabela.
+
+Testes sintéticos: 4096 combinações de intensidade/alpha,
+cores assimétricas, stores de 2/3 bytes, chave, diferença entre
+formatos, fronteira 255/256 e rejeições. Nenhum renderer novo,
+sem afirmar pixel parity. Roteiro 25 ampliado para os cinco
+kernels específicos e, quando necessário, janelas dos loops
+a partir da decompilação; não repetir os alvos anteriores.
+Sem novo gate ou aumento de coverage.

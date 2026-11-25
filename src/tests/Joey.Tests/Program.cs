@@ -195,6 +195,7 @@ NativeSurfaceCopyChecks.Run(Check);
 NativeIntensityPixelChecks.Run(Check);
 NativeSourceAlphaPixelChecks.Run(Check);
 NativeSurfaceColorLayoutChecks.Run(Check);
+NativePackedAlphaPixelChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
