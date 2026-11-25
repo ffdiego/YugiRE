@@ -157,7 +157,7 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Set)
         {
-            if (queuedDuel is not null && !FieldSpellRules.Supports(card.Id))
+            if (queuedDuel is not null)
             {
                 if (duel.TryQueueSpellTrapSet(index, out message)) ClearDuelSelection();
                 return;
@@ -168,10 +168,12 @@ static partial class Game
             {
                 ShowPlayedCardDetail(card);
                 handLayouts[ViewPlayer].RemoveAt(index);
-                if (zone >= 0)
+                bool field = FieldSpellRules.Supports(card.Id);
+                if (field || zone >= 0)
                 {
-                    BeginFlight(card, ViewPlayer, zone, origin, true, true);
-                    QueueSetEffect(ViewPlayer, zone, spell: true);
+                    int destination = field ? 0 : zone;
+                    BeginFlight(card, ViewPlayer, destination, origin, true, true, field);
+                    QueueSetEffect(ViewPlayer, destination, spell: true, field: field);
                 }
                 ClearDuelSelection();
             }
@@ -396,7 +398,7 @@ static partial class Game
             if (duelDebug) Raylib.DrawRectangleLinesEx(fieldRect, 1, own ? Gold : Color.Gray);
             if (duel.FieldSpells[player] is Card fieldCard)
             {
-                if (!ActivationInFlight(fieldRect))
+                if (!ActivationInFlight(fieldRect) && !InFlight(player, 0, true, field: true))
                 {
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]);

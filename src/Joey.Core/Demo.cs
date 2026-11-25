@@ -466,16 +466,12 @@ public sealed partial class DemoDuel
         if (FieldSpellRules.Supports(Hand[index].Id))
         {
             // Setting a new field spell does not replace the opponent's active one.
-            FieldSpells[ActivePlayer] = Hand[index];
-            FieldSpellFaceDown[ActivePlayer] = true;
-            hands[ActivePlayer].RemoveAt(index);
+            CommitSpellTrapSet(ActivePlayer, index, DuelZone.FieldSpell, 0);
             message = "Field Spell set face-down in its dedicated zone.";
             return true;
         }
         int zone = FirstFreeSpellZone();
-        Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = true;
-        spellSetTurn[ActivePlayer, zone] = Turn;
-        hands[ActivePlayer].RemoveAt(index);
+        CommitSpellTrapSet(ActivePlayer, index, DuelZone.SpellTrap, zone);
         message = "Card set face-down in the leftmost free spell/trap zone.";
         return true;
     }

@@ -10,7 +10,7 @@ static partial class Game
     // Capture the departure before Joey.Core's committed hand is reflowed.
     // The moving card is drawn independently while its neighbours shift.
     sealed record HandTransfer(DemoHandTransfer Transfer, CardBounds? Departure = null) : CardEffect;
-    sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins) : CardEffect;
+    sealed record SetPlacement(int Player, int Zone, bool Spell, CardPoint[] ParticleOrigins, bool Field = false) : CardEffect;
     sealed record NormalSummonPlacement(Card Card, int Player, int Zone) : CardEffect;
     sealed record SpecialSummonPlacement(DemoSpecialSummon Summon) : CardEffect;
     sealed record DuelOpening : CardEffect;
@@ -116,7 +116,7 @@ static partial class Game
         cardEffects.Pending.Any(step => step.Kind is TributePlacement { Tribute.Player: var owner }
             && owner == player);
 
-    static void QueueSetEffect(int player, int zone, bool spell)
+    static void QueueSetEffect(int player, int zone, bool spell, bool field = false)
     {
         if (!presentation.Style.PlayAnimations) return;
         // The card is already committed to the Core; Set runs after flight.
@@ -126,10 +126,10 @@ static partial class Game
         for (int i = 0; i < radii.Length; i++)
             radii[i] = Random.Shared.Next(NativeSetFrame.MinimumRadius,
                                            NativeSetFrame.MaximumRadius + 1);
-        var center = DuelCardLayout.Center(spell ? DuelCardZone.Spell : DuelCardZone.Monster,
+        var center = DuelCardLayout.Center(field ? DuelCardZone.Field : spell ? DuelCardZone.Spell : DuelCardZone.Monster,
                                           player == ViewPlayer, zone);
         var origins = NativeSetFrame.ParticleOrigins(center, radii, effectCosine);
-        QueueCardEffect(new SetPlacement(player, zone, spell, origins), NativeSetFrame.Updates);
+        QueueCardEffect(new SetPlacement(player, zone, spell, origins, field), NativeSetFrame.Updates);
     }
 
     static void QueueNormalSummonEffect(Card card, int player, int zone)
@@ -400,7 +400,7 @@ static partial class Game
     static void DrawSetPlacement(SetPlacement placement, int elapsedUpdates)
     {
         bool near = placement.Player == ViewPlayer;
-        var zone = placement.Spell ? DuelCardZone.Spell : DuelCardZone.Monster;
+        var zone = placement.Field ? DuelCardZone.Field : placement.Spell ? DuelCardZone.Spell : DuelCardZone.Monster;
         var center = DuelCardLayout.Center(zone, near, placement.Zone);
         var frame = NativeSetFrame.FromUpdate(elapsedUpdates, effectCosine);
         // Constructor 0044EFD0 uses 00402690: flag is monster-type 1..20,

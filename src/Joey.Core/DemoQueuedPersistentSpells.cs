@@ -25,6 +25,23 @@ public sealed partial class DemoDuel
         SpellFaceDown[side, slot] = false;
     }
 
+    private void CommitSpellTrapSet(int side, int handIndex, DuelZone destination, int slot)
+    {
+        Card card = hands[side][handIndex];
+        if (destination == DuelZone.FieldSpell)
+        {
+            FieldSpells[side] = card;
+            FieldSpellFaceDown[side] = true;
+        }
+        else
+        {
+            Spells[side, slot] = card;
+            SpellFaceDown[side, slot] = true;
+            spellSetTurn[side, slot] = Turn;
+        }
+        hands[side].RemoveAt(handIndex);
+    }
+
     private bool TryPlanFieldActivation(CardTarget source,out CardTarget[] replaced)
     {
         replaced=[];

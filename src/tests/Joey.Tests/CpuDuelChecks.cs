@@ -107,10 +107,10 @@ internal static class CpuDuelChecks
         foreach (int side in new[] { 0, 1 })
         foreach (ushort id in new[] { SpellTrapTargetRules.MysticalSpaceTyphoon, SpellTrapTargetRules.RemoveTrap })
         {
-            Card[] deck = [Spell(id)];
+            Card[] targetedDeck = [Spell(id)];
             var d = DemoDuel.FromPartialObservation(1 - side, [Spell(1002, 21), Spell(1056, 21)],
                 new Card?[5], new Card?[5], 8000,
-                side0Deck: side == 0 ? deck : null, side1Deck: side == 1 ? deck : null);
+                side0Deck: side == 0 ? targetedDeck : null, side1Deck: side == 1 ? targetedDeck : null);
             check(d.SetFromHand(0, out _) && d.SetFromHand(0, out _), "C12 targeted CPU: tracked setup");
             if (id == SpellTrapTargetRules.RemoveTrap) d.SpellFaceDown[1 - side, 0] = false;
             d.NextTurn();
@@ -137,6 +137,37 @@ internal static class CpuDuelChecks
                 d.Spells[1 - side,1]?.Id == 1056 && d.Graveyard(side).Single().Id == id &&
                 d.Graveyard(1 - side).Single().Id == 1002,
                 "C12 targeted CPU: first opposing legal target only");
+        }
+
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool trap in new[] { false, true })
+        {
+            Card placement = trap ? Spell(1056, 21) : strong;
+            var d = State(side, [placement], deck: [Spell(999)]);
+            var queue = d.CreatePrimitiveActionQueue();
+            var controller = new CpuDuelController(side);
+            void Drain()
+            {
+                for (int i = 0; i < 100 && queue.IsBusy; i++) queue.Tick();
+                if (queue.IsBusy) throw new InvalidOperationException("CPU placement queue did not drain.");
+            }
+            check(controller.Step(d, queueTurnActions: true).Action == CpuAction.Draw,
+                "C12 CPU placement: turn draw");
+            Drain();
+            var placementStep = controller.Step(d, queueTurnActions: true);
+            check(placementStep.Status == CpuStepStatus.Acted &&
+                placementStep.Action == (trap ? CpuAction.Set : CpuAction.Summon) &&
+                queue.IsBusy && d.Hand.Count == 2 && d.Spells[side,0] is null && d.Monsters[side,0] is null,
+                "C12 CPU placement: admission without mutation");
+            var entry = queue.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(entry.Origin == ActionOrigin.Cpu &&
+                entry.Command.GetType().Name == (trap ? "SetCommand" : "PrepareNormalPlacementCommand"),
+                "C12 CPU placement: typed producer");
+            Drain();
+            check(d.Hand.Count == 1 && (trap
+                ? d.Spells[side,0] == placement && d.SpellFaceDown[side,0]
+                : d.Monsters[side,0] == placement && !d.MonsterFaceDown[side,0]),
+                "C12 CPU placement: expected board");
         }
 
         var summonTrap = State(0, [strong]);

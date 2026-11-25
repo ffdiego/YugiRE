@@ -72,13 +72,14 @@ static partial class Game
             case ActionPresentationKind.Summon:
             case ActionPresentationKind.Set:
                 bool set = a.Kind == ActionPresentationKind.Set;
-                bool spell = a.Destination == DuelZone.SpellTrap;
+                bool field = a.Destination == DuelZone.FieldSpell;
+                bool spell = field || a.Destination == DuelZone.SpellTrap;
                 ShowPlayedCardDetail(a.Card, hiddenFromPlayer: !near && set);
-                if (snapshot.Origin is { } from && a.Destination != DuelZone.FieldSpell)
+                if (snapshot.Origin is { } from)
                 {
                     handLayouts[side].RemoveAt(a.SourceIndex);
-                    BeginFlight(a.Card, side, slot, from, spell, set);
-                    if (set) QueueSetEffect(side, slot, spell);
+                    BeginFlight(a.Card, side, slot, from, spell, set, field);
+                    if (set) QueueSetEffect(side, slot, spell, field);
                     else QueueNormalSummonEffect(a.Card, side, slot);
                 }
                 break;

@@ -270,8 +270,12 @@ public sealed class CpuDuelController
                     .OrderBy(z => duel.AttackValue(Player, z)).ThenBy(z => z).Take(DemoDuel.NormalTributes(card)).ToArray();
                 bool set = FlipEffectRules.Supports(card.Id) ||
                     card.Attack < MaxVisibleEnemyAttack(duel) && card.Defense > card.Attack;
+                int destination = duel.FirstFreeMonsterZone(tributes);
                 return Act(set ? CpuAction.Set : CpuAction.Summon,
-                    (out string m) => duel.SummonLeftmost(summonIndex, set, out m, tributes), card, target: duel.FirstFreeMonsterZone(tributes), handIndex: summonIndex);
+                    (out string m) => queueTurnActions
+                        ? duel.TryQueueNormalPlacement(summonIndex, destination, set, out m, tributes, ActionOrigin.Cpu)
+                        : duel.SummonLeftmost(summonIndex, set, out m, tributes),
+                    card, target: destination, handIndex: summonIndex);
             }
             // Equip only our own compatible monsters. Never sets an equipment it cannot activate.
             for (int i = 0; i < duel.Hand.Count; i++)
@@ -290,7 +294,10 @@ public sealed class CpuDuelController
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);
             if (trapIndex >= 0)
-                return Act(CpuAction.Set, (out string m) => duel.SetFromHand(trapIndex, out m), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
+                return Act(CpuAction.Set, (out string m) => queueTurnActions
+                    ? duel.TryQueueSpellTrapSet(trapIndex, out m, ActionOrigin.Cpu)
+                    : duel.SetFromHand(trapIndex, out m),
+                    duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
             if (duel.CanBeginBattle) return Act(CpuAction.BeginBattle, EnterBattle);
         }
         if (duel.Phase == DemoPhase.Battle)

@@ -1031,18 +1031,14 @@ public sealed partial class DemoDuel
             {
                 if (set.Destination != DuelZone.FieldSpell || duel.FieldSpells[set.Side] is not null)
                     return new(CommandOutcome.Rejected, "Invalid Field Spell destination.");
-                duel.FieldSpells[set.Side] = card;
-                duel.FieldSpellFaceDown[set.Side] = true;
+                // The dedicated FIELD slot is separate from the five S/T slots.
             }
             else
             {
                 if (set.Destination != DuelZone.SpellTrap || duel.Spells[set.Side, set.Slot] is not null)
                     return new(CommandOutcome.Rejected, "Invalid Spell/Trap destination.");
-                duel.Spells[set.Side, set.Slot] = card;
-                duel.SpellFaceDown[set.Side, set.Slot] = true;
-                duel.spellSetTurn[set.Side, set.Slot] = duel.Turn;
             }
-            duel.hands[set.Side].RemoveAt(index);
+            duel.CommitSpellTrapSet(set.Side, index, set.Destination, set.Slot);
             return new(CommandOutcome.Applied) { Placement = new(set.Source, card.Id, index,
                 set.Destination, set.Slot, true, false, 0) };
         }
