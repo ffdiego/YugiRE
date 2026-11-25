@@ -40,7 +40,7 @@ Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT l
 
 <a id="v04"></a>
 
-Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado no voo; sampler ajustado. V04.2: NativeRotatedQuad porta geometria inteira e pivô de 00422840/00422C00 confirmados pelo assembly no SQLite v3 (bundle de fusão); âncora de ataque direto 525,64/536 confirmada. Testes de vértices adicionados; renderer normal preservado, faltam x87, compositor final e comparação. Pivô/compositor e constantes x87 pendentes; [contrato](../../docs/research/native-attack-life-routing-2026-11-24.md).
+Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado no voo; sampler ajustado. V04.2: NativeRotatedQuad porta geometria inteira e pivô de 00422840/00422C00 confirmados pelo assembly no SQLite v3 (bundle de fusão); âncora de ataque direto 525,64/536 confirmada. Testes de vértices adicionados; renderer normal preservado, faltam x87, compositor final e comparação. V04.3: NativeSwordAngle porta operandos FPATAN, perspectiva e truncamento da interpolação (sete checks); constantes e __ftol não constam no v3, roteiro 32 direcionado. CI anterior V04.2 verde; novo CI pendente. Pivô/compositor e constantes x87 pendentes; [contrato](../../docs/research/native-attack-life-routing-2026-11-24.md).
   Reconstituir estaticamente e validar a troca ao atingir a carta (`j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp`): frame/estado de transição, clipping, pivô e camada. Preservar a ilusão de penetração observada no vídeo, sem declarar seus detalhes como comprovados antes da análise. Rotina Draw `004142C0` (Partial).
 
 ## V05 — ATK/DEF em monstros no campo
