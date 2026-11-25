@@ -135,6 +135,13 @@ public sealed class CpuDuelController
             var candidate = selection.EligibleCards
                 .Where(c => !duel.SelectedBatchIndices.Contains(c.SourceIndex))
                 .OrderByDescending(c => CardValue(c.Card)).ThenBy(c => c.SourceIndex).FirstOrDefault();
+            if (queueTurnActions && duel.UsesQueuedHandSelection(selection))
+            {
+                if (candidate is not null || selection.MinSelections == 0)
+                    return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedHandSelection(
+                        selection, candidate?.SourceIndex, out m, ActionOrigin.Cpu), candidate?.Card);
+                return Idle(CpuStepStatus.Blocked, "Mandatory queued hand selection has no candidate.");
+            }
             if (selection.MaxSelections > 1)
             {
                 int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);

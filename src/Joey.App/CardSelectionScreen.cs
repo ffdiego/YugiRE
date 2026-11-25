@@ -55,6 +55,7 @@ static partial class Game
                     : "Optional recruit: select a monster or Skip."
             : "Select one card (mandatory).", 250, 151, 13);
 
+        bool queuedHandSelection = queuedDuel is not null && duel.UsesQueuedHandSelection(request);
         int visibleSlots = cardSelectionList?.Window.VisibleCount ?? CardSelectionPageSize;
         for (int slot = 0; slot < visibleSlots; slot++)
         {
@@ -65,7 +66,9 @@ static partial class Game
             if (cardSelectionList is { } list ? DrawNativeSelectionCard(list, option.Card, slot, chosen)
                 : DrawSelectionCard(option.Card, slot, chosen))
             {
-                bool resolved = request.MaxSelections > 1
+                bool resolved = queuedHandSelection
+                    ? duel.TrySubmitQueuedHandSelection(request, option.SourceIndex, out message)
+                    : request.MaxSelections > 1
                     ? duel.SelectBatchCard(option.SourceIndex, out message)
                     : duel.ResolveCardSelection(option.SourceIndex, null,
                         request.MaySelectFaceDownDefense && selectionFaceDownDefense, out message);
@@ -102,7 +105,10 @@ static partial class Game
             duel.SelectedBatchIndices.Count == 0 &&
             Button("Skip", 247, 531, 85, 30))
         {
-            if (duel.SkipOptionalCardSelection(out message))
+            bool skipped = queuedHandSelection
+                ? duel.TrySubmitQueuedHandSelection(request, null, out message)
+                : duel.SkipOptionalCardSelection(out message);
+            if (skipped)
             {
                 cardSelectionPage = 0;
                 ClearDuelSelection();
