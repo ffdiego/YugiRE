@@ -96,7 +96,7 @@ internal static class QueuedMonsterFlipTargetChecks
             check(d.PendingFlipTarget is null&&d.Monsters[enemy,0] is null&&
                 (d.Monsters[enemy,1] is null)==(id==601)&&
                 q.Trace.Any(t=>t.Stage==ActionTraceStage.Executed&&t.Entry.Origin==ActionOrigin.Cpu&&
-                    t.Entry.Command is ResolveMonsterFlipTargetsCommand),
+                    t.Entry.Command.GetType().Name=="ResolveMonsterFlipTargetsCommand"),
                 "CPU choice uses same queued answer and origin");
         }
 
