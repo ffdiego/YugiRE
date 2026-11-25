@@ -142,3 +142,45 @@ produtores reais até callbacks; comparar com os destinos
 da Explosion. Se já executou a versão anterior do 29,
 pedir apenas os dois blocos, não repetir disassembly.
 Sem alteração de regras, renderer, badge ou Verified.
+
+## V22 — coleta 29 recebida: opcode e rota confirmados
+
+ZIP ghidra-native-break-scatter-contract.zip SHA256
+2c8f9bea150a4de82d7b76e324ee5977337525e65904f785a6d6546f43586844.
+Fingerprint EXE confere, cinco funções, cinco janelas de 512
+instruções, três chunks de memória (948 bytes), missing=[].
+Importado em snapshot privado v5-visuals, SQLite SHA256
+0f4a090f62900dc2f29e5527cd17cff3c899198f791a909a17098d1712132dee,
+integrity_check e foreign_key_check ok. Não repetir roteiro 29.
+Snapshot derivado de v4-visuals, não contém v4-actions bundle 31.
+
+Tabela byte indexada por opcode-1 + tabela dword de 173 entradas:
+79 -> 4F -> 005B966D -> 00404B40 (Break).
+7A -> 50 -> 005B9672 -> 00405620 (rota distinta).
+7B -> 51 -> 005B9677.
+7C -> 52 -> 005B967C -> 00405190 (Explosion).
+Os mapeamentos 79/7C são únicos no domínio 1..256.
+00578030 produz 79 para região FF (snapshot de combate).
+00579330 produz 79 para regiões B/C/D, conforme wrappers.
+00577CF0 produz 7C para slots de monstro 0..4, inclusive
+ramos especiais de resource ID 780..783 e condição 453.
+00576B30: fora do bypass flag 1000h (95), se bit 1 do
+argumento de flags está setado, produz 79; sem bit 1 pode
+produzir 8D+83 ou 8F, ou 79 para IDs 780..783. Respeitar
+gates anteriores de ocupação, seleção e proteção.
+00576940 -> 00576960(dest E, flags 2) -> 00576B30.
+005778B0 idem com flags A. São rotas de destruição por
+efeito, não uma escolha aleatória na apresentação.
+Exemplos de callbacks catalogados que chamam 00576940:
+Blast Juggler (005853B0), Weather Report (00585F50) e
+00588D90 compartilhado por várias counter traps. Nem todo
+ramo do callback usa esse caminho; não generalizar para
+todas as destruições por efeito. 00577950 (Nobleman
+of Crossout/Extermination) passa flags 0, portanto não
+atribuir Break automaticamente a banimento.
+00578860 -> 00579310 é condicionado à consulta 005709D0
+com resource 294h (Crush Card) e tipo/ATK>=1500; ainda
+precisa validar o contexto e a semântica da zona.
+ACTIONS deve preservar a rota explícita (79 vs 7C) no
+contrato de apresentação, não inferir pelo nome da carta.
+Nenhum novo comando de regras ou roteamento App nesta fatia.
