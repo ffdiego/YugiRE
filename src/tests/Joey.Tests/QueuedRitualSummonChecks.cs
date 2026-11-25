@@ -20,8 +20,65 @@ internal static class QueuedRitualSummonChecks
         if (queue.IsBusy) throw new InvalidOperationException("Ritual queue did not drain.");
     }
 
+    private static void CheckCpu(Action<bool, string> check)
+    {
+        var spell = Spell(670);
+        var ritual = Monster(359, 8, 3);
+        var material = Monster(29, 5);
+        var fieldTribute = Monster(30, 3);
+        var inert = Spell(65000);
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool set in new[] { false, true })
+        foreach (bool full in new[] { false, true })
+        {
+            Card?[] ownField = full
+                ? [fieldTribute, Monster(31, 1), Monster(32, 1), Monster(33, 1), Monster(34, 1)]
+                : [fieldTribute, null, null, null, null];
+            var duel = DemoDuel.FromPartialObservation(side, [spell, ritual, ritual, material],
+                side == 0 ? ownField : new Card?[5], side == 1 ? ownField : new Card?[5],
+                8000, equipmentContextResolved: true, side0Deck: [inert], side1Deck: [inert]);
+            check(duel.Draw(out _), "Ritual CPU fixture draws before the Main Phase");
+            var gate = new TributeGate();
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            if (set)
+            {
+                check(duel.TryQueueSpellTrapSet(0, out _), "Ritual CPU fixture Sets the Ritual spell");
+                Drain(queue);
+            }
+            var handCount = duel.Hand.Count;
+            duel.TryCaptureCardTarget(side, DuelZone.Hand, set ? 0 : 1, out var savedCopy);
+            duel.TryCaptureCardTarget(side, DuelZone.Hand, set ? 1 : 2, out var otherCopy);
+            var cpu = new CpuDuelController(side);
+            var step = cpu.Step(duel, queueTurnActions: true);
+            var admission = queue.Trace.LastOrDefault();
+            check(step is { Status: CpuStepStatus.Acted, Action: CpuAction.Spell } &&
+                admission?.Entry.Origin == ActionOrigin.Cpu && duel.Hand.Count == handCount &&
+                duel.Graveyard(side).Count == 0,
+                $"Ritual CPU admits by occurrence without mutating hand or field (side {side}, Set {set}, full {full})");
+            for (int tick = 0; tick < 14; tick++) queue.Tick();
+            int slot = full ? 0 : 1;
+            check(queue.IsBusy && duel.Monsters[side, slot] is null &&
+                duel.Graveyard(side).Select(card => card.Id).SequenceEqual(
+                    new[] { spell.Id, full ? fieldTribute.Id : ritual.Id }),
+                "Ritual CPU waits at the first tribute gate and clears a slot first on a full field");
+            gate.Released = true;
+            Drain(queue);
+            check(duel.TryCaptureCardTarget(side, DuelZone.Monster, slot, out var summoned) &&
+                summoned.Occurrence == savedCopy.Occurrence && !duel.DefensePosition[side, slot] &&
+                duel.Graveyard(side).Select(card => card.Id).SequenceEqual(
+                    full ? [spell.Id, fieldTribute.Id, material.Id] : [spell.Id, ritual.Id]) &&
+                (full
+                    ? duel.TryCaptureCardTarget(side, DuelZone.Hand, 0, out var retained) &&
+                      retained.Occurrence == otherCopy.Occurrence
+                    : duel.TryCaptureCardTarget(side, DuelZone.Graveyard, 1, out var paid) &&
+                      paid.Occurrence == otherCopy.Occurrence),
+                "Ritual CPU uses a minimal legal subset and preserves the selected physical Ritual monster");
+        }
+    }
+
     public static void Run(Action<bool, string> check, string? datPath)
     {
+        CheckCpu(check);
         var pairs = new (ushort Spell, ushort Monster, int Level)[]
         {
             (672,355,7),(670,359,8),(669,363,8),(673,364,6),(675,700,6),(676,701,6),
