@@ -395,3 +395,20 @@ ou o opcode de chegada ao GY. Não enviar EXE/DAT. Ver
 V20.2 — revisão de moeda (Windows/Fedora desktop): `dotnet run --project src/Joey.App -- /path/to/data.dat --review-coin=3,5,400,100,1`. F7 avança, F8 reinicia, F12 captura PNG/JSON. Verificar uma/três moedas e ambos os bits; recortes/halo e flags de reflexão no JSON. Reflexão/brilhos não implementados; não repetir coleta 16. Validação manual pendente, sem dados privados versionados.
 
 V20.3: o review de moeda agora inclui brilho key5 e JSON schema 2 com o plano de reflexão. A reflexão continua omitida até resolver +94/+A0. Roteiro 24 já abrange esses offsets da vtable; não repetir a coleta 16.
+
+## V04 — 32-native-sword-angle-ghidra.sh (aguardando Fedora)
+
+SQLite v3 verificado: os três doubles 005DA708/005DA728/005DA730
+não estão cobertos por nenhum bloco de visual_evidence_memory;
+005C3E40 só tem decompilação identificada como __ftol, sem assembly.
+Não repetir 21 nem a geometria dos blitters já recuperada.
+
+    bash scripts/pending/32-native-sword-angle-ghidra.sh
+
+Ambiente: Fedora/Ghidra local, projeto e EXE atestados pelo exportador.
+Saída privada: scratch/ghidra-native-sword-angle-contract.zip.
+Critério: três doubles de 8 bytes (blocos 8+16), helper completo,
+identificar modo de arredondamento/restauração de control word e importar
+em cópia cumulativa com fingerprint, integridade e auditoria.
+Se a instrução encaminhar a outro helper, consultar SQLite antes de ampliar.
+Não inferir constantes pelo nome ou por atan2. [Contrato V04](../../docs/research/native-attack-life-routing-2026-11-24.md).
