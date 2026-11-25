@@ -135,8 +135,63 @@ static partial class Game
             Console.Error.WriteLine("Queued inherent summon selection regression failed.");
             return 1;
         }
-        Console.WriteLine("Laboratory, queued automatic draw, combat presentation and inherent summon selection regressions passed.");
+        if (!CheckQueuedSummonResponse())
+        {
+            Console.Error.WriteLine("Queued summon response presentation regression failed.");
+            return 1;
+        }
+        Console.WriteLine("Laboratory, queued automatic draw, combat, inherent summon selection and summon response regressions passed.");
         return 0;
+    }
+
+    static bool CheckQueuedSummonResponse()
+    {
+        var monster = new Card(24, 24, "Summon fixture", "", (3u << 20) | (4u << 25) | (140u << 9));
+        var trap = new Card(120, SummonTrapRules.TrapHole, "Trap Hole", "", 21u << 20);
+        var elapsed = TimeSpan.FromMilliseconds(17);
+
+        foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
+        foreach (bool pass in new[] { false, true })
+        {
+            duel = DemoDuel.FromPartialObservation(0, [trap], new Card?[5], new Card?[5], 8000,
+                side1Deck: [monster]);
+            if (!duel.SetFromHand(0, out _) || !duel.EndTurn(out _) || !duel.Draw(out _)) return false;
+            presentation.SetStyle(style);
+            ResetDuelPresentation();
+            labSession = new DuelConsoleSession(duel, new AppActionPresentationGate());
+            var queue = labSession.Queue;
+            queuedDuel = queue;
+            AdvanceDuelPhases(elapsed);
+
+            void Advance()
+            {
+                for (int frame = 0; frame < 600 && queue.IsBusy; frame++)
+                {
+                    AdvanceSpellActivation(elapsed);
+                    if (CanPlayCardEffects) AdvanceCardEffects(elapsed);
+                    AdvanceDuelPhases(elapsed);
+                    AdvanceAlpha(elapsed);
+                    AdvanceQueuedDuel();
+                    AdvanceLifePresentation(elapsed);
+                }
+            }
+
+            if (!labSession.Execute("summon 0 2").Enqueued) return false;
+            Advance();
+            if (queue.IsBusy || duel.PendingSummonResponse is not { } response ||
+                !CommitSummonResponse(response, pass ? null : response.EligibleTraps.Single()) ||
+                duel.Spells[0, 0] != trap || duel.Monsters[1, 2] != monster)
+                return false;
+            Advance();
+            if (queue.IsBusy || queue.Fault is not null || duel.PendingSummonResponse is not null ||
+                !queue.Trace.Any(entry => entry.Stage == ActionTraceStage.Completed &&
+                    entry.Entry.Command.GetType().Name == "ResolveSummonResponseCommand" &&
+                    entry.Entry.Origin == ActionOrigin.Player) ||
+                (pass ? duel.Spells[0, 0] != trap || duel.Monsters[1, 2] != monster :
+                    !duel.Graveyard(0).SequenceEqual([trap]) || !duel.Graveyard(1).SequenceEqual([monster])))
+                return false;
+        }
+        return true;
     }
 
     static bool CheckQueuedAutomaticDraw(DuelLookAndFeel style)

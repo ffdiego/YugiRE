@@ -21,18 +21,30 @@ static partial class Game
             if (Button($"P{option.Owner + 1} Z{option.Zone + 1}: {option.Trap.Name}",
                 x, y, 238, 36))
             {
-                if (duel.ActivateSummonTrap(option.Owner, option.Zone, out message))
-                {
-                    BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true), nearSide: option.Owner == ViewPlayer);
-                    ClearDuelSelection();
-                }
+                CommitSummonResponse(response, option);
                 return;
             }
         }
         if (Button("Pass response", 565, 460, 180, 34))
+            CommitSummonResponse(response, null);
+    }
+
+    static bool CommitSummonResponse(DemoSummonResponse response, DemoSummonTrapOption? option)
+    {
+        if (duel.UsesQueuedSummonResponse(response))
         {
-            if (duel.PassSummonResponse(out message))
-                ClearDuelSelection();
+            if (!duel.TryQueueSummonResponse(response, option, out message)) return false;
         }
+        else if (option is null)
+        {
+            if (!duel.PassSummonResponse(out message)) return false;
+        }
+        else
+        {
+            if (!duel.ActivateSummonTrap(option.Owner, option.Zone, out message)) return false;
+            BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true), nearSide: option.Owner == ViewPlayer);
+        }
+        ClearDuelSelection();
+        return true;
     }
 }

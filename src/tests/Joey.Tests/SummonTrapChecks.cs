@@ -11,8 +11,127 @@ internal static class SummonTrapChecks
     private static Card?[] Slots(Card? a = null, Card? b = null, Card? c = null) =>
         [a, b, c, null, null];
 
+    private sealed class ResponseGate : IPresentationGate
+    {
+        public string? WaitingFor { get; set; }
+        public bool CanAdvance => true;
+        public bool CanComplete(QueuedDuelCommand entry, CommandResult result) =>
+            entry.Command.GetType().Name != WaitingFor;
+    }
+
+    private static void StepUntil(ActionQueue queue, Func<bool> expected)
+    {
+        for (int i = 0; i < 60 && queue.IsBusy && !expected(); i++) queue.Tick();
+        if (!expected()) throw new InvalidOperationException("Summon response did not reach expected state.");
+    }
+
+    private static void RunQueued(Action<bool, string> check)
+    {
+        var trapHole = Trap(1002, 120);
+        var senju = Monster(1109, 485, 1400, 1000);
+        var ritual = new Card(777, 730, "Relinquished", "", (18u << 20) | (1u << 25));
+        foreach (int summoner in new[] { 0, 1 })
+        foreach (bool pass in new[] { false, true })
+        {
+            int owner = 1 - summoner;
+            var duel = DemoDuel.FromPartialObservation(owner, [trapHole], Slots(), Slots(), 8000,
+                side0Deck: summoner == 0 ? [senju, ritual] : [], side1Deck: summoner == 1 ? [senju, ritual] : []);
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.Draw(out _), "Queued Trap Hole fixture");
+            var gate = new ResponseGate { WaitingFor = nameof(SummonCommand) };
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("summon 0 2").Enqueued, "Queued Normal Summon admitted");
+            StepUntil(queue, () => queue.Active?.Command is SummonCommand);
+            check(duel.PendingSummonResponse is null && duel.PendingCardSelection is null &&
+                duel.Monsters[summoner, 2] == senju, "Response and search wait for the summon gate");
+            gate.WaitingFor = null;
+            StepUntil(queue, () => !queue.IsBusy);
+            var response = duel.PendingSummonResponse!;
+            var option = response.EligibleTraps.Single();
+            check(option.Owner == owner && duel.UsesQueuedSummonResponse(response) && console.HasPendingChoice &&
+                console.Execute("choices").Message.Contains($"{owner} 0: 1002") &&
+                duel.PendingCardSelection is null && !console.Execute("draw 1").Success &&
+                !duel.PassSummonResponse(out _) && !duel.ActivateSummonTrap(owner, 0, out _),
+                "Queued response blocks other actions and legacy answers");
+
+            if (pass)
+                check(console.Execute("respond-summon pass").Enqueued, "Console admits pass for current response");
+            else
+                check(new CpuDuelController(owner).Step(duel, queueTurnActions: true) is
+                    { Status: CpuStepStatus.Acted, Action: CpuAction.Response, Card: null },
+                    "CPU admits Trap Hole without duplicating activation presentation");
+            var admitted = queue.Trace.Last().Entry;
+            check(ReferenceEquals(response, duel.PendingSummonResponse) && duel.Spells[owner, 0] == trapHole &&
+                duel.PendingCardSelection is null && admitted.Origin == (pass ? ActionOrigin.Console : ActionOrigin.Cpu) &&
+                !duel.TryQueueSummonResponse(response, null, out _), "Response admission does not spend or clear the choice");
+            if (!pass)
+            {
+                var presentation = duel.DescribeActionPresentation(admitted.Command);
+                check(presentation is { Kind: ActionPresentationKind.Activate, SourceIndex: 0 } &&
+                    presentation.Source.Side == owner && presentation.Card == trapHole, "A03 projects the actual Trap before spending");
+
+                gate.WaitingFor = "ResolveSummonResponseCommand";
+                StepUntil(queue, () => queue.Active?.Command.GetType().Name == gate.WaitingFor);
+                queue.Tick();
+                check(duel.Spells[owner, 0] == trapHole && duel.Monsters[summoner, 2] == senju &&
+                    duel.PendingCardSelection is null, "Activation gate precedes cost and destruction");
+                gate.WaitingFor = nameof(SendToGraveyardCommand);
+                StepUntil(queue, () => queue.Active?.Command is SendToGraveyardCommand);
+                queue.Tick();
+                check(duel.Graveyard(owner).Single() == trapHole && duel.Monsters[summoner, 2] == senju &&
+                    duel.PendingCardSelection is null, "Cost gate precedes destruction and trigger");
+            }
+            gate.WaitingFor = null;
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is null && !duel.TryQueueSummonResponse(response, null, out _) &&
+                duel.PendingCardSelection is { EffectResourceId: 1109 } search && search.Owner == summoner &&
+                (pass ? duel.Spells[owner, 0] == trapHole && duel.Monsters[summoner, 2] == senju && duel.LastSummonTrap is null
+                    : duel.Monsters[summoner, 2] is null && duel.Graveyard(summoner).Single() == senju &&
+                      duel.LastMonsterWipe is null && duel.LastSummonTrap is { TrapResourceId: 1002, DestroyedMonsters: 1 }),
+                "Pass or Trap Hole preserves the summon trigger and accounts only applied moves");
+        }
+
+        var torrential = Trap(1425, 272);
+        var sangan = Monster(47, 248);
+        var witch = Monster(573, 261, 1100, 1200);
+        var strong = Monster(12, 103, 1600);
+        var low = Monster(11, 102);
+        var wipe = DemoDuel.FromPartialObservation(0, [torrential], Slots(sangan), Slots(witch), 8000,
+            side0Deck: [low], side1Deck: [strong, low]);
+        check(wipe.SetFromHand(0, out _) && wipe.EndTurn(out _) && wipe.Draw(out _), "Queued Torrential fixture");
+        var wipeGate = new ResponseGate();
+        var wipeConsole = new DuelConsoleSession(wipe, wipeGate);
+        check(wipeConsole.Execute("summon 0 1").Enqueued, "Queued Torrential fixture summons");
+        StepUntil(wipeConsole.Queue, () => !wipeConsole.Queue.IsBusy);
+        var pending = wipe.PendingSummonResponse!;
+        check(!wipeConsole.Execute("respond-summon 1 0").Success &&
+            wipeConsole.Execute("respond-summon 0 0").Enqueued, "Console admits only an offered Trap");
+        var originalTrap = wipe.Spells[0, 0];
+        wipe.Spells[0, 0] = torrential with { };
+        StepUntil(wipeConsole.Queue, () => !wipeConsole.Queue.IsBusy);
+        check(ReferenceEquals(pending, wipe.PendingSummonResponse) && wipe.Graveyard(0).Count == 0 &&
+            wipe.PendingCardSelection is null && wipeConsole.Queue.Trace.Last().Result?.Outcome == CommandOutcome.Rejected,
+            "Replacing the chosen Trap before execution rejects without consuming the response");
+        wipe.Spells[0, 0] = originalTrap;
+        check(wipeConsole.Execute("respond-summon 0 0").Enqueued, "A still current response can be answered again");
+        wipeGate.WaitingFor = nameof(DestroyCommand);
+        StepUntil(wipeConsole.Queue, () => wipeConsole.Queue.Active?.Command is DestroyCommand);
+        wipeConsole.Queue.Tick();
+        check(wipe.Graveyard(0).SequenceEqual([torrential, sangan]) && wipe.Graveyard(1).Count == 0 &&
+            wipe.PendingCardSelection is null && wipe.LastMonsterWipe is null,
+            "Torrential applies exactly one destruction before the gate, with no premature search");
+        wipeGate.WaitingFor = null;
+        StepUntil(wipeConsole.Queue, () => !wipeConsole.Queue.IsBusy);
+        check(wipe.Graveyard(1).SequenceEqual([witch, strong]) &&
+            wipe.LastMonsterWipe is { EffectResourceId: 1425, DestroyedPlayer0: 1, DestroyedPlayer1: 2 } &&
+            wipe.LastSummonTrap is { TrapResourceId: 1425, DestroyedMonsters: 3 } &&
+            wipe.PendingCardSelection is { Owner: 0, EffectResourceId: 47 },
+            "Torrential finalizes the batch in field order before opening Sangan's search");
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        RunQueued(check);
         var trapHole = Trap(1002, 120);
         var torrential = Trap(1425, 272);
         var small = Monster(10, 101, 900);
