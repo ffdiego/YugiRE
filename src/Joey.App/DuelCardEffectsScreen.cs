@@ -384,12 +384,11 @@ static partial class Game
                 geometry.Degrees, new Color(255, 255, 255, frame.CardOpacity));
 
         // 004870B0 launches eight stars after counter 128, 16 units apart.
-        // 2/3 is the native resource index, but the bitmap association is
-        // provisional until sacrifice.txt has been inspected from data.dat.
+        // sacrifice.txt key 2/3 are the yellow stars (v3 manifest).
         foreach (var particle in frame.Particles)
         {
             var origin = placement.ParticleOrigins[particle.Sequence];
-            var sprite = graphics.Texture(DatGraphics.SetSprites[2 + particle.Variant]);
+            var sprite = graphics.Texture(NativePlacementAssets.TributeStar(particle.Variant));
             Raylib.DrawTexture(sprite,
                 origin.X - sprite.Width / 2,
                 origin.Y - particle.RisePixels - sprite.Height / 2,
@@ -406,33 +405,30 @@ static partial class Game
         // Constructor 0044EFD0 uses 00402690: flag is monster-type 1..20,
         // NOT the player's side. Draw 0044F390 selects indices 2/3 for
         // monsters, 4/5 for spell/trap, alternating every 8 counter units.
-        // Manifest order is still inferred from original DAT resource names.
+        // Original manifest order: monster yellow, spell/trap blue.
         if (frame.MainOpacity <= 0) return;
-        DrawEffectStamp(placement.Spell ? DatGraphics.SetAuraYellow : DatGraphics.SetAuraBlue,
+        DrawEffectStamp(NativePlacementAssets.Aura(placement.Spell),
             center, 0, frame.ScaleFixed16, frame.MainOpacity);
         foreach (var particle in frame.Particles)
         {
             var origin = placement.ParticleOrigins[particle.Sequence];
-            var sprite = graphics.Texture(DatGraphics.SetSprites[
-                2 + (placement.Spell ? 2 : 0) + particle.Variant]);
+            var sprite = graphics.Texture(NativePlacementAssets.Star(placement.Spell,particle.Variant));
             Raylib.DrawTexture(sprite, origin.X - sprite.Width / 2,
                 origin.Y - particle.RisePixels - sprite.Height / 2,
                 new Color(255, 255, 255, frame.MainOpacity));
         }
-        // Exact MT draw sequence, original 512-element cosine table,
-        // BMP manifest order and the native scratch blend await comparison.
+        // Exact shared MT sequence and native scratch +AC blend await comparison.
     }
 
     static void DrawNormalSummon(NormalSummonPlacement summon, int elapsedUpdates)
     {
         // The constructor 0044F630 loads data/mini/list_card.txt; the DAT
-        // contains a mini\\<name>.bmp counterpart for every card\\<name>.bmp.
-        // The native Draw is split into scaling and vertically wrapped passes.
-        // The second pass clipping/orientation remains an approximation.
-        string? fullName = graphics.Artwork.For(summon.Card);
-        if (fullName is null || !fullName.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase))
-            return;
-        var sprite = graphics.Texture(@"mini\" + fullName[5..]);
+        // contains a miniature bank; summon.txt is a separate effect bank.
+        // 0044FA10 selects mini in the first branch and key 0 of summon.txt
+        // in the second branch, NOT a vertically scrolling monster face.
+        string? mini = graphics.Artwork.MiniFor(summon.Card);
+        if (mini is null) return;
+        var sprite = graphics.Texture(mini);
         var center = DuelCardLayout.Center(DuelCardZone.Monster, summon.Player == ViewPlayer, summon.Zone);
         var frame = NativeNormalSummonFrame.FromUpdate(elapsedUpdates, effectCosine);
         if (frame.Opacity == 0) return;
@@ -443,21 +439,18 @@ static partial class Game
             float width = sprite.Width * scale, height = sprite.Height * scale;
             Raylib.DrawTexturePro(sprite, new Rectangle(0, 0, sprite.Width, sprite.Height),
                 new Rectangle(center.X, center.Y, width, height),
-                new System.Numerics.Vector2(width / 2, height / 2), 0, tint);
+                new System.Numerics.Vector2(width / 2, height / 2), summon.Player == ViewPlayer ? 0 : 180, tint);
             return;
         }
 
-        // The native Draw scrolls the mini image by floor(counter*5/8)
-        // and composites two strips if the source offset crosses its edge.
-        int offset = frame.WrappedSourceOffset(sprite.Height);
-        float x = center.X - sprite.Width / 2f;
-        float y = center.Y - sprite.Height / 2f;
-        int firstHeight = sprite.Height - offset;
-        Raylib.DrawTextureRec(sprite, new Rectangle(0, offset, sprite.Width, firstHeight),
-            new System.Numerics.Vector2(x, y), tint);
-        if (offset > 0)
-            Raylib.DrawTextureRec(sprite, new Rectangle(0, 0, sprite.Width, offset),
-                new System.Numerics.Vector2(x, y + firstHeight), tint);
+        // Candidate crop adapter: 0044FA10 wraps a mini-sized window
+        // inside summon.txt key 0 (100x94), not the card itself.
+        // Exact horizontal offset and native +18 blend require assembly.
+        var rainbow=graphics.Texture(NativePlacementAssets.Rainbow);
+        foreach(var strip in NativeSummonRainbow.Strips(frame.ScrollPixels,
+            rainbow.Width,rainbow.Height,DuelCardLayout.MiniWidth,DuelCardLayout.MiniHeight,center))
+            Raylib.DrawTexturePro(rainbow,ToRectangle(strip.Source),ToRectangle(strip.Destination),
+                System.Numerics.Vector2.Zero,0,tint);
     }
 
     static void DrawSpecialSummon(DemoSpecialSummon summon, int elapsedUpdates)
