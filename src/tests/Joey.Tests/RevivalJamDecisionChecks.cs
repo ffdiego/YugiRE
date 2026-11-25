@@ -84,6 +84,30 @@ internal static class RevivalJamDecisionChecks
         CheckQueuedRevival(check, fieldFull: false);
         CheckQueuedRevival(check, fieldFull: true);
 
+        // Offerings replaces Draw, not Standby. Schedule a real revival
+        // for the same owner's due turn, using existing battle/decision path.
+        {
+            var d=DemoDuel.FromPartialObservation(1,[new Card(1451,1451,"Offerings","",22u<<20)],
+                Slots(Monster(900,100,attack:2000)),
+                [Monster(RevivalJamRules.ResourceId,1060),Monster(901,101),null,null,null],8000);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryCaptureCardTarget(1,DuelZone.Hand,0,out var offering)&&
+                d.TryCaptureCardTarget(1,DuelZone.Monster,1,out var victim)&&
+                d.TryQueueTargetedMonsterSpell(offering,victim,out _),"Offerings before Revival Jam battle");
+            Drain(q);
+            check(d.BeginBattle(out _)&&d.Attack(0,0,out _)&&d.PendingEffectDecision is not null,
+                "Revival Jam destroyed by battle after Offerings");
+            var revival=d.PendingEffectDecision!;
+            check(d.ResolveEffectDecision(revival.Id,EffectDecisionAnswer.Accept,out _)&&
+                d.PendingDelayedRevivals.Count==1&&d.PendingSkippedDrawTurn(1)==4,
+                "Both pending effects due on the same turn");
+            d.NextTurn();d.NextTurn();
+            check(d.TryQueueTurnDraw(out _),"Skip with pending Standby");Drain(q);
+            check(!d.GameOver&&d.HandFor(1).Count==0&&d.PendingSkippedDrawTurn(1) is null&&
+                d.PendingDelayedRevivals.Count==0&&d.Monsters[1,0]?.Id==RevivalJamRules.ResourceId&&
+                d.DefensePosition[1,0],"Skipped empty-deck Draw still resolves paid Standby revival");
+        }
+
         var jam = Monster(RevivalJamRules.ResourceId, 1060);
         var declined = DestroyJam(jam);
         var request = declined.PendingEffectDecision;
