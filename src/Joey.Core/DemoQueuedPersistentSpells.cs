@@ -46,8 +46,10 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(source,out int index,out var card) || card.Id!=InfiniteCardsId ||
             card.ClassCode is not (21 or 22 or 23)) return false;
         slot=source.Zone==DuelZone.Hand?FirstFreeSpellZone():index;
-        return slot>=0 && (source.Zone==DuelZone.Hand || SpellFaceDown[source.Side,slot]) &&
-            !equipment.Any(e=>e.Owner==source.Side&&e.SourceZone==slot);
+        // An out parameter cannot be captured by a lambda (CS1628).
+        int destination = slot;
+        return destination>=0 && (source.Zone==DuelZone.Hand || SpellFaceDown[source.Side,destination]) &&
+            !equipment.Any(e=>e.Owner==source.Side&&e.SourceZone==destination);
     }
 
     private bool TryQueueInfiniteCards(CardTarget source,out string message,ActionOrigin origin)
