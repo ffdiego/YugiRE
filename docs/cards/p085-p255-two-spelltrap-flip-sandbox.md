@@ -57,6 +57,6 @@ responsabilidade dono/controlador distintos, proteção/negação de alvo,
 geração durável de instância ao substituir publicamente o mesmo objeto
 `Card`, nem ordenação/timing nativo dos movimentos.
 
-Ghidra pendente: `scripts/pending/05-flip-spelltrap-targets-ghidra.sh`
+Coleta Ghidra importada no SQLite cumulativo: `scripts/completed/05-flip-spelltrap-targets-ghidra.sh`
 versionado neste PR; **não executado** neste ambiente. Produz ZIP privado
 em `scratch/ghidra-flip-spelltrap-two-targets.zip` na máquina com Ghidra.

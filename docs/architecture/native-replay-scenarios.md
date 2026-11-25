@@ -313,7 +313,7 @@ avanço legal ao turno 3 para o lado 0), ataque direto/com alvo, Classic/Instant
 destino lógico espelhado, nenhuma alteração de LP/defensor durante o cue e
 mesmo trace final. Não altera parâmetros de LookAndFeel.
 
-O roteiro privado executável `scripts/pending/actions-a09-combat-smoke.py`
+O roteiro privado executável `scripts/regression/actions-a09-combat-smoke.py`
 roda o mesmo checkpoint de laboratório no Lab, App Classic e App Instant.
 A fixture usa o ID 1351 já observado em CE na amostra arquivada, com hipótese
 explícita de monstro jogável de ATK positivo no DAT local: falha cedo se a
@@ -328,7 +328,7 @@ de trace/state entre os três perfis. A duração medida é wall-clock do App,
 não update nativo nem teste de pixels.
 
 ```powershell
-python scripts/pending/actions-a09-combat-smoke.py --dat ../passion/data.dat
+python scripts/regression/actions-a09-combat-smoke.py --dat ../passion/data.dat
 ```
 
 Fechar cada janela somente após Script completed. Logs ficam em

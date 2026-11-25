@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-PATH = Path(__file__).resolve().parents[1] / "scripts/pending/actions-a09-combat-smoke.py"
+PATH = Path(__file__).resolve().parents[1] / "scripts/regression/actions-a09-combat-smoke.py"
 spec = importlib.util.spec_from_file_location("action_combat_smoke", PATH)
 smoke = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(smoke)
