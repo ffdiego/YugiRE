@@ -45,6 +45,29 @@ internal static class NativeFieldAttributeDispositionChecks
         var revealed=timeline.Sample(second,1000,500,1800,900,1,true);
         check(replaced==a && revealed==a,
             "V05: identity replacement and hidden reset seed from base");
+        // Recipe 33: exact little-endian pairs from 005DB560 and 005DB510.
+        CardPoint[] monsters=[new(369,352),new(447,352),new(525,352),new(603,352),new(681,352),
+            new(681,248),new(603,248),new(525,248),new(447,248),new(369,248)];
+        CardPoint[] spells=[new(369,460),new(447,460),new(525,460),new(603,460),new(681,460),
+            new(681,140),new(603,140),new(525,140),new(447,140),new(369,140)];
+        foreach(bool near in new[]{true,false})
+        for(int slot=0;slot<5;slot++)
+        {
+            int index=slot+(near?0:5);
+            check(NativeDuelLayout.MonsterCenter(slot,near)==monsters[index] &&
+                DuelCardLayout.Center(DuelCardZone.Monster,near,slot)==monsters[index] &&
+                DuelCardLayout.Center(DuelCardZone.Spell,near,slot)==spells[index],
+                $"V02/V05/V06: recipe 33 exact native zone centers near={near} slot={slot}");
+            foreach(bool defense in new[]{false,true})
+            foreach(bool hidden in new[]{false,true})
+            {
+                var geometry=DuelCardLayout.OnBoard(DuelCardZone.Monster,near,slot,defense,hidden);
+                var center=monsters[index];
+                CardPoint? expected=(!near&&hidden)?null:new CardPoint(center.X,center.Y+(near?46:-46));
+                check(geometry.AttributesCenter==expected,
+                    $"V05: recipe 33 attribute anchor near={near} slot={slot} defense={defense} hidden={hidden}");
+            }
+        }
         var local=NativeFieldAttributeFrame.Compose(new CardPoint(525,398),7,10,1500,1200,1500,1200,false);
         var opponent=NativeFieldAttributeFrame.Compose(new CardPoint(525,202),7,10,1500,1200,1500,1200,true);
         check(local.Attack.CenterX==505 && local.Defense.CenterX==545 &&
