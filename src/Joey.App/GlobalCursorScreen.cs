@@ -16,7 +16,7 @@ static partial class Game
             !MotionBusy && !PhaseBusy && !alphaBlocked &&
             CanPlayTurn && CanPlayMainOrBattle &&
             CpuDuelController.PendingOwner(duel) is null &&
-            !choosingTributes && !choosingEquip &&
+            !choosingTributes && !choosingEquip && banishSummonChoice is null &&
             mouse.X >= 0 && mouse.X < NativeDuelLayout.CanvasWidth &&
             mouse.Y >= 0 && mouse.Y < NativeDuelLayout.CanvasHeight &&
             !duel.GameOver)

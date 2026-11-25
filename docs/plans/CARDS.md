@@ -299,8 +299,7 @@ fila pode admitir o monstro. O clique registra a ocorrência localmente.
 Ao completar o custo exato, o App usa o mesmo produtor da CPU e do
 console. A lista usa os modos 7–9 de `0040C940`; o branch default de
 `0043A060` escolhe `selectlist`. Consultados o SQLite v6 e o
-disassembly no EXE de mesmo fingerprint. Sem código novo de Draw,
-recursos ou geometria nativa. Posição aberta e cancelamento reutilizam
+disassembly no EXE de mesmo fingerprint. O adaptador usa o Draw, os recursos e a geometria da lista estável de V11. Posição aberta e cancelamento reutilizam
 controles provisórios. O teste App sem janela passa pelo produtor do
 clique nos dois lados, em ATK/DEF, com custos de uma a três ocorrências,
 desmarcação, cancelamento, bloqueio de mutação na admissão e custo no
