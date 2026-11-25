@@ -1133,6 +1133,8 @@ public sealed partial class DemoDuel
             !MonsterFaceDown[1-p,slot] && !IsMarkedForBattleDestruction(1-p,slot));
         sum = new(sum.Attack + ElementalBattleAttributeRules.AttackDelta(
             monster.Id, p, ActivePlayer, Phase == DemoPhase.Battle, opposingSouls), sum.Defense);
+        var temporary = temporaryStats.GetValueOrDefault(monster);
+        sum = new(sum.Attack + temporary.Attack, sum.Defense + temporary.Defense);
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
     }
@@ -1815,12 +1817,7 @@ public sealed partial class DemoDuel
                     continue;
                 if (FusionRules.IsFusionMonster(card)) fusionDecks[p].Add(card);
                 else additions.Add(card);
-                Monsters[p, z] = null;
-                MonsterWasFlipped[p, z] = false;
-                MonsterFaceDown[p, z] = DefensePosition[p, z] = false;
-                changedPosition[p, z] = attacked[p, z] = false;
-                foreach (var equip in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z).ToArray())
-                    RemoveEquipmentCore(equip.Owner, equip.SourceZone);
+                ClearMonsterSlot(p, z);
             }
             returned[p] = additions.Count;
             // A player whose field sent no monsters back keeps the deck's order.
@@ -2469,6 +2466,7 @@ public sealed partial class DemoDuel
 
     private void ClearMonsterSlot(int player, int zone, bool removeEquipment = true)
     {
+        if (Monsters[player, zone] is Card departing) temporaryStats.Remove(departing);
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
         MonsterWasFlipped[player, zone] = false;
@@ -2525,6 +2523,7 @@ public sealed partial class DemoDuel
     private void AdvanceTurn()
     {
         ExpireDrawPhaseSkipOnTurnExit();
+        temporaryStats.Clear();
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
         battlePhaseEndedThisTurn = false;
         Array.Clear(attacked); Array.Clear(changedPosition);
