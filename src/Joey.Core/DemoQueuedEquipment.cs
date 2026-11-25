@@ -77,6 +77,18 @@ public sealed partial class DemoDuel
         return sourceIndex == slot && SpellFaceDown[source.Side, slot];
     }
 
+    private void CommitEquipmentActivation(int owner, int slot, int? handIndex,
+        Card card, int targetSide, int targetIndex, Card monster)
+    {
+        if (handIndex is int index)
+        {
+            hands[owner].RemoveAt(index);
+            Spells[owner, slot] = card;
+        }
+        SpellFaceDown[owner, slot] = false;
+        equipment.Add(new(card, owner, slot, targetSide, targetIndex, monster));
+    }
+
     private CommandResult ApplyQueuedEquipment(EquipCommand command)
     {
         if (!TryResolveCardTarget(command.Source, out _, out _) ||
@@ -88,14 +100,10 @@ public sealed partial class DemoDuel
         int owner = command.Side, slot = command.SpellSlot;
         // Placement/flip and its link constitute one logical equipment
         // activation, not separate externally visible half-equipped states.
-        if (command.Source.Zone == DuelZone.Hand)
-        {
-            hands[owner].RemoveAt(index);
-            Spells[owner, slot] = card;
-        }
-        SpellFaceDown[owner, slot] = false;
+        CommitEquipmentActivation(owner, slot,
+            command.Source.Zone == DuelZone.Hand ? index : null,
+            card, command.Target.Side, targetIndex, monster);
         spellSetTurn[owner, slot] = 0;
-        equipment.Add(new(card, owner, slot, command.Target.Side, targetIndex, monster));
         return new(CommandOutcome.Applied);
     }
 }

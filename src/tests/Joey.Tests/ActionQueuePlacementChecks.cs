@@ -79,6 +79,29 @@ internal static class ActionQueuePlacementChecks
                 immediate.Paid.SequenceEqual(delayed.Paid) && immediate.Placed.SequenceEqual(delayed.Placed),
                 "A02 immediate and gated placement have identical trace and events");
         }
+        foreach (int side in new[] { 0, 1 })
+        {
+            Card field = new(332, 332, "Sogen", "", 22u << 20);
+            var legacy = DemoDuel.FromPartialObservation(side, [spell, field], new Card?[5], new Card?[5], 8000);
+            var queued = DemoDuel.FromPartialObservation(side, [spell, field], new Card?[5], new Card?[5], 8000);
+            var queue = queued.CreatePrimitiveActionQueue();
+            foreach (var zone in new[] { DuelZone.SpellTrap, DuelZone.FieldSpell })
+            {
+                check(legacy.SetFromHand(0, out _) && queued.TryQueueSpellTrapSet(0, out _),
+                    "C12 Set: both admission paths");
+                var entry = queue.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+                var cue = queued.DescribeActionPresentation(entry.Command);
+                check(cue is { Kind: ActionPresentationKind.Set, DestinationSlot: 0 } && cue.Destination == zone,
+                    "C12 Set: correct distinct board zone in presentation");
+                Drain(queue);
+                check(queued.Hand.SequenceEqual(legacy.Hand) &&
+                    queued.FieldSpells[side] == legacy.FieldSpells[side] &&
+                    queued.FieldSpellFaceDown[side] == legacy.FieldSpellFaceDown[side] &&
+                    queued.Spells[side,0] == legacy.Spells[side,0] &&
+                    queued.SpellFaceDown[side,0] == legacy.SpellFaceDown[side,0],
+                    "C12 Set: same committed state");
+            }
+        }
         ActionQueueFlipChecks.Run(check);
         var simple = DemoDuel.FromPartialObservation(0, [low, spell], new Card?[5], new Card?[5], 8000);
         var simpleQueue = simple.CreatePrimitiveActionQueue();

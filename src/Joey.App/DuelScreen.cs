@@ -43,9 +43,11 @@ static partial class Game
               duel.QueuedTargetedMonsterSpellCandidates(source).Count != 0
             : queuedDuel is not null && IsQueuedTargetedSpellTrap(ViewHand[index])
                 ? QueuedSpellTrapChoices(DuelZone.Hand, index).Count != 0
-                : queuedDuel is not null && DemoDuel.SupportsQueuedFixedSpell(ViewHand[index])
-                    ? duel.CanQueueFixedSpellActivation(DuelZone.Hand, index)
-                    : duel.CanActivateFromHand(index);
+                : queuedDuel is not null && IsQueuedEquip(ViewHand[index])
+                    ? QueuedEquipChoices(DuelZone.Hand, index).Count != 0
+                    : queuedDuel is not null && DemoDuel.SupportsQueuedFixedSpell(ViewHand[index])
+                        ? duel.CanQueueFixedSpellActivation(DuelZone.Hand, index)
+                        : duel.CanActivateFromHand(index);
 
     static (CardTarget Source, IReadOnlyList<QueuedTargetedMonsterSpellCandidate> Choices, int Turn)? fissureSelection;
 
@@ -117,6 +119,55 @@ static partial class Game
                 return;
             }
             duel.TryQueueTargetedSpellTrap(selection.Source, choice.Target, out message);
+            ClearDuelSelection();
+            return;
+        }
+    }
+
+    static bool IsQueuedEquip(Card card) => card.ClassCode == 22 && EquipmentRules.SupportsQueued(card.Id);
+
+    static IReadOnlyList<QueuedEquipmentCandidate> QueuedEquipChoices(DuelZone zone, int index) =>
+        queuedDuel is { IsBusy: false } && duel.ActivePlayer == ViewPlayer &&
+        duel.TryCaptureCardTarget(ViewPlayer, zone, index, out var source)
+            ? duel.QueuedEquipmentCandidates(source) : [];
+
+    static (CardTarget Source, IReadOnlyList<QueuedEquipmentCandidate> Choices, int Turn)? queuedEquipChoice;
+
+    static void StartQueuedEquipChoice(DuelZone zone, int index)
+    {
+        ClearDuelSelection();
+        if (!duel.TryCaptureCardTarget(ViewPlayer, zone, index, out var source))
+        {
+            message = "Equipment source occurrence changed.";
+            return;
+        }
+        var choices = QueuedEquipChoices(zone, index);
+        if (choices.Count == 0)
+        {
+            message = "No compatible tracked face-up monster.";
+            return;
+        }
+        queuedEquipChoice = (source, choices, duel.Turn);
+        choosingEquip = true;
+        hand = zone == DuelZone.Hand ? index : -1;
+        message = "Choose a compatible face-up monster (Backspace cancels).";
+    }
+
+    static bool IsQueuedEquipTarget(int side, int slot) =>
+        queuedEquipChoice is { } choice &&
+        duel.TryCaptureCardTarget(side, DuelZone.Monster, slot, out var target) &&
+        choice.Choices.Any(c => c.Slot == slot && c.Target == target);
+
+    static void ReadQueuedEquipChoice()
+    {
+        if (queuedEquipChoice is not { } selection || !PointerPressed(MouseButton.Left)) return;
+        foreach (var choice in selection.Choices)
+        {
+            if (!Hit(ZoneBounds(choice.Target.Side, choice.Slot, false))) continue;
+            if (!IsQueuedEquipTarget(choice.Target.Side, choice.Slot))
+                message = "Equipment target occurrence changed.";
+            else
+                duel.TryQueueEquipment(selection.Source, choice.Target, out message);
             ClearDuelSelection();
             return;
         }
@@ -206,6 +257,7 @@ static partial class Game
         hand = attacker = hoverHand = hoverCpuHand = -1;
         fissureSelection = null;
         queuedSpellTrapSelection = null;
+        queuedEquipChoice = null;
         handActionsWereEnabled = false;
         setHandAction = choosingTributes = choosingEquip = false;
         tributeZones.Clear();
@@ -241,7 +293,7 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Set)
         {
-            if (queuedDuel is not null && !FieldSpellRules.Supports(card.Id))
+            if (queuedDuel is not null)
             {
                 if (duel.TryQueueSpellTrapSet(index, out message)) ClearDuelSelection();
                 return;
@@ -252,14 +304,18 @@ static partial class Game
             {
                 ShowPlayedCardDetail(card);
                 handLayouts[ViewPlayer].RemoveAt(index);
-                if (zone >= 0)
+                bool field = FieldSpellRules.Supports(card.Id);
+                if (field || zone >= 0)
                 {
-                    BeginFlight(card, ViewPlayer, zone, origin, true, true);
-                    QueueSetEffect(ViewPlayer, zone, spell: true);
+                    int destination = field ? 0 : zone;
+                    BeginFlight(card, ViewPlayer, destination, origin, true, true, field);
+                    QueueSetEffect(ViewPlayer, destination, spell: true, field: field);
                 }
                 ClearDuelSelection();
             }
         }
+        else if (action == NativeCursorAction.Activate && queuedDuel is not null && IsQueuedEquip(card))
+            StartQueuedEquipChoice(DuelZone.Hand, index);
         else if (action == NativeCursorAction.Activate &&
                  EquipmentRules.Supports(card.Id) && duel.CanActivateFromHand(index))
         {
@@ -466,6 +522,7 @@ static partial class Game
         var pendingTarget = duel.PendingSpellTrapTarget;
         var pendingFlipSpells = duel.PendingFlipSpellTrapTargets;
         bool CanHighlightSpell(int player, int zone) =>
+            queuedEquipChoice is not null ? false :
             queuedSpellTrapSelection is not null ? IsQueuedSpellTrapTarget(player, zone) :
             pendingTarget is null && pendingFlipSpells is null ||
             HumanChoice && (pendingTarget?.EligibleTargets.Any(
@@ -480,7 +537,7 @@ static partial class Game
             if (duelDebug) Raylib.DrawRectangleLinesEx(fieldRect, 1, own ? Gold : Color.Gray);
             if (duel.FieldSpells[player] is Card fieldCard)
             {
-                if (!ActivationInFlight(fieldRect))
+                if (!ActivationInFlight(fieldRect) && !InFlight(player, 0, true, field: true))
                 {
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]);
@@ -492,12 +549,17 @@ static partial class Game
                         DrawFieldSelectionFrame(geometry, own);
                 }
                 if (own && duel.FieldSpellFaceDown[player] && !blockInput && fissureSelection is null &&
-                     queuedSpellTrapSelection is null &&
+                    queuedSpellTrapSelection is null && queuedEquipChoice is null &&
                     duel.PendingSpellTrapTarget is null &&
-                    PointerPressed(MouseButton.Left) && Hit(fieldRect) &&
-                    duel.ActivateSetFieldSpell(out message))
-                    BeginCardActivation(fieldCard, fieldRect);
-                else if (!blockInput && fissureSelection is null && queuedSpellTrapSelection is null && Hit(fieldRect) && duel.CanUseFusionGate(player))
+                    PointerPressed(MouseButton.Left) && Hit(fieldRect))
+                {
+                    if (queuedDuel is not null)
+                        duel.TryQueueFieldSpellActivation(DuelZone.FieldSpell, 0, out message);
+                    else if (duel.ActivateSetFieldSpell(out message))
+                        BeginCardActivation(fieldCard, fieldRect);
+                }
+                else if (!blockInput && fissureSelection is null && queuedSpellTrapSelection is null &&
+                    queuedEquipChoice is null && Hit(fieldRect) && duel.CanUseFusionGate(player))
                 {
                     Label("Click Fusion Gate to Fusion Summon", 10, 587, 11, Gold);
                     if (PointerPressed(MouseButton.Left) && duel.BeginFusionGate(player, out message))
@@ -520,7 +582,8 @@ static partial class Game
                         duel.DefensePosition[player, zone], duel.MonsterFaceDown[player, zone]);
                     DrawDuelCard(monster, geometry);
                     if (Hit(monsterRect) && pendingTarget is null && queuedSpellTrapSelection is null && !IsJoeySpeaking() &&
-                        (fissureSelection is null || IsFissureTarget(player, zone)))
+                        (fissureSelection is null || IsFissureTarget(player, zone)) &&
+                        (queuedEquipChoice is null || IsQueuedEquipTarget(player, zone)))
                         DrawFieldSelectionFrame(geometry, own);
                     // The Core may have flipped an enemy defender logically
                     // before the sword reaches it. Reuse the same presentation
@@ -559,7 +622,8 @@ static partial class Game
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
                     DrawEffectStamp(DatGraphics.AttackSword, NativeAttackFrame.SwordAnchor(zone, own),
                         0, 0x10000, 0xa0);
-                if (blockInput || queuedSpellTrapSelection is not null || duel.PendingSpellTrapTarget is not null ||
+                if (blockInput || queuedSpellTrapSelection is not null || queuedEquipChoice is not null ||
+                    duel.PendingSpellTrapTarget is not null ||
                     !PointerPressed(MouseButton.Left)) continue;
                 if (fissureSelection is { } fissure)
                 {
@@ -639,6 +703,8 @@ static partial class Game
                         StartQueuedFissure(zone, fromSet: true);
                     else if (queuedDuel is not null && IsQueuedTargetedSpellTrap(setSpell))
                         StartQueuedSpellTrapTarget(zone, fromSet: true);
+                    else if (queuedDuel is not null && IsQueuedEquip(setSpell))
+                        StartQueuedEquipChoice(DuelZone.SpellTrap, zone);
                     else if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
                         TryQueuedFixedSpell(DuelZone.SpellTrap, zone, out message);
                     else if (duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
@@ -756,20 +822,25 @@ static partial class Game
         if (!joeySpeaking) UpdateCpuHandHover(hoverUpdates);
         else hoverCpuHand = -1;
         if (alphaCpu is not null) DrawCpuHand();
-        DrawPhasePanel(turnInput && queuedSpellTrapSelection is null);
+        DrawPhasePanel(turnInput && queuedSpellTrapSelection is null && queuedEquipChoice is null);
 
         if (fissureSelection is { } fissure && fissure.Turn != duel.Turn ||
             queuedSpellTrapSelection is { } spellChoice &&
                 (spellChoice.Turn != duel.Turn || duel.Phase != DemoPhase.Main ||
+                 queuedDuel?.IsBusy != false || pendingOwner is not null) ||
+            queuedEquipChoice is { } equipChoice &&
+                (equipChoice.Turn != duel.Turn || duel.Phase != DemoPhase.Main ||
                  queuedDuel?.IsBusy != false || pendingOwner is not null) ||
             actionInput && Raylib.IsKeyPressed(KeyboardKey.Backspace)) ClearDuelSelection();
         // Refresh eligibility after any turn-changing input in this frame.
         actionInput &= !PhaseBusy && queuedDuel?.IsBusy != true &&
             CanPlayMainOrBattle && CpuDuelController.PendingOwner(duel) is null;
         bool selectingQueuedSpellTrap = queuedSpellTrapSelection is not null;
+        bool selectingQueuedEquip = queuedEquipChoice is not null;
         if (selectingQueuedSpellTrap && actionInput && !joeySpeaking) ReadQueuedSpellTrapTarget();
+        else if (selectingQueuedEquip && actionInput && !joeySpeaking) ReadQueuedEquipChoice();
         bool handHovered = !joeySpeaking && UpdateHandInteraction(hoverUpdates,
-            actionInput && !selectingQueuedSpellTrap);
+            actionInput && !selectingQueuedSpellTrap && !selectingQueuedEquip);
         bool handInput = actionInput && handHovered;
         actionInput &= queuedDuel?.IsBusy != true;
         choiceInput &= queuedDuel?.IsBusy != true;
@@ -777,7 +848,8 @@ static partial class Game
         if (choiceInput && flipSpellTarget is not null) ReadFlipSpellTrapTarget(flipSpellTarget);
         else if (choiceInput && spellTarget is not null) ReadSpellTrapTarget(spellTarget);
         DrawDuelField(handInput || (!actionInput && !flipInput) || selectingCard ||
-            selectingQueuedSpellTrap || queuedSpellTrapSelection is not null,
+            selectingQueuedSpellTrap || queuedSpellTrapSelection is not null ||
+            selectingQueuedEquip || queuedEquipChoice is not null,
             hoverUpdates);
         // A travelling card or the CPU's turn must not freeze the sidebar.
         // Only an actual Joey speech cue may suppress inspection.

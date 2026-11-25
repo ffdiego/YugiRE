@@ -67,18 +67,20 @@ static partial class Game
                 // Producer has emitted followups, but no source movement or
                 // damage/destruction yet. Show the existing travel + glow.
                 queuedPreviewSource = presentation.Style.PlayAnimations ? a.Source : null;
-                BeginCardActivation(a.Card, ZoneBounds(side, slot, true), snapshot.Origin, near);
+                BeginCardActivation(a.Card, a.Destination == DuelZone.FieldSpell
+                    ? FieldZoneBounds(side) : ZoneBounds(side, slot, true), snapshot.Origin, near);
                 break;
             case ActionPresentationKind.Summon:
             case ActionPresentationKind.Set:
                 bool set = a.Kind == ActionPresentationKind.Set;
-                bool spell = a.Destination == DuelZone.SpellTrap;
+                bool field = a.Destination == DuelZone.FieldSpell;
+                bool spell = field || a.Destination == DuelZone.SpellTrap;
                 ShowPlayedCardDetail(a.Card, hiddenFromPlayer: !near && set);
-                if (snapshot.Origin is { } from && a.Destination != DuelZone.FieldSpell)
+                if (snapshot.Origin is { } from)
                 {
                     handLayouts[side].RemoveAt(a.SourceIndex);
-                    BeginFlight(a.Card, side, slot, from, spell, set);
-                    if (set) QueueSetEffect(side, slot, spell);
+                    BeginFlight(a.Card, side, slot, from, spell, set, field);
+                    if (set) QueueSetEffect(side, slot, spell, field);
                     else QueueNormalSummonEffect(a.Card, side, slot);
                 }
                 break;
@@ -107,9 +109,11 @@ static partial class Game
             // Only one scheduler passage per frame; the Core never reads time.
             if (labSession is null && !ConsoleCapturesInput && queue.PendingDecision is { } request)
             {
-                var answer = EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
-                    effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip
-                        ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline);
+                EffectDecisionAnswer? answer = alphaCpu is { } cpu && request.Owner == cpu.Player
+                    ? CpuDuelController.DecideOptionalEffect(duel, request)
+                    : EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
+                        effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip
+                            ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline);
                 if (answer is { } choice) queue.SubmitDecision(request.Id, choice);
             }
             queue.Tick();

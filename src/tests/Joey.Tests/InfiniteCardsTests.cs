@@ -6,6 +6,30 @@ static class InfiniteCardsTests
     {
         var infinite = new Card(951, 0x593, "Infinite Cards", "", 21u << 20);
         var monster = new Card(1, 1, "Monster", "", (1u << 20) | (4u << 25));
+        foreach(int side in new[]{0,1})
+        foreach(bool set in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(side,[infinite],[null,null,null,null,null],
+                [null,null,null,null,null],8000);
+            var q=d.CreatePrimitiveActionQueue();
+            if(set)
+            {
+                check(d.TryQueueSpellTrapSet(0,out _),"Infinite Cards queued Set");
+                while(q.IsBusy)q.Tick();
+                check(!d.HandLimitDisabled,"Set Infinite Cards has no effect");
+            }
+            check(d.TryQueueActivation(0,set,out _)&&!d.HandLimitDisabled,"Infinite Cards queued admission read-only");
+            var entry = q.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(d.DescribeActionPresentation(entry.Command) is
+                { Kind: ActionPresentationKind.Activate, Destination: DuelZone.SpellTrap, DestinationSlot: 0 } cue &&
+                cue.Source.Side == side && cue.Source.Zone == (set ? DuelZone.SpellTrap : DuelZone.Hand),
+                "C12 Infinite Cards: correct presentation projection before placement");
+            q.Tick();
+            check(d.HandLimitDisabled&&d.Spells[side,0]?.Id==0x593&&!d.SpellFaceDown[side,0]&&
+                d.Graveyard(side).Count==0&&d.Hand.Count==0,
+                "Infinite Cards active on field through queue, not spent");
+            check(!d.TryQueueActivation(0,true,out _),"Cannot reactivate continuous source");
+        }
         var sword = new Card(2, 300, "Legendary Sword", "", 22u << 20);
         var duel = DemoDuel.FromDecks(Enumerable.Repeat(infinite, 40).ToArray(), Enumerable.Repeat(monster, 40).ToArray());
         check(duel.Play(0, out _) && duel.Spells[0, 0] == infinite && duel.Hand.Count == 4 &&

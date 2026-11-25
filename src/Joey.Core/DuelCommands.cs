@@ -75,6 +75,9 @@ internal sealed record OpenDeckSearchSpellCommand(int Side, CardTarget Source, u
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateSpellTrapWipeCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record PrepareFieldSpellActivationCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateFieldSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateInfiniteCardsCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 internal sealed record ActivateFinalDestinyCommand(int Side, CardTarget Source, CardTarget First,
     CardTarget Second, CardTarget Third, CardTarget Fourth, CardTarget Fifth) : DuelCommand(Side)
 {
@@ -267,6 +270,15 @@ internal static class DuelCommandValidation
                 break;
             case ResolveFinalDestinyCommand finalDestinyResolve:
                 Target(finalDestinyResolve.Source,finalDestinyResolve.Side,DuelZone.Hand,DuelZone.SpellTrap);
+                break;
+            case PrepareFieldSpellActivationCommand fieldPrepare:
+                Target(fieldPrepare.Source,fieldPrepare.Side,DuelZone.Hand,DuelZone.FieldSpell);
+                break;
+            case ActivateFieldSpellCommand fieldActivate:
+                Target(fieldActivate.Source,fieldActivate.Side,DuelZone.Hand,DuelZone.FieldSpell);
+                break;
+            case ActivateInfiniteCardsCommand infinite when infinite.Slot is >=0 and <5:
+                Target(infinite.Source,infinite.Side,DuelZone.Hand,DuelZone.SpellTrap);
                 break;
             case ActivateSpellTrapWipeCommand spellTrapWipe:
                 Target(spellTrapWipe.Source, spellTrapWipe.Side, DuelZone.Hand, DuelZone.SpellTrap);

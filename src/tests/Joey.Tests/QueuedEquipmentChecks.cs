@@ -73,6 +73,78 @@ internal static class QueuedEquipmentChecks
                 duel.Graveyard(owner).Single().Id == id && duel.AttackValue(targetSide,0) == 1000,
                 "Queued equipment destruction clears link and restores base");
         }
+        // All 21 legacy P025 sources use the same commit primitive in
+        // queue and legacy mode; preserve target restrictions and modifiers.
+        (ushort Id, int Type, int Attribute)[] legacyCases =
+        [
+            (300,15,2), (307,11,2), (302,3,2), (304,10,2), (309,13,2),
+            (311,17,2), (314,1,2), (315,19,2), (318,12,2), (321,2,2),
+            (322,18,2), (324,7,2), (325,9,2), (326,16,2), (327,14,2),
+            (301,15,2), (306,15,1), (308,15,3), (653,15,4),
+            (1012,15,4), (1013,15,6)
+        ];
+        foreach (var fixture in legacyCases)
+        foreach (int owner in new[] { 0, 1 })
+        foreach (int targetSide in new[] { 0, 1 })
+        {
+            var equip = Spell(fixture.Id);
+            var target = Monster(42) with { Properties =
+                ((uint)fixture.Type << 20) | ((uint)fixture.Attribute << 29) |
+                (4u << 25) | (100u << 9) | 100u };
+            DemoDuel Setup() => DemoDuel.FromPartialObservation(owner, [equip],
+                targetSide == 0 ? [target,null,null,null,null] : new Card?[5],
+                targetSide == 1 ? [target,null,null,null,null] : new Card?[5],
+                8000, equipmentContextResolved: true);
+            var legacy = Setup();
+            var queued = Setup();
+            var queue = queued.CreatePrimitiveActionQueue();
+            check(legacy.Equip(0, targetSide, 0, out _) &&
+                queued.TryCaptureCardTarget(owner, DuelZone.Hand, 0, out var source) &&
+                queued.QueuedEquipmentCandidates(source).Count == 1 &&
+                queued.TryQueueEquipment(DuelZone.Hand, 0, targetSide, 0, out _),
+                $"C12 P025 {fixture.Id}: legacy and queued admission");
+            var entry = queue.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(entry.Origin == ActionOrigin.Player && entry.Command is EquipCommand &&
+                queued.DescribeActionPresentation(entry.Command) is
+                    { Kind: ActionPresentationKind.Activate, Destination: DuelZone.SpellTrap, DestinationSlot: 0 } &&
+                queued.Hand.Count == 1 && queued.EquipmentCards.Count == 0,
+                $"C12 P025 {fixture.Id}: one activation projection, no immediate mutation");
+            Drain(queue);
+            check(queued.Hand.Count == legacy.Hand.Count &&
+                queued.EquipmentCards.SequenceEqual(legacy.EquipmentCards) &&
+                queued.Spells[owner,0] == legacy.Spells[owner,0] &&
+                queued.AttackValue(targetSide,0) == legacy.AttackValue(targetSide,0) &&
+                queued.DefenseValue(targetSide,0) == legacy.DefenseValue(targetSide,0),
+                $"C12 P025 {fixture.Id}: same equipment state and attributes");
+        }
+
+        foreach (int side in new[] { 0, 1 })
+        {
+            var target = Monster(42);
+            var d = DemoDuel.FromPartialObservation(side, [Spell(300)],
+                side == 0 ? [target,null,null,null,null] : new Card?[5],
+                side == 1 ? [target,null,null,null,null] : new Card?[5], 8000,
+                equipmentContextResolved: true,
+                side0Deck: side == 0 ? [Spell(999)] : null,
+                side1Deck: side == 1 ? [Spell(999)] : null);
+            var queue = d.CreatePrimitiveActionQueue();
+            var controller = new CpuDuelController(side);
+            check(controller.Step(d, queueTurnActions: true).Action == CpuAction.Draw,
+                "C12 CPU equipment: turn draw");
+            Drain(queue);
+            check(controller.Step(d, queueTurnActions: true) is
+                { Status: CpuStepStatus.Acted, Action: CpuAction.Equip, Card: null } &&
+                d.EquipmentCards.Count == 0 && d.Hand.Count == 2 && queue.IsBusy,
+                "C12 CPU equipment: admission only");
+            check(queue.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry is
+                { Origin: ActionOrigin.Cpu, Command: EquipCommand },
+                "C12 CPU equipment: same typed command");
+            Drain(queue);
+            check(d.EquipmentCards.Count == 1 && d.Spells[side,0]?.Id == 300 &&
+                d.Hand.Count == 1 && d.AttackValue(side,0) == 1300,
+                "C12 CPU equipment: existing selection and bonus preserved");
+        }
+
         var mage = DemoDuel.FromPartialObservation(0, [Spell(1450), Spell(300), Spell(FieldSpellRules.SogenId)],
             [Monster(42), null, null, null, null], new Card?[5], 8000, equipmentContextResolved:true);
         var mq = mage.CreatePrimitiveActionQueue();
