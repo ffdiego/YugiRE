@@ -225,6 +225,78 @@ internal static class QueuedMonsterWipeChecks
             check(d.PendingCardSelection is null&&d.HandFor(1).Single().Id==24,"Search completes normally");
         }
 
+        // Thousand Knives: each real DAT Dark Magician identity, both sides,
+        // Hand/Set, a hidden opposing target, no extra discard required.
+        foreach (ushort magicianId in new ushort[]{34,1210,2034})
+        foreach (int side in new[]{0,1})
+        foreach (bool set in new[]{false,true})
+        {
+            int enemy=1-side;
+            var magician=Monster(magicianId,18,magicianId);
+            var victim=Monster(24,15);
+            var d=DemoDuel.FromPartialObservation(side,[Spell(1211)],
+                side==0?Slots(magician):Slots(victim,victim),
+                side==1?Slots(magician):Slots(victim,victim),8000);
+            d.MonsterFaceDown[enemy,1]=true;
+            var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
+            if(set){check(d.TryQueueSpellTrapSet(0,out _),"Knives Set");Drain(q);}
+            var knivesSource=Capture(d,side,set?DuelZone.SpellTrap:DuelZone.Hand,0);
+            var knivesTarget=Capture(d,enemy,DuelZone.Monster,1);
+            var ownTarget=Capture(d,side,DuelZone.Monster,0);
+            check(d.QueuedDiscardSpellCosts(knivesSource).Count==0&&
+                d.QueuedTargetedMonsterSpellCandidates(knivesSource).Count==2&&
+                d.QueuedTargetedMonsterSpellCandidates(knivesSource).Any(c=>c.Target==knivesTarget&&c.FaceDown)&&
+                !d.TryQueueTargetedMonsterSpell(knivesSource,ownTarget,out _)&&
+                !(set?d.ActivateSetSpell(0,out _):d.Play(0,out _)),
+                "Knives requires no discard; own target and legacy bypass rejected");
+            int start=q.Trace.Count;
+            check(d.TryQueueTargetedMonsterSpell(knivesSource,knivesTarget,out _)&&
+                d.Graveyard(side).Count==0,"Knives admission");
+            q.Tick();q.Tick();
+            check(d.Graveyard(side).Single().Id==1211&&d.Monsters[enemy,1] is not null,"Knives spends source");
+            q.Tick();gate.Release=false;q.Tick();q.Tick();
+            check(q.IsBusy&&d.Monsters[enemy,1] is null&&d.Graveyard(enemy).Single().Id==24,
+                "Knives hidden target destroyed once while gate waits");
+            gate.Release=true;Drain(q);
+            check(d.Monsters[side,0]?.Id==magicianId&&d.Monsters[enemy,0] is not null&&
+                d.HandFor(side).Count==0&&
+                q.Trace.Skip(start).Count(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is DestroyCommand)==1&&
+                !q.Trace.Skip(start).Any(x=>x.Stage==ActionTraceStage.Executed&&x.Entry.Command is DiscardCommand),
+                "Knives preserves magician and other monster; no discard command");
+        }
+        foreach (int condition in new[]{0,1,2})
+        {
+            // Absent, face-down, opponent-only.
+            var magician=Monster(34,18,34);
+            var victim=Monster(24,15);
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1211)],
+                condition==1?Slots(magician):Slots(victim),
+                condition==2?Slots(magician):Slots(victim),8000);
+            if(condition==1)d.MonsterFaceDown[0,0]=true;
+            var q=d.CreatePrimitiveActionQueue();
+            var knivesSource=Capture(d,0,DuelZone.Hand,0);
+            var knivesTarget=Capture(d,1,DuelZone.Monster,0);
+            check(d.QueuedTargetedMonsterSpellCandidates(knivesSource).Count==0&&
+                !d.TryQueueTargetedMonsterSpell(knivesSource,knivesTarget,out _)&&!q.IsBusy,
+                "Knives requires face-up own Dark Magician");
+        }
+        foreach(bool beforeSpend in new[]{false,true})
+        {
+            var d=DemoDuel.FromPartialObservation(0,[Spell(1211)],
+                Slots(Monster(34,18,34)),Slots(Monster(24,15)),8000);
+            var q=d.CreatePrimitiveActionQueue();
+            var knivesSource=Capture(d,0,DuelZone.Hand,0);
+            var knivesTarget=Capture(d,1,DuelZone.Monster,0);
+            check(d.TryQueueTargetedMonsterSpell(knivesSource,knivesTarget,out _),"Knives stale admission");
+            q.Tick();
+            if(beforeSpend)d.MonsterFaceDown[0,0]=true;
+            else {q.Tick();d.Monsters[1,0]=Monster(24,15);}
+            Drain(q);
+            check(d.Monsters[1,0] is not null&&d.Graveyard(1).Count==0&&
+                d.Graveyard(0).Count==(beforeSpend?0:1)&&d.HandFor(0).Count==(beforeSpend?1:0),
+                "Knives condition rechecked before spend; replaced target not destroyed");
+        }
+
         var sangan=Monster(47,3,47);
         var witch=Monster(573,18,573);
         var normal=Monster(24,15);

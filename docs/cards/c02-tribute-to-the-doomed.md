@@ -28,7 +28,7 @@ never expose hidden enemy identities in UI. Admission validates all
 three distinct occurrences and does not mutate. Producer reserves
 activation; DiscardCommand pays cost (rechecking source/cost/target);
 SendToGraveyardCommand spends spell only after applied discard;
-ResolveDiscardMonsterSpellCommand verifies both results and live target.
+ResolveTargetedMonsterSpellCommand verifies both results and live target.
 Then existing standalone DestroyCommand executes with link cleanup
 and deferred field-to-graveyard triggers. No new destruction primitive.
 If source/target changed before payment, no cost; after payment,

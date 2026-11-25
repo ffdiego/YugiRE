@@ -226,9 +226,10 @@ public sealed partial class DemoDuel
         private bool drawSpellSourceSpent;
         private CardTarget? searchSpellSource;
         private bool searchSpellSourceSpent;
-        private ActivateDiscardMonsterSpellCommand? discardMonsterSpell;
-        private bool discardMonsterSpellPaid;
-        private bool discardMonsterSpellSpent;
+        private sealed record TargetedMonsterSpellReservation(CardTarget Source, CardTarget? Cost, CardTarget Target);
+        private TargetedMonsterSpellReservation? targetedMonsterSpell;
+        private bool targetedMonsterSpellPaid;
+        private bool targetedMonsterSpellSpent;
         private bool resolvingFlipBatch;
         private sealed class FlipDeckFlow(ushort effect, int controller, int requested, IEnumerable<CardTarget> expected)
         {
@@ -314,8 +315,8 @@ public sealed partial class DemoDuel
                 return duel.FinishQueuedBattleRemoval(battleFinish);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval();
-            if (command is ResolveDiscardMonsterSpellCommand resolveDiscardSpell)
-                return ResolveDiscardMonsterSpell(resolveDiscardSpell, followups);
+            if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
+                return ResolveTargetedMonsterSpell(resolveDiscardSpell, followups);
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
@@ -327,14 +328,15 @@ public sealed partial class DemoDuel
             // The cost must succeed before spending the spell. Recheck the
             // complete reservation before payment; after payment do not refund
             // just because the target disappears before resolution.
-            if (discardMonsterSpell is { } paidSpell)
+            if (targetedMonsterSpell is { } paidSpell)
             {
                 if (command is DiscardCommand pay && pay.Target == paidSpell.Cost &&
-                    !duel.TryPlanDiscardMonsterSpell(paidSpell.Source,paidSpell.Cost,paidSpell.Target))
+                    !duel.TryPlanTargetedMonsterSpell(paidSpell.Source,paidSpell.Cost,paidSpell.Target))
                     return new(CommandOutcome.Skipped, "Reserved activation changed before payment.");
                 if (command is SendToGraveyardCommand spend && spend.Target == paidSpell.Source &&
-                    !discardMonsterSpellPaid)
-                    return new(CommandOutcome.Skipped, "Discard cost was not paid.");
+                    (!targetedMonsterSpellPaid || paidSpell.Cost is null &&
+                     !duel.TryPlanTargetedMonsterSpell(paidSpell.Source,null,paidSpell.Target)))
+                    return new(CommandOutcome.Skipped, "Payment or activation condition not satisfied.");
             }
             bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
             if (finishDrawSpell) reservedDrawSpell.Dequeue();
@@ -406,6 +408,8 @@ public sealed partial class DemoDuel
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateDiscardMonsterSpellCommand paidSpellActivation:
                     return ActivateDiscardMonsterSpell(paidSpellActivation, followups);
+                case ActivateConditionalMonsterSpellCommand conditionalSpell:
+                    return ActivateConditionalMonsterSpell(conditionalSpell, followups);
                 case ActivateDeckSearchSpellCommand searchSpell:
                     return ActivateDeckSearchSpell(searchSpell, followups);
                 case OpenDeckSearchSpellCommand openSearch:
@@ -448,8 +452,8 @@ public sealed partial class DemoDuel
                     return BanishFromSource(banish.Target);
                 case DiscardCommand discard:
                     var discarded = SendHandToGraveyard(discard.Target, discard: true);
-                    if (discardMonsterSpell is { } reservedSpell && reservedSpell.Cost == discard.Target)
-                        discardMonsterSpellPaid = discarded.Outcome == CommandOutcome.Applied;
+                    if (targetedMonsterSpell is { } reservedSpell && reservedSpell.Cost == discard.Target)
+                        targetedMonsterSpellPaid = discarded.Outcome == CommandOutcome.Applied;
                     if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
                         scout.NewSpells.Contains(discard.Target)) scout.Discarded++;
                     return discarded;
@@ -476,8 +480,8 @@ public sealed partial class DemoDuel
         {
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
-            if (discardMonsterSpell is { } paidSpell && paidSpell.Source == target)
-                discardMonsterSpellSpent = result.Outcome == CommandOutcome.Applied;
+            if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
+                targetedMonsterSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (wipe is { } current && current.Source == target)
                 current.SourceSpent = result.Outcome == CommandOutcome.Applied;
             return result;
@@ -485,30 +489,45 @@ public sealed partial class DemoDuel
 
         private CommandResult ActivateDiscardMonsterSpell(ActivateDiscardMonsterSpellCommand activate, IActionCommandSink followups)
         {
-            if (discardMonsterSpell is not null || wipe is not null || finishScheduled ||
+            if (targetedMonsterSpell is not null || wipe is not null || finishScheduled ||
                 followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Discard-cost spell needs isolated activation.");
-            if (!duel.TryPlanDiscardMonsterSpell(activate.Source,activate.Cost,activate.Target))
+            if (!duel.TryPlanTargetedMonsterSpell(activate.Source,activate.Cost,activate.Target))
                 return new(CommandOutcome.Rejected, "Source, cost or target no longer legal.");
-            discardMonsterSpell = activate;
-            discardMonsterSpellPaid = discardMonsterSpellSpent = false;
+            targetedMonsterSpell = new(activate.Source,activate.Cost,activate.Target);
+            targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
             queue.EnqueueBatch([new DiscardCommand(activate.Side,activate.Cost),
                 new SendToGraveyardCommand(activate.Side,activate.Source),
-                new ResolveDiscardMonsterSpellCommand(activate.Side,activate.Source,activate.Target)]);
+                new ResolveTargetedMonsterSpellCommand(activate.Side,activate.Source,activate.Target)]);
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult ResolveDiscardMonsterSpell(ResolveDiscardMonsterSpellCommand resolve, IActionCommandSink followups)
+        private CommandResult ActivateConditionalMonsterSpell(ActivateConditionalMonsterSpellCommand activate, IActionCommandSink followups)
         {
-            if (discardMonsterSpell is not { } reserved || reserved.Source != resolve.Source ||
+            if (targetedMonsterSpell is not null || wipe is not null || finishScheduled ||
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
+                return new(CommandOutcome.Rejected, "Conditional spell needs isolated activation.");
+            if (!duel.TryPlanTargetedMonsterSpell(activate.Source,null,activate.Target))
+                return new(CommandOutcome.Rejected, "Source, condition or target no longer legal.");
+            targetedMonsterSpell = new(activate.Source,null,activate.Target);
+            targetedMonsterSpellPaid = true; // no payment required
+            targetedMonsterSpellSpent = false;
+            queue.EnqueueBatch([new SendToGraveyardCommand(activate.Side,activate.Source),
+                new ResolveTargetedMonsterSpellCommand(activate.Side,activate.Source,activate.Target)]);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveTargetedMonsterSpell(ResolveTargetedMonsterSpellCommand resolve, IActionCommandSink followups)
+        {
+            if (targetedMonsterSpell is not { } reserved || reserved.Source != resolve.Source ||
                 reserved.Target != resolve.Target)
-                return new(CommandOutcome.Rejected, "No matching discard-cost spell reservation.");
-            bool paid = discardMonsterSpellPaid && discardMonsterSpellSpent;
-            discardMonsterSpell = null;
-            discardMonsterSpellPaid = discardMonsterSpellSpent = false;
+                return new(CommandOutcome.Rejected, "No matching targeted spell reservation.");
+            bool paid = targetedMonsterSpellPaid && targetedMonsterSpellSpent;
+            targetedMonsterSpell = null;
+            targetedMonsterSpellPaid = targetedMonsterSpellSpent = false;
             if (!paid || duel.LegacyActionsBlocked)
                 return new(CommandOutcome.Skipped, "Unpaid, unspent or blocked spell.");
-            if (!duel.IsDiscardMonsterSpellTarget(resolve.Target))
+            if (!duel.IsTargetedMonsterSpellTarget(resolve.Target))
                 return new(CommandOutcome.Skipped, "Selected monster or links no longer valid.");
             if (followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Isolated destruction required.");
@@ -611,7 +630,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
                 MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.RequiresDiscard(card)) ||
+                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card)) ||
                 !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
