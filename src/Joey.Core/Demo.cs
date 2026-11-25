@@ -466,16 +466,12 @@ public sealed partial class DemoDuel
         if (FieldSpellRules.Supports(Hand[index].Id))
         {
             // Setting a new field spell does not replace the opponent's active one.
-            FieldSpells[ActivePlayer] = Hand[index];
-            FieldSpellFaceDown[ActivePlayer] = true;
-            hands[ActivePlayer].RemoveAt(index);
+            CommitSpellTrapSet(ActivePlayer, index, DuelZone.FieldSpell, 0);
             message = "Field Spell set face-down in its dedicated zone.";
             return true;
         }
         int zone = FirstFreeSpellZone();
-        Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = true;
-        spellSetTurn[ActivePlayer, zone] = Turn;
-        hands[ActivePlayer].RemoveAt(index);
+        CommitSpellTrapSet(ActivePlayer, index, DuelZone.SpellTrap, zone);
         message = "Card set face-down in the leftmost free spell/trap zone.";
         return true;
     }
@@ -614,9 +610,7 @@ public sealed partial class DemoDuel
             // the opponent's side remains face-down until they activate it.
             ReplaceActiveFields();
             if (FieldSpells[ActivePlayer] is not null) SendFieldSpellToGraveyard(ActivePlayer);
-            FieldSpells[ActivePlayer] = field;
-            FieldSpellFaceDown[ActivePlayer] = false;
-            hands[ActivePlayer].RemoveAt(index);
+            CommitFieldActivation(ActivePlayer, index);
             message = $"{field.Name}: {FieldSpellRules.EffectSummary(field.Id)}";
             return true;
         }
@@ -650,7 +644,7 @@ public sealed partial class DemoDuel
         {
             int zone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
             if (zone < 0) { message = "Infinite Cards needs a free spell zone."; return false; }
-            Spells[ActivePlayer, zone] = Hand[index]; SpellFaceDown[ActivePlayer, zone] = false; hands[ActivePlayer].RemoveAt(index);
+            CommitInfiniteCardsActivation(ActivePlayer, zone, index);
             message = "Infinite Cards active: neither player has an end-turn hand limit.";
             return true;
         }
@@ -740,9 +734,9 @@ public sealed partial class DemoDuel
             message = $"{card.Name}: destroyed {LastMonsterWipe.TotalDestroyed} monster(s).";
             return true;
         }
-        if (card.Id == 0x593)
+        if (card.Id == InfiniteCardsId)
         {
-            SpellFaceDown[p, zone] = false;
+            CommitInfiniteCardsActivation(p, zone, null);
             message = "Infinite Cards activated."; return true;
         }
         if (DrawSpellRules.Effect(card) is { } draw)
@@ -1041,7 +1035,7 @@ public sealed partial class DemoDuel
             FieldSpells[owner] is not Card field || !FieldSpellFaceDown[owner] ||
             !FieldSpellRules.Supports(field.Id)) return false;
         ReplaceActiveFields();
-        FieldSpellFaceDown[owner] = false;
+        CommitFieldActivation(owner, null);
         message = $"{field.Name}: {FieldSpellRules.EffectSummary(field.Id)}";
         return true;
     }
@@ -1165,9 +1159,8 @@ public sealed partial class DemoDuel
         if (!eligibility.Value) return false;
         int sourceZone = FirstFreeSpellZone();
         var card = Hand[index];
-        equipment.Add(new(card, ActivePlayer, sourceZone, targetPlayer, targetZone, Monsters[targetPlayer, targetZone]!));
-        Spells[ActivePlayer, sourceZone] = card; SpellFaceDown[ActivePlayer, sourceZone] = false;
-        hands[ActivePlayer].RemoveAt(index);
+        CommitEquipmentActivation(ActivePlayer, sourceZone, index, card,
+            targetPlayer, targetZone, Monsters[targetPlayer, targetZone]!);
         message = $"{card.Name} equipped."; return true;
     }
     /// <summary>Explicit sandbox removal, not an activation, native movement rule or trigger.</summary>
