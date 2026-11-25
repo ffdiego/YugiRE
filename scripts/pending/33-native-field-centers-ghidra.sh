@@ -5,5 +5,5 @@ cd "$(dirname "$0")/../.."
 # Exporter requires at least one function: use the table consumer for provenance.
 python3 scripts/export_ghidra_visual_bundle.py \
   --targets 0045C280 \
-  --memory 005DB560:80 --memory 005DB4E8:80 \
+  --memory 005DB560:80 --memory 005DB510:80 \
   --output scratch/ghidra-native-field-centers-contract.zip
