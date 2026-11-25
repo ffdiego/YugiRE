@@ -49,7 +49,10 @@ internal static class QueuedMonsterFlipTargetChecks
             check(!d.TryQueueMonsterFlipAnswer(source,[target,target],out _),"FLIP duplicate selection rejected");
             if(id!=601)check(!d.TryQueueMonsterFlipAnswer(source,[],out _),"Mandatory target required");
             CardTarget[] picks=id==601?[target,source]:[target];
-            check(d.TryQueueMonsterFlipAnswer(source,picks,out _)&&d.PendingFlipTarget is not null&&
+            var request=d.PendingFlipTarget!;
+            check(d.UsesQueuedMonsterFlipChoice(request)&&!d.TrySubmitQueuedMonsterFlipChoice(request with {},picks,out _),
+                "Monster FLIP producer requires exact request");
+            check(d.TrySubmitQueuedMonsterFlipChoice(request,picks,out _)&&d.PendingFlipTarget is not null&&
                 d.Monsters[enemy,0] is not null,"Admission leaves pending choice and board untouched");
             q.Tick();gate.Release=false;q.Tick();q.Tick();
             check(d.Monsters[enemy,0] is null&&d.EquipmentCards.Count==1&&q.IsBusy,
@@ -65,10 +68,26 @@ internal static class QueuedMonsterFlipTargetChecks
                 "Exactly one return command per selected monster");
         }
 
+        foreach(int side in new[]{0,1})
+        {
+            var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(Monster(601)):Slots(Monster(24),Monster(25)),
+                side==1?Slots(Monster(601)):Slots(Monster(24),Monster(25)),8000);
+            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
+            var q=d.CreatePrimitiveActionQueue();d.TryQueueChangePosition(0,out _);Drain(q);
+            var req=d.PendingFlipTarget!;
+            var step=new CpuDuelController(side).Step(d,queueTurnActions:true);
+            check(step.Status==CpuStepStatus.Acted&&q.IsBusy&&d.PendingFlipTarget==req&&d.HandFor(1-side).Count==0,
+                "CPU Penguin admits both targets without mutation");
+            Drain(q);
+            check(d.PendingFlipTarget is null&&d.HandFor(1-side).Count==2&&d.Monsters[side,0]?.Id==601&&
+                q.Trace.Any(t=>t.Stage==ActionTraceStage.Executed&&t.Entry.Origin==ActionOrigin.Cpu),
+                "CPU Penguin returns opposing occurrences through queue");
+        }
+
         var zero=DemoDuel.FromPartialObservation(0,[],Slots(Monster(601)),Slots(Monster(24)),8000);
         zero.MonsterFaceDown[0,0]=zero.DefensePosition[0,0]=true;
         var zq=zero.CreatePrimitiveActionQueue();zero.TryQueueChangePosition(0,out _);Drain(zq);
-        check(zero.TryQueueMonsterFlipAnswer(Capture(zero,0,0),[],out _),"Penguin may select zero");
+        check(zero.TrySubmitQueuedMonsterFlipChoice(zero.PendingFlipTarget!,[],out _),"Penguin may select zero");
         Drain(zq);
         check(zero.PendingFlipTarget is null&&zero.Monsters[0,0] is not null&&zero.Monsters[1,0] is not null,
             "Empty Penguin answer moves nothing");

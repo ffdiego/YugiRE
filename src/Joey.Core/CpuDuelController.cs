@@ -118,6 +118,14 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
         {
+            if (queueTurnActions && duel.UsesQueuedFlipSpellTrapChoice(twoSpellTargets))
+            {
+                var picks = duel.QueuedFlipSpellTrapCandidates(twoSpellTargets)
+                    .OrderBy(c => c.Target.Side == Player ? 1 : 0).ThenBy(c => c.Zone)
+                    .Take(2).Select(c => c.Target).ToArray();
+                return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedFlipSpellTrapChoice(
+                    twoSpellTargets, picks, out m, ActionOrigin.Cpu));
+            }
             // Prefer adverse targets, while allowing own-side selections when
             // the effect requires two cards across the entire field.
             var choice = twoSpellTargets.EligibleTargets
@@ -176,6 +184,18 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipTarget is { } flip)
         {
+            if (queueTurnActions && duel.UsesQueuedMonsterFlipChoice(flip))
+            {
+                bool optional = flip.Effect == DemoFlipEffect.ReturnUpToTwo;
+                var picks = duel.QueuedMonsterFlipCandidates()
+                    .Where(c => !optional || c.Target.Side != Player)
+                    .OrderBy(c => c.Target.Side == Player ? 1 : 0)
+                    .ThenByDescending(c => c.Target.Side == Player ? -KnownPower(duel, c.Target.Side, c.Zone)
+                        : KnownPower(duel, c.Target.Side, c.Zone)).ThenBy(c => c.Zone)
+                    .Take(optional ? 2 : 1).Select(c => c.Target).ToArray();
+                return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedMonsterFlipChoice(
+                    flip, picks, out m, ActionOrigin.Cpu));
+            }
             bool bounce = flip.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
             var targets = (from p in Enumerable.Range(0, 2)
                            from z in Enumerable.Range(0, 5)

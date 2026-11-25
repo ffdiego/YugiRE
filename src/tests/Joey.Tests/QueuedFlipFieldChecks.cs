@@ -46,7 +46,10 @@ internal static class QueuedFlipFieldChecks
                 !d.TryQueueFlipSpellTrapPair(request,[field.Target,field.Target],out _)&&
                 !d.TryQueueFlipSpellTrapPair(request with {},[field.Target,other.Target],out _),
                 "Mandatory distinct pair and exact request");
-            check(d.TryQueueFlipSpellTrapPair(request,[field.Target,other.Target],out _)&&
+            check(d.UsesQueuedFlipSpellTrapChoice(request)&&
+                !d.TrySubmitQueuedFlipSpellTrapChoice(request with {},[field.Target,other.Target],out _),
+                "Pair producer requires exact request");
+            check(d.TrySubmitQueuedFlipSpellTrapChoice(request,[field.Target,other.Target],out _)&&
                 d.PendingFlipSpellTrapTargets==request&&d.FieldSpells[enemy] is not null,"Admission nonmutating");
             q.Tick();gate.Release=false;q.Tick();q.Tick();
             check(d.FieldSpells[enemy] is null&&d.Spells[enemy,bounce?1:0] is not null&&q.IsBusy,

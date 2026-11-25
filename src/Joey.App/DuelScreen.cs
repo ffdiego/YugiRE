@@ -385,7 +385,8 @@ static partial class Game
                         DuelCardZone.Field, own, 0, false, duel.FieldSpellFaceDown[player]);
                     DrawDuelCard(fieldCard, geometry);
                     if (duel.SelectedFlipSpellTrapTargets.Any(t => t.Player == player &&
-                        t.Zone == SpellTrapTargetRules.FieldZone))
+                        t.Zone == SpellTrapTargetRules.FieldZone) ||
+                        QueuedFlipPicked(duel.PendingFlipSpellTrapTargets, player, SpellTrapTargetRules.FieldZone))
                         DrawFieldSelectionFrame(geometry, own);
                     if (Hit(fieldRect) && CanHighlightSpell(player, SpellTrapTargetRules.FieldZone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
@@ -436,7 +437,8 @@ static partial class Game
 
                 if (own && (attacker == zone || tributeZones.Contains(zone)))
                     Raylib.DrawRectangleLinesEx(monsterRect, 3, tributeZones.Contains(zone) ? Color.Red : Color.White);
-                if (duel.SelectedFlipTargets.Any(t => t.Player == player && t.Zone == zone))
+                if (duel.SelectedFlipTargets.Any(t => t.Player == player && t.Zone == zone) ||
+                    QueuedFlipPicked(duel.PendingFlipTarget, player, zone))
                     Raylib.DrawRectangleLinesEx(monsterRect, 4, Color.SkyBlue);
                 if (duel.PendingFlipTarget is
                     { Effect: DemoFlipEffect.ReturnUpToTwo or DemoFlipEffect.ReturnOne } &&
@@ -447,7 +449,8 @@ static partial class Game
                     var geometry = DuelCardLayout.OnBoard(
                         DuelCardZone.Spell, own, zone, false, duel.SpellFaceDown[player, zone]);
                     DrawDuelCard(spell, geometry);
-                    if (duel.SelectedFlipSpellTrapTargets.Any(t => t.Player == player && t.Zone == zone))
+                    if (duel.SelectedFlipSpellTrapTargets.Any(t => t.Player == player && t.Zone == zone) ||
+                        QueuedFlipPicked(duel.PendingFlipSpellTrapTargets, player, zone))
                         DrawFieldSelectionFrame(geometry, own);
                     if (Hit(spellRect) && CanHighlightSpell(player, zone) && !IsJoeySpeaking())
                         DrawFieldSelectionFrame(geometry, own);
@@ -459,9 +462,11 @@ static partial class Game
                     !PointerPressed(MouseButton.Left)) continue;
                 if (Hit(monsterRect))
                 {
-                    if (duel.PendingFlipTarget is not null)
+                    if (duel.PendingFlipTarget is { } flipRequest)
                     {
-                        if (monster is not null && duel.ResolveFlipTarget(player, zone, out message))
+                        if (monster is not null && (queuedDuel is not null && duel.UsesQueuedMonsterFlipChoice(flipRequest)
+                            ? PickQueuedMonsterFlip(flipRequest, player, zone)
+                            : duel.ResolveFlipTarget(player, zone, out message)))
                             ClearDuelSelection();
                     }
                     else if (choosingTributes && own && monster != null)
@@ -534,8 +539,10 @@ static partial class Game
             var area = target.IsFieldZone ? FieldZoneBounds(target.Player) :
                 ZoneBounds(target.Player, target.Zone, true);
             if (!Hit(area)) continue;
-            if (duel.SelectFlipSpellTrapTarget(target.Player, target.Zone, out message) &&
-                duel.PendingFlipSpellTrapTargets is null)
+            bool queued = queuedDuel is not null && duel.UsesQueuedFlipSpellTrapChoice(pending);
+            if (queued ? PickQueuedSpellTrapFlip(pending, target.Player, target.Zone)
+                : duel.SelectFlipSpellTrapTarget(target.Player, target.Zone, out message) &&
+                    duel.PendingFlipSpellTrapTargets is null)
                 ClearDuelSelection();
             return;
         }
@@ -651,11 +658,12 @@ static partial class Game
         if (!joeySpeaking) UpdateDuelDetail();
         AdvanceLifePresentation(frameElapsed);
         DrawDuelDetail();
-        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } &&
+        if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } optionalFlip &&
             Button("Done", 132, 584, 76, 16, choiceInput))
         {
-            duel.FinishFlipTargets(out message);
-            ClearDuelSelection();
+            bool resolved = queuedDuel is not null && duel.UsesQueuedMonsterFlipChoice(optionalFlip)
+                ? SubmitQueuedMonsterFlipPicks(optionalFlip) : duel.FinishFlipTargets(out message);
+            if (resolved) ClearDuelSelection();
         }
         DrawSidePiles();
         DrawDuelHand();
@@ -675,7 +683,7 @@ static partial class Game
             string help = flip.Effect switch
             {
                 DemoFlipEffect.ReturnUpToTwo =>
-                    $"Select up to 2 ({duel.SelectedFlipTargets.Count}/2)",
+                    $"Select up to 2 ({(queuedDuel is not null && duel.UsesQueuedMonsterFlipChoice(flip) ? QueuedFlipPickCount(flip) : duel.SelectedFlipTargets.Count)}/2)",
                 DemoFlipEffect.ReturnOne =>
                     "Select one monster",
                 DemoFlipEffect.DestroyOpponentMonster =>
@@ -686,7 +694,7 @@ static partial class Game
         }
         else if (choiceInput && duel.PendingFlipSpellTrapTargets is { } chooseSpells)
             Label($"Select 2 {(chooseSpells.RequireFaceDown ? "Set " : "")}S/T: " +
-                  $"{duel.SelectedFlipSpellTrapTargets.Count}/2", 10, 587, 11, Gold);
+                  $"{(queuedDuel is not null && duel.UsesQueuedFlipSpellTrapChoice(chooseSpells) ? QueuedFlipPickCount(chooseSpells) : duel.SelectedFlipSpellTrapTargets.Count)}/2", 10, 587, 11, Gold);
         else if (choiceInput && duel.PendingSpellTrapTarget is not null)
             Label("Choose a Spell or Trap (Backspace cancels)", 10, 587, 11, Gold);
         else if (actionInput && (choosingTributes || choosingEquip || duel.PendingEndDiscards > 0))
