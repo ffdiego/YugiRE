@@ -400,7 +400,8 @@ V20.3: o review de moeda agora inclui brilho key5 e JSON schema 2 com o plano de
 
 SQLite v3: assembly 0045C280 já recuperado. Faltam os bytes
 integrais das tabelas estáticas 005DB560 (monstros) e 005DB4E8
-(S/T), cada uma com dez pares de int32 LE. Apenas 005DB570:4
+(S/T, base indexada a partir de 5; ler 005DB510:80), cada uma
+com dez pares de int32 LE. Apenas 005DB570:4
 (X central) está coberto na tabela de monstros. As demais
 tabelas a partir de 005DB5B0:80 já foram coletadas; não repetir 03/20/21.
 
