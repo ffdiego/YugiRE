@@ -216,3 +216,9 @@ Inspeção do head `bae311a` do draft #150, sem editar a branch reservada. CI do
 - `src/Joey.Core/Demo.cs`: 2616 linhas no head #150; `ActionsBlocked` ainda inclui `LegacyActionsBlocked`. Nenhuma linha removida nesta auditoria/triagem, nem mudança de comportamento.
 
 Próximo passo C12: responsável do #150 deve concluir/revisar a fatia, reconciliar com a main e PRs ACTIONS; validar defaults, disponibilidade e escolhas, ordens de comandos e rejeições sem fallback mutante em regressões UI/CPU. Não marcar item 1 fechado nem iniciar novas cartas nesta rodada.
+
+### C12.1 — Produtores de seleção Deck/GY → Hand (P006/P165/P018/Fusion Sage)
+
+Base `bd4dc3e`. A janela CardSelectionScreen e a CPU usavam ResolveCardSelection/SkipOptionalCardSelection mesmo para prompts com executor tipado. Fusion Sage é exclusivo da fila e o clique legado era recusado; os demais podiam mutar imediatamente. Novo adaptador `DemoQueuedHandSelection.cs` compartilha admissão Player/Cpu, preserva a identidade da requisição e da ocorrência no índice mostrado, e nunca recorre ao legado após rejeição ou fila ocupada. P006 Sangan/Witch, P165 Sonic Bird/Senju, P018 Magician of Faith/Mask of Darkness e Fusion Sage (C02.2) usam a resposta existente quando no escopo suportado. P018 permanece restrito ao FLIP manual Main; batalha legada com deferredBattle, Deck→Field, GY→Field e escolhas múltiplas não são migradas nesta fatia. Sem novas cartas. Não alterar layout visual.
+
+Teste: estende QueuedDeckSearchChecks e QueuedGraveyardRecoveryChecks para ambos os lados, duplicatas, resposta stale, escolha inválida, não mutação na admissão, bloqueio de segundo clique e origem CPU. Os checks de executor/gate/shuffle existentes permanecem. CI requerido. Demo.cs 2623 → 2623 linhas (adaptador novo, nenhum resolvedor legado removido nesta fatia; preservar comparadores legados até C12 fechar). PR #150 também toca CPU em outras regiões; reconciliar sequencialmente. Gate C12.1 permanece aberto.
