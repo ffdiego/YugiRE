@@ -307,3 +307,35 @@ SQLite v2 consultado: máscara e ciclo em decompilação, sem assembly dos alvos
     bash scripts/pending/26-native-cursor-dispatch-ghidra.sh
 
 Saída privada: scratch/ghidra-native-cursor-dispatch-contract.zip. Confirmar ordem, code 12/reset, operandos e vtable 005DA594. Inspecionar manifesto cursor_e.txt local sem pixels e resolver consumidor de +108h pelo SQLite primeiro. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+
+
+## V31/V18 — 27-joey-reaction-audio-ghidra.sh (aguardando Fedora)
+
+    bash scripts/pending/27-joey-reaction-audio-ghidra.sh
+
+Saída privada: scratch/ghidra-joey-reaction-audio-contract.zip. Confirma classificação de dano e duração, tabela 005DA3C0, vtables e prefixo de 0x70 descritores 005EFD48. Inclui 00403310/00414A20/004152D0/00415C90 e bloco 005DA7F0:80 para invocação, início e resultado. Se a versão anterior já foi executada, coletar só os quatro alvos e bloco adicionais. Resolver alvos no SQLite primeiro; não exportar WAV/pixels. Reutilizar --inspect-visual-dat para os manifests de busto. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
+
+V18.1: versão atual do roteiro 27 também coleta 005C1180/005C1480/005C1960 e prefixo de 21 descritores Stream em 005F0A30:336 (verificar terminador; não inferir contagem pelo DAT). Se roteiro 27 já foi executado, não repetir os alvos anteriores. Inspeção privada sem áudio: `dotnet run --project src/Joey.App -- --voice-dat=/path/to/Voice.dat --inspect-voice-dat`. Saída scratch/visual-review/voice-metadata.json, sem WAVs.
+
+
+## V18 — 28-voice-audio-windows.ps1 (aguardando Windows)
+
+Após merge do PR #117, atualizar main e rodar na raiz do repositório:
+
+    powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1
+
+Caso Voice.dat não esteja em ../passion/Voice.dat ou passion/Voice.dat,
+passar -VoiceDat com o caminho real. -SkipPlayback permite só inspeção
+e testes negativos. O default reproduz joey_01.wav, attack.wav, card_move.wav
+uma vez cada; -Samples permite selecionar outros WAVs Internal. Enviar
+scratch/voice-smoke-<timestamp>/summary.json, voice-metadata.json, logs e
+listening-notes.txt preenchido. Não enviar o DAT nem WAVs. Resultado
+de processo não comprova escuta; anotar se cada som foi audível e terminou
+corretamente. Não executar 27 no Windows só por causa deste smoke.
+
+
+## V22 — 29-native-break-scatter-ghidra.sh (aguardando Fedora)
+
+    bash scripts/pending/29-native-break-scatter-ghidra.sh
+
+Saída privada scratch/ghidra-native-break-scatter-contract.zip. SQLite v2 confirma decompilação do CRT srand(0)/rand e tabela de 256 bytes; não pedir dump runtime dessa tabela nem repetir Draw 00450FD0 do bundle 16. Confirmar expressão x87/ftol, ABI e pushes de 00558FB0, gerador e rotina CRT. Roteiro 24 cobre vtable de superfície. [Contrato](../../docs/research/native-bank-effect-draws-2026-11-24.md#v22-complemento--dispersão-determinística-da-carta).

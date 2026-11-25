@@ -97,3 +97,59 @@ Testes sintéticos verificam limites, todos os índices e lados,
 recortes, fade, repetição de Draw, âncoras, bits/defasagem e
 partículas. Coverage 20/34, nenhum novo Verified; o dado
 tem renderer de revisão, ainda não disparado no duelo.
+
+## V20 complemento — passes primários da moeda
+
+Reconsulta direta do SQLite v2 (SHA e quick_check acima, confirmados nesta sessão), instruções 00457520..00457D01. Não repetir bundle 16. Não usar ordem de arquivo como remap.
+
+- 00457727..00457774: em 1<=local<256, divisor P do banco key0, frame=(6+trunc(local*(bit?5P:4P+trunc(P/2))/256))%P. A tabela literal de 14 entradas 00457754..004577E0 é 1,2,3,3,2,1,0,1,2,3,3,2,1,0 para sombra key1; usar dimensão/divisor próprio. Adapter aceita P=14 e sombra >=4 por segurança (não afirmar manifesto observado).
+- 00457824..004578F5: sombra usa recorte, sem escala, offset trunc(bounce*25/256) em ambos os eixos; metade largura/altura próprias. Virtual +4C. 004578F8..004579E1: key0 frame selecionado, dimensões escaladas por S/256, origem X=centerX-H/2, Y=centerY-H/2+trunc(-50*bounce/256). Ambas usam metade ALTURA escalada, não largura. Virtual +4C. Ordem sombra e moeda.
+- 004579ED..00457A22: fora do giro, nada quando local<=-128; -128<local<-64 usa 512+4local, caso restante usa 256, exceto global counter-end>-64: 4*(end-counter). Virtual +48. 00457AD6..00457B05 sombra key1 frame0 usa metade largura do frame em X/Y e +1 nos dois. 00457B08..00457BB3 key0 frame13 se local>0 e bit0, senão frame6. Âncora pela metade largura, sem +1. Não interpretar bit como cara/coroa.
+- 00457BD2..00457CDB: halo key2 inteiro entre 256<=local<320, dimensões *(2local-256)/256 e argumento 4*(320-local). Origem central por largura e altura próprias; slot +48. Este argumento não é alpha Raylib confirmado.
+- 00457CDE..00457D01: compara bit com objeto+1C e diferença global counter-end; se -320<=diff<-192 entra ramo scratch keys3/4; fora desse intervalo salta ao ramo key5, cujo loop ainda tem gates de visibilidade. NativeCoinPassLayout expõe apenas gates, não simula os passes omitidos. Resta mapear parâmetros/compositor +94/+A0 e partículas. O campo +1C não é resultado sorteado nem um flag booleano confirmado; adapter restringe ao domínio 0/1 recuperável. Não ligar ao duelo, não criar gate A03, não contar novo Draw.
+
+Testes sintéticos usam dimensões assimétricas para detectar trocas de eixos, verificam recortes por bit, halo/fade, ausência pré-lançamento e defasagem. Sem DAT real nem comparação de frames. Coverage continua 20/34.
+
+
+## V22 complemento — dispersão determinística da carta
+
+SQLite v2 SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
+quick_check ok nesta sessão. 00450FD0 tem assembly no bundle 16; os
+callees 00558FB0, 00558BC0, 0055C020, 00558BF0, 005C3BF5 e 005C3C02
+têm decompilação, não assembly indexado. Não repetir a coleta Draw.
+
+**Tabela 00A52EB4:** 00558BC0 inicializa sob demanda, 0055C020 aloca
+0x100 bytes e chama 00558BF0. Esta última chama 005C3BF5(0) (srand,
+estado TLS+14h) e 256 vezes _rand (005C3C02). A implementação do CRT
+usa state = (state*0x343FD+0x269EC3) mod 2^32 e retorna
+(state>>16)&0x7FFF. Cada entrada armazena somente o byte baixo.
+A tabela candidata deterministicamente reconstruída inicia
+26 27 F6 85 97 15 AD 1D D2 94 DD C4 76 19 39 31 (hex),
+SHA256 dos 256 bytes
+62ad1265fa2adde0c900daee2cee11a9405a49573388877efbb410318968c854.
+Não consumir RNG de cartas, UI/deck MT ou global C#; isto é
+um gerador local para reproduzir a tabela, não uma alegação de que
+o srand original não tenha efeitos colaterais na thread nativa.
+
+**00558FB0:** parâmetro <1 retorna 0, >=256 usa blit direto para
+modos conhecidos 0..3 (+0C,+08,+20,+4C). No domínio 1..255,
+percorre linhas de 2 e colunas de 4 pixels, limitando retângulos
+à imagem. Para bloco em (x,y), linha r=y/2, usa tabela
+[(26*r+x)&255] e [(1+38*r+x)&255] separadamente; direção
+(x-W/2,y-H/2), quadrado da distância. Há uma expressão x87
+seguida de __ftol perdida pelo decompilador; se divisor !=0,
+multiplica direção por 256 e divide com truncamento. Extensão
+E=W+H-((W+H)*p>>8). Deslocamentos candidatos (noise*dir*E)>>16
+com shift aritmético, preservando sinais e truncamentos.
+A ordem de argumentos e o divisor precisam da janela assembly
+para fechar a ABI; não assumir sqrt nem renderizar via alpha.
+
+NativeBreakScatter porta a tabela, retângulos, fases e classificação
+de domínio, e expõe projeção inteira com divisor **injetado**.
+Testes sintéticos de hash, cortes de borda, orientação, índices,
+shift negativo e centro. Uma miniatura 50x72 produz 468 blocos
+(13 colunas x 36 linhas, última coluna de 2px); uma 72x50 produz 450.
+Modelo não desenha partículas/carta e não substitui o gate de A03.
+Roteiro 29 coleta callee 00558FB0 e gerador específico, sem pedir
+a tabela runtime já reconstruível. Roteiro 24 continua dono da
+vtable de superfície. Sem mudança da cobertura 20/34.
