@@ -17,7 +17,7 @@ public sealed partial class DemoDuel
         UsesQueuedAttackResponse(response) && response.Attack.AttackingPlayer == ActivePlayer;
 
     private bool IsQueuedDirectResponseTrap(int side, int slot) =>
-        Spells[side, slot] is { Id: AttackTrapRules.MagicCylinder, ClassCode: 21 } &&
+        Spells[side, slot] is { ClassCode: 21, Id: AttackTrapRules.MagicCylinder or AttackTrapRules.NegateAttack } &&
         SpellFaceDown[side, slot] && spellSetTurn[side, slot] < Turn;
 
     private bool HasQueuedDirectResponse(int attacker) =>
@@ -76,7 +76,7 @@ public sealed partial class DemoDuel
 
     private sealed partial class PrimitiveActionExecutor
     {
-        private sealed record AttackTrapPayment(CardTarget Source, int Attacker, int Damage);
+        private sealed record AttackTrapPayment(CardTarget Source, ushort ResourceId, int Attacker, int Damage);
 
         private AttackTrapPayment? attackTrapPayment;
         private bool attackTrapSpent;
@@ -93,11 +93,12 @@ public sealed partial class DemoDuel
                 declared: true);
             if (command.Source is { } source)
             {
-                if (!attackerValid || !duel.TryResolveCardTarget(source, out int slot, out _) ||
+                if (!attackerValid || !duel.TryResolveCardTarget(source, out int slot, out var trap) ||
                     !pending.Traps.TryGetValue(slot, out var original) || original != source ||
                     !duel.IsQueuedDirectResponseTrap(command.Side, slot))
                     return new(CommandOutcome.Rejected, "Attack Trap or attacker occurrence is no longer eligible.");
-                attackTrapPayment = new(source, pending.Attacker.Side, damage);
+                attackTrapPayment = new(source, trap.Id, pending.Attacker.Side,
+                    trap.Id == AttackTrapRules.MagicCylinder ? damage : 0);
                 attackTrapSpent = false;
                 queue.EnqueueBatch([new SendToGraveyardCommand(command.Side, source),
                     new ResolveSpentAttackTrapCommand(command.Side, source)]);
@@ -118,9 +119,13 @@ public sealed partial class DemoDuel
             attackTrapPayment = null;
             if (!attackTrapSpent) return new(CommandOutcome.Skipped, "Attack Trap was not spent.");
             attackTrapSpent = false;
-            if (payment.Damage > 0) followups.Enqueue(new DamageCommand(payment.Attacker, payment.Damage));
-            duel.LastAttackTrap = new(AttackTrapRules.MagicCylinder, command.Side, payment.Attacker, 0,
-                AttackContinued: false, ReflectedDamage: payment.Damage);
+            bool endsBattle = payment.ResourceId == AttackTrapRules.NegateAttack;
+            if (endsBattle)
+                followups.Enqueue(new ChangeBattlePhaseCommand(payment.Attacker, duel.Turn, EnterBattle: false));
+            else if (payment.Damage > 0)
+                followups.Enqueue(new DamageCommand(payment.Attacker, payment.Damage));
+            duel.LastAttackTrap = new(payment.ResourceId, command.Side, payment.Attacker, 0,
+                AttackContinued: false, ReflectedDamage: payment.Damage, BattlePhaseEnded: endsBattle);
             return new(CommandOutcome.Applied);
         }
     }

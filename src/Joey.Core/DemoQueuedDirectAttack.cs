@@ -11,10 +11,10 @@ public sealed partial class DemoDuel
 
     /// <summary>Opt-in battle pilot. Single face-up attacker, empty other
     /// monster and field slots, and no known battle-damage callback.
-    /// The only supported Set response is an opponent's eligible Magic Cylinder.</summary>
+    /// Supported Set responses are an opponent's eligible Magic Cylinder or Negate Attack.</summary>
     public bool TryQueueDirectAttack(int slot, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Direct-attack pilot requires an unused attacker in Battle Phase with an empty field apart from eligible opposing Magic Cylinder.";
+        message = "Direct-attack pilot requires an unused attacker in Battle Phase with an empty field apart from eligible opposing Magic Cylinder or Negate Attack.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
             PendingEndDiscards != 0 || !CanAttackDirectly(slot) ||
             !TryCaptureCardTarget(ActivePlayer,DuelZone.Monster,slot,out var target) ||

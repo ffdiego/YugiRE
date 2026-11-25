@@ -123,6 +123,13 @@ os cues existentes e ainda não foi comparada em captura pareada.
 Demo.cs 2614 → 2614. Respostas a ataques com alvo, Mirror Force, Negate
 Attack, outros S/T e campos fora do piloto continuam no fluxo legado.
 
+*Negate Attack no piloto direto (C12.1):* o Set elegível entra na mesma
+janela do App, CPU e console. A fila gasta a ocorrência antes de emitir
+a saída da Battle Phase pelo comando de fase existente. A fase não pode
+ser reaberta nesse turno. Os testes cobrem os dois lados, passe,
+substituição de ocorrência, ausência de dano e a fase final. Ataques com
+alvo e Mirror Force continuam legados. Demo.cs 2614 → 2614.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
