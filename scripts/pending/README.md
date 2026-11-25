@@ -396,23 +396,4 @@ V20.2 — revisão de moeda (Windows/Fedora desktop): `dotnet run --project src/
 
 V20.3: o review de moeda agora inclui brilho key5 e JSON schema 2 com o plano de reflexão. A reflexão continua omitida até resolver +94/+A0. Roteiro 24 já abrange esses offsets da vtable; não repetir a coleta 16.
 
-## V02/V05/V06 — 33-native-field-centers-ghidra.sh (aguardando Fedora)
-
-SQLite v3: assembly 0045C280 já recuperado. Faltam os bytes
-integrais das tabelas estáticas 005DB560 (monstros) e 005DB4E8
-(S/T, base indexada a partir de 5; ler 005DB510:80), cada uma
-com dez pares de int32 LE. Apenas 005DB570:4
-(X central) está coberto na tabela de monstros. As demais
-tabelas a partir de 005DB5B0:80 já foram coletadas; não repetir 03/20/21.
-
-    bash scripts/pending/33-native-field-centers-ghidra.sh
-
-Ambiente: Fedora/Ghidra local e projeto/EXE atestados pelo exportador.
-Saída privada scratch/ghidra-native-field-centers-contract.zip.
-O exportador exige ao menos uma função; 0045C280 é somente a
-proveniência do consumidor, sem nova janela de assembly.
-Encerramento: validar 160 bytes e fingerprint, decodificar dez
-pares de cada tabela, validar ordem/espelhamento e comparar com
-NativeDuelLayout; importar em nova cópia cumulativa com auditoria.
-Não ajustar coordenadas de gameplay por hipótese.
-[Contrato V05](../../docs/research/native-field-attributes-2026-11-22.md).
+Roteiro 33 (V02/V05/V06) coletado, validado e importado em 25/11; ver [completed](../completed/README.md). Não repetir.
