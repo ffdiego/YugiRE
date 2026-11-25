@@ -100,7 +100,7 @@ static partial class Game
         duel.TryCaptureCardTarget(player,
             zone == SpellTrapTargetRules.FieldZone ? DuelZone.FieldSpell : DuelZone.SpellTrap,
             zone == SpellTrapTargetRules.FieldZone ? 0 : zone, out var target) &&
-        selection.Choices.Any(choice => choice.Target == target);
+        selection.Choices.Any(choice => choice.Zone == zone && choice.Target == target);
 
     static void ReadQueuedSpellTrapTarget()
     {
@@ -558,7 +558,7 @@ static partial class Game
                 if (!blockInput && own && duel.CanAttack(zone) && attacker != zone)
                     DrawEffectStamp(DatGraphics.AttackSword, NativeAttackFrame.SwordAnchor(zone, own),
                         0, 0x10000, 0xa0);
-                if (blockInput || duel.PendingSpellTrapTarget is not null ||
+                if (blockInput || queuedSpellTrapSelection is not null || duel.PendingSpellTrapTarget is not null ||
                     !PointerPressed(MouseButton.Left)) continue;
                 if (fissureSelection is { } fissure)
                 {
