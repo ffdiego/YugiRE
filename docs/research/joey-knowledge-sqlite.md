@@ -1,35 +1,42 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
-## Snapshot de referência atual — 24/11/2026, v2
+## Snapshot de referência atual — 25/11/2026, v6
 
 Para as três trilhas, usar o arquivo privado
-`joey-knowledge-visual-cumulative-2026-11-24-v2.zip`,
-disponível na Biblioteca do mantenedor e destinado às fontes do
-projeto YugiRE. Em sessões ChatGPT, procurar por esse nome exato
+`joey-knowledge-visual-cumulative-2026-11-24-v6.zip`,
+preparado localmente em `scratch/coord-evidence/` para uso privado. Em sessões ChatGPT, procurar por esse nome exato
 nas fontes do projeto ou na Biblioteca antes de solicitar novo upload.
 No ambiente local, extrair sob `scratch/`. O ZIP contém
 `joey-knowledge-visual-cumulative.sqlite` e
-`visual-evidence-import-audit.json`.
+`visual-evidence-import-audit.json` (v6) e `visual-evidence-import-audit-v5.json` (histórico).
 
 | Validação | Valor |
 | --- | --- |
-| SHA-256 do SQLite | `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4` |
-| SHA-256 do ZIP v2 | `583c6639286de0c9685881a965d5ea4e62cf9694a60053bc746c49fbc3466277` |
+| SHA-256 do SQLite | `7b65daf2d88898f7627ce3e27a181a5aec732604fa3da3795e357affdb184c52` |
+| SHA-256 do ZIP v6 | `c853501cca4c8a918d3808de825a062f412e6cb1cb42f472dc449e027590e272` |
 | SHA-256 do EXE | `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de` |
 | PRAGMA integrity_check | ok |
 | PRAGMA foreign_key_check | sem violações |
 
-Contagens conferidas no SQLite **extraído do ZIP v2**, iguais à auditoria:
+Contagens conferidas no SQLite **v6**, iguais à auditoria:
 
 | Tabela | Registros |
 | --- | ---: |
 | functions | 6.518 |
-| visual_transient_decompilations | 93 |
-| visual_evidence_bundles | 21 |
-| visual_evidence_reports | 175 |
-| visual_evidence_functions | 281 (215 VAs distintas) |
-| visual_evidence_instructions | 167.494 |
-| visual_evidence_memory | 24 |
+| visual_transient_decompilations | 120 |
+| visual_evidence_bundles | 33 |
+| visual_evidence_reports | 224 |
+| visual_evidence_functions | 361 (291 VAs distintas) |
+| visual_evidence_instructions | 221.094 |
+| visual_evidence_memory | 37 |
+| visual_runtime_cosine | 512 |
+| visual_dat_manifests | 80 |
+| visual_dat_images | 1.078 |
+| visual_voice_metadata | 131 |
+| visual_runtime_reports | 9 |
+| visual_runtime_sources | 3 |
+
+A v6 preserva as linhas da v5 e acrescenta o bundle 32 com os dois alvos de Final Destiny, `00589970` e `005813D0`. A v5 preserva todas as linhas da v4, que havia preservado as da v3 e acrescentado os bundles 31/A06 (7/7 funções) e 17/V23–V24 (4/4 funções). A v5 acrescenta 9 bundles, 67 registros de funções e 13 blocos de memória. A v3 preservou as contagens estáticas da v2. A amostra de cosseno em `00A52EE8` coincide em todas as 512 entradas com a geração x16.16 por truncamento em direção a zero. Os metadados gráficos registram três erros. O smoke de voz registra um WAV válido, um recurso acima do limite da aplicação e 129 rejeições por cabeçalho RIFF truncado. Os três exemplos selecionados não chegaram à reprodução.
 
 O arquivo anterior `joey-knowledge-visual-cumulative.zip` tem
 19 bundles e 179 registros de funções, embora sua auditoria
@@ -37,9 +44,7 @@ informe 21/281. A v2 foi reempacotada a partir do SQLite completo
 e validada após extração; substitui aquele ZIP como referência.
 O snapshot `joey-knowledge-visual-decoded.zip` é histórico.
 
-Inclui as coletas Ghidra 01–13, 16, 18–21 e 23, e dois bundles
-visuais históricos. O 17 não foi recebido; 14, 15 e 22
-são execuções especiais, não bundles do Ghidra.
+Inclui as coletas Ghidra 01–13, 16–21, 23–27 e 29–32, e dois bundles visuais históricos. Os números 16 e 17 têm roteiros distintos por trilha. O roteiro 25 foi coletado em duas partes. Os roteiros 14, 15, 22 e 28 são execuções especiais. Consulte o [histórico de coletas](../../scripts/completed/README.md) e as [regressões](../../scripts/regression/README.md).
 A aquisição não implica implementação ou Verified.
 
 ## Consultas à evidência cumulativa
