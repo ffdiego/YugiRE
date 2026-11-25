@@ -89,43 +89,10 @@ public sealed partial class DemoDuel
         bool defense = false)
     {
         message = "Choose separate occurrences that match the recipe.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
-        if (GameOver || Phase != DemoPhase.Main || PendingFusionSummon is not { } pending ||
-            pending.Owner != ActivePlayer ||
-            pending.Options.FirstOrDefault(option => option.DeckIndex == deckIndex) is not { } choice ||
-            materials.Count != choice.Recipe.Count ||
-            FusionRules.Complete(choice.Recipe, [], materials, needsField: false) is null)
+        if (primitiveActionQueue?.IsBusy == true || PendingFusionSummon is not { } pending ||
+            !TryValidateFusionChoice(pending, deckIndex, materials, out var choice, out int destination, out message))
             return false;
-
-        int owner = pending.Owner;
-        if (deckIndex >= fusionDecks[owner].Count || !ReferenceEquals(fusionDecks[owner][deckIndex], choice.Result) ||
-            materials.Any(material => !choice.Materials.Contains(material) ||
-                !ReferenceEquals(material.Card, FusionMaterialAt(owner, material))))
-        {
-            message = "A selected card is no longer in its original position.";
-            return false;
-        }
-
-        int source = pending.SourceIndex;
-        bool sourceAvailable = pending.FieldOwner is int fieldOwner
-            ? IsActiveFusionGate(fieldOwner) && ReferenceEquals(FieldSpells[fieldOwner], pending.Spell)
-            : pending.FromSet
-                ? SpellFaceDown[owner, source] && ReferenceEquals(Spells[owner, source], pending.Spell)
-                : source < Hand.Count && ReferenceEquals(Hand[source], pending.Spell) && FirstFreeSpellZone() >= 0;
-        if (!sourceAvailable)
-        {
-            message = "The activating Spell is no longer available.";
-            return false;
-        }
-
-        var fieldSlots = materials.Where(material => material.Zone == FusionMaterialZone.Field)
-            .Select(material => material.Index).ToArray();
-        int destination = FirstFreeMonsterZone(fieldSlots);
-        if (destination < 0)
-        {
-            message = "Choose a material from the field to free a Monster Zone.";
-            return false;
-        }
+        int owner = pending.Owner, source = pending.SourceIndex;
 
         // Commit only after the source, result, materials and destination are validated.
         // Finalize movement and placement before offering any material's Graveyard effect.
@@ -158,6 +125,56 @@ public sealed partial class DemoDuel
         BeginNextQueuedDeckSearch();
         message = pending.FieldOwner is null ? $"Fusion Summoned {choice.Result.Name}."
             : $"Fusion Gate: Fusion Summoned {choice.Result.Name} and banished {materials.Count} materials.";
+        return true;
+    }
+
+    // Shared by the legacy comparator and the queued producer. The latter
+    // additionally captures numeric occurrence IDs and plans linked removals.
+    private bool TryValidateFusionChoice(PendingFusionSummon pending, int deckIndex,
+        IReadOnlyList<FusionMaterial> materials, out FusionSummonOption choice,
+        out int destination, out string message)
+    {
+        choice = null!;
+        destination = -1;
+        message = "Choose separate occurrences that match the recipe.";
+        if (GameOver || Phase != DemoPhase.Main || !ReferenceEquals(PendingFusionSummon, pending) ||
+            pending.Owner != ActivePlayer ||
+            pending.Options.FirstOrDefault(option => option.DeckIndex == deckIndex) is not { } selected ||
+            materials.Count != selected.Recipe.Count ||
+            FusionRules.Complete(selected.Recipe, [], materials, needsField: false) is null)
+            return false;
+
+        int owner = pending.Owner;
+        if (deckIndex < 0 || deckIndex >= fusionDecks[owner].Count || !ReferenceEquals(fusionDecks[owner][deckIndex], selected.Result) ||
+            materials.Any(material => !selected.Materials.Contains(material) ||
+                !ReferenceEquals(material.Card, FusionMaterialAt(owner, material))))
+        {
+            message = "A selected card is no longer in its original position.";
+            return false;
+        }
+
+        int source = pending.SourceIndex;
+        bool sourceAvailable = pending.FieldOwner is int fieldOwner
+            ? IsActiveFusionGate(fieldOwner) && ReferenceEquals(FieldSpells[fieldOwner], pending.Spell)
+            : pending.FromSet
+                ? SpellFaceDown[owner, source] && ReferenceEquals(Spells[owner, source], pending.Spell)
+                : source < Hand.Count && ReferenceEquals(Hand[source], pending.Spell) && FirstFreeSpellZone() >= 0;
+        if (!sourceAvailable)
+        {
+            message = "The activating Spell is no longer available.";
+            return false;
+        }
+
+        var fieldSlots = materials.Where(material => material.Zone == FusionMaterialZone.Field)
+            .Select(material => material.Index).ToArray();
+        destination = FirstFreeMonsterZone(fieldSlots);
+        if (destination < 0)
+        {
+            message = "Choose a material from the field to free a Monster Zone.";
+            return false;
+        }
+
+        choice = selected;
         return true;
     }
 
