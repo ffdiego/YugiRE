@@ -349,6 +349,14 @@ V17 complemento (roteiro 25): inclui 00546D70 para confirmar inicialização das
 - Pergunta: legalidade/candidatos de Tribute e Thousand Knives; cálculo do menor ATK, desempate e fase da escolha de Fissure; registro/consumo da penalidade Draw Phase de Offerings (00587950/0057AE20). Não repetir callbacks já recuperados (00585C80/00583510/005944D0).
 - Encerramento: corpo/assembly ou ausência explícita para cada endereço, interpretar filtros e despacho, importar cumulativamente com auditoria e quick_check. Coleta/importação **pendentes**, não bloqueiam escopo sandbox. [Contrato Fissure](../../docs/cards/c02-fissure.md).
 
+V17 complemento source-alpha (roteiro 25): kernels 00438100/00438E30 e base 00530220, janelas dos loops 00438CD4/00439A04/00530DFE. Se já executado, coletar somente novos alvos/janelas. Não mapear YGA para formato por hipótese. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--source-alpha-nos-formatos-1213).
+
+V17 complemento carga (roteiro 24): inclui 004AB460/004AB950/004AD580/004AA8D0, para confirmar upload alpha e chave convertida. Se já executou roteiro 24, enviar resultado existente e coletar só novos alvos. Não assumir vínculo YGA ou formato da scratch. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--ordem-de-canais-carga-alpha-e-cor-chave-2411).
+
+V17 complemento packed-alpha (roteiro 25): novos alvos 004365C0/00437360/0052F570/00439B60/00424FC0. Confirmar loops e ABI; se coleta 25 já executada, pedir somente os novos alvos. Não confundir same-format e destino opaco. [Contrato](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--alpha-packed-1011-e-destino-opaco).
+
+V17.3: roteiro 25 já contém 0052CF10/00433150, usados pelo novo sampler 20-bit. Não solicitar nova coleta; confirmar loops de edge/span e clipping do bundle existente.
+
 ## A06 — 31-actions-battle-callbacks-ghidra.sh (aguardando Fedora)
 
 SQLite cumulativo v2 consultado: as sete VAs de P164 (elementais),
