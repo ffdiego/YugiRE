@@ -2,7 +2,7 @@ namespace Joey.LookAndFeel;
 
 /// <summary>Raw virtual slot, resource key before remap and integer geometry.
 /// Parameter256 is the native argument, NOT a proven linear alpha.
-/// Reflection scratch and sparkles are deliberately not rendered.</summary>
+/// Reflection scratch and sparkle geometry are modeled separately.</summary>
 public readonly record struct NativeCoinPass(int Key,int VirtualSlot,
     CardBounds Source,CardBounds Destination,int Parameter256);
 
@@ -68,9 +68,9 @@ public static class NativeCoinPassLayout
         }
         bool highlight=(coin.ResultBit?1:0)==highlightBit;
         // 00457CDE..00457D01: branch uses GLOBAL remaining, not local t.
-        // The later key-5 branch has its own per-sparkle gates; reaching
-        // it does not imply that any actual sparkle is visible.
+        // 00457EAE falls through to 00457EB2 after reflection.
+        // The key-5 loop is reached in BOTH cases, with independent gates.
         return new(coin,passes,highlight&&remaining is >192 and <=320,
-            highlight&&!(remaining is >192 and <=320));
+            highlight);
     }
 }
