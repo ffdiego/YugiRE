@@ -161,6 +161,8 @@ Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, ban
 Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, orientação e argumento de distorção. NativeBreakScatter reconstrói tabela 00A52EB4 via CRT srand(0)/rand, 256 bytes; porta blocos 4x2 e fases de dispersão, projeção com divisor injetado. Roteiro 29 confirma ABI/x87 de 00558FB0 e gerador; compositor restante pendente. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
   Opcode 4F, camadas e separação de explosão identificados; esperar a coleta 16 antes de portar a timeline. Não alterar regras.
 
+V22.3: vtable 005DB314 +4 confirma busy t<64 (4 updates) versus ativo t<256 (16 updates). NativeBreakFieldReview porta ordem dos cinco shines, argumento bruto +AC e recortes 4x2 após orientação; --review-break=ID,HEX usa DAT original, F7/F8/F12, oculto exige ID 0. Só campo região+slot 0..10. Compositor, mão/snapshot FF, A03 e desktop pendentes; sem crédito de cobertura. [Contrato](../../docs/research/native-break-field-review-2026-11-25.md).
+
 ## V23 — Corrente (0041F870)
 
 <a id="v23"></a>
