@@ -168,11 +168,11 @@ internal static class QueuedMonsterWipeChecks
             check(q.IsBusy&&d.Monsters[targetSide,0] is null&&d.EquipmentCards.Count==1,
                 "Monster removal gate precedes linked equipment");
             gate.Release=true;Drain(q);
-            var moves=q.Trace.Skip(start).Where(x=>x.Stage==ActionTraceStage.Executed)
+            var paidSpellMoves=q.Trace.Skip(start).Where(x=>x.Stage==ActionTraceStage.Executed)
                 .Select(x=>x.Entry.Command).Where(c=>c is DiscardCommand or SendToGraveyardCommand or DestroyCommand).ToArray();
-            check(moves.Length==4&&moves[0]==new DiscardCommand(side,cost)&&
-                moves[1]==new SendToGraveyardCommand(side,spellSource)&&moves[2]==new DestroyCommand(targetSide,target)&&
-                d.Graveyard(side).Select(c=>c.Id).SequenceEqual(new ushort[]{1023,1023,300})&&
+            check(paidSpellMoves.Length==4&&paidSpellMoves[0]==new DiscardCommand(side,cost)&&
+                paidSpellMoves[1]==new SendToGraveyardCommand(side,spellSource)&&paidSpellMoves[2]==new DestroyCommand(targetSide,target)&&
+                d.Graveyard(side).Select(c=>c.Id).SequenceEqual(own?new ushort[]{1023,1023,24,300}:new ushort[]{1023,1023,300})&&
                 d.EquipmentCards.Count==0&&d.Monsters[1-targetSide,0] is not null&&
                 d.Monsters[0,1] is not null&&d.Monsters[1,1] is not null&&d.HandFor(side).Single().Id==25,
                 "Exact payment and one destruction with its linked cleanup");
