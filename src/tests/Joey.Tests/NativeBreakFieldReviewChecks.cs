@@ -94,12 +94,23 @@ internal static class NativeBreakFieldReviewChecks
             check(actual.Center(perspective)==expected.Center(perspective),
                 "V22: region+slot normalization preserves field center");
         }
-        foreach(ushort unsupported in new ushort[]{0x8016,0x803e,0x8154})
+        for(int side=0;side<2;side++)
+        for(int perspective=0;perspective<2;perspective++)
+        for(int region=0;region<5;region++)
+        {
+            var snapshot=new NativeBreakFieldTarget((ushort)(0x8000 | 0xff<<6 | region<<1 | side));
+            check(snapshot.IsCombatSnapshot && snapshot.FieldZone==region &&
+                  snapshot.Center(perspective)==NativeDisabledChainTarget.FromField(side,region,false).Center(perspective),
+                "V22: snapshot FF uses monster-region center");
+            check(NativeBreakFieldReview.Sample(new(),snapshot.Center(perspective),snapshot.Descriptor,perspective,50,72,cosine)
+                  is { Fragments.Length:1 },"V22: combat snapshot review is supported");
+        }
+        foreach(ushort unsupported in new ushort[]{0x8016,0x803e,0x8154,0xbfca})
         {
             bool rejected=false;
             try { _=NativeBreakFieldReview.Sample(new(),new(525,352),unsupported,0,50,72,cosine); }
             catch(ArgumentException) { rejected=true; }
-            check(rejected,"V22: hand, snapshot and unsupported field descriptors rejected");
+            check(rejected,"V22: hand and unsupported field/snapshot descriptors rejected");
         }
     }
 }
