@@ -28,6 +28,10 @@ public sealed partial class DemoDuel
                     return null;
                 return new(ActionPresentationKind.TargetedAttack, source, attack.Attacker,
                     sourceSlot, DuelZone.Monster, defenderSlot);
+            case PrepareFusionSummonCommand fusion:
+                target = fusion.Source; kind = ActionPresentationKind.Activate;
+                destination = target.Zone == DuelZone.FieldSpell ? DuelZone.FieldSpell : DuelZone.SpellTrap;
+                slot = target.Zone == DuelZone.FieldSpell ? 0 : FirstFreeSpellZone(); break;
             case EquipCommand equip:
                 target = equip.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = equip.SpellSlot; break;

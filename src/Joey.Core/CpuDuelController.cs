@@ -130,6 +130,9 @@ public sealed class CpuDuelController
         if (duel.PendingFusionSummon is { } fusion)
         {
             var option = fusion.Options.MaxBy(option => option.Result.Attack)!;
+            if (queueTurnActions)
+                return Act(CpuAction.Spell, (out string m) => duel.TryQueueFusionSummon(
+                    fusion, option.DeckIndex, option.SuggestedMaterials, out m, origin: ActionOrigin.Cpu));
             int[] spent = option.SuggestedMaterials.Where(material => material.Zone == FusionMaterialZone.Hand)
                 .Select(material => material.Index).ToArray();
             return Act(CpuAction.Spell,

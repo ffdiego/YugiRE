@@ -24,7 +24,8 @@ public sealed partial class DemoDuel
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
-                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment()) &&
+                admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment() ||
+                 admittingQueuedFusion && CanAdmitQueuedFusion()) &&
                 (PendingEndDiscards == 0 || admittingQueuedEndDiscard && CanAdmitQueuedEndDiscard()), allowLabEdits);
     }
 
@@ -343,6 +344,11 @@ public sealed partial class DemoDuel
 
         public CommandResult Execute(DuelCommand command, IActionCommandSink followups)
         {
+            if (command is PrepareFusionSummonCommand prepareFusion)
+                return PrepareFusionSummon(prepareFusion, followups);
+            if (command is FinishFusionSummonCommand finishFusion)
+                return FinishFusionSummon(finishFusion);
+            if (fusionBatch is not null) return ExecuteFusionStep(command);
             // The legacy public input gate also blocks when the queue is busy.
             // The executor itself must use only the legacy rule blockers.
             if (command is FinishGraveyardBanishSummonCommand finishBanishSummon)

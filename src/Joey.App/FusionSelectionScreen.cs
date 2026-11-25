@@ -145,6 +145,16 @@ static partial class Game
 
     static void CommitHumanFusion(PendingFusionSummon request, FusionSummonOption result)
     {
+        if (queuedDuel is not null)
+        {
+            if (duel.TryQueueFusionSummon(request, result.DeckIndex, selectedFusionMaterials,
+                out message, fusionDefensePosition))
+            {
+                ClearDuelSelection();
+                ResetFusionChoice();
+            }
+            return;
+        }
         var destination = request.FieldOwner is int fieldOwner ? FieldZoneBounds(fieldOwner) :
             ZoneBounds(request.Owner, request.FromSet ? request.SourceIndex : duel.FirstFreeSpellZone(), true);
         bool fromHand = request.FieldOwner is null && !request.FromSet;

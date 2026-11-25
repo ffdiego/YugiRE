@@ -11,6 +11,8 @@ public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool Fac
     bool FaceUpDefense = false)
 {
     public bool InDefense => FaceDownDefense || FaceUpDefense;
+    // Snapshot only for presentation of a committed general Fusion.
+    public IReadOnlyList<Card>? FusionMaterials { get; init; }
 }
 /// <summary>Committed normal summon or face-down Set; not a special summon or FLIP.</summary>
 public sealed record DemoNormalSummon(int Player, int Zone, Card Card, bool FaceDown);
@@ -2037,7 +2039,8 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    private void PlaceSelectedMonster(int owner, int zone, Card card, bool faceDownDefense, bool faceUpDefense = false)
+    private void PlaceSelectedMonster(int owner, int zone, Card card, bool faceDownDefense, bool faceUpDefense = false,
+        IReadOnlyList<Card>? fusionMaterials = null)
     {
         Monsters[owner, zone] = card;
         MonsterFaceDown[owner, zone] = faceDownDefense;
@@ -2045,7 +2048,7 @@ public sealed partial class DemoDuel
         MonsterWasFlipped[owner, zone] = false;
         changedPosition[owner, zone] = true;
         attacked[owner, zone] = false;
-        MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense, faceUpDefense));
+        MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense, faceUpDefense) { FusionMaterials = fusionMaterials });
     }
 
     public bool SkipOptionalCardSelection(out string message)
