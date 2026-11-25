@@ -6,19 +6,19 @@
 
 ## Foco atual
 
-**C12 — migrar as famílias já implementadas para a fila de ações.** CARDS prioriza C12.1 (produtores UI/CPU e fila padrão); novos efeitos ficam suspensos até esse gate documentado e integrado. Após C12.1, famílias independentes podem avançar exclusivamente pela fila, sem interromper a remoção do legado restante. ACTIONS e VISUALS mantêm suas trilhas e coordenam dependências. [Critério e ordem](#c12--migrar-as-famílias-done-para-a-fila-de-ações).
+**C12 — migrar as famílias já implementadas para a fila de ações.** CARDS prioriza C12.1 (produtores UI/CPU e fila padrão); novos efeitos ficam suspensos até esse gate documentado e integrado. Após C12.1, famílias independentes podem avançar exclusivamente pela fila, sem interromper a remoção do legado restante. ACTIONS e VISUALS mantêm seus backlogs; o agente único atravessa as dependências necessárias sequencialmente. [Critério e ordem](#c12--migrar-as-famílias-done-para-a-fila-de-ações).
 
 <a id="trilhas-de-trabalho-como-despachar-um-agente"></a>
 
 ## Como despachar um agente
 
-Três trilhas com IDs estáveis: ACTIONS (fila/scheduler, console, traces), CARDS (regras e cobertura), VISUALS (fidelidade visual). Comandos: `continue o trabalho em <TRILHA>` ou `faça <ID>`.
+Três trilhas com IDs estáveis: ACTIONS (fila/scheduler, console, traces), CARDS (regras e cobertura), VISUALS (fidelidade visual). Comandos: `continue o trabalho`, `continue o trabalho em <TRILHA>`, `faça <ID>` ou `/goal <objetivo>`. **Preferência (25/11/2026): um agente único, uma fatia ativa por vez, com objetivo explícito e execução autônoma.** As três trilhas são uma organização do backlog, não uma obrigação de paralelizar.
 
-1. Ler Foco atual, Contrato da fila e a trilha pedida. Escolher primeiro item Pronto ou Parcial executável (ou ID citado), respeitando o foco e dependências; conferir PRs/branches ativos antes de reservar o ID. CARDS começa por C12.1; após seu gate, priorizar famílias de risco baixo/médio (C18) com primitivas disponíveis, sem abandonar o C12 restante.
+1. Ler Foco atual, Contrato da fila e a trilha pedida, se houver. Respeitar objetivo/ID explícito, gates e dependências; conferir PRs/branches ativos. Na dúvida, escolher a frente e o item Pronto ou Parcial com maior ganho funcional provável por esforço (desbloqueios, cobertura jogável, fidelidade, evidência disponível, risco e custo de validação). Executar dependências mínimas de outras trilhas sem delegação por padrão. CARDS começa por C12.1; após seu gate, priorizar famílias de risco baixo/médio (C18) com primitivas disponíveis, sem abandonar o C12 restante.
 2. Entregar uma fatia vertical pequena (regra → fila → teste → UI se aplicável → CARDS.md/manifest se aplicável).
 3. Atualizar **apenas checkbox ao concluir, Status e Próximo passo** do item no PLANS.md. Relato de fatia (PR, CI, evidência e limites) vai em `docs/plans/<TRILHA>.md` no bloco do ID. Nunca acrescentar relatos a PLANS.md.
 4. Achados novos viram IDs no fim da trilha; nunca renumerar ou reutilizar. Revisar bloqueios quando dependências fecharem.
-5. Relatório curto: comportamento, testes, limitações, próximo ID sugerido. C12 também exige linhas antes/depois e legado restante.
+5. Relatório curto: comportamento, testes, limitações, próximo ID sugerido. C12 também exige linhas antes/depois e legado restante. Em `/goal`, continuar autonomamente após cada checkpoint até alcançar o objetivo ou um limite real; se bloqueado, registrar a pendência e escolher outra fatia útil compatível com o objetivo.
 
 Status: `Pronto`, `Em andamento`, `Bloqueado por X`, `Aguardando evidência`, `Parcial`, `Concluído`. Uma sessão escritora por vez na main; ver Colaboração.
 
@@ -28,7 +28,7 @@ ACTIONS: marcos A concluídos / marcos A numerados (não porcentagem de opcodes)
 
 ## Regras de priorização
 
-1. Priorizar o que o jogador consegue fazer de verdade; fatias verticais pequenas, não número de callbacks.
+1. Priorizar o que o jogador consegue fazer de verdade; fatias verticais pequenas, não número de callbacks. Na ausência de prioridade explícita, maximizar ganho funcional provável por esforço e franquia, privilegiando desbloqueios reutilizáveis e trabalho validável; não alternar frentes só por equilíbrio de badges.
 2. CARDS: texto do DAT local e regras da edição Joey; definições declarativas por família mecânica (records/tabelas C#, sem DSL desnecessária), testes por ID e cenário de família. Triagem C18 orienta o rigor, não impede efeitos claros; análise nativa sob demanda para ambiguidades materiais.
 3. Joey.Tests libera Done no escopo completo anunciado; headless isolado não prova jogabilidade UI/CPU, e integração incompleta é Partial no escopo jogável. Verified exige comparação do mesmo comportamento com original. C14/C15 ficam adiados como campanha, salvo divergência material; validar famílias e interações por decks/traces quando houver massa crítica.
 4. Core independente de Frida e tempo de animação, mas ordem e granularidade seguem a fila nativa. Preservar laboratório de RE.
@@ -109,7 +109,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 **Pronto quando:** (a) fila padrão no App/CPU; (b) nenhuma família migrada mantém resolução legada equivalente ativa (remover ou marcar obsoleto e impedir seu uso no caminho padrão); (c) `ActionsBlocked` não depende dos `Pending*` legados dessas famílias; (d) testes atuais e regressões passam, CI verde antes da integração e cobertura jogável preexistente preservada (ganhos de lotes independentes contabilizados separadamente); (e) Demo.cs diminui por fatia, com contagem de linhas antes/depois. Se precisar de uma adaptação transitória, justificar e registrar sua remoção; não criar novo resolvedor legado.
 
-**Gate C12.1:** a fila deve ser o caminho padrão real no App e na CPU, com paridade de cobertura jogável preexistente, regressões UI/CPU (incluindo admissão, escolhas e gates aplicáveis) e CI obrigatório verde; registrar o fechamento do item 1 com PR e evidências. Antes disso, não implementar cartas novas nem abrir lotes C02/C03. Depois, CARDS pode entregar novas famílias independentes exclusivamente pela fila, em paralelo à migração restante A06/A07/C12, sem depender de resolvedores legados, criar bypasses ou alterar contratos compartilhados sem coordenação. AÇÕES estruturais ficam com ACTIONS; CARDS pode continuar fatias de migração acordadas. O C12 continua aberto até todos os critérios originais; comparar paridade da migração com a baseline anterior ao gate, separando ganhos de cobertura dos novos lotes.
+**Gate C12.1:** a fila deve ser o caminho padrão real no App e na CPU, com paridade de cobertura jogável preexistente, regressões UI/CPU (incluindo admissão, escolhas e gates aplicáveis) e CI obrigatório verde; registrar o fechamento do item 1 com PR e evidências. Antes disso, não implementar cartas novas nem abrir lotes C02/C03. Depois, CARDS pode entregar novas famílias independentes exclusivamente pela fila, alternando sequencialmente com a migração restante A06/A07/C12 conforme o ganho provável, sem depender de resolvedores legados, criar bypasses ou alterar contratos compartilhados sem respeitar suas dependências. Mudanças estruturais seguem ACTIONS; o mesmo agente pode executar fatias CARDS necessárias. O C12 continua aberto até todos os critérios originais; comparar paridade da migração com a baseline anterior ao gate, separando ganhos de cobertura dos novos lotes.
 
 Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
 
@@ -202,7 +202,9 @@ Use `Joey.Lab summarize` ou ferramentas `yugilab` somente quando houver uma perg
 
 ## Colaboração
 
-**Em paralelo:** usar uma branch/worktree por trilha e ID (por exemplo, `actions/A01-scheduler`, `cards/C01-taxonomia`, `visuals/V03-assets`). Reservar o item com PR draft ou coordenação explícita; não presumir que uma tarefa está livre só pelo Markdown. ACTIONS tem precedência para contratos compartilhados e alterações estruturais em `DemoDuel`; CARDS pode avançar taxonomia, tabelas e testes isolados, VISUALS modelos/recursos sem alterar regras. Integrações que atravessam trilhas exigem coordenação, não uma proibição de trabalhar. `A02` entrega a infraestrutura, não converte automaticamente todos os caminhos legados: durante A06/C12, usar adaptadores explícitos e não duplicar mutação. Depois de migrado um caminho, nenhuma regra nova pode contornar sua fila.
+**Padrão: agente único.** Trabalhar sequencialmente com `/goal` definido, atravessando trilhas quando necessário; preferir commits incrementais validados na main. Não criar agente coordenador nem distribuir trabalho por trilha apenas porque existem três backlogs.
+
+**Paralelismo excepcional:** somente quando o ganho esperado superar claramente a coordenação, preferencialmente em pesquisas independentes somente leitura ou tarefas isoladas. Nesse caso, usar uma branch/worktree por trilha e ID (por exemplo, `actions/A01-scheduler`, `cards/C01-taxonomia`, `visuals/V03-assets`). Reservar o item com PR draft ou coordenação explícita; não presumir que uma tarefa está livre só pelo Markdown. ACTIONS tem precedência para contratos compartilhados e alterações estruturais em `DemoDuel`; CARDS pode avançar taxonomia, tabelas e testes isolados, VISUALS modelos/recursos sem alterar regras. Integrações que atravessam trilhas são responsabilidade do agente principal; se houver concorrência excepcional, exigem coordenação. `A02` entrega a infraestrutura, não converte automaticamente todos os caminhos legados: durante A06/C12, usar adaptadores explícitos e não duplicar mutação. Depois de migrado um caminho, nenhuma regra nova pode contornar sua fila.
 
 Uma sessão escritora atualiza e publica em `main` após testes. Outra máquina continua com `git pull --ff-only`. Se houver múltiplos agentes escritores ao mesmo tempo (por exemplo, um em CARDS e outro em VISUALS), isolar branches/worktrees e integrar sequencialmente; itens de ACTIONS (`A02`, `A06`) mexem no núcleo e **não** devem rodar em paralelo com mudanças grandes em `Demo.cs`. Marcar `CARDS.md` de acordo com implementação atual, **não** com intenção, texto de carta ou trace de outra implementação.
 
