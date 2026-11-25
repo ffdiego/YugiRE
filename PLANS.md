@@ -85,7 +85,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Produtores UI/CPU de rituais existentes em C12; efeito próprio de Relinquished e restrições depois. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
-- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Validar produtores persistentes, magias fixas e P025; depois Set de FIELD e seleções restantes, até fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
+- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Validar produtores persistentes, magias fixas, P025 e MST/Remove Trap; depois Set de FIELD e seleções restantes, até fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Parcial`. Comparação P036 em duelo nativo pendente. [Detalhes](docs/plans/CARDS.md#c14)
 - [ ] **C15 — Fatias `Verified`.** Status: `Aguardando evidência`. Uma carta por família comparada ao original, após migração; baixa prioridade. [Detalhes](docs/plans/CARDS.md#c15)

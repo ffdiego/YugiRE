@@ -37,6 +37,9 @@ public sealed partial class DemoDuel
             case ActivateInfiniteCardsCommand infinite:
                 target = infinite.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = infinite.Slot; break;
+            case ActivateTargetedSpellTrapCommand targeted:
+                target = targeted.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
             case ActivateDrawSpellCommand draw:
                 target = draw.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

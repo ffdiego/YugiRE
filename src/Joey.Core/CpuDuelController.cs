@@ -223,7 +223,19 @@ public sealed class CpuDuelController
                 SpellTrapTargetRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i) &&
                 duel.SpellTrapTargets(duel.Hand[i].Id).Any(candidate => candidate.Player != Player), -1);
             if (targeted >= 0)
-                return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
+            {
+                if (!queueTurnActions)
+                    return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
+                if (!duel.TryCaptureCardTarget(Player, DuelZone.Hand, targeted, out var source))
+                    return Idle(CpuStepStatus.Blocked, "Targeted spell source is untracked.");
+                var target = duel.QueuedSpellTrapTargetCandidates(source)
+                    .FirstOrDefault(candidate => candidate.Target.Side != Player);
+                if (target is null)
+                    return Idle(CpuStepStatus.Blocked, "No tracked opposing Spell/Trap target.");
+                return Act(CpuAction.Spell,
+                    (out string m) => duel.TryQueueTargetedSpellTrap(source, target.Target, out m, ActionOrigin.Cpu),
+                    duel.Hand[targeted], source: duel.FirstFreeSpellZone(), handIndex: targeted);
+            }
 
             for (int z = 0; z < 5; z++)
             {

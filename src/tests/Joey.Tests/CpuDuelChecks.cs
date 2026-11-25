@@ -52,12 +52,16 @@ internal static class CpuDuelChecks
         {
             DemoDuel Prepare()
             {
-                var d = State(side, [Spell(id)], deck: [Spell(9100), Spell(9101), Spell(9102), Spell(9103)]);
-                if (id == SpellTrapWipeRules.HarpiesFeatherDuster)
-                {
-                    d.Spells[1 - side, 0] = Spell(1002, 21);
-                    d.SpellFaceDown[1 - side, 0] = true;
-                }
+                if (id != SpellTrapWipeRules.HarpiesFeatherDuster)
+                    return State(side, [Spell(id)], deck: [Spell(9100), Spell(9101), Spell(9102), Spell(9103)]);
+                // Public board arrays are not an import API. Set an actual
+                // registered card before the CPU's turn.
+                Card[] deck = [Spell(id), Spell(9101), Spell(9102), Spell(9103)];
+                var d = DemoDuel.FromPartialObservation(1 - side, [Spell(1002, 21)],
+                    new Card?[5], new Card?[5], 8000,
+                    side0Deck: side == 0 ? deck : null, side1Deck: side == 1 ? deck : null);
+                if (!d.SetFromHand(0, out _)) throw new InvalidOperationException("Duster setup failed.");
+                d.NextTurn();
                 return d;
             }
             var legacy = Prepare();
@@ -98,6 +102,41 @@ internal static class CpuDuelChecks
                 queued.Graveyard(1 - side).SequenceEqual(legacy.Graveyard(1 - side)) &&
                 queued.Spells[1 - side, 0] == legacy.Spells[1 - side, 0],
                 $"C12 CPU {id}: same final state as legacy");
+        }
+
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort id in new[] { SpellTrapTargetRules.MysticalSpaceTyphoon, SpellTrapTargetRules.RemoveTrap })
+        {
+            Card[] deck = [Spell(id)];
+            var d = DemoDuel.FromPartialObservation(1 - side, [Spell(1002, 21), Spell(1056, 21)],
+                new Card?[5], new Card?[5], 8000,
+                side0Deck: side == 0 ? deck : null, side1Deck: side == 1 ? deck : null);
+            check(d.SetFromHand(0, out _) && d.SetFromHand(0, out _), "C12 targeted CPU: tracked setup");
+            if (id == SpellTrapTargetRules.RemoveTrap) d.SpellFaceDown[1 - side, 0] = false;
+            d.NextTurn();
+            var q = d.CreatePrimitiveActionQueue();
+            var controller = new CpuDuelController(side);
+            void Drain()
+            {
+                for (int i = 0; i < 100 && q.IsBusy; i++) q.Tick();
+                if (q.IsBusy) throw new InvalidOperationException("Targeted CPU queue did not drain.");
+            }
+            check(controller.Step(d, queueTurnActions: true).Action == CpuAction.Draw,
+                "C12 targeted CPU: draw");
+            Drain();
+            check(controller.Step(d, queueTurnActions: true) is
+                { Status: CpuStepStatus.Acted, Action: CpuAction.Spell, HandIndex: 0 } &&
+                q.IsBusy && d.PendingSpellTrapTarget is null && d.Hand.Count == 1 &&
+                d.Spells[1 - side,0] is not null, "C12 targeted CPU: no legacy prompt or immediate mutation");
+            var entry = q.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(entry.Origin == ActionOrigin.Cpu && entry.Command.GetType().Name == "ActivateTargetedSpellTrapCommand" &&
+                d.DescribeActionPresentation(entry.Command) is { Kind: ActionPresentationKind.Activate },
+                "C12 targeted CPU: typed activation with cue");
+            Drain();
+            check(d.Hand.Count == 0 && d.Spells[1 - side,0] is null &&
+                d.Spells[1 - side,1]?.Id == 1056 && d.Graveyard(side).Single().Id == id &&
+                d.Graveyard(1 - side).Single().Id == 1002,
+                "C12 targeted CPU: first opposing legal target only");
         }
 
         var summonTrap = State(0, [strong]);
