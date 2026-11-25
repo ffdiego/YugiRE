@@ -270,7 +270,9 @@ public sealed class CpuDuelController
                     .OrderByDescending(z => duel.AttackValue(Player, z)).FirstOrDefault(-1);
                 if (target < 0) continue;
                 int index = i;
-                return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index],
+                return Act(CpuAction.Equip, (out string m) => queueTurnActions
+                    ? duel.TryQueueEquipment(DuelZone.Hand, index, Player, target, out m, ActionOrigin.Cpu)
+                    : duel.Equip(index, Player, target, out m), duel.Hand[index],
                     source: duel.FirstFreeSpellZone(), target: target, handIndex: index);
             }
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>

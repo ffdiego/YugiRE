@@ -11,6 +11,7 @@ static partial class Game
     static int[] cpuHandDrop = [];
     static bool handActionsWereEnabled;
     static bool setHandAction, choosingTributes, choosingEquip;
+    static CardTarget? queuedEquipSource;
     static int[] handLift = [];
     // Presentation-only numeric smoothing for the two monster rows.
     // Lazily allocated; no Core state or attribute values are mutated.
@@ -119,6 +120,7 @@ static partial class Game
         hand = attacker = hoverHand = hoverCpuHand = -1;
         handActionsWereEnabled = false;
         setHandAction = choosingTributes = choosingEquip = false;
+        queuedEquipSource = null;
         tributeZones.Clear();
         Array.Clear(handLift);
         Array.Clear(cpuHandDrop);
@@ -174,6 +176,11 @@ static partial class Game
         else if (action == NativeCursorAction.Activate &&
                  EquipmentRules.Supports(card.Id) && duel.CanActivateFromHand(index))
         {
+            if (queuedDuel is not null)
+            {
+                if (!duel.TryCaptureCardTarget(ViewPlayer, DuelZone.Hand, index, out var source)) return;
+                queuedEquipSource = source;
+            }
             choosingEquip = true;
             message = $"Choose a compatible face-up monster for {card.Name}.";
         }
@@ -477,6 +484,17 @@ static partial class Game
                     }
                     else if (choosingEquip && monster != null)
                     {
+                        if (queuedDuel is not null)
+                        {
+                            if (queuedEquipSource is not { } source ||
+                                !duel.TryCaptureCardTarget(player, DuelZone.Monster, zone, out var target))
+                            {
+                                message = "Equipment source or target is unavailable.";
+                            }
+                            else if (duel.TryQueueEquipment(source, target, out message))
+                                ClearDuelSelection();
+                            continue;
+                        }
                         var equip = ViewHand[hand];
                         int sourceZone = duel.FirstFreeSpellZone();
                         var origin = HandBounds(hand);

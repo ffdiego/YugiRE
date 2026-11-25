@@ -1163,9 +1163,8 @@ public sealed partial class DemoDuel
         if (!eligibility.Value) return false;
         int sourceZone = FirstFreeSpellZone();
         var card = Hand[index];
-        equipment.Add(new(card, ActivePlayer, sourceZone, targetPlayer, targetZone, Monsters[targetPlayer, targetZone]!));
-        Spells[ActivePlayer, sourceZone] = card; SpellFaceDown[ActivePlayer, sourceZone] = false;
-        hands[ActivePlayer].RemoveAt(index);
+        CommitEquipmentActivation(ActivePlayer, sourceZone, index, card,
+            targetPlayer, targetZone, Monsters[targetPlayer, targetZone]!);
         message = $"{card.Name} equipped."; return true;
     }
     /// <summary>Explicit sandbox removal, not an activation, native movement rule or trigger.</summary>

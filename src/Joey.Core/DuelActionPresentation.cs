@@ -28,6 +28,9 @@ public sealed partial class DemoDuel
                     return null;
                 return new(ActionPresentationKind.TargetedAttack, source, attack.Attacker,
                     sourceSlot, DuelZone.Monster, defenderSlot);
+            case EquipCommand equip:
+                target = equip.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = equip.SpellSlot; break;
             case ActivateFieldSpellCommand field:
                 target = field.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.FieldSpell; slot = 0; break;

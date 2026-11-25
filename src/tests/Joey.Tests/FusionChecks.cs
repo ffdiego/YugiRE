@@ -112,17 +112,17 @@ internal static class FusionChecks
                 side0Deck: side == 0 ? [filler] : null, side1Deck: side == 1 ? [filler] : null,
                 side0FusionDeck: side == 0 ? [thousand] : null, side1FusionDeck: side == 1 ? [thousand] : null);
             var q = queued.CreatePrimitiveActionQueue();
-            var cpu = new CpuDuelController(side);
+            var queuedCpu = new CpuDuelController(side);
             void Drain()
             {
                 for (int i = 0; i < 100 && q.IsBusy; i++) q.Tick();
                 if (q.IsBusy) throw new InvalidOperationException("Fusion Gate queue did not drain.");
             }
-            check(cpu.Step(queued, queueTurnActions: true).Action == CpuAction.Draw,
+            check(queuedCpu.Step(queued, queueTurnActions: true).Action == CpuAction.Draw,
                 "C12 CPU Fusion Gate: turn draw");
             Drain();
             int before = q.Trace.Count;
-            check(cpu.Step(queued, queueTurnActions: true) is { Status: CpuStepStatus.Acted,
+            check(queuedCpu.Step(queued, queueTurnActions: true) is { Status: CpuStepStatus.Acted,
                 Action: CpuAction.Spell, HandIndex: 0 } && queued.FieldSpells[side] is null &&
                 queued.Hand.Count == 4 && q.IsBusy, "C12 CPU Fusion Gate: admission only");
             var command = q.Trace.Skip(before).First(x => x.Stage == ActionTraceStage.Admitted).Entry;
@@ -133,7 +133,7 @@ internal static class FusionChecks
             check(queued.FieldSpells[side]?.Id == gate.Id && queued.Hand.Count == 3 &&
                 queued.CanUseFusionGate(side) && queued.PendingFusionSummon is null,
                 "C12 CPU Fusion Gate: activation only, fusion remains separate");
-            check(cpu.Step(queued, queueTurnActions: true).Action == CpuAction.Selection &&
+            check(queuedCpu.Step(queued, queueTurnActions: true).Action == CpuAction.Selection &&
                 queued.PendingFusionSummon is not null, "C12 CPU Fusion Gate: existing fusion strategy preserved");
         }
         Card witch = Monster(573), faith = Monster(611), king = Monster(494, fusion: true);
