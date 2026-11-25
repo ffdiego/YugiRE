@@ -118,7 +118,7 @@ Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 - [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`. Log de blit por frame; tabela de cosseno já capturada. [Detalhes](docs/plans/VISUALS.md#v01)
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Controles transitórios de seleção/descarte e validação DAT. [Detalhes](docs/plans/VISUALS.md#v03)
-- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Pronto`. Pivô/compositor e constantes x87 (roteiro 21). [Detalhes](docs/plans/VISUALS.md#v04)
+- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Ligar quadrilátero nativo ao renderer após fechar constantes x87, formato/key e compositor; comparar frames. [Detalhes](docs/plans/VISUALS.md#v04)
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Âncoras em pixels, blending e validação. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Geometria absoluta e slot de combate via A03. [Detalhes](docs/plans/VISUALS.md#v06)
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Rasterizador 0051EBD0 e predicado virtual +4; compositor/timeline; conferir App atual. [Detalhes](docs/plans/VISUALS.md#v07)
