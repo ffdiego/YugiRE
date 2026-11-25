@@ -1,46 +1,54 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
-## Snapshot de referência atual — 24/11/2026, v2
+## Snapshot de referência atual — 24/11/2026, v4-actions
 
-Para as três trilhas, usar o arquivo privado
-`joey-knowledge-visual-cumulative-2026-11-24-v2.zip`,
-disponível na Biblioteca do mantenedor e destinado às fontes do
-projeto YugiRE. Em sessões ChatGPT, procurar por esse nome exato
-nas fontes do projeto ou na Biblioteca antes de solicitar novo upload.
-No ambiente local, extrair sob `scratch/`. O ZIP contém
-`joey-knowledge-visual-cumulative.sqlite` e
-`visual-evidence-import-audit.json`.
+Usar o ZIP privado `joey-knowledge-visual-cumulative-2026-11-24-v4-actions.zip`
+entregue no handoff ACTIONS. Procurar nas fontes do projeto ou na Biblioteca
+privada; localmente extrair em `scratch/`. O mantenedor pode anexar o ZIP
+a outras sessões. Não publicar o SQLite nem ZIPs no GitHub.
 
 | Validação | Valor |
 | --- | --- |
-| SHA-256 do SQLite | `80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4` |
-| SHA-256 do ZIP v2 | `583c6639286de0c9685881a965d5ea4e62cf9694a60053bc746c49fbc3466277` |
+| SHA-256 do SQLite | `afaaae7761e460a1a274db5191ca7950d450e8e95810ff0c22d89e6e1e4e263c` |
+| SHA-256 do ZIP | `cb43b3bc7a7f9d78b44a9d537a5e93ba2e5c6b691da19662f83a6b4638b65491` |
 | SHA-256 do EXE | `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de` |
 | PRAGMA integrity_check | ok |
 | PRAGMA foreign_key_check | sem violações |
 
-Contagens conferidas no SQLite **extraído do ZIP v2**, iguais à auditoria:
+Importação do roteiro 31 em nova cópia do SQLite v3 (SHA-256
+`9953a4eb3af861b034f91863aa99adfcaa83d7d34c671eb8f20315cfa37948ed`).
+A auditoria `actions-battle-callbacks-import-audit.json` acompanha o ZIP;
+as auditorias anteriores permanecem como histórico. Importação local
+compatível com o schema e os critérios do importador cumulativo,
+sem substituir registros existentes.
 
 | Tabela | Registros |
 | --- | ---: |
 | functions | 6.518 |
-| visual_transient_decompilations | 93 |
-| visual_evidence_bundles | 21 |
-| visual_evidence_reports | 175 |
-| visual_evidence_functions | 281 (215 VAs distintas) |
-| visual_evidence_instructions | 167.494 |
+| visual_transient_decompilations | 100 |
+| visual_evidence_bundles | 22 |
+| visual_evidence_reports | 183 |
+| visual_evidence_functions | 288 (222 VAs distintas) |
+| visual_evidence_instructions | 171.078 |
 | visual_evidence_memory | 24 |
 
-O arquivo anterior `joey-knowledge-visual-cumulative.zip` tem
-19 bundles e 179 registros de funções, embora sua auditoria
-informe 21/281. A v2 foi reempacotada a partir do SQLite completo
-e validada após extração; substitui aquele ZIP como referência.
-O snapshot `joey-knowledge-visual-decoded.zip` é histórico.
+Sete VAs novas (P164/P118/P087), 8 relatórios, 3.584 instruções
+indexadas dos retries exatos. As 7 janelas deslocadas do batch inicial
+ficam no relatório bruto, não no índice de assembly.
+Ver [A06 callbacks](native-actions-battle-callbacks-2026-11-24.md).
+As coletas 01–13, 16, 18–21 e 23 e dois bundles históricos continuam
+presentes; o 17 não estava na fonte. As coletas 14, 15 e 22 são
+execuções especiais. A aquisição não implica implementação ou Verified.
 
-Inclui as coletas Ghidra 01–13, 16, 18–21 e 23, e dois bundles
-visuais históricos. O 17 não foi recebido; 14, 15 e 22
-são execuções especiais, não bundles do Ghidra.
-A aquisição não implica implementação ou Verified.
+### Histórico de versões
+
+A v3 tinha 21 bundles e 281 registros de funções (mesmas contagens
+de evidência da v2). A v2 tinha SHA-256 do SQLite
+`80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4`.
+O ZIP sem sufixo contém apenas 19 bundles, apesar da auditoria antiga;
+o decoded é histórico. Não substituir uma base mais recente por essas
+versões. Consultar primeiro os índices cumulativos antes de solicitar
+nova coleta.
 
 ## Consultas à evidência cumulativa
 

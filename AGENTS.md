@@ -81,7 +81,7 @@ Ferramentas existentes: SQLite nativo enriquecido, `scripts/run-archive-query.sh
 ## Fonte privada compartilhada de engenharia reversa
 
 **ACTIONS, CARDS e VISUALS devem consultar primeiro o snapshot cumulativo
-`joey-knowledge-visual-cumulative-2026-11-24-v2.zip` (24/11/2026), que
+`joey-knowledge-visual-cumulative-2026-11-24-v4-actions.zip` (24/11/2026), que
 contém `joey-knowledge-visual-cumulative.sqlite` e a auditoria.**
 Em conversas ChatGPT, procurar o arquivo nas fontes do projeto YugiRE
 ou na Biblioteca privada do mantenedor pelo nome exato; em máquinas locais,
