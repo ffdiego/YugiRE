@@ -66,6 +66,9 @@ internal sealed record ResolveGraveyardRecoveryCommand(int Side, PendingCardSele
 internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
+internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target,
+    int ExpectedTurn) : DuelCommand(Side);
+internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateDeckSearchSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record OpenDeckSearchSpellCommand(int Side, CardTarget Source, ushort ResourceId) : DuelCommand(Side);
@@ -229,6 +232,14 @@ internal static class DuelCommandValidation
                 Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
                 Target(equip.Target, equip.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateTemporaryStatCommand modifier when modifier.ExpectedTurn > 0:
+                Target(modifier.Source, modifier.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(modifier.Target, modifier.Target.Side, DuelZone.Monster);
+                break;
+            case ResolveTemporaryStatCommand modifier:
+                Target(modifier.Source, modifier.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                Target(modifier.Target, modifier.Target.Side, DuelZone.Monster);
                 break;
             case ActivateDrawSpellCommand drawSpell:
                 Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);

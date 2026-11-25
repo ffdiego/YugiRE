@@ -50,7 +50,7 @@ static partial class Game
         alphaBlocked = false;
         cpuDelay = TimeSpan.Zero;
         ResetDuelPresentation();
-        if (useQueuedActions) queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate());
+        if (useQueuedActions) queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
         QueueDuelOpening();
         QueueOpeningDeal();
         QueueInitialExodiaOpening();
@@ -80,8 +80,11 @@ static partial class Game
     {
         screen = "duel";
         labSession = null;
+        liveConsoleSession = null;
         labScript = null;
         labConsoleOpen = false;
+        consoleHeight = 0;
+        consoleCapturedThisFrame = false;
         queuedDuel = null;
         queuedPreviewSource = null;
         ClearDuelSelection();
@@ -273,7 +276,7 @@ static partial class Game
         // F7 steps presentation, never authorizes a new CPU decision.
         // Without this gate a paused idle duel could still mutate Joey.Core.
         if (visualReviewPaused) return;
-        if (labSession is not null || alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true) return;
+        if (labSession is not null || ConsoleCapturesInput || alphaCpu is not { } cpu || alphaBlocked || duel.GameOver || MotionBusy || PhaseBusy || queuedDuel?.IsBusy == true) return;
         cpuDelay -= elapsed;
         if (cpuDelay > TimeSpan.Zero) return;
         int? owner = CpuDuelController.PendingOwner(duel);

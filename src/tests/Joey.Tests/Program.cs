@@ -284,6 +284,7 @@ DynamicEquipmentLifecycleChecks.Run(Check);
 TimedEquipmentAndQueuedLpChecks.Run(Check);
 QueuedDrawSpellChecks.Run(Check);
 QueuedMonsterWipeChecks.Run(Check);
+QueuedTemporaryStatChecks.Run(Check, args.FirstOrDefault());
 QueuedSpellTrapWipeChecks.Run(Check);
 QueuedTargetedSpellTrapChecks.Run(Check);
 QueuedMonsterFlipTargetChecks.Run(Check);

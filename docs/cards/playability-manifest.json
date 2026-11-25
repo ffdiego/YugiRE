@@ -1831,6 +1831,49 @@
       ]
     },
     {
+      "id": "trap.temporary-stats-p123",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1015,
+        1016,
+        1082
+      ],
+      "mechanics": [
+        "Queued ATK/DEF modifier for one face-up monster until turn advance"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTemporaryStats.cs",
+        "src/tests/Joey.Tests/QueuedTemporaryStatChecks.cs",
+        "docs/cards/c02-p123-temporary-stats.md"
+      ],
+      "limitations": [
+        "Headless idle Main and Battle windows; chain, Damage Step, UI/CPU and dynamic native comparison pending."
+      ]
+    },
+    {
+      "id": "spell.temporary-stats-p123",
+      "kind": "Spell",
+      "subtype": "QuickPlay",
+      "status": "Done",
+      "resourceIds": [
+        1075,
+        1076
+      ],
+      "mechanics": [
+        "Queued ATK/DEF modifier for one face-up monster until turn advance"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTemporaryStats.cs",
+        "src/tests/Joey.Tests/QueuedTemporaryStatChecks.cs",
+        "docs/cards/c02-p123-temporary-stats.md"
+      ],
+      "limitations": [
+        "Headless idle Main and Battle windows; chain, Damage Step, UI/CPU and dynamic native comparison pending."
+      ]
+    },
+    {
       "id": "field.destroy.discard-five-c02",
       "kind": "Spell",
       "subtype": "Normal",
