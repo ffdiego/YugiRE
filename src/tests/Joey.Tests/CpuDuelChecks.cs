@@ -51,9 +51,117 @@ internal static class CpuDuelChecks
         }
     }
 
+    private sealed class FixedSpellGate : IPresentationGate
+    {
+        public bool CanAdvance => true;
+        public bool Release { get; set; }
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
+    }
+
+    private static void QueuedFixedSpells(Action<bool, string> check)
+    {
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool fromSet in new[] { false, true })
+        foreach (ushort id in new ushort[]
+        {
+            338, 345, LifePointSpellRules.BlueMedicine,
+            DrawSpellRules.PotOfGreed, DrawSpellRules.UpstartGoblin,
+            SpellTrapWipeRules.HarpiesFeatherDuster, SpellTrapWipeRules.HeavyStorm,
+            SpellTrapWipeRules.GiantTrunade
+        })
+        {
+            int enemy = 1 - side;
+            Card spell = Spell(id), trap = Spell(1056, 21);
+            Card[] deck = [spell, Monster(24), Monster(25), Monster(26), Monster(27)];
+            var duel = DemoDuel.FromPartialObservation(enemy, [trap], Slots(), Slots(), 8000,
+                equipmentContextResolved: true, side0Deck: side == 0 ? deck : null,
+                side1Deck: side == 1 ? deck : null);
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.Draw(out _),
+                "C12 fixed spell fixture: tracked enemy Set, draw source");
+            if (fromSet) check(duel.SetFromHand(0, out _), "C12 fixed spell fixture Set");
+            var zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+            check(!duel.CanQueueFixedSpellActivation(zone, 0), "No queue: fixed producer unavailable");
+            var gate = new FixedSpellGate();
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            if (fromSet)
+            {
+                duel.SpellFaceDown[side, 0] = false;
+                check(!duel.CanQueueFixedSpellActivation(zone, 0), "Face-up source cannot activate again");
+                duel.SpellFaceDown[side, 0] = true;
+            }
+            check(DemoDuel.SupportsQueuedFixedSpell(spell) &&
+                duel.CanQueueFixedSpellActivation(zone, 0) && !queue.IsBusy &&
+                queue.Trace.Count == 0 && duel.Graveyard(side).Count == 0 &&
+                duel.DeckCount(side) == 4 && duel.Life.All(lp => lp == 8000),
+                "C12 UI query uses tracked legality without mutation");
+            var step = new CpuDuelController(side).Step(duel, queueTurnActions: true);
+            check(step is { Status: CpuStepStatus.Acted, Action: CpuAction.Spell, Card: null, HandIndex: null } &&
+                queue.IsBusy && !duel.CanQueueFixedSpellActivation(zone, 0) &&
+                duel.Graveyard(side).Count == 0 && duel.DeckCount(side) == 4 &&
+                duel.Spells[enemy, 0] is not null && duel.Life.All(lp => lp == 8000),
+                "C12 CPU admission only; no immediate mutation or duplicate legacy presentation metadata");
+            var entry = queue.Trace.Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
+            var preview = duel.DescribeActionPresentation(entry.Command);
+            check(entry.Origin == ActionOrigin.Cpu && preview is { Kind: ActionPresentationKind.Activate } &&
+                preview.Card.Id == id && preview.Source.Zone == zone && preview.SourceIndex == 0 &&
+                preview.DestinationSlot == 0,
+                "C12 App gate sees exact pre-spend source");
+            queue.Tick(); queue.Tick();
+            check(queue.IsBusy && duel.Graveyard(side).Count == 0 && duel.DeckCount(side) == 4 &&
+                duel.Spells[enemy, 0] is not null && duel.Life.All(lp => lp == 8000),
+                "C12 activation gate prevents source spend and effect");
+            gate.Release = true;
+            for (int tick = 0; tick < 100 && queue.IsBusy; tick++) queue.Tick();
+            check(!queue.IsBusy && queue.Fault is null && duel.Graveyard(side).Single().Id == id &&
+                duel.Spells[side, 0] is null &&
+                queue.Trace.Where(e => e.Stage == ActionTraceStage.Executed).All(e => e.Result?.Outcome == CommandOutcome.Applied),
+                "C12 fixed spell resolves through typed commands");
+            if (LifePointSpellRules.ResolveQueued(id, side) is { } lp)
+                check(duel.Life[side] == 8000 + lp.CasterDelta &&
+                    duel.Life[enemy] == 8000 + lp.OpponentDelta && duel.Hand.Count == 0,
+                    "C12 LP spell matches existing resolver");
+            else if (DrawSpellRules.Effect(spell) is { } draw)
+                check(duel.DeckCount(side) == 4 - draw.Cards && duel.Hand.Count == draw.Cards &&
+                    duel.Life[enemy] == 8000 + draw.OpponentLifeGain,
+                    "C12 draw spell keeps ordered draws and opponent heal");
+            else
+                check(duel.Spells[enemy, 0] is null && (id == SpellTrapWipeRules.GiantTrunade
+                    ? duel.HandFor(enemy).Single().Id == trap.Id && duel.Graveyard(enemy).Count == 0
+                    : duel.Graveyard(enemy).Single().Id == trap.Id && duel.HandFor(enemy).Count == 0),
+                    "C12 S/T wipe preserves return vs destruction");
+        }
+
+        foreach (bool set in new[] { false, true })
+        {
+            var zone = set ? DuelZone.SpellTrap : DuelZone.Hand;
+            foreach (ushort id in new ushort[] { DrawSpellRules.PotOfGreed, MonsterWipeRules.Raigeki,
+                MonsterWipeRules.EternalRest, SpellTrapWipeRules.HarpiesFeatherDuster, SpellTrapWipeRules.GiantTrunade })
+            {
+                var duel = State(0, [Spell(id)]);
+                if (set) check(duel.SetFromHand(0, out _), "C12 unavailable source fixture Set");
+                var queue = duel.CreatePrimitiveActionQueue();
+                check(!duel.CanQueueFixedSpellActivation(zone, 0) &&
+                    !duel.TryQueueActivation(0, set, out _) && queue.Trace.Count == 0 &&
+                    !queue.IsBusy && duel.Graveyard(0).Count == 0,
+                    "C12 no legal deck or targets: query and dispatcher both reject");
+            }
+            var wipe = State(0, [Spell(MonsterWipeRules.Raigeki)], enemy: Monster(24));
+            if (set) check(wipe.SetFromHand(0, out _), "C12 Raigeki fixture Set");
+            var wipeQueue = wipe.CreatePrimitiveActionQueue();
+            check(wipe.CanQueueFixedSpellActivation(zone, 0) &&
+                wipe.TryQueueActivation(0, set, out _) && wipe.Monsters[1, 0] is not null,
+                "C12 App fixed monster wipe admits without early removal");
+            for (int tick = 0; tick < 100 && wipeQueue.IsBusy; tick++) wipeQueue.Tick();
+            check(!wipeQueue.IsBusy && wipe.Monsters[1, 0] is null &&
+                wipe.Graveyard(0).Single().Id == MonsterWipeRules.Raigeki,
+                "C12 App monster wipe uses existing typed destruction");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         QueuedFissure(check);
+        QueuedFixedSpells(check);
         var origin = new CardBounds(400, 520, 108, 153);
         var destination = NativeDuelLayout.MonsterBounds(0, true);
         var halfway = CardTravel.Sample(origin, destination, 4);
