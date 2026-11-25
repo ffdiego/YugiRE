@@ -299,6 +299,7 @@ QueuedDeckRecruitmentChecks.Run(Check);
 QueuedSameNameRecruitmentChecks.Run(Check);
 QueuedGraveyardRevivalChecks.Run(Check);
 QueuedRitualSearchChecks.Run(Check);
+QueuedRitualSummonChecks.Run(Check, args.FirstOrDefault());
 QueuedFlipDeckFlowChecks.Run(Check);
 QueuedFlipFieldChecks.Run(Check);
 QueuedFlipBanishBurnChecks.Run(Check);
