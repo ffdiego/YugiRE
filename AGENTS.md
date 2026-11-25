@@ -29,6 +29,19 @@ O trabalho está organizado em três trilhas em [`PLANS.md`](PLANS.md), com iten
 
 **Badges das três frentes:** ACTIONS mede marcos A numerados com `[x]` e status `Concluído` no PLANS.md; ao editar a trilha, executar `python scripts/publish_actions_progress.py`. CARDS mede Done+Verified no catálogo de 771 cartas e exibe Partial separadamente; VISUALS mede Draw implementadas inclusive Partial, não fidelidade. Manter os três geradores e seus testes consistentes com as fontes.
 
+## Autonomia operacional e execução contínua
+
+O mantenedor autoriza explicitamente os agentes a realizar as operações ordinárias abaixo, **sem solicitar confirmação adicional na conversa**:
+
+- Criar e reutilizar branches/worktrees isoladas; selecionar tarefas e implementar/refatorar dentro do escopo e dos contratos do projeto.
+- Executar builds, testes e investigações autorizadas, atualizar documentação, manifests e badges, criar commits e fazer push de branches.
+- Abrir, revisar e atualizar PRs; reconciliar conflitos preservando o trabalho concorrente; integrar marcos com os critérios de aceitação satisfeitos e CI obrigatório aprovado.
+- Quando houver um coordenador, somente ele (ou o integrador explicitamente designado) integra na main; os demais agentes trabalham em branches/worktrees próprias. Para um único escritor, permanece válido o fluxo preferencial da seção Git.
+
+Em uma sessão com Goal ou missão autônoma de múltiplos marcos, manter ACTIONS, CARDS e VISUALS produtivas sempre que houver trabalho independente. A conclusão de uma fatia, commit, PR ou relatório intermediário não encerra a missão: selecionar ou delegar imediatamente a próxima tarefa executável, manter checkpoints e atualizar a base de integração. Se faltar evidência, permissão ou dependência em uma frente, registrar a lacuna e avançar em outra tarefa; não ficar ocioso esperando autorização já concedida. Encerrar ao atingir o objetivo, esgotar as alternativas produtivas ou alcançar limites reais de execução.
+
+A autorização de Git não substitui o sandbox, as permissões do ambiente nem as proteções da branch. Respeitar bloqueios e não contorná-los; não fazer force push, descartar trabalho alheio, publicar artefatos privados ou executar mudanças destrutivas fora do escopo. Consultar o mantenedor para operações destrutivas, decisões arquiteturais relevantes fora dos contratos acordados ou conflitos sem resolução segura.
+
 ## Motor orientado a comandos e console (ACTIONS)
 
 O console (A04) é um produtor da mesma API de comandos tipados usada por jogador, CPU, efeitos, scripts e testes. A origem determina autorização, não execução: uma vez admitido, um comando equivalente passa pela mesma fila, executor, gatilhos, eventos e gate visual. O console de laboratório pode solicitar operações privilegiadas explicitamente, sem transformar isso em jogadas legais nem modificar o estado diretamente. `state`/`diff` são leituras. Parser e runner reutilizáveis em headless, com UI opcional no Joey.App. Validar identidade/condições na execução; distinguir destruição, descarte e envio ao cemitério. Perfis de apresentação podem mudar duração, não o resultado ou a sequência lógica. A04 ainda é plano, não funcionalidade entregue.
@@ -89,6 +102,14 @@ Nunca versionar o SQLite ou os ZIPs no GitHub.
 ## Extrações nativas que dependem de outra máquina
 
 A pasta [`scripts/pending/`](scripts/pending/README.md) contém **tarefas de extração executáveis mas não executadas**, para Ghidra/Windows e outras evidências indisponíveis neste ambiente. Ler seu `README.md` antes de executar, atualizar o estado após obter um ZIP e nunca marcar um item como concluído só porque o script foi escrito. Não executar automaticamente as tarefas pendentes durante builds, CI ou testes. Esta política vale para **ACTIONS, CARDS e VISUALS**. Se qualquer frente depender do Windows (Frida/executável/DAT) ou Fedora (Ghidra/projeto local) indisponível, adicionar um script direcionado, indicar ID da trilha, ambiente, pré-requisitos, evidência esperada e saída em `scratch/`, registrar no README e avançar em uma tarefa independente.
+
+**Ciclo de vida obrigatório dos roteiros (todas as trilhas):**
+
+- `scripts/pending/`: fila ativa de coletas ainda não executadas, incompletas, falhas ou aguardando validação/importação. Manter o README como lista acionável, com estado, próxima ação e ambiente. Uma execução com falha não encerra a pendência: registrar a causa e não pedir nova execução idêntica sem necessidade.
+- `scripts/completed/`: após receber e validar o resultado, registrar as conclusões e incorporar a evidência ao SQLite cumulativo quando compatível (ou referenciar o artefato privado quando não for), mover o roteiro de pending para completed no mesmo marco de consolidação. Manter `scripts/completed/README.md` com ID, nome, data, resultado, referência à evidência e snapshot/importação, quando aplicável. Não confundir coleta concluída com implementação ou comportamento Verified.
+- `scripts/regression/`: mover testes/smokes reutilizáveis que já cumpriram o objetivo de coleta e devem continuar disponíveis para regressões opcionais. Não misturá-los com a fila de coletas inéditas.
+- Preservar nomes, numeração e histórico; não excluir roteiros reprodutíveis. Atualizar referências ativas, comandos e READMEs, revisar caminhos relativos e testes afetados. Se uma nova lacuna exigir coleta, criar roteiro direcionado com novo número; não recolocar uma coleta concluída na fila sem justificativa.
+- Antes de solicitar execução ao mantenedor, reconciliar a fila com os bundles recebidos, o SQLite mais recente e PRs ativos. Não repetir coletas já disponíveis. Em trabalho paralelo, o coordenador serializa a reorganização de caminhos para evitar conflitos.
 
 **SQLite primeiro, enriquecimento preferencial:** antes de pedir outra coleta, consultar a versão mais recente do banco, bundles e docs existentes (efeitos triviais de cartas continuam dispensando RE exaustiva). Quando possível, importar novas evidências estáticas em uma cópia cumulativa do SQLite compartilhado, validando fingerprint, origem, integridade e preservação dos dados anteriores; usar/estender importadores testados conforme o formato. Dados dinâmicos/frames que não se ajustem ao banco ficam em artefatos privados com referências. Uma sessão escritora integra o snapshot, demais agentes consultam somente leitura. Registrar a versão e auditoria; não versionar o banco nem dumps. Ver [guia SQLite](docs/research/joey-knowledge-sqlite.md).
 
