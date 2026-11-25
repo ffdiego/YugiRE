@@ -9,7 +9,7 @@ static partial class Game
     static ActionQueue? queuedDuel;
     static CardTarget? queuedPreviewSource;
 
-    sealed record ActionVisualSnapshot(DuelActionPresentation Action, Rectangle? Origin);
+    sealed record ActionVisualSnapshot(DuelActionPresentation Action, Rectangle? Origin, ActionOrigin CommandOrigin);
 
     sealed class AppActionPresentationGate : ICommandPresentationGate
     {
@@ -32,7 +32,7 @@ static partial class Game
             if (description is { Source.Zone: DuelZone.Hand } hand)
                 origin = hand.Source.Side == ViewPlayer ? HandBounds(hand.SourceIndex)
                     : CpuHandBounds(hand.SourceIndex, duel.HandFor(hand.Source.Side).Count);
-            active.Capture(command.Sequence, description is null ? null : new(description, origin));
+            active.Capture(command.Sequence, description is null ? null : new(description, origin, command.Origin));
         }
 
         public bool CanComplete(QueuedDuelCommand command, CommandResult result)
@@ -59,9 +59,9 @@ static partial class Game
         {
             case ActionPresentationKind.DirectAttack:
             case ActionPresentationKind.TargetedAttack:
-                // Direct attacks start the full cue after the click.
-                // Queued targeted attacks currently come from the console.
-                BeginAttackCue(side, a.SourceIndex, slot, alreadyAimed: false);
+                // Player input follows the existing click-based aiming rule.
+                BeginAttackCue(side, a.SourceIndex, slot,
+                    alreadyAimed: snapshot.CommandOrigin == ActionOrigin.Player ? null : false);
                 break;
             case ActionPresentationKind.Activate:
                 // Producer has emitted followups, but no source movement or

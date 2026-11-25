@@ -245,11 +245,10 @@ public sealed partial class DuelConsoleSession
         {
             if (words.Length != 3 || !Slot(words[1], out int attacker))
                 return new(false, "Expected attack SLOT direct|TARGET_SLOT.");
-            if (words[2] == "direct")
-                ok = duel.TryQueueDirectAttack(attacker, out message, ActionOrigin.Console);
-            else if (Slot(words[2], out int defender))
-                ok = duel.TryQueueTargetedAttack(attacker, defender, out message, ActionOrigin.Console);
-            else return new(false, "Expected attack SLOT direct|TARGET_SLOT.");
+            int defender = -1;
+            if (words[2] != "direct" && !Slot(words[2], out defender))
+                return new(false, "Expected attack SLOT direct|TARGET_SLOT.");
+            ok = duel.TryQueueAttack(attacker, defender, out message, ActionOrigin.Console);
         }
         else if (op == "activate") return ExecuteActivation(words);
         else
