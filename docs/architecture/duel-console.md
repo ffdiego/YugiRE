@@ -25,6 +25,8 @@ CI A04.2 completo aprovado (45319725401). summon INDEX SLOT [tribute slots], set
 
 ## Reconciliação com C12
 
+`summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]]` usa o lado ativo e índices começando em zero. Consulte a ordem de mão e cemitério com `state`. O comando admite a invocação inerente C16 pelo produtor compartilhado com a CPU. Valor de custo, elegibilidade, ocorrências distintas e slot livre são revalidados. Exemplo para Soul of Purity and Light na mão 0 com custos elegíveis no cemitério 0 e 2: `summon-banish 0 1 attack 0 2`.
+
 A04.3 CI 45320160383 verde antes da reconciliação. A main integrou compra/LP/equipamento; removidos ActivateSimpleSpell/FinishSimpleSpell duplicados da branch A04. TryQueueActivation encaminha compra/LP para os produtores C12 e mantém a generalização de wipes. Novo equip hand|set INDEX SIDE SLOT encaminha TryQueueEquipment; nenhum executor paralelo. Preservados os testes de CARDS e os testes headless do console. CI da reconciliação pendente. A03 segue em PR independente #77. A04 parcial.
 
 ## Integração com A03 e C12 wipes

@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed partial class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | activate field | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | activate field | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -87,6 +87,7 @@ public sealed partial class DuelConsoleSession
         if (op == "select-revive") return SelectRevival(words);
         // Legal inputs use the same producer methods as normal play, with
         // the source labelled Console only for tracing, not for rule bypass.
+        if (op == "summon-banish") return ExecuteBanishSummon(words);
         if (op == "ritual") return ExecuteRitualSummon(words);
         if (op is "summon" or "set" or "flip" or "position" or "activate" or "equip" or "battle" or "turn" or "discard-end" or "attack")
             return ExecuteLegal(op, words);
@@ -184,6 +185,31 @@ public sealed partial class DuelConsoleSession
             : duel.PendingFlipSpellTrapTargets is not null ? operation is ("choices" or "select-st-pair")
             : PendingFieldSelection is { Source: CardSelectionSource.Deck } ? operation is ("choices" or "select-recruit")
             : PendingFieldSelection is { Source: CardSelectionSource.Graveyard } && operation is ("choices" or "select-revive");
+    }
+
+    private DuelConsoleResult ExecuteBanishSummon(string[] words)
+    {
+        const string usage = "Expected summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]].";
+        if (words.Length is < 5 or > 7 || !Index(words[1], out int handIndex) ||
+            !Slot(words[2], out int slot) || words[3] is not ("attack" or "defense"))
+            return new(false, usage);
+
+        int side = duel.ActivePlayer;
+        if (!duel.TryCaptureCardTarget(side, DuelZone.Hand, handIndex, out var source))
+            return new(false, "Choose a tracked card in the active player's hand.");
+
+        var cost = new List<CardTarget>();
+        foreach (string token in words.Skip(4))
+        {
+            if (!Index(token, out int index) ||
+                !duel.TryCaptureCardTarget(side, DuelZone.Graveyard, index, out var target))
+                return new(false, "Choose a tracked card in the active player's Graveyard.");
+            cost.Add(target);
+        }
+
+        bool admitted = duel.TryQueueGraveyardBanishSummon(source, slot, cost,
+            words[3] == "defense", out string message, ActionOrigin.Console);
+        return new(admitted, message, admitted);
     }
 
     private DuelConsoleResult ExecuteLegal(string op, string[] words)

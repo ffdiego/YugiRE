@@ -19,11 +19,12 @@ da carta fonte via 00402460/00402650. Não inferir os efeitos seguintes.
 O catálogo de identidades v2 não tem linha 1518; ID inferido da
 família consecutiva, confirmar nome/atributo DAT antes de promoção.
 A regra executável usa atributo real da fonte DAT, não nomes.
-Os seis constam como Partial no manifesto: somente procedimento opt-in,
-não efeito completo. Mantém API legada
-ID-only restrita a Dark Necrofear para não expor cartas incompletas
-na UI/CPU. Spirit Elimination, efeitos contínuos/Standby, mudança de
-controle C17 e janelas de resposta continuam pendentes.
+O manifesto registra os seis procedimentos e o escopo dos efeitos
+posteriores já implementados. A CPU em modo fila e o console App/Lab
+usam este produtor por ocorrência. O seletor gráfico, Spirit Elimination,
+os efeitos de posição de Aqua/Garuda, a mudança de controle C17 e as
+janelas de resposta continuam pendentes. A API legada por ID continua
+restrita a Dark Necrofear.
 
 QueuedGraveyardBanishSummonCandidates e TryQueueGraveyardBanishSummon
 validam mão, Main Phase, dono ativo, custo exato e slot livre. Executor

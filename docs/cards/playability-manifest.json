@@ -1354,7 +1354,8 @@
       ],
       "status": "Partial",
       "mechanics": [
-        "Core-only inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
+        "Queue-mode CPU and the App/Lab console admit the summon through its shared producer",
+        "Inherent Special Summon from hand by banishing exactly three Fiend monsters from own Graveyard, preserving normal summon allowance",
         "Revalidate hand source, distinct graveyard positions and free destination before changing zones",
         "Queue-backed cost and face-up Special Summon, one command per occurrence, no summon before all costs are applied"
       ],
@@ -1369,7 +1370,7 @@
         "docs/cards/c16-queued-graveyard-banish-summon.md"
       ],
       "limitations": [
-        "No End Phase equip/control, UI/CPU input, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
+        "No End Phase equip/control, board selector, proper-summon revival gate, summon negation, or Spirit Elimination field-substitution branch. No native differential duel.",
         "Native availability 00583050, preparation 005944D0 and primary 005906B0 not decompiled; summon cost helper 0059DEF0/00599E30/005AB640 available."
       ]
     },
@@ -1507,6 +1508,7 @@
       "kind": "Monster",
       "subtype": "Effect",
       "mechanics": [
+        "Queue-mode CPU and the App/Lab console admit the summon through its shared producer",
         "Queue-backed inherent Special Summon from hand by banishing exactly two (1515) or one (1516–1519) eligible monsters from own Graveyard; match source attribute",
         "Revalidate distinct occurrences, cost and free slot; separate BanishCommand per cost and SpecialSummonCommand only after full payment"
       ],
@@ -1526,7 +1528,7 @@
         "docs/cards/c16-elemental-position-opportunities.md"
       ],
       "limitations": [
-        "Aqua Spirit Standby and Garuda End Phase position effects: pure text-based intent only, no phase/selection/executor integration yet; native callback 005907D0 missing. UI/CPU, Spirit Elimination and native differential validation pending."
+        "Aqua Spirit Standby and Garuda End Phase position effects: pure text-based intent only, no phase/selection/executor integration yet; native callback 005907D0 missing. Board selector, Spirit Elimination and native differential validation pending."
       ]
     },
     {
@@ -1540,6 +1542,7 @@
         1518
       ],
       "mechanics": [
+        "Queue-mode CPU and the App/Lab console admit the summon through its shared producer",
         "Queue-backed inherent Special Summon by banishing own Graveyard monsters matching source attribute (2 for 1515, 1 for 1516/1518)",
         "Soul of Purity and Light lowers opposing monsters' ATK by 300 per face-up source during opponent Battle Phase",
         "Spirit of Flames gains 300 ATK during own Battle Phase; resource 1518 gains 300 ATK during opponent Battle Phase",
@@ -1555,7 +1558,7 @@
         "docs/cards/c16-elemental-battle-attributes.md"
       ],
       "limitations": [
-        "Done in explicit headless C# duel scope via opt-in queue summon API and legacy battle path. Graphical/CPU producer integration belongs to ACTIONS; no native differential validation.",
+        "Done in explicit headless C# duel scope. CPU and console admit the queue-backed summon. Board selector and native differential validation pending.",
         "Native effect suppression, ownership/controller changes, Spirit Elimination, special summon responses pending. Resource 1518 verified as Joey pack ID and native effect branch; DAT name still to confirm."
       ]
     },

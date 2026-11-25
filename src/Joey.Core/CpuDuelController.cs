@@ -417,6 +417,24 @@ public sealed class CpuDuelController
                         : duel.SummonLeftmost(summonIndex, set, out m, tributes),
                     card, target: destination, handIndex: summonIndex);
             }
+            int specialSlot = queueTurnActions ? duel.FirstFreeMonsterZone() : -1;
+            if (specialSlot >= 0)
+            {
+                for (int index = 0; index < duel.Hand.Count; index++)
+                {
+                    Card card = duel.Hand[index];
+                    int required = GraveyardBanishSummonRules.QueuedRequiredCount(card);
+                    if (required == 0 || !duel.TryCaptureCardTarget(Player, DuelZone.Hand, index, out var source))
+                        continue;
+                    var candidates = duel.QueuedGraveyardBanishSummonCandidates(source);
+                    if (candidates.Count == 0) continue;
+                    var cost = candidates.Take(required).Select(candidate => candidate.Target).ToArray();
+                    bool defense = card.Attack < MaxVisibleEnemyAttack(duel) && card.Defense > card.Attack;
+                    return Act(CpuAction.Summon, (out string m) =>
+                        duel.TryQueueGraveyardBanishSummon(source, specialSlot, cost, defense, out m, ActionOrigin.Cpu),
+                        card, target: specialSlot, handIndex: index);
+                }
+            }
             // Preserve the CPU's preference for its own strongest compatible
             // monster. In queue mode the candidates include tracked Set sources.
             if (queueTurnActions)
