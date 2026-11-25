@@ -59,7 +59,7 @@ executa essa etapa caso a restauração automática esteja desabilitada.
   usa `card_pack.bin`, não a imagem da carta. Para inspecionar os 1114 registros
   internos, use `dotnet run -- --include-unused` (junto ao caminho DAT, se necessário).
   Esse modo mantém variantes e registros sem nome, sem inferir jogabilidade.
-- Duelo local: a mão exibida pertence ao jogador ativo, alternado por End turn.
+- Single Duel Mode inicia duelo local (dois jogadores manuais), com os decks de 40 cartas do Alpha e cinco cartas iniciais por lado. A mão exibida pertence ao jogador ativo, alternado por End turn.
   Draw compra uma carta por turno. Passe o mouse sobre uma carta para elevá-la
   e mostrar Summon/Activate; botão direito alterna para Set. Clique na carta
   ou no balão para confirmar. A colocação usa o primeiro slot livre à esquerda.
@@ -110,6 +110,10 @@ executa essa etapa caso a restauração automática esteja desabilitada.
 - Escape ou Menu retornam ao menu principal. A janela pode ser redimensionada;
   a área de interação acompanha a escala da imagem.
 
+## Console de laboratório
+
+No menu, **Console lab (' / F10)** abre um novo tabuleiro vazio, sem CPU. Em qualquer duelo, a tecla apóstrofo (`'`), grave ou F10 abre/retrai o console estilo Quake sobre a partida atual; Esc fecha primeiro o console. Enter executa comandos, Up/Down percorrem histórico e PgUp/PgDn rolam o log. Também é possível iniciar com `dotnet run --project src/Joey.App -- --duel-console`. A abertura em duelo local/Alpha habilita explicitamente a ferramenta de desenvolvimento no estado atual: reaproveita a fila existente ou cria a única fila se ainda estiver no modo legado. CPU e cliques ficam suspensos enquanto aberto; ações já admitidas continuam. O modo piloto de ações enfileiradas permanece ativo no duelo após fechar o console. O laboratório vazio continua separado. [Comandos](../docs/architecture/duel-console.md).
+
 ## Alpha vs CPU
 
 Escolha **Alpha - vs CPU** no menu ou execute da raiz:
@@ -118,7 +122,22 @@ Escolha **Alpha - vs CPU** no menu ou execute da raiz:
 dotnet run --project src/Joey.App -- ../passion/data.dat --alpha
 ```
 
-O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Use `--fast` ou `--instant` para acelerar ou `--alpha-headless` para simular um duelo no terminal. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
+O modo inclui um baralho próprio, mão rival oculta, turnos automáticos e animações de carta. Fast (60 updates/s, 2x Classic) é o perfil padrão; use `--classic` para a cadência de referência (30 updates/s), `--fast` para solicitá-lo explicitamente, `--instant` para ignorar animações ou `--alpha-headless` para simular um duelo no terminal. O perfil explícito `--mute-joey` continua selecionando Silent. O cliente gráfico mostra somente warnings e erros do raylib por padrão; `--raylib-verbose` restaura os logs INFO, inclusive carregamento de texturas. Os logs do console de duelo não são filtrados. [Controles, regras e resultados dos testes](../docs/research/alpha-0.1-2026-11-21.md)
+
+## Áudio do cliente
+
+O App procura Voice.dat na mesma pasta de data.dat. Para outro caminho:
+
+```powershell
+dotnet run --project src/Joey.App -- --alpha "--voice-dat=C:\Jogos\Joey\Voice.dat"
+```
+
+`--no-audio` desativa tudo; `--no-music` desativa apenas música.
+O laboratório usa os mesmos cues do duelo. Primeira integração por nomes
+reais do DAT, associações semânticas provisórias, sem falas do Joey,
+trilha dinâmica ou fade nativo. Música repete por buffer decodificado.
+Se arquivo/dispositivo faltar, o jogo continua e imprime [audio].
+Nenhum áudio é exportado do DAT.
 
 ## Importar e comparar um deck original
 
@@ -141,7 +160,7 @@ de compatibilidade ainda desconhecido. O arquivo é aberto somente para leitura.
 os jogadores; cada jogador recebe cinco cartas e pode comprar do restante.
 Requer 40–80 cartas, conforme a checagem nativa documentada. O embaralhamento
 com semente fixa é política de demonstração, não o algoritmo original.
-**Demo fixture** retorna às cartas de teste anteriores. Reset preserva a opção
+**Demo fixture** retorna às cartas de teste anteriores, com mão ampliada intencionalmente; não é o modo normal. Reset preserva a opção
 usada ao iniciar o duelo. As listas adicionais não participam da simulação.
 Os efeitos suportados continuam limitados aos já descritos acima.
 

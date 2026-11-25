@@ -339,3 +339,7 @@ direções, com igualdade RGB em relação aos recortes do DAT. Em ambas
 as viradas, as amostras apareceram a três frames de distância na captura.
 Esse teste compara a saída raylib com as tiras, e não com uma gravação
 quadro a quadro do executável.
+
+## Correções de integração Set/Summon (SQLite v3)
+
+`visual_dat_manifests` confirma set.txt = eff_set_y,eff_set_b,eff_star0_y,eff_star1_y,eff_star0_b,eff_star1_b; sacrifice.txt = card_pika_h,eff_set_y,eff_star0_y,eff_star1_y; summon.txt = eff_rainbow,eff_star0_y,eff_star1_y (BMP salvo primeiro sacrifice YGA). `visual_dat_images`: aura 79x78, estrelas 9x11, rainbow 100x94. `0044EFD0` flag 00402690, `0044F390` decomp seleciona !monster e 2+2*!monster+variant. `0044FA10` decomp primeiro ramo usa mini global, segundo lookup 0 no banco local summon.txt e scroll=(t*5/8)%altura; clip mini-sized. O renderer antigo rolava a face da carta e invertia cor do Set. Novo recorte vertical usa rainbow, horizontal centrado e alpha raylib são aproximações; +AC scratch do Set ainda ausente. `00418B60` decomp atualiza centro por cos(t/2-128), escala zona mão linear e ângulo +/-t/2 para quarto de volta, face 0..256; `00418EF0` candidato usa cos(min(face,256-face)) na transformação. Cliente aproxima por largura e rotação, não quad nativo; mão adversária começa oculta, Set nunca revela. Voo local não mais desabilitado por alphaCpu null. Não introduzir scheduler adicional. Sem afirmar paridade ou nova cobertura. Testes sintéticos e validação gráfica pendente.

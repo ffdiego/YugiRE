@@ -118,6 +118,21 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
         {
+            if (queueTurnActions && duel.UsesQueuedFlipSpellTrapSelection(twoSpellTargets))
+            {
+                if (duel.FlipEffectsNegated)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TrySelectQueuedFlipSpellTrapTarget(twoSpellTargets, -1, -1, out m, ActionOrigin.Cpu));
+                var queuedChoice = duel.QueuedFlipSpellTrapCandidates(twoSpellTargets)
+                    .Where(c => !duel.SelectedFlipSpellTrapTargets.Any(s =>
+                        s.Player == c.Target.Side && s.Zone == c.Zone))
+                    .OrderBy(c => c.Target.Side == Player ? 1 : 0)
+                    .ThenBy(c => c.Zone).FirstOrDefault();
+                return queuedChoice is null
+                    ? Idle(CpuStepStatus.Blocked, "Mandatory queued Spell/Trap pair has no candidate.")
+                    : Act(CpuAction.Selection, (out string m) => duel.TrySelectQueuedFlipSpellTrapTarget(
+                        twoSpellTargets, queuedChoice.Target.Side, queuedChoice.Zone, out m, ActionOrigin.Cpu));
+            }
             // Prefer adverse targets, while allowing own-side selections when
             // the effect requires two cards across the entire field.
             var choice = twoSpellTargets.EligibleTargets
@@ -135,6 +150,30 @@ public sealed class CpuDuelController
             var candidate = selection.EligibleCards
                 .Where(c => !duel.SelectedBatchIndices.Contains(c.SourceIndex))
                 .OrderByDescending(c => CardValue(c.Card)).ThenBy(c => c.SourceIndex).FirstOrDefault();
+            if (queueTurnActions && duel.UsesQueuedHandSelection(selection))
+            {
+                if (candidate is not null || selection.MinSelections == 0)
+                    return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedHandSelection(
+                        selection, candidate?.SourceIndex, out m, ActionOrigin.Cpu), candidate?.Card);
+                return Idle(CpuStepStatus.Blocked, "Mandatory queued hand selection has no candidate.");
+            }
+            if (queueTurnActions && duel.UsesQueuedFieldSelection(selection))
+            {
+                int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);
+                var choices = selection.EligibleCards.OrderByDescending(c => CardValue(c.Card))
+                    .ThenBy(c => c.SourceIndex).Take(Math.Min(free, selection.MaxSelections)).ToArray();
+                var targets = new List<CardTarget>();
+                foreach (var choice in choices)
+                {
+                    if (!duel.TryCaptureQueuedFieldSelection(selection, choice.SourceIndex, out var target))
+                        return Idle(CpuStepStatus.Blocked, "Queued field selection occurrence changed.");
+                    targets.Add(target);
+                }
+                bool set = selection.MaySelectFaceDownDefense && choices.Length == 1 &&
+                    choices[0].Card.Defense > choices[0].Card.Attack;
+                return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedFieldSelection(
+                    selection, targets, set, out m, ActionOrigin.Cpu), choices.FirstOrDefault()?.Card);
+            }
             if (selection.MaxSelections > 1)
             {
                 int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);
@@ -152,6 +191,26 @@ public sealed class CpuDuelController
         }
         if (duel.PendingFlipTarget is { } flip)
         {
+            if (queueTurnActions && duel.UsesQueuedMonsterFlipSelection(flip))
+            {
+                if (duel.FlipEffectsNegated)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
+                var choice = duel.QueuedMonsterFlipCandidates()
+                    .Where(c => !duel.SelectedFlipTargets.Any(t => t.Player == c.Target.Side && t.Zone == c.Zone))
+                    .Where(c => flip.Effect != DemoFlipEffect.ReturnUpToTwo || c.Target.Side != Player)
+                    .OrderByDescending(c => c.Target.Side != Player)
+                    .ThenByDescending(c => c.Target.Side == Player ? -KnownPower(duel, Player, c.Zone) :
+                        KnownPower(duel, c.Target.Side, c.Zone))
+                    .ThenBy(c => c.Zone).FirstOrDefault();
+                if (choice is not null)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TrySelectQueuedMonsterFlipTarget(flip, choice.Target.Side, choice.Zone, out m, ActionOrigin.Cpu));
+                if (flip.Effect == DemoFlipEffect.ReturnUpToTwo)
+                    return Act(CpuAction.Selection, (out string m) =>
+                        duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
+                return Idle(CpuStepStatus.Blocked, "Mandatory queued FLIP has no legal target.");
+            }
             bool bounce = flip.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
             var targets = (from p in Enumerable.Range(0, 2)
                            from z in Enumerable.Range(0, 5)

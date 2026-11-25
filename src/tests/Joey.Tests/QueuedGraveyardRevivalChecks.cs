@@ -58,7 +58,9 @@ internal static class QueuedGraveyardRevivalChecks
             catch(InvalidOperationException){check(true,"Pending revival blocks unrelated commands");}
             int shuffles=0;var summons=new List<DemoSpecialSummon>();
             d.DeckShuffled+=_=>shuffles++;d.MonsterSpecialSummoned+=summons.Add;
-            check(d.TryQueueGraveyardRevival(first,pick.Target,4,set,out _)&&
+            check(d.UsesQueuedFieldSelection(first)&&d.TryCaptureQueuedFieldSelection(first,pick.SourceIndex,out var captured)&&
+                captured==pick.Target&&!d.TryCaptureQueuedFieldSelection(first,1,out _),"Field producer captures exact eligible GY occurrence");
+            check(d.TrySubmitQueuedFieldSelection(first,[pick.Target],set,out _,destinationZone:4)&&
                 d.PendingCardSelection==first&&d.Graveyard(owner).Count==4&&d.Monsters[owner,4] is null,
                 "Revival admission leaves request and card unchanged");
             q.Tick();gate.Release=false;q.Tick();q.Tick();

@@ -99,7 +99,11 @@ internal static class QueuedDeckSearchChecks
             int shuffled=0,drawn=0;
             d.DeckShuffled+=p=>{if(p==side)shuffled++;};
             d.HandTransferred+=_=>drawn++;
-            check(d.TryQueueDeckSearch(request,chosen.Target,out _),"Fusion Sage choose duplicate occurrence");
+            check(d.UsesQueuedHandSelection(request)&&!d.TrySubmitQueuedHandSelection(request with {},chosen.SourceIndex,out _)&&
+                !d.TrySubmitQueuedHandSelection(request,null,out _),"UI adapter rejects stale request and mandatory decline");
+            check(d.TrySubmitQueuedHandSelection(request,chosen.SourceIndex,out _)&&d.PendingCardSelection==request&&
+                d.HandFor(side).Count==0&&!d.TrySubmitQueuedHandSelection(request,chosen.SourceIndex,out _),
+                "UI adapter admits duplicate occurrence without mutation or repeated input");
             q.Tick();gate.Release=false;q.Tick();q.Tick();
             check(d.HandFor(side).Count==1&&shuffled==0&&q.IsBusy,"Gate before shuffle");
             gate.Release=true;Drain(q);
@@ -126,6 +130,27 @@ internal static class QueuedDeckSearchChecks
             Drain(q);
             check(d.PendingCardSelection is null&&d.Graveyard(0).Count==0&&d.DeckCount(0)==1,
                 "Failed source spend must not open a search");
+        }
+
+        foreach(int side in new[]{0,1})
+        {
+            var d=DemoDuel.FromPartialObservation(side,[Spell(1040)],Slots(),Slots(),8000,
+                side0Deck:side==0?[Spell(1003),Spell(1003)]:[Monster(24)],
+                side1Deck:side==1?[Spell(1003),Spell(1003)]:[Monster(24)]);
+            var q=d.CreatePrimitiveActionQueue();
+            check(d.TryQueueActivation(0,false,out _),"CPU selection setup");Drain(q);
+            var request=d.PendingCardSelection!;
+            var chosen=d.QueuedDeckSearchCandidates(request)[0];
+            var cpu=new CpuDuelController(side);
+            var step=cpu.Step(d,queueTurnActions:true);
+            check(step.Status==CpuStepStatus.Acted&&step.Action==CpuAction.Selection&&q.IsBusy&&
+                d.PendingCardSelection==request&&d.HandFor(side).Count==0,
+                "CPU admits search response without immediate movement");
+            Drain(q);
+            check(d.PendingCardSelection is null&&d.HandFor(side).Count==1&&
+                d.TryCaptureCardTarget(side,DuelZone.Hand,0,out var received)&&received.Occurrence==chosen.Target.Occurrence&&
+                q.Trace.Any(t=>t.Entry.Origin==ActionOrigin.Cpu&&t.Stage==ActionTraceStage.Executed),
+                "CPU answer is queued, exact occurrence and origin preserved");
         }
 
         var chain=DemoDuel.FromPartialObservation(0,[Spell(335)],Slots(Monster(47)),Slots(Monster(573)),8000,

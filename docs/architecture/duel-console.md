@@ -125,3 +125,7 @@ invocação, posição, recusa, alvos inválidos e duas ressurreições de Spear
 A declaração enfileirada de combate com efeitos segue limitada pelo piloto
 A05/A09; não se afirma que um roteiro de ataque já produza Mystic Tomato
 ou Nimble Momonga desde o início. Não altera o renderer.
+
+## Console retrátil em duelo ativo
+
+Apóstrofo/grave/F10 abre overlay deslizante no topo; Esc fecha antes de sair do duelo, histórico e scroll por teclado. A sessão live é distinta de labSession: não reseta estado, não ativa espelho de fase lab nem substitui CPU. Attach reaproveita a única fila e conserva sua autorização; quando ainda não existe fila, cria-a explicitamente com gate do App e autorização de edições lab. O App opt-in --queued-actions cria fila habilitada para o console local; a origem Console/Test ainda é obrigatória para spawn/move. O modo legado passa ao piloto enfileirado ao primeiro uso do console, sem voltar à execução paralela ao fechar. CPU/inputs novos suspensos durante overlay; gate e fases continuam. Leitura/decisão acessíveis durante animação; mutações aguardam disponibilidade. Sem claims de paridade ou suporte a todas as ações. Testes de identidade da fila, trace e autorização; smoke desktop pendente.

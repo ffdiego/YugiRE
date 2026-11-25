@@ -13,16 +13,8 @@ sealed class DatGraphics : IDisposable
     public const string AttackImpact = @"j\duel\effect\atk_eff.yga";
     public const string SetAuraBlue = @"j\duel\effect\eff_set_b.bmp";
     public const string SetAuraYellow = @"j\duel\effect\eff_set_y.bmp";
-    // Six original BMPs in the DAT. Native index order and side-color selection
-    // still require inspecting Set constructor 0044EFD0.
-    public static readonly string[] SetSprites =
-    [
-        SetAuraBlue, SetAuraYellow,
-        @"j\duel\effect\eff_star0_b.bmp",
-        @"j\duel\effect\eff_star1_b.bmp",
-        @"j\duel\effect\eff_star0_y.bmp",
-        @"j\duel\effect\eff_star1_y.bmp"
-    ];
+    // Native manifest order, confirmed in SQLite v3.
+    public static readonly string[] SetSprites = NativePlacementAssets.SetBank();
     public const string DuelDetailBackground = @"j\duel\detail\detail.bmp";
     public const string DuelDetailManifest = @"j\duel\detail\detail.txt";
     public const string DuelDetailLine = @"j\duel\detail\line.bmp";
@@ -232,6 +224,7 @@ sealed class DatGraphics : IDisposable
             name.Equals(AttackSwordPartial, StringComparison.OrdinalIgnoreCase) ||
             NativeExclusionResources.IsParticleBitmap(name) || // diagnostic keying
             name.StartsWith(NativeDisabledChainResources.Prefix, StringComparison.OrdinalIgnoreCase) || // diagnostic green key for V23 BMPs
+            NativeCoinResources.IsCoinFaceBitmap(name) || // diagnostic green key; native compositor pending
             NativeDiceResources.IsDiceBitmap(name) || // diagnostic green-key path; native blend pending
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
@@ -256,7 +249,7 @@ sealed class DatGraphics : IDisposable
             .Concat(archive!.Entries.Where(e => e.Name.StartsWith(@"card\", StringComparison.OrdinalIgnoreCase) && e.Name.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase)).Select(e => e.Name));
         names = names.Concat(PhaseBannersBlue).Concat(PhaseBannersRed).Concat(BattleBannersBlue).Concat(BattleBannersRed)
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
-            .Concat(SetSprites).Concat(LifeSprites).Concat(LifeFloatingFonts)
+            .Concat(SetSprites).Append(NativePlacementAssets.Rainbow).Concat(LifeSprites).Concat(LifeFloatingFonts)
             .Concat(FieldAttributeFonts).Concat(ShuffleSprites)
             .Append(DuelDetailBackground).Append(DuelDetailLine)
             .Append(DuelDetailScrollbar).Append(DuelStartEnglish)
