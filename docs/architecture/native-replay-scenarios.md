@@ -128,7 +128,7 @@ validar em captura nativa equivalente. Não há novo cue gráfico; o
 renderer lê o estado revelado, e o gate é testado sinteticamente.
 O contrato A09 de combate face-up e suas capturas permanece independente.
 
-Próximo estágio: um FLIP real sem seleção de campo (Skelengel é candidato).
+Próximo estágio previsto nesta primeira fatia: um FLIP real sem seleção de campo (Skelengel, entregue na seção seguinte).
 A ordem do legado para um defensor oculto é revelar → calcular e aplicar
 dano → FLIP/decisões → remover combatentes marcados ainda presentes.
 Não reutilizar FinishManualPosition, que emite janelas de Flip Summon.
@@ -138,3 +138,36 @@ Precisamos tratar finalização após vitória (inclusive Exodia por compra)
 e separar dano de remoção antes de expandir para FLIPs com alvo e
 recrutadores. Não chamar FinishDeferredBattle dentro de um executor
 enfileirado: ele remove diretamente pelo fluxo legado.
+
+## A06 — Skelengel P118 durante o Damage Step
+
+Ampliação restrita: defensor Skelengel (resource 539), em defesa oculta,
+atacante dos IDs 24/1351 e nenhum outro cartão em campo. O SQLite
+cumulativo v2 confirma identidade 539/internal 440/class 17, perfil P118,
+primary 005887C0 e target_preparation 00593CA0. Os dois endereços não
+constam no índice de funções/decompilações desse snapshot; as linhas de
+callback não demonstram a ordem dinâmica. A política de compra opcional
+e a cronologia seguem o sandbox legado; sem novos opcodes presumidos.
+
+Depois de revelar o defensor sem Flip Summon, ResolveRevealedBattleCommand
+calcula ATK x DEF e reserva a eventual destruição sem retirar a carta.
+Se DEF > ATK, DamageCommand conclui seu gate antes do novo
+OpenBattleFlipDrawCommand. Ele reaproveita PendingEffectDecision e
+RecordFlipDrawDecisionCommand existentes, com dono do defensor.
+Não abre decisão se o deck está vazio ou o dano encerrou o duelo.
+A continuação agenda FinishBattleFlipCommand só após a decisão e eventual
+DrawCommand concluírem seus gates; finaliza a reserva e agenda os
+snapshots e a chegada ao GY. Se a compra completar Exodia, apenas a
+remoção reservada de Skelengel pode prosseguir após a vitória.
+O status IsMarkedForBattleDestruction permanece verdadeiro durante
+a escolha e a compra quando ATK > DEF; operação de FLIP não conta como
+Flip Summon. Não chama FinishDeferredBattle nem TriggerFlip legado.
+
+Testes: ATK menor/igual/maior que DEF, ambos lados, aceitação/recusa,
+deck vazio, dano letal, Exodia e identidade de compra/defensor, decisão
+duplicada/ID inválido, bloqueio de inputs e trace idêntico com gate imediato
+ou atrasado. CI 45515196933 (49.931 checks C#; Python/Node verdes).
+Sem generalizar para outros FLIPs, cartas extras, armadilhas ou efeitos
+de chegada ao cemitério. OpenBattleFlipDrawCommand e FinishBattleFlipCommand
+permanecem unmapped. Não introduz tempo nem novo cue gráfico. A aceitação
+do Damage Step nativo ainda depende de uma captura equivalente.
