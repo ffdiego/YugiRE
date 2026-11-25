@@ -111,9 +111,12 @@ static partial class Game
             // Only one scheduler passage per frame; the Core never reads time.
             if (labSession is null && !ConsoleCapturesInput && queue.PendingDecision is { } request)
             {
-                var answer = EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
-                    effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip
-                        ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline);
+                // Ask is a human presentation preference, not a CPU prompt.
+                EffectDecisionAnswer? answer = alphaCpu is { } cpu && request.Owner == cpu.Player
+                    ? CpuDuelController.DecideOptionalEffect(duel, request)
+                    : EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
+                        effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip
+                            ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline);
                 if (answer is { } choice) queue.SubmitDecision(request.Id, choice);
             }
             queue.Tick();

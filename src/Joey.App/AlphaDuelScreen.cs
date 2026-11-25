@@ -333,7 +333,7 @@ static partial class Game
                     ? hiddenBeforeStep[1 - continued.AttackingPlayer, continued.TargetZone] : null);
         // Queued activations are presented once by AppActionPresentationGate.
         // The CPU step only admitted the command; its hand has not moved yet.
-        if (step.Action is CpuAction.Spell or CpuAction.Equip or CpuAction.Set or CpuAction.Summon &&
+        if (step.Action is CpuAction.Spell or CpuAction.Equip or CpuAction.Set or CpuAction.Summon or CpuAction.Position &&
             queuedDuel?.IsBusy == true) return;
         if (step.Card is not Card card) return;
         if (step.Action is CpuAction.Set or CpuAction.Summon or

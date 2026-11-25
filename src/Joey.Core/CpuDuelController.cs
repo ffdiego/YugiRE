@@ -37,6 +37,11 @@ public sealed class CpuDuelController
 
     private delegate bool Operation(out string message);
 
+    // Shared optional-effect policy, including decisions held inside ActionQueue.
+    public static EffectDecisionAnswer DecideOptionalEffect(DemoDuel duel, PendingEffectDecision request) =>
+        request.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(request.Owner) > 0
+            ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
+
     public CpuStep Step(DemoDuel duel) => Step(duel, queueTurnActions: false);
 
     public CpuStep Step(DemoDuel duel, bool queueTurnActions)
@@ -76,8 +81,7 @@ public sealed class CpuDuelController
 
         if (duel.PendingEffectDecision is { } decision)
         {
-            var answer = decision.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(decision.Owner) > 0
-                ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
+            var answer = DecideOptionalEffect(duel, decision);
             return Act(CpuAction.Decision, (out string m) => duel.ResolveEffectDecision(
                 decision.Id, answer, out m));
         }
@@ -253,7 +257,9 @@ public sealed class CpuDuelController
                     duel.MonsterFaceDown[Player, z] && !wantDefense && duel.AttackValue(Player, z) >= 1000)
                 {
                     int zone = z;
-                    return Act(CpuAction.Position, (out string m) => duel.ChangePosition(zone, out m), duel.Monsters[Player, zone], zone);
+                    return Act(CpuAction.Position, (out string m) => queueTurnActions
+                        ? duel.TryQueueChangePosition(zone, out m, ActionOrigin.Cpu)
+                        : duel.ChangePosition(zone, out m), duel.Monsters[Player, zone], zone);
                 }
             }
             int summonIndex = Enumerable.Range(0, duel.Hand.Count).Where(duel.CanSummonFromHand)

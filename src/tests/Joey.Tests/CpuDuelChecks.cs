@@ -170,6 +170,42 @@ internal static class CpuDuelChecks
                 "C12 CPU placement: expected board");
         }
 
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool optional in new[] { false, true })
+        {
+            var positionCard = optional ? Monster(FlipEffectRules.Skelengel, 100, 100) : strong;
+            var d = State(side, [], own: positionCard, deck: [Spell(999), Spell(998)]);
+            d.MonsterFaceDown[side,0] = d.DefensePosition[side,0] = true;
+            var queue = d.CreatePrimitiveActionQueue();
+            var controller = new CpuDuelController(side);
+            void DrainPosition()
+            {
+                for (int i = 0; i < 100 && queue.IsBusy; i++)
+                {
+                    if (queue.PendingDecision is { } request)
+                        queue.SubmitDecision(request.Id, CpuDuelController.DecideOptionalEffect(d, request));
+                    queue.Tick();
+                }
+                if (queue.IsBusy) throw new InvalidOperationException("CPU position queue did not drain.");
+            }
+            check(controller.Step(d, queueTurnActions: true).Action == CpuAction.Draw,
+                "C12 CPU position: turn draw");
+            DrainPosition();
+            check(controller.Step(d, queueTurnActions: true) is
+                { Status: CpuStepStatus.Acted, Action: CpuAction.Position, SourceZone: 0 } &&
+                d.MonsterFaceDown[side,0] && queue.IsBusy,
+                "C12 CPU position: admits without revealing");
+            var entry = queue.Trace.Last(x => x.Stage == ActionTraceStage.Admitted).Entry;
+            check(entry.Origin == ActionOrigin.Cpu && entry.Command is FlipCommand &&
+                d.DescribeActionPresentation(entry.Command) is { Kind: ActionPresentationKind.Flip },
+                "C12 CPU position: same FlipCommand and presentation");
+            DrainPosition();
+            check(!d.MonsterFaceDown[side,0] && !d.DefensePosition[side,0] &&
+                !d.CanChangePosition(0) && d.Hand.Count == (optional ? 2 : 1) &&
+                queue.PendingDecision is null && d.PendingEffectDecision is null,
+                "C12 CPU position: flip and optional draw finish without human prompt");
+        }
+
         var summonTrap = State(0, [strong]);
         var destroyed = new List<DemoMonsterDestruction>();
         summonTrap.MonsterDestroyed += destroyed.Add;
