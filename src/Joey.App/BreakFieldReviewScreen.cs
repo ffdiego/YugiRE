@@ -22,7 +22,7 @@ static partial class Game
             !ushort.TryParse(fields[1],NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture,out ushort descriptor))
             throw new InvalidDataException("Break review expects --review-break=ID,HEX; use ID 0 for hidden cards.");
         try { breakReviewTarget=new(descriptor); }
-        catch(ArgumentException ex) { throw new InvalidDataException("Break review currently supports field region+slot 0..10 only.",ex); }
+        catch(ArgumentException ex) { throw new InvalidDataException("Break review currently supports field region+slot 0..10 or monster region with snapshot slot FF.",ex); }
         if(Option(args,"--review-perspective=") is string perspective &&
             (!int.TryParse(perspective,out breakReviewPerspective) || breakReviewPerspective is <0 or >1))
             throw new InvalidDataException("Perspective must be 0 or 1.");
@@ -93,6 +93,7 @@ static partial class Game
             schemaVersion=1,routine="00450FD0",descriptor=breakReviewTarget.Descriptor,
             perspective=breakReviewPerspective,center=breakReviewTarget.Center(breakReviewPerspective),
             counter=breakReviewTimeline.Counter,active=breakReviewTimeline.Active,
+            combatSnapshot=breakReviewTarget.IsCombatSnapshot,fieldZone=breakReviewTarget.FieldZone,
             blocksRelease=breakReviewTimeline.BlocksRelease,
             cardResource=breakReviewCardPath,shineResource=breakReviewShinePath,
             frame=CurrentBreakFieldReview(),cosineSource=effectCosineSource,
