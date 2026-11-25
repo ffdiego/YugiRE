@@ -203,3 +203,34 @@ Man-Eater Bug ou alvos que retornem à Fusion Deck. Sem alteração de UI
 normal ou regra de CARDS. Testes usam o console e comparam ATK >, =, <
 DEF, zero/um/dois retornos, dono e identidade, recusa de alvo marcado,
 tentativa de resposta legada e gate imediato/atrasado.
+
+## A06 — Man-Eater Bug P072 durante o Damage Step
+
+O SQLite cumulativo v2 (quick_check ok) confirma resource 500, internal
+753, class 10, perfil P072/row 91. Candidate 0057A930 está ausente dos
+índices de funções; primary 00585C80 possui decompilação em
+`decompilations` e target_preparation 005944D0 em
+`visual_evidence_functions`. O primary testa bit 4 do byte em +4,
+chama 00583470 para resolver alvo, testa os 12 bits baixos do registro
+de campo e encaminha a 00577880 (com ramo especial para 0x3ff/0x4bb).
+A preparação bifurca por flags de 00A54E5C para 00593440 ou 005B3FA0
+com resource 500. Isso sustenta o vínculo de alvo/resolução; não
+demonstra a cronologia dinâmica do Damage Step ou a causa da remoção.
+
+A extensão compartilha OpenBattleFlipTargetsCommand com Penguin, mas
+exige exatamente um alvo (DestroyMonster). O defensor marcado continua
+elegível para destruição por efeito, ao contrário de retorno à mão.
+A reserva registra o destino esperado de cada combatente selecionado
+(Hand ou Graveyard). O finalizador verifica ocorrência exata no destino
+e slot vazio; se Man-Eater destruiu a si mesmo e estava marcado, cancela
+somente a remoção por batalha dessa ocorrência já enviada ao GY. Se
+destruiu o atacante, o defensor marcado ainda segue pelos comandos
+SnapshotBattleRemoval e FinishBattleRemoval. Não duplica evento nem
+usa FinishDeferredBattle. O DestroyCommand chama RemoveMonster sem
+destroyedByBattle; não generalizar para recrutadores ainda não admitidos.
+
+Testes espelhados, ATK maior/igual/menor que DEF, self/atacante, escolha
+obrigatória, identidade, gates, ordem e contagem de comandos/eventos.
+Compara legado não terminal; mantém política de não abrir prompt após
+dano letal. Campo isolado, sem outros monstros/armadilhas/equipamentos.
+Sem novo opcode, alteração do renderer ou confirmação dinâmica nativa.
