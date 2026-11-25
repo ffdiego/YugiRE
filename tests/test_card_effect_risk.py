@@ -6,7 +6,8 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from card_effect_risk import SLOTS, adjust_risk, build, callback_slots
+from card_effect_risk import (SLOTS, adjust_risk, build, callback_slots,
+                              read_static_index, static_index)
 from card_playability import CATALOG, ROOT, MANIFEST, read_manifest, read_subtypes
 
 
@@ -85,6 +86,49 @@ class RiskTests(unittest.TestCase):
         broken['profiles'][1]['callbacks'][0] = '0x0'
         with self.assertRaises(ValueError):
             callback_slots(broken)
+
+
+    def test_static_study_join_is_separate_from_playability(self):
+        cat, ref = fixture()
+        evidence = static_index([('study.jsonl', [
+            dict(kind='family', family='stats-por-contagem', pending='some limitation'),
+            dict(kind='card', family='stats-por-contagem', resource_id=13,
+                 status='Mapeado', pending_card=None),
+            dict(kind='family', family='vitoria-central-exodia', pending=None),
+            dict(kind='card', family='vitoria-central-exodia', resource_id=10,
+                 status='Mapeado', pending_card=None),
+        ])])
+        result = build(cat, ref, {}, {13: 'Effect', 14: 'Normal'}, static_evidence=evidence)
+        rows = {row['resourceId']: row for row in result['cards']}
+        self.assertEqual(rows[13]['status'], 'Pending')
+        self.assertEqual(rows[13]['initialRisk'], 'indeterminate')
+        self.assertEqual(rows[13]['adjustedRisk'], 'medium')
+        self.assertTrue(rows[13]['needsReview'])
+        self.assertEqual(rows[10]['adjustedRisk'], 'high')
+        self.assertEqual(rows[10]['staticEvidence']['status'], 'Mapeado')
+        self.assertEqual(result['unfinishedStaticCounts']['Mapeado'], 2)
+        self.assertNotIn('pending_card', rows[13]['staticEvidence'])
+
+    def test_static_index_rejects_duplicate_id(self):
+        entries = [
+            dict(kind='family', family='test'),
+            dict(kind='card', family='test', resource_id=10, status='Mapeado'),
+            dict(kind='card', family='test', resource_id=10, status='Parcial'),
+        ]
+        with self.assertRaises(ValueError):
+            static_index([('study.jsonl', entries)])
+
+    def test_real_static_inventory_and_zero_slot_pending_ids(self):
+        static = read_static_index()
+        self.assertEqual(len(static), 998)
+        cat = json.loads(CATALOG.read_text(encoding='utf-8'))
+        ref = json.loads((ROOT / 'docs/cards/pack-index.json').read_text(encoding='utf-8'))
+        manifest = read_manifest(MANIFEST)
+        result = build(cat, ref, {rid: row['status'] for rid, row in manifest.items()},
+                       read_subtypes(), static_evidence=static)
+        for row in result['cards']:
+            if row['status'] in ('Pending', 'Partial') and row['slotCount'] in (0, None):
+                self.assertIsNotNone(row['staticEvidence'])
 
     def test_real_versioned_inventory_reproduces_slot_distribution(self):
         cat = json.loads(CATALOG.read_text(encoding='utf-8'))

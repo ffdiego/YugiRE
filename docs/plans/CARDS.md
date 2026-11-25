@@ -192,3 +192,27 @@ Sem Verified nesta base. Dos 48 Pending sem registro, 31 pertencem ao pack Joey 
 `python scripts/card_effect_risk.py` cruza os metadados públicos sem DAT/EXE e escreve somente IDs, slots, risco inicial, status atual e motivos em scratch. `python scripts/card_effect_risk.py --taxonomy scratch/card-taxonomy.json --pack joey` usa C01 real (valida fingerprints/referência) e eleva risco por famílias detectadas. Não baixa risco alto automaticamente e distingue ausência de registro, zero slots e Normal. O campo `reviewResourceIds` orienta a revisão, não prescreve extração nativa. O C01 é triagem lexical: vitória especial, timing contínuo, custos e efeitos específicos ainda exigem leitura semântica do texto local; nenhum resultado automático serve como ruling. O script não altera o manifesto, o catálogo nem as badges. Sem C01 local, a classificação semântica permanece explicitamente não avaliada. Testes offline em `tests/test_card_effect_risk.py` cobrem joins, fingerprints, risco, registros inválidos e a distribuição real. CI pendente na criação do PR.
 
 Próximo passo: rodar com o C01 local já produzido, agrupar candidatos por família e revisar os casos ambíguos usando SQLite. Não repetir extração se scratch/card-taxonomy.json já existir; não implementar novas cartas enquanto C12.1 não fechar.
+
+### C18.2 — Reutilizar a campanha estática antes de pedir Ghidra
+
+Cruzamento adicional sobre `66f1fe1`: 15 JSONL, 998 IDs sem duplicatas, 133 famílias. Entre as 331 entradas Pending/Partial do manifesto, 183 têm registro Mapeado, 127 Parcial, 1 Pendente e 20 não aparecem nos JSONL (ver estudos anteriores em [reconciliação](../research/card-static-sweep/reconciliacao.md); ausência no JSONL não é ausência de evidência). Status estático nunca promove playability.
+
+As 60 entradas inacabadas sem slots úteis já estão nos JSONL: 48 sem registro (33 Mapeado, 15 Parcial) e 12 com slots nulos (9 Mapeado, 2 Parcial, 1 Pendente). O script agora cruza os 15 estudos e inclui fonte/família/status/lacunas por ID, contagem de pendências por família e pisos semânticos conservadores para as famílias auditadas sem slots. Não exporta descrições nem duplica os estudos. C18 continua Parcial até a execução do C01 real e a revisão dirigida dos riscos por família.
+
+**Candidatos para depois de C12.1, não executar ainda:**
+- Atributos derivados: Machine King, Shadow Ghoul, Lava/Swamp Battleguard, Harpie's Pet Dragon, Buster Blader, Muka Muka, Flash Assailant, Dark Magician Girl e Wodan (406/367/553/11/385/808/515/1111/759/234). Os dez efeitos estão Mapeado; reutilizar recálculo, não comandos que alterem ATK base. Nuvia, Boar Soldier, Pumpking e Maha Vailo têm restrições/lacunas adicionais (lotes 10/11); não promover por semelhança.
+- Standby LP: Spirit of the Breeze, Dancing Fairy, Cure Mermaid, Marie the Fallen One (1437/1438/1441/1446), todos Mapeado. Depende da passagem de fase A07 e de emissão por ocorrência.
+- Retorno/posição de fase: Sinister Serpent, The Wicked Worm Beast, Dark Zebra (474/22/1113), Mapeado; requer Standby/End e escolha/gate aplicável.
+- Combate, controle, proteção, invocação restrita e Toons dependem dos contratos de ACTIONS; não antecipar com bypass. The Unfriendly Amazon (1431) continua Pendente estático; usar DAT/SQLite primeiro e coleta dirigida apenas se material.
+- Exodia (20) é Pending no manifesto nesta base apesar de regra central Mapeado. Conferir escopo realmente acionável e testes (inclusive fila e término) antes de qualquer promoção; não contar esta revisão como implementação.
+
+### C12.1 — Auditoria de gate sobre PR #150
+
+Inspeção do head `bae311a` do draft #150, sem editar a branch reservada. CI do head passou; GitHub recusou merge enquanto draft. O título não significa gate fechado. Evidências de código:
+- `src/Joey.App/Program.cs:41`: fila ainda opt-in (`args.Contains("--queued-actions")`).
+- `src/Joey.App/DuelScreen.cs:199–216, 418–425, 553–559`: ativação fixa e seletiva já têm produtores específicos, mas fallback `Play`/`ActivateSetSpell` e `BeginFusionGate` continuam legados. Não remover fallback sem paridade das famílias jogáveis.
+- `src/Joey.Core/CpuDuelController.cs:203–232, 317–330`: caminho de Fusion Gate ativo/fusão e ataques ainda chamam métodos legados nesta branch; coordenar #137/#140/A09 antes de alterar.
+- `src/Joey.Core/DemoActionQueue.cs:92–139`: dispatcher da fila cobre compra, LP, busca, wipes, persistentes e Fissure com mínimo único; empate de Fissure exige escolha explícita. Conferir integração UI/CPU dos seletores e outras ativações existentes, não assumir que executor implica produtor.
+- `src/Joey.Core/Demo.cs`: 2616 linhas no head #150; `ActionsBlocked` ainda inclui `LegacyActionsBlocked`. Nenhuma linha removida nesta auditoria/triagem, nem mudança de comportamento.
+
+Próximo passo C12: responsável do #150 deve concluir/revisar a fatia, reconciliar com a main e PRs ACTIONS; validar defaults, disponibilidade e escolhas, ordens de comandos e rejeições sem fallback mutante em regressões UI/CPU. Não marcar item 1 fechado nem iniciar novas cartas nesta rodada.

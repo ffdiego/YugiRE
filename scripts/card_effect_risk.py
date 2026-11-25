@@ -20,6 +20,23 @@ RISK = ('low', 'medium', 'high')
 FINGERPRINTS = {'cardIdSha256': 'card_id_sha256', 'namesSha256': 'names_sha256',
                 'propertiesSha256': 'properties_sha256'}
 UNFINISHED = ('Pending', 'Partial')
+STATIC_DIR = ROOT / 'docs/research/card-static-sweep'
+STATIC_STATUSES = ('Mapeado', 'Parcial', 'Pendente')
+
+# Advisory floors for the audited zero/absent-slot families.
+STATIC_MEDIUM = {
+    'stats-por-contagem', 'stats-proprios-sem-callback',
+    'retorno-e-posicao-de-fase', 'lp-na-standby',
+    'uso-por-batalha', 'modificador-global-de-combate',
+}
+STATIC_HIGH = {
+    'lp-por-evento-global', 'custo-e-risco-de-ataque',
+    'destinos-de-invocacao-restrita', 'invocacao-por-condicao',
+    'regras-de-zona-e-visibilidade', 'protecao-de-umi',
+    'condicoes-especificas-de-batalha', 'equipar-destruido',
+    'fronteiras-do-dano-de-batalha', 'vinculos-e-protecao-globais',
+    'marcadores-apos-ataque', 'toons-classicos', 'vitoria-central-exodia',
+}
 
 
 def callback_slots(catalog):
@@ -53,6 +70,55 @@ def callback_slots(catalog):
     if seen_rows != set(assigned) or len(result) != catalog['table']['count']:
         raise ValueError('Callback row totals differ')
     return result
+
+
+def static_index(sources):
+    """Index existing studies without copying descriptions or conclusions."""
+    indexed = {}
+    for source, records in sources:
+        families = {}
+        for entry in records:
+            family = entry['family']
+            if entry['kind'] == 'family':
+                if family in families:
+                    raise ValueError('Duplicate static family in a study')
+                families[family] = bool(entry.get('pending'))
+            elif entry['kind'] == 'card':
+                rid, status = entry['resource_id'], entry['status']
+                if (type(rid) is not int or not 0 <= rid < 65535 or
+                        rid in indexed or family not in families or
+                        status not in STATIC_STATUSES):
+                    raise ValueError('Invalid or duplicate static card identity')
+                indexed[rid] = dict(source=source, family=family, status=status,
+                                    familyGap=families[family],
+                                    cardGap=bool(entry.get('pending_card')))
+            else:
+                raise ValueError('Unsupported static record kind')
+    return indexed
+
+
+def read_static_index(directory=STATIC_DIR):
+    paths = sorted(directory.glob('[0-9][0-9]-*.jsonl'))
+    if not paths:
+        raise ValueError('No static evidence studies found')
+    return static_index((path.relative_to(ROOT).as_posix(),
+                         (json.loads(line) for line in path.read_text(encoding='utf-8').splitlines() if line.strip()))
+                        for path in paths)
+
+
+def apply_static_floor(adjusted, reasons, review, evidence, count):
+    if evidence is None or adjusted == 'not-applicable':
+        return adjusted, reasons, review
+    family = evidence['family']
+    if count in (None, 0):
+        floor = 'high' if family in STATIC_HIGH else 'medium' if family in STATIC_MEDIUM else None
+        if floor:
+            adjusted = floor if adjusted == 'indeterminate' else RISK[max(RISK.index(adjusted), RISK.index(floor))]
+            reasons = [*reasons, 'static-family-risk-floor']
+    if evidence['status'] != 'Mapeado' or evidence['cardGap'] or evidence['familyGap']:
+        review = True
+        reasons = [*reasons, 'existing-static-evidence-has-gaps']
+    return adjusted, reasons, review
 
 
 def initial_risk(count):
@@ -99,7 +165,7 @@ def adjust_risk(initial, kind, route, families):
                                route == 'review' or not families)
 
 
-def build(catalog, reference, statuses, subtypes, taxonomy=None, mask=7):
+def build(catalog, reference, statuses, subtypes, taxonomy=None, mask=7, static_evidence=None):
     callbacks = callback_slots(catalog)
     if (reference['schemaVersion'] != 1 or
             reference['fields'] != ['resourceId', 'packMask', 'kindCode']):
@@ -116,6 +182,7 @@ def build(catalog, reference, statuses, subtypes, taxonomy=None, mask=7):
             subtypes.get(rid, 'EffectOrUnknown') if reference['kinds'][str(code)] == 'Monster'
             else reference['kinds'][str(code)]), families=[], route=None)
                   for rid, pack, code in reference['cards']]
+    static_evidence = {} if static_evidence is None else static_evidence
     rows = []
     for entry in source:
         if not entry['packMask'] & mask:
@@ -130,10 +197,13 @@ def build(catalog, reference, statuses, subtypes, taxonomy=None, mask=7):
         route = entry['route']
         families = effect_families(route, entry['families'])
         adjusted, reasons, review = adjust_risk(initial, entry['kind'], route, families)
+        evidence = static_evidence.get(rid)
+        adjusted, reasons, review = apply_static_floor(adjusted, reasons, review, evidence, count)
         row = dict(resourceId=rid, packMask=entry['packMask'], kind=entry['kind'],
                    status=status, callbackProfile=profile, callbackSlots=slots,
                    slotCount=count, initialRisk=initial, adjustedRisk=adjusted,
-                   families=families, route=route, reasons=reasons, needsReview=review)
+                   families=families, route=route, reasons=reasons, needsReview=review,
+                   staticEvidence=evidence)
         if 'internalIndex' in entry:
             row['internalIndex'] = entry['internalIndex']
         rows.append(row)
@@ -143,11 +213,17 @@ def build(catalog, reference, statuses, subtypes, taxonomy=None, mask=7):
     counts = defaultdict(Counter)
     review_ids = []
     backlog = defaultdict(Counter)
+    static_counts = Counter()
+    static_families = defaultdict(Counter)
     for row in rows:
         key = 'absent' if row['slotCount'] is None else str(row['slotCount'])
         counts[key][row['status']] += 1
         if row['status'] in UNFINISHED and row['adjustedRisk'] != 'not-applicable':
             backlog[row['adjustedRisk']][row['status']] += 1
+            evidence = row['staticEvidence']
+            static_counts[evidence['status'] if evidence else 'not-indexed'] += 1
+            if evidence:
+                static_families[evidence['source'] + ':' + evidence['family']][row['status']] += 1
             if row['needsReview']:
                 review_ids.append(row['resourceId'])
     return dict(schemaVersion=1, catalogSha256=catalog['target_sha256'],
@@ -155,6 +231,8 @@ def build(catalog, reference, statuses, subtypes, taxonomy=None, mask=7):
                 packMask=mask, catalogSlotCounts=dict(sorted(raw_counts.items())),
                 packSlotStatusCounts={k: dict(v) for k, v in sorted(counts.items())},
                 unfinishedByRisk={k: dict(v) for k, v in sorted(backlog.items())},
+                unfinishedStaticCounts=dict(static_counts),
+                unfinishedStaticFamilies={k: dict(v) for k, v in sorted(static_families.items())},
                 reviewResourceIds=sorted(set(review_ids)), cards=rows)
 
 
@@ -171,7 +249,7 @@ def main():
         result = build(read(CATALOG), read(ROOT / 'docs/cards/pack-index.json'),
                        {rid: item['status'] for rid, item in manifest.items()},
                        read_subtypes(), read(args.taxonomy) if args.taxonomy else None,
-                       SCOPES[args.pack])
+                       SCOPES[args.pack], read_static_index())
     except (OSError, ValueError, KeyError, TypeError):
         p.error('Cannot read compatible callback, pack, manifest and optional C01 metadata')
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -179,9 +257,10 @@ def main():
     print('Callback records by filled slots:', result['catalogSlotCounts'])
     print('Pack entries by slots and current status:', result['packSlotStatusCounts'])
     print('Unfinished by advisory risk:', result['unfinishedByRisk'])
+    print('Unfinished by existing static study:', result['unfinishedStaticCounts'])
     print('Unfinished resource IDs for review:', len(result['reviewResourceIds']))
     if not args.taxonomy:
-        print('No C01 taxonomy: semantic risk unassessed; use local --taxonomy to enrich.')
+        print('No C01 taxonomy: C01 semantics unavailable; static family floors are advisory; use --taxonomy to enrich.')
 
 
 if __name__ == '__main__':
