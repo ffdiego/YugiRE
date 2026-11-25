@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed partial class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT] | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
+    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | set INDEX [SLOT [tribute...]] | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -263,7 +263,7 @@ public sealed partial class DuelConsoleSession
 
     private DuelConsoleResult ExecuteActivation(string[] words)
     {
-        const string usage = "Expected activate hand|set INDEX [SIDE field|SIDE spell SLOT].";
+        const string usage = "Expected activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT].";
         if (words.Length < 3 || words[1] is not ("hand" or "set") || !Index(words[2], out int index))
             return new(false, usage);
 
@@ -282,15 +282,18 @@ public sealed partial class DuelConsoleSession
         {
             case "field" when words.Length == 5: targetZone = DuelZone.FieldSpell; break;
             case "spell" when words.Length == 6 && Slot(words[5], out slot): targetZone = DuelZone.SpellTrap; break;
+            case "monster" when words.Length == 6 && Slot(words[5], out slot): targetZone = DuelZone.Monster; break;
             default: return new(false, usage);
         }
 
         DuelZone sourceZone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
         if (!duel.TryCaptureCardTarget(duel.ActivePlayer, sourceZone, index, out var source) ||
             !duel.TryCaptureCardTarget(side, targetZone, slot, out var target))
-            return new(false, "Choose a tracked source and a tracked Spell/Trap target.");
+            return new(false, "Choose a tracked source and target.");
 
-        bool enqueued = duel.TryQueueTargetedSpellTrap(source, target, out string message, ActionOrigin.Console);
+        bool enqueued = targetZone == DuelZone.Monster
+            ? duel.TryQueueTemporaryStatModifier(source, target, out string message, ActionOrigin.Console)
+            : duel.TryQueueTargetedSpellTrap(source, target, out message, ActionOrigin.Console);
         return new(enqueued, message, enqueued);
     }
 

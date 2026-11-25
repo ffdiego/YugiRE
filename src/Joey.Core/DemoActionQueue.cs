@@ -430,6 +430,10 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case EquipCommand equip:
                     return duel.ApplyQueuedEquipment(equip);
+                case ActivateTemporaryStatCommand temporaryStat:
+                    return ActivateTemporaryStat(temporaryStat, followups);
+                case ResolveTemporaryStatCommand temporaryStatResult:
+                    return ResolveTemporaryStat(temporaryStatResult);
                 case ActivateDrawSpellCommand drawSpell:
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateDiscardMonsterSpellCommand paidSpellActivation:
@@ -473,7 +477,7 @@ public sealed partial class DemoDuel
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Hand:
                     return ObserveFixedSpellSpend(send.Target, SendHandToGraveyard(send.Target, discard: false));
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.SpellTrap:
-                    return ObserveFixedSpellSpend(send.Target, SendSetFixedSpellToGraveyard(send.Target));
+                    return ObserveFixedSpellSpend(send.Target, SpendSetActivation(send.Target));
                 case PrepareGraveyardBanishSummonCommand prepareBanish:
                     return PrepareGraveyardBanishSummon(prepareBanish, followups);
                 case BanishCommand banish:
@@ -507,6 +511,8 @@ public sealed partial class DemoDuel
         private CommandResult ObserveFixedSpellSpend(CardTarget target, CommandResult result)
         {
             if (ritualSummon?.Spell == target) ritualSpellSpent = result.Outcome == CommandOutcome.Applied;
+            if (temporaryStatActivation?.Source == target)
+                temporaryStatSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
@@ -659,17 +665,20 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult SendSetFixedSpellToGraveyard(CardTarget target)
+        private CommandResult SpendSetActivation(CardTarget target)
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
-            if (card.ClassCode != 22 || !(LifePointSpellRules.SupportsQueued(card.Id) || DrawSpellRules.Effect(card) is not null ||
-                MonsterWipeRules.SupportsQueued(card.Id) || DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
+            bool fixedSpell = card.ClassCode == 22 && (LifePointSpellRules.SupportsQueued(card.Id) ||
+                DrawSpellRules.Effect(card) is not null || MonsterWipeRules.SupportsQueued(card.Id) ||
+                DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
                 SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) ||
-                ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card)) ||
-                !duel.SpellFaceDown[target.Side, slot] ||
+                ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
+            bool temporaryModifier = temporaryStatActivation?.Source == target &&
+                TemporaryStatRules.For(card.Id)?.ClassCode == card.ClassCode;
+            if (!(fixedSpell || temporaryModifier) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
-                return new(CommandOutcome.Rejected, "Only unlinked set fixed LP/draw/wipe spells are migrated here.");
+                return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
             duel.graves[target.Side].Add(card);
             return new(CommandOutcome.Applied);
