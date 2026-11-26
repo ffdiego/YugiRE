@@ -36,12 +36,12 @@ public sealed partial class DemoDuel
             return false;
         // Fail closed: do not silently bypass response windows, field auras,
         // linked equipment or alternate target selection.
-        bool admitAlliedNormals = HasQueuedDirectResponse(side);
+        bool admitAlliedNormals = HasQueuedAttackResponseTrap(side);
         for(int p=0;p<2;p++)
         {
             if(FieldSpells[p] is not null) return false;
             for(int z=0;z<5;z++)
-                if(Spells[p,z] is not null && (p == side || !IsQueuedDirectResponseTrap(p,z) ||
+                if(Spells[p,z] is not null && (p == side || !IsQueuedAttackResponseTrap(p,z) ||
                         !TryCaptureCardTarget(p, DuelZone.SpellTrap, z, out _)) ||
                     (p!=side || z!=slot) && Monsters[p,z] is { } other &&
                         (p != side || !admitAlliedNormals || !IsPlainBattlePilot(other)))
@@ -59,9 +59,10 @@ public sealed partial class DemoDuel
             !TryPlanQueuedDirectAttack(attack.Attacker,out int slot,out var card,out int damage))
             return new(CommandOutcome.Rejected,"Direct attack no longer satisfies pilot restrictions.");
         attacked[attack.Side,slot]=true;
-        if (HasQueuedDirectResponse(attack.Side))
+        if (HasQueuedAttackResponseTrap(attack.Side))
         {
-            followups.Enqueue(new OpenDirectAttackResponseCommand(attack.Side, attack.Attacker));
+            followups.Enqueue(new OpenAttackResponseCommand(attack.Side, attack.Attacker, null,
+                primitiveActionQueue?.Active?.Origin ?? ActionOrigin.Effect));
             // This response window has no archived native opcode projection.
             return new(CommandOutcome.Applied, "Direct attack declared; response follows.");
         }

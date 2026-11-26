@@ -99,8 +99,8 @@ internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source
     CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
 internal sealed record TributeCommand(int Side, CardTarget Target) : DuelCommand(Side);
 internal sealed record FinishNormalPlacementCommand(int Side, CardTarget Target, bool FaceDown) : DuelCommand(Side);
-internal sealed record OpenDirectAttackResponseCommand(int Side, CardTarget Attacker) : DuelCommand(Side);
-internal sealed record ResolveDirectAttackResponseCommand(int Side, DemoAttackResponse Request, CardTarget? Source) : DuelCommand(Side);
+internal sealed record OpenAttackResponseCommand(int Side, CardTarget Attacker, CardTarget? Defender, ActionOrigin DeclarationOrigin) : DuelCommand(Side);
+internal sealed record ResolveAttackResponseCommand(int Side, DemoAttackResponse Request, CardTarget? Source) : DuelCommand(Side);
 internal sealed record ResolveSpentAttackTrapCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ResolveSummonResponseCommand(int Side, DemoSummonResponse Request, CardTarget? Source) : DuelCommand(Side);
 internal sealed record ResolvePositionCommand(int Side, CardTarget Target, bool WasFaceDown, bool WasInDefense) : DuelCommand(Side);
@@ -116,10 +116,12 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
-            case OpenDirectAttackResponseCommand response:
+            case OpenAttackResponseCommand response:
                 Target(response.Attacker, response.Side, DuelZone.Monster);
+                if (response.Defender is { } attackDefender)
+                    Target(attackDefender, 1 - response.Side, DuelZone.Monster);
                 break;
-            case ResolveDirectAttackResponseCommand response when response.Request is not null:
+            case ResolveAttackResponseCommand response when response.Request is not null:
                 if (response.Source is { } attackTrap) Target(attackTrap, response.Side, DuelZone.SpellTrap);
                 break;
             case ResolveSpentAttackTrapCommand response:

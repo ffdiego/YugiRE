@@ -139,6 +139,16 @@ dois monstros em ataque, defesa aberta e oculta, gates e LP intactos.
 Ataques com alvo que abrem respostas e campos fora do piloto ficam no
 legado. Demo.cs 2614 → 2614, cobertura preservada.
 
+*Respostas a ataques com alvo (C12.1):* os combatentes já admitidos pelo
+piloto podem enfrentar as três armadilhas Set elegíveis. O produtor
+guarda ocorrência e posição do alvo no momento da declaração. O passe
+usa a origem da declaração para a espada e retoma a mesma resolução
+antes da revelação. Qualquer das três ativações cancela o ataque sem
+revelar o defensor. Os testes cobrem os dois lados, a espera no gate,
+passe, dano refletido, fim da fase e destruição. Não há novo
+mapeamento de opcode; contexto fora do piloto permanece legado.
+Demo.cs 2614 → 2614 e cobertura preservada.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

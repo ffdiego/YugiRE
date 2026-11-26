@@ -32,7 +32,8 @@ static partial class Game
             if (description is { Source.Zone: DuelZone.Hand } hand)
                 origin = hand.Source.Side == ViewPlayer ? HandBounds(hand.SourceIndex)
                     : CpuHandBounds(hand.SourceIndex, duel.HandFor(hand.Source.Side).Count);
-            active.Capture(command.Sequence, description is null ? null : new(description, origin, command.Origin));
+            active.Capture(command.Sequence, description is null ? null :
+                new(description, origin, description.DeclarationOrigin ?? command.Origin));
         }
 
         public bool CanComplete(QueuedDuelCommand command, CommandResult result)

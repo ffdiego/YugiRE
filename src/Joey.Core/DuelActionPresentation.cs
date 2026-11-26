@@ -5,7 +5,10 @@ public enum ActionPresentationKind { Activate, Summon, Set, Flip, DirectAttack, 
 /// <summary>Read-only projection of the command's source BEFORE mutation.
 /// Contains domain data, not graphics coordinates or duration.</summary>
 public sealed record DuelActionPresentation(ActionPresentationKind Kind, Card Card, CardTarget Source,
-    int SourceIndex, DuelZone Destination, int DestinationSlot);
+    int SourceIndex, DuelZone Destination, int DestinationSlot)
+{
+    public ActionOrigin? DeclarationOrigin { get; init; }
+}
 
 public sealed partial class DemoDuel
 {
@@ -17,14 +20,18 @@ public sealed partial class DemoDuel
         int slot;
         switch (command)
         {
-            case DeclareDirectAttackCommand attack when HasQueuedDirectResponse(attack.Side):
+            case DeclareDirectAttackCommand attack when HasQueuedAttackResponseTrap(attack.Side):
+            case DeclareTargetedAttackCommand attackWithTarget when HasQueuedAttackResponseTrap(attackWithTarget.Side):
                 return null;
-            case ResolveDirectAttackResponseCommand { Source: null } response:
-                if (queuedDirectResponse is not { } pending || !UsesQueuedAttackResponse(response.Request) ||
-                    !TryResolveCardTarget(pending.Attacker, out int directSlot, out var directAttacker)) return null;
-                return new(ActionPresentationKind.DirectAttack, directAttacker, pending.Attacker,
-                    directSlot, DuelZone.Monster, -1);
-            case ResolveDirectAttackResponseCommand { Source: { } attackTrap }:
+            case ResolveAttackResponseCommand { Source: null } response:
+                if (queuedAttackResponse is not { } pending || !UsesQueuedAttackResponse(response.Request) ||
+                    DescribeQueuedAttack(pending.Attacker, pending.Defender) is not { } continued) return null;
+                return new(continued.DirectAttack ? ActionPresentationKind.DirectAttack : ActionPresentationKind.TargetedAttack,
+                    continued.Attacker, pending.Attacker, continued.AttackerZone, DuelZone.Monster, continued.TargetZone)
+                {
+                    DeclarationOrigin = pending.DeclarationOrigin
+                };
+            case ResolveAttackResponseCommand { Source: { } attackTrap }:
                 target = attackTrap; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = -1; break;
             case DeclareDirectAttackCommand attack:

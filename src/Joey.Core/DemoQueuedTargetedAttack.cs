@@ -47,7 +47,7 @@ public sealed partial class DemoDuel
     }
 
     private bool TryPlanTargetedAttack(CardTarget attacker,CardTarget defender,
-        out BattleReservation a,out BattleReservation b)
+        out BattleReservation a,out BattleReservation b,bool declared = false)
     {
         a=null!; b=null!;
         int p=attacker.Side, e=defender.Side;
@@ -55,7 +55,7 @@ public sealed partial class DemoDuel
             GameOver || Phase!=DemoPhase.Battle || queuedBattleReveal is not null || queuedBattleRemoved.Any(x=>x is not null) ||
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
-            attacked[p,s] || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
+            attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
                 IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]))
             return false;
@@ -74,6 +74,18 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Rejected,"Targeted battle no longer satisfies pilot restrictions.");
 
         attacked[a.Target.Side,a.Slot]=true;
+        if (HasQueuedAttackResponseTrap(command.Side))
+        {
+            queue.Enqueue(new OpenAttackResponseCommand(command.Side, command.Attacker, command.Defender,
+                primitiveActionQueue?.Active?.Origin ?? ActionOrigin.Effect));
+            return new(CommandOutcome.Applied, "Targeted attack declared; response follows.");
+        }
+        EnqueueTargetedBattleResolution(a, b, queue);
+        return new(CommandOutcome.Applied) { TargetedAttack=new(a.Target,b.Target,a.Slot,b.Slot) };
+    }
+
+    private void EnqueueTargetedBattleResolution(BattleReservation a, BattleReservation b, IActionBatchSink queue)
+    {
         if (MonsterFaceDown[b.Target.Side,b.Slot])
         {
             // Reveal is a separate operation after the declaration gate.
@@ -82,7 +94,6 @@ public sealed partial class DemoDuel
             queue.Enqueue(new RevealBattleDefenderCommand(b.Target.Side,a.Target,b.Target));
         }
         else QueuePlainBattleOutcome(a,b,queue);
-        return new(CommandOutcome.Applied) { TargetedAttack=new(a.Target,b.Target,a.Slot,b.Slot) };
     }
 
     private bool IsSupportedBattleField(int attackerSide,int source,int target)
@@ -93,7 +104,8 @@ public sealed partial class DemoDuel
             if (FieldSpells[side] is not null) return false;
             for (int z=0;z<5;z++)
             {
-                if (Spells[side,z] is not null) return false;
+                if (Spells[side,z] is not null && (side == attackerSide || !IsQueuedAttackResponseTrap(side, z) ||
+                    !TryCaptureCardTarget(side, DuelZone.SpellTrap, z, out _))) return false;
                 if (z != (side == attackerSide ? source : target) && Monsters[side,z] is { } other &&
                     !IsPlainBattlePilot(other)) return false;
             }

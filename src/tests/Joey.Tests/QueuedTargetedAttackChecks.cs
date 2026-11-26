@@ -10,8 +10,81 @@ internal static class QueuedTargetedAttackChecks
     }
     private static Card Monster(ushort id,int atk,int def)=>new(id,id,"Fixture","",(3u<<20)|(4u<<25)|((uint)(atk/10)<<9)|(uint)(def/10));
     private static Card?[] Slots(Card c,int slot) {var s=new Card?[5];s[slot]=c;return s;}
+    private static void CheckResponseBeforeHiddenDefender(Action<bool, string> check)
+    {
+        ushort[] choices = [0, AttackTrapRules.MagicCylinder, AttackTrapRules.NegateAttack, AttackTrapRules.MirrorForce];
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort answer in choices)
+        {
+            bool pass = answer == 0;
+            int responder = 1 - side;
+            ushort id = pass ? AttackTrapRules.MagicCylinder : answer;
+            var trap = new Card(id, id, "Attack response", "", 21u << 20);
+            var attacker = Monster(24, 1400, 1000);
+            var defender = Monster(1351, 1000, 1000);
+            var duel = DemoDuel.FromPartialObservation(responder, [trap],
+                side == 0 ? Slots(attacker, 2) : Slots(defender, 3),
+                side == 1 ? Slots(attacker, 2) : Slots(defender, 3), 8000);
+            duel.DefensePosition[responder, 3] = duel.MonsterFaceDown[responder, 3] = true;
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _),
+                "Targeted attack response fixture");
+            var gate = new Gate();
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+
+            check(duel.TryQueueTargetedAttack(2, 3, out _) &&
+                duel.DescribeActionPresentation(queue.Trace.Last().Entry.Command) is null,
+                "Targeted attack defers the sword cue while a response is eligible");
+            queue.Tick();
+            check(queue.Active?.Command is DeclareTargetedAttackCommand &&
+                duel.PendingAttackResponse is null && duel.MonsterFaceDown[responder, 3],
+                "The targeted response waits at the declaration gate");
+            gate.Release = true;
+            DrainResponseQueue(queue);
+            check(duel.PendingAttackResponse is { } pending && !pending.Attack.DirectAttack &&
+                pending.Attack.TargetZone == 3 && duel.MonsterFaceDown[responder, 3] &&
+                duel.Life.SequenceEqual([8000, 8000]) &&
+                console.Execute(pass ? "respond-attack pass" : $"respond-attack {responder} 0").Enqueued,
+                "Responding to a targeted attack leaves the original defender hidden");
+            var preview = duel.DescribeActionPresentation(queue.Trace.Last().Entry.Command);
+            check(pass
+                    ? preview is { Kind: ActionPresentationKind.TargetedAttack, DestinationSlot: 3,
+                        DeclarationOrigin: ActionOrigin.Player }
+                    : preview is { Kind: ActionPresentationKind.Activate },
+                "A pass uses the declared target and original input origin for the sword cue");
+
+            gate.Release = false;
+            queue.Tick();
+            check(duel.PendingAttackResponse is null && duel.MonsterFaceDown[responder, 3] &&
+                duel.Spells[responder, 0] == trap && duel.Life.SequenceEqual([8000, 8000]),
+                "Response presentation precedes reveal, spend and damage");
+            gate.Release = true;
+            DrainResponseQueue(queue);
+
+            check(!console.HasPendingChoice && duel.Life[responder] == 8000 &&
+                duel.Life[side] == (answer == AttackTrapRules.MagicCylinder ? 6600 : 8000) &&
+                duel.Phase == (answer == AttackTrapRules.NegateAttack ? DemoPhase.Main : DemoPhase.Battle) &&
+                (pass ? duel.LastAttackTrap is null && duel.Spells[responder, 0] == trap &&
+                    duel.Graveyard(responder).SequenceEqual([defender]) && duel.Monsters[responder, 3] is null
+                    : duel.LastAttackTrap?.TrapResourceId == answer &&
+                    duel.Graveyard(responder).SequenceEqual([trap]) && duel.Monsters[responder, 3] == defender &&
+                    duel.MonsterFaceDown[responder, 3]) &&
+                (answer == AttackTrapRules.MirrorForce
+                    ? duel.Graveyard(side).SequenceEqual([attacker]) && duel.Monsters[side, 2] is null
+                    : duel.Monsters[side, 2] == attacker),
+                "Targeted pass reveals and resolves combat, while each Trap stops it before reveal");
+        }
+    }
+
+    private static void DrainResponseQueue(ActionQueue queue)
+    {
+        for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
+        if (queue.IsBusy) throw new InvalidOperationException("Targeted attack response did not drain.");
+    }
+
     public static void Run(Action<bool,string> check)
     {
+        CheckResponseBeforeHiddenDefender(check);
         foreach(int side in new[]{0,1})
         foreach(var (atk,other,defense,removeA,removeB,lossA,lossB) in new (int,int,bool,bool,bool,int,int)[]{
             (1400,1000,false,false,true,0,400),(1000,1400,false,true,false,400,0),
