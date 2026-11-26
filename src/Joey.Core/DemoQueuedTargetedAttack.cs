@@ -58,7 +58,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
-                IsBattleFlipPilot(bc) && equipment.Count == 0 && MonsterFaceDown[e,t] && DefensePosition[e,t]))
+                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]))
             return false;
         if (!IsSupportedBattleField(p,s,t)) return false;
         a=new(attacker,s,ac,false);
@@ -122,7 +122,7 @@ public sealed partial class DemoDuel
             TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
             attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
             MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
-            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc) && equipment.Count == 0) &&
+            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc)) &&
             IsSupportedBattleField(p,source,target);
     }
 
@@ -246,8 +246,9 @@ public sealed partial class DemoDuel
         queuedBattleReveal=null;
         if (queuedBattleRemoved[1] is { } marked)
         {
-            queue.EnqueueBatch([new SnapshotBattleRemovalCommand(command.Side,marked.Target,1),
-                new FinishBattleRemovalCommand(command.Side,marked.Target,1)]);
+            var batch = new List<DuelCommand> { new SnapshotBattleRemovalCommand(command.Side, marked.Target, 1) };
+            PlanBattleRemoval(marked, 1, batch);
+            queue.EnqueueBatch(batch);
         }
         return new(CommandOutcome.Applied);
     }

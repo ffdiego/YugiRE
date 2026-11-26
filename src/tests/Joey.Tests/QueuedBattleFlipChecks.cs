@@ -23,8 +23,64 @@ internal static class QueuedBattleFlipChecks
     }
     private static void Drain(ActionQueue q)=>Until(q,()=>!q.IsBusy);
 
+    private static void CheckEquippedAttacker(Action<bool, string> check)
+    {
+        var magePower = new Card(DynamicEquipmentRules.MagePower, DynamicEquipmentRules.MagePower,
+            "Mage Power", "", 22u << 20);
+        foreach (int attackerSide in new[] { 0, 1 })
+        foreach (ushort id in new[] { FlipEffectRules.Skelengel, FlipEffectRules.ManEaterBug, FlipEffectRules.PenguinSoldier })
+        {
+            int owner = 1 - attackerSide;
+            var attacker = Monster(24, atk: 1200);
+            var defender = Monster(id, def: 1500);
+            var draw = Monster(1351);
+            var duel = DemoDuel.FromPartialObservation(owner, [magePower],
+                owner == 0 ? Slots(defender, 3) : Slots(attacker, 2),
+                owner == 1 ? Slots(defender, 3) : Slots(attacker, 2), 8000,
+                equipmentContextResolved: true, side0Deck: owner == 0 ? [draw] : [],
+                side1Deck: owner == 1 ? [draw] : []);
+            duel.MonsterFaceDown[owner, 3] = duel.DefensePosition[owner, 3] = true;
+            var console = new DuelConsoleSession(duel);
+            var queue = console.Queue;
+            check(duel.TryQueueEquipment(DuelZone.Hand, 0, attackerSide, 2, out _),
+                "The defending player equips the opposing attacker");
+            Drain(queue);
+            check(duel.EndTurn(out _) && duel.BeginBattle(out _) && duel.AttackValue(attackerSide, 2) == 1700 &&
+                console.Execute("attack 2 3").Enqueued, "The equipped attacker enters the queued battle FLIP");
+            Until(queue, () => queue.PendingDecision is not null || duel.PendingFlipTarget is not null);
+            check(duel.IsMarkedForBattleDestruction(owner, 3) &&
+                duel.Life.SequenceEqual([8000, 8000]), "The equipment bonus changes the destruction marker before FLIP");
+
+            if (id == FlipEffectRules.Skelengel)
+            {
+                check(queue.PendingDecision is { } decision &&
+                    console.Execute($"decision {decision.Id} accept").Success, "Skelengel accepts the queued draw");
+            }
+            else
+            {
+                check(duel.PendingFlipTarget is { } pending && duel.UsesQueuedMonsterFlipSelection(pending) &&
+                    console.Execute($"select-flip {attackerSide} 2").Enqueued,
+                    "The FLIP targets the original equipped attacker");
+            }
+            Drain(queue);
+
+            check(duel.Graveyard(owner).SequenceEqual(id == FlipEffectRules.Skelengel
+                    ? [defender] : [magePower, defender]) &&
+                (id switch
+                {
+                    FlipEffectRules.Skelengel => duel.HandFor(owner).SequenceEqual([draw]) &&
+                        duel.EquipmentCards.Count == 1 && duel.Monsters[attackerSide, 2] == attacker,
+                    FlipEffectRules.ManEaterBug => duel.Graveyard(attackerSide).SequenceEqual([attacker]) &&
+                        duel.EquipmentCards.Count == 0,
+                    _ => duel.HandFor(attackerSide).SequenceEqual([attacker]) && duel.EquipmentCards.Count == 0
+                }) && !console.HasPendingChoice && queue.Fault is null,
+                "The FLIP and any linked cleanup complete before sending the marked defender");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
+        CheckEquippedAttacker(check);
         foreach(int side in new[]{0,1})
         foreach(int atk in new[]{1400,1000,600})
         foreach(bool accept in new[]{true,false})
