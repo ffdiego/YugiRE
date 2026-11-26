@@ -45,7 +45,7 @@ public sealed partial class DuelConsoleSession
     private DuelConsoleResult SelectMonsterFlip(string[] words)
     {
         if (duel.PendingFlipTarget is not { } request ||
-            !duel.TryCaptureCardTarget(request.Owner, DuelZone.Monster, request.SourceZone, out var source))
+            !duel.TryGetQueuedFlipSource(request, out var source))
             return new(false, "No tracked pending monster FLIP.");
         var targets = new List<CardTarget>();
         if (!(words.Length == 2 && words[1] == "decline"))

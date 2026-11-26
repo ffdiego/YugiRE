@@ -186,6 +186,15 @@ C# cobrem os dois lados, passe, ativação de Torrential com e sem par
 restante e o gate de destruição. Demo.cs permanece com 2614 linhas.
 A precedência entre armadilha e FLIP aguarda comparação nativa.
 
+*Alvo monstro após resposta de Flip Summon (C12.1):* Man-Eater
+Bug, Hane-Hane e Penguin Soldier retomam o produtor compartilhado de
+seleção com a ocorrência original da fonte. Escolhas obrigatórias
+sem candidatos terminam após o último gate de Torrential. Penguin
+Soldier pode recusar, inclusive pela CPU com campo vazio. Os testes C#
+cobrem ambos os lados, passe, Torrential e Trap Hole em fixture com
+ATK suficiente. A ordem dinâmica entre FLIP e armadilha segue pendente
+de comparação nativa. Demo.cs permanece com 2614 linhas.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

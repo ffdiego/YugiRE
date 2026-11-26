@@ -404,6 +404,81 @@ internal static class SummonTrapChecks
         }
     }
 
+    private static void RunQueuedMonsterFlipAfterSummonResponse(Action<bool, string> check)
+    {
+        var torrential = Trap(SummonTrapRules.TorrentialTribute, 272);
+        var trapHole = Trap(SummonTrapRules.TrapHole, 273);
+        var target = Monster(24, 240);
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort id in new[] { FlipEffectRules.ManEaterBug, FlipEffectRules.HaneHane, FlipEffectRules.PenguinSoldier })
+        foreach (var (trap, pass) in new[] { (torrential, true), (torrential, false), (trapHole, false) })
+        {
+            int responder = 1 - side;
+            bool wiped = !pass && trap == torrential;
+            bool optional = id == FlipEffectRules.PenguinSoldier;
+            // Raised fixture ATK permits testing Trap Hole separately from a full wipe.
+            var flip = Monster(id, 241, atk: 1100);
+            var duel = DemoDuel.FromPartialObservation(responder, [trap],
+                Slots(side == 0 ? flip : target), Slots(side == 1 ? flip : target), 8000);
+            duel.MonsterFaceDown[side, 0] = duel.DefensePosition[side, 0] = true;
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) &&
+                duel.TryCaptureCardTarget(responder, DuelZone.Monster, 0, out _), "Monster FLIP response fixture");
+            duel.TryCaptureCardTarget(responder, DuelZone.Monster, 0, out var targetOccurrence);
+
+            var gate = new ResponseGate();
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("flip 0").Enqueued, "Monster FLIP admitted");
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is { } response && duel.UsesQueuedSummonResponse(response) &&
+                duel.PendingFlipTarget is null && CpuDuelController.PendingOwner(duel) == responder &&
+                !console.Execute($"select-flip {responder} 0").Enqueued &&
+                console.Execute(pass ? "respond-summon pass" : $"respond-summon {responder} 0").Enqueued,
+                "Only the Trap responder can act while the monster choice is suspended");
+            if (!pass)
+            {
+                gate.WaitingFor = nameof(DestroyCommand);
+                StepUntil(queue, () => queue.Active?.Command is DestroyCommand);
+                check(duel.PendingFlipTarget is null, "Monster target choice waits for the destruction gate");
+                gate.WaitingFor = null;
+            }
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is null && (duel.Monsters[side, 0] is not null) == pass,
+                "Trap response finishes with the expected source state");
+
+            if (wiped && !optional)
+            {
+                check(duel.PendingFlipTarget is null && console.Execute("turn end").Enqueued,
+                    "A mandatory monster choice with no legal target leaves the turn playable");
+                StepUntil(queue, () => !queue.IsBusy);
+                continue;
+            }
+
+            check(duel.PendingFlipTarget is { } pending && duel.UsesQueuedMonsterFlipSelection(pending),
+                "The queued monster choice resumes with its original source occurrence");
+            if (wiped)
+            {
+                check(duel.QueuedMonsterFlipCandidates().Count == 0 &&
+                    new CpuDuelController(side).Step(duel, queueTurnActions: true) is
+                        { Action: CpuAction.Selection, Status: CpuStepStatus.Acted },
+                    "CPU can decline Penguin Soldier on an empty field after Torrential");
+            }
+            else
+            {
+                check(console.Execute($"select-flip {responder} 0").Enqueued,
+                    "The console selects the surviving monster after pass or Trap Hole");
+            }
+            StepUntil(queue, () => !queue.IsBusy);
+
+            DuelZone destination = id == FlipEffectRules.ManEaterBug ? DuelZone.Graveyard : DuelZone.Hand;
+            int destinationIndex = destination == DuelZone.Graveyard && !pass ? 1 : 0;
+            check(duel.PendingFlipTarget is null && duel.Monsters[responder, 0] is null &&
+                (wiped || duel.TryCaptureCardTarget(responder, destination, destinationIndex, out var moved) &&
+                    moved.Occurrence == targetOccurrence.Occurrence),
+                "Answer closes the choice and moves the surviving target by occurrence");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         RunQueued(check);
@@ -412,6 +487,7 @@ internal static class SummonTrapChecks
         RunQueuedRecoveryAfterSummonResponse(check);
         RunQueuedRecruitmentAfterSummonResponse(check);
         RunQueuedSpellTrapPairAfterSummonResponse(check);
+        RunQueuedMonsterFlipAfterSummonResponse(check);
         var trapHole = Trap(1002, 120);
         var torrential = Trap(1425, 272);
         var small = Monster(10, 101, 900);
