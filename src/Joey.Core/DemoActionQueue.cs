@@ -3,6 +3,8 @@ namespace Joey.Core;
 public sealed partial class DemoDuel
 {
     private ActionQueue? primitiveActionQueue;
+    internal bool HasActionQueue => primitiveActionQueue is not null;
+    internal bool ActionQueueBusy => primitiveActionQueue?.IsBusy == true;
 
     // Explicit developer console attachment must reuse this duel's queue.
     // An existing queue retains its original lab-edit authorization.
@@ -11,8 +13,7 @@ public sealed partial class DemoDuel
 
     /// <summary>
     /// One queue per duel. Effect-level operations, not a general legal input API.
-    /// Existing App/CPU entrypoints remain legacy; do not mix their decisions
-    /// with admitted queue work. Direct array writes are fixture-only.
+    /// The host drives the queue. Direct array writes are fixture-only.
     /// </summary>
     public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false)
     {

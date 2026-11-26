@@ -71,9 +71,9 @@ public sealed partial class DemoDuel
     private DemoAttackDeclaration? DescribeQueuedAttack(CardTarget attacker, CardTarget? defender)
     {
         if (defender is { } target)
-            return TryPlanTargetedAttack(attacker, target, out var a, out var b, declared: true)
+            return TryPlanTargetedAttack(attacker, target, out var a, out var b, out _, declared: true)
                 ? new(attacker.Side, a.Slot, a.Card, b.Slot, b.Card) : null;
-        return TryPlanQueuedDirectAttack(attacker, out int slot, out var card, out _, declared: true)
+        return TryPlanQueuedDirectAttack(attacker, out int slot, out var card, out _, out _, declared: true)
             ? new(attacker.Side, slot, card, -1, null) : null;
     }
 
@@ -122,9 +122,9 @@ public sealed partial class DemoDuel
             BattleReservation? defender = null;
             int damage = 0;
             bool attackValid = pending.Defender is { } target
-                ? duel.TryPlanTargetedAttack(pending.Attacker, target, out attacker, out defender, declared: true) &&
+                ? duel.TryPlanTargetedAttack(pending.Attacker, target, out attacker, out defender, out _, declared: true) &&
                     attacker.Slot == pending.Request.Attack.AttackerZone && defender.Slot == pending.Request.Attack.TargetZone
-                : duel.TryPlanQueuedDirectAttack(pending.Attacker, out int sourceSlot, out _, out damage, declared: true) &&
+                : duel.TryPlanQueuedDirectAttack(pending.Attacker, out int sourceSlot, out _, out damage, out _, declared: true) &&
                     sourceSlot == pending.Request.Attack.AttackerZone;
             if (attackValid && attacker is not null)
                 damage = Math.Clamp(duel.AttackValue(attacker.Target.Side, attacker.Slot), 0, ushort.MaxValue);

@@ -134,4 +134,11 @@ ou Nimble Momonga desde o início. Não altera o renderer.
 
 ## Console retrátil em duelo ativo
 
-Apóstrofo/grave/F10 abre overlay deslizante no topo; Esc fecha antes de sair do duelo, histórico e scroll por teclado. A sessão live é distinta de labSession: não reseta estado, não ativa espelho de fase lab nem substitui CPU. Attach reaproveita a única fila e conserva sua autorização; quando ainda não existe fila, cria-a explicitamente com gate do App e autorização de edições lab. O App opt-in --queued-actions cria fila habilitada para o console local; a origem Console/Test ainda é obrigatória para spawn/move. O modo legado passa ao piloto enfileirado ao primeiro uso do console, sem voltar à execução paralela ao fechar. CPU/inputs novos suspensos durante overlay; gate e fases continuam. Leitura/decisão acessíveis durante animação; mutações aguardam disponibilidade. Sem claims de paridade ou suporte a todas as ações. Testes de identidade da fila, trace e autorização; smoke desktop pendente.
+Apóstrofo/grave/F10 abre o overlay sobre o duelo atual. Esc fecha o console
+antes de sair do duelo. O overlay preserva o estado, as fases e a CPU do
+duelo. O modo padrão reutiliza a fila do App. Ao abrir o console em
+`--legacy-actions`, o App anexa a fila com seu gate e a mantém após
+fechar o overlay. Spawn e move exigem origem Console/Test. Enquanto o
+overlay está aberto, o App suspende a CPU e a entrada do tabuleiro.
+O gate e as fases continuam. Leituras e respostas a decisões ficam
+acessíveis durante animações. Outros comandos aguardam a fila.

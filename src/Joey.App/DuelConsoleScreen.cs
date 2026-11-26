@@ -84,6 +84,12 @@ static partial class Game
     // a raylib window. This is the regression for the first-frame deck-out.
     static int CheckConsoleStartup()
     {
+        if (!QueueActionsEnabled([]) || !QueueActionsEnabled(["--queued-actions"]) ||
+            QueueActionsEnabled(["--legacy-actions"]))
+        {
+            Console.Error.WriteLine("Action mode CLI regression.");
+            return 1;
+        }
         if (SelectPresentationStyle([]) is not FastLookAndFeel ||
             SelectPresentationStyle(["--fast"]).UpdatesPerSecond != 60 ||
             SelectPresentationStyle(["--classic"]).GetType() != typeof(DuelLookAndFeel) ||
@@ -105,15 +111,17 @@ static partial class Game
             return 1;
         }
 
-        // Ensure the regular legacy mode still runs its automatic draw path.
+        // Exercise the same action mode selection used by local and Alpha duels.
         duel = DuelConsoleSession.EmptyLabDuel();
-        ResetDuelPresentation();
+        useQueuedActions = QueueActionsEnabled(["--legacy-actions"]);
+        StartDuelPresentation();
         AdvanceDuelPhases(TimeSpan.FromMilliseconds(17));
-        if (duel.Winner != 1)
+        if (queuedDuel is not null || duel.Winner != 1)
         {
             Console.Error.WriteLine("Legacy phase driver no longer performs its automatic draw.");
             return 1;
         }
+        useQueuedActions = QueueActionsEnabled([]);
         if (!CheckQueuedAutomaticDraw(new DuelLookAndFeel()) ||
             !CheckQueuedAutomaticDraw(new InstantLookAndFeel()))
         {
@@ -214,9 +222,8 @@ static partial class Game
         alphaCpu = new(1);
         alphaBlocked = false;
         presentation.SetStyle(style);
-        ResetDuelPresentation();
-        var queue = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate());
-        queuedDuel = queue;
+        StartDuelPresentation();
+        if (queuedDuel is not { } queue) return false;
         var elapsed = TimeSpan.FromMilliseconds(17);
 
         void AdvanceFrame()

@@ -4,8 +4,7 @@ using Raylib_cs;
 
 static partial class Game
 {
-    // Explicit pilot. Unmigrated actions retain their existing producers.
-    static bool useQueuedActions;
+    static bool useQueuedActions = true;
     static ActionQueue? queuedDuel;
     static CardTarget? queuedPreviewSource;
 

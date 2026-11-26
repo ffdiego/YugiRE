@@ -265,7 +265,7 @@ internal static class CpuDuelChecks
         var legacyDirect = State(1, [], own: strong);
         var directQueue = direct.CreatePrimitiveActionQueue();
         check(direct.BeginBattle(out _) && legacyDirect.BeginBattle(out _) &&
-            cpu.Step(direct, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
+            cpu.Step(direct) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
             direct.Life[0] == 8000 && directQueue.IsBusy &&
             cpu.Step(legacyDirect) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 },
             "CPU: direct attack admission defers damage in queued mode");
@@ -277,13 +277,36 @@ internal static class CpuDuelChecks
             directTrace[0].Entry.Origin == ActionOrigin.Cpu,
             "CPU: direct declaration and damage match legacy final life points");
 
-        var unsupportedDirect = State(1, [], own: strong);
-        unsupportedDirect.Spells[1, 0] = Spell(999);
+        var unsupportedDirect = State(1, [Spell(0x593)], own: strong);
+        check(unsupportedDirect.SetFromHand(0, out _) && unsupportedDirect.ActivateSetSpell(0, out _),
+            "CPU: Infinite Cards is a tracked face-up continuous card outside the battle pilot");
         var unsupportedQueue = unsupportedDirect.CreatePrimitiveActionQueue();
         check(unsupportedDirect.BeginBattle(out _) &&
-            cpu.Step(unsupportedDirect, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack } &&
+            !unsupportedDirect.TryQueueAttack(0, -1, out _, out bool unsupported) && unsupported &&
+            unsupportedQueue.Trace.Count == 0 && unsupportedDirect.Life[0] == 8000 &&
+            cpu.Step(unsupportedDirect) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack } &&
             unsupportedDirect.Life[0] == 8000 - strong.Attack && !unsupportedQueue.IsBusy,
-            "CPU: a direct attack outside the isolated pilot keeps its legacy execution");
+            "CPU: only a legal attack outside the pilot uses compatibility execution");
+
+        var rejectedAttack = State(1, [], own: strong);
+        var rejectedQueue = rejectedAttack.CreatePrimitiveActionQueue();
+        check(rejectedAttack.BeginBattle(out _) &&
+            !rejectedAttack.TryQueueAttack(0, 0, out _, out bool missingTarget) && !missingTarget &&
+            rejectedAttack.TryQueueAttack(0, -1, out _) &&
+            !rejectedAttack.TryQueueAttack(0, -1, out _, out bool busy) && !busy &&
+            cpu.Step(rejectedAttack).Status == CpuStepStatus.Blocked && rejectedAttack.Life[0] == 8000,
+            "CPU: invalid target and busy queue cannot authorize a compatibility attack");
+        for (int tick = 0; tick < 10 && rejectedQueue.IsBusy; tick++) rejectedQueue.Tick();
+        check(!rejectedAttack.TryQueueAttack(0, -1, out _, out bool alreadyAttacked) && !alreadyAttacked,
+            "CPU: an already used attacker cannot authorize compatibility execution");
+
+        var untrackedAttack = State(1, [], own: strong);
+        var untrackedQueue = untrackedAttack.CreatePrimitiveActionQueue();
+        check(untrackedAttack.BeginBattle(out _), "CPU: untracked attack is tested in Battle Phase");
+        untrackedAttack.Monsters[1, 0] = strong with { };
+        check(cpu.Step(untrackedAttack) is { Status: CpuStepStatus.Blocked, Action: CpuAction.Attack } &&
+            untrackedAttack.Life[0] == 8000 && untrackedAttack.CanAttack(0) && untrackedQueue.Trace.Count == 0,
+            "CPU: an untracked occurrence cannot fall back or consume the attack");
 
         var activation = State(1, [Spell(342)], deck: [weak]);
         activation.Spells[1, 0] = Spell(1002, 21);
@@ -476,10 +499,21 @@ internal static class CpuDuelChecks
         check(deck.Concat(fusion).All(c => art.For(c) is { } image && !image.StartsWith(@"card\token_", StringComparison.OrdinalIgnoreCase)),
             "Alpha: all cards are available in the packs and have non-token artwork");
         check(deck.Count == 40 && deck.GroupBy(c => c.Id).All(g => g.Count() <= 3), "Alpha: curated DAT deck has 40 cards, at most three copies");
+        foreach (bool queued in new[] { false, true })
+        {
+            RunAlphaDuels(check, deck, fusion, queued);
+        }
+    }
+
+    private static void RunAlphaDuels(Action<bool, string> check, IReadOnlyList<Card> deck,
+        IReadOnlyList<Card> fusion, bool queued)
+    {
+        string mode = queued ? "queued" : "legacy";
         int fusions = 0;
         for (int seed = 0; seed < 30; seed++)
         {
             var d = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
+            var queue = queued ? d.CreatePrimitiveActionQueue() : null;
             d.MonsterSpecialSummoned += summon =>
             {
                 if (FusionRules.IsFusionMonster(summon.Card)) fusions++;
@@ -489,10 +523,19 @@ internal static class CpuDuelChecks
             while (!d.GameOver && steps++ < 5000)
             {
                 var action = players[CpuDuelController.PendingOwner(d) ?? d.ActivePlayer].Step(d);
-                if (action.Status != CpuStepStatus.Acted) throw new Exception($"Alpha DAT seed {seed}: {action.Message}");
+                if (action.Status != CpuStepStatus.Acted)
+                    throw new InvalidOperationException($"Alpha DAT {mode}, seed {seed}, turn {d.Turn}: {action.Message}");
+                for (int tick = 0; queue is { IsBusy: true } && tick < 1000; tick++)
+                {
+                    if (queue.PendingDecision is { } decision)
+                        queue.SubmitDecision(decision.Id, CpuDuelController.DecideOptionalEffect(d, decision));
+                    queue.Tick();
+                }
+                if (queue is { IsBusy: true })
+                    throw new InvalidOperationException($"Alpha DAT {mode}, seed {seed}: action queue did not drain.");
             }
-            check(d.GameOver && steps < 5000, $"Alpha DAT: complete duel seed {seed} in {steps} actions / {d.Turn} turns");
+            check(d.GameOver && steps < 5000, $"Alpha DAT {mode}: complete duel seed {seed} in {steps} actions / {d.Turn} turns");
         }
-        check(fusions > 0, "Alpha DAT: the curated Fusion Deck was used in a complete CPU duel");
+        check(fusions > 0, $"Alpha DAT {mode}: the curated Fusion Deck was used in a complete CPU duel");
     }
 }

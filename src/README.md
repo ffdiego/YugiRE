@@ -116,6 +116,10 @@ No menu, **Console lab (' / F10)** abre um novo tabuleiro vazio, sem CPU. Em qua
 
 ## Alpha vs CPU
 
+A fila de ações é o padrão nos duelos locais, no Alpha e em
+`--alpha-headless`. Use `--legacy-actions` para iniciar no modo legado.
+Abrir o console de desenvolvimento em um duelo legado anexa a fila à partida.
+
 Escolha **Alpha - vs CPU** no menu ou execute da raiz:
 
 ```bash

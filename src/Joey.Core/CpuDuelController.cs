@@ -8,7 +8,7 @@ public sealed record CpuStep(CpuStepStatus Status, CpuAction Action, int Player,
 
 /// <summary>
 /// Deterministic alpha strategy, NOT a reproduction of Joey's native selector.
-/// One Step commits or admits one engine action. The host drives any opted-in queue.
+/// One Step commits or admits one engine action. The host drives the attached queue.
 /// Responds to its own choices even during the opponent's turn. Create per duel/side.
 /// </summary>
 public sealed class CpuDuelController
@@ -61,7 +61,11 @@ public sealed class CpuDuelController
         request.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(request.Owner) > 0
             ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
 
-    public CpuStep Step(DemoDuel duel) => Step(duel, queueTurnActions: false);
+    public CpuStep Step(DemoDuel duel)
+    {
+        ArgumentNullException.ThrowIfNull(duel);
+        return Step(duel, queueTurnActions: duel.HasActionQueue);
+    }
 
     public CpuStep Step(DemoDuel duel, bool queueTurnActions)
     {
@@ -73,6 +77,7 @@ public sealed class CpuDuelController
         }
         CpuStep Idle(CpuStepStatus status, string message) => new(status, CpuAction.None, Player, message);
         if (duel.GameOver) return Idle(CpuStepStatus.GameOver, "Duel finished.");
+        if (duel.ActionQueueBusy) return Idle(CpuStepStatus.Blocked, "Waiting for the current action to finish.");
         int? pendingOwner = PendingOwner(duel);
         if (pendingOwner is int owner && owner != Player || pendingOwner is null && duel.ActivePlayer != Player)
             return Idle(CpuStepStatus.WaitingForOpponent, "Waiting for opponent.");
@@ -274,8 +279,12 @@ public sealed class CpuDuelController
             : duel.EndTurn(out pending);
         bool AttackFrom(int source, int target, out string pending)
         {
-            if (queueTurnActions && duel.TryQueueAttack(source, target, out pending, ActionOrigin.Cpu))
-                return true;
+            if (queueTurnActions)
+            {
+                if (duel.TryQueueAttack(source, target, out pending, out bool unsupported, ActionOrigin.Cpu))
+                    return true;
+                if (!unsupported) return false;
+            }
             return duel.Attack(source, target, out pending);
         }
 
