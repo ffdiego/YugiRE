@@ -213,6 +213,15 @@ baixado depois da revelação do defensor. Equipamentos e contínuas
 nas zonas comuns seguem fora do piloto. Demo.cs permanece com
 2614 linhas. Validação em C#.
 
+*Equipamentos no ataque direto (C12.1):* o produtor admite
+equipamentos fixos e dinâmicos que tenham fonte e alvo rastreáveis.
+Dano direto e Magic Cylinder usam o ATK efetivo. Mirror Force
+remove o equipamento ligado em um comando separado. Os testes C#
+cobrem os dois lados e a limpeza no cemitério do dono do
+equipamento quando o alvo pertence ao outro jogador. O combate
+com alvo ainda requer migração da limpeza por destruição de
+batalha. Demo.cs permanece com 2614 linhas.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
