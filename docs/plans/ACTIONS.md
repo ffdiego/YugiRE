@@ -318,6 +318,8 @@ Demo.cs 2600 → 2600 linhas. A fatia liga o produtor de batalha
 ao executor existente e preserva os caminhos de revelação fora dele.
 Casos C# nos dois lados, incluindo deck insuficiente e gate.
 [Contrato](../cards/c12-queued-flip-deck-flow.md).
+[PR #219](https://github.com/ffdiego/YugiRE/pull/219) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45876461293).
 
 ## A07 — Turno e fases como comandos/estágios da fila
 

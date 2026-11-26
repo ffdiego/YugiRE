@@ -156,6 +156,7 @@ CardSelectionChecks.Run(Check);
 DeckSearcherChecks.Run(Check);
 BattleRecruiterChecks.Run(Check);
 BattleDamageEffectRuleChecks.Run(Check);
+QueuedBattleCalculationChecks.Run(Check);
 BattleGraveyardEffectChecks.Run(Check);
 GraveyardArrivalRuleChecks.Run(Check);
 RevivalJamDecisionChecks.Run(Check);

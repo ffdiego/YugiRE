@@ -2,6 +2,10 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
+    private const ushort KineticSoldier = 1253;
+    private const ushort MadSwordBeast = 1341;
+    private const int WarriorType = 15;
+
     // Roles are not player numbers: 0 attacker, 1 defender. These are
     // reserved transient card records, NOT an additional action queue.
     private sealed record BattleReservation(CardTarget Target, int Slot, Card Card, bool Defense)
@@ -25,7 +29,8 @@ public sealed partial class DemoDuel
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
-        (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast ||
+        (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
+            or KineticSoldier or MadSwordBeast ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -173,13 +178,13 @@ public sealed partial class DemoDuel
             throw new InvalidOperationException("Reserved revealed combatant changed.");
         if (IsBattleFlipPilot(reserved.Defender.Card))
         {
-            // In defense, positive delta marks the defender; negative delta
-            // damages the attacker. Keep the marked card present for FLIP.
-            int delta=AttackValue(reserved.Attacker.Target.Side,reserved.Attacker.Slot) -
-                DefenseValue(reserved.Defender.Target.Side,reserved.Defender.Slot);
+            // Keep the marked card present until damage and FLIP finish.
+            int delta = QueuedTargetedBattlePower(command.Side, reserved.Attacker.Slot, reserved.Defender.Slot).Difference;
             reserved.FlipCalculated=true;
             queuedBattleRemoved[1]=delta>0?reserved.Defender:null;
-            if(delta<0) queue.Enqueue(new DamageCommand(command.Side,Math.Min(-delta,ushort.MaxValue)));
+            int damage = TargetedBattleDamage(delta, reserved.Attacker.Card, defenderInDefense: true);
+            if (damage > 0)
+                queue.Enqueue(new DamageCommand(delta < 0 ? command.Side : 1 - command.Side, damage));
             var defender = reserved.Defender.Target;
             queue.Enqueue(reserved.Defender.Card.Id switch
             {
@@ -333,17 +338,33 @@ public sealed partial class DemoDuel
         return new(CommandOutcome.Applied);
     }
 
+    internal (int Attack, int Difference) QueuedTargetedBattlePower(int attackerSide, int source, int target)
+    {
+        int defenderSide = 1 - attackerSide;
+        var attacker = Monsters[attackerSide, source]!;
+        var defender = Monsters[defenderSide, target]!;
+        int attack = EquipmentStats(attackerSide, source, KineticSoldierBonus(attacker, defender)).Attack;
+        var stats = EquipmentStats(defenderSide, target, KineticSoldierBonus(defender, attacker));
+        return (attack, attack - (DefensePosition[defenderSide, target] ? stats.Defense : stats.Attack));
+    }
+
+    private static int KineticSoldierBonus(Card card, Card opponent) =>
+        card.Id == KineticSoldier && opponent.ClassCode == WarriorType ? 2000 : 0;
+
+    private static int TargetedBattleDamage(int difference, Card attacker, bool defenderInDefense)
+    {
+        if (difference > 0 && defenderInDefense && attacker.Id != MadSwordBeast) return 0;
+        return Math.Min(Math.Abs(difference), ushort.MaxValue);
+    }
+
     private void QueuePlainBattleOutcome(BattleReservation a,BattleReservation b,IActionBatchSink queue)
     {
         int p=a.Target.Side,e=b.Target.Side;
-        int atk=AttackValue(p,a.Slot);
-        int other=b.Defense?DefenseValue(e,b.Slot):AttackValue(e,b.Slot);
-        int delta=atk-other;
+        var (atk, delta) = QueuedTargetedBattlePower(p, a.Slot, b.Slot);
         bool removeA=!b.Defense && (delta<0 || delta==0 && atk>0);
         bool removeB=delta>0 || !b.Defense && delta==0 && atk>0;
-        int amount=delta<0 ? -delta : !b.Defense ? delta : 0;
+        int amount = TargetedBattleDamage(delta, a.Card, b.Defense);
         int damaged=delta<0?p:e;
-        amount = Math.Min(amount, ushort.MaxValue);
         var effect = BattleEffectAfterDamage(delta < 0 ? b.Card : a.Card, 1 - damaged, amount);
         var removals = new List<DuelCommand>();
         if (removeA) removals.Add(new SnapshotBattleRemovalCommand(p, a.Target, 0));
