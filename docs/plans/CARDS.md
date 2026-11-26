@@ -126,7 +126,7 @@ têm produtores na fila em recortes documentados. O App ainda ativa a
 fila por `--queued-actions`. App e CPU chamam o ataque legado quando o
 produtor enfileirado recusa a jogada. O combate básico
 com alvo admite os 264 normais de C13 e conserva os IDs explícitos do
-piloto inicial, seis recrutadores elementais e três FLIPs. Os testes
+piloto inicial, seis recrutadores elementais e quatro FLIPs. Os testes
 comparam cada normal com o legado nos dois lados, atacando, defendendo
 de face para cima ou em defesa oculta e como aliado em ataque direto.
 Restam gatilhos de dano e remoção, como P168, Bistro Butcher e Masked

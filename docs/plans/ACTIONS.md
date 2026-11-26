@@ -247,6 +247,14 @@ dois lados. Os IDs históricos do piloto continuam aceitos.
 Demo.cs permanece com 2614 linhas. Sem alteração de catálogo ou
 validação contra o processo nativo.
 
+*Hane-Hane em batalha (C12.1):* a revelação em defesa usa o
+produtor enfileirado de retorno obrigatório de um monstro. O
+gate de dano precede a escolha. O defensor marcado não é um
+alvo válido, enquanto Hane-Hane não marcado pode retornar a
+si mesmo. Os testes cobrem ambos os lados, recusa inválida,
+retorno do atacante equipado e retorno do próprio defensor.
+Demo.cs permanece com 2614 linhas. Comparação em C#.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

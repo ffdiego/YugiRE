@@ -31,7 +31,8 @@ public sealed partial class DemoDuel
         IsPlainBattlePilot(card) || IsElementalBattleRecruiter(card);
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
-        card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug;
+        card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
+            or FlipEffectRules.HaneHane;
 
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player)
@@ -171,6 +172,7 @@ public sealed partial class DemoDuel
     private static DemoFlipEffect? BattleTargetEffect(Card card) => card.Id switch
     {
         FlipEffectRules.PenguinSoldier => DemoFlipEffect.ReturnUpToTwo,
+        FlipEffectRules.HaneHane => DemoFlipEffect.ReturnOne,
         FlipEffectRules.ManEaterBug => DemoFlipEffect.DestroyMonster,
         _ => null
     };
