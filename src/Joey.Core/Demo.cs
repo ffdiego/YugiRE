@@ -1136,8 +1136,9 @@ public sealed partial class DemoDuel
         sum = new(sum.Attack + ElementalBattleAttributeRules.AttackDelta(
             monster.Id, p, ActivePlayer, Phase == DemoPhase.Battle, opposingSouls), sum.Defense);
         var temporary = temporaryStats.GetValueOrDefault(monster);
-        sum = new(sum.Attack + temporary.Attack + battleBonus.Attack - zombyraAttackLoss.GetValueOrDefault(monster),
-            sum.Defense + temporary.Defense + battleBonus.Defense);
+        var persistent = persistentMonsterStats.GetValueOrDefault(monster);
+        sum = new(sum.Attack + temporary.Attack + battleBonus.Attack + persistent.Attack,
+            sum.Defense + temporary.Defense + battleBonus.Defense + persistent.Defense);
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
     }
@@ -2455,7 +2456,7 @@ public sealed partial class DemoDuel
         if (Monsters[player, zone] is Card departing)
         {
             temporaryStats.Remove(departing);
-            zombyraAttackLoss.Remove(departing);
+            persistentMonsterStats.Remove(departing);
         }
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;

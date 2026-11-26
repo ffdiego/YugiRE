@@ -100,6 +100,7 @@ internal static class QueuedBattleCalculationChecks
 
         CheckInsectSoldiers(check);
         CheckZombyra(check);
+        CheckSlateWarrior(check);
     }
 
     private static void CheckInsectSoldiers(Action<bool, string> check)
@@ -168,8 +169,8 @@ internal static class QueuedBattleCalculationChecks
             "Zombyra retains the accumulated loss across turns and cannot declare on an empty opposing field");
         var commands = queue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed)
             .Select(entry => entry.Entry.Command.GetType().Name).ToList();
-        check(commands.Count(name => name == "ApplyZombyraBattleAttackLossCommand") == 2 &&
-            commands.LastIndexOf("ApplyZombyraBattleAttackLossCommand") > commands.LastIndexOf("FinishBattleRemovalCommand"),
+        check(commands.Count(name => name == "ApplyBattleDestructionStatChangeCommand") == 2 &&
+            commands.LastIndexOf("ApplyBattleDestructionStatChangeCommand") > commands.LastIndexOf("FinishBattleRemovalCommand"),
             "Each Zombyra attack loss has its own command after battle removal");
 
         check(duel.TryCaptureCardTarget(1, DuelZone.Monster, 0, out var source), "Capture weakened Zombyra");
@@ -194,7 +195,7 @@ internal static class QueuedBattleCalculationChecks
         check(tied.TryQueueTargetedAttack(0, 0, out _), "Equal attack battle fixture is admitted");
         Drain(tieQueue);
         check(tied.Monsters[0, 0] is null && tied.Monsters[1, 0] is null &&
-            !tieQueue.Trace.Any(entry => entry.Entry.Command.GetType().Name == "ApplyZombyraBattleAttackLossCommand"),
+            !tieQueue.Trace.Any(entry => entry.Entry.Command.GetType().Name == "ApplyBattleDestructionStatChangeCommand"),
             "A Zombyra destroyed in the same battle leaves no surviving occurrence to modify");
 
         var flip = Battle(zombyra, Monster(FlipEffectRules.NeedleWorm, 10, 750, 600), defense: true, faceDown: true);
@@ -203,5 +204,54 @@ internal static class QueuedBattleCalculationChecks
         Drain(flipQueue);
         check(flip.LastDeckFlow is not null && flip.AttackValue(1, 0) == 1900 && flip.Monsters[0, 0] is null,
             "Zombyra loses ATK after a successful battle destruction following FLIP");
+    }
+
+    private static void CheckSlateWarrior(Action<bool, string> check)
+    {
+        var slate = Monster(FlipEffectRules.SlateWarrior, 3, 1900, 400);
+        var weak = Monster(77, 15, 300, 1000);
+        Card?[] empty = [null, null, null, null, null];
+        Card?[] field = [slate, null, null, null, null];
+        foreach (bool suppressed in new[] { false, true })
+        {
+            var duel = DemoDuel.FromPartialObservation(1, [], empty, field, 8000, side1Deck: [weak]);
+            duel.MonsterFaceDown[1, 0] = duel.DefensePosition[1, 0] = true;
+            if (suppressed)
+            {
+                ushort id = FlipEffectSuppressionRules.RoyalCommand;
+                duel.Spells[0, 0] = new Card(id, id, "Royal Command", "", 21u << 20);
+            }
+            var queue = duel.CreatePrimitiveActionQueue();
+            var cpu = new CpuDuelController(1);
+            check(cpu.Step(duel).Action == CpuAction.Draw, "Slate Warrior CPU fixture draws for turn");
+            Drain(queue);
+            check(cpu.Step(duel) is { Action: CpuAction.Position, Status: CpuStepStatus.Acted } &&
+                duel.AttackValue(1, 0) == 1900 && duel.MonsterFaceDown[1, 0],
+                "Slate Warrior's Flip Summon admission does not grant stats");
+            Drain(queue);
+            check(!duel.MonsterFaceDown[1, 0] && duel.AttackValue(1, 0) == (suppressed ? 1900 : 2400) &&
+                duel.DefenseValue(1, 0) == (suppressed ? 400 : 900),
+                "Slate Warrior gains 500 ATK and DEF on its Flip Summon unless Royal Command is active");
+        }
+
+        var surviving = Battle(weak, slate, defense: true, faceDown: true);
+        var survivalQueue = surviving.CreatePrimitiveActionQueue();
+        check(surviving.TryQueueTargetedAttack(0, 0, out _), "Slate Warrior battle reveal is admitted");
+        Drain(survivalQueue);
+        check(surviving.Life[1] == 7900 && surviving.AttackValue(0, 0) == 2400 &&
+            surviving.DefenseValue(0, 0) == 900,
+            "Slate Warrior's battle FLIP raises stats after the original DEF determined damage");
+
+        var zombyra = Monster(1523, 15, 2100, 800);
+        foreach (bool faceDown in new[] { false, true })
+        {
+            var defeated = Battle(zombyra, slate, defense: faceDown, faceDown: faceDown);
+            var defeatQueue = defeated.CreatePrimitiveActionQueue();
+            check(defeated.TryQueueTargetedAttack(0, 0, out _), "Zombyra can destroy Slate Warrior in battle");
+            Drain(defeatQueue);
+            check(defeated.Graveyard(0).Single() == slate && defeated.AttackValue(1, 0) == 1400 &&
+                defeated.DefenseValue(1, 0) == 300,
+                "Slate Warrior's battle penalty stacks with Zombyra's own loss regardless of previous visibility");
+        }
     }
 }
