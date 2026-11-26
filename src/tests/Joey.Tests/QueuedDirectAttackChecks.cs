@@ -299,7 +299,7 @@ internal static class QueuedDirectAttackChecks
         foreach(var enemy in new[]{false,true})
         {
             var blocked=DemoDuel.FromPartialObservation(1,[],Slots(enemy?Monster(1000):null),
-                Slots(Monster(1000,219)),8000);
+                Slots(Monster(1000,BattleDamageEffectRules.WhiteMagicalHat)),8000);
             var bq=blocked.CreatePrimitiveActionQueue();blocked.BeginBattle(out _);
             check(!blocked.TryQueueDirectAttack(2,out _) && bq.Trace.Count==0,"A05.7 rejects effects/other monsters");
         }

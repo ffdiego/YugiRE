@@ -1535,17 +1535,12 @@ public sealed partial class DemoDuel
         if (amount <= 0) return;
         int opponent = 1 - controller;
         Damage(opponent, amount);
-        if (GameOver) return;
 
         // Native battle damage producer 00578540 queues both IDs. The
         // sandbox resolves mandatory draws here, after LP damage is applied.
-        (int recipient, int count) = source.Id switch
-        {
-            219 => (controller, 1), // Masked Sorcerer
-            522 => (opponent, 2),   // The Bistro Butcher
-            _ => (opponent, 0)
-        };
-        if (count == 0) return;
+        if (BattleDamageEffectRules.AfterBattleDamage(source.Id, controller, opponent, amount, GameOver) is not
+            { Kind: BattleDamageEffectKind.Draw } draw) return;
+        int recipient = draw.AffectedSide, count = draw.MaximumCount;
         int drawn = Math.Min(count, DeckCount(recipient));
         for (int i = 0; i < drawn; i++) DrawToHand(recipient);
         bool deckOut = drawn < count;

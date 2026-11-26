@@ -19,6 +19,8 @@ internal sealed record OpenBattleFlipDrawCommand(int Side, CardTarget Defender) 
 internal sealed record OpenBattleFlipTargetsCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+internal sealed record ResolveBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent) : DuelCommand(Side);
+internal sealed record FinishBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent, int Drawn) : DuelCommand(Side);
 internal sealed record OpenBattleRecruitmentCommand(int Side) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
@@ -117,6 +119,10 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
+            case ResolveBattleDamageDrawCommand battleDraw when IsValidBattleDamageDraw(battleDraw.Intent, battleDraw.Side):
+            case FinishBattleDamageDrawCommand finishDraw when IsValidBattleDamageDraw(finishDraw.Intent, finishDraw.Side) &&
+                finishDraw.Drawn >= 0 && finishDraw.Drawn <= finishDraw.Intent.MaximumCount:
+                break;
             case OpenAttackResponseCommand response:
                 Target(response.Attacker, response.Side, DuelZone.Monster);
                 if (response.Defender is { } attackDefender)
@@ -410,6 +416,11 @@ internal static class DuelCommandValidation
         };
         if (!valid) throw new ArgumentException("Invalid laboratory destination.");
     }
+
+    private static bool IsValidBattleDamageDraw(BattleDamageEffectIntent intent, int side) =>
+        intent.Controller == side &&
+        BattleDamageEffectRules.AfterBattleDamage(intent.SourceResourceId, side, 1 - side, 1, false) is
+            { Kind: BattleDamageEffectKind.Draw } draw && draw == intent;
 
     private static void Target(CardTarget target, int side, params DuelZone[] allowed)
     {

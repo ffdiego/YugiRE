@@ -9,6 +9,7 @@ internal static class MonsterBattleRuleChecks
     public static void Run(Action<bool, string> check)
     {
         RunBattleDraws(check);
+        RunQueuedBattleDraws(check);
         (ushort Id, byte Boost, byte Weaken)[] auras =
             [(491, 1, 2), (627, 2, 1), (523, 3, 4), (597, 4, 3), (526, 5, 6), (608, 6, 5)];
         foreach (var (id, boost, weaken) in auras)
@@ -102,6 +103,120 @@ internal static class MonsterBattleRuleChecks
               new CpuDuelController(1).Step(cpu) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
               cpu.Life[0] == 7400,
             "CPU can make a legal direct attack through a stronger defending monster");
+    }
+
+    private sealed class BattleDrawGate : IPresentationGate
+    {
+        public Type? Hold { get; set; }
+        public bool CanAdvance => true;
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
+            command.Command.GetType() != Hold;
+    }
+
+    private static Card?[] Field(Card? card) => [card, null, null, null, null];
+
+    private static void Drain(ActionQueue queue)
+    {
+        for (int tick = 0; queue.IsBusy && tick < 40; tick++) queue.Tick();
+        if (queue.IsBusy) throw new InvalidOperationException("Battle draw queue did not drain.");
+    }
+
+    private static void RunQueuedBattleDraws(Action<bool, string> check)
+    {
+        var first = Monster(951, 1);
+        var second = Monster(952, 1);
+        var normal = Monster(24, 1, 600);
+        var butcher = Monster(BattleDamageEffectRules.BistroButcher, 2, 1800);
+        var sorcerer = Monster(BattleDamageEffectRules.MaskedSorcerer, 2, 900);
+        Card[] pieces = ExodiaRules.RequiredNames.Select((name, i) =>
+            Monster((ushort)(3100 + i), 1) with { Name = name }).ToArray();
+
+        foreach (int side in new[] { 0, 1 })
+        foreach (var (source, target, defense, lethal, shortfall, exodia) in new[]
+        {
+            (sorcerer, (Card?)null, false, false, false, false),
+            (butcher, normal, false, false, false, false),
+            (butcher, normal, true, false, false, false),
+            (butcher, normal, false, true, false, false),
+            (butcher, normal, false, false, true, false),
+            (butcher, normal, false, false, true, true),
+            (butcher, normal, false, false, false, true)
+        })
+        {
+            int opponent = 1 - side;
+            int recipient = source == sorcerer ? side : opponent;
+            Card[] deck = exodia ? (shortfall ? [pieces[4]] : [pieces[4], second]) :
+                shortfall ? [first] : [first, second];
+            DemoDuel State()
+            {
+                var duel = DemoDuel.FromPartialObservation(opponent, exodia ? pieces[..4] : [],
+                    side == 0 ? Field(source) : Field(target), side == 1 ? Field(source) : Field(target),
+                    lethal ? 100 : 8000, side0Deck: recipient == 0 ? deck : [], side1Deck: recipient == 1 ? deck : []);
+                duel.EndTurn(out _);
+                duel.DefensePosition[opponent, 0] = defense;
+                return duel;
+            }
+
+            int targetSlot = target is null ? -1 : 0;
+            var legacy = State();
+            check(legacy.BeginBattle(out _) && legacy.Attack(0, targetSlot, out _), "Legacy battle draw comparison");
+            var queued = State();
+            var gate = new BattleDrawGate();
+            var queue = queued.CreatePrimitiveActionQueue(gate);
+            check(queued.BeginBattle(out _) && queued.TryQueueAttack(0, targetSlot, out _),
+                "Battle draw source is admitted through the queue");
+
+            if (target is not null && !defense && !lethal)
+            {
+                gate.Hold = typeof(DamageCommand);
+                for (int i = 0; i < 12 && queue.Active?.Command is not DamageCommand && queue.IsBusy; i++) queue.Tick();
+                check(queue.Active?.Command is DamageCommand && queued.HandFor(recipient).Count == (exodia ? 4 : 0) &&
+                    queued.Monsters[opponent, 0] == target, "Damage gate blocks battle draws and removal");
+                gate.Hold = typeof(DrawCommand);
+                for (int i = 0; i < 12 && queue.Active?.Command is not DrawCommand && queue.IsBusy; i++) queue.Tick();
+                check(queue.Active?.Command is DrawCommand && queued.LastDeckFlow is null &&
+                    queued.Monsters[opponent, 0] == target, "First draw gate blocks remaining draws and battle removal");
+                gate.Hold = null;
+            }
+            Drain(queue);
+            check(queued.Life.SequenceEqual(legacy.Life) && queued.Winner == legacy.Winner &&
+                queued.ExodiaWinner == legacy.ExodiaWinner && queued.LastDeckFlow == legacy.LastDeckFlow &&
+                queued.HandFor(recipient).SequenceEqual(legacy.HandFor(recipient)) &&
+                queued.DeckSnapshot(recipient).SequenceEqual(legacy.DeckSnapshot(recipient)) &&
+                queued.Monsters.Cast<Card?>().SequenceEqual(legacy.Monsters.Cast<Card?>()) &&
+                queued.Graveyard(opponent).SequenceEqual(legacy.Graveyard(opponent)),
+                "Battle draw, completion, loss precedence and removal agree with the legacy sandbox");
+        }
+
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool pass in new[] { false, true })
+        {
+            int opponent = 1 - side;
+            var trap = new Card(1214, AttackTrapRules.MagicCylinder, "Magic Cylinder", "", 21u << 20);
+            var duel = DemoDuel.FromPartialObservation(opponent, [trap],
+                side == 0 ? Field(sorcerer) : Field(null), side == 1 ? Field(sorcerer) : Field(null), 8000,
+                side0Deck: side == 0 ? [first] : [], side1Deck: side == 1 ? [first] : []);
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _), "Battle draw trap fixture");
+            var console = new DuelConsoleSession(duel);
+            check(console.Execute("attack 0 direct").Enqueued, "Battle draw attack before the trap window");
+            Drain(console.Queue);
+            check(console.Execute(pass ? "respond-attack pass" : $"respond-attack {opponent} 0").Enqueued,
+                "Battle draw trap pass or activation is admitted");
+            Drain(console.Queue);
+            check(duel.Life[pass ? opponent : side] == 7100 && duel.HandFor(side).Count == (pass ? 1 : 0) &&
+                (duel.LastDeckFlow is not null) == pass, "Only actual battle damage triggers the draw after the response");
+        }
+
+        var reflected = DemoDuel.FromPartialObservation(1, [], Field(sorcerer), Field(normal),
+            8000, side0Deck: [first]);
+        reflected.DefensePosition[0, 0] = true;
+        reflected.MonsterFaceDown[0, 0] = true;
+        var reflectedQueue = reflected.CreatePrimitiveActionQueue();
+        check(reflected.BeginBattle(out _) && reflected.TryQueueAttack(0, 0, out _),
+            "Masked Sorcerer can defend while hidden");
+        Drain(reflectedQueue);
+        check(reflected.Life[1] == 7800 && reflected.HandFor(0).SequenceEqual([first]) &&
+            reflected.Monsters[0, 0] == sorcerer, "Reflected defense damage draws for the defending source");
     }
 
     private static void RunBattleDraws(Action<bool, string> check)

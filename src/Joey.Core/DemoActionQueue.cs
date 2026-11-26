@@ -284,7 +284,7 @@ public sealed partial class DemoDuel
         private PrepareNormalPlacementCommand? placement;
         private readonly HashSet<CardTarget> paidTributes = [];
         private bool resolvingJar;
-        private readonly Queue<DuelCommand> reservedDrawSpell = new();
+        private readonly Queue<DuelCommand> reservedMandatoryDrawEffects = new();
         private CardTarget? drawSpellSource;
         private bool drawSpellSourceSpent;
         private CardTarget? searchSpellSource;
@@ -384,6 +384,10 @@ public sealed partial class DemoDuel
                 return duel.OpenAttackResponse(openAttackResponse);
             if (command is ResolveAttackResponseCommand attackResponse)
                 return ResolveAttackResponse(attackResponse, followups);
+            if (command is ResolveBattleDamageDrawCommand battleDraw)
+                return ResolveBattleDamageDraw(battleDraw, followups);
+            if (command is FinishBattleDamageDrawCommand finishBattleDraw)
+                return FinishBattleDamageDraw(finishBattleDraw);
             if (command is ResolveSpentAttackTrapCommand spentAttackTrap)
                 return ResolveSpentAttackTrap(spentAttackTrap, followups);
             if (command is ResolveSummonResponseCommand summonResponse)
@@ -394,13 +398,10 @@ public sealed partial class DemoDuel
                 return duel.OpenQueuedBattleFlipTargets(openBattleTargets, followups);
             if (command is FinishBattleFlipCommand finishBattleFlip)
                 return duel.FinishQueuedBattleFlip(finishBattleFlip, followups);
-            // A draw during Skelengel FLIP can end the duel (Exodia). Its
-            // already marked defender still needs the reserved cleanup.
+            // An exact battle reservation may still need cleanup after lethal damage or Exodia.
             if (duel.GameOver && command is SnapshotBattleRemovalCommand afterWin &&
-                afterWin.Role==1 && duel.queuedBattleRemoved[1] is { } marked &&
-                marked.Target==afterWin.Target && marked.Card.Id==FlipEffectRules.Skelengel)
+                duel.queuedBattleRemoved[afterWin.Role] is { } marked && marked.Target == afterWin.Target)
                 return duel.SnapshotQueuedBattleRemoval(afterWin);
-            // Only a reserved battle snapshot may finish after lethal LP.
             if (command is OpenBattleRecruitmentCommand)
                 return duel.OpenQueuedBattleRecruitment();
             if (command is FinishBattleRemovalCommand battleFinish)
@@ -462,13 +463,11 @@ public sealed partial class DemoDuel
                      !duel.IsFinalDestinySource(finalPayment.Source)))
                     return new(CommandOutcome.Skipped,"Final Destiny's complete cost was not paid.");
             }
-            bool finishDrawSpell = reservedDrawSpell.TryPeek(out var expectedDraw) && expectedDraw == command;
-            if (finishDrawSpell) reservedDrawSpell.Dequeue();
-            // Legacy Morphing Jar draws every available card for both players,
-            // even if Exodia is found mid-batch. Only this reserved batch may
-            // continue its draws after a winner has been set.
+            bool finishMandatoryDrawEffect = reservedMandatoryDrawEffects.TryPeek(out var expectedDraw) && expectedDraw == command;
+            if (finishMandatoryDrawEffect) reservedMandatoryDrawEffects.Dequeue();
+            // Admitted mandatory batches still finish after Exodia or lethal damage.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || finishDrawSpell || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishMandatoryDrawEffect || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             if (duel.HasQueuedEndDiscard && command is not EndTurnDiscardCommand)
@@ -820,7 +819,7 @@ public sealed partial class DemoDuel
 
         private CommandResult ActivateDrawSpell(ActivateDrawSpellCommand activate, IActionCommandSink followups)
         {
-            if (reservedDrawSpell.Count != 0 || drawSpellSource is not null ||
+            if (reservedMandatoryDrawEffects.Count != 0 || drawSpellSource is not null ||
                 followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Draw spell requires isolated activation.");
             if (!duel.TryResolveCardTarget(activate.Source, out _, out _))
@@ -845,7 +844,7 @@ public sealed partial class DemoDuel
                 var context = new EffectContext();
                 context.Draw(activate.Side, effect.Cards);
                 context.ChangeLifePoints(1 - activate.Side, effect.OpponentLifeGain);
-                foreach (var next in context.Commands) reservedDrawSpell.Enqueue(next);
+                foreach (var next in context.Commands) reservedMandatoryDrawEffects.Enqueue(next);
                 return new(context.Commands);
             });
             return new(CommandOutcome.Applied);
