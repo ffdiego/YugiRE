@@ -22,8 +22,9 @@ public sealed partial class DemoDuel
     private PendingCardSelection? queuedBattleDeckSelectionRequest;
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
-    private static bool IsPlainBattlePilot(Card card) => card.IsMonster &&
-        (card.Id is 24 or 1351 || NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id));
+    private static bool IsPassiveBattlePilot(Card card) => card.IsMonster &&
+        (card.Id is 24 or 1351 || NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
+            CountedAttributeRules.ContainsKey(card.Id));
 
     private static bool HasBattleRemovalDeckSelection(Card card) => card.IsMonster &&
         (CardSelectionRules.BattleRecruitAttribute(card.Id) is not null ||
@@ -31,7 +32,7 @@ public sealed partial class DemoDuel
             CardSelectionRules.OnFieldToGraveyardFilter(card.Id) is not null);
 
     private static bool IsOrdinaryBattlePilot(Card card) =>
-        IsPlainBattlePilot(card) || HasBattleRemovalDeckSelection(card) ||
+        IsPassiveBattlePilot(card) || HasBattleRemovalDeckSelection(card) ||
         card.IsMonster && BattleDamageEffectRules.SupportsDraw(card.Id);
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
@@ -124,7 +125,7 @@ public sealed partial class DemoDuel
             {
                 if (!IsSupportedQueuedBattleBackRow(side,z)) return false;
                 if (z != (side == attackerSide ? source : target) && Monsters[side,z] is { } other &&
-                    !IsPlainBattlePilot(other)) return false;
+                    !IsPassiveBattlePilot(other)) return false;
             }
         }
         return true;

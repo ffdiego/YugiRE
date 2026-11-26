@@ -22,6 +22,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Blue Medicine (1006/P041) | **Done** (escopo sandbox na fila) | [C05](docs/cards/c05-queued-blue-medicine.md), `TimedEquipmentAndQueuedLpChecks.cs` | Mão/Set, gasto e HealCommand +400 LP; sem caminho legado novo ou paridade nativa. |
 | Tremendous Fire (346/P053) | **Done** (escopo sandbox na fila) | `LifePointSpellRules.cs`, `TimedEquipmentAndQueuedLpChecks.cs` | App/CPU, mão/Set. O sandbox declara empate quando esse efeito zera os dois LP. |
+| Monstros com atributos por contagem (10 IDs) | **Done** (escopo sandbox na fila) | `DemoCountedMonsterAttributes.cs`, `CountedMonsterAttributeChecks.cs` | ATK/DEF derivados de mão, campo e cemitério. Invocação e combate usam os produtores comuns. |
 | Magias normais de compra fixa `P119/P143` | **Done** (2 IDs no sandbox) | Pot of Greed (1010) e Upstart Goblin (1065). `DrawSpellRules`, `DemoDuel` e `DrawSpellChecks` cobrem mão, Set, contagens, LP e uso pela CPU. | Exigem cartas suficientes no deck. Sem correntes, negação ou comparação nativa do timing. |
 | Equipamentos `P025` | **Done** (24 IDs, escopo sandbox) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs). [Ciclo fixo testado](docs/cards/c04-fixed-equipment-lifecycle.md); UI/CPU da fila e supressões pendentes; [dinâmicos](docs/cards/c04-dynamic-equipment-lifecycle.md) |
 | Eternal Rest (655/P092) | **Done** (sandbox na fila, condicionado ao CI) | [C02](docs/cards/c02-eternal-rest.md), `QueuedMonsterWipeChecks.cs` | Destruição não seletiva de monstros equipados, ambos os lados; vínculos e limpeza por comando. Sem UI/CPU, correntes ou paridade nativa. |
@@ -252,6 +253,24 @@ App e na CPU, com gasto e mudanças de LP em comandos separados.
 Goblin usam `TryQueueDrawSpell`, com gasto antes da continuação,
 DrawCommand por carta e HealCommand posterior de Upstart.
 [Contrato](docs/cards/c12-queued-draw-spells.md).
+
+### Atributos por contagem (C03)
+
+| Recursos | Modificador quando revelado |
+| --- | --- |
+| Swamp Battleguard (11), Lava Battleguard (553) | +500 ATK por cópia revelada do parceiro no próprio campo |
+| Wodan the Resident of the Forest (234), Machine King (406) | +100 ATK por Planta ou Máquina, respectivamente, revelada em qualquer campo |
+| Harpie's Pet Dragon (385) | +300 ATK/DEF por Harpie Lady revelada nos dois campos (61 ou 1249) |
+| Shadow Ghoul (367) | +100 ATK por monstro no próprio cemitério |
+| Dark Magician Girl (759) | +300 ATK por Dark Magician (34, 1210, 2034) ou Magician of Black Chaos (721) em ambos os cemitérios |
+| Buster Blader (808) | +500 ATK por Dragão revelado no campo adversário ou no cemitério adversário |
+| Muka Muka (515), Flash Assailant (1111) | +300 ou −400 ATK/DEF, respectivamente, por carta na própria mão |
+
+A fila recalcula os atributos após movimentos e revelação. O sandbox
+usa o tipo do DAT no filtro de campo. Mudanças dinâmicas de tipo e
+comparação pareada com o Joey original continuam pendentes.
+[Contagens de campo e cemitério](docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl) ·
+[Contagens adicionais](docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
 
 ### Destruição de monstros na fila (C12)
 

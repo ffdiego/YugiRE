@@ -76,7 +76,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 - [x] **C01 — Taxonomia de efeitos por texto local.** Status: `Concluído`. Taxonomia local concluída: 264 sem efeito, 433 fila/resposta, 72 revisão, duas candidatas triviais. [Detalhes](docs/plans/CARDS.md#c01)
 - [ ] **C02 — Lotes triviais por família.** Status: `Pronto`. Selecionar famílias independentes de risco baixo/médio (C18) com produtor na fila. [Detalhes](docs/plans/CARDS.md#c02)
-- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`. Priorizar bônus por contagem já mapeados (C18); admitir os combatentes e seus modificadores na fila. [Detalhes](docs/plans/CARDS.md#c03)
+- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`. Priorizar gatilhos independentes com comandos disponíveis. Dano de batalha depende de A06/A07. [Detalhes](docs/plans/CARDS.md#c03)
 - [ ] **C04 — Equipamentos `P025`.** Status: `Parcial`. Migrar fluxos legados de mão dos equipamentos P025 (C12); demais efeitos depois. [Detalhes](docs/plans/CARDS.md#c04)
 - [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Parcial`. Ampliar efeitos independentes de LP pela triagem C18; dano por armadilha e FLIP depende do gatilho na fila. [Detalhes](docs/plans/CARDS.md#c05)
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto`. Migrar armadilhas existentes em C12; novas respostas/correntes depois. [Detalhes](docs/plans/CARDS.md#c06)
