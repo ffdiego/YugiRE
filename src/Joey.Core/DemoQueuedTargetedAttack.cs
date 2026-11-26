@@ -53,6 +53,12 @@ public sealed partial class DemoDuel
 
     internal bool HasDeclaredAttack(int side, int slot) => attackDeclarations[side, slot] != 0;
 
+    private void RecordBattleAttack(int side, int slot, Card attacker)
+    {
+        attackDeclarations[side, slot]++;
+        firstBattleAttacker ??= attacker;
+    }
+
     private bool AllowsQueuedAttackUse(int side, int slot, Card attacker, bool declared) =>
         declared ? HasDeclaredAttack(side, slot) :
             attackDeclarations[side, slot] < (attacker.Id == HayabusaKnight ? 2 : 1);
@@ -92,7 +98,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             !AllowsQueuedAttackUse(p, s, ac, declared) || MonsterFaceDown[p,s] || DefensePosition[p,s] ||
-            AttackRestrictedByInsectBarrier(p, ac))
+            AttackRestrictedByContinuousSpells(p, ac))
             return false;
         unsupported = (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
@@ -112,7 +118,7 @@ public sealed partial class DemoDuel
             !TryPlanTargetedAttack(command.Attacker,command.Defender,out var a,out var b,out _))
             return new(CommandOutcome.Rejected,"Targeted battle no longer satisfies pilot restrictions.");
 
-        attackDeclarations[a.Target.Side, a.Slot]++;
+        RecordBattleAttack(a.Target.Side, a.Slot, a.Card);
         if (HasQueuedAttackResponseTrap(command.Side))
         {
             queue.Enqueue(new OpenAttackResponseCommand(command.Side, command.Attacker, command.Defender,
