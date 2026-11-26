@@ -131,8 +131,10 @@ comparam cada normal com o legado nos dois lados, atacando, defendendo
 de face para cima ou em defesa oculta e como aliado em ataque direto.
 Masked Sorcerer e Bistro Butcher já executam suas compras após dano de
 batalha pela fila. P168 também executa os efeitos de LP após a remoção
-de batalha antes de oferecer as cópias. Restam outros gatilhos de
-remoção, FLIPs e campos com contínuas fora do piloto.
+de batalha antes de oferecer as cópias. Sangan e Witch of the Black
+Forest usam após batalha o mesmo produtor obrigatório de busca de
+P006. Restam outros gatilhos de remoção, FLIPs e campos com contínuas
+fora do piloto.
 
 Para fechar o C12 completo após a paridade, retirar os resolvedores
 legados equivalentes do caminho padrão, desacoplar seus `Pending*` de

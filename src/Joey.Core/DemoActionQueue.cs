@@ -403,7 +403,7 @@ public sealed partial class DemoDuel
                 duel.queuedBattleRemoved[afterWin.Role] is { } marked && marked.Target == afterWin.Target)
                 return duel.SnapshotQueuedBattleRemoval(afterWin);
             if (command is OpenBattleRecruitmentCommand)
-                return duel.OpenQueuedBattleRecruitment();
+                return duel.OpenQueuedBattleDeckSelection();
             if (command is FinishBattleRemovalCommand battleFinish)
                 return duel.FinishQueuedBattleRemoval(battleFinish, followups);
             // The equipped monster's reserved cleanup still runs after lethal battle damage.
@@ -1803,9 +1803,9 @@ public sealed partial class DemoDuel
             reservedDeckSearchOwner = null;
             reservedDeckSearch.Clear();
             deckSearchMoved = false;
-            bool battleRecruitment = duel.queuedBattleRecruitmentRequest is not null;
+            bool battleDeckSelection = duel.queuedBattleDeckSelectionRequest is not null;
             duel.BeginNextQueuedDeckSearch();
-            if (battleRecruitment) duel.RefreshQueuedBattleRecruitmentRequest();
+            if (battleDeckSelection) duel.RefreshQueuedBattleDeckSelectionRequest();
             return new(CommandOutcome.Applied);
         }
 
