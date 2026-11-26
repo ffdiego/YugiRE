@@ -1774,13 +1774,13 @@ public sealed partial class DemoDuel
         }
     }
 
-    private void DrawToHand(int player)
+    private void DrawToHand(int player, bool checkExodia = true)
     {
         Card card = decks[player].Dequeue();
         int index = hands[player].Count;
         hands[player].Add(card);
         HandTransferred?.Invoke(new(player, index, card, FromDeck: true));
-        CheckExodia(player);
+        if (checkExodia) CheckExodia(player);
     }
 
     /// <summary>

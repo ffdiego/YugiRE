@@ -43,6 +43,22 @@ Após C12.1, usar a triagem de C01/C18 e confirmar a mecânica antes de implemen
   C02.9: P123 (1015/1016/1075/1076/1082, Yugi/Kaiba) usa gasto e ATK/DEF temporário por ocorrência, Main/Battle ociosa, expiração na troca de turno. [Contrato](../../docs/cards/c02-p123-temporary-stats.md). Done headless condicionado ao CI, sem Damage Step, correntes ou Verified.
   `python scripts/card_effect_backlog.py scratch/card-taxonomy.json` resume Pending e Partial por rota e família usando o manifesto atual. Use `--pack joey` para filtrar o pack Joey. Exportações iniciais v1 que também rotulavam compra simples como busca são aceitas como compra.
 
+### C02.10 — Card Destruction
+
+Card Destruction (1221/P215) reutiliza o produtor comum de compra.
+A resolução espera o gasto por ocorrência, depois enfileira cada
+descarte. Só após os gates dos descartes conhece a quantidade de
+compras de cada lado. O sandbox trata a reposição como um lote
+para Exodia e decide deck-out antes de verificar as mãos completas.
+
+DAT e catálogo confirmam o recurso no pack Yugi. SQLite v7 identifica
+`005820A0` e `0058E1F0`, sem corpo indexado para esses dois endereços.
+O estudo estático aponta descarte via `00575970` e compra via `00578B60`.
+A guarda de Deck do ativador segue a regra pública. Ordem de compra,
+deck-out e prioridades precisam de comparação nativa. A CPU usa
+a ativação para encerrar o duelo por falta de Deck adversário.
+[Regras e recorte](../../CARDS.md#magias-lp-e-compra-na-fila-c12).
+
 ## C03 — Monstros de efeito restantes (193 Effect)
 
 <a id="c03"></a>
@@ -66,6 +82,8 @@ porque alteração dinâmica de tipo segue pendente. C# testa ambos
 lados, filtro face-up, grupo correto e valor no dano pela fila.
 A cobertura aumenta em 10 Done. A comparação dinâmica segue pendente.
 [Cartas e fórmulas](../../CARDS.md#atributos-por-contagem-c03).
+[PR #210](https://github.com/ffdiego/YugiRE/pull/210) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45829629992).
 
 ## C04 — Equipamentos `P025`
 

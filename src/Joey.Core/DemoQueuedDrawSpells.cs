@@ -16,13 +16,12 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    private bool CanResolveQueuedDrawSpell(CardTarget source, out DrawSpellEffect effect)
+    private bool CanResolveQueuedDrawSpell(CardTarget source, out Card card)
     {
-        effect = default;
+        card = null!;
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
-            !TryResolveCardTarget(source, out int index, out var card) ||
-            DrawSpellRules.Effect(card) is not { } plan ||
-            DeckCount(source.Side) < plan.Cards) return false;
+            !TryResolveCardTarget(source, out int index, out card) ||
+            !DrawSpellRules.SupportsQueued(card)) return false;
         if (source.Zone == DuelZone.Hand)
         {
             if (FirstFreeSpellZone() < 0) return false;
@@ -33,7 +32,11 @@ public sealed partial class DemoDuel
                 equipment.Any(e => e.Owner == source.Side && e.SourceZone == index)) return false;
         }
         else return false;
-        effect = plan;
-        return true;
+        if (DrawSpellRules.IsCardDestruction(card))
+        {
+            int ownCount = hands[source.Side].Count - (source.Zone == DuelZone.Hand ? 1 : 0);
+            return (ownCount > 0 || hands[1 - source.Side].Count > 0) && DeckCount(source.Side) >= ownCount;
+        }
+        return DrawSpellRules.Effect(card) is { } plan && DeckCount(source.Side) >= plan.Cards;
     }
 }

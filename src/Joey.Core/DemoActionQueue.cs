@@ -96,7 +96,7 @@ public sealed partial class DemoDuel
     /// <summary>Existing fixed-effect executors; no target or cost selection at admission.</summary>
     public static bool SupportsQueuedFixedSpell(Card card) => FieldSpellRules.Supports(card.Id) ||
         card.Id == InfiniteCardsId || card.ClassCode == 22 &&
-        (DrawSpellRules.Effect(card) is not null || DeckSearchSpellRules.Filter(card.Id) is not null ||
+        (DrawSpellRules.SupportsQueued(card) || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
          SpellTrapWipeRules.SupportsQueued(card.Id));
 
@@ -112,7 +112,7 @@ public sealed partial class DemoDuel
             return false;
         if (FieldSpellRules.Supports(card.Id)) return TryPlanFieldActivation(source, out _);
         if (card.Id == InfiniteCardsId) return CanActivateInfiniteCards(source, out _);
-        if (DrawSpellRules.Effect(card) is not null)
+        if (DrawSpellRules.SupportsQueued(card))
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
             return CanResolveDeckSearchSpell(source, out _);
@@ -138,7 +138,7 @@ public sealed partial class DemoDuel
         if (FieldSpellRules.Supports(card.Id))
             return TryQueueFieldSpellActivation(zone,index,out message,origin);
         if (card.ClassCode!=22) return false;
-        if (DrawSpellRules.Effect(card) is not null)
+        if (DrawSpellRules.SupportsQueued(card))
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
             return TryQueueDeckSearchSpell(zone, index, out message, origin);
@@ -429,6 +429,7 @@ public sealed partial class DemoDuel
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
+            if (command is FinishCardDestructionCommand cardDestruction) return FinishCardDestruction(cardDestruction);
             if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision, followups);
             // An unspent source cancels the entire reserved wipe, including linked consequences.
             if (wipe is { SourceSpent: false } pendingWipe &&
@@ -519,7 +520,7 @@ public sealed partial class DemoDuel
                         duel.Winner = 1 - draw.Side;
                         return new(CommandOutcome.Applied, "Empty deck: player loses (sandbox policy).");
                     }
-                    duel.DrawToHand(draw.Side);
+                    duel.DrawToHand(draw.Side, checkExodia: !resolvingCardDestructionDraws);
                     return new(CommandOutcome.Applied);
                 case DamageCommand damage:
                     duel.ChangeLife(damage.Side, -damage.Amount, damage.DeferDuelResult);
@@ -610,6 +611,8 @@ public sealed partial class DemoDuel
                         targetedMonsterSpellPaid = discarded.Outcome == CommandOutcome.Applied;
                     if (discarded.Outcome == CommandOutcome.Applied && flipDeckFlow is { IsMill: false } scout &&
                         scout.NewSpells.Contains(discard.Target)) scout.Discarded++;
+                    if (discarded.Outcome == CommandOutcome.Applied && cardDestructionDiscards is { } counts)
+                        counts[discard.Side]++;
                     return discarded;
                 case SpecialSummonCommand specialSummon:
                     return SpecialSummonFromSource(specialSummon);
@@ -834,7 +837,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Rejected, "Draw spell requires isolated activation.");
             if (!duel.TryResolveCardTarget(activate.Source, out _, out _))
                 return new(CommandOutcome.Skipped, "Draw spell occurrence gone.");
-            if (!duel.CanResolveQueuedDrawSpell(activate.Source, out var effect))
+            if (!duel.CanResolveQueuedDrawSpell(activate.Source, out var card))
                 return new(CommandOutcome.Rejected, "Draw spell no longer legal.");
             // Spending is a separate command; the continuation below is pure
             // with respect to duel state and emits effects only after a successful spend.
@@ -847,6 +850,9 @@ public sealed partial class DemoDuel
                 drawSpellSource = null;
                 drawSpellSourceSpent = false;
                 if (!spent || duel.GameOver) return new([]);
+                if (DrawSpellRules.IsCardDestruction(card)) return PlanCardDestruction(activate.Side);
+                var effect = DrawSpellRules.Effect(card) ??
+                    throw new InvalidOperationException("Reserved draw spell has no effect.");
                 // Recheck availability before issuing the reserved batch.
                 // No other admitted action can run between these draws.
                 if (duel.DeckCount(activate.Side) < effect.Cards)
@@ -892,7 +898,7 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Set spell occurrence gone.");
             bool fixedSpell = card.ClassCode == 22 && (LifePointSpellRules.SupportsQueued(card.Id) ||
-                DrawSpellRules.Effect(card) is not null || MonsterWipeRules.SupportsQueued(card.Id) ||
+                DrawSpellRules.SupportsQueued(card) || MonsterWipeRules.SupportsQueued(card.Id) ||
                 DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
                 SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || card.Id == FinalDestiny ||
                 ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));

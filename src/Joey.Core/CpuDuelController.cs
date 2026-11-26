@@ -328,7 +328,9 @@ public sealed class CpuDuelController
                         if (!(useLpSpell ||
                               ShouldClearSpellTraps(duel, candidate.Id, queued: true,
                                   excludedSlot: zone == DuelZone.SpellTrap ? i : -1) ||
-                              DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards) ||
+                              DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards ||
+                              DrawSpellRules.IsCardDestruction(candidate) &&
+                                  duel.DeckCount(1 - Player) < duel.HandFor(1 - Player).Count) ||
                             !duel.CanQueueFixedSpellActivation(zone, i)) continue;
                         int index = i;
                         return Act(CpuAction.Spell, (out string m) =>
