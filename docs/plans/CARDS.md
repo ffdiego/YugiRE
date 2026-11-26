@@ -113,6 +113,25 @@ vazio, dano de batalha antes do FLIP, dano letal e supressão. Compatibilidade
 com configurações de batalha ainda legadas e comparação dinâmica
 seguem pendentes.
 [Estudo de P044](../research/card-static-sweep/01-lp-destruicao-respostas.jsonl).
+[PR #214](https://github.com/ffdiego/YugiRE/pull/214) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45833101536).
+
+### C03.4 — Ganhos de LP na Standby
+
+Spirit of the Breeze (1437), Dancing Fairy (1438), Cure Mermaid
+(1441) e Marie the Fallen One (1446) entram como 4 Done do pack
+Joey. O DAT confirma zona, pose e valor. A fila emite uma cura por
+ocorrência elegível do jogador ativo após o gate da compra normal
+e os retornos atrasados de Standby. A fase ocorre também quando
+Offerings to the Doomed pula a compra.
+
+O estudo estático localiza os ramos de campo em `005A627D`,
+`005A637D` e `005A647E`. `005A6530` no SQLite v7 confirma a
+varredura do cemitério e o ganho de 200 por Marie elegível. O
+sandbox resolve campo por família e slot crescente e depois
+cemitério. A ordem entre cópias e supressão por Prohibition
+permanecem pendentes. Os testes não promovem nenhuma carta a Verified.
+[Pesquisa de Standby](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
 
 ## C04 — Equipamentos `P025`
 

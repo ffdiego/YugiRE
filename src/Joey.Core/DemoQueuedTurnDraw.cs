@@ -2,6 +2,35 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
+    private readonly record struct StandbyFieldLifeRule(ushort ResourceId, int Amount, bool? Defense);
+
+    private const ushort MarieTheFallenOne = 1446;
+    private static readonly StandbyFieldLifeRule[] StandbyFieldLifeRules =
+    [
+        new(1437, 1000, Defense: false), // Spirit of the Breeze
+        new(1438, 1000, Defense: true),  // Dancing Fairy
+        new(1441, 800, Defense: null),   // Cure Mermaid
+    ];
+
+    private static bool IsStandbyLifeMonster(Card card) => card.IsMonster &&
+        (card.Id == MarieTheFallenOne || StandbyFieldLifeRules.Any(rule => rule.ResourceId == card.Id));
+
+    private IEnumerable<DuelCommand> StandbyLifeEffects(int side)
+    {
+        foreach (var rule in StandbyFieldLifeRules)
+        for (int slot = 0; slot < 5; slot++)
+        {
+            if (Monsters[side, slot] is { IsMonster: true } card && card.Id == rule.ResourceId &&
+                !MonsterFaceDown[side, slot] && (rule.Defense is null || rule.Defense == DefensePosition[side, slot]))
+                yield return new HealCommand(side, rule.Amount);
+        }
+        foreach (var card in graves[side])
+        {
+            if (card.IsMonster && card.Id == MarieTheFallenOne)
+                yield return new HealCommand(side, 200);
+        }
+    }
+
     public bool TryQueueTurnDraw(out string message, ActionOrigin origin = ActionOrigin.Player)
     {
         message = "Turn draw requires an idle duel and an unused draw for the active player.";
@@ -22,8 +51,13 @@ public sealed partial class DemoDuel
         if (!TakeTurnDraw(out bool skipped))
             return new(CommandOutcome.Applied, "Empty deck: active player loses (demo policy).");
 
-        if (!GameOver && FindDueStandbyRevival() >= 0)
-            followups.Enqueue(new ResolveStandbyRevivalCommand(command.Side, command.ExpectedTurn));
+        if (!GameOver)
+        {
+            if (FindDueStandbyRevival() >= 0)
+                followups.Enqueue(new ResolveStandbyRevivalCommand(command.Side, command.ExpectedTurn));
+            if (StandbyLifeEffects(command.Side).Any())
+                followups.ScheduleContinuation(_ => new(GameOver ? [] : [.. StandbyLifeEffects(command.Side)]));
+        }
         return new(CommandOutcome.Applied, skipped ? "Draw Phase skipped." : "");
     }
 
