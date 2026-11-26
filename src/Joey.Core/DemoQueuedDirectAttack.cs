@@ -34,12 +34,12 @@ public sealed partial class DemoDuel
             BattleDamageEffectRules.AfterBattleDamage(card.Id,side,1-side,1,false) is not null ||
             card.Id is 219 or 522)
             return false;
-        // Fail closed: do not silently bypass response windows, field auras,
-        // linked equipment or alternate target selection.
+        // Fail closed for unsupported field context, linked equipment
+        // or alternate target selection.
         bool admitAlliedNormals = HasQueuedAttackResponseTrap(side);
         for(int p=0;p<2;p++)
         {
-            if(FieldSpells[p] is not null) return false;
+            if(!IsSupportedQueuedBattleFieldSpell(p)) return false;
             for(int z=0;z<5;z++)
                 if(!IsSupportedQueuedBattleBackRow(p,z) ||
                     (p!=side || z!=slot) && Monsters[p,z] is { } other &&
