@@ -332,6 +332,8 @@ caminhos de revelação fora do recorte ainda usam o resolvedor
 legado. O catálogo aponta `005860E0` para P086, sem corpo nas
 tabelas consultadas do SQLite v7. Comparação dinâmica pendente.
 [Contrato de FLIPs de deck](../cards/c12-queued-flip-deck-flow.md).
+[PR #225](https://github.com/ffdiego/YugiRE/pull/225) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45880054620).
 
 ## A07 — Turno e fases como comandos/estágios da fila
 

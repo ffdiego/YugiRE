@@ -550,12 +550,14 @@ public sealed partial class DemoDuel
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
         (!HasDeclaredAttack(ActivePlayer, zone) ||
             HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
+        (attacker.Id != ZombyraTheDark || Enumerable.Range(0, 5).Any(slot => Monsters[1 - ActivePlayer, slot] is not null)) &&
         !AttackRestrictedByContinuousSpells(ActivePlayer, attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
         DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
 
     private bool DirectAttackAllowed(int player, Card attacker)
     {
+        if (attacker.Id == ZombyraTheDark) return false;
         if (DirectAttackRules.AttacksThroughAnyMonster(attacker.Id)) return true;
         int opponent = 1 - player;
         for (int zone = 0; zone < 5; zone++)
@@ -1134,7 +1136,7 @@ public sealed partial class DemoDuel
         sum = new(sum.Attack + ElementalBattleAttributeRules.AttackDelta(
             monster.Id, p, ActivePlayer, Phase == DemoPhase.Battle, opposingSouls), sum.Defense);
         var temporary = temporaryStats.GetValueOrDefault(monster);
-        sum = new(sum.Attack + temporary.Attack + battleBonus.Attack,
+        sum = new(sum.Attack + temporary.Attack + battleBonus.Attack - zombyraAttackLoss.GetValueOrDefault(monster),
             sum.Defense + temporary.Defense + battleBonus.Defense);
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
@@ -2450,7 +2452,11 @@ public sealed partial class DemoDuel
 
     private void ClearMonsterSlot(int player, int zone, bool removeEquipment = true)
     {
-        if (Monsters[player, zone] is Card departing) temporaryStats.Remove(departing);
+        if (Monsters[player, zone] is Card departing)
+        {
+            temporaryStats.Remove(departing);
+            zombyraAttackLoss.Remove(departing);
+        }
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
         MonsterWasFlipped[player, zone] = false;

@@ -99,6 +99,7 @@ internal static class QueuedBattleCalculationChecks
             "Higher DEF damages Mad Sword Beast's controller without piercing");
 
         CheckInsectSoldiers(check);
+        CheckZombyra(check);
     }
 
     private static void CheckInsectSoldiers(Action<bool, string> check)
@@ -135,5 +136,72 @@ internal static class QueuedBattleCalculationChecks
         Drain(defendingQueue);
         check(defending.Life.SequenceEqual([7200, 8000]) && defending.Graveyard(0).Single() == soldiers,
             "Insect Soldiers gain no bonus while defending against WIND");
+    }
+
+    private static void CheckZombyra(Action<bool, string> check)
+    {
+        var zombyra = Monster(1523, 15, 2100, 500);
+        var weaker = Monster(77, 15, 1300, 1000);
+        var duel = DemoDuel.FromPartialObservation(1, [], [weaker, weaker, null, null, null],
+            [zombyra, null, null, null, null], 8000);
+        var queue = duel.CreatePrimitiveActionQueue();
+        void NextOwnTurn()
+        {
+            for (int turn = 0; turn < 2; turn++)
+            {
+                if (!duel.TryQueueEndTurn(out _)) throw new InvalidOperationException("Could not advance Zombyra fixture.");
+                Drain(queue);
+            }
+        }
+
+        for (int battle = 0; battle < 2; battle++)
+        {
+            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, battle, out _) &&
+                duel.AttackValue(1, 0) == 2100 - 200 * battle, "Zombyra declares using its existing ATK");
+            Drain(queue);
+            check(duel.Monsters[0, battle] is null && duel.AttackValue(1, 0) == 1900 - 200 * battle &&
+                duel.DefenseValue(1, 0) == 500, "Zombyra loses 200 ATK per completed battle destruction");
+            if (battle == 0) NextOwnTurn();
+        }
+        check(duel.Life[0] == 6600 && !duel.CanAttack(0) && !duel.CanAttackDirectly(0) &&
+            !duel.TryQueueAttack(0, -1, out _, out bool unsupported) && !unsupported,
+            "Zombyra retains the accumulated loss across turns and cannot declare on an empty opposing field");
+        var commands = queue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed)
+            .Select(entry => entry.Entry.Command.GetType().Name).ToList();
+        check(commands.Count(name => name == "ApplyZombyraBattleAttackLossCommand") == 2 &&
+            commands.LastIndexOf("ApplyZombyraBattleAttackLossCommand") > commands.LastIndexOf("FinishBattleRemovalCommand"),
+            "Each Zombyra attack loss has its own command after battle removal");
+
+        check(duel.TryCaptureCardTarget(1, DuelZone.Monster, 0, out var source), "Capture weakened Zombyra");
+        queue.Enqueue(new ReturnToHandCommand(1, source));
+        Drain(queue);
+        NextOwnTurn();
+        check(duel.TryQueueNormalPlacement(0, 0, false, out _), "The same Zombyra can be summoned after leaving the field");
+        Drain(queue);
+        check(duel.AttackValue(1, 0) == 2100 &&
+            duel.TryCaptureCardTarget(1, DuelZone.Monster, 0, out var returned) && returned == source,
+            "Returning Zombyra to the field resets the penalty for the same occurrence");
+
+        var defending = Battle(weaker, zombyra);
+        var defenseQueue = defending.CreatePrimitiveActionQueue();
+        check(defending.TryQueueTargetedAttack(0, 0, out _), "Zombyra can win while being attacked");
+        Drain(defenseQueue);
+        check(defending.AttackValue(0, 0) == 1900 && defending.Monsters[1, 0] is null,
+            "Zombyra applies the loss when it destroys the attacking monster");
+
+        var tied = Battle(zombyra, Monster(77, 15, 2100, 1000));
+        var tieQueue = tied.CreatePrimitiveActionQueue();
+        check(tied.TryQueueTargetedAttack(0, 0, out _), "Equal attack battle fixture is admitted");
+        Drain(tieQueue);
+        check(tied.Monsters[0, 0] is null && tied.Monsters[1, 0] is null &&
+            !tieQueue.Trace.Any(entry => entry.Entry.Command.GetType().Name == "ApplyZombyraBattleAttackLossCommand"),
+            "A Zombyra destroyed in the same battle leaves no surviving occurrence to modify");
+
+        var flip = Battle(zombyra, Monster(FlipEffectRules.NeedleWorm, 10, 750, 600), defense: true, faceDown: true);
+        var flipQueue = flip.CreatePrimitiveActionQueue();
+        check(flip.TryQueueTargetedAttack(0, 0, out _), "Zombyra can attack a supported FLIP defender");
+        Drain(flipQueue);
+        check(flip.LastDeckFlow is not null && flip.AttackValue(1, 0) == 1900 && flip.Monsters[0, 0] is null,
+            "Zombyra loses ATK after a successful battle destruction following FLIP");
     }
 }
