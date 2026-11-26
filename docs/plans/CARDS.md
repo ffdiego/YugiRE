@@ -125,8 +125,8 @@ Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
 têm produtores na fila em recortes documentados. O App ainda ativa a
 fila por `--queued-actions`. App e CPU chamam o ataque legado quando o
 produtor enfileirado recusa a jogada. O combate com alvo ainda usa
-dois IDs normais explícitos no piloto, seis recrutadores elementais e
-três FLIPs. A cobertura de 264 normais de C13 foi validada no sandbox e
+dois IDs explícitos do piloto inicial, seis recrutadores elementais e
+três FLIPs. A lista inicial não representa a categoria Normal. A cobertura de 264 normais de C13 foi validada no sandbox e
 ainda precisa de regressão equivalente pelo caminho padrão. Também
 restam gatilhos de dano e remoção, como P168, Bistro Butcher e Masked
 Sorcerer, e campos com contínuas fora do piloto.
