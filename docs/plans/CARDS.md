@@ -348,12 +348,30 @@ tabelas consultadas. A ordem com a resposta de invocação, a
 escolha de alvo oculto e a duração quando a fonte é ocultada
 seguem as políticas do sandbox e aguardam comparação dinâmica.
 [Pesquisa de vínculos](../research/card-static-sweep/02-zonas-e-modificadores.jsonl).
+[PR #231](https://github.com/ffdiego/YugiRE/pull/231) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45912879637).
 
 ## C04 — Equipamentos `P025`
 
 <a id="c04"></a>
 
 Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além dos três recursos modelados (Legendary Sword, Beast Fangs, Sword of Dark Destruction). O perfil `P025` tem 41 callbacks catalogados; **não assumir** que os 41 tenham a mesma regra. Fatia de 18 IDs dos packs com bônus fixos implementada no fluxo de mão existente; ver [contrato C04](../../docs/cards/c04-fixed-equipment.md). Testes C# aprovados. Set e fila: fatia C04.2 com EquipCommand, 21 IDs fixos e 3 dinâmicos no sandbox opt-in, sem novo caminho legado. C04.4: 21 fixos Done no escopo sandbox após CI de ciclo completo mão/Set, ambos lados e quatro saídas; seleção por ocorrência. C04.5: três dinâmicos Done no escopo sandbox após CI, composição e ciclo de vida; [contrato](../../docs/cards/c04-dynamic-equipment-lifecycle.md). [Ciclo fixo](../../docs/cards/c04-fixed-equipment-lifecycle.md). UI/CPU, supressões e demais efeitos continuam pendentes. Ver [contrato](../../docs/cards/c04-queued-dynamic-equipment.md). Stim-Pack/Germ Infection: aritmética estática fechada, produtor de avanço temporal não localizado; depende de A07. [Evidência e limites](../../docs/cards/c04-timed-equipment.md).
+
+### C04.6 — Equipamentos de dano perfurante
+
+Fairy Meteor Crush (1313) equipa monstros revelados. Cyclon
+Laser (1540) exige Gradius (1339) e acrescenta 300 ATK pelo
+modelo de atributos já existente. Ambos usam o produtor
+mão/Set e a limpeza por ocorrência da fila.
+
+`00579CE0` contém os filtros. `005B8210` e `0056D8D0`
+distinguem vínculos por lado do equipamento. Contra defesa,
+o sandbox aplica a diferença positiva uma vez por lado
+adversário ao dono da fonte. Quando ambos os lados sofrem
+dano, a fila resolve os dois comandos antes de adjudicar.
+Empate em dano letal duplo, supressão e ordem exata dos LP
+aguardam comparação dinâmica com Joey.
+[Inventário P025](../../docs/cards/p025-preliminary.md).
 
 ## C05 — Curas/danos adicionais em tabelas de efeitos
 

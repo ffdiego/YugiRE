@@ -1113,6 +1113,7 @@ public sealed partial class DemoDuel
                     unchecked(sum.Defense + contribution.Delta.Defense));
                 continue;
             }
+            if (e.Card.Id == EquipmentRules.FairyMeteorCrush) continue;
             var delta = NativeAiAttributes.EquipmentDelta(e.Card.Id, stats, monster.Id);
             if (!delta.IsSupported) throw new InvalidOperationException("Unsupported equipment in demo link list");
             sum = new(unchecked(sum.Attack + delta.Value.Attack), unchecked(sum.Defense + delta.Value.Defense));

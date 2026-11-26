@@ -210,9 +210,7 @@ public sealed partial class DemoDuel
             int delta = QueuedTargetedBattlePower(command.Side, reserved.Attacker.Slot, reserved.Defender.Slot).Difference;
             reserved.FlipCalculated=true;
             queuedBattleRemoved[1]=delta>0?reserved.Defender:null;
-            int damage = TargetedBattleDamage(delta, reserved.Attacker.Card, defenderInDefense: true);
-            if (damage > 0)
-                queue.Enqueue(new DamageCommand(delta < 0 ? command.Side : 1 - command.Side, damage));
+            queue.EnqueueBatch(TargetedBattleDamage(reserved.Attacker, delta, defenderInDefense: true));
             var defender = reserved.Defender.Target;
             queue.Enqueue(reserved.Defender.Card.Id switch
             {
@@ -393,10 +391,32 @@ public sealed partial class DemoDuel
         _ => default
     };
 
-    private static int TargetedBattleDamage(int difference, Card attacker, bool defenderInDefense)
+    private DuelCommand[] TargetedBattleDamage(BattleReservation attacker, int difference, bool defenderInDefense)
     {
-        if (difference > 0 && defenderInDefense && attacker.Id != MadSwordBeast) return 0;
-        return Math.Min(Math.Abs(difference), ushort.MaxValue);
+        int side = attacker.Target.Side;
+        int amount = Math.Min(Math.Abs(difference), ushort.MaxValue);
+        if (amount == 0) return [];
+        if (difference < 0) return [new DamageCommand(side, amount)];
+        if (!defenderInDefense) return [new DamageCommand(1 - side, amount)];
+
+        bool damageDefender = attacker.Card.Id == MadSwordBeast;
+        bool damageAttacker = false;
+        foreach (var equip in equipment)
+        {
+            if (!ReferenceEquals(equip.TargetCard, attacker.Card) || equip.TargetPlayer != side ||
+                equip.TargetZone != attacker.Slot || !EquipmentRules.GrantsPiercing(equip.Card.Id) ||
+                !IsTrackedBattleEquipment(equip)) continue;
+            if (equip.Owner == side) damageDefender = true;
+            else damageAttacker = true;
+        }
+        if (damageDefender && damageAttacker)
+            return [
+                new DamageCommand(1 - side, amount) { DeferDuelResult = true },
+                new DamageCommand(side, amount) { DeferDuelResult = true },
+                new FinishJointDamageCommand(side)
+            ];
+        if (damageDefender) return [new DamageCommand(1 - side, amount)];
+        return damageAttacker ? [new DamageCommand(side, amount)] : [];
     }
 
     private void QueuePlainBattleOutcome(BattleReservation a,BattleReservation b,IActionBatchSink queue)
@@ -405,20 +425,21 @@ public sealed partial class DemoDuel
         var (atk, delta) = QueuedTargetedBattlePower(p, a.Slot, b.Slot);
         bool removeA=!b.Defense && (delta<0 || delta==0 && atk>0);
         bool removeB=delta>0 || !b.Defense && delta==0 && atk>0;
-        int amount = TargetedBattleDamage(delta, a.Card, b.Defense);
-        int damaged=delta<0?p:e;
+        var damage = TargetedBattleDamage(a, delta, b.Defense);
+        int damaged = delta < 0 ? p : e;
+        int amount = damage.OfType<DamageCommand>().FirstOrDefault(command => command.Side == damaged)?.Amount ?? 0;
         var effect = BattleEffectAfterDamage(delta < 0 ? b.Card : a.Card, 1 - damaged, amount);
         var removals = new List<DuelCommand>();
         if (removeA) removals.Add(new SnapshotBattleRemovalCommand(p, a.Target, 0));
         if (removeB) removals.Add(new SnapshotBattleRemovalCommand(e, b.Target, 1));
-        if (effect is null && amount > 0) removals.Add(new DamageCommand(damaged, amount));
+        if (effect is null) removals.AddRange(damage);
         if (removeA) PlanBattleRemoval(a, 0, removals, removeB ? null : b);
         if (removeB) PlanBattleRemoval(b, 1, removals, removeA ? null : a);
         if (effect is null)
             queue.EnqueueBatch(removals);
         else
         {
-            queue.EnqueueBatch([new DamageCommand(damaged, amount), effect]);
+            queue.EnqueueBatch([.. damage, effect]);
             if (removals.Count != 0) queue.ScheduleContinuation(_ => new(removals));
         }
         queuedBattleRemoved[0]=removeA?a:null;

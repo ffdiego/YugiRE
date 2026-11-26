@@ -14,6 +14,10 @@ public sealed record EquipmentTargetContext(
 /// properties, implement 0056C510, or decide full native activation legality.</summary>
 public static class EquipmentRules
 {
+    internal const ushort FairyMeteorCrush = 1313;
+    internal const ushort CyclonLaser = 1540;
+    private const ushort Gradius = 1339;
+
     // Restrict activation to the reviewed fixed-bonus spells. The shared
     // callback profile alone is not sufficient (e.g. Metalmorph, Megamorph).
     private static readonly Dictionary<ushort, byte> types = new()
@@ -47,7 +51,10 @@ public static class EquipmentRules
         types.ContainsKey(resourceId) || attributes.ContainsKey(resourceId);
 
     // Keep the legacy UI whitelist unchanged. New dynamic cards require the queue.
-    public static bool SupportsQueued(ushort resourceId) => Supports(resourceId) || DynamicEquipmentRules.Supports(resourceId);
+    public static bool SupportsQueued(ushort resourceId) => Supports(resourceId) ||
+        DynamicEquipmentRules.Supports(resourceId) || GrantsPiercing(resourceId);
+
+    internal static bool GrantsPiercing(ushort resourceId) => resourceId is FairyMeteorCrush or CyclonLaser;
 
     public static NativeAiResult<bool> Eligibility(ushort resourceId, EquipmentTargetContext? target) =>
         Evaluate(resourceId, target, queued: false);
@@ -66,6 +73,8 @@ public static class EquipmentRules
         bool common = target.Player is >= 0 and <= 1 && target.Zone is >= 0 and < 5 &&
             target.InternalIndex is > 0 and <= 0xfff && target.ResourceId != ushort.MaxValue &&
             target.FaceUp.Value && target.GenericGuardsSatisfied.Value;
+        if (queued && GrantsPiercing(resourceId))
+            return NativeAiResult<bool>.Supported(common && (resourceId == FairyMeteorCrush || target.ResourceId == Gradius));
         bool specific = queued && DynamicEquipmentRules.Supports(resourceId) || (types.TryGetValue(resourceId, out byte type)
             ? target.DynamicType == type
             : attributes.TryGetValue(resourceId, out byte attribute) && target.DynamicAttribute == attribute);
