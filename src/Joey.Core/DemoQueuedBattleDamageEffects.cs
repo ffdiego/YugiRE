@@ -2,16 +2,21 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
-    private static ResolveBattleDamageDrawCommand? BattleDrawAfterDamage(Card source, int controller, int amount) =>
-        BattleDamageEffectRules.AfterBattleDamage(source.Id, controller, 1 - controller, amount, false) is
-            { Kind: BattleDamageEffectKind.Draw } intent ? new(controller, intent) : null;
+    private static DuelCommand? BattleEffectAfterDamage(Card source, int controller, int amount) =>
+        BattleDamageEffectRules.AfterBattleDamage(source.Id, controller, 1 - controller, amount, false) switch
+        {
+            { Kind: BattleDamageEffectKind.Draw } draw => new ResolveBattleDamageDrawCommand(controller, draw),
+            { Kind: BattleDamageEffectKind.RandomDiscard } discard =>
+                new ResolveBattleDamageDiscardCommand(controller, discard.AffectedSide),
+            _ => null
+        };
 
     private static void EnqueueDirectBattleDamage(Card source, int controller, int damage, IActionBatchSink queue)
     {
         if (damage <= 0) return;
         var hit = new DamageCommand(1 - controller, damage);
-        if (BattleDrawAfterDamage(source, controller, damage) is { } draw)
-            queue.EnqueueBatch([hit, draw]);
+        if (BattleEffectAfterDamage(source, controller, damage) is { } effect)
+            queue.EnqueueBatch([hit, effect]);
         else
             queue.Enqueue(hit);
     }
@@ -19,6 +24,22 @@ public sealed partial class DemoDuel
     private sealed partial class PrimitiveActionExecutor
     {
         private FinishBattleDamageDrawCommand? pendingBattleDrawFinish;
+
+        private CommandResult ResolveBattleDamageDiscard(ResolveBattleDamageDiscardCommand command,
+            IActionCommandSink followups)
+        {
+            if (duel.GameOver) return new(CommandOutcome.Skipped, "Battle damage ended the duel.");
+            if (followups is not IActionBatchSink { PendingCount: 0 })
+                return new(CommandOutcome.Rejected, "Battle discard requires an isolated damage result.");
+
+            int side = command.DamagedSide;
+            int? index = BattleDamageEffectRules.ChooseRandomDiscardIndex(duel.hands[side].Count, duel.effectRandom.Next);
+            if (index is null) return new(CommandOutcome.Applied, "The opponent's hand is empty.");
+            if (!duel.TryCaptureCardTarget(side, DuelZone.Hand, index.Value, out var target))
+                return new(CommandOutcome.Skipped, "The selected hand occurrence is unavailable.");
+            followups.Enqueue(new DiscardCommand(side, target));
+            return new(CommandOutcome.Applied);
+        }
 
         private CommandResult ResolveBattleDamageDraw(ResolveBattleDamageDrawCommand command, IActionCommandSink followups)
         {

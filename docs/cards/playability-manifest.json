@@ -1615,6 +1615,28 @@
       ]
     },
     {
+      "id": "battle-damage.random-hand-discard-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        113
+      ],
+      "mechanics": [
+        "Queue-backed targeted and direct combat in the supported battle configurations",
+        "After the battle damage gate, select one occurrence from the damaged player's current hand using the duel RNG and enqueue a discard",
+        "No discard when the hand is empty, the attack is canceled, or battle damage ended the duel"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedBattleDamageEffects.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/cards/c03-battle-damage-effects.md"
+      ],
+      "limitations": [
+        "Native RNG, discard-trigger interactions and differential validation are pending."
+      ]
+    },
+    {
       "id": "draw.card-destruction-c02",
       "kind": "Spell",
       "subtype": "Normal",

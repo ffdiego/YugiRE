@@ -387,6 +387,8 @@ public sealed partial class DemoDuel
                 return ResolveAttackResponse(attackResponse, followups);
             if (command is ResolveBattleDamageDrawCommand battleDraw)
                 return ResolveBattleDamageDraw(battleDraw, followups);
+            if (command is ResolveBattleDamageDiscardCommand battleDiscard)
+                return ResolveBattleDamageDiscard(battleDiscard, followups);
             if (command is FinishBattleDamageDrawCommand finishBattleDraw)
                 return FinishBattleDamageDraw(finishBattleDraw);
             if (command is ResolveSpentAttackTrapCommand spentAttackTrap)

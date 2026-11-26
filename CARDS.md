@@ -23,6 +23,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Blue Medicine (1006/P041) | **Done** (escopo sandbox na fila) | [C05](docs/cards/c05-queued-blue-medicine.md), `TimedEquipmentAndQueuedLpChecks.cs` | Mão/Set, gasto e HealCommand +400 LP; sem caminho legado novo ou paridade nativa. |
 | Tremendous Fire (346/P053) | **Done** (escopo sandbox na fila) | `LifePointSpellRules.cs`, `TimedEquipmentAndQueuedLpChecks.cs` | App/CPU, mão/Set. O sandbox declara empate quando esse efeito zera os dois LP. |
 | Monstros com atributos por contagem (10 IDs) | **Done** (escopo sandbox na fila) | `DemoCountedMonsterAttributes.cs`, `CountedMonsterAttributeChecks.cs` | ATK/DEF derivados de mão, campo e cemitério. Invocação e combate usam os produtores comuns. |
+| White Magical Hat (113/P019) | **Done** (escopo sandbox na fila) | `DemoQueuedBattleDamageEffects.cs`, `MonsterBattleRuleChecks.cs` | Dano de batalha positivo e não letal causa um descarte aleatório, após o gate do dano. |
 | Magias normais de compra fixa `P119/P143` | **Done** (2 IDs no sandbox) | Pot of Greed (1010) e Upstart Goblin (1065). `DrawSpellRules`, `DemoDuel` e `DrawSpellChecks` cobrem mão, Set, contagens, LP e uso pela CPU. | Exigem cartas suficientes no deck. Sem correntes, negação ou comparação nativa do timing. |
 | Card Destruction (1221/P215) | **Done** (escopo sandbox na fila) | `DemoQueuedCardDestruction.cs`, `QueuedCardDestructionChecks.cs` | Gasta a magia, descarta ambas as mãos e repõe por quantidade descartada. Cobre deck-out e empate por Exodia simultâneo. |
 | Equipamentos `P025` | **Done** (24 IDs, escopo sandbox) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs). [Ciclo fixo testado](docs/cards/c04-fixed-equipment-lifecycle.md); UI/CPU da fila e supressões pendentes; [dinâmicos](docs/cards/c04-dynamic-equipment-lifecycle.md) |
@@ -208,6 +209,13 @@ Skelengel usa o ramo de compra única de `005887C0`. A escolha vem do texto do D
 | 522 | The Bistro Butcher | Done (sandbox) | Ao causar dano de batalha aos LP adversários, o adversário compra duas cartas |
 
 O produtor `00578540` agenda os pedidos para 219 e 522 após o comando de dano. Os callbacks `005844A0` e `00585D30` enviam os totais de compra a `00578B60`. O sandbox resolve a compra obrigatória após dano positivo e não letal, incluindo ataque direto e dano causado pelo defensor. Se faltarem cartas, compra as disponíveis e aplica deck-out. A ordem exata do pedido nativo e seus casos de deck-out seguem pendentes. [Estudo das rotinas de compra](docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl)
+
+White Magical Hat (113/P019) usa o mesmo encadeamento de dano de
+batalha. Após o gate, o RNG do duelo escolhe uma ocorrência na mão
+atual de quem sofreu o dano e a fila aplica um descarte. Mão vazia,
+ataque cancelado e dano letal não geram descarte. A comparação do RNG
+e das interações de descarte com o Joey segue pendente.
+[Contrato de dano de batalha](docs/cards/c03-battle-damage-effects.md).
 
 ### Destruição em massa de magias e armadilhas (P094/P141)
 

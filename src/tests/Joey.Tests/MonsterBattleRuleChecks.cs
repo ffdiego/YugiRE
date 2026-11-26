@@ -10,6 +10,7 @@ internal static class MonsterBattleRuleChecks
     {
         RunBattleDraws(check);
         RunQueuedBattleDraws(check);
+        RunQueuedBattleDiscard(check);
         (ushort Id, byte Boost, byte Weaken)[] auras =
             [(491, 1, 2), (627, 2, 1), (523, 3, 4), (597, 4, 3), (526, 5, 6), (608, 6, 5)];
         foreach (var (id, boost, weaken) in auras)
@@ -119,6 +120,74 @@ internal static class MonsterBattleRuleChecks
     {
         for (int tick = 0; queue.IsBusy && tick < 40; tick++) queue.Tick();
         if (queue.IsBusy) throw new InvalidOperationException("Battle draw queue did not drain.");
+    }
+
+    private static void RunQueuedBattleDiscard(Action<bool, string> check)
+    {
+        const int seed = 1979;
+        var source = Monster(BattleDamageEffectRules.WhiteMagicalHat, 1, 1200);
+        var target = Monster(24, 1, 600);
+        var duplicate = Monster(1351, 1);
+
+        foreach (int side in new[] { 0, 1 })
+        foreach (var (direct, defense, lethal, empty) in new[]
+        {
+            (true, false, false, false), (false, false, false, false),
+            (false, true, false, false), (true, false, true, false), (true, false, false, true)
+        })
+        {
+            int opposite = 1 - side;
+            Card[] hand = empty ? [] : [duplicate, duplicate, target];
+            Card? defender = direct ? null : target;
+            Card?[] sourceField = [source, source, null, null, null];
+            var duel = DemoDuel.FromPartialObservation(opposite, hand,
+                side == 0 ? sourceField : Field(defender), side == 1 ? sourceField : Field(defender),
+                lethal ? 100 : 8000, effectShuffleSeed: seed);
+            if (defense)
+            {
+                duel.MonsterFaceDown[side, 0] = duel.DefensePosition[side, 0] = true;
+                if (opposite == 0)
+                    check(duel.EndTurn(out _) && duel.EndTurn(out _), "White Magical Hat defender waits for a legal battle turn");
+            }
+            else check(duel.EndTurn(out _), "White Magical Hat passes to the attacking controller");
+            check(duel.BeginBattle(out _), "White Magical Hat fixture enters Battle Phase");
+            var gate = new BattleDrawGate { Hold = typeof(DamageCommand) };
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            CardTarget expected = default;
+            if (!empty)
+                check(duel.TryCaptureCardTarget(opposite, DuelZone.Hand, new Random(seed).Next(hand.Length), out expected),
+                    "White Magical Hat fixture records the deterministic chosen occurrence");
+            check(duel.TryQueueAttack(0, direct ? -1 : 0, out _), "White Magical Hat can battle through the normal queue");
+            for (int tick = 0; tick < 30 && queue.IsBusy && queue.Active?.Command is not DamageCommand; tick++) queue.Tick();
+            int damage = direct ? 1200 : defense ? 200 : 600;
+            check(queue.Active?.Command is DamageCommand && duel.Life[opposite] == Math.Max(0, (lethal ? 100 : 8000) - damage) &&
+                duel.HandFor(opposite).Count == hand.Length && !queue.Trace.Any(e => e.Entry.Command is DiscardCommand),
+                "White Magical Hat waits for damage presentation before choosing a discard");
+            gate.Hold = null;
+            Drain(queue);
+            var discards = queue.Trace.Where(e => e.Stage == ActionTraceStage.Executed)
+                .Select(e => e.Entry.Command).OfType<DiscardCommand>().ToArray();
+            bool discard = !empty && !lethal;
+            check(duel.Winner == (lethal ? side : (int?)null) &&
+                duel.HandFor(opposite).Count == hand.Length - (discard ? 1 : 0) &&
+                (discard ? discards.Length == 1 && discards[0].Target == expected : discards.Length == 0),
+                "White Magical Hat discards exactly the selected occurrence only after nonlethal damage");
+            check(direct || (duel.Monsters[opposite, 0] is null) == !defense,
+                "White Magical Hat finishes ordinary battle removal after the effect");
+        }
+
+        var trap = new Card(1214, AttackTrapRules.MagicCylinder, "Magic Cylinder", "", 21u << 20);
+        var canceled = DemoDuel.FromPartialObservation(0, [trap, duplicate], Field(null), Field(source), 8000);
+        check(canceled.SetFromHand(0, out _) && canceled.EndTurn(out _) && canceled.BeginBattle(out _),
+            "White Magical Hat trap fixture");
+        var console = new DuelConsoleSession(canceled);
+        check(console.Execute("attack 0 direct").Enqueued, "White Magical Hat declares before the response");
+        Drain(console.Queue);
+        check(console.Execute("respond-attack 0 0").Enqueued, "Magic Cylinder cancels White Magical Hat's attack");
+        Drain(console.Queue);
+        check(canceled.Life[1] == 6800 && canceled.HandFor(0).SequenceEqual([duplicate]) &&
+            !console.Queue.Trace.Any(entry => entry.Entry.Command is DiscardCommand),
+            "Damage by an attack Trap does not trigger White Magical Hat");
     }
 
     private static void RunQueuedBattleDraws(Action<bool, string> check)

@@ -294,6 +294,8 @@ gates, console e CPU. Demo.cs 2607 → 2600 linhas pela reutilização
 do registro do gatilho. A resolução de combate legada ainda atende
 configurações fora do piloto. A comparação de P169 no Joey segue
 pendente. [Contrato](../cards/c12-queued-graveyard-revival.md).
+[PR #212](https://github.com/ffdiego/YugiRE/pull/212) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45831426885).
 
 ## A07 — Turno e fases como comandos/estágios da fila
 
