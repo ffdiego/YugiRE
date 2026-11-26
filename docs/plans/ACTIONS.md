@@ -230,6 +230,14 @@ dano letal e equipamentos cruzados, com duas cópias do mesmo ID.
 O recorte de FLIP em batalha ainda usa campo sem equipamento.
 Demo.cs permanece com 2614 linhas.
 
+*FLIP em batalha com equipamento (C12.1):* o piloto de Skelengel,
+Man-Eater Bug e Penguin Soldier usa o ATK efetivo do atacante equipado.
+Se o FLIP remove o atacante, a fila limpa o equipamento antes de
+finalizar a destruição de batalha do defensor. Os testes C# cobrem
+os dois lados, a compra, a destruição e o retorno à mão com um
+equipamento controlado pelo defensor. Demo.cs permanece com 2614
+linhas. A ordem nativa com equipamento ainda aguarda comparação.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

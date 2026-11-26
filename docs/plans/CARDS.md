@@ -119,6 +119,23 @@ Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 
 Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
 
+### C12.1 — Bloqueios atuais do caminho padrão
+
+Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
+têm produtores na fila em recortes documentados. O App ainda ativa a
+fila por `--queued-actions`. App e CPU chamam o ataque legado quando o
+produtor enfileirado recusa a jogada. O combate com alvo ainda usa
+dois IDs normais explícitos no piloto, seis recrutadores elementais e
+três FLIPs. A cobertura de 264 normais de C13 foi validada no sandbox e
+ainda precisa de regressão equivalente pelo caminho padrão. Também
+restam gatilhos de dano e remoção, como P168, Bistro Butcher e Masked
+Sorcerer, e campos com contínuas fora do piloto.
+
+Para fechar o C12 completo após a paridade, retirar os resolvedores
+legados equivalentes do caminho padrão, desacoplar seus `Pending*` de
+`ActionsBlocked` e registrar a redução de Demo.cs por fatia. Regras de
+cartas sem equivalente jogável continuam nos IDs próprios.
+
 ### Histórico das fatias
 
 Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos (invariantes 1–5). Registrar aqui as cartas implementadas fora da fila enquanto `A02` não existir. Dívida inicial inclui as famílias dos lotes 6–14 (ver nota de consolidação abaixo), além das famílias listadas neste item.
