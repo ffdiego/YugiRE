@@ -544,7 +544,8 @@ public sealed partial class DemoDuel
     private bool AllowsTurnDraw => Phase == DemoPhase.Main && !battlePhaseEndedThisTurn && !drawn;
     public bool CanBeginBattle => !ActionsBlocked && AllowsBattlePhaseChange(enterBattle: true);
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
-        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
+        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } card &&
+        !IsManualPositionLocked(ActivePlayer, zone, card);
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } attacker &&
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
@@ -2457,6 +2458,7 @@ public sealed partial class DemoDuel
         {
             temporaryStats.Remove(departing);
             persistentMonsterStats.Remove(departing);
+            positionLockedThroughTurn.Remove(departing);
         }
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
