@@ -27,7 +27,8 @@ internal sealed record ResolveBattleDamageDiscardCommand(int Side, int DamagedSi
 internal sealed record FinishBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent, int Drawn) : DuelCommand(Side);
 internal sealed record OpenBattleRecruitmentCommand(int Side) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
-internal sealed record ApplyZombyraBattleAttackLossCommand(int Side, CardTarget Survivor, CardTarget Destroyed) : DuelCommand(Side);
+internal sealed record ApplyBattleDestructionStatChangeCommand(int Side, CardTarget Survivor, CardTarget Destroyed) : DuelCommand(Side);
+internal sealed record ResolveSlateWarriorFlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 internal sealed record FinishEndPhaseReturnCommand(int Side, int ExpectedTurn, CardTarget Source) : DuelCommand(Side);
@@ -201,9 +202,12 @@ internal static class DuelCommandValidation
             case FinishBattleRemovalCommand finishBattle when finishBattle.Role is 0 or 1:
                 Target(finishBattle.Target,finishBattle.Side,DuelZone.Monster);
                 break;
-            case ApplyZombyraBattleAttackLossCommand attackLoss:
-                Target(attackLoss.Survivor, attackLoss.Side, DuelZone.Monster);
-                Target(attackLoss.Destroyed, 1 - attackLoss.Side, DuelZone.Graveyard);
+            case ApplyBattleDestructionStatChangeCommand statChange:
+                Target(statChange.Survivor, statChange.Side, DuelZone.Monster);
+                Target(statChange.Destroyed, 1 - statChange.Side, DuelZone.Graveyard);
+                break;
+            case ResolveSlateWarriorFlipCommand slateFlip:
+                Target(slateFlip.Target, slateFlip.Side, DuelZone.Monster);
                 break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case ChangeBattlePhaseCommand { ExpectedTurn: > 0 }:

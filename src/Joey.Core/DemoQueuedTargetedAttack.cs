@@ -8,6 +8,7 @@ public sealed partial class DemoDuel
     private const ushort InsectSoldiersOfTheSky = 477;
     private const ushort ZombyraTheDark = 1523;
     private const int ZombyraAttackLossPerBattle = 200;
+    private const int SlateWarriorStatChange = 500;
     private const int WarriorType = 15;
     private const int WindAttribute = 6;
 
@@ -21,7 +22,7 @@ public sealed partial class DemoDuel
     private readonly BattleReservation?[] queuedBattleRemoved = new BattleReservation?[2];
     private readonly HashSet<CardTarget> queuedBattleEquipmentRemovals = [];
     private readonly Queue<DuelCommand> queuedBattlePostRemovalEffects = new();
-    private readonly Dictionary<Card, int> zombyraAttackLoss = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Card, NativeAiAttributeDelta> persistentMonsterStats = new(ReferenceEqualityComparer.Instance);
     private sealed record BattleRevealReservation(BattleReservation Attacker, BattleReservation Defender, int Turn)
     {
         public bool FlipCalculated { get; set; }
@@ -36,7 +37,8 @@ public sealed partial class DemoDuel
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
-            or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky or ZombyraTheDark ||
+            or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky or ZombyraTheDark
+            or FlipEffectRules.SlateWarrior ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -53,7 +55,8 @@ public sealed partial class DemoDuel
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         (card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
             or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi
-            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness || HasQueuedDeckFlip(card.Id));
+            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness or FlipEffectRules.SlateWarrior ||
+            HasQueuedDeckFlip(card.Id));
 
     private static bool HasQueuedDeckFlip(ushort id) =>
         id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout or FlipEffectRules.MorphingJar;
@@ -212,6 +215,7 @@ public sealed partial class DemoDuel
             {
                 FlipEffectRules.Skelengel => new OpenBattleFlipDrawCommand(defender.Side, defender),
                 FlipEffectRules.PrincessOfTsurugi => new ResolveBattleFlipDamageCommand(defender.Side, defender),
+                FlipEffectRules.SlateWarrior => new ResolveSlateWarriorFlipCommand(defender.Side, defender),
                 FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness =>
                     new OpenBattleFlipRecoveryCommand(defender.Side, defender),
                 var id when HasQueuedDeckFlip(id) => new OpenBattleFlipDeckFlowCommand(defender.Side, defender),
@@ -428,23 +432,36 @@ public sealed partial class DemoDuel
             queuedBattlePostRemovalEffects.Enqueue(effect);
             batch.Add(effect);
         }
-        if (survivor is { Card.Id: ZombyraTheDark } &&
+        if (survivor is not null && BattleDestructionStatChange(survivor.Card, removed.Card) != default &&
             TryResolveCardTarget(survivor.Target, out _, out _))
         {
-            var loss = new ApplyZombyraBattleAttackLossCommand(survivor.Target.Side, survivor.Target,
+            var loss = new ApplyBattleDestructionStatChangeCommand(survivor.Target.Side, survivor.Target,
                 removed.Target with { Zone = DuelZone.Graveyard });
             queuedBattlePostRemovalEffects.Enqueue(loss);
             batch.Add(loss);
         }
     }
 
-    private CommandResult ApplyZombyraBattleAttackLoss(ApplyZombyraBattleAttackLossCommand command)
+    private static NativeAiAttributeDelta BattleDestructionStatChange(Card survivor, Card destroyed)
     {
-        if (!TryResolveCardTarget(command.Survivor, out int slot, out var card) || card.Id != ZombyraTheDark ||
-            MonsterFaceDown[command.Side, slot] || !TryResolveCardTarget(command.Destroyed, out _, out _))
+        int loss = destroyed.Id == FlipEffectRules.SlateWarrior ? SlateWarriorStatChange : 0;
+        int additionalAttackLoss = survivor.Id == ZombyraTheDark ? ZombyraAttackLossPerBattle : 0;
+        return new(-loss - additionalAttackLoss, -loss);
+    }
+
+    private void AdjustPersistentMonsterStats(Card card, NativeAiAttributeDelta delta)
+    {
+        var prior = persistentMonsterStats.GetValueOrDefault(card);
+        persistentMonsterStats[card] = new(prior.Attack + delta.Attack, prior.Defense + delta.Defense);
+    }
+
+    private CommandResult ApplyBattleDestructionStatChange(ApplyBattleDestructionStatChangeCommand command)
+    {
+        if (!TryResolveCardTarget(command.Survivor, out int slot, out var card) ||
+            MonsterFaceDown[command.Side, slot] || !TryResolveCardTarget(command.Destroyed, out _, out var destroyed))
             return new(CommandOutcome.Skipped, "The reserved battle victory no longer applies.");
 
-        zombyraAttackLoss[card] = zombyraAttackLoss.GetValueOrDefault(card) + ZombyraAttackLossPerBattle;
+        AdjustPersistentMonsterStats(card, BattleDestructionStatChange(card, destroyed));
         return new(CommandOutcome.Applied);
     }
 

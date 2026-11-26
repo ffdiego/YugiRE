@@ -257,6 +257,22 @@ contribuição de −200 em `0056DD30`. A cardinalidade, o reset
 ao deixar o campo e a ordem exata com outros modificadores
 seguem pendentes de comparação dinâmica com Joey.
 [Pesquisa de atributos de batalha](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
+[PR #226](https://github.com/ffdiego/YugiRE/pull/226) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45880591858).
+
+### C03.11 — Modificadores de Slate Warrior
+
+Slate Warrior (1254/P166) ganha 500 de ATK e DEF no Flip
+Summon ou na revelação em batalha admitida. A fila resolve
+o FLIP depois de calcular o dano. Quando Slate é destruído
+em batalha, o sobrevivente perde 500 de ATK e DEF, inclusive
+quando não ocorreu FLIP. Os modificadores acumulam por
+ocorrência no campo e terminam quando o monstro sai.
+O DAT e os ramos de `0056DD30` no SQLite v7 indicam os deltas.
+O catálogo aponta `0058AFE0` para P166, sem corpo nas tabelas
+consultadas. A janela nativa, revelação por efeito externo e
+os casos de reinversão de atributos seguem pendentes.
+[Pesquisa de efeitos compostos](../research/card-static-sweep/08-efeitos-compostos-e-eventos.jsonl).
 
 ## C04 — Equipamentos `P025`
 

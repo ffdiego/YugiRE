@@ -1615,6 +1615,29 @@
       ]
     },
     {
+      "id": "flip.slate-warrior-stat-changes-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1254
+      ],
+      "mechanics": [
+        "Gain 500 ATK and DEF on queued Flip Summon or an admitted battle reveal",
+        "Apply a 500 ATK and DEF loss to the surviving monster that destroys Slate Warrior in queued battle",
+        "Keep adjustments attached to the field occurrence"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedBattleCalculationChecks.cs",
+        "docs/research/card-static-sweep/08-efeitos-compostos-e-eventos.jsonl"
+      ],
+      "limitations": [
+        "External effect reveals and native modifier suppression, reversal and timing remain pending."
+      ]
+    },
+    {
       "id": "battle.zombyra-the-dark-attack-loss-c03",
       "kind": "Monster",
       "subtype": "Effect",

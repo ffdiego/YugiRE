@@ -12,7 +12,7 @@ public enum DemoFlipEffect
     DestroyTwoSetSpellTraps, ReturnTwoSpellTraps,
     BanishThreeDeckBurn800, BanishTwoRandomHandBurn800,
     Gain3000LifePoints,
-    DestroyOpponentMonster, RecruitSameNameFaceDown, DamagePerOpposingSpellTrap
+    DestroyOpponentMonster, RecruitSameNameFaceDown, DamagePerOpposingSpellTrap, RaiseSelfStats
 }
 
 public enum DemoMonsterEffectTrigger { Flip, PositionChange }
@@ -37,6 +37,7 @@ public static class FlipEffectRules
     public const ushort FireSorcerer = 1436;
     public const ushort ImmortalOfThunder = 461;
     public const ushort BubonicVermin = 1307;
+    public const ushort SlateWarrior = 1254;
 
     public static DemoFlipEffect Effect(ushort resourceId) => resourceId switch
     {
@@ -57,6 +58,7 @@ public static class FlipEffectRules
         FireSorcerer => DemoFlipEffect.BanishTwoRandomHandBurn800,
         ImmortalOfThunder => DemoFlipEffect.Gain3000LifePoints,
         BubonicVermin => DemoFlipEffect.RecruitSameNameFaceDown,
+        SlateWarrior => DemoFlipEffect.RaiseSelfStats,
         _ => DemoFlipEffect.None
     };
     public static bool Supports(ushort resourceId) => Effect(resourceId) != DemoFlipEffect.None;

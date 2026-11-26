@@ -233,7 +233,7 @@ public sealed partial class DemoDuel
         DemoFlipEffect.RecruitSameNameFaceDown or DemoFlipEffect.MillOpponentDeck or
         DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour or
         DemoFlipEffect.BanishThreeDeckBurn800 or DemoFlipEffect.BanishTwoRandomHandBurn800 or
-        DemoFlipEffect.DamagePerOpposingSpellTrap or
+        DemoFlipEffect.DamagePerOpposingSpellTrap or DemoFlipEffect.RaiseSelfStats or
         DemoFlipEffect.ShuffleAndExcavate;
 
     // Snapshot linked consequences before the producer admits any removals.
@@ -402,6 +402,8 @@ public sealed partial class DemoDuel
                 return duel.OpenQueuedBattleFlipRecovery(recoveryFlip, followups);
             if (command is OpenBattleFlipDeckFlowCommand deckFlip)
                 return OpenBattleFlipDeckFlow(deckFlip, followups);
+            if (command is ResolveSlateWarriorFlipCommand slateFlip)
+                return ResolveSlateWarriorFlip(slateFlip, followups);
             if (command is ResolveBattleFlipDamageCommand damageFlip)
                 return duel.ResolveQueuedBattleFlipDamage(damageFlip, followups);
             if (command is OpenBattleFlipTargetsCommand openBattleTargets)
@@ -543,8 +545,8 @@ public sealed partial class DemoDuel
                         damage.Side == 1 - paid.Owner && damage.Amount == FlipBanishBurnRules.BurnDamage)
                         paid.DamageApplied = true;
                     return new(CommandOutcome.Applied);
-                case ApplyZombyraBattleAttackLossCommand attackLoss when finishBattleRemovalEffect:
-                    return duel.ApplyZombyraBattleAttackLoss(attackLoss);
+                case ApplyBattleDestructionStatChangeCommand statChange when finishBattleRemovalEffect:
+                    return duel.ApplyBattleDestructionStatChange(statChange);
                 case FinishJointDamageCommand:
                     if (duel.Life[0] == 0 && duel.Life[1] == 0) duel.IsDraw = true;
                     else if (duel.Life[0] == 0) duel.Winner = 1;
@@ -1264,6 +1266,14 @@ public sealed partial class DemoDuel
             if (HasQueuedDeckFlip(card.Id))
                 return ResolveFlipDeckFlow(position.Side, card,
                     new FinishFlipBatchCommand(position.Side, position.Target, position.WasInDefense), followups);
+            if (card.Id == FlipEffectRules.SlateWarrior)
+            {
+                followups.Enqueue(new ResolveSlateWarriorFlipCommand(side, position.Target));
+                followups.ScheduleContinuation(_ => new([new FinishFlipBatchCommand(side,
+                    position.Target, position.WasInDefense)]));
+                resolvingFlipBatch = true;
+                return new(CommandOutcome.Applied);
+            }
             if (card.Id == FlipEffectRules.FourStarredLadybugOfDoom)
                 return ResolveLadybug(position, followups);
             if (card.Id == FlipEffectRules.MorphingJar2)
@@ -1540,6 +1550,28 @@ public sealed partial class DemoDuel
             duel.ReturnSpellTrapCardToOwnerHand(target.Side, zone);
             if (singleReturn) current.PrimaryReturned = true;
             current.Targets.Remove(target);
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveSlateWarriorFlip(ResolveSlateWarriorFlipCommand command, IActionCommandSink followups)
+        {
+            if (!duel.TryResolveCardTarget(command.Target, out int slot, out var card) ||
+                card.Id != FlipEffectRules.SlateWarrior || duel.MonsterFaceDown[command.Side, slot])
+                throw new InvalidOperationException("Reserved Slate Warrior FLIP changed.");
+
+            if (duel.queuedBattleReveal is { FlipCalculated: true, FlipOpened: false } battle &&
+                battle.Defender.Target == command.Target)
+            {
+                if (!duel.ValidateBattleReveal(battle, faceDown: false, allowEnded: true))
+                    throw new InvalidOperationException("Reserved battle FLIP changed before the stat increase.");
+                battle.FlipOpened = true;
+                followups.Enqueue(new FinishBattleFlipCommand(command.Side, command.Target));
+            }
+            else if (!resolvingFlipBatch)
+                return new(CommandOutcome.Rejected, "No matching Slate Warrior FLIP.");
+
+            if (!duel.GameOver && !duel.FlipEffectsNegated)
+                duel.AdjustPersistentMonsterStats(card, new(SlateWarriorStatChange, SlateWarriorStatChange));
             return new(CommandOutcome.Applied);
         }
 
