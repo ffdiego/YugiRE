@@ -12,7 +12,7 @@ public enum DemoFlipEffect
     DestroyTwoSetSpellTraps, ReturnTwoSpellTraps,
     BanishThreeDeckBurn800, BanishTwoRandomHandBurn800,
     Gain3000LifePoints,
-    DestroyOpponentMonster, RecruitSameNameFaceDown
+    DestroyOpponentMonster, RecruitSameNameFaceDown, DamagePerOpposingSpellTrap
 }
 
 public enum DemoMonsterEffectTrigger { Flip, PositionChange }
@@ -30,6 +30,7 @@ public static class FlipEffectRules
     public const ushort HirosShadowScout = 610;
     public const ushort FourStarredLadybugOfDoom = 1338;
     public const ushort Skelengel = 539;
+    public const ushort PrincessOfTsurugi = 265;
     public const ushort Greenkappa = 585;
     public const ushort TornadoBird = 1521;
     public const ushort LadyAssailantOfFlames = 1435;
@@ -49,6 +50,7 @@ public static class FlipEffectRules
         HirosShadowScout => DemoFlipEffect.DrawAndDiscardOpponentSpells,
         FourStarredLadybugOfDoom => DemoFlipEffect.DestroyOpponentFaceUpLevelFour,
         Skelengel => DemoFlipEffect.OptionalDrawOne,
+        PrincessOfTsurugi => DemoFlipEffect.DamagePerOpposingSpellTrap,
         Greenkappa => DemoFlipEffect.DestroyTwoSetSpellTraps,
         TornadoBird => DemoFlipEffect.ReturnTwoSpellTraps,
         LadyAssailantOfFlames => DemoFlipEffect.BanishThreeDeckBurn800,

@@ -233,6 +233,7 @@ public sealed partial class DemoDuel
         DemoFlipEffect.RecruitSameNameFaceDown or DemoFlipEffect.MillOpponentDeck or
         DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour or
         DemoFlipEffect.BanishThreeDeckBurn800 or DemoFlipEffect.BanishTwoRandomHandBurn800 or
+        DemoFlipEffect.DamagePerOpposingSpellTrap or
         DemoFlipEffect.ShuffleAndExcavate;
 
     // Snapshot linked consequences before the producer admits any removals.
@@ -397,6 +398,8 @@ public sealed partial class DemoDuel
                 return ResolveSummonResponse(summonResponse, followups);
             if (command is OpenBattleFlipDrawCommand openBattleFlip)
                 return OpenBattleFlipDraw(openBattleFlip, followups);
+            if (command is ResolveBattleFlipDamageCommand damageFlip)
+                return duel.ResolveQueuedBattleFlipDamage(damageFlip, followups);
             if (command is OpenBattleFlipTargetsCommand openBattleTargets)
                 return duel.OpenQueuedBattleFlipTargets(openBattleTargets, followups);
             if (command is FinishBattleFlipCommand finishBattleFlip)
@@ -1243,6 +1246,14 @@ public sealed partial class DemoDuel
                 return ResolveJar2(position, change, followups);
             if (FlipBanishBurnRules.Cost(card.Id) is not null)
                 return ResolveFlipBanish(position, card, followups);
+            if (card.Id == FlipEffectRules.PrincessOfTsurugi)
+            {
+                duel.EnqueueOpposingSpellTrapDamage(side, followups);
+                followups.ScheduleContinuation(_ => new([new FinishFlipBatchCommand(side,
+                    position.Target, position.WasInDefense, false, false)]));
+                resolvingFlipBatch = true;
+                return new(CommandOutcome.Applied);
+            }
             if (card.Id == FlipEffectRules.MorphingJar)
             {
                 if (followups is not IActionBatchSink { PendingCount: 0 } queue)

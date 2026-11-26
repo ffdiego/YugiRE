@@ -24,7 +24,8 @@ public sealed partial class DemoDuel
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
-        (card.Id is 24 or 1351 || NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
+        (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi ||
+            NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id));
 
     private static bool HasBattleRemovalDeckSelection(Card card) => card.IsMonster &&
@@ -38,7 +39,7 @@ public sealed partial class DemoDuel
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
-            or FlipEffectRules.HaneHane;
+            or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi;
 
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player) =>
@@ -175,15 +176,39 @@ public sealed partial class DemoDuel
             reserved.FlipCalculated=true;
             queuedBattleRemoved[1]=delta>0?reserved.Defender:null;
             if(delta<0) queue.Enqueue(new DamageCommand(command.Side,Math.Min(-delta,ushort.MaxValue)));
-            queue.Enqueue(reserved.Defender.Card.Id==FlipEffectRules.Skelengel
-                ? new OpenBattleFlipDrawCommand(reserved.Defender.Target.Side,reserved.Defender.Target)
-                : new OpenBattleFlipTargetsCommand(reserved.Defender.Target.Side,reserved.Defender.Target));
+            var defender = reserved.Defender.Target;
+            queue.Enqueue(reserved.Defender.Card.Id switch
+            {
+                FlipEffectRules.Skelengel => new OpenBattleFlipDrawCommand(defender.Side, defender),
+                FlipEffectRules.PrincessOfTsurugi => new ResolveBattleFlipDamageCommand(defender.Side, defender),
+                _ => new OpenBattleFlipTargetsCommand(defender.Side, defender)
+            });
         }
         else
         {
             queuedBattleReveal=null;
             QueuePlainBattleOutcome(reserved.Attacker,reserved.Defender,queue);
         }
+        return new(CommandOutcome.Applied);
+    }
+
+    private void EnqueueOpposingSpellTrapDamage(int side, IActionCommandSink followups)
+    {
+        int count = SpellTrapWipeRules.CountOnSide(1 - side, Spells, FieldSpells);
+        if (count > 0) followups.Enqueue(new DamageCommand(1 - side, count * 500));
+    }
+
+    private CommandResult ResolveQueuedBattleFlipDamage(ResolveBattleFlipDamageCommand command, IActionCommandSink followups)
+    {
+        if (queuedBattleReveal is not { FlipCalculated: true, FlipOpened: false } reserved ||
+            reserved.Defender.Target != command.Defender || reserved.Defender.Card.Id != FlipEffectRules.PrincessOfTsurugi ||
+            followups is not IActionBatchSink { PendingCount: 0 })
+            return new(CommandOutcome.Rejected, "No matching calculated battle damage FLIP.");
+        if (!ValidateBattleReveal(reserved, faceDown: false, allowEnded: true))
+            throw new InvalidOperationException("Reserved battle FLIP changed before damage.");
+        reserved.FlipOpened = true;
+        if (!GameOver && !FlipEffectsNegated) EnqueueOpposingSpellTrapDamage(command.Side, followups);
+        followups.Enqueue(new FinishBattleFlipCommand(command.Side, command.Defender));
         return new(CommandOutcome.Applied);
     }
 
