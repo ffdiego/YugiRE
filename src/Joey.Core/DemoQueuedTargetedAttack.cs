@@ -10,6 +10,7 @@ public sealed partial class DemoDuel
     }
     private readonly BattleReservation?[] queuedBattleRemoved = new BattleReservation?[2];
     private readonly HashSet<CardTarget> queuedBattleEquipmentRemovals = [];
+    private readonly Queue<DuelCommand> queuedBattleLifeEffects = new();
     private sealed record BattleRevealReservation(BattleReservation Attacker, BattleReservation Defender, int Turn)
     {
         public bool FlipCalculated { get; set; }
@@ -27,8 +28,11 @@ public sealed partial class DemoDuel
     private static bool IsElementalBattleRecruiter(Card card) => card.IsMonster &&
         CardSelectionRules.BattleRecruitAttribute(card.Id) is not null;
 
+    private static bool IsBattleRecruiter(Card card) => IsElementalBattleRecruiter(card) ||
+        card.IsMonster && CardSelectionRules.BattleSameNameRecruiter(card.Id);
+
     private static bool IsOrdinaryBattlePilot(Card card) =>
-        IsPlainBattlePilot(card) || IsElementalBattleRecruiter(card) ||
+        IsPlainBattlePilot(card) || IsBattleRecruiter(card) ||
         card.IsMonster && BattleDamageEffectRules.SupportsDraw(card.Id);
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
@@ -297,6 +301,14 @@ public sealed partial class DemoDuel
             queuedBattleEquipmentRemovals.Add(equipmentDestroy.Target);
             batch.Add(equipmentDestroy);
         }
+        if (CardSelectionRules.BattleSameNameLifeChange(removed.Card.Id, removed.Target.Side) is { } lifeChange)
+        {
+            DuelCommand effect = lifeChange.Delta > 0
+                ? new HealCommand(lifeChange.Side, lifeChange.Delta)
+                : new DamageCommand(lifeChange.Side, -lifeChange.Delta);
+            queuedBattleLifeEffects.Enqueue(effect);
+            batch.Add(effect);
+        }
     }
 
     private CommandResult SnapshotQueuedBattleRemoval(SnapshotBattleRemovalCommand command)
@@ -331,9 +343,10 @@ public sealed partial class DemoDuel
 
     private void RefreshQueuedBattleRecruitmentRequest()
     {
-        // The restricted battle admits only P164 post-battle producers.
-        queuedBattleRecruitmentRequest=PendingCardSelection is { } next &&
-            IsElementalRecruitment(next) ? next : null;
+        queuedBattleRecruitmentRequest = PendingCardSelection is { } next &&
+            (IsElementalRecruitment(next) ||
+                CardSelectionRules.BattleSameNameRecruiter(next.EffectResourceId) && IsSameNameRecruitment(next))
+            ? next : null;
     }
 
     private CommandResult FinishQueuedBattleRemoval(FinishBattleRemovalCommand command,IActionCommandSink followups)
@@ -341,11 +354,10 @@ public sealed partial class DemoDuel
         var r=queuedBattleRemoved[command.Role];
         if(r is null || r.Target!=command.Target || !r.Detached)
             return new(CommandOutcome.Rejected,"No detached combatant to send.");
-        // Preserve the Card reference. Only a real battle arrival can
-        // produce P164; effect DestroyCommand never uses this path.
+        // Preserve the Card reference for recruitment from its actual battle arrival.
         graves[command.Side].Add(r.Card);
         queuedBattleRemoved[command.Role]=null;
-        if (!GameOver && IsElementalBattleRecruiter(r.Card))
+        if (!GameOver && IsBattleRecruiter(r.Card))
         {
             queuedDeckSearches.Enqueue((command.Side,r.Card,true,false,false));
             queuedBattleRecruitmentOpening=true;

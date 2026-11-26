@@ -130,8 +130,9 @@ piloto inicial, seis recrutadores elementais e quatro FLIPs. Os testes
 comparam cada normal com o legado nos dois lados, atacando, defendendo
 de face para cima ou em defesa oculta e como aliado em ataque direto.
 Masked Sorcerer e Bistro Butcher já executam suas compras após dano de
-batalha pela fila. Restam gatilhos de remoção, como P168, outros FLIPs
-e campos com contínuas fora do piloto.
+batalha pela fila. P168 também executa os efeitos de LP após a remoção
+de batalha antes de oferecer as cópias. Restam outros gatilhos de
+remoção, FLIPs e campos com contínuas fora do piloto.
 
 Para fechar o C12 completo após a paridade, retirar os resolvedores
 legados equivalentes do caminho padrão, desacoplar seus `Pending*` de

@@ -265,6 +265,16 @@ Regressões C# cobrem os dois lados, defesa revelada, passe de
 armadilha, dano zero, remoção, deck-out e Exodia. Demo.cs
 2614 → 2609 linhas. Ainda falta comparação com o executável.
 
+*P168 em batalha (C12.1):* Nimble Momonga e Giant Germ
+chegam ao cemitério pela fila e recebem, respectivamente, cura
+de 1000 e dano de 500 ao oponente por comando. Somente após as
+remoções, alterações de LP e respectivos gates o produtor oferece
+as cópias; os dois donos escolhem na ordem das remoções. Os testes
+cobrem os dois lados, empate, dano letal, recusa, duas cópias e
+posição de invocação. Dano letal preserva a alteração de LP do
+sandbox e impede a oferta. Demo.cs 2609 → 2607 linhas. A ordem
+nativa segue pendente de comparação.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

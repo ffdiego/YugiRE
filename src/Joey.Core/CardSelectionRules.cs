@@ -58,6 +58,13 @@ public static class CardSelectionRules
     public static bool BattleSameNameRecruiter(ushort resourceId) =>
         resourceId is NimbleMomonga or GiantGerm;
 
+    internal static (int Side, int Delta)? BattleSameNameLifeChange(ushort resourceId, int owner) => resourceId switch
+    {
+        NimbleMomonga => (owner, 1000),
+        GiantGerm => (1 - owner, -500),
+        _ => null
+    };
+
     // Original DAT: class 22 = Spell, 21 = Trap (not the reverse).
     public static bool IsEligible(Card card, CardSelectionFilter filter, byte? requiredAttributeCode = null, ushort? requiredResourceId = null) => filter switch
     {

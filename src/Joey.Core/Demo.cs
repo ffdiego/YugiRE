@@ -1965,7 +1965,7 @@ public sealed partial class DemoDuel
     public bool SelectBatchCard(int sourceIndex, out string message)
     {
         message = "A multiple-card recruitment is not pending.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRecruitmentChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
@@ -1991,7 +1991,7 @@ public sealed partial class DemoDuel
     public bool FinishOptionalCardSelection(out string message)
     {
         message = "No multiple same-name recruitment is pending.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRecruitmentChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
@@ -2400,10 +2400,8 @@ public sealed partial class DemoDuel
         if (!queueLinkedConsequences && ImmortalThunderRules.LosesLifeOnFieldToGraveyard(removed.Id, previouslyFlipped))
             ChangeLife(p, -ImmortalThunderRules.GraveyardLifeLoss);
 
-        if (destroyedByBattle && removed.Id == CardSelectionRules.NimbleMomonga)
-            ChangeLife(p, 1000);
-        else if (destroyedByBattle && removed.Id == CardSelectionRules.GiantGerm)
-            ChangeLife(1 - p, -500);
+        if (destroyedByBattle && CardSelectionRules.BattleSameNameLifeChange(removed.Id, p) is { } lifeChange)
+            ChangeLife(lifeChange.Side, lifeChange.Delta);
 
         if (CardSelectionRules.OnFieldToGraveyardFilter(removed.Id) is not null ||
             destroyedByBattle && (CardSelectionRules.BattleRecruitAttribute(removed.Id) is not null ||
