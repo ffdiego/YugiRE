@@ -284,6 +284,7 @@ FieldSpellChecks.Run(Check);
 AttributeFieldSpellChecks.Run(Check);
 TypeFieldSpellChecks.Run(Check);
 MonsterBattleRuleChecks.Run(Check);
+CountedMonsterAttributeChecks.Run(Check);
 EquipmentChecks.Run(Check);
 QueuedEquipmentChecks.Run(Check);
 FixedEquipmentLifecycleChecks.Run(Check);
@@ -331,6 +332,7 @@ LabCaptureChecks.Run(Check);
 if (args.Length > 0)
 {
     using var attributeArchive = new Archive(args[0]);
+    CountedMonsterAttributeChecks.RunCatalog(Check, attributeArchive);
     CpuDuelChecks.RunCatalog(Check, attributeArchive);
     AiAttributeChecks.RunCatalog(Check,attributeArchive);
     AiCandidateSearchChecks.RunCatalog(Check,attributeArchive);

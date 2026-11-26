@@ -1087,7 +1087,7 @@ public sealed partial class DemoDuel
         var stats = new NativeAiStats((ushort)monster.Index, (byte)monster.ClassCode,
             (byte)(monster.Properties >> 29), monster.Attack, monster.Defense);
         if (MonsterFaceDown[p, z]) return stats; // Native calculation returns before equipment deltas.
-        var sum = new NativeAiAttributeDelta();
+        var sum = CountedMonsterAttributes(p, monster.Id);
         foreach (var e in equipment.Where(e => e.TargetPlayer == p && e.TargetZone == z))
         {
             // A sandbox identity check, not a reconstruction of the native selection key.

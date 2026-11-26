@@ -1615,6 +1615,39 @@
       ]
     },
     {
+      "id": "attributes.counted-monsters-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        11,
+        234,
+        367,
+        385,
+        406,
+        515,
+        553,
+        759,
+        808,
+        1111
+      ],
+      "mechanics": [
+        "Queue-backed monster placement, battle declaration, reveal and removal",
+        "Recalculate continuous ATK or ATK/DEF deltas from eligible cards in hand, on the field, or in either Graveyard",
+        "Use the same effective stats for combat, player display, and CPU decisions"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoCountedMonsterAttributes.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/CountedMonsterAttributeChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl",
+        "docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl"
+      ],
+      "limitations": [
+        "Queue-backed sandbox. Field type matching uses the DAT class. Dynamic type changes and native differential validation are pending."
+      ]
+    },
+    {
       "id": "wipe.equipped-monsters-c02",
       "kind": "Spell",
       "subtype": "Normal",

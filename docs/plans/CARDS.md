@@ -49,6 +49,24 @@ Após C12.1, usar a triagem de C01/C18 e confirmar a mecânica antes de implemen
 
 Além dos já feitos (FLIP, P006, P164 etc.), cobrir gatilhos de campo/cemitério/batalha, efeitos contínuos e de invocação. Agrupar por mecânica, não por ID. Para Joey, priorizar os 109 Effect do pack. Fatia de intenções de dano de batalha P019/P023/P078/P239/P120 em [contrato C03](../../docs/cards/c03-battle-damage-effects.md), sem mutação nem promoção de cobertura. Integrar após evento de dano de batalha na fila A02/A06; P239/P120 exigem seleção e comandos adicionais.
 
+### C03.1 — Atributos por contagem
+
+Dez monstros recebem modificadores consultados no estado corrente do
+duelo enfileirado. Os produtores de invocação, ataque, revelação e
+remoção continuam donos dos movimentos. O piloto admite os dez
+como combatentes ou espectadores passivos e usa os atributos
+calculados ao resolver dano. O App consome as mesmas consultas
+para os valores do campo e a CPU as usa para escolher ataques.
+
+DAT e SQLite v7 conferidos. `0056DD30` consulta `00569AE0` para
+pares no mesmo lado, `00569B00` para os IDs de Harpie Lady nos dois
+lados, `00569BF0` para tipos face-up e as zonas de mão/cemitério para
+os demais contadores. O sandbox interpreta tipo como classe do DAT
+porque alteração dinâmica de tipo segue pendente. C# testa ambos
+lados, filtro face-up, grupo correto e valor no dano pela fila.
+A cobertura aumenta em 10 Done. A comparação dinâmica segue pendente.
+[Cartas e fórmulas](../../CARDS.md#atributos-por-contagem-c03).
+
 ## C04 — Equipamentos `P025`
 
 <a id="c04"></a>
@@ -74,6 +92,8 @@ regra de empate e do efeito único da carta.
 Incremento de 1 Done sobre a baseline de 440 cartas de C12.1.
 Restructer Revolution (1039/P049) está fora dos 771 IDs. A
 comparação do empate com o Joey segue pendente.
+[PR #209](https://github.com/ffdiego/YugiRE/pull/209) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45828505782).
 [Evidência](../../CARDS.md#magias-lp-e-compra-na-fila-c12).
 
 ## C06 — Demais armadilhas e janelas de resposta/correntes

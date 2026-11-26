@@ -51,6 +51,8 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(status.get(1451), "Done")  # queued Offerings to the Doomed
         self.assertEqual(status.get(1067), "Done")  # queued Final Destiny
         self.assertEqual(status.get(346), "Done")  # queued double damage and joint duel result
+        for rid in (11, 234, 367, 385, 406, 515, 553, 759, 808, 1111):
+            self.assertEqual(status.get(rid), "Done")  # continuous battle attributes derived from zone counts
         for rid in (300,301,302,304,306,307,308,309,311,314,315,318,321,322,324,325,326,327,653,1012,1013):
             self.assertEqual(status.get(rid), "Done")
         for rid in (656,1449,1450):

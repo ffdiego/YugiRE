@@ -66,7 +66,7 @@ public sealed partial class DemoDuel
             for(int z=0;z<5;z++)
                 if(!IsSupportedQueuedBattleBackRow(p,z) ||
                     (p!=side || z!=slot) && Monsters[p,z] is { } other &&
-                        (p != side || !IsPlainBattlePilot(other)))
+                        (p != side || !IsPassiveBattlePilot(other)))
                     return false;
         }
         return true;
