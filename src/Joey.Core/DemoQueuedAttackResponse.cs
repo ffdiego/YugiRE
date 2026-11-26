@@ -17,6 +17,12 @@ public sealed partial class DemoDuel
         !GameOver && Phase == DemoPhase.Battle && PendingAttackResponse is { } response &&
         UsesQueuedAttackResponse(response) && response.Attack.AttackingPlayer == ActivePlayer;
 
+    // AttackValue/DefenseValue already include the active field contribution.
+    private bool IsSupportedQueuedBattleFieldSpell(int side) =>
+        FieldSpells[side] is null ||
+        FieldSpells[side] is { ClassCode: 22 } field && FieldSpellRules.Supports(field.Id) &&
+        TryCaptureCardTarget(side, DuelZone.FieldSpell, 0, out _);
+
     private bool IsSupportedQueuedBattleBackRow(int side, int slot) =>
         Spells[side, slot] is null ||
         Spells[side, slot] is { ClassCode: 21 or 22 } && SpellFaceDown[side, slot] &&

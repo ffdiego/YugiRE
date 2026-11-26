@@ -80,6 +80,37 @@ internal static class QueuedTargetedAttackChecks
         }
     }
 
+    private static void CheckFieldSpellDefense(Action<bool, string> check)
+    {
+        var chorus = new Card(1069, 1069, "Chorus of Sanctuary", "", 22u << 20);
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool fieldActive in new[] { false, true })
+        {
+            int responder = 1 - side;
+            var attacker = Monster(24, 1400, 1000);
+            var defender = Monster(1351, 1000, 1000);
+            var duel = DemoDuel.FromPartialObservation(responder, [chorus],
+                side == 0 ? Slots(attacker, 2) : Slots(defender, 3),
+                side == 1 ? Slots(attacker, 2) : Slots(defender, 3), 8000);
+            duel.DefensePosition[responder, 3] = duel.MonsterFaceDown[responder, 3] = true;
+            var console = new DuelConsoleSession(duel);
+            var queue = console.Queue;
+            check(console.Execute(fieldActive ? "activate hand 0" : "set 0").Enqueued,
+                "Field defense fixture activates or Sets Chorus");
+            DrainResponseQueue(queue);
+            check(duel.EndTurn(out _) && duel.BeginBattle(out _) &&
+                duel.DefenseValue(responder, 3) == 1000 && duel.TryQueueTargetedAttack(2, 3, out _),
+                "The hidden defender uses base DEF before reveal, even under an active Field Spell");
+            DrainResponseQueue(queue);
+            check(duel.FieldSpells[responder] == chorus && duel.FieldSpellFaceDown[responder] != fieldActive &&
+                duel.Life[responder] == 8000 && duel.Life[side] == (fieldActive ? 7900 : 8000) &&
+                !duel.MonsterFaceDown[responder, 3] &&
+                (fieldActive ? duel.Monsters[responder, 3] == defender && duel.DefenseValue(responder, 3) == 1500 :
+                    duel.Monsters[responder, 3] is null && duel.Graveyard(responder).Contains(defender)),
+                "Field bonus applies after reveal only when active and changes the battle outcome");
+        }
+    }
+
     private static void DrainResponseQueue(ActionQueue queue)
     {
         for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
@@ -89,6 +120,7 @@ internal static class QueuedTargetedAttackChecks
     public static void Run(Action<bool,string> check)
     {
         CheckResponseBeforeHiddenDefender(check);
+        CheckFieldSpellDefense(check);
         foreach(int side in new[]{0,1})
         foreach(var (atk,other,defense,removeA,removeB,lossA,lossB) in new (int,int,bool,bool,bool,int,int)[]{
             (1400,1000,false,false,true,0,400),(1000,1400,false,true,false,400,0),

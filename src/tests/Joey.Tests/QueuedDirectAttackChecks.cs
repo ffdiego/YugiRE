@@ -204,11 +204,39 @@ internal static class QueuedDirectAttackChecks
         }
     }
 
+    private static void CheckFieldSpellDamage(Action<bool, string> check)
+    {
+        var yami = new Card(334, 334, "Yami", "", 22u << 20);
+        foreach (int side in new[] { 0, 1 })
+        {
+            int responder = 1 - side;
+            var attacker = Monster(1400);
+            var duel = DemoDuel.FromPartialObservation(responder, [yami],
+                side == 0 ? Slots(attacker) : Slots(), side == 1 ? Slots(attacker) : Slots(), 8000);
+            var console = new DuelConsoleSession(duel);
+            var queue = console.Queue;
+            check(console.Execute("activate hand 0").Enqueued, "Active field fixture admits Yami");
+            Drain(queue);
+            check(duel.TryCaptureCardTarget(responder, DuelZone.FieldSpell, 0, out var fieldTarget),
+                "Yami has a tracked occurrence in the Field Zone");
+            check(duel.EndTurn(out _) && duel.BeginBattle(out _) && duel.AttackValue(side, 2) == 1600,
+                "Opposing Yami boosts the Fiend before the direct attack");
+            check(duel.TryQueueDirectAttack(2, out _) && duel.Life[responder] == 8000,
+                "Field Spell does not prevent read-only attack admission");
+            Drain(queue);
+            check(duel.Life[responder] == 6400 && duel.ActiveFieldSpell == yami &&
+                duel.TryCaptureCardTarget(responder, DuelZone.FieldSpell, 0, out var currentField) &&
+                currentField == fieldTarget && duel.PendingAttackResponse is null,
+                "Direct attack uses live field-modified ATK and preserves the Field Spell");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
         CheckQueuedAttackResponses(check);
         CheckDirectMirrorForce(check);
         CheckSetBackRow(check);
+        CheckFieldSpellDamage(check);
         var d=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000);
         var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
         check(!d.TryQueueDirectAttack(2,out _),"A05.7 Main Phase rejects attack");

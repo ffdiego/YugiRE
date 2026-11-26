@@ -204,6 +204,15 @@ dano e os três tipos de resposta em combate com alvo. Modificadores
 ativos e vínculos de equipamento continuam fora deste recorte.
 Demo.cs permanece com 2614 linhas.
 
+*Magias de Campo no combate enfileirado (C12.1):* ataques diretos
+e com alvo admitem Magias de Campo já suportadas, baixadas ou ativas,
+com ocorrência rastreável. Ambos reutilizam os atributos efetivos
+do Core. As regressões cobrem os dois lados, o bônus de ATK de Yami
+no dano direto e a diferença entre Chorus of Sanctuary ativo e
+baixado depois da revelação do defensor. Equipamentos e contínuas
+nas zonas comuns seguem fora do piloto. Demo.cs permanece com
+2614 linhas. Validação em C#.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

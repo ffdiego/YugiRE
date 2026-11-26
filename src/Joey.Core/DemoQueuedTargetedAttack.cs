@@ -101,7 +101,7 @@ public sealed partial class DemoDuel
         if (equipment.Count!=0) return false;
         for (int side=0;side<2;side++)
         {
-            if (FieldSpells[side] is not null) return false;
+            if (!IsSupportedQueuedBattleFieldSpell(side)) return false;
             for (int z=0;z<5;z++)
             {
                 if (!IsSupportedQueuedBattleBackRow(side,z)) return false;
