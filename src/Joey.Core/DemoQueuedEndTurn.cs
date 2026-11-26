@@ -2,8 +2,11 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
+    private const ushort WickedWormBeast = 22;
     private bool queuedEndTurn;
     private bool admittingQueuedEndDiscard;
+    private readonly Queue<CardTarget> queuedEndReturns = new();
+    private CardTarget? queuedEndReturn;
 
     public bool HasQueuedEndDiscard => queuedEndTurn && PendingEndDiscards != 0;
 
@@ -78,9 +81,37 @@ public sealed partial class DemoDuel
 
         queuedEndTurn = true;
         Phase = DemoPhase.End;
-        if (PendingEndDiscards == 0)
-            followups.Enqueue(PlanQueuedEndResolution(command.Side, command.ExpectedTurn));
+        for (int slot = 0; slot < 5; slot++)
+            if (IsEndPhaseReturnMonster(command.Side, slot) &&
+                TryCaptureCardTarget(command.Side, DuelZone.Monster, slot, out var target))
+                queuedEndReturns.Enqueue(target);
+        ContinueQueuedEndTurn(followups);
         return new(CommandOutcome.Applied, "End Phase.");
+    }
+
+    private bool IsEndPhaseReturnMonster(int side, int slot) =>
+        Monsters[side, slot] is { IsMonster: true, Id: WickedWormBeast } && !MonsterFaceDown[side, slot];
+
+    private void ContinueQueuedEndTurn(IActionCommandSink followups)
+    {
+        if (queuedEndReturns.TryDequeue(out var target))
+        {
+            queuedEndReturn = target;
+            followups.Enqueue(new ReturnToHandCommand(target.Side, target));
+        }
+        else if (PendingEndDiscards == 0)
+            followups.Enqueue(PlanQueuedEndResolution(ActivePlayer, Turn));
+    }
+
+    private CommandResult FinishQueuedEndReturn(FinishEndPhaseReturnCommand command, IActionCommandSink followups)
+    {
+        if (!queuedEndTurn || Phase != DemoPhase.End || command.Side != ActivePlayer ||
+            command.ExpectedTurn != Turn || queuedEndReturn != command.Source)
+            return new(CommandOutcome.Rejected, "No matching End Phase return.");
+
+        queuedEndReturn = null;
+        ContinueQueuedEndTurn(followups);
+        return new(CommandOutcome.Applied);
     }
 
     private CommandResult ExecuteQueuedTurnAdvance(AdvanceTurnCommand command)

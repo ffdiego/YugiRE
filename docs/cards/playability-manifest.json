@@ -1615,6 +1615,27 @@
       ]
     },
     {
+      "id": "end-phase.wicked-worm-beast-return-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        22
+      ],
+      "mechanics": [
+        "Return each face-up The Wicked Worm Beast controlled by the ending player to hand",
+        "Resolve linked equipment cleanup and presentation gates before enforcing the hand limit"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedEndTurn.cs",
+        "src/tests/Joey.Tests/QueuedEndTurnChecks.cs",
+        "docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl"
+      ],
+      "limitations": [
+        "The sandbox orders returns before the hand limit and other end effects. Native ordering, suppression and controller changes are unverified."
+      ]
+    },
+    {
       "id": "standby.dark-zebra-position-c03",
       "kind": "Monster",
       "subtype": "Effect",

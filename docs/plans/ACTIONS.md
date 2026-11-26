@@ -307,6 +307,8 @@ e ao executor existentes. A batalha legada fica disponível fora
 do piloto. SQLite v7 registra `00593530` para preparação de alvo.
 Comparação dinâmica pendente.
 [Contrato](../cards/c12-queued-graveyard-recovery.md).
+[PR #217](https://github.com/ffdiego/YugiRE/pull/217) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45874884888).
 
 ## A07 — Turno e fases como comandos/estágios da fila
 
@@ -317,6 +319,7 @@ A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi receb
   *Compra no sandbox:* `turn draw` reserva a compra legal do jogador ativo e revalida o turno na execução. A compra comum projeta `0x61`. A fila honra o gate da compra antes do processamento dos retornos atrasados de Standby e invoca a ocorrência do cemitério com `SpecialSummonCommand`. O modo experimental `--queued-actions` do App usa essa compra na abertura do turno e liga os botões de Battle, Main2 e End, mais o descarte obrigatório, aos mesmos produtores da fila. A CPU experimental admite as mesmas operações de fase, inclusive o descarte obrigatório. As oportunidades de fase e a correlação de sua cronologia nativa continuam abertas.
   *Reconciliação com A06:* PR #108 integra draw/Standby/end/discard/CPU em fatia incremental, mantendo seleções do console, trace incompleto e admissão isolada. CI anterior 45398551966 verde, novo CI pendente. A07 não concluído: ciclo/cronologia nativa e visual restantes.
   *Curas de Standby (C03.4):* o produtor de compra agenda a continuação de cura após a compra e os gates dos retornos atrasados. A compra pulada também entrega a fase e deck-out encerra antes das curas. Os testes cobrem CPU, ambos os lados, pose, duplicatas e um comando por ocorrência. [Cartas e limites](CARDS.md#c034--ganhos-de-lp-na-standby).
+  *Retornos de End Phase (C03.6):* o produtor serializa as ocorrências de The Wicked Worm Beast, deixa a limpeza vinculada passar pelo gate e só então consulta o limite de mão. O descarte obrigatório e a troca de turno continuam tipados. [Cartas e limites](CARDS.md#c036--retorno-de-the-wicked-worm-beast-no-fim-do-turno).
 
 ## A08 — Extrair `Joey.Cards` e definir `EffectContext`
 

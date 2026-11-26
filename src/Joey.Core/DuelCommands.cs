@@ -28,6 +28,7 @@ internal sealed record OpenBattleRecruitmentCommand(int Side) : DuelCommand(Side
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
+internal sealed record FinishEndPhaseReturnCommand(int Side, int ExpectedTurn, CardTarget Source) : DuelCommand(Side);
 public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side);
 internal sealed record PlaceEndPhaseMessageCommand(int Side, int ExpectedTurn, CardTarget Source, int Slot) : DuelCommand(Side);
 internal sealed record AdvanceTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
@@ -206,6 +207,9 @@ internal static class DuelCommandValidation
                 break;
             case StandbyDefenseCommand position when position.ExpectedTurn > 0:
                 Target(position.Source, position.Side, DuelZone.Monster);
+                break;
+            case FinishEndPhaseReturnCommand endReturn when endReturn.ExpectedTurn > 0:
+                Target(endReturn.Source, endReturn.Side, DuelZone.Monster);
                 break;
             case ShuffleDeckCommand:
             case FinishDeckSearchCommand:

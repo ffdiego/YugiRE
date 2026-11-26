@@ -2,8 +2,8 @@
 
 Métrica de cartas jogáveis no sandbox C#, não paridade com o executável original.
 
-- **Trilogia:** 459/771 = 59.53%
-- **Joey:** 151/350 = 43.14%
+- **Trilogia:** 460/771 = 59.66%
+- **Joey:** 152/350 = 43.43%
 - **Partial:** 9; **Verified:** 0 (trilogia).
 - **Partial no Joey:** 7.
 A badge mostra Done+Verified e, separadamente, o número de Partial. Migração de regras já Done para a fila (C12) não altera a cobertura jogável.
@@ -12,10 +12,10 @@ A badge mostra Done+Verified e, separadamente, o número de Partial. Migração 
 
 | Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Trilogia | Monster | 499 | 372 | 7 | 120 | 0 | 74.55% |
+| Trilogia | Monster | 499 | 373 | 7 | 119 | 0 | 74.75% |
 | Trilogia | Spell | 172 | 79 | 1 | 92 | 0 | 45.93% |
 | Trilogia | Trap | 100 | 8 | 1 | 91 | 0 | 8.00% |
-| Joey | Monster | 194 | 121 | 5 | 68 | 0 | 62.37% |
+| Joey | Monster | 194 | 122 | 5 | 67 | 0 | 62.89% |
 | Joey | Spell | 84 | 28 | 1 | 55 | 0 | 33.33% |
 | Joey | Trap | 72 | 2 | 1 | 69 | 0 | 2.78% |
 

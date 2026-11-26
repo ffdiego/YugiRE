@@ -11,9 +11,17 @@ internal static class QueuedEndTurnChecks
             command.Command is not EndTurnDiscardCommand || Release;
     }
 
+    private sealed class ReturnGate : IPresentationGate
+    {
+        public bool Release { get; set; }
+        public bool CanAdvance => true;
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
+            command.Command is not ReturnToHandCommand || Release;
+    }
+
     private static void Drain(ActionQueue queue)
     {
-        for (int i = 0; i < 12 && queue.IsBusy; i++) queue.Tick();
+        for (int i = 0; i < 40 && queue.IsBusy; i++) queue.Tick();
         if (queue.IsBusy) throw new InvalidOperationException("End turn did not drain.");
     }
 
@@ -109,6 +117,63 @@ internal static class QueuedEndTurnChecks
 
         CheckEndPhaseMessage(check, card);
         CheckCpuTurn(check);
+        CheckEndPhaseReturns(check, card);
+    }
+
+    private static void CheckEndPhaseReturns(Action<bool, string> check, Card filler)
+    {
+        var beast = new Card(22, 22, "The Wicked Worm Beast", "", (11u << 20) | (3u << 25) | (140u << 9));
+        var equip = new Card(307, 307, "Beast Fangs", "", 22u << 20);
+        foreach (int side in new[] { 0, 1 })
+        {
+            int opponent = 1 - side;
+            Card?[] own = [beast, beast, beast, null, null];
+            Card?[] enemy = [beast, null, null, null, null];
+            var duel = DemoDuel.FromPartialObservation(side, [filler, filler, filler, filler, filler, equip],
+                side == 0 ? own : enemy, side == 1 ? own : enemy, 8000, equipmentContextResolved: true);
+            duel.DefensePosition[side, 1] = true;
+            duel.MonsterFaceDown[side, 2] = duel.DefensePosition[side, 2] = true;
+            check(duel.Equip(5, side, 0, out _), "End Phase return fixture attaches Beast Fangs");
+            var gate = new ReturnGate();
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            check(duel.TryCaptureCardTarget(side, DuelZone.Monster, 0, out var first) &&
+                duel.TryQueueEndTurn(out _), "The Wicked Worm Beast uses the common queued end turn");
+            queue.Tick();
+            queue.Tick();
+            check(queue.Active?.Command is ReturnToHandCommand &&
+                duel.TryCaptureCardTarget(side, DuelZone.Hand, 5, out var returned) && returned.Occurrence == first.Occurrence &&
+                duel.Monsters[side, 1]?.Id == beast.Id && duel.Spells[side, 0]?.Id == equip.Id &&
+                duel.PendingEndDiscards == 0 && duel.ActivePlayer == side,
+                "The first return waits with its occurrence moved, before linked equipment and the next return");
+            gate.Release = true;
+            Drain(queue);
+            check(duel.Phase == DemoPhase.End && duel.ActivePlayer == side && duel.PendingEndDiscards == 1 &&
+                duel.HandFor(side).Count == 7 && duel.Graveyard(side).Single().Id == equip.Id &&
+                duel.Spells[side, 0] is null && duel.MonsterFaceDown[side, 2] &&
+                duel.Monsters[opponent, 0]?.Id == beast.Id,
+                "Only the active player's revealed Beasts return and the final hand size opens the discard");
+            var outcomes = queue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed).ToArray();
+            check(outcomes.Count(entry => entry.Entry.Command is ReturnToHandCommand) == 2 &&
+                outcomes.All(entry => entry.Result?.Outcome == CommandOutcome.Applied),
+                "Every eligible End Phase return resolves through its own command");
+            check(new CpuDuelController(side).Step(duel) is { Status: CpuStepStatus.Acted, Action: CpuAction.Discard },
+                "The CPU admits the resulting hand-limit discard");
+            Drain(queue);
+            check(duel.ActivePlayer == opponent && duel.HandFor(side).Count == 6,
+                "Turn advance waits until the return and hand-limit discard finish");
+        }
+
+        var stale = DemoDuel.FromPartialObservation(0, [], [beast, null, null, null, null], new Card?[5], 8000);
+        var staleQueue = stale.CreatePrimitiveActionQueue();
+        check(stale.TryQueueEndTurn(out _), "End Phase reserves a tracked return");
+        staleQueue.Tick();
+        var replacement = beast with { };
+        stale.Monsters[0, 0] = replacement;
+        Drain(staleQueue);
+        check(ReferenceEquals(stale.Monsters[0, 0], replacement) && stale.HandFor(0).Count == 0 &&
+            stale.ActivePlayer == 1 && staleQueue.Trace.Any(entry =>
+                entry.Entry.Command is ReturnToHandCommand && entry.Result?.Outcome == CommandOutcome.Skipped),
+            "A stale End Phase return leaves the replacement alone and lets the turn advance");
     }
 
     private static void CheckCpuTurn(Action<bool, string> check)
