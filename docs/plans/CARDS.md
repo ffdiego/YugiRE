@@ -94,6 +94,25 @@ emite o dano, aguarda o gate e agenda a escolha aleatória por
 ocorrência. A fila usa o RNG do duelo e o comando de descarte
 existente. O App e a CPU usam a declaração de ataque compartilhada.
 [Contrato e limites](../cards/c03-battle-damage-effects.md#c032--white-magical-hat).
+[PR #213](https://github.com/ffdiego/YugiRE/pull/213) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45832234060).
+
+### C03.3 — Princess of Tsurugi
+
+Princess of Tsurugi (265/P044) entra na fila em Flip Summon e
+revelação em batalha. `00584E60` chama `0056A320` com contagem
+adversária que percorre slots 5–10, incluindo FIELD e cartas Set.
+No sandbox, a resolução usa a contagem corrente, emite um
+comando de dano quando há cartas elegíveis e espera seu gate
+antes da remoção de batalha. A CPU considera o dano ao decidir
+virar a carta. A regra de supressão de Royal Command é compartilhada.
+
+O DAT confirma 500 por carta. Os testes C# cobrem ambos os lados,
+S/T baixada e FIELD adversários, exclusão das próprias S/T, campo
+vazio, dano de batalha antes do FLIP, dano letal e supressão. Compatibilidade
+com configurações de batalha ainda legadas e comparação dinâmica
+seguem pendentes.
+[Estudo de P044](../research/card-static-sweep/01-lp-destruicao-respostas.jsonl).
 
 ## C04 — Equipamentos `P025`
 

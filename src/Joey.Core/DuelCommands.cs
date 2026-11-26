@@ -16,6 +16,7 @@ public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker,
 internal sealed record RevealBattleDefenderCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record ResolveRevealedBattleCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record OpenBattleFlipDrawCommand(int Side, CardTarget Defender) : DuelCommand(Side);
+internal sealed record ResolveBattleFlipDamageCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record OpenBattleFlipTargetsCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
@@ -171,6 +172,9 @@ internal static class DuelCommandValidation
                 break;
             case OpenBattleFlipDrawCommand openBattleFlip:
                 Target(openBattleFlip.Defender,openBattleFlip.Side,DuelZone.Monster);
+                break;
+            case ResolveBattleFlipDamageCommand damageFlip:
+                Target(damageFlip.Defender, damageFlip.Side, DuelZone.Monster);
                 break;
             case OpenBattleFlipTargetsCommand openBattleTargets:
                 Target(openBattleTargets.Defender,openBattleTargets.Side,DuelZone.Monster);

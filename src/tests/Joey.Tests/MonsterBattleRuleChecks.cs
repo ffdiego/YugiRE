@@ -11,6 +11,7 @@ internal static class MonsterBattleRuleChecks
         RunBattleDraws(check);
         RunQueuedBattleDraws(check);
         RunQueuedBattleDiscard(check);
+        RunPrincessOfTsurugi(check);
         (ushort Id, byte Boost, byte Weaken)[] auras =
             [(491, 1, 2), (627, 2, 1), (523, 3, 4), (597, 4, 3), (526, 5, 6), (608, 6, 5)];
         foreach (var (id, boost, weaken) in auras)
@@ -286,6 +287,72 @@ internal static class MonsterBattleRuleChecks
         Drain(reflectedQueue);
         check(reflected.Life[1] == 7800 && reflected.HandFor(0).SequenceEqual([first]) &&
             reflected.Monsters[0, 0] == sorcerer, "Reflected defense damage draws for the defending source");
+    }
+
+    private static void RunPrincessOfTsurugi(Action<bool, string> check)
+    {
+        var princess = Monster(FlipEffectRules.PrincessOfTsurugi, 6, 900);
+        var filler = new Card(999, 999, "Inert Spell", "", 22u << 20);
+        var forest = new Card(329, 329, "Forest", "", 22u << 20);
+        foreach (int owner in new[] { 0, 1 })
+        foreach ((bool battle, bool backRow, bool lethal, bool reflects) in
+            new[] { (false, true, false, false), (true, true, true, false),
+                (true, false, false, false), (true, true, false, true) })
+        {
+            int enemy = 1 - owner;
+            var attacker = Monster(24, 1, reflects ? 500 : 1500);
+            var duel = DemoDuel.FromPartialObservation(enemy, backRow ? [forest, filler] : [],
+                owner == 0 ? Field(princess) : Field(attacker),
+                owner == 1 ? Field(princess) : Field(attacker), lethal ? 1000 : 8000,
+                side0Deck: owner == 0 ? [filler] : [], side1Deck: owner == 1 ? [filler] : []);
+            duel.MonsterFaceDown[owner, 0] = duel.DefensePosition[owner, 0] = true;
+            if (backRow)
+                check(duel.SetFromHand(1, out _) && duel.Play(0, out _),
+                    "Princess of Tsurugi fixture: one opposing Set and one active Field Spell");
+            if (battle)
+            {
+                if (enemy == 0)
+                    check(duel.EndTurn(out _) && duel.EndTurn(out _), "Princess fixture advances to a legal battle turn");
+                check(duel.BeginBattle(out _), "Princess fixture enters Battle Phase");
+            }
+            else
+                check(duel.EndTurn(out _) && duel.Draw(out _) && duel.SetFromHand(0, out _),
+                    "Princess manual FLIP fixture has one own Set that should be excluded");
+
+            var gate = new BattleDrawGate { Hold = battle ? typeof(DamageCommand) : typeof(FlipCommand) };
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            check(battle ? duel.TryQueueAttack(0, 0, out _) :
+                new CpuDuelController(owner).Step(duel) is { Status: CpuStepStatus.Acted, Action: CpuAction.Position },
+                "Princess of Tsurugi uses the queued battle or manual FLIP producer");
+            for (int tick = 0; tick < 25 && queue.IsBusy && queue.Active?.Command.GetType() != gate.Hold; tick++)
+                queue.Tick();
+            if (backRow)
+                check(queue.Active?.Command.GetType() == gate.Hold && duel.Monsters[owner, 0]?.Id == princess.Id &&
+                    !duel.MonsterFaceDown[owner, 0] && duel.Life[enemy] == (lethal ? 0 : reflects ? 7700 : 8000),
+                    "Princess burn waits behind the FLIP gate in Main and resolves before removal in battle");
+            gate.Hold = null;
+            Drain(queue);
+            var damages = queue.Trace.Where(e => e.Stage == ActionTraceStage.Executed)
+                .Select(e => e.Entry.Command).OfType<DamageCommand>().ToArray();
+            DamageCommand[] expected = reflects ? [new(enemy, 300), new(enemy, 1000)] :
+                backRow ? [new(enemy, 1000)] : [];
+            bool removed = battle && !reflects;
+            check(duel.Life[enemy] == (lethal ? 1000 : 8000) - expected.Sum(command => command.Amount) &&
+                duel.Life[owner] == 8000 && (duel.Monsters[owner, 0] is null) == removed &&
+                duel.Graveyard(owner).Any(c => c.Id == princess.Id) == removed &&
+                damages.SequenceEqual(expected),
+                "Princess of Tsurugi counts opposing Spell/Traps and Field only, with zero and lethal covered");
+        }
+
+        var suppressed = DemoDuel.FromPartialObservation(0, [], Field(princess), Field(null), 8000);
+        suppressed.MonsterFaceDown[0, 0] = suppressed.DefensePosition[0, 0] = true;
+        suppressed.Spells[1, 0] = new Card(1530, FlipEffectSuppressionRules.RoyalCommand, "Royal Command", "", 21u << 20);
+        var suppressedQueue = suppressed.CreatePrimitiveActionQueue();
+        check(suppressed.TryQueueChangePosition(0, out _), "Royal Command does not prevent the Flip Summon itself");
+        Drain(suppressedQueue);
+        check(!suppressed.MonsterFaceDown[0, 0] && suppressed.Life[1] == 8000 &&
+            !suppressedQueue.Trace.Any(e => e.Entry.Command is DamageCommand),
+            "Royal Command suppresses Princess of Tsurugi's FLIP damage");
     }
 
     private static void RunBattleDraws(Action<bool, string> check)

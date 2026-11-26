@@ -556,6 +556,8 @@ public sealed class CpuDuelController
         FlipEffectRules.FourStarredLadybugOfDoom =>
             MonsterWipeRules.LevelFourOpponentTargets(Player, d.Monsters, d.MonsterFaceDown).Count > 0,
         FlipEffectRules.Skelengel => d.DeckCount(Player) > 0,
+        FlipEffectRules.PrincessOfTsurugi => d.HasActionQueue && !d.FlipEffectsNegated &&
+            SpellTrapWipeRules.CountOnSide(1 - Player, d.Spells, d.FieldSpells) > 0,
         FlipEffectRules.BubonicVermin =>
             Enumerable.Range(0, 5).Any(z => d.Monsters[Player, z] is null) &&
             d.DeckSnapshot(Player).Any(candidate => candidate.IsMonster && candidate.Id == c.Id),

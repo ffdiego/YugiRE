@@ -1615,6 +1615,29 @@
       ]
     },
     {
+      "id": "flip.opposing-back-row-damage-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        265
+      ],
+      "mechanics": [
+        "Queue-backed Flip Summon or reveal in battle",
+        "Inflict 500 damage per occupied opposing Spell/Trap or Field Spell slot, including Set cards",
+        "Wait for the damage gate before battle removal, with sandbox FLIP suppression"
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
+        "docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl"
+      ],
+      "limitations": [
+        "Sandbox combat configurations and FLIP suppression only. Native timing and differential validation are pending."
+      ]
+    },
+    {
       "id": "battle-damage.random-hand-discard-c03",
       "kind": "Monster",
       "subtype": "Effect",
