@@ -1878,7 +1878,7 @@ public sealed partial class DemoDuel
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice || HasQueuedBattleRecoveryChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)

@@ -16,7 +16,7 @@ public sealed partial class DemoDuel
                  DeckSearchSpellRules.Filter(request.EffectResourceId) == request.Filter)) ||
              (request.MinSelections == 0 &&
                 RitualSearchRules.OnNormalOrFlipSummon(request.EffectResourceId) == request.Filter)) ||
-         request.Source == CardSelectionSource.Graveyard && Phase == DemoPhase.Main &&
+         request.Source == CardSelectionSource.Graveyard && (Phase == DemoPhase.Main || HasQueuedBattleRecoveryChoice) &&
             request.MinSelections == 1 &&
             CardSelectionRules.FlipGraveyardFilter(request.EffectResourceId) == request.Filter);
 

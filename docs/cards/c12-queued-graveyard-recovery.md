@@ -17,9 +17,10 @@ libera outras solicitações após o gate de movimentação. Royal Command
 suprime antes da resolução, inclusive quando ativado entre admissão e
 executor. Nenhuma chamada de FinishDeferredBattle a partir da fila.
 
-Apenas Main Phase sem batalha diferida (Flip Summon manual); resposta
-em batalha, UI/CPU, seleção de Deck/embaralhamento e prompts unificados
-continuam pendentes. MoveToHandCommand é primitiva de GY, não de Deck,
-não valida efeitos de carta por si. Testes de lados, classes, duplicatas,
-request obsoleta, gate, supressão, GY sem candidatos e reuso da ocorrência.
-CI pendente, sem promoção de cobertura.
+Na batalha enfileirada, a revelação abre a mesma escolha após o
+cálculo de dano. A ocorrência marcada fica no campo até terminar
+o gate de MoveToHandCommand. Sem candidato ou com efeito suprimido,
+a remoção segue automaticamente. App e CPU usam o mesmo seletor.
+Os testes C# cobrem lados, classes, duplicatas, identidade, ausência
+de candidato e gates. A comparação dinâmica e configurações de
+batalha fora do piloto seguem pendentes.

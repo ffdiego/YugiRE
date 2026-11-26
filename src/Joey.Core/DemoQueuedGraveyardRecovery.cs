@@ -7,7 +7,7 @@ public sealed partial class DemoDuel
     private bool admittingQueuedGraveyardRecovery;
 
     private bool CanAdmitQueuedGraveyardRecovery() =>
-        !GameOver && Phase == DemoPhase.Main && deferredBattle is null &&
+        !GameOver && AllowsQueuedRecoveryPhase() && deferredBattle is null &&
         PendingCardSelection is { Source: CardSelectionSource.Graveyard,
             Destination: CardSelectionDestination.Hand, MinSelections: 1, MaxSelections: 1 } pending &&
         CardSelectionRules.FlipGraveyardFilter(pending.EffectResourceId) == pending.Filter &&
@@ -41,7 +41,7 @@ public sealed partial class DemoDuel
     public bool TryQueueGraveyardRecovery(PendingCardSelection request, CardTarget? target,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose an eligible occurrence for the current manual FLIP recovery.";
+        message = "Choose an eligible occurrence for the current FLIP recovery.";
         if (primitiveActionQueue is not { IsBusy: false } queue ||
             !TryPlanQueuedGraveyardRecovery(request, target, out _)) return false;
         admittingQueuedGraveyardRecovery = true;
