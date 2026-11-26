@@ -106,6 +106,64 @@ internal static class QueuedDirectAttackChecks
         }
     }
 
+    private static void CheckDirectMirrorForce(Action<bool, string> check)
+    {
+        var mirror = new Card(1056, AttackTrapRules.MirrorForce, "Mirror Force", "", 21u << 20);
+        var attacker = Monster(1400);
+        var ally = Monster(1000, 1351);
+        var defender = Monster(800);
+        var hidden = Monster(600, 1351);
+        foreach (int side in new[] { 0, 1 })
+        {
+            int responder = 1 - side;
+            Card?[] field = [ally, defender, attacker, hidden, null];
+            var duel = DemoDuel.FromPartialObservation(responder, [mirror],
+                side == 0 ? field : Slots(), side == 1 ? field : Slots(), 8000);
+            duel.DefensePosition[side, 1] = duel.DefensePosition[side, 3] = true;
+            duel.MonsterFaceDown[side, 3] = true;
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _),
+                "Queued Mirror Force fixture");
+            var gate = new Gate { Release = true };
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+
+            check(console.Execute("attack 2 direct").Enqueued, "Direct response accepts other supported normal allies");
+            Drain(queue);
+            check(duel.PendingAttackResponse?.EligibleTraps.Single().Trap.Id == mirror.Id &&
+                console.Execute($"respond-attack {responder} 0").Enqueued,
+                "Mirror Force response selects the Set occurrence before damage");
+            gate.Release = false;
+            queue.Tick();
+            check(duel.Spells[responder, 0] == mirror && duel.Graveyard(side).Count == 0,
+                "Mirror Force activation gate precedes all removal");
+
+            gate.Release = true;
+            queue.Tick();
+            gate.Release = false;
+            queue.Tick();
+            check(queue.Active?.Command is SendToGraveyardCommand &&
+                duel.Graveyard(responder).SequenceEqual([mirror]) && duel.Graveyard(side).Count == 0,
+                "Mirror Force spends before destruction");
+            gate.Release = true;
+            queue.Tick();
+            gate.Release = false;
+            queue.Tick();
+            check(queue.Active?.Command is DestroyCommand && duel.Graveyard(side).SequenceEqual([ally]) &&
+                duel.Monsters[side, 2] == attacker && duel.LastAttackTrap is null,
+                "First destruction gate blocks the second target and the final result");
+            gate.Release = true;
+            Drain(queue);
+            check(duel.Life.SequenceEqual([8000, 8000]) && duel.Phase == DemoPhase.Battle &&
+                duel.Graveyard(side).SequenceEqual([ally, attacker]) &&
+                duel.Monsters[side, 1] == defender && duel.Monsters[side, 3] == hidden &&
+                duel.MonsterFaceDown[side, 3] &&
+                duel.LastMonsterWipe is { TotalDestroyed: 2 } &&
+                duel.LastAttackTrap is { TrapResourceId: AttackTrapRules.MirrorForce,
+                    DestroyedMonsters: 2, AttackContinued: false, ReflectedDamage: 0, BattlePhaseEnded: false },
+                "Mirror Force removes only face-up attack monsters and keeps the Battle Phase");
+        }
+    }
+
     private static void SwapTraps(DemoDuel duel, int side) =>
         (duel.Spells[side, 0], duel.Spells[side, 1]) = (duel.Spells[side, 1], duel.Spells[side, 0]);
 
@@ -118,6 +176,7 @@ internal static class QueuedDirectAttackChecks
     public static void Run(Action<bool,string> check)
     {
         CheckQueuedAttackResponses(check);
+        CheckDirectMirrorForce(check);
         var d=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000);
         var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
         check(!d.TryQueueDirectAttack(2,out _),"A05.7 Main Phase rejects attack");

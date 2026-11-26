@@ -9,12 +9,11 @@ public sealed partial class DemoDuel
             ? TryQueueDirectAttack(attackerSlot, out message, origin)
             : TryQueueTargetedAttack(attackerSlot, defenderSlot, out message, origin);
 
-    /// <summary>Opt-in battle pilot. Single face-up attacker, empty other
-    /// monster and field slots, and no known battle-damage callback.
-    /// Supported Set responses are an opponent's eligible Magic Cylinder or Negate Attack.</summary>
+    /// <summary>Opt-in direct battle pilot. An eligible response can coexist
+    /// with other supported normal monsters on the attacker's field.</summary>
     public bool TryQueueDirectAttack(int slot, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Direct-attack pilot requires an unused attacker in Battle Phase with an empty field apart from eligible opposing Magic Cylinder or Negate Attack.";
+        message = "Direct-attack pilot requires an unused attacker in Battle Phase without unsupported monsters or Spell/Trap effects.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
             PendingEndDiscards != 0 || !CanAttackDirectly(slot) ||
             !TryCaptureCardTarget(ActivePlayer,DuelZone.Monster,slot,out var target) ||
@@ -37,13 +36,15 @@ public sealed partial class DemoDuel
             return false;
         // Fail closed: do not silently bypass response windows, field auras,
         // linked equipment or alternate target selection.
+        bool admitAlliedNormals = HasQueuedDirectResponse(side);
         for(int p=0;p<2;p++)
         {
             if(FieldSpells[p] is not null) return false;
             for(int z=0;z<5;z++)
                 if(Spells[p,z] is not null && (p == side || !IsQueuedDirectResponseTrap(p,z) ||
                         !TryCaptureCardTarget(p, DuelZone.SpellTrap, z, out _)) ||
-                    (p!=side || z!=slot) && Monsters[p,z] is not null)
+                    (p!=side || z!=slot) && Monsters[p,z] is { } other &&
+                        (p != side || !admitAlliedNormals || !IsPlainBattlePilot(other)))
                     return false;
         }
         damage=Math.Clamp(AttackValue(side,slot),0,ushort.MaxValue);

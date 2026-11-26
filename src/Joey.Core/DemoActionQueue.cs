@@ -268,6 +268,7 @@ public sealed partial class DemoDuel
             public bool SourceSpent { get; set; }
             public bool MonsterWipe { get; } = monsterWipe;
             public DemoSummonEvent? Summon { get; init; }
+            public DemoAttackDeclaration? Attack { get; init; }
             public CardTarget? PrimaryTarget { get; init; }
             public bool PrimaryDestroyed { get; set; }
             public bool PrimaryReturned { get; set; }
@@ -871,10 +872,12 @@ public sealed partial class DemoDuel
                 ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
             bool temporaryModifier = temporaryStatActivation?.Source == target &&
                 TemporaryStatRules.For(card.Id)?.ClassCode == card.ClassCode;
-            bool summonTrap = wipe is { Summon: not null } summonWipe && summonWipe.Source == target &&
-                summonWipe.ResourceId == card.Id && card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
+            bool reservedTrapWipe = wipe is { } responseWipe &&
+                (responseWipe.Summon is not null || responseWipe.Attack is not null) &&
+                responseWipe.Source == target && responseWipe.ResourceId == card.Id &&
+                card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
             bool attackTrap = attackTrapPayment?.Source == target && duel.IsQueuedDirectResponseTrap(target.Side, slot);
-            if (!(fixedSpell || temporaryModifier || summonTrap || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
+            if (!(fixedSpell || temporaryModifier || reservedTrapWipe || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);
@@ -952,7 +955,8 @@ public sealed partial class DemoDuel
         }
 
         private bool TryReserveMonsterWipe(CardTarget source, ushort resourceId,
-            IReadOnlyList<MonsterWipeTarget> snapshot, IActionBatchSink queue, DemoSummonEvent? summon = null)
+            IReadOnlyList<MonsterWipeTarget> snapshot, IActionBatchSink queue,
+            DemoSummonEvent? summon = null, DemoAttackDeclaration? attack = null)
         {
             var targets = new List<CardTarget>();
             var context = new EffectContext();
@@ -972,7 +976,7 @@ public sealed partial class DemoDuel
             // movement happens in this activation producer.
             queue.EnqueueBatch(context.Commands);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
-            wipe = new(source.Side, resourceId, source, targets) { Summon = summon };
+            wipe = new(source.Side, resourceId, source, targets) { Summon = summon, Attack = attack };
             ScheduleFinish(source.Side, queue);
             return true;
         }
@@ -2038,6 +2042,9 @@ public sealed partial class DemoDuel
                     if (current.Summon is { } summon)
                         duel.LastSummonTrap = new(current.ResourceId, current.Caster, summon.Player,
                             summon.Kind, current.Counts[0] + current.Counts[1]);
+                    if (current.Attack is { } attack)
+                        duel.LastAttackTrap = new(current.ResourceId, current.Caster, attack.AttackingPlayer,
+                            current.Counts[0] + current.Counts[1], AttackContinued: false);
                 }
                 wipe = null;
             }
