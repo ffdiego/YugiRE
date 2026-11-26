@@ -74,6 +74,8 @@ v7 consulta 1352 no lado adversário e bloqueia o tipo dinâmico 10.
 Mudanças de tipo, supressão e comparação dinâmica com Joey
 seguem pendentes.
 [Pesquisa de restrições de ataque](../research/card-static-sweep/04-regras-globais-e-continuacoes.jsonl).
+[PR #221](https://github.com/ffdiego/YugiRE/pull/221) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45877885467).
 
 ## C03 — Monstros de efeito restantes (193 Effect)
 
@@ -192,6 +194,20 @@ dinâmica com Joey pendente.
 [Pesquisa do cálculo de dano](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
 [PR #220](https://github.com/ffdiego/YugiRE/pull/220) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45877151923).
+
+### C03.8 — Segundo ataque de Hayabusa Knight
+
+Hayabusa Knight (1336) pode declarar dois ataques em cada Battle
+Phase. Os produtores direto e com alvo usam a mesma contagem.
+O DAT confirma o limite e `0056C180` no SQLite v7 consome
+`0x200` antes de gravar o uso geral de ataque. O sandbox conta
+na declaração, inclusive quando Magic Cylinder responde.
+A segunda declaração usa a fila nas configurações admitidas.
+A CPU segue para outro ataque ou encerra a fase caso o segundo
+ataque exija uma configuração ainda fora da fila.
+Reset após mudança de controle e instante nativo em ataques
+interrompidos aguardam comparação dinâmica.
+[Pesquisa de uso por batalha](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
 
 ## C04 — Equipamentos `P025`
 

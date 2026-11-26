@@ -31,7 +31,8 @@ public sealed partial class DemoDuel
                 MonsterFaceDown[side, slot] = faceDown;
                 DefensePosition[side, slot] = defense;
                 MonsterWasFlipped[side, slot] = false;
-                changedPosition[side, slot] = attacked[side, slot] = false;
+                changedPosition[side, slot] = false;
+                attackDeclarations[side, slot] = 0;
                 break;
             case DuelZone.SpellTrap:
                 Spells[side, slot] = card;

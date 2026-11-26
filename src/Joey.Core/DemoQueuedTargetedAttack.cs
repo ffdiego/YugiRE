@@ -4,6 +4,7 @@ public sealed partial class DemoDuel
 {
     private const ushort KineticSoldier = 1253;
     private const ushort MadSwordBeast = 1341;
+    private const ushort HayabusaKnight = 1336;
     private const int WarriorType = 15;
 
     // Roles are not player numbers: 0 attacker, 1 defender. These are
@@ -30,7 +31,7 @@ public sealed partial class DemoDuel
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
-            or KineticSoldier or MadSwordBeast ||
+            or KineticSoldier or MadSwordBeast or HayabusaKnight ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -50,6 +51,12 @@ public sealed partial class DemoDuel
             or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness
             or FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout;
 
+    internal bool HasDeclaredAttack(int side, int slot) => attackDeclarations[side, slot] != 0;
+
+    private bool AllowsQueuedAttackUse(int side, int slot, Card attacker, bool declared) =>
+        declared ? HasDeclaredAttack(side, slot) :
+            attackDeclarations[side, slot] < (attacker.Id == HayabusaKnight ? 2 : 1);
+
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player) =>
         TryQueueTargetedAttack(attackerSlot, defenderSlot, out message, out _, origin);
@@ -66,6 +73,7 @@ public sealed partial class DemoDuel
         if (!TryPlanTargetedAttack(attacker,defender,out _,out _,out unsupported))
         {
             if (unsupported) message = "Targeted attack is outside the supported queued battle configurations.";
+            unsupported &= !HasDeclaredAttack(ActivePlayer, attackerSlot);
             return false;
         }
         queue.Enqueue(new DeclareTargetedAttackCommand(ActivePlayer,attacker,defender),origin);
@@ -83,7 +91,7 @@ public sealed partial class DemoDuel
             GameOver || Phase!=DemoPhase.Battle || queuedBattleReveal is not null || queuedBattleRemoved.Any(x=>x is not null) ||
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
-            attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s] ||
+            !AllowsQueuedAttackUse(p, s, ac, declared) || MonsterFaceDown[p,s] || DefensePosition[p,s] ||
             AttackRestrictedByInsectBarrier(p, ac))
             return false;
         unsupported = (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
@@ -104,7 +112,7 @@ public sealed partial class DemoDuel
             !TryPlanTargetedAttack(command.Attacker,command.Defender,out var a,out var b,out _))
             return new(CommandOutcome.Rejected,"Targeted battle no longer satisfies pilot restrictions.");
 
-        attacked[a.Target.Side,a.Slot]=true;
+        attackDeclarations[a.Target.Side, a.Slot]++;
         if (HasQueuedAttackResponseTrap(command.Side))
         {
             queue.Enqueue(new OpenAttackResponseCommand(command.Side, command.Attacker, command.Defender,
@@ -150,7 +158,7 @@ public sealed partial class DemoDuel
         return Turn==reserved.Turn && ActivePlayer==p && Phase==DemoPhase.Battle && (allowEnded || !GameOver) &&
             TryResolveCardTarget(a.Target,out int source,out var ac) && source==a.Slot && ReferenceEquals(ac,a.Card) &&
             TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
-            attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
+            HasDeclaredAttack(p, source) && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
             MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
             IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc)) &&
             IsSupportedBattleField(p,source,target);
@@ -303,7 +311,7 @@ public sealed partial class DemoDuel
             else if (!TryResolveCardTarget(combatant.Target,out int index,out var card) ||
                 index!=slot || !ReferenceEquals(card,combatant.Card) || MonsterFaceDown[side,slot] ||
                 DefensePosition[side,slot]!=combatant.Defense ||
-                (combatant==reserved.Attacker && !attacked[side,slot]))
+                (combatant==reserved.Attacker && !HasDeclaredAttack(side, slot)))
                 return false;
         }
         return true;
