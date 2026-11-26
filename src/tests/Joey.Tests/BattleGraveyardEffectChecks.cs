@@ -10,8 +10,89 @@ internal static class BattleGraveyardEffectChecks
     private static Card?[] Slots(Card? a = null, Card? b = null, Card? c = null,
         Card? d = null, Card? e = null) => [a, b, c, d, e];
 
+    private sealed class RecruitmentGate : IPresentationGate
+    {
+        public Type? Hold { get; set; }
+        public bool CanAdvance => true;
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
+            command.Command.GetType() != Hold;
+    }
+
+    private static void Drain(ActionQueue queue)
+    {
+        for (int tick = 0; queue.IsBusy && tick < 60; tick++) queue.Tick();
+        if (queue.IsBusy) throw new InvalidOperationException("Battle recruitment did not reach a choice or finish.");
+    }
+
+    private static void RunQueuedBattleRecruitment(Action<bool, string> check)
+    {
+        var momonga = Monster(CardSelectionRules.NimbleMomonga, 453);
+        var germ = Monster(CardSelectionRules.GiantGerm, 383);
+        var normal = Monster(24, 24, 2200);
+        foreach (int side in new[] { 0, 1 })
+        {
+            int defender = 1 - side;
+            var duel = DemoDuel.FromPartialObservation(defender, [],
+                side == 0 ? Slots(momonga) : Slots(germ),
+                side == 1 ? Slots(momonga) : Slots(germ), 8000,
+                side0Deck: side == 0 ? [momonga, momonga] : [germ, germ],
+                side1Deck: side == 1 ? [momonga, momonga] : [germ, germ]);
+            check(duel.EndTurn(out _) && duel.BeginBattle(out _), "P168 tied battle fixture");
+            var gate = new RecruitmentGate { Hold = typeof(HealCommand) };
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("attack 0 0").Enqueued, "P168 admits both recruiters as combatants");
+            for (int tick = 0; queue.IsBusy && queue.Active?.Command is not HealCommand && tick < 30; tick++) queue.Tick();
+            check(queue.Active?.Command is HealCommand && duel.Life[side] == 9000 &&
+                duel.Graveyard(side).SequenceEqual([momonga]) && duel.Graveyard(defender).Count == 0 &&
+                duel.PendingCardSelection is null, "Momonga heals after arriving and before the second removal");
+            gate.Hold = null;
+            Drain(queue);
+            check(duel.Life[side] == 8500 && duel.Graveyard(defender).SequenceEqual([germ]) &&
+                duel.PendingCardSelection?.EffectResourceId == momonga.Id && CpuDuelController.PendingOwner(duel) == side &&
+                !duel.SelectBatchCard(0, out _) && !duel.FinishOptionalCardSelection(out _) &&
+                console.Execute("select-recruit batch 0 1").Enqueued,
+                "Germ's damage ends before either request opens; only the queue answers the first request");
+            Drain(queue);
+            check(duel.Monsters[side, 0] == momonga && duel.Monsters[side, 1] == momonga &&
+                duel.MonsterFaceDown[side, 0] && duel.MonsterFaceDown[side, 1] &&
+                duel.PendingCardSelection?.EffectResourceId == germ.Id && CpuDuelController.PendingOwner(duel) == defender &&
+                console.Execute("select-recruit decline").Enqueued,
+                "Momonga recruits two hidden copies and advances to the second owner");
+            Drain(queue);
+            check(duel.PendingCardSelection is null && duel.DeckCount(defender) == 2 &&
+                queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Executed &&
+                    entry.Entry.Command is ShuffleDeckCommand) == 1,
+                "Declining Germ does not summon or shuffle");
+
+            foreach (bool lethal in new[] { false, true })
+            {
+                var single = DemoDuel.FromPartialObservation(defender, [],
+                    side == 0 ? Slots(normal) : Slots(germ), side == 1 ? Slots(normal) : Slots(germ),
+                    lethal ? 100 : 8000,
+                    side0Deck: defender == 0 ? [germ, germ] : [], side1Deck: defender == 1 ? [germ, germ] : []);
+                single.MonsterFaceDown[defender, 0] = single.DefensePosition[defender, 0] = !lethal;
+                var singleConsole = new DuelConsoleSession(single);
+                check(single.EndTurn(out _) && single.BeginBattle(out _) &&
+                    singleConsole.Execute("attack 0 0").Enqueued, "P168 Germ battle fixture");
+                Drain(singleConsole.Queue);
+                check(single.Life[side] == 7500 && single.Graveyard(defender).SequenceEqual([germ]) &&
+                    (lethal ? single.Winner == side && single.PendingCardSelection is null :
+                        single.PendingCardSelection?.EffectResourceId == germ.Id &&
+                        singleConsole.Execute("select-recruit batch 0 1").Enqueued),
+                    "Germ burns for 500 even after lethal battle damage; only a live duel can recruit");
+                Drain(singleConsole.Queue);
+                if (!lethal)
+                    check(single.Monsters[defender, 0] == germ && single.Monsters[defender, 1] == germ &&
+                        !single.DefensePosition[defender, 0] && !single.DefensePosition[defender, 1],
+                        "Germ recruits both copies face-up in attack");
+            }
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        RunQueuedBattleRecruitment(check);
         var momonga = Monster(1115, 453, 1000, 100, level: 2, attribute: 5, type: 11);
         var duplicate1 = Monster(1115, 1453, 1000, 100, level: 2, attribute: 5, type: 11);
         var duplicate2 = Monster(1115, 2453, 1000, 100, level: 2, attribute: 5, type: 11);

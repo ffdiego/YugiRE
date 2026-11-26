@@ -463,11 +463,15 @@ public sealed partial class DemoDuel
                      !duel.IsFinalDestinySource(finalPayment.Source)))
                     return new(CommandOutcome.Skipped,"Final Destiny's complete cost was not paid.");
             }
+            // The sandbox applies the reserved P168 LP effect even after lethal battle damage.
+            bool finishBattleLifeEffect = duel.queuedBattleLifeEffects.TryPeek(out var expectedBattleLife) &&
+                ReferenceEquals(expectedBattleLife, command);
+            if (finishBattleLifeEffect) duel.queuedBattleLifeEffects.Dequeue();
             bool finishMandatoryDrawEffect = reservedMandatoryDrawEffects.TryPeek(out var expectedDraw) && expectedDraw == command;
             if (finishMandatoryDrawEffect) reservedMandatoryDrawEffects.Dequeue();
             // Admitted mandatory batches still finish after Exodia or lethal damage.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || finishMandatoryDrawEffect || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishMandatoryDrawEffect || finishBattleLifeEffect || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             if (duel.HasQueuedEndDiscard && command is not EndTurnDiscardCommand)
