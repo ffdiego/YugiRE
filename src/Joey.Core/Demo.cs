@@ -1220,14 +1220,14 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    private DemoMonsterPositionChange CommitManualPosition(int owner, int zone)
+    private DemoMonsterPositionChange CommitManualPosition(int owner, int zone, bool countsAsManualChange = true)
     {
         var monster = Monsters[owner, zone]!;
         bool flipped = MonsterFaceDown[owner, zone];
         bool oldDefense = DefensePosition[owner, zone];
         DefensePosition[owner, zone] = !oldDefense;
         MonsterFaceDown[owner, zone] = false;
-        changedPosition[owner, zone] = true;
+        if (countsAsManualChange) changedPosition[owner, zone] = true;
         if (flipped) MonsterWasFlipped[owner, zone] = true;
         var change = new DemoMonsterPositionChange(owner, zone, monster,
             flipped, oldDefense, false, DefensePosition[owner, zone]);
@@ -2267,6 +2267,7 @@ public sealed partial class DemoDuel
     {
         message = "Choose an eligible monster in either monster zone.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice ||
+            PendingFlipTarget is { Effect: DemoFlipEffect.ChangeFaceUpPosition } ||
             PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.PositionChange } position &&
                 UsesQueuedMonsterFlipSelection(position)) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;

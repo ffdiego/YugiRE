@@ -28,6 +28,7 @@ internal static class QueuedMonsterFlipTargetChecks
 
     public static void Run(Action<bool,string> check)
     {
+        CheckBiteShoes(check);
         foreach(int side in new[]{0,1})
         foreach(ushort id in new ushort[]{500,540,601})
         {
@@ -175,5 +176,79 @@ internal static class QueuedMonsterFlipTargetChecks
         check(battle.ResolveFlipTarget(1,0,out _)&&battle.FinishFlipTargets(out _)&&
             battle.Graveyard(0).Single().Id==601&&battle.HandFor(1).Single().Id==24,
             "Existing battle FLIP resolution preserved");
+    }
+
+    private static void CheckBiteShoes(Action<bool, string> check)
+    {
+        var bite = Monster(FlipEffectRules.BiteShoes);
+        var normal = Monster(24);
+        foreach (int side in new[] { 0, 1 })
+        {
+            int enemy = 1 - side;
+            var own = Slots(bite, normal);
+            var opposing = Slots(normal, normal);
+            var duel = DemoDuel.FromPartialObservation(side, [], side == 0 ? own : opposing,
+                side == 1 ? own : opposing, 8000);
+            duel.MonsterFaceDown[side, 0] = duel.DefensePosition[side, 0] = true;
+            duel.MonsterFaceDown[enemy, 0] = duel.DefensePosition[enemy, 0] = true;
+            duel.DefensePosition[enemy, 1] = true;
+            var queue = duel.CreatePrimitiveActionQueue();
+            check(duel.TryQueueChangePosition(0, out _), "Bite Shoes can be Flip Summoned through the queue");
+            Drain(queue);
+            var request = duel.PendingFlipTarget ?? throw new InvalidOperationException("Bite Shoes did not ask for a target.");
+            var candidates = duel.QueuedMonsterFlipCandidates();
+            check(duel.UsesQueuedMonsterFlipSelection(request) && candidates.Count == 3 &&
+                candidates.All(candidate => !candidate.FaceDown) &&
+                !duel.TrySelectQueuedMonsterFlipTarget(request, enemy, 0, out _) &&
+                !duel.ResolveFlipTarget(enemy, 1, out _),
+                "Bite Shoes lists face-up cards of both owners and rejects hidden or legacy selection");
+
+            bool targetsOwnMonster = side == 0;
+            int targetSide = targetsOwnMonster ? side : enemy;
+            var target = Capture(duel, targetSide, 1);
+            check(duel.TrySelectQueuedMonsterFlipTarget(request, targetSide, 1, out _) &&
+                duel.DefensePosition[targetSide, 1] != targetsOwnMonster,
+                "Bite Shoes admits an occurrence before its position changes");
+            Drain(queue);
+            check(Capture(duel, targetSide, 1) == target && !duel.MonsterFaceDown[targetSide, 1] &&
+                duel.DefensePosition[targetSide, 1] == targetsOwnMonster && duel.PendingFlipTarget is null &&
+                (!targetsOwnMonster || duel.CanChangePosition(1)),
+                "Bite Shoes toggles only the selected position and preserves manual position allowance");
+        }
+
+        foreach (bool targetsSelf in new[] { false, true })
+        {
+            var duel = DemoDuel.FromPartialObservation(1, [], Slots(bite), Slots(Monster(24, atk: 1500)), 8000);
+            duel.MonsterFaceDown[0, 0] = duel.DefensePosition[0, 0] = true;
+            var queue = duel.CreatePrimitiveActionQueue();
+            DemoMonsterDestruction? destroyed = null;
+            duel.MonsterDestroyed += item => destroyed = item;
+            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, 0, out _), "Battle Bite Shoes is admitted");
+            Drain(queue);
+            var request = duel.PendingFlipTarget ?? throw new InvalidOperationException("Battle Bite Shoes did not ask for a target.");
+            check(duel.IsMarkedForBattleDestruction(0, 0), "Bite Shoes opens its choice after battle marking");
+            check(targetsSelf
+                    ? duel.TrySelectQueuedMonsterFlipTarget(request, 0, 0, out _)
+                    : new CpuDuelController(0).Step(duel) is { Action: CpuAction.Selection, Status: CpuStepStatus.Acted },
+                "Battle Bite Shoes can change its own position or have the CPU change the attacker's");
+            Drain(queue);
+            check(duel.Life.SequenceEqual([8000, 8000]) && duel.Graveyard(0).Single() == bite &&
+                duel.DefensePosition[1, 0] == !targetsSelf && destroyed?.Defense == !targetsSelf,
+                "Bite Shoes position changes do not recalculate damage or undo marked destruction");
+        }
+
+        var stale = DemoDuel.FromPartialObservation(0, [], Slots(bite), Slots(normal), 8000);
+        stale.MonsterFaceDown[0, 0] = stale.DefensePosition[0, 0] = true;
+        var staleQueue = stale.CreatePrimitiveActionQueue();
+        check(stale.TryQueueChangePosition(0, out _), "Bite Shoes stale target fixture flips");
+        Drain(staleQueue);
+        var staleRequest = stale.PendingFlipTarget!;
+        check(stale.TrySelectQueuedMonsterFlipTarget(staleRequest, 1, 0, out _), "Admit the original Bite Shoes target");
+        stale.Monsters[1, 0] = normal with { };
+        Drain(staleQueue);
+        check(!stale.DefensePosition[1, 0] && ReferenceEquals(stale.PendingFlipTarget, staleRequest) &&
+            stale.TrySelectQueuedMonsterFlipTarget(staleRequest, 0, 0, out _),
+            "Same-ID replacement does not move, and Bite Shoes can select another occurrence");
+        Drain(staleQueue);
     }
 }

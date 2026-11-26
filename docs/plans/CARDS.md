@@ -311,6 +311,23 @@ como ataque é política do sandbox. A sequência exata, o
 tratamento de supressão e a troca de controle aguardam
 comparação dinâmica.
 [Pesquisa de uso por batalha](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
+[PR #229](https://github.com/ffdiego/YugiRE/pull/229) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45911763813).
+
+### C03.14 — Posição por FLIP de Bite Shoes
+
+Bite Shoes (1330/P240) reutiliza o seletor por ocorrência no
+Flip Summon e na revelação em batalha admitida. A escolha exige
+um monstro revelado e permite os dois lados. O comando alterna
+a posição mantendo a carta visível. A mudança por efeito
+preserva o uso manual de mudança de posição. Em batalha, ela
+ocorre depois do cálculo e preserva a remoção já marcada.
+O DAT fixa os alvos e o estudo de `0058F7E0` descreve a
+revalidação e chamada de `005751E0`. O wrapper `005751E0`
+consta no SQLite v7. Alvo marcado, revelações por efeitos
+externos e gatilhos de posição forçada aguardam validação ou
+integração. Nenhuma comparação dinâmica foi realizada.
+[Pesquisa de FLIPs de campo](../research/card-static-sweep/05-janelas-invocacao-batalha.jsonl).
 
 ## C04 — Equipamentos `P025`
 

@@ -56,6 +56,7 @@ internal sealed record FinishJointDamageCommand(int Side) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+internal sealed record ChangePositionByFlipCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
 public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false, bool FaceUpDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -447,6 +448,9 @@ internal static class DuelCommandValidation
                 break;
             case ChangePositionCommand position:
                 Target(position.Target, position.Side, DuelZone.Monster);
+                break;
+            case ChangePositionByFlipCommand forcedPosition:
+                Target(forcedPosition.Target, forcedPosition.Side, DuelZone.Monster);
                 break;
             default:
                 throw new ArgumentException("Unknown command or invalid arguments.", nameof(command));

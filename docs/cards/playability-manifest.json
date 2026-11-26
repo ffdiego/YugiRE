@@ -1615,6 +1615,28 @@
       ]
     },
     {
+      "id": "flip.bite-shoes-position-change-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1330
+      ],
+      "mechanics": [
+        "Choose one tracked face-up monster on either side after queued Flip Summon or a supported battle reveal",
+        "Switch its position while keeping it face-up and preserve established battle damage and removal"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedMonsterFlipTargets.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedMonsterFlipTargetChecks.cs",
+        "docs/research/card-static-sweep/05-janelas-invocacao-batalha.jsonl"
+      ],
+      "limitations": [
+        "External effect reveals, forced-position triggers, and native validation of marked targets remain pending."
+      ]
+    },
+    {
       "id": "battle.goblin-attack-force-position-c03",
       "kind": "Monster",
       "subtype": "Effect",

@@ -29,6 +29,7 @@ public sealed partial class DemoDuel
         public bool FlipOpened { get; set; }
         public PendingCardSelection? Recovery { get; set; }
         public Dictionary<CardTarget,DuelZone> ExpectedEffectMoves { get; } = [];
+        public ChangePositionByFlipCommand? ExpectedPositionChange { get; set; }
     }
     private BattleRevealReservation? queuedBattleReveal;
     private bool queuedBattleRemovalSelectionOpening;
@@ -38,7 +39,7 @@ public sealed partial class DemoDuel
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
             or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky or ZombyraTheDark
-            or FlipEffectRules.SlateWarrior or GoblinAttackForce ||
+            or FlipEffectRules.SlateWarrior or FlipEffectRules.BiteShoes or GoblinAttackForce ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -55,7 +56,8 @@ public sealed partial class DemoDuel
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         (card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
             or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi
-            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness or FlipEffectRules.SlateWarrior ||
+            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness or FlipEffectRules.SlateWarrior
+            or FlipEffectRules.BiteShoes ||
             HasQueuedDeckFlip(card.Id));
 
     private static bool HasQueuedDeckFlip(ushort id) =>
@@ -255,6 +257,7 @@ public sealed partial class DemoDuel
         FlipEffectRules.PenguinSoldier => DemoFlipEffect.ReturnUpToTwo,
         FlipEffectRules.HaneHane => DemoFlipEffect.ReturnOne,
         FlipEffectRules.ManEaterBug => DemoFlipEffect.DestroyMonster,
+        FlipEffectRules.BiteShoes => DemoFlipEffect.ChangeFaceUpPosition,
         _ => null
     };
 
@@ -316,17 +319,23 @@ public sealed partial class DemoDuel
             return false;
         foreach (var (target, destination) in reserved.ExpectedEffectMoves)
             if (!TryResolveCardTarget(target with { Zone = destination }, out _, out _)) return false;
+        if (reserved.ExpectedPositionChange is { } position &&
+            (!TryResolveCardTarget(position.Target, out int positionSlot, out _) ||
+             MonsterFaceDown[position.Side, positionSlot] || DefensePosition[position.Side, positionSlot] != position.Defense))
+            return false;
 
         foreach (var combatant in new[]{reserved.Attacker,reserved.Defender})
         {
             int side=combatant.Target.Side,slot=combatant.Slot;
+            bool expectedDefense = reserved.ExpectedPositionChange is { } change && change.Target == combatant.Target
+                ? change.Defense : combatant.Defense;
             if (reserved.ExpectedEffectMoves.ContainsKey(combatant.Target))
             {
                 if (Monsters[side,slot] is not null) return false;
             }
             else if (!TryResolveCardTarget(combatant.Target,out int index,out var card) ||
                 index!=slot || !ReferenceEquals(card,combatant.Card) || MonsterFaceDown[side,slot] ||
-                DefensePosition[side,slot]!=combatant.Defense ||
+                DefensePosition[side,slot]!=expectedDefense ||
                 (combatant==reserved.Attacker && !HasDeclaredAttack(side, slot)))
                 return false;
         }
@@ -356,6 +365,8 @@ public sealed partial class DemoDuel
         queuedBattleReveal=null;
         if (queuedBattleRemoved[1] is { } marked)
         {
+            if (reserved.ExpectedPositionChange is { } change && change.Target == marked.Target)
+                queuedBattleRemoved[1] = marked = marked with { Defense = change.Defense };
             var batch = new List<DuelCommand> { new SnapshotBattleRemovalCommand(command.Side, marked.Target, 1) };
             PlanBattleRemoval(marked, 1, batch, reserved.Attacker);
             queue.EnqueueBatch(batch);
