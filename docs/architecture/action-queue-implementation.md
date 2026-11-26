@@ -88,16 +88,15 @@ uma vez. Com a ocorrência ainda no cemitério e um slot livre, um
 fonte ausente consome a promessa com o custo já pago. O caminho admite
 a compra manual no sandbox e deixa em aberto os gates nativos completos.
 
-O App também admite esse lote automaticamente com `--queued-actions`.
+O App admite esse lote automaticamente por padrão.
 O aviso de Draw pode acompanhar a fila, que continua respeitando pausas
 e movimentos. Standby e Main aguardam a resolução do lote inteiro.
 O teste de startup sem janela cobre Classic e Instant, a compra dos
-dois lados e a perda por falta de cartas. No modo experimental, os botões
+dois lados e a perda por falta de cartas. Os botões
 Battle, Main2 e End admitem os produtores comuns e permitem que a apresentação
 observe a mudança depois da execução. O descarte obrigatório usa a mesma fila.
-A CPU experimental usa os mesmos produtores de fase com origem `Cpu`; as
-demais decisões seguem o fluxo existente. O App padrão usa o caminho legado
-e o Lab usa comandos explícitos.
+A CPU usa os mesmos produtores de fase com origem `Cpu`. O App inicia
+no modo legado com `--legacy-actions` e o Lab usa comandos explícitos.
 
 ## A08.1 — Planejamento de compra e LP
 

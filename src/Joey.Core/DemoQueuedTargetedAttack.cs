@@ -39,33 +39,45 @@ public sealed partial class DemoDuel
             or FlipEffectRules.HaneHane;
 
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
-        ActionOrigin origin = ActionOrigin.Player)
+        ActionOrigin origin = ActionOrigin.Player) =>
+        TryQueueTargetedAttack(attackerSlot, defenderSlot, out message, out _, origin);
+
+    private bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
+        out bool unsupported, ActionOrigin origin)
     {
-        message = "Targeted battle pilot requires supported combatants, with only supported normal monsters elsewhere on the field.";
+        unsupported = false;
+        message = "Choose a legal targeted attack with an idle queue.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked ||
             PendingEndDiscards != 0 || !CanAttack(attackerSlot) ||
             !TryCaptureCardTarget(ActivePlayer,DuelZone.Monster,attackerSlot,out var attacker) ||
-            !TryCaptureCardTarget(1-ActivePlayer,DuelZone.Monster,defenderSlot,out var defender) ||
-            !TryPlanTargetedAttack(attacker,defender,out _,out _)) return false;
+            !TryCaptureCardTarget(1-ActivePlayer,DuelZone.Monster,defenderSlot,out var defender)) return false;
+        if (!TryPlanTargetedAttack(attacker,defender,out _,out _,out unsupported))
+        {
+            if (unsupported) message = "Targeted attack is outside the supported queued battle configurations.";
+            return false;
+        }
         queue.Enqueue(new DeclareTargetedAttackCommand(ActivePlayer,attacker,defender),origin);
         message="Targeted attack admitted.";
         return true;
     }
 
     private bool TryPlanTargetedAttack(CardTarget attacker,CardTarget defender,
-        out BattleReservation a,out BattleReservation b,bool declared = false)
+        out BattleReservation a,out BattleReservation b,out bool unsupported,bool declared = false)
     {
         a=null!; b=null!;
+        unsupported=false;
         int p=attacker.Side, e=defender.Side;
         if (p!=ActivePlayer || e!=1-p || attacker.Zone!=DuelZone.Monster || defender.Zone!=DuelZone.Monster ||
             GameOver || Phase!=DemoPhase.Battle || queuedBattleReveal is not null || queuedBattleRemoved.Any(x=>x is not null) ||
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
-            attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
-            !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
-                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]))
+            attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s])
             return false;
-        if (!IsSupportedBattleField(p,s,t)) return false;
+        unsupported = (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
+            !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
+                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]) ||
+            !IsSupportedBattleField(p,s,t);
+        if (unsupported) return false;
         a=new(attacker,s,ac,false);
         b=new(defender,t,bc,DefensePosition[e,t]);
         return true;
@@ -76,7 +88,7 @@ public sealed partial class DemoDuel
         if(!TryResolveCardTarget(command.Attacker,out _,out _) || !TryResolveCardTarget(command.Defender,out _,out _))
             return new(CommandOutcome.Skipped,"Declared combatant gone.");
         if(followups is not IActionBatchSink { PendingCount:0 } queue ||
-            !TryPlanTargetedAttack(command.Attacker,command.Defender,out var a,out var b))
+            !TryPlanTargetedAttack(command.Attacker,command.Defender,out var a,out var b,out _))
             return new(CommandOutcome.Rejected,"Targeted battle no longer satisfies pilot restrictions.");
 
         attacked[a.Target.Side,a.Slot]=true;

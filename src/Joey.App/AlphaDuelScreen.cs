@@ -49,8 +49,7 @@ static partial class Game
         alphaCpu = new(1);
         alphaBlocked = false;
         cpuDelay = TimeSpan.Zero;
-        ResetDuelPresentation();
-        if (useQueuedActions) queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
+        StartDuelPresentation();
         QueueDuelOpening();
         QueueOpeningDeal();
         QueueInitialExodiaOpening();
@@ -63,6 +62,7 @@ static partial class Game
         var deck = AlphaDeck.Create(playableCards);
         var fusion = AlphaDeck.CreateFusionDeck(playableCards);
         var match = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
+        var queue = useQueuedActions ? match.CreatePrimitiveActionQueue() : null;
         CpuDuelController[] sides = [new(0), new(1)];
         for (int i = 0; i < 5000 && !match.GameOver; i++)
         {
@@ -70,10 +70,28 @@ static partial class Game
             var step = sides[owner].Step(match);
             Console.WriteLine($"Turn {match.Turn} | P{owner + 1} | {step.Message}");
             if (step.Status != CpuStepStatus.Acted) return 1;
+            for (int tick = 0; queue is { IsBusy: true } && tick < 1000; tick++)
+            {
+                if (queue.PendingDecision is { } decision)
+                    queue.SubmitDecision(decision.Id, CpuDuelController.DecideOptionalEffect(match, decision));
+                queue.Tick();
+            }
+            if (queue is { IsBusy: true })
+            {
+                Console.Error.WriteLine("Action queue did not finish the CPU step.");
+                return 1;
+            }
         }
         string result = match.IsDraw ? "Draw" : match.Winner is int winner ? $"P{winner + 1} wins" : "Action limit reached";
         Console.WriteLine($"{result} | Turn {match.Turn} | LP {match.Life[0]}/{match.Life[1]} | Deck {match.DeckCount(0)}/{match.DeckCount(1)} | Seed {seed}");
         return match.GameOver ? 0 : 1;
+    }
+
+    static void StartDuelPresentation()
+    {
+        ResetDuelPresentation();
+        if (useQueuedActions)
+            queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
     }
 
     static void ResetDuelPresentation()
@@ -276,7 +294,8 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
-        if (queuedDuel is not null && duel.TryQueueAttack(attacker, target, out message))
+        if (queuedDuel is not null &&
+            (duel.TryQueueAttack(attacker, target, out message, out bool unsupported) || !unsupported))
             return;
 
         int player = duel.ActivePlayer;
@@ -314,7 +333,7 @@ static partial class Game
         for (int player = 0; player < 2; player++)
         for (int zone = 0; zone < NativeDuelLayout.MonsterSlots; zone++)
             hiddenBeforeStep[player, zone] = CaptureHiddenAttackTarget(player, zone);
-        var step = cpu.Step(duel, queueTurnActions: queuedDuel is not null);
+        var step = cpu.Step(duel);
         if (step.Status == CpuStepStatus.Blocked)
         {
             message = step.Message;

@@ -128,6 +128,35 @@ legados equivalentes do caminho padrão, desacoplar seus `Pending*` de
 `ActionsBlocked` e registrar a redução de Demo.cs por fatia. Regras de
 cartas sem equivalente jogável continuam nos IDs próprios.
 
+### C12.1 — Fila padrão
+
+O App cria a fila ao iniciar duelo local ou Alpha. `--alpha-headless`
+também processa a fila, e o produtor padrão da CPU usa a fila anexada
+pelo duelo. `--legacy-actions` seleciona o modo anterior. A flag
+`--queued-actions` continua compatível com o padrão.
+
+Compatibilidade transitória no modo padrão:
+
+- Ataque fora das configurações admitidas pelo piloto, como FLIP de
+  batalha ainda legado, certos combatentes, espectadores e contínuas.
+  App e CPU só recorrem ao legado após uma indicação de configuração
+  não suportada, com fonte e alvo rastreados e antes da admissão.
+  Remover à medida que A06/C12 integrar esses caminhos.
+- Ativações sem produtor de fila e respostas de seleção, armadilha ou
+  efeito que ainda pertencem a um produtor legado. O App seleciona o
+  produtor pela família da carta ou pelo tipo e origem da solicitação
+  antes de tentar admitir. A CPU também escolhe pelo pedido pendente.
+  Retirar os ramos equivalentes conforme forem migrados os produtores
+  que abrem esses pedidos.
+
+`Demo.cs` 2607 → 2607 linhas. A fatia muda a escolha de produtor no
+App/CPU e preserva o comparador explícito para a etapa de remoção.
+O smoke sem janela exercita o mesmo inicializador em Classic e
+Instant. Os testes cobrem admissão, recusa sem fallback em fila
+ocupada, alvo inválido ou ocorrência sem rastreamento, e 30 seeds do
+Alpha por modo com o DAT local, incluindo fusões. O gate exige CI
+verde e integração.
+
 ### Histórico das fatias
 
 Reexpressar FLIP, seleções, P037/P039/P092, armadilhas e fusões como comandos (invariantes 1–5). Registrar aqui as cartas implementadas fora da fila enquanto `A02` não existir. Dívida inicial inclui as famílias dos lotes 6–14 (ver nota de consolidação abaixo), além das famílias listadas neste item.

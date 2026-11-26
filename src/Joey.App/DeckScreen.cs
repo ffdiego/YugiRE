@@ -66,7 +66,7 @@ static partial class Game
         alphaCpu = null;
         alphaBlocked = false;
         duel = next;
-        ResetDuelPresentation();
+        StartDuelPresentation();
         QueueDuelOpening();
         if (!useDemoFixture) QueueOpeningDeal();
         QueueInitialExodiaOpening();

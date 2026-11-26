@@ -19,6 +19,7 @@ static partial class Game
     static bool includeUnused;
     static readonly DuelPresentationClock presentation = new(new FastLookAndFeel());
     static string previousDuelMessage = "";
+    static bool QueueActionsEnabled(string[] args) => !args.Contains("--legacy-actions");
     // Keep explicit legacy profile precedence; Fast is now the App default.
     static DuelLookAndFeel SelectPresentationStyle(string[] args) =>
         args.Contains("--instant") ? new InstantLookAndFeel()
@@ -38,7 +39,7 @@ static partial class Game
         graphics = resources;
         includeUnused = args.Contains("--include-unused");
         useLegacySelection = args.Contains("--legacy-selection");
-        useQueuedActions = args.Contains("--queued-actions");
+        useQueuedActions = QueueActionsEnabled(args);
         presentation.SetStyle(SelectPresentationStyle(args));
         if (Option(args, "--native-cosine=") is string cosinePath)
         {
