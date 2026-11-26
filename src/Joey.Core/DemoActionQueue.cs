@@ -400,6 +400,8 @@ public sealed partial class DemoDuel
                 return OpenBattleFlipDraw(openBattleFlip, followups);
             if (command is OpenBattleFlipRecoveryCommand recoveryFlip)
                 return duel.OpenQueuedBattleFlipRecovery(recoveryFlip, followups);
+            if (command is OpenBattleFlipDeckFlowCommand deckFlip)
+                return OpenBattleFlipDeckFlow(deckFlip, followups);
             if (command is ResolveBattleFlipDamageCommand damageFlip)
                 return duel.ResolveQueuedBattleFlipDamage(damageFlip, followups);
             if (command is OpenBattleFlipTargetsCommand openBattleTargets)
@@ -436,6 +438,7 @@ public sealed partial class DemoDuel
             if (command is FinishNormalPlacementCommand finish)
                 return FinishPlacement(finish);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
+            if (command is FinishFlipDeckFlowCommand deckFlow) return FinishFlipDeckFlow(deckFlow);
             if (command is FinishCardDestructionCommand cardDestruction) return FinishCardDestruction(cardDestruction);
             if (command is RecordFlipDrawDecisionCommand decision) return RecordFlipDrawDecision(decision, followups);
             // An unspent source cancels the entire reserved wipe, including linked consequences.
@@ -1256,7 +1259,8 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Applied, message);
             }
             if (card.Id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout)
-                return ResolveFlipDeckFlow(position, card, followups);
+                return ResolveFlipDeckFlow(position.Side, card,
+                    new FinishFlipBatchCommand(position.Side, position.Target, position.WasInDefense, false, false), followups);
             if (card.Id == FlipEffectRules.FourStarredLadybugOfDoom)
                 return ResolveLadybug(position, followups);
             if (card.Id == FlipEffectRules.MorphingJar2)
@@ -1559,12 +1563,36 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult ResolveFlipDeckFlow(ResolvePositionCommand position, Card card, IActionCommandSink followups)
+        private CommandResult OpenBattleFlipDeckFlow(OpenBattleFlipDeckFlowCommand command, IActionCommandSink followups)
         {
-            if (resolvingFlipBatch || followups is not IActionBatchSink { PendingCount: 0 } queue)
+            if (duel.queuedBattleReveal is not { FlipCalculated: true, FlipOpened: false } reserved ||
+                reserved.Defender.Target != command.Defender ||
+                reserved.Defender.Card.Id is not (FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout) ||
+                followups is not IActionBatchSink { PendingCount: 0 })
+                return new(CommandOutcome.Rejected, "No matching calculated battle deck FLIP.");
+            if (!duel.ValidateBattleReveal(reserved, faceDown: false, allowEnded: true))
+                throw new InvalidOperationException("Reserved battle FLIP changed before deck flow.");
+
+            var finish = new FinishBattleFlipCommand(command.Side, command.Defender);
+            if (duel.GameOver || duel.FlipEffectsNegated)
+                followups.Enqueue(finish);
+            else
+            {
+                var result = ResolveFlipDeckFlow(command.Side, reserved.Defender.Card, finish, followups);
+                if (result.Outcome != CommandOutcome.Applied)
+                    throw new InvalidOperationException("Reserved battle FLIP could not start deck flow.");
+            }
+            reserved.FlipOpened = true;
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ResolveFlipDeckFlow(int controller, Card card, DuelCommand finish, IActionCommandSink followups)
+        {
+            if (resolvingFlipBatch || flipDeckFlow is not null ||
+                followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Deck flow needs isolated resolution.");
             bool mill = card.Id == FlipEffectRules.NeedleWorm;
-            int side = 1 - position.Side, requested = mill ? 5 : 3;
+            int side = 1 - controller, requested = mill ? 5 : 3;
             var expected = new List<CardTarget>();
             for (int i = 0; i < Math.Min(requested, duel.decks[side].Count); i++)
             {
@@ -1572,18 +1600,36 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Rejected, "Untracked deck occurrence.");
                 expected.Add(target);
             }
-            flipDeckFlow = new(card.Id, position.Side, requested, expected);
-            resolvingFlipBatch = true;
+            var flow = new FlipDeckFlow(card.Id, controller, requested, expected);
+            flipDeckFlow = flow;
+            resolvingFlipBatch = finish is FinishFlipBatchCommand;
             queue.EnqueueBatch(expected.Select(target => mill
                 ? (DuelCommand)new SendToGraveyardCommand(side, target)
                 : new DrawCommand(side)));
             queue.ScheduleContinuation(_ =>
             {
-                var finish = new FinishFlipBatchCommand(position.Side, position.Target, position.WasInDefense, false, false);
                 // Read-only continuation: only successfully drawn Spell copies
                 // participate; never select matching resource IDs in old hand.
-                return new([.. flipDeckFlow!.NewSpells.Select(t => (DuelCommand)new DiscardCommand(side, t)), finish]);
+                return new([.. flow.NewSpells.Select(t => (DuelCommand)new DiscardCommand(side, t)),
+                    new FinishFlipDeckFlowCommand(controller), finish]);
             });
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult FinishFlipDeckFlow(FinishFlipDeckFlowCommand command)
+        {
+            if (flipDeckFlow is not { } flow || flow.Controller != command.Side)
+                return new(CommandOutcome.Rejected, "No matching FLIP deck flow.");
+            flipDeckFlow = null;
+            int sent = flow.IsMill ? flow.Moved : flow.Discarded;
+            bool shortfall = !flow.IsMill && flow.Moved < flow.Requested;
+            duel.LastDeckFlow = new(flow.Effect, flow.Controller, flow.Side, flow.Requested,
+                flow.Moved, flow.IsMill ? 0 : flow.Moved - flow.Discarded, sent, flow.Discarded, shortfall);
+            if (!flow.IsMill)
+            {
+                duel.CheckExodia(flow.Side);
+                if (shortfall && duel.Winner is null) duel.Winner = flow.Controller;
+            }
             return new(CommandOutcome.Applied);
         }
 
@@ -1702,19 +1748,6 @@ public sealed partial class DemoDuel
                 flipBanish = null;
                 duel.LastFlipBanishBurn = new(burn.Effect, burn.Owner, burn.Source, burn.Required,
                     Array.AsReadOnly(burn.Removed.ToArray()), burn.DamageApplied ? FlipBanishBurnRules.BurnDamage : 0, burn.DamageApplied);
-            }
-            if (flipDeckFlow is { } flow)
-            {
-                flipDeckFlow = null;
-                int sent = flow.IsMill ? flow.Moved : flow.Discarded;
-                bool shortfall = !flow.IsMill && flow.Moved < flow.Requested;
-                duel.LastDeckFlow = new(flow.Effect, flow.Controller, flow.Side, flow.Requested,
-                    flow.Moved, flow.IsMill ? 0 : flow.Moved - flow.Discarded, sent, flow.Discarded, shortfall);
-                if (!flow.IsMill)
-                {
-                    duel.CheckExodia(flow.Side);
-                    if (shortfall && duel.Winner is null) duel.Winner = flow.Controller;
-                }
             }
             if (!duel.GameOver)
             {

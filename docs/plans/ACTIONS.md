@@ -310,6 +310,15 @@ Comparação dinâmica pendente.
 [PR #217](https://github.com/ffdiego/YugiRE/pull/217) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45874884888).
 
+*P082/P088 em batalha (C12):* Needle Worm e Hiro's Shadow Scout
+usam o mesmo lote do Flip Summon manual. Cada carta é movimentada
+por comando e o defensor marcado aguarda a conclusão do lote.
+A limpeza ocorre mesmo se a compra do Scout encerrar o duelo.
+Demo.cs 2600 → 2600 linhas. A fatia liga o produtor de batalha
+ao executor existente e preserva os caminhos de revelação fora dele.
+Casos C# nos dois lados, incluindo deck insuficiente e gate.
+[Contrato](../cards/c12-queued-flip-deck-flow.md).
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

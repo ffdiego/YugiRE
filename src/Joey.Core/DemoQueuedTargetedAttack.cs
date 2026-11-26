@@ -42,7 +42,8 @@ public sealed partial class DemoDuel
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
             or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi
-            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness;
+            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness
+            or FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout;
 
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player) =>
@@ -186,6 +187,8 @@ public sealed partial class DemoDuel
                 FlipEffectRules.PrincessOfTsurugi => new ResolveBattleFlipDamageCommand(defender.Side, defender),
                 FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness =>
                     new OpenBattleFlipRecoveryCommand(defender.Side, defender),
+                FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout =>
+                    new OpenBattleFlipDeckFlowCommand(defender.Side, defender),
                 _ => new OpenBattleFlipTargetsCommand(defender.Side, defender)
             });
         }

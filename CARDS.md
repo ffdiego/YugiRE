@@ -331,7 +331,7 @@ Spear Cretin usa `TryQueueGraveyardRevival`: um monstro do próprio GY por solic
 
 ### Movimentação do deck na fila (C12)
 
-Needle Worm e Hiro's Shadow Scout: Flip Summon manual emite movimentações individuais, com auditoria `LastDeckFlow` após o gate. Mill não é compra; Scout descarta apenas Spells recém-compradas. Batalha/reveal externo continuam legados. [Contrato](docs/cards/c12-queued-flip-deck-flow.md).
+Needle Worm e Hiro's Shadow Scout compartilham o lote de comandos individuais no Flip Summon manual e na revelação em batalha admitida pela fila. O Scout descarta só Spells recém-compradas. A auditoria `LastDeckFlow` é publicada após o gate, antes da remoção do defensor marcado. Revelação por efeito externo continua legada. [Contrato](docs/cards/c12-queued-flip-deck-flow.md).
 
 ## Evidências nativas (não confundir com paridade C# completa)
 

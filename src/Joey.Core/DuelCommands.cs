@@ -17,6 +17,7 @@ internal sealed record RevealBattleDefenderCommand(int Side, CardTarget Attacker
 internal sealed record ResolveRevealedBattleCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record OpenBattleFlipDrawCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record OpenBattleFlipRecoveryCommand(int Side, CardTarget Defender) : DuelCommand(Side);
+internal sealed record OpenBattleFlipDeckFlowCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record ResolveBattleFlipDamageCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record OpenBattleFlipTargetsCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
@@ -118,6 +119,7 @@ internal sealed record ResolveSummonResponseCommand(int Side, DemoSummonResponse
 internal sealed record FinishSummonFlipDrawCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolvePositionCommand(int Side, CardTarget Target, bool WasFaceDown, bool WasInDefense) : DuelCommand(Side);
 internal sealed record FinishFlipBatchCommand(int Side, CardTarget Target, bool WasInDefense, bool DeckOut0, bool DeckOut1) : DuelCommand(Side);
+internal sealed record FinishFlipDeckFlowCommand(int Side) : DuelCommand(Side);
 internal sealed record RecordFlipDrawDecisionCommand(int Side, long DecisionId, EffectDecisionAnswer Answer) : DuelCommand(Side);
 
 internal static class DuelCommandValidation
@@ -178,6 +180,9 @@ internal static class DuelCommandValidation
                 break;
             case OpenBattleFlipRecoveryCommand recoveryFlip:
                 Target(recoveryFlip.Defender, recoveryFlip.Side, DuelZone.Monster);
+                break;
+            case OpenBattleFlipDeckFlowCommand deckFlip:
+                Target(deckFlip.Defender, deckFlip.Side, DuelZone.Monster);
                 break;
             case ResolveBattleFlipDamageCommand damageFlip:
                 Target(damageFlip.Defender, damageFlip.Side, DuelZone.Monster);
@@ -390,6 +395,7 @@ internal static class DuelCommandValidation
             case DamageCommand damage when damage.Amount > 0:
             case FinishJointDamageCommand:
             case FinishCardDestructionCommand:
+            case FinishFlipDeckFlowCommand:
             case HealCommand { Amount: > 0 }:
                 break;
             case SummonCommand summon when summon.Slot is >= 0 and < 5:
