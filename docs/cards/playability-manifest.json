@@ -1615,6 +1615,27 @@
       ]
     },
     {
+      "id": "standby.dark-zebra-position-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1113
+      ],
+      "mechanics": [
+        "If face-up and alone on its controller's field during own Standby Phase, move Dark Zebra to defense",
+        "Lock its position for that turn even if already in defense, then expire the lock on the controller's next turn"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTurnDraw.cs",
+        "src/tests/Joey.Tests/QueuedStandbyPositionChecks.cs",
+        "docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl"
+      ],
+      "limitations": [
+        "Queue-backed sandbox. Native suppression and differential validation are pending."
+      ]
+    },
+    {
       "id": "standby.own-life-gain-c03",
       "kind": "Monster",
       "subtype": "Effect",

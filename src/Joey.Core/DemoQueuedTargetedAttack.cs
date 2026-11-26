@@ -24,7 +24,7 @@ public sealed partial class DemoDuel
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
-        (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi ||
+        (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
