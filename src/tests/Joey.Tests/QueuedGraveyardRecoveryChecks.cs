@@ -18,8 +18,64 @@ internal static class QueuedGraveyardRecoveryChecks
             c.Command is not MoveToHandCommand || Release;
     }
 
+    private static void RunBattleRecovery(Action<bool, string> check)
+    {
+        var attacker = new Card(24, 24, "Normal Monster", "", (3u << 20) | (4u << 25) | (140u << 9));
+        foreach (int owner in new[] { 0, 1 })
+        foreach (ushort id in new ushort[] { FlipEffectRules.MagicianOfFaith, FlipEffectRules.MaskOfDarkness })
+        foreach (bool hasCandidate in new[] { false, true })
+        {
+            int enemy = 1 - owner;
+            var desired = Spell(id == FlipEffectRules.MagicianOfFaith ? (ushort)342 : (ushort)1056,
+                id == FlipEffectRules.MagicianOfFaith ? 22 : 21);
+            var wrong = Spell(999, desired.ClassCode == 22 ? 21 : 22);
+            Card[] grave = hasCandidate ? [desired, wrong, desired] : [wrong];
+            var duel = DemoDuel.FromPartialObservation(1, [],
+                owner == 0 ? Slots(Monster(id)) : Slots(attacker),
+                owner == 1 ? Slots(Monster(id)) : Slots(attacker), 8000,
+                side0Graveyard: owner == 0 ? grave : [desired], side1Graveyard: owner == 1 ? grave : [desired]);
+            duel.MonsterFaceDown[owner, 0] = duel.DefensePosition[owner, 0] = true;
+            if (enemy == 0) check(duel.EndTurn(out _), "Battle recovery fixture advances to the attacking player");
+            check(duel.BeginBattle(out _), "Battle recovery fixture enters Battle Phase");
+            var gate = new Gate();
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            check(duel.TryQueueAttack(0, 0, out _), "P018 attack uses queued combat");
+            Drain(queue);
+            if (!hasCandidate)
+            {
+                check(duel.PendingCardSelection is null && duel.Graveyard(owner).Last().Id == id &&
+                    duel.Monsters[owner, 0] is null, "Without a legal P018 card, battle finishes without a choice");
+                continue;
+            }
+
+            var request = duel.PendingCardSelection ?? throw new InvalidOperationException("Missing battle recovery.");
+            var candidates = duel.QueuedGraveyardRecoveryCandidates(request);
+            check(duel.UsesQueuedHandSelection(request) && request.Owner == owner &&
+                duel.IsMarkedForBattleDestruction(owner, 0) && candidates.Select(c => c.SourceIndex).SequenceEqual([0, 2]) &&
+                !duel.ResolveCardSelection(0, out _),
+                "Battle P018 offers the correct class and disallows an immediate legacy answer");
+            var picked = candidates[owner == 0 ? 1 : 0].Target;
+            check(owner == 0 ? duel.TrySubmitQueuedHandSelection(request, 2, out _) :
+                new CpuDuelController(owner).Step(duel) is { Status: CpuStepStatus.Acted, Action: CpuAction.Selection },
+                "Player and CPU share the P018 producer during the opponent's turn");
+            gate.Release = false;
+            queue.Tick();
+            queue.Tick();
+            check(queue.Active?.Command is MoveToHandCommand && duel.IsMarkedForBattleDestruction(owner, 0) &&
+                duel.TryCaptureCardTarget(owner, DuelZone.Hand, 0, out var recovered) && recovered.Occurrence == picked.Occurrence,
+                "P018 moves one exact occurrence and holds battle cleanup behind the movement gate");
+            gate.Release = true;
+            Drain(queue);
+            check(duel.PendingCardSelection is null && duel.Monsters[owner, 0] is null &&
+                duel.Graveyard(owner).Last().Id == id && !queue.Trace.Any(e => e.Entry.Command is ShuffleDeckCommand) &&
+                queue.Trace.Where(e => e.Stage == ActionTraceStage.Executed).All(e => e.Result?.Outcome == CommandOutcome.Applied),
+                "Battle P018 finishes and removes the defender after completing recovery");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
+        RunBattleRecovery(check);
         foreach(int side in new[]{0,1})
         foreach(ushort id in new ushort[]{427,101})
         {

@@ -146,6 +146,8 @@ contagem `00569D50` e o registro `0x11`. Os testes C# cobrem
 ambos os lados, gate, Set, companhia e expiração. Supressão
 nativa e comparação dinâmica seguem pendentes.
 [Pesquisa de posição e fase](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
+[PR #216](https://github.com/ffdiego/YugiRE/pull/216) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45874384265).
 
 ## C04 — Equipamentos `P025`
 

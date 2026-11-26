@@ -398,6 +398,8 @@ public sealed partial class DemoDuel
                 return ResolveSummonResponse(summonResponse, followups);
             if (command is OpenBattleFlipDrawCommand openBattleFlip)
                 return OpenBattleFlipDraw(openBattleFlip, followups);
+            if (command is OpenBattleFlipRecoveryCommand recoveryFlip)
+                return duel.OpenQueuedBattleFlipRecovery(recoveryFlip, followups);
             if (command is ResolveBattleFlipDamageCommand damageFlip)
                 return duel.ResolveQueuedBattleFlipDamage(damageFlip, followups);
             if (command is OpenBattleFlipTargetsCommand openBattleTargets)
@@ -1858,7 +1860,10 @@ public sealed partial class DemoDuel
                 !duel.TryPlanQueuedGraveyardRecovery(answer.Request, answer.Target, out var movement))
                 return new(CommandOutcome.Rejected, "Graveyard recovery request or target changed.");
 
+            var battle = duel.HasQueuedBattleRecoveryChoice ? duel.queuedBattleReveal : null;
             ReserveGraveyardTransfer(answer.Side, movement, queue);
+            if (battle is not null)
+                followups.ScheduleContinuation(_ => new([new FinishBattleFlipCommand(answer.Side, battle.Defender.Target)]));
             return new(CommandOutcome.Applied);
         }
 

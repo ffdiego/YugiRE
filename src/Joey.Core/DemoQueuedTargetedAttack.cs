@@ -16,6 +16,7 @@ public sealed partial class DemoDuel
     {
         public bool FlipCalculated { get; set; }
         public bool FlipOpened { get; set; }
+        public PendingCardSelection? Recovery { get; set; }
         public Dictionary<CardTarget,DuelZone> ExpectedEffectMoves { get; } = [];
     }
     private BattleRevealReservation? queuedBattleReveal;
@@ -40,7 +41,8 @@ public sealed partial class DemoDuel
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
-            or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi;
+            or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi
+            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness;
 
     public bool TryQueueTargetedAttack(int attackerSlot, int defenderSlot, out string message,
         ActionOrigin origin = ActionOrigin.Player) =>
@@ -182,6 +184,8 @@ public sealed partial class DemoDuel
             {
                 FlipEffectRules.Skelengel => new OpenBattleFlipDrawCommand(defender.Side, defender),
                 FlipEffectRules.PrincessOfTsurugi => new ResolveBattleFlipDamageCommand(defender.Side, defender),
+                FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness =>
+                    new OpenBattleFlipRecoveryCommand(defender.Side, defender),
                 _ => new OpenBattleFlipTargetsCommand(defender.Side, defender)
             });
         }
@@ -220,6 +224,33 @@ public sealed partial class DemoDuel
         FlipEffectRules.ManEaterBug => DemoFlipEffect.DestroyMonster,
         _ => null
     };
+
+    private bool HasQueuedBattleRecoveryChoice =>
+        queuedBattleReveal is { FlipCalculated: true, FlipOpened: true, Recovery: { } request } &&
+        ReferenceEquals(PendingCardSelection, request);
+
+    private bool AllowsQueuedRecoveryPhase() => Phase == DemoPhase.Main ||
+        HasQueuedBattleRecoveryChoice && queuedBattleReveal is { } battle &&
+        ValidateBattleReveal(battle, faceDown: false);
+
+    private CommandResult OpenQueuedBattleFlipRecovery(OpenBattleFlipRecoveryCommand command, IActionCommandSink followups)
+    {
+        if (queuedBattleReveal is not { FlipCalculated: true, FlipOpened: false } reserved ||
+            reserved.Defender.Target != command.Defender ||
+            CardSelectionRules.FlipGraveyardFilter(reserved.Defender.Card.Id) is null ||
+            followups is not IActionBatchSink { PendingCount: 0 } || PendingCardSelection is not null)
+            return new(CommandOutcome.Rejected, "No matching calculated battle recovery FLIP.");
+        if (!ValidateBattleReveal(reserved, faceDown: false, allowEnded: true))
+            throw new InvalidOperationException("Reserved battle FLIP changed before recovery.");
+
+        reserved.FlipOpened = true;
+        if (!GameOver)
+            TriggerFlip(command.Side, reserved.Defender.Slot, reserved.Defender.Card, out _);
+        reserved.Recovery = PendingCardSelection;
+        if (reserved.Recovery is null)
+            followups.Enqueue(new FinishBattleFlipCommand(command.Side, command.Defender));
+        return new(CommandOutcome.Applied);
+    }
 
     private bool HasQueuedBattleTargetChoice =>
         queuedBattleReveal is { FlipCalculated:true, FlipOpened:true } reserved &&

@@ -297,6 +297,17 @@ pendente. [Contrato](../cards/c12-queued-graveyard-revival.md).
 [PR #212](https://github.com/ffdiego/YugiRE/pull/212) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45831426885).
 
+*P018 em batalha (C12):* Magician of Faith e Mask of Darkness
+abrem o seletor de recuperação por ocorrência quando reveladas no
+combate. O App e a CPU aguardam o mesmo comando de movimento.
+Uma carta marcada permanece até o fim do gate da recuperação.
+Sem candidato, a fila conclui o combate sem abrir escolha.
+Demo.cs 2600 → 2600 linhas. O despacho foi ligado à regra de seleção
+e ao executor existentes. A batalha legada fica disponível fora
+do piloto. SQLite v7 registra `00593530` para preparação de alvo.
+Comparação dinâmica pendente.
+[Contrato](../cards/c12-queued-graveyard-recovery.md).
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
