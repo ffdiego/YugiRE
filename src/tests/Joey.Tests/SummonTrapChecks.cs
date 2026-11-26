@@ -337,6 +337,73 @@ internal static class SummonTrapChecks
         }
     }
 
+    private static void RunQueuedSpellTrapPairAfterSummonResponse(Action<bool, string> check)
+    {
+        var torrential = Trap(SummonTrapRules.TorrentialTribute, 272);
+        var first = Trap(SummonTrapRules.TrapHole, 273);
+        var second = Trap(AttackTrapRules.MirrorForce, 274);
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort id in new[] { FlipEffectRules.Greenkappa, FlipEffectRules.TornadoBird })
+        foreach (var (pass, enoughAfterTrap) in new[] { (true, false), (false, false), (false, true) })
+        {
+            int responder = 1 - side;
+            var flip = Monster(id, 241);
+            Card[] hand = enoughAfterTrap ? [torrential, first, second] : [torrential, first];
+            var duel = DemoDuel.FromPartialObservation(responder, hand,
+                side == 0 ? Slots(flip) : Slots(), side == 1 ? Slots(flip) : Slots(), 8000);
+            duel.MonsterFaceDown[side, 0] = duel.DefensePosition[side, 0] = true;
+            for (int i = 0; i < hand.Length; i++)
+                check(duel.SetFromHand(0, out _), "Spell/Trap FLIP response fixture sets a Trap");
+            check(duel.EndTurn(out _), "Spell/Trap FLIP response fixture ends setup turn");
+
+            var gate = new ResponseGate();
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("flip 0").Enqueued, "Spell/Trap FLIP admitted");
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is { } response && duel.UsesQueuedSummonResponse(response) &&
+                duel.PendingFlipSpellTrapTargets is null && CpuDuelController.PendingOwner(duel) == responder &&
+                !console.Execute($"select-st-pair {responder} 0 {responder} 1").Enqueued &&
+                console.Execute(pass ? "respond-summon pass" : $"respond-summon {responder} 0").Enqueued,
+                "Only the Trap response is available while the Spell/Trap choice is suspended");
+            if (!pass)
+            {
+                gate.WaitingFor = nameof(DestroyCommand);
+                StepUntil(queue, () => queue.Active?.Command is DestroyCommand);
+                check(duel.Monsters[side, 0] is null && duel.PendingFlipSpellTrapTargets is null,
+                    "The pair waits until the gate closes after the FLIP source leaves");
+                gate.WaitingFor = null;
+            }
+            StepUntil(queue, () => !queue.IsBusy);
+            if (!pass && !enoughAfterTrap)
+            {
+                check(duel.PendingFlipSpellTrapTargets is null && duel.Spells[responder, 1] == first &&
+                    console.Execute("turn end").Enqueued,
+                    "A mandatory pair with only one surviving candidate leaves no pending choice");
+                StepUntil(queue, () => !queue.IsBusy);
+                continue;
+            }
+
+            int firstSlot = pass ? 0 : 1;
+            int secondSlot = firstSlot + 1;
+            check(duel.PendingSummonResponse is null && duel.PendingFlipSpellTrapTargets is { } pair &&
+                duel.UsesQueuedFlipSpellTrapSelection(pair) &&
+                duel.QueuedFlipSpellTrapCandidates(pair).Select(c => c.Zone).SequenceEqual([firstSlot, secondSlot]) &&
+                console.Execute($"select-st-pair {responder} {firstSlot} {responder} {secondSlot}").Enqueued,
+                "The original surviving pair can be selected after pass or source destruction");
+            StepUntil(queue, () => !queue.IsBusy);
+
+            bool destroys = id == FlipEffectRules.Greenkappa;
+            Card firstSelected = pass ? torrential : first;
+            Card secondSelected = pass ? first : second;
+            var destination = destroys ? duel.Graveyard(responder) : duel.HandFor(responder);
+            check(duel.PendingFlipSpellTrapTargets is null && destination.Contains(firstSelected) &&
+                destination.Contains(secondSelected) && duel.Spells[responder, firstSlot] is null &&
+                duel.Spells[responder, secondSlot] is null,
+                "Greenkappa destroys both cards and Tornado Bird returns both to their owner");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         RunQueued(check);
@@ -344,6 +411,7 @@ internal static class SummonTrapChecks
         RunQueuedFlipBatchResponse(check);
         RunQueuedRecoveryAfterSummonResponse(check);
         RunQueuedRecruitmentAfterSummonResponse(check);
+        RunQueuedSpellTrapPairAfterSummonResponse(check);
         var trapHole = Trap(1002, 120);
         var torrential = Trap(1425, 272);
         var small = Monster(10, 101, 900);

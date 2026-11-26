@@ -98,5 +98,8 @@ opcional de Skelengel aguarda o passe ou o último gate da armadilha e
 continua disponível se o monstro for destruído. A recuperação do cemitério de
 Magician of Faith e Mask of Darkness também aguarda a armadilha antes
 de reapresentar os candidatos originais por ocorrência. Bubonic Vermin
-retoma a seleção opcional do Deck após a mesma espera. As combinações
-em que o FLIP abre seleção de alvos no campo permanecem no fluxo legado.
+retoma a seleção opcional do Deck após a mesma espera. Greenkappa e
+Tornado Bird retomam a escolha se restarem dois alvos válidos, mesmo
+após perder a fonte. Se Torrential gastar um dos dois únicos alvos,
+a escolha encerra sem efeito no sandbox. Seleções de monstros no campo
+permanecem no fluxo legado.

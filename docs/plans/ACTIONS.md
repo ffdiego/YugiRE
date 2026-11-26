@@ -178,6 +178,14 @@ embaralhamento e escolha da ocorrência exata em defesa oculta depois
 que Torrential destrói a fonte. Demo.cs permanece com 2614 linhas.
 A ordem ainda aguarda comparação nativa.
 
+*Pares de Magias/Armadilhas após resposta de Flip Summon (C12.1):*
+Greenkappa e Tornado Bird guardam a ocorrência da fonte durante a
+resposta e reapresentam os alvos originais ainda válidos. Se restar menos
+que o par obrigatório, o sandbox encerra a escolha sem efeito. Os testes
+C# cobrem os dois lados, passe, ativação de Torrential com e sem par
+restante e o gate de destruição. Demo.cs permanece com 2614 linhas.
+A precedência entre armadilha e FLIP aguarda comparação nativa.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

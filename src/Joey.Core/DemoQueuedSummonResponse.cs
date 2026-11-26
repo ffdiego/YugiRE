@@ -66,15 +66,24 @@ public sealed partial class DemoDuel
     {
         private PendingEffectDecision? flipDrawAfterSummonResponse;
         private PendingCardSelection? cardSelectionAfterSummonResponse;
+        private (PendingFlipSpellTrapTargets Request, CardTarget Source)? pairAfterSummonResponse;
 
         private void FinishQueuedManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
         {
             duel.FinishManualPosition(change, resolveFlip, out message);
             if (!change.FlipSummoned || duel.PendingSummonResponse is not { Summon.Kind: DemoSummonKind.Flip } response ||
-                duel.PendingFlipTarget is not null || duel.PendingFlipSpellTrapTargets is not null ||
-                duel.PendingEffectDecision is not null) return;
+                duel.PendingFlipTarget is not null || duel.PendingEffectDecision is not null) return;
 
-            if (duel.PendingCardSelection is { } selection)
+            if (duel.PendingFlipSpellTrapTargets is { } pair)
+            {
+                if (pair.Owner != change.Player || !ReferenceEquals(pair.Source, change.Card) ||
+                    !duel.UsesQueuedFlipSpellTrapSelection(pair) ||
+                    !duel.TryCaptureCardTarget(change.Player, DuelZone.Monster, change.Zone, out var source))
+                    return;
+                pairAfterSummonResponse = (pair, source);
+                duel.PendingFlipSpellTrapTargets = null;
+            }
+            else if (duel.PendingCardSelection is { } selection)
             {
                 bool graveyardRecovery = selection.Source == CardSelectionSource.Graveyard &&
                     duel.UsesQueuedHandSelection(selection);
@@ -106,14 +115,22 @@ public sealed partial class DemoDuel
         {
             var draw = flipDrawAfterSummonResponse;
             var selection = cardSelectionAfterSummonResponse;
+            var pair = pairAfterSummonResponse;
             flipDrawAfterSummonResponse = null;
             cardSelectionAfterSummonResponse = null;
+            pairAfterSummonResponse = null;
             if (!duel.GameOver && !duel.FlipEffectsNegated)
             {
                 if (draw is not null)
                 {
                     ScheduleManualFlipDraw(draw, followups, resumeSummonTriggers: true);
                     return;
+                }
+                if (pair is { } choice && duel.CurrentFlipSpellTrapCandidates(choice.Request)
+                    .Take(PendingFlipSpellTrapTargets.RequiredCount).Count() == PendingFlipSpellTrapTargets.RequiredCount)
+                {
+                    duel.resumedSummonFlipPair = choice;
+                    duel.PendingFlipSpellTrapTargets = choice.Request;
                 }
                 if (selection is not null)
                     duel.PendingCardSelection = selection;
