@@ -1083,7 +1083,7 @@ public sealed partial class DemoDuel
     }
     public int AttackValue(int p, int z) => EquipmentStats(p, z).Attack;
     public int DefenseValue(int p, int z) => EquipmentStats(p, z).Defense;
-    private NativeAiStats EquipmentStats(int p, int z, int battleBonus = 0)
+    private NativeAiStats EquipmentStats(int p, int z, NativeAiAttributeDelta battleBonus = default)
     {
         if (Monsters[p, z] is not Card monster) return default;
         // This sandbox uses DAT attributes. Field, equipment and aura contributions
@@ -1134,7 +1134,8 @@ public sealed partial class DemoDuel
         sum = new(sum.Attack + ElementalBattleAttributeRules.AttackDelta(
             monster.Id, p, ActivePlayer, Phase == DemoPhase.Battle, opposingSouls), sum.Defense);
         var temporary = temporaryStats.GetValueOrDefault(monster);
-        sum = new(sum.Attack + temporary.Attack + battleBonus, sum.Defense + temporary.Defense + battleBonus);
+        sum = new(sum.Attack + temporary.Attack + battleBonus.Attack,
+            sum.Defense + temporary.Defense + battleBonus.Defense);
         // Accumulate all contributions and clamp once. Other native stages are absent.
         return NativeAiAttributes.ApplyResolvedTail(stats, sum, 0, 0);
     }

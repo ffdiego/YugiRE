@@ -93,6 +93,8 @@ e a decisão da CPU. A saída do primeiro atacante, múltiplas
 cópias e alterações da fonte durante a Battle Phase aguardam
 comparação dinâmica com Joey.
 [Pesquisa de restrições de ataque](../research/card-static-sweep/04-regras-globais-e-continuacoes.jsonl).
+[PR #223](https://github.com/ffdiego/YugiRE/pull/223) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45879047129).
 
 ## C03 — Monstros de efeito restantes (193 Effect)
 
@@ -227,6 +229,19 @@ interrompidos aguardam comparação dinâmica.
 [Pesquisa de uso por batalha](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
 [PR #222](https://github.com/ffdiego/YugiRE/pull/222) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45878520337).
+
+### C03.9 — Insect Soldiers of the Sky
+
+Insect Soldiers of the Sky (477) ganha 1.000 de ATK apenas no
+cálculo de dano ao atacar WIND. Reutiliza os atributos de
+batalha de Kinetic Soldier, com bônus só no ATK do atacante.
+O DAT confirma o recorte e `005B7C50` no SQLite v7 lê o
+atributo 6 do defensor e soma 1.000 ao ATK. A CPU pode usar o
+bônus contra alvos visíveis. Testes C# cobrem adversário
+revelado, defesa oculta, outro atributo e a carta sendo atacada.
+Inversão de modificadores e mudança de atributo seguem fora
+do recorte. Comparação dinâmica com Joey pendente.
+[Pesquisa de atributos de batalha](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
 
 ## C04 — Equipamentos `P025`
 
