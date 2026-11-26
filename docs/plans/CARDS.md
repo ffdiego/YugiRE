@@ -132,6 +132,20 @@ sandbox resolve campo por família e slot crescente e depois
 cemitério. A ordem entre cópias e supressão por Prohibition
 permanecem pendentes. Os testes não promovem nenhuma carta a Verified.
 [Pesquisa de Standby](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
+[PR #215](https://github.com/ffdiego/YugiRE/pull/215) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45833952772).
+
+### C03.5 — Posição de Dark Zebra na Standby
+
+Dark Zebra (1113) reutiliza a continuação da Standby. O comando
+revalida turno, ocorrência, pose e a contagem de monstros do lado
+ativo. Força defesa se necessário e trava a posição até o próximo
+turno do controlador, inclusive quando já estava em defesa.
+`005A6120` no SQLite v7 confirma o filtro por `00569790`, a
+contagem `00569D50` e o registro `0x11`. Os testes C# cobrem
+ambos os lados, gate, Set, companhia e expiração. Supressão
+nativa e comparação dinâmica seguem pendentes.
+[Pesquisa de posição e fase](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
 
 ## C04 — Equipamentos `P025`
 

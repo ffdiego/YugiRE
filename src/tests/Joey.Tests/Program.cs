@@ -292,6 +292,7 @@ DynamicEquipmentLifecycleChecks.Run(Check);
 TimedEquipmentAndQueuedLpChecks.Run(Check);
 QueuedCardDestructionChecks.Run(Check);
 QueuedStandbyLifeChecks.Run(Check);
+QueuedStandbyPositionChecks.Run(Check);
 QueuedDrawSpellChecks.Run(Check);
 QueuedMonsterWipeChecks.Run(Check);
 QueuedTemporaryStatChecks.Run(Check, args.FirstOrDefault());

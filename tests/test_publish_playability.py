@@ -53,6 +53,7 @@ class PublishedPlayabilityTests(unittest.TestCase):
         self.assertEqual(status.get(1221), "Done")  # Card Destruction replenishes both hands in the queue
         self.assertEqual(status.get(113), "Done")  # White Magical Hat discards after queued battle damage
         self.assertEqual(status.get(265), "Done")  # Princess of Tsurugi damage on queued FLIP
+        self.assertEqual(status.get(1113), "Done")  # Dark Zebra's Standby position and lock
         for rid in (1437, 1438, 1441, 1446):
             self.assertEqual(status.get(rid), "Done")  # queued Standby life effects
         self.assertEqual(status.get(346), "Done")  # queued double damage and joint duel result

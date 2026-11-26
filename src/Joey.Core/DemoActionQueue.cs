@@ -517,6 +517,8 @@ public sealed partial class DemoDuel
                     return duel.ExecuteQueuedTurnDraw(turnDraw, followups);
                 case ResolveStandbyRevivalCommand standby:
                     return duel.ExecuteQueuedStandbyRevival(standby, followups);
+                case StandbyDefenseCommand standbyDefense:
+                    return duel.ExecuteStandbyDefense(standbyDefense);
                 case DrawCommand draw:
                     if (flipDeckFlow is { IsMill: false } flow && flow.Side == draw.Side)
                         return DrawForShadowScout(flow);

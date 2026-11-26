@@ -5,6 +5,7 @@ public sealed partial class DemoDuel
     private readonly record struct StandbyFieldLifeRule(ushort ResourceId, int Amount, bool? Defense);
 
     private const ushort MarieTheFallenOne = 1446;
+    private const ushort DarkZebra = 1113;
     private static readonly StandbyFieldLifeRule[] StandbyFieldLifeRules =
     [
         new(1437, 1000, Defense: false), // Spirit of the Breeze
@@ -55,14 +56,42 @@ public sealed partial class DemoDuel
         {
             if (FindDueStandbyRevival() >= 0)
                 followups.Enqueue(new ResolveStandbyRevivalCommand(command.Side, command.ExpectedTurn));
-            if (StandbyLifeEffects(command.Side).Any())
-                followups.ScheduleContinuation(_ => new(GameOver ? [] : [.. StandbyLifeEffects(command.Side)]));
+            if (StandbyLifeEffects(command.Side).Any() ||
+                Enumerable.Range(0, 5).Any(slot => Monsters[command.Side, slot]?.Id == DarkZebra))
+                followups.ScheduleContinuation(_ => new(GameOver ? [] : PlanStandbyEffects(command.Side, command.ExpectedTurn)));
         }
         return new(CommandOutcome.Applied, skipped ? "Draw Phase skipped." : "");
     }
 
     private int FindDueStandbyRevival() =>
         delayedRevivals.FindLastIndex(effect => effect.Owner == ActivePlayer && effect.DueTurn <= Turn);
+
+    private DuelCommand[] PlanStandbyEffects(int side, int turn)
+    {
+        int slot = DarkZebraStandbySlot(side);
+        if (slot >= 0 && TryCaptureCardTarget(side, DuelZone.Monster, slot, out var source))
+            return [new StandbyDefenseCommand(side, turn, source), .. StandbyLifeEffects(side)];
+        return [.. StandbyLifeEffects(side)];
+    }
+
+    private int DarkZebraStandbySlot(int side)
+    {
+        if (Enumerable.Range(0, 5).Count(slot => Monsters[side, slot] is not null) != 1)
+            return -1;
+        return Enumerable.Range(0, 5).FirstOrDefault(slot =>
+            Monsters[side, slot] is { IsMonster: true, Id: DarkZebra } && !MonsterFaceDown[side, slot], -1);
+    }
+
+    private CommandResult ExecuteStandbyDefense(StandbyDefenseCommand command)
+    {
+        if (command.Side != ActivePlayer || command.ExpectedTurn != Turn || Phase != DemoPhase.Main || !drawn ||
+            !TryResolveCardTarget(command.Source, out int slot, out _) || slot != DarkZebraStandbySlot(command.Side))
+            return new(CommandOutcome.Skipped, "The Standby monster or its field is no longer eligible.");
+
+        if (!DefensePosition[command.Side, slot]) CommitManualPosition(command.Side, slot);
+        else changedPosition[command.Side, slot] = true;
+        return new(CommandOutcome.Applied);
+    }
 
     private CommandResult ExecuteQueuedStandbyRevival(ResolveStandbyRevivalCommand command, IActionCommandSink followups)
     {
