@@ -4,6 +4,13 @@ namespace Joey.Core;
 // This does not implement any of the corresponding special summon procedures.
 public static class NormalSummonRules
 {
+    internal const ushort BoarSoldier = 1118;
+    internal const ushort NuviaTheWicked = 1413;
+
+    internal static bool IsFlipOnlySummon(Card card) => card.Id == BoarSoldier;
+
+    internal static bool DestroysAfterNormalSummon(Card card) => card.Id is BoarSoldier or NuviaTheWicked;
+
     private static readonly HashSet<ushort> specialOnly =
     [
         0x37, 0x38, 0x3e, 0x42, 0x170, 0x175, 0x187,

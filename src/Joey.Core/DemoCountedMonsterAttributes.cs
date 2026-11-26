@@ -19,6 +19,8 @@ public sealed partial class DemoDuel
             d.graves[1 - side].Count(c => c.ClassCode == 1)), // Buster Blader
         [515] = new(300, (d, side) => d.hands[side].Count, IncludesDefense: true), // Muka Muka
         [1111] = new(-400, (d, side) => d.hands[side].Count, IncludesDefense: true), // Flash Assailant
+        [NormalSummonRules.BoarSoldier] = new(-1000, (d, side) => d.CountOccupiedMonsters(1 - side) > 0 ? 1 : 0),
+        [NormalSummonRules.NuviaTheWicked] = new(-200, (d, side) => d.CountOccupiedMonsters(1 - side)),
     };
 
     private int CountFaceUp(int side, Func<Card, bool> matches) =>
@@ -27,6 +29,9 @@ public sealed partial class DemoDuel
 
     private int CountFaceUpOnBothSides(Func<Card, bool> matches) =>
         CountFaceUp(0, matches) + CountFaceUp(1, matches);
+
+    private int CountOccupiedMonsters(int side) =>
+        Enumerable.Range(0, 5).Count(slot => Monsters[side, slot] is not null);
 
     private NativeAiAttributeDelta CountedMonsterAttributes(int side, ushort resourceId)
     {
