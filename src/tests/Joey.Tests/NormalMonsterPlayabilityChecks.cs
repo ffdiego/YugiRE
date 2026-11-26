@@ -97,6 +97,52 @@ internal static class NormalMonsterPlayabilityChecks
               $"{label}: normal monster set face-down with appropriate tribute count");
     }
 
+    private static void RunQueuedCombat(Card card, Action<bool, string> check, string label)
+    {
+        Card opponent = SyntheticNormal(0, 29, level: 4);
+        foreach (int side in new[] { 0, 1 })
+        foreach (var (attacker, defender, faceDown) in new (Card, Card?, bool)[]
+        {
+            (card, opponent, false), (opponent, card, false), (opponent, card, true), (opponent, null, false)
+        })
+        {
+            bool direct = defender is null;
+            int defenderSide = 1 - side;
+            DemoDuel State()
+            {
+                Card?[] attackingField = [attacker, direct ? card : null, null, null, null];
+                Card?[] defendingField = [defender, null, null, null, null];
+                var duel = DemoDuel.FromPartialObservation(side, [],
+                    side == 0 ? attackingField : defendingField,
+                    side == 1 ? attackingField : defendingField, 8000);
+                if (side == 0)
+                {
+                    duel.NextTurn();
+                    duel.NextTurn();
+                }
+                duel.MonsterFaceDown[defenderSide, 0] = duel.DefensePosition[defenderSide, 0] = faceDown;
+                return duel;
+            }
+
+            var legacy = State();
+            int targetSlot = direct ? -1 : 0;
+            check(legacy.BeginBattle(out _) && legacy.Attack(0, targetSlot, out _),
+                $"{label}: legacy comparison attack is legal");
+
+            var queued = State();
+            var queue = queued.CreatePrimitiveActionQueue();
+            check(queued.BeginBattle(out _) && queued.TryQueueAttack(0, targetSlot, out _) &&
+                queued.Life.SequenceEqual([8000, 8000]), $"{label}: attack admitted by the queue without damage");
+            for (int tick = 0; queue.IsBusy && tick < 40; tick++) queue.Tick();
+            check(!queue.IsBusy && queue.Fault is null && queued.Life.SequenceEqual(legacy.Life) &&
+                queued.Monsters.Cast<Card?>().SequenceEqual(legacy.Monsters.Cast<Card?>()) &&
+                queued.MonsterFaceDown.Cast<bool>().SequenceEqual(legacy.MonsterFaceDown.Cast<bool>()) &&
+                queued.Graveyard(0).SequenceEqual(legacy.Graveyard(0)) &&
+                queued.Graveyard(1).SequenceEqual(legacy.Graveyard(1)),
+                $"{label}: queued combat agrees with legacy LP, reveal and casualties");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         var normalIds = NormalIds();
@@ -110,6 +156,7 @@ internal static class NormalMonsterPlayabilityChecks
                   !NormalSummonRules.RequiresSpecialSummon(normal),
                   $"Normal #{normal.Id}: simple monster category has no special-only gate");
             RunCard(normal, check, $"Normal #{normal.Id} synthetic level {level}");
+            RunQueuedCombat(normal, check, $"Normal #{normal.Id} synthetic level {level}");
         }
     }
 
@@ -127,7 +174,10 @@ internal static class NormalMonsterPlayabilityChecks
                          real.Level is >= 1 and <= 12;
             check(match, $"Original DAT: Normal #{id} has ordinary category and playable level");
             if (match)
+            {
                 RunCard(real!, check, $"Original DAT Normal #{id}");
+                RunQueuedCombat(real!, check, $"Original DAT Normal #{id}");
+            }
         }
     }
 }

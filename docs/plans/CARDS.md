@@ -124,12 +124,13 @@ Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias apó
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
 têm produtores na fila em recortes documentados. O App ainda ativa a
 fila por `--queued-actions`. App e CPU chamam o ataque legado quando o
-produtor enfileirado recusa a jogada. O combate com alvo ainda usa
-dois IDs explícitos do piloto inicial, seis recrutadores elementais e
-três FLIPs. A lista inicial não representa a categoria Normal. A cobertura de 264 normais de C13 foi validada no sandbox e
-ainda precisa de regressão equivalente pelo caminho padrão. Também
-restam gatilhos de dano e remoção, como P168, Bistro Butcher e Masked
-Sorcerer, e campos com contínuas fora do piloto.
+produtor enfileirado recusa a jogada. O combate básico
+com alvo admite os 264 normais de C13 e conserva os IDs explícitos do
+piloto inicial, seis recrutadores elementais e três FLIPs. Os testes
+comparam cada normal com o legado nos dois lados, atacando, defendendo
+de face para cima ou em defesa oculta e como aliado em ataque direto.
+Restam gatilhos de dano e remoção, como P168, Bistro Butcher e Masked
+Sorcerer, outros FLIPs, e campos com contínuas fora do piloto.
 
 Para fechar o C12 completo após a paridade, retirar os resolvedores
 legados equivalentes do caminho padrão, desacoplar seus `Pending*` de

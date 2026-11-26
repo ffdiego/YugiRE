@@ -238,6 +238,15 @@ os dois lados, a compra, a destruição e o retorno à mão com um
 equipamento controlado pelo defensor. Demo.cs permanece com 2614
 linhas. A ordem nativa com equipamento ainda aguarda comparação.
 
+*Normais do catálogo no combate (C12.1):* o Core incorpora o
+inventário versionado de subtipos como recurso do assembly. Os
+264 normais de C13 entram no combate com alvo e são admitidos
+como aliados em ataque direto. O teste, sintético e com DAT
+local, compara LP, revelação e movimentação com o legado nos
+dois lados. Os IDs históricos do piloto continuam aceitos.
+Demo.cs permanece com 2614 linhas. Sem alteração de catálogo ou
+validação contra o processo nativo.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
