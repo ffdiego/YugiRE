@@ -2,11 +2,12 @@ using Joey.Core;
 
 internal static class ActionQueueFlipChecks
 {
-    private sealed class Gate : IPresentationGate
+    private sealed class Gate(bool transfersOnly = false) : IPresentationGate
     {
         public bool CanAdvance => true;
         public bool Release { get; set; }
-        public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
+        public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
+            Release || transfersOnly && command.Command is not (DiscardCommand or DrawCommand);
     }
     private static Card Monster(ushort id) => new(id, id, $"Fixture {id}", "", (3u << 20) | (4u << 25));
     private static Card?[] Slots(Card? card = null) => [card, null, null, null, null];
@@ -18,6 +19,7 @@ internal static class ActionQueueFlipChecks
 
     public static void Run(Action<bool, string> check)
     {
+        CheckBattleMorphingJar(check);
         var jar = Monster(FlipEffectRules.MorphingJar);
         var ordinary = Monster(24);
         Card[] Deck(int count) => Enumerable.Range(0, count).Select(i => Monster((ushort)(3000 + i))).ToArray();
@@ -114,5 +116,66 @@ internal static class ActionQueueFlipChecks
         Drain(jq2);
         check(jar2.LastMorphingJar2[0].SpecialSummoned == 1 && jar2.MonsterFaceDown[0,0],
             "C12 Jar #2 completes through queue");
+    }
+
+    private static void CheckBattleMorphingJar(Action<bool, string> check)
+    {
+        var jar = Monster(FlipEffectRules.MorphingJar);
+        var ordinary = Monster(24);
+        var attacker = ordinary with { Properties = ordinary.Properties | (140u << 9) };
+        foreach (int attackingSide in new[] { 0, 1 })
+        foreach (var (size0, size1) in new[] { (6, 6), (2, 6), (6, 2), (2, 2), (0, 0) })
+        {
+            int owner = 1 - attackingSide;
+            Card[] Deck(int side, int count) => Enumerable.Range(0, count + (side == owner ? 1 : 0))
+                .Select(index => Monster((ushort)(3000 + 10 * side + index))).ToArray();
+            var duel = DemoDuel.FromPartialObservation(attackingSide, [ordinary, ordinary],
+                Slots(attackingSide == 0 ? attacker : jar), Slots(attackingSide == 1 ? attacker : jar), 8000,
+                side0Deck: Deck(0, size0), side1Deck: Deck(1, size1));
+            duel.NextTurn();
+            duel.Draw(out _);
+            duel.NextTurn();
+            duel.MonsterFaceDown[owner, 0] = duel.DefensePosition[owner, 0] = true;
+            List<DemoHandTransfer> transfers = [];
+            duel.HandTransferred += transfers.Add;
+            var gate = new Gate(transfersOnly: true);
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, 0, out _) &&
+                duel.MonsterFaceDown[owner, 0] && transfers.Count == 0, "Morphing Jar battle admission is nonmutating");
+            for (int i = 0; i < 25 && transfers.Count == 0; i++) queue.Tick();
+            queue.Tick();
+            check(transfers.Count == 1 && !transfers[0].FromDeck && queue.IsBusy &&
+                duel.Monsters[owner, 0] == jar && !duel.MonsterFaceDown[owner, 0],
+                "Morphing Jar discard gate holds the revealed defender on the field");
+            gate.Release = true;
+            Drain(queue);
+            int? winner = (size0 < 5) == (size1 < 5) ? null : size0 < 5 ? 1 : 0;
+            check(duel.HandFor(0).Count == Math.Min(5, size0) && duel.HandFor(1).Count == Math.Min(5, size1) &&
+                transfers.Take(3).All(transfer => !transfer.FromDeck) &&
+                transfers.Skip(3).Count() == Math.Min(5, size0) + Math.Min(5, size1) &&
+                transfers.Skip(3).All(transfer => transfer.FromDeck) && duel.Winner == winner &&
+                duel.IsDraw == (size0 < 5 && size1 < 5) &&
+                duel.Monsters[owner, 0] is null && duel.Graveyard(owner).Last() == jar,
+                "Battle Morphing Jar discards both hands before draws, then resolves deck-out and battle removal");
+            var commands = queue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed)
+                .Select(entry => entry.Entry.Command.GetType().Name).ToList();
+            int finish = commands.IndexOf("FinishMorphingJarCommand");
+            check(finish > commands.LastIndexOf(nameof(DiscardCommand)) &&
+                finish > commands.LastIndexOf(nameof(DrawCommand)) &&
+                commands.IndexOf("FinishBattleRemovalCommand") > finish,
+                "Battle Morphing Jar finalizes after all movements and before the marked defender is removed");
+        }
+
+        var exodia = ExodiaRules.RequiredNames.Select((name, index) =>
+            Monster((ushort)(3100 + index)) with { Name = name }).ToArray();
+        var ending = DemoDuel.FromPartialObservation(1, [], Slots(jar), Slots(attacker), 8000,
+            side0Deck: exodia, side1Deck: [ordinary, ordinary]);
+        ending.MonsterFaceDown[0, 0] = ending.DefensePosition[0, 0] = true;
+        var endingQueue = ending.CreatePrimitiveActionQueue();
+        check(ending.BeginBattle(out _) && ending.TryQueueTargetedAttack(0, 0, out _), "Battle Jar Exodia fixture");
+        Drain(endingQueue);
+        check(ending.ExodiaWinner == 0 && ending.Winner == 0 && ending.HandFor(1).Count == 2 &&
+            ending.Graveyard(0).Single() == jar,
+            "Battle Jar completes the other player's draws and removal after Exodia");
     }
 }

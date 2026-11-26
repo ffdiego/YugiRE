@@ -1,4 +1,4 @@
-# C12 — FLIP deck flow P082/P088
+# C12 — FLIP deck flow P082/P086/P088
 
 Needle Worm 561 e Hiro's Shadow Scout 610, já Done. A fila compartilha
 o lote entre Flip Summon manual e revelação em batalha. Royal Command
@@ -36,3 +36,12 @@ da magia na mão. A validação é de cenários C#.
 O catálogo lista `00585E40` e `00586260`; as VAs não apareceram
 nas quatro tabelas de decompilação e instruções do SQLite v7.
 A comparação dinâmica com Joey segue pendente.
+
+P086 (Morphing Jar 590) também usa o mesmo despacho em batalha.
+Cada descarte e compra é um comando. Depois de concluir os gates,
+FinishMorphingJarCommand aplica a política de deck-out simples
+ou duplo se Exodia ainda não tiver encerrado o duelo. A remoção
+do defensor marcado fica no fim da sequência. O caso de Exodia
+conclui as compras reservadas do outro lado mesmo com vencedor.
+O catálogo lista `005860E0`, sem corpo nas tabelas consultadas
+do SQLite v7. A migração preserva o comportamento C# já testado.
