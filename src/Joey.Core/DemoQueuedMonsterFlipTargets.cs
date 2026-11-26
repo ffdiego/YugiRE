@@ -14,7 +14,8 @@ public sealed partial class DemoDuel
     private static bool SupportsQueuedMonsterSelection(DemoFlipTarget pending) => pending.Trigger switch
     {
         DemoMonsterEffectTrigger.Flip => pending.Effect is
-            DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo,
+            DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo or
+            DemoFlipEffect.ChangeFaceUpPosition,
         DemoMonsterEffectTrigger.PositionChange => pending.Effect == DemoFlipEffect.DestroyOpponentMonster &&
             MonsterPositionEffectRules.TriggersOnAttackToDefense(pending.SourceCard.Id),
         _ => false
@@ -145,13 +146,14 @@ public sealed partial class DemoDuel
     private IEnumerable<QueuedMonsterFlipCandidate> CurrentMonsterFlipCandidates(DemoFlipTarget pending)
     {
         bool bounce = IsBounce(pending);
+        bool positionOnly = pending.Effect == DemoFlipEffect.ChangeFaceUpPosition;
         for (int p = 0; p < 2; p++)
         for (int z = 0; z < 5; z++)
         {
             if (Monsters[p,z] is not Card card || !IsEligibleTargetSide(pending, p) ||
                 bounce && IsMarkedForBattleDestruction(p,z) ||
-                !TryCaptureCardTarget(p,DuelZone.Monster,z,out var target) ||
-                !TryPlanRemovalLinks(p,z,out _,toGraveyard: !bounce)) continue;
+                !TryCaptureCardTarget(p,DuelZone.Monster,z,out var target)) continue;
+            if (positionOnly ? MonsterFaceDown[p, z] : !TryPlanRemovalLinks(p,z,out _,toGraveyard: !bounce)) continue;
             yield return new(target, z, card, MonsterFaceDown[p, z]);
         }
     }
@@ -197,8 +199,14 @@ public sealed partial class DemoDuel
         foreach (var target in targets)
         {
             if (target.Zone != DuelZone.Monster || !IsEligibleTargetSide(pending, target.Side) ||
-                !TryResolveCardTarget(target,out int slot,out _) ||
-                bounce && IsMarkedForBattleDestruction(target.Side,slot) ||
+                !TryResolveCardTarget(target,out int slot,out _)) return false;
+            if (pending.Effect == DemoFlipEffect.ChangeFaceUpPosition)
+            {
+                if (MonsterFaceDown[target.Side, slot]) return false;
+                result.Add(new ChangePositionByFlipCommand(target.Side, target, !DefensePosition[target.Side, slot]));
+                continue;
+            }
+            if (bounce && IsMarkedForBattleDestruction(target.Side,slot) ||
                 !TryPlanRemovalLinks(target.Side,slot,out var links,toGraveyard: !bounce))
                 return false;
             plans.Add(target,links);

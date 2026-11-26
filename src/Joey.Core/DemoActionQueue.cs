@@ -233,7 +233,7 @@ public sealed partial class DemoDuel
         DemoFlipEffect.RecruitSameNameFaceDown or DemoFlipEffect.MillOpponentDeck or
         DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour or
         DemoFlipEffect.BanishThreeDeckBurn800 or DemoFlipEffect.BanishTwoRandomHandBurn800 or
-        DemoFlipEffect.DamagePerOpposingSpellTrap or DemoFlipEffect.RaiseSelfStats or
+        DemoFlipEffect.DamagePerOpposingSpellTrap or DemoFlipEffect.RaiseSelfStats or DemoFlipEffect.ChangeFaceUpPosition or
         DemoFlipEffect.ShuffleAndExcavate;
 
     // Snapshot linked consequences before the producer admits any removals.
@@ -609,6 +609,8 @@ public sealed partial class DemoDuel
                     return MovePosition(flip.Target, true, null, followups);
                 case ChangePositionCommand position:
                     return MovePosition(position.Target, false, position.Defense, followups);
+                case ChangePositionByFlipCommand flipPosition:
+                    return ApplyFlipPositionChange(flipPosition);
                 case ResolvePositionCommand resolve:
                     return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Deck:
@@ -1284,6 +1286,12 @@ public sealed partial class DemoDuel
                     position.Target, position.WasInDefense)]));
                 resolvingFlipBatch = true;
                 return new(CommandOutcome.Applied);
+            }
+            if (card.Id == FlipEffectRules.BiteShoes)
+            {
+                duel.PendingFlipTarget = new(side, slot, card, DemoFlipEffect.ChangeFaceUpPosition);
+                FinishQueuedManualPosition(change, resolveFlip: false, out var message);
+                return new(CommandOutcome.Applied, message);
             }
             if (card.Id == FlipEffectRules.FourStarredLadybugOfDoom)
                 return ResolveLadybug(position, followups);
@@ -2018,8 +2026,13 @@ public sealed partial class DemoDuel
             var battle = duel.HasQueuedBattleTargetChoice ? duel.queuedBattleReveal : null;
             if (battle is not null)
             {
-                var destination = IsBounce(pending) ? DuelZone.Hand : DuelZone.Graveyard;
-                foreach (var target in targets) battle.ExpectedEffectMoves.Add(target, destination);
+                if (pending.Effect == DemoFlipEffect.ChangeFaceUpPosition)
+                    battle.ExpectedPositionChange = batch.OfType<ChangePositionByFlipCommand>().SingleOrDefault();
+                else
+                {
+                    var destination = IsBounce(pending) ? DuelZone.Hand : DuelZone.Graveyard;
+                    foreach (var target in targets) battle.ExpectedEffectMoves.Add(target, destination);
+                }
             }
             // Clear only this pending interaction inside its command, not at
             // admission. Never invoke legacy FinishDeferredBattle here.
@@ -2027,11 +2040,24 @@ public sealed partial class DemoDuel
             duel.resumedSummonMonsterFlip = null;
             duel.flipSelections.Clear();
             queue.EnqueueBatch(batch);
-            foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
-            linkedRemovalBatch = true;
-            ScheduleFinish(source.Side, followups);
+            if (pending.Effect != DemoFlipEffect.ChangeFaceUpPosition)
+            {
+                foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
+                linkedRemovalBatch = true;
+                ScheduleFinish(source.Side, followups);
+            }
             if (battle is not null)
                 followups.ScheduleContinuation(_ => new([new FinishBattleFlipCommand(source.Side,battle.Defender.Target)]));
+            return new(CommandOutcome.Applied);
+        }
+
+        private CommandResult ApplyFlipPositionChange(ChangePositionByFlipCommand command)
+        {
+            if (!duel.TryResolveCardTarget(command.Target, out int slot, out _) ||
+                duel.MonsterFaceDown[command.Side, slot] || duel.DefensePosition[command.Side, slot] == command.Defense)
+                return new(CommandOutcome.Skipped, "FLIP position target is no longer eligible.");
+
+            duel.CommitManualPosition(command.Side, slot, countsAsManualChange: false);
             return new(CommandOutcome.Applied);
         }
 
