@@ -222,6 +222,14 @@ equipamento quando o alvo pertence ao outro jogador. O combate
 com alvo ainda requer migração da limpeza por destruição de
 batalha. Demo.cs permanece com 2614 linhas.
 
+*Equipamentos no combate com alvo (C12.1):* o combate comum
+reserva a limpeza de cada Equip rastreável após o envio do monstro
+ao cemitério. O comando de destruição do Equip reservado completa
+mesmo após dano letal. As regressões C# cobrem dois lados, empate,
+dano letal e equipamentos cruzados, com duas cópias do mesmo ID.
+O recorte de FLIP em batalha ainda usa campo sem equipamento.
+Demo.cs permanece com 2614 linhas.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

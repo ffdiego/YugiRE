@@ -9,6 +9,7 @@ public sealed partial class DemoDuel
         public bool Detached { get; set; }
     }
     private readonly BattleReservation?[] queuedBattleRemoved = new BattleReservation?[2];
+    private readonly HashSet<CardTarget> queuedBattleEquipmentRemovals = [];
     private sealed record BattleRevealReservation(BattleReservation Attacker, BattleReservation Defender, int Turn)
     {
         public bool FlipCalculated { get; set; }
@@ -57,7 +58,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s] || (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
-                IsBattleFlipPilot(bc) && MonsterFaceDown[e,t] && DefensePosition[e,t]))
+                IsBattleFlipPilot(bc) && equipment.Count == 0 && MonsterFaceDown[e,t] && DefensePosition[e,t]))
             return false;
         if (!IsSupportedBattleField(p,s,t)) return false;
         a=new(attacker,s,ac,false);
@@ -98,7 +99,7 @@ public sealed partial class DemoDuel
 
     private bool IsSupportedBattleField(int attackerSide,int source,int target)
     {
-        if (equipment.Count!=0) return false;
+        if (!equipment.All(IsTrackedBattleEquipment)) return false;
         for (int side=0;side<2;side++)
         {
             if (!IsSupportedQueuedBattleFieldSpell(side)) return false;
@@ -121,7 +122,8 @@ public sealed partial class DemoDuel
             TryResolveCardTarget(b.Target,out int target,out var bc) && target==b.Slot && ReferenceEquals(bc,b.Card) &&
             attacked[p,source] && !MonsterFaceDown[p,source] && !DefensePosition[p,source] &&
             MonsterFaceDown[e,target]==faceDown && DefensePosition[e,target] &&
-            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc)) && IsSupportedBattleField(p,source,target);
+            IsOrdinaryBattlePilot(ac) && (IsOrdinaryBattlePilot(bc) || IsBattleFlipPilot(bc) && equipment.Count == 0) &&
+            IsSupportedBattleField(p,source,target);
     }
 
     private CommandResult RevealQueuedBattleDefender(RevealBattleDefenderCommand command,IActionCommandSink followups)
@@ -264,11 +266,25 @@ public sealed partial class DemoDuel
         if(removeA) batch.Add(new SnapshotBattleRemovalCommand(p,a.Target,0));
         if(removeB) batch.Add(new SnapshotBattleRemovalCommand(e,b.Target,1));
         if(amount>0) batch.Add(new DamageCommand(damaged,Math.Min(amount,ushort.MaxValue)));
-        if(removeA) batch.Add(new FinishBattleRemovalCommand(p,a.Target,0));
-        if(removeB) batch.Add(new FinishBattleRemovalCommand(e,b.Target,1));
+        if (removeA) PlanBattleRemoval(a, 0, batch);
+        if (removeB) PlanBattleRemoval(b, 1, batch);
         queue.EnqueueBatch(batch);
         queuedBattleRemoved[0]=removeA?a:null;
         queuedBattleRemoved[1]=removeB?b:null;
+    }
+
+    private void PlanBattleRemoval(BattleReservation removed, int role, List<DuelCommand> batch)
+    {
+        if (!TryPlanRemovalLinks(removed.Target.Side, removed.Slot, out var links))
+            throw new InvalidOperationException("Reserved battle removal links changed.");
+        batch.Add(new FinishBattleRemovalCommand(removed.Target.Side, removed.Target, role));
+        foreach (var link in links)
+        {
+            if (link is not DestroyCommand { Target.Zone: DuelZone.SpellTrap } equipmentDestroy)
+                throw new InvalidOperationException("Unexpected link in the ordinary battle pilot.");
+            queuedBattleEquipmentRemovals.Add(equipmentDestroy.Target);
+            batch.Add(equipmentDestroy);
+        }
     }
 
     private CommandResult SnapshotQueuedBattleRemoval(SnapshotBattleRemovalCommand command)

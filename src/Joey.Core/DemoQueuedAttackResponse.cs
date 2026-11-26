@@ -25,8 +25,17 @@ public sealed partial class DemoDuel
 
     private bool IsSupportedQueuedBattleBackRow(int side, int slot) =>
         Spells[side, slot] is null ||
-        Spells[side, slot] is { ClassCode: 21 or 22 } && SpellFaceDown[side, slot] &&
-        TryCaptureCardTarget(side, DuelZone.SpellTrap, slot, out _);
+        Spells[side, slot] is { ClassCode: 21 or 22 } &&
+        TryCaptureCardTarget(side, DuelZone.SpellTrap, slot, out _) &&
+        (SpellFaceDown[side, slot] || equipment.Any(e => e.Owner == side && e.SourceZone == slot));
+
+    private bool IsTrackedBattleEquipment(Equipment link) =>
+        link.Card.ClassCode == 22 && EquipmentRules.SupportsQueued(link.Card.Id) &&
+        ReferenceEquals(Spells[link.Owner, link.SourceZone], link.Card) &&
+        !SpellFaceDown[link.Owner, link.SourceZone] &&
+        TryCaptureCardTarget(link.Owner, DuelZone.SpellTrap, link.SourceZone, out _) &&
+        ReferenceEquals(Monsters[link.TargetPlayer, link.TargetZone], link.TargetCard) &&
+        TryCaptureCardTarget(link.TargetPlayer, DuelZone.Monster, link.TargetZone, out _);
 
     private bool IsQueuedAttackResponseTrap(int side, int slot) =>
         Spells[side, slot] is { ClassCode: 21 } trap && AttackTrapRules.Supports(trap.Id) &&
