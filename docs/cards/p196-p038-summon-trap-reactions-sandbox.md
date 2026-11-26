@@ -101,5 +101,9 @@ de reapresentar os candidatos originais por ocorrência. Bubonic Vermin
 retoma a seleção opcional do Deck após a mesma espera. Greenkappa e
 Tornado Bird retomam a escolha se restarem dois alvos válidos, mesmo
 após perder a fonte. Se Torrential gastar um dos dois únicos alvos,
-a escolha encerra sem efeito no sandbox. Seleções de monstros no campo
-permanecem no fluxo legado.
+a escolha encerra sem efeito no sandbox. Man-Eater Bug e Hane-Hane
+também encerram a escolha obrigatória quando nenhum monstro válido
+resta. Se sobrar um monstro, ele continua selecionável mesmo depois
+de Trap Hole destruir a fonte. Penguin Soldier mantém a opção de
+recusar em campo vazio. A ordem entre a resposta e a seleção ainda
+aguarda comparação com o executável original.

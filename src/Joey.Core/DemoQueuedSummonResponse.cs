@@ -67,14 +67,25 @@ public sealed partial class DemoDuel
         private PendingEffectDecision? flipDrawAfterSummonResponse;
         private PendingCardSelection? cardSelectionAfterSummonResponse;
         private (PendingFlipSpellTrapTargets Request, CardTarget Source)? pairAfterSummonResponse;
+        private (DemoFlipTarget Request, CardTarget Source)? monsterFlipAfterSummonResponse;
 
         private void FinishQueuedManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
         {
             duel.FinishManualPosition(change, resolveFlip, out message);
             if (!change.FlipSummoned || duel.PendingSummonResponse is not { Summon.Kind: DemoSummonKind.Flip } response ||
-                duel.PendingFlipTarget is not null || duel.PendingEffectDecision is not null) return;
+                duel.PendingEffectDecision is not null) return;
 
-            if (duel.PendingFlipSpellTrapTargets is { } pair)
+            if (duel.PendingFlipTarget is { } monster)
+            {
+                if (monster.Trigger != DemoMonsterEffectTrigger.Flip || monster.Owner != change.Player ||
+                    monster.SourceZone != change.Zone || !ReferenceEquals(monster.SourceCard, change.Card) ||
+                    !duel.UsesQueuedMonsterFlipSelection(monster) ||
+                    !duel.TryCaptureCardTarget(change.Player, DuelZone.Monster, change.Zone, out var source))
+                    return;
+                monsterFlipAfterSummonResponse = (monster, source);
+                duel.PendingFlipTarget = null;
+            }
+            else if (duel.PendingFlipSpellTrapTargets is { } pair)
             {
                 if (pair.Owner != change.Player || !ReferenceEquals(pair.Source, change.Card) ||
                     !duel.UsesQueuedFlipSpellTrapSelection(pair) ||
@@ -116,9 +127,11 @@ public sealed partial class DemoDuel
             var draw = flipDrawAfterSummonResponse;
             var selection = cardSelectionAfterSummonResponse;
             var pair = pairAfterSummonResponse;
+            var monster = monsterFlipAfterSummonResponse;
             flipDrawAfterSummonResponse = null;
             cardSelectionAfterSummonResponse = null;
             pairAfterSummonResponse = null;
+            monsterFlipAfterSummonResponse = null;
             if (!duel.GameOver && !duel.FlipEffectsNegated)
             {
                 if (draw is not null)
@@ -131,6 +144,12 @@ public sealed partial class DemoDuel
                 {
                     duel.resumedSummonFlipPair = choice;
                     duel.PendingFlipSpellTrapTargets = choice.Request;
+                }
+                if (monster is { } targets && (targets.Request.Effect == DemoFlipEffect.ReturnUpToTwo ||
+                    duel.CurrentMonsterFlipCandidates(targets.Request).Any()))
+                {
+                    duel.resumedSummonMonsterFlip = targets;
+                    duel.PendingFlipTarget = targets.Request;
                 }
                 if (selection is not null)
                     duel.PendingCardSelection = selection;

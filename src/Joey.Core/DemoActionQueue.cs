@@ -1880,6 +1880,7 @@ public sealed partial class DemoDuel
             // Clear only this pending interaction inside its command, not at
             // admission. Never invoke legacy FinishDeferredBattle here.
             duel.PendingFlipTarget = null;
+            duel.resumedSummonMonsterFlip = null;
             duel.flipSelections.Clear();
             queue.EnqueueBatch(batch);
             foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);

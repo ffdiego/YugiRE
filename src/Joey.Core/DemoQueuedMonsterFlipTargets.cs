@@ -9,6 +9,7 @@ public sealed partial class DemoDuel
     // A narrowly scoped admission exception to the existing pending-choice
     // gate. Only this method can set it, only while enqueueing the answer.
     private bool admittingQueuedMonsterFlipAnswer;
+    private (DemoFlipTarget Request, CardTarget Source)? resumedSummonMonsterFlip;
 
     private static bool SupportsQueuedMonsterSelection(DemoFlipTarget pending) => pending.Trigger switch
     {
@@ -37,14 +38,27 @@ public sealed partial class DemoDuel
         deferredBattle is null && SupportsQueuedMonsterSelection(request) &&
         (Phase == DemoPhase.Main || HasQueuedBattleTargetChoice);
 
-    private bool TryGetQueuedFlipSource(DemoFlipTarget request, out CardTarget source)
+    internal bool TryGetQueuedFlipSource(DemoFlipTarget request, out CardTarget source)
     {
         source = default;
-        return UsesQueuedMonsterFlipSelection(request) &&
-            primitiveActionQueue is { IsBusy: false } && CanAdmitQueuedMonsterFlipAnswer() &&
-            TryCaptureCardTarget(request.Owner, DuelZone.Monster, request.SourceZone, out source) &&
-            TryResolveCardTarget(source, out _, out var card) && ReferenceEquals(card, request.SourceCard);
+        if (!UsesQueuedMonsterFlipSelection(request) ||
+            primitiveActionQueue is not { IsBusy: false } || !CanAdmitQueuedMonsterFlipAnswer())
+            return false;
+        if (resumedSummonMonsterFlip is { } resumed && ReferenceEquals(resumed.Request, request))
+        {
+            source = resumed.Source;
+            return true;
+        }
+        return TryCaptureCardTarget(request.Owner, DuelZone.Monster, request.SourceZone, out source) &&
+            MatchesQueuedMonsterFlipSource(request, source);
     }
+
+    private bool MatchesQueuedMonsterFlipSource(DemoFlipTarget request, CardTarget source) =>
+        resumedSummonMonsterFlip is { } resumed && ReferenceEquals(resumed.Request, request)
+            ? source == resumed.Source
+            : source.Zone == DuelZone.Monster && source.Side == request.Owner &&
+              TryResolveCardTarget(source, out int slot, out var card) &&
+              slot == request.SourceZone && ReferenceEquals(card, request.SourceCard);
 
     public bool TrySelectQueuedMonsterFlipTarget(DemoFlipTarget request, int player, int zone,
         out string message, ActionOrigin origin = ActionOrigin.Player)
@@ -125,8 +139,12 @@ public sealed partial class DemoDuel
     {
         if (primitiveActionQueue?.IsBusy == true || GameOver || PendingFlipTarget is not { } pending ||
             !SupportsQueuedMonsterSelection(pending) || SuppressesQueuedMonsterSelection(pending)) return [];
+        return CurrentMonsterFlipCandidates(pending).ToList().AsReadOnly();
+    }
+
+    private IEnumerable<QueuedMonsterFlipCandidate> CurrentMonsterFlipCandidates(DemoFlipTarget pending)
+    {
         bool bounce = IsBounce(pending);
-        var result = new List<QueuedMonsterFlipCandidate>();
         for (int p = 0; p < 2; p++)
         for (int z = 0; z < 5; z++)
         {
@@ -134,9 +152,8 @@ public sealed partial class DemoDuel
                 bounce && IsMarkedForBattleDestruction(p,z) ||
                 !TryCaptureCardTarget(p,DuelZone.Monster,z,out var target) ||
                 !TryPlanRemovalLinks(p,z,out _,toGraveyard: !bounce)) continue;
-            result.Add(new(target,z,card,MonsterFaceDown[p,z]));
+            yield return new(target, z, card, MonsterFaceDown[p, z]);
         }
-        return result.AsReadOnly();
     }
 
     /// <summary>Admit a target answer for a supported monster effect.
@@ -168,9 +185,7 @@ public sealed partial class DemoDuel
         batch = [];
         plans = new();
         if (!CanAdmitQueuedMonsterFlipAnswer() || PendingFlipTarget is not { } pending ||
-            source.Zone != DuelZone.Monster || source.Side != pending.Owner ||
-            !TryResolveCardTarget(source,out int sourceSlot,out var sourceCard) ||
-            sourceSlot != pending.SourceZone || !ReferenceEquals(sourceCard,pending.SourceCard))
+            !MatchesQueuedMonsterFlipSource(pending, source))
             return false;
         // Royal Command suppresses the pending effect. Accept only an empty
         // answer in that case; no target movement or legacy battle resolver.
