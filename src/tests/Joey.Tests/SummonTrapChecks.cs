@@ -222,11 +222,73 @@ internal static class SummonTrapChecks
             "Torrential preserves the linked graveyard consequence of Immortal of Thunder");
     }
 
+    private static void RunQueuedRecoveryAfterSummonResponse(Action<bool, string> check)
+    {
+        var torrential = Trap(SummonTrapRules.TorrentialTribute, 272);
+        var searcher = Monster(47, 248);
+        var searchResult = Monster(24, 240);
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort resourceId in new ushort[] { 427, 101 })
+        foreach (bool pass in new[] { false, true })
+        {
+            int responder = 1 - side;
+            var flip = Monster(resourceId, 241);
+            var desired = resourceId == 427
+                ? new Card(342, 342, "Recovery Spell", "", 22u << 20)
+                : Trap(AttackTrapRules.MirrorForce, 467);
+            Card[] graveyard = [desired, flip, desired];
+            var duel = DemoDuel.FromPartialObservation(responder, [torrential],
+                side == 0 ? Slots(flip, searcher) : Slots(),
+                side == 1 ? Slots(flip, searcher) : Slots(), 8000,
+                side0Deck: side == 0 ? [searchResult] : [], side1Deck: side == 1 ? [searchResult] : [],
+                side0Graveyard: side == 0 ? graveyard : [], side1Graveyard: side == 1 ? graveyard : []);
+            duel.MonsterFaceDown[side, 0] = duel.DefensePosition[side, 0] = true;
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) &&
+                duel.TryCaptureCardTarget(side, DuelZone.Graveyard, 2, out _), "FLIP recovery response fixture");
+            duel.TryCaptureCardTarget(side, DuelZone.Graveyard, 2, out var secondCopy);
+
+            var gate = new ResponseGate();
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("flip 0").Enqueued, "P018 Flip Summon admitted");
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is { } response &&
+                duel.UsesQueuedSummonResponse(response) && duel.PendingCardSelection is null &&
+                CpuDuelController.PendingOwner(duel) == responder &&
+                !console.Execute("select-hand 2").Enqueued &&
+                console.Execute(pass ? "respond-summon pass" : $"respond-summon {responder} 0").Enqueued,
+                "Recovery waits while the responder owns the Trap window");
+
+            if (!pass)
+            {
+                gate.WaitingFor = nameof(DestroyCommand);
+                StepUntil(queue, () => queue.Active?.Command is DestroyCommand);
+                check(duel.Monsters[side, 0] is null && duel.Monsters[side, 1] == searcher &&
+                    duel.PendingCardSelection is null, "Recovery and search wait for all Torrential destructions");
+                gate.WaitingFor = null;
+            }
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is null && duel.PendingCardSelection is { } recovery &&
+                recovery.EffectResourceId == resourceId && duel.UsesQueuedHandSelection(recovery) &&
+                duel.QueuedGraveyardRecoveryCandidates(recovery).Select(candidate => candidate.SourceIndex)
+                    .SequenceEqual([0, 2]) && duel.Hand.Count == 0 &&
+                console.Execute("select-hand 2").Enqueued,
+                "P018 resumes the original candidates and admits the selected occurrence");
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.TryCaptureCardTarget(side, DuelZone.Hand, 0, out var recovered) &&
+                recovered.Occurrence == secondCopy.Occurrence &&
+                (pass ? duel.PendingCardSelection is null && duel.Monsters[side, 0] == flip :
+                    duel.PendingCardSelection is { EffectResourceId: 47 } && duel.Monsters[side, 0] is null),
+                "P018 completes with the selected copy before Torrential's Sangan search");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         RunQueued(check);
         RunQueuedFlipSummon(check);
         RunQueuedFlipBatchResponse(check);
+        RunQueuedRecoveryAfterSummonResponse(check);
         var trapHole = Trap(1002, 120);
         var torrential = Trap(1425, 272);
         var small = Monster(10, 101, 900);

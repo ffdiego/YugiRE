@@ -27,7 +27,7 @@ CI A04.2 completo aprovado (45319725401). summon INDEX SLOT [tribute slots], set
 
 `summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]]` usa o lado ativo e índices começando em zero. Consulte a ordem de mão e cemitério com `state`. O comando admite a invocação inerente C16 pelo produtor compartilhado com a CPU. Valor de custo, elegibilidade, ocorrências distintas e slot livre são revalidados. Exemplo para Soul of Purity and Light na mão 0 com custos elegíveis no cemitério 0 e 2: `summon-banish 0 1 attack 0 2`.
 
-Após uma Normal Summon ou uma Flip Summon sem seleção simultânea pela fila,
+Após uma Normal Summon ou uma Flip Summon compatível pela fila,
 `choices` lista as armadilhas da janela. `respond-summon pass` mantém a carta Set e `respond-summon SIDE SLOT`
 ativa uma das opções. Os índices começam em zero.
 
