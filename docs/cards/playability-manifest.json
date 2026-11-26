@@ -1615,6 +1615,48 @@
       ]
     },
     {
+      "id": "battle.kinetic-soldier-warrior-bonus-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1253
+      ],
+      "mechanics": [
+        "Gain 2000 ATK and DEF when the battle opponent is a Warrior, only for queued battle damage calculation",
+        "Use the same calculation for CPU target evaluation against visible opponents"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedBattleCalculationChecks.cs",
+        "docs/research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl"
+      ],
+      "limitations": [
+        "Queued battle configurations with existing sandbox stats and types. Native stat reversal, type-changing effects and differential validation are pending."
+      ]
+    },
+    {
+      "id": "battle.mad-sword-beast-piercing-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1341
+      ],
+      "mechanics": [
+        "Apply positive ATK minus DEF as battle damage when attacking a defense-position monster in queued battle",
+        "Run the DamageCommand before any supported battle FLIP"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedBattleCalculationChecks.cs",
+        "docs/research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl"
+      ],
+      "limitations": [
+        "Queued battle configurations. Native differential validation is pending."
+      ]
+    },
+    {
       "id": "end-phase.wicked-worm-beast-return-c03",
       "kind": "Monster",
       "subtype": "Effect",

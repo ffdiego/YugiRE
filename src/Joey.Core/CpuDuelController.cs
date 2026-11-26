@@ -513,10 +513,14 @@ public sealed class CpuDuelController
                     return Act(CpuAction.Attack, (out string m) => AttackFrom(source, -1, out m),
                         duel.Monsters[Player, source], source, -1);
                 var enemies = Enumerable.Range(0, 5).Where(z => duel.Monsters[enemy, z] is not null).ToArray();
-                int target = enemies.Where(z => power > KnownPower(duel, enemy, z))
-                    .OrderByDescending(z => !duel.MonsterFaceDown[enemy, z] && !duel.DefensePosition[enemy, z]
-                        ? power - duel.AttackValue(enemy, z) + 1000 : 500)
-                    .ThenBy(z => z).FirstOrDefault(-1);
+                int target = enemies.Select(z => (Zone: z,
+                        Margin: queueTurnActions && !duel.MonsterFaceDown[enemy, z]
+                            ? duel.QueuedTargetedBattlePower(Player, source, z).Difference
+                            : power - KnownPower(duel, enemy, z)))
+                    .Where(candidate => candidate.Margin > 0)
+                    .OrderByDescending(candidate => !duel.MonsterFaceDown[enemy, candidate.Zone] &&
+                        !duel.DefensePosition[enemy, candidate.Zone] ? candidate.Margin + 1000 : 500)
+                    .ThenBy(candidate => candidate.Zone).Select(candidate => candidate.Zone).FirstOrDefault(-1);
                 if (enemies.Length > 0 && target < 0) continue;
                 return Act(CpuAction.Attack, (out string m) => AttackFrom(source, target, out m), duel.Monsters[Player, source], source, target);
             }

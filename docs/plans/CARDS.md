@@ -162,6 +162,21 @@ resolução de outras cartas de fim de turno ainda é política do
 sandbox. Supressão nativa e controle trocado aguardam validação.
 [Pesquisa de retorno e fase](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
 
+### C03.7 — Modificadores do cálculo de dano
+
+Kinetic Soldier (1253) acrescenta 2.000 aos atributos durante o
+cálculo de dano contra Warrior, nos dois papéis do combate.
+O bônus usa o acumulador de atributos só para esse cálculo.
+Mad Sword Beast (1341) causa a diferença positiva como dano de
+batalha ao atacar defesa. O comando de dano precede o FLIP quando
+o defensor é revelado no combate. A CPU usa o cálculo do Kinetic
+contra alvos visíveis e preserva sua estimativa para alvos ocultos.
+O DAT local e as VAs `005B7C50` e `005B8210` do SQLite v7
+sustentam as regras. Composição com Reverse Trap e efeitos fora
+da batalha admitida pela fila seguem pendentes. Comparação
+dinâmica com Joey pendente.
+[Pesquisa do cálculo de dano](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
+
 ## C04 — Equipamentos `P025`
 
 <a id="c04"></a>
