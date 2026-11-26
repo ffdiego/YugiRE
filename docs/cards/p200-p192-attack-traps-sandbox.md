@@ -76,3 +76,7 @@ atacante, aliados adicionais restritos aos normais 24 e 1351, zona FIELD
 vazia e somente cópias elegíveis dessas armadilhas ou Mirror Force nos demais slots. Console: `respond-attack pass` ou
 `respond-attack SIDE SLOT`, com posições base zero e `choices` para
 consultar a janela. Outros cenários preservam o resolvedor legado.
+
+O piloto de combate com alvo usa a mesma janela. Passe continua contra
+a ocorrência declarada e só então revela um defensor oculto. Qualquer
+das três armadilhas aceitas cancela o ataque antes dessa revelação.

@@ -380,10 +380,10 @@ public sealed partial class DemoDuel
             if (command is ResolveMonsterPositionTargetCommand positionTarget)
                 return ResolveQueuedMonsterTargets(positionTarget.Source, [positionTarget.Target],
                     DemoMonsterEffectTrigger.PositionChange, followups);
-            if (command is OpenDirectAttackResponseCommand openAttackResponse)
-                return duel.OpenDirectAttackResponse(openAttackResponse);
-            if (command is ResolveDirectAttackResponseCommand attackResponse)
-                return ResolveDirectAttackResponse(attackResponse, followups);
+            if (command is OpenAttackResponseCommand openAttackResponse)
+                return duel.OpenAttackResponse(openAttackResponse);
+            if (command is ResolveAttackResponseCommand attackResponse)
+                return ResolveAttackResponse(attackResponse, followups);
             if (command is ResolveSpentAttackTrapCommand spentAttackTrap)
                 return ResolveSpentAttackTrap(spentAttackTrap, followups);
             if (command is ResolveSummonResponseCommand summonResponse)
@@ -876,7 +876,7 @@ public sealed partial class DemoDuel
                 (responseWipe.Summon is not null || responseWipe.Attack is not null) &&
                 responseWipe.Source == target && responseWipe.ResourceId == card.Id &&
                 card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
-            bool attackTrap = attackTrapPayment?.Source == target && duel.IsQueuedDirectResponseTrap(target.Side, slot);
+            bool attackTrap = attackTrapPayment?.Source == target && duel.IsQueuedAttackResponseTrap(target.Side, slot);
             if (!(fixedSpell || temporaryModifier || reservedTrapWipe || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
