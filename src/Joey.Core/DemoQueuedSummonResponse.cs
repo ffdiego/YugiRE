@@ -68,6 +68,7 @@ public sealed partial class DemoDuel
         private PendingCardSelection? cardSelectionAfterSummonResponse;
         private (PendingFlipSpellTrapTargets Request, CardTarget Source)? pairAfterSummonResponse;
         private (DemoFlipTarget Request, CardTarget Source)? monsterFlipAfterSummonResponse;
+        private CardTarget? selfDestructAfterSummonResponse;
 
         private void FinishQueuedManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
         {
@@ -128,10 +129,17 @@ public sealed partial class DemoDuel
             var selection = cardSelectionAfterSummonResponse;
             var pair = pairAfterSummonResponse;
             var monster = monsterFlipAfterSummonResponse;
+            var selfDestruct = selfDestructAfterSummonResponse;
             flipDrawAfterSummonResponse = null;
             cardSelectionAfterSummonResponse = null;
             pairAfterSummonResponse = null;
             monsterFlipAfterSummonResponse = null;
+            selfDestructAfterSummonResponse = null;
+            if (!duel.GameOver && selfDestruct is { } target && duel.TryResolveCardTarget(target, out _, out _))
+            {
+                followups.Enqueue(new DestroyCommand(target.Side, target));
+                return;
+            }
             if (!duel.GameOver && !duel.FlipEffectsNegated)
             {
                 if (draw is not null)

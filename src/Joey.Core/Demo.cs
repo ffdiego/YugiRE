@@ -550,7 +550,7 @@ public sealed partial class DemoDuel
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
         (!HasDeclaredAttack(ActivePlayer, zone) ||
             HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
-        (attacker.Id != ZombyraTheDark || Enumerable.Range(0, 5).Any(slot => Monsters[1 - ActivePlayer, slot] is not null)) &&
+        (attacker.Id != ZombyraTheDark || CountOccupiedMonsters(1 - ActivePlayer) > 0) &&
         !AttackRestrictedByContinuousSpells(ActivePlayer, attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
         DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
@@ -1846,7 +1846,7 @@ public sealed partial class DemoDuel
                 // Summons from excavation are not Normal Summons: no tributes,
                 // but level >4 and cards requiring a different summon cannot go.
                 if (card.IsMonster && card.Level is >= 1 and <= 4 &&
-                    !NormalSummonRules.RequiresSpecialSummon(card) && zone >= 0)
+                    !NormalSummonRules.RequiresSpecialSummon(card) && !NormalSummonRules.IsFlipOnlySummon(card) && zone >= 0)
                 {
                     Monsters[p, zone] = card;
                     MonsterWasFlipped[p, zone] = false;
@@ -2201,7 +2201,7 @@ public sealed partial class DemoDuel
                 // Spear Cretin never resurrects its very same card occurrence.
                 var monsters = CardSelectionRules.Candidates(
                     graves[owner], CardSelectionFilter.AnyMonster)
-                    .Where(c => !ReferenceEquals(c.Card, source)).ToArray();
+                    .Where(c => !ReferenceEquals(c.Card, source) && !NormalSummonRules.IsFlipOnlySummon(c.Card)).ToArray();
                 if (monsters.Length == 0) continue;
                 selectedBatchIndices.Clear();
                 PendingCardSelection = new(owner, CardSelectionSource.Graveyard,

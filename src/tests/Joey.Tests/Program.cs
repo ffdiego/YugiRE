@@ -158,6 +158,7 @@ BattleRecruiterChecks.Run(Check);
 BattleDamageEffectRuleChecks.Run(Check);
 QueuedBattleCalculationChecks.Run(Check);
 QueuedHayabusaChecks.Run(Check);
+QueuedSummonSelfDestructionChecks.Run(Check);
 BattleGraveyardEffectChecks.Run(Check);
 GraveyardArrivalRuleChecks.Run(Check);
 RevivalJamDecisionChecks.Run(Check);

@@ -434,6 +434,7 @@ public sealed class CpuDuelController
                 int[] tributes = Enumerable.Range(0, 5).Where(z => duel.Monsters[Player, z] is not null)
                     .OrderBy(z => duel.AttackValue(Player, z)).ThenBy(z => z).Take(DemoDuel.NormalTributes(card)).ToArray();
                 bool set = FlipEffectRules.Supports(card.Id) ||
+                    queueTurnActions && NormalSummonRules.DestroysAfterNormalSummon(card) ||
                     card.Attack < MaxVisibleEnemyAttack(duel) && card.Defense > card.Attack;
                 int destination = duel.FirstFreeMonsterZone(tributes);
                 return Act(set ? CpuAction.Set : CpuAction.Summon,

@@ -1615,6 +1615,52 @@
       ]
     },
     {
+      "id": "summon.boar-soldier-self-destruction-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1118
+      ],
+      "mechanics": [
+        "Destroy the exact occurrence after a queued face-up Normal Summon and any summon response",
+        "Allow Set and Flip Summon and reject Special Summon for this card",
+        "Lose 1000 ATK while the opponent controls any monster"
+      ],
+      "evidence": [
+        "src/Joey.Core/NormalSummonRules.cs",
+        "src/Joey.Core/DemoCountedMonsterAttributes.cs",
+        "src/tests/Joey.Tests/QueuedSummonSelfDestructionChecks.cs",
+        "docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl"
+      ],
+      "limitations": [
+        "Queued sandbox. Exact native summon response order and Special Summon restrictions require differential validation."
+      ]
+    },
+    {
+      "id": "summon.nuvia-the-wicked-self-destruction-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1413
+      ],
+      "mechanics": [
+        "Destroy the exact occurrence after a queued face-up Normal Summon and any summon response",
+        "Preserve Set, Flip Summon and eligible Special Summons",
+        "Lose 200 ATK for every monster the opponent controls"
+      ],
+      "evidence": [
+        "src/Joey.Core/NormalSummonRules.cs",
+        "src/Joey.Core/DemoCountedMonsterAttributes.cs",
+        "src/tests/Joey.Tests/QueuedSummonSelfDestructionChecks.cs",
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+      ],
+      "limitations": [
+        "Queued sandbox. Exact native summon response order requires differential validation."
+      ]
+    },
+    {
       "id": "flip.slate-warrior-stat-changes-c03",
       "kind": "Monster",
       "subtype": "Effect",

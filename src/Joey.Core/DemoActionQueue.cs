@@ -438,7 +438,7 @@ public sealed partial class DemoDuel
                 (command is not SendToGraveyardCommand spendRitual || spendRitual.Target != ritual.Spell))
                 return new(CommandOutcome.Skipped, "Ritual spell was not spent.");
             if (command is FinishNormalPlacementCommand finish)
-                return FinishPlacement(finish);
+                return FinishPlacement(finish, followups);
             if (command is FinishFlipBatchCommand jar) return FinishFlipBatch(jar);
             if (command is FinishFlipDeckFlowCommand deckFlow) return FinishFlipDeckFlow(deckFlow);
             if (command is FinishMorphingJarCommand morphingJar) return FinishMorphingJar(morphingJar);
@@ -1141,13 +1141,20 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied) { Placement = observation };
         }
 
-        private CommandResult FinishPlacement(FinishNormalPlacementCommand finish)
+        private CommandResult FinishPlacement(FinishNormalPlacementCommand finish, IActionCommandSink followups)
         {
-            if (!duel.TryResolveCardTarget(finish.Target, out int slot, out _))
+            if (!duel.TryResolveCardTarget(finish.Target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Placed occurrence gone.");
             string message = "";
             duel.FinishNormalPlacement(finish.Side, slot, finish.FaceDown, ref message);
             duel.queuedSummonResponse = duel.PendingSummonResponse;
+            if (!finish.FaceDown && NormalSummonRules.DestroysAfterNormalSummon(card))
+            {
+                if (duel.queuedSummonResponse is not null)
+                    selfDestructAfterSummonResponse = finish.Target;
+                else
+                    followups.Enqueue(new DestroyCommand(finish.Side, finish.Target));
+            }
             return new(CommandOutcome.Applied, message);
         }
 
@@ -1356,7 +1363,8 @@ public sealed partial class DemoDuel
         }
 
         private static bool Jar2CanSummon(Card card) =>
-            card.IsMonster && card.Level is >= 1 and <= 4 && !NormalSummonRules.RequiresSpecialSummon(card);
+            card.IsMonster && card.Level is >= 1 and <= 4 && !NormalSummonRules.RequiresSpecialSummon(card) &&
+            !NormalSummonRules.IsFlipOnlySummon(card);
 
         private ActionContinuationStep PlanJar2Excavation(Jar2Batch batch, ResolvePositionCommand position)
         {
@@ -1878,7 +1886,8 @@ public sealed partial class DemoDuel
             if (jar2 is not null && (summon.Source.Zone != DuelZone.Deck || index != 0 ||
                 !Jar2CanSummon(card) || !summon.FaceDownDefense || duel.Monsters[summon.Side,summon.Slot] is not null))
                 throw new InvalidOperationException("Reserved Jar #2 summon conditions changed.");
-            if (!card.IsMonster || duel.Monsters[summon.Side, summon.Slot] is not null)
+            if (!card.IsMonster || NormalSummonRules.IsFlipOnlySummon(card) ||
+                duel.Monsters[summon.Side, summon.Slot] is not null)
                 return new(CommandOutcome.Rejected, "Special Summon requires a monster and a free slot.");
             if (summon.Source.Zone == DuelZone.Hand)
             {

@@ -273,6 +273,27 @@ O catálogo aponta `0058AFE0` para P166, sem corpo nas tabelas
 consultadas. A janela nativa, revelação por efeito externo e
 os casos de reinversão de atributos seguem pendentes.
 [Pesquisa de efeitos compostos](../research/card-static-sweep/08-efeitos-compostos-e-eventos.jsonl).
+[PR #227](https://github.com/ffdiego/YugiRE/pull/227) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45881159153).
+
+### C03.12 — Autodestruição após Normal Summon
+
+Boar Soldier (1118) e Nuvia the Wicked (1413) compartilham a
+autodestruição por comando após a colocação revelada. Se houver
+uma resposta de invocação, a autodestruição segue depois dela
+caso a ocorrência ainda esteja no campo. Essa ordem é a política
+do sandbox. Set e Flip Summon preservam a carta e a CPU prefere
+Set. Boar perde 1.000 ATK se qualquer zona adversária estiver
+ocupada e a fila exige Flip Summon para ele permanecer no campo.
+Nuvia perde 200 ATK por zona adversária ocupada e pode ser
+invocada por efeito. A regra considera cartas viradas para baixo
+porque `00569D50` conta zonas preenchidas em `0056DD30`.
+`005ABD00` encaminha os dois IDs para a mesma rotina de
+destruição. A exigência de Flip Summon segue o DAT local.
+A ordem nativa da resposta e as restrições em todos os
+procedimentos do Joey aguardam comparação dinâmica.
+[Pesquisa de invocação e atributos](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
+[Pesquisa de Nuvia](../research/card-static-sweep/10-efeitos-sem-registro.jsonl).
 
 ## C04 — Equipamentos `P025`
 
