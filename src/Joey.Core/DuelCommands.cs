@@ -31,6 +31,7 @@ internal sealed record AdvanceTurnCommand(int Side, int ExpectedTurn) : DuelComm
 public sealed record TurnDrawCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 internal sealed record ResolveStandbyRevivalCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one card
+internal sealed record FinishCardDestructionCommand(int Side, bool OpponentDeckOut) : DuelCommand(Side);
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
 public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelCommand(Side);
@@ -369,6 +370,7 @@ internal static class DuelCommandValidation
                 break;
             case DamageCommand damage when damage.Amount > 0:
             case FinishJointDamageCommand:
+            case FinishCardDestructionCommand:
             case HealCommand { Amount: > 0 }:
                 break;
             case SummonCommand summon when summon.Slot is >= 0 and < 5:

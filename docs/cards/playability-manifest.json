@@ -1615,6 +1615,29 @@
       ]
     },
     {
+      "id": "draw.card-destruction-c02",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1221
+      ],
+      "mechanics": [
+        "Queue-backed activation from hand or Set during own Main Phase",
+        "Spend the source, discard each remaining hand occurrence, and draw by successful discard count",
+        "Adjudicate deck-out and simultaneous Exodia after the replacement batch"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedDrawSpells.cs",
+        "src/Joey.Core/DemoQueuedCardDestruction.cs",
+        "src/tests/Joey.Tests/QueuedCardDestructionChecks.cs",
+        "docs/research/card-static-sweep/04-regras-globais-e-continuacoes.jsonl"
+      ],
+      "limitations": [
+        "The sandbox applies the public activation guard and presents the caster's replacements first. Native activation, terminal order, discard-trigger interactions and chains are unverified."
+      ]
+    },
+    {
       "id": "attributes.counted-monsters-c03",
       "kind": "Monster",
       "subtype": "Effect",

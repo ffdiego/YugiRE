@@ -24,6 +24,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Tremendous Fire (346/P053) | **Done** (escopo sandbox na fila) | `LifePointSpellRules.cs`, `TimedEquipmentAndQueuedLpChecks.cs` | App/CPU, mão/Set. O sandbox declara empate quando esse efeito zera os dois LP. |
 | Monstros com atributos por contagem (10 IDs) | **Done** (escopo sandbox na fila) | `DemoCountedMonsterAttributes.cs`, `CountedMonsterAttributeChecks.cs` | ATK/DEF derivados de mão, campo e cemitério. Invocação e combate usam os produtores comuns. |
 | Magias normais de compra fixa `P119/P143` | **Done** (2 IDs no sandbox) | Pot of Greed (1010) e Upstart Goblin (1065). `DrawSpellRules`, `DemoDuel` e `DrawSpellChecks` cobrem mão, Set, contagens, LP e uso pela CPU. | Exigem cartas suficientes no deck. Sem correntes, negação ou comparação nativa do timing. |
+| Card Destruction (1221/P215) | **Done** (escopo sandbox na fila) | `DemoQueuedCardDestruction.cs`, `QueuedCardDestructionChecks.cs` | Gasta a magia, descarta ambas as mãos e repõe por quantidade descartada. Cobre deck-out e empate por Exodia simultâneo. |
 | Equipamentos `P025` | **Done** (24 IDs, escopo sandbox) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs). [Ciclo fixo testado](docs/cards/c04-fixed-equipment-lifecycle.md); UI/CPU da fila e supressões pendentes; [dinâmicos](docs/cards/c04-dynamic-equipment-lifecycle.md) |
 | Eternal Rest (655/P092) | **Done** (sandbox na fila, condicionado ao CI) | [C02](docs/cards/c02-eternal-rest.md), `QueuedMonsterWipeChecks.cs` | Destruição não seletiva de monstros equipados, ambos os lados; vínculos e limpeza por comando. Sem UI/CPU, correntes ou paridade nativa. |
 | Fusion Sage (1040/P134) | **Done** (sandbox na fila, condicionado ao CI) | [C02.2](docs/cards/c02-fusion-sage.md), `QueuedDeckSearchChecks.cs` | Mão/Set, gasto, seleção obrigatória de Polymerization, transferência de ocorrência e shuffle. Sem UI/CPU ou paridade nativa. |
@@ -253,6 +254,18 @@ App e na CPU, com gasto e mudanças de LP em comandos separados.
 Goblin usam `TryQueueDrawSpell`, com gasto antes da continuação,
 DrawCommand por carta e HealCommand posterior de Upstart.
 [Contrato](docs/cards/c12-queued-draw-spells.md).
+
+Card Destruction (1221/P215) gasta a ocorrência ativada da mão ou
+Set, descarta ambas as mãos e compra uma carta por descarte
+concluído. O sandbox requer Deck suficiente para o ativador e
+ao menos um descarte possível entre os dois lados. Se faltar Deck
+ao adversário, a fila compra as cartas disponíveis antes de declarar
+deck-out. As duas compras são tratadas como um efeito para decidir
+Exodia e a execução apresenta as cartas do ativador primeiro. Essa
+ordem, a prioridade de deck-out e os gatilhos de descarte aguardam
+validação de interação com o Joey.
+[Estudo estático](docs/research/card-static-sweep/04-regras-globais-e-continuacoes.jsonl) ·
+[Disponibilidade e compras na regra oficial](https://www.db.yugioh-card.com/yugiohdb/faq_search.action?cid=4821&ope=4&request_locale=ja).
 
 ### Atributos por contagem (C03)
 
