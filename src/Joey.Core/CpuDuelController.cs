@@ -326,6 +326,7 @@ public sealed class CpuDuelController
                         bool useLpSpell = lp is { } change && (duel.Life[Player] > -change.CasterDelta ||
                             change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
                         if (!(useLpSpell ||
+                              duel.ShouldPlayInsectBarrier(Player, candidate) ||
                               ShouldClearSpellTraps(duel, candidate.Id, queued: true,
                                   excludedSlot: zone == DuelZone.SpellTrap ? i : -1) ||
                               DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards ||

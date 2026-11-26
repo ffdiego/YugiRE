@@ -27,7 +27,8 @@ public sealed partial class DemoDuel
         Spells[side, slot] is null ||
         Spells[side, slot] is { ClassCode: 21 or 22 } &&
         TryCaptureCardTarget(side, DuelZone.SpellTrap, slot, out _) &&
-        (SpellFaceDown[side, slot] || equipment.Any(e => e.Owner == side && e.SourceZone == slot));
+        (SpellFaceDown[side, slot] || IsInsectBarrier(Spells[side, slot]) ||
+            equipment.Any(e => e.Owner == side && e.SourceZone == slot));
 
     private bool IsTrackedBattleEquipment(Equipment link) =>
         link.Card.ClassCode == 22 && EquipmentRules.SupportsQueued(link.Card.Id) &&

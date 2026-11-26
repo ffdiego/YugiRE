@@ -15,7 +15,7 @@ o próprio Set se ativado da mão. Sem gasto ao GY da fonte nova.
 Cada substituição revalida fonte e lista restante, sem trocar alvos.
 Estatísticas continuam derivadas pelo cálculo existente.
 
-Infinite Cards usa ActivateInfiniteCardsCommand para colocar/virar
+Infinite Cards usa ActivateContinuousSpellCommand para colocar/virar
 a fonte na zona S/T; HandLimitDisabled deriva do estado de ambos
 os lados, sem flag persistente nova. Sem alterar a regra do End Turn.
 

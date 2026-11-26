@@ -95,7 +95,7 @@ public sealed partial class DemoDuel
 
     /// <summary>Existing fixed-effect executors; no target or cost selection at admission.</summary>
     public static bool SupportsQueuedFixedSpell(Card card) => FieldSpellRules.Supports(card.Id) ||
-        card.Id == InfiniteCardsId || card.ClassCode == 22 &&
+        SupportsQueuedContinuousSpell(card) || card.ClassCode == 22 &&
         (DrawSpellRules.SupportsQueued(card) || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
          SpellTrapWipeRules.SupportsQueued(card.Id));
@@ -111,7 +111,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(source, out _, out var card) || !SupportsQueuedFixedSpell(card))
             return false;
         if (FieldSpellRules.Supports(card.Id)) return TryPlanFieldActivation(source, out _);
-        if (card.Id == InfiniteCardsId) return CanActivateInfiniteCards(source, out _);
+        if (SupportsQueuedContinuousSpell(card)) return CanActivateContinuousSpell(source, out _);
         if (DrawSpellRules.SupportsQueued(card))
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -134,7 +134,7 @@ public sealed partial class DemoDuel
         if (!TryCaptureCardTarget(ActivePlayer, zone, index, out var source) ||
             !TryResolveCardTarget(source, out _, out var card))
             return false;
-        if (card.Id==InfiniteCardsId) return TryQueueInfiniteCards(source,out message,origin);
+        if (SupportsQueuedContinuousSpell(card)) return TryQueueContinuousSpell(source,out message,origin);
         if (FieldSpellRules.Supports(card.Id))
             return TryQueueFieldSpellActivation(zone,index,out message,origin);
         if (card.ClassCode!=22) return false;
@@ -576,8 +576,8 @@ public sealed partial class DemoDuel
                     return PrepareFieldActivation(fieldPrepare,followups);
                 case ActivateFieldSpellCommand fieldActivate:
                     return ApplyFieldActivation(fieldActivate);
-                case ActivateInfiniteCardsCommand infinite:
-                    return duel.ApplyInfiniteCards(infinite);
+                case ActivateContinuousSpellCommand continuous:
+                    return duel.ApplyContinuousSpell(continuous);
                 case ActivateSpellTrapWipeCommand spellTrapWipe:
                     return ActivateSpellTrapWipe(spellTrapWipe.Source, followups);
                 case ActivateMonsterWipeCommand monsterWipe:

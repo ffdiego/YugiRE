@@ -46,7 +46,7 @@ public sealed partial class DemoDuel
         int side=source.Side;
         if (source.Zone!=DuelZone.Monster || side!=ActivePlayer || Phase!=DemoPhase.Battle ||
             GameOver || attacked[side,slot] != declared || MonsterFaceDown[side,slot] || DefensePosition[side,slot] ||
-            !card.IsMonster || !DirectAttackAllowed(side,card))
+            !card.IsMonster || AttackRestrictedByInsectBarrier(side, card) || !DirectAttackAllowed(side,card))
             return false;
         unsupported = !SupportsQueuedDirectAttack(side, slot, card);
         if (unsupported) return false;
