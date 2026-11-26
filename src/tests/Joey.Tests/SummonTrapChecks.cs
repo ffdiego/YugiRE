@@ -129,9 +129,104 @@ internal static class SummonTrapChecks
             "Torrential finalizes the batch in field order before opening Sangan's search");
     }
 
+    private static void RunQueuedFlipSummon(Action<bool, string> check)
+    {
+        var drawCard = Monster(24, 240);
+        foreach (int summoner in new[] { 0, 1 })
+        foreach (bool skelengel in new[] { false, true })
+        foreach (bool pass in new[] { false, true })
+        {
+            int owner = 1 - summoner;
+            var monster = skelengel ? Monster(FlipEffectRules.Skelengel, 230, 900) : Monster(24, 231, 1400);
+            var trap = skelengel ? Trap(SummonTrapRules.TorrentialTribute, 272) : Trap(SummonTrapRules.TrapHole, 120);
+            var duel = DemoDuel.FromPartialObservation(owner, [trap],
+                summoner == 0 ? Slots(null, null, monster) : Slots(),
+                summoner == 1 ? Slots(null, null, monster) : Slots(), 8000,
+                side0Deck: summoner == 0 ? [drawCard] : [], side1Deck: summoner == 1 ? [drawCard] : []);
+            duel.MonsterFaceDown[summoner, 2] = duel.DefensePosition[summoner, 2] = true;
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _), "Queued Flip Summon fixture");
+            var gate = new ResponseGate { WaitingFor = nameof(FlipCommand) };
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("flip 2").Enqueued, "Flip Summon admitted");
+            StepUntil(queue, () => queue.Active?.Command is FlipCommand);
+            check(!duel.MonsterFaceDown[summoner, 2] && duel.PendingSummonResponse is null &&
+                queue.PendingDecision is null, "Flip gate precedes the response and optional draw");
+            gate.WaitingFor = null;
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is { Summon.Kind: DemoSummonKind.Flip } response &&
+                duel.UsesQueuedSummonResponse(response) && console.HasPendingChoice &&
+                queue.PendingDecision is null && duel.PendingEffectDecision is null &&
+                !duel.PassSummonResponse(out _) && !duel.ActivateSummonTrap(owner, 0, out _),
+                "Queued Flip Summon opens only the queued response window");
+
+            bool admitted = pass ? console.Execute("respond-summon pass").Enqueued :
+                new CpuDuelController(owner).Step(duel, queueTurnActions: true) is
+                    { Status: CpuStepStatus.Acted, Action: CpuAction.Response };
+            check(admitted && duel.Spells[owner, 0] == trap, "Flip Summon response admitted without cost movement");
+            if (!pass)
+            {
+                gate.WaitingFor = nameof(SendToGraveyardCommand);
+                StepUntil(queue, () => queue.Active?.Command is SendToGraveyardCommand);
+                check(duel.Graveyard(owner).SequenceEqual([trap]) &&
+                    duel.Monsters[summoner, 2] == monster && queue.PendingDecision is null,
+                    "Trap spend gate precedes destruction and optional draw");
+                gate.WaitingFor = null;
+            }
+            StepUntil(queue, () => skelengel ? queue.PendingDecision is not null : !queue.IsBusy);
+            check(duel.PendingSummonResponse is null && duel.PendingEffectDecision is null &&
+                (pass ? duel.Spells[owner, 0] == trap && duel.Monsters[summoner, 2] == monster &&
+                    duel.LastSummonTrap is null
+                    : duel.Spells[owner, 0] is null && duel.Monsters[summoner, 2] is null &&
+                    duel.Graveyard(summoner).SequenceEqual([monster]) &&
+                    duel.LastSummonTrap is { SummonKind: DemoSummonKind.Flip, DestroyedMonsters: 1 }),
+                "Flip Summon response completes before the following effect");
+            if (skelengel)
+            {
+                var decision = queue.PendingDecision!;
+                check(decision.Source.Id == FlipEffectRules.Skelengel && decision.Owner == summoner &&
+                    duel.Hand.Count == 0 && console.Execute($"decision {decision.Id} accept").Success,
+                    "Skelengel draw remains queued even after the Trap destroys its source");
+                StepUntil(queue, () => !queue.IsBusy);
+                check(duel.Hand.SequenceEqual([drawCard]) && duel.EffectDecisionHistory.Count == 1 &&
+                    queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Completed &&
+                        entry.Entry.Command is DrawCommand) == 1,
+                    "Skelengel draws exactly once through the shared command");
+            }
+        }
+    }
+
+    private static void RunQueuedFlipBatchResponse(Action<bool, string> check)
+    {
+        var immortal = Monster(FlipEffectRules.ImmortalOfThunder, 232, 1500);
+        var torrential = Trap(SummonTrapRules.TorrentialTribute, 272);
+        var duel = DemoDuel.FromPartialObservation(0, [torrential], Slots(), Slots(immortal), 8000);
+        duel.MonsterFaceDown[1, 0] = duel.DefensePosition[1, 0] = true;
+        check(duel.SetFromHand(0, out _) && duel.EndTurn(out _), "Queued Flip batch response fixture");
+        var gate = new ResponseGate { WaitingFor = nameof(HealCommand) };
+        var console = new DuelConsoleSession(duel, gate);
+        var queue = console.Queue;
+        check(console.Execute("flip 0").Enqueued, "Immortal Flip Summon is admitted");
+        StepUntil(queue, () => queue.Active?.Command is HealCommand);
+        check(duel.Life[1] == 11000 && duel.PendingSummonResponse is null,
+            "The immediate FLIP batch completes its gate before the response opens");
+        gate.WaitingFor = null;
+        StepUntil(queue, () => !queue.IsBusy);
+        check(duel.PendingSummonResponse is { Summon.Kind: DemoSummonKind.Flip } response &&
+            duel.UsesQueuedSummonResponse(response) && console.Execute("respond-summon 0 0").Enqueued,
+            "Torrential can answer after the immediate FLIP batch");
+        StepUntil(queue, () => !queue.IsBusy);
+        check(duel.Life.SequenceEqual([8000, 6000]) && duel.Graveyard(1).SequenceEqual([immortal]) &&
+            queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Completed &&
+                entry.Entry.Command is DamageCommand { Side: 1, Amount: 5000 }) == 1,
+            "Torrential preserves the linked graveyard consequence of Immortal of Thunder");
+    }
+
     public static void Run(Action<bool, string> check)
     {
         RunQueued(check);
+        RunQueuedFlipSummon(check);
+        RunQueuedFlipBatchResponse(check);
         var trapHole = Trap(1002, 120);
         var torrential = Trap(1425, 272);
         var small = Monster(10, 101, 900);

@@ -406,7 +406,12 @@ public sealed partial class DemoDuel
             if (command is FinishBattleRemovalCommand battleFinish)
                 return duel.FinishQueuedBattleRemoval(battleFinish, followups);
             if (command is FinishFieldRemovalCommand)
-                return FinishRemoval();
+                return FinishRemoval(followups);
+            if (command is FinishSummonFlipDrawCommand)
+            {
+                duel.BeginNextQueuedDeckSearch();
+                return new(CommandOutcome.Applied);
+            }
             if (command is ResolveFinalDestinyCommand finalDestinyResolve)
                 return ResolveFinalDestiny(finalDestinyResolve,followups);
             if (command is ResolveTargetedMonsterSpellCommand resolveDiscardSpell)
@@ -1183,7 +1188,7 @@ public sealed partial class DemoDuel
                 position.WasInDefense, duel.MonsterFaceDown[side, slot], duel.DefensePosition[side, slot]);
             if (!change.FlipSummoned || duel.FlipEffectsNegated)
             {
-                duel.FinishManualPosition(change, resolveFlip: true, out var message);
+                FinishQueuedManualPosition(change, resolveFlip: true, out var message);
                 return new(CommandOutcome.Applied, message);
             }
             if (!duel.CanQueueFlip(card))
@@ -1192,21 +1197,14 @@ public sealed partial class DemoDuel
             {
                 var request = new PendingEffectDecision(++duel.nextEffectDecisionId, side, card,
                     EffectDecisionKind.DrawOneOnFlip, 0, duel.Turn);
-                duel.FinishManualPosition(change, resolveFlip: false, out var message);
-                if (duel.LegacyActionsBlocked)
-                {
-                    // Existing summon response has precedence. Keep the legacy
-                    // request bridge for that combination until A06 migrates it.
+                FinishQueuedManualPosition(change, resolveFlip: false, out var message);
+                if (duel.PendingSummonResponse is { } response && duel.UsesQueuedSummonResponse(response))
+                    flipDrawAfterSummonResponse = request;
+                else if (duel.LegacyActionsBlocked)
                     duel.queuedEffectDecisions.Enqueue(request);
-                    return new(CommandOutcome.Applied, message);
-                }
-                queueDrawDecision = request;
-                followups.ScheduleContinuation(_ => new([], answer =>
-                {
-                    var selected = answer ?? throw new InvalidOperationException("Missing draw answer.");
-                    return new([new RecordFlipDrawDecisionCommand(side, request.Id, selected)]);
-                }, request));
-                return new(CommandOutcome.Applied);
+                else
+                    ScheduleManualFlipDraw(request, followups);
+                return new(CommandOutcome.Applied, message);
             }
             if (card.Id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout)
                 return ResolveFlipDeckFlow(position, card, followups);
@@ -1251,7 +1249,7 @@ public sealed partial class DemoDuel
 
             // Choice-only effects can open a legacy request, but cannot
             // execute its answer here. A06/C12 migrate the response path.
-            duel.FinishManualPosition(change, resolveFlip: true, out var detail);
+            FinishQueuedManualPosition(change, resolveFlip: true, out var detail);
             return new(CommandOutcome.Applied, detail);
         }
 
@@ -1638,7 +1636,7 @@ public sealed partial class DemoDuel
                     excavation.Summoned[p],excavation.Sent[p],excavation.Found[p]<excavation.Returned[p])).ToArray());
                 // The original FLIP source may now be in another zone or
                 // face-down again. Preserve the original position event.
-                duel.FinishManualPosition(excavation.Change,resolveFlip:false,out var jar2Detail);
+                FinishQueuedManualPosition(excavation.Change,resolveFlip:false,out var jar2Detail);
                 return new(CommandOutcome.Applied,jar2Detail);
             }
             if (flipBanish is { } burn)
@@ -1670,7 +1668,7 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "FLIP source gone.");
             var change = new DemoMonsterPositionChange(finish.Side, slot, card, true, finish.WasInDefense,
                 duel.MonsterFaceDown[finish.Side, slot], duel.DefensePosition[finish.Side, slot]);
-            duel.FinishManualPosition(change, resolveFlip: false, out var detail);
+            FinishQueuedManualPosition(change, resolveFlip: false, out var detail);
             return new(CommandOutcome.Applied, detail);
         }
 
@@ -2026,12 +2024,13 @@ public sealed partial class DemoDuel
             followups.ScheduleContinuation(_ => new([new FinishFieldRemovalCommand(side)]));
         }
 
-        private CommandResult FinishRemoval()
+        private CommandResult FinishRemoval(IActionCommandSink followups)
         {
             if (!finishScheduled) return new(CommandOutcome.Rejected, "No field removal to finalize.");
             finishScheduled = false;
             linkedRemovalBatch = false;
             plannedLinks.Clear();
+            bool summonResponse = wipe?.Summon is not null;
             if (wipe is { } current)
             {
                 if (current.SourceSpent)
@@ -2048,9 +2047,11 @@ public sealed partial class DemoDuel
                 }
                 wipe = null;
             }
-            // Legacy choice bridge only; selection mutations are still A06/C12.
             // No search or optional prompt opens between the destruction commands.
-            duel.BeginNextQueuedDeckSearch();
+            if (summonResponse)
+                ContinueAfterSummonResponse(followups);
+            else
+                duel.BeginNextQueuedDeckSearch();
             return new(CommandOutcome.Applied);
         }
     }
