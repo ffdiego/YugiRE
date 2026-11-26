@@ -6,7 +6,7 @@
 
 ## Foco atual
 
-**C12 — migrar as famílias já implementadas para a fila de ações.** CARDS prioriza C12.1 (produtores UI/CPU e fila padrão); novos efeitos ficam suspensos até esse gate documentado e integrado. Após C12.1, famílias independentes podem avançar exclusivamente pela fila, sem interromper a remoção do legado restante. ACTIONS e VISUALS mantêm seus backlogs; o agente único atravessa as dependências necessárias sequencialmente. [Critério e ordem](#c12--migrar-as-famílias-done-para-a-fila-de-ações).
+**C12 — fila de ações como caminho padrão e remoção do legado (gate reduzido, decisão 26/11/2026).** Escopo congelado no inventário Done original; a fila vira padrão para as famílias que já têm produtor, e a remoção efetiva do legado é a métrica das fatias de migração. Cumprido o gate reduzido, C02/C03 reabrem pela fila e a remoção do legado restante segue em fatias. ACTIONS e VISUALS mantêm seus backlogs; o agente único atravessa as dependências necessárias sequencialmente. [Critério e ordem](#c12--migrar-as-famílias-done-para-a-fila-de-ações).
 
 <a id="trilhas-de-trabalho-como-despachar-um-agente"></a>
 
@@ -82,36 +82,47 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto`. Migrar armadilhas existentes em C12; novas respostas/correntes depois. [Detalhes](docs/plans/CARDS.md#c06)
 - [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Parcial`. Integrar gatilhos já implementados à fila em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c07)
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`. Fusion/Extra Deck, tokens, controle e seleção >5; depois de C12. [Detalhes](docs/plans/CARDS.md#c08)
-- [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Revisar restrições, interações e efeito próprio de Relinquished após o gate C12.1. [Detalhes](docs/plans/CARDS.md#c09)
+- [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Revisar restrições, interações e efeito próprio de Relinquished após o gate C12.1. Produtores UI/CPU de Ritual já feitos pertencem a C09, não ao C12. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
-- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Fechar a paridade de combate e dos produtores UI/CPU antes de validar a fila padrão; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
+- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Gate reduzido: fila padrão no App/CPU para famílias com produtor + CI verde; priorizar apagar legado. Escopo congelado no inventário Done; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Adiado`. Sea Serpent confirmado no DAT; comparação P036 em duelo nativo preservada, sob demanda. [Detalhes](docs/plans/CARDS.md#c14)
 - [ ] **C15 — Fatias `Verified`.** Status: `Adiado`. Comparações por família e interações em duelos dirigidos após massa crítica; antecipar divergências materiais. [Detalhes](docs/plans/CARDS.md#c15)
-- [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Parcial`. Comparar o seletor do tabuleiro com o original; efeitos pós-invocação restantes depois. [Detalhes](docs/plans/CARDS.md#c16)
+- [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Parcial`. Comparar o seletor do tabuleiro com o original; efeitos pós-invocação restantes depois. Produtores UI/CPU/console já feitos pertencem a C16, não ao C12. [Detalhes](docs/plans/CARDS.md#c16)
 - [ ] **C17 — Controle de Dark Necrofear e Prohibition.** Status: `Aguardando evidência`. Dark Necrofear/Prohibition dependem de evidência; não implementar por aproximação. [Detalhes](docs/plans/CARDS.md#c17)
 
 - [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Parcial`. Inventário de slots reproduzido; script cruza manifest, estudos estáticos e C01 opcional. Falta executar a taxonomia real e revisar semântica por família; novas cartas aguardam C12.1. [Detalhes](docs/plans/CARDS.md#c18)
 
 ### C12 — migrar as famílias Done para a fila de ações
 
-**Objetivo:** eliminar o caminho duplo (`Demo.cs` legado + `DemoActionQueue.cs`), sem alterar a cobertura jogável. O App ainda usa a fila via `--queued-actions` na base desta revisão. A migração não é expansão de catálogo.
+**Objetivo:** eliminar o caminho duplo (`Demo.cs` legado + `DemoActionQueue.cs`), sem alterar a cobertura jogável. Não é expansão de catálogo.
 
-**Inventário de partida:** LP (10 magias), compra (Pot of Greed, Upstart Goblin), wipes P037/P039/P092, Duster/Heavy Storm P094/P141, MST/Remove Trap, FLIPs, P018/P006/P164/P168/P169/P165/P082/P088, Greenkappa/Tornado Bird/Four-Starred Ladybug, P051/P052, Morphing Jar #2, procedimentos C16, equipamentos e rituais têm fatias na fila em escopos distintos (ver detalhes e contratos). Há pilotos de combate isolado para Skelengel, Penguin Soldier, Man-Eater Bug e P164 em A06. Não confundir executor/headless com integração completa. Conferir o código antes de declarar migração ou repetir trabalho.
+**Escopo (congelado em 26/11/2026):** apenas o inventário Done original: LP, compra, wipes (P037/P039/P092), Duster/Heavy Storm, MST/Remove Trap, FLIPs, P018/P006/P164/P168/P169/P165/P082/P088, Greenkappa/Tornado Bird/Four-Starred Ladybug, P051/P052, Morphing Jar #2, equipamentos P025, persistentes, fusões e caminhos de armadilhas de ataque/Summon já jogáveis no inventário original. Produtores de famílias Partial (C16, rituais/C09, Dream Clown e similares) **saem do C12** e seguem em C16, C09 e C07. Preservar as implementações já integradas; não criar produtor novo para família fora do inventário como parte do C12.
+
+**Estado registrado no plano de 26/11/2026:** Demo.cs 2.607 linhas (2.623 no início do C12.1, 18 fatias); fila ≈5.300 linhas (`DemoQueued*` + `DemoActionQueue`) contra ≈2.800 do legado; fila ainda opt-in via `--queued-actions`. Conferir esses números na base de execução antes de medir a próxima fatia.
+
+**Gate C12.1 (reduzido):**
+1. Fila como caminho padrão no App e na CPU para as famílias que já têm produtor. Modo legado explícito atrás de flag (`--legacy-actions`); no modo padrão, fallback transitório somente para operação ainda não suportada pela fila, antes de qualquer admissão, reserva, mutação ou emissão de evento. Rejeições por ilegalidade, fila ocupada, seleção stale ou falha após admissão não autorizam fallback. Cada fallback deve ser identificado e registrado com sua remoção prevista; não criar bypass para cartas novas.
+2. Testes atuais e CI verde. Regressão descoberta depois vira bug com ID próprio; não reabrir automaticamente o gate. Não integrar código sabidamente quebrado nem suprimir testes.
+3. Registrar fechamento com commit/PR, CI e linhas de Demo.cs antes/depois.
+
+Não exigido para o gate: paridade de famílias sem produtor, smoke gráfico, comparação pareada com o original, famílias Partial. Essas validações continuam acionáveis em seus respectivos marcos; o gate reduzido não equivale a C12 concluído ou a Verified.
+
+**Regra de fatia:** progresso da remoção do legado deve apagar resolvedores e reduzir Demo.cs, substituindo comparadores legados por testes de cenário que preservem as regressões relevantes. Fatia necessária que não reduza Demo.cs (incluindo a troca do default) justifica o motivo e registra a dívida restante; redução de linhas não justifica remoção de comportamento ou deslocamento artificial de código. Nenhum resolvedor legado novo.
+
+**Depois do gate:** C02/C03 reabrem para famílias independentes de risco baixo/médio (C18), somente pela fila, alternando com a remoção do legado restante segundo o ganho funcional provável.
 
 **Pendente (ordem):**
-1. Produtores UI/CPU das famílias já migradas e fila como **caminho padrão** do App e da CPU, preservando comportamento e testes; coordenar A06/A07/A08. Migrar a admissão de famílias já jogáveis que ainda não têm executor, conforme necessário para manter paridade ao ativar o padrão. PR #150 está aberto na base desta revisão (FIELD/P036, ativação Fusion Gate e Infinite Cards); conferir merge/CI antes de duplicar.
-2. Combate: ampliar FLIPs em batalha e P164 além dos pilotos isolados; P168 (LP de batalha), Bistro Butcher/Masked Sorcerer e demais gatilhos legados; dependências mínimas de A06/A07.
-3. Equipamentos P025: remover os 21 fluxos legados de mão e integrar produtores dos equipamentos existentes.
-4. Armadilhas de ataque/Summon (Trap Hole, Torrential Tribute, Magic Cylinder, Negate Attack, Mirror Force) e fusões: verificar no código o que já foi migrado antes de implementar; migrar apenas caminhos existentes.
-5. P117/P159/P160, Dark Necrofear e Prohibition: inventariar lacunas ([revival](docs/cards/p117-p159-p160-revival-spells-gap.md), C17); não implementar regras novas nem promover status para fechar C12. Pendências sem equivalente jogável ficam nos IDs próprios.
+1. Virar o padrão (gate acima).
+2. Apagar o legado das famílias migradas e seus comparadores; desacoplar `Pending*` de `ActionsBlocked`.
+3. Combate: gatilhos legados restantes (FLIPs em batalha, P164 além dos pilotos e demais gatilhos do inventário); mínimo de A06/A07.
+4. Equipamentos P025: remover os 21 fluxos legados de mão.
+5. Armadilhas de ataque/Summon: verificar no código o que já migrou; migrar só caminhos existentes.
 
-**Pronto quando:** (a) fila padrão no App/CPU; (b) nenhuma família migrada mantém resolução legada equivalente ativa (remover ou marcar obsoleto e impedir seu uso no caminho padrão); (c) `ActionsBlocked` não depende dos `Pending*` legados dessas famílias; (d) testes atuais e regressões passam, CI verde antes da integração e cobertura jogável preexistente preservada (ganhos de lotes independentes contabilizados separadamente); (e) Demo.cs diminui por fatia, com contagem de linhas antes/depois. Se precisar de uma adaptação transitória, justificar e registrar sua remoção; não criar novo resolvedor legado.
+P117/P159/P160, Dark Necrofear e Prohibition ficam fora do C12 (C17 e [lacuna](docs/cards/p117-p159-p160-revival-spells-gap.md)).
 
-**Gate C12.1:** a fila deve ser o caminho padrão real no App e na CPU, com paridade de cobertura jogável preexistente, regressões UI/CPU (incluindo admissão, escolhas e gates aplicáveis) e CI obrigatório verde; registrar o fechamento do item 1 com PR e evidências. Antes disso, não implementar cartas novas nem abrir lotes C02/C03. Depois, CARDS pode entregar novas famílias independentes exclusivamente pela fila, alternando sequencialmente com a migração restante A06/A07/C12 conforme o ganho provável, sem depender de resolvedores legados, criar bypasses ou alterar contratos compartilhados sem respeitar suas dependências. Mudanças estruturais seguem ACTIONS; o mesmo agente pode executar fatias CARDS necessárias. O C12 continua aberto até todos os critérios originais; comparar paridade da migração com a baseline anterior ao gate, separando ganhos de cobertura dos novos lotes.
-
-Não ampliar IA nativa, RNG, traces ou visuais como parte de C12; melhorias após validação. Fazer somente a menor fatia necessária de A06/A07/A08 e registrar a dependência; manter EffectContext em Joey.Core até C12 fechar. Relatar migração, legado restante, linhas de Demo.cs, testes e próximo passo.
+**C12 fecha quando:** nenhuma família do inventário mantém resolução legada ativa, `ActionsBlocked` não depende dos `Pending*` dessas famílias, testes e CI verdes, cobertura jogável do inventário preservada e Demo.cs reduzido. Não ampliar IA nativa, RNG, traces ou visuais no C12; manter EffectContext em Joey.Core até fechar.
 
 Histórico e contratos: [C12](docs/plans/CARDS.md#c12).
 
