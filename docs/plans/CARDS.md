@@ -129,8 +129,9 @@ com alvo admite os 264 normais de C13 e conserva os IDs explícitos do
 piloto inicial, seis recrutadores elementais e quatro FLIPs. Os testes
 comparam cada normal com o legado nos dois lados, atacando, defendendo
 de face para cima ou em defesa oculta e como aliado em ataque direto.
-Restam gatilhos de dano e remoção, como P168, Bistro Butcher e Masked
-Sorcerer, outros FLIPs, e campos com contínuas fora do piloto.
+Masked Sorcerer e Bistro Butcher já executam suas compras após dano de
+batalha pela fila. Restam gatilhos de remoção, como P168, outros FLIPs
+e campos com contínuas fora do piloto.
 
 Para fechar o C12 completo após a paridade, retirar os resolvedores
 legados equivalentes do caminho padrão, desacoplar seus `Pending*` de

@@ -255,6 +255,16 @@ si mesmo. Os testes cobrem ambos os lados, recusa inválida,
 retorno do atacante equipado e retorno do próprio defensor.
 Demo.cs permanece com 2614 linhas. Comparação em C#.
 
+*Compra por dano de batalha (C12.1):* Masked Sorcerer e Bistro
+Butcher usam a mesma intenção do sandbox legado. A fila aplica
+o dano e suas esperas antes das compras individuais e conclui a
+remoção de batalha depois do lote. Dano letal ou ataque cancelado
+não inicia as compras. Exodia mantém a precedência sobre deck-out,
+e o lote obrigatório termina de comprar as cartas disponíveis.
+Regressões C# cobrem os dois lados, defesa revelada, passe de
+armadilha, dano zero, remoção, deck-out e Exodia. Demo.cs
+2614 → 2609 linhas. Ainda falta comparação com o executável.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

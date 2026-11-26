@@ -16,6 +16,8 @@ public static class BattleDamageEffectRules
     public const ushort DrillBug = 1328;
     public const ushort Kycoo = 1511;
 
+    public static bool SupportsDraw(ushort resourceId) => resourceId is MaskedSorcerer or BistroButcher;
+
     // Called only for actual monster-inflicted battle damage, not effect
     // damage, an attempted attack, or a generic LP change.
     // The caller supplies the controller at the damage event, not the

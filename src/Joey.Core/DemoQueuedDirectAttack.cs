@@ -31,8 +31,8 @@ public sealed partial class DemoDuel
         if (source.Zone!=DuelZone.Monster || side!=ActivePlayer || Phase!=DemoPhase.Battle ||
             GameOver || attacked[side,slot] != declared || MonsterFaceDown[side,slot] || DefensePosition[side,slot] ||
             !card.IsMonster || !DirectAttackAllowed(side,card) ||
-            BattleDamageEffectRules.AfterBattleDamage(card.Id,side,1-side,1,false) is not null ||
-            card.Id is 219 or 522)
+            (BattleDamageEffectRules.AfterBattleDamage(card.Id,side,1-side,1,false) is not null &&
+                !BattleDamageEffectRules.SupportsDraw(card.Id)))
             return false;
         // Mirror Force already schedules linked removal through the wipe executor.
         if (!equipment.All(IsTrackedBattleEquipment)) return false;
@@ -53,7 +53,7 @@ public sealed partial class DemoDuel
     {
         if (!TryResolveCardTarget(attack.Attacker,out _,out _))
             return new(CommandOutcome.Skipped,"Declared attacker occurrence gone.");
-        if (followups is not IActionBatchSink { PendingCount: 0 } ||
+        if (followups is not IActionBatchSink { PendingCount: 0 } queue ||
             !TryPlanQueuedDirectAttack(attack.Attacker,out int slot,out var card,out int damage))
             return new(CommandOutcome.Rejected,"Direct attack no longer satisfies pilot restrictions.");
         attacked[attack.Side,slot]=true;
@@ -65,7 +65,7 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied, "Direct attack declared; response follows.");
         }
         // Declaration owns the gate. Only the subsequent command changes LP.
-        if(damage>0) followups.Enqueue(new DamageCommand(1-attack.Side,damage));
+        EnqueueDirectBattleDamage(card, attack.Side, damage, queue);
         return new(CommandOutcome.Applied)
         {
             DirectAttack=new(attack.Attacker,card.Id,slot,damage)

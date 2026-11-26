@@ -28,7 +28,8 @@ public sealed partial class DemoDuel
         CardSelectionRules.BattleRecruitAttribute(card.Id) is not null;
 
     private static bool IsOrdinaryBattlePilot(Card card) =>
-        IsPlainBattlePilot(card) || IsElementalBattleRecruiter(card);
+        IsPlainBattlePilot(card) || IsElementalBattleRecruiter(card) ||
+        card.IsMonster && BattleDamageEffectRules.SupportsDraw(card.Id);
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
@@ -265,13 +266,21 @@ public sealed partial class DemoDuel
         bool removeB=delta>0 || !b.Defense && delta==0 && atk>0;
         int amount=delta<0 ? -delta : !b.Defense ? delta : 0;
         int damaged=delta<0?p:e;
-        var batch=new List<DuelCommand>();
-        if(removeA) batch.Add(new SnapshotBattleRemovalCommand(p,a.Target,0));
-        if(removeB) batch.Add(new SnapshotBattleRemovalCommand(e,b.Target,1));
-        if(amount>0) batch.Add(new DamageCommand(damaged,Math.Min(amount,ushort.MaxValue)));
-        if (removeA) PlanBattleRemoval(a, 0, batch);
-        if (removeB) PlanBattleRemoval(b, 1, batch);
-        queue.EnqueueBatch(batch);
+        amount = Math.Min(amount, ushort.MaxValue);
+        var draw = BattleDrawAfterDamage(delta < 0 ? b.Card : a.Card, 1 - damaged, amount);
+        var removals = new List<DuelCommand>();
+        if (removeA) removals.Add(new SnapshotBattleRemovalCommand(p, a.Target, 0));
+        if (removeB) removals.Add(new SnapshotBattleRemovalCommand(e, b.Target, 1));
+        if (draw is null && amount > 0) removals.Add(new DamageCommand(damaged, amount));
+        if (removeA) PlanBattleRemoval(a, 0, removals);
+        if (removeB) PlanBattleRemoval(b, 1, removals);
+        if (draw is null)
+            queue.EnqueueBatch(removals);
+        else
+        {
+            queue.EnqueueBatch([new DamageCommand(damaged, amount), draw]);
+            if (removals.Count != 0) queue.ScheduleContinuation(_ => new(removals));
+        }
         queuedBattleRemoved[0]=removeA?a:null;
         queuedBattleRemoved[1]=removeB?b:null;
     }

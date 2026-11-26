@@ -155,8 +155,8 @@ public sealed partial class DemoDuel
             {
                 if (attacker is not null && defender is not null)
                     duel.EnqueueTargetedBattleResolution(attacker, defender, queue);
-                else if (damage > 0)
-                    queue.Enqueue(new DamageCommand(command.Side, damage));
+                else
+                    EnqueueDirectBattleDamage(pending.Request.Attack.Attacker, pending.Attacker.Side, damage, queue);
             }
 
             duel.queuedAttackResponse = null;
