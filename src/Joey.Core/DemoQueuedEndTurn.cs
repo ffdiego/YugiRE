@@ -79,6 +79,13 @@ public sealed partial class DemoDuel
             command.ExpectedTurn != Turn || Phase == DemoPhase.End)
             return new(CommandOutcome.Rejected, "End Phase is no longer legal for this side and turn.");
 
+        if (Phase == DemoPhase.Battle && QueuedBattleEndDefenses(command.Side).Any())
+        {
+            followups.Enqueue(new ChangeBattlePhaseCommand(command.Side, command.ExpectedTurn, EnterBattle: false));
+            followups.ScheduleContinuation(_ => new([command]));
+            return new(CommandOutcome.Applied, "Finish Battle Phase before the End Phase.");
+        }
+
         queuedEndTurn = true;
         Phase = DemoPhase.End;
         for (int slot = 0; slot < 5; slot++)

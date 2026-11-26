@@ -1615,6 +1615,28 @@
       ]
     },
     {
+      "id": "battle.goblin-attack-force-position-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1344
+      ],
+      "mechanics": [
+        "Switch the attacking occurrence to Defense Position at the end of queued Battle Phase",
+        "Complete the position change before Main Phase 2 or End Phase effects",
+        "Prevent manual position changes through the controller's next turn while the occurrence remains on the field"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedBattlePhase.cs",
+        "src/tests/Joey.Tests/QueuedGoblinAttackForceChecks.cs",
+        "docs/research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl"
+      ],
+      "limitations": [
+        "Queued sandbox uses attack declarations, including a negated declaration. Native timing, suppression and control-change interactions require dynamic validation."
+      ]
+    },
+    {
       "id": "summon.boar-soldier-self-destruction-c03",
       "kind": "Monster",
       "subtype": "Effect",

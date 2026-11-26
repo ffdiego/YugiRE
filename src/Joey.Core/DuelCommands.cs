@@ -30,6 +30,8 @@ internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, i
 internal sealed record ApplyBattleDestructionStatChangeCommand(int Side, CardTarget Survivor, CardTarget Destroyed) : DuelCommand(Side);
 internal sealed record ResolveSlateWarriorFlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
+internal sealed record FinishBattlePhaseCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
+internal sealed record GoblinAttackForceDefenseCommand(int Side, int ExpectedTurn, CardTarget Source) : DuelCommand(Side);
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 internal sealed record FinishEndPhaseReturnCommand(int Side, int ExpectedTurn, CardTarget Source) : DuelCommand(Side);
 public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side);
@@ -209,8 +211,12 @@ internal static class DuelCommandValidation
             case ResolveSlateWarriorFlipCommand slateFlip:
                 Target(slateFlip.Target, slateFlip.Side, DuelZone.Monster);
                 break;
+            case GoblinAttackForceDefenseCommand forcedDefense when forcedDefense.ExpectedTurn > 0:
+                Target(forcedDefense.Source, forcedDefense.Side, DuelZone.Monster);
+                break;
             case RecordFlipDrawDecisionCommand record when record.DecisionId > 0 && Enum.IsDefined(record.Answer):
             case ChangeBattlePhaseCommand { ExpectedTurn: > 0 }:
+            case FinishBattlePhaseCommand { ExpectedTurn: > 0 }:
             case EndTurnCommand { ExpectedTurn: > 0 }:
             case AdvanceTurnCommand { ExpectedTurn: > 0 }:
             case TurnDrawCommand { ExpectedTurn: > 0 }:

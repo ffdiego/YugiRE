@@ -507,7 +507,11 @@ public sealed partial class DemoDuel
                 case SnapshotBattleRemovalCommand snapshot:
                     return duel.SnapshotQueuedBattleRemoval(snapshot);
                 case ChangeBattlePhaseCommand phase:
-                    return duel.ExecuteQueuedBattlePhaseChange(phase);
+                    return duel.ExecuteQueuedBattlePhaseChange(phase, followups);
+                case FinishBattlePhaseCommand finishBattle:
+                    return duel.FinishQueuedBattlePhase(finishBattle);
+                case GoblinAttackForceDefenseCommand forcedDefense:
+                    return duel.ExecuteGoblinAttackForceDefense(forcedDefense);
                 case EndTurnCommand endTurn:
                     return duel.ExecuteQueuedEndTurn(endTurn, followups);
                 case FinishEndPhaseReturnCommand endReturn:
@@ -1190,7 +1194,7 @@ public sealed partial class DemoDuel
             if (!duel.TryResolveCardTarget(target, out int slot, out var card))
                 return new(CommandOutcome.Skipped, "Monster occurrence gone.");
             int side = target.Side;
-            if (side != duel.ActivePlayer || duel.Phase != DemoPhase.Main || duel.changedPosition[side, slot] ||
+            if (side != duel.ActivePlayer || duel.Phase != DemoPhase.Main || duel.IsManualPositionLocked(side, slot, card) ||
                 duel.MonsterFaceDown[side, slot] != flip ||
                 (!flip && defense != !duel.DefensePosition[side, slot]) ||
                 (flip && !duel.CanQueueFlip(card)))

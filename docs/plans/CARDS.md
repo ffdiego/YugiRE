@@ -294,6 +294,23 @@ A ordem nativa da resposta e as restrições em todos os
 procedimentos do Joey aguardam comparação dinâmica.
 [Pesquisa de invocação e atributos](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
 [Pesquisa de Nuvia](../research/card-static-sweep/10-efeitos-sem-registro.jsonl).
+[PR #228](https://github.com/ffdiego/YugiRE/pull/228) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45911333190).
+
+### C03.13 — Posição de Goblin Attack Force no fim da Battle Phase
+
+Goblin Attack Force (1344) entra em defesa no encerramento da
+Battle Phase se tiver declarado um ataque. Cada ocorrência se
+move por comando e aguarda o gate antes da Main Phase 2. O
+atalho End Turn também conclui essa etapa antes dos efeitos
+da End Phase. A trava manual dura até o fim do próximo turno
+do controlador e é removida quando o monstro deixa o campo.
+`0056AF90` e `0056B5A0` no SQLite v7 dão evidência do histórico
+e da trava. O DAT fixa as fases. A declaração negada contar
+como ataque é política do sandbox. A sequência exata, o
+tratamento de supressão e a troca de controle aguardam
+comparação dinâmica.
+[Pesquisa de uso por batalha](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
 
 ## C04 — Equipamentos `P025`
 

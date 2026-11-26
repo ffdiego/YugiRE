@@ -38,7 +38,7 @@ public sealed partial class DemoDuel
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
             or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky or ZombyraTheDark
-            or FlipEffectRules.SlateWarrior ||
+            or FlipEffectRules.SlateWarrior or GoblinAttackForce ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
