@@ -68,10 +68,10 @@ Joey-only de 350 cards. Até compararmos ações observadas, o status
 continua `Done (sandbox)`, não `Verified`.
 
 
-No piloto de ataque direto da fila, Magic Cylinder abre a resposta após a
-declaração. O passe retoma o mesmo ataque. A ativação gasta a ocorrência
-Set e emite separadamente o dano contra o atacante. O cenário exige um
-único atacante, zona FIELD vazia e somente cópias elegíveis de Magic
-Cylinder nos demais slots. Console: `respond-attack pass` ou
+No piloto de ataque direto da fila, Magic Cylinder e Negate Attack abrem a
+resposta após a declaração. O passe retoma o mesmo ataque. A ativação gasta a ocorrência
+Set. Magic Cylinder emite um comando separado de dano contra o atacante.
+Negate Attack emite um comando de saída da Battle Phase, sem aplicar dano. O cenário exige um
+único atacante, zona FIELD vazia e somente cópias elegíveis dessas duas armadilhas nos demais slots. Console: `respond-attack pass` ou
 `respond-attack SIDE SLOT`, com posições base zero e `choices` para
 consultar a janela. Outros cenários preservam o resolvedor legado.
