@@ -186,7 +186,7 @@ internal static class QueuedBattlePenguinChecks
             lq.Trace.Where(t=>t.Stage==ActionTraceStage.Executed).All(t=>t.Result?.Outcome==CommandOutcome.Applied),
             "A06 lethal damage skips target prompt (bounded terminal policy)");
 
-        var other=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.MorphingJar),3),Slots(Monster(24),2),8000);
+        var other=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.ImmortalOfThunder),3),Slots(Monster(24),2),8000);
         other.MonsterFaceDown[0,3]=other.DefensePosition[0,3]=true;
         var oq=other.CreatePrimitiveActionQueue();other.BeginBattle(out _);
         check(!other.TryQueueTargetedAttack(2,3,out _)&&oq.Trace.Count==0,"A06 other FLIPs still fail closed");

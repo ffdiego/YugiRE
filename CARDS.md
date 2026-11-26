@@ -85,7 +85,7 @@ Os 264 IDs Normal estão em `docs/cards/playability-manifest.json` no grupo `mon
 ## FLIP jogável: primeiro lote
 
 - **Man-Eater Bug** (`resourceId=500`): ao revelar por Flip Summon ou ataque, seleciona e destrói um monstro de qualquer lado. Se foi atacado, o combate espera a escolha e só prossegue se os dois combatentes permanecerem.
-- **Morphing Jar** (`resourceId=590`): descarta ambas as mãos para o cemitério e cada duelista compra cinco. O caso de ambos os decks insuficientes é um empate simplificado do sandbox.
+- **Morphing Jar** (`resourceId=590`): descarta ambas as mãos para o cemitério e cada duelista compra cinco. O Flip Summon e a revelação em batalha admitida usam o mesmo lote da fila. O caso de ambos os decks insuficientes é um empate simplificado do sandbox.
 - **Penguin Soldier** (`resourceId=601`): retorna até dois monstros para as mãos dos donos. Pode escolher a si mesmo após Flip Summon ou sobreviver ao ataque; se estiver marcado para destruição por batalha, não pode devolver a si mesmo.
 - **Morphing Jar #2** (`resourceId=1163`, `P182`): embaralha monstros elegíveis do campo em cada Main Deck, escava até uma quota por jogador e coloca monstros de nível 4 ou inferior em defesa virada para baixo; as cartas não invocadas vão ao cemitério. O Jar destruído por batalha não retorna ao deck. Sem Extra Deck, tokens ou controle trocado.
 - **Hane-Hane** (`resourceId=540`, `P080`): retorna exatamente um monstro para a mão de seu dono. Compartilha o resolver com Penguin, mas não permite encerrar com zero escolhas se houver alvo legal; não pode selecionar um monstro marcado para destruição por batalha.

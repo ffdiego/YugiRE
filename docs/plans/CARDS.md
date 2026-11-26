@@ -242,6 +242,8 @@ revelado, defesa oculta, outro atributo e a carta sendo atacada.
 Inversão de modificadores e mudança de atributo seguem fora
 do recorte. Comparação dinâmica com Joey pendente.
 [Pesquisa de atributos de batalha](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
+[PR #224](https://github.com/ffdiego/YugiRE/pull/224) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45879438477).
 
 ## C04 — Equipamentos `P025`
 

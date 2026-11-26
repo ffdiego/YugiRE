@@ -48,10 +48,12 @@ public sealed partial class DemoDuel
         card.IsMonster && card.Id == CardSelectionRules.SpearCretin;
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
-        card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
+        (card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
             or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi
-            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness
-            or FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout;
+            or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness || HasQueuedDeckFlip(card.Id));
+
+    private static bool HasQueuedDeckFlip(ushort id) =>
+        id is FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout or FlipEffectRules.MorphingJar;
 
     internal bool HasDeclaredAttack(int side, int slot) => attackDeclarations[side, slot] != 0;
 
@@ -209,8 +211,7 @@ public sealed partial class DemoDuel
                 FlipEffectRules.PrincessOfTsurugi => new ResolveBattleFlipDamageCommand(defender.Side, defender),
                 FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness =>
                     new OpenBattleFlipRecoveryCommand(defender.Side, defender),
-                FlipEffectRules.NeedleWorm or FlipEffectRules.HirosShadowScout =>
-                    new OpenBattleFlipDeckFlowCommand(defender.Side, defender),
+                var id when HasQueuedDeckFlip(id) => new OpenBattleFlipDeckFlowCommand(defender.Side, defender),
                 _ => new OpenBattleFlipTargetsCommand(defender.Side, defender)
             });
         }

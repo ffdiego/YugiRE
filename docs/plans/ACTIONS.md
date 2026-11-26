@@ -321,6 +321,18 @@ Casos C# nos dois lados, incluindo deck insuficiente e gate.
 [PR #219](https://github.com/ffdiego/YugiRE/pull/219) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45876461293).
 
+*P086 em batalha (C12):* Morphing Jar usa o mesmo lote do Flip
+Summon para reservar os descartes e emitir as compras dos dois
+lados. A finalização adjudica a insuficiência de deck antes da
+remoção do defensor. Exodia e o empate por dois decks insuficientes
+mantêm as políticas do sandbox. Testes C# cobrem gates, ambos os
+lados, decks vazios e finalização após Exodia. Demo.cs 2608 →
+2608 linhas. O produtor passa pelo executor já migrado e os
+caminhos de revelação fora do recorte ainda usam o resolvedor
+legado. O catálogo aponta `005860E0` para P086, sem corpo nas
+tabelas consultadas do SQLite v7. Comparação dinâmica pendente.
+[Contrato de FLIPs de deck](../cards/c12-queued-flip-deck-flow.md).
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

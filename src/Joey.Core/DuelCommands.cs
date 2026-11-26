@@ -118,7 +118,8 @@ internal sealed record ResolveSpentAttackTrapCommand(int Side, CardTarget Source
 internal sealed record ResolveSummonResponseCommand(int Side, DemoSummonResponse Request, CardTarget? Source) : DuelCommand(Side);
 internal sealed record FinishSummonFlipDrawCommand(int Side) : DuelCommand(Side);
 internal sealed record ResolvePositionCommand(int Side, CardTarget Target, bool WasFaceDown, bool WasInDefense) : DuelCommand(Side);
-internal sealed record FinishFlipBatchCommand(int Side, CardTarget Target, bool WasInDefense, bool DeckOut0, bool DeckOut1) : DuelCommand(Side);
+internal sealed record FinishFlipBatchCommand(int Side, CardTarget Target, bool WasInDefense) : DuelCommand(Side);
+internal sealed record FinishMorphingJarCommand(int Side, bool DeckOut0, bool DeckOut1) : DuelCommand(Side);
 internal sealed record FinishFlipDeckFlowCommand(int Side) : DuelCommand(Side);
 internal sealed record RecordFlipDrawDecisionCommand(int Side, long DecisionId, EffectDecisionAnswer Answer) : DuelCommand(Side);
 
@@ -396,6 +397,7 @@ internal static class DuelCommandValidation
             case FinishJointDamageCommand:
             case FinishCardDestructionCommand:
             case FinishFlipDeckFlowCommand:
+            case FinishMorphingJarCommand:
             case HealCommand { Amount: > 0 }:
                 break;
             case SummonCommand summon when summon.Slot is >= 0 and < 5:
