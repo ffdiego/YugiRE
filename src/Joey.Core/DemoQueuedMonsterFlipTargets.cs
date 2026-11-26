@@ -15,9 +15,11 @@ public sealed partial class DemoDuel
     {
         DemoMonsterEffectTrigger.Flip => pending.Effect is
             DemoFlipEffect.DestroyMonster or DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo or
-            DemoFlipEffect.ChangeFaceUpPosition,
+            DemoFlipEffect.ChangeFaceUpPosition or DemoFlipEffect.PreventMonsterAttack,
         DemoMonsterEffectTrigger.PositionChange => pending.Effect == DemoFlipEffect.DestroyOpponentMonster &&
             MonsterPositionEffectRules.TriggersOnAttackToDefense(pending.SourceCard.Id),
+        DemoMonsterEffectTrigger.NormalOrFlipSummon => pending.Effect == DemoFlipEffect.PreventMonsterAttack &&
+            pending.SourceCard.Id == InvitationToADarkSleep,
         _ => false
     };
 
@@ -28,7 +30,11 @@ public sealed partial class DemoDuel
         pending.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
 
     private static bool IsEligibleTargetSide(DemoFlipTarget pending, int side) =>
-        pending.Effect != DemoFlipEffect.DestroyOpponentMonster || side != pending.Owner;
+        (pending.Effect != DemoFlipEffect.DestroyOpponentMonster &&
+            pending.Trigger != DemoMonsterEffectTrigger.NormalOrFlipSummon) || side != pending.Owner;
+
+    private static bool MovesMonsterFlipTarget(DemoFlipTarget pending) =>
+        pending.Effect is not (DemoFlipEffect.ChangeFaceUpPosition or DemoFlipEffect.PreventMonsterAttack);
 
     // UI/CPU pre-admission selection is not a duel command. Retain the
     // exact occurrence for the first optional pick, not a mutable slot.
@@ -153,7 +159,8 @@ public sealed partial class DemoDuel
             if (Monsters[p,z] is not Card card || !IsEligibleTargetSide(pending, p) ||
                 bounce && IsMarkedForBattleDestruction(p,z) ||
                 !TryCaptureCardTarget(p,DuelZone.Monster,z,out var target)) continue;
-            if (positionOnly ? MonsterFaceDown[p, z] : !TryPlanRemovalLinks(p,z,out _,toGraveyard: !bounce)) continue;
+            if (positionOnly && MonsterFaceDown[p, z] ||
+                MovesMonsterFlipTarget(pending) && !TryPlanRemovalLinks(p,z,out _,toGraveyard: !bounce)) continue;
             yield return new(target, z, card, MonsterFaceDown[p, z]);
         }
     }
@@ -169,15 +176,23 @@ public sealed partial class DemoDuel
             !TryPlanQueuedMonsterFlipAnswer(source, targets, out _, out _))
             return false;
         // The caller's list is copied into immutable command values.
-        bool position = PendingFlipTarget!.Trigger == DemoMonsterEffectTrigger.PositionChange;
-        DuelCommand answer = position
-            ? new ResolveMonsterPositionTargetCommand(source.Side, source, targets[0])
-            : new ResolveMonsterFlipTargetsCommand(source.Side, source,
-                targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null);
+        var trigger = PendingFlipTarget!.Trigger;
+        DuelCommand answer = trigger switch
+        {
+            DemoMonsterEffectTrigger.PositionChange => new ResolveMonsterPositionTargetCommand(source.Side, source, targets[0]),
+            DemoMonsterEffectTrigger.NormalOrFlipSummon => new ResolveMonsterSummonTargetCommand(source.Side, source, targets[0]),
+            _ => new ResolveMonsterFlipTargetsCommand(source.Side, source,
+                targets.Count > 0 ? targets[0] : null, targets.Count > 1 ? targets[1] : null)
+        };
         admittingQueuedMonsterFlipAnswer = true;
         try { queue.Enqueue(answer, origin); }
         finally { admittingQueuedMonsterFlipAnswer = false; }
-        message = position ? "Position effect answer admitted." : "FLIP answer admitted.";
+        message = trigger switch
+        {
+            DemoMonsterEffectTrigger.PositionChange => "Position effect answer admitted.",
+            DemoMonsterEffectTrigger.NormalOrFlipSummon => "Summon effect answer admitted.",
+            _ => "FLIP answer admitted."
+        };
         return true;
     }
 
@@ -204,6 +219,11 @@ public sealed partial class DemoDuel
             {
                 if (MonsterFaceDown[target.Side, slot]) return false;
                 result.Add(new ChangePositionByFlipCommand(target.Side, target, !DefensePosition[target.Side, slot]));
+                continue;
+            }
+            if (pending.Effect == DemoFlipEffect.PreventMonsterAttack)
+            {
+                result.Add(new BindMonsterAttackCommand(source.Side, source, target));
                 continue;
             }
             if (bounce && IsMarkedForBattleDestruction(target.Side,slot) ||

@@ -89,6 +89,8 @@ internal sealed record FinishGraveyardRecoveryCommand(int Side) : DuelCommand(Si
 internal sealed record ResolveFlipSpellTrapPairCommand(int Side, PendingFlipSpellTrapTargets Request, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterFlipTargetsCommand(int Side, CardTarget Source, CardTarget? First, CardTarget? Second) : DuelCommand(Side);
 internal sealed record ResolveMonsterPositionTargetCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
+internal sealed record ResolveMonsterSummonTargetCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
+internal sealed record BindMonsterAttackCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target,
     int ExpectedTurn) : DuelCommand(Side);
 internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
@@ -309,6 +311,14 @@ internal static class DuelCommandValidation
             case ResolveMonsterPositionTargetCommand positionTarget:
                 Target(positionTarget.Source, positionTarget.Side, DuelZone.Monster);
                 Target(positionTarget.Target, 1 - positionTarget.Side, DuelZone.Monster);
+                break;
+            case ResolveMonsterSummonTargetCommand summonTarget:
+                Target(summonTarget.Source, summonTarget.Side, DuelZone.Monster);
+                Target(summonTarget.Target, 1 - summonTarget.Side, DuelZone.Monster);
+                break;
+            case BindMonsterAttackCommand restriction:
+                Target(restriction.Source, restriction.Side, DuelZone.Monster);
+                Target(restriction.Target, restriction.Target.Side, DuelZone.Monster);
                 break;
             case ResolveMonsterFlipTargetsCommand flipTargets:
                 Target(flipTargets.Source, flipTargets.Side, DuelZone.Monster);

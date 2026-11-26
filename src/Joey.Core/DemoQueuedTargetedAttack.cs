@@ -39,7 +39,8 @@ public sealed partial class DemoDuel
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
             or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky or ZombyraTheDark
-            or FlipEffectRules.SlateWarrior or FlipEffectRules.BiteShoes or GoblinAttackForce ||
+            or FlipEffectRules.SlateWarrior or FlipEffectRules.BiteShoes or GoblinAttackForce
+            or FlipEffectRules.DarkEyesIllusionist or InvitationToADarkSleep ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -57,7 +58,7 @@ public sealed partial class DemoDuel
         (card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
             or FlipEffectRules.HaneHane or FlipEffectRules.PrincessOfTsurugi
             or FlipEffectRules.MagicianOfFaith or FlipEffectRules.MaskOfDarkness or FlipEffectRules.SlateWarrior
-            or FlipEffectRules.BiteShoes ||
+            or FlipEffectRules.BiteShoes or FlipEffectRules.DarkEyesIllusionist ||
             HasQueuedDeckFlip(card.Id));
 
     private static bool HasQueuedDeckFlip(ushort id) =>
@@ -110,7 +111,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
             !AllowsQueuedAttackUse(p, s, ac, declared) || MonsterFaceDown[p,s] || DefensePosition[p,s] ||
-            AttackRestrictedByContinuousSpells(p, ac))
+            AttackRestrictedByContinuousSpells(p, ac) || AttackRestrictedByMonster(ac))
             return false;
         unsupported = (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||
@@ -258,6 +259,7 @@ public sealed partial class DemoDuel
         FlipEffectRules.HaneHane => DemoFlipEffect.ReturnOne,
         FlipEffectRules.ManEaterBug => DemoFlipEffect.DestroyMonster,
         FlipEffectRules.BiteShoes => DemoFlipEffect.ChangeFaceUpPosition,
+        FlipEffectRules.DarkEyesIllusionist => DemoFlipEffect.PreventMonsterAttack,
         _ => null
     };
 

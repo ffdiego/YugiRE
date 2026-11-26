@@ -160,6 +160,7 @@ QueuedBattleCalculationChecks.Run(Check);
 QueuedHayabusaChecks.Run(Check);
 QueuedSummonSelfDestructionChecks.Run(Check);
 QueuedGoblinAttackForceChecks.Run(Check);
+QueuedAttackRestrictionMonsterChecks.Run(Check);
 BattleGraveyardEffectChecks.Run(Check);
 GraveyardArrivalRuleChecks.Run(Check);
 RevivalJamDecisionChecks.Run(Check);

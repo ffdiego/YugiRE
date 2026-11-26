@@ -328,6 +328,26 @@ consta no SQLite v7. Alvo marcado, revelações por efeitos
 externos e gatilhos de posição forçada aguardam validação ou
 integração. Nenhuma comparação dinâmica foi realizada.
 [Pesquisa de FLIPs de campo](../research/card-static-sweep/05-janelas-invocacao-batalha.jsonl).
+[PR #230](https://github.com/ffdiego/YugiRE/pull/230) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45912243443).
+
+### C03.15 — Restrições de ataque ligadas de P098
+
+Dark-Eyes Illusionist (729) escolhe um monstro de qualquer lado
+no FLIP. Invitation to a Dark Sleep (1332) escolhe um adversário
+no Normal ou Flip Summon, inclusive sob Royal Command. O vínculo
+usa duas ocorrências e é eliminado se uma delas sair do campo.
+Invitation também depende da fonte revelada. A fila revalida antes
+da declaração. O App reaproveita o seletor e o texto de alvo
+adversário. Special Summon não abre escolha para Invitation.
+
+O DAT distingue gatilhos e duração. `0056B7D0` consulta ambos os
+IDs e `0056D790` conta as associações aplicáveis no SQLite v7.
+O catálogo lista `00586EF0` como primário de P098, sem corpo nas
+tabelas consultadas. A ordem com a resposta de invocação, a
+escolha de alvo oculto e a duração quando a fonte é ocultada
+seguem as políticas do sandbox e aguardam comparação dinâmica.
+[Pesquisa de vínculos](../research/card-static-sweep/02-zonas-e-modificadores.jsonl).
 
 ## C04 — Equipamentos `P025`
 
