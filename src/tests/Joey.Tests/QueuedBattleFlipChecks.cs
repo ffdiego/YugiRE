@@ -28,7 +28,8 @@ internal static class QueuedBattleFlipChecks
         var magePower = new Card(DynamicEquipmentRules.MagePower, DynamicEquipmentRules.MagePower,
             "Mage Power", "", 22u << 20);
         foreach (int attackerSide in new[] { 0, 1 })
-        foreach (ushort id in new[] { FlipEffectRules.Skelengel, FlipEffectRules.ManEaterBug, FlipEffectRules.PenguinSoldier })
+        foreach (ushort id in new[] { FlipEffectRules.Skelengel, FlipEffectRules.ManEaterBug,
+            FlipEffectRules.PenguinSoldier, FlipEffectRules.HaneHane })
         {
             int owner = 1 - attackerSide;
             var attacker = Monster(24, atk: 1200);
@@ -58,6 +59,10 @@ internal static class QueuedBattleFlipChecks
             }
             else
             {
+                if (id == FlipEffectRules.HaneHane)
+                    check(!console.Execute("select-flip decline").Enqueued &&
+                        !console.Execute($"select-flip {owner} 3").Enqueued && !queue.IsBusy,
+                        "Hane-Hane requires one target and cannot bounce its marked defender");
                 check(duel.PendingFlipTarget is { } pending && duel.UsesQueuedMonsterFlipSelection(pending) &&
                     console.Execute($"select-flip {attackerSide} 2").Enqueued,
                     "The FLIP targets the original equipped attacker");
@@ -78,9 +83,42 @@ internal static class QueuedBattleFlipChecks
         }
     }
 
+    private static void CheckHaneHaneSurvivesAndReturns(Action<bool, string> check)
+    {
+        foreach (int side in new[] { 0, 1 })
+        {
+            int owner = 1 - side;
+            var attacker = Monster(24, atk: 1000);
+            var defender = Monster(FlipEffectRules.HaneHane, def: 1200);
+            var duel = DemoDuel.FromPartialObservation(owner, [],
+                owner == 0 ? Slots(defender, 3) : Slots(attacker, 2),
+                owner == 1 ? Slots(defender, 3) : Slots(attacker, 2), 8000);
+            duel.MonsterFaceDown[owner, 3] = duel.DefensePosition[owner, 3] = true;
+            var gate = new Gate { Release = false };
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(duel.EndTurn(out _) && duel.BeginBattle(out _) && console.Execute("attack 2 3").Enqueued,
+                "Hane-Hane battle admitted");
+            Until(queue, () => queue.Active?.Command is DamageCommand);
+            check(duel.Life[side] == 7800 && duel.PendingFlipTarget is null,
+                "Reflected battle damage reaches its gate before Hane-Hane offers a target");
+            gate.Release = true;
+            Drain(queue);
+            check(duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnOne } &&
+                !duel.IsMarkedForBattleDestruction(owner, 3) &&
+                console.Execute($"select-flip {owner} 3").Enqueued,
+                "An unmarked Hane-Hane can return itself");
+            Drain(queue);
+            check(duel.HandFor(owner).SequenceEqual([defender]) && duel.Graveyard(owner).Count == 0 &&
+                duel.Monsters[owner, 3] is null && duel.Monsters[side, 2] == attacker && !console.HasPendingChoice,
+                "Hane-Hane returns once and the battle finishes without destroying it");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
         CheckEquippedAttacker(check);
+        CheckHaneHaneSurvivesAndReturns(check);
         foreach(int side in new[]{0,1})
         foreach(int atk in new[]{1400,1000,600})
         foreach(bool accept in new[]{true,false})

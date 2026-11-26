@@ -296,7 +296,7 @@ internal static class QueuedTargetedAttackChecks
                 "A06 same-ID replacement faults safely before next stage");
         }
 
-        var hiddenEffect=DemoDuel.FromPartialObservation(1,[],Slots(Monster(540,500,500),3),
+        var hiddenEffect=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.NeedleWorm,500,500),3),
             Slots(Monster(24,1400,500),2),8000);
         hiddenEffect.MonsterFaceDown[0,3]=hiddenEffect.DefensePosition[0,3]=true;
         var hq=hiddenEffect.CreatePrimitiveActionQueue();hiddenEffect.BeginBattle(out _);
