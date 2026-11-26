@@ -1615,6 +1615,31 @@
       ]
     },
     {
+      "id": "standby.own-life-gain-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1437,
+        1438,
+        1441,
+        1446
+      ],
+      "mechanics": [
+        "Resolve one HealCommand per eligible occurrence in the owner's Standby Phase",
+        "Respect required face-up field position or own Graveyard, depending on the monster",
+        "A skipped draw still reaches Standby, while a game-ending deck-out prevents the effects"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTurnDraw.cs",
+        "src/tests/Joey.Tests/QueuedStandbyLifeChecks.cs",
+        "docs/research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl"
+      ],
+      "limitations": [
+        "Multi-copy ordering and Prohibition interactions are unverified. The queue waits for existing delayed revival gates before healing."
+      ]
+    },
+    {
       "id": "flip.opposing-back-row-damage-c03",
       "kind": "Monster",
       "subtype": "Effect",

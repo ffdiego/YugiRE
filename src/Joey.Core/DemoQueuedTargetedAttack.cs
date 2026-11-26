@@ -26,7 +26,8 @@ public sealed partial class DemoDuel
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
-            CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id));
+            CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
+            IsStandbyLifeMonster(card));
 
     private static bool HasBattleRemovalDeckSelection(Card card) => card.IsMonster &&
         (CardSelectionRules.BattleRecruitAttribute(card.Id) is not null ||
