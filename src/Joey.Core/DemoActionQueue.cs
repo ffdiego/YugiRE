@@ -405,6 +405,9 @@ public sealed partial class DemoDuel
                 return duel.OpenQueuedBattleRecruitment();
             if (command is FinishBattleRemovalCommand battleFinish)
                 return duel.FinishQueuedBattleRemoval(battleFinish, followups);
+            // The equipped monster's reserved cleanup still runs after lethal battle damage.
+            if (command is DestroyCommand linkedEquip && duel.queuedBattleEquipmentRemovals.Remove(linkedEquip.Target))
+                return DestroyQueuedSpellTrap(linkedEquip.Target);
             if (command is FinishFieldRemovalCommand)
                 return FinishRemoval(followups);
             if (command is FinishSummonFlipDrawCommand)

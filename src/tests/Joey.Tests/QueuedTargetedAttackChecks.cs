@@ -111,6 +111,55 @@ internal static class QueuedTargetedAttackChecks
         }
     }
 
+    private static void CheckBattleEquipmentCleanup(Action<bool, string> check)
+    {
+        var magePower = new Card(DynamicEquipmentRules.MagePower, DynamicEquipmentRules.MagePower,
+            "Mage Power", "", 22u << 20);
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool lethal in new[] { false, true })
+        {
+            int responder = 1 - side;
+            var attacker = Monster(24, lethal ? 1800 : 1400, 1000);
+            var defender = Monster(1351, 1400, 1000);
+            var duel = DemoDuel.FromPartialObservation(responder, [magePower],
+                side == 0 ? Slots(attacker, 2) : Slots(defender, 3),
+                side == 1 ? Slots(attacker, 2) : Slots(defender, 3), 8000,
+                equipmentContextResolved: true, side0Deck: side == 0 ? [magePower] : [],
+                side1Deck: side == 1 ? [magePower] : []);
+            var console = new DuelConsoleSession(duel);
+            var queue = console.Queue;
+            check(duel.TryQueueEquipment(DuelZone.Hand, 0, side, 2, out _), "Responder equips attacker");
+            DrainResponseQueue(queue);
+            check(duel.EndTurn(out _) && duel.Draw(out _) &&
+                duel.TryQueueEquipment(DuelZone.Hand, 0, responder, 3, out _), "Attacker equips defender");
+            DrainResponseQueue(queue);
+            duel.Life[responder] = lethal ? 300 : 8000;
+            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(2, 3, out _) &&
+                duel.EquipmentCards.Count == 2, "Targeted battle admits tracked equipment on both combatants");
+            DrainResponseQueue(queue);
+
+            var cleanup = queue.Trace.Where(t => t.Stage == ActionTraceStage.Executed &&
+                (t.Entry.Command.GetType().Name == "FinishBattleRemovalCommand" ||
+                    t.Entry.Command is DestroyCommand)).ToArray();
+            check(cleanup.Select(t => (t.Entry.Command.GetType().Name, t.Entry.Command.Side)).SequenceEqual(lethal
+                ? [("FinishBattleRemovalCommand", responder), (nameof(DestroyCommand), side)]
+                : [("FinishBattleRemovalCommand", side), (nameof(DestroyCommand), responder),
+                    ("FinishBattleRemovalCommand", responder), (nameof(DestroyCommand), side)]) &&
+                cleanup.All(t => t.Result?.Outcome == CommandOutcome.Applied),
+                "Each Equip destruction executes after its monster arrives in the graveyard");
+            check(lethal
+                ? duel.Winner == side && duel.Life[responder] == 0 && duel.Monsters[side, 2] == attacker &&
+                    duel.Graveyard(responder).SequenceEqual([defender]) &&
+                    duel.Graveyard(side).SequenceEqual([magePower]) &&
+                    duel.EquipmentCards is [{ Owner: var owner }] && owner == responder
+                : duel.Winner is null && duel.Life.SequenceEqual([8000, 8000]) &&
+                    duel.Graveyard(side).SequenceEqual([attacker, magePower]) &&
+                    duel.Graveyard(responder).SequenceEqual([magePower, defender]) &&
+                    duel.EquipmentCards.Count == 0,
+                "Lethal and tied battles clear the right links and preserve the owners of both copies");
+        }
+    }
+
     private static void DrainResponseQueue(ActionQueue queue)
     {
         for (int tick = 0; queue.IsBusy && tick < 100; tick++) queue.Tick();
@@ -121,6 +170,7 @@ internal static class QueuedTargetedAttackChecks
     {
         CheckResponseBeforeHiddenDefender(check);
         CheckFieldSpellDefense(check);
+        CheckBattleEquipmentCleanup(check);
         foreach(int side in new[]{0,1})
         foreach(var (atk,other,defense,removeA,removeB,lossA,lossB) in new (int,int,bool,bool,bool,int,int)[]{
             (1400,1000,false,false,true,0,400),(1000,1400,false,true,false,400,0),
