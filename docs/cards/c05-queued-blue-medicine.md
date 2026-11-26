@@ -20,13 +20,9 @@ negação de bypass legado, e side inválido. Done no escopo
 headless somente após CI. UI/CPU e negation pendentes.
 
 ## Próximos recortes
-Tremendous Fire (346,P053, packMask 2) tem primary 00585130
-ausente no SQLite; texto: adversário sofre 1000, dono 500.
-https://www.db.yugioh-card.com/yugiohdb/card_search.action?cid=4353&ope=2&request_locale=en
-Não reutilizar o lote LP caster-first sem tratamento do fim
-de duelo: duas perdas letais podem exigir resultado de empate,
-enquanto Winner atual é resolvido em cada dano. Coordenar A08/A07
-para uma resolução composta, sem deduzir a ordem do callback.
+Tremendous Fire (346/P053) entrou na fila em C05.2, com duas
+perdas separadas e adjudicação conjunta após os gates.
+[Comportamento e limites](../../CARDS.md#magias-lp-e-compra-na-fila-c12).
 Mooyan Curry (337,P040) consta do catálogo nativo, mas não dos
 771 packs jogáveis; não implementar para aumentar a badge.
 Gift of The Mystical Elf (1092/P156) é Trap, não LP Spell;

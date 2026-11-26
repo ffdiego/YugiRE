@@ -21,6 +21,7 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 | Magias de dano direto `P045` (5 IDs) | **Done** (sandbox) | `DirectDamageRules.cs`, `LifePointSpellRules.cs`, `DemoDuel` e testes de ativação da mão/set | Sem correntes, negação e validação de timing nativo integral |
 | Magias de recuperação de LP (5 IDs) | **Done** (sandbox) | Red Medicine, Goblin's Secret Remedy, Soul of the Pure, Dian Keto e Rain of Mercy usam o mesmo fluxo de ativação/LP/cemitério | Valores do texto das cartas; interações/negação nativa não implementadas |
 | Blue Medicine (1006/P041) | **Done** (escopo sandbox na fila) | [C05](docs/cards/c05-queued-blue-medicine.md), `TimedEquipmentAndQueuedLpChecks.cs` | Mão/Set, gasto e HealCommand +400 LP; sem caminho legado novo ou paridade nativa. |
+| Tremendous Fire (346/P053) | **Done** (escopo sandbox na fila) | `LifePointSpellRules.cs`, `TimedEquipmentAndQueuedLpChecks.cs` | App/CPU, mão/Set. O sandbox declara empate quando esse efeito zera os dois LP. |
 | Magias normais de compra fixa `P119/P143` | **Done** (2 IDs no sandbox) | Pot of Greed (1010) e Upstart Goblin (1065). `DrawSpellRules`, `DemoDuel` e `DrawSpellChecks` cobrem mão, Set, contagens, LP e uso pela CPU. | Exigem cartas suficientes no deck. Sem correntes, negação ou comparação nativa do timing. |
 | Equipamentos `P025` | **Done** (24 IDs, escopo sandbox) | `EquipmentRules.cs`, `NativeAiAttributes.cs`, vínculo/limpeza básica no demo; [C04](docs/cards/c04-fixed-equipment.md) | Ativação legada da mão (21 IDs); EquipCommand mão/Set (24 IDs). [Ciclo fixo testado](docs/cards/c04-fixed-equipment-lifecycle.md); UI/CPU da fila e supressões pendentes; [dinâmicos](docs/cards/c04-dynamic-equipment-lifecycle.md) |
 | Eternal Rest (655/P092) | **Done** (sandbox na fila, condicionado ao CI) | [C02](docs/cards/c02-eternal-rest.md), `QueuedMonsterWipeChecks.cs` | Destruição não seletiva de monstros equipados, ambos os lados; vínculos e limpeza por comando. Sem UI/CPU, correntes ou paridade nativa. |
@@ -142,6 +143,7 @@ Man-Eater Bug, Hane-Hane e Morphing Jar pertencem aos packs Yugi/Kaiba. Penguin 
 | 343 | Hinotama | Done (sandbox) | `P045`, 500 de dano direto |
 | 344 | Final Flame | Done (sandbox) | `P045`, 600 de dano direto |
 | 345 | Ookazi | Done (sandbox) | `P045`, 800 de dano direto |
+| 346 | Tremendous Fire | Done (sandbox) | `P053`, 1000 de dano no adversário e 500 no ativador pela fila |
 | 1007 | Raimei | Done (sandbox) | `P045`, 300 de dano direto |
 | 338 | Red Medicine | Done (sandbox) | Recupera 500 LP do ativador |
 | 339 | Goblin's Secret Remedy | Done (sandbox) | Recupera 600 LP do ativador |
@@ -235,7 +237,21 @@ Fusion Gate (1547) é `Done` no sandbox e integra a Alpha. Depois de ser ativada
 
 ### Magias LP e compra na fila (C12)
 
-As dez magias fixas já Done têm agora caminho opt-in `TryQueueLifePointSpell` para mão/Set, com gasto e mudanças de LP em comandos separados. UI/CPU ainda legados. [Contrato](docs/cards/c12-queued-lp-spells.md). Pot of Greed e Upstart Goblin têm `TryQueueDrawSpell`, com gasto validado antes da continuação, DrawCommand por carta e HealCommand posterior de Upstart. [Contrato](docs/cards/c12-queued-draw-spells.md). Stim-Pack e Germ Infection têm apenas aritmética estática, não ativação, até fechar A07.
+C05.2 acrescenta Tremendous Fire (346/P053) ao produtor de LP.
+Os valores conferem com o DAT local e o estudo estático registra
+a ordem adversário → ativador em `00585130`. A fila declara o
+resultado após ambas as perdas. O sandbox trata como empate os
+dois LP a zero no mesmo efeito. A comparação do resultado com
+o executável original segue pendente.
+[Estudo estático](docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl) ·
+[Regra de empate](https://www.yugioh-card.com/eu/wp-content/uploads/2022/07/Rulebook_v9_en.pdf).
+
+As magias fixas de LP usam `TryQueueLifePointSpell` para mão/Set no
+App e na CPU, com gasto e mudanças de LP em comandos separados.
+[Contrato](docs/cards/c12-queued-lp-spells.md). Pot of Greed e Upstart
+Goblin usam `TryQueueDrawSpell`, com gasto antes da continuação,
+DrawCommand por carta e HealCommand posterior de Upstart.
+[Contrato](docs/cards/c12-queued-draw-spells.md).
 
 ### Destruição de monstros na fila (C12)
 

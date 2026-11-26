@@ -321,8 +321,11 @@ public sealed class CpuDuelController
                     for (int i = 0; i < count; i++)
                     {
                         var candidate = zone == DuelZone.Hand ? duel.Hand[i] : duel.Spells[Player, i];
-                        if (candidate is null || candidate.ClassCode != 22 ||
-                            !(LifePointSpellRules.SupportsQueued(candidate.Id) ||
+                        if (candidate is not { ClassCode: 22 }) continue;
+                        var lp = LifePointSpellRules.ResolveQueued(candidate.Id, Player);
+                        bool useLpSpell = lp is { } change && (duel.Life[Player] > -change.CasterDelta ||
+                            change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
+                        if (!(useLpSpell ||
                               ShouldClearSpellTraps(duel, candidate.Id, queued: true,
                                   excludedSlot: zone == DuelZone.SpellTrap ? i : -1) ||
                               DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards) ||

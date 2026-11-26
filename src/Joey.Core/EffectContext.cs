@@ -24,11 +24,11 @@ internal sealed class EffectContext
             commands.Add(new DrawCommand(side));
     }
 
-    public void ChangeLifePoints(int side, int delta)
+    public void ChangeLifePoints(int side, int delta, bool deferDuelResult = false)
     {
         if (delta > 0)
             commands.Add(new HealCommand(side, delta));
         else if (delta < 0)
-            commands.Add(new DamageCommand(side, checked(-delta)));
+            commands.Add(new DamageCommand(side, checked(-delta)) { DeferDuelResult = deferDuelResult });
     }
 }

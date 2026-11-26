@@ -5,7 +5,7 @@ namespace Joey.Core;
 /// reuses the audited P045 scalar resolver. Healing amounts are sourced from
 /// the card descriptions; they are not claims of native callback parity.
 /// </summary>
-public readonly record struct LifePointSpellChange(int CasterDelta, int OpponentDelta);
+public readonly record struct LifePointSpellChange(int CasterDelta, int OpponentDelta, bool JointDamage = false);
 
 public static class LifePointSpellRules
 {
@@ -14,15 +14,23 @@ public static class LifePointSpellRules
         resourceId is 338 or 339 or 340 or 341 or 1315;
 
     public const ushort BlueMedicine = 1006;
+    public const ushort TremendousFire = 346;
 
     // New rules are admitted only by the typed action producer.
     // Keep the legacy Play/ActivateSetSpell whitelist unchanged.
     public static bool SupportsQueued(ushort resourceId) =>
-        resourceId == BlueMedicine || Supports(resourceId);
+        resourceId is BlueMedicine or TremendousFire || Supports(resourceId);
 
-    public static LifePointSpellChange? ResolveQueued(ushort resourceId, int caster) =>
-        caster is not (0 or 1) ? null :
-        resourceId == BlueMedicine ? new LifePointSpellChange(400, 0) : ResolveDemo(resourceId, caster);
+    public static LifePointSpellChange? ResolveQueued(ushort resourceId, int caster)
+    {
+        if (caster is not (0 or 1)) return null;
+        return resourceId switch
+        {
+            BlueMedicine => new(400, 0),
+            TremendousFire => new(-500, -1000, JointDamage: true),
+            _ => ResolveDemo(resourceId, caster)
+        };
+    }
 
     /// <summary>
     /// Resolve a simple spell in the two-player C# demo (no chains, negation,

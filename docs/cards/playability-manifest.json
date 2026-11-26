@@ -1592,6 +1592,29 @@
       ]
     },
     {
+      "id": "lp.damage.tremendous-fire-c05",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        346
+      ],
+      "mechanics": [
+        "Queue-backed activation from hand or Set during own Main Phase",
+        "Spend the exact occurrence, deal 1000 damage to the opponent, then 500 damage to the caster",
+        "Adjudicate victory or draw after both damage commands finish"
+      ],
+      "evidence": [
+        "src/Joey.Core/LifePointSpellRules.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/tests/Joey.Tests/TimedEquipmentAndQueuedLpChecks.cs",
+        "docs/research/card-static-sweep/01-lp-destruicao-respostas.jsonl"
+      ],
+      "limitations": [
+        "Joint duel result follows the sandbox interpretation for both LP reaching zero during one effect. Native terminal timing and response windows are unverified."
+      ]
+    },
+    {
       "id": "wipe.equipped-monsters-c02",
       "kind": "Spell",
       "subtype": "Normal",

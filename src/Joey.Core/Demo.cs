@@ -1071,11 +1071,11 @@ public sealed partial class DemoDuel
         ChangeLife(ActivePlayer, change.CasterDelta);
         ChangeLife(1 - ActivePlayer, change.OpponentDelta);
     }
-    private void ChangeLife(int player, int delta)
+    private void ChangeLife(int player, int delta, bool deferDuelResult = false)
     {
         // Demo policy: LP cannot be negative; safe int ceiling for repeated healing.
         Life[player] = (int)Math.Clamp((long)Life[player] + delta, 0L, int.MaxValue);
-        if (Life[player] == 0 && delta < 0) Winner = 1 - player;
+        if (!deferDuelResult && Life[player] == 0 && delta < 0) Winner = 1 - player;
     }
     public int AttackValue(int p, int z) => EquipmentStats(p, z).Attack;
     public int DefenseValue(int p, int z) => EquipmentStats(p, z).Defense;
