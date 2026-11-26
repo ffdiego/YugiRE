@@ -65,7 +65,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [x] **A03 — Eventos de apresentação tipados ligados à fila.** Status: `Concluído`. Gate por comando e prévia de ativação/invocação; [contrato](docs/architecture/action-presentation.md). [Detalhes](docs/plans/ACTIONS.md#a03)
 - [x] **A04 — Console de duelo no `Joey.App`.** Status: `Concluído`. Console App/Lab compartilhado; [contrato](docs/architecture/duel-console.md). [Detalhes](docs/plans/ACTIONS.md#a04)
 - [x] **A05 — Trace de comandos comparável.** Status: `Concluído`. Trace comparável compra → invocação → ataque → dano; [contrato](docs/architecture/native-replay-scenarios.md). [Detalhes](docs/plans/ACTIONS.md#a05)
-- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`. Ampliar campos e combatentes suportados pelo piloto de ataque; coordenar C12. [Detalhes](docs/plans/ACTIONS.md#a06)
+- [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`. Ampliar o piloto de ataque para modificadores ativos e outros combatentes; coordenar C12. [Detalhes](docs/plans/ACTIONS.md#a06)
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Parcial`. Completar turno/fases na fila e correlacionar dispatcher, bits de fase e rótulos. [Detalhes](docs/plans/ACTIONS.md#a07)
 - [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`. EffectContext no Core; extrair Joey.Cards somente após C12. Mínimas dependências durante a migração. [Detalhes](docs/plans/ACTIONS.md#a08)
 - [ ] **A09 — Comparar combate em condição equivalente e apresentar o trace no App.** Status: `Parcial`. Smoke gráfico e captura nativa equivalente; conferir PRs #137/#140 de ataque direto antes de editar. [Detalhes](docs/plans/ACTIONS.md#a09)

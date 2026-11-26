@@ -195,6 +195,15 @@ cobrem ambos os lados, passe, Torrential e Trap Hole em fixture com
 ATK suficiente. A ordem dinâmica entre FLIP e armadilha segue pendente
 de comparação nativa. Demo.cs permanece com 2614 linhas.
 
+*Combate com Magias e Armadilhas baixadas (C12.1):* o produtor
+compartilhado admite ataques diretos e com alvo quando as zonas
+comuns contêm apenas Magias/Armadilhas baixadas com ocorrência
+rastreável. Somente as armadilhas oponentes já elegíveis abrem resposta.
+Os testes C# cobrem os dois lados, conservação das cartas baixadas,
+dano e os três tipos de resposta em combate com alvo. Modificadores
+ativos e vínculos de equipamento continuam fora deste recorte.
+Demo.cs permanece com 2614 linhas.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

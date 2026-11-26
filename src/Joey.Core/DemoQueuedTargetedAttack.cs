@@ -104,8 +104,7 @@ public sealed partial class DemoDuel
             if (FieldSpells[side] is not null) return false;
             for (int z=0;z<5;z++)
             {
-                if (Spells[side,z] is not null && (side == attackerSide || !IsQueuedAttackResponseTrap(side, z) ||
-                    !TryCaptureCardTarget(side, DuelZone.SpellTrap, z, out _))) return false;
+                if (!IsSupportedQueuedBattleBackRow(side,z)) return false;
                 if (z != (side == attackerSide ? source : target) && Monsters[side,z] is { } other &&
                     !IsPlainBattlePilot(other)) return false;
             }

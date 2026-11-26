@@ -41,8 +41,7 @@ public sealed partial class DemoDuel
         {
             if(FieldSpells[p] is not null) return false;
             for(int z=0;z<5;z++)
-                if(Spells[p,z] is not null && (p == side || !IsQueuedAttackResponseTrap(p,z) ||
-                        !TryCaptureCardTarget(p, DuelZone.SpellTrap, z, out _)) ||
+                if(!IsSupportedQueuedBattleBackRow(p,z) ||
                     (p!=side || z!=slot) && Monsters[p,z] is { } other &&
                         (p != side || !admitAlliedNormals || !IsPlainBattlePilot(other)))
                     return false;
