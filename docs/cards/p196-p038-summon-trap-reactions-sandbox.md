@@ -97,5 +97,6 @@ que já emitem um lote mantêm sua finalização antes da janela. A compra
 opcional de Skelengel aguarda o passe ou o último gate da armadilha e
 continua disponível se o monstro for destruído. A recuperação do cemitério de
 Magician of Faith e Mask of Darkness também aguarda a armadilha antes
-de reapresentar os candidatos originais por ocorrência. As combinações
+de reapresentar os candidatos originais por ocorrência. Bubonic Vermin
+retoma a seleção opcional do Deck após a mesma espera. As combinações
 em que o FLIP abre seleção de alvos no campo permanecem no fluxo legado.

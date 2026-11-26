@@ -171,6 +171,13 @@ de retomar a seleção. Demo.cs 2614 → 2614. Seleções de alvos no campo
 ainda usam o fluxo legado. Ordem verificada em C#, sem comparação
 nativa equivalente.
 
+*Recrutamento após resposta de Flip Summon (C12.1):* Bubonic Vermin
+retoma a seleção opcional Deck → campo após o passe ou o gate final de
+Torrential Tribute. Os testes C# cobrem ambos os lados, recusa sem
+embaralhamento e escolha da ocorrência exata em defesa oculta depois
+que Torrential destrói a fonte. Demo.cs permanece com 2614 linhas.
+A ordem ainda aguarda comparação nativa.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

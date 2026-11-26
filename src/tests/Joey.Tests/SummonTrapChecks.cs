@@ -283,12 +283,67 @@ internal static class SummonTrapChecks
         }
     }
 
+    private static void RunQueuedRecruitmentAfterSummonResponse(Action<bool, string> check)
+    {
+        var torrential = Trap(SummonTrapRules.TorrentialTribute, 272);
+        var vermin = Monster(FlipEffectRules.BubonicVermin, 241);
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool pass in new[] { false, true })
+        {
+            int responder = 1 - side;
+            Card[] deck = [vermin, vermin];
+            var duel = DemoDuel.FromPartialObservation(responder, [torrential],
+                side == 0 ? Slots(vermin) : Slots(), side == 1 ? Slots(vermin) : Slots(), 8000,
+                side0Deck: side == 0 ? deck : [], side1Deck: side == 1 ? deck : []);
+            duel.MonsterFaceDown[side, 0] = duel.DefensePosition[side, 0] = true;
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _), "Bubonic response fixture");
+            check(duel.TryCaptureCardTarget(side, DuelZone.Deck, 1, out var secondCopy),
+                "Bubonic fixture has two deck occurrences");
+
+            var gate = new ResponseGate();
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("flip 0").Enqueued, "Bubonic Flip Summon admitted");
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is { } response && duel.UsesQueuedSummonResponse(response) &&
+                duel.PendingCardSelection is null && CpuDuelController.PendingOwner(duel) == responder &&
+                !console.Execute("select-recruit 1 2").Enqueued &&
+                console.Execute(pass ? "respond-summon pass" : $"respond-summon {responder} 0").Enqueued,
+                "Recruitment waits while the responder owns the Trap window");
+
+            if (!pass)
+            {
+                gate.WaitingFor = nameof(DestroyCommand);
+                StepUntil(queue, () => queue.Active?.Command is DestroyCommand);
+                check(duel.Monsters[side, 0] is null && duel.PendingCardSelection is null,
+                    "Recruitment waits for the destruction gate after the source leaves");
+                gate.WaitingFor = null;
+            }
+            StepUntil(queue, () => !queue.IsBusy);
+            check(duel.PendingSummonResponse is null && duel.PendingCardSelection is { } recruitment &&
+                duel.UsesQueuedFieldSelection(recruitment) &&
+                console.Execute(pass ? "select-recruit decline" : "select-recruit 1 2").Enqueued,
+                "Bubonic recruitment resumes by the original deck occurrences");
+            StepUntil(queue, () => !queue.IsBusy);
+
+            check(duel.PendingCardSelection is null && duel.DeckCount(side) == (pass ? 2 : 1) &&
+                queue.Trace.Count(t => t.Stage == ActionTraceStage.Executed &&
+                    t.Entry.Command is ShuffleDeckCommand) == (pass ? 0 : 1),
+                "Only accepted recruitment moves a deck card and shuffles");
+            check(pass ? duel.Monsters[side, 0] == vermin && duel.Monsters[side, 2] is null :
+                duel.TryCaptureCardTarget(side, DuelZone.Monster, 2, out var recruit) &&
+                recruit.Occurrence == secondCopy.Occurrence && duel.MonsterFaceDown[side, 2] &&
+                duel.DefensePosition[side, 2], "Bubonic accepts the exact copy in face-down defense after Torrential");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         RunQueued(check);
         RunQueuedFlipSummon(check);
         RunQueuedFlipBatchResponse(check);
         RunQueuedRecoveryAfterSummonResponse(check);
+        RunQueuedRecruitmentAfterSummonResponse(check);
         var trapHole = Trap(1002, 120);
         var torrential = Trap(1425, 272);
         var small = Monster(10, 101, 900);
