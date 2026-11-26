@@ -20,13 +20,15 @@ internal static class QueuedTargetedAttackChecks
             int responder = 1 - side;
             ushort id = pass ? AttackTrapRules.MagicCylinder : answer;
             var trap = new Card(id, id, "Attack response", "", 21u << 20);
+            var setSpell = new Card(1010, 1010, "Pot of Greed", "", 22u << 20);
             var attacker = Monster(24, 1400, 1000);
             var defender = Monster(1351, 1000, 1000);
-            var duel = DemoDuel.FromPartialObservation(responder, [trap],
+            var duel = DemoDuel.FromPartialObservation(responder, [trap, setSpell],
                 side == 0 ? Slots(attacker, 2) : Slots(defender, 3),
                 side == 1 ? Slots(attacker, 2) : Slots(defender, 3), 8000);
             duel.DefensePosition[responder, 3] = duel.MonsterFaceDown[responder, 3] = true;
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _),
+            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
+                duel.EndTurn(out _) && duel.BeginBattle(out _),
                 "Targeted attack response fixture");
             var gate = new Gate();
             var console = new DuelConsoleSession(duel, gate);
@@ -42,7 +44,8 @@ internal static class QueuedTargetedAttackChecks
             gate.Release = true;
             DrainResponseQueue(queue);
             check(duel.PendingAttackResponse is { } pending && !pending.Attack.DirectAttack &&
-                pending.Attack.TargetZone == 3 && duel.MonsterFaceDown[responder, 3] &&
+                pending.Attack.TargetZone == 3 && pending.EligibleTraps.Count == 1 &&
+                duel.MonsterFaceDown[responder, 3] &&
                 duel.Life.SequenceEqual([8000, 8000]) &&
                 console.Execute(pass ? "respond-attack pass" : $"respond-attack {responder} 0").Enqueued,
                 "Responding to a targeted attack leaves the original defender hidden");
@@ -61,7 +64,8 @@ internal static class QueuedTargetedAttackChecks
             gate.Release = true;
             DrainResponseQueue(queue);
 
-            check(!console.HasPendingChoice && duel.Life[responder] == 8000 &&
+            check(!console.HasPendingChoice && duel.Spells[responder, 1] == setSpell &&
+                duel.SpellFaceDown[responder, 1] && duel.Life[responder] == 8000 &&
                 duel.Life[side] == (answer == AttackTrapRules.MagicCylinder ? 6600 : 8000) &&
                 duel.Phase == (answer == AttackTrapRules.NegateAttack ? DemoPhase.Main : DemoPhase.Battle) &&
                 (pass ? duel.LastAttackTrap is null && duel.Spells[responder, 0] == trap &&

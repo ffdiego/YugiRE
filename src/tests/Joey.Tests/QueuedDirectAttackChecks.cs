@@ -173,10 +173,42 @@ internal static class QueuedDirectAttackChecks
         if (queue.IsBusy) throw new InvalidOperationException("Attack response queue did not drain.");
     }
 
+    private static void CheckSetBackRow(Action<bool, string> check)
+    {
+        var setSpell = new Card(1010, 1010, "Pot of Greed", "", 22u << 20);
+        var setTrap = new Card(1002, 1002, "Trap Hole", "", 21u << 20);
+        var attackingSideTrap = new Card(AttackTrapRules.MagicCylinder,
+            AttackTrapRules.MagicCylinder, "Magic Cylinder", "", 21u << 20);
+        foreach (int side in new[] { 0, 1 })
+        {
+            int responder = 1 - side;
+            var attacker = Monster(1400);
+            var duel = DemoDuel.FromPartialObservation(responder, [setSpell, setTrap],
+                side == 0 ? Slots(attacker) : Slots(), side == 1 ? Slots(attacker) : Slots(), 8000,
+                side0Deck: side == 0 ? [attackingSideTrap] : [],
+                side1Deck: side == 1 ? [attackingSideTrap] : []);
+            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) && duel.EndTurn(out _) &&
+                duel.Draw(out _) && duel.SetFromHand(0, out _) && duel.BeginBattle(out _), "Both sides set back-row cards");
+            var queue = duel.CreatePrimitiveActionQueue();
+            duel.SpellFaceDown[responder, 0] = false;
+            check(!duel.TryQueueDirectAttack(2, out _) && queue.Trace.Count == 0,
+                "Face-up Spell/Trap still falls outside the queued battle pilot");
+            duel.SpellFaceDown[responder, 0] = true;
+            check(duel.TryQueueDirectAttack(2, out _), "Direct attack admits both sides' Set cards");
+            Drain(queue);
+            check(duel.Life[responder] == 6600 && duel.PendingAttackResponse is null &&
+                duel.Spells[side, 0] == attackingSideTrap && duel.SpellFaceDown[side, 0] &&
+                duel.Spells[responder, 0] == setSpell && duel.SpellFaceDown[responder, 0] &&
+                duel.Spells[responder, 1] == setTrap && duel.SpellFaceDown[responder, 1],
+                "Set cards keep their identity and only eligible opposing Traps can respond");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
         CheckQueuedAttackResponses(check);
         CheckDirectMirrorForce(check);
+        CheckSetBackRow(check);
         var d=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000);
         var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
         check(!d.TryQueueDirectAttack(2,out _),"A05.7 Main Phase rejects attack");
