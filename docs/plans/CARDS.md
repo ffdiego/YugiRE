@@ -245,6 +245,19 @@ do recorte. Comparação dinâmica com Joey pendente.
 [PR #224](https://github.com/ffdiego/YugiRE/pull/224) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45879438477).
 
+### C03.10 — Perda de ATK de Zombyra the Dark
+
+Zombyra the Dark (1523) tem a proibição de ataque direto na
+admissão. Se destruir por batalha e permanecer em campo, um
+comando separado reduz o ATK em 200 depois de a ocorrência
+derrotada chegar ao cemitério. A redução acumula entre turnos
+e termina quando Zombyra deixa o campo. O DAT confirma as
+regras e o SQLite v7 contém a guarda em `0056B7D0` e a
+contribuição de −200 em `0056DD30`. A cardinalidade, o reset
+ao deixar o campo e a ordem exata com outros modificadores
+seguem pendentes de comparação dinâmica com Joey.
+[Pesquisa de atributos de batalha](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
+
 ## C04 — Equipamentos `P025`
 
 <a id="c04"></a>

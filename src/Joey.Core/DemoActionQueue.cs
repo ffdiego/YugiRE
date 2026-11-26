@@ -476,15 +476,15 @@ public sealed partial class DemoDuel
                      !duel.IsFinalDestinySource(finalPayment.Source)))
                     return new(CommandOutcome.Skipped,"Final Destiny's complete cost was not paid.");
             }
-            // The sandbox applies the reserved P168 LP effect even after lethal battle damage.
-            bool finishBattleLifeEffect = duel.queuedBattleLifeEffects.TryPeek(out var expectedBattleLife) &&
-                ReferenceEquals(expectedBattleLife, command);
-            if (finishBattleLifeEffect) duel.queuedBattleLifeEffects.Dequeue();
+            // Reserved battle removal consequences can finish after lethal battle damage.
+            bool finishBattleRemovalEffect = duel.queuedBattlePostRemovalEffects.TryPeek(out var expectedBattleEffect) &&
+                ReferenceEquals(expectedBattleEffect, command);
+            if (finishBattleRemovalEffect) duel.queuedBattlePostRemovalEffects.Dequeue();
             bool finishMandatoryDrawEffect = reservedMandatoryDrawEffects.TryPeek(out var expectedDraw) && expectedDraw == command;
             if (finishMandatoryDrawEffect) reservedMandatoryDrawEffects.Dequeue();
             // Admitted mandatory batches still finish after Exodia or lethal damage.
             if (duel.LegacyActionsBlocked && !(duel.GameOver &&
-                ((resolvingJar && command is DrawCommand) || finishMandatoryDrawEffect || finishBattleLifeEffect || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
+                ((resolvingJar && command is DrawCommand) || finishMandatoryDrawEffect || finishBattleRemovalEffect || (command is ShuffleDeckCommand reservedShuffle && reservedDeckSearchOwner == reservedShuffle.Side && deckSearchMoved) || wipe is not null || placement is not null || linkedRemovalBatch)))
                 return new(CommandOutcome.Rejected, "Duel has ended or a legacy decision is pending.");
 
             if (duel.HasQueuedEndDiscard && command is not EndTurnDiscardCommand)
@@ -543,6 +543,8 @@ public sealed partial class DemoDuel
                         damage.Side == 1 - paid.Owner && damage.Amount == FlipBanishBurnRules.BurnDamage)
                         paid.DamageApplied = true;
                     return new(CommandOutcome.Applied);
+                case ApplyZombyraBattleAttackLossCommand attackLoss when finishBattleRemovalEffect:
+                    return duel.ApplyZombyraBattleAttackLoss(attackLoss);
                 case FinishJointDamageCommand:
                     if (duel.Life[0] == 0 && duel.Life[1] == 0) duel.IsDraw = true;
                     else if (duel.Life[0] == 0) duel.Winner = 1;

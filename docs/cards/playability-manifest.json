@@ -1615,6 +1615,28 @@
       ]
     },
     {
+      "id": "battle.zombyra-the-dark-attack-loss-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1523
+      ],
+      "mechanics": [
+        "Prevent direct attack declarations",
+        "Apply a persistent 200 ATK loss after each queued battle destruction by the surviving occurrence",
+        "Clear the accumulated loss when the monster leaves the field"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedBattleCalculationChecks.cs",
+        "docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl"
+      ],
+      "limitations": [
+        "Attack loss uses supported queued battle configurations. Native comparison of event ordering, accumulation and reset is pending."
+      ]
+    },
+    {
       "id": "battle.insect-soldiers-of-the-sky-wind-bonus-c03",
       "kind": "Monster",
       "subtype": "Effect",

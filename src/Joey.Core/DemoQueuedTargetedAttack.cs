@@ -6,6 +6,8 @@ public sealed partial class DemoDuel
     private const ushort MadSwordBeast = 1341;
     private const ushort HayabusaKnight = 1336;
     private const ushort InsectSoldiersOfTheSky = 477;
+    private const ushort ZombyraTheDark = 1523;
+    private const int ZombyraAttackLossPerBattle = 200;
     private const int WarriorType = 15;
     private const int WindAttribute = 6;
 
@@ -18,7 +20,8 @@ public sealed partial class DemoDuel
     }
     private readonly BattleReservation?[] queuedBattleRemoved = new BattleReservation?[2];
     private readonly HashSet<CardTarget> queuedBattleEquipmentRemovals = [];
-    private readonly Queue<DuelCommand> queuedBattleLifeEffects = new();
+    private readonly Queue<DuelCommand> queuedBattlePostRemovalEffects = new();
+    private readonly Dictionary<Card, int> zombyraAttackLoss = new(ReferenceEqualityComparer.Instance);
     private sealed record BattleRevealReservation(BattleReservation Attacker, BattleReservation Defender, int Turn)
     {
         public bool FlipCalculated { get; set; }
@@ -33,7 +36,7 @@ public sealed partial class DemoDuel
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
-            or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky ||
+            or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky or ZombyraTheDark ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -350,7 +353,7 @@ public sealed partial class DemoDuel
         if (queuedBattleRemoved[1] is { } marked)
         {
             var batch = new List<DuelCommand> { new SnapshotBattleRemovalCommand(command.Side, marked.Target, 1) };
-            PlanBattleRemoval(marked, 1, batch);
+            PlanBattleRemoval(marked, 1, batch, reserved.Attacker);
             queue.EnqueueBatch(batch);
         }
         return new(CommandOutcome.Applied);
@@ -392,8 +395,8 @@ public sealed partial class DemoDuel
         if (removeA) removals.Add(new SnapshotBattleRemovalCommand(p, a.Target, 0));
         if (removeB) removals.Add(new SnapshotBattleRemovalCommand(e, b.Target, 1));
         if (effect is null && amount > 0) removals.Add(new DamageCommand(damaged, amount));
-        if (removeA) PlanBattleRemoval(a, 0, removals);
-        if (removeB) PlanBattleRemoval(b, 1, removals);
+        if (removeA) PlanBattleRemoval(a, 0, removals, removeB ? null : b);
+        if (removeB) PlanBattleRemoval(b, 1, removals, removeA ? null : a);
         if (effect is null)
             queue.EnqueueBatch(removals);
         else
@@ -405,7 +408,7 @@ public sealed partial class DemoDuel
         queuedBattleRemoved[1]=removeB?b:null;
     }
 
-    private void PlanBattleRemoval(BattleReservation removed, int role, List<DuelCommand> batch)
+    private void PlanBattleRemoval(BattleReservation removed, int role, List<DuelCommand> batch, BattleReservation? survivor)
     {
         if (!TryPlanRemovalLinks(removed.Target.Side, removed.Slot, out var links))
             throw new InvalidOperationException("Reserved battle removal links changed.");
@@ -422,9 +425,27 @@ public sealed partial class DemoDuel
             DuelCommand effect = lifeChange.Delta > 0
                 ? new HealCommand(lifeChange.Side, lifeChange.Delta)
                 : new DamageCommand(lifeChange.Side, -lifeChange.Delta);
-            queuedBattleLifeEffects.Enqueue(effect);
+            queuedBattlePostRemovalEffects.Enqueue(effect);
             batch.Add(effect);
         }
+        if (survivor is { Card.Id: ZombyraTheDark } &&
+            TryResolveCardTarget(survivor.Target, out _, out _))
+        {
+            var loss = new ApplyZombyraBattleAttackLossCommand(survivor.Target.Side, survivor.Target,
+                removed.Target with { Zone = DuelZone.Graveyard });
+            queuedBattlePostRemovalEffects.Enqueue(loss);
+            batch.Add(loss);
+        }
+    }
+
+    private CommandResult ApplyZombyraBattleAttackLoss(ApplyZombyraBattleAttackLossCommand command)
+    {
+        if (!TryResolveCardTarget(command.Survivor, out int slot, out var card) || card.Id != ZombyraTheDark ||
+            MonsterFaceDown[command.Side, slot] || !TryResolveCardTarget(command.Destroyed, out _, out _))
+            return new(CommandOutcome.Skipped, "The reserved battle victory no longer applies.");
+
+        zombyraAttackLoss[card] = zombyraAttackLoss.GetValueOrDefault(card) + ZombyraAttackLossPerBattle;
+        return new(CommandOutcome.Applied);
     }
 
     private CommandResult SnapshotQueuedBattleRemoval(SnapshotBattleRemovalCommand command)
