@@ -9,7 +9,7 @@ public sealed partial class DuelConsoleSession
 
     public string PendingChoicePrompt => Queue.PendingDecision is { } decision
         ? $"Decision {decision.Id} requires explicit answer."
-        : PendingSummonTrapResponse is not null ? "Pending Normal Summon response requires respond-summon."
+        : PendingSummonTrapResponse is not null ? "Pending summon response requires respond-summon."
         : PendingAttackTrapResponse is not null ? "Pending attack response requires respond-attack."
         : HasPendingEndDiscard ? "End Phase requires discard-end INDEX."
         : PendingHandSelection is not null ? "Pending hand selection requires select-hand."

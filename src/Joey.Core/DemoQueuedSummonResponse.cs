@@ -64,6 +64,40 @@ public sealed partial class DemoDuel
 
     private sealed partial class PrimitiveActionExecutor
     {
+        private PendingEffectDecision? flipDrawAfterSummonResponse;
+
+        private void FinishQueuedManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
+        {
+            duel.FinishManualPosition(change, resolveFlip, out message);
+            // Intersecting target/card selections retain the existing priority path.
+            if (change.FlipSummoned && duel.PendingSummonResponse is { Summon.Kind: DemoSummonKind.Flip } response &&
+                duel.PendingFlipTarget is null && duel.PendingFlipSpellTrapTargets is null &&
+                duel.PendingCardSelection is null && duel.PendingEffectDecision is null)
+                duel.queuedSummonResponse = response;
+        }
+
+        private void ScheduleManualFlipDraw(PendingEffectDecision request, IActionCommandSink followups,
+            bool resumeSummonTriggers = false)
+        {
+            queueDrawDecision = request;
+            followups.ScheduleContinuation(_ => new([], answer =>
+            {
+                var selected = answer ?? throw new InvalidOperationException("Missing draw answer.");
+                return new([new RecordFlipDrawDecisionCommand(request.Owner, request.Id, selected)],
+                    resumeSummonTriggers ? _ => new([new FinishSummonFlipDrawCommand(request.Owner)]) : null);
+            }, request));
+        }
+
+        private void ContinueAfterSummonResponse(IActionCommandSink followups)
+        {
+            var draw = flipDrawAfterSummonResponse;
+            flipDrawAfterSummonResponse = null;
+            if (draw is not null && !duel.GameOver && !duel.FlipEffectsNegated)
+                ScheduleManualFlipDraw(draw, followups, resumeSummonTriggers: true);
+            else
+                duel.BeginNextQueuedDeckSearch();
+        }
+
         private CommandResult ResolveSummonResponse(ResolveSummonResponseCommand command, IActionCommandSink followups)
         {
             if (!duel.CanAdmitQueuedSummonResponse() || !duel.UsesQueuedSummonResponse(command.Request) ||
@@ -80,7 +114,7 @@ public sealed partial class DemoDuel
 
             duel.queuedSummonResponse = null;
             duel.PendingSummonResponse = null;
-            if (command.Source is null) duel.BeginNextQueuedDeckSearch();
+            if (command.Source is null) ContinueAfterSummonResponse(followups);
             return new(CommandOutcome.Applied);
         }
     }

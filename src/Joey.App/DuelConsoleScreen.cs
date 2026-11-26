@@ -156,10 +156,13 @@ static partial class Game
         var elapsed = TimeSpan.FromMilliseconds(17);
 
         foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
+        foreach (bool flip in new[] { false, true })
         foreach (bool pass in new[] { false, true })
         {
-            duel = DemoDuel.FromPartialObservation(0, [trap], new Card?[5], new Card?[5], 8000,
+            Card?[] monsters = flip ? [null, null, monster, null, null] : new Card?[5];
+            duel = DemoDuel.FromPartialObservation(0, [trap], new Card?[5], monsters, 8000,
                 side1Deck: [monster]);
+            if (flip) duel.MonsterFaceDown[1, 2] = duel.DefensePosition[1, 2] = true;
             if (!duel.SetFromHand(0, out _) || !duel.EndTurn(out _) || !duel.Draw(out _)) return false;
             presentation.SetStyle(style);
             ResetDuelPresentation();
@@ -181,9 +184,10 @@ static partial class Game
                 }
             }
 
-            if (!labSession.Execute("summon 0 2").Enqueued) return false;
+            if (!labSession.Execute(flip ? "flip 2" : "summon 0 2").Enqueued) return false;
             Advance();
             if (queue.IsBusy || duel.PendingSummonResponse is not { } response ||
+                response.Summon.Kind != (flip ? DemoSummonKind.Flip : DemoSummonKind.Normal) ||
                 !CommitSummonResponse(response, pass ? null : response.EligibleTraps.Single()) ||
                 duel.Spells[0, 0] != trap || duel.Monsters[1, 2] != monster)
                 return false;

@@ -89,3 +89,11 @@ troca de controle e verificações profundas de timing para FLIPs com
 outros gatilhos simultâneos. Direcionar essas evoluções para o futuro
 sistema de eventos; não fingir que `Done (sandbox)` equivale a
 `Verified` contra o executável original.
+
+
+Após uma Flip Summon enfileirada sem outra seleção imediata, App, CPU e
+console usam o mesmo comando de resposta da Normal Summon. Efeitos FLIP
+que já emitem um lote mantêm sua finalização antes da janela. A compra
+opcional de Skelengel aguarda o passe ou o último gate da armadilha e
+continua disponível se o monstro for destruído. As combinações em que o
+FLIP abre seleção de cartas ou alvos simultânea permanecem no fluxo legado.

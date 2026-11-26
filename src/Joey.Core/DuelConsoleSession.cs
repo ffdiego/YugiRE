@@ -235,7 +235,7 @@ public sealed partial class DuelConsoleSession
     private DuelConsoleResult RespondToSummon(string[] words)
     {
         if (PendingSummonTrapResponse is not { } response)
-            return new(false, "No queued Normal Summon response is pending.");
+            return new(false, "No queued summon response is pending.");
         DemoSummonTrapOption? choice = null;
         if (words is not [_, "pass"])
         {

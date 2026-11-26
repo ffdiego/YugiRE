@@ -149,6 +149,17 @@ passe, dano refletido, fim da fase e destruição. Não há novo
 mapeamento de opcode; contexto fora do piloto permanece legado.
 Demo.cs 2614 → 2614 e cobertura preservada.
 
+*Respostas a Flip Summon (C12.1):* o App, a CPU e o console reutilizam
+o passe e a ativação enfileirados para P196/P038 quando o FLIP não
+abre outra seleção simultânea. O gate de revelação precede a resposta.
+Skelengel toma a decisão na fila depois do passe ou da finalização da
+armadilha, inclusive quando a carta já foi para o cemitério. Os lotes
+FLIP já migrados preservam seus comandos antes da abertura da janela.
+O recorte preserva a ordem C# do sandbox. A coleta 31 descreve o callback
+P118, mas a ordem dinâmica no original ainda precisa de comparação.
+Demo.cs preservado em 2614 linhas. Seleções de cartas ou alvos que
+coexistem com a resposta permanecem legadas.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
