@@ -58,6 +58,8 @@ A guarda de Deck do ativador segue a regra pública. Ordem de compra,
 deck-out e prioridades precisam de comparação nativa. A CPU usa
 a ativação para encerrar o duelo por falta de Deck adversário.
 [Regras e recorte](../../CARDS.md#magias-lp-e-compra-na-fila-c12).
+[PR #211](https://github.com/ffdiego/YugiRE/pull/211) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45830575650).
 
 ## C03 — Monstros de efeito restantes (193 Effect)
 

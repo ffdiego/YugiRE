@@ -7,6 +7,7 @@ public sealed partial class DemoDuel
     private sealed record BattleReservation(CardTarget Target, int Slot, Card Card, bool Defense)
     {
         public bool Detached { get; set; }
+        public bool WasFlipped { get; set; }
     }
     private readonly BattleReservation?[] queuedBattleRemoved = new BattleReservation?[2];
     private readonly HashSet<CardTarget> queuedBattleEquipmentRemovals = [];
@@ -18,8 +19,8 @@ public sealed partial class DemoDuel
         public Dictionary<CardTarget,DuelZone> ExpectedEffectMoves { get; } = [];
     }
     private BattleRevealReservation? queuedBattleReveal;
-    private bool queuedBattleDeckSelectionOpening;
-    private PendingCardSelection? queuedBattleDeckSelectionRequest;
+    private bool queuedBattleRemovalSelectionOpening;
+    private PendingCardSelection? queuedBattleRemovalSelectionRequest;
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsPassiveBattlePilot(Card card) => card.IsMonster &&
@@ -33,7 +34,7 @@ public sealed partial class DemoDuel
 
     private static bool IsOrdinaryBattlePilot(Card card) =>
         IsPassiveBattlePilot(card) || HasBattleRemovalDeckSelection(card) ||
-        card.IsMonster && BattleDamageEffectRules.SupportsDraw(card.Id);
+        card.IsMonster && (card.Id == CardSelectionRules.SpearCretin || BattleDamageEffectRules.SupportsDraw(card.Id));
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
@@ -331,6 +332,7 @@ public sealed partial class DemoDuel
         if(!TryResolveCardTarget(r.Target,out int slot,out var card) ||
             slot!=r.Slot || !ReferenceEquals(card,r.Card))
             throw new InvalidOperationException("Reserved combatant changed before snapshot.");
+        r.WasFlipped = MonsterWasFlipped[command.Side, slot];
         ClearMonsterSlot(command.Side,slot,removeEquipment:false);
         r.Detached=true;
         // Existing visual event marks field disappearance, NOT GY arrival.
@@ -338,25 +340,32 @@ public sealed partial class DemoDuel
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,card.Id,slot,command.Role) };
     }
 
-    private bool HasQueuedBattleDeckSelectionChoice =>
-        queuedBattleDeckSelectionRequest is not null &&
-        ReferenceEquals(PendingCardSelection,queuedBattleDeckSelectionRequest);
+    private bool HasQueuedBattleRemovalSelectionChoice =>
+        queuedBattleRemovalSelectionRequest is not null &&
+        ReferenceEquals(PendingCardSelection,queuedBattleRemovalSelectionRequest);
 
-    private CommandResult OpenQueuedBattleDeckSelection()
+    private CommandResult OpenQueuedBattleRemovalSelection()
     {
-        if (!queuedBattleDeckSelectionOpening || queuedBattleRemoved.Any(x=>x is not null) ||
-            queuedBattleDeckSelectionRequest is not null || PendingCardSelection is not null)
-            return new(CommandOutcome.Rejected,"No completed battle deck selection.");
-        queuedBattleDeckSelectionOpening=false;
+        if (!queuedBattleRemovalSelectionOpening || queuedBattleRemoved.Any(x=>x is not null) ||
+            queuedBattleRemovalSelectionRequest is not null || PendingCardSelection is not null)
+            return new(CommandOutcome.Rejected,"No pending selection after battle removal.");
+        queuedBattleRemovalSelectionOpening=false;
         BeginNextQueuedDeckSearch();
-        RefreshQueuedBattleDeckSelectionRequest();
+        RefreshQueuedBattleRemovalSelectionRequest();
         return new(CommandOutcome.Applied);
     }
 
-    private void RefreshQueuedBattleDeckSelectionRequest()
+    private void ContinueQueuedGraveyardOrDeckSelection()
     {
-        queuedBattleDeckSelectionRequest = PendingCardSelection is { } next &&
-            (IsElementalRecruitment(next) ||
+        BeginNextQueuedDeckSearch();
+        if (queuedBattleRemovalSelectionRequest is not null)
+            RefreshQueuedBattleRemovalSelectionRequest();
+    }
+
+    private void RefreshQueuedBattleRemovalSelectionRequest()
+    {
+        queuedBattleRemovalSelectionRequest = PendingCardSelection is { } next &&
+            (IsElementalRecruitment(next) || IsSpearCretinRevival(next) ||
                 CardSelectionRules.BattleSameNameRecruiter(next.EffectResourceId) && IsSameNameRecruitment(next) ||
                 UsesQueuedHandSelection(next) && CardSelectionRules.OnFieldToGraveyardFilter(next.EffectResourceId) is not null)
             ? next : null;
@@ -370,14 +379,19 @@ public sealed partial class DemoDuel
         // Preserve the Card reference for effects triggered by its arrival.
         graves[command.Side].Add(r.Card);
         queuedBattleRemoved[command.Role]=null;
-        if (!GameOver && HasBattleRemovalDeckSelection(r.Card))
+        if (!GameOver)
         {
-            queuedDeckSearches.Enqueue((command.Side,r.Card,true,false,false));
-            queuedBattleDeckSelectionOpening=true;
+            if (HasBattleRemovalDeckSelection(r.Card))
+            {
+                queuedDeckSearches.Enqueue((command.Side,r.Card,true,false,false));
+                queuedBattleRemovalSelectionOpening = true;
+            }
+            if (QueueSpearCretinRevival(command.Side, r.Card, r.WasFlipped, destroyedByBattle: true))
+                queuedBattleRemovalSelectionOpening = true;
         }
         // All reserved combatants must reach GY and finish their gates
-        // before the first owner receives a deck selection request.
-        if (queuedBattleDeckSelectionOpening && queuedBattleRemoved.All(x=>x is null))
+        // before the first owner receives a selection request.
+        if (queuedBattleRemovalSelectionOpening && queuedBattleRemoved.All(x=>x is null))
             followups.ScheduleContinuation(_ => new([new OpenBattleRecruitmentCommand(command.Side)]));
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,r.Card.Id,r.Slot,command.Role) };
     }

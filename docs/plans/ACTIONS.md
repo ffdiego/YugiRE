@@ -284,6 +284,17 @@ Testes C# cobrem os dois lados, filtros distintos, console, CPU
 e proteção contra resposta legada. Demo.cs permanece com 2607
 linhas. Comparação nativa pendente.
 
+*P169 em batalha (C12):* Spear Cretin (1116) entra na fila de
+combate. O snapshot guarda o histórico de revelação antes de limpar
+o slot. Após a chegada ao cemitério e o gate, o mesmo produtor de
+ressurreição oferece a escolha do controlador e depois a adversária.
+A segunda espera a invocação da primeira. Testes espelhados cobrem
+revelação em batalha, cópia distinta, ausência de disparo sem FLIP,
+gates, console e CPU. Demo.cs 2607 → 2600 linhas pela reutilização
+do registro do gatilho. A resolução de combate legada ainda atende
+configurações fora do piloto. A comparação de P169 no Joey segue
+pendente. [Contrato](../cards/c12-queued-graveyard-revival.md).
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

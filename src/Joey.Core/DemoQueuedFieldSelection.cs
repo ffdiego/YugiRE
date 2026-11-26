@@ -9,9 +9,7 @@ public sealed partial class DemoDuel
         deferredBattle is null && request.Destination == CardSelectionDestination.Field &&
         (request.Source == CardSelectionSource.Deck && request.MinSelections == 0 &&
             (IsElementalRecruitment(request) || IsSameNameRecruitment(request)) ||
-         request is { Source: CardSelectionSource.Graveyard, MinSelections: 1, MaxSelections: 1,
-            Filter: CardSelectionFilter.AnyMonster, EffectResourceId: CardSelectionRules.SpearCretin,
-            MaySelectFaceDownDefense: true });
+         IsSpearCretinRevival(request));
 
     /// <summary>Capture a displayed occurrence, without staging game state.</summary>
     public bool TryCaptureQueuedFieldSelection(PendingCardSelection request, int sourceIndex,

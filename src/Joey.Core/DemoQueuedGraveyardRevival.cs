@@ -4,12 +4,22 @@ public sealed partial class DemoDuel
 {
     private bool admittingQueuedGraveyardRevival;
 
+    private static bool IsSpearCretinRevival(PendingCardSelection request) =>
+        request is { Source: CardSelectionSource.Graveyard, Destination: CardSelectionDestination.Field,
+            MinSelections: 1, MaxSelections: 1, Filter: CardSelectionFilter.AnyMonster,
+            EffectResourceId: CardSelectionRules.SpearCretin, MaySelectFaceDownDefense: true };
+
+    private bool QueueSpearCretinRevival(int owner, Card source, bool wasFlipped, bool destroyedByBattle)
+    {
+        if (source.Id != CardSelectionRules.SpearCretin || !wasFlipped) return false;
+        queuedDeckSearches.Enqueue((owner, source, destroyedByBattle, true, false));
+        queuedDeckSearches.Enqueue((1 - owner, source, destroyedByBattle, true, false));
+        return true;
+    }
+
     private bool CanAdmitQueuedGraveyardRevival() =>
         !GameOver && deferredBattle is null &&
-        PendingCardSelection is { Source: CardSelectionSource.Graveyard,
-            Destination: CardSelectionDestination.Field, MinSelections: 1, MaxSelections: 1,
-            Filter: CardSelectionFilter.AnyMonster, EffectResourceId: CardSelectionRules.SpearCretin,
-            MaySelectFaceDownDefense: true } &&
+        PendingCardSelection is { } request && IsSpearCretinRevival(request) &&
         PendingFlipTarget is null && PendingFlipSpellTrapTargets is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&
         PendingEffectDecision is null && PendingSpellTrapTarget is null &&
@@ -37,7 +47,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Spear Cretin's mandatory answer, from the owner's own GY.
-    /// The source's FLIP history was already checked by RemoveMonster.</summary>
+    /// The source's FLIP history was already checked at Graveyard arrival.</summary>
     public bool TryQueueGraveyardRevival(PendingCardSelection request, CardTarget target, int slot,
         bool faceDownDefense, out string message, ActionOrigin origin = ActionOrigin.Player)
     {

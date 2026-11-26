@@ -13,9 +13,10 @@ internal static class BattleGraveyardEffectChecks
     private sealed class RecruitmentGate : IPresentationGate
     {
         public Type? Hold { get; set; }
+        public string? HoldName { get; set; }
         public bool CanAdvance => true;
         public bool CanComplete(QueuedDuelCommand command, CommandResult result) =>
-            command.Command.GetType() != Hold;
+            command.Command.GetType() != Hold && command.Command.GetType().Name != HoldName;
     }
 
     private static void Drain(ActionQueue queue)
@@ -90,9 +91,74 @@ internal static class BattleGraveyardEffectChecks
         }
     }
 
+    private static void RunQueuedBattleRevival(Action<bool, string> check)
+    {
+        var spear = Monster(CardSelectionRules.SpearCretin, 516, 500, 500);
+        var opponent = Monster(24, 24, 2200);
+        foreach (int owner in new[] { 0, 1 })
+        foreach ((bool set, bool previouslyFlipped) in new[] { (false, false), (true, false), (false, true) })
+        {
+            int attacker = 1 - owner;
+            var duel = DemoDuel.FromPartialObservation(1, [],
+                owner == 0 ? Slots(spear) : Slots(opponent), owner == 1 ? Slots(spear) : Slots(opponent), 8000,
+                side0Graveyard: owner == 0 ? [opponent, spear] : [opponent],
+                side1Graveyard: owner == 1 ? [opponent, spear] : [opponent]);
+            duel.MonsterFaceDown[owner, 0] = duel.DefensePosition[owner, 0] = set || previouslyFlipped;
+            if (previouslyFlipped)
+                check(duel.RevealMonsterByEffect(owner, 0, out _) && duel.PendingCardSelection is null,
+                    "P169 records an earlier reveal without reviving before the card leaves the field");
+            if (attacker == 0) check(duel.EndTurn(out _), "Spear Cretin fixture: pass to the attacking side");
+            check(duel.BeginBattle(out _), "Spear Cretin fixture: enter Battle Phase");
+            var gate = new RecruitmentGate { HoldName = "FinishBattleRemovalCommand" };
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(console.Execute("attack 0 0").Enqueued, "P169 battle uses the queued combat producer");
+            for (int tick = 0; queue.IsBusy && queue.Active?.Command.GetType().Name != gate.HoldName && tick < 30; tick++)
+                queue.Tick();
+            check(queue.IsBusy && duel.Monsters[owner, 0] is null && duel.Graveyard(owner).Last().Id == spear.Id &&
+                duel.PendingCardSelection is null, "P169 waits for the battle removal gate before offering revival");
+            gate.HoldName = null;
+            Drain(queue);
+            if (!set && !previouslyFlipped)
+            {
+                check(duel.PendingCardSelection is null, "A never-flipped Spear Cretin does not queue revival");
+                continue;
+            }
+
+            var request = duel.PendingCardSelection;
+            check(request is { Source: CardSelectionSource.Graveyard } && request.Owner == owner &&
+                request.EligibleCards.Select(c => c.SourceIndex).SequenceEqual([0, 1]) &&
+                !duel.ResolveCardSelection(1, 4, true, out _) &&
+                !console.Execute("select-revive 2 4 set").Success,
+                "P169 offers the other copy after battle and rejects the triggering occurrence and legacy answer");
+            check(duel.TryCaptureCardTarget(owner, DuelZone.Graveyard, 1, out var otherSpear) &&
+                console.Execute("select-revive 1 4 set").Enqueued, "P169 admits the chosen copy from the owner's GY");
+            gate.Hold = typeof(SpecialSummonCommand);
+            for (int tick = 0; queue.IsBusy && queue.Active?.Command is not SpecialSummonCommand && tick < 20; tick++)
+                queue.Tick();
+            check(queue.IsBusy && duel.PendingCardSelection is null && duel.MonsterFaceDown[owner, 4] &&
+                duel.TryCaptureCardTarget(owner, DuelZone.Monster, 4, out var placed) &&
+                placed.Occurrence == otherSpear.Occurrence,
+                "P169 keeps the next owner waiting for the first revival's gate");
+            gate.Hold = null;
+            Drain(queue);
+            check(duel.PendingCardSelection?.Owner == attacker &&
+                !duel.ResolveCardSelection(0, out _) &&
+                new CpuDuelController(attacker).Step(duel) is { Status: CpuStepStatus.Acted, Action: CpuAction.Selection },
+                "P169 second owner also answers through the queue");
+            Drain(queue);
+            check(duel.PendingCardSelection is null && duel.Monsters[attacker, 1]?.Id == opponent.Id &&
+                queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Executed &&
+                    entry.Entry.Command is SpecialSummonCommand) == 2 &&
+                !queue.Trace.Any(entry => entry.Entry.Command is ShuffleDeckCommand),
+                "P169 completes both revivals without a deck shuffle");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
         RunQueuedBattleRecruitment(check);
+        RunQueuedBattleRevival(check);
         var momonga = Monster(1115, 453, 1000, 100, level: 2, attribute: 5, type: 11);
         var duplicate1 = Monster(1115, 1453, 1000, 100, level: 2, attribute: 5, type: 11);
         var duplicate2 = Monster(1115, 2453, 1000, 100, level: 2, attribute: 5, type: 11);

@@ -315,7 +315,7 @@ internal static class QueuedTargetedAttackChecks
         d2.Life[0]=100;var q2=d2.CreatePrimitiveActionQueue();d2.BeginBattle(out _);
         d2.TryQueueTargetedAttack(2,3,out _);for(int i=0;i<30 && q2.IsBusy;i++)q2.Tick();
         check(d2.Winner==1 && d2.Graveyard(0).Count==1 && !q2.IsBusy,"A05.8 reserved cleanup after lethal (sandbox policy)");
-        var d3=DemoDuel.FromPartialObservation(1,[],Slots(Monster(CardSelectionRules.SpearCretin,500,500),3),Slots(Monster(24,1400,500),2),8000);
+        var d3=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.MorphingJar2,500,500),3),Slots(Monster(24,1400,500),2),8000);
         var q3=d3.CreatePrimitiveActionQueue();d3.BeginBattle(out _);
         check(!d3.TryQueueTargetedAttack(2,3,out _) && q3.Trace.Count==0,"A05.8 effect ID rejected");
     }
