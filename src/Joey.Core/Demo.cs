@@ -545,8 +545,9 @@ public sealed partial class DemoDuel
     public bool CanChangePosition(int zone) => !ActionsBlocked && Phase == DemoPhase.Main &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
-        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null &&
-        !attacked[ActivePlayer, zone] && !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone];
+        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } attacker &&
+        !attacked[ActivePlayer, zone] && !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
+        !AttackRestrictedByInsectBarrier(ActivePlayer, attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
         DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
 
@@ -646,7 +647,7 @@ public sealed partial class DemoDuel
         {
             int zone = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[ActivePlayer, z] == null, -1);
             if (zone < 0) { message = "Infinite Cards needs a free spell zone."; return false; }
-            CommitInfiniteCardsActivation(ActivePlayer, zone, index);
+            CommitContinuousSpellActivation(ActivePlayer, zone, index);
             message = "Infinite Cards active: neither player has an end-turn hand limit.";
             return true;
         }
@@ -738,7 +739,7 @@ public sealed partial class DemoDuel
         }
         if (card.Id == InfiniteCardsId)
         {
-            CommitInfiniteCardsActivation(p, zone, null);
+            CommitContinuousSpellActivation(p, zone, null);
             message = "Infinite Cards activated."; return true;
         }
         if (DrawSpellRules.Effect(card) is { } draw)

@@ -83,7 +83,8 @@ public sealed partial class DemoDuel
             GameOver || Phase!=DemoPhase.Battle || queuedBattleReveal is not null || queuedBattleRemoved.Any(x=>x is not null) ||
             !TryResolveCardTarget(attacker,out int s,out var ac) ||
             !TryResolveCardTarget(defender,out int t,out var bc) ||
-            attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s])
+            attacked[p,s] != declared || MonsterFaceDown[p,s] || DefensePosition[p,s] ||
+            AttackRestrictedByInsectBarrier(p, ac))
             return false;
         unsupported = (MonsterFaceDown[e,t] && !DefensePosition[e,t]) ||
             !IsOrdinaryBattlePilot(ac) || !(IsOrdinaryBattlePilot(bc) ||

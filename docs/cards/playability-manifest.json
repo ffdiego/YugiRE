@@ -1615,6 +1615,27 @@
       ]
     },
     {
+      "id": "continuous.insect-barrier-c02",
+      "kind": "Spell",
+      "subtype": "Continuous",
+      "status": "Done",
+      "resourceIds": [
+        1352
+      ],
+      "mechanics": [
+        "Activate the tracked copy from hand or Set via the continuous spell command",
+        "While it stays face-up, prevent opposing Insect monsters from declaring direct or targeted attacks"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "src/tests/Joey.Tests/QueuedInsectBarrierChecks.cs",
+        "docs/research/card-static-sweep/04-regras-globais-e-continuacoes.jsonl"
+      ],
+      "limitations": [
+        "Queue-backed activation uses sandbox monster types. Type-changing effects, spell suppression and native differential validation are pending."
+      ]
+    },
+    {
       "id": "battle.kinetic-soldier-warrior-bonus-c03",
       "kind": "Monster",
       "subtype": "Effect",

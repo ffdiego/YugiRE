@@ -3,6 +3,24 @@ namespace Joey.Core;
 public sealed partial class DemoDuel
 {
     private const ushort InfiniteCardsId = 0x593;
+    private const ushort InsectBarrierId = 1352;
+    private const int InsectType = 10;
+
+    private static bool SupportsQueuedContinuousSpell(Card card) =>
+        card is { Id: InfiniteCardsId, ClassCode: 21 or 22 or 23 } || IsInsectBarrier(card);
+
+    private static bool IsInsectBarrier(Card? card) => card is { Id: InsectBarrierId, ClassCode: 22 };
+
+    private bool HasFaceUpInsectBarrier(int side) =>
+        Enumerable.Range(0, 5).Any(slot => !SpellFaceDown[side, slot] && IsInsectBarrier(Spells[side, slot]));
+
+    private bool AttackRestrictedByInsectBarrier(int side, Card attacker) =>
+        attacker.ClassCode == InsectType && HasFaceUpInsectBarrier(1 - side);
+
+    internal bool ShouldPlayInsectBarrier(int side, Card card) =>
+        IsInsectBarrier(card) && !HasFaceUpInsectBarrier(side) &&
+        Enumerable.Range(0, 5).Any(slot => !MonsterFaceDown[1 - side, slot] &&
+            Monsters[1 - side, slot] is { ClassCode: InsectType });
 
     // Shared commit primitives; only admission and scheduling differ.
     private void CommitFieldActivation(int side, int? handIndex)
@@ -15,7 +33,7 @@ public sealed partial class DemoDuel
         FieldSpellFaceDown[side] = false;
     }
 
-    private void CommitInfiniteCardsActivation(int side, int slot, int? handIndex)
+    private void CommitContinuousSpellActivation(int side, int slot, int? handIndex)
     {
         if (handIndex is int index)
         {
@@ -76,13 +94,12 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    private bool CanActivateInfiniteCards(CardTarget source,out int slot)
+    private bool CanActivateContinuousSpell(CardTarget source,out int slot)
     {
         slot=-1;
         if(LegacyActionsBlocked || PendingEndDiscards!=0 || source.Side!=ActivePlayer ||
             Phase!=DemoPhase.Main || source.Zone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
-            !TryResolveCardTarget(source,out int index,out var card) || card.Id!=InfiniteCardsId ||
-            card.ClassCode is not (21 or 22 or 23)) return false;
+            !TryResolveCardTarget(source,out int index,out var card) || !SupportsQueuedContinuousSpell(card)) return false;
         slot=source.Zone==DuelZone.Hand?FirstFreeSpellZone():index;
         // An out parameter cannot be captured by a lambda (CS1628).
         int destination = slot;
@@ -90,22 +107,22 @@ public sealed partial class DemoDuel
             !equipment.Any(e=>e.Owner==source.Side&&e.SourceZone==destination);
     }
 
-    private bool TryQueueInfiniteCards(CardTarget source,out string message,ActionOrigin origin)
+    private bool TryQueueContinuousSpell(CardTarget source,out string message,ActionOrigin origin)
     {
-        message="Choose a legal Infinite Cards activation.";
+        message="Choose a legal Continuous Spell activation.";
         if(primitiveActionQueue is not {IsBusy:false} queue || ActionsBlocked ||
-            !CanActivateInfiniteCards(source,out int slot)) return false;
-        queue.Enqueue(new ActivateInfiniteCardsCommand(source.Side,source,slot),origin);
-        message="Infinite Cards admitted.";
+            !CanActivateContinuousSpell(source,out int slot)) return false;
+        queue.Enqueue(new ActivateContinuousSpellCommand(source.Side,source,slot),origin);
+        message="Continuous Spell activation admitted.";
         return true;
     }
 
-    private CommandResult ApplyInfiniteCards(ActivateInfiniteCardsCommand command)
+    private CommandResult ApplyContinuousSpell(ActivateContinuousSpellCommand command)
     {
-        if(!CanActivateInfiniteCards(command.Source,out int slot)||slot!=command.Slot ||
+        if(!CanActivateContinuousSpell(command.Source,out int slot)||slot!=command.Slot ||
             !TryResolveCardTarget(command.Source,out int index,out var card))
-            return new(CommandOutcome.Rejected,"Infinite Cards source or destination changed.");
-        CommitInfiniteCardsActivation(command.Side, slot,
+            return new(CommandOutcome.Rejected,"Continuous Spell source or destination changed.");
+        CommitContinuousSpellActivation(command.Side, slot,
             command.Source.Zone == DuelZone.Hand ? index : null);
         spellSetTurn[command.Side,slot]=0;
         var result=new CommandResult(CommandOutcome.Applied);

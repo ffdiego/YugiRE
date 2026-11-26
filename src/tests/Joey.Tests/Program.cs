@@ -213,6 +213,7 @@ NativeSwordAngleChecks.Run(Check);
 ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
+QueuedInsectBarrierChecks.Run(Check);
 if (args.Length > 0)
 {
     using var archive = new Archive(args[0]);
