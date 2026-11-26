@@ -81,3 +81,12 @@ ausência de Trap mantendo o combate anterior.
 diferenciar declaração, decisão, destruição, gatilhos pós-corrente
 e estado final. O texto atualizado das cartas não substitui
 verificação das diferenças do Joey original.
+
+
+No piloto direto da fila, App, CPU e console usam a mesma resposta.
+Mirror Force reutiliza o lote de destruição. A armadilha Set é gasta
+antes da primeira destruição. Cada monstro em ataque aberto recebe um
+comando próprio, e o resultado aguarda o último gate. O piloto aceita
+aliados normais já cobertos (IDs 24 e 1351) e preserva os monstros em
+defesa. Ataques contra um alvo ou com efeitos de campo fora desse
+piloto mantêm a resolução legada.

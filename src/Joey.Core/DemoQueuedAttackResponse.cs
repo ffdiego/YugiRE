@@ -17,7 +17,7 @@ public sealed partial class DemoDuel
         UsesQueuedAttackResponse(response) && response.Attack.AttackingPlayer == ActivePlayer;
 
     private bool IsQueuedDirectResponseTrap(int side, int slot) =>
-        Spells[side, slot] is { ClassCode: 21, Id: AttackTrapRules.MagicCylinder or AttackTrapRules.NegateAttack } &&
+        Spells[side, slot] is { ClassCode: 21 } trap && AttackTrapRules.Supports(trap.Id) &&
         SpellFaceDown[side, slot] && spellSetTurn[side, slot] < Turn;
 
     private bool HasQueuedDirectResponse(int attacker) =>
@@ -86,7 +86,7 @@ public sealed partial class DemoDuel
         {
             if (!duel.CanAdmitQueuedAttackResponse() || !duel.UsesQueuedAttackResponse(command.Request) ||
                 duel.queuedDirectResponse is not { } pending || command.Side != 1 - pending.Attacker.Side ||
-                attackTrapPayment is not null || followups is not IActionBatchSink { PendingCount: 0 } queue)
+                attackTrapPayment is not null || wipe is not null || finishScheduled || followups is not IActionBatchSink { PendingCount: 0 } queue)
                 return new(CommandOutcome.Rejected, "Attack response changed before execution.");
 
             bool attackerValid = duel.TryPlanQueuedDirectAttack(pending.Attacker, out _, out _, out int damage,
@@ -97,11 +97,22 @@ public sealed partial class DemoDuel
                     !pending.Traps.TryGetValue(slot, out var original) || original != source ||
                     !duel.IsQueuedDirectResponseTrap(command.Side, slot))
                     return new(CommandOutcome.Rejected, "Attack Trap or attacker occurrence is no longer eligible.");
-                attackTrapPayment = new(source, trap.Id, pending.Attacker.Side,
-                    trap.Id == AttackTrapRules.MagicCylinder ? damage : 0);
-                attackTrapSpent = false;
-                queue.EnqueueBatch([new SendToGraveyardCommand(command.Side, source),
-                    new ResolveSpentAttackTrapCommand(command.Side, source)]);
+                if (trap.Id == AttackTrapRules.MirrorForce)
+                {
+                    var attack = pending.Request.Attack;
+                    var targets = MonsterWipeRules.AttackPositionTargets(attack.AttackingPlayer,
+                        duel.Monsters, duel.MonsterFaceDown, duel.DefensePosition);
+                    if (targets.Count == 0 || !TryReserveMonsterWipe(source, trap.Id, targets, queue, attack: attack))
+                        return new(CommandOutcome.Rejected, "Mirror Force targets or links are no longer tracked.");
+                }
+                else
+                {
+                    attackTrapPayment = new(source, trap.Id, pending.Attacker.Side,
+                        trap.Id == AttackTrapRules.MagicCylinder ? damage : 0);
+                    attackTrapSpent = false;
+                    queue.EnqueueBatch([new SendToGraveyardCommand(command.Side, source),
+                        new ResolveSpentAttackTrapCommand(command.Side, source)]);
+                }
             }
             else if (attackerValid && damage > 0)
                 queue.Enqueue(new DamageCommand(command.Side, damage));

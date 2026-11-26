@@ -130,6 +130,15 @@ ser reaberta nesse turno. Os testes cobrem os dois lados, passe,
 substituição de ocorrência, ausência de dano e a fase final. Ataques com
 alvo e Mirror Force continuam legados. Demo.cs 2614 → 2614.
 
+*Mirror Force no piloto direto (C12.1):* o mesmo produtor admite as três
+armadilhas de declaração. Com uma resposta elegível, os normais 24 e
+1351 também podem ocupar slots aliados. A fila reutiliza o lote de
+destruição, gasta a armadilha Set, destrói uma ocorrência por comando e
+registra o resultado ao terminar. Regressões dos dois lados verificam
+dois monstros em ataque, defesa aberta e oculta, gates e LP intactos.
+Ataques com alvo que abrem respostas e campos fora do piloto ficam no
+legado. Demo.cs 2614 → 2614, cobertura preservada.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>
