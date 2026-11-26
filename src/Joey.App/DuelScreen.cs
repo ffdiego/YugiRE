@@ -918,6 +918,8 @@ static partial class Game
                     "Select one monster",
                 DemoFlipEffect.DestroyOpponentMonster =>
                     "Select an opposing monster",
+                DemoFlipEffect.PreventMonsterAttack when flip.Trigger == DemoMonsterEffectTrigger.NormalOrFlipSummon =>
+                    "Select an opposing monster",
                 _ => "Select a FLIP target"
             };
             if (HumanChoice) Label(help, 10, 587, 11, Gold);

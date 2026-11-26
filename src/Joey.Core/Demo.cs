@@ -552,7 +552,7 @@ public sealed partial class DemoDuel
         (!HasDeclaredAttack(ActivePlayer, zone) ||
             HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
         (attacker.Id != ZombyraTheDark || CountOccupiedMonsters(1 - ActivePlayer) > 0) &&
-        !AttackRestrictedByContinuousSpells(ActivePlayer, attacker);
+        !AttackRestrictedByContinuousSpells(ActivePlayer, attacker) && !AttackRestrictedByMonster(attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
         DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
 
@@ -2267,7 +2267,7 @@ public sealed partial class DemoDuel
     {
         message = "Choose an eligible monster in either monster zone.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice ||
-            PendingFlipTarget is { Effect: DemoFlipEffect.ChangeFaceUpPosition } ||
+            PendingFlipTarget is { Effect: DemoFlipEffect.ChangeFaceUpPosition or DemoFlipEffect.PreventMonsterAttack } ||
             PendingFlipTarget is { Trigger: DemoMonsterEffectTrigger.PositionChange } position &&
                 UsesQueuedMonsterFlipSelection(position)) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.MonsterTarget, out message)) return true;
@@ -2460,6 +2460,7 @@ public sealed partial class DemoDuel
             temporaryStats.Remove(departing);
             persistentMonsterStats.Remove(departing);
             positionLockedThroughTurn.Remove(departing);
+            ClearMonsterAttackRestrictions(departing);
         }
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;

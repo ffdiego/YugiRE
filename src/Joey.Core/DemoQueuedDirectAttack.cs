@@ -48,7 +48,8 @@ public sealed partial class DemoDuel
         if (source.Zone!=DuelZone.Monster || side!=ActivePlayer || Phase!=DemoPhase.Battle ||
             GameOver || !AllowsQueuedAttackUse(side, slot, card, declared) ||
             MonsterFaceDown[side,slot] || DefensePosition[side,slot] ||
-            !card.IsMonster || AttackRestrictedByContinuousSpells(side, card) || !DirectAttackAllowed(side,card))
+            !card.IsMonster || AttackRestrictedByContinuousSpells(side, card) || AttackRestrictedByMonster(card) ||
+            !DirectAttackAllowed(side,card))
             return false;
         unsupported = !SupportsQueuedDirectAttack(side, slot, card);
         if (unsupported) return false;

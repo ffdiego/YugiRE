@@ -1615,6 +1615,48 @@
       ]
     },
     {
+      "id": "flip.dark-eyes-illusionist-attack-restriction-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        729
+      ],
+      "mechanics": [
+        "Choose one tracked monster on either side after queued Flip Summon or supported battle reveal",
+        "Prevent the exact target from declaring attacks while Dark-Eyes Illusionist remains on the field"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedMonsterAttackRestrictions.cs",
+        "src/tests/Joey.Tests/QueuedAttackRestrictionMonsterChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "External effect reveals, targeting of hidden monsters and native association lifecycle require differential validation."
+      ]
+    },
+    {
+      "id": "summon.invitation-to-a-dark-sleep-attack-restriction-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1332
+      ],
+      "mechanics": [
+        "Choose one opposing monster after queued Normal or Flip Summon and its response window",
+        "Prevent the exact target from declaring attacks while Invitation remains on the field face-up"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedMonsterAttackRestrictions.cs",
+        "src/tests/Joey.Tests/QueuedAttackRestrictionMonsterChecks.cs",
+        "docs/research/card-static-sweep/02-zonas-e-modificadores.jsonl"
+      ],
+      "limitations": [
+        "Native summon response order, hidden targets and association lifecycle require differential validation."
+      ]
+    },
+    {
       "id": "flip.bite-shoes-position-change-c03",
       "kind": "Monster",
       "subtype": "Effect",

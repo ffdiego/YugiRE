@@ -70,6 +70,17 @@ public sealed partial class DemoDuel
         private (DemoFlipTarget Request, CardTarget Source)? monsterFlipAfterSummonResponse;
         private CardTarget? selfDestructAfterSummonResponse;
 
+        private void OpenAttackRestrictionAfterSummon(CardTarget source, int slot, Card card,
+            DemoMonsterEffectTrigger trigger)
+        {
+            var request = new DemoFlipTarget(source.Side, slot, card, DemoFlipEffect.PreventMonsterAttack, trigger);
+            if (!duel.CurrentMonsterFlipCandidates(request).Any()) return;
+            if (duel.queuedSummonResponse is not null)
+                monsterFlipAfterSummonResponse = (request, source);
+            else
+                duel.PendingFlipTarget = request;
+        }
+
         private void FinishQueuedManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
         {
             duel.FinishManualPosition(change, resolveFlip, out message);
@@ -153,14 +164,17 @@ public sealed partial class DemoDuel
                     duel.resumedSummonFlipPair = choice;
                     duel.PendingFlipSpellTrapTargets = choice.Request;
                 }
-                if (monster is { } targets && (targets.Request.Effect == DemoFlipEffect.ReturnUpToTwo ||
-                    duel.CurrentMonsterFlipCandidates(targets.Request).Any()))
-                {
-                    duel.resumedSummonMonsterFlip = targets;
-                    duel.PendingFlipTarget = targets.Request;
-                }
                 if (selection is not null)
                     duel.PendingCardSelection = selection;
+            }
+            if (!duel.GameOver && monster is { } targets && !duel.SuppressesQueuedMonsterSelection(targets.Request) &&
+                (targets.Request.Effect != DemoFlipEffect.PreventMonsterAttack ||
+                 duel.TryResolveCardTarget(targets.Source, out _, out _)) &&
+                (targets.Request.Effect == DemoFlipEffect.ReturnUpToTwo ||
+                 duel.CurrentMonsterFlipCandidates(targets.Request).Any()))
+            {
+                duel.resumedSummonMonsterFlip = targets;
+                duel.PendingFlipTarget = targets.Request;
             }
             duel.BeginNextQueuedDeckSearch();
         }

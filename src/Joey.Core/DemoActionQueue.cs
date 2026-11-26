@@ -234,6 +234,7 @@ public sealed partial class DemoDuel
         DemoFlipEffect.DrawAndDiscardOpponentSpells or DemoFlipEffect.DestroyOpponentFaceUpLevelFour or
         DemoFlipEffect.BanishThreeDeckBurn800 or DemoFlipEffect.BanishTwoRandomHandBurn800 or
         DemoFlipEffect.DamagePerOpposingSpellTrap or DemoFlipEffect.RaiseSelfStats or DemoFlipEffect.ChangeFaceUpPosition or
+        DemoFlipEffect.PreventMonsterAttack or
         DemoFlipEffect.ShuffleAndExcavate;
 
     // Snapshot linked consequences before the producer admits any removals.
@@ -382,6 +383,9 @@ public sealed partial class DemoDuel
             if (command is ResolveMonsterPositionTargetCommand positionTarget)
                 return ResolveQueuedMonsterTargets(positionTarget.Source, [positionTarget.Target],
                     DemoMonsterEffectTrigger.PositionChange, followups);
+            if (command is ResolveMonsterSummonTargetCommand summonTarget)
+                return ResolveQueuedMonsterTargets(summonTarget.Source, [summonTarget.Target],
+                    DemoMonsterEffectTrigger.NormalOrFlipSummon, followups);
             if (command is OpenAttackResponseCommand openAttackResponse)
                 return duel.OpenAttackResponse(openAttackResponse);
             if (command is ResolveAttackResponseCommand attackResponse)
@@ -611,6 +615,8 @@ public sealed partial class DemoDuel
                     return MovePosition(position.Target, false, position.Defense, followups);
                 case ChangePositionByFlipCommand flipPosition:
                     return ApplyFlipPositionChange(flipPosition);
+                case BindMonsterAttackCommand restriction:
+                    return duel.ApplyMonsterAttackRestriction(restriction);
                 case ResolvePositionCommand resolve:
                     return ResolvePosition(resolve, followups);
                 case SendToGraveyardCommand send when send.Target.Zone == DuelZone.Deck:
@@ -1154,6 +1160,8 @@ public sealed partial class DemoDuel
             string message = "";
             duel.FinishNormalPlacement(finish.Side, slot, finish.FaceDown, ref message);
             duel.queuedSummonResponse = duel.PendingSummonResponse;
+            if (!finish.FaceDown && card.Id == InvitationToADarkSleep)
+                OpenAttackRestrictionAfterSummon(finish.Target, slot, card, DemoMonsterEffectTrigger.NormalOrFlipSummon);
             if (!finish.FaceDown && NormalSummonRules.DestroysAfterNormalSummon(card))
             {
                 if (duel.queuedSummonResponse is not null)
@@ -1256,6 +1264,15 @@ public sealed partial class DemoDuel
             int side = position.Side;
             var change = new DemoMonsterPositionChange(side, slot, card, position.WasFaceDown,
                 position.WasInDefense, duel.MonsterFaceDown[side, slot], duel.DefensePosition[side, slot]);
+            if (change.FlipSummoned && (card.Id == InvitationToADarkSleep ||
+                card.Id == FlipEffectRules.DarkEyesIllusionist && !duel.FlipEffectsNegated))
+            {
+                var trigger = card.Id == InvitationToADarkSleep
+                    ? DemoMonsterEffectTrigger.NormalOrFlipSummon : DemoMonsterEffectTrigger.Flip;
+                FinishQueuedManualPosition(change, resolveFlip: false, out var message);
+                OpenAttackRestrictionAfterSummon(position.Target, slot, card, trigger);
+                return new(CommandOutcome.Applied, message);
+            }
             if (!change.FlipSummoned || duel.FlipEffectsNegated)
             {
                 FinishQueuedManualPosition(change, resolveFlip: true, out var message);
@@ -2028,7 +2045,7 @@ public sealed partial class DemoDuel
             {
                 if (pending.Effect == DemoFlipEffect.ChangeFaceUpPosition)
                     battle.ExpectedPositionChange = batch.OfType<ChangePositionByFlipCommand>().SingleOrDefault();
-                else
+                else if (MovesMonsterFlipTarget(pending))
                 {
                     var destination = IsBounce(pending) ? DuelZone.Hand : DuelZone.Graveyard;
                     foreach (var target in targets) battle.ExpectedEffectMoves.Add(target, destination);
@@ -2040,7 +2057,7 @@ public sealed partial class DemoDuel
             duel.resumedSummonMonsterFlip = null;
             duel.flipSelections.Clear();
             queue.EnqueueBatch(batch);
-            if (pending.Effect != DemoFlipEffect.ChangeFaceUpPosition)
+            if (MovesMonsterFlipTarget(pending))
             {
                 foreach (var pair in plans) plannedLinks.Add(pair.Key, pair.Value);
                 linkedRemovalBatch = true;
