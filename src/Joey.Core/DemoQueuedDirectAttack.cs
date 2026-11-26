@@ -48,7 +48,7 @@ public sealed partial class DemoDuel
         if (source.Zone!=DuelZone.Monster || side!=ActivePlayer || Phase!=DemoPhase.Battle ||
             GameOver || !AllowsQueuedAttackUse(side, slot, card, declared) ||
             MonsterFaceDown[side,slot] || DefensePosition[side,slot] ||
-            !card.IsMonster || AttackRestrictedByInsectBarrier(side, card) || !DirectAttackAllowed(side,card))
+            !card.IsMonster || AttackRestrictedByContinuousSpells(side, card) || !DirectAttackAllowed(side,card))
             return false;
         unsupported = !SupportsQueuedDirectAttack(side, slot, card);
         if (unsupported) return false;
@@ -81,7 +81,7 @@ public sealed partial class DemoDuel
         if (followups is not IActionBatchSink { PendingCount: 0 } queue ||
             !TryPlanQueuedDirectAttack(attack.Attacker,out int slot,out var card,out int damage,out _))
             return new(CommandOutcome.Rejected,"Direct attack no longer satisfies pilot restrictions.");
-        attackDeclarations[attack.Side, slot]++;
+        RecordBattleAttack(attack.Side, slot, card);
         if (HasQueuedAttackResponseTrap(attack.Side))
         {
             followups.Enqueue(new OpenAttackResponseCommand(attack.Side, attack.Attacker, null,

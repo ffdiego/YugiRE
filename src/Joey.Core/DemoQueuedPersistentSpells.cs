@@ -4,23 +4,41 @@ public sealed partial class DemoDuel
 {
     private const ushort InfiniteCardsId = 0x593;
     private const ushort InsectBarrierId = 1352;
+    private const ushort TheDarkDoorId = 1538;
     private const int InsectType = 10;
 
     private static bool SupportsQueuedContinuousSpell(Card card) =>
-        card is { Id: InfiniteCardsId, ClassCode: 21 or 22 or 23 } || IsInsectBarrier(card);
+        card is { Id: InfiniteCardsId, ClassCode: 21 or 22 or 23 } || IsAttackRestrictionSpell(card);
 
-    private static bool IsInsectBarrier(Card? card) => card is { Id: InsectBarrierId, ClassCode: 22 };
+    private static bool IsAttackRestrictionSpell(Card? card) =>
+        card is { Id: InsectBarrierId or TheDarkDoorId, ClassCode: 22 };
 
-    private bool HasFaceUpInsectBarrier(int side) =>
-        Enumerable.Range(0, 5).Any(slot => !SpellFaceDown[side, slot] && IsInsectBarrier(Spells[side, slot]));
+    private bool HasFaceUpAttackRestrictionSpell(int side, ushort id) =>
+        Enumerable.Range(0, 5).Any(slot => !SpellFaceDown[side, slot] &&
+            Spells[side, slot] is { ClassCode: 22 } spell && spell.Id == id);
 
-    private bool AttackRestrictedByInsectBarrier(int side, Card attacker) =>
-        attacker.ClassCode == InsectType && HasFaceUpInsectBarrier(1 - side);
+    private bool AttackRestrictedByContinuousSpells(int side, Card attacker) =>
+        attacker.ClassCode == InsectType && HasFaceUpAttackRestrictionSpell(1 - side, InsectBarrierId) ||
+        firstBattleAttacker is { } first && !ReferenceEquals(first, attacker) &&
+            (HasFaceUpAttackRestrictionSpell(side, TheDarkDoorId) ||
+             HasFaceUpAttackRestrictionSpell(1 - side, TheDarkDoorId));
 
-    internal bool ShouldPlayInsectBarrier(int side, Card card) =>
-        IsInsectBarrier(card) && !HasFaceUpInsectBarrier(side) &&
-        Enumerable.Range(0, 5).Any(slot => !MonsterFaceDown[1 - side, slot] &&
-            Monsters[1 - side, slot] is { ClassCode: InsectType });
+    internal bool ShouldPlayAttackRestrictionSpell(int side, Card card)
+    {
+        if (!IsAttackRestrictionSpell(card) || HasFaceUpAttackRestrictionSpell(side, card.Id)) return false;
+        int enemy = 1 - side;
+        return card.Id switch
+        {
+            InsectBarrierId => Enumerable.Range(0, 5).Any(slot => !MonsterFaceDown[enemy, slot] &&
+                Monsters[enemy, slot] is { ClassCode: InsectType }),
+            TheDarkDoorId => !HasFaceUpAttackRestrictionSpell(enemy, card.Id) &&
+                CountVisibleAttackers(side) <= 1 && CountVisibleAttackers(enemy) > 1,
+            _ => false
+        };
+    }
+
+    private int CountVisibleAttackers(int side) => Enumerable.Range(0, 5).Count(slot =>
+        Monsters[side, slot] is not null && !MonsterFaceDown[side, slot] && !DefensePosition[side, slot]);
 
     // Shared commit primitives; only admission and scheduling differ.
     private void CommitFieldActivation(int side, int? handIndex)

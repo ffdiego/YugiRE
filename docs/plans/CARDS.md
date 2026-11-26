@@ -77,6 +77,23 @@ seguem pendentes.
 [PR #221](https://github.com/ffdiego/YugiRE/pull/221) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45877885467).
 
+### C02.12 — The Dark Door
+
+The Dark Door (1538, P007) usa a ativação contínua da fila.
+A primeira declaração da Battle Phase registra a ocorrência,
+que pode continuar atacando se tiver usos restantes. Essa
+marca persiste se o primeiro atacante deixar o campo e é
+limpa para a próxima fase. O impedimento vale nos dois lados
+enquanto ao menos uma cópia permanecer revelada.
+`0056B7D0` e `005709F0` no SQLite v7 confirmam a verificação
+da chave e o estudo estático localiza registro e limpeza em
+`005A1FE7` e `005A3F97`. Testes C# cobrem duas cópias do
+mesmo monstro, segundo ataque de Hayabusa, remoção de fontes
+e a decisão da CPU. A saída do primeiro atacante, múltiplas
+cópias e alterações da fonte durante a Battle Phase aguardam
+comparação dinâmica com Joey.
+[Pesquisa de restrições de ataque](../research/card-static-sweep/04-regras-globais-e-continuacoes.jsonl).
+
 ## C03 — Monstros de efeito restantes (193 Effect)
 
 <a id="c03"></a>
@@ -208,6 +225,8 @@ ataque exija uma configuração ainda fora da fila.
 Reset após mudança de controle e instante nativo em ataques
 interrompidos aguardam comparação dinâmica.
 [Pesquisa de uso por batalha](../research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl).
+[PR #222](https://github.com/ffdiego/YugiRE/pull/222) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45878520337).
 
 ## C04 — Equipamentos `P025`
 

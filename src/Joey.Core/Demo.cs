@@ -84,6 +84,7 @@ public sealed partial class DemoDuel
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
     private readonly byte[,] attackDeclarations = new byte[2, 5];
+    private Card? firstBattleAttacker;
     private readonly bool[,] changedPosition = new bool[2, 5];
     public bool[,] DefensePosition { get; } = new bool[2, 5];
     public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
@@ -549,7 +550,7 @@ public sealed partial class DemoDuel
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
         (!HasDeclaredAttack(ActivePlayer, zone) ||
             HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
-        !AttackRestrictedByInsectBarrier(ActivePlayer, attacker);
+        !AttackRestrictedByContinuousSpells(ActivePlayer, attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
         DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
 
@@ -1297,6 +1298,7 @@ public sealed partial class DemoDuel
     {
         Phase = DemoPhase.Main;
         battlePhaseEndedThisTurn = true;
+        firstBattleAttacker = null;
     }
     /// <summary>
     /// Attack declaration and Battle Step response are distinct from damage
@@ -1327,7 +1329,7 @@ public sealed partial class DemoDuel
 
         // An attack declaration consumes the attack regardless of whether
         // Mirror Force destroys the attacker in the response window.
-        attackDeclarations[p, source] = 1;
+        RecordBattleAttack(p, source, attacker);
         var declaration = new DemoAttackDeclaration(p, source, attacker, target, defender);
         BeginAttackResponse(declaration);
         if (PendingAttackResponse is not null)
@@ -2508,6 +2510,7 @@ public sealed partial class DemoDuel
         temporaryStats.Clear();
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
         battlePhaseEndedThisTurn = false;
+        firstBattleAttacker = null;
         Array.Clear(attackDeclarations); Array.Clear(changedPosition);
         // A Standby opportunity follows the turn-draw opportunity (including a skipped Draw Phase); see
         // ResolvePostDrawStandbyEffects, not the turn increment itself.

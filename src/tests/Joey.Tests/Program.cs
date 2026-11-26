@@ -215,6 +215,7 @@ ActivationEffectChecks.Run(Check);
 HandActionTests.Run(Check);
 InfiniteCardsTests.Run(Check);
 QueuedInsectBarrierChecks.Run(Check);
+QueuedDarkDoorChecks.Run(Check);
 if (args.Length > 0)
 {
     using var archive = new Archive(args[0]);
