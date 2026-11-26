@@ -5,9 +5,9 @@ internal static class QueuedBattleCalculationChecks
     private const ushort KineticSoldier = 1253;
     private const ushort MadSwordBeast = 1341;
 
-    private static Card Monster(ushort id, int type, int attack, int defense) =>
+    private static Card Monster(ushort id, int type, int attack, int defense, uint attribute = 0) =>
         new(id, id, "Battle fixture", "", ((uint)type << 20) | (4u << 25) |
-            ((uint)(attack / 10) << 9) | (uint)(defense / 10));
+            ((uint)(attack / 10) << 9) | (uint)(defense / 10) | (attribute << 29));
 
     private static DemoDuel Battle(Card attacker, Card defender, bool defense = false, bool faceDown = false)
     {
@@ -97,5 +97,43 @@ internal static class QueuedBattleCalculationChecks
         Drain(failedQueue);
         check(failed.Life.SequenceEqual([8000, 7900]) && failed.Monsters[0, 0] is not null,
             "Higher DEF damages Mad Sword Beast's controller without piercing");
+
+        CheckInsectSoldiers(check);
+    }
+
+    private static void CheckInsectSoldiers(Action<bool, string> check)
+    {
+        var soldiers = Monster(477, 10, 1000, 800);
+        var wind = Monster(77, 15, 1800, 1700, attribute: 6);
+        var faceUp = Battle(soldiers, wind);
+        var faceUpQueue = faceUp.CreatePrimitiveActionQueue();
+        check(new CpuDuelController(1).Step(faceUp) is { Action: CpuAction.Attack, Status: CpuStepStatus.Acted },
+            "CPU uses Insect Soldiers' battle bonus against a visible WIND monster");
+        Drain(faceUpQueue);
+        check(faceUp.Life.SequenceEqual([7800, 8000]) && faceUp.Monsters[0, 0] is null &&
+            faceUp.AttackValue(1, 0) == 1000 && faceUp.DefenseValue(1, 0) == 800,
+            "Insect Soldiers add 1000 only to damage-calculation ATK against WIND");
+
+        var hidden = Battle(soldiers, wind, defense: true, faceDown: true);
+        var hiddenQueue = hidden.CreatePrimitiveActionQueue();
+        check(hidden.TryQueueTargetedAttack(0, 0, out _) && hidden.MonsterFaceDown[0, 0],
+            "Insect Soldiers declare before the WIND defender is revealed");
+        Drain(hiddenQueue);
+        check(hidden.Life.SequenceEqual([8000, 8000]) && hidden.Graveyard(0).Single() == wind,
+            "Revealed WIND defender is destroyed without piercing damage");
+
+        var nonWind = Battle(soldiers, Monster(77, 15, 1800, 1700, attribute: 5));
+        var nonWindQueue = nonWind.CreatePrimitiveActionQueue();
+        check(nonWind.TryQueueTargetedAttack(0, 0, out _), "Insect Soldiers may attack a non-WIND monster");
+        Drain(nonWindQueue);
+        check(nonWind.Life.SequenceEqual([8000, 7200]) && nonWind.Graveyard(1).Single() == soldiers,
+            "Insect Soldiers gain no bonus against a non-WIND opponent");
+
+        var defending = Battle(wind, soldiers);
+        var defendingQueue = defending.CreatePrimitiveActionQueue();
+        check(defending.TryQueueTargetedAttack(0, 0, out _), "WIND may attack Insect Soldiers in attack position");
+        Drain(defendingQueue);
+        check(defending.Life.SequenceEqual([7200, 8000]) && defending.Graveyard(0).Single() == soldiers,
+            "Insect Soldiers gain no bonus while defending against WIND");
     }
 }

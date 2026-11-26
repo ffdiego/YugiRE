@@ -1615,6 +1615,27 @@
       ]
     },
     {
+      "id": "battle.insect-soldiers-of-the-sky-wind-bonus-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        477
+      ],
+      "mechanics": [
+        "Gain 1000 ATK only in queued battle calculations when attacking a WIND monster",
+        "Use the same calculation for visible CPU targets"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedBattleCalculationChecks.cs",
+        "docs/research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl"
+      ],
+      "limitations": [
+        "Uses sandbox attributes and queued battle configurations. Native stat reversal, attribute changes, and dynamic comparison are pending."
+      ]
+    },
+    {
       "id": "continuous.the-dark-door-c02",
       "kind": "Spell",
       "subtype": "Continuous",

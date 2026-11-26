@@ -5,7 +5,9 @@ public sealed partial class DemoDuel
     private const ushort KineticSoldier = 1253;
     private const ushort MadSwordBeast = 1341;
     private const ushort HayabusaKnight = 1336;
+    private const ushort InsectSoldiersOfTheSky = 477;
     private const int WarriorType = 15;
+    private const int WindAttribute = 6;
 
     // Roles are not player numbers: 0 attacker, 1 defender. These are
     // reserved transient card records, NOT an additional action queue.
@@ -31,7 +33,7 @@ public sealed partial class DemoDuel
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 or FlipEffectRules.PrincessOfTsurugi or DarkZebra or WickedWormBeast
-            or KineticSoldier or MadSwordBeast or HayabusaKnight ||
+            or KineticSoldier or MadSwordBeast or HayabusaKnight or InsectSoldiersOfTheSky ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
             IsStandbyLifeMonster(card));
@@ -358,13 +360,17 @@ public sealed partial class DemoDuel
         int defenderSide = 1 - attackerSide;
         var attacker = Monsters[attackerSide, source]!;
         var defender = Monsters[defenderSide, target]!;
-        int attack = EquipmentStats(attackerSide, source, KineticSoldierBonus(attacker, defender)).Attack;
-        var stats = EquipmentStats(defenderSide, target, KineticSoldierBonus(defender, attacker));
+        int attack = EquipmentStats(attackerSide, source, BattleStatBonus(attacker, defender, attacking: true)).Attack;
+        var stats = EquipmentStats(defenderSide, target, BattleStatBonus(defender, attacker, attacking: false));
         return (attack, attack - (DefensePosition[defenderSide, target] ? stats.Defense : stats.Attack));
     }
 
-    private static int KineticSoldierBonus(Card card, Card opponent) =>
-        card.Id == KineticSoldier && opponent.ClassCode == WarriorType ? 2000 : 0;
+    private static NativeAiAttributeDelta BattleStatBonus(Card card, Card opponent, bool attacking) => card.Id switch
+    {
+        KineticSoldier when opponent.ClassCode == WarriorType => new(2000, 2000),
+        InsectSoldiersOfTheSky when attacking && opponent.Properties >> 29 == WindAttribute => new(1000, 0),
+        _ => default
+    };
 
     private static int TargetedBattleDamage(int difference, Card attacker, bool defenderInDefense)
     {
