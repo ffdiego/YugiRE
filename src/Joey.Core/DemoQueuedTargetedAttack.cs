@@ -20,9 +20,9 @@ public sealed partial class DemoDuel
     private bool queuedBattleRecruitmentOpening;
     private PendingCardSelection? queuedBattleRecruitmentRequest;
 
-    // Explicit first pilot IDs without callback rows in the cumulative RE DB.
-    // Not a general normal-monster classifier: the DAT has no proven bit for it.
-    private static bool IsPlainBattlePilot(Card card) => card.IsMonster && card.Id is 24 or 1351;
+    // Preserve the original pilot IDs alongside the audited Normal catalog.
+    private static bool IsPlainBattlePilot(Card card) => card.IsMonster &&
+        (card.Id is 24 or 1351 || NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id));
 
     private static bool IsElementalBattleRecruiter(Card card) => card.IsMonster &&
         CardSelectionRules.BattleRecruitAttribute(card.Id) is not null;

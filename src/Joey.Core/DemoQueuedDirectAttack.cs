@@ -36,14 +36,13 @@ public sealed partial class DemoDuel
             return false;
         // Mirror Force already schedules linked removal through the wipe executor.
         if (!equipment.All(IsTrackedBattleEquipment)) return false;
-        bool admitAlliedNormals = HasQueuedAttackResponseTrap(side);
         for(int p=0;p<2;p++)
         {
             if(!IsSupportedQueuedBattleFieldSpell(p)) return false;
             for(int z=0;z<5;z++)
                 if(!IsSupportedQueuedBattleBackRow(p,z) ||
                     (p!=side || z!=slot) && Monsters[p,z] is { } other &&
-                        (p != side || !admitAlliedNormals || !IsPlainBattlePilot(other)))
+                        (p != side || !IsPlainBattlePilot(other)))
                     return false;
         }
         damage=Math.Clamp(AttackValue(side,slot),0,ushort.MaxValue);
