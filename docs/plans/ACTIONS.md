@@ -160,6 +160,17 @@ P118, mas a ordem dinâmica no original ainda precisa de comparação.
 Demo.cs preservado em 2614 linhas. Seleções de cartas ou alvos que
 coexistem com a resposta permanecem legadas.
 
+*Recuperação P018 após resposta de Flip Summon (C12.1):* Magician of
+Faith e Mask of Darkness conservam a seleção original enquanto o
+respondente passa ou ativa a armadilha. Após o último gate, a
+recuperação volta a ficar disponível mesmo se Torrential destruir a
+fonte e resolve antes das buscas de cemitério geradas na destruição.
+Os testes cobrem ambos os lados, passe, destruição, escolha entre
+cópias do mesmo ID e ordem com Sangan. A supressão é reavaliada antes
+de retomar a seleção. Demo.cs 2614 → 2614. Seleções de alvos no campo
+ainda usam o fluxo legado. Ordem verificada em C#, sem comparação
+nativa equivalente.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

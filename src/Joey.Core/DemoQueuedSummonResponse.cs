@@ -65,15 +65,26 @@ public sealed partial class DemoDuel
     private sealed partial class PrimitiveActionExecutor
     {
         private PendingEffectDecision? flipDrawAfterSummonResponse;
+        private PendingCardSelection? recoveryAfterSummonResponse;
 
         private void FinishQueuedManualPosition(DemoMonsterPositionChange change, bool resolveFlip, out string message)
         {
             duel.FinishManualPosition(change, resolveFlip, out message);
-            // Intersecting target/card selections retain the existing priority path.
-            if (change.FlipSummoned && duel.PendingSummonResponse is { Summon.Kind: DemoSummonKind.Flip } response &&
-                duel.PendingFlipTarget is null && duel.PendingFlipSpellTrapTargets is null &&
-                duel.PendingCardSelection is null && duel.PendingEffectDecision is null)
-                duel.queuedSummonResponse = response;
+            if (!change.FlipSummoned || duel.PendingSummonResponse is not { Summon.Kind: DemoSummonKind.Flip } response ||
+                duel.PendingFlipTarget is not null || duel.PendingFlipSpellTrapTargets is not null ||
+                duel.PendingEffectDecision is not null) return;
+
+            if (duel.PendingCardSelection is { } selection)
+            {
+                if (selection.Source != CardSelectionSource.Graveyard || selection.Owner != change.Player ||
+                    selection.EffectResourceId != change.Card.Id || !duel.UsesQueuedHandSelection(selection))
+                    return;
+                // Hold P018's original candidates until the Trap and linked removals finish.
+                // Paying the Trap may remove the FLIP source without undoing the recovery.
+                recoveryAfterSummonResponse = selection;
+                duel.PendingCardSelection = null;
+            }
+            duel.queuedSummonResponse = response;
         }
 
         private void ScheduleManualFlipDraw(PendingEffectDecision request, IActionCommandSink followups,
@@ -91,11 +102,20 @@ public sealed partial class DemoDuel
         private void ContinueAfterSummonResponse(IActionCommandSink followups)
         {
             var draw = flipDrawAfterSummonResponse;
+            var recovery = recoveryAfterSummonResponse;
             flipDrawAfterSummonResponse = null;
-            if (draw is not null && !duel.GameOver && !duel.FlipEffectsNegated)
-                ScheduleManualFlipDraw(draw, followups, resumeSummonTriggers: true);
-            else
-                duel.BeginNextQueuedDeckSearch();
+            recoveryAfterSummonResponse = null;
+            if (!duel.GameOver && !duel.FlipEffectsNegated)
+            {
+                if (draw is not null)
+                {
+                    ScheduleManualFlipDraw(draw, followups, resumeSummonTriggers: true);
+                    return;
+                }
+                if (recovery is not null)
+                    duel.PendingCardSelection = recovery;
+            }
+            duel.BeginNextQueuedDeckSearch();
         }
 
         private CommandResult ResolveSummonResponse(ResolveSummonResponseCommand command, IActionCommandSink followups)
