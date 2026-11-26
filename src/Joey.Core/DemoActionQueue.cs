@@ -504,6 +504,8 @@ public sealed partial class DemoDuel
                     return duel.ExecuteQueuedBattlePhaseChange(phase);
                 case EndTurnCommand endTurn:
                     return duel.ExecuteQueuedEndTurn(endTurn, followups);
+                case FinishEndPhaseReturnCommand endReturn:
+                    return duel.FinishQueuedEndReturn(endReturn, followups);
                 case EndTurnDiscardCommand endDiscard:
                     if (!duel.CanExecuteQueuedEndDiscard(endDiscard))
                         return new(CommandOutcome.Rejected, "End-turn discard is no longer legal.");
@@ -632,6 +634,17 @@ public sealed partial class DemoDuel
                 case ReturnToDeckCommand returnDeck:
                     return ReturnMonsterToDeck(returnDeck.Target);
                 case ReturnToHandCommand bounce:
+                    if (duel.queuedEndReturn == bounce.Target)
+                    {
+                        int turn = duel.Turn;
+                        var result = duel.TryResolveCardTarget(bounce.Target, out int slot, out _) &&
+                            duel.IsEndPhaseReturnMonster(bounce.Side, slot)
+                            ? ReturnQueuedMonster(bounce.Target, followups)
+                            : new(CommandOutcome.Skipped, "The End Phase return source is no longer eligible.");
+                        followups.ScheduleContinuation(_ => new([new FinishEndPhaseReturnCommand(
+                            bounce.Side, turn, bounce.Target)]));
+                        return result;
+                    }
                     return bounce.Target.Zone == DuelZone.Monster ? ReturnQueuedMonster(bounce.Target, followups) : ReturnQueuedSpellTrap(bounce.Target);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
                     return DestroyMonster(destroy.Target, followups);

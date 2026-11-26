@@ -275,7 +275,7 @@ public sealed partial class DemoDuel
     // Native suppression/negation is not modeled; setting a spell does not activate it.
     public bool HandLimitDisabled => Enumerable.Range(0, 2).Any(p =>
         Enumerable.Range(0, 5).Any(z => Spells[p, z]?.Id == 0x593 && !SpellFaceDown[p, z]));
-    public int PendingEndDiscards => Phase == DemoPhase.End ? ExcessEndTurnCards : 0;
+    public int PendingEndDiscards => Phase == DemoPhase.End && queuedEndReturn is null ? ExcessEndTurnCards : 0;
     private int ExcessEndTurnCards => HandLimitDisabled ? 0 : Math.Max(0, Hand.Count - EndTurnHandLimit);
     private DemoDuel() { }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.

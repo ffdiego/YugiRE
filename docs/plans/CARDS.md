@@ -149,6 +149,19 @@ nativa e comparação dinâmica seguem pendentes.
 [PR #216](https://github.com/ffdiego/YugiRE/pull/216) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45874384265).
 
+### C03.6 — Retorno de The Wicked Worm Beast no fim do turno
+
+The Wicked Worm Beast (22) retorna à mão por ocorrência, em ordem
+de slots, no fim do turno de seu controlador. Cada retorno usa a
+limpeza de equipamentos da fila. O descarte por excesso de mão
+é oferecido depois de concluir os retornos e os gates. O DAT
+confirma a fase e o destino e `005A4480` no SQLite v7 chama
+`00569790` para exigir a carta revelada e `005779D0` para
+encaminhar o retorno. A posição em relação ao descarte e à
+resolução de outras cartas de fim de turno ainda é política do
+sandbox. Supressão nativa e controle trocado aguardam validação.
+[Pesquisa de retorno e fase](../research/card-static-sweep/11-ataque-invocacao-e-fases.jsonl).
+
 ## C04 — Equipamentos `P025`
 
 <a id="c04"></a>
