@@ -83,7 +83,7 @@ public sealed partial class DemoDuel
     public record Equipment(Card Card, int Owner, int SourceZone, int TargetPlayer, int TargetZone, Card TargetCard);
     private readonly List<Equipment> equipment = [];
     public IReadOnlyList<Equipment> EquipmentCards => equipment.AsReadOnly();
-    private readonly bool[,] attacked = new bool[2, 5];
+    private readonly byte[,] attackDeclarations = new byte[2, 5];
     private readonly bool[,] changedPosition = new bool[2, 5];
     public bool[,] DefensePosition { get; } = new bool[2, 5];
     public bool[,] MonsterFaceDown { get; } = new bool[2, 5];
@@ -546,7 +546,9 @@ public sealed partial class DemoDuel
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is not null && !changedPosition[ActivePlayer, zone];
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } attacker &&
-        !attacked[ActivePlayer, zone] && !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
+        !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
+        (!HasDeclaredAttack(ActivePlayer, zone) ||
+            HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
         !AttackRestrictedByInsectBarrier(ActivePlayer, attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
         DirectAttackAllowed(ActivePlayer, Monsters[ActivePlayer, zone]!);
@@ -1304,7 +1306,7 @@ public sealed partial class DemoDuel
     {
         message = "Select an unused attacker and a valid enemy target in battle phase.";
         int p = ActivePlayer, enemy = 1 - p;
-        if (!CanAttack(source)) return false;
+        if (!CanAttack(source) || HasDeclaredAttack(p, source)) return false;
         var attacker = Monsters[p, source]!;
 
         Card? defender = null;
@@ -1325,7 +1327,7 @@ public sealed partial class DemoDuel
 
         // An attack declaration consumes the attack regardless of whether
         // Mirror Force destroys the attacker in the response window.
-        attacked[p, source] = true;
+        attackDeclarations[p, source] = 1;
         var declaration = new DemoAttackDeclaration(p, source, attacker, target, defender);
         BeginAttackResponse(declaration);
         if (PendingAttackResponse is not null)
@@ -1844,7 +1846,7 @@ public sealed partial class DemoDuel
                     MonsterWasFlipped[p, zone] = false;
                     MonsterFaceDown[p, zone] = DefensePosition[p, zone] = true;
                     changedPosition[p, zone] = true;
-                    attacked[p, zone] = false;
+                    attackDeclarations[p, zone] = 0;
                     MonsterSpecialSummoned?.Invoke(new(p, zone, card, true));
                     summoned++;
                 }
@@ -2043,7 +2045,7 @@ public sealed partial class DemoDuel
         DefensePosition[owner, zone] = faceDownDefense || faceUpDefense;
         MonsterWasFlipped[owner, zone] = false;
         changedPosition[owner, zone] = true;
-        attacked[owner, zone] = false;
+        attackDeclarations[owner, zone] = 0;
         MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense, faceUpDefense) { FusionMaterials = fusionMaterials });
     }
 
@@ -2449,7 +2451,8 @@ public sealed partial class DemoDuel
         Monsters[player, zone] = null;
         DefensePosition[player, zone] = MonsterFaceDown[player, zone] = false;
         MonsterWasFlipped[player, zone] = false;
-        changedPosition[player, zone] = attacked[player, zone] = false;
+        changedPosition[player, zone] = false;
+        attackDeclarations[player, zone] = 0;
         // Attached equips go to their owners' Graveyards when the monster leaves.
         if (removeEquipment)
             foreach (var e in equipment.Where(e => e.TargetPlayer == player && e.TargetZone == zone).ToArray())
@@ -2505,7 +2508,7 @@ public sealed partial class DemoDuel
         temporaryStats.Clear();
         Turn++; Phase = DemoPhase.Main; summoned = drawn = false;
         battlePhaseEndedThisTurn = false;
-        Array.Clear(attacked); Array.Clear(changedPosition);
+        Array.Clear(attackDeclarations); Array.Clear(changedPosition);
         // A Standby opportunity follows the turn-draw opportunity (including a skipped Draw Phase); see
         // ResolvePostDrawStandbyEffects, not the turn increment itself.
     }

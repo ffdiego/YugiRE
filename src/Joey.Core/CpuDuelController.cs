@@ -510,20 +510,29 @@ public sealed class CpuDuelController
                 .OrderByDescending(z => duel.AttackValue(Player, z)))
             {
                 int power = duel.AttackValue(Player, source);
-                if (power > 0 && duel.CanAttackDirectly(source))
-                    return Act(CpuAction.Attack, (out string m) => AttackFrom(source, -1, out m),
-                        duel.Monsters[Player, source], source, -1);
                 var enemies = Enumerable.Range(0, 5).Where(z => duel.Monsters[enemy, z] is not null).ToArray();
-                int target = enemies.Select(z => (Zone: z,
+                if ((power > 0 || enemies.Length == 0) && duel.CanAttackDirectly(source))
+                {
+                    var directAttempt = Act(CpuAction.Attack, (out string m) => AttackFrom(source, -1, out m),
+                        duel.Monsters[Player, source], source, -1);
+                    if (directAttempt.Status != CpuStepStatus.Blocked || !duel.HasDeclaredAttack(Player, source))
+                        return directAttempt;
+                }
+                var targets = enemies.Select(z => (Zone: z,
                         Margin: queueTurnActions && !duel.MonsterFaceDown[enemy, z]
                             ? duel.QueuedTargetedBattlePower(Player, source, z).Difference
                             : power - KnownPower(duel, enemy, z)))
                     .Where(candidate => candidate.Margin > 0)
                     .OrderByDescending(candidate => !duel.MonsterFaceDown[enemy, candidate.Zone] &&
                         !duel.DefensePosition[enemy, candidate.Zone] ? candidate.Margin + 1000 : 500)
-                    .ThenBy(candidate => candidate.Zone).Select(candidate => candidate.Zone).FirstOrDefault(-1);
-                if (enemies.Length > 0 && target < 0) continue;
-                return Act(CpuAction.Attack, (out string m) => AttackFrom(source, target, out m), duel.Monsters[Player, source], source, target);
+                    .ThenBy(candidate => candidate.Zone).Select(candidate => candidate.Zone);
+                foreach (int target in targets)
+                {
+                    var targetedAttempt = Act(CpuAction.Attack, (out string m) => AttackFrom(source, target, out m),
+                        duel.Monsters[Player, source], source, target);
+                    if (targetedAttempt.Status != CpuStepStatus.Blocked || !duel.HasDeclaredAttack(Player, source))
+                        return targetedAttempt;
+                }
             }
             return Act(CpuAction.EndBattle, LeaveBattle);
         }

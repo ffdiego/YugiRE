@@ -1615,6 +1615,28 @@
       ]
     },
     {
+      "id": "battle.hayabusa-knight-extra-attack-c03",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "status": "Done",
+      "resourceIds": [
+        1336
+      ],
+      "mechanics": [
+        "Allow up to two direct or targeted attack declarations in the same queued Battle Phase",
+        "Share the attack count across both producers and renew it for the next turn"
+      ],
+      "evidence": [
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/Joey.Core/DemoQueuedDirectAttack.cs",
+        "src/tests/Joey.Tests/QueuedHayabusaChecks.cs",
+        "docs/research/card-static-sweep/09-efeitos-fora-da-tabela.jsonl"
+      ],
+      "limitations": [
+        "Second attack is available in queued battle configurations. Consumption on a negated declaration follows the sandbox policy; native comparison and control-change interactions are pending."
+      ]
+    },
+    {
       "id": "continuous.insect-barrier-c02",
       "kind": "Spell",
       "subtype": "Continuous",
