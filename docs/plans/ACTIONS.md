@@ -275,6 +275,15 @@ posição de invocação. Dano letal preserva a alteração de LP do
 sandbox e impede a oferta. Demo.cs 2609 → 2607 linhas. A ordem
 nativa segue pendente de comparação.
 
+*P006 em batalha (C12.1):* Sangan e Witch of the Black
+Forest agora podem combater pela fila e abrem buscas obrigatórias
+Deck → mão pelo produtor existente quando chegam ao cemitério.
+No empate, a busca do atacante precede a do defensor e a segunda
+aguarda a transferência, o embaralhamento e o gate da primeira.
+Testes C# cobrem os dois lados, filtros distintos, console, CPU
+e proteção contra resposta legada. Demo.cs permanece com 2607
+linhas. Comparação nativa pendente.
+
 ## A07 — Turno e fases como comandos/estágios da fila
 
 <a id="a07"></a>

@@ -18,21 +18,20 @@ public sealed partial class DemoDuel
         public Dictionary<CardTarget,DuelZone> ExpectedEffectMoves { get; } = [];
     }
     private BattleRevealReservation? queuedBattleReveal;
-    private bool queuedBattleRecruitmentOpening;
-    private PendingCardSelection? queuedBattleRecruitmentRequest;
+    private bool queuedBattleDeckSelectionOpening;
+    private PendingCardSelection? queuedBattleDeckSelectionRequest;
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
     private static bool IsPlainBattlePilot(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 || NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id));
 
-    private static bool IsElementalBattleRecruiter(Card card) => card.IsMonster &&
-        CardSelectionRules.BattleRecruitAttribute(card.Id) is not null;
-
-    private static bool IsBattleRecruiter(Card card) => IsElementalBattleRecruiter(card) ||
-        card.IsMonster && CardSelectionRules.BattleSameNameRecruiter(card.Id);
+    private static bool HasBattleRemovalDeckSelection(Card card) => card.IsMonster &&
+        (CardSelectionRules.BattleRecruitAttribute(card.Id) is not null ||
+            CardSelectionRules.BattleSameNameRecruiter(card.Id) ||
+            CardSelectionRules.OnFieldToGraveyardFilter(card.Id) is not null);
 
     private static bool IsOrdinaryBattlePilot(Card card) =>
-        IsPlainBattlePilot(card) || IsBattleRecruiter(card) ||
+        IsPlainBattlePilot(card) || HasBattleRemovalDeckSelection(card) ||
         card.IsMonster && BattleDamageEffectRules.SupportsDraw(card.Id);
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
@@ -326,26 +325,27 @@ public sealed partial class DemoDuel
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,card.Id,slot,command.Role) };
     }
 
-    private bool HasQueuedBattleRecruitmentChoice =>
-        queuedBattleRecruitmentRequest is not null &&
-        ReferenceEquals(PendingCardSelection,queuedBattleRecruitmentRequest);
+    private bool HasQueuedBattleDeckSelectionChoice =>
+        queuedBattleDeckSelectionRequest is not null &&
+        ReferenceEquals(PendingCardSelection,queuedBattleDeckSelectionRequest);
 
-    private CommandResult OpenQueuedBattleRecruitment()
+    private CommandResult OpenQueuedBattleDeckSelection()
     {
-        if (!queuedBattleRecruitmentOpening || queuedBattleRemoved.Any(x=>x is not null) ||
-            queuedBattleRecruitmentRequest is not null || PendingCardSelection is not null)
-            return new(CommandOutcome.Rejected,"No completed battle recruitment batch.");
-        queuedBattleRecruitmentOpening=false;
+        if (!queuedBattleDeckSelectionOpening || queuedBattleRemoved.Any(x=>x is not null) ||
+            queuedBattleDeckSelectionRequest is not null || PendingCardSelection is not null)
+            return new(CommandOutcome.Rejected,"No completed battle deck selection.");
+        queuedBattleDeckSelectionOpening=false;
         BeginNextQueuedDeckSearch();
-        RefreshQueuedBattleRecruitmentRequest();
+        RefreshQueuedBattleDeckSelectionRequest();
         return new(CommandOutcome.Applied);
     }
 
-    private void RefreshQueuedBattleRecruitmentRequest()
+    private void RefreshQueuedBattleDeckSelectionRequest()
     {
-        queuedBattleRecruitmentRequest = PendingCardSelection is { } next &&
+        queuedBattleDeckSelectionRequest = PendingCardSelection is { } next &&
             (IsElementalRecruitment(next) ||
-                CardSelectionRules.BattleSameNameRecruiter(next.EffectResourceId) && IsSameNameRecruitment(next))
+                CardSelectionRules.BattleSameNameRecruiter(next.EffectResourceId) && IsSameNameRecruitment(next) ||
+                UsesQueuedHandSelection(next) && CardSelectionRules.OnFieldToGraveyardFilter(next.EffectResourceId) is not null)
             ? next : null;
     }
 
@@ -354,17 +354,17 @@ public sealed partial class DemoDuel
         var r=queuedBattleRemoved[command.Role];
         if(r is null || r.Target!=command.Target || !r.Detached)
             return new(CommandOutcome.Rejected,"No detached combatant to send.");
-        // Preserve the Card reference for recruitment from its actual battle arrival.
+        // Preserve the Card reference for effects triggered by its arrival.
         graves[command.Side].Add(r.Card);
         queuedBattleRemoved[command.Role]=null;
-        if (!GameOver && IsBattleRecruiter(r.Card))
+        if (!GameOver && HasBattleRemovalDeckSelection(r.Card))
         {
             queuedDeckSearches.Enqueue((command.Side,r.Card,true,false,false));
-            queuedBattleRecruitmentOpening=true;
+            queuedBattleDeckSelectionOpening=true;
         }
         // All reserved combatants must reach GY and finish their gates
-        // before the first owner receives a recruitment request.
-        if (queuedBattleRecruitmentOpening && queuedBattleRemoved.All(x=>x is null))
+        // before the first owner receives a deck selection request.
+        if (queuedBattleDeckSelectionOpening && queuedBattleRemoved.All(x=>x is null))
             followups.ScheduleContinuation(_ => new([new OpenBattleRecruitmentCommand(command.Side)]));
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,r.Card.Id,r.Slot,command.Role) };
     }

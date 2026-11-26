@@ -52,9 +52,59 @@ internal static class QueuedDeckSearchChecks
         }
     }
 
+    private static void CheckBattleSearchOrder(Action<bool, string> check)
+    {
+        var sangan = Monster(47);
+        var witch = Monster(573);
+        var lowAttack = Monster(24, 1200, 1900);
+        var lowDefense = Monster(25, 1900, 1200);
+        Card[] deck = [lowAttack, lowDefense];
+        foreach (int side in new[] { 0, 1 })
+        {
+            int defender = 1 - side;
+            var duel = DemoDuel.FromPartialObservation(defender, [],
+                side == 0 ? Slots(sangan) : Slots(witch), side == 1 ? Slots(sangan) : Slots(witch), 8000,
+                side0Deck: deck, side1Deck: deck);
+            var gate = new Gate();
+            var console = new DuelConsoleSession(duel, gate);
+            var queue = console.Queue;
+            check(duel.EndTurn(out _) && duel.BeginBattle(out _) && console.Execute("attack 0 0").Enqueued,
+                "P006 admits a battle between the two searchers");
+            Drain(queue);
+            check(duel.Graveyard(side).SequenceEqual([sangan]) && duel.Graveyard(defender).SequenceEqual([witch]) &&
+                duel.PendingCardSelection is { EffectResourceId: 47, MinSelections: 1 } first &&
+                CpuDuelController.PendingOwner(duel) == side && duel.UsesQueuedHandSelection(first) &&
+                duel.QueuedDeckSearchCandidates(first).Select(c => c.SourceIndex).SequenceEqual([0]) &&
+                !duel.ResolveCardSelection(0, out _) && !console.Execute("select-hand decline").Enqueued &&
+                console.Execute("select-hand 0").Enqueued,
+                "Sangan's mandatory ATK search is offered first, after both removals");
+            gate.Release = false;
+            for (int tick = 0; queue.IsBusy && queue.Active?.Command is not MoveToHandCommand && tick < 20; tick++)
+                queue.Tick();
+            check(queue.Active?.Command is MoveToHandCommand && duel.HandFor(side).SequenceEqual([lowAttack]) &&
+                duel.HandFor(defender).Count == 0 && duel.PendingCardSelection is null &&
+                !queue.Trace.Any(entry => entry.Entry.Command is ShuffleDeckCommand),
+                "Sangan's transfer gate blocks its shuffle and Witch's search");
+            gate.Release = true;
+            Drain(queue);
+            check(duel.PendingCardSelection is { EffectResourceId: 573, MinSelections: 1 } second &&
+                CpuDuelController.PendingOwner(duel) == defender &&
+                duel.QueuedDeckSearchCandidates(second).Select(c => c.SourceIndex).SequenceEqual([1]) &&
+                new CpuDuelController(defender).Step(duel, queueTurnActions: true) is
+                    { Status: CpuStepStatus.Acted, Action: CpuAction.Selection },
+                "Witch follows after Sangan's shuffle and the CPU uses her DEF search");
+            Drain(queue);
+            check(duel.PendingCardSelection is null && duel.HandFor(defender).SequenceEqual([lowDefense]) &&
+                queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Executed &&
+                    entry.Entry.Command is ShuffleDeckCommand) == 2 &&
+                duel.Life.SequenceEqual([8000, 8000]), "Each search transfers and shuffles once");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
         CpuFusionSage(check);
+        CheckBattleSearchOrder(check);
         foreach(int side in new[]{0,1})
         foreach(ushort effect in new ushort[]{47,573})
         {
