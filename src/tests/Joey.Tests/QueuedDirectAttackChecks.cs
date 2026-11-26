@@ -231,12 +231,54 @@ internal static class QueuedDirectAttackChecks
         }
     }
 
+    private static void CheckEquippedDirectAttack(Action<bool, string> check)
+    {
+        var magePower = new Card(DynamicEquipmentRules.MagePower, DynamicEquipmentRules.MagePower,
+            "Mage Power", "", 22u << 20);
+        foreach (int side in new[] { 0, 1 })
+        foreach (ushort response in new ushort[] { 0, AttackTrapRules.MagicCylinder, AttackTrapRules.MirrorForce })
+        {
+            int responder = 1 - side;
+            bool pass = response == 0;
+            bool wipe = response == AttackTrapRules.MirrorForce;
+            ushort trapId = pass ? AttackTrapRules.MagicCylinder : response;
+            var trap = new Card(trapId, trapId, "Attack Trap", "", 21u << 20);
+            var attacker = Monster(1400);
+            var duel = DemoDuel.FromPartialObservation(responder, [magePower, trap],
+                side == 0 ? Slots(attacker) : Slots(), side == 1 ? Slots(attacker) : Slots(), 8000,
+                equipmentContextResolved: true);
+            var console = new DuelConsoleSession(duel);
+            var queue = console.Queue;
+            check(duel.TryQueueEquipment(DuelZone.Hand, 0, side, 2, out _),
+                "Mage Power can equip the opposing monster");
+            Drain(queue);
+            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _) &&
+                duel.AttackValue(side, 2) == 2400 && duel.TryQueueDirectAttack(2, out _),
+                "Equipped direct attack admits the current ATK and the Set response");
+            Drain(queue);
+            check(duel.PendingAttackResponse?.EligibleTraps.Single().Zone == 1 &&
+                console.Execute(pass ? "respond-attack pass" : $"respond-attack {responder} 1").Enqueued,
+                "The linked Equip does not appear as an attack response");
+            Drain(queue);
+
+            check(duel.Life[side] == (response == AttackTrapRules.MagicCylinder ? 5600 : 8000) &&
+                duel.Life[responder] == (pass ? 5600 : 8000) &&
+                (wipe ? duel.Graveyard(side).SequenceEqual([attacker]) &&
+                    duel.Graveyard(responder).SequenceEqual([trap, magePower]) &&
+                    duel.EquipmentCards.Count == 0 && duel.Spells[responder, 0] is null :
+                    duel.Monsters[side, 2] == attacker && duel.Spells[responder, 0] == magePower &&
+                    duel.EquipmentCards.Count == 1),
+                "Direct damage and Cylinder use equipped ATK; Mirror Force cleans up the original link");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
         CheckQueuedAttackResponses(check);
         CheckDirectMirrorForce(check);
         CheckSetBackRow(check);
         CheckFieldSpellDamage(check);
+        CheckEquippedDirectAttack(check);
         var d=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000);
         var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
         check(!d.TryQueueDirectAttack(2,out _),"A05.7 Main Phase rejects attack");
