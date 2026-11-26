@@ -1,7 +1,8 @@
 # C12 — Ressurreição GY → Field
 
-P169: Spear Cretin (1116). Reusar RemoveMonster e BeginNextQueuedDeckSearch:
-após ocorrência previamente revelada chegar ao GY, gerar duas
+P169: Spear Cretin (1116). A remoção por batalha ou efeito
+usa o mesmo registro de gatilho. Após uma ocorrência previamente
+revelada chegar ao cemitério, o produtor gera duas
 solicitações obrigatórias, primeiro dono, depois oponente, pulando
 lado sem candidatos ou espaço. A solicitação original exclui a
 ocorrência disparadora, não todas as cartas do mesmo resource ID.
@@ -17,11 +18,12 @@ SpecialSummonCommand antes de abrir próxima escolha. Não embaralha.
 
 SpecialSummonCommand admite origem Deck ou Graveyard, do próprio
 lado. Preserva ocorrência, limpa histórico de FLIP na colocação e
-usa evento MonsterSpecialSummoned. Não altera o produtor de batalha
-nem as janelas de resposta, nem implementa ressurreição do GY adversário.
-Primitiva de movimentação não substitui regras de admissão específicas.
+usa evento MonsterSpecialSummoned. O produtor de batalha enfileirado
+guarda o histórico de FLIP no snapshot de remoção e aciona a
+ressurreição na chegada ao cemitério após os gates. Cada lado revive
+uma ocorrência do próprio cemitério.
 
-Testes: ambos donos e posições, exclusão da fonte, outra cópia, filtro,
-slot, request obsoleto, gate, segunda escolha, batalha concluída e
-primitiva inválida. Sem paridade nativa, sem aumento de cobertura.
-CI pendente; UI/CPU ainda legados.
+Testes cobrem os dois donos e posições, exclusão da fonte, outra cópia,
+filtro, slot, request obsoleto, gates e segunda escolha. O App e a CPU
+usam a seleção compartilhada no modo padrão. O gatilho e a ordem
+em batalha foram testados em C# e aguardam comparação nativa.

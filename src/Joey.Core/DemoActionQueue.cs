@@ -404,7 +404,7 @@ public sealed partial class DemoDuel
                 duel.queuedBattleRemoved[afterWin.Role] is { } marked && marked.Target == afterWin.Target)
                 return duel.SnapshotQueuedBattleRemoval(afterWin);
             if (command is OpenBattleRecruitmentCommand)
-                return duel.OpenQueuedBattleDeckSelection();
+                return duel.OpenQueuedBattleRemovalSelection();
             if (command is FinishBattleRemovalCommand battleFinish)
                 return duel.FinishQueuedBattleRemoval(battleFinish, followups);
             // The equipped monster's reserved cleanup still runs after lethal battle damage.
@@ -1824,9 +1824,7 @@ public sealed partial class DemoDuel
             reservedDeckSearchOwner = null;
             reservedDeckSearch.Clear();
             deckSearchMoved = false;
-            bool battleDeckSelection = duel.queuedBattleDeckSelectionRequest is not null;
-            duel.BeginNextQueuedDeckSearch();
-            if (battleDeckSelection) duel.RefreshQueuedBattleDeckSelectionRequest();
+            duel.ContinueQueuedGraveyardOrDeckSelection();
             return new(CommandOutcome.Applied);
         }
 
@@ -1884,7 +1882,7 @@ public sealed partial class DemoDuel
             if (!resolvingGraveyardRecovery)
                 return new(CommandOutcome.Rejected, "No recovery to finalize.");
             resolvingGraveyardRecovery = false;
-            duel.BeginNextQueuedDeckSearch();
+            duel.ContinueQueuedGraveyardOrDeckSelection();
             return new(CommandOutcome.Applied);
         }
 

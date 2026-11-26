@@ -1878,7 +1878,7 @@ public sealed partial class DemoDuel
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleDeckSelectionChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MaxSelections: 1 } pending ||
             pending.MinSelections is < 0 or > 1 || pending.Owner is < 0 or > 1)
@@ -1965,7 +1965,7 @@ public sealed partial class DemoDuel
     public bool SelectBatchCard(int sourceIndex, out string message)
     {
         message = "A multiple-card recruitment is not pending.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleDeckSelectionChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
@@ -1991,7 +1991,7 @@ public sealed partial class DemoDuel
     public bool FinishOptionalCardSelection(out string message)
     {
         message = "No multiple same-name recruitment is pending.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleDeckSelectionChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not
             { Source: CardSelectionSource.Deck, Destination: CardSelectionDestination.Field,
@@ -2049,7 +2049,7 @@ public sealed partial class DemoDuel
     public bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
-        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleDeckSelectionChoice) return false;
+        if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
         if (TryNegatePendingFlip(PendingFlipChoice.CardSelection, out message)) return true;
         if (PendingCardSelection is not { MinSelections: 0 } pending)
             return false;
@@ -2408,14 +2408,7 @@ public sealed partial class DemoDuel
                                   CardSelectionRules.BattleSameNameRecruiter(removed.Id)))
             queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, false, false));
 
-        // Spear Cretin's FLIP does not resolve on revelation. After it has
-        // been flipped, its later trip to the graveyard allows each player to
-        // revive from their own graveyard. The source itself is ineligible.
-        if (removed.Id == CardSelectionRules.SpearCretin && previouslyFlipped)
-        {
-            queuedDeckSearches.Enqueue((p, removed, destroyedByBattle, true, false));
-            queuedDeckSearches.Enqueue((1 - p, removed, destroyedByBattle, true, false));
-        }
+        QueueSpearCretinRevival(p, removed, previouslyFlipped, destroyedByBattle);
         if (destroyedByBattle && removed.Id == RevivalJamRules.ResourceId &&
             !GameOver && RevivalJamRules.MayPay(Life[p]))
         {
