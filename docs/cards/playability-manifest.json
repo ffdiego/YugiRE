@@ -1615,6 +1615,50 @@
       ]
     },
     {
+      "id": "equipment.fairy-meteor-crush-piercing-c04",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "status": "Done",
+      "resourceIds": [
+        1313
+      ],
+      "mechanics": [
+        "Equip one tracked face-up monster from hand or Set via the queue",
+        "Grant piercing battle damage to the side opposite the equip owner with no stat bonus"
+      ],
+      "evidence": [
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedEquipmentChecks.cs",
+        "docs/cards/p025-preliminary.md"
+      ],
+      "limitations": [
+        "Queued sandbox. Native suppression, reflect timing, and double-lethal battle adjudication require dynamic validation."
+      ]
+    },
+    {
+      "id": "equipment.cyclon-laser-piercing-c04",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "status": "Done",
+      "resourceIds": [
+        1540
+      ],
+      "mechanics": [
+        "Equip only tracked face-up Gradius from hand or Set via the queue and add 300 ATK",
+        "Grant piercing battle damage to the side opposite the equip owner"
+      ],
+      "evidence": [
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs",
+        "src/tests/Joey.Tests/QueuedEquipmentChecks.cs",
+        "docs/cards/p025-preliminary.md"
+      ],
+      "limitations": [
+        "Queued sandbox. Native suppression, reflect timing, and double-lethal battle adjudication require dynamic validation."
+      ]
+    },
+    {
       "id": "flip.dark-eyes-illusionist-attack-restriction-c03",
       "kind": "Monster",
       "subtype": "Effect",

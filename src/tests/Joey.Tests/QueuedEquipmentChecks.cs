@@ -18,6 +18,7 @@ internal static class QueuedEquipmentChecks
     }
     public static void Run(Action<bool, string> check)
     {
+        CheckPiercingEquipment(check);
         foreach (int owner in new[] { 0, 1 })
         foreach (int targetSide in new[] { 0, 1 })
         foreach (ushort id in new ushort[] { 300, 656, 1449, 1450 })
@@ -172,5 +173,91 @@ internal static class QueuedEquipmentChecks
             "New dynamic equipment cannot bypass queue via legacy activation");
         check(DynamicEquipmentRules.Evaluate(656, 1001, 9000,8000,0,0).BaseAttack == 501,
             "Megamorph native half rounding");
+    }
+
+    private static void CheckPiercingEquipment(Action<bool, string> check)
+    {
+        const ushort fairy = 1313, cyclon = 1540;
+        var gradius = Monster(558, 1339) with { Properties = (7u << 20) | (4u << 25) | (120u << 9) | 80u };
+        var defender = Monster(24, 24) with { Properties = (3u << 20) | (4u << 25) | (100u << 9) | 60u };
+        Card?[] attackerField = [gradius, null, null, null, null];
+        Card?[] defenderField = [defender, null, null, null, null];
+        foreach (ushort id in new[] { fairy, cyclon })
+        foreach (int owner in new[] { 0, 1 })
+        foreach (bool fromSet in new[] { false, true })
+        {
+            var duel = DemoDuel.FromPartialObservation(owner, [Spell(id)], defenderField, attackerField, 8000,
+                equipmentContextResolved: true);
+            duel.DefensePosition[0, 0] = true;
+            var queue = duel.CreatePrimitiveActionQueue();
+            if (fromSet)
+            {
+                check(duel.TryQueueSpellTrapSet(0, out _), "Piercing equipment may be Set");
+                Drain(queue);
+            }
+            var zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
+            check(duel.TryCaptureCardTarget(owner, zone, 0, out var source) &&
+                duel.QueuedEquipmentCandidates(source).Count == (id == cyclon ? 1 : 2),
+                "Cyclon Laser targets only Gradius and Fairy Meteor Crush accepts any face-up monster");
+            check(duel.TryQueueEquipment(zone, 0, 1, 0, out _), "Piercing equipment attaches to the exact Gradius");
+            Drain(queue);
+            int difference = id == cyclon ? 900 : 600;
+            check(duel.AttackValue(1, 0) == difference + 600 && duel.DefenseValue(1, 0) == 800,
+                "Cyclon Laser grants 300 ATK and Fairy Meteor Crush grants no stats");
+            if (owner == 0)
+            {
+                check(duel.TryQueueEndTurn(out _), "Advance to the opposing equipped monster's turn");
+                Drain(queue);
+            }
+            duel.MonsterFaceDown[0, 0] = fromSet;
+            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, 0, out _), "Piercing battle is admitted");
+            Drain(queue);
+            check(duel.Life[owner] == 8000 && duel.Life[1 - owner] == 8000 - difference &&
+                duel.Graveyard(0).Single() == defender &&
+                queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Executed &&
+                    entry.Entry.Command is DamageCommand { Amount: var amount } && amount == difference) == 1,
+                "Piercing grants one battle damage difference to the side opposite the Equip Spell's owner");
+        }
+
+        foreach (bool lethal in new[] { false, true })
+        {
+            var worm = defender with { Id = FlipEffectRules.NeedleWorm };
+            var duel = DemoDuel.FromPartialObservation(0, [Spell(fairy), Spell(fairy)],
+                [worm, null, null, null, null], attackerField, 8000, equipmentContextResolved: true,
+                side1Deck: [Spell(cyclon), Monster(77)]);
+            var queue = duel.CreatePrimitiveActionQueue();
+            for (int copy = 0; copy < 2; copy++)
+            {
+                check(duel.TryQueueEquipment(DuelZone.Hand, 0, 1, 0, out _), "Stack Fairy Meteor Crush links from the defender's side");
+                Drain(queue);
+            }
+            check(duel.TryQueueEndTurn(out _), "Advance to Gradius during the joint piercing scenarios");
+            Drain(queue);
+            check(duel.TryQueueTurnDraw(out _), "Draw Cyclon Laser for the attacker");
+            Drain(queue);
+            check(duel.TryQueueEquipment(DuelZone.Hand, 0, 1, 0, out _), "Gradius also equips its own Cyclon Laser");
+            Drain(queue);
+            duel.MonsterFaceDown[0, 0] = duel.DefensePosition[0, 0] = true;
+            if (lethal) duel.Life[0] = duel.Life[1] = 900;
+            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, 0, out _), "Joint piercing attacks an opposing FLIP");
+            Drain(queue);
+            int expectedLife = lethal ? 0 : 7100;
+            check(duel.Life.SequenceEqual([expectedLife, expectedLife]) && duel.IsDraw == lethal &&
+                (duel.LastDeckFlow is not null) == !lethal && duel.Graveyard(0).Single() == worm &&
+                queue.Trace.Count(entry => entry.Stage == ActionTraceStage.Executed &&
+                    entry.Entry.Command is DamageCommand { Amount: 900 }) == 2,
+                "Either side takes the positive difference once; joint lethal ends the duel before FLIP");
+        }
+
+        var cpu = DemoDuel.FromPartialObservation(1, [Spell(cyclon)], defenderField, attackerField, 8000,
+            equipmentContextResolved: true, side1Deck: [Spell(0)]);
+        var cpuQueue = cpu.CreatePrimitiveActionQueue();
+        var controller = new CpuDuelController(1);
+        check(controller.Step(cpu).Action == CpuAction.Draw, "CPU draws before planning Cyclon Laser");
+        Drain(cpuQueue);
+        check(controller.Step(cpu) is { Action: CpuAction.Equip, Status: CpuStepStatus.Acted },
+            "CPU equips Cyclon Laser through the tracked Gradius target");
+        Drain(cpuQueue);
+        check(cpu.AttackValue(1, 0) == 1500, "CPU Cyclon Laser grants the Gradius bonus");
     }
 }
