@@ -75,24 +75,24 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 > Novos efeitos somente pela fila; novos lotes suspensos até o gate C12.1. Depois, DAT primeiro e triagem C18 para famílias independentes. [Histórico](docs/plans/CARDS.md#histórico-concluído-sem-id).
 
 - [x] **C01 — Taxonomia de efeitos por texto local.** Status: `Concluído`. Taxonomia local concluída: 264 sem efeito, 433 fila/resposta, 72 revisão, duas candidatas triviais. [Detalhes](docs/plans/CARDS.md#c01)
-- [ ] **C02 — Lotes triviais por família.** Status: `Pronto`. Após C12.1: famílias independentes de risco baixo/médio (C18); preservar lotes já implementados, incluindo Final Destiny e P123. [Detalhes](docs/plans/CARDS.md#c02)
-- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`. Após C12.1: efeitos independentes por risco (C18); dano de batalha depende de A06/A07. [Detalhes](docs/plans/CARDS.md#c03)
+- [ ] **C02 — Lotes triviais por família.** Status: `Pronto`. Selecionar famílias independentes de risco baixo/médio (C18) com produtor na fila. [Detalhes](docs/plans/CARDS.md#c02)
+- [ ] **C03 — Monstros de efeito restantes (193 Effect).** Status: `Parcial`. Priorizar bônus por contagem já mapeados (C18); admitir os combatentes e seus modificadores na fila. [Detalhes](docs/plans/CARDS.md#c03)
 - [ ] **C04 — Equipamentos `P025`.** Status: `Parcial`. Migrar fluxos legados de mão dos equipamentos P025 (C12); demais efeitos depois. [Detalhes](docs/plans/CARDS.md#c04)
-- [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Pronto`. Blue Medicine já na fila; Tremendous Fire após C12. [Detalhes](docs/plans/CARDS.md#c05)
+- [ ] **C05 — Curas/danos adicionais em tabelas de efeitos.** Status: `Parcial`. Ampliar efeitos independentes de LP pela triagem C18; dano por armadilha e FLIP depende do gatilho na fila. [Detalhes](docs/plans/CARDS.md#c05)
 - [ ] **C06 — Demais armadilhas e janelas de resposta/correntes.** Status: `Pronto`. Migrar armadilhas existentes em C12; novas respostas/correntes depois. [Detalhes](docs/plans/CARDS.md#c06)
 - [ ] **C07 — Gatilhos de cemitério/batalha e refinamento de FLIP.** Status: `Parcial`. Integrar gatilhos já implementados à fila em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c07)
 - [ ] **C08 — Ampliar Morphing Jar #2.** Status: `Pronto`. Fusion/Extra Deck, tokens, controle e seleção >5; depois de C12. [Detalhes](docs/plans/CARDS.md#c08)
 - [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Revisar restrições, interações e efeito próprio de Relinquished após o gate C12.1. Produtores UI/CPU de Ritual já feitos pertencem a C09, não ao C12. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
-- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Foco atual. Gate reduzido: fila padrão no App/CPU para famílias com produtor + CI verde; priorizar apagar legado. Escopo congelado no inventário Done; ver bloco C12. [Detalhes](docs/plans/CARDS.md#c12)
+- [ ] **C12 — Migrar famílias Done para a fila de ações.** Status: `Parcial`. Após o gate integrado, apagar resolvedores legados equivalentes e substituir comparadores por testes de cenário. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Adiado`. Sea Serpent confirmado no DAT; comparação P036 em duelo nativo preservada, sob demanda. [Detalhes](docs/plans/CARDS.md#c14)
 - [ ] **C15 — Fatias `Verified`.** Status: `Adiado`. Comparações por família e interações em duelos dirigidos após massa crítica; antecipar divergências materiais. [Detalhes](docs/plans/CARDS.md#c15)
 - [ ] **C16 — Seletor de custo de invocação especial por banimento.** Status: `Parcial`. Comparar o seletor do tabuleiro com o original; efeitos pós-invocação restantes depois. Produtores UI/CPU/console já feitos pertencem a C16, não ao C12. [Detalhes](docs/plans/CARDS.md#c16)
 - [ ] **C17 — Controle de Dark Necrofear e Prohibition.** Status: `Aguardando evidência`. Dark Necrofear/Prohibition dependem de evidência; não implementar por aproximação. [Detalhes](docs/plans/CARDS.md#c17)
 
-- [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Parcial`. Inventário de slots reproduzido; script cruza manifest, estudos estáticos e C01 opcional. Falta executar a taxonomia real e revisar semântica por família; novas cartas aguardam C12.1. [Detalhes](docs/plans/CARDS.md#c18)
+- [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Parcial`. Aplicar o cruzamento C01 local na revisão semântica por família. [Detalhes](docs/plans/CARDS.md#c18)
 
 ### C12 — migrar as famílias Done para a fila de ações
 

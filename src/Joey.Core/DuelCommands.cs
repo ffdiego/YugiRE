@@ -37,7 +37,11 @@ public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelC
 public sealed record BanishCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side);
-public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side);
+public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side)
+{
+    internal bool DeferDuelResult { get; init; }
+}
+internal sealed record FinishJointDamageCommand(int Side) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
@@ -364,6 +368,7 @@ internal static class DuelCommandValidation
                 Target(jar.Target, jar.Side, DuelZone.Monster);
                 break;
             case DamageCommand damage when damage.Amount > 0:
+            case FinishJointDamageCommand:
             case HealCommand { Amount: > 0 }:
                 break;
             case SummonCommand summon when summon.Slot is >= 0 and < 5:

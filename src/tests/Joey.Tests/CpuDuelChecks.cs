@@ -64,7 +64,7 @@ internal static class CpuDuelChecks
         foreach (bool fromSet in new[] { false, true })
         foreach (ushort id in new ushort[]
         {
-            338, 345, LifePointSpellRules.BlueMedicine,
+            338, 345, LifePointSpellRules.BlueMedicine, LifePointSpellRules.TremendousFire,
             DrawSpellRules.PotOfGreed, DrawSpellRules.UpstartGoblin,
             SpellTrapWipeRules.HarpiesFeatherDuster, SpellTrapWipeRules.HeavyStorm,
             SpellTrapWipeRules.GiantTrunade
@@ -260,6 +260,21 @@ internal static class CpuDuelChecks
         var win = State(1, [Spell(345)], deck: [weak]); win.Life[0] = 100;
         cpu.Step(win);
         check(cpu.Step(win).Action == CpuAction.Spell && win.Winner == 1, "CPU: lethal spell wins");
+
+        foreach (int opponentLife in new[] { 1000, 1001 })
+        {
+            var fire = State(1, [Spell(LifePointSpellRules.TremendousFire)], deck: [weak]);
+            fire.Life[0] = opponentLife;
+            fire.Life[1] = 500;
+            check(fire.Draw(out _), "CPU: Tremendous Fire fixture drew for the turn");
+            var queue = fire.CreatePrimitiveActionQueue();
+            var action = cpu.Step(fire);
+            for (int tick = 0; tick < 15 && queue.IsBusy; tick++) queue.Tick();
+            check(opponentLife == 1000
+                ? action.Action == CpuAction.Spell && fire.IsDraw
+                : action.Action == CpuAction.Summon && fire.Life[1] == 500 && fire.Graveyard(1).Count == 0,
+                "CPU: Tremendous Fire can tie the duel and is skipped when only its own damage is lethal");
+        }
 
         var direct = State(1, [], own: strong);
         var legacyDirect = State(1, [], own: strong);

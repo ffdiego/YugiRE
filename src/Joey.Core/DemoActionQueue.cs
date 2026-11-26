@@ -522,10 +522,15 @@ public sealed partial class DemoDuel
                     duel.DrawToHand(draw.Side);
                     return new(CommandOutcome.Applied);
                 case DamageCommand damage:
-                    duel.ChangeLife(damage.Side, -damage.Amount);
+                    duel.ChangeLife(damage.Side, -damage.Amount, damage.DeferDuelResult);
                     if (flipBanish is { } paid && paid.Removed.Count == paid.Required &&
                         damage.Side == 1 - paid.Owner && damage.Amount == FlipBanishBurnRules.BurnDamage)
                         paid.DamageApplied = true;
+                    return new(CommandOutcome.Applied);
+                case FinishJointDamageCommand:
+                    if (duel.Life[0] == 0 && duel.Life[1] == 0) duel.IsDraw = true;
+                    else if (duel.Life[0] == 0) duel.Winner = 1;
+                    else if (duel.Life[1] == 0) duel.Winner = 0;
                     return new(CommandOutcome.Applied);
                 case HealCommand heal:
                     duel.ChangeLife(heal.Side, heal.Amount);
@@ -863,10 +868,19 @@ public sealed partial class DemoDuel
                 return new(CommandOutcome.Skipped, "LP spell occurrence gone.");
             if (!duel.CanResolveQueuedLifePointSpell(activate.Source, out var change))
                 return new(CommandOutcome.Rejected, "LP spell no longer legal.");
-            // Legacy order: spend source, then caster LP, then opposing LP.
-            // No mutation in the producer. Each operation has its own gate.
             var context = new EffectContext();
             context.SendToGraveyard(activate.Source);
+            if (change.JointDamage)
+            {
+                // Resolve the two losses in emission order. Check for a
+                // winner only after both commands complete their gates.
+                context.ChangeLifePoints(1 - activate.Side, change.OpponentDelta, deferDuelResult: true);
+                context.ChangeLifePoints(activate.Side, change.CasterDelta, deferDuelResult: true);
+                queue.EnqueueBatch(context.Commands);
+                queue.Enqueue(new FinishJointDamageCommand(activate.Side));
+                return new(CommandOutcome.Applied);
+            }
+            // Existing spells retain caster-first order.
             context.ChangeLifePoints(activate.Side, change.CasterDelta);
             context.ChangeLifePoints(1 - activate.Side, change.OpponentDelta);
             queue.EnqueueBatch(context.Commands);

@@ -59,8 +59,22 @@ Expandir `EquipmentRules`/`DemoDuel` por famílias de filtros e bônus, além do
 
 <a id="c05"></a>
 
-C05.1: Blue Medicine (1006/P041), cura 400 LP por fila, texto confirmado e testes mão/Set. Tremendous Fire (346/P053) exige semântica de dano aos dois lados e empate em A08; Mooyan Curry (337) fora do índice de 771. [Contrato](../../docs/cards/c05-queued-blue-medicine.md).
+C05.1: Blue Medicine (1006/P041), cura 400 LP por fila, texto confirmado e testes mão/Set. Mooyan Curry (337) fora do índice de 771. [Contrato](../../docs/cards/c05-queued-blue-medicine.md).
   Sem prometer tamanho de lote antes de confirmar o catálogo original.
+
+### C05.2 — Dano aos dois lados
+
+Tremendous Fire (346/P053) usa o produtor de LP por mão/Set do
+App e CPU. A magia aplica duas
+perdas por comandos, em ordem adversário → ativador. O resultado só
+é declarado após os dois gates, incluindo empate quando ambos chegam
+a zero no mesmo efeito. O sandbox infere essa adjudicação a partir da
+regra de empate e do efeito único da carta.
+
+Incremento de 1 Done sobre a baseline de 440 cartas de C12.1.
+Restructer Revolution (1039/P049) está fora dos 771 IDs. A
+comparação do empate com o Joey segue pendente.
+[Evidência](../../CARDS.md#magias-lp-e-compra-na-fila-c12).
 
 ## C06 — Demais armadilhas e janelas de resposta/correntes
 
@@ -154,8 +168,11 @@ App/CPU e preserva o comparador explícito para a etapa de remoção.
 O smoke sem janela exercita o mesmo inicializador em Classic e
 Instant. Os testes cobrem admissão, recusa sem fallback em fila
 ocupada, alvo inválido ou ocorrência sem rastreamento, e 30 seeds do
-Alpha por modo com o DAT local, incluindo fusões. O gate exige CI
-verde e integração.
+Alpha por modo com o DAT local, incluindo fusões. O gate reduzido
+fechou no commit `852c06c`. A cobertura de referência é 440 de
+771 cartas Done e 9 Partial.
+[PR #208](https://github.com/ffdiego/YugiRE/pull/208) ·
+[CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45827305917).
 
 ### Histórico das fatias
 
@@ -231,7 +248,12 @@ Sem Verified nesta base. Dos 48 Pending sem registro, 31 pertencem ao pack Joey 
 
 `python scripts/card_effect_risk.py` cruza os metadados públicos sem DAT/EXE e escreve somente IDs, slots, risco inicial, status atual e motivos em scratch. `python scripts/card_effect_risk.py --taxonomy scratch/card-taxonomy.json --pack joey` usa C01 real (valida fingerprints/referência) e eleva risco por famílias detectadas. Não baixa risco alto automaticamente e distingue ausência de registro, zero slots e Normal. O campo `reviewResourceIds` orienta a revisão, não prescreve extração nativa. O C01 é triagem lexical: vitória especial, timing contínuo, custos e efeitos específicos ainda exigem leitura semântica do texto local; nenhum resultado automático serve como ruling. O script não altera o manifesto, o catálogo nem as badges. Sem C01 local, a classificação semântica permanece explicitamente não avaliada. Testes offline em `tests/test_card_effect_risk.py` cobrem joins, fingerprints, risco, registros inválidos e a distribuição real. CI pendente na criação do PR.
 
-Próximo passo: rodar com o C01 local já produzido, agrupar candidatos por família e revisar os casos ambíguos usando SQLite. Não repetir extração se scratch/card-taxonomy.json já existir; não implementar novas cartas enquanto C12.1 não fechar.
+No fechamento de C12.1, o C01 local e os estudos estáticos produziram
+4 Pending de risco baixo, 121 de risco médio e 197 de risco alto,
+além de 9 Partial de risco alto no conjunto de 771 cartas. No pack
+Joey, 1 Pending baixo, 68 médios e 134 altos, além de 7 Partial altos.
+Os relatórios `scratch/c12-c18-risk-all.json` e
+`scratch/c12-c18-risk-joey.json` permanecem locais.
 
 ### C18.2 — Reutilizar a campanha estática antes de pedir Ghidra
 

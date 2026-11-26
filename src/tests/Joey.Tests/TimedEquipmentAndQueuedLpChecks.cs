@@ -17,8 +17,57 @@ internal static class TimedEquipmentAndQueuedLpChecks
         public bool CanComplete(QueuedDuelCommand command, CommandResult result) => Release;
     }
 
+    private static void CheckJointDamage(Action<bool, string> check)
+    {
+        const ushort id = LifePointSpellRules.TremendousFire;
+        foreach (int side in new[] { 0, 1 })
+        foreach (bool set in new[] { false, true })
+        foreach ((int own, int enemy) in new[] { (8000, 8000), (500, 8000), (8000, 1000), (500, 1000) })
+        {
+            var duel = DemoDuel.FromPartialObservation(side, [Spell(id)], new Card?[5], new Card?[5], own);
+            duel.Life[1 - side] = enemy;
+            var gate = new Gate();
+            var queue = duel.CreatePrimitiveActionQueue(gate);
+            if (set)
+            {
+                check(duel.TryQueueSpellTrapSet(0, out _), "Tremendous Fire Set");
+                Drain(queue);
+            }
+            check(!(set ? duel.ActivateSetSpell(0, out _) : duel.Play(0, out _)) &&
+                duel.TryQueueActivation(0, set, out _), "Tremendous Fire activates only through the shared queue");
+            queue.Tick(); // activate
+            queue.Tick(); // spend
+            gate.Release = false;
+            queue.Tick(); // opponent's damage
+            queue.Tick(); // wait on its gate
+            check(queue.Active?.Command is DamageCommand { Amount: 1000 } first && first.Side == 1 - side &&
+                duel.Graveyard(side).Single().Id == id && duel.Life[1 - side] == enemy - 1000 &&
+                duel.Life[side] == own && !duel.GameOver, "Tremendous Fire waits after opponent damage before self-damage");
+            gate.Release = true;
+            queue.Tick(); // complete opponent's damage
+            gate.Release = false;
+            queue.Tick(); // caster's damage
+            check(queue.Active?.Command is DamageCommand { Amount: 500 } second && second.Side == side &&
+                duel.Life[side] == own - 500 && !duel.GameOver,
+                "Tremendous Fire waits for both presentation gates before declaring the result");
+            gate.Release = true;
+            Drain(queue);
+            int? winner = (own <= 500, enemy <= 1000) switch
+            {
+                (false, true) => side,
+                (true, false) => 1 - side,
+                _ => null
+            };
+            check(duel.Winner == winner && duel.IsDraw == (own <= 500 && enemy <= 1000) &&
+                queue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed)
+                    .All(entry => entry.Result?.Outcome == CommandOutcome.Applied),
+                "Tremendous Fire determines win, loss, or draw after both losses");
+        }
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        CheckJointDamage(check);
         for (int count = 0; count < 16; count++)
         {
             ushort flags = (ushort)(0xffc3 | (count << 2));
