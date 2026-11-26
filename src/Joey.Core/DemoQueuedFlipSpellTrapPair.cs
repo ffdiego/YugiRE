@@ -3,6 +3,7 @@ namespace Joey.Core;
 public sealed partial class DemoDuel
 {
     private bool admittingQueuedFlipSpellTrapPair;
+    private (PendingFlipSpellTrapTargets Request, CardTarget Source)? resumedSummonFlipPair;
 
     private (PendingFlipSpellTrapTargets Request, CardTarget Target)? queuedFlipSpellTrapFirstPick;
 
@@ -81,16 +82,37 @@ public sealed partial class DemoDuel
         if (primitiveActionQueue?.IsBusy == true || !CanAdmitQueuedFlipSpellTrapPair() ||
             !ReferenceEquals(PendingFlipSpellTrapTargets, request) || FlipEffectsNegated)
             return [];
-        var result = new List<QueuedSpellTrapCandidate>();
+        return CurrentFlipSpellTrapCandidates(request).ToList().AsReadOnly();
+    }
+
+    private IEnumerable<QueuedSpellTrapCandidate> CurrentFlipSpellTrapCandidates(PendingFlipSpellTrapTargets request)
+    {
         foreach (var candidate in request.EligibleTargets)
         {
             bool field = candidate.Zone == SpellTrapTargetRules.FieldZone;
             if (TryCaptureCardTarget(candidate.Player, field ? DuelZone.FieldSpell : DuelZone.SpellTrap,
                 field ? 0 : candidate.Zone, out var target) &&
                 TryResolveFlipSpellTrapPick(request, target, out _, out _))
-                result.Add(new(target, candidate.Zone, candidate.Card, IsSpellTrapFaceDown(candidate.Player,candidate.Zone)));
+                yield return new(target, candidate.Zone, candidate.Card,
+                    IsSpellTrapFaceDown(candidate.Player, candidate.Zone));
         }
-        return result.AsReadOnly();
+    }
+
+    private bool TryGetFlipSpellTrapSource(PendingFlipSpellTrapTargets request, out CardTarget source)
+    {
+        if (resumedSummonFlipPair is { } resumed && ReferenceEquals(resumed.Request, request))
+        {
+            source = resumed.Source;
+            return true;
+        }
+
+        source = default;
+        for (int slot = 0; slot < 5; slot++)
+        {
+            if (ReferenceEquals(Monsters[request.Owner, slot], request.Source))
+                return TryCaptureCardTarget(request.Owner, DuelZone.Monster, slot, out source);
+        }
+        return false;
     }
 
     public bool TryQueueFlipSpellTrapPair(PendingFlipSpellTrapTargets request, IReadOnlyList<CardTarget> targets,
@@ -133,8 +155,7 @@ public sealed partial class DemoDuel
         if (!CanAdmitQueuedFlipSpellTrapPair() || !ReferenceEquals(PendingFlipSpellTrapTargets, request) ||
             flipSpellTrapSelections.Count != 0 || targets.Count > 2 ||
             targets.Distinct().Count() != targets.Count || targets.Count == 1) return false;
-        int sourceSlot = Enumerable.Range(0,5).FirstOrDefault(z => ReferenceEquals(Monsters[request.Owner,z],request.Source), -1);
-        if (sourceSlot < 0 || !TryCaptureCardTarget(request.Owner,DuelZone.Monster,sourceSlot,out source)) return false;
+        if (!TryGetFlipSpellTrapSource(request, out source)) return false;
         if (FlipEffectsNegated) return true;
         if (targets.Count != 2) return false;
         var commands = new List<DuelCommand>();

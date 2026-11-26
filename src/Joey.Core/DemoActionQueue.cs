@@ -1466,6 +1466,7 @@ public sealed partial class DemoDuel
                 !duel.TryPlanFlipSpellTrapPair(answer.Request, targets, out var source, out var batch, out var cascade))
                 return new(CommandOutcome.Rejected, "FLIP pair request or occurrence changed.");
             duel.PendingFlipSpellTrapTargets = null;
+            duel.resumedSummonFlipPair = null;
             duel.flipSpellTrapSelections.Clear();
             queue.EnqueueBatch(batch);
             wipe = new(answer.Side, answer.Request.Source.Id, source, targets.Concat(cascade), monsterWipe: false)
