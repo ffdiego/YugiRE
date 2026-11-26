@@ -11,7 +11,7 @@ local, não provas de resolução nativa.
 
 | ID | Carta | Pack | Perfil | Callback primário | Situação |
 | --- | --- | --- | --- | --- | --- |
-| 113 | White Magical Hat | Kaiba | P019 | 005842E0 | Pending |
+| 113 | White Magical Hat | Kaiba | P019 | 005842E0 | Done na fila |
 | 219 | Masked Sorcerer | Kaiba | P023 | 005844A0 | Done legado |
 | 522 | The Bistro Butcher | Kaiba | P078 | 00585D30 | Done legado |
 | 1328 | Drill Bug | Joey | P239 | 0058F640 | Pending |
@@ -81,3 +81,17 @@ efeito, escolha aleatória vazia/limites. Não há novo Done/Verified, alteraç�
 no manifest ou mudança na badge. C03 permanece Parcial. Próximo recorte
 integrável: P019 quando houver o evento de dano de batalha na fila, seguido
 dos dois monstros de Joey. Manter C12 para as duas compras legadas.
+
+## C03.2 — White Magical Hat
+
+O DAT local indica o descarte aleatório após dano aos LP adversários.
+O chamador `00578540` no SQLite v7 sustenta o contexto de batalha.
+A primária `005842E0` está catalogada e sem corpo indexado no snapshot.
+O sandbox agenda o descarte só após dano de batalha positivo e não
+letal. A escolha usa o RNG do duelo sobre a mão corrente e guarda
+a ocorrência escolhida até a execução de `DiscardCommand`.
+
+Os testes cobrem lados espelhados, ataque direto, remoção em batalha,
+defensor que causa dano, retenção no gate, mão vazia, dano letal
+e Magic Cylinder. A ordem do gate e o RNG foram testados em C#.
+A equivalência do RNG e dos gatilhos de descarte com o Joey segue pendente.

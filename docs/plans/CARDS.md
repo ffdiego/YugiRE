@@ -87,6 +87,14 @@ A cobertura aumenta em 10 Done. A comparação dinâmica segue pendente.
 [PR #210](https://github.com/ffdiego/YugiRE/pull/210) ·
 [CI aprovado](https://github.com/ffdiego/YugiRE/actions/runs/45829629992).
 
+### C03.2 — White Magical Hat
+
+P019 aumenta a cobertura em 1 Done. O produtor comum de combate
+emite o dano, aguarda o gate e agenda a escolha aleatória por
+ocorrência. A fila usa o RNG do duelo e o comando de descarte
+existente. O App e a CPU usam a declaração de ataque compartilhada.
+[Contrato e limites](../cards/c03-battle-damage-effects.md#c032--white-magical-hat).
+
 ## C04 — Equipamentos `P025`
 
 <a id="c04"></a>

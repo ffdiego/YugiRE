@@ -20,6 +20,7 @@ internal sealed record OpenBattleFlipTargetsCommand(int Side, CardTarget Defende
 internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
 internal sealed record ResolveBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent) : DuelCommand(Side);
+internal sealed record ResolveBattleDamageDiscardCommand(int Side, int DamagedSide) : DuelCommand(Side);
 internal sealed record FinishBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent, int Drawn) : DuelCommand(Side);
 internal sealed record OpenBattleRecruitmentCommand(int Side) : DuelCommand(Side);
 internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
@@ -124,6 +125,8 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
+            case ResolveBattleDamageDiscardCommand discard when discard.DamagedSide == 1 - discard.Side:
+                break;
             case ResolveBattleDamageDrawCommand battleDraw when IsValidBattleDamageDraw(battleDraw.Intent, battleDraw.Side):
             case FinishBattleDamageDrawCommand finishDraw when IsValidBattleDamageDraw(finishDraw.Intent, finishDraw.Side) &&
                 finishDraw.Drawn >= 0 && finishDraw.Drawn <= finishDraw.Intent.MaximumCount:

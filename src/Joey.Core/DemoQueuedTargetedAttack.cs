@@ -23,9 +23,9 @@ public sealed partial class DemoDuel
     private PendingCardSelection? queuedBattleRemovalSelectionRequest;
 
     // Preserve the original pilot IDs alongside the audited Normal catalog.
-    private static bool IsPassiveBattlePilot(Card card) => card.IsMonster &&
+    private static bool IsSupportedBattleBystander(Card card) => card.IsMonster &&
         (card.Id is 24 or 1351 || NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
-            CountedAttributeRules.ContainsKey(card.Id));
+            CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id));
 
     private static bool HasBattleRemovalDeckSelection(Card card) => card.IsMonster &&
         (CardSelectionRules.BattleRecruitAttribute(card.Id) is not null ||
@@ -33,8 +33,8 @@ public sealed partial class DemoDuel
             CardSelectionRules.OnFieldToGraveyardFilter(card.Id) is not null);
 
     private static bool IsOrdinaryBattlePilot(Card card) =>
-        IsPassiveBattlePilot(card) || HasBattleRemovalDeckSelection(card) ||
-        card.IsMonster && (card.Id == CardSelectionRules.SpearCretin || BattleDamageEffectRules.SupportsDraw(card.Id));
+        IsSupportedBattleBystander(card) || HasBattleRemovalDeckSelection(card) ||
+        card.IsMonster && card.Id == CardSelectionRules.SpearCretin;
 
     private static bool IsBattleFlipPilot(Card card) => card.IsMonster &&
         card.Id is FlipEffectRules.Skelengel or FlipEffectRules.PenguinSoldier or FlipEffectRules.ManEaterBug
@@ -126,7 +126,7 @@ public sealed partial class DemoDuel
             {
                 if (!IsSupportedQueuedBattleBackRow(side,z)) return false;
                 if (z != (side == attackerSide ? source : target) && Monsters[side,z] is { } other &&
-                    !IsPassiveBattlePilot(other)) return false;
+                    !IsSupportedBattleBystander(other)) return false;
             }
         }
         return true;
@@ -284,18 +284,18 @@ public sealed partial class DemoDuel
         int amount=delta<0 ? -delta : !b.Defense ? delta : 0;
         int damaged=delta<0?p:e;
         amount = Math.Min(amount, ushort.MaxValue);
-        var draw = BattleDrawAfterDamage(delta < 0 ? b.Card : a.Card, 1 - damaged, amount);
+        var effect = BattleEffectAfterDamage(delta < 0 ? b.Card : a.Card, 1 - damaged, amount);
         var removals = new List<DuelCommand>();
         if (removeA) removals.Add(new SnapshotBattleRemovalCommand(p, a.Target, 0));
         if (removeB) removals.Add(new SnapshotBattleRemovalCommand(e, b.Target, 1));
-        if (draw is null && amount > 0) removals.Add(new DamageCommand(damaged, amount));
+        if (effect is null && amount > 0) removals.Add(new DamageCommand(damaged, amount));
         if (removeA) PlanBattleRemoval(a, 0, removals);
         if (removeB) PlanBattleRemoval(b, 1, removals);
-        if (draw is null)
+        if (effect is null)
             queue.EnqueueBatch(removals);
         else
         {
-            queue.EnqueueBatch([new DamageCommand(damaged, amount), draw]);
+            queue.EnqueueBatch([new DamageCommand(damaged, amount), effect]);
             if (removals.Count != 0) queue.ScheduleContinuation(_ => new(removals));
         }
         queuedBattleRemoved[0]=removeA?a:null;

@@ -16,7 +16,7 @@ public sealed partial class DemoDuel
             : TryQueueTargetedAttack(attackerSlot, defenderSlot, out message, out unsupported, origin);
 
     /// <summary>Opt-in direct battle pilot. An eligible response can coexist
-    /// with other supported normal monsters on the attacker's field.</summary>
+    /// with supported bystanders on the attacker's field.</summary>
     public bool TryQueueDirectAttack(int slot, out string message, ActionOrigin origin = ActionOrigin.Player) =>
         TryQueueDirectAttack(slot, out message, out _, origin);
 
@@ -57,7 +57,7 @@ public sealed partial class DemoDuel
     private bool SupportsQueuedDirectAttack(int side, int slot, Card card)
     {
         if (BattleDamageEffectRules.AfterBattleDamage(card.Id,side,1-side,1,false) is not null &&
-            !BattleDamageEffectRules.SupportsDraw(card.Id)) return false;
+            !BattleDamageEffectRules.SupportsQueued(card.Id)) return false;
         // Mirror Force already schedules linked removal through the wipe executor.
         if (!equipment.All(IsTrackedBattleEquipment)) return false;
         for(int p=0;p<2;p++)
@@ -66,7 +66,7 @@ public sealed partial class DemoDuel
             for(int z=0;z<5;z++)
                 if(!IsSupportedQueuedBattleBackRow(p,z) ||
                     (p!=side || z!=slot) && Monsters[p,z] is { } other &&
-                        (p != side || !IsPassiveBattlePilot(other)))
+                        (p != side || !IsSupportedBattleBystander(other)))
                     return false;
         }
         return true;
