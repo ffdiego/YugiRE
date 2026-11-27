@@ -507,7 +507,7 @@ defesa e sincronização com áudio. A cobertura do
 Draw passa para **18/31 (58.06%) Partial**, sem
 nova rotina Verified.
 
-## Bustos do Joey, cenas signature e encerramentos (fora das 34 Draw)
+## Bustos do Joey, cenas signature e encerramentos
 
 O SQLite contém uma família paralela à composição das cartas do duelo:
 `00402E00/00403310/004166F0` para reações, `00414A20` para
@@ -517,7 +517,20 @@ controle de conclusão dos efeitos em `00409D00`, `00409940` e
 `00409AB0` são evidências de que essas cenas compartilham a gestão
 de apresentações, apesar de possuírem vtables/Draws diferentes.
 
-O índice do DAT inventaria 17 manifests e 160 BMP/YGA em `j\bust_up\`;
-essas cenas **não** faziam parte dos 31 Draw selecionados para a badge.
-O inspetor `--inspect-visual-dat` passa a cobrir seus recursos. A pesquisa
-e os entrypoints estão em `docs/research/bust-up-cinematics-and-destiny-board.md`.
+| Elemento | Construtor | Update | Draw | Recursos DAT | Estado |
+| --- | --- | --- | --- | --- | --- |
+| Invocação signature | `00414A20` / `005DA7F0` | `00414CF0` | `00414DC0` | `bust_up/summon.txt`, `summon2.txt` | Pending |
+| Busto de abertura | `00415130 → 004152D0` / `005DA800` | `00415580` | `00415840` | `bust_up/start.txt` | Pending |
+| Busto de resultado | `00415AF0 → 00415C90` / `005DA820` | `00416050` | `00416260` | `bust_up/win.txt`, `lose.txt`, `draw.txt` | Pending |
+| Busto de reação | `004166F0` e `00416A00` / `005DA840` | `00456730` | `00416BC0` | `bust_up/reaction*.txt` | Pending |
+
+A coleta 27 preserva as tabelas. O assembly das fábricas confirma a
+instalação das vtables finais de abertura e resultado em `0041516B` e
+`00415B2B`, após os construtores instalarem as bases `005DA810` e
+`005DA830`. A invocação signature instala a sua em `00414AA4`, e as
+reações em `004167B6` e `00416ACA`. O slot Draw do objeto de som
+(`005DA3FC + 0Ch`) aponta para `0043A5D0`, cujo corpo é `ret 4`.
+
+O índice do DAT inventaria 17 manifests e 160 BMP/YGA em `j\bust_up\`.
+O inspetor `--inspect-visual-dat` cobre esses recursos.
+[Pesquisa dos bustos](../research/bust-up-cinematics-and-destiny-board.md).

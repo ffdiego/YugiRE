@@ -150,6 +150,10 @@ V15.1 (27/11/2026). A matriz aceita regiões por quadro-chave e orçamentos inde
 
 Seleção nativa (`0043B280`, ver V11), ajuda `0045E4A0`, efeito de estado persistente `0040E260`, quebra/remoção alternativa `00450FD0`, ativação alternativa `00450AD0`, corrente `0041F870`, remoção/exclusão `0043DBE0`, moeda `00457520`, dado `00456B90`, Vija `004584C0`, Layerfont A/B `00455FF0`/`00456360`. Cada rotina vira um item novo (`V20`, `V21`...) quando começar. Estado: [cobertura visual](../../docs/architecture/VISUAL_COVERAGE.md).
 
+A coleta 35 identificou quatro entradas Draw registradas para bustos no
+agendador da cena. O inventário passou de 34 para 38 rotinas, com as
+quatro novas em Pending. A evidência e a análise do gate estão em V31.
+
 ## V17 — Cadência nativa de update/draw e blending
 
 <a id="v17"></a>
@@ -253,4 +257,15 @@ NativeVijaContract porta inicialização e predicado virtual +4 para ambos os mo
 
 <a id="v31"></a>
 
-Modelo de roteamento de dano 00403900, distinção som-only/bust-up 00402E00, duração raw 00416B80. Roteiro 27 recupera tabela de severidade→manifesto e vtable 005DA840; posição, compositor, Update/Draw e gate ainda ausentes. NativeJoeyCinematicRouting porta 00403310 (ATK original, lado, códigos de evento e duas falas), 004152D0 e 00415C90 (start/result e variantes RNG), sem integração; roteiro 27 ampliado para vtables destas cenas. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
+Modelo de roteamento de dano 00403900, distinção som-only/bust-up 00402E00, duração raw 00416B80. O roteiro 27 recuperou a tabela de severidade→manifesto e as vtables das cenas. NativeJoeyCinematicRouting porta 00403310 (ATK original, lado, códigos de evento e duas falas), 004152D0 e 00415C90 (start/result e variantes RNG). A integração com o cliente continua pendente. [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
+
+V31, 27/11/2026. A coleta 35 confirmou os pares Update/Draw das
+quatro famílias no assembly e recuperou o gate `00416BB0`. Esse
+predicado devolve o byte ativo em `obj+04h` quando `obj+1Ch` está
+habilitado, e zero nos demais casos. O Update compartilhado `00456730`
+soma 8 ao contador de `obj+10h`. No caminho habilitado, o Draw de reação
+`00416BC0` usa a superfície temporária de `005F2FB8+38Ch`. Sua
+inicialização recebe 800×600 em `00416C29`, e `00416C45` chama o
+slot `+0Ch` do destino. Posições dos elementos, ordem completa de
+composição e comparação em execução ainda pendem. A coleta foi
+importada no snapshot privado v9.

@@ -35,6 +35,7 @@ Execute os comandos da raiz do repositório. Os resultados continuam privados em
 | [31-actions-battle-callbacks-ghidra.sh](31-actions-battle-callbacks-ghidra.sh) | `ghidra-actions-battle-callbacks.zip` (v4, [relato A06](../../docs/research/native-actions-battle-callbacks-2026-11-24.md)) |
 | [32-final-destiny-ghidra.sh](32-final-destiny-ghidra.sh) | `ghidra-final-destiny-contract.zip` (C02.9, 2/2 funções, complemento do 30, v6) |
 | [32-native-sword-angle-ghidra.sh](32-native-sword-angle-ghidra.sh) | `ghidra-native-sword-angle-contract.zip` (V04, 27/11/2026, 1/1 função e 2/2 blocos, v8) |
+| [35-bust-up-update-draw-ghidra.sh](35-bust-up-update-draw-ghidra.sh) | `ghidra-bust-up-update-draw.zip` (V16/V31, 27/11/2026, 8/8 funções, [v9](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v9--draw-dos-bustos-27112026)) |
 
 As coletas 16/CARDS e 17/CARDS exportaram apenas as rotinas que ainda exigiam assembly. Os helpers omitidos já constam do snapshot anterior. A coleta 25 exportou sete funções no bundle base e oito no complemento de alpha. Os comandos preservados nos roteiros continuam reproduzindo o recorte completo.
 

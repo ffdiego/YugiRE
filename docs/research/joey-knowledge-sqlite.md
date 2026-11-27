@@ -1,5 +1,26 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
+## Complemento cumulativo v9 — Draw dos bustos (27/11/2026)
+
+O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v9.zip`
+contém o SQLite cumulativo, a auditoria atual e a auditoria v8. A
+coleta 35/V16/V31 acrescenta oito rotinas dos objetos de busto, todas
+com assembly. As vtables e o Update compartilhado `00456730` já
+constavam da base. O fingerprint do executável é o mesmo da v8.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `b7829cff3c01da8c07fff7df3536975411b1a53f3f906e25ee90db5c2d7658bb` |
+| SHA-256 do ZIP v9 | `6fd6f866da43a79e8603d1ca2ed605f5225b5b8dc9f3c9b776eeebc5951508a1` |
+| SHA-256 do bundle 35 | `aa3d72274ce74517de52e6ee4946003372ccb9135230994021a03f96b1475106` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+A comparação por conteúdo confirmou a preservação de todas as linhas
+da v8. A v9 tem 36 bundles, 237 relatórios, 371 registros de funções
+(300 VAs distintas), 229.350 instruções indexadas e 41 blocos de memória.
+[Relato V31](../plans/VISUALS.md#v31).
+
 ## Complemento cumulativo v8 — conversão x87 (27/11/2026)
 
 O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v8.zip`

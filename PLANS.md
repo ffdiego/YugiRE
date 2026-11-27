@@ -130,7 +130,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Respostas e descarte auditados. Fechar composição da seleção e revisar sobreposição dos controles provisórios. [Detalhes](docs/plans/VISUALS.md#v14)
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
-- [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`. Índice das Draws restantes; V20–V31 têm IDs próprios. [Detalhes](docs/plans/VISUALS.md#v16)
+- [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`. Investigar as rotinas ainda sem entrada confirmada; V20–V31 têm IDs próprios. [Detalhes](docs/plans/VISUALS.md#v16)
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Medir a cadência no Windows com a coleta 34 e validar as fronteiras surface/blend. [Detalhes](docs/plans/VISUALS.md#v17)
 - [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Leitura PCM e streaming do menu e duelo validados no cliente. Comparar escuta, transições e associação dinâmica no Windows. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
@@ -145,7 +145,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Banco DAT e resolvedor padrão confirmados. Validar o compositor e ligar os produtores à apresentação. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
-- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Posição, compositor, Update/Draw e gate do bust-up. [Detalhes](docs/plans/VISUALS.md#v31)
+- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Mapear posições e passes do compositor e comparar a sequência em execução. [Detalhes](docs/plans/VISUALS.md#v31)
 
 ## Trilha AI
 
