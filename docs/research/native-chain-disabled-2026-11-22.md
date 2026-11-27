@@ -134,3 +134,29 @@ A Draw é exercitável pelo modo de revisão, mas ainda não
 integrada ao fluxo normal: **Pending, cobertura 19/34**.
 
 **Correção de 25/11:** [auditoria da tabela comprimida](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma B1 e os produtores. Preservar os gates de zona ocupada, C != 0, D == 0 e bit 5; não disparar para toda negação.
+
+## V12.2 — varredura disparada pelo ramo de Jinzo (27/11)
+
+A coleta 38 confirma o caminho no assembly. Em `005AB820`, o trecho
+em `005ABBC6` prossegue se `0056B440` retornar zero. O valor obtido
+via `004022E0` é normalizado pela base `0x2D6` em `005ABBE0`.
+O caso `0x2EF` tem seletor 1 em `005ABCE5`, que aponta para
+`005ABBF9` pela tabela `005ABCC0`. O SQLite identifica esse
+resource ID como Jinzo, índice interno 428. A rotina chama
+`00578390` em `005ABC1C` e então `0059CCF0` em `005ABC24`.
+
+A varredura percorre os lados 0 e 1, zonas combinadas 5 a 9. Exige
+ocupante com ID interno diferente de zero, bit 1 no byte de estado
+em `00A55D7A` para aquela posição e categoria `0x15` no catálogo
+via `004025D0`. Esses filtros correspondem às armadilhas já
+reveladas no campo. Em `0059CD4C` solicita
+`005B9170((lado << 15) | 0xB1, zona, 1, 0)` uma vez por slot
+elegível. A criação do indicador continua sujeita aos gates
+de `00408730` na hora da execução.
+
+O modo `disabled-chain` do roteiro 34 liga a varredura a uma execução
+compatível por argumentos e ordem. As chamadas do setter e do
+construtor são atribuídas à execução que as contém. Onde houver mais
+de um pedido idêntico, a coleta conserva a ambiguidade. A captura
+no original e o vínculo com o fluxo normal do cliente permanecem
+pendentes. [Roteiro](../../scripts/pending/README.md#v12--produtor-e-execução-de-b1-no-roteiro-34).

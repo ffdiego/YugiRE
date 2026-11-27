@@ -1,5 +1,25 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
+## Complemento cumulativo v12 — produtor de B1 (27/11/2026)
+
+O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v12.zip`
+contém o SQLite cumulativo e as auditorias da v11 e da v12. A coleta
+38/V12 acrescenta o assembly de `005AB820` e `0059CCF0` e a tabela
+do ramo por carta em `005ABCC0`. O fingerprint permanece o da v11.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `21ad800fbee90281e56c810313d3b31251c380ecd168e7c21795fe9c7c935914` |
+| SHA-256 do ZIP v12 | `d866db20ee9b38c396342fc26f44d0b9e2a4856dd84c4659feb90c789fbbe573` |
+| SHA-256 do bundle 38 | `b1c4a85b50f085671bafdeadd0da09d1e255bdca79e3bf4541bb33f09fc4d50f` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+As linhas da v11 foram preservadas. A v12 tem 39 bundles, 247 relatórios,
+376 registros de funções (305 VAs distintas), 231.910 instruções
+indexadas e 46 blocos de memória.
+[Relato V12](../plans/VISUALS.md#v12).
+
 ## Complemento cumulativo v11 — produtor do banner de resultado (27/11/2026)
 
 O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v11.zip`

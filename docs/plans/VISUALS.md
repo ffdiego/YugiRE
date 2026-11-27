@@ -122,6 +122,13 @@ conferem com os metadados do BMP, com os eixos trocados a 90°.
 No contador 24, o canvas voltou ao tabuleiro sem indicador,
 pixel a pixel. A validação se limita à revisão isolada do cliente.
 
+V12.2 (27/11/2026). O assembly ligou o ramo de Jinzo à varredura que
+pede B1 para armadilhas reveladas nos dois lados. O modo
+`disabled-chain` do roteiro 34 registra pedidos e execuções, a
+escrita do bit 5 e o descritor entregue ao construtor. Os testes
+simulados passaram. Falta capturar o cenário e o controle no
+original. [Rastreio](../../docs/research/native-chain-disabled-2026-11-22.md#v122--varredura-disparada-pelo-ramo-de-jinzo-2711).
+
 ## V13 — `DebugOverlayEnabled` na UI
 
 <a id="v13"></a>

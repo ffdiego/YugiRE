@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record attack blits, selection backgrounds, reactions, result or dispatcher cadence."""
+"""Record visual events or dispatcher cadence in the original duel process."""
 from __future__ import annotations
 
 import argparse
@@ -20,6 +20,7 @@ SCENARIOS = {
     "cadence": "Stay in one duel scene during the recording.",
     "reaction": "Trigger a character reaction and let it finish.",
     "result": "Finish the duel and advance past the result banner.",
+    "disabled-chain": "Bring Jinzo into play with a face-up Trap on the field.",
 }
 
 
@@ -166,6 +167,27 @@ def observed_result_fade(events: list[dict]) -> bool:
     return False
 
 
+def observed_disabled_chain(events: list[dict]) -> bool:
+    """Find compatible trap-scan requests and handler executions in capture order."""
+    trap_scan_requests = set()
+    for event in events:
+        kind = event["kind"]
+        if kind not in ("disabled-chain-request", "disabled-chain-handler"):
+            continue
+        side, zone = event["side"], event["zone"]
+        if not (side in (0, 1) and 5 <= zone < 10 and event["low"] == 1 and event["high"] == 0):
+            continue
+        if kind == "disabled-chain-request" and event["producerRva"] == 0x19ccf0:
+            trap_scan_requests.add((side, zone))
+        elif (kind == "disabled-chain-handler" and (side, zone) in trap_scan_requests
+              and event["substate"] == 0 and event["bit5Write"] is True
+              and event["descriptor"] is not None):
+            descriptor = event["descriptor"]
+            if (descriptor & 1, (descriptor >> 1) & 31, (descriptor >> 6) & 255) == (side, 5, zone - 5):
+                return True
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True)
@@ -199,6 +221,8 @@ def main() -> int:
         observed = observed_reaction(result["events"])
     elif args.mode == "result":
         observed = observed_result_fade(result["events"])
+    elif args.mode == "disabled-chain":
+        observed = observed_disabled_chain(result["events"])
     else:
         passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
         observed = {"aim", "flight", "impact", "partial-sword"} <= passes

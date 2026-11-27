@@ -23,7 +23,7 @@ powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1
 ```
 
-## V01/V04/V11/V16/V17/V31 — 34-attack-draw-runtime.py (aguardando Windows)
+## V01/V04/V11/V12/V16/V17/V31 — 34-attack-draw-runtime.py (aguardando Windows)
 
 Com Frida na venv e um duelo aberto no executável original, indique o
 PID do jogo. Durante os 20 segundos de captura, execute um ataque.
@@ -135,3 +135,24 @@ sem descarte de eventos. O modo aguarda execução no Windows.
 ```powershell
 python scripts/pending/34-attack-draw-runtime.py --mode result --pid <PID> --exe ..\passion\joey_pc.exe --output scratch/visual-review/result-fade.json
 ```
+
+### V12 — produtor e execução de B1 no roteiro 34
+
+Em Windows, use Frida na venv e um duelo aberto no original. Inicie
+a coleta antes de colocar Jinzo em campo com uma armadilha contínua
+já revelada. Repita em arquivo separado com a armadilha baixada,
+como controle. A saída esperada para o controle sem B1 é 1.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --mode disabled-chain --pid <PID> --exe ..\passion\joey_pc.exe --output scratch/visual-review/disabled-chain-jinzo.json
+```
+
+O relatório preserva lado, zona, argumentos e endereço de retorno
+do pedido B1 em `005B9170`. Para cada execução de `00408730` registra
+os argumentos do dispatcher, o subestado e as chamadas observadas
+ao setter do bit 5 e ao construtor do indicador. Saída 0 exige um
+pedido da varredura `0059CCF0` seguido de uma execução compatível
+no mesmo lado e zona, com o descritor esperado e sem perda de eventos.
+Os eventos são vinculados por ordem e argumentos. Pedidos
+idênticos no mesmo trecho podem ter mais de uma correspondência.
+As saídas ficam em `scratch/` e a coleta aguarda Windows.

@@ -243,6 +243,67 @@ function watchResultBanner() {
     });
 }
 
+function watchDisabledChain() {
+    const handlers = new Map();
+    const producers = new Map([
+        [0x1835d8, 0x183510],
+        [0x188e94, 0x188d90],
+        [0x188fdd, 0x188d90],
+        [0x19cd51, 0x19ccf0],
+        [0x1bb8b3, 0x1bb720],
+        [0x1bb937, 0x1bb720],
+    ]);
+    hook(0x1b9170, {
+        onEnter(args) {
+            const command = args[0].toUInt32();
+            if ((command & 0xfff) !== 0xb1) return;
+            const returnRva = imageRva(this.returnAddress);
+            record({
+                kind: 'disabled-chain-request', threadId: this.threadId,
+                frame: scenes.get(this.threadId) ?? null, returnRva,
+                producerRva: producers.get(returnRva) ?? null,
+                side: (command >>> 15) & 1, zone: args[1].toUInt32() & 0xffff,
+                low: args[2].toUInt32() & 0xffff, high: args[3].toUInt32() & 0xffff,
+            });
+        },
+    });
+    hook(0x8730, {
+        onEnter() {
+            const argumentsBase = image.base.add(0x6550a0);
+            this.previous = handlers.get(this.threadId);
+            this.event = {
+                kind: 'disabled-chain-handler', threadId: this.threadId,
+                frame: scenes.get(this.threadId) ?? null,
+                side: argumentsBase.readU16() >>> 15, zone: argumentsBase.add(2).readU16(),
+                low: argumentsBase.add(4).readU16(), high: argumentsBase.add(6).readU16(),
+                substate: image.base.add(0x6558ac).readU8() & 0x7f,
+                bit5Write: null, descriptor: null,
+            };
+            handlers.set(this.threadId, this.event);
+        },
+        onLeave() {
+            record(this.event);
+            if (this.previous === undefined) handlers.delete(this.threadId);
+            else handlers.set(this.threadId, this.previous);
+        },
+    });
+    hook(0x170710, {
+        onEnter(args) {
+            const event = handlers.get(this.threadId);
+            if (event === undefined || imageRva(this.returnAddress) !== 0x87e5 || args[2].toUInt32() !== 5)
+                return;
+            event.bit5Write = args[3].toUInt32() !== 0;
+        },
+    });
+    hook(0x52f20, {
+        onEnter(args) {
+            const event = handlers.get(this.threadId);
+            if (event === undefined || imageRva(this.returnAddress) !== 0x88de) return;
+            event.descriptor = args[0].readU16();
+        },
+    });
+}
+
 function startCadenceClock() {
     const kernel = Process.getModuleByName('kernel32.dll');
     const buffer = Memory.alloc(8);
@@ -296,7 +357,7 @@ rpc.exports = {
     start(mode = 'attack') {
         if (Process.arch !== 'ia32' || image.size < 0x4dd01)
             throw new Error('Unexpected original process architecture or image size');
-        if (!['attack', 'selection', 'cadence', 'reaction', 'result'].includes(mode))
+        if (!['attack', 'selection', 'cadence', 'reaction', 'result', 'disabled-chain'].includes(mode))
             throw new Error('Unexpected capture mode');
         if (hooks.length !== 0) throw new Error('Capture is already active');
         events.length = 0;
@@ -333,6 +394,10 @@ rpc.exports = {
             }
             if (mode === 'reaction') {
                 watchReaction();
+                return;
+            }
+            if (mode === 'disabled-chain') {
+                watchDisabledChain();
                 return;
             }
             hook(0x14110, {
