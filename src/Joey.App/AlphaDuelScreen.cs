@@ -293,14 +293,7 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
-        if (queuedDuel is not null &&
-            (duel.TryQueueAttack(attacker, target, out message, out bool unsupported) || !unsupported))
-            return;
-
-        int player = duel.ActivePlayer;
-        var hidden = CaptureHiddenAttackTarget(1 - player, target);
-        if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
-            BeginAttackCue(player, attacker, target, hidden);
+        duel.TryQueueAttack(attacker, target, out message);
     }
 
     static void AdvanceAlpha(TimeSpan elapsed)

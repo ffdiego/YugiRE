@@ -18,7 +18,7 @@ Quatro trilhas com IDs estáveis: ACTIONS (fila/scheduler, console, traces), CAR
 2. Entregar uma fatia vertical pequena (regra → fila → integração jogável → manifesto; sem teste por carta).
 3. Atualizar **apenas checkbox ao concluir, Status e Próximo passo** do item no PLANS.md. Relato de fatia (PR, CI, evidência e limites) vai em `docs/plans/<TRILHA>.md` no bloco do ID. Nunca acrescentar relatos a PLANS.md.
 4. Achados novos viram IDs no fim da trilha; nunca renumerar ou reutilizar. Revisar bloqueios quando dependências fecharem.
-5. Relatório curto: comportamento, testes, limitações, próximo ID sugerido. C12 também exige linhas antes/depois e legado restante. Em `/goal`, continuar autonomamente após cada checkpoint até alcançar o objetivo ou um limite real; se bloqueado, registrar a pendência e escolher outra fatia útil compatível com o objetivo.
+5. Relatório curto: comportamento, testes, limitações, próximo ID sugerido. C12 exige inventário do legado restante e lacunas de cobertura, sem meta de linhas. Em `/goal`, continuar autonomamente após cada checkpoint até alcançar o objetivo ou um limite real; se bloqueado, registrar a pendência e escolher outra fatia útil compatível com o objetivo.
 
 Status: `Pronto`, `Em andamento`, `Bloqueado por X`, `Aguardando evidência`, `Parcial`, `Concluído`. Uma sessão escritora por vez na main; ver Colaboração.
 
@@ -100,12 +100,12 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 ### C12 — fila única, sem legado
 
-**Objetivo:** eliminar toda resolução paralela, não apenas o inventário Done original. O gate reduzido C12.1 é histórico. A08 e novas cartas pela fila começam agora.
+**Objetivo:** limpeza arquitetural, não migração comportamental. Eliminar toda resolução paralela, não apenas o inventário Done original. O gate reduzido C12.1 é histórico. A08 e novas cartas pela fila começam agora.
 
 1. Inventariar App, CPU, Lab/console; retirar modo legado e fallback por operação.
 2. Migrar famílias restantes para comandos/continuações, apagar resolvedores antigos e Pending legados; operação não suportada falha explicitamente sem mutação.
 3. Extrair regras em Joey.Cards junto às migrações; Core mantém executor, legalidade, estado e scheduler. Não duplicar regra para preservar teste histórico.
-4. Preservar cobertura quando possível, registrar lacunas; build e CI ativos verdes, sem exigir novos testes por carta.
+4. Aceitar perda temporária de cobertura em vez de manter ou migrar o legado por obrigação. Retirar operações sem produtor, registrar lacunas e reclassificar o manifesto conforme suporte real; CARDS recupera a cobertura depois. Build e CI ativos verdes; sem testes novos por carta.
 
 **C12 fecha quando:** nenhuma entrada de duelo usa resolução legada, nenhuma flag/fallback seleciona esse caminho, não há resolvedor duplicado nem segunda fila de regras; build e CI ativos aprovados. Relatar caminhos restantes.
 

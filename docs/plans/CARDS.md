@@ -436,7 +436,7 @@ Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 
 <a id="c12"></a>
 
-**Política vigente (26/11/2026):** o gate reduzido, escopo congelado e critérios de encerramento em [PLANS.md](../../PLANS.md#c12--migrar-as-famílias-done-para-a-fila-de-ações) substituem os critérios anteriores. C12.1 libera C02/C03 após a fila padrão para famílias com produtor, testes atuais e CI verde; não exige paridade de famílias sem produtor, smoke gráfico, comparação nativa ou migração de famílias Partial. Fallback de compatibilidade somente para operação não suportada antes de qualquer admissão/mutação, nunca para contornar rejeições. Remover resolvedores e comparadores por fatia, substituir por regressões de cenário, medir Demo.cs e justificar exceções necessárias. C16, C09, Dream Clown e outras famílias Partial ficam nos respectivos IDs, preservando tudo que já foi integrado. O C12 completo permanece aberto até cumprir os critérios de PLANS.md.
+**Política vigente (26/11/2026):** C12 é limpeza arquitetural. Não exigir migração de cartas, preservação de cobertura, teste individual ou paridade nativa como condição para retirar o legado. Operações sem produtor falham explicitamente sem mutação; reclassificar cobertura e devolver lacunas ao backlog CARDS. Os relatos seguintes são históricos. [Critério vigente](../../PLANS.md#c12--fila-única-sem-legado).
 
 O histórico abaixo registra os gates e estados vigentes em cada entrega, inclusive os requisitos anteriores de paridade; não deve ser interpretado como bloqueio adicional ao gate reduzido. #177 incorporou os persistentes de #150, #179 integrou Polymerization/Fusion Gate. Manter esses resultados e os testes existentes.
 

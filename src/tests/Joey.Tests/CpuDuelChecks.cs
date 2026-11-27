@@ -299,9 +299,9 @@ internal static class CpuDuelChecks
         check(unsupportedDirect.BeginBattle(out _) &&
             !unsupportedDirect.TryQueueAttack(0, -1, out _, out bool unsupported) && unsupported &&
             unsupportedQueue.Trace.Count == 0 && unsupportedDirect.Life[0] == 8000 &&
-            cpu.Step(unsupportedDirect) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack } &&
-            unsupportedDirect.Life[0] == 8000 - strong.Attack && !unsupportedQueue.IsBusy,
-            "CPU: only a legal attack outside the pilot uses compatibility execution");
+            cpu.Step(unsupportedDirect) is { Status: CpuStepStatus.Blocked, Action: CpuAction.Attack } &&
+            unsupportedDirect.Life[0] == 8000 && !unsupportedQueue.IsBusy && unsupportedQueue.Trace.Count == 0,
+            "CPU: unsupported attack is rejected without compatibility execution");
 
         var rejectedAttack = State(1, [], own: strong);
         var rejectedQueue = rejectedAttack.CreatePrimitiveActionQueue();
