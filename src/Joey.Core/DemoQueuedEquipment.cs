@@ -2,8 +2,13 @@ namespace Joey.Core;
 
 public sealed record QueuedEquipmentCandidate(CardTarget Target, int Slot, Card Card);
 
+// Observation of the one committed link, not an additional rule command.
+public sealed record DemoEquipmentActivation(Card Card, int Owner, int SourceSlot,
+    int TargetSide, int TargetSlot);
+
 public sealed partial class DemoDuel
 {
+    public event Action<DemoEquipmentActivation>? EquipmentActivated;
     // A read-only projection for A06/UI/CPU. Hold the occurrence token,
     // not a slot or a catalogue ID, from selection through admission.
     public IReadOnlyList<QueuedEquipmentCandidate> QueuedEquipmentCandidates(CardTarget source)
@@ -105,6 +110,7 @@ public sealed partial class DemoDuel
             command.Source.Zone == DuelZone.Hand ? index : null,
             card, command.Target.Side, targetIndex, monster);
         spellSetTurn[owner, slot] = 0;
+        EquipmentActivated?.Invoke(new(card,owner,slot,command.Target.Side,targetIndex));
         return new(CommandOutcome.Applied);
     }
 }

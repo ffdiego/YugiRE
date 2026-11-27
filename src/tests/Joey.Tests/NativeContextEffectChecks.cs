@@ -99,7 +99,11 @@ internal static class NativeContextEffectChecks
               }), "V24: copy a vertical rectangle into a scratch sized from icon 1");
         affect.AdvanceNativeUpdate(18);
         check(draw.Sample(affect, 1, new(681,248), cosine).Rebuild is null,
-            "V24: anchor and phase changes reuse the scratch for the same selector");
+            "V24: repeated selector reuses scratch within a Draw");
+        draw.BeginDraw();
+        check(draw.Sample(affect, 1, new(681,248), cosine).Rebuild is
+            { IconIndex: 1 } nextDraw && nextDraw.BackgroundCopies[0].Source.Y == 19,
+            "V24: 0040E288 resets selector per focused Draw");
         affect.AdvanceNativeUpdate(18);
         check(draw.Sample(affect, 2, new(681,248), cosine).Rebuild is
                 { IconIndex: 2 } wrapped &&

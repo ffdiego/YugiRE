@@ -33,3 +33,9 @@ dos outros formatos e o uso dessa máscara na composição final seguem
 pendentes. O plano C# representa a ordem dos passes e os retângulos,
 mantendo a rasterização e a seleção completa de vínculos fora da entrega.
 Nenhuma Draw foi acrescentada à cobertura.
+
+**Correção V24 (27/11):** a instrução 0040E288 no início de Draw
+zera +128 após resolver o objeto em foco. A reutilização descrita acima
+vale apenas entre passes do mesmo Draw, não entre frames. NativeAffectDraw.BeginDraw
+modela esta fronteira. O banco de ícones não é a animação transitória de
+EquipCommand; [V32](native-equipment-travel-2026-11-27.md) documenta a rota B2.

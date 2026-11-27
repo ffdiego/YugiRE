@@ -250,3 +250,15 @@ vínculo causal. Não disparar V26 apenas pelo destino de movimento.
 No cliente, `--review-exclusion=250,8080` (ID real) ou `0,0080`
 (oculto), F5 reprodução/pausa, F7/F9 passo, F8 reset, F12 captura.
 Confirma geometria e predicado; não substitui a captura original.
+
+## V32 — contrato da viagem de equipamento (57)
+
+```bash
+bash scripts/pending/57-equipment-travel-contract.sh
+```
+Confirme vtable 005DB3E4 slots +4/+8/+C e índice/stub de B2.
+Saída scratch/ghidra-equipment-travel-contract.zip (privada).
+No duelo compare equipamento comum da mão/Set, destino próprio e
+adversário. Verificar crescimento estático 0..128, viagem 128..192,
+Draw terminal, momento de alteração ATK/DEF e som 1000000A.
+A coleta não bloqueia o desenvolvimento da apresentação já recuperada.
