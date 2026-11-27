@@ -263,6 +263,44 @@ de pedir código adicional. Roteiro 25 continua dono
 dos kernels raster, não repetir. Nenhum novo Draw.
 
 
+## V17 complemento — alocação do YGA e amostra de cor-chave (27/11)
+
+A vtable `005DC6EC` da coleta 24 liga `+DCh` a `004AABC0`,
+`+E0h` a `004ABC10` e `+64h` a `004AC170`. A coleta 39
+confirma no assembly que `004AAC8C` compara a extensão extraída
+com `yga` e, se igual, chama `004AB460` em `004AACC8`.
+`004AB529` solicita a alocação pelo slot `+E0h` com os argumentos
+largura, altura, 1, 0. A flag 1 ativa o ramo de alpha em
+`004ABD31`. Esse ramo consulta o formato no objeto de dispositivo
+retornado por `00494470` em `+94h` e usa a tabela `004ABDAC`.
+
+| Código do dispositivo | Formato alpha alocado |
+| ---: | --- |
+| 2 | 11, RGB555 e nibble alpha |
+| 3 | 10, RGB565 e nibble alpha |
+| 4 | 11, RGB555 e nibble alpha |
+| 5 e 7 | 12, BGRA |
+| 6 e 8 | 13, RGBA |
+
+Outros códigos não entram na alocação software desse ramo.
+`NativeSurfaceColorLayout.SelectSourceAlphaFormat` expõe a tabela
+no relatório de diagnóstico. Depois de um upload bem-sucedido,
+`004AACDD` chama `+64h` com coordenadas 0,0. `004AC170`
+liga a amostra por coordenada e guarda a chave convertida em
+`surface+64h`. Em `004AACE0` o carregador liga `surface+78h`.
+Ainda é preciso identificar, por chamada de composição, se o pass
+consome a chave amostrada, a outra chave de `+70h` ou source alpha.
+
+O inspetor `--inspect-visual-dat` conta alpha zero, parcial e
+opaco, além dos pixels com alpha não zero cujo RGB é preto ou
+coincide com o canto superior esquerdo decodificado. A amostra do
+relatório precede a conversão para o formato nativo. Dos 520 YGAs
+no escopo do inspetor local, 125 têm RGB de origem diferente de
+preto. Os 1.078 registros de imagem mantiveram hashes, dimensões
+e estado de leitura. As contagens são diagnósticas, e os passes do
+cliente continuam com a política de composição anterior.
+[Evidência da coleta 39](joey-knowledge-sqlite.md#complemento-cumulativo-v13--seletor-de-superfície-yga-27112026).
+
 ## V17 complemento — alpha packed 10/11 e destino opaco
 
 SQLite v2 reaberto read-only (SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,

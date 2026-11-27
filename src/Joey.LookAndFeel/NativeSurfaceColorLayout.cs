@@ -8,6 +8,18 @@ namespace Joey.LookAndFeel;
 /// No inference from the .yga filename or active GPU pixel format.</summary>
 public static class NativeSurfaceColorLayout
 {
+    /// <summary>The software alpha branch of 004ABC10 indexes 004ABDAC
+    /// by the current device format minus two. A null result means
+    /// that the branch skips software alpha allocation.</summary>
+    public static int? SelectSourceAlphaFormat(int deviceFormat) => deviceFormat switch
+    {
+        3 => 10,
+        2 or 4 => 11,
+        5 or 7 => 12,
+        6 or 8 => 13,
+        _ => null
+    };
+
     public static int ClassifyDirectDraw(int bits,uint redMask,uint greenMask,uint blueMask)
     {
         if(bits==8)return 2;

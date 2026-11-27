@@ -226,6 +226,15 @@ NativeSurfaceCopy porta cópia opaca/escala/clipping e quatro formatos de surfac
 
 V17.1 (27/11/2026). O modo `cadence` da coleta 34 registra timestamps de `QueryPerformanceCounter` na entrada da cena e dos dispatchers, filtrados pelo thread e pelos dois pares de chamadas de `0044DD00`. O resumo distingue frames sem despacho, com Update→Draw e com sequência inesperada. A mediana dos intervalos de cena é derivada por thread, e o valor nominal é registrado separadamente. Testam-se localmente, por simulação, os dois ramos, máscaras, filtros, conversão de ticks e frames incompletos. A cadência do executável e a apresentação do buffer ainda aguardam observação no Windows. [Protocolo](../../scripts/pending/README.md#v01v17--cadência-da-cena-no-roteiro-34).
 
+V17, 27/11/2026. O assembly e a tabela recuperada pela coleta 39
+ligaram o caminho YGA à alocação alpha 10–13 e à amostra de cor em (0,0).
+O inspetor agora compara o RGB da amostra com a ocorrência de pixels
+visíveis no alpha original e informa os formatos possíveis por código
+do dispositivo. Conferidos 520 YGAs no DAT, as sete entradas da tabela,
+o build e os testes C#. Faltam o consumidor da chave e o formato
+efetivamente ativo durante os passes nativos.
+[Alocação YGA](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--alocação-do-yga-e-amostra-de-cor-chave-2711).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

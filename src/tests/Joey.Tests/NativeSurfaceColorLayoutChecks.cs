@@ -4,6 +4,10 @@ internal static class NativeSurfaceColorLayoutChecks
 {
     internal static void Run(Action<bool,string> check)
     {
+        int?[] formats = [null, null, 11, 10, 11, 12, 13, 12, 13, null, null];
+        check(Enumerable.Range(0, formats.Length).Select(NativeSurfaceColorLayout.SelectSourceAlphaFormat)
+            .SequenceEqual(formats), "V17: native software source-alpha allocation across device formats");
+
         check(NativeSurfaceColorLayout.ClassifyDirectDraw(8,0,0,0)==2 &&
             NativeSurfaceColorLayout.ClassifyDirectDraw(16,0xf800,0x7e0,0x1f)==3 &&
             NativeSurfaceColorLayout.ClassifyDirectDraw(16,0x7c00,0x3e0,0x1f)==4 &&

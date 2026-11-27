@@ -39,6 +39,7 @@ Execute os comandos da raiz do repositório. Os resultados continuam privados em
 | [36-result-fade-ghidra.sh](36-result-fade-ghidra.sh) | `ghidra-result-fade.zip` (V16, 27/11/2026, 2/2 funções e 2/2 blocos, [v10](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v10--saída-do-banner-de-resultado-27112026)) |
 | [37-result-scene-ghidra.sh](37-result-scene-ghidra.sh) | `ghidra-result-scene.zip` (V16, 27/11/2026, 1/1 função e 2/2 blocos, [v11](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v11--produtor-do-banner-de-resultado-27112026)) |
 | [38-disabled-chain-producer-ghidra.sh](38-disabled-chain-producer-ghidra.sh) | `ghidra-disabled-chain-producer.zip` (V12, 27/11/2026, 2/2 funções e 1/1 bloco, [v12](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v12--produtor-de-b1-27112026)) |
+| [39-yga-surface-selector-ghidra.sh](39-yga-surface-selector-ghidra.sh) | `ghidra-yga-surface-selector.zip` (V17, 27/11/2026, 2/2 funções e 2/2 blocos, [v13](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v13--seletor-de-superfície-yga-27112026)) |
 
 As coletas 16/CARDS e 17/CARDS exportaram apenas as rotinas que ainda exigiam assembly. Os helpers omitidos já constam do snapshot anterior. A coleta 25 exportou sete funções no bundle base e oito no complemento de alpha. Os comandos preservados nos roteiros continuam reproduzindo o recorte completo.
 

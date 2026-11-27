@@ -19,11 +19,32 @@ static class VisualManifestProbe
 
     private sealed record ManifestRecord(string Name, int Bytes, string Latin1, string Hex);
     private sealed record ImageRecord(string Name, uint StoredBytes, uint DecodedBytes,
-        int? Width, int? Height, string? Sha256, string? Error);
+        int? Width, int? Height, string? Sha256, string? Error, YgaAlphaSummary? YgaAlpha = null);
+    private sealed record YgaAlphaSummary(int TransparentPixels, int PartialAlphaPixels,
+        int OpaquePixels, int NonTransparentBlackPixels, string TopLeftRgb, int NonTransparentTopLeftMatches);
     private sealed record HelpRequest(int Key, string Pattern, string[] MissingLanguages,
         ImageRecord[] Variants);
     private sealed record ReactionGeometry(string Manifest, string BaseResource, ImageRecord? BaseImage,
         CardPoint Origin, CardPoint[] SourceQuad, CardPoint[] DestinationQuad);
+
+    private static YgaAlphaSummary InspectYgaAlpha(ReadOnlySpan<byte> rgba)
+    {
+        var origin = rgba[..3];
+        int transparent = 0, partial = 0, opaque = 0, black = 0, matchesOrigin = 0;
+        for (int i = 0; i < rgba.Length; i += 4)
+        {
+            if (rgba[i + 3] == 0)
+            {
+                transparent++;
+                continue;
+            }
+            if (rgba[i + 3] == 255) opaque++;
+            else partial++;
+            if ((rgba[i] | rgba[i + 1] | rgba[i + 2]) == 0) black++;
+            if (rgba.Slice(i, 3).SequenceEqual(origin)) matchesOrigin++;
+        }
+        return new(transparent, partial, opaque, black, Convert.ToHexString(origin), matchesOrigin);
+    }
 
     private static HelpRequest[]? InspectHelpBank(IEnumerable<ManifestRecord> manifests,
         IEnumerable<ImageRecord> images)
@@ -130,6 +151,7 @@ static class VisualManifestProbe
             {
                 byte[] bytes = archive.Read(entry.Name);
                 int width, height;
+                YgaAlphaSummary? alpha = null;
                 if (bitmap)
                 {
                     var info = BitmapInfo.Read(bytes);
@@ -139,13 +161,15 @@ static class VisualManifestProbe
                 else
                 {
                     var info = NativeYgaSprite.Decode(bytes,
-                        static (data, count) => Archive.Decode(data, count));
+                        static (data, count) => Archive.Decode(data, count),
+                        YgaTransparencyMode.SourceAlpha);
                     width = info.Width;
                     height = info.Height;
+                    alpha = InspectYgaAlpha(info.Rgba);
                 }
 
                 images.Add(new(entry.Name, entry.Stored, entry.Size, width, height,
-                    Convert.ToHexString(SHA256.HashData(bytes)), null));
+                    Convert.ToHexString(SHA256.HashData(bytes)), null, alpha));
             }
             catch (Exception ex) when (ex is InvalidDataException or IOException or
                                            OverflowException or ArgumentException)
@@ -162,6 +186,11 @@ static class VisualManifestProbe
             archiveEntries = archive.Entries.Count,
             manifests,
             images,
+            nativeAlphaAllocation = Enumerable.Range(2, 7).Select(deviceFormat => new
+            {
+                deviceFormat,
+                softwareFormat = NativeSurfaceColorLayout.SelectSourceAlphaFormat(deviceFormat)
+            }),
             helpRequests = InspectHelpBank(manifests, images),
             bustUpReactionGeometry = InspectReactionGeometry(manifests, images)
         };
