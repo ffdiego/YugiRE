@@ -21,7 +21,8 @@ public sealed partial class DemoDuel
         card = null!;
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
             !TryResolveCardTarget(source, out int index, out card) ||
-            !DrawSpellRules.SupportsQueued(card)) return false;
+            !DrawSpellRules.SupportsQueued(card) ||
+            card.ClassCode == 21 && !CanActivateOwnMainTrap(source, index)) return false;
         if (source.Zone == DuelZone.Hand)
         {
             if (FirstFreeSpellZone() < 0) return false;
@@ -37,6 +38,6 @@ public sealed partial class DemoDuel
             int ownCount = hands[source.Side].Count - (source.Zone == DuelZone.Hand ? 1 : 0);
             return (ownCount > 0 || hands[1 - source.Side].Count > 0) && DeckCount(source.Side) >= ownCount;
         }
-        return DrawSpellRules.Effect(card) is { } plan && DeckCount(source.Side) >= plan.Cards;
+        return DrawSpellRules.QueuedEffect(card) is { } plan && DeckCount(source.Side) >= plan.Cards;
     }
 }

@@ -14,6 +14,10 @@ public static class LifePointSpellRules
     public static bool SupportsQueued(ushort resourceId) =>
         Joey.Cards.FixedSpellEffects.LifePoints(resourceId) is not null;
 
+    public static bool SupportsQueued(Card card) =>
+        card.ClassCode == 22 && SupportsQueued(card.Id) ||
+        card is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.GiftOfTheMysticalElf };
+
     public static LifePointSpellChange? ResolveQueued(ushort resourceId, int caster)
     {
         if (caster is not (0 or 1)) return null;

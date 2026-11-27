@@ -95,7 +95,9 @@ public sealed partial class DemoDuel
 
     /// <summary>Existing fixed-effect executors; no target or cost selection at admission.</summary>
     public static bool SupportsQueuedFixedSpell(Card card) => FieldSpellRules.Supports(card.Id) ||
-        SupportsQueuedContinuousSpell(card) || card.ClassCode == 22 &&
+        SupportsQueuedContinuousSpell(card) || card.ClassCode == 21 &&
+        (DrawSpellRules.SupportsQueued(card) || LifePointSpellRules.SupportsQueued(card)) ||
+        card.ClassCode == 22 &&
         (DrawSpellRules.SupportsQueued(card) || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
          SpellTrapWipeRules.SupportsQueued(card.Id));
@@ -116,7 +118,7 @@ public sealed partial class DemoDuel
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
             return CanResolveDeckSearchSpell(source, out _);
-        if (LifePointSpellRules.SupportsQueued(card.Id))
+        if (LifePointSpellRules.SupportsQueued(card))
             return CanResolveQueuedLifePointSpell(source, out _);
         if (MonsterWipeRules.SupportsQueued(card.Id))
             return CanAdmitQueuedMonsterWipe(source);
@@ -137,12 +139,13 @@ public sealed partial class DemoDuel
         if (SupportsQueuedContinuousSpell(card)) return TryQueueContinuousSpell(source,out message,origin);
         if (FieldSpellRules.Supports(card.Id))
             return TryQueueFieldSpellActivation(zone,index,out message,origin);
-        if (card.ClassCode!=22) return false;
+        if (card.ClassCode != 22 && !(card.ClassCode == 21 &&
+            (DrawSpellRules.SupportsQueued(card) || LifePointSpellRules.SupportsQueued(card)))) return false;
         if (DrawSpellRules.SupportsQueued(card))
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
             return TryQueueDeckSearchSpell(zone, index, out message, origin);
-        if (LifePointSpellRules.SupportsQueued(card.Id))
+        if (LifePointSpellRules.SupportsQueued(card))
             return TryQueueLifePointSpell(zone, index, out message, origin);
         if (MonsterWipeRules.SupportsQueued(card.Id))
             return TryQueueMonsterWipe(zone, index, out message, origin);
@@ -893,7 +896,7 @@ public sealed partial class DemoDuel
                 drawSpellSourceSpent = false;
                 if (!spent || duel.GameOver) return new([]);
                 if (DrawSpellRules.IsCardDestruction(card)) return PlanCardDestruction(activate.Side);
-                var effect = DrawSpellRules.Effect(card) ??
+                var effect = DrawSpellRules.QueuedEffect(card) ??
                     throw new InvalidOperationException("Reserved draw spell has no effect.");
                 // Recheck availability before issuing the reserved batch.
                 // No other admitted action can run between these draws.
@@ -944,6 +947,9 @@ public sealed partial class DemoDuel
                 DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
                 SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || card.Id == FinalDestiny ||
                 ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
+            bool ownMainTrap = card.ClassCode == 21 &&
+                (LifePointSpellRules.SupportsQueued(card) || DrawSpellRules.SupportsQueued(card)) &&
+                duel.CanActivateOwnMainTrap(target, slot);
             bool temporaryModifier = temporaryStatActivation?.Source == target &&
                 TemporaryStatRules.For(card.Id)?.ClassCode == card.ClassCode;
             bool reservedTrapWipe = wipe is { } responseWipe &&
@@ -951,7 +957,7 @@ public sealed partial class DemoDuel
                 responseWipe.Source == target && responseWipe.ResourceId == card.Id &&
                 card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
             bool attackTrap = attackTrapPayment?.Source == target && duel.IsQueuedAttackResponseTrap(target.Side, slot);
-            if (!(fixedSpell || temporaryModifier || reservedTrapWipe || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
+            if (!(fixedSpell || ownMainTrap || temporaryModifier || reservedTrapWipe || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);

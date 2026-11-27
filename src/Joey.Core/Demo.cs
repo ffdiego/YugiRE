@@ -224,7 +224,7 @@ public sealed partial class DemoDuel
     private (DuelZone Source, int Index, int Slot)? FindEndPhaseMessage(int endingPlayer)
     {
         int owner = 1 - endingPlayer;
-        if (DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown) is not ushort resourceId)
+        if (AreTrapsSuppressed || DestinyBoardRules.NextMessage(owner, Spells, SpellFaceDown) is not ushort resourceId)
             return null;
         int slot = Enumerable.Range(0, 5).FirstOrDefault(z => Spells[owner, z] is null, -1);
         if (slot < 0) return null;

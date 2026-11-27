@@ -43,6 +43,7 @@ public sealed partial class DemoDuel
             or FlipEffectRules.DarkEyesIllusionist or InvitationToADarkSleep ||
             NormalSummonRules.Category(card) == 0 && NormalMonsterCatalog.Contains(card.Id) ||
             CountedAttributeRules.ContainsKey(card.Id) || BattleDamageEffectRules.SupportsQueued(card.Id) ||
+            Joey.Cards.ElementalAuraEffects.Supports(card.Id) ||
             IsStandbyLifeMonster(card));
 
     private static bool HasBattleRemovalDeckSelection(Card card) => card.IsMonster &&

@@ -13,6 +13,21 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 - **Done:** funcional **no escopo indicado**, acionável em um duelo C# e coberto por testes; não exige RE exaustiva.
 - **Verified:** `Done` e resultado relevante comparado com execução observada do Joey original. Traces de uma regra ainda não implementada em C# **não** tornam a carta Verified.
 
+## Lote CARDS — efeitos contados e contínuos (27/11/2026 UTC)
+
+O manifesto é a fonte de status atual; as tabelas antigas abaixo registram escopos históricos.
+
+| Família | Estado | Contrato atual |
+| --- | --- | --- |
+| Gift of The Mystical Elf (1092) | Partial | 300 cura por monstro de ambos os lados. Set anterior, Main própria. |
+| Jar of Greed (1447) | Partial | Compra uma carta via fila; Set anterior, Main própria. |
+| Gravity Bind (1323) | Partial | Nível >= 4 não ataca; Set anterior, Main própria; supressão contínua. |
+| Destiny Board (1528), Spirit Messages (1541–1544) | Partial | Ativação por fila, mensagens na End adversária e vitória F-I-N-A-L. |
+| Royal Command (1530) | Partial | Ativação por fila recuperada; negação FLIP existente. |
+| Auras elementais (491,523,526,597,608,627) | Done | Definições em Joey.Cards; admissão de combate restaurada. |
+
+IDs conferidos no SQLite cumulativo v3 e índice de packs; efeitos a partir do texto conhecido das cartas e contratos existentes, sem ler o DAT integral nem afirmar paridade. Restructer Revolution (1039) e Just Desserts (1032) constam nas identidades mas não nos packs; não implementadas neste lote. Traps não são acionáveis fora do recorte Main própria até ACTIONS fornecer janela de resposta geral.
+
 ## Inventário atual (sem extrapolar números do DAT)
 
 | Família / mecânica | Estado atual | Evidência de implementação | Limitação principal |
