@@ -23,7 +23,7 @@ powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1
 ```
 
-## V01/V04/V11/V17/V31 — 34-attack-draw-runtime.py (aguardando Windows)
+## V01/V04/V11/V16/V17/V31 — 34-attack-draw-runtime.py (aguardando Windows)
 
 Com Frida na venv e um duelo aberto no executável original, indique o
 PID do jogo. Durante os 20 segundos de captura, execute um ataque.
@@ -121,3 +121,17 @@ completa inclui Update inicial, Draw que desativa o mesmo objeto e
 passagem base nesse Draw, sem perda de eventos. Confronte os pontos
 com `bustUpReactionGeometry` no inspetor do DAT e a sequência com
 frames equivalentes. O modo aguarda a execução no Windows.
+
+### V16 — saída do resultado no roteiro 34
+
+No Windows, inicie a coleta antes de sair da tela de resultado. Em
+partidas com vários duelos, use um arquivo por saída. O ordinal
+neste modo é a entrada em `00447000`, a rotina da cena de resultado.
+O traço registra fase/subfase, contador antes/depois de `00444490`,
+desativação e argumentos de desenho em `0044451F`. Saída 0 exige
+uma sequência de 16 Draws, das quais 15 pedem o blit esperado,
+sem descarte de eventos. O modo aguarda execução no Windows.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --mode result --pid <PID> --exe ..\passion\joey_pc.exe --output scratch/visual-review/result-fade.json
+```

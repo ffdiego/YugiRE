@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record attack blits, selection backgrounds, reactions or dispatcher cadence."""
+"""Record attack blits, selection backgrounds, reactions, result or dispatcher cadence."""
 from __future__ import annotations
 
 import argparse
@@ -19,6 +19,7 @@ SCENARIOS = {
     "selection": "Open a card-selection window.",
     "cadence": "Stay in one duel scene during the recording.",
     "reaction": "Trigger a character reaction and let it finish.",
+    "result": "Finish the duel and advance past the result banner.",
 }
 
 
@@ -142,6 +143,29 @@ def observed_reaction(events: list[dict]) -> bool:
     return False
 
 
+def observed_result_fade(events: list[dict]) -> bool:
+    """Check that one banner advances through the expected 16 Draws."""
+    sequences = {}
+    for event in events:
+        if event["kind"] == "result-banner-draw":
+            sequences.setdefault((event["threadId"], event["runId"]), []).append(event)
+    for sequence in sequences.values():
+        if len(sequence) != 16:
+            continue
+        if all(
+            event["before"] == 16 * index
+            and event["after"] == 16 * (index + 1)
+            and event["activeAfter"] == (index < 15)
+            and event["blit"] == (
+                {"x": 400, "y": 300, "intensity": 256 - 16 * (index + 1)}
+                if index < 15 else None
+            )
+            for index, event in enumerate(sequence)
+        ):
+            return True
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True)
@@ -173,6 +197,8 @@ def main() -> int:
         observed = any(row["orderedUpdateDrawFrames"] >= 2 for row in result["cadenceByThread"])
     elif args.mode == "reaction":
         observed = observed_reaction(result["events"])
+    elif args.mode == "result":
+        observed = observed_result_fade(result["events"])
     else:
         passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
         observed = {"aim", "flight", "impact", "partial-sword"} <= passes

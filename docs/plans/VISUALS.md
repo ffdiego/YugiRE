@@ -167,9 +167,25 @@ fica negativo. O índice normal é
 `byte[005F3257 + byte[005F325B]] - 1`; `005BDAC0` pode
 forçar 3, a entrada `aborted_?.bmp` no DAT. O Draw entrega
 a imagem, (400,300) e a intensidade ao destino pelo slot
-`+50h` em `0044451F`. Faltam o produtor de `obj+14h`
-e a comparação da sequência com a execução original.
-A coleta 36 foi importada no snapshot privado v10.
+`+50h` em `0044451F`. A coleta 36 foi importada no
+snapshot privado v10.
+
+V16.1. A coleta 37 confirmou o produtor em `00447000`, slot zero
+da vtable do pai `005DBBC8`. A fase 5 grava o byte `+40h` do
+pai (o `+14h` do banner em `pai+2Ch`) em `00447542`,
+somente quando o contador da fase era zero e `0044B970`
+confirma modo interno 1. O mesmo ramo cria o objeto de
+`duel/match/match.txt`. A fase 6 também grava esse byte em
+`004476B9` na subfase zero, desde que o bit 6 de `00A54E5C`
+esteja limpo, `005F3254` seja 1 e o modo interno seja diferente
+de 3. Essa subfase aguarda o predicado virtual `+4h` do banner
+retornar falso para avançar. Em ambas as rotas, o pai despacha
+Update em `004476F7` e Draw em `0044776B`, com máscara 1.
+Para um índice de recurso válido, a previsão estática é 15
+blits (intensidades 240 a 16), seguidos pela desativação na
+16ª chamada de Draw. O modo `result` do roteiro 34 registra
+esse recorte e aguarda execução no Windows.
+[Coleta de saída](../../scripts/pending/README.md#v16--saída-do-resultado-no-roteiro-34).
 
 ## V17 — Cadência nativa de update/draw e blending
 

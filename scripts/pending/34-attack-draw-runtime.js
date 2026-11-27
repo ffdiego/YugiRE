@@ -181,6 +181,68 @@ function watchReaction() {
     });
 }
 
+function watchResultBanner() {
+    const parents = new Map();
+    const bannerDraws = new Map();
+    const runIds = new Map();
+    let nextRun = 0;
+
+    hook(0x47000, {
+        onEnter() {
+            const parent = this.context.ecx;
+            const banner = parent.add(0x2c);
+            if (imageRva(banner.readPointer()) !== 0x1dbc48) return;
+            this.previous = parents.get(this.threadId);
+            this.tracked = true;
+            parents.set(this.threadId, {
+                banner, frame: ++frames,
+                phase: parent.add(0x10).readS32(),
+                subphase: parent.add(0x14).readS32(),
+            });
+        },
+        onLeave() {
+            if (!this.tracked) return;
+            if (this.previous === undefined) parents.delete(this.threadId);
+            else parents.set(this.threadId, this.previous);
+        },
+    });
+    hook(0x44490, {
+        onEnter() {
+            const parent = parents.get(this.threadId);
+            const banner = this.context.ecx;
+            if (parent === undefined || !parent.banner.equals(banner) || !banner.add(0x14).readU8()) return;
+            const before = banner.add(0x10).readS32();
+            const key = banner.toString();
+            if (before === 0 || !runIds.has(key)) runIds.set(key, ++nextRun);
+            this.banner = banner;
+            this.previous = bannerDraws.get(this.threadId);
+            this.event = {
+                kind: 'result-banner-draw', frame: parent.frame, runId: runIds.get(key),
+                threadId: this.threadId, phase: parent.phase, subphase: parent.subphase,
+                before, blit: null,
+            };
+            bannerDraws.set(this.threadId, this.event);
+        },
+        onLeave() {
+            if (this.event === undefined) return;
+            this.event.after = this.banner.add(0x10).readS32();
+            this.event.activeAfter = this.banner.add(0x04).readU8() !== 0;
+            record(this.event);
+            if (this.previous === undefined) bannerDraws.delete(this.threadId);
+            else bannerDraws.set(this.threadId, this.previous);
+        },
+    });
+    hook(0x4451f, {
+        onEnter() {
+            const draw = bannerDraws.get(this.threadId);
+            if (draw === undefined) return;
+            const stack = this.context.esp;
+            draw.blit = { x: stack.add(4).readS32(), y: stack.add(8).readS32(),
+                intensity: stack.add(16).readS32() };
+        },
+    });
+}
+
 function startCadenceClock() {
     const kernel = Process.getModuleByName('kernel32.dll');
     const buffer = Memory.alloc(8);
@@ -234,7 +296,7 @@ rpc.exports = {
     start(mode = 'attack') {
         if (Process.arch !== 'ia32' || image.size < 0x4dd01)
             throw new Error('Unexpected original process architecture or image size');
-        if (!['attack', 'selection', 'cadence', 'reaction'].includes(mode))
+        if (!['attack', 'selection', 'cadence', 'reaction', 'result'].includes(mode))
             throw new Error('Unexpected capture mode');
         if (hooks.length !== 0) throw new Error('Capture is already active');
         events.length = 0;
@@ -243,6 +305,10 @@ rpc.exports = {
         scenes.clear();
         draws.clear();
         try {
+            if (mode === 'result') {
+                watchResultBanner();
+                return;
+            }
             if (mode === 'cadence') cadence = startCadenceClock();
             hook(0x4dd00, {
                 onEnter() {
