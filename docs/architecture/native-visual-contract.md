@@ -202,6 +202,29 @@ sincronização com o display, os caminhos alternativos de cópia
 e o comportamento no Windows seguem em aberto.
 [Roteiro 47](../../scripts/regression/README.md#47--v17-entrega-do-buffer-em-proton).
 
+### Notificações de desenho em Xvfb
+
+Em duas novas sessões do original, o roteiro 48 observou eventos
+`DamageNotify` na janela raiz dedicada de 800×600. As amostras foram
+coletadas durante duelos de demonstração em Proton 9.0 com llvmpipe,
+sem anexar um debugger. A extensão negociada foi DAMAGE 1.1. Cada
+sessão foi observada por dez segundos.
+
+| Preset | Notificações de 800×600 | Intervalo entre notificações, p10 / mediana / p90 |
+| --- | ---: | ---: |
+| Padrão | 300 | 32 / 33 / 35 ms |
+| `-speedy` | 600 | 15 / 17 / 18 ms |
+
+Todas as notificações tinham área e geometria (0,0,800,600). Os
+intervalos usam os timestamps do servidor X, em milissegundos.
+As duas amostras confirmam que a mudança de preset aparece na
+cadência do drawable do Xvfb. Os retângulos descrevem áreas
+afetadas por operações de desenho. O teste deixa em aberto a
+correspondência individual com o BltFast, as diferenças entre
+pixels de quadros consecutivos e o momento em que um quadro chega a um
+monitor físico. [Roteiro 48](../../scripts/regression/README.md#48--v17-notificações-de-desenho-em-xvfb),
+[protocolo DAMAGE da X.Org](https://www.x.org/releases/current/doc/damageproto/damageproto.txt).
+
 ## Primeira prévia em raylib (posterior à análise estática)
 
 A aplicação agora carrega os sprites de ativação `kouka_ue/sita_b/y.yga`

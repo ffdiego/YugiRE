@@ -188,3 +188,26 @@ em ordem. Confira o módulo `ddraw.dll`, `xy=[0,0]`, a origem
 `[0,0,800,600]`, flags `0x10` e retorno zero. Compare as medianas
 entre `callNs` consecutivos no mesmo thread. O relógio monotônico
 do host informa nanossegundos sob GDB.
+
+### 48 — V17, notificações de desenho em Xvfb
+
+Use o display Xvfb isolado do [guia de Proton](../../docs/research/joey-proton-validation.md),
+com `XAUTHORITY` apontando para a autoridade da sessão. Rode uma
+vez no modo padrão e outra com `-speedy`, com a demonstração já
+no tabuleiro e sem debugger anexado. O observador usa Python 3.8+
+e as bibliotecas `libX11.so.6` e `libXdamage.so.1`.
+
+```bash
+preset=standard  # Use speedy para a segunda sessão.
+python scripts/regression/48-x11-drawable-cadence.py --display "$DISPLAY" --seconds 10 \
+  > "scratch/x11-damage-$preset.json"
+```
+
+Confira os retângulos `area` e `geometry` antes de comparar
+intervalos entre `serverMs` consecutivos, com wrap de 32 bits.
+Em um display dedicado, o piloto encontrou apenas notificações
+de 800×600 durante a amostra. `receivedNs` é o instante local do
+recebimento relativo ao início da coleta. O modo de retângulos
+brutos pode emitir mais de um evento por operação e também pode
+cobrir pixels que conservaram o valor anterior.
+[Protocolo DAMAGE da X.Org](https://www.x.org/releases/current/doc/damageproto/damageproto.txt).

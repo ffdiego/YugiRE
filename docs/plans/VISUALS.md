@@ -281,6 +281,15 @@ o contador do laço, os argumentos e os retornos dos 240 blits.
 Continuam pendentes a exibição efetiva, os caminhos de transição
 e a comparação em Windows. [Entrega do buffer em Proton](../../docs/architecture/native-visual-contract.md#entrega-do-buffer-ao-directdraw-em-proton).
 
+V17.4. O roteiro 48 mediu a saída no Xvfb sem anexar GDB. Em dez
+segundos por preset, o servidor registrou 300 notificações de
+800×600 no padrão e 600 com `-speedy`. As medianas pelo relógio do
+servidor foram 33 e 17 ms. A verificação em Python conferiu todos
+os retângulos e a progressão dos timestamps. O teste cobre o
+servidor virtual. Ainda faltam a exibição física e a comparação
+com o caminho do Windows.
+[Notificações de desenho em Xvfb](../../docs/architecture/native-visual-contract.md#notificações-de-desenho-em-xvfb).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

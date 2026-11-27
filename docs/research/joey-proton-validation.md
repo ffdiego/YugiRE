@@ -128,7 +128,7 @@ done
 test -n "$joey_test_pid"
 ```
 
-Use o PID confirmado nos [roteiros de regressão 41 a 47](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+Use o PID confirmado nos [roteiros de regressão com GDB, de 41 a 47](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
 O 41 lê três chamadas de cena. O 42 deve estar anexado antes do
 clique na pilha do cemitério e desanexa após o primeiro blit estável.
 Para o [43](../../scripts/regression/README.md#43--v31-quadrilátero-base-da-reação-em-proton),
@@ -144,6 +144,8 @@ O [46](../../scripts/regression/README.md#46--v17-despacho-da-cena-em-proton)
 registra 360 entradas da cena no preset escolhido, com ou sem despacho.
 O [47](../../scripts/regression/README.md#47--v17-entrega-do-buffer-em-proton)
 acompanha a chamada ao DirectDraw com o tabuleiro já em cena.
+O [48](../../scripts/regression/README.md#48--v17-notificações-de-desenho-em-xvfb)
+observa a saída no servidor X por dez segundos sem anexar ao processo.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 
