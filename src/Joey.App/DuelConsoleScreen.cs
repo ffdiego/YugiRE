@@ -36,8 +36,7 @@ static partial class Game
         {
             if(ConsoleSession is null)
             {
-                // Lazy attachment: leave the legacy path untouched until
-                // the operator explicitly opens the developer console.
+                // Attach the console to the existing action queue.
                 liveConsoleSession=DuelConsoleSession.Attach(duel,new AppActionPresentationGate(),cards);
                 queuedDuel=liveConsoleSession.Queue;
                 labStatus=DuelScriptStatus.Completed;
@@ -84,12 +83,6 @@ static partial class Game
     // a raylib window. This is the regression for the first-frame deck-out.
     static int CheckConsoleStartup()
     {
-        if (!QueueActionsEnabled([]) || !QueueActionsEnabled(["--queued-actions"]) ||
-            QueueActionsEnabled(["--legacy-actions"]))
-        {
-            Console.Error.WriteLine("Action mode CLI regression.");
-            return 1;
-        }
         if (SelectPresentationStyle([]) is not FastLookAndFeel ||
             SelectPresentationStyle(["--fast"]).UpdatesPerSecond != 60 ||
             SelectPresentationStyle(["--classic"]).GetType() != typeof(DuelLookAndFeel) ||
@@ -111,17 +104,7 @@ static partial class Game
             return 1;
         }
 
-        // Exercise the same action mode selection used by local and Alpha duels.
-        duel = DuelConsoleSession.EmptyLabDuel();
-        useQueuedActions = QueueActionsEnabled(["--legacy-actions"]);
-        StartDuelPresentation();
-        AdvanceDuelPhases(TimeSpan.FromMilliseconds(17));
-        if (queuedDuel is not null || duel.Winner != 1)
-        {
-            Console.Error.WriteLine("Legacy phase driver no longer performs its automatic draw.");
-            return 1;
-        }
-        useQueuedActions = QueueActionsEnabled([]);
+        // Local and Alpha duels always start with the typed queue.
         if (!CheckQueuedAutomaticDraw(new DuelLookAndFeel()) ||
             !CheckQueuedAutomaticDraw(new InstantLookAndFeel()))
         {

@@ -288,9 +288,6 @@ if (args.Length > 0)
     DeckTraceChecks.Run(Check,traceArchive);
 }
 else DeckTraceChecks.Run(Check);
-if (historicalCards) DirectDamageChecks.Run(Check);
-if (historicalCards) LifePointSpellChecks.Run(Check);
-if (historicalCards) DrawSpellChecks.Run(Check);
 if (historicalCards) FieldSpellChecks.Run(Check);
 if (historicalCards) AttributeFieldSpellChecks.Run(Check);
 if (historicalCards) TypeFieldSpellChecks.Run(Check);

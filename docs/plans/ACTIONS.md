@@ -4,6 +4,8 @@ Histórico e contratos movidos de PLANS.md na revisão de 24/11/2026 (base `42f7
 
 > **Política vigente (26/11/2026):** A08 imediatamente; C12 elimina toda execução legada (flags, fallback, resolvedores). A05/A09 evoluem para equivalência de duelos com mesmas decisões e estado/RNG inicial. Comparar argumentos e estado além da ordem; gaps são inconclusivos. Critérios históricos de C12/A08 abaixo não bloqueiam a nova política.
 
+Primeira fatia A08/C12 (26/11): definições fixas de LP/compra extraídas em Joey.Cards, adaptadores no Core. App gráfico e Alpha headless sempre criam a fila tipada; opção --legacy-actions rejeitada. Fallbacks por operação e chamadas diretas ainda existem, portanto C12 permanece aberto. CI necessário.
+
 ## Contexto: espinha dorsal da fila
 
 ### Por que importa

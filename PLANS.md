@@ -96,6 +96,8 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 - [ ] **C18 — Triagem de risco por slots de callback e mecânica.** Status: `Parcial`. Aplicar o cruzamento C01 local na revisão semântica por família. [Detalhes](docs/plans/CARDS.md#c18)
 
+<a id="c12--migrar-as-famílias-done-para-a-fila-de-ações"></a>
+
 ### C12 — fila única, sem legado
 
 **Objetivo:** eliminar toda resolução paralela, não apenas o inventário Done original. O gate reduzido C12.1 é histórico. A08 e novas cartas pela fila começam agora.
@@ -205,7 +207,7 @@ Use `Joey.Lab summarize` ou ferramentas `yugilab` somente quando houver uma perg
 
 **Padrão: agente único.** Trabalhar sequencialmente com `/goal` definido, atravessando trilhas quando necessário; preferir commits incrementais validados na main. Não criar agente coordenador nem distribuir trabalho por trilha apenas porque existem quatro backlogs.
 
-**Paralelismo excepcional:** somente quando o ganho esperado superar claramente a coordenação, preferencialmente em pesquisas independentes somente leitura ou tarefas isoladas. Nesse caso, usar uma branch/worktree por trilha e ID (por exemplo, `actions/A01-scheduler`, `cards/C01-taxonomia`, `visuals/V03-assets`). Reservar o item com PR draft ou coordenação explícita; não presumir que uma tarefa está livre só pelo Markdown. ACTIONS tem precedência para contratos compartilhados e alterações estruturais em `DemoDuel`; CARDS pode avançar taxonomia, tabelas e testes isolados, VISUALS modelos/recursos sem alterar regras. Integrações que atravessam trilhas são responsabilidade do agente principal; se houver concorrência excepcional, exigem coordenação. `A02` entrega a infraestrutura, não converte automaticamente todos os caminhos legados: durante A06/C12, usar adaptadores explícitos e não duplicar mutação. Depois de migrado um caminho, nenhuma regra nova pode contornar sua fila.
+**Paralelismo excepcional:** somente quando o ganho esperado superar claramente a coordenação, preferencialmente em pesquisas independentes somente leitura ou tarefas isoladas. Nesse caso, usar uma branch/worktree por trilha e ID (por exemplo, `actions/A01-scheduler`, `cards/C01-taxonomia`, `visuals/V03-assets`). Reservar o item com PR draft ou coordenação explícita; não presumir que uma tarefa está livre só pelo Markdown. ACTIONS tem precedência para contratos compartilhados e alterações estruturais em `DemoDuel`; CARDS pode avançar taxonomia, tabelas e testes isolados, VISUALS modelos/recursos sem alterar regras. Integrações que atravessam trilhas são responsabilidade do agente principal; se houver concorrência excepcional, exigem coordenação. `A02` entrega a infraestrutura, não converte automaticamente todos os caminhos legados: durante A06/C12, retirar adaptadores de execução e não duplicar mutação. Depois de migrado um caminho, nenhuma regra nova pode contornar sua fila.
 
 Uma sessão escritora atualiza e publica em `main` após testes. Outra máquina continua com `git pull --ff-only`. Se houver múltiplos agentes escritores ao mesmo tempo (por exemplo, um em CARDS e outro em VISUALS), isolar branches/worktrees e integrar sequencialmente; itens de ACTIONS (`A02`, `A06`) mexem no núcleo e **não** devem rodar em paralelo com mudanças grandes em `Demo.cs`. Marcar `CARDS.md` de acordo com implementação atual, **não** com intenção, texto de carta ou trace de outra implementação.
 

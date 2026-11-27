@@ -19,7 +19,6 @@ static partial class Game
     static bool includeUnused;
     static readonly DuelPresentationClock presentation = new(new FastLookAndFeel());
     static string previousDuelMessage = "";
-    static bool QueueActionsEnabled(string[] args) => !args.Contains("--legacy-actions");
     // Keep explicit legacy profile precedence; Fast is now the App default.
     static DuelLookAndFeel SelectPresentationStyle(string[] args) =>
         args.Contains("--instant") ? new InstantLookAndFeel()
@@ -30,6 +29,11 @@ static partial class Game
 
     public static int Run(string[] args)
     {
+        if (args.Contains("--legacy-actions"))
+        {
+            Console.Error.WriteLine("Legacy action mode has been removed. The typed action queue is required.");
+            return 1;
+        }
         if (args is ["--check-console-startup"]) return CheckConsoleStartup();
         if (args.Contains("--inspect-voice-dat") || Option(args,"--review-voice=") is not null)
             return VoiceAudioReview.Run(Option(args,"--voice-dat="),
@@ -39,7 +43,6 @@ static partial class Game
         graphics = resources;
         includeUnused = args.Contains("--include-unused");
         useLegacySelection = args.Contains("--legacy-selection");
-        useQueuedActions = QueueActionsEnabled(args);
         presentation.SetStyle(SelectPresentationStyle(args));
         if (Option(args, "--native-cosine=") is string cosinePath)
         {
