@@ -158,11 +158,15 @@ public sealed class CpuDuelController
                 .Where(c => !duel.SelectedBatchIndices.Contains(c.SourceIndex))
                 .OrderByDescending(c => selection.Source == CardSelectionSource.Hand && selection.SourceSide == Player
                     ? -CardValue(c.Card) : CardValue(c.Card)).ThenBy(c => c.SourceIndex).FirstOrDefault();
+            if (selection.Destination == CardSelectionDestination.Banished)
+                candidate = selection.EligibleCards.Where(c => (c.SourceSide ?? selection.SourceSide) != Player)
+                    .OrderByDescending(c => CardValue(c.Card)).ThenBy(c => c.AnswerIndex).FirstOrDefault()
+                    ?? (selection.MinSelections == 0 ? null : candidate);
             if (duel.UsesQueuedHandSelection(selection))
             {
                 if (candidate is not null || selection.MinSelections == 0)
                     return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedHandSelection(
-                        selection, candidate?.SourceIndex, out m, ActionOrigin.Cpu), candidate?.Card);
+                        selection, candidate?.AnswerIndex, out m, ActionOrigin.Cpu), candidate?.Card);
                 return Idle(CpuStepStatus.Blocked, "Mandatory queued hand selection has no candidate.");
             }
             if (duel.UsesQueuedFieldSelection(selection))
@@ -250,7 +254,10 @@ public sealed class CpuDuelController
                             change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
                         if (!(useLpSpell ||
                               candidate is { ClassCode: 22, Id: Joey.Cards.RevivalSpellEffects.MonsterReborn } ||
-                              candidate.ClassCode == 22 && Joey.Cards.HandManipulationEffects.For(candidate.Id) is not null ||
+                              candidate.ClassCode == 22 && Joey.Cards.HandManipulationEffects.For(candidate.Id) is not null &&
+                                  candidate.Id != Joey.Cards.HandManipulationEffects.TheCheerfulCoffin &&
+                                  (candidate.Id != Joey.Cards.HandManipulationEffects.SoulRelease ||
+                                   duel.Graveyard(1-Player).Count > 0) ||
                               duel.ShouldPlayAttackRestrictionSpell(Player, candidate) ||
                               candidate is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.DestinyBoard } ||
                               ShouldClearSpellTraps(duel, candidate.Id,

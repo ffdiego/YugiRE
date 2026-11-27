@@ -99,7 +99,7 @@ internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, 
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateHandManipulationSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record AdvanceHandManipulationCommand(int Side, CardTarget Source) : DuelCommand(Side);
-internal sealed record ResolveHandManipulationCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
+internal sealed record ResolveHandManipulationCommand(int Side, PendingCardSelection Request, CardTarget? Target) : DuelCommand(Side);
 internal sealed record ActivateDeckSearchSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateGraveyardRevivalSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record OpenGraveyardRevivalSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -359,7 +359,11 @@ internal static class DuelCommandValidation
                 break;
             case ResolveHandManipulationCommand handAnswer when handAnswer.Request is not null &&
                 handAnswer.Request.Owner == handAnswer.Side:
-                Target(handAnswer.Target,handAnswer.Request.SourceSide,DuelZone.Hand);
+                if (handAnswer.Target is { } picked)
+                    Target(picked,picked.Side,handAnswer.Request.Source == CardSelectionSource.Graveyard
+                        ? DuelZone.Graveyard : DuelZone.Hand);
+                else if (handAnswer.Request.MinSelections != 0)
+                    throw new ArgumentException("Mandatory selection requires an occurrence.");
                 break;
             case ActivateDrawSpellCommand drawSpell:
                 Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);

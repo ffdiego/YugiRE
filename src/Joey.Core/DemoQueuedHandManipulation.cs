@@ -10,10 +10,41 @@ public sealed partial class DemoDuel
         card.ClassCode == 22 && HandManipulationEffects.For(card.Id) is not null;
 
     private static bool IsHandManipulationRequest(PendingCardSelection request) =>
-        request.Source == CardSelectionSource.Hand &&
-        request.Destination is CardSelectionDestination.Graveyard or CardSelectionDestination.Deck &&
-        request.Filter == CardSelectionFilter.AnyCard && request.MinSelections == 1 &&
-        request.MaxSelections == 1 && HandManipulationEffects.For(request.EffectResourceId) is not null;
+        request.Source is CardSelectionSource.Hand or CardSelectionSource.Graveyard &&
+        request.Destination is CardSelectionDestination.Graveyard or CardSelectionDestination.Deck or CardSelectionDestination.Banished &&
+        request.MinSelections is 0 or 1 && request.MaxSelections == 1 &&
+        HandManipulationEffects.For(request.EffectResourceId) is not null;
+
+    private static bool IsGraveBanish(HandManipulationKind kind) =>
+        kind is HandManipulationKind.OpponentGraveBanish or HandManipulationKind.EitherGraveBanish;
+
+    private static bool UsesOwnHand(HandManipulationKind kind) =>
+        kind is HandManipulationKind.DrawThenDiscard or HandManipulationKind.OwnMonsterDiscard;
+
+    private static CardSelectionFilter ManipulationFilter(HandManipulationKind kind) =>
+        kind is HandManipulationKind.OwnMonsterDiscard or HandManipulationKind.OpponentGraveBanish
+            ? CardSelectionFilter.AnyMonster : CardSelectionFilter.AnyCard;
+
+    private IReadOnlyList<CardSelectionCandidate> ManipulationCandidates(int caster, HandManipulationKind kind)
+    {
+        bool grave = IsGraveBanish(kind);
+        int[] sides = kind == HandManipulationKind.EitherGraveBanish ? [caster,1-caster] :
+            [UsesOwnHand(kind) ? caster : 1-caster];
+        var result = new List<CardSelectionCandidate>();
+        foreach (int side in sides)
+        {
+            var cards = grave ? graves[side] : hands[side];
+            for (int i = 0; i < cards.Count; i++)
+            {
+                if (!CardSelectionRules.IsEligible(cards[i],ManipulationFilter(kind))) continue;
+                if (!TryCaptureCardTarget(side,grave ? DuelZone.Graveyard : DuelZone.Hand,i,out _))
+                    return [];
+                result.Add(new(i,cards[i]) { SourceSide = side,
+                    ChoiceKey = kind == HandManipulationKind.EitherGraveBanish ? result.Count : null });
+            }
+        }
+        return result.AsReadOnly();
+    }
 
     private bool CanResolveHandManipulationSpell(CardTarget source)
     {
@@ -28,11 +59,11 @@ public sealed partial class DemoDuel
         else if (source.Zone != DuelZone.SpellTrap || !SpellFaceDown[source.Side,index] ||
                  equipment.Any(e => e.Owner == source.Side && e.SourceZone == index)) return false;
 
-        int affected = effect.Kind == HandManipulationKind.DrawThenDiscard ? source.Side : 1-source.Side;
-        if (effect.DrawCount > 0 && DeckCount(source.Side) < effect.DrawCount) return false;
-        if (effect.DrawCount == 0 && hands[affected].Count == 0) return false;
-        return Enumerable.Range(0,hands[affected].Count).All(i =>
-            TryCaptureCardTarget(affected,DuelZone.Hand,i,out _));
+        if (effect.DrawCount > 0)
+            return DeckCount(source.Side) >= effect.DrawCount &&
+                Enumerable.Range(0,hands[source.Side].Count).All(i =>
+                    TryCaptureCardTarget(source.Side,DuelZone.Hand,i,out _));
+        return ManipulationCandidates(source.Side,effect.Kind).Count > 0;
     }
 
     private bool TryQueueHandManipulationSpell(CardTarget source, out string message, ActionOrigin origin)
@@ -56,9 +87,11 @@ public sealed partial class DemoDuel
     private bool TryGetHandManipulationTarget(PendingCardSelection request, int index, out CardTarget target)
     {
         target = default;
-        var option = request.EligibleCards.FirstOrDefault(c => c.SourceIndex == index);
+        var option = request.EligibleCards.FirstOrDefault(c => c.AnswerIndex == index);
         return CanAdmitHandManipulationAnswer() && ReferenceEquals(request,PendingCardSelection) &&
-            option is not null && TryCaptureCardTarget(request.SourceSide,DuelZone.Hand,index,out target) &&
+            option is not null && TryCaptureCardTarget(option.SourceSide ?? request.SourceSide,
+                request.Source == CardSelectionSource.Graveyard ? DuelZone.Graveyard : DuelZone.Hand,
+                option.SourceIndex,out target) &&
             TryResolveCardTarget(target,out _,out var card) && ReferenceEquals(card,option.Card);
     }
 
@@ -66,8 +99,15 @@ public sealed partial class DemoDuel
         out string message, ActionOrigin origin)
     {
         message = "Choose one current hand occurrence.";
-        if (primitiveActionQueue is not { IsBusy: false } queue || index is not int pick ||
-            !TryGetHandManipulationTarget(request,pick,out var target)) return false;
+        if (primitiveActionQueue is not { IsBusy: false } queue ||
+            !CanAdmitHandManipulationAnswer() || !ReferenceEquals(request,PendingCardSelection)) return false;
+        CardTarget? target = null;
+        if (index is int pick)
+        {
+            if (!TryGetHandManipulationTarget(request,pick,out var found)) return false;
+            target = found;
+        }
+        else if (request.MinSelections != 0) return false;
         admittingHandManipulationAnswer = true;
         try { queue.Enqueue(new ResolveHandManipulationCommand(request.Owner,request,target),origin); }
         finally { admittingHandManipulationAnswer = false; }
@@ -85,7 +125,8 @@ public sealed partial class DemoDuel
             public int Remaining { get; set; } = effect.ChosenCount;
             public bool SourceSpent { get; set; }
             public bool InitialEffectsIssued { get; set; }
-            public int Affected => Effect.Kind == HandManipulationKind.DrawThenDiscard ? Source.Side : 1-Source.Side;
+            public int Affected => UsesOwnHand(Effect.Kind) ? Source.Side : 1-Source.Side;
+            public bool CanStop => Effect.OptionalAfterFirst && Remaining < Effect.ChosenCount;
             public int Chooser => Effect.Kind == HandManipulationKind.RandomThenChosenDiscard ? Affected : Source.Side;
         }
         private HandManipulationBatch? handManipulation;
@@ -141,35 +182,53 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 }
             }
-            if (batch.Remaining == 0 || duel.hands[batch.Affected].Count == 0)
+            var candidates = duel.ManipulationCandidates(batch.Source.Side,batch.Effect.Kind);
+            if (batch.Remaining == 0 || candidates.Count == 0)
             {
                 handManipulation = null;
                 if (batch.Effect.Kind == HandManipulationKind.DrawThenDiscard) duel.CheckExodia(batch.Source.Side);
                 return new(CommandOutcome.Applied);
             }
-            var candidates = CardSelectionRules.Candidates(duel.hands[batch.Affected],CardSelectionFilter.AnyCard);
+            bool grave = IsGraveBanish(batch.Effect.Kind);
             duel.selectedBatchIndices.Clear();
-            duel.PendingCardSelection = new(batch.Chooser,CardSelectionSource.Hand,
+            duel.PendingCardSelection = new(batch.Chooser,grave ? CardSelectionSource.Graveyard : CardSelectionSource.Hand,
+                grave ? CardSelectionDestination.Banished :
                 batch.Effect.Kind == HandManipulationKind.OpponentChosenReturn
                     ? CardSelectionDestination.Deck : CardSelectionDestination.Graveyard,
-                CardSelectionFilter.AnyCard,candidates,1,1,batch.ResourceId,HandSourceSide:batch.Affected);
+                ManipulationFilter(batch.Effect.Kind),candidates,batch.CanStop ? 0 : 1,1,
+                batch.ResourceId,HandSourceSide:batch.Affected);
             return new(CommandOutcome.Applied);
         }
 
         private CommandResult ResolveHandManipulation(ResolveHandManipulationCommand command, IActionCommandSink followups)
         {
             if (handManipulation is not { } batch || batch.Chooser != command.Side ||
-                batch.ResourceId != command.Request.EffectResourceId || command.Target.Side != batch.Affected ||
+                batch.ResourceId != command.Request.EffectResourceId ||
                 batch.Remaining <= 0 || followups is not IActionBatchSink { PendingCount: 0 } queue ||
-                !duel.TryResolveCardTarget(command.Target,out int index,out _) ||
-                !duel.TryGetHandManipulationTarget(command.Request,index,out var target) || target != command.Target)
-                return new(CommandOutcome.Rejected,"Hand choice changed.");
+                !duel.CanAdmitHandManipulationAnswer() ||
+                !ReferenceEquals(command.Request,duel.PendingCardSelection))
+                return new(CommandOutcome.Rejected,"Selection changed.");
+            if (command.Target is { } chosen)
+            {
+                if (!command.Request.EligibleCards.Any(c =>
+                    duel.TryGetHandManipulationTarget(command.Request,c.AnswerIndex,out var current) &&
+                    current == chosen))
+                    return new(CommandOutcome.Rejected,"Selection occurrence changed.");
+                batch.Remaining--;
+                if (IsGraveBanish(batch.Effect.Kind))
+                    queue.Enqueue(new BanishCommand(chosen.Side,chosen));
+                else if (batch.Effect.Kind == HandManipulationKind.OpponentChosenReturn)
+                    queue.EnqueueBatch([new ReturnToDeckCommand(chosen.Side,chosen),new ShuffleDeckCommand(chosen.Side)]);
+                else queue.Enqueue(new DiscardCommand(chosen.Side,chosen));
+            }
+            else
+            {
+                if (!batch.CanStop || command.Request.MinSelections != 0)
+                    return new(CommandOutcome.Rejected,"Mandatory selection cannot be declined.");
+                batch.Remaining = 0;
+            }
             duel.PendingCardSelection = null;
             duel.selectedBatchIndices.Clear();
-            batch.Remaining--;
-            if (batch.Effect.Kind == HandManipulationKind.OpponentChosenReturn)
-                queue.EnqueueBatch([new ReturnToDeckCommand(batch.Affected,target),new ShuffleDeckCommand(batch.Affected)]);
-            else queue.Enqueue(new DiscardCommand(batch.Affected,target));
             queue.ScheduleContinuation(_ => new([new AdvanceHandManipulationCommand(batch.Source.Side,batch.Source)]));
             return new(CommandOutcome.Applied);
         }

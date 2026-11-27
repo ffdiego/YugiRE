@@ -396,6 +396,14 @@ public sealed partial class DuelConsoleSession
     {
         if (Queue.IsBusy || PendingHandSelection is not { } request)
             return new(false, "No pending hand selection available.");
+        if (request.Source == CardSelectionSource.Hand || request.Destination == CardSelectionDestination.Banished)
+        {
+            var manipulationLines = request.EligibleCards.Select(c =>
+                $"{c.AnswerIndex}: side {c.SourceSide ?? request.SourceSide} {request.Source}[{c.SourceIndex}] {c.Card.Id}");
+            return new(true,string.Join("\n",new[] {
+                $"Chooser {request.Owner}: {request.Source} → {request.Destination}; select-hand INDEX{(request.MinSelections == 0 ? "|decline" : "")}"
+            }.Concat(manipulationLines)));
+        }
         var choices = request.Source == CardSelectionSource.Hand
             ? request.EligibleCards.Select(item => (item.SourceIndex,item.Card))
             : request.Source == CardSelectionSource.Deck
@@ -414,10 +422,15 @@ public sealed partial class DuelConsoleSession
         if (words.Length != 2)
             return new(false, "Expected select-hand INDEX|decline.");
 
-        if (request.Source == CardSelectionSource.Hand)
+        if (request.Source == CardSelectionSource.Hand || request.Destination == CardSelectionDestination.Banished)
         {
-            if (!Index(words[1],out int handIndex)) return new(false,"Choose a hand index.");
-            bool ok = duel.TrySubmitQueuedHandSelection(request,handIndex,out string handMessage,ActionOrigin.Console);
+            int? pick = null;
+            if (words[1] != "decline")
+            {
+                if (!Index(words[1],out int handIndex)) return new(false,"Choose a selection index.");
+                pick = handIndex;
+            }
+            bool ok = duel.TrySubmitQueuedHandSelection(request,pick,out string handMessage,ActionOrigin.Console);
             return new(ok,handMessage,ok);
         }
         bool fromDeck = request.Source == CardSelectionSource.Deck;

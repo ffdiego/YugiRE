@@ -2,10 +2,17 @@ namespace Joey.Core;
 
 /// <summary>Position in the source zone (not the DAT catalog index) identifies each copy.</summary>
 public enum CardSelectionSource { Deck, Graveyard, Hand }
-public enum CardSelectionDestination { Hand, Field, Graveyard, Deck }
+public enum CardSelectionDestination { Hand, Field, Graveyard, Deck, Banished }
 public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500, SameNameMonster, AnyMonster, RitualSpell, RitualMonster, Polymerization, AnyCard }
 public enum CardSelectionPosition { FaceUpAttack, FaceDownDefense }
-public sealed record CardSelectionCandidate(int SourceIndex, Card Card);
+public sealed record CardSelectionCandidate(int SourceIndex, Card Card)
+{
+    // SourceIndex remains the physical zone index. A mixed-side list uses
+    // an explicit answer key and side, rather than aliasing equal indices.
+    public int? ChoiceKey { get; init; }
+    public int? SourceSide { get; init; }
+    public int AnswerIndex => ChoiceKey ?? SourceIndex;
+}
 
 public sealed record PendingCardSelection(
     int Owner, CardSelectionSource Source, CardSelectionDestination Destination,
