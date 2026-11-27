@@ -43,8 +43,10 @@ public sealed class NativeLifePointPresentation
     /// mid-animation, retarget from the currently displayed value rather
     /// than letting old events overwrite the latest Core state.
     /// </summary>
-    public void SetLogicalLife(int currentLife, bool animate = true)
+    public void SetLogicalLife(int currentLife, bool animate = true, int anchorSlot = -1)
     {
+        if (anchorSlot is < -1 or >= NativeDuelLayout.MonsterSlots)
+            throw new ArgumentOutOfRangeException(nameof(anchorSlot));
         int target = ClampToNativeDisplay(currentLife);
         if (!animate)
         {
@@ -57,7 +59,7 @@ public sealed class NativeLifePointPresentation
 
         PendingDelta = target - Displayed;
         RampCounter = 0;
-        AnchorSlot = -1;
+        AnchorSlot = anchorSlot;
         HoldConsumption = false;
     }
 

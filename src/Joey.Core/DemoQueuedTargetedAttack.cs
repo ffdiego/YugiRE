@@ -211,7 +211,7 @@ public sealed partial class DemoDuel
             int delta = QueuedTargetedBattlePower(command.Side, reserved.Attacker.Slot, reserved.Defender.Slot).Difference;
             reserved.FlipCalculated=true;
             queuedBattleRemoved[1]=delta>0?reserved.Defender:null;
-            queue.EnqueueBatch(TargetedBattleDamage(reserved.Attacker, delta, defenderInDefense: true));
+            queue.EnqueueBatch(TargetedBattleDamage(reserved.Attacker, reserved.Defender, delta));
             var defender = reserved.Defender.Target;
             queue.Enqueue(reserved.Defender.Card.Id switch
             {
@@ -392,13 +392,14 @@ public sealed partial class DemoDuel
         _ => default
     };
 
-    private DuelCommand[] TargetedBattleDamage(BattleReservation attacker, int difference, bool defenderInDefense)
+    private DuelCommand[] TargetedBattleDamage(BattleReservation attacker, BattleReservation defender, int difference)
     {
         int side = attacker.Target.Side;
         int amount = Math.Min(Math.Abs(difference), ushort.MaxValue);
         if (amount == 0) return [];
-        if (difference < 0) return [new DamageCommand(side, amount)];
-        if (!defenderInDefense) return [new DamageCommand(1 - side, amount)];
+        if (difference < 0) return [new DamageCommand(side, amount) { AffectedCombatantSlot = attacker.Slot }];
+        if (!defender.Defense)
+            return [new DamageCommand(defender.Target.Side, amount) { AffectedCombatantSlot = defender.Slot }];
 
         bool damageDefender = attacker.Card.Id == MadSwordBeast;
         bool damageAttacker = false;
@@ -426,7 +427,7 @@ public sealed partial class DemoDuel
         var (atk, delta) = QueuedTargetedBattlePower(p, a.Slot, b.Slot);
         bool removeA=!b.Defense && (delta<0 || delta==0 && atk>0);
         bool removeB=delta>0 || !b.Defense && delta==0 && atk>0;
-        var damage = TargetedBattleDamage(a, delta, b.Defense);
+        var damage = TargetedBattleDamage(a, b, delta);
         int damaged = delta < 0 ? p : e;
         int amount = damage.OfType<DamageCommand>().FirstOrDefault(command => command.Side == damaged)?.Amount ?? 0;
         var effect = BattleEffectAfterDamage(delta < 0 ? b.Card : a.Card, 1 - damaged, amount);

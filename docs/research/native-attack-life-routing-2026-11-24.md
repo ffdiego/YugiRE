@@ -65,6 +65,12 @@ direto, dano zero, hold após rampa, segundo pedido que
 apenas libera, cancelamento, som e compatibilidade legada.
 Cobertura permanece 20/34; V04/V06 já contados Partial.
 
+### V06.2 — slot de combate pela fila
+
+Consulta ao snapshot cumulativo v7 confirma o seletor de `00414110` e o armazenamento dos argumentos em `004140B0`. A decompilação de `00413BA0` mostra o repasse dos quatro argumentos a `004140B0`. O Draw `0047C660` lê `+2C` em `0047C69A` e chama `0045C140` em `0047C6AB`. Os centros lógicos usados pelo App são os da coleta 33.
+
+No C#, o produtor de dano de combate comum guarda o slot da reserva do combatente do lado que perdeu LP. O App usa esse slot ao observar o comando aplicado e inicia a rampa já existente. O vínculo entre dano comum e o caminho nativo sem override de slot é uma inferência. Dano perfurante mantém o centro da fileira de magias/armadilhas enquanto os produtores das flags `0x08/0x10` permanecem em aberto. O hold nativo continua fora desse recorte.
+
 ## Próxima evidência
 
 21-attack-life-draw-ghidra.sh solicita os dois Draws,

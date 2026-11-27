@@ -23,12 +23,15 @@ static partial class Game
         // sword is travelling. The LP catch-up is itself a motion barrier to
         // keep CPU/turn actions from starting another move mid-number.
         if (CardMotionBusy && presentation.Style.PlayAnimations) return;
+        var damage = queuedDuel is { Active.Command: DamageCommand command, ActiveResult.Outcome: CommandOutcome.Applied }
+            ? command : null;
         for (int player = 0; player < lifeDisplays.Length; player++)
         {
             long previous=(long)lifeDisplays[player].Displayed+lifeDisplays[player].PendingDelta;
             int next=NativeLifePointPresentation.ClampToNativeDisplay(duel.Life[player]);
             if(previous!=next)PlayDuelSound(next<previous?DuelSoundCue.Damage:DuelSoundCue.Heal);
-            lifeDisplays[player].SetLogicalLife(duel.Life[player], presentation.Style.PlayAnimations);
+            int anchorSlot = damage?.Side == player ? damage.AffectedCombatantSlot ?? -1 : -1;
+            lifeDisplays[player].SetLogicalLife(duel.Life[player], presentation.Style.PlayAnimations, anchorSlot);
         }
         int updates = lifeClock.Advance(elapsed, presentation.Style);
         for (int player = 0; player < lifeDisplays.Length; player++)
@@ -208,8 +211,6 @@ static partial class Game
             bool near = player == ViewPlayer;
             // 0047C660 resolves the slot (or central spell slot for -1),
             // then centers the FULL signed number, not its right edge.
-            // Legacy logical-life input supplies -1; the scheduler adapter
-            // can supply a battle slot through RequestNativeChange later.
             var anchor = NativeLifeHud.FloatingNumberAnchor(near, counter.AnchorSlot);
             var origin = NativeLifeHud.FloatingNumberOrigin(anchor, counter.PendingDelta,
                 glyphWidth, glyphHeight, columns);

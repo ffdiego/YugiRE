@@ -50,6 +50,7 @@ public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(S
 public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side)
 {
+    public int? AffectedCombatantSlot { get; internal init; }
     internal bool DeferDuelResult { get; init; }
 }
 internal sealed record FinishJointDamageCommand(int Side) : DuelCommand(Side);

@@ -2,8 +2,7 @@ namespace Joey.LookAndFeel;
 
 /// <summary>
 /// Presentation input recovered from 00414110 (state 7) and 00408470.
-/// Slot -1 is a native sentinel, NOT a coordinate. The actual Draw
-/// 0047C660 and its anchor mapping still need assembly evidence.
+/// Draw 0047C660 maps slot -1 to the center of the affected spell/trap row.
 /// </summary>
 public readonly record struct NativeLifeDeltaRequest
 {

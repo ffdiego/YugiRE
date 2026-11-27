@@ -91,9 +91,15 @@ internal static class NativeLifeDeltaChecks
         lp.Reset(1000);
         check(lp.AnchorSlot == -1 && !lp.HoldConsumption && lp.PendingDelta == 0,
               "V06: reset clears native input state");
+        lp.SetLogicalLife(900, anchorSlot: 2);
         lp.SetLogicalLife(900);
+        check(lp.AnchorSlot == 2 && lp.PendingDelta == -100,
+              "V06: polling the same total retains the queued anchor");
         for(int i=0;i<33;i++) lp.AdvanceNativeUpdate();
         check(lp.Displayed == 900 && lp.PendingDelta == 0,
-              "V06: legacy adapter remains compatible");
+              "V06: queued anchor preserves the LP ramp and consumption");
+        lp.SetLogicalLife(950);
+        check(lp.AnchorSlot == -1 && lp.PendingDelta == 50,
+              "V06: a subsequent general change uses the central anchor");
     }
 }

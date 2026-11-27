@@ -207,6 +207,12 @@ internal static class QueuedTargetedAttackChecks
             check(!q.IsBusy && (d.Monsters[side,2] is null)==removeA &&
                 (d.Monsters[1-side,3] is null)==removeB && d.Life[side]==8000-lossA &&
                 d.Life[1-side]==8000-lossB,"A05.8 common battle matrix");
+            var battleDamage = q.Trace.Where(t => t.Stage == ActionTraceStage.Executed)
+                .Select(t => t.Entry.Command).OfType<DamageCommand>();
+            (int Side, int? Slot)[] expectedAnchors = lossA > 0 ? [(side, 2)] :
+                lossB > 0 ? [(1 - side, 3)] : [];
+            check(battleDamage.Select(damage => (damage.Side, damage.AffectedCombatantSlot)).SequenceEqual(expectedAnchors),
+                "V06: ordinary battle keeps the affected combatant's reserved slot");
             if(removeA) check(d.TryCaptureCardTarget(side,DuelZone.Graveyard,0,out var g) &&
                 g.Occurrence==originalA.Occurrence,"A05.8 attacker identity preserved");
             if(removeB) check(d.TryCaptureCardTarget(1-side,DuelZone.Graveyard,0,out var g) &&
@@ -268,6 +274,10 @@ internal static class QueuedTargetedAttackChecks
                 !d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defense matrix matches legacy and consumes attack");
             check(d.TryCaptureCardTarget(1-side,removed?DuelZone.Graveyard:DuelZone.Monster,removed?0:3,out var placed) &&
                 placed.Occurrence==original.Occurrence,"A06 reveal preserves occurrence through final destination");
+            var battleDamage = q.Trace.Where(t => t.Stage == ActionTraceStage.Executed)
+                .Select(t => t.Entry.Command).OfType<DamageCommand>();
+            check(battleDamage.Select(damage => damage.AffectedCombatantSlot).SequenceEqual(
+                loss > 0 ? new int?[] { 2 } : []), "V06: damage against a revealed defender keeps the attacker slot");
             var trace=ActionTraceProjection.ReadExecuted(q.Trace);
             check(trace.Take(3).Select(t=>t.Command).SequenceEqual(new[]{
                 "DeclareTargetedAttackCommand","RevealBattleDefenderCommand","ResolveRevealedBattleCommand"}) &&
