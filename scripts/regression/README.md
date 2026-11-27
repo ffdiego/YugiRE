@@ -330,3 +330,23 @@ ignora os pedidos com alvo em um slot de monstro.
 Em um ataque direto do lado próprio, os dois últimos
 quadriláteros do impacto chegaram com Y negativo, antes
 do clipping interno.
+
+### 59 — V04/V17, recorte do impacto em Proton
+
+Use o [prefixo isolado](../../docs/research/joey-proton-validation.md)
+e o PID confirmado do original. Anexe antes da demonstração ou
+provoque um ataque direto. O roteiro procura uma chamada em
+intensidade 32 de origem 10 para destino 3 com vértices além
+da borda vertical. Use GDB com Python.
+
+```bash
+timeout --signal=INT 183s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/59-wine-attack-impact-clip.gdb > scratch/attack-impact-clip.log 2>&1
+```
+
+Confira `attack-impact-clip` e a desanexação. Para cada faixa,
+compare `y` com o recorte e `offset` com `y*stride+x*2`.
+`changed` conta as posições cujo RGB565 mudou entre a entrada
+e a saída da faixa. O piloto do recorte inferior chegou a Y=599,
+com 138 faixas e 6.022 alterações. A amostra pode variar conforme
+a borda do impacto.

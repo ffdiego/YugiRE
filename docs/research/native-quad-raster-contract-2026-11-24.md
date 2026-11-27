@@ -116,3 +116,30 @@ não afirmar equivalência de pixels até assembly + comparação.
 Sem suporte a outros formatos, vtables, máscaras, alpha por
 pixel neste raster, perspectiva com divisão por profundidade,
 ou integração de A03. Sem mudança na cobertura Draw.
+
+## Recorte vertical do impacto em Proton
+
+No ramo de origem 10 e destino 3 de `00422E30`, o assembly
+em `004235D1..00423611` lê o retângulo de recorte e usa
+a borda inferior menos um como limite inclusivo de Y.
+`00423B99` recebe a faixa de destino com o comprimento em
+pixels e `00423BF6` é a saída do laço dessa faixa. O helper
+por pixel observado no assembly é `00439B60`.
+
+Em Proton 9.0 com Xvfb e llvmpipe, o roteiro 59 capturou um
+quadrilátero de intensidade 32 de (451,462) a (599,610),
+com âncora (525,536), correspondente à geometria prevista
+para impacto direto adversário. A sonda seleciona o formato,
+a intensidade e os vértices. O chamador do ataque fica fora
+do traço.
+
+O destino tinha recorte (0,0,800,600) e passo de 1600 bytes.
+As 138 faixas corresponderam a todas as linhas Y=462…599,
+com X inicial 451 e 149 pixels por linha. Todos os ponteiros
+coincidiram com `base + Y*1600 + X*2`. Das 20.562 posições
+visitadas, 6.022 tiveram cor diferente à saída da faixa,
+incluindo 71 na linha 599. A rotina retornou zero.
+
+O log guarda contagens e coordenadas. Verificar o peso do
+alpha na cor final requer amostrar os pixels de entrada e
+saída do helper. [Roteiro 59](../../scripts/regression/README.md#59--v04v17-recorte-do-impacto-em-proton).

@@ -73,6 +73,11 @@ impacto chegaram com dois vértices acima da área de 800×600.
 A aplicação do recorte dentro do rasterizador segue pendente.
 [Validação do ataque direto](../../docs/research/native-attack-life-routing-2026-11-24.md#v047--vértices-do-ataque-direto).
 
+O roteiro 59 observou a escrita do impacto na borda inferior.
+O quadrilátero terminou em Y=610 e as faixas de saída pararam
+em Y=599. A borda superior e os pixels compostos seguem
+pendentes de comparação. [Recorte em Proton](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
+
 ## V05 — ATK/DEF em monstros no campo
 
 <a id="v05"></a>
@@ -348,6 +353,12 @@ os retângulos e a progressão dos timestamps. O teste cobre o
 servidor virtual. Ainda faltam a exibição física e a comparação
 com o caminho do Windows.
 [Notificações de desenho em Xvfb](../../docs/architecture/native-visual-contract.md#notificações-de-desenho-em-xvfb).
+
+V17.5. No ramo 10→3 de `00422E30`, o roteiro 59 registrou
+138 faixas consecutivas dentro do buffer RGB565 e 6.022 pixels
+com alteração entre a entrada e a saída das faixas. Falta
+confrontar as cores de entrada com o resultado do compositor
+e do modelo C#. [Recorte em Proton](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
 
 ## V18 — Áudio e vozes
 
