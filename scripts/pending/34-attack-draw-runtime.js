@@ -93,7 +93,7 @@ function watchSelectionBackground() {
             const keyFromPixel = sourceLayoutKnown ? source.add(0x55).readU8() !== 0 : null;
             record({
                 kind: 'selection-background',
-                frame,
+                frame, threadId: this.threadId,
                 drawRva: 0x3b280,
                 callRva: SELECTION_BACKGROUND_CALL,
                 manifestKey: edx.toUInt32(),
@@ -101,6 +101,8 @@ function watchSelectionBackground() {
                 y: esp.add(8).readS32(),
                 destinationVtableRva: imageRva(destinationVtable),
                 destinationMethodRva: imageRva(destinationVtable.add(0x4c).readPointer()),
+                destinationFormat: imageRva(destinationVtable) === SURFACE_VTABLE
+                    ? destination.add(0x74).readU32() : null,
                 sourceVtableRva: imageRva(sourceVtable),
                 sourceFormat: sourceLayoutKnown ? source.add(0x74).readU32() : null,
                 sourceFlag78: sourceLayoutKnown ? source.add(0x78).readU8() : null,
@@ -109,9 +111,64 @@ function watchSelectionBackground() {
                 keyY: keyFromPixel === true ? source.add(0x60).readS32() : null,
                 keyColorRef: keyFromPixel === false ? source.add(0x58).readU32() : null,
                 packedKey: sourceLayoutKnown ? source.add(0x64).readU32() : null,
+                blendKey: sourceLayoutKnown ? source.add(0x70).readU32() : null,
             });
         },
     });
+
+    const compositions = new Map();
+    hook(0x1ab40, {
+        onEnter(args) {
+            const frame = scenes.get(this.threadId);
+            if (frame === undefined || imageRva(this.returnAddress) !== SELECTION_BACKGROUND_CALL + 3) return;
+            this.previous = compositions.get(this.threadId);
+            this.composition = {
+                source: args[0],
+                destination: this.context.ecx,
+                event: {
+                    kind: 'selection-composition', frame, threadId: this.threadId,
+                    compositorRva: null, keyReads: [],
+                },
+            };
+            compositions.set(this.threadId, this.composition);
+        },
+        onLeave() {
+            if (this.composition === undefined) return;
+            record(this.composition.event);
+            if (this.previous === undefined) compositions.delete(this.threadId);
+            else compositions.set(this.threadId, this.previous);
+        },
+    });
+    for (const [rva, returnRva] of [[0xb1760, 0x1ad73], [0xcb740, 0x1ae26]]) {
+        hook(rva, {
+            onEnter(args) {
+                const composition = compositions.get(this.threadId);
+                if (composition === undefined || imageRva(this.returnAddress) !== returnRva ||
+                    !composition.source.equals(args[0]) || !composition.destination.equals(this.context.ecx))
+                    return;
+                this.event = composition.event;
+                this.event.compositorRva = rva;
+            },
+            onLeave(result) {
+                if (this.event !== undefined) this.event.compositorResult = result.toInt32();
+            },
+        });
+    }
+    for (const [rva, fieldOffset] of [[0x1ac50, 0x64], [0xac1f0, 0x70]]) {
+        hook(rva, {
+            onEnter() {
+                const composition = compositions.get(this.threadId);
+                if (composition === undefined || composition.event.compositorRva === null ||
+                    !composition.source.equals(this.context.ecx)) return;
+                this.event = composition.event;
+                this.returnRva = imageRva(this.returnAddress);
+            },
+            onLeave(value) {
+                if (this.event !== undefined)
+                    this.event.keyReads.push({ fieldOffset, returnRva: this.returnRva, value: value.toUInt32() });
+            },
+        });
+    }
 }
 
 function watchReaction() {

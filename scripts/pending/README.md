@@ -54,7 +54,7 @@ traces privados. O recorte cobre a espada e o impacto. Elegibilidade,
 reflexo, rasterização, demais famílias e cadência sem instrumentação
 têm validação própria.
 
-### V01/V11 — fundo da seleção no roteiro 34
+### V01/V11/V17 — fundo da seleção no roteiro 34
 
 No mesmo ambiente, abra uma seleção de cemitério, deck ou fusão.
 Deixe a janela chegar ao estado estável durante a captura. Grave
@@ -65,15 +65,16 @@ python scripts/pending/34-attack-draw-runtime.py --mode selection --pid <PID> --
 ```
 
 O ponto `0043B47E` registra a chamada `+4C`, as vtables de
-destino e origem, o destino virtual resolvido e chave de manifesto
-em EDX. Para a origem `005DC6EC`, inclui o formato, o flag
-`+78`, a chave empacotada e os parâmetros que selecionam a
-chave por coordenada ou COLORREF. A captura limita o acesso aos
-campos dessa vtable e grava somente metadados. Saída 0 significa
-que houve pelo menos um pedido de fundo estável sem eventos
-perdidos. Para resolver a lacuna, confronte o alvo e os campos da
-chave com a imagem de referência e as variantes do DAT. O modo
-ainda aguarda execução no Windows.
+destino e origem, o destino virtual resolvido e a chave de manifesto
+em EDX. Para a vtable `005DC6EC`, inclui os formatos, o flag
+`+78h`, as chaves em `+64h` e `+70h` e a origem da amostra.
+O evento `selection-composition` registra o ramo alcançado por
+`0041AB40`, o código de retorno do compositor e as leituras
+dos getters de chave para a mesma superfície de origem.
+Saída 0 exige que a captura observe o compositor de um fundo
+estável sem perder eventos. Confronte o ramo, os formatos e a
+chave lida com a imagem de referência e as variantes do DAT.
+O modo aguarda execução no Windows.
 
 ### V01/V17 — cadência da cena no roteiro 34
 

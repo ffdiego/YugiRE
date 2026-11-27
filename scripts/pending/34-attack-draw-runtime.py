@@ -213,7 +213,8 @@ def main() -> int:
     except (OSError, ValueError, RuntimeError, ImportError) as error:
         parser.exit(2, f"{error}\n")
     if args.mode == "selection":
-        observed = any(event["kind"] == "selection-background" for event in result["events"])
+        observed = any(event["kind"] == "selection-composition" and event["compositorRva"] is not None
+                       for event in result["events"])
     elif args.mode == "cadence":
         result["cadenceByThread"] = summarize_cadence(result)
         observed = any(row["orderedUpdateDrawFrames"] >= 2 for row in result["cadenceByThread"])

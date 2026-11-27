@@ -108,6 +108,13 @@ V11/V14 (27/11/2026). No laboratório gráfico com DAT real, a seleção de cemi
 
 V11/V01 (27/11/2026). A amostra dos BMPs do DAT mostrou dois valores de canto superior esquerdo, `00FF30` nas duas variantes de seleção do deck e `00FF00` nas variantes de fusão, cemitério e exclusão observadas. O carregador de superfície confirma um caminho que amostra a chave por coordenada. A coleta 34 ganhou o modo `selection` para registrar receptor, chave e formato no blit estável. [Rastreio estático](../../docs/research/native-selection-window-fusion-2026-11-22.md#cor-chave-do-fundo-da-seleção).
 
+V11/V17 (27/11/2026). A coleta 40 ligou o blit estável aos ramos
+de cor-chave e alpha para a vtable `005DC6EC`. O modo `selection`
+agora registra o compositor, os formatos e o getter de chave
+observado durante a mesma passagem. Os cenários simulados
+passaram. Faltam as amostras da execução original.
+[Ramos da composição](../../docs/research/native-selection-window-fusion-2026-11-22.md#v11v17--ramos-de-composição-do-fundo-estável).
+
 ## V12 — Indicador de corrente desativada (`004531C0`)
 
 <a id="v12"></a>

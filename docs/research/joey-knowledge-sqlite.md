@@ -1,5 +1,26 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
+## Complemento cumulativo v14 — composição do fundo da seleção (27/11/2026)
+
+O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v14.zip`
+contém o SQLite cumulativo e as auditorias da v13 e da v14. A coleta
+40/V11/V17 acrescenta `0041AB40`, `004CB740`, duas janelas de
+assembly de `004B1760` e duas tabelas de despacho. O fingerprint
+do executável permanece o da v13.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `e4778b59f6d679a36657d212499a5718f8e697c0457047d38a7933aaf9bcb428` |
+| SHA-256 do ZIP v14 | `1c888bab8228467ebae42f698737d498ba066c04cd967b449d290b7111f33318` |
+| SHA-256 do bundle 40 | `1d260e99ba2fbdf6e786ee78048e10a581f48048773d374c01c250aa91de10e5` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+As linhas da v13 foram preservadas. A v14 tem 41 bundles, 256 relatórios,
+380 registros de funções (309 VAs distintas), 236.964 instruções
+indexadas e 50 blocos de memória.
+[Relato V11](../plans/VISUALS.md#v11).
+
 ## Complemento cumulativo v13 — seletor de superfície YGA (27/11/2026)
 
 O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v13.zip`

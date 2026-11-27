@@ -522,6 +522,36 @@ iguais, esse compositor consulta a chave da origem no slot `+74`
 para essa vtable. A amostra do receptor real e dos campos da
 origem antes do blit estável segue no modo `selection` da coleta 34.
 
+#### V11/V17 — ramos de composição do fundo estável
+
+A coleta 40 no SQLite v14 confirma os dois ramos para a vtable
+`005DC6EC`. A origem expõe o byte `+78h` pela consulta
+`0041AD10`. Em `0041AB40`, zero seleciona o slot `+08h`
+(`0041AD50 → 004B1760`), e valor diferente de zero seleciona
+`+28h` (`0041AE00 → +8Ch → 004CB740`).
+
+No primeiro ramo, `004B2D12` despacha superfícies de formato
+igual pela tabela em `004B3140`. No caso BGR24 → BGR24, a
+entrada `004B2DCF` lê o slot `+74h` da origem em `004B2DD3`.
+`0041AC50` devolve a chave armazenada em `surface+64h`.
+Esse leitor é distinto do que devolve a chave de `+70h` em
+`004AC1F0`.
+
+No segundo ramo, `004CB740` aceita origem 10 para destinos 3/10,
+origem 11 para 4/11, origem 12 para 5/7/12 e origem 13 para
+6/8/13. Um par incompatível devolve 2. O caso BGRA(12) →
+BGR24(5), em `004CBB31`, chama `004E2FB0` em `004CBB7D`
+sem consultar os getters de chave. Para 10 → 3, `004CBDE0`
+lê o nibble alpha no byte 2 da origem no caminho de escala direta.
+
+O receptor de `0043B47E` é o argumento de destino recebido
+pelo Draw. `0044DD00` o passa ao dispatcher nos dois ramos
+em `0044DD5D` e `0044DD8D`. A coleta Windows distingue
+a vtable efetiva, os formatos e o getter observado nesse
+destino. A verificação estática ainda deixa em aberto qual
+ramo foi executado em cada cenário.
+[Coleta de seleção](../../scripts/pending/README.md#v01v11v17--fundo-da-seleção-no-roteiro-34).
+
 ## V11 — banco de fusão e revisão do objeto vinculado
 
 Consulta ao SQLite existente (sem repetir bundle 01): construtores
