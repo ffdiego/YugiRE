@@ -100,6 +100,8 @@ Recuperar condições/alternância nativas de mudança de posição e as variant
 
 A reconciliação de #143 usa o snapshot imutável `DemoSpecialSummon.FusionMaterials` entregue em #179. A fusão geral `004524F0` desenha sobre o tabuleiro com recursos do DAT e é Partial. No caminho enfileirado, sua apresentação e a invocação especial ocupam o gate do comando de invocação. O resultado fica oculto no campo e no hover durante a primeira etapa. As fases logicamente posteriores aguardam liberação do mesmo comando. A variante sem fila usa a sequência de apresentação existente. A composição intermediária, o pass `+AC`, o epílogo e a associação de áudio seguem pendentes de validação. Falta também a comparação gráfica pareada.
 
+V11/V14 (27/11/2026). No laboratório gráfico com DAT real, a seleção de cemitério para o recurso 1008 abriu `list_grave0.bmp` com uma opção elegível. O clique na miniatura resolveu a escolha e o recurso 81 apareceu no campo. O canvas F12 da lista contém 19.933 pixels RGB `00FF00`. O assembly da Draw estável em `0043B47E` chama o slot virtual `+4C` do destino. A vtable candidata `005DC6EC` aponta esse slot para `0041AB40`, que escolhe entre `+08` e `+28` pelo resultado de `+40` da superfície de origem. Falta demonstrar o receptor ativo e a origem da cor-chave antes de modificar a composição. Capturas privadas `yugire-20261127-050448-500` e `yugire-20261127-050531-688`.
+
 ## V12 — Indicador de corrente desativada (`004531C0`)
 
 <a id="v12"></a>
@@ -122,6 +124,8 @@ V13.1 (27/11/2026). Smoke gráfico Linux com Mutter/Xwayland isolado, Alpha com 
 Separar **controles do jogo** de **diagnósticos**; corrigir layout provisório que cobre cartas, sprites e textos; comparar capturas sem debug. A imagem de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
 
 V14.1 (27/11/2026). A captura limpa da abertura e o clique de fim de turno confirmam mão, pilhas, LP e seletor de fase visíveis com debug desligado. O overlay ativo cobre parte da mão adversária e desenha contornos das zonas. A captura limpa usa a fonte de fallback do Raylib no painel de detalhes porque a fonte compatível com Courier New estava indisponível no compositor de teste. A leitura do App identifica três diálogos modais de gameplay sobre o tabuleiro: resposta à invocação e ao ataque (`x=238, y=110, 535×400`) e decisão de efeito (`x=238, y=126, 535×340`). São controles essenciais provisórios. Faltam capturas em estados com esses diálogos e com seleção ou descarte ativos, além de evidência nativa para qualquer mudança de posição.
+
+V14.2 (27/11/2026). Com debug desligado, o laboratório gráfico confirmou o diálogo de compra opcional após Flip Summon (recurso 539) e a seleção de cemitério de V11. No diálogo de efeito, o painel escurece as duas fileiras centrais e os atributos dos dois monstros, mantendo a descrição lateral e os dois botões visíveis. O clique em Draw acionou `RecordFlipDrawDecisionCommand` seguido de `DrawCommand` e dispensou o painel. Capturas privadas `yugire-20261127-050351-158` e `yugire-20261127-050352-109`. Os diálogos de resposta à invocação e ao ataque e o descarte ainda precisam de capturas. O smoke Alpha headless com seed 1979 terminou no turno 5 com uma configuração de ataque que a fila rejeitou. Esse caminho ficou fora da validação visual.
 
 ## V15 — Matriz de comparação por elemento visual
 
