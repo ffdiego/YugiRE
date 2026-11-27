@@ -113,11 +113,15 @@ Bundle 02 concluído: opcode bruto 0xB1 (índice 0x72), gates, descritor, rotaç
 Default OFF em modo fiel, botão `Ocultar debug` enquanto ativo, atalho F3 e toggle em menu para restaurar. Centralizar Draw e HitTest do overlay, sem interferir no duelo; testes do estado/toggle.
   Estado App-local `DebugOverlayState`: default OFF, F3/menu, hitboxes compartilhados, captura antes de cliques do duelo e hide no mesmo frame. Testes sintéticos do estado; comparação gráfica ON/OFF e smoke real pendentes (V14/V15).
 
+V13.1 (27/11/2026). Smoke gráfico Linux com Mutter/Xwayland isolado, Alpha com DAT real, perfil Instant, áudio desligado e canvas F12 de 800×600. O duelo inicia limpo. F3 mostra o overlay. O clique em Ocultar debug e o segundo F3 restauraram o canvas inicial pixel a pixel. Os dois frames com debug ativo diferem da base em 29.912 pixels, com retângulo exclusivo `[253,8,799,504]`. Turno, fase, LP, carta no painel e contadores registrados se mantiveram nos cinco frames. O menu reativou o overlay antes de reabrir a Alpha. Com debug novamente oculto, o botão de fim de turno levou de turno 1 Main a turno 2 Main. O teste é da UI do YugiRE e usa a captura do canvas, que exclui o cursor da janela. PNGs e metadados privados em `scratch/visual-review/`, prefixo `yugire-20261127-0501` para a sequência ON/OFF e `yugire-20261127-05022` para a troca de turno.
+
 ## V14 — Auditoria visual da Alpha em 800×600
 
 <a id="v14"></a>
 
 Separar **controles do jogo** de **diagnósticos**; corrigir layout provisório que cobre cartas, sprites e textos; comparar capturas sem debug. A imagem de 21/11/2026 mostra textos e controles sobrepostos ao tabuleiro; ela não determina, isoladamente, quais componentes são debug.
+
+V14.1 (27/11/2026). A captura limpa da abertura e o clique de fim de turno confirmam mão, pilhas, LP e seletor de fase visíveis com debug desligado. O overlay ativo cobre parte da mão adversária e desenha contornos das zonas. A captura limpa usa a fonte de fallback do Raylib no painel de detalhes porque a fonte compatível com Courier New estava indisponível no compositor de teste. A leitura do App identifica três diálogos modais de gameplay sobre o tabuleiro: resposta à invocação e ao ataque (`x=238, y=110, 535×400`) e decisão de efeito (`x=238, y=126, 535×340`). São controles essenciais provisórios. Faltam capturas em estados com esses diálogos e com seleção ou descarte ativos, além de evidência nativa para qualquer mudança de posição.
 
 ## V15 — Matriz de comparação por elemento visual
 
