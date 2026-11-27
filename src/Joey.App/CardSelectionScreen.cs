@@ -83,7 +83,9 @@ static partial class Game
             bool chosen = queuedFieldSelection ? queuedFieldPicks.Any(p => p.Index == option.SourceIndex)
                 : false;
             if (cardSelectionList is { } list ? DrawNativeSelectionCard(list, option.Card, slot, chosen)
-                : DrawSelectionCard(option.Card, slot, chosen))
+                : DrawSelectionCard(option.Card, slot, chosen,
+                    request.Destination == CardSelectionDestination.Banished
+                        ? $"P{(option.SourceSide ?? request.SourceSide) + 1}" : null))
             {
                 if (queuedFieldSelection)
                 {

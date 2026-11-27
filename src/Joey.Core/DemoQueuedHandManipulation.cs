@@ -25,7 +25,7 @@ public sealed partial class DemoDuel
         kind is HandManipulationKind.OwnMonsterDiscard or HandManipulationKind.OpponentGraveBanish
             ? CardSelectionFilter.AnyMonster : CardSelectionFilter.AnyCard;
 
-    private IReadOnlyList<CardSelectionCandidate> ManipulationCandidates(int caster, HandManipulationKind kind)
+    private IReadOnlyList<CardSelectionCandidate> ManipulationCandidates(int caster, HandManipulationKind kind, CardOccurrenceId? excluded = null)
     {
         bool grave = IsGraveBanish(kind);
         int[] sides = kind == HandManipulationKind.EitherGraveBanish ? [caster,1-caster] :
@@ -37,8 +37,9 @@ public sealed partial class DemoDuel
             for (int i = 0; i < cards.Count; i++)
             {
                 if (!CardSelectionRules.IsEligible(cards[i],ManipulationFilter(kind))) continue;
-                if (!TryCaptureCardTarget(side,grave ? DuelZone.Graveyard : DuelZone.Hand,i,out _))
+                if (!TryCaptureCardTarget(side,grave ? DuelZone.Graveyard : DuelZone.Hand,i,out var target))
                     return [];
+                if (target.Occurrence == excluded) continue;
                 result.Add(new(i,cards[i]) { SourceSide = side,
                     ChoiceKey = kind == HandManipulationKind.EitherGraveBanish ? result.Count : null });
             }
@@ -182,7 +183,7 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 }
             }
-            var candidates = duel.ManipulationCandidates(batch.Source.Side,batch.Effect.Kind);
+            var candidates = duel.ManipulationCandidates(batch.Source.Side,batch.Effect.Kind,batch.Source.Occurrence);
             if (batch.Remaining == 0 || candidates.Count == 0)
             {
                 handManipulation = null;

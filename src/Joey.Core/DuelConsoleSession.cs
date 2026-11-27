@@ -404,11 +404,9 @@ public sealed partial class DuelConsoleSession
                 $"Chooser {request.Owner}: {request.Source} → {request.Destination}; select-hand INDEX{(request.MinSelections == 0 ? "|decline" : "")}"
             }.Concat(manipulationLines)));
         }
-        var choices = request.Source == CardSelectionSource.Hand
-            ? request.EligibleCards.Select(item => (item.SourceIndex,item.Card))
-            : request.Source == CardSelectionSource.Deck
-                ? duel.QueuedDeckSearchCandidates(request).Select(item => (item.SourceIndex, item.Card))
-                : duel.QueuedGraveyardRecoveryCandidates(request).Select(item => (item.SourceIndex, item.Card));
+        var choices = request.Source == CardSelectionSource.Deck
+            ? duel.QueuedDeckSearchCandidates(request).Select(item => (item.SourceIndex, item.Card))
+            : duel.QueuedGraveyardRecoveryCandidates(request).Select(item => (item.SourceIndex, item.Card));
         var lines = choices.Select(item => $"{item.SourceIndex}: {item.Card.Id}").ToArray();
         string prompt = $"Chooser {request.Owner}: side {request.SourceSide} {request.Source} → {request.Destination} (source indices):";
         if (request.MinSelections == 0) prompt += " select-hand decline is available.";
