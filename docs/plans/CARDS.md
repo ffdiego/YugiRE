@@ -2,7 +2,7 @@
 
 Histórico e contratos movidos de PLANS.md na revisão de 24/11/2026 (base `42f7813`). [Plano vivo e status atuais](../../PLANS.md). Registrar novos relatos (PR, CI, evidência, limitações) no bloco do item; não duplicar relatos no plano. Os relatos anteriores são históricos, não certificam o estado atual de uma branch.
 
-> **Decisão 25/11/2026 — aceleração com segurança:** texto do DAT local e regras da época de Joey como ponto de partida; definições declarativas por família e testes por ID. Não exigir verificação nativa individual para Done; preservar escopo e dependências UI/CPU. Novos efeitos somente após gate C12.1 e pela fila. C18 é triagem consultiva; C14/C15 ficam adiados como campanha, não apagados. Evidência de divergência continua acionável.
+> **Política vigente (26/11/2026):** Joey.Cards imediatamente, DAT primeiro, sem novos testes por carta, sem documentação/callback individual obrigatório. C12.1 não bloqueia expansão. Duelos diferenciais orientam correções; preservar histórico de testes como consulta. Exigências antigas abaixo são históricas, não gates atuais.
 
 ## Histórico concluído (sem ID)
 

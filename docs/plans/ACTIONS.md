@@ -2,6 +2,8 @@
 
 Histórico e contratos movidos de PLANS.md na revisão de 24/11/2026 (base `42f7813`). [Plano vivo e status atuais](../../PLANS.md). Registrar novos relatos (PR, CI, evidência, limitações) no bloco do item; não duplicar relatos no plano. Os relatos anteriores são históricos, não certificam o estado atual de uma branch.
 
+> **Política vigente (26/11/2026):** A08 imediatamente; C12 elimina toda execução legada (flags, fallback, resolvedores). A05/A09 evoluem para equivalência de duelos com mesmas decisões e estado/RNG inicial. Comparar argumentos e estado além da ordem; gaps são inconclusivos. Critérios históricos de C12/A08 abaixo não bloqueiam a nova política.
+
 ## Contexto: espinha dorsal da fila
 
 ### Por que importa
