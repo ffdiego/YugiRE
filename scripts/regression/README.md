@@ -211,3 +211,31 @@ recebimento relativo ao início da coleta. O modo de retângulos
 brutos pode emitir mais de um evento por operação e também pode
 cobrir pixels que conservaram o valor anterior.
 [Protocolo DAMAGE da X.Org](https://www.x.org/releases/current/doc/damageproto/damageproto.txt).
+
+### 49 e 50 — V05, atributos no campo em Proton
+
+No prefixo e display isolados do
+[guia de Proton](../../docs/research/joey-proton-validation.md),
+confirme o fingerprint e o PID. Anexe o 49 no menu ou no
+tabuleiro. Ele agrupa entradas com os mesmos argumentos a
+partir da primeira entrada de `004194D0` e se desanexa ao
+completar o recorte de 55 segundos. O 50 é uma segunda coleta
+para um ATK com intensidade 256 e registra o formato, o
+ponto de amostragem e a chave da superfície do atlas.
+
+```bash
+timeout --signal=INT 135s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/49-wine-field-attributes.gdb > scratch/field-attributes.log 2>&1
+
+timeout --signal=INT 20s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/50-wine-field-atlas-key.gdb > scratch/field-atlas-key.log 2>&1
+```
+
+Confira `passes` por descritor e perspectiva. A ordem é
+DEF, separador e ATK. Defensores adversários ocultos no
+piloto tiveram lista vazia. Compare o atlas com a
+variação em relação ao valor de catálogo. O campo
+`right` é a âncora direita do helper, em pixels lógicos.
+Para a prova de pixels, use uma captura com um valor em
+intensidade 256 e confronte os pixels do glifo, fora da
+cor-chave, com o DAT em RGB565.

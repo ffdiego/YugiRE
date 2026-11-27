@@ -1,5 +1,42 @@
 # ATK/DEF no campo — atlas numérico nativo (22/11/2026)
 
+## V05.3 — argumentos e chave do atlas em Proton
+
+Em dois recortes do mesmo duelo de demonstração do EXE de
+referência, o roteiro 49 observou `004194D0` e os pontos de
+chamada `0041972F`, `0041987B` e `00419A11`. O piloto usou
+Proton 9.0, Xvfb a 800×600 e llvmpipe. Foram conferidos 4.557
+grupos na ordem DEF, separador e ATK. Os casos incluem ataque
+revelado nos dois lados, defesa própria oculta e defesa
+adversária revelada. Outros 474 registros de defesa adversária
+oculta passaram pela entrada de `004194D0` sem os três passes.
+
+Nos slots 0 e 1 amostrados de cada lado, os argumentos
+coincidiram com os centros do PE e os glifos de 7×10 do
+DAT. Os topos foram Y=393 e Y=197. O separador recebeu a
+âncora direita X+3, índice 10 e intensidade 160. Os
+números foram centrados em X−20 (ATK) e X+20 (DEF).
+A intensidade foi 256 para o atributo da posição e 160
+para o outro. Os dois números usaram o atlas 1 e os
+valores impressos conferiram com o catálogo do DAT. Os
+atlas de aumento e redução ficaram sem amostra.
+
+No roteiro 50, `00419A11` recebeu a superfície do atlas
+normal com vtable `005DC6EC`, formato 3 e cor-chave
+`0x8D85` em `+64h`, com coordenadas da amostra (0,0).
+O DAT confirma RGB (141,179,40) nesse ponto nos três
+atlas. Em uma captura do duelo, o ATK adversário 2400
+em (647,197) e a DEF própria 600 em (378,393) foram
+comparados com o atlas normal. Em intensidade 256, todos os
+431 pixels de primeiro plano tiveram os mesmos componentes
+de 5/6/5 bits. Os 59 pixels correspondentes à chave
+mostraram a textura do campo. O carregador do cliente
+usa RGB (0,255,0) para os três atlas, uma divergência
+localizada. Ainda faltam a comparação pareada com o
+cliente, a mistura na intensidade 160 e a cadência do
+tween com valores modificados.
+[Roteiros 49 e 50](../../scripts/regression/README.md#49-e-50--v05-atributos-no-campo-em-proton).
+
 ## Procedência
 
 SQLite privado do usuário `joey-knowledge-visual-decoded.sqlite` (Joey EXE SHA-256

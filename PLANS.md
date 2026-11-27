@@ -119,7 +119,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Validação DAT passa. Investigar os controles transitórios de seleção e descarte. [Detalhes](docs/plans/VISUALS.md#v03)
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Coleta 32 confirmou constantes x87 e truncamento. Confirmar formato, chave e compositor do quadrilátero e comparar frames. [Detalhes](docs/plans/VISUALS.md#v04)
-- [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Centros confirmados (coleta 33); comparar pixels, blending e cadência. [Detalhes](docs/plans/VISUALS.md#v05)
+- [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Reconciliar a chave do atlas identificada no Proton e validar o blend em intensidade 160, as variantes de valor e a cadência. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Slot do combate comum ligado à fila. Mapear flags do dano especial, integrar hold e comparar gráficos/cadência. [Detalhes](docs/plans/VISUALS.md#v06)
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Predicado +4 confirmado; rasterizador 0051EBD0 (coleta 25), compositor e integração via A03/A07. [Detalhes](docs/plans/VISUALS.md#v07)
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Banco DAT confirmado; semântica A/B, compositor, integração e validação. [Detalhes](docs/plans/VISUALS.md#v08)

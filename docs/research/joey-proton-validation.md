@@ -146,6 +146,9 @@ O [47](../../scripts/regression/README.md#47--v17-entrega-do-buffer-em-proton)
 acompanha a chamada ao DirectDraw com o tabuleiro já em cena.
 O [48](../../scripts/regression/README.md#48--v17-notificações-de-desenho-em-xvfb)
 observa a saída no servidor X por dez segundos sem anexar ao processo.
+Os [49 e 50](../../scripts/regression/README.md#49-e-50--v05-atributos-no-campo-em-proton)
+registram os argumentos dos números de ATK/DEF e a cor-chave
+do atlas no executável.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

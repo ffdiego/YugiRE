@@ -55,6 +55,17 @@ V04.4 (27/11/2026). A coleta 32 em Ghidra local obteve a função `005C3E40` e o
 
 Já ligados: BMPs originais, separador, variantes normal/aumentado/reduzido, `0xA0/0x100`, tween 7/8, gate nativo de `00418EF0 → 004194D0` (movimento `0x100`, saída estado 5, zona, lado, face-up `0x8000`, identidade do ocupante `0056DD30`); renderer e JSON F12 compartilham a visibilidade, evitando revelar atributos da CPU antes do contato da espada. V05.1: gate distingue preservar/resetar/avançar; DuelScreen mantém tween durante slot ocupado em movimento. DAT confirma glifos 7x10, roteiro 33 recebido e importado no v4-visuals: confirma todos os centros e Y 398/202, sem deslocamento novo; 50 checks extras. CI do PR #152 verde. Faltam blending, comparação gráfica/cadência e sprites dos indicadores adicionais (overlays `00419B70/0041A3B0/0041A070` não são números). **Partial, não Verified.** Ver [pesquisa](../../docs/research/native-field-attributes-2026-11-22.md) ; bundle 03 recebido e absorvido em 23/11, não repetir coleta. Ver [handoff dos bundles](../../docs/research/visual-contract-bundles-2026-11-23.md).
 
+V05.3. Em dois recortes da demonstração em Proton, a comparação
+em Python conferiu as posições, intensidades e ordem de 4.557
+grupos de ATK/DEF. Também confirmou 474 chamadas referentes a
+defensores adversários ocultos sem os passes numéricos.
+A captura confirmou a chave RGB565 `0x8D85` para o atlas normal.
+Na comparação com o DAT, todos os 431 pixels de primeiro plano
+dos dois números em intensidade 256 coincidiram após a conversão
+para RGB565. O cliente filtra verde puro nesses atlas. Faltam a
+reconciliação da chave, a mistura a 160 e a coleta das variantes
+de valor. [Evidência e roteiros](../../docs/research/native-field-attributes-2026-11-22.md#v053--argumentos-e-chave-do-atlas-em-proton).
+
 ## V06 — LP flutuante por origem do dano/cura
 
 <a id="v06"></a>
