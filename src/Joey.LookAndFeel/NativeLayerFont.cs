@@ -31,6 +31,11 @@ public sealed class NativeLayerFontB
         native005BDAD0 && !native0044BA10;
     public void AdvanceNativeDraw(bool wantsDisplay) =>
         Value = Math.Clamp(Value + (wantsDisplay ? 4 : -4), 0, 256);
+    // 0045640C loads the center from 005DB570 (DWORD 525 in bundle 01).
+    public const int CenterX = 525;
+    public CardBounds? Bounds(int width,int height,ReadOnlySpan<int> cosine) =>
+        Top(height,cosine) is int y ? new(CenterX-width/2,y,width,height) : null;
+
     public int? Top(int height, ReadOnlySpan<int> cosine)
     {
         NativeFusionMath.Validate(cosine);
@@ -56,6 +61,33 @@ public static class NativeLayerFontResources
 {
     public const string Prefix = @"j\duel\effect\";
     public const string Manifest = Prefix + "layerfont.txt";
+    // All ten observed BMPs in the v7 DAT inventory. No inferred
+    // fallback to English dimensions for other locales.
+    public static CardBounds ExpectedSize(int key,char language='e')
+    {
+        if(language is not ('e' or 'f' or 'g' or 'i' or 's'))
+            throw new ArgumentOutOfRangeException(nameof(language));
+        return key switch
+        {
+            0 => language switch
+            {
+                'f' => new(0,0,233,37),
+                'g' => new(0,0,72,30),
+                's' => new(0,0,215,36),
+                _ => new(0,0,233,30)
+            },
+            1 => new(0,0,469,34),
+            _ => throw new ArgumentOutOfRangeException(nameof(key))
+        };
+    }
+
+    public static void ValidateSize(int key,int width,int height,char language='e')
+    {
+        var expected=ExpectedSize(key,language);
+        if(expected.Width!=width || expected.Height!=height)
+            throw new InvalidDataException("Unexpected Layerfont texture dimensions.");
+    }
+
     public static string[] Parse(string text, IEnumerable<string> archiveNames, char language = 'e')
     {
         if (language is not ('e' or 'f' or 'g' or 'i' or 's'))

@@ -31,7 +31,24 @@ internal static class NativeLayerFontChecks
         int[] realShape = new int[512];
         realShape[0]=65536;
         realShape[496]=32768;
-        check(b.Top(34,realShape)==16,"V28: final vertical anchor");
+        check(b.Top(34,realShape)==16 &&
+              b.Bounds(469,34,realShape)==new CardBounds(291,16,469,34),
+            "V28: assembly-confirmed final bounds from 005DB570=525");
+        foreach(char language in "efgis")
+        {
+            var demo=NativeLayerFontResources.ExpectedSize(0,language);
+            var wait=NativeLayerFontResources.ExpectedSize(1,language);
+            NativeLayerFontResources.ValidateSize(0,demo.Width,demo.Height,language);
+            NativeLayerFontResources.ValidateSize(1,wait.Width,wait.Height,language);
+            check(NativeLayerFontA.Bounds(demo.Width,demo.Height).X+demo.Width==788 &&
+                NativeLayerFontA.Bounds(demo.Width,demo.Height).Y+demo.Height==588 &&
+                wait==new CardBounds(0,0,469,34),"V27/V28: locale-specific DAT dimensions and anchor");
+        }
+        check(NativeLayerFontResources.ExpectedSize(0,'g')==new CardBounds(0,0,72,30) &&
+            NativeLayerFontResources.ExpectedSize(0,'f')==new CardBounds(0,0,233,37) &&
+            NativeLayerFontResources.ExpectedSize(0,'s')==new CardBounds(0,0,215,36),
+            "V27: observed non-English dimensions");
+        reject(()=>NativeLayerFontResources.ValidateSize(0,233,30,'g'),"V27: wrong locale dimensions reject");
         b.AdvanceNativeDraw(false);
         check(b.Top(34,realShape)==-9,"V28: signed interpolation");
         for(int i=0;i<63;i++) b.AdvanceNativeDraw(false);

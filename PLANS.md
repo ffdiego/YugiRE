@@ -138,14 +138,15 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, validar Draw/remap/blend. [Detalhes](docs/plans/VISUALS.md#v21)
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Break por causa de remoção (efeitos em campo), Explosion para combate; validar DAT, exceções, cauda e compositor. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
-- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Resolver os ramos restantes de vínculos e integrar o compositor nativo. [Detalhes](docs/plans/VISUALS.md#v24)
+- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Reset por Draw, Jar key2 e TER key4 confirmados; roteiro 58 estático para kinds/Spellbinding Circle; compositor pendente. Viagem Equip em V32. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Gate não bloqueante e DAT confirmados; roteiro 34 exclusion para produtor, depois integração A03/remap/blend. [Detalhes](docs/plans/VISUALS.md#v26)
-- [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
-- [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
+- [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Assembly e dimensões DAT confirmados; compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
+- [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Assembly confirma âncora/altura, dimensões DAT; compositor e integração. [Detalhes](docs/plans/VISUALS.md#v28)
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Banco DAT e resolvedor padrão confirmados. Validar o compositor e ligar os produtores à apresentação. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Banco DAT real e geometria confirmados; investigar compositor +98, renderizar letras e ligar vitória sem espera invisível. [Detalhes](docs/plans/VISUALS.md#v30)
 - [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Review reaction07 implementado; validar DAT/capturas, compositor e outros seletores antes de ligar áudio e fila. [Detalhes](docs/plans/VISUALS.md#v31)
+- [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Live EquipCommand, roteiro 57 para gate/despacho e auditoria do inventário. [Detalhes](docs/plans/VISUALS.md#v32)
 
 ## Trilha AI
 

@@ -30,6 +30,9 @@ public sealed class NativeAffectDraw
     public const string Manifest = @"j\duel\effect\affect.txt";
     private int? cachedSelector;
 
+    // 0040E288 clears +128 on each focused Draw. Reuse only within it.
+    public void BeginDraw() => cachedSelector = null;
+
     public static string[] Resources(string manifest, IEnumerable<string> archiveNames)
     {
         var available = new HashSet<string>(archiveNames, StringComparer.OrdinalIgnoreCase);

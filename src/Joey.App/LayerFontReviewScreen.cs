@@ -48,12 +48,11 @@ static partial class Game
                 ToRectangle(DuelSurfaceLayout.Board),Vector2.Zero,0,Color.White);
         bool first = layerFontReviewMode == "a";
         var texture = graphics.Texture(layerFontReviewResources[first ? 0 : 1]);
-        // Geometry comes from the recovered Draw expressions; B's width/height
-        // register mapping still needs assembly confirmation. This diagnostic
-        // does not establish the native compositor or the live duel gate.
+        // Assembly-confirmed A/B dimensions and signed integer geometry.
+        // Rendering is still diagnostic until native compositor comparison.
+        NativeLayerFontResources.ValidateSize(first?0:1,texture.Width,texture.Height);
         layerFontReviewBounds = first ? NativeLayerFontA.Bounds(texture.Width,texture.Height) :
-            layerFontB.Top(texture.Height,effectCosine) is int y ?
-                new CardBounds(525-texture.Width/2,y,texture.Width,texture.Height) : null;
+            layerFontB.Bounds(texture.Width,texture.Height,effectCosine);
         layerFontReviewIntensity = first ? layerFontA.Intensity(effectCosine) : null;
         if (layerFontReviewBounds is { } bounds)
             Raylib.DrawTexture(texture,bounds.X,bounds.Y,
@@ -70,7 +69,7 @@ static partial class Game
             counter=layerFontA.Counter,value=layerFontB.Value,wantsDisplay=layerFontWantsDisplay,
             bounds=layerFontReviewBounds,intensity=layerFontReviewIntensity,
             cosineSource=effectCosineSource,
-            compositor="provisional raylib texture/tint; native vtable blit and B registers pending"
+            compositor="provisional raylib texture/tint; native vtable blit pending; integer A/B geometry confirmed"
         },new JsonSerializerOptions{WriteIndented=true})+Environment.NewLine);
     }
 }
