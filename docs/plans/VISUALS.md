@@ -144,6 +144,12 @@ Coordenadas/dimensões/ângulos e contagem de updates por estado/quadro-chave co
 
 V15.1 (27/11/2026). A matriz aceita regiões por quadro-chave e orçamentos independentes por elemento. O relatório inclui os retângulos das divergências em coordenadas do canvas. Os testes sintéticos verificam que uma diferença localizada pode reprovar o par mesmo dentro do limite global, que o limiar RGB é respeitado e que regiões inválidas são rejeitadas antes de gravar diagnósticos. Faltam pares do mesmo estado e contador no original e no cliente.
 
+V15.2 (27/11/2026). F12 na revisão de corrente ativa agora encaminha
+o quadro apenas para a captura específica de V23. Antes, o mesmo
+acionamento também caía na captura genérica do duelo. O build e
+os testes da matriz passaram. A confirmação gráfica do atalho
+ficou pendente por timeout ao conectar ao display Xwayland isolado.
+
 ## V16 — Demais Draws do inventário
 
 <a id="v16"></a>
