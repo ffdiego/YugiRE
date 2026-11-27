@@ -258,7 +258,7 @@ public sealed partial class DemoDuel
                 !ReferenceEquals(Spells[e.Owner, e.SourceZone], e.Card) ||
                 !TryCaptureCardTarget(e.Owner, DuelZone.SpellTrap, e.SourceZone, out var target))
                 return false;
-            result.Add(new DestroyCommand(e.Owner, target));
+            result.Add(new DestroyCommand(e.Owner, target) { Cause = RemovalCause.LinkedCleanup });
         }
         if (toGraveyard && ImmortalThunderRules.LosesLifeOnFieldToGraveyard(card.Id, MonsterWasFlipped[player, slot]))
             result.Add(new DamageCommand(player, ImmortalThunderRules.GraveyardLifeLoss));
@@ -686,9 +686,9 @@ public sealed partial class DemoDuel
                     }
                     return bounce.Target.Zone == DuelZone.Monster ? ReturnQueuedMonster(bounce.Target, followups) : ReturnQueuedSpellTrap(bounce.Target);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
-                    return DestroyMonster(destroy.Target, followups);
+                    return DestroyMonster(destroy.Target, followups, destroy.Cause);
                 case DestroyCommand destroy when destroy.Target.Zone is DuelZone.SpellTrap or DuelZone.FieldSpell:
-                    return DestroyQueuedSpellTrap(destroy.Target);
+                    return DestroyQueuedSpellTrap(destroy.Target, destroy.Cause);
                 default:
                     return new(CommandOutcome.Rejected, "Command not migrated to DemoDuel.");
             }
@@ -1008,12 +1008,13 @@ public sealed partial class DemoDuel
             {
                 queue.EnqueueBatch([.. context.Commands,
                     new ReturnToHandCommand(activate.Target.Side, activate.Target),
-                    .. targets.Where(t => t != activate.Target).Select(t => (DuelCommand)new DestroyCommand(t.Side, t))]);
+                    .. targets.Where(t => t != activate.Target).Select(t => (DuelCommand)new DestroyCommand(t.Side, t)
+                         { Cause = RemovalCause.LinkedCleanup })]);
             }
             else
             {
-                foreach (var target in targets) context.Destroy(target);
-                queue.EnqueueBatch(context.Commands);
+                queue.EnqueueBatch([.. context.Commands, .. targets.Select(t => (DuelCommand)new DestroyCommand(t.Side,t)
+                    { Cause = t == activate.Target ? RemovalCause.EffectDestruction : RemovalCause.LinkedCleanup })]);
             }
             wipe = new(activate.Side, spell.Id, activate.Source, targets, monsterWipe: false)
                 { PrimaryTarget = activate.Target };
@@ -1154,7 +1155,8 @@ public sealed partial class DemoDuel
                 throw new InvalidOperationException("Reserved tribute changed during placement.");
             }
             duel.deferringFieldRemovalTriggers = true;
-            try { duel.RemoveMonster(tribute.Side, slot, isTribute: true, queueLinkedConsequences: true); }
+            try { duel.RemoveMonster(tribute.Side, slot, isTribute: true, queueLinkedConsequences: true,
+                removalCause: isRitual ? RemovalCause.RitualMaterial : RemovalCause.Tribute); }
             finally { duel.deferringFieldRemovalTriggers = false; }
             paidTributes.Add(tribute.Target);
             return new(CommandOutcome.Applied);
@@ -2144,7 +2146,8 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult DestroyMonster(CardTarget target, IActionCommandSink followups)
+        private CommandResult DestroyMonster(CardTarget target, IActionCommandSink followups,
+            RemovalCause cause = RemovalCause.EffectDestruction)
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out _))
             {
@@ -2170,7 +2173,8 @@ public sealed partial class DemoDuel
             }
             bool hidden = duel.MonsterFaceDown[target.Side, slot];
             duel.deferringFieldRemovalTriggers = true;
-            try { duel.RemoveMonster(target.Side, slot, queueLinkedConsequences: true); }
+            try { duel.RemoveMonster(target.Side, slot, queueLinkedConsequences: true,
+                removalCause: cause); }
             finally { duel.deferringFieldRemovalTriggers = false; }
             if (wipe is { } current && current.Targets.Remove(target))
             {
@@ -2181,7 +2185,8 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult DestroyQueuedSpellTrap(CardTarget target)
+        private CommandResult DestroyQueuedSpellTrap(CardTarget target,
+            RemovalCause cause = RemovalCause.LinkedCleanup)
         {
             bool reserved = wipe is { MonsterWipe: false, SourceSpent: true } current &&
                 current.Targets.Contains(target);
@@ -2228,8 +2233,16 @@ public sealed partial class DemoDuel
 
             // This low-level helper moves a single occurrence and removes its
             // equipment link. It does not run the bulk Destiny Board resolver.
-            duel.DestroySpellTrapCard(target.Side,
-                target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot);
+            int removedZone = target.Zone == DuelZone.FieldSpell ? SpellTrapTargetRules.FieldZone : slot;
+            bool wasHidden = duel.IsSpellTrapFaceDown(target.Side, removedZone);
+            // Primary selected targets and direct wipes are effect destruction.
+            // Do not synthesize Break for dependent equipment/Board cleanup.
+            bool directEffect = cause == RemovalCause.EffectDestruction && reserved && wipe is { } removal &&
+                (removal.PrimaryTarget is null || removal.PrimaryTarget == target) &&
+                (removal.FlipPair is not { } directPair || directPair.Contains(target));
+            duel.DestroySpellTrapCard(target.Side, removedZone);
+            if (directEffect)
+                duel.SpellTrapDestroyed?.Invoke(new(target.Side, removedZone, card, wasHidden));
             if (reserved)
             {
                 wipe!.Targets.Remove(target);

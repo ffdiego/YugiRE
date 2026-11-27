@@ -136,7 +136,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Integração A03 e comparação; nome do banco não prova RNG. [Detalhes](docs/plans/VISUALS.md#v20)
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Remap/blend e integração A03. [Detalhes](docs/plans/VISUALS.md#v21)
-- [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Review reconciliado; ligar snapshot e rota confirmada via A03, validar compositor. [Detalhes](docs/plans/VISUALS.md#v22)
+- [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Break por causa de remoção (efeitos em campo), Explosion para combate; validar DAT, exceções, cauda e compositor. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Resolver os ramos restantes de vínculos e integrar o compositor nativo. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)

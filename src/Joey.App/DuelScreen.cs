@@ -712,6 +712,7 @@ static partial class Game
             visualReviewPaused, visualReviewStep);
         presentation.Advance(frameElapsed);
         int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
+        AdvanceBreakTails(frameElapsed);
         bool effectsCouldAdvance = CanPlayCardEffects;
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);

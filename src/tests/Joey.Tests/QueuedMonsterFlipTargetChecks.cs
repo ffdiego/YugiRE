@@ -39,6 +39,8 @@ internal static class QueuedMonsterFlipTargetChecks
                 side==1?own:opposing,8000,equipmentContextResolved:true);
             check(d.Equip(0,enemy,0,out _)&&d.AttackValue(enemy,0)==1300,"FLIP setup: opposing equipment target");
             d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
+            var removals=new List<DemoMonsterDestruction>();
+            d.MonsterDestroyed+=removals.Add;
             var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
             check(d.TryQueueChangePosition(0,out _),"FLIP summon admitted");
             Drain(q);
@@ -55,6 +57,9 @@ internal static class QueuedMonsterFlipTargetChecks
             q.Tick();gate.Release=false;q.Tick();q.Tick();
             check(d.Monsters[enemy,0] is null&&d.EquipmentCards.Count==1&&q.IsBusy,
                 "FLIP first movement applied once; linked equipment waits");
+            check(id==500 ? removals.Count==1 && removals[0].Cause==RemovalCause.EffectDestruction &&
+                removals[0].Card==other && removals[0].Player==enemy && removals[0].Zone==0
+                : removals.Count==0, "V22 removal provenance and pre-mutation snapshot; bounce not destruction");
             gate.Release=true;Drain(q);
             check(d.PendingFlipTarget is null&&d.EquipmentCards.Count==0&&
                 d.Graveyard(side).Single().Id==300&&

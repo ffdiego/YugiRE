@@ -8,9 +8,21 @@ public sealed record DuelCheckpoint(int Turn, DemoPhase Phase = DemoPhase.Main,
     bool DrawTaken = false, IReadOnlyList<Card?>? Side0SetSpells = null,
     IReadOnlyList<Card?>? Side1SetSpells = null);
 
-public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
-/// <summary>A tribute paid as a normal-summon cost; distinct from destruction.</summary>
-public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
+public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense)
+{
+    public RemovalCause Cause { get; init; } = RemovalCause.EffectDestruction;
+}
+/// <summary>A normal or ritual tribute, distinct from destruction.</summary>
+public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool FaceDown, bool Defense)
+{
+    public RemovalCause Cause { get; init; } = RemovalCause.Tribute;
+}
+/// <summary>Successfully destroyed S/T or FIELD; snapshot from before slot mutation.
+/// Zone uses SpellTrapTargetRules.FieldZone for a Field Spell.</summary>
+public sealed record DemoSpellTrapDestruction(int Player, int Zone, Card Card, bool FaceDown)
+{
+    public RemovalCause Cause => RemovalCause.EffectDestruction;
+}
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
 /// <summary>Presentation-only notification, emitted after an effect places a monster.</summary>
 public sealed record DemoSpecialSummon(int Player, int Zone, Card Card, bool FaceDownDefense,
@@ -34,6 +46,7 @@ public sealed record DemoDestinyBoardCompletion(int Player, IReadOnlyList<Card> 
 public sealed partial class DemoDuel
 {
     public event Action<DemoMonsterDestruction>? MonsterDestroyed;
+    public event Action<DemoSpellTrapDestruction>? SpellTrapDestroyed;
     /// <summary>Fired once after a player completes all five unique Exodia pieces.</summary>
     public event Action<DemoExodiaCompletion>? ExodiaCompleted;
     public event Action<DemoDestinyBoardMessagePlaced>? DestinyBoardMessagePlaced;
@@ -2443,7 +2456,8 @@ public sealed partial class DemoDuel
     }
 
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,
-        bool isFusionMaterial = false, bool queueLinkedConsequences = false)
+        bool isFusionMaterial = false, bool queueLinkedConsequences = false,
+        RemovalCause? removalCause = null)
     {
         Card removed = Monsters[p, z]!;
         bool faceDown = MonsterFaceDown[p, z];
@@ -2484,9 +2498,12 @@ public sealed partial class DemoDuel
             BeginNextQueuedDeckSearch();
         }
         if (isTribute)
-            MonsterTributed?.Invoke(new(p, z, removed, faceDown, defense));
+            MonsterTributed?.Invoke(new(p, z, removed, faceDown, defense)
+                { Cause = removalCause ?? RemovalCause.Tribute });
         else if (!isFusionMaterial)
-            MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense));
+            MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense)
+                { Cause = destroyedByBattle ? RemovalCause.BattleDestruction :
+                    removalCause ?? RemovalCause.EffectDestruction });
     }
 
     private void ReturnMonsterToHand(int player, int zone, bool removeEquipment = true)

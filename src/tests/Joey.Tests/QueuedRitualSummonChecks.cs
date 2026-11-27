@@ -63,6 +63,10 @@ internal static class QueuedRitualSummonChecks
                 "Ritual CPU waits at the first tribute gate and clears a slot first on a full field");
             gate.Released = true;
             Drain(queue);
+            check(queue.Trace.Where(t => t.Stage == ActionTraceStage.Executed &&
+                t.Entry.Command.GetType().Name == "TributeCommand")
+                .All(t => t.Entry.Command is ICardRemovalCommand { Cause: RemovalCause.RitualMaterial }),
+                "Ritual payments carry their own cause, including hand materials");
             check(duel.TryCaptureCardTarget(side, DuelZone.Monster, slot, out var summoned) &&
                 summoned.Occurrence == savedCopy.Occurrence && !duel.DefensePosition[side, slot] &&
                 duel.Graveyard(side).Select(card => card.Id).SequenceEqual(
@@ -96,6 +100,8 @@ internal static class QueuedRitualSummonChecks
             var ownField = new Card?[] { tribute, Monster(41, 2), Monster(42, 2), Monster(43, 2), Monster(44, 2) };
             var duel = DemoDuel.FromPartialObservation(side, [spell, ritual],
                 side == 0 ? ownField : new Card?[5], side == 1 ? ownField : new Card?[5], 8000);
+            var observedTributes = new List<DemoMonsterTribute>();
+            duel.MonsterTributed += observedTributes.Add;
             var gate = new TributeGate();
             var queue = duel.CreatePrimitiveActionQueue(gate);
             duel.TryCaptureCardTarget(side, DuelZone.Hand, 0, out var source);
@@ -115,6 +121,8 @@ internal static class QueuedRitualSummonChecks
             check(duel.Hand.Count == 1 && duel.Monsters[side, 0] is null && queue.IsBusy &&
                 duel.Graveyard(side).Select(c => c.Id).SequenceEqual(new[] { spell.Id, tribute.Id }),
                 $"Ritual {spellId} waits after paying tribute");
+            check(observedTributes.Count == 1 && observedTributes[0].Cause == RemovalCause.RitualMaterial &&
+                observedTributes[0].Card == tribute, "Ritual field snapshot is not effect destruction or normal tribute");
             gate.Released = true;
             Drain(queue);
             check(duel.TryCaptureCardTarget(side, DuelZone.Monster, 0, out var placed) &&

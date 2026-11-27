@@ -110,6 +110,9 @@ internal static class QueuedBattleManEaterChecks
                     executed.Count(t=>t.Entry.Command.GetType().Name=="SnapshotBattleRemovalCommand")==(battleRemoval?1:0)&&
                     executed.Count(t=>t.Entry.Command.GetType().Name=="FinishBattleRemovalCommand")==(battleRemoval?1:0),
                     "A06 effect destruction never duplicates battle destruction");
+                check(destroyed.Count(e=>e.Cause==RemovalCause.EffectDestruction)==1 &&
+                    destroyed.Count(e=>e.Cause==RemovalCause.BattleDestruction)==(battleRemoval?1:0),
+                    "V22 destruction cause is independent of whether effect occurs during battle");
                 return q.Trace.ToArray();
             }
             check(Pilot(false).SequenceEqual(Pilot(true)),"A06 Man-Eater trace independent of gate");

@@ -98,3 +98,22 @@ public static class NativeBreakFieldReview
         _ => throw new ArgumentOutOfRangeException(nameof(rotation))
     };
 }
+
+/// <summary>Live field descriptor. The host chooses the effect by removal
+/// cause; this math layer has no dependency on the rules engine or card IDs.</summary>
+public static class NativeLiveBreak
+{
+    public static NativeBreakFieldTarget MonsterTarget(int side, int slot, bool faceDown, bool defense)
+    {
+        if (slot is < 0 or >= 5) throw new ArgumentOutOfRangeException(nameof(slot));
+        return FieldTarget(side, slot, faceDown, defense);
+    }
+
+    public static NativeBreakFieldTarget FieldTarget(int side, int fieldZone, bool faceDown, bool defense = false)
+    {
+        if (side is not (0 or 1) || fieldZone is < 0 or > 10)
+            throw new ArgumentOutOfRangeException(nameof(fieldZone));
+        return new((ushort)(side | fieldZone << 6 | (faceDown ? 0 : 0x8000) | (defense ? 0x4000 : 0)));
+    }
+    public const int BlockingUpdates = NativeBreakTimeline.ReleaseCounter / NativeBreakTimeline.UpdateIncrement;
+}
