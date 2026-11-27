@@ -446,3 +446,21 @@ A validação integral do JSONL continua obrigatória. Fixture sintética cobre
 lacuna, restauração por baseline, janela, limites C# e rodapé inválido.
 CI pendente; primeiro pareamento real e atributos/decisões equivalentes
 continuam em aberto. [Uso](../architecture/duel-differential-policy.md#inspeção-antes-de-parear).
+
+### A09.9 — Identidade dos blocos de atributos de combate
+
+SQLite cumulativo v7, SHA256 a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379,
+quick_check ok, fingerprint db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de.
+Assembly 005B7C50–005B7CCD escolhe bloco atacante pelo bit 0 do seletor,
+lado alvo pelo bit 1 e slots por shifts 8/11 &7. 005B7CFF–005B7D53
+codifica lado e slot nos quatro bits baixos do descritor, defesa em bit 5,
+e índice em 12 bits. 005B7D7A–005B7D9C zera índice do bloco alvo em ataque
+direto (bit 2). 005B81D3–005B8206 grava ATK/DEF com clamp zero.
+O inventário A09.8 usa essa projeção para correlacionar cada ator com o slot
+físico observado, inclusive cartas de mesmo índice; não inferir ocorrência
+quando índice/pose/descritor discordam ou falta sample. O campo occurrenceWord
+é uma leitura nativa, não identidade C# mapeada. Testes sintéticos novos;
+CI pendente. A captura Sogen anterior comprova utilidade dos valores, não
+valida a nova correlação. Atributos de confronto não são necessariamente
+atributos gerais do campo; comparação diferencial de atributos aguarda
+checkpoint C# no estágio de cálculo equivalente. Nenhuma coleta nova pedida.

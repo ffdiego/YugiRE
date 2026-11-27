@@ -232,6 +232,7 @@ class NativeStateInteractionsTests(unittest.TestCase):
             self.assertEqual(entries[0]["args"], records[2]["args"])
             self.assertEqual(entries[1]["sides"][0]["lifePoints"], 6600)
             self.assertEqual(entries[2]["sides"][0]["lifePoints"], 7600)
+            self.assertEqual(report["csharpBoundaries"][0]["fieldMonsterAttributes"], [[None] * 5] * 2)
             boundaries = report["csharpBoundaries"]
             self.assertEqual([row["scriptLine"] for row in boundaries], [None, 4])
             self.assertTrue(boundaries[1]["boundary"]["hasPendingChoice"])
