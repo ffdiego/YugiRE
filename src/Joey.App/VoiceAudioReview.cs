@@ -1,7 +1,6 @@
 using Joey.Core;
 using Joey.LookAndFeel;
 using Raylib_cs;
-using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -10,6 +9,7 @@ using System.Text.Json;
 internal static class VoiceAudioReview
 {
     private const string InternalPrefix=@"joey\english\internal\";
+    private const int InspectionUncompressedLimit=32*1024*1024;
     private sealed record Entry(string Name, uint Size, NativeWaveInfo? Info,
         double? EstimatedMilliseconds, string? Error);
 
@@ -31,14 +31,8 @@ internal static class VoiceAudioReview
             string name=InternalPrefix+filename;
             if(!archive.Entries.Any(e=>e.Name.Equals(name,StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidDataException("Missing original voice resource: "+name);
-            byte[] bytes=archive.Read(name);
-            var info=NativeWaveInfo.ReadVoiceArchiveEntry(bytes, out int? canonicalEnd);
+            byte[] bytes=NativeWaveInfo.PrepareVoiceArchiveEntry(archive.Read(name), out var info);
             Console.WriteLine($"[voice review] {name}: format={info.Format} rate={info.SampleRate} channels={info.Channels} bytes={info.DataBytes} estimated_ms={info.ByteRateDurationMilliseconds:F1}");
-            if(canonicalEnd is int length)
-            {
-                Array.Resize(ref bytes, length);
-                BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(4), (uint)(length - 8));
-            }
             return Play(bytes);
         }
         catch(Exception ex) when(ex is IOException or InvalidDataException or
@@ -58,7 +52,8 @@ internal static class VoiceAudioReview
         {
             try
             {
-                var info=NativeWaveInfo.ReadVoiceArchiveEntry(archive.Read(e.Name), out _);
+                var info=NativeWaveInfo.ReadVoiceArchiveEntry(
+                    archive.Read(e.Name,InspectionUncompressedLimit), out _);
                 entries.Add(new(e.Name,e.Size,info,info.ByteRateDurationMilliseconds,null));
             }
             catch(Exception ex) when(ex is IOException or InvalidDataException or OverflowException)

@@ -68,6 +68,24 @@ internal static class NativeVoiceAudioChecks
         BinaryPrimitives.WriteUInt16LittleEndian(inconsistentVoice.AsSpan(32), 1);
         reject(() => NativeWaveInfo.ReadVoiceArchiveEntry(inconsistentVoice, out _),
             "V18: Voice.dat adaptation preserves PCM validation");
+        var partialStereo=(byte[])voice.Clone();
+        Array.Resize(ref partialStereo,96);
+        BinaryPrimitives.WriteUInt32LittleEndian(partialStereo.AsSpan(4),48);
+        BinaryPrimitives.WriteUInt16LittleEndian(partialStereo.AsSpan(22),2);
+        BinaryPrimitives.WriteUInt32LittleEndian(partialStereo.AsSpan(28),32000);
+        BinaryPrimitives.WriteUInt16LittleEndian(partialStereo.AsSpan(32),4);
+        BinaryPrimitives.WriteUInt32LittleEndian(partialStereo.AsSpan(42),6);
+        partialStereo[46]=11;
+        var canonical=NativeWaveInfo.PrepareVoiceArchiveEntry(partialStereo,out var reported);
+        check(reported.DataBytes==6 && canonical.Length==50 &&
+            NativeWaveInfo.Read(canonical)==(reported with { DataBytes=4 }) &&
+            canonical.AsSpan(46).SequenceEqual(partialStereo.AsSpan(46,4)) &&
+            BinaryPrimitives.ReadUInt32LittleEndian(partialStereo.AsSpan(42))==6,
+            "V18: trim only the final partial stereo frame from decoder input, preserving metadata");
+        Array.Resize(ref partialStereo,52);
+        BinaryPrimitives.WriteUInt32LittleEndian(partialStereo.AsSpan(4),44);
+        reject(() => NativeWaveInfo.ReadVoiceArchiveEntry(partialStereo,out _),
+            "V18: ordinary PCM with incomplete frames remains invalid");
         check(NativeAudioRouting.Resolve(true,0x10001045,70,20,99)==
             new NativeAudioRequest(NativeAudioBank.Internal,69,0),
             "V18: Internal uses low twelve bits, ignores stream transition");

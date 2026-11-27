@@ -14,13 +14,13 @@ Ficha mínima para novos scripts: `número | ID da trilha | ambiente | pré-requ
 
 ## V18 — smoke de áudio Windows (28)
 
-A execução registrou 129 falhas no cabeçalho RIFF. A correção da variante PCM em #134 aceita 106 de 131 entradas no DAT local. Restam 24 entradas com frame estéreo incompleto e uma acima do limite. A captura existente está no SQLite cumulativo.
+A execução anterior registrou 129 falhas no cabeçalho RIFF. Com o adaptador para a variante PCM e o limite de inspeção para entradas armazenadas sem compressão, o cliente atual validou as 131 entradas no Linux. A captura Windows anterior está no SQLite cumulativo.
 
-Próxima ação em Windows com o cliente atualizado: validar a decodificação com `-SkipPlayback` e executar escuta dos exemplos aceitos. Registre os resultados no relatório privado do roteiro. [Diagnóstico](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
+Próxima ação em Windows com o cliente atualizado: validar a inspeção com `-SkipPlayback`, ouvir as amostras do roteiro e observar a troca de música do menu para o duelo no App. Registre os resultados no relatório privado do roteiro. [Diagnóstico](../../docs/research/native-joey-reaction-audio-2026-11-24.md).
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1 -SkipPlayback
-powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1 -Samples joey_01.wav
+powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1
 ```
 
 ## V01/V04 — 34-attack-draw-runtime.py (aguardando Windows)

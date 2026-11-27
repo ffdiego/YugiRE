@@ -158,6 +158,8 @@ Integração gráfica inicial: DuelAudioPlayer abre Voice.dat adjacente ou --voi
 
 V18.3 (27/11/2026). A coleta 27 já continha as duas tabelas de descritores. A verificação no v8 e no PE confirmou 110 entradas Internal e 14 Stream até as sentinelas. Todos os nomes existem no Voice.dat local. A inspeção atual aceita 106 efeitos e falas, mas rejeita todas as 20 entradas da pasta Stream, 19 pela inconsistência PCM e uma pelo limite de tamanho. A música configurada no cliente está entre as rejeitadas. [Mapeamento e limites da inspeção](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v183--descritores-e-estado-do-voicedat).
 
+V18.4 (27/11/2026). As 24 entradas que falhavam por alinhamento têm PCM estéreo de 16 bits com dois bytes restantes depois do último quadro completo. O adaptador de decodificação remove essa amostra isolada apenas na variante do contêiner do Voice.dat e preserva o tamanho declarado na inspeção, que validou 131/131 entradas. A música passa a decodificar em blocos, com buffer de origem retido pela vida do stream. O smoke Linux com ALSA nulo avançou a reprodução de menu e duelo, inclusive após GC compactante e troca de faixa, e tocou `card_move.wav`. Ainda falta escuta no Windows e comparação de seleção, transição e volume com o original. [Contrato e validação](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v184--quadros-pcm-e-streaming-no-cliente).
+
 ## V19 — Fidelidade sistemática das demais telas/efeitos
 
 <a id="v19"></a>

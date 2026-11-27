@@ -285,3 +285,33 @@ Isso inclui as músicas atualmente configuradas no cliente para menu
 e duelo. A leitura de duração em `005C0F80` explica o tamanho
 declarado, enquanto o tratamento do quadro estéreo incompleto
 durante reprodução segue em aberto.
+
+## V18.4 — quadros PCM e streaming no cliente
+
+No Voice.dat registrado, as 24 entradas com problema de alinhamento
+têm `nBlockAlign=4`, PCM estéreo de 16 bits e tamanho do chunk `data`
+congruente a 2 módulo 4. Todas têm a estrutura de sufixo já confirmada.
+A tabela nativa confirma nomes e as rotinas em `005C0B60` e
+`005C0F80` separam carregamento e duração. A inicialização do banco
+passa por `0055FF10`, vtable `005DCD68` e `00549BA0`, que chama
+`005601D0` por `+40`. Esse caminho ainda não estabelece como o
+dispositivo original consome o último quadro incompleto.
+
+O adaptador para o Raylib descarta apenas a amostra sem par nessa
+variante do contêiner. Reescreve o tamanho RIFF e o tamanho `data`
+na cópia temporária, com validação estrita para RIFF comum.
+A inspeção conserva o tamanho original do chunk para estimar a
+duração. O limite de carregamento para reprodução permanece em
+16 MiB. O comando de inspeção pode ler entradas armazenadas sem
+compressão de até 32 MiB, inclusive `m_tuto.wav` (25.964.784 bytes).
+O limite de descompressão permanece em 16 MiB.
+
+O player de música usa a API de streaming do Raylib, com entrada WAV
+em memória e decodificação em blocos. O teste Linux com ALSA nulo
+carregou `m_menu.wav` (63,72 s), trocou para `m_duel1.wav`
+(139,65 s), verificou avanço das duas faixas após GC compactante e
+liberou os streams ao parar e ao trocar. O teste separado de
+`card_move.wav` concluiu pela entrada pública de revisão. Esses
+testes validam o caminho do cliente até o dispositivo virtual.
+Escuta física, cadência, volumes e transições do original
+continuam pendentes.

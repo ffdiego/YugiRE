@@ -32,6 +32,20 @@ try
         writer.Write(new byte[256]); writer.Write(280u); writer.Write(1u); writer.Write(1u);
     }
     Reject(() => { using var a = new Archive(malformed); }, "Reject payload beyond EOF");
+    using (var writer = new BinaryWriter(File.Create(malformed)))
+    {
+        writer.Write(Encoding.ASCII.GetBytes("KCEJYUGI")); writer.Write(1u);
+        var name = new byte[256];
+        name[0] = 0x16; // Nibble-swapped ASCII 'a'.
+        writer.Write(name); writer.Write(280u); writer.Write(3u); writer.Write(3u);
+        writer.Write(new byte[] { 1, 2, 3 });
+    }
+    using (var boundedArchive = new Archive(malformed))
+    {
+        Reject(() => boundedArchive.Read("a", 2), "Archive enforces a caller's uncompressed byte limit");
+        Check(boundedArchive.Read("a", 3).SequenceEqual(new byte[] { 1, 2, 3 }),
+            "Archive accepts a stored entry at the uncompressed byte limit");
+    }
 }
 finally { File.Delete(malformed); }
 if (historicalCards)

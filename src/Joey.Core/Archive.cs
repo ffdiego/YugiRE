@@ -5,6 +5,7 @@ namespace Joey.Core;
 // RE evidence: docs/02-file-formats.md, KCEJYUGI index and 0x0054A000.
 public sealed class Archive : IDisposable
 {
+    private const int ResourceByteLimit = 16 * 1024 * 1024;
     public record Entry(string Name, uint Offset, uint Size, uint Stored);
     private readonly FileStream stream;
     private readonly Dictionary<string, Entry> entries = new(StringComparer.OrdinalIgnoreCase);
@@ -32,17 +33,23 @@ public sealed class Archive : IDisposable
         }
         catch { stream.Dispose(); throw; }
     }
-    public byte[] Read(string name)
+    public byte[] Read(string name) => Read(name, ResourceByteLimit);
+
+    /// <summary>Allows an explicit size limit for entries stored without compression.
+    /// Compressed input and decompression retain the archive's default upper bound.</summary>
+    public byte[] Read(string name, int maxUncompressedBytes)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(maxUncompressedBytes);
         var e = entries[name];
-        if (e.Size > 16 * 1024 * 1024 || e.Stored > 16 * 1024 * 1024) throw new InvalidDataException("Resource exceeds application limit");
+        int limit = e.Size == e.Stored ? maxUncompressedBytes : Math.Min(maxUncompressedBytes, ResourceByteLimit);
+        if (e.Size > limit || e.Stored > limit) throw new InvalidDataException("Resource exceeds application limit");
         stream.Position = e.Offset;
         byte[] data = new byte[(int)e.Stored]; stream.ReadExactly(data);
         return e.Size == e.Stored ? data : Decode(data, checked((int)e.Size));
     }
     public static byte[] Decode(ReadOnlySpan<byte> input, int size)
     {
-        if (size < 0 || size > 16 * 1024 * 1024) throw new InvalidDataException("Invalid output size");
+        if (size < 0 || size > ResourceByteLimit) throw new InvalidDataException("Invalid output size");
         byte[] ring = new byte[4096], output = new byte[size];
         int source = 0, dest = 0, pos = 0xfee, flags = 0;
         while (dest < size)

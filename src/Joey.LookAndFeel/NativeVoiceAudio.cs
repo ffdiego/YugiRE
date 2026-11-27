@@ -13,10 +13,22 @@ public readonly record struct NativeWaveInfo(ushort Format, ushort Channels,
     public static NativeWaveInfo Read(ReadOnlySpan<byte> bytes) =>
         ReadCore(bytes, voiceArchive: false, out _);
 
-    /// <summary>Reads an original Voice.dat entry. If canonicalEnd is set,
-    /// use that length and rewrite the RIFF size for a standalone decoder.</summary>
+    /// <summary>Reads declared metadata. When canonicalEnd is set, use
+    /// PrepareVoiceArchiveEntry to produce a standalone RIFF.</summary>
     public static NativeWaveInfo ReadVoiceArchiveEntry(ReadOnlySpan<byte> bytes, out int? canonicalEnd) =>
         ReadCore(bytes, voiceArchive: true, out canonicalEnd);
+
+    /// <summary>Produces a bounded decoder input without modifying the archive bytes.</summary>
+    public static byte[] PrepareVoiceArchiveEntry(byte[] bytes, out NativeWaveInfo info)
+    {
+        info = ReadVoiceArchiveEntry(bytes, out int? canonicalEnd);
+        if (canonicalEnd is not int end) return bytes;
+
+        var canonical = bytes[..end];
+        BinaryPrimitives.WriteUInt32LittleEndian(canonical.AsSpan(4), (uint)(end - 8));
+        BinaryPrimitives.WriteUInt32LittleEndian(canonical.AsSpan(42), (uint)(end - 46));
+        return canonical;
+    }
 
     private static NativeWaveInfo ReadCore(ReadOnlySpan<byte> bytes, bool voiceArchive, out int? canonicalEnd)
     {
@@ -31,7 +43,7 @@ public readonly record struct NativeWaveInfo(ushort Format, ushort Channels,
         // The Voice.dat PCM variant has fmt size 18, no extension data,
         // and precisely 4 bytes inside/40 outside RIFF after its data
         // chunk. Native duration reader 005C0F80 stops at the data size.
-        if (voiceArchive && end >= 50 && bytes.Length - end == 40 &&
+        bool archivePcm = voiceArchive && end >= 50 && bytes.Length - end == 40 &&
             bytes.Slice(12, 4).SequenceEqual("fmt "u8) &&
             BinaryPrimitives.ReadUInt32LittleEndian(bytes[16..]) == 18 &&
             BinaryPrimitives.ReadUInt16LittleEndian(bytes[20..]) == 1 &&
@@ -39,10 +51,10 @@ public readonly record struct NativeWaveInfo(ushort Format, ushort Channels,
             BinaryPrimitives.ReadUInt16LittleEndian(bytes[34..]) == 16 &&
             BinaryPrimitives.ReadUInt16LittleEndian(bytes[36..]) == 0 &&
             bytes.Slice(38, 4).SequenceEqual("data"u8) &&
-            46L + BinaryPrimitives.ReadUInt32LittleEndian(bytes[42..]) == end - 4)
+            46L + BinaryPrimitives.ReadUInt32LittleEndian(bytes[42..]) == end - 4;
+        if (archivePcm)
         {
             end -= 4;
-            canonicalEnd = (int)end;
         }
 
         ushort format=0,channels=0,align=0,bits=0;
@@ -78,9 +90,14 @@ public readonly record struct NativeWaveInfo(ushort Format, ushort Channels,
         }
         if(!hasFormat||!hasData||format==0||channels==0||rate==0||byteRate==0||align==0)
             throw new InvalidDataException("Incomplete or invalid WAVE metadata");
+        bool partialStereoFrame = archivePcm && channels == 2 && align == 4 &&
+            data > align && data % align == 2;
         if(format==1 && (bits==0 || bits%8!=0 || channels*(long)bits/8!=align ||
-            rate*(long)align!=byteRate || data%align!=0))
+            rate*(long)align!=byteRate || (data%align!=0 && !partialStereoFrame)))
             throw new InvalidDataException("Inconsistent PCM WAVE format or data length");
+        // The local decoder accepts whole frames. Keep the declared size in
+        // metadata and omit the final unpaired sample from its input.
+        if (archivePcm) canonicalEnd = (int)end - (partialStereoFrame ? 2 : 0);
         return new(format,channels,rate,byteRate,align,bits,data);
     }
 }

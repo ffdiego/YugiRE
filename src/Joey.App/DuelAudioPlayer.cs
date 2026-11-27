@@ -1,7 +1,7 @@
 using Joey.Core;
 using Joey.LookAndFeel;
 using Raylib_cs;
-using System.Buffers.Binary;
+using System.Runtime.InteropServices;
 
 // Optional playback; audio completion never controls the action queue.
 internal sealed class DuelAudioPlayer : IDisposable
@@ -9,7 +9,8 @@ internal sealed class DuelAudioPlayer : IDisposable
     readonly Archive archive;
     readonly Dictionary<string,Sound> effects=new(StringComparer.OrdinalIgnoreCase);
     readonly HashSet<string> failed=new(StringComparer.OrdinalIgnoreCase);
-    Sound? music;
+    Music? music;
+    GCHandle musicBytes;
     string? musicPath;
     bool disposed;
 
@@ -57,13 +58,7 @@ internal sealed class DuelAudioPlayer : IDisposable
         if(failed.Contains(path))return null;
         try
         {
-            byte[] bytes=archive.Read(path);
-            _=NativeWaveInfo.ReadVoiceArchiveEntry(bytes,out int? canonicalEnd);
-            if(canonicalEnd is int end)
-            {
-                Array.Resize(ref bytes,end);
-                BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(4),(uint)(end-8));
-            }
+            byte[] bytes=NativeWaveInfo.PrepareVoiceArchiveEntry(archive.Read(path),out _);
             var wave=Raylib.LoadWaveFromMemory(".wav",bytes);
             if(!Raylib.IsWaveValid(wave))throw new InvalidDataException("Could not decode WAV.");
             try
@@ -99,8 +94,8 @@ internal sealed class DuelAudioPlayer : IDisposable
         Raylib.PlaySound(sound);
     }
 
-    // First adapter: one bounded decoded track, repeat on completion.
-    // No claim of native streaming, transitions or DirectSound volume.
+    // Keep the bounded WAV input in memory and let raylib feed decoded
+    // frames to the device in blocks.
     internal void UpdateMusic(string? path)
     {
         if(disposed)return;
@@ -108,21 +103,61 @@ internal sealed class DuelAudioPlayer : IDisposable
         {
             StopMusic();
             musicPath=path;
-            if(path is not null&&Load(path) is { } loaded)
+            if(path is not null) music=LoadMusic(path);
+        }
+        if(music is { } current) Raylib.UpdateMusicStream(current);
+    }
+
+    Music? LoadMusic(string path)
+    {
+        if(failed.Contains(path)) return null;
+        GCHandle buffer=default;
+        Music stream=default;
+        bool valid=false;
+        try
+        {
+            byte[] bytes=NativeWaveInfo.PrepareVoiceArchiveEntry(archive.Read(path),out _);
+            // raylib's decoder retains a pointer into the WAV for the life
+            // of the stream, including across compacting collections.
+            buffer=GCHandle.Alloc(bytes,GCHandleType.Pinned);
+            stream=Raylib.LoadMusicStreamFromMemory(".wav",bytes);
+            valid=Raylib.IsMusicValid(stream);
+            if(!valid) throw new InvalidDataException("Could not decode music WAV.");
+            stream.Looping=true;
+            Raylib.SetMusicVolume(stream,0.35f);
+            Raylib.PlayMusicStream(stream);
+            Console.WriteLine($"[audio] Music stream: {path} ({Raylib.GetMusicTimeLength(stream):F1} s)");
+            musicBytes=buffer;
+            buffer=default;
+            return stream;
+        }
+        catch(Exception ex) when(ex is IOException or InvalidDataException or KeyNotFoundException or
+            OverflowException or DllNotFoundException or EntryPointNotFoundException)
+        {
+            failed.Add(path);
+            Console.Error.WriteLine("[audio] "+path+": "+ex.Message);
+            return null;
+        }
+        finally
+        {
+            if(buffer.IsAllocated)
             {
-                music=loaded;
-                Raylib.SetSoundVolume(loaded,0.35f);
+                try { if(valid) Raylib.UnloadMusicStream(stream); }
+                finally { buffer.Free(); }
             }
         }
-        if(music is { } current&&!Raylib.IsSoundPlaying(current))
-            Raylib.PlaySound(current);
     }
 
     void StopMusic()
     {
         if(music is not { } current)return;
-        Raylib.StopSound(current);Raylib.UnloadSound(current);
         music=null;
+        try
+        {
+            Raylib.StopMusicStream(current);
+            Raylib.UnloadMusicStream(current);
+        }
+        finally { musicBytes.Free(); }
     }
 
     public void Dispose()
