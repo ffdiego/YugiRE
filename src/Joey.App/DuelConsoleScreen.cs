@@ -427,6 +427,7 @@ static partial class Game
             }
             else if (attackCue is not null) return Failed("Instant cue");
 
+            bool sawFloatingDamage = false;
             for (int frame = 0; frame < 600 && queue.IsBusy; frame++)
             {
                 if (CanPlayCardEffects) AdvanceCardEffects(elapsed);
@@ -434,7 +435,14 @@ static partial class Game
                 AdvanceAlpha(elapsed);
                 AdvanceQueuedDuel();
                 AdvanceLifePresentation(elapsed);
+                if (lifeDisplays[0].PendingDelta != 0)
+                {
+                    sawFloatingDamage = true;
+                    if (lifeDisplays[0].AnchorSlot != (targeted ? 3 : -1))
+                        return Failed("floating damage anchor");
+                }
             }
+            if (sawFloatingDamage != style.PlayAnimations) return Failed("floating damage visibility");
             if (queue.IsBusy || alphaBlocked || attackCue is not null || !duel.Life.SequenceEqual(headless.Life) ||
                 alphaCpu.ActionsThisTurn != 1 || !queue.Trace.SequenceEqual(headlessQueue.Trace) ||
                 !duel.Graveyard(0).SequenceEqual(headless.Graveyard(0)))
