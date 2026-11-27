@@ -276,3 +276,9 @@ e a validação dos vértices e dimensões passaram. O assembly também
 mostrou que os pedidos de som e o encerramento por contador/predicado
 de áudio acontecem no Draw. Faltam os passes adicionais e uma
 comparação pareada. [Geometria e término](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v311--quadrilátero-base-e-término-da-reação-2711).
+
+O modo `reaction` do roteiro 34 registra o ciclo de vida e a chamada
+do quadrilátero base no executável, com contadores e IDs de som
+antes/depois do Draw. O formato só é lido para a vtable reconhecida.
+A execução do roteiro no original segue pendente.
+[Coleta Windows](../../scripts/pending/README.md#v01v31--reação-no-roteiro-34).

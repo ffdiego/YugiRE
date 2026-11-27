@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record attack blits, selection backgrounds or dispatcher cadence in a live duel."""
+"""Record attack blits, selection backgrounds, reactions or dispatcher cadence."""
 from __future__ import annotations
 
 import argparse
@@ -18,6 +18,7 @@ SCENARIOS = {
     "attack": "Perform one targeted or direct attack.",
     "selection": "Open a card-selection window.",
     "cadence": "Stay in one duel scene during the recording.",
+    "reaction": "Trigger a character reaction and let it finish.",
 }
 
 
@@ -118,6 +119,29 @@ def summarize_cadence(result: dict) -> list[dict]:
     return summary
 
 
+def observed_reaction(events: list[dict]) -> bool:
+    """Require one reaction with an initial Update and a finishing Draw."""
+    started = set()
+    quads = set()
+    enters = {}
+    for event in events:
+        kind = event["kind"]
+        if kind == "reaction-update" and event["active"] and event["counter"] == 0:
+            started.add(event["reactionId"])
+        elif kind == "reaction-draw-enter":
+            enters[event["drawId"]] = event
+        elif kind == "reaction-base-quad":
+            quads.add(event["drawId"])
+        elif kind == "reaction-draw-exit":
+            draw_id = event["drawId"]
+            enter = enters.pop(draw_id, None)
+            if (enter and enter["reactionId"] == event["reactionId"] and enter["active"]
+                    and not event["active"] and event["counter"] >= 256
+                    and event["reactionId"] in started and draw_id in quads):
+                return True
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True)
@@ -147,6 +171,8 @@ def main() -> int:
     elif args.mode == "cadence":
         result["cadenceByThread"] = summarize_cadence(result)
         observed = any(row["orderedUpdateDrawFrames"] >= 2 for row in result["cadenceByThread"])
+    elif args.mode == "reaction":
+        observed = observed_reaction(result["events"])
     else:
         passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
         observed = {"aim", "flight", "impact", "partial-sword"} <= passes

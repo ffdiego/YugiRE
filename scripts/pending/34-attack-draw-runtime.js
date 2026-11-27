@@ -5,6 +5,7 @@ const ROTATED = 0x22840;
 const INTENSITY = 0x22c00;
 const SELECTION_BACKGROUND_CALL = 0x3b47e;
 const SURFACE_VTABLE = 0x1dc6ec;
+const REACTION_VTABLE = 0x1da840;
 const sites = new Map([
     [0x146ea, { primitive: ROTATED, key: 0, pass: 'flight' }],
     [0x14777, { primitive: INTENSITY, key: 2, pass: 'impact' }],
@@ -113,6 +114,73 @@ function watchSelectionBackground() {
     });
 }
 
+function watchReaction() {
+    const reactionIds = new Map();
+    let nextId = 0;
+    let nextDraw = 0;
+
+    function state(pointer) {
+        const key = pointer.toString();
+        if (!reactionIds.has(key)) reactionIds.set(key, ++nextId);
+        return {
+            reactionId: reactionIds.get(key),
+            active: pointer.add(0x04).readU8() !== 0,
+            counter: pointer.add(0x10).readS32(),
+            primarySound: pointer.add(0x14).readU32(),
+            secondarySound: pointer.add(0x18).readU32(),
+            scratchEnabled: pointer.add(0x1c).readU8() !== 0,
+        };
+    }
+
+    hook(0x56730, {
+        onEnter() {
+            const frame = scenes.get(this.threadId);
+            const object = this.context.ecx;
+            if (frame === undefined || imageRva(object.readPointer()) !== REACTION_VTABLE) return;
+            if (object.add(0x10).readS32() === 0) reactionIds.delete(object.toString());
+            record({ kind: 'reaction-update', frame, threadId: this.threadId, ...state(object) });
+        },
+    });
+    hook(0x16bc0, {
+        onEnter() {
+            const frame = scenes.get(this.threadId);
+            if (frame === undefined) return;
+            this.object = this.context.ecx;
+            this.previous = draws.get(this.threadId);
+            this.draw = { frame, threadId: this.threadId, drawId: ++nextDraw };
+            draws.set(this.threadId, this.draw);
+            record({ kind: 'reaction-draw-enter', ...this.draw, ...state(this.object) });
+        },
+        onLeave() {
+            if (this.draw === undefined) return;
+            record({ kind: 'reaction-draw-exit', ...this.draw, ...state(this.object) });
+            if (this.previous === undefined) draws.delete(this.threadId);
+            else draws.set(this.threadId, this.previous);
+        },
+    });
+    hook(0x1203c0, {
+        onEnter(args) {
+            const draw = draws.get(this.threadId);
+            if (draw === undefined || imageRva(this.returnAddress) !== 0x16d4c || args[5].toInt32() !== 4) return;
+            const source = args[0];
+            const destination = this.context.ecx;
+            function quad(pointer) {
+                return Array.from({ length: 4 }, (_, i) => ({
+                    x: pointer.add(i * 8).readS32(), y: pointer.add(i * 8 + 4).readS32(),
+                }));
+            }
+            function format(surface) {
+                return imageRva(surface.readPointer()) === SURFACE_VTABLE ? surface.add(0x74).readU32() : null;
+            }
+            record({
+                kind: 'reaction-base-quad', ...draw,
+                sourceQuad: quad(args[1]), destinationQuad: quad(args[2]),
+                sourceFormat: format(source), destinationFormat: format(destination),
+            });
+        },
+    });
+}
+
 function startCadenceClock() {
     const kernel = Process.getModuleByName('kernel32.dll');
     const buffer = Memory.alloc(8);
@@ -166,7 +234,7 @@ rpc.exports = {
     start(mode = 'attack') {
         if (Process.arch !== 'ia32' || image.size < 0x4dd01)
             throw new Error('Unexpected original process architecture or image size');
-        if (mode !== 'attack' && mode !== 'selection' && mode !== 'cadence')
+        if (!['attack', 'selection', 'cadence', 'reaction'].includes(mode))
             throw new Error('Unexpected capture mode');
         if (hooks.length !== 0) throw new Error('Capture is already active');
         events.length = 0;
@@ -195,6 +263,10 @@ rpc.exports = {
             }
             if (mode === 'selection') {
                 watchSelectionBackground();
+                return;
+            }
+            if (mode === 'reaction') {
+                watchReaction();
                 return;
             }
             hook(0x14110, {

@@ -23,7 +23,7 @@ powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1
 ```
 
-## V01/V04 — 34-attack-draw-runtime.py (aguardando Windows)
+## V01/V04/V11/V17/V31 — 34-attack-draw-runtime.py (aguardando Windows)
 
 Com Frida na venv e um duelo aberto no executável original, indique o
 PID do jogo. Durante os 20 segundos de captura, execute um ataque.
@@ -101,3 +101,23 @@ se a coleta terminar durante o despacho. Os timestamps ainda não
 cobrem o flip do buffer ou a latência de exibição. Para concluir a
 coleta, compare os intervalos, a máscara e as sequências dos dois
 presets e preserve os relatórios privados.
+
+### V01/V31 — reação no roteiro 34
+
+No Windows, abra um duelo com as vozes ativas e provoque uma reação
+de dano ou de invocação. Deixe a reação terminar antes do fim da coleta.
+Use outro arquivo para uma reação com segunda fala ou com áudio
+desabilitado.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --mode reaction --pid <PID> --exe ..\passion\joey_pc.exe --output scratch/visual-review/reaction-damage.json
+```
+
+O relatório registra o contador e os dois IDs de som antes/depois do
+Draw, o estado ativo e o sinalizador de superfície temporária. Vincula
+a chamada de `005203C0` no retorno `00416D4C` ao mesmo Draw e registra
+os quadriláteros e os formatos cuja vtable é reconhecida. Uma coleta
+completa inclui Update inicial, Draw que desativa o mesmo objeto e
+passagem base nesse Draw, sem perda de eventos. Confronte os pontos
+com `bustUpReactionGeometry` no inspetor do DAT e a sequência com
+frames equivalentes. O modo aguarda a execução no Windows.
