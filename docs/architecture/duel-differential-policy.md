@@ -72,3 +72,18 @@ que a listagem foi produzida. Confirmar decisões, RNG e momento por evidência
 independente, então usar `--pair` explicitamente. Escolher pares por igualdade
 de LP/cartas esconderia divergências. Os arquivos contêm estado privado de
 ambos os lados e devem permanecer em scratch.
+
+### Identidade dos combatentes no inventário
+
+Quando a captura também usa `--battle-attributes`, as entradas com snapshot
+0x31 incluem `battleActors`. O seletor 00A57840 identifica o lado atacante
+(bit 0), lado alvo (bit 1), ataque direto (bit 2) e slots (bits 8–10 e 11–13).
+O bloco com índice igual ao lado atacante contém o atacante; o outro contém
+o alvo, exceto ataque direto. O descritor confirma lado/slot e postura;
+correlação com o campo exige índice e postura concordantes no mesmo sample.
+Divergências e ausência de amostra não recebem occurrenceWord. A chave alta
+do descritor não é equiparada a occurrenceWord. Preservamos os blocos brutos.
+O inventário também lista os atributos gerais dos monstros no checkpoint C#
+(`fieldMonsterAttributes`), separados dos atributos de batalha: efeitos
+específicos do confronto podem mudar os valores. Não comparar esses campos
+automaticamente nem alterar o verdict da projeção de estado.

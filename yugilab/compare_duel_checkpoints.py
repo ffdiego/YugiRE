@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .state_interactions import analyze_capture
+from .battle_actor_projection import project_battle_actors
 
 Pair = tuple[int, int | None]
 COUNTER_FIELDS = ("lifePoints", "handIndices", "deckCount", "graveyardCount")
@@ -95,10 +96,14 @@ def inventory(capture: Path, document: dict, window: tuple[int, int] | None = No
         seq = event["seq"]
         if window is not None and not window[0] <= seq <= window[1]:
             return
-        entries.append(dict(nativeSeq=seq, duelIndex=duel, args=event.get("args"),
-                            caller=event.get("caller"),
-                            stateReadError=event.get("stateReadError"),
-                            sides=None if sides is None else [_native_fields(side) for side in sides]))
+        entry = dict(nativeSeq=seq, duelIndex=duel, args=event.get("args"),
+                     caller=event.get("caller"), stateReadError=event.get("stateReadError"),
+                     sides=None if sides is None else [_native_fields(side) for side in sides])
+        if event.get("battleAttributesReadError") is not None:
+            entry["battleAttributesReadError"] = event["battleAttributesReadError"]
+        elif event.get("battleAttributesObservation") is not None:
+            entry["battleActors"] = project_battle_actors(event["battleAttributesObservation"], sides)
+        entries.append(entry)
 
     source = analyze_capture(capture, on_entry=observe)
     boundaries = []
@@ -109,7 +114,12 @@ def inventory(capture: Path, document: dict, window: tuple[int, int] | None = No
         boundaries.append(dict(scriptLine=line, boundary=checkpoint["boundary"],
                                turn=checkpoint.get("turn"), activePlayer=checkpoint.get("activePlayer"),
                                phase=checkpoint.get("phase"), mainPhase2=checkpoint.get("mainPhase2"),
-                               sides=[_csharp_fields(side) for side in sides]))
+                               sides=[_csharp_fields(side) for side in sides],
+                               fieldMonsterAttributes=[
+                                   [None if slot is None else dict(
+                                       internalIndex=slot["card"]["internalIndex"],
+                                       attack=slot.get("attack"), defenseValue=slot.get("defenseValue"))
+                                    for slot in side["monsters"]] for side in sides]))
     return dict(schema="yugire-duel-checkpoint-inventory-v1",
                 nativeCaptureSha256=source["sha256"],
                 nativeSamplePoint="command_producer_onEnter", nativeSamplesAreAtomic=False,
