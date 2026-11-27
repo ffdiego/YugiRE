@@ -350,3 +350,23 @@ compare `y` com o recorte e `offset` com `y*stride+x*2`.
 e a saída da faixa. O piloto do recorte inferior chegou a Y=599,
 com 138 faixas e 6.022 alterações. A amostra pode variar conforme
 a borda do impacto.
+
+### 60 — V17, pixels do compositor 10 para 3 em Proton
+
+Confirme o fingerprint e o PID no
+[prefixo isolado](../../docs/research/joey-proton-validation.md).
+Anexe antes de um ataque. Use GDB com Python e .NET 10.
+A sonda procura o impacto em intensidade 224 e se desanexa
+ao reunir 144 amostras antes e depois do helper por pixel.
+
+```bash
+timeout --signal=INT 115s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/60-wine-packed-alpha-pixels.gdb > scratch/attack-packed-pixels.log 2>&1
+dotnet run --file scripts/regression/60-compare-packed-alpha-pixels.cs -- scratch/attack-packed-pixels.log
+```
+
+Confira quantas amostras foram comparadas, quantas passaram
+pela cor-chave e quantas mudaram de valor. O comparador informa
+a primeira divergência em RGB565. O piloto cobriu 144 pontos,
+com 71 amostras de cor-chave e 57 mudanças. Os pixels lidos
+permanecem no log privado.

@@ -360,6 +360,14 @@ com alteração entre a entrada e a saída das faixas. Falta
 confrontar as cores de entrada com o resultado do compositor
 e do modelo C#. [Recorte em Proton](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
 
+V17.6. O roteiro 60 comparou 144 pixels de uma chamada 10→3
+do impacto em intensidade 224 com `NativePackedAlphaPixel`.
+Os resultados RGB565 coincidiram em todos os pontos, com
+71 amostras de cor-chave e 57 pixels cujo conteúdo mudou.
+O comparador .NET aceita o mesmo formato de traço para 11→4.
+Ainda faltam outras intensidades, o caminho base e amostras
+do par 11→4. [Validação dos pixels](../../docs/research/native-surface-copy-contract-2026-11-24.md#validação-de-pixels-do-par-10-para-3-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

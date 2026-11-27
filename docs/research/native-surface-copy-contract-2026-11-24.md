@@ -344,3 +344,22 @@ sem afirmar pixel parity. Roteiro 25 ampliado para os cinco
 kernels específicos e, quando necessário, janelas dos loops
 a partir da decompilação; não repetir os alvos anteriores.
 Sem novo gate ou aumento de coverage.
+
+### Validação de pixels do par 10 para 3 em Proton
+
+O roteiro 60 filtrou o impacto pelo retorno a `00414777`
+na pilha de `00422E30`, com origem 10, destino 3 e intensidade
+224. Em `00423BAB` e `00423BB0`, leu a origem selecionada,
+a cor-chave e o RGB565 de destino imediatamente antes e
+depois de `00439B60`. Foram amostrados pixels e linhas em
+passos de sete, até obter 144 amostras no mesmo impacto.
+
+O comparador .NET executou `NativePackedAlphaPixel.ApplyToOpaque`
+para cada entrada e obteve o mesmo valor final nas 144 amostras.
+Houve 71 amostras de cor-chave, 57 diferenças entre entrada e
+saída e alphas 0, 1, 2, 3, 4, 5, 7, 9, 10 e 11 fora da chave.
+Esse recorte valida o helper com os pixels escolhidos pelo
+original. O mapeamento de texels de uma implementação C#,
+outras intensidades, o caminho base e o par 11→4 seguem em aberto.
+O log bruto fica em `scratch/`.
+[Roteiro e comparador 60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton).

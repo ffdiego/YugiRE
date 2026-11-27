@@ -159,6 +159,8 @@ O [54](../../scripts/regression/README.md#54--v04-despacho-da-espada-em-proton)
 registra a troca de variante da espada e o compositor usado a cada passo.
 O [59](../../scripts/regression/README.md#59--v04v17-recorte-do-impacto-em-proton)
 mede as faixas de escrita quando o impacto ultrapassa a borda do buffer.
+O [60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton)
+compara o resultado de pixels amostrados no compositor com o modelo .NET.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 
