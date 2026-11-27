@@ -72,3 +72,11 @@ com equipamento comum da mão/Set, alvo próprio/oponente, revisar tempo
 do atributo e áudio. A Draw 00456740 não consta da matriz auditada de
 39 entradas; não incrementar numerador/denominador até reconciliação
 da vtable/inventário. 
+
+**Precisão sobre o vínculo:** 0040A230 chama 0056AB60 com o par C
+como primeiro argumento (registro dono da lista, normalmente monstro),
+B como segundo (par fonte S/T), e D como terceiro (kind). 0056AB60
+acrescenta a relação e metadata em arrays separados e incrementa a
+contagem. Assim, foco sobre monstro percorre o vínculo armazenado;
+foco sobre equip precisa da varredura inversa. Não confundir o sentido
+com a origem da animação B2.

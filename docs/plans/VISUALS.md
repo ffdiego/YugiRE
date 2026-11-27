@@ -406,7 +406,7 @@ quadros do executável original continuam pendentes.
 
 <a id="v24"></a>
 
-NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos brutos 1F/21 (índices 19/1B). O roteiro 17 e o DAT confirmam scratch 50×50, recortes verticais com wrap e recomposição por troca de seletor. O PR #139 porta o plano de composição e testa a ordem dos passes. Faltam ramos de vínculos, compositor e validação em tela. V24.2 corrige reset por Draw (0040E288); viagem específica de equipamento separada em V32. [Evidência](../research/native-affect-scratch-2026-11-24.md).
+NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos brutos 1F/21 (índices 19/1B). O roteiro 17 e o DAT confirmam scratch 50×50, recortes verticais com wrap e recomposição por troca de seletor. O PR #139 porta o plano de composição e testa a ordem dos passes. Faltam ramos de vínculos, compositor e validação em tela. V24.2 corrige reset por Draw (0040E288); viagem específica de equipamento separada em V32. V24.3 confirma Jar key2 nos dois sentidos, TER key4 no próprio foco, distinção de resource consultado nos links e os ramos campo/poder. Roteiro 58 para três jump tables e callback Spellbinding Circle. [Evidência](../research/native-affect-scratch-2026-11-24.md).
 
 ## V25 — Ativação alternativa (00450AD0)
 

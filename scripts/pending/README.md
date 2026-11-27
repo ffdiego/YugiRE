@@ -262,3 +262,16 @@ No duelo compare equipamento comum da mão/Set, destino próprio e
 adversário. Verificar crescimento estático 0..128, viagem 128..192,
 Draw terminal, momento de alteração ATK/DEF e som 1000000A.
 A coleta não bloqueia o desenvolvimento da apresentação já recuperada.
+
+## V24 — tabelas de seletores e produtores de restrição (58)
+
+```bash
+bash scripts/pending/58-affect-link-selectors.sh
+```
+Apenas Ghidra, sem executar o jogo. Exporta 72 bytes em 0040E918
+(três tabelas de seis destinos), primário/candidate/target_preparation
+ de Spellbinding Circle e callbacks de Dark-Eyes Illusionist,
+Invitation, Thousand-Eyes Restrict e Dragon Capture Jar. Resolver
+kind de vínculo efetivamente emitido e compará-lo aos destinos de
+0040E594/627/7A6. Não coletar novamente toda 0040E260. Importar
+bundle cumulativo quando recebido; nenhum recurso binário no Git.
