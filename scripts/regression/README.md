@@ -41,6 +41,8 @@ V20.3: o review de moeda agora inclui brilho key5 e JSON schema 2 com o plano de
 
 ### 41 — V17, formato da superfície da cena em Wine
 
+O [procedimento para preparar Proton, Xvfb e a cópia do original](../../docs/research/joey-proton-validation.md) descreve a abertura do duelo, a captura e a identificação do processo.
+
 Abra um duelo na sua cópia de teste com GDB e Wine/Proton disponíveis.
 Confira o SHA-256 do executável, o PID da cópia que você iniciou e o
 mapeamento do PE em `00400000`. O fingerprint é o da coleta 34.
