@@ -52,7 +52,8 @@ public static class EquipmentRules
 
     // Keep the legacy UI whitelist unchanged. New dynamic cards require the queue.
     public static bool SupportsQueued(ushort resourceId) => Supports(resourceId) ||
-        DynamicEquipmentRules.Supports(resourceId) || GrantsPiercing(resourceId);
+        DynamicEquipmentRules.Supports(resourceId) || GrantsPiercing(resourceId) ||
+        Joey.Cards.EquipmentEffects.For(resourceId) is not null;
 
     internal static bool GrantsPiercing(ushort resourceId) => resourceId is FairyMeteorCrush or CyclonLaser;
 
@@ -75,6 +76,9 @@ public static class EquipmentRules
             target.FaceUp.Value && target.GenericGuardsSatisfied.Value;
         if (queued && GrantsPiercing(resourceId))
             return NativeAiResult<bool>.Supported(common && (resourceId == FairyMeteorCrush || target.ResourceId == Gradius));
+        if (queued && Joey.Cards.EquipmentEffects.For(resourceId) is { } effect)
+            return NativeAiResult<bool>.Supported(common &&
+                (effect.RequiredType is null || target.DynamicType == effect.RequiredType));
         bool specific = queued && DynamicEquipmentRules.Supports(resourceId) || (types.TryGetValue(resourceId, out byte type)
             ? target.DynamicType == type
             : attributes.TryGetValue(resourceId, out byte attribute) && target.DynamicAttribute == attribute);

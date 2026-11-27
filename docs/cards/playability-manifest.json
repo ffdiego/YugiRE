@@ -2596,6 +2596,235 @@
       "limitations": [
         "Dependent on bounded Destiny Board activation; complete timing and chains pending."
       ]
+    },
+    {
+      "id": "equipment.axe-of-despair",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Axe of Despair: +1000 ATK",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        303
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Optional Tribute to return the card from Graveyard to top of Deck. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.black-pendant",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Black Pendant: +500 ATK",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        310
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: 500 damage when sent from field to Graveyard. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.horn-of-light",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Horn of Light: +800 DEF",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        312
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Optional 500 LP payment for return to top of Deck. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.horn-of-the-unicorn",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Horn of the Unicorn: +700 ATK/DEF",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        313
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Mandatory return to top of Deck when sent from field to Graveyard. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.malevolent-nuzzler",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Malevolent Nuzzler: +700 ATK",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        320
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Optional 500 LP payment for return to top of Deck. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.sword-of-deep-seated",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Sword of Deep-Seated: +500 ATK/DEF",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1042
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Mandatory top-of-Deck placement when sent to Graveyard. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.ring-of-magnetism",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Ring of Magnetism: -500 ATK/DEF",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1058
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: forced opposing attacks toward equipped monster. Own-monster target enforced. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.sword-of-dragons-soul",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Sword of Dragon's Soul: Warrior +700 ATK",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1182
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Destroy opposing Dragon after battle. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.mask-of-brutality",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Mask of Brutality: +1000 ATK / -1000 DEF",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1420
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Pending: Standby LP maintenance or destruction. CPU intentionally does not activate this partial effect.",
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
+    },
+    {
+      "id": "equipment.lightning-blade",
+      "kind": "Spell",
+      "subtype": "Equip",
+      "mechanics": [
+        "Lightning Blade: Warrior +800 ATK; all face-up WATER monsters -500 ATK",
+        "Tracked Hand/Set equip, additive modifier and linked removal through existing queue"
+      ],
+      "status": "Done",
+      "resourceIds": [
+        1422
+      ],
+      "evidence": [
+        "src/Joey.Cards/EquipmentEffects.cs",
+        "src/Joey.Core/EquipmentRules.cs",
+        "src/Joey.Core/DemoQueuedEquipment.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
+      ]
     }
   ]
 }

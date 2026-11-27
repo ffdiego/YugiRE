@@ -367,6 +367,10 @@ public sealed class CpuDuelController
                         var candidate = zone == DuelZone.Hand ? duel.Hand[i] : duel.Spells[Player, i];
                         if (candidate is not { ClassCode: 22 } || !EquipmentRules.SupportsQueued(candidate.Id) ||
                             !duel.TryCaptureCardTarget(Player, zone, i, out var source)) continue;
+                        var definition = Joey.Cards.EquipmentEffects.For(candidate.Id);
+                        // This is an intentionally conservative sandbox policy.
+                        // Partial riders are not used by CPU until implemented.
+                        if (definition is { HasPendingRider: true }) continue;
                         var target = duel.QueuedEquipmentCandidates(source).Where(c => c.Target.Side == Player)
                             .OrderByDescending(c => duel.AttackValue(Player, c.Slot)).ThenBy(c => c.Slot).FirstOrDefault();
                         if (target is not null)
