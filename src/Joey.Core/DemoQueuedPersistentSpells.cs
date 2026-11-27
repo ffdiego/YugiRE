@@ -1,3 +1,5 @@
+using Joey.Cards;
+
 namespace Joey.Core;
 
 public sealed partial class DemoDuel
@@ -8,7 +10,23 @@ public sealed partial class DemoDuel
     private const int InsectType = 10;
 
     private static bool SupportsQueuedContinuousSpell(Card card) =>
-        card is { Id: InfiniteCardsId, ClassCode: 21 or 22 or 23 } || IsAttackRestrictionSpell(card);
+        card is { Id: InfiniteCardsId, ClassCode: 21 or 22 or 23 } || IsAttackRestrictionSpell(card) ||
+        card.ClassCode == 21 && CountedAndContinuousEffects.IsContinuousTrap(card.Id);
+
+    private bool AreTrapsSuppressed =>
+        FlipEffectSuppressionRules.JinzoFaceUp(Monsters, MonsterFaceDown) ||
+        FlipEffectSuppressionRules.RoyalDecreeFaceUp(Spells, SpellFaceDown);
+
+    // Bounded window; do not simulate a negated chain.
+    private bool CanActivateOwnMainTrap(CardTarget source, int slot) =>
+        source.Side == ActivePlayer && Phase == DemoPhase.Main &&
+        source.Zone == DuelZone.SpellTrap && slot is >= 0 and < 5 &&
+        SpellFaceDown[source.Side, slot] && spellSetTurn[source.Side, slot] < Turn &&
+        !AreTrapsSuppressed;
+
+    private bool HasEffectiveContinuousTrap(ushort id) => !AreTrapsSuppressed &&
+        Enumerable.Range(0, 2).Any(side => Enumerable.Range(0, 5).Any(slot =>
+            !SpellFaceDown[side, slot] && Spells[side, slot] is { ClassCode: 21 } trap && trap.Id == id));
 
     private static bool IsAttackRestrictionSpell(Card? card) =>
         card is { Id: InsectBarrierId or TheDarkDoorId, ClassCode: 22 };
@@ -18,6 +36,8 @@ public sealed partial class DemoDuel
             Spells[side, slot] is { ClassCode: 22 } spell && spell.Id == id);
 
     private bool AttackRestrictedByContinuousSpells(int side, Card attacker) =>
+        CountedAndContinuousEffects.GravityBindPreventsAttack(attacker.Level) &&
+            HasEffectiveContinuousTrap(CountedAndContinuousEffects.GravityBind) ||
         attacker.ClassCode == InsectType && HasFaceUpAttackRestrictionSpell(1 - side, InsectBarrierId) ||
         firstBattleAttacker is { } first && !ReferenceEquals(first, attacker) &&
             (HasFaceUpAttackRestrictionSpell(side, TheDarkDoorId) ||
@@ -117,7 +137,8 @@ public sealed partial class DemoDuel
         slot=-1;
         if(LegacyActionsBlocked || PendingEndDiscards!=0 || source.Side!=ActivePlayer ||
             Phase!=DemoPhase.Main || source.Zone is not (DuelZone.Hand or DuelZone.SpellTrap) ||
-            !TryResolveCardTarget(source,out int index,out var card) || !SupportsQueuedContinuousSpell(card)) return false;
+            !TryResolveCardTarget(source,out int index,out var card) || !SupportsQueuedContinuousSpell(card) ||
+            card.ClassCode == 21 && !CanActivateOwnMainTrap(source, index)) return false;
         slot=source.Zone==DuelZone.Hand?FirstFreeSpellZone():index;
         // An out parameter cannot be captured by a lambda (CS1628).
         int destination = slot;
@@ -143,6 +164,8 @@ public sealed partial class DemoDuel
         CommitContinuousSpellActivation(command.Side, slot,
             command.Source.Zone == DuelZone.Hand ? index : null);
         spellSetTurn[command.Side,slot]=0;
+        if (card.Id == CountedAndContinuousEffects.DestinyBoard)
+            CheckDestinyBoard(command.Side);
         var result=new CommandResult(CommandOutcome.Applied);
         return command.Source.Zone==DuelZone.Hand?result with
         {Placement=new(command.Source,card.Id,index,DuelZone.SpellTrap,slot,false,false,0)}:result;

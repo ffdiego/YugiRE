@@ -17,12 +17,20 @@ public sealed partial class DemoDuel
         return true;
     }
 
+    internal LifePointSpellChange? ResolveQueuedLifePoints(ushort id, int side) =>
+        id == Joey.Cards.CountedAndContinuousEffects.GiftOfTheMysticalElf
+            ? new LifePointSpellChange(Joey.Cards.CountedAndContinuousEffects.GiftLifeGain(
+                CountOccupiedMonsters(side), CountOccupiedMonsters(1 - side)), 0)
+            : LifePointSpellRules.ResolveQueued(id, side);
+
     private bool CanResolveQueuedLifePointSpell(CardTarget source, out LifePointSpellChange change)
     {
         change = default;
         if (ActivePlayer != source.Side || Phase != DemoPhase.Main ||
-            !TryResolveCardTarget(source, out int index, out var card) || card.ClassCode != 22 ||
-            LifePointSpellRules.ResolveQueued(card.Id, source.Side) is not { } plan)
+            !TryResolveCardTarget(source, out int index, out var card) || !LifePointSpellRules.SupportsQueued(card) ||
+            card.ClassCode == 21 && !CanActivateOwnMainTrap(source, index) ||
+            ResolveQueuedLifePoints(card.Id, source.Side) is not { } plan ||
+            plan.CasterDelta == 0 && plan.OpponentDelta == 0)
             return false;
         if (source.Zone == DuelZone.Hand)
         {
