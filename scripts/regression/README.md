@@ -166,3 +166,25 @@ confira Update→Draw, ramo e máscara iguais. Use timestamps de entradas
 consecutivas no mesmo thread e com a mesma sequência de despacho para
 comparar os intervalos. O relógio é monotônico e os valores estão em
 nanossegundos. O log fica em `scratch/`.
+
+### 47 — V17, entrega do buffer em Proton
+
+Use as duas sessões indicadas no roteiro 46. Deixe a demonstração
+chegar ao tabuleiro e aguarde as animações de abertura passarem
+antes de anexar. Use GDB com Python e arquivos separados para os
+dois presets.
+
+```bash
+preset=standard  # Use speedy para a segunda sessão.
+timeout --signal=INT 45s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/47-wine-scene-present.gdb > "scratch/scene-present-$preset.log" 2>&1
+```
+
+O roteiro usa quatro breakpoints de hardware e grava uma linha
+`scene-present` com JSON para 120 intervalos completos entre
+entradas da cena. No recorte regular do piloto, cada entrada
+teve uma chamada do laço e uma chamada ao `BltFast` do DirectDraw,
+em ordem. Confira o módulo `ddraw.dll`, `xy=[0,0]`, a origem
+`[0,0,800,600]`, flags `0x10` e retorno zero. Compare as medianas
+entre `callNs` consecutivos no mesmo thread. O relógio monotônico
+do host informa nanossegundos sob GDB.

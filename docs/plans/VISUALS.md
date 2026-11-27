@@ -272,6 +272,15 @@ ramos em todas as entradas. Ainda faltam a medição da apresentação
 do buffer e a coleta equivalente no Windows.
 [Medição e limites](../../docs/architecture/native-visual-contract.md#cadência-observada-em-proton).
 
+V17.3. O roteiro 47 acompanhou 120 entradas regulares por preset,
+do frame da cena ao retorno de `BltFast` em DirectDraw. Cada
+entrada teve um blit de 800×600 em (0,0), com retorno zero.
+A mediana entre chamadas foi 33,26 ms no padrão e 16,57 ms com
+`-speedy`, sob GDB. A verificação em Python conferiu a ordem,
+o contador do laço, os argumentos e os retornos dos 240 blits.
+Continuam pendentes a exibição efetiva, os caminhos de transição
+e a comparação em Windows. [Entrega do buffer em Proton](../../docs/architecture/native-visual-contract.md#entrega-do-buffer-ao-directdraw-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

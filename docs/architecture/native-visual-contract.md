@@ -171,10 +171,36 @@ apenas intervalos entre entradas consecutivas da mesma sequência de
 despacho. Os percentis 10 e 90 para o ramo regular foram 32,50 e
 34,33 ms no padrão e 15,50 e 17,71 ms com `-speedy`.
 
-Os breakpoints afetam os intervalos. A amostra cobre o despacho da
-cena e deixa em aberto a atualização de cada objeto, o flip do buffer
-e a cadência no Windows. As contagens dos ramos são específicas a
-essas demonstrações. [Roteiro 46](../../scripts/regression/README.md#46--v17-despacho-da-cena-em-proton).
+Os breakpoints afetam os intervalos. Esta amostra cobre o despacho da
+cena. As contagens dos ramos são específicas a essas demonstrações.
+[Roteiro 46](../../scripts/regression/README.md#46--v17-despacho-da-cena-em-proton).
+
+### Entrega do buffer ao DirectDraw em Proton
+
+O roteiro 47 observou 120 entradas consecutivas do ramo regular da
+cena em cada preset, no meio de um duelo de demonstração. Todas
+retornaram a `0055C969`, imediatamente após o despacho indireto em
+`0055C967`. O contador do laço em `005F2FB4` avançou uma unidade
+entre entradas. Após a entrada da cena, a chamada em `004112CA`
+resolveu o slot `+04` da vtable `005DC6D0` para `004A8E20`.
+O assembly mostrou a chamada a `004A8F80` em `004A8EEA`. Dentro
+dessa rotina, o slot `+1C` em `004A9098` resolveu para o
+`BltFast` de `ddraw.dll` do Proton.
+
+Cada entrada teve uma chamada a esse slot, em (0,0) com retângulo
+de origem (0,0,800,600) e flags `0x10`. Os 240 retornos,
+observados em `004A909B`, foram zero.
+
+| Preset | Mediana entre chamadas a `BltFast` | Mediana da entrada da cena até `BltFast` | Mediana entre chamada e retorno |
+| --- | ---: | ---: | ---: |
+| Padrão | 33,26 ms | 3,39 ms | 0,93 ms |
+| `-speedy` | 16,57 ms | 2,60 ms | 0,90 ms |
+
+As medições incluem as pausas do GDB. O ponto final observado é
+o retorno da chamada DirectDraw. A exibição pelo backend, a
+sincronização com o display, os caminhos alternativos de cópia
+e o comportamento no Windows seguem em aberto.
+[Roteiro 47](../../scripts/regression/README.md#47--v17-entrega-do-buffer-em-proton).
 
 ## Primeira prévia em raylib (posterior à análise estática)
 
