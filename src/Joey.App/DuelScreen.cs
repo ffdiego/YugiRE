@@ -429,7 +429,8 @@ static partial class Game
     }
 
     // 004194D0 draws DEF, its slash, then ATK using original DAT bitmaps.
-    // Position alpha is 0xA0/0x100; modified attributes use blue/red atlas.
+    // Position intensity is 0xA0/0x100; RGB565 glyph colors are prepared
+    // at texture load, not blended with the board using alpha tint.
     // The anchor is the existing 00418A80 field-card geometry, whose final
     // native pixel parity still requires paired frame comparison.
     static void DrawFieldAttributes(int player, int zone, Card monster, CardPoint center, int presentationUpdates)
@@ -446,27 +447,26 @@ static partial class Game
             monster.Attack, monster.Defense, duel.DefensePosition[player, zone]);
 
         DrawFieldNumber(frame.Defense);
-        Raylib.DrawTexturePro(normal,
+        var separator = graphics.FieldAttributeTexture(NativeFieldAttributeFonts.Normal, frame.SeparatorOpacity);
+        Raylib.DrawTexturePro(separator,
             new Rectangle(NativeFieldAttributeFonts.SeparatorIndex * width, 0, width, normal.Height),
             new Rectangle(frame.SeparatorX, frame.SeparatorY, width, normal.Height),
-            Vector2.Zero, 0,
-            new Color(255, 255, 255, Math.Min(255, frame.SeparatorOpacity)));
+            Vector2.Zero, 0, Color.White);
         DrawFieldNumber(frame.Attack);
     }
 
     static void DrawFieldNumber(NativeFieldNumberPass pass)
     {
-        var font = graphics.Texture(pass.Sprite);
+        var font = graphics.FieldAttributeTexture(pass.Sprite, pass.Opacity);
         int glyphWidth = NativeLifeHud.GlyphWidth(font.Width, pass.Columns);
         int[] digits = NativeLifeHud.DecimalGlyphs(pass.Value);
         int x = pass.LeftX(glyphWidth);
-        var tint = new Color(255, 255, 255, Math.Min(255, pass.Opacity));
         foreach (int digit in digits)
         {
             Raylib.DrawTexturePro(font,
                 new Rectangle(digit * glyphWidth, 0, glyphWidth, font.Height),
                 new Rectangle(x, pass.TopY, glyphWidth, font.Height),
-                Vector2.Zero, 0, tint);
+                Vector2.Zero, 0, Color.White);
             x += glyphWidth;
         }
     }
