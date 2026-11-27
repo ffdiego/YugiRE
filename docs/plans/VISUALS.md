@@ -502,6 +502,13 @@ O assembly confirma que, nesse modo, o predicado de áudio deixa
 passar o primeiro Draw que atinge o limiar.
 [Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v315--término-com-áudio-desativado).
 
+V31.6. Review isolado `--review-reaction=07` usa base e grupos 1/2
+confirmados, passos e predicado de áudio simulado; F12 exporta o
+estado pós-step. Lifecycle puro cobre uma e duas falas. Composição
+Raylib provisória, reprodução real, outros seletores, ligação à fila
+ e captura pareada pendentes. CI e DAT real ainda por validar.
+[Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v316--renderer-isolado-de-reaction07).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

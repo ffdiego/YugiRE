@@ -446,3 +446,24 @@ liberou os streams ao parar e ao trocar. O teste separado de
 testes validam o caminho do cliente até o dispositivo virtual.
 Escuta física, cadência, volumes e transições do original
 continuam pendentes.
+
+## V31.6 — renderer isolado de reaction07
+
+```sh
+dotnet run --project src/Joey.App -- /path/to/data.dat --review-reaction=07 --no-audio
+```
+
+F7 executa um Update (+8) e um Draw; F8 reinicia; F12 captura PNG/JSON
+privados. O estado global de cena tem contador independente e pode iniciar
+com `--reaction-scene-state=N`. O modo padrão simula o predicado de áudio
+sempre satisfeito; `--reaction-wait-audio` exige F5 após o primeiro pedido.
+A captura é do limite pós-step, omitindo objeto já encerrado. Nenhuma voz
+real é tocada. O parser exige a geometria e os cabeçalhos de reaction07
+observados nos roteiros 43/44, sem inferir os demais seletores. Usa a
+ordem base, boca e olhos, bitmask e posições confirmadas. Bitmaps locais
+são desenhados por Raylib como preview retangular; a superfície temporária,
+composição packed e transparência ainda precisam de comparação. O modelo
+puro de lifecycle testa a troca de duas falas nos contadores 880/1520,
+mas o review de reaction07 usa apenas o pedido observado 0x1000003A.
+Não liga gatilhos de gameplay, áudio real ou A03. Draw continua Pending
+até integração; CI e smoke com DAT real pendentes.
