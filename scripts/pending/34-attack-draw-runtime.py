@@ -21,6 +21,7 @@ SCENARIOS = {
     "reaction": "Trigger a character reaction and let it finish.",
     "result": "Finish the duel and advance past the result banner.",
     "disabled-chain": "Bring Jinzo into play with a face-up Trap on the field.",
+    "exclusion": "Resolve one field banishment; allow its presentation to finish.",
 }
 
 
@@ -188,6 +189,38 @@ def observed_disabled_chain(events: list[dict]) -> bool:
     return False
 
 
+def observed_exclusion(events: list[dict]) -> bool:
+    """Require one complete constructed lifetime, not merely a movement to banished."""
+    starts = {}
+    draws = {}
+    blocking = set()
+    for event in events:
+        kind = event["kind"]
+        if kind == "exclusion-construct":
+            starts[event["id"]] = event
+        elif kind == "exclusion-draw":
+            draws.setdefault(event["id"], []).append(event)
+        elif kind == "exclusion-gate" and event["blocks"]:
+            blocking.add(event["id"])
+    for identifier, start in starts.items():
+        if (start["counter"] != 64 or not start["active"] or identifier in blocking
+                or start["returnRva"] is None or start["hiddenArgumentZero"] is False):
+            continue
+        samples = draws.get(identifier, [])
+        if len(samples) != 24:
+            continue
+        if all(
+            sample["before"] == 64 + index * 8
+            and sample["counter"] == 72 + index * 8
+            and sample["active"] == (index < 23)
+            and sample["descriptor"] == start["descriptor"]
+            and sample["hiddenArgumentZero"] is not False
+            for index, sample in enumerate(samples)
+        ):
+            return True
+    return False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True)
@@ -224,6 +257,10 @@ def main() -> int:
         observed = observed_result_fade(result["events"])
     elif args.mode == "disabled-chain":
         observed = observed_disabled_chain(result["events"])
+    elif args.mode == "exclusion":
+        observed = observed_exclusion(result["events"])
+        result["constructorCalls"] = sum(e["kind"] == "exclusion-construct" for e in result["events"])
+        result["contextTransfers"] = sum(e["kind"] == "exclusion-context-transfer" for e in result["events"])
     else:
         passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
         observed = {"aim", "flight", "impact", "partial-sword"} <= passes

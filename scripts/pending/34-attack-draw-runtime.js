@@ -361,6 +361,75 @@ function watchDisabledChain() {
     });
 }
 
+// Observe actual callers of the unlinked exclusion object. The command
+// log gives context, not a claimed opcode mapping. No calls or writes to the game.
+function watchExclusion() {
+    const live = new Map();
+    let nextId = 0;
+    const state = obj => {
+        const descriptor = obj.add(0x18).readU16();
+        return { descriptor, counter: obj.add(0x10).readS32(),
+            active: obj.add(4).readU8() !== 0,
+            visibleCardArgument: (descriptor & 0x8000) !== 0 ? obj.add(0x14).readU32() : 0,
+            hiddenArgumentZero: (descriptor & 0x8000) !== 0 ? null : obj.add(0x14).readU32() === 0 };
+    };
+    hook(0x1b9170, {
+        onEnter(args) {
+            const word = args[0].toUInt32() & 0xffff;
+            if (![0x79,0x7a,0x7c,0x8e,0x8f,0x95].includes(word & 0xfff)) return;
+            record({ kind:'exclusion-context-command', threadId:this.threadId,
+                frame:scenes.get(this.threadId) ?? null, returnRva:imageRva(this.returnAddress),
+                words:[word,...[1,2,3].map(i=>args[i].toUInt32() & 0xffff)] });
+        },
+    });
+    hook(0xcdb0, {
+        onEnter(args) {
+            record({ kind:'exclusion-context-transfer', threadId:this.threadId,
+                frame:scenes.get(this.threadId) ?? null, returnRva:imageRva(this.returnAddress),
+                source:args[1].readU16(), destination:args[2].readU16() });
+        },
+    });
+    hook(0x3d810, {
+        onEnter() {
+            this.caller = imageRva(this.returnAddress);
+            this.object = this.context.ecx;
+        },
+        onLeave(result) {
+            if (!result.equals(this.object) || imageRva(result.readPointer()) !== 0x1dacb4) {
+                record({kind:'exclusion-constructor-unexpected',threadId:this.threadId,returnRva:this.caller});
+                return;
+            }
+            const id = ++nextId;
+            live.set(result.toString(),id);
+            record({kind:'exclusion-construct',id,threadId:this.threadId,
+                frame:scenes.get(this.threadId) ?? null,returnRva:this.caller,...state(result)});
+        },
+    });
+    hook(0x3dbd0, {
+        onEnter() {
+            this.id = live.get(this.context.ecx.toString());
+        },
+        onLeave(result) {
+            if (this.id !== undefined)
+                record({kind:'exclusion-gate',id:this.id,threadId:this.threadId,blocks:(result.toUInt32() & 255)!==0});
+        },
+    });
+    hook(0x3dbe0, {
+        onEnter() {
+            this.object = this.context.ecx;
+            this.id = live.get(this.object.toString());
+            if (this.id !== undefined) this.before = state(this.object);
+        },
+        onLeave() {
+            if (this.id === undefined) return;
+            const after = state(this.object);
+            record({kind:'exclusion-draw',id:this.id,threadId:this.threadId,
+                frame:scenes.get(this.threadId) ?? null,before:this.before.counter,...after});
+            if (!after.active) live.delete(this.object.toString());
+        },
+    });
+}
+
 function startCadenceClock() {
     const kernel = Process.getModuleByName('kernel32.dll');
     const buffer = Memory.alloc(8);
@@ -414,7 +483,7 @@ rpc.exports = {
     start(mode = 'attack') {
         if (Process.arch !== 'ia32' || image.size < 0x4dd01)
             throw new Error('Unexpected original process architecture or image size');
-        if (!['attack', 'selection', 'cadence', 'reaction', 'result', 'disabled-chain'].includes(mode))
+        if (!['attack', 'selection', 'cadence', 'reaction', 'result', 'disabled-chain', 'exclusion'].includes(mode))
             throw new Error('Unexpected capture mode');
         if (hooks.length !== 0) throw new Error('Capture is already active');
         events.length = 0;
@@ -455,6 +524,10 @@ rpc.exports = {
             }
             if (mode === 'disabled-chain') {
                 watchDisabledChain();
+                return;
+            }
+            if (mode === 'exclusion') {
+                watchExclusion();
                 return;
             }
             hook(0x14110, {

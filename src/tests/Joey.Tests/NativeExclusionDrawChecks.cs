@@ -37,7 +37,7 @@ internal static class NativeExclusionDrawChecks
             {
                 int t=e.Counter+8;
                 var preview=e.SampleNextDraw(center,50,72,perspective,cosine,Size)!.Value;
-                check(e.Counter==t-8,"V26: pure query");
+                check(e.Counter==t-8 && !e.BlocksRelease,"V26: pure query; active never blocks");
                 var frame=e.Draw(center,50,72,perspective,cosine,Size)!.Value;
                 check(frame.Counter==t && frame.Passes.SequenceEqual(preview.Passes) &&
                     frame.ReleasesCardBank==(t==256) && e.Counter==t,
@@ -59,13 +59,17 @@ internal static class NativeExclusionDrawChecks
                 }
                 count++;
             }
-            check(count==24 && e.Draw(center,50,72,perspective,cosine,Size) is null &&
+            check(count==24 && !e.BlocksRelease && e.Draw(center,50,72,perspective,cosine,Size) is null &&
                 start.VisibleCardArgument==(visible==1?123u:0u),
                 "V26: no hidden card identity; 24 Draws, no Update dependency");
         }
         string[] names=["jyoga_hikacard.yga","jyoga_hikatate.yga","jyoga_ryusi1.bmp",
             "jyoga_ryusi2.bmp","jyoga_ryusi3.bmp","jyoga_ryusi4.bmp","jyoga_ryusi5.bmp","jyoga_ryusi6.bmp"];
         string[] paths=names.Select(n=>NativeExclusionResources.Prefix+n).ToArray();
+        check(Enumerable.Range(0,8).Select(NativeExclusionResources.ExpectedSize).SequenceEqual(
+            new[]{new CardBounds(0,0,58,80),new CardBounds(0,0,15,144)}.Concat(
+                Enumerable.Repeat(new CardBounds(0,0,50,72),6))),
+            "V26: captured DAT dimensions, not inferred from names");
         string manifest=string.Join("\n",names);
         check(NativeExclusionResources.Parse(manifest,paths.Reverse()).SequenceEqual(paths),
             "V26: manifest order validated");

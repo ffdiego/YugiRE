@@ -18,6 +18,7 @@ static partial class Game
     static CardBounds[] exclusionSizes=[];
     static int altReviewCategory,altExPerspective;
     static uint? altReviewSound;
+    static bool exclusionReviewPlaying;
 
     static void ConfigureAlternativeExclusionReview(string[] args,Archive archive)
     {
@@ -72,9 +73,12 @@ static partial class Game
         }
         else
         {
-            exclusionSizes=exclusionResources.Select(name=>{
+            exclusionSizes=exclusionResources.Select((name,key)=>{
                 var t=graphics.Texture(name);
-                return new CardBounds(0,0,t.Width,t.Height);
+                var size=new CardBounds(0,0,t.Width,t.Height);
+                if(size!=NativeExclusionResources.ExpectedSize(key))
+                    throw new InvalidDataException("Unexpected exclusion resource geometry: "+name);
+                return size;
             }).ToArray();
             AdvanceExclusionReviewDraw();
         }
@@ -99,15 +103,29 @@ static partial class Game
         bool alternative=altExReviewMode=="alternative";
         if(Raylib.IsKeyPressed(KeyboardKey.F8))
         {
-            altReview=new();altReviewSound=null;
+            altReview=new();altReviewSound=null;exclusionReviewPlaying=false;
             if(!alternative){exclusionReview=new(exclusionStart);AdvanceExclusionReviewDraw();}
+        }
+        else if(!alternative&&Raylib.IsKeyPressed(KeyboardKey.F5))
+        {
+            exclusionReviewPlaying=!exclusionReviewPlaying && exclusionReview!.Active;
         }
         else if(Raylib.IsKeyPressed(KeyboardKey.F7))
         {
             if(alternative)altReviewSound=altReview.AdvanceNativeUpdate();
-            else AdvanceExclusionReviewDraw();
+            else { exclusionReviewPlaying=false;AdvanceExclusionReviewDraw(); }
         }
-        else if(!alternative&&Raylib.IsKeyPressed(KeyboardKey.F9))AdvanceExclusionReviewDraw();
+        else if(!alternative&&Raylib.IsKeyPressed(KeyboardKey.F9))
+        {
+            exclusionReviewPlaying=false;AdvanceExclusionReviewDraw();
+        }
+        else if(!alternative&&exclusionReviewPlaying)
+        {
+            // One native Draw sample per review draw. No Update clock,
+            // no query advancing the timeline, no scheduler dependency.
+            AdvanceExclusionReviewDraw();
+            if(!exclusionReview!.Active) exclusionReviewPlaying=false;
+        }
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground),0,0,Color.White);
         if(duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board,new Rectangle(0,0,board.Width,board.Height),
@@ -158,6 +176,8 @@ static partial class Game
             alternativeFrame=alternative?CurrentAlternativeReview():null,
             exclusionFrame=alternative?null:exclusionFrame,
             counter=alternative?altReview.Counter:exclusionReview!.Counter,
+            blocksRelease=alternative?(bool?)null:exclusionReview!.BlocksRelease,
+            active=alternative?(bool?)null:exclusionReview!.Active,
             soundRequest=alternative?altReviewSound:NativeExclusionTimeline.ConstructorSound,
             resources=exclusionResources,cosineSource=effectCosineSource,
             compositor="diagnostic raylib tint/geometry; native raster/remap not verified"

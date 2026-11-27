@@ -228,3 +228,25 @@ limpeza dependente. Comparar com o EXE, registrar diferenças, em
 especial 7A e flags excepcionais, sem assumir equivalência universal.
 Saída privada: log e capturas de estados equivalentes; nenhuma coleta
 estática nova obrigatória.
+
+## V26 — identificar produtor de exclusão (34, modo exclusion)
+
+No original, executar um banimento de monstro no campo (Nobleman of
+Crossout como primeiro cenário; Dimensional Warrior como comparação),
+com tempo suficiente para terminar a apresentação. Repetir separadamente
+para materiais de Fusion Gate e banimento a partir do cemitério como
+controles. Usar nomes diferentes, saída privada em scratch/.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --mode exclusion --pid <PID> --exe ..\\passion\\joey_pc.exe --seconds 45 --output scratch/visual-review/exclusion-nobleman.json
+```
+
+Saída 0: construtor observado com retorno dentro da imagem, t64,
+24 Draws até t256, nenhuma perda, nenhuma consulta de gate verdadeira.
+Saída 1 pode conter transferência mas nenhum objeto de exclusão; NÃO
+converter isso em prova de inexistência. Comparar returnRva, argumentos
+de 79/7A/7C/8E/8F/95 e descritores de transferência; contexto não é
+vínculo causal. Não disparar V26 apenas pelo destino de movimento.
+No cliente, `--review-exclusion=250,8080` (ID real) ou `0,0080`
+(oculto), F5 reprodução/pausa, F7/F9 passo, F8 reset, F12 captura.
+Confirma geometria e predicado; não substitui a captura original.

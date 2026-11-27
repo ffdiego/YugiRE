@@ -156,3 +156,44 @@ A03 fornece evento/snapshot e integração, não criar fila
 paralela. Testes sintéticos de passes, fronteiras, duas
 perspectivas, visibilidade e mutação de Draw.
 **Correção de 25/11:** [auditoria da tabela comprimida](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma as três rotas brutas de V25. Não altera V26 nem o compositor.
+
+## V26.2 — gate, DAT e lacuna do produtor (27/11)
+
+SQLite cumulativo v7 aberto read-only, quick_check=ok, SHA256
+`a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379`.
+Bundle 18, batch-000, janela 0043D810: **0043DBD0 XOR AL,AL;
+0043DBD2 RET**. A vtable 005DACB4 +4 é uma consulta que sempre
+retorna falso, inclusive durante os 24 Draws. +8 é no-op.
+Não usar PresentationSequence de 24 updates, nem aguardar Active
+em CanComplete. 0043E05D limpa o byte ativo após o último Draw.
+O modelo expõe BlocksRelease=false; revisão F5 avança uma amostra
+por Draw efetivo do review (cadência do host, não prova do original).
+F7/F9 avançam manualmente e pausam; F8 reinicia.
+
+Inventário privado visual-dat-20261124 contém exclusion.txt com
+8 linhas na ordem implementada (comentários Shift-JIS após //).
+Confirma key0=58x80, key1=15x144, keys2..7=50x72, sem erro de
+leitura. A revisão agora verifica dimensões, além dos nomes.
+Não prova o remap interno nem o blend pixel a pixel.
+
+A busca de referências de chamadas, decompilações e instruções do
+v7 não encontrou produtor direto externo de 0043D810. 8F vai para
+00409240, que registra transferência via 0040CDB0 (mailbox tipo 7,
+A5506A/A5506C/A55070); o consumidor 0040D070 usa 0041D6C0 para
+movimentação ou 0041D3F0 para variantes de token. Não há chamada
+explícita de 0043D810 nessas rotinas; chamadas virtuais/rotas não
+indexadas continuam possíveis. Isso NÃO prova que a animação seja
+inutilizada, nem que banir via 8F dispare exclusão. 7C também pode
+ter destino de banimento sem trocar o construtor de Explosion.
+Portanto não ligar automaticamente RemovalCause.Banish nem
+FusionMaterial a V26. Nem toda operação de banimento tem origem
+visual no campo (deck, mão, cemitério, custos).
+
+Roteiro 34 modo exclusion: observa constructor, return RVA,
+identidade mascarada, gate, Draw e contexto de comandos/transferência.
+Saída 0 requer um objeto observado desde t64 até t256, 24 Draws,
+sem perda e sem gate bloqueante observado. Ausência de objeto é
+resultado inconclusivo sobre produtor, não erro de regra; guardar
+controle com contexto de transferência. Associação temporal não
+prova causalidade; examinar retorno do construtor antes de ligar
+uma rota A03. Sem ativação sintética no duelo ou aumento da badge.
