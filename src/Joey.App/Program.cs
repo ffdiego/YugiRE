@@ -195,7 +195,7 @@ static partial class Game
                 {
                     InitializeAlternativeExclusionReview();
                     screen = "alt-ex-review";
-                    Console.WriteLine("[V25/V26 review] F7 native step, F9 Draw only for exclusion, F8 reset, F12 capture");
+                    Console.WriteLine("[V25/V26 review] F7 native step, F9 Draw only, F5 play/pause exclusion, F8 reset, F12 capture");
                 }
                 if (coinReview is not null)
                 {

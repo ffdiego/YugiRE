@@ -422,6 +422,8 @@ Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grand
 Bundle 18 recebido: NativeExclusionTimeline porta 24 Draws, ordem mini/feixes/partículas/halo, fim e mascaramento; revisão --review-exclusion=ID,HEX (oculto exige ID 0). Remap/blend e integração A03 pendentes.
   NativeExclusionStart: descritor, argumento mascarado face-up, contador 64 e camada 0x120. Update vazio, Draw e produtor não mapeados. Não inventar duração nem disparar para todo banimento. Roteiro 18; mesmo contrato.
 
+V26.2: gate +4 sempre falso (0043DBD0), manifesto e dimensões DAT conferidos. Review F5 por Draw. Produtor ainda não encontrado; roteiro 34 modo exclusion pendente. Não ligar automaticamente a banimento ou material de fusão.
+
 ## V27 — Layerfont A (00455FF0)
 
 <a id="v27"></a>

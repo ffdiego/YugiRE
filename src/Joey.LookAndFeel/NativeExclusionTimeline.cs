@@ -17,6 +17,8 @@ public sealed class NativeExclusionTimeline
     public NativeExclusionStart Start { get; }
     public int Counter { get; private set; }=NativeExclusionStart.InitialCounter;
     public bool Active => Counter<EndCounter;
+    // Vtable +4 (0043DBD0): XOR AL,AL / RET, independently of Draw lifetime.
+    public bool BlocksRelease => false;
 
     public NativeExclusionTimeline(NativeExclusionStart start)=>Start=start;
 
@@ -87,6 +89,14 @@ public static class NativeExclusionResources
     private static readonly string[] Names=["jyoga_hikacard.yga","jyoga_hikatate.yga",
         "jyoga_ryusi1.bmp","jyoga_ryusi2.bmp","jyoga_ryusi3.bmp","jyoga_ryusi4.bmp",
         "jyoga_ryusi5.bmp","jyoga_ryusi6.bmp"];
+    // Confirmed by the private visual-dat-20261124 manifest/image inventory.
+    public static CardBounds ExpectedSize(int key) => key switch
+    {
+        0 => new(0,0,58,80),
+        1 => new(0,0,15,144),
+        >=2 and <=7 => new(0,0,50,72),
+        _ => throw new ArgumentOutOfRangeException(nameof(key))
+    };
     public static bool IsParticleBitmap(string path)=>
         Names.Skip(2).Any(n=>path.Equals(Prefix+n,StringComparison.OrdinalIgnoreCase));
     public static string[] Parse(string manifest,IEnumerable<string> archiveNames)
