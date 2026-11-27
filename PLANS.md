@@ -131,7 +131,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Respostas e descarte auditados. Fechar composição da seleção e revisar sobreposição dos controles provisórios. [Detalhes](docs/plans/VISUALS.md#v14)
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
 - [ ] **V16 — Demais Draws do inventário.** Status: `Parcial`. Capturar a saída do resultado e investigar as famílias ainda sem Draw confirmado. [Detalhes](docs/plans/VISUALS.md#v16)
-- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Ampliar a coleta 10→3 para outras intensidades e obter uma amostra 11→4. Comparar a entrega do buffer e a seleção no Windows. [Detalhes](docs/plans/VISUALS.md#v17)
+- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Obter uma amostra 11→4 e validar a seleção de texels. Comparar a entrega do buffer e a seleção no Windows. [Detalhes](docs/plans/VISUALS.md#v17)
 - [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Leitura PCM e streaming do menu e duelo validados no cliente. Comparar escuta, transições e associação dinâmica no Windows. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, verificar reflexão, remap e blend. [Detalhes](docs/plans/VISUALS.md#v20)

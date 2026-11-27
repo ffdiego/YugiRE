@@ -9,6 +9,10 @@ capture = None
 active_row = None
 pending = None
 entries = []
+requested = gdb.convenience_variable("packed_intensity")
+intensity_to_capture = 224 if requested is None else int(requested)
+if intensity_to_capture not in range(32, 256, 32):
+    raise ValueError("Choose an impact intensity from 32 to 224 in steps of 32")
 
 def reg(name):
     return int(gdb.parse_and_eval("$" + name)) & 0xffffffff
@@ -27,11 +31,11 @@ class Impact(HardwareProbe):
     def stop(self):
         global capture
         sp=reg("esp")
-        if capture or read(sp)!=0x00422e10 or read(sp+0x7c)!=0x00414777 or read(sp+12)!=224:
+        if capture or read(sp)!=0x00422e10 or read(sp+0x7c)!=0x00414777 or read(sp+12)!=intensity_to_capture:
             return False
         dst,src=read(sp+4),read(sp+8)
         if read(dst+0x74)==3 and read(src+0x74)==10:
-            capture={"thread":thread(),"sourceFormat":10,"destinationFormat":3,"intensity":224}
+            capture={"thread":thread(),"sourceFormat":10,"destinationFormat":3,"intensity":intensity_to_capture}
         return False
 
 class Row(HardwareProbe):

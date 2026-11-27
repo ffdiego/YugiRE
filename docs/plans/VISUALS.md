@@ -375,6 +375,13 @@ intensidade 256. O teste cobre o helper em execução e deixa
 em aberto a rasterização do cliente e o par 11→4.
 [Validação do caminho base](../../docs/research/native-surface-copy-contract-2026-11-24.md#validação-do-caminho-base-10-para-3-em-proton).
 
+V17.8. O roteiro 60 passou a aceitar uma intensidade
+selecionada. A comparação .NET conferiu todos os 288
+pixels amostrados nas intensidades 32 e 128 em Proton,
+incluindo casos fora da chave cujo alpha efetivo ficou
+zero após a quantização.
+[Amostras adicionais](../../docs/research/native-surface-copy-contract-2026-11-24.md#amostras-de-intensidade-32-e-128).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

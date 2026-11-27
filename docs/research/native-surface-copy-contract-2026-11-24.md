@@ -385,3 +385,29 @@ extremos 0 e 15 e a composição de preto com alpha 8.
 O recorte valida o cálculo por pixel com amostragem do
 original. Rasterização, integração e 11→4 seguem
 pendentes. [Roteiro 61](../../scripts/regression/README.md#61--v17-pixels-do-compositor-base-10-para-3).
+
+### Amostras de intensidade 32 e 128
+
+O roteiro 60 mediu dois outros impactos, ambos no ramo
+10→3 com os texels selecionados pelo original. O comparador
+.NET reproduziu os 144 valores finais em cada intensidade.
+
+| Intensidade | Amostras | Cor-chave | Pixels alterados |
+| --- | ---: | ---: | ---: |
+| 32 | 144 | 66 | 53 |
+| 128 | 144 | 73 | 61 |
+
+Em intensidade 32, 23 amostras fora da chave tiveram peso
+de origem quantizado em 0, e 55 tiveram peso 1. A comparação
+já cobre os passos 32, 128 e 224 do ramo de intensidade,
+com o 256 no compositor base. O mapeamento de texels e o
+par 11→4 seguem pendentes.
+[Roteiro 60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton).
+
+Para buscar 11→4, uma sessão em modo `-win` usou Xvfb
+800×600 com profundidade 15. O roteiro 41 voltou a observar
+formato 3 nas três entradas da cena, com vtable `005DC6EC`
+e flag `+78h=0`. Nesse ambiente, mudar a profundidade do
+display não acionou RGB555 no buffer de duelo. O Pillow
+também rejeitou a captura nesse display, por isso a
+execução medida dispensou PNG e observou o formato via GDB.

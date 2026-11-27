@@ -371,6 +371,11 @@ a primeira divergência em RGB565. O piloto cobriu 144 pontos,
 com 71 amostras de cor-chave e 57 mudanças. Os pixels lidos
 permanecem no log privado.
 
+O padrão é 224. Para selecionar outro passo do impacto,
+acrescente `-ex 'set $packed_intensity = 32'` antes de
+`-x`, com um nome de log específico. Os passos possíveis
+vão de 32 a 224 em múltiplos de 32.
+
 ### 61 — V17, pixels do compositor base 10 para 3
 
 Com os mesmos requisitos do roteiro 60, anexe antes de
