@@ -145,30 +145,11 @@ static partial class Game
 
     static void CommitHumanFusion(PendingFusionSummon request, FusionSummonOption result)
     {
-        if (queuedDuel is not null)
+        if (duel.TryQueueFusionSummon(request, result.DeckIndex, selectedFusionMaterials,
+            out message, fusionDefensePosition))
         {
-            if (duel.TryQueueFusionSummon(request, result.DeckIndex, selectedFusionMaterials,
-                out message, fusionDefensePosition))
-            {
-                ClearDuelSelection();
-                ResetFusionChoice();
-            }
-            return;
+            ClearDuelSelection();
+            ResetFusionChoice();
         }
-        var destination = request.FieldOwner is int fieldOwner ? FieldZoneBounds(fieldOwner) :
-            ZoneBounds(request.Owner, request.FromSet ? request.SourceIndex : duel.FirstFreeSpellZone(), true);
-        bool fromHand = request.FieldOwner is null && !request.FromSet;
-        Rectangle? origin = fromHand ? HandBounds(request.SourceIndex) : null;
-        if (!duel.ResolveFusionSummon(result.DeckIndex, selectedFusionMaterials, out message, fusionDefensePosition))
-            return;
-        var spent = selectedFusionMaterials.Where(material => material.Zone == FusionMaterialZone.Hand)
-            .Select(material => material.Index);
-        if (fromHand) spent = spent.Append(request.SourceIndex);
-        foreach (int index in spent.OrderDescending()) handLayouts[request.Owner].RemoveAt(index);
-        ShowPlayedCardDetail(request.Spell);
-        BeginCardActivation(request.Spell, destination, origin,
-            nearSide: (request.FieldOwner ?? request.Owner) == ViewPlayer);
-        ClearDuelSelection();
-        ResetFusionChoice();
     }
 }

@@ -7,19 +7,6 @@ static partial class Game
     // silently accepting them; no native-CPU decision policy is claimed.
     private static EffectPromptMode optionalEffectPrompts = EffectPromptMode.Ask;
 
-    static void ApplyOptionalEffectPromptPolicy()
-    {
-        while (duel.PendingEffectDecision is { } request)
-        {
-            var answer = EffectDecisionPolicies.Choose(optionalEffectPrompts, request,
-                effect => effect.Kind == EffectDecisionKind.DrawOneOnFlip
-                    ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline);
-            if (answer is null) return;
-            if (!duel.ResolveEffectDecision(request.Id, answer.Value, out message))
-                return;
-        }
-    }
-
     static bool ResolvePresentedDecision(long id, EffectDecisionAnswer answer)
     {
         if (queuedDuel?.PendingDecision is { } pending)
@@ -28,12 +15,13 @@ static partial class Game
             message = "Decision admitted.";
             return true;
         }
-        return duel.ResolveEffectDecision(id, answer, out message);
+        message = "No queued effect decision is available.";
+        return false;
     }
 
     static void DrawEffectDecisionOverlay()
     {
-        if ((queuedDuel?.PendingDecision ?? duel.PendingEffectDecision) is not { } request) return;
+        if (queuedDuel?.PendingDecision is not { } request) return;
         bool draw = request.Kind == EffectDecisionKind.DrawOneOnFlip;
         Raylib.DrawRectangle(238, 126, 535, 340, new Color(7, 15, 28, 250));
         Raylib.DrawRectangleLines(238, 126, 535, 340, Gold);

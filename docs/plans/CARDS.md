@@ -722,3 +722,7 @@ seletor enfileirado está ativo. Demo.cs 2612 → 2614 pelo bloqueio transitóri
 As regressões cobrem os dois lados, alvo aliado inelegível, Royal Command,
 origem CPU/console e ausência de mutação na admissão. Cobertura preservada.
 O gate C12.1 segue aberto, incluindo respostas à declaração de ataque.
+
+### C12 — Retirada de execução direta nos produtores gráficos
+
+App admite fases, compra, set, summon, posição, campo, seleção, respostas e fusão exclusivamente pelos produtores tipados; abrir seleção de fusão não move cartas. CPU com fila rejeita prompts legados; modo CPU sem fila e resolvedores Core ainda pendentes. Não manter fallback para recuperar cobertura. Reavaliar Royal Command, Destiny Board e outras ativações sem produtor no manifesto antes do fechamento. Build/CI requeridos.
