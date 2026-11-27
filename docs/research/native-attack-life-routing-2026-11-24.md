@@ -207,6 +207,26 @@ truncamento/nearest pelo nome nem pela representação do Ghidra.
 Roteiro 32 coleta somente 24 bytes e helper; sem repetir 21.
 CI anterior V04.2 passou (run 45543687589); novos checks aguardam CI.
 
+### V04.4 — constantes e conversão x87 (27/11)
+
+A coleta 32 foi executada no projeto Ghidra local sobre o fingerprint
+`db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
+Os blocos `005DA708:8` e `005DA728:16` conferem com a seção
+`.rdata` do PE lida independentemente com `objdump`. Os doubles
+IEEE 754 little-endian são `0x400921FB54442D18` (π em binário64)
+em `005DA708`, `-256` em `005DA728` e `+256` em `005DA730`.
+
+A rotina `005C3E40..005C3E66` salva a palavra de controle x87,
+força RC para `11b` com `OR AH,0x0C`, converte e retira ST0
+com `FISTP qword` em `005C3E59`, restaura a palavra de controle
+em `005C3E5C` e retorna o inteiro de 64 bits em EDX:EAX.
+O resultado finito representável é truncado em direção a zero.
+A leitura é estática. A precisão de FPATAN em fronteiras de índice
+e a composição do quadrilátero ainda precisam de validação dinâmica.
+
+O bundle privado foi importado com os relatórios `batch-000.txt`
+e `memory-read.txt`. [Snapshot v8](joey-knowledge-sqlite.md#complemento-cumulativo-v8--conversão-x87-27112026).
+
 ## V06.1 — trajetória e fronteiras por glifo (25/11)
 
 Fonte privada v4-visuals, SQLite SHA256

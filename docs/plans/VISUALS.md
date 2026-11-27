@@ -43,6 +43,8 @@ Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT l
 Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado no voo; sampler ajustado. V04.2: NativeRotatedQuad porta geometria inteira e pivô de 00422840/00422C00 confirmados pelo assembly no SQLite v3 (bundle de fusão); âncora de ataque direto 525,64/536 confirmada. Testes de vértices adicionados; renderer normal preservado, faltam x87, compositor final e comparação. V04.3: NativeSwordAngle porta operandos FPATAN, perspectiva e truncamento da interpolação (sete checks); constantes e __ftol não constam no v3, roteiro 32 direcionado. CI do PR #151 verde. Pivô/compositor e constantes x87 pendentes; [contrato](../../docs/research/native-attack-life-routing-2026-11-24.md).
   Reconstituir estaticamente e validar a troca ao atingir a carta (`j\duel\effect\atk_icon.bmp` e `atk_icon2.bmp`): frame/estado de transição, clipping, pivô e camada. Preservar a ilusão de penetração observada no vídeo, sem declarar seus detalhes como comprovados antes da análise. Rotina Draw `004142C0` (Partial).
 
+V04.4 (27/11/2026). A coleta 32 em Ghidra local obteve a função `005C3E40` e os dois blocos de constantes. O assembly confirma truncamento x87 e restauração da palavra de controle, e os bytes do PE confirmam os três doubles. A evidência foi integrada ao snapshot privado v8. O formato de superfície, a chave de transparência e os frames pareados continuam pendentes. [Achados e proveniência](../../docs/research/native-attack-life-routing-2026-11-24.md#v044--constantes-e-conversão-x87-2711).
+
 ## V05 — ATK/DEF em monstros no campo
 
 <a id="v05"></a>

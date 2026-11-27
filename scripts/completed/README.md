@@ -34,6 +34,7 @@ Execute os comandos da raiz do repositório. Os resultados continuam privados em
 | [30-cards-selective-destruction-ghidra.sh](30-cards-selective-destruction-ghidra.sh) | `ghidra-selective-destruction-contract.zip` |
 | [31-actions-battle-callbacks-ghidra.sh](31-actions-battle-callbacks-ghidra.sh) | `ghidra-actions-battle-callbacks.zip` (v4, [relato A06](../../docs/research/native-actions-battle-callbacks-2026-11-24.md)) |
 | [32-final-destiny-ghidra.sh](32-final-destiny-ghidra.sh) | `ghidra-final-destiny-contract.zip` (C02.9, 2/2 funções, complemento do 30, v6) |
+| [32-native-sword-angle-ghidra.sh](32-native-sword-angle-ghidra.sh) | `ghidra-native-sword-angle-contract.zip` (V04, 27/11/2026, 1/1 função e 2/2 blocos, v8) |
 
 As coletas 16/CARDS e 17/CARDS exportaram apenas as rotinas que ainda exigiam assembly. Os helpers omitidos já constam do snapshot anterior. A coleta 25 exportou sete funções no bundle base e oito no complemento de alpha. Os comandos preservados nos roteiros continuam reproduzindo o recorte completo.
 
@@ -47,6 +48,14 @@ dotnet run --project src/Joey.App -- ..\passion\data.dat --alpha --native-cosine
 ```
 
 Os 512 valores são lidos em duas amostras estáveis. O JSON fica em `scratch/visual-review/`.
+
+## V04 — constantes do ângulo e conversão x87
+
+O bundle `ghidra-native-sword-angle-contract.zip` (SHA-256
+`8cc2991088c5f4bffe5b1b3ea042e19342ba180bbf8eb6cea936dd0c48559a20`)
+confirma os três doubles e o truncamento com restauração da palavra
+de controle em `005C3E40`. Importação validada na
+[v8 cumulativa](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v8--conversão-x87-27112026).
 
 ## V02/V05/V06 — [33-native-field-centers-ghidra.sh](33-native-field-centers-ghidra.sh)
 

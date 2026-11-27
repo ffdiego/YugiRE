@@ -22,20 +22,3 @@ Próxima ação em Windows com o cliente atualizado: validar a decodificação c
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1 -SkipPlayback
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1 -Samples joey_01.wav
 ```
-
-## V04 — 32-native-sword-angle-ghidra.sh (aguardando Fedora)
-
-SQLite v3 verificado: os três doubles 005DA708/005DA728/005DA730
-não estão cobertos por nenhum bloco de visual_evidence_memory;
-005C3E40 só tem decompilação identificada como __ftol, sem assembly.
-Não repetir 21 nem a geometria dos blitters já recuperada.
-
-    bash scripts/pending/32-native-sword-angle-ghidra.sh
-
-Ambiente: Fedora/Ghidra local, projeto e EXE atestados pelo exportador.
-Saída privada: scratch/ghidra-native-sword-angle-contract.zip.
-Critério: três doubles de 8 bytes (blocos 8+16), helper completo,
-identificar modo de arredondamento/restauração de control word e importar
-em cópia cumulativa com fingerprint, integridade e auditoria.
-Se a instrução encaminhar a outro helper, consultar SQLite antes de ampliar.
-Não inferir constantes pelo nome ou por atan2. [Contrato V04](../../docs/research/native-attack-life-routing-2026-11-24.md).
