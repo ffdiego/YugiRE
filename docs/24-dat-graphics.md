@@ -147,3 +147,19 @@ SQLite cumulativo v2 validado (SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b
 O App valida a presença das duas associações para cada carta do pool jogável antes de abrir a janela. O modo --check-graphics passa a incluir os BMPs mini/ e os dois versos originais, com validação de dimensão 50x72 do verso mini. O startup gráfico pre-carrega esse verso quando usa o tema nativo. Não substitui imagem ausente por nome de carta no duelo nem desenha um verso geométrico. Tema explicitamente fornecido continua permitido; o fallback textual só existe na inspeção opt-in --include-unused para registro fora do pool e fora do duelo, com mensagem no console. Assets de token que constam do manifesto não são placeholders inventados pelo cliente e não são removidos.
 
 Testes sintéticos do policy App-local (link no projeto de testes) verificam seleção de banco, rejeição de mapping ausente e restrição do fallback. Não foi executado o DAT real nesta sessão. Restam controles transitórios essenciais, incluindo descarte e destaques de alvos, cuja substituição precisa de evidência do dispatcher e dos passes nativos; preservar jogabilidade. Sem aumento de cobertura Draw.
+
+## V03.2 — BMPs indexados do DAT
+
+No DAT com o SHA-256 registrado acima, `j/duel/detail/line.bmp` é
+BI_RGB de 8 bits, 177×1, com 164 entradas de paleta.
+`j/duel/dialog/3taku_mask.bmp` (306×20) e `j/bust_up/dummy#.bmp`
+(800×600) são BI_RGB de 1 bit. A verificação de cabeçalho passa a
+aceitar ambos os formatos indexados. Ela valida o tamanho da paleta,
+as linhas de pixels com padding e os índices em paletas abreviadas.
+O decodificador em memória continua sendo o Raylib.
+
+`--check-graphics` decodificou 1.690 recursos BMP/YGA e validou o
+catálogo com 1.114 associações de arte. `--inspect-visual-dat` concluiu
+com 80 manifests e 1.078 registros de imagem sem erros. São verificações
+de arquivo e decodificação. A apresentação em tela continua sujeita à
+comparação de frames.

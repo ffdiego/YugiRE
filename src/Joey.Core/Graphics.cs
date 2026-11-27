@@ -20,11 +20,32 @@ public readonly record struct BitmapInfo(int Width, int Height)
         uint compression = BinaryPrimitives.ReadUInt32LittleEndian(bytes[30..]);
         if (header < 40 || 14L + header > bytes.Length || offset < 14L + header ||
             width <= 0 || width > 4096 || height == 0 || height < -4096 || height > 4096 ||
-            planes != 1 || bits != 24 || compression != 0)
-            throw new InvalidDataException("Unsupported BMP layout (expected uncompressed 24-bit)");
-        long stride = (width * 3L + 3) & ~3L;
+            planes != 1 || bits is not (1 or 8 or 24) || compression != 0)
+            throw new InvalidDataException("Unsupported BMP layout (expected uncompressed 1-, 8-, or 24-bit)");
+        int stride = ((width * bits + 31) / 32) * 4;
         if (offset + stride * Math.Abs(height) > bytes.Length)
             throw new InvalidDataException("Truncated BMP pixels");
+        if (bits != 24)
+        {
+            int maximumColors = 1 << bits;
+            uint declaredColors = BinaryPrimitives.ReadUInt32LittleEndian(bytes[46..]);
+            uint paletteSize = declaredColors == 0 ? (uint)maximumColors : declaredColors;
+            if (paletteSize > maximumColors || offset < 14L + header + 4L * paletteSize)
+                throw new InvalidDataException("Invalid or truncated BMP palette");
+            if (paletteSize < maximumColors)
+            {
+                for (int y = 0; y < Math.Abs(height); y++)
+                {
+                    var row = bytes.Slice((int)offset + y * stride, stride);
+                    for (int x = 0; x < width; x++)
+                    {
+                        int index = bits == 8 ? row[x] : (row[x / 8] >> (7 - x % 8)) & 1;
+                        if (index >= paletteSize)
+                            throw new InvalidDataException("BMP pixel index is outside its palette");
+                    }
+                }
+            }
+        }
         return new(width, Math.Abs(height));
     }
 }

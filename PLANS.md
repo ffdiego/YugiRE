@@ -117,7 +117,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 - [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`. Log de blit por frame; tabela de cosseno já capturada. [Detalhes](docs/plans/VISUALS.md#v01)
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
-- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Controles transitórios de seleção/descarte e validação DAT. [Detalhes](docs/plans/VISUALS.md#v03)
+- [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Validação DAT passa. Investigar os controles transitórios de seleção e descarte. [Detalhes](docs/plans/VISUALS.md#v03)
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Coleta 32 confirmou constantes x87 e truncamento. Confirmar formato, chave e compositor do quadrilátero e comparar frames. [Detalhes](docs/plans/VISUALS.md#v04)
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Centros confirmados (coleta 33); comparar pixels, blending e cadência. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Slot do combate comum ligado à fila. Mapear flags do dano especial, integrar hold e comparar gráficos/cadência. [Detalhes](docs/plans/VISUALS.md#v06)

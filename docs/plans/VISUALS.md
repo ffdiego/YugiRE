@@ -36,6 +36,8 @@ Ambos os lados, rotação (ataque/defesa e face-up/down), dimensões/pivô, e po
 Substituir remanescentes do fluxo visual padrão por sprites carregados do DAT local, usando manifests e seleção de variantes por estado; não versionar os assets. Aviso explícito de asset faltante; nada de substituição silenciosa.
   V03.1: preflight de mappings grandes/mini para cartas jogáveis, validação de mini BMPs e verso original, sem substituição geométrica/nome no duelo; diagnóstico de registro não jogável só com --include-unused fora do duelo. Tema explícito preservado. Controles transitórios de seleção/descarte e validação DAT real ainda pendentes. [Evidência](../../docs/24-dat-graphics.md#v031-assets-obrigatórios-e-fallback-explícito).
 
+V03.2 (27/11/2026). Com o DAT original, a validação parava ao atingir o BMP indexado do painel de detalhes. O leitor aceita agora BMPs BI_RGB de 1 e 8 bits com validação de paleta e dos índices dos pixels. `--check-graphics` decodificou 1.690 recursos BMP/YGA no App e `--inspect-visual-dat` validou 1.078 registros de imagem. Os controles de seleção e descarte continuam pendentes. [Formatos constatados no DAT](../../docs/24-dat-graphics.md#v032--bmps-indexados-do-dat).
+
 ## V04 — Troca de sprite da espada de ataque
 
 <a id="v04"></a>

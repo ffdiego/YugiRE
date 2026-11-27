@@ -220,7 +220,12 @@ sealed class DatGraphics : IDisposable
     Image ReadImage(string name)
     {
         byte[] bytes = (archive ?? throw new InvalidOperationException("No DAT open")).Read(name);
-        var info = BitmapInfo.Read(bytes);
+        BitmapInfo info;
+        try { info = BitmapInfo.Read(bytes); }
+        catch (InvalidDataException ex)
+        {
+            throw new InvalidDataException($"Invalid BMP {name}: {ex.Message}", ex);
+        }
         var image = Raylib.LoadImageFromMemory(".bmp", bytes);
         if (image.Width != info.Width || image.Height != info.Height)
         {

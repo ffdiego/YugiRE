@@ -21,6 +21,24 @@ static class GraphicsTests
         check(BitmapInfo.Read(bmp) == new BitmapInfo(1, 2), "BMP top-down dimensions");
         BinaryPrimitives.WriteInt32LittleEndian(bmp.AsSpan(18), int.MaxValue);
         reject(() => BitmapInfo.Read(bmp), "Reject oversized BMP dimensions before allocation");
+        var indexed = new byte[66]; // 2 entries and one padded four-byte row.
+        bmp.AsSpan(0, 54).CopyTo(indexed);
+        BinaryPrimitives.WriteUInt32LittleEndian(indexed.AsSpan(10), 62);
+        BinaryPrimitives.WriteInt32LittleEndian(indexed.AsSpan(18), 3);
+        BinaryPrimitives.WriteInt32LittleEndian(indexed.AsSpan(22), 1);
+        BinaryPrimitives.WriteUInt16LittleEndian(indexed.AsSpan(28), 1);
+        indexed[62] = 0b1010_0000;
+        check(BitmapInfo.Read(indexed) == new BitmapInfo(3, 1), "BMP 1-bit default palette and packed row");
+        BinaryPrimitives.WriteUInt16LittleEndian(indexed.AsSpan(28), 8);
+        BinaryPrimitives.WriteUInt32LittleEndian(indexed.AsSpan(46), 2);
+        indexed[62] = 1;
+        indexed[65] = 255; // Row padding has no pixel index.
+        check(BitmapInfo.Read(indexed) == new BitmapInfo(3, 1), "BMP 8-bit shortened palette and padded row");
+        indexed[63] = 2;
+        reject(() => BitmapInfo.Read(indexed), "Reject BMP pixel index outside its declared palette");
+        indexed[63] = 0;
+        BinaryPrimitives.WriteUInt32LittleEndian(indexed.AsSpan(46), 3);
+        reject(() => BitmapInfo.Read(indexed), "Reject truncated BMP palette");
         var text = Encoding.ASCII.GetBytes("// sample\r\nmenu.bmp\t200320 // position\r\nmask.bmp 5\r\n");
         var sprite = SceneSprite.Find(text, "MENU.BMP");
         check(sprite.X == 200 && sprite.Y == 320, "Parse scene xxxYYY position and ignore comments");
