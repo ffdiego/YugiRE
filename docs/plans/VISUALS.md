@@ -269,3 +269,10 @@ inicialização recebe 800×600 em `00416C29`, e `00416C45` chama o
 slot `+0Ch` do destino. Posições dos elementos, ordem completa de
 composição e comparação em execução ainda pendem. A coleta foi
 importada no snapshot privado v9.
+
+V31.1. O inspetor do DAT agora reporta o quadrilátero base e sua
+origem para os dez bancos de reação. O build, a inspeção do DAT local
+e a validação dos vértices e dimensões passaram. O assembly também
+mostrou que os pedidos de som e o encerramento por contador/predicado
+de áudio acontecem no Draw. Faltam os passes adicionais e uma
+comparação pareada. [Geometria e término](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v311--quadrilátero-base-e-término-da-reação-2711).

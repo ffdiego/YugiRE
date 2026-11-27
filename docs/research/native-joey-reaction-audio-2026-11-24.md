@@ -3,8 +3,42 @@
 SQLite privado v2 SHA256 80daa5c6563f4be5da0ed742517514a4eaada7ec7b70440bdc29f00ccea04da4,
 quick_check=ok (leitura em 24/11). Fonte: decompilations, refs, pointers,
 functions, visual_evidence_memory/instructions/transient_decompilations.
-As rotinas de reação abaixo não têm assembly de entrada no snapshot;
-classificador e duração são portas de decompilação, não paridade confirmada.
+O snapshot v2 era a fonte do classificador e da duração. O complemento
+de 27/11, abaixo, incorpora o assembly do Draw e o cruza com o DAT local.
+
+## V31.1 — quadrilátero base e término da reação (27/11)
+
+Assembly da coleta 35 no SQLite v9, com fingerprint conferido no EXE
+local. Em `00416C48..00416D47`, a reação lê os inteiros dos cinco
+primeiros registros de 8 bytes. Cada inteiro fornece `x = valor / 1000`
+e `y = valor % 1000`, ambos com sinal. A chave 0 fornece a origem e
+resolve o bitmap via `00417F40`. As chaves 1, 2, 4, 3 fornecem,
+nessa ordem, os vértices de origem. A segunda lista soma a origem a
+cada vértice. `00416D47` entrega as duas listas, o bitmap e a quantidade
+4 a `005203C0`.
+
+`--inspect-visual-dat` registra esses argumentos em
+`bustUpReactionGeometry`, com dimensões e hash do bitmap base quando
+encontrado no DAT. Nos dez manifests locais, os máximos das coordenadas
+de origem são largura−1 e altura−1 do bitmap. Cinco têm quadriláteros
+com pelo menos uma aresta inclinada, portanto as dimensões máximas não
+bastam para descrever a passagem. O diagnóstico cobre a passagem base.
+Os dois grupos seguintes usam um seletor por resto decimal e a tabela
+em `00417A10`; a composição completa e os formatos escolhidos no
+runtime permanecem em aberto.
+
+O epílogo do mesmo Draw (`00417971..00417A0B`) pede o som primário
+quando o contador é exatamente 8. Se há segundo pedido e
+`005C0490` aceita o primário, move o ID secundário para o campo
+primário, zera o secundário e pede o segundo som. Para os demais
+caminhos após esse teste, finaliza quando contador ≥256 e
+`005C0490` aceita o ID atual. A finalização limpa `obj+04h`; com
+`obj+1Ch` e gerenciador presente, limpa também o byte `+05h` dele.
+O caminho de áudio desabilitado em `005C0490` retorna 1. Esses
+valores são contadores e predicados do executável. A cadência entre
+Draws e a transição com uma segunda fala ainda dependem de observação.
+
+[Coleta e proveniência](joey-knowledge-sqlite.md#complemento-cumulativo-v9--draw-dos-bustos-27112026).
 
 ## Objetos distintos
 

@@ -1,5 +1,6 @@
 using Joey.Core;
 using Joey.LookAndFeel;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -14,12 +15,15 @@ static class VisualManifestProbe
 {
     private const int MaxManifestBytes = 8192;
     private const string HelpPrefix = @"j\duel\help\";
+    private const string BustUpPrefix = @"j\bust_up\";
 
     private sealed record ManifestRecord(string Name, int Bytes, string Latin1, string Hex);
     private sealed record ImageRecord(string Name, uint StoredBytes, uint DecodedBytes,
         int? Width, int? Height, string? Sha256, string? Error);
     private sealed record HelpRequest(int Key, string Pattern, string[] MissingLanguages,
         ImageRecord[] Variants);
+    private sealed record ReactionGeometry(string Manifest, string BaseResource, ImageRecord? BaseImage,
+        CardPoint Origin, CardPoint[] SourceQuad, CardPoint[] DestinationQuad);
 
     private static HelpRequest[]? InspectHelpBank(IEnumerable<ManifestRecord> manifests,
         IEnumerable<ImageRecord> images)
@@ -52,6 +56,47 @@ static class VisualManifestProbe
             requests.Add(new(requests.Count, pattern, [..missingLanguages], [..variants]));
         }
         return [..requests];
+    }
+
+    private static ReactionGeometry[] InspectReactionGeometry(IEnumerable<ManifestRecord> manifests,
+        IEnumerable<ImageRecord> images)
+    {
+        var lookup = images.Where(image => image.Name.StartsWith(BustUpPrefix, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(image => image.Name, StringComparer.OrdinalIgnoreCase);
+        const string reactionPrefix = BustUpPrefix + "reaction";
+        var result = new List<ReactionGeometry>();
+        foreach (var manifest in manifests)
+        {
+            if (!manifest.Name.StartsWith(reactionPrefix, StringComparison.OrdinalIgnoreCase) ||
+                !manifest.Name.EndsWith(".txt", StringComparison.OrdinalIgnoreCase) ||
+                manifest.Name.Length != reactionPrefix.Length + 6 ||
+                !char.IsAsciiDigit(manifest.Name[reactionPrefix.Length]) ||
+                !char.IsAsciiDigit(manifest.Name[reactionPrefix.Length + 1]))
+                continue;
+
+            string[][] rows = manifest.Latin1.Split('\n')
+                .Select(line => line.Split("//", 2)[0].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                .Where(words => words.Length > 0).Take(5).ToArray();
+            if (rows.Length != 5)
+                throw new InvalidDataException("Incomplete reaction geometry: " + manifest.Name);
+
+            var points = new CardPoint[5];
+            for (int i = 0; i < rows.Length; i++)
+            {
+                if (rows[i].Length != 2 ||
+                    !int.TryParse(rows[i][1], NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out int packed))
+                    throw new InvalidDataException($"Invalid reaction coordinate at key {i}: {manifest.Name}");
+                points[i] = new(packed / 1000, packed % 1000);
+            }
+
+            // 00416C48..00416D47 reads keys 0, 1, 2, 4, 3 in this order.
+            var origin = points[0];
+            CardPoint[] source = [points[1], points[2], points[4], points[3]];
+            var destination = source.Select(point => new CardPoint(point.X + origin.X, point.Y + origin.Y)).ToArray();
+            string resource = BustUpPrefix + rows[0][0].Replace('/', '\\');
+            result.Add(new(manifest.Name, resource, lookup.GetValueOrDefault(resource), origin, source, destination));
+        }
+        return [..result];
     }
 
     public static int Export(Archive archive, string outputPath = "scratch/visual-review/dat-manifests.json")
@@ -117,7 +162,8 @@ static class VisualManifestProbe
             archiveEntries = archive.Entries.Count,
             manifests,
             images,
-            helpRequests = InspectHelpBank(manifests, images)
+            helpRequests = InspectHelpBank(manifests, images),
+            bustUpReactionGeometry = InspectReactionGeometry(manifests, images)
         };
 
         string? folder = Path.GetDirectoryName(outputPath);
