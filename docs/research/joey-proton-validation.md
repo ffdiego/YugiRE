@@ -161,6 +161,8 @@ O [59](../../scripts/regression/README.md#59--v04v17-recorte-do-impacto-em-proto
 mede as faixas de escrita quando o impacto ultrapassa a borda do buffer.
 O [60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton)
 compara o resultado de pixels amostrados no compositor com o modelo .NET.
+O [61](../../scripts/regression/README.md#61--v17-pixels-do-compositor-base-10-para-3)
+repete a comparação no compositor base.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

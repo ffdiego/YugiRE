@@ -368,6 +368,13 @@ O comparador .NET aceita o mesmo formato de traço para 11→4.
 Ainda faltam outras intensidades, o caminho base e amostras
 do par 11→4. [Validação dos pixels](../../docs/research/native-surface-copy-contract-2026-11-24.md#validação-de-pixels-do-par-10-para-3-em-proton).
 
+V17.7. O compositor base 10→3 usa o nibble diretamente
+como peso. O helper `NativePackedAlphaPixel.ApplyBaseToRgb565`
+coincidiu com os 144 pixels capturados pelo roteiro 61 em
+intensidade 256. O teste cobre o helper em execução e deixa
+em aberto a rasterização do cliente e o par 11→4.
+[Validação do caminho base](../../docs/research/native-surface-copy-contract-2026-11-24.md#validação-do-caminho-base-10-para-3-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

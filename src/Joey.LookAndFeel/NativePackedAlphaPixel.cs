@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace Joey.LookAndFeel;
 
 /// <summary>Pixel subset of 004365C0/00437360, 0052F570 and
-/// 00439B60/00424FC0. Alpha nibble occupies byte 2 of a four-byte
+/// 00439B60/00424FC0 and 004CBDE0. Alpha nibble occupies byte 2 of a four-byte
 /// source. Same-format and opaque-destination paths are deliberately
 /// different; not a general surface or polygon compositor.</summary>
 public static class NativePackedAlphaPixel
@@ -62,8 +62,7 @@ public static class NativePackedAlphaPixel
 
     /// <summary>10->3 or 11->4, intensity 0..255 only.
     /// Cross-format helper quantizes the effective byte again, then
-    /// adds the two packed lookup results. Base cross-format dispatch
-    /// is outside this adapter; do not substitute same-format copy.</summary>
+    /// adds the two packed lookup results.</summary>
     public static bool ApplyToOpaque(ReadOnlySpan<byte> source,Span<byte> destination,
         int sourceFormat,NativeSurfaceFormat destinationFormat,ushort colorKey,int intensity)
     {
@@ -75,11 +74,30 @@ public static class NativePackedAlphaPixel
             throw new ArgumentException("Incomplete packed pixel.");
         ushort s=BinaryPrimitives.ReadUInt16LittleEndian(source);
         if(s==colorKey)return false;
-        ushort d=BinaryPrimitives.ReadUInt16LittleEndian(destination);
         int q=EffectiveIntensity(source[2],(byte)intensity)>>4;
-        ushort result=(ushort)(NativeIntensityPixel.ScalePacked(s,destinationFormat,q)+
-                               NativeIntensityPixel.ScalePacked(d,destinationFormat,15-q));
-        BinaryPrimitives.WriteUInt16LittleEndian(destination,result);
+        BlendOpaque(s, destination, destinationFormat, q);
         return true;
+    }
+
+    /// <summary>Blend a packed RGB565 source over RGB565 using its alpha nibble directly.
+    /// The base compositor applies this to every sampled pixel.</summary>
+    public static void ApplyBaseToRgb565(ReadOnlySpan<byte> source, Span<byte> destination)
+    {
+        if (source.Length < 4 || destination.Length < 2)
+            throw new ArgumentException("Incomplete packed alpha pixel.");
+        int level = source[2];
+        if (level > 15)
+            throw new ArgumentOutOfRangeException(nameof(source), "Expected alpha nibble.");
+        BlendOpaque(BinaryPrimitives.ReadUInt16LittleEndian(source), destination,
+            NativeSurfaceFormat.Rgb565, level);
+    }
+
+    private static void BlendOpaque(ushort source, Span<byte> destination,
+        NativeSurfaceFormat format, int level)
+    {
+        ushort current = BinaryPrimitives.ReadUInt16LittleEndian(destination);
+        ushort result = (ushort)(NativeIntensityPixel.ScalePacked(source, format, level) +
+                                 NativeIntensityPixel.ScalePacked(current, format, 15 - level));
+        BinaryPrimitives.WriteUInt16LittleEndian(destination,result);
     }
 }

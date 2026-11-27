@@ -370,3 +370,16 @@ pela cor-chave e quantas mudaram de valor. O comparador informa
 a primeira divergência em RGB565. O piloto cobriu 144 pontos,
 com 71 amostras de cor-chave e 57 mudanças. Os pixels lidos
 permanecem no log privado.
+
+### 61 — V17, pixels do compositor base 10 para 3
+
+Com os mesmos requisitos do roteiro 60, anexe antes de
+um ataque. O roteiro seleciona intensidade 256 e coleta
+144 amostras no helper base. O comparador do roteiro 60
+reconhece o cabeçalho `attack-packed-base-pixels`.
+
+```bash
+timeout --signal=INT 105s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/61-wine-packed-alpha-base-pixels.gdb > scratch/attack-packed-base-pixels.log 2>&1
+dotnet run --file scripts/regression/60-compare-packed-alpha-pixels.cs -- scratch/attack-packed-base-pixels.log
+```

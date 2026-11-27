@@ -363,3 +363,25 @@ original. O mapeamento de texels de uma implementação C#,
 outras intensidades, o caminho base e o par 11→4 seguem em aberto.
 O log bruto fica em `scratch/`.
 [Roteiro e comparador 60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton).
+
+### Validação do caminho base 10 para 3 em Proton
+
+Em intensidade 256, as chamadas do impacto entram em
+`0051EBD0` por `00422C00 → 00422840`. A rotina do par
+10→3 chama `004CBDE0` a partir de `0051F897`.
+O assembly usa o byte de alpha, na faixa 0…15, para
+indexar diretamente `0062EE04`, com peso complementar
+15−alpha no destino. Esse helper aplica o cálculo a
+cada pixel recebido.
+
+O roteiro 61 confirmou a cadeia de retornos do impacto
+e mediu 144 pixels imediatamente antes e depois de
+`004CBDE0`. O comparador obteve os mesmos 144 valores
+RGB565 com `NativePackedAlphaPixel.ApplyBaseToRgb565`.
+Houve 59 pixels alterados e 77 amostras cujo word da
+origem era zero. Os alphas observados foram 0, 1, 2, 3,
+5, 6, 7, 8, 9, 10 e 11. Testes sintéticos cobrem os
+extremos 0 e 15 e a composição de preto com alpha 8.
+O recorte valida o cálculo por pixel com amostragem do
+original. Rasterização, integração e 11→4 seguem
+pendentes. [Roteiro 61](../../scripts/regression/README.md#61--v17-pixels-do-compositor-base-10-para-3).
