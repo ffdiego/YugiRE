@@ -124,10 +124,12 @@ public sealed partial class DemoDuel
             BattleReservation? attacker = null;
             BattleReservation? defender = null;
             int damage = 0;
+            NativeAiStats directStats = default;
+            BattleCalculationObservation? calculation = null;
             bool attackValid = pending.Defender is { } target
                 ? duel.TryPlanTargetedAttack(pending.Attacker, target, out attacker, out defender, out _, declared: true) &&
                     attacker.Slot == pending.Request.Attack.AttackerZone && defender.Slot == pending.Request.Attack.TargetZone
-                : duel.TryPlanQueuedDirectAttack(pending.Attacker, out int sourceSlot, out _, out damage, out _, declared: true) &&
+                : duel.TryPlanQueuedDirectAttack(pending.Attacker, out int sourceSlot, out _, out damage, out _, out directStats, declared: true) &&
                     sourceSlot == pending.Request.Attack.AttackerZone;
             if (attackValid && attacker is not null)
                 damage = Math.Clamp(duel.AttackValue(attacker.Target.Side, attacker.Slot), 0, ushort.MaxValue);
@@ -157,14 +159,20 @@ public sealed partial class DemoDuel
             else if (attackValid)
             {
                 if (attacker is not null && defender is not null)
-                    duel.EnqueueTargetedBattleResolution(attacker, defender, queue);
+                    calculation = duel.EnqueueTargetedBattleResolution(attacker, defender, queue);
                 else
-                    EnqueueDirectBattleDamage(pending.Request.Attack.Attacker, pending.Attacker.Side, damage, queue);
+                {
+                    var sourceCard = pending.Request.Attack.Attacker;
+                    int sourceZone = pending.Request.Attack.AttackerZone;
+                    calculation = new(duel.CaptureBattleActor(pending.Attacker, sourceZone, sourceCard, directStats),
+                        null, null, damage);
+                    EnqueueDirectBattleDamage(sourceCard, pending.Attacker.Side, damage, queue);
+                }
             }
 
             duel.queuedAttackResponse = null;
             duel.PendingAttackResponse = null;
-            return attackValid ? new(CommandOutcome.Applied) :
+            return attackValid ? new(CommandOutcome.Applied) { BattleCalculation = calculation } :
                 new(CommandOutcome.Skipped, "Declared combatant is no longer available.");
         }
 

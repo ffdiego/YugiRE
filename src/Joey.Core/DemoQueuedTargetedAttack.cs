@@ -139,11 +139,11 @@ public sealed partial class DemoDuel
                 primitiveActionQueue?.Active?.Origin ?? ActionOrigin.Effect));
             return new(CommandOutcome.Applied, "Targeted attack declared; response follows.");
         }
-        EnqueueTargetedBattleResolution(a, b, queue);
-        return new(CommandOutcome.Applied) { TargetedAttack=new(a.Target,b.Target,a.Slot,b.Slot) };
+        var calculation = EnqueueTargetedBattleResolution(a, b, queue);
+        return new(CommandOutcome.Applied) { TargetedAttack=new(a.Target,b.Target,a.Slot,b.Slot), BattleCalculation=calculation };
     }
 
-    private void EnqueueTargetedBattleResolution(BattleReservation a, BattleReservation b, IActionBatchSink queue)
+    private BattleCalculationObservation? EnqueueTargetedBattleResolution(BattleReservation a, BattleReservation b, IActionBatchSink queue)
     {
         if (MonsterFaceDown[b.Target.Side,b.Slot])
         {
@@ -151,8 +151,9 @@ public sealed partial class DemoDuel
             // Never turn this into a Flip Summon or invoke its triggers.
             queuedBattleReveal=new(a,b,Turn);
             queue.Enqueue(new RevealBattleDefenderCommand(b.Target.Side,a.Target,b.Target));
+            return null;
         }
-        else QueuePlainBattleOutcome(a,b,queue);
+        return QueuePlainBattleOutcome(a,b,queue);
     }
 
     private bool IsSupportedBattleField(int attackerSide,int source,int target)
@@ -205,10 +206,12 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Rejected,"No matching reserved revealed battle.");
         if (!ValidateBattleReveal(reserved,faceDown:false))
             throw new InvalidOperationException("Reserved revealed combatant changed.");
+        BattleCalculationObservation calculation;
         if (IsBattleFlipPilot(reserved.Defender.Card))
         {
             // Keep the marked card present until damage and FLIP finish.
-            int delta = QueuedTargetedBattlePower(command.Side, reserved.Attacker.Slot, reserved.Defender.Slot).Difference;
+            var (observation, delta) = CalculateTargetedBattle(reserved.Attacker, reserved.Defender);
+            calculation = observation;
             reserved.FlipCalculated=true;
             queuedBattleRemoved[1]=delta>0?reserved.Defender:null;
             queue.EnqueueBatch(TargetedBattleDamage(reserved.Attacker, reserved.Defender, delta));
@@ -227,9 +230,9 @@ public sealed partial class DemoDuel
         else
         {
             queuedBattleReveal=null;
-            QueuePlainBattleOutcome(reserved.Attacker,reserved.Defender,queue);
+            calculation = QueuePlainBattleOutcome(reserved.Attacker,reserved.Defender,queue);
         }
-        return new(CommandOutcome.Applied);
+        return new(CommandOutcome.Applied) { BattleCalculation = calculation };
     }
 
     private void EnqueueOpposingSpellTrapDamage(int side, IActionCommandSink followups)
@@ -375,14 +378,32 @@ public sealed partial class DemoDuel
         return new(CommandOutcome.Applied);
     }
 
-    internal (int Attack, int Difference) QueuedTargetedBattlePower(int attackerSide, int source, int target)
+    private (NativeAiStats Attacker, NativeAiStats Defender) TargetedBattleStats(int attackerSide, int source, int target)
     {
         int defenderSide = 1 - attackerSide;
         var attacker = Monsters[attackerSide, source]!;
         var defender = Monsters[defenderSide, target]!;
-        int attack = EquipmentStats(attackerSide, source, BattleStatBonus(attacker, defender, attacking: true)).Attack;
-        var stats = EquipmentStats(defenderSide, target, BattleStatBonus(defender, attacker, attacking: false));
-        return (attack, attack - (DefensePosition[defenderSide, target] ? stats.Defense : stats.Attack));
+        return (EquipmentStats(attackerSide, source, BattleStatBonus(attacker, defender, attacking: true)),
+            EquipmentStats(defenderSide, target, BattleStatBonus(defender, attacker, attacking: false)));
+    }
+
+    internal (int Attack, int Difference) QueuedTargetedBattlePower(int attackerSide, int source, int target)
+    {
+        var (attacker, defender) = TargetedBattleStats(attackerSide, source, target);
+        return (attacker.Attack, attacker.Attack -
+            (DefensePosition[1 - attackerSide, target] ? defender.Defense : defender.Attack));
+    }
+
+    private BattleActorObservation CaptureBattleActor(CardTarget target, int slot, Card card, NativeAiStats stats) =>
+        new(target, card.Id, card.Index, slot, DefensePosition[target.Side, slot],
+            MonsterFaceDown[target.Side, slot], stats.Attack, stats.Defense);
+
+    private (BattleCalculationObservation Observation, int Difference) CalculateTargetedBattle(BattleReservation a, BattleReservation b)
+    {
+        var (attacker, defender) = TargetedBattleStats(a.Target.Side, a.Slot, b.Slot);
+        int delta = attacker.Attack - (DefensePosition[b.Target.Side, b.Slot] ? defender.Defense : defender.Attack);
+        return (new(CaptureBattleActor(a.Target, a.Slot, a.Card, attacker),
+            CaptureBattleActor(b.Target, b.Slot, b.Card, defender), delta, null), delta);
     }
 
     private static NativeAiAttributeDelta BattleStatBonus(Card card, Card opponent, bool attacking) => card.Id switch
@@ -421,10 +442,11 @@ public sealed partial class DemoDuel
         return damageAttacker ? [new DamageCommand(side, amount)] : [];
     }
 
-    private void QueuePlainBattleOutcome(BattleReservation a,BattleReservation b,IActionBatchSink queue)
+    private BattleCalculationObservation QueuePlainBattleOutcome(BattleReservation a,BattleReservation b,IActionBatchSink queue)
     {
         int p=a.Target.Side,e=b.Target.Side;
-        var (atk, delta) = QueuedTargetedBattlePower(p, a.Slot, b.Slot);
+        var (calculation, delta) = CalculateTargetedBattle(a, b);
+        int atk = calculation.Attacker.Attack;
         bool removeA=!b.Defense && (delta<0 || delta==0 && atk>0);
         bool removeB=delta>0 || !b.Defense && delta==0 && atk>0;
         var damage = TargetedBattleDamage(a, b, delta);
@@ -446,6 +468,7 @@ public sealed partial class DemoDuel
         }
         queuedBattleRemoved[0]=removeA?a:null;
         queuedBattleRemoved[1]=removeB?b:null;
+        return calculation;
     }
 
     private void PlanBattleRemoval(BattleReservation removed, int role, List<DuelCommand> batch, BattleReservation? survivor)

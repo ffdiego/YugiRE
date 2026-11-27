@@ -10,6 +10,65 @@ internal static class ActionTraceProjectionChecks
         public bool Release {get;set;}
         public bool CanComplete(QueuedDuelCommand command,CommandResult result)=>Release;
     }
+    private static void CheckBattleCalculationTrace(Action<bool, string> check)
+    {
+        foreach (bool direct in new[] { false, true })
+        foreach (bool hidden in direct ? new[] { false } : new[] { false, true })
+        {
+            string Run(bool delayed)
+            {
+                // The battle-only modifier distinguishes calculation from a
+                // post-battle field read (not a new individual card test).
+                var attacker = new Card(1253, 1253, "Fixture", "", (7u<<20)|(4u<<25)|(135u<<9)|180u);
+                var defender = new Card(77, 77, "Fixture", "", (15u<<20)|(4u<<25)|(200u<<9)|150u);
+                Card?[] a = [null, attacker, null, null, null];
+                Card?[] b = direct ? new Card?[5] : [null, null, null, defender, null];
+                var duel = DemoDuel.FromPartialObservation(1, [], b, a, 8000);
+                duel.DefensePosition[0,3] = duel.MonsterFaceDown[0,3] = hidden;
+                check(duel.BeginBattle(out _), "A09 calculation fixture enters Battle Phase");
+                var gate = new Gate();
+                var queue = duel.CreatePrimitiveActionQueue(delayed ? gate : null);
+                check(duel.TryCaptureCardTarget(1, DuelZone.Monster, 1, out var source) &&
+                    duel.TryQueueAttack(1, direct ? -1 : 3, out _), "A09 calculation fixture admits attack");
+                check(!queue.Trace.Any(e => e.Result?.BattleCalculation is not null), "A09 admission is not calculation");
+                for (int i = 0; i < 100 && queue.IsBusy; i++)
+                {
+                    gate.Release = false;
+                    queue.Tick();
+                    if (delayed && queue.Active is not null)
+                    {
+                        var before = ActionTraceJson.Serialize(ActionTraceJson.Capture(queue, "battle"));
+                        queue.Tick();
+                        check(before == ActionTraceJson.Serialize(ActionTraceJson.Capture(queue, "battle")),
+                            "A09 blocked gate cannot repeat calculation");
+                        gate.Release = true;
+                        queue.Tick();
+                    }
+                }
+                var trace = ActionTraceJson.Capture(queue, "battle");
+                var row = trace.Rows.Single(x => x.BattleCalculation is not null);
+                var calc = row.BattleCalculation!;
+                check(trace.Complete && calc.Attacker.Target == source && calc.Attacker.Slot == 1 &&
+                    calc.Attacker.Attack == (direct ? 1350 : 3350) &&
+                    calc.Attacker.DefenseValue == (direct ? 1800 : 3800) &&
+                    !calc.Attacker.FaceDown && !calc.Attacker.Defense,
+                    "A09 retains the exact occurrence and calculated ATK/DEF");
+                check(direct
+                    ? calc.Defender is null && calc.Difference is null && calc.RequestedDirectDamage == 1350 &&
+                      row.Command == nameof(DeclareDirectAttackCommand)
+                    : calc.Defender is { Slot: 3, InternalIndex: 77, Attack: 2000, DefenseValue: 1500, FaceDown: false } target &&
+                      target.Defense == hidden && calc.Difference == (hidden ? 1850 : 1350) &&
+                      calc.RequestedDirectDamage is null &&
+                      row.Command == (hidden ? "ResolveRevealedBattleCommand" : nameof(DeclareTargetedAttackCommand)),
+                    "A09 records direct or targeted calculation at the actual stage");
+                check(trace.Rows.Where(x => x.Command == nameof(DamageCommand) || x.Command == "SnapshotBattleRemovalCommand")
+                    .All(x => x.Sequence > row.Sequence), "A09 calculation precedes damage and removal");
+                return ActionTraceJson.Serialize(trace);
+            }
+            check(Run(false) == Run(true), "A09 calculation trace is independent of gate speed");
+        }
+    }
+
     public static void Run(Action<bool,string> check)
     {
         Card monster = new(24,24,"Fixture","",(3u<<20)|(4u<<25));
@@ -51,6 +110,7 @@ internal static class ActionTraceProjectionChecks
             return ActionTraceExport.Serialize(doc);
         }
         check(Pilot(false)==Pilot(true),"A05.6 trace independent of gate speed");
+        CheckBattleCalculationTrace(check);
         // Non-zero source and destination positions, duplicate resources, both
         // sides, and a stale target: no resource-id lookup after mutation.
         foreach(int side in new[]{0,1})

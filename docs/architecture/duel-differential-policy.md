@@ -87,3 +87,18 @@ O inventário também lista os atributos gerais dos monstros no checkpoint C#
 (`fieldMonsterAttributes`), separados dos atributos de batalha: efeitos
 específicos do confronto podem mudar os valores. Não comparar esses campos
 automaticamente nem alterar o verdict da projeção de estado.
+
+### Observações C# no cálculo de batalha
+
+A exportação de comandos `--trace-output=trace.json` inclui `battleCalculation`
+nos resultados Applied que efetivamente calculam a batalha: ataque direto,
+ataque com alvo revelado, continuação após passe de resposta ou resolução
+após revelar defensor. Identifica ambos os atores por ocorrência, lado,
+slot, índice e resource ID, postura e ATK/DEF retornados pelo cálculo que
+a regra usa. O alvo direto é null; diferença assinada de batalha com alvo
+é distinta do dano direto solicitado (limitado pelo resolvedor). Um ataque
+cancelado por armadilha ou mera admissão não possui cálculo observado.
+O snapshot é imutável e não é refeito durante o gate ou após remoção/FLIP.
+Não acrescenta opcode nativo, não muda a ordem do scheduler nem substitui
+checkpoint de campo. O pareamento explícito de snapshots 0x31 com esta linha
+e a comparação numérica ainda são próximos passos.

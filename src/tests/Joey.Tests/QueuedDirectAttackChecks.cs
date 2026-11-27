@@ -88,6 +88,13 @@ internal static class QueuedDirectAttackChecks
                 gate.Release = true;
             }
             Drain(queue);
+            var calculations = ActionTraceProjection.ReadExecuted(queue.Trace)
+                .Where(row => row.BattleCalculation is not null).ToArray();
+            check(pass
+                ? calculations.Length == 1 && calculations[0].Command == "ResolveAttackResponseCommand" &&
+                  calculations[0].BattleCalculation is { Defender: null, RequestedDirectDamage: 1400,
+                      Attacker: { Slot: 2, Attack: 1400 } }
+                : calculations.Length == 0, "A09 records continued direct attacks, not cancelled attacks");
             int expectedDamage = endsBattle ? 0 : 1400;
             check(duel.Life[pass ? responder : side] == 8000 - expectedDamage &&
                 duel.Life[pass ? side : responder] == 8000 &&
