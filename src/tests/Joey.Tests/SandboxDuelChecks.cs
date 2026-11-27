@@ -9,8 +9,9 @@ internal static class SandboxDuelChecks
         static Card Monster(int index, ushort id, int attackUnits) => new(
             index, id, "Sandbox candidate " + index, "",
             (1u << 20) | (4u << 25) | ((uint)attackUnits << 9) | 80u);
+        ushort[] normalIds = [0, 1, 2, 3, 5, 6, 9, 12, 13, 16, 17, 18, 19, 21, 23, 25, 26, 27, 31, 32, 33, 34, 37, 38, 40, 41, 44, 49, 50, 51, 52, 54, 58, 59, 61, 63, 64, 65, 67, 70];
         var catalog = Enumerable.Range(0, 40)
-            .Select(i => Monster(i + 1, (ushort)(100 + i), 100 + i)).ToList();
+            .Select(i => Monster(i + 1, normalIds[i], 100 + i)).ToList();
         var spark = new Card(755, 342, "Sparks", "", 21u << 20);
         // Category 1 contains ordinary-summonable effect monsters: those must not
         // enter the plain-stat-only candidate pool or its execution whitelist.
@@ -45,7 +46,7 @@ internal static class SandboxDuelChecks
         var b = SandboxDuelRunner.Simulate(deck0, deck1, 2, 123, 160, trace2,
             "OperatorDeclaredSandboxPool", poolCount);
         check(a.SequenceEqual(b) && trace1.ToString() == trace2.ToString() &&
-              a.Count == 2 && a.All(x => x.Actions > 0 && x.FinalTurn <= 161),
+              a.Count == 2 && a.All(x => x.Actions > 0 && x.FinalTurn <= 161 && x.Status != "Unsupported"),
             "Headless sandbox produces deterministic bounded duels and JSONL");
 
         var entries = trace1.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries)
@@ -64,8 +65,9 @@ internal static class SandboxDuelChecks
                 doc.RootElement.GetProperty("action").GetString() == "NormalSummon") &&
                 actions.Any(doc => doc.RootElement.GetProperty("action").GetString() == "Attack"),
                 "Sandbox action trace covers normal summons and attacks");
-            check(actions.All(doc => doc.RootElement.GetProperty("after").GetProperty("life").GetArrayLength() == 2),
-                "Sandbox actions preserve before/after two-sided LP snapshots");
+            check(actions.All(doc => doc.RootElement.GetProperty("after").GetProperty("life").GetArrayLength() == 2 &&
+                doc.RootElement.GetProperty("commands").GetArrayLength() > 0),
+                "Sandbox actions preserve before/after LP snapshots and executed typed commands");
         }
         finally { foreach (var doc in entries) doc.Dispose(); }
 
