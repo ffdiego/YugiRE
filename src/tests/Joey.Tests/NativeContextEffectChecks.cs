@@ -99,7 +99,12 @@ internal static class NativeContextEffectChecks
               }), "V24: copy a vertical rectangle into a scratch sized from icon 1");
         affect.AdvanceNativeUpdate(18);
         check(draw.Sample(affect, 1, new(681,248), cosine).Rebuild is null,
-            "V24: anchor and phase changes reuse the scratch for the same selector");
+            "V24: repeated selector reuses scratch within a Draw");
+        draw.BeginDraw();
+        check(draw.Sample(affect, 1, new(681,248), cosine).Rebuild is
+            { IconIndex: 1 } nextDraw && nextDraw.BackgroundCopies[^1].Source.Y == 19 &&
+              nextDraw.BackgroundCopies[^1].Source.Height == 50,
+            "V24: 0040E288 resets selector per focused Draw");
         affect.AdvanceNativeUpdate(18);
         check(draw.Sample(affect, 2, new(681,248), cosine).Rebuild is
                 { IconIndex: 2 } wrapped &&
@@ -125,6 +130,29 @@ internal static class NativeContextEffectChecks
             check(NativeAffectTimeline.IncomingLinkSelector(5,0x52,kind)==(kind is 1 or 4 or 5 ? 1 : 2),
                 "V24: nonmonster focus depends on link kind");
         }
+        foreach(bool focusJar in new[]{false,true})
+        {
+            check(NativeAffectTimeline.DragonJarHighlight(328,true,0,true,1,focusJar) &&
+                !NativeAffectTimeline.DragonJarHighlight(348,true,0,true,1,focusJar) &&
+                !NativeAffectTimeline.DragonJarHighlight(328,false,0,true,1,focusJar) &&
+                !NativeAffectTimeline.DragonJarHighlight(328,true,0,false,1,focusJar) &&
+                !NativeAffectTimeline.DragonJarHighlight(328,true,0,true,2,focusJar) &&
+                !NativeAffectTimeline.DragonJarHighlight(328,true,0x20,true,1,focusJar),
+                "V24: Dragon Capture Jar explicit resource, effective race, reveal and suppression gates");
+        }
+        check(!NativeAffectTimeline.DragonJarHighlight(328,true,2,true,1,false) &&
+               NativeAffectTimeline.DragonJarHighlight(328,true,2,true,1,true),
+            "V24: Dragon Capture Jar direction-specific bit 1 gate");
+        check(!NativeAffectTimeline.RestrictSelfHighlight(1334,1) &&
+               NativeAffectTimeline.RestrictSelfHighlight(1334,2) &&
+               NativeAffectTimeline.RestrictSelfHighlight(77,1) &&
+              !NativeAffectTimeline.RestrictSelfHighlight(77,0),
+            "V24: TER count subtracts focused TER; highlight self");
+        check(NativeAffectTimeline.MonsterFocusLinkedCardSelector(82)==5 &&
+              NativeAffectTimeline.MonsterFocusLinkedCardSelector(729)==4 &&
+              NativeAffectTimeline.MonsterFocusLinkedCardSelector(1332)==4 &&
+              NativeAffectTimeline.MonsterFocusLinkedCardSelector(348)==2,
+            "V24: selector of resolved stored link, not proof of existence of that link");
         check(NativeAffectTimeline.IncomingLinkSelector(0,123,3) is null &&
             NativeAffectTimeline.IncomingLinkSelector(0,123,7) is null,
             "V24: unproven link kinds do not produce a selector");

@@ -221,6 +221,7 @@ NativeTurnNoticeChecks.Run(Check, Reject);
 NativeNoticeProjectionChecks.Run(Check);
 NativeSelectionOriginChecks.Run(Check);
 NativeBankEffectChecks.Run(Check, Reject);
+NativeEquipmentTravelChecks.Run(Check, Reject);
 NativeBreakScatterChecks.Run(Check);
 NativeBreakFieldReviewChecks.Run(Check);
 NativeCoinPassChecks.Run(Check, Reject);

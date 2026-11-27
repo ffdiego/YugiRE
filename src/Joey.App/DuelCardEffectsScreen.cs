@@ -6,6 +6,11 @@ static partial class Game
 {
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
+    sealed record EquipmentTravelVisual(string Artwork, CardPoint Source, CardPoint Target,
+        int RotationIndex) : CardEffect
+    {
+        public bool TerminalDrawn { get; set; }
+    }
     sealed record CoinResultVisual(NativeCoinTimeline Timeline, int Highlight, NativeDiceTexture[] Textures) : CardEffect;
     sealed record DiceResultVisual(NativeDiceTimeline Timeline, NativeDiceTexture[] Textures) : CardEffect
     {
@@ -79,6 +84,7 @@ static partial class Game
             ShowPlayedCardDetail(normal.Card,
                 hiddenFromPlayer: normal.Player != ViewPlayer && normal.FaceDown);
         };
+        duel.EquipmentActivated += QueueEquipmentTravel;
         duel.LabCoinResultReported += QueueLiveCoin;
         duel.LabDiceResultReported += QueueLiveDice;
         duel.MonsterDestroyed += monster =>
@@ -239,8 +245,13 @@ static partial class Game
         int consumed = Math.Min(updates, remaining);
         // One virtual native Update/Draw per rendered step for these banks.
         // Drop excess catch-up rather than skip their Draw-dependent motion.
-        if (current.Kind is CoinResultVisual or DiceResultVisual)
+        if (current.Kind is CoinResultVisual or DiceResultVisual or EquipmentTravelVisual)
             consumed = Math.Min(consumed, 1);
+        // The native terminal counter is cleared in Draw, not Update.
+        // Keep the sample at 192 visible until it has actually been drawn.
+        if (current.Kind is EquipmentTravelVisual equip &&
+            cardEffects.ElapsedUpdates == NativeEquipmentTravel.Updates && !equip.TerminalDrawn)
+            consumed = 0;
         if (consumed != 0 && current.Kind is CoinResultVisual coin)
             coin.Timeline.AdvanceNativeUpdate();
         if (consumed != 0 && current.Kind is DiceResultVisual dice)
@@ -342,6 +353,9 @@ static partial class Game
         if (!playing) return;
         switch (cardEffects.Current?.Kind)
         {
+            case EquipmentTravelVisual equip:
+                DrawEquipmentTravel(equip,cardEffects.ElapsedUpdates);
+                break;
             case CoinResultVisual coin:
                 DrawLiveCoin(coin);
                 break;
