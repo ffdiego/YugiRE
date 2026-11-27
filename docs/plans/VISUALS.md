@@ -66,6 +66,15 @@ para RGB565. O cliente filtra verde puro nesses atlas. Faltam a
 reconciliação da chave, a mistura a 160 e a coleta das variantes
 de valor. [Evidência e roteiros](../../docs/research/native-field-attributes-2026-11-22.md#v053--argumentos-e-chave-do-atlas-em-proton).
 
+V05.4. Em Proton, os três passes de intensidade 160 chegaram
+ao compositor retangular RGB565 com peso de origem 160 e peso
+de destino zero. Em duas capturas, a escala inteira por canal
+conferiu nos 1.067 pixels dos glifos e a cor-chave preservou o
+fundo nos outros 333 pixels. O cliente ainda usa o alpha da
+raylib nesse caminho. As variantes de valores modificados e a
+cadência do tween seguem pendentes.
+[Evidência e roteiro](../../docs/research/native-field-attributes-2026-11-22.md#v054--composição-em-intensidade-160).
+
 ## V06 — LP flutuante por origem do dano/cura
 
 <a id="v06"></a>

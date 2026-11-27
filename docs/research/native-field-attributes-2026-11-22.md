@@ -37,6 +37,34 @@ cliente, a mistura na intensidade 160 e a cadência do
 tween com valores modificados.
 [Roteiros 49 e 50](../../scripts/regression/README.md#49-e-50--v05-atributos-no-campo-em-proton).
 
+## V05.4 — composição em intensidade 160
+
+No PE de referência, `004803A1` e `004805C6` passam pelo
+slot `+80h` de `005DC6EC`. O alvo `004CA570` despacha
+superfícies RGB565 do mesmo formato pelo ramo `004CB1E1` e
+entra em `004DF170` pela chamada de `004CB251`.
+O roteiro 52 observou esse caminho para DEF, separador e
+ATK com intensidade 160 no Proton. As duas superfícies
+tinham formato 3, a chave era `0x8D85` e os pesos de
+origem e destino foram 160 e 0.
+
+No kernel retangular, os quatro bits altos de cada peso
+indexam separadamente `0062EE04`. A chave evita que o
+pixel de destino seja sobrescrito. Com esses argumentos,
+cada canal do glifo em RGB565 sai como `floor(canal*10/15)`.
+O caminho de mistura com pesos complementares de
+`00431750` pertence a outro compositor.
+
+Em duas capturas de 800×600, a previsão coincidiu com os
+1.067 pixels de glifo de quatro números e quatro separadores.
+Os outros 333 pixels coincidiam com o fundo em uma captura
+do tabuleiro sem sobreposição naquele local. As amostras
+incluem o ATK e a DEF em ambos os lados, em intensidade
+160 e com o atlas normal. O cliente atualmente usa tint
+alpha 160. Faltam a comparação pareada com o cliente e as
+capturas das variantes de aumento e redução.
+[Roteiro 52](../../scripts/regression/README.md#52--v05-composição-dos-atributos-em-proton).
+
 ## Procedência
 
 SQLite privado do usuário `joey-knowledge-visual-decoded.sqlite` (Joey EXE SHA-256

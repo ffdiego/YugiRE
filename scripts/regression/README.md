@@ -257,3 +257,22 @@ reação de uma fala da primeira com duas e desanexa após
 amostrar as duas. Para a segunda, confira o retorno do
 predicado e o contador da troca. Se o prazo terminar com
 apenas `single-end`, a amostra cobre só o caso de uma fala.
+
+### 52 — V05, composição dos atributos em Proton
+
+Confirme o fingerprint e o PID no
+[prefixo isolado](../../docs/research/joey-proton-validation.md).
+Anexe no menu e aguarde a demonstração. O roteiro se desanexa
+após capturar DEF, separador e ATK em intensidade 160.
+
+```bash
+timeout --signal=INT 95s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/52-wine-field-attribute-blend.gdb > scratch/field-attribute-blend.log 2>&1
+```
+
+Os códigos de `glyph pass` 1, 2 e 4 identificam DEF,
+separador e ATK. Confira formato 3 nas duas superfícies,
+chave `0x8d85`, `src-weight=160` e `dst-weight=0`.
+Na captura, compare os pixels do glifo após escalar os
+canais RGB565 por 10/15. Nas posições da chave, compare
+com uma captura do mesmo fundo sem números.
