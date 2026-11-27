@@ -394,3 +394,7 @@ dupla pelos eventos DemoDuel e pelo comando ativo. A03 define a política de
 cancelamento/Instant e identidade por Sequence, inclusive comandos Skipped/
 Rejected, sem obrigar LookAndFeel a conhecer tipos do Core. Não bloquear
 comando por objeto que ainda não tem Draw/contrato de conclusão.
+
+### C12/A09 — Sandbox headless usa o mesmo executor
+
+O runner de política restrita não resolve mais diretamente ações. JSONL conserva snapshots e acrescenta comandos executados; resultado Unsupported não significa derrota, empate ou validação do original. Para A09 ainda são necessários estados/decisões equivalentes e comparação com o executável. Não confundir esse smoke sintético com duelo diferencial.

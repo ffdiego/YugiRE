@@ -34,7 +34,7 @@ internal static class CpuDuelChecks
                 duel.TryCaptureCardTarget(1 - side, DuelZone.Monster, 1, out var second) &&
                 first.Occurrence != second.Occurrence, "C12 Fissure has two tracked minimum occurrences");
 
-            check(cpu.Step(duel, queueTurnActions: true) is { Status: CpuStepStatus.Acted, Action: CpuAction.Selection } &&
+            check(cpu.Step(duel) is { Status: CpuStepStatus.Acted, Action: CpuAction.Selection } &&
                 queue.IsBusy && duel.Graveyard(side).Count == 0 && duel.Monsters[1 - side, 0] is not null,
                 "C12 CPU chooses tied Fissure target without mutating during admission");
             var entry = queue.Trace.Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
@@ -94,7 +94,7 @@ internal static class CpuDuelChecks
                 queue.Trace.Count == 0 && duel.Graveyard(side).Count == 0 &&
                 duel.DeckCount(side) == 4 && duel.Life.All(lp => lp == 8000),
                 "C12 UI query uses tracked legality without mutation");
-            var step = new CpuDuelController(side).Step(duel, queueTurnActions: true);
+            var step = new CpuDuelController(side).Step(duel);
             check(step is { Status: CpuStepStatus.Acted, Action: CpuAction.Spell, Card: null, HandIndex: null } &&
                 queue.IsBusy && !duel.CanQueueFixedSpellActivation(zone, 0) &&
                 duel.Graveyard(side).Count == 0 && duel.DeckCount(side) == 4 &&
@@ -197,7 +197,7 @@ internal static class CpuDuelChecks
                 duel.PendingSpellTrapTarget is null && !queue.IsBusy && queue.Trace.Count == 0,
                 "C12 local target query has no legacy prompt or state mutation");
             var target = choices[0].Target;
-            check(new CpuDuelController(side).Step(duel, queueTurnActions: true) is
+            check(new CpuDuelController(side).Step(duel) is
                 { Status: CpuStepStatus.Acted, Action: CpuAction.Selection, Card: null } &&
                 queue.IsBusy && duel.PendingSpellTrapTarget is null && duel.Graveyard(side).Count == 0 &&
                 duel.TryCaptureCardTarget(enemy, target.Zone, 0, out var stillPresent) && stillPresent == target,
@@ -251,15 +251,14 @@ internal static class CpuDuelChecks
         var strong = Monster(1); var weak = Monster(2, 500, 500);
         var cpu = new CpuDuelController(1);
         var empty = State(1, []);
-        check(cpu.Step(empty) is { Status: CpuStepStatus.Acted, Action: CpuAction.Draw } && empty.Winner == 0,
-            "CPU: empty deck loses once and game-over becomes immutable");
-        check(cpu.Step(empty).Status == CpuStepStatus.GameOver && empty.Turn == 2, "CPU: no action after defeat");
-        var other = State(0, [strong], deck: [weak]);
-        check(cpu.Step(other).Status == CpuStepStatus.WaitingForOpponent && other.Hand.Count == 1,
-            "CPU: leaves opponent turn untouched");
-        var win = State(1, [Spell(345)], deck: [weak]); win.Life[0] = 100;
-        cpu.Step(win);
-        check(cpu.Step(win).Action == CpuAction.Spell && win.Winner == 1, "CPU: lethal spell wins");
+        check(cpu.Step(empty).Status == CpuStepStatus.Blocked && empty.Winner is null,
+            "CPU refuses to execute without an attached queue");
+        var emptyQueue = empty.CreatePrimitiveActionQueue();
+        check(cpu.Step(empty) is { Status: CpuStepStatus.Acted, Action: CpuAction.Draw } &&
+            empty.Winner is null && emptyQueue.IsBusy, "CPU admits deck-out through the queue");
+        for (int i = 0; i < 100 && emptyQueue.IsBusy; i++) emptyQueue.Tick();
+        check(empty.Winner == 0 && cpu.Step(empty).Status == CpuStepStatus.GameOver,
+            "Queued deck-out completes once");
 
         foreach (int opponentLife in new[] { 1000, 1001 })
         {
@@ -277,20 +276,18 @@ internal static class CpuDuelChecks
         }
 
         var direct = State(1, [], own: strong);
-        var legacyDirect = State(1, [], own: strong);
         var directQueue = direct.CreatePrimitiveActionQueue();
-        check(direct.BeginBattle(out _) && legacyDirect.BeginBattle(out _) &&
+        check(direct.BeginBattle(out _) &&
             cpu.Step(direct) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
-            direct.Life[0] == 8000 && directQueue.IsBusy &&
-            cpu.Step(legacyDirect) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 },
+            direct.Life[0] == 8000 && directQueue.IsBusy,
             "CPU: direct attack admission defers damage in queued mode");
         for (int tick = 0; tick < 10 && directQueue.IsBusy; tick++) directQueue.Tick();
         var directTrace = directQueue.Trace.Where(entry => entry.Stage == ActionTraceStage.Executed).ToArray();
-        check(!directQueue.IsBusy && direct.Life.SequenceEqual(legacyDirect.Life) &&
+        check(!directQueue.IsBusy && direct.Life[0] == 8000 - strong.Attack &&
             directTrace.Select(entry => entry.Entry.Command.GetType()).SequenceEqual(
                 new[] { typeof(DeclareDirectAttackCommand), typeof(DamageCommand) }) &&
             directTrace[0].Entry.Origin == ActionOrigin.Cpu,
-            "CPU: direct declaration and damage match legacy final life points");
+            "CPU: direct declaration and damage use the typed executor");
 
         var unsupportedDirect = State(1, [Spell(0x593)], own: strong);
         check(unsupportedDirect.SetFromHand(0, out _) && unsupportedDirect.ActivateSetSpell(0, out _),
@@ -323,13 +320,6 @@ internal static class CpuDuelChecks
             untrackedAttack.Life[0] == 8000 && untrackedAttack.CanAttack(0) && untrackedQueue.Trace.Count == 0,
             "CPU: an untracked occurrence cannot fall back or consume the attack");
 
-        var activation = State(1, [Spell(342)], deck: [weak]);
-        activation.Spells[1, 0] = Spell(1002, 21);
-        cpu.Step(activation);
-        check(cpu.Step(activation) is { Action: CpuAction.Spell, SourceZone: 1, HandIndex: 0, Card.Id: 342 } &&
-            activation.Spells[1, 1] is null && activation.Graveyard(1).Last().Id == 342,
-            "CPU: spell activation reports its display zone even after the spell leaves the field");
-
         foreach (int side in new[] { 0, 1 })
         foreach (bool trap in new[] { false, true })
         {
@@ -342,10 +332,10 @@ internal static class CpuDuelChecks
                 for (int i = 0; i < 100 && queue.IsBusy; i++) queue.Tick();
                 if (queue.IsBusy) throw new InvalidOperationException("CPU placement queue did not drain.");
             }
-            check(controller.Step(d, queueTurnActions: true).Action == CpuAction.Draw,
+            check(controller.Step(d).Action == CpuAction.Draw,
                 "C12 CPU placement: turn draw");
             Drain();
-            var placementStep = controller.Step(d, queueTurnActions: true);
+            var placementStep = controller.Step(d);
             check(placementStep.Status == CpuStepStatus.Acted &&
                 placementStep.Action == (trap ? CpuAction.Set : CpuAction.Summon) &&
                 queue.IsBusy && d.Hand.Count == 2 && d.Spells[side,0] is null && d.Monsters[side,0] is null,
@@ -379,10 +369,10 @@ internal static class CpuDuelChecks
                 }
                 if (queue.IsBusy) throw new InvalidOperationException("CPU position queue did not drain.");
             }
-            check(controller.Step(d, queueTurnActions: true).Action == CpuAction.Draw,
+            check(controller.Step(d).Action == CpuAction.Draw,
                 "C12 CPU position: turn draw");
             DrainPosition();
-            check(controller.Step(d, queueTurnActions: true) is
+            check(controller.Step(d) is
                 { Status: CpuStepStatus.Acted, Action: CpuAction.Position, SourceZone: 0 } &&
                 d.MonsterFaceDown[side,0] && queue.IsBusy,
                 "C12 CPU position: admits without revealing");
@@ -397,110 +387,6 @@ internal static class CpuDuelChecks
                 "C12 CPU position: flip and optional draw finish without human prompt");
         }
 
-        var summonTrap = State(0, [strong]);
-        var destroyed = new List<DemoMonsterDestruction>();
-        summonTrap.MonsterDestroyed += destroyed.Add;
-        summonTrap.Spells[1, 3] = Spell(1002, 21);
-        summonTrap.SpellFaceDown[1, 3] = true;
-        check(summonTrap.SummonLeftmost(0, false, out _) &&
-            cpu.Step(summonTrap) is { Action: CpuAction.Response, SourceZone: 3, Card.Id: 1002 } &&
-            summonTrap.Spells[1, 3] is null && summonTrap.Graveyard(0).Single() == strong &&
-            destroyed.SequenceEqual(new[] { new DemoMonsterDestruction(0, 0, strong, false, false) }),
-            "CPU: Trap Hole reports its zone and one destroyed monster after normal resolution");
-
-        var tributeMonster = strong with { Properties = (strong.Properties & ~(15u << 25)) | (6u << 25) };
-        var tribute = State(0, [tributeMonster], own: weak);
-        tribute.MonsterDestroyed += destroyed.Add;
-        check(tribute.SummonLeftmost(0, false, out _, [0]) && tribute.Graveyard(0).Single() == weak &&
-            destroyed.Count == 1, "Presentation: tribute movement does not trigger destruction");
-
-        var noMoves = State(1, [], own: weak, enemy: strong, deck: [Spell(999)]);
-        int count = 0;
-        while (noMoves.Turn == 2 && !noMoves.GameOver && count++ < 30)
-            check(cpu.Step(noMoves).Status == CpuStepStatus.Acted, "CPU: bounded few-options action");
-        check(noMoves.Turn == 3 && count < 10 && noMoves.Life[1] == 8000,
-            "CPU: refuses losing face-up attack and ends turn with unsupported hand card");
-        var defense = State(1, [Monster(3, 700, 2000)], enemy: strong, deck: [Spell(999)]);
-        cpu.Step(defense); var set = cpu.Step(defense);
-        check(set.Action == CpuAction.Set && defense.DefensePosition[1, 0] &&
-            !set.Message.Contains("Fixture"), "CPU: defensive set with hidden identity in log");
-
-        foreach (ushort id in new ushort[] { 500, 590, 427, 101, 601, 540 })
-        {
-            var flip = Monster(id, 450, 600);
-            var d = State(1, [], flip, strong, [Spell(342), Spell(1002, 21)],
-                Enumerable.Repeat(weak, 12).ToArray());
-            d.MonsterFaceDown[1, 0] = d.DefensePosition[1, 0] = true;
-            check(d.ChangePosition(0, out _), $"CPU FLIP {id}: setup trigger");
-            int steps = 0;
-            while (CpuDuelController.PendingOwner(d) == 1 && !d.GameOver && steps++ < 12)
-                check(cpu.Step(d).Status == CpuStepStatus.Acted, $"CPU FLIP {id}: resolve choice");
-            check(CpuDuelController.PendingOwner(d) is null && steps < 12, $"CPU FLIP {id}: no stalled prompt");
-        }
-        var attackFlip = State(0, [], strong, Monster(500, 450, 600));
-        attackFlip.MonsterFaceDown[1, 0] = attackFlip.DefensePosition[1, 0] = true;
-        attackFlip.NextTurn(); attackFlip.NextTurn(); attackFlip.BeginBattle(out _); attackFlip.Attack(0, 0, out _);
-        check(attackFlip.PendingFlipTarget?.Owner == 1 && cpu.Step(attackFlip).Status == CpuStepStatus.Acted &&
-            attackFlip.PendingFlipTarget is null && attackFlip.Monsters[0, 0] is null,
-            "CPU: defender resolves mandatory FLIP during human turn");
-
-        var revive = State(1, [], Monster(1405), strong);
-        revive.NextTurn(); revive.BeginBattle(out _); revive.Attack(0, 0, out _);
-        check(revive.PendingEffectDecision?.Owner == 1 && cpu.Step(revive).Action == CpuAction.Decision &&
-            revive.PendingEffectDecision is null && revive.Life[1] == 8000,
-            "CPU: optional revival cost is declined without blocking opponent");
-
-        var discard = State(1, Enumerable.Repeat(Spell(999), 12).ToArray(), deck: [Spell(999)]);
-        int discards = 0;
-        for (int i = 0; i < 25 && discard.Turn == 2; i++)
-        {
-            var step = cpu.Step(discard);
-            if (step.Action == CpuAction.Discard) discards++;
-            check(step.Status == CpuStepStatus.Acted, "CPU: discard progress");
-        }
-        check(discard.Turn == 3 && discards == 7 && discard.HandFor(1).Count == 6,
-            "CPU: enforces end-turn hand limit and advances exactly once");
-
-        var stressed = State(1, Enumerable.Repeat(Spell(338), 75).ToArray(), deck: [weak]);
-        int stressActions = 0, tacticalSpells = 0;
-        while (stressed.Turn == 2 && stressActions++ < CpuDuelController.MaxActionsPerTurn)
-        {
-            var step = cpu.Step(stressed);
-            if (step.Status != CpuStepStatus.Acted) throw new Exception(step.Message);
-            if (step.Action == CpuAction.Spell) tacticalSpells++;
-        }
-        check(stressed.Turn == 3 && tacticalSpells == CpuDuelController.TacticalActionLimit - 1 &&
-            stressed.HandFor(1).Count == 6 && stressActions < CpuDuelController.MaxActionsPerTurn,
-            "CPU: tactical limit stops optional actions but still finishes mandatory discards");
-
-        // Entire deterministic matches, with FLIP, LP and trap responses in both directions.
-        var pool = new[] { strong, Monster(3, 1400, 2000), Monster(500, 450, 600), Monster(427, 300, 400),
-            Monster(101, 900, 400), Monster(590, 700, 600), Spell(345), Spell(342), Spell(341), Spell(1002, 21), Spell(1056, 21) };
-        var deck = Enumerable.Range(0, 40).Select(i => pool[i % pool.Length]).ToArray();
-        string Play(int seed, DuelLookAndFeel style)
-        {
-            var d = DemoDuel.FromDecks(deck, deck, seed);
-            var controllers = new[] { new CpuDuelController(0), new CpuDuelController(1) };
-            var clock = new DuelPresentationClock(style);
-            var transcript = new List<string>();
-            for (int i = 0; i < 5000 && !d.GameOver; i++)
-            {
-                int owner = CpuDuelController.PendingOwner(d) ?? d.ActivePlayer;
-                var result = controllers[owner].Step(d);
-                if (result.Status != CpuStepStatus.Acted) throw new Exception($"CPU seed {seed}: {result.Message}");
-                if (controllers[owner].ActionsThisTurn > CpuDuelController.MaxActionsPerTurn) throw new Exception("Unbounded CPU turn");
-                transcript.Add($"{d.Turn}:{result.Action}:{d.Life[0]}:{d.Life[1]}:{result.Message}");
-                clock.Show(DuelPresentationCue.CardMove); clock.Advance(TimeSpan.FromSeconds(1));
-            }
-            if (!d.GameOver) throw new Exception("CPU match did not terminate: " + seed);
-            return string.Join("|", transcript) + $"/{d.Winner}/{d.IsDraw}";
-        }
-        for (int seed = 0; seed < 40; seed++)
-        {
-            string expected = Play(seed, new DuelLookAndFeel());
-            check(expected == Play(seed, new FastLookAndFeel()) && expected == Play(seed, new InstantLookAndFeel()),
-                $"CPU: full duel seed {seed}, deterministic result independent of presentation");
-        }
     }
 
     public static void RunCatalog(Action<bool, string> check, Archive archive)
@@ -514,43 +400,9 @@ internal static class CpuDuelChecks
         check(deck.Concat(fusion).All(c => art.For(c) is { } image && !image.StartsWith(@"card\token_", StringComparison.OrdinalIgnoreCase)),
             "Alpha: all cards are available in the packs and have non-token artwork");
         check(deck.Count == 40 && deck.GroupBy(c => c.Id).All(g => g.Count() <= 3), "Alpha: curated DAT deck has 40 cards, at most three copies");
-        foreach (bool queued in new[] { false, true })
-        {
-            RunAlphaDuels(check, deck, fusion, queued);
-        }
+        // Full DAT duels are now differential lab work, not a CI gate.
+        // See archive/card-tests for the historical two-executor comparison.
     }
 
-    private static void RunAlphaDuels(Action<bool, string> check, IReadOnlyList<Card> deck,
-        IReadOnlyList<Card> fusion, bool queued)
-    {
-        string mode = queued ? "queued" : "legacy";
-        int fusions = 0;
-        for (int seed = 0; seed < 30; seed++)
-        {
-            var d = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
-            var queue = queued ? d.CreatePrimitiveActionQueue() : null;
-            d.MonsterSpecialSummoned += summon =>
-            {
-                if (FusionRules.IsFusionMonster(summon.Card)) fusions++;
-            };
-            var players = new[] { new CpuDuelController(0), new CpuDuelController(1) };
-            int steps = 0;
-            while (!d.GameOver && steps++ < 5000)
-            {
-                var action = players[CpuDuelController.PendingOwner(d) ?? d.ActivePlayer].Step(d);
-                if (action.Status != CpuStepStatus.Acted)
-                    throw new InvalidOperationException($"Alpha DAT {mode}, seed {seed}, turn {d.Turn}: {action.Message}");
-                for (int tick = 0; queue is { IsBusy: true } && tick < 1000; tick++)
-                {
-                    if (queue.PendingDecision is { } decision)
-                        queue.SubmitDecision(decision.Id, CpuDuelController.DecideOptionalEffect(d, decision));
-                    queue.Tick();
-                }
-                if (queue is { IsBusy: true })
-                    throw new InvalidOperationException($"Alpha DAT {mode}, seed {seed}: action queue did not drain.");
-            }
-            check(d.GameOver && steps < 5000, $"Alpha DAT {mode}: complete duel seed {seed} in {steps} actions / {d.Turn} turns");
-        }
-        check(fusions > 0, $"Alpha DAT {mode}: the curated Fusion Deck was used in a complete CPU duel");
-    }
+
 }

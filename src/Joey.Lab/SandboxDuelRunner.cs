@@ -94,6 +94,7 @@ public static class SandboxDuelRunner
                 output.WriteLine($"Sandbox duels: {totals.Count}; winners 0/1: " +
                     $"{totals.Count(x => x.Winner == 0)}/{totals.Count(x => x.Winner == 1)}; " +
                     $"turn-limit: {totals.Count(x => x.Status == "TurnLimit")}; " +
+                    $"unsupported: {totals.Count(x => x.Status == "Unsupported")}; " +
                     $"actions: {totals.Sum(x => x.Actions)}");
                 output.WriteLine("Saved sandbox-only JSONL: " + destination);
             }
@@ -160,13 +161,16 @@ public static class SandboxDuelRunner
         static List<Card> Deck(int side)
         {
             var result = new List<Card>();
+            // Synthetic stats, but known Normal resource IDs select the
+            // ordinary queued battle contract rather than an unsupported ID.
+            ushort[] normalIds = [0, 1, 2, 3, 5, 6, 9, 12, 13, 16, 17, 18, 19, 21, 23, 25, 26, 27, 31, 32, 33, 34, 37, 38, 40, 41, 44, 49, 50, 51, 52, 54, 58, 59, 61, 63, 64, 65, 67, 70];
             for (int i = 0; i < 38; i++)
             {
                 int attackUnits = 95 + (i % 12) * 8;
                 int defenseUnits = 80 + (i % 9) * 6;
                 uint props = (1u << 20) | (4u << 25) |
                     ((uint)attackUnits << 9) | (uint)defenseUnits;
-                result.Add(new Card(2000 + side * 100 + i, (ushort)(3000 + side * 100 + i),
+                result.Add(new Card(2000 + side * 100 + i, normalIds[i],
                     $"Synthetic monster {side}/{i}", "", props));
             }
             result.Add(new Card(2900 + side, 342, "Synthetic Sparks", "", 21u << 20));
@@ -197,6 +201,8 @@ public static class SandboxDuelRunner
         {
             int gameSeed = unchecked(seed + game * 1009);
             DemoDuel duel = DemoDuel.FromDecks(deck0, deck1, gameSeed);
+            var queue = duel.CreatePrimitiveActionQueue();
+            bool unsupported = false;
             int sequence = 0;
             object Snapshot() => new
             {
@@ -210,61 +216,83 @@ public static class SandboxDuelRunner
                     .Select(z => duel.Spells[p, z]?.Index).ToArray()).ToArray(),
                 winner = duel.Winner
             };
-            void Step(string action, Func<(bool Success, string Message)> operation,
+            bool Step(string action, Func<(bool Success, string Message)> operation,
                 int? sourceIndex = null, int? targetPlayer = null, int? targetZone = null)
             {
-                int turn = duel.Turn, side = duel.ActivePlayer;
+                int turn = duel.Turn, side = duel.ActivePlayer, cursor = queue.Trace.Count;
                 string phase = duel.Phase.ToString();
                 object before = Snapshot();
                 var (success, message) = operation();
                 if (!success)
-                    throw new InvalidOperationException($"Rejected sandbox action {action}: {message}");
-                events.WriteLine(JsonSerializer.Serialize(new
                 {
-                    kind = "sandbox_action", duelIndex = game, seq = ++sequence,
-                    turn, side, phase, action, sourceIndex, targetPlayer, targetZone,
-                    message, before, after = Snapshot()
-                }));
-                // The headless runner never blocks waiting for human input.
-                // Explicit conservative policy: decline optional costs, log the
-                // choice, and do not present this as the native demo AI.
-                while (duel.PendingEffectDecision is { } request)
-                {
-                    object decisionBefore = Snapshot();
-                    bool resolved = duel.ResolveEffectDecision(
-                        request.Id, EffectDecisionAnswer.Decline, out string reason);
-                    if (!resolved)
-                        throw new InvalidOperationException("Headless effect decision was rejected.");
+                    unsupported = true;
                     events.WriteLine(JsonSerializer.Serialize(new
                     {
-                        kind = "sandbox_effect_decision", duelIndex = game, seq = ++sequence,
-                        decisionId = request.Id, request.Owner,
-                        effectKind = request.Kind.ToString(),
-                        sourceIndex = request.Source.Index,
-                        policy = "DeclineOptionalCosts", answer = "Decline",
-                        turn = duel.Turn, reason, before = decisionBefore, after = Snapshot()
+                        kind = "sandbox_unsupported", duelIndex = game, seq = ++sequence,
+                        turn, side, phase, action, sourceIndex, targetPlayer, targetZone,
+                        reason = message, before, after = Snapshot()
                     }));
+                    return false;
                 }
-            }
-            while (duel.Winner is null && duel.Turn <= maxTurns)
-            {
-                Step("Draw", () => { bool ok = duel.Draw(out string message); return (ok, message); });
-                if (duel.Winner is not null) break;
 
-                // Only whitelisted fixed-damage spells; not a native effect/chain executor.
-                while (duel.Winner is null)
+                // Identical scheduler to App/CPU. The headless gate releases
+                // immediately; the sandbox policy explicitly declines optional costs.
+                for (int tick = 0; tick < 10000 && queue.IsBusy; tick++)
+                {
+                    if (queue.PendingDecision is { } request)
+                    {
+                        object decisionBefore = Snapshot();
+                        if (!queue.SubmitDecision(request.Id, EffectDecisionAnswer.Decline))
+                            throw new InvalidOperationException("Headless queued decision was rejected.");
+                        events.WriteLine(JsonSerializer.Serialize(new
+                        {
+                            kind = "sandbox_effect_decision", duelIndex = game, seq = ++sequence,
+                            decisionId = request.Id, request.Owner,
+                            effectKind = request.Kind.ToString(), sourceIndex = request.Source.Index,
+                            policy = "DeclineOptionalCosts", answer = "Decline",
+                            turn = duel.Turn, reason = "Decision admitted", before = decisionBefore,
+                            after = Snapshot()
+                        }));
+                    }
+                    queue.Tick();
+                }
+                var commands = queue.Trace.Skip(cursor)
+                    .Where(entry => entry.Stage == ActionTraceStage.Executed)
+                    .Select(entry => new
+                    {
+                        command = entry.Entry.Command.GetType().Name,
+                        outcome = entry.Result?.Outcome.ToString(),
+                        detail = entry.Result?.Detail
+                    }).ToArray();
+                unsupported = queue.IsBusy || commands.Any(entry => entry.outcome == nameof(CommandOutcome.Rejected));
+                events.WriteLine(JsonSerializer.Serialize(new
+                {
+                    kind = unsupported ? "sandbox_unsupported" : "sandbox_action",
+                    duelIndex = game, seq = ++sequence,
+                    turn, side, phase, action, sourceIndex, targetPlayer, targetZone,
+                    message, commands, before, after = Snapshot()
+                }));
+                return !unsupported;
+            }
+            while (!duel.GameOver && !unsupported && duel.Turn <= maxTurns)
+            {
+                if (!Step("Draw", () => { bool ok = duel.TryQueueTurnDraw(out string message, ActionOrigin.Cpu); return (ok, message); })) break;
+                if (duel.GameOver) break;
+
+                // Restricted sandbox policy, not the native AI. Every effect
+                // is admitted and resolved through the shared typed queue.
+                while (!duel.GameOver && !unsupported)
                 {
                     int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(
                         i => DirectDamageRules.Amount(duel.Hand[i].Id).HasValue &&
-                             duel.CanActivateFromHand(i), -1);
+                             duel.CanQueueFixedSpellActivation(DuelZone.Hand, i), -1);
                     if (spell < 0) break;
                     int cardIndex = duel.Hand[spell].Index;
-                    Step("FixedDamage", () => { bool ok = duel.Play(spell, out string message); return (ok, message); },
+                    Step("FixedDamage", () => { bool ok = duel.TryQueueActivation(spell, false, out string message, ActionOrigin.Cpu); return (ok, message); },
                         cardIndex);
                 }
-                if (duel.Winner is not null) break;
+                if (duel.GameOver || unsupported) break;
 
-                // No tribute/special summon in the initial sandbox. Choose highest ATK.
                 int summon = Enumerable.Range(0, duel.Hand.Count)
                     .Where(i => duel.Hand[i].IsMonster && duel.Hand[i].Level <= 4 &&
                                 duel.CanSummonFromHand(i))
@@ -274,16 +302,16 @@ public static class SandboxDuelRunner
                 if (summon >= 0)
                 {
                     int cardIndex = duel.Hand[summon].Index;
-                    Step("NormalSummon", () => { bool ok = duel.SummonLeftmost(summon, false, out string message); return (ok, message); },
-                        cardIndex);
+                    if (!Step("NormalSummon", () => { bool ok = duel.TryQueueNormalPlacement(summon, duel.FirstFreeMonsterZone(), false, out string message, origin: ActionOrigin.Cpu); return (ok, message); },
+                        cardIndex)) break;
                 }
-                if (duel.Turn > 1 && duel.Winner is null)
+                if (duel.Turn > 1 && !duel.GameOver && duel.CanBeginBattle)
                 {
-                    Step("BeginBattle", () => { bool ok = duel.BeginBattle(out string message); return (ok, message); });
+                    if (!Step("BeginBattle", () => { bool ok = duel.TryQueueBattlePhaseChange(true, out string message, ActionOrigin.Cpu); return (ok, message); })) break;
                     int side = duel.ActivePlayer, other = 1 - side;
-                    for (int zone = 0; zone < 5 && duel.Winner is null; zone++)
+                    for (int zone = 0; zone < 5 && !duel.GameOver && !unsupported; zone++)
                     {
-                        if (duel.Monsters[side, zone] is not Card card || duel.DefensePosition[side, zone])
+                        if (duel.Monsters[side, zone] is not Card card || !duel.CanAttack(zone))
                             continue;
                         int target = Enumerable.Range(0, 5)
                             .Where(z => duel.Monsters[other, z] is not null)
@@ -291,21 +319,27 @@ public static class SandboxDuelRunner
                                 ? duel.DefenseValue(other, z) : duel.AttackValue(other, z))
                             .ThenBy(z => z).FirstOrDefault(-1);
                         int sourceZone = zone;
-                        Step("Attack", () => { bool ok = duel.Attack(sourceZone, target, out string message); return (ok, message); },
+                        Step("Attack", () => { bool ok = duel.TryQueueAttack(sourceZone, target, out string message, ActionOrigin.Cpu); return (ok, message); },
                             card.Index, other, target);
                     }
                 }
-                if (duel.Winner is not null) break;
-                Step("EndTurn", () => { bool ok = duel.EndTurn(out string message); return (ok, message); });
-                while (duel.Phase == DemoPhase.End && duel.Winner is null)
+                if (duel.GameOver || unsupported) break;
+                if (!Step("EndTurn", () => { bool ok = duel.TryQueueEndTurn(out string message, ActionOrigin.Cpu); return (ok, message); })) break;
+                while (duel.Phase == DemoPhase.End && !duel.GameOver && !unsupported)
                 {
+                    if (duel.PendingEndDiscards == 0)
+                    {
+                        Step("AdvanceTurn", () => { bool ok = duel.TryQueueEndTurn(out string message, ActionOrigin.Cpu); return (ok, message); });
+                        continue;
+                    }
                     int index = duel.Hand.Count - 1;
                     int cardIndex = duel.Hand[index].Index;
-                    Step("EndPhaseDiscard", () => { bool ok = duel.DiscardForEndTurn(index, out string message); return (ok, message); },
+                    Step("EndPhaseDiscard", () => { bool ok = duel.TryQueueEndTurnDiscard(index, out string message, ActionOrigin.Cpu); return (ok, message); },
                         cardIndex);
                 }
             }
-            string status = duel.Winner is null ? "TurnLimit" : "SandboxWinner";
+            string status = unsupported ? "Unsupported" : duel.IsDraw ? "Draw" :
+                duel.Winner is null ? "TurnLimit" : "SandboxWinner";
             var outcome = new SandboxDuelOutcome(game, gameSeed, duel.Winner,
                 status, duel.Turn, sequence, duel.Life[0], duel.Life[1]);
             summaries.Add(outcome);
@@ -322,6 +356,8 @@ public static class SandboxDuelRunner
             winner0 = summaries.Count(s => s.Winner == 0),
             winner1 = summaries.Count(s => s.Winner == 1),
             turnLimit = summaries.Count(s => s.Status == "TurnLimit"),
+            unsupported = summaries.Count(s => s.Status == "Unsupported"),
+            draws = summaries.Count(s => s.Status == "Draw"),
             nativeParity = false
         }));
         return summaries;

@@ -726,3 +726,11 @@ O gate C12.1 segue aberto, incluindo respostas à declaração de ataque.
 ### C12 — Retirada de execução direta nos produtores gráficos
 
 App admite fases, compra, set, summon, posição, campo, seleção, respostas e fusão exclusivamente pelos produtores tipados; abrir seleção de fusão não move cartas. CPU com fila rejeita prompts legados; modo CPU sem fila e resolvedores Core ainda pendentes. Não manter fallback para recuperar cobertura. Reavaliar Royal Command, Destiny Board e outras ativações sem produtor no manifesto antes do fechamento. Build/CI requeridos.
+
+### C12 — CPU sem motor alternativo
+
+CpuDuelController.Step exige fila anexada e só admite comandos tipados; retirados resolvedores de turno, combate, magia, equipamento, seleção e respostas. O overload booleano obsoleto rejeita false e existe apenas para compilar chamadas históricas ainda não arquivadas. Os checks ativos de CPU preservam admissão/ordem, deck-out e rejeição sem mutação; comparações com legado e duelos sintéticos legados arquivados. Próxima fatia: retirar overload, migrar Lab/SandboxDuelRunner e tornar fila obrigatória no Core, apagando mutadores públicos e estados legados. Não promover cobertura de operações sem produtor.
+
+### C12 — Lab pela fila
+
+SandboxDuelRunner agora admite compra, dano, invocação, combate e fim de turno pela ActionQueue, drena com gate headless e registra comandos executados. Rejeições/limites do piloto encerram o duelo como Unsupported, sem fallback. Fixtures de monstros usam IDs Normais conhecidos com stats sintéticos; não há alegação de paridade nativa. O próximo passo é remover os mutadores públicos e separar inicialização/fixtures do motor.

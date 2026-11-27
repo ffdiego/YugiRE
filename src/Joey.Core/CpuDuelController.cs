@@ -56,26 +56,22 @@ public sealed class CpuDuelController
 
     private delegate bool Operation(out string message);
 
-    private static bool RejectLegacy(out string message)
-    {
-        message = "Legacy resolution is unsupported in queued duels.";
-        return false;
-    }
-
     // A CPU-owned queue decision must not wait for a human preference or click.
     public static EffectDecisionAnswer DecideOptionalEffect(DemoDuel duel, PendingEffectDecision request) =>
         request.Kind == EffectDecisionKind.DrawOneOnFlip && duel.DeckCount(request.Owner) > 0
             ? EffectDecisionAnswer.Accept : EffectDecisionAnswer.Decline;
 
+    // Historical source compatibility only: false cannot select an executor.
+    [Obsolete("Use Step(duel); the typed action queue is mandatory.")]
+    public CpuStep Step(DemoDuel duel, bool queueTurnActions) =>
+        queueTurnActions ? Step(duel) : new(CpuStepStatus.Blocked, CpuAction.None, Player,
+            "Legacy CPU execution has been removed.");
+
     public CpuStep Step(DemoDuel duel)
     {
         ArgumentNullException.ThrowIfNull(duel);
-        return Step(duel, queueTurnActions: duel.HasActionQueue);
-    }
-
-    public CpuStep Step(DemoDuel duel, bool queueTurnActions)
-    {
-        ArgumentNullException.ThrowIfNull(duel);
+        if (!duel.HasActionQueue)
+            return new(CpuStepStatus.Blocked, CpuAction.None, Player, "Attach the duel action queue before stepping the CPU.");
         if (!ReferenceEquals(duel, observedDuel) || observedTurn != duel.Turn)
         {
             observedDuel = duel; observedTurn = duel.Turn;
@@ -109,63 +105,33 @@ public sealed class CpuDuelController
                 }, card, source, target, handIndex, additionalSpentHandIndices, fieldOwner);
         }
 
-        if (duel.PendingEffectDecision is { } decision)
-        {
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy effect decision is unsupported.");
-            var answer = DecideOptionalEffect(duel, decision);
-            return Act(CpuAction.Decision, (out string m) => duel.ResolveEffectDecision(
-                decision.Id, answer, out m));
-        }
+        if (duel.PendingEffectDecision is not null)
+            return Idle(CpuStepStatus.Blocked, "Legacy effect decision is unsupported.");
         if (duel.PendingSummonResponse is { } summon)
         {
             var trap = summon.EligibleTraps.FirstOrDefault(t => t.Owner == Player &&
                 (t.Trap.Id == SummonTrapRules.TrapHole ||
                  BoardPower(duel, 1 - Player) > BoardPower(duel, Player)));
-            if (duel.UsesQueuedSummonResponse(summon))
-                return Act(CpuAction.Response, (out string m) =>
-                    duel.TryQueueSummonResponse(summon, trap, out m, ActionOrigin.Cpu));
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy summon response is unsupported.");
-            return trap is null ? Act(CpuAction.Response, duel.PassSummonResponse) :
-                Act(CpuAction.Response, (out string m) => duel.ActivateSummonTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
+            return Act(CpuAction.Response, (out string m) =>
+                duel.TryQueueSummonResponse(summon, trap, out m, ActionOrigin.Cpu));
         }
         if (duel.PendingAttackResponse is { } attack)
         {
             var trap = attack.EligibleTraps.FirstOrDefault(t => t.Owner == Player);
-            if (duel.UsesQueuedAttackResponse(attack))
-                return Act(CpuAction.Response, (out string m) =>
-                    duel.TryQueueAttackResponse(attack, trap, out m, ActionOrigin.Cpu));
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy attack response is unsupported.");
-            return trap is null ? Act(CpuAction.Response, duel.PassAttackResponse) :
-                Act(CpuAction.Response, (out string m) => duel.ActivateAttackTrap(Player, trap.Zone, out m), trap.Trap, source: trap.Zone);
+            return Act(CpuAction.Response, (out string m) =>
+                duel.TryQueueAttackResponse(attack, trap, out m, ActionOrigin.Cpu));
         }
-        if (duel.PendingSpellTrapTarget is { } pendingTarget)
-        {
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy Spell/Trap selection is unsupported.");
-            var target = pendingTarget.EligibleTargets.FirstOrDefault(candidate => candidate.Player != Player);
-            if (target is null) return Act(CpuAction.Selection, duel.CancelSpellTrapTarget);
-            return Act(CpuAction.Spell, (out string m) => duel.ResolveSpellTrapTarget(target.Player, target.Zone, out m),
-                pendingTarget.Spell,
-                source: pendingTarget.FromSet ? pendingTarget.SourceIndex : duel.FirstFreeSpellZone(),
-                handIndex: pendingTarget.FromSet ? null : pendingTarget.SourceIndex);
-        }
+        if (duel.PendingSpellTrapTarget is not null)
+            return Idle(CpuStepStatus.Blocked, "Legacy Spell/Trap selection is unsupported.");
         if (duel.PendingFusionSummon is { } fusion)
         {
             var option = fusion.Options.MaxBy(option => option.Result.Attack)!;
-            if (queueTurnActions)
-                return Act(CpuAction.Spell, (out string m) => duel.TryQueueFusionSummon(
-                    fusion, option.DeckIndex, option.SuggestedMaterials, out m, origin: ActionOrigin.Cpu));
-            int[] spent = option.SuggestedMaterials.Where(material => material.Zone == FusionMaterialZone.Hand)
-                .Select(material => material.Index).ToArray();
-            return Act(CpuAction.Spell,
-                (out string m) => duel.ResolveFusionSummon(option.DeckIndex, option.SuggestedMaterials, out m),
-                fusion.Spell, source: fusion.FieldOwner is null
-                    ? fusion.FromSet ? fusion.SourceIndex : duel.FirstFreeSpellZone() : null,
-                handIndex: fusion.FromSet || fusion.FieldOwner is not null ? null : fusion.SourceIndex,
-                additionalSpentHandIndices: spent, fieldOwner: fusion.FieldOwner);
+            return Act(CpuAction.Spell, (out string m) => duel.TryQueueFusionSummon(
+                fusion, option.DeckIndex, option.SuggestedMaterials, out m, origin: ActionOrigin.Cpu));
         }
         if (duel.PendingFlipSpellTrapTargets is { } twoSpellTargets)
         {
-            if (queueTurnActions && duel.UsesQueuedFlipSpellTrapSelection(twoSpellTargets))
+            if (duel.UsesQueuedFlipSpellTrapSelection(twoSpellTargets))
             {
                 if (duel.FlipEffectsNegated)
                     return Act(CpuAction.Selection, (out string m) =>
@@ -180,32 +146,21 @@ public sealed class CpuDuelController
                     : Act(CpuAction.Selection, (out string m) => duel.TrySelectQueuedFlipSpellTrapTarget(
                         twoSpellTargets, queuedChoice.Target.Side, queuedChoice.Zone, out m, ActionOrigin.Cpu));
             }
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy Spell/Trap pair is unsupported.");
-            // Prefer adverse targets, while allowing own-side selections when
-            // the effect requires two cards across the entire field.
-            var choice = twoSpellTargets.EligibleTargets
-                .Where(t => !duel.SelectedFlipSpellTrapTargets.Any(s =>
-                    s.Player == t.Player && s.Zone == t.Zone))
-                .OrderBy(t => t.Player == Player ? 1 : 0)
-                .ThenBy(t => t.Zone).FirstOrDefault();
-            return choice is null
-                ? Idle(CpuStepStatus.Blocked, "Mandatory two-target FLIP has no candidate.")
-                : Act(CpuAction.Selection, (out string m) =>
-                    duel.SelectFlipSpellTrapTarget(choice.Player, choice.Zone, out m));
+            return Idle(CpuStepStatus.Blocked, "Unsupported Spell/Trap selection.");
         }
         if (duel.PendingCardSelection is { } selection)
         {
             var candidate = selection.EligibleCards
                 .Where(c => !duel.SelectedBatchIndices.Contains(c.SourceIndex))
                 .OrderByDescending(c => CardValue(c.Card)).ThenBy(c => c.SourceIndex).FirstOrDefault();
-            if (queueTurnActions && duel.UsesQueuedHandSelection(selection))
+            if (duel.UsesQueuedHandSelection(selection))
             {
                 if (candidate is not null || selection.MinSelections == 0)
                     return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedHandSelection(
                         selection, candidate?.SourceIndex, out m, ActionOrigin.Cpu), candidate?.Card);
                 return Idle(CpuStepStatus.Blocked, "Mandatory queued hand selection has no candidate.");
             }
-            if (queueTurnActions && duel.UsesQueuedFieldSelection(selection))
+            if (duel.UsesQueuedFieldSelection(selection))
             {
                 int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);
                 var choices = selection.EligibleCards.OrderByDescending(c => CardValue(c.Card))
@@ -222,25 +177,11 @@ public sealed class CpuDuelController
                 return Act(CpuAction.Selection, (out string m) => duel.TrySubmitQueuedFieldSelection(
                     selection, targets, set, out m, ActionOrigin.Cpu), choices.FirstOrDefault()?.Card);
             }
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy card selection is unsupported.");
-            if (selection.MaxSelections > 1)
-            {
-                int free = Enumerable.Range(0, 5).Count(z => duel.Monsters[Player, z] is null);
-                if (candidate is not null && duel.SelectedBatchIndices.Count < free)
-                    return Act(CpuAction.Selection, (out string m) => duel.SelectBatchCard(candidate.SourceIndex, out m));
-                return Act(CpuAction.Selection, duel.FinishOptionalCardSelection);
-            }
-            if (candidate is not null)
-                return Act(CpuAction.Selection, (out string m) => duel.ResolveCardSelection(candidate.SourceIndex, null,
-                    selection.Destination == CardSelectionDestination.Field && selection.MaySelectFaceDownDefense &&
-                    candidate.Card.Defense > candidate.Card.Attack, out m), candidate.Card);
-            if (selection.MinSelections == 0)
-                return Act(CpuAction.Selection, duel.SkipOptionalCardSelection);
-            return Idle(CpuStepStatus.Blocked, "Mandatory card selection has no legal candidate.");
+            return Idle(CpuStepStatus.Blocked, "Unsupported card selection.");
         }
         if (duel.PendingFlipTarget is { } flip)
         {
-            if (queueTurnActions && duel.UsesQueuedMonsterFlipSelection(flip))
+            if (duel.UsesQueuedMonsterFlipSelection(flip))
             {
                 if (flip.Trigger == DemoMonsterEffectTrigger.Flip && duel.FlipEffectsNegated)
                     return Act(CpuAction.Selection, (out string m) =>
@@ -260,49 +201,19 @@ public sealed class CpuDuelController
                         duel.TryFinishQueuedMonsterFlipSelection(flip, out m, ActionOrigin.Cpu));
                 return Idle(CpuStepStatus.Blocked, "Mandatory queued FLIP has no legal target.");
             }
-            if (queueTurnActions) return Idle(CpuStepStatus.Blocked, "Legacy monster selection is unsupported.");
-            bool bounce = flip.Effect is DemoFlipEffect.ReturnOne or DemoFlipEffect.ReturnUpToTwo;
-            var targets = (from p in Enumerable.Range(0, 2)
-                           from z in Enumerable.Range(0, 5)
-                           where duel.Monsters[p, z] is not null &&
-                               (!bounce || !duel.IsMarkedForBattleDestruction(p, z)) &&
-                               (flip.Effect != DemoFlipEffect.DestroyOpponentMonster || p != flip.Owner) &&
-                               !duel.SelectedFlipTargets.Any(t => t.Player == p && t.Zone == z)
-                           orderby p != Player descending,
-                               (p == Player ? -KnownPower(duel, p, z) : KnownPower(duel, p, z)) descending, z
-                           select (Player: p, Zone: z)).ToArray();
-            if (flip.Effect == DemoFlipEffect.ReturnUpToTwo &&
-                !targets.Any(t => t.Player != Player))
-                return Act(CpuAction.Selection, duel.FinishFlipTargets);
-            if (targets.Length > 0)
-                return Act(CpuAction.Selection, (out string m) => duel.ResolveFlipTarget(targets[0].Player, targets[0].Zone, out m));
-            return Idle(CpuStepStatus.Blocked, "Mandatory FLIP has no legal target.");
+            return Idle(CpuStepStatus.Blocked, "Unsupported monster selection.");
         }
-        bool DrawTurnCard(out string pending) => queueTurnActions
-            ? duel.TryQueueTurnDraw(out pending, ActionOrigin.Cpu)
-            : duel.Draw(out pending);
-        bool EnterBattle(out string pending) => queueTurnActions
-            ? duel.TryQueueBattlePhaseChange(true, out pending, ActionOrigin.Cpu)
-            : duel.BeginBattle(out pending);
-        bool LeaveBattle(out string pending) => queueTurnActions
-            ? duel.TryQueueBattlePhaseChange(false, out pending, ActionOrigin.Cpu)
-            : duel.EndBattle(out pending);
-        bool EndTurn(out string pending) => queueTurnActions
-            ? duel.TryQueueEndTurn(out pending, ActionOrigin.Cpu)
-            : duel.EndTurn(out pending);
-        bool AttackFrom(int source, int target, out string pending)
-        {
-            return queueTurnActions
-                ? duel.TryQueueAttack(source, target, out pending, ActionOrigin.Cpu)
-                : duel.Attack(source, target, out pending);
-        }
+        bool DrawTurnCard(out string pending) => duel.TryQueueTurnDraw(out pending, ActionOrigin.Cpu);
+        bool EnterBattle(out string pending) => duel.TryQueueBattlePhaseChange(true, out pending, ActionOrigin.Cpu);
+        bool LeaveBattle(out string pending) => duel.TryQueueBattlePhaseChange(false, out pending, ActionOrigin.Cpu);
+        bool EndTurn(out string pending) => duel.TryQueueEndTurn(out pending, ActionOrigin.Cpu);
+        bool AttackFrom(int source, int target, out string pending) =>
+            duel.TryQueueAttack(source, target, out pending, ActionOrigin.Cpu);
 
         if (duel.PendingEndDiscards > 0)
         {
             int discard = Enumerable.Range(0, duel.Hand.Count).OrderBy(i => CardValue(duel.Hand[i])).ThenBy(i => i).First();
-            return Act(CpuAction.Discard, (out string m) => duel.HasQueuedEndDiscard
-                ? duel.TryQueueEndTurnDiscard(discard, out m, ActionOrigin.Cpu)
-                : queueTurnActions ? RejectLegacy(out m) : duel.DiscardForEndTurn(discard, out m));
+            return Act(CpuAction.Discard, (out string m) => duel.TryQueueEndTurnDiscard(discard, out m, ActionOrigin.Cpu));
         }
         if (tacticalActions >= TacticalActionLimit)
             return Act(CpuAction.EndTurn, EndTurn);
@@ -315,12 +226,9 @@ public sealed class CpuDuelController
             int gateInHand = Enumerable.Range(0, duel.Hand.Count)
                 .FirstOrDefault(i => duel.Hand[i].Id == FusionRules.FusionGate, -1);
             if (gateInHand >= 0 && duel.HasFusionCombination() &&
-                (!queueTurnActions || duel.CanQueueFixedSpellActivation(DuelZone.Hand, gateInHand)))
-                return Act(CpuAction.Spell, (out string m) => queueTurnActions
-                    ? duel.TryQueueActivation(gateInHand, false, out m, ActionOrigin.Cpu)
-                    : duel.Play(gateInHand, out m), duel.Hand[gateInHand],
+                duel.CanQueueFixedSpellActivation(DuelZone.Hand, gateInHand))
+                return Act(CpuAction.Spell, (out string m) => duel.TryQueueActivation(gateInHand, false, out m, ActionOrigin.Cpu), duel.Hand[gateInHand],
                     handIndex: gateInHand, fieldOwner: Player);
-            if (queueTurnActions)
             {
                 // Preserve the existing LP/draw/S/T-clear priorities. The
                 // typed producer owns all movement and its presentation.
@@ -336,7 +244,7 @@ public sealed class CpuDuelController
                             change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
                         if (!(useLpSpell ||
                               duel.ShouldPlayAttackRestrictionSpell(Player, candidate) ||
-                              ShouldClearSpellTraps(duel, candidate.Id, queued: true,
+                              ShouldClearSpellTraps(duel, candidate.Id,
                                   excludedSlot: zone == DuelZone.SpellTrap ? i : -1) ||
                               DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards ||
                               DrawSpellRules.IsCardDestruction(candidate) &&
@@ -348,19 +256,9 @@ public sealed class CpuDuelController
                     }
                 }
             }
-            else
-            {
-                int spell = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
-                    duel.CanActivateFromHand(i) && (LifePointSpellRules.Supports(duel.Hand[i].Id) ||
-                        ShouldClearSpellTraps(duel, duel.Hand[i].Id) ||
-                        DrawSpellRules.Effect(duel.Hand[i]) is { } draw && duel.DeckCount(Player) > draw.Cards), -1);
-                if (spell >= 0) return Act(CpuAction.Spell, (out string m) => duel.Play(spell, out m), duel.Hand[spell],
-                    source: duel.FirstFreeSpellZone(), handIndex: spell);
-            }
-            if (queueTurnActions && FindFissure(duel, Player) is { } fissure)
+            if (FindFissure(duel, Player) is { } fissure)
                 return Act(CpuAction.Selection, (out string m) =>
                     duel.TryQueueTargetedMonsterSpell(fissure.Source, fissure.Target, out m, ActionOrigin.Cpu));
-            if (queueTurnActions)
             {
                 int searchInHand = Enumerable.Range(0, duel.Hand.Count)
                     .FirstOrDefault(i => duel.CanQueueDeckSearchSpell(DuelZone.Hand, i), -1);
@@ -374,14 +272,9 @@ public sealed class CpuDuelController
                         duel.TryQueueDeckSearchSpell(DuelZone.SpellTrap, searchSet, out m, ActionOrigin.Cpu));
             }
             int fusionSpell = Enumerable.Range(0, duel.Hand.Count)
-                .FirstOrDefault(i => queueTurnActions
-                    ? duel.CanBeginQueuedFusionSelection(DuelZone.Hand, i)
-                    : FusionRules.Supports(duel.Hand[i]) && duel.CanActivateFromHand(i), -1);
+                .FirstOrDefault(i => duel.CanBeginQueuedFusionSelection(DuelZone.Hand, i), -1);
             if (fusionSpell >= 0)
-                return Act(CpuAction.Selection, (out string m) => queueTurnActions
-                    ? duel.TryBeginQueuedFusionSelection(DuelZone.Hand, fusionSpell, out m)
-                    : duel.Play(fusionSpell, out m));
-            if (queueTurnActions)
+                return Act(CpuAction.Selection, (out string m) => duel.TryBeginQueuedFusionSelection(DuelZone.Hand, fusionSpell, out m));
             {
                 foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
                 {
@@ -400,16 +293,7 @@ public sealed class CpuDuelController
                     }
                 }
             }
-            else
-            {
-                int targeted = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
-                    SpellTrapTargetRules.Supports(duel.Hand[i].Id) && duel.CanActivateFromHand(i) &&
-                    duel.SpellTrapTargets(duel.Hand[i].Id).Any(candidate => candidate.Player != Player), -1);
-                if (targeted >= 0)
-                    return Act(CpuAction.Selection, (out string m) => duel.Play(targeted, out m));
-            }
-
-            if (queueTurnActions && duel.SuggestQueuedRitualSummon() is { } ritual)
+            if (duel.SuggestQueuedRitualSummon() is { } ritual)
                 return Act(CpuAction.Spell, (out string m) => duel.TryQueueRitualSummon(
                     ritual.Spell, ritual.Monster, ritual.Slot, ritual.Materials, ritual.Defense, out m, ActionOrigin.Cpu));
 
@@ -429,9 +313,7 @@ public sealed class CpuDuelController
                     duel.MonsterFaceDown[Player, z] && !wantDefense && duel.AttackValue(Player, z) >= 1000)
                 {
                     int zone = z;
-                    return Act(CpuAction.Position, (out string m) => queueTurnActions
-                        ? duel.TryQueueChangePosition(zone, out m, ActionOrigin.Cpu)
-                        : duel.ChangePosition(zone, out m), duel.Monsters[Player, zone], zone);
+                    return Act(CpuAction.Position, (out string m) => duel.TryQueueChangePosition(zone, out m, ActionOrigin.Cpu), duel.Monsters[Player, zone], zone);
                 }
             }
             int summonIndex = Enumerable.Range(0, duel.Hand.Count).Where(duel.CanSummonFromHand)
@@ -447,16 +329,14 @@ public sealed class CpuDuelController
                 int[] tributes = Enumerable.Range(0, 5).Where(z => duel.Monsters[Player, z] is not null)
                     .OrderBy(z => duel.AttackValue(Player, z)).ThenBy(z => z).Take(DemoDuel.NormalTributes(card)).ToArray();
                 bool set = FlipEffectRules.Supports(card.Id) ||
-                    queueTurnActions && NormalSummonRules.DestroysAfterNormalSummon(card) ||
+                    NormalSummonRules.DestroysAfterNormalSummon(card) ||
                     card.Attack < MaxVisibleEnemyAttack(duel) && card.Defense > card.Attack;
                 int destination = duel.FirstFreeMonsterZone(tributes);
                 return Act(set ? CpuAction.Set : CpuAction.Summon,
-                    (out string m) => queueTurnActions
-                        ? duel.TryQueueNormalPlacement(summonIndex, destination, set, out m, tributes, ActionOrigin.Cpu)
-                        : duel.SummonLeftmost(summonIndex, set, out m, tributes),
+                    (out string m) => duel.TryQueueNormalPlacement(summonIndex, destination, set, out m, tributes, ActionOrigin.Cpu),
                     card, target: destination, handIndex: summonIndex);
             }
-            int specialSlot = queueTurnActions ? duel.FirstFreeMonsterZone() : -1;
+            int specialSlot = duel.FirstFreeMonsterZone();
             if (specialSlot >= 0)
             {
                 for (int index = 0; index < duel.Hand.Count; index++)
@@ -476,7 +356,6 @@ public sealed class CpuDuelController
             }
             // Preserve the CPU's preference for its own strongest compatible
             // monster. In queue mode the candidates include tracked Set sources.
-            if (queueTurnActions)
             {
                 foreach (var zone in new[] { DuelZone.Hand, DuelZone.SpellTrap })
                 {
@@ -494,27 +373,10 @@ public sealed class CpuDuelController
                     }
                 }
             }
-            else
-            {
-                // Equip only our own compatible monsters. Never sets an equipment it cannot activate.
-                for (int i = 0; i < duel.Hand.Count; i++)
-                {
-                    if (!EquipmentRules.Supports(duel.Hand[i].Id) || !duel.CanActivateFromHand(i)) continue;
-                    int target = Enumerable.Range(0, 5).Where(z => duel.Monsters[Player, z] is not null &&
-                        duel.EquipmentEligibility(i, Player, z) is { IsSupported: true, Value: true })
-                        .OrderByDescending(z => duel.AttackValue(Player, z)).FirstOrDefault(-1);
-                    if (target < 0) continue;
-                    int index = i;
-                    return Act(CpuAction.Equip, (out string m) => duel.Equip(index, Player, target, out m), duel.Hand[index],
-                        source: duel.FirstFreeSpellZone(), target: target, handIndex: index);
-                }
-            }
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
                 (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);
             if (trapIndex >= 0)
-                return Act(CpuAction.Set, (out string m) => queueTurnActions
-                    ? duel.TryQueueSpellTrapSet(trapIndex, out m, ActionOrigin.Cpu)
-                    : duel.SetFromHand(trapIndex, out m), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
+                return Act(CpuAction.Set, (out string m) => duel.TryQueueSpellTrapSet(trapIndex, out m, ActionOrigin.Cpu), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
             if (duel.CanBeginBattle) return Act(CpuAction.BeginBattle, EnterBattle);
         }
         if (duel.Phase == DemoPhase.Battle)
@@ -533,7 +395,7 @@ public sealed class CpuDuelController
                         return directAttempt;
                 }
                 var targets = enemies.Select(z => (Zone: z,
-                        Margin: queueTurnActions && !duel.MonsterFaceDown[enemy, z]
+                        Margin: !duel.MonsterFaceDown[enemy, z]
                             ? duel.QueuedTargetedBattlePower(Player, source, z).Difference
                             : power - KnownPower(duel, enemy, z)))
                     .Where(candidate => candidate.Margin > 0)
@@ -553,11 +415,11 @@ public sealed class CpuDuelController
         return Act(CpuAction.EndTurn, EndTurn);
     }
 
-    private bool ShouldClearSpellTraps(DemoDuel duel, ushort resourceId, bool queued = false, int excludedSlot = -1)
+    private bool ShouldClearSpellTraps(DemoDuel duel, ushort resourceId, int excludedSlot = -1)
     {
-        if (!(queued ? SpellTrapWipeRules.SupportsQueued(resourceId) : SpellTrapWipeRules.Supports(resourceId)))
+        if (!SpellTrapWipeRules.SupportsQueued(resourceId))
             return false;
-        bool hitsOwnSide = queued ? SpellTrapWipeRules.HitsOwnSideQueued(resourceId) : SpellTrapWipeRules.HitsOwnSide(resourceId);
+        bool hitsOwnSide = SpellTrapWipeRules.HitsOwnSideQueued(resourceId);
         int own = hitsOwnSide
             ? SpellTrapWipeRules.CountOnSide(Player, duel.Spells, duel.FieldSpells, excludedSlot) : 0;
         return SpellTrapWipeRules.CountOnSide(1 - Player, duel.Spells, duel.FieldSpells) > own;
@@ -584,7 +446,7 @@ public sealed class CpuDuelController
         FlipEffectRules.FourStarredLadybugOfDoom =>
             MonsterWipeRules.LevelFourOpponentTargets(Player, d.Monsters, d.MonsterFaceDown).Count > 0,
         FlipEffectRules.Skelengel => d.DeckCount(Player) > 0,
-        FlipEffectRules.PrincessOfTsurugi => d.HasActionQueue && !d.FlipEffectsNegated &&
+        FlipEffectRules.PrincessOfTsurugi => !d.FlipEffectsNegated &&
             SpellTrapWipeRules.CountOnSide(1 - Player, d.Spells, d.FieldSpells) > 0,
         FlipEffectRules.BubonicVermin =>
             Enumerable.Range(0, 5).Any(z => d.Monsters[Player, z] is null) &&

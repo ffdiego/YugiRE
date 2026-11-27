@@ -255,15 +255,15 @@ static partial class Game
         AdvancePhases();
         if (PhaseBusy || queue.IsBusy || duel.ActivePlayer != 1 || duel.Hand.Count != 1 ||
             duel.HandFor(0).Count != handLimit) return Failed("second Main Phase");
-        if (alphaCpu.Step(duel, queueTurnActions: true).Action != CpuAction.BeginBattle)
+        if (alphaCpu.Step(duel).Action != CpuAction.BeginBattle)
             return Failed("CPU Battle admission");
         AdvancePhases();
         if (PhaseBusy || queue.IsBusy || displayedPhase != DuelPhaseDisplay.Battle ||
-            alphaCpu.Step(duel, queueTurnActions: true).Action != CpuAction.EndBattle)
+            alphaCpu.Step(duel).Action != CpuAction.EndBattle)
             return Failed("CPU Main2 admission");
         AdvancePhases();
         if (PhaseBusy || queue.IsBusy || displayedPhase != DuelPhaseDisplay.Main2 ||
-            alphaCpu.Step(duel, queueTurnActions: true).Action != CpuAction.EndTurn)
+            alphaCpu.Step(duel).Action != CpuAction.EndTurn)
             return Failed("CPU End Phase admission");
         AdvancePhases();
         var draws = queue.Trace.Where(item => item.Stage == ActionTraceStage.Completed &&
@@ -393,7 +393,7 @@ static partial class Game
         var headless = Setup();
         if (!headless.BeginBattle(out _)) return Failed("headless phase");
         var headlessQueue = headless.CreatePrimitiveActionQueue();
-        if (new CpuDuelController(1).Step(headless, queueTurnActions: true).Action != CpuAction.Attack)
+        if (new CpuDuelController(1).Step(headless).Action != CpuAction.Attack)
             return Failed("headless admission");
         for (int tick = 0; tick < 10 && headlessQueue.IsBusy; tick++) headlessQueue.Tick();
         if (headlessQueue.IsBusy || headless.Life[0] != (targeted ? 7600 : 6600) ||

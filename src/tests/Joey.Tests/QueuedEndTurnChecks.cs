@@ -187,7 +187,7 @@ internal static class QueuedEndTurnChecks
             CpuAction.Discard, CpuAction.Discard];
         foreach (var action in actions)
         {
-            var step = cpu.Step(duel, queueTurnActions: true);
+            var step = cpu.Step(duel);
             check(step.Status == CpuStepStatus.Acted && step.Action == action && queue.IsBusy &&
                 queue.Trace.Last().Entry.Origin == ActionOrigin.Cpu,
                 $"A07 CPU admits {action} to the duel's queue");
