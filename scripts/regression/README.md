@@ -38,3 +38,22 @@ Roteiro 22 executado via PowerShell, headless e gráfico: 18 Applied e 106 linha
 V20.2 — revisão de moeda (Windows/Fedora desktop): `dotnet run --project src/Joey.App -- /path/to/data.dat --review-coin=3,5,400,100,1`. F7 avança, F8 reinicia, F12 captura PNG/JSON. Verificar uma/três moedas e ambos os bits; recortes/halo e flags de reflexão no JSON. Reflexão/brilhos não implementados; não repetir coleta 16. Validação manual pendente, sem dados privados versionados.
 
 V20.3: o review de moeda agora inclui brilho key5 e JSON schema 2 com o plano de reflexão. A reflexão continua omitida até resolver +94/+A0. Roteiro 24 já abrange esses offsets da vtable; não repetir a coleta 16.
+
+### 41 — V17, formato da superfície da cena em Wine
+
+Abra um duelo na sua cópia de teste com GDB e Wine/Proton disponíveis.
+Confira o SHA-256 do executável, o PID da cópia que você iniciou e o
+mapeamento do PE em `00400000`. O fingerprint é o da coleta 34.
+O roteiro usa breakpoint de hardware, lê três entradas de `0044DD00`
+e desanexa. Os campos de formato e flag são lidos na vtable conhecida.
+
+```bash
+timeout --signal=INT 15s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/41-wine-scene-surface.gdb > scratch/scene-surface-wine.log 2>&1
+```
+
+O piloto em Proton 9.0, Xvfb a 800×600 e llvmpipe retornou
+`0x005dc6ec format=3 flag78=0` nas três amostras do duelo de
+demonstração. Os breakpoints interferem no tempo de execução.
+A coleta 34 em Windows continua sendo a referência para cadência e
+para a passagem de composição na seleção.

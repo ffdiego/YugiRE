@@ -242,6 +242,17 @@ o build e os testes C#. Faltam o consumidor da chave e o formato
 efetivamente ativo durante os passes nativos.
 [Alocação YGA](../../docs/research/native-surface-copy-contract-2026-11-24.md#v17-complemento--alocação-do-yga-e-amostra-de-cor-chave-2711).
 
+V17 (27/11/2026, piloto em Proton). Uma cópia do PE com o fingerprint
+do inventário e o DAT local iniciou com Proton 9.0 em Xvfb de 800×600.
+O teste inicial encontrou dependências de vídeo ausentes. Após copiar
+as duas DLLs vkd3d da instalação do Proton para system32 e syswow64
+no prefixo isolado, o executável exibiu menu e duelo de demonstração.
+Em três entradas de `0044DD00`, GDB observou vtable `005DC6EC`,
+formato 3 (RGB565) e `+78h=0` no destino. As imagens e o log seguem
+privados em `scratch/native-runtime/`. A origem da seleção, o compositor
+efetivo e a cadência em Windows continuam pendentes.
+[Amostragem reproduzível](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>
