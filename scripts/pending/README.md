@@ -189,3 +189,29 @@ comparada ou divergências registradas. Não incluir recursos do jogo
 no Git. Roteiros 43–45 e 51 já executados no original; não repeti-los
 sem uma pergunta específica. Áudio físico e integração A03 separados.
 [Contrato V31.6](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v316--renderer-isolado-de-reaction07).
+
+## V22 — revisão gráfica de Break (56, aguardando DAT e comparação)
+
+**Ambiente:** Fedora/Linux ou Windows, .NET 10, display e DAT local.
+**Pergunta:** verificar partículas, orientação, fragmentos e fronteiras
+4/16 updates do review de campo `00450FD0`, antes do vínculo A03.
+
+```bash
+bash scripts/pending/56-break-field-review.sh /path/to/data.dat 250,8080 0
+bash scripts/pending/56-break-field-review.sh /path/to/data.dat 0,4080 0
+```
+
+Em Windows: `dotnet run --project src/Joey.App -- C:\\passion\\data.dat --review-break=250,8080 --review-perspective=0 --no-audio`.
+ID 250 é exemplo, use um resource ID válido; para ocultas usar ID 0.
+F12 nos contadores 0/16/48/64/128/240/256; F7 avança, F8 reinicia.
+Repetir nos dois lados, ataque e defesa, e com slot FF de snapshot.
+Os contadores 64..240 devem manter o efeito visível, mas sem
+`blocksRelease`. A captura final deve mostrar somente o tabuleiro.
+
+**Saída privada:** PNG/JSON em scratch/visual-review, log e comparação
+com original quando disponível. Sem exportar pixels para Git.
+**Encerramento:** aceitar DAT real, confirmar geometria e fronteiras,
+registrar divergências de +AC/+C e compositor. O review anterior no
+PR #186 aceitou DAT real; este roteiro valida a versão reconciliada e
+comparação gráfica, não repete Ghidra 29. Integração A03 separada.
+[Contrato](../../docs/research/native-break-field-review-2026-11-25.md).

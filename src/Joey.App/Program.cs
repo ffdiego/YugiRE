@@ -92,7 +92,8 @@ static partial class Game
             ConfigureCoinReview(args, archive);
             ConfigureAlternativeExclusionReview(args, archive);
             ConfigureReactionReview(args, archive);
-            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, reactionReview is not null }.Count(active => active) > 1)
+            ConfigureBreakFieldReview(args, archive);
+            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, reactionReview is not null, breakReviewCardPath is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
@@ -108,7 +109,7 @@ static partial class Game
         catch (Exception ex) when (ex is IOException or InvalidDataException or KeyNotFoundException or OverflowException)
         { error = ex.Message; Console.Error.WriteLine(error); }
         if (args.Contains("--inspect-visual-dat")) return 1;
-        if ((Option(args, "--review-chain=") is not null || Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || args.Contains("--review-general-fusion") || Option(args, "--review-general-fusion-cards=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-coin=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null || Option(args, "--review-reaction=") is not null) && error.Length > 0) return 1;
+        if ((Option(args, "--review-chain=") is not null || Option(args, "--review-disabled-chain=") is not null || Option(args, "--review-card-status=") is not null || Option(args, "--review-attached-fusion=") is not null || args.Contains("--review-general-fusion") || Option(args, "--review-general-fusion-cards=") is not null || Option(args, "--review-layerfont=") is not null || Option(args, "--review-dice=") is not null || Option(args, "--review-coin=") is not null || Option(args, "--review-alternative=") is not null || Option(args, "--review-exclusion=") is not null || Option(args, "--review-reaction=") is not null || Option(args, "--review-break=") is not null) && error.Length > 0) return 1;
         if (args.Contains("--alpha-headless"))
         {
             if (error.Length > 0) return 1;
@@ -135,7 +136,7 @@ static partial class Game
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
-        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && reactionReview is null && args.Contains("--alpha")) StartAlpha();
+        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && reactionReview is null && breakReviewCardPath is null && args.Contains("--alpha")) StartAlpha();
         // Suppress routine INFO texture/cache messages, not warnings/errors.
         // Do not initialize raylib solely to configure logging in headless modes.
         Raylib.SetTraceLogLevel(args.Contains("--raylib-verbose") ? TraceLogLevel.Info : TraceLogLevel.Warning);
@@ -159,6 +160,12 @@ static partial class Game
                 // Native detail uses an English GDI face, not the default
                 // raylib bitmap font; keep this confined to the sidebar.
                 duelTheme.LoadNativeDetailFonts();
+                if (breakReviewCardPath is not null)
+                {
+                    InitializeBreakFieldReview();
+                    screen = "break-review";
+                    Console.WriteLine("[V22 review] F7 native Update, F8 reset, F12 capture; field-only diagnostic compositor");
+                }
                 if (reactionReview is not null)
                 {
                     InitializeReactionReview();
@@ -255,7 +262,12 @@ static partial class Game
             mouse = (Raylib.GetMousePosition() - origin) / scale;
             debugOverlay.ResetFrame();
             Raylib.BeginTextureMode(canvas); Raylib.ClearBackground(Background);
-            if (screen == "reaction-review")
+            if (screen == "break-review")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
+                DrawBreakFieldReview();
+            }
+            else if (screen == "reaction-review")
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawReactionReview();
@@ -360,11 +372,12 @@ static partial class Game
             }
 
             Raylib.EndTextureMode();
-            if ((screen is "duel" or "active-chain-review" or "chain-review" or "status-review" or "fusion-review" or "general-fusion-review" or "layerfont-review" or "dice-review" or "coin-review" or "alt-ex-review" or "reaction-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
+            if ((screen is "duel" or "active-chain-review" or "chain-review" or "status-review" or "fusion-review" or "general-fusion-review" or "layerfont-review" or "dice-review" or "coin-review" or "alt-ex-review" or "reaction-review" or "break-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
                 try
                 {
-                    if (screen == "reaction-review") CaptureReactionReview(canvas);
+                    if (screen == "break-review") CaptureBreakFieldReview(canvas);
+                    else if (screen == "reaction-review") CaptureReactionReview(canvas);
                     else if (screen == "active-chain-review") CaptureChainReview(canvas);
                     else if (screen == "chain-review") CaptureDisabledChainReview(canvas);
                     else if (screen == "status-review") CaptureCardStatusReview(canvas);

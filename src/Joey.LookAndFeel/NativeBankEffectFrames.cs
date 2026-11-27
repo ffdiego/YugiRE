@@ -49,17 +49,27 @@ public sealed class NativeCoinTimeline
 public readonly record struct NativeCoinSample(int LocalCounter, CardPoint Center,
     int Bounce, int ScaleFixed8, bool ResultBit, uint? SoundRequest);
 
-public readonly record struct NativeBreakParticle(CardBounds Bounds, int Intensity);
+public readonly record struct NativeBreakParticle(CardBounds Bounds, int Intensity)
+{
+    // 0045105E..00451071 changes DL only; preserve the high bits of
+    // the angle. Intensity is the low byte, not a proven blend factor.
+    public int RawCompositorArgument { get; init; }
+}
 
 /// <summary>00450FB0/00450FD0. Five original resource-0 particles precede
 /// a separate card distortion pass (00558FB0). No generic Destroy mapping.</summary>
 public sealed class NativeBreakTimeline
 {
     public const int EndCounter=256, UpdateIncrement=16, Updates=16;
+    public const int ReleaseCounter=64;
     public const uint SoundRequest=0x10000008;
     public const int ParticleKey=0, ParticleCount=5;
     public int Counter { get; private set; }
     public bool Active => Counter < EndCounter;
+
+    // Vtable 005DB314 +4 = 00450E50 (CMP counter,40h / SETL).
+    // The object can still be drawn after this query stops blocking.
+    public bool BlocksRelease => Counter < ReleaseCounter;
 
     public void AdvanceNativeUpdate()
     {
@@ -78,7 +88,8 @@ public sealed class NativeBreakTimeline
             int angle=i*512/5;
             int dx=unchecked(NativeFusionMath.C(cosine,angle)*radius)>>16;
             int dy=unchecked(NativeFusionMath.C(cosine,angle-128)*radius)>>16;
-            result[i]=new(new(center.X+dx-width/2,center.Y+dy-height/2,width,height),255-Counter);
+            result[i]=new(new(center.X+dx-width/2,center.Y+dy-height/2,width,height),255-Counter)
+            { RawCompositorArgument=(angle & ~255) | (255-Counter) };
         }
         return result;
     }
