@@ -85,12 +85,16 @@ Bundle 04 recebido: 17/17 funções e 12/12 janelas; `NativeStatusDrawLayout` im
 
 A nuvem de ataque aparece no hover quando `Joey.Core.CanAttack(zone)` autoriza (testes negativos, sem segundo cursor). **Resta validar no dispatcher original** a precedência, o hotspot e os casos de seleção de alvo. Não confundir o cursor com a espada no campo.
 
+V09/V10 (27/11/2026). Smoke Linux com DAT original, debug desligado e Alpha no compositor isolado. Na Battle Phase, a captura F12 registrou `Attack` ao passar pelo monstro próprio em ataque e o ponteiro padrão sobre o monstro próprio em defesa e sobre o adversário. O smoke valida a seleção do recurso do cliente. O PNG do canvas F12 exclui o cursor desenhado na janela. Capturas privadas `yugire-20261127-052637` a `yugire-20261127-052639`.
+
 ## V10 — Cursores `SetAttack`/`SetDefense`
 
 <a id="v10"></a>
 
 Recuperar condições/alternância nativas de mudança de posição e as variantes `cursor_e_setatk.yga`/`cursor_e_setdef.yga`; não exibir ação ilegal nem assumir que os nomes do DAT provam o fluxo.
   NativeCursorActionSelector isola ciclo de 005B8910 (máscara, ordem injetada, pedido raw 005BF490/4B0). Roteiro 26 citado como recebido, porém ausente no v4-visuals consultado; localizar coleta antes de repetir. V09/V10.1: manifesto inglês e 16 dimensões confirmados; Flip/SetAttack/SetDefense no hover do duelo pelo gate CanChangePosition do Core. Parser de manifesto isolado; prioridade code→asset/hotspot, smoke e integração do preflight pendentes. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+
+No mesmo smoke, a Main Phase registrou `SetDefense`, `SetAttack` e `Flip` respectivamente sobre ataque próprio revelado, defesa própria revelada e carta própria oculta. Sobre o adversário, registrou o ponteiro padrão. Antes da correção, a Alpha ainda anunciava `SetDefense` sobre o campo atrás do console. A seleção do cursor passou a consultar o mesmo bloqueio de entrada `ConsoleCapturesInput` que já controla os cliques. Repetindo o cenário na mesma zona, o console aberto produziu o ponteiro padrão e os demais resultados se mantiveram. Capturas privadas `yugire-20261127-052630` a `yugire-20261127-052633`. A branch histórica `origin/visuals/V10-cursor-hotspots-followup` ainda não está integrada. A auditoria usou a implementação presente na main e deixa em aberto a comparação de hotspot e precedência nativos.
 
 ## V11 — Janela de seleção e fusão (foco de cobertura)
 

@@ -12,7 +12,7 @@ static partial class Game
     /// </summary>
     static string ActiveWindowCursorSprite()
     {
-        if (screen == "duel" && !visualReviewPaused &&
+        if (screen == "duel" && !ConsoleCapturesInput && !visualReviewPaused &&
             !MotionBusy && !PhaseBusy && !alphaBlocked &&
             CanPlayTurn && CanPlayMainOrBattle &&
             CpuDuelController.PendingOwner(duel) is null &&
