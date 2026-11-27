@@ -53,3 +53,22 @@ saída 0 para concordância na projeção solicitada, 1 para diferença no
 prefixo, 2 para entrada inválida e 3 para resultado inconclusivo. Ainda
 faltam atributos efetivos, identidade das ocorrências e uma captura
 equivalente com decisões correlacionadas.
+
+### Inspeção antes de parear
+
+```sh
+python -m yugilab.compare_duel_checkpoints captura.jsonl checkpoints.json \
+  --inventory --native-window 120:150 > scratch/pairing-inventory.json
+```
+
+O inventário lista cada entrada de comando nativo (sequência, duelo, argumentos
+brutos, caller, erro de leitura e projeção de estado) na janela inclusiva,
+e todos os limites do roteiro C# (linha, última sequência, escolha pendente,
+fase e projeção de estado). Uma entrada sem amostra tem `sides: null`;
+nunca preencher lacunas com o estado anterior. Omitir `--native-window` lista
+toda a captura. A integridade e o rodapé são validados mesmo fora da janela.
+O inventário não cria pares nem emite verdict; a saída 0 indica somente
+que a listagem foi produzida. Confirmar decisões, RNG e momento por evidência
+independente, então usar `--pair` explicitamente. Escolher pares por igualdade
+de LP/cartas esconderia divergências. Os arquivos contêm estado privado de
+ambos os lados e devem permanecer em scratch.
