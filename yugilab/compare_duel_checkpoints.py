@@ -70,15 +70,9 @@ def _csharp_fields(side: dict) -> dict:
     }
 
 
-def compare(capture: Path, document: dict, pairs: list[Pair]) -> dict:
+def _checkpoints(document: dict) -> dict:
     if document.get("schema") != "yugire-duel-checkpoints-v1" or type(document.get("complete")) is not bool:
         raise ValueError("Expected a yugire-duel-checkpoints-v1 document")
-    if not pairs or pairs[0][1] is not None:
-        raise ValueError("The first pair must identify the initial C# checkpoint")
-    for (previous_seq, previous_line), (seq, line) in zip(pairs, pairs[1:]):
-        if seq <= previous_seq or line is None or line <= (previous_line or 0):
-            raise ValueError("Native sequences and script lines must increase strictly")
-
     checkpoints = {}
     for checkpoint in document["checkpoints"]:
         line = checkpoint["boundary"]["line"]
@@ -87,6 +81,61 @@ def compare(capture: Path, document: dict, pairs: list[Pair]) -> dict:
         checkpoints[line] = checkpoint
     if None not in checkpoints:
         raise ValueError("Missing initial C# checkpoint")
+    return checkpoints
+
+
+def inventory(capture: Path, document: dict, window: tuple[int, int] | None = None) -> dict:
+    """Expose pairing inputs in source order without choosing equivalent states."""
+    checkpoints = _checkpoints(document)
+    if window is not None and (window[0] < 1 or window[1] < window[0]):
+        raise ValueError("Native window must have positive, increasing bounds")
+    entries = []
+
+    def observe(duel: int, event: dict, sides: list[dict] | None) -> None:
+        seq = event["seq"]
+        if window is not None and not window[0] <= seq <= window[1]:
+            return
+        entries.append(dict(nativeSeq=seq, duelIndex=duel, args=event.get("args"),
+                            caller=event.get("caller"),
+                            stateReadError=event.get("stateReadError"),
+                            sides=None if sides is None else [_native_fields(side) for side in sides]))
+
+    source = analyze_capture(capture, on_entry=observe)
+    boundaries = []
+    for line, checkpoint in sorted(checkpoints.items(), key=lambda item: item[0] or 0):
+        sides = checkpoint["sides"]
+        if len(sides) != 2:
+            raise ValueError("C# checkpoint needs exactly two sides")
+        boundaries.append(dict(scriptLine=line, boundary=checkpoint["boundary"],
+                               turn=checkpoint.get("turn"), activePlayer=checkpoint.get("activePlayer"),
+                               phase=checkpoint.get("phase"), mainPhase2=checkpoint.get("mainPhase2"),
+                               sides=[_csharp_fields(side) for side in sides]))
+    return dict(schema="yugire-duel-checkpoint-inventory-v1",
+                nativeCaptureSha256=source["sha256"],
+                nativeSamplePoint="command_producer_onEnter", nativeSamplesAreAtomic=False,
+                projectedFields=FIELDS, csharpComplete=document["complete"],
+                nativeWindow=window, nativeEntries=entries, csharpBoundaries=boundaries,
+                interpretationLimit="Unpaired inputs. Matching state alone does not establish equivalent decisions, RNG or timing.")
+
+
+def _window(raw: str) -> tuple[int, int]:
+    try:
+        first, last = (int(part) for part in raw.split(":"))
+        if 1 <= first <= last:
+            return first, last
+    except ValueError:
+        pass
+    raise argparse.ArgumentTypeError("Use FIRST:LAST with positive, increasing bounds")
+
+
+def compare(capture: Path, document: dict, pairs: list[Pair]) -> dict:
+    if not pairs or pairs[0][1] is not None:
+        raise ValueError("The first pair must identify the initial C# checkpoint")
+    for (previous_seq, previous_line), (seq, line) in zip(pairs, pairs[1:]):
+        if seq <= previous_seq or line is None or line <= (previous_line or 0):
+            raise ValueError("Native sequences and script lines must increase strictly")
+
+    checkpoints = _checkpoints(document)
 
     wanted = {seq for seq, _ in pairs}
     samples = {}
@@ -168,15 +217,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("native_capture", type=Path)
     parser.add_argument("checkpoints", type=Path)
-    parser.add_argument("--pair", action="append", required=True, type=_pair, metavar="N:LINE")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--pair", action="append", type=_pair, metavar="N:LINE")
+    mode.add_argument("--inventory", action="store_true", help="List unpaired native entries and C# boundaries")
+    parser.add_argument("--native-window", type=_window, metavar="FIRST:LAST",
+                        help="Restrict inventory to this inclusive native sequence range")
     args = parser.parse_args()
+    if args.native_window is not None and not args.inventory:
+        parser.error("--native-window requires --inventory")
     try:
         document = json.loads(args.checkpoints.read_text(encoding="utf-8"))
-        report = compare(args.native_capture, document, args.pair)
+        report = (inventory(args.native_capture, document, args.native_window) if args.inventory
+                  else compare(args.native_capture, document, args.pair))
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
         parser.exit(2, f"Invalid checkpoint comparison: {error}\n")
     print(json.dumps(report, indent=2))
-    return {"projected_match": 0, "mismatch": 1, "inconclusive": 3}[report["verdict"]]
+    return 0 if args.inventory else {"projected_match": 0, "mismatch": 1, "inconclusive": 3}[report["verdict"]]
 
 
 if __name__ == "__main__":

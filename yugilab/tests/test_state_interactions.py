@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from yugilab.compare_duel_checkpoints import compare
+from yugilab.compare_duel_checkpoints import compare, inventory, _window
 from yugilab.state_interactions import _state_changes, analyze_capture, summarize
 
 
@@ -203,6 +203,45 @@ class NativeStateInteractionsTests(unittest.TestCase):
             self.assertEqual(compare(path, document, pairs[:2])["verdict"], "inconclusive")
             with self.assertRaisesRegex(ValueError, "increase strictly"):
                 compare(path, document, [(1, None), (6, 9), (4, 7)])
+
+    def test_inventory_preserves_unpaired_entries_and_sampling_gaps(self):
+        records = self.fixture()
+        # An unsampled entry ends the state chain. Restore a baseline at
+        # the next entry rather than pretending the old state was observed.
+        records[2]["stateSampled"] = False
+        records[3]["stateObservation"] = observation(
+            "baseline", sides=copy.deepcopy(records[1]["stateObservation"]["sides"]))
+        records[-1]["stateTrace"].update(samples=6, baselines=2)
+        def side(lp):
+            return dict(life=lp, hand=[], deck=[{}] * 28, graveyard=[],
+                        monsters=[None] * 5, spells=[None] * 5, fieldSpell=None)
+        document = dict(schema="yugire-duel-checkpoints-v1", complete=False, checkpoints=[
+            dict(boundary=dict(line=None, lastExecutedSequence=None), sides=[side(6600), side(2600)]),
+            dict(boundary=dict(line=4, lastExecutedSequence=8, hasPendingChoice=True),
+                 turn=2, phase="Main", sides=[side(7600), side(3600)]),
+        ])
+        with tempfile.TemporaryDirectory() as td:
+            path = self.write(td, records)
+            report = inventory(path, document, _window("2:4"))
+            self.assertEqual(report["schema"], "yugire-duel-checkpoint-inventory-v1")
+            self.assertNotIn("verdict", report)
+            self.assertFalse(report["csharpComplete"])
+            entries = report["nativeEntries"]
+            self.assertEqual([row["nativeSeq"] for row in entries], [2, 3, 4])
+            self.assertIsNone(entries[0]["sides"])
+            self.assertEqual(entries[0]["args"], records[2]["args"])
+            self.assertEqual(entries[1]["sides"][0]["lifePoints"], 6600)
+            self.assertEqual(entries[2]["sides"][0]["lifePoints"], 7600)
+            boundaries = report["csharpBoundaries"]
+            self.assertEqual([row["scriptLine"] for row in boundaries], [None, 4])
+            self.assertTrue(boundaries[1]["boundary"]["hasPendingChoice"])
+            self.assertEqual(boundaries[1]["phase"], "Main")
+            self.assertEqual(len(inventory(path, document)["nativeEntries"]), 7)
+            with self.assertRaisesRegex(ValueError, "Native window"):
+                inventory(path, document, (4, 2))
+            records[-1]["stateTrace"]["samples"] = 99
+            with self.assertRaisesRegex(ValueError, "counts do not match"):
+                inventory(self.write(td, records), document)
 
     def test_compare_field_slot_identity_and_pose(self):
         records = self.fixture()

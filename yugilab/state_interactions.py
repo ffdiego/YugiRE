@@ -101,8 +101,9 @@ def _state_changes(event: dict, duel_index: int) -> list[dict]:
 
 
 def analyze_capture(path: Path, *, span: int = 48,
-                    on_sample: Callable[[int, int, list[dict]], None] | None = None) -> dict:
-    """Report state interactions and optionally visit read-only command-entry samples."""
+                    on_sample: Callable[[int, int, list[dict]], None] | None = None,
+                    on_entry: Callable[[int, dict, list[dict] | None], None] | None = None) -> dict:
+    """Visit command entries, including explicit gaps, or sampled states only."""
     if not 8 <= span <= 300:
         raise ValueError("span must be 8..300 seq IDs")
     summary, _, _, _, _ = _capture_summary(path)
@@ -172,6 +173,10 @@ def analyze_capture(path: Path, *, span: int = 48,
             else:
                 counts["unsampledCommandEntries"] += 1
                 state, last_sample_seq = None, None
+
+            # An unsampled entry must not inherit the previous observation.
+            if on_entry is not None:
+                on_entry(duel, event, state if event.get("stateSampled") is True else None)
 
             # Count only actually sampled state, not inferred trap activation.
             if event.get("stateSampled") is True and state is not None:

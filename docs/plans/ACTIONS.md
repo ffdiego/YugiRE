@@ -435,3 +435,14 @@ os slots 5–9 de magia/armadilha e 10 de magia de campo. Testes
 sintéticos cobrem divergência de postura, remoção e face, além de bit
 alto irrelevante e slot vazio com flags residuais. Atributos
 efetivos, associações e identidade de ocorrências seguem em aberto.
+
+### A09.8 — Inventário para pareamento de checkpoints
+
+O comparador disponibiliza `--inventory` e uma janela nativa opcional.
+Lista argumentos do produtor, sequência, duelo, projeções de estado e
+lacunas de leitura, além dos limites C# com contexto e escolha pendente.
+Não escolhe pares por igualdade de estado nem atribui causalidade a comandos.
+A validação integral do JSONL continua obrigatória. Fixture sintética cobre
+lacuna, restauração por baseline, janela, limites C# e rodapé inválido.
+CI pendente; primeiro pareamento real e atributos/decisões equivalentes
+continuam em aberto. [Uso](../architecture/duel-differential-policy.md#inspeção-antes-de-parear).
