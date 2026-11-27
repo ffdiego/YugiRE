@@ -66,6 +66,23 @@ projeção até a entrada dos compositores. A amostragem dos
 pixels rasterizados, o clipping final e o ataque direto
 ficaram fora deste recorte.
 
+## V04.7 — vértices do ataque direto
+
+Com o filtro `$attack_direct=1` do roteiro 54, o segundo duelo
+da sessão de demonstração em Proton produziu um ataque direto
+do slot próprio 1. O Draw entregou a âncora (525,64) e o
+comparador .NET 10 reproduziu os quadriláteros de origem e
+destino nas 39 chamadas aos compositores, com as dimensões do
+DAT e os coeficientes usados em execução.
+
+Os dois últimos impactos chegaram ao compositor por intensidade
+com vértices acima do canvas. No contador 480, a aresta superior
+foi de (456,−5) a (594,−5). No contador 496, foi de (451,−10)
+a (599,−10). O chamador passou esses pontos antes do clipping
+interno. A coleta ainda cobre só um dos lados do ataque direto.
+O clipping e os pixels de saída continuam em aberto.
+[Roteiro 54](../../scripts/regression/README.md#54--v04-despacho-da-espada-em-proton).
+
 ## V04 — espada
 
 00413BC0 carrega duel/effect/attack.txt, três recursos, camada

@@ -16,6 +16,7 @@ coefficients = {}
 tracked = None
 pending = None
 aim = None
+direct_only = bool(gdb.convenience_variable("attack_direct"))
 
 def reg(name):
     return int(gdb.parse_and_eval("$" + name)) & 0xffffffff
@@ -52,6 +53,8 @@ class Request(HardwareProbe):
             return False
         kind, key = site
         obj = reg("esi") - 0x38
+        if direct_only and read(obj+0x24, signed=True) != -1:
+            return False
         count = read(obj+0x14)
         if tracked is None and kind == "flight":
             tracked = {"object": obj, "thread": thread(),

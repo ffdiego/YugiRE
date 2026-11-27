@@ -118,7 +118,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`. Validar coleta 34 dos blits da espada no Windows e ampliar para as demais famílias. [Detalhes](docs/plans/VISUALS.md#v01)
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Validação DAT passa. Investigar os controles transitórios de seleção e descarte. [Detalhes](docs/plans/VISUALS.md#v03)
-- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Comparar os pixels após validar os vértices no compositor do original. [Detalhes](docs/plans/VISUALS.md#v04)
+- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Validar o recorte dos impactos junto à borda e comparar os pixels. [Detalhes](docs/plans/VISUALS.md#v04)
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Reconciliar chave e intensidade com o original e observar o retorno à base. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Slot do combate comum ligado à fila. Mapear flags do dano especial, integrar hold e comparar gráficos/cadência. [Detalhes](docs/plans/VISUALS.md#v06)
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Predicado +4 confirmado; rasterizador 0051EBD0 (coleta 25), compositor e integração via A03/A07. [Detalhes](docs/plans/VISUALS.md#v07)

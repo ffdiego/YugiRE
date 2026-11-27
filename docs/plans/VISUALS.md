@@ -66,6 +66,13 @@ coeficientes lidos no processo. Ainda faltam a comparação de
 pixels, o clipping final e o ataque direto nesse recorte.
 [Validação dos vértices](../../docs/research/native-attack-life-routing-2026-11-24.md#v046--vértices-entregues-aos-compositores).
 
+V04.7. Em um ataque direto do lado próprio, o roteiro 54
+confirmou a âncora (525,64) e a projeção C# coincidiu nas 39
+chamadas aos compositores. Os dois últimos quadriláteros de
+impacto chegaram com dois vértices acima da área de 800×600.
+A aplicação do recorte dentro do rasterizador segue pendente.
+[Validação do ataque direto](../../docs/research/native-attack-life-routing-2026-11-24.md#v047--vértices-do-ataque-direto).
+
 ## V05 — ATK/DEF em monstros no campo
 
 <a id="v05"></a>

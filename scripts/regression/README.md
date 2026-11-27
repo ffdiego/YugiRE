@@ -323,3 +323,10 @@ cada ângulo observado, indexado por `angle & 511`. Use as
 dimensões do DAT e esses valores na chamada de
 `NativeRotatedQuad.Project` para comparar os quatro pontos.
 O pedido de escala zero não chega ao compositor.
+
+Para amostrar só ataques diretos, acrescente
+`-ex 'set $attack_direct = 1'` antes de `-x`. O filtro
+ignora os pedidos com alvo em um slot de monstro.
+Em um ataque direto do lado próprio, os dois últimos
+quadriláteros do impacto chegaram com Y negativo, antes
+do clipping interno.
