@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from yugilab.compare_duel_checkpoints import compare
 from yugilab.state_interactions import _state_changes, analyze_capture, summarize
 
 
@@ -153,6 +154,51 @@ class NativeStateInteractionsTests(unittest.TestCase):
             path=self.write(td,records)
             with self.assertRaisesRegex(ValueError,"missing contiguous previous sample"):
                 analyze_capture(path)
+
+    def test_compare_explicit_checkpoint_pairs(self):
+        def checkpoint(line, life, graveyard_count):
+            def side(lp, count):
+                return dict(life=lp, hand=[], deck=[{}] * 28, graveyard=[{}] * count)
+
+            return dict(boundary=dict(line=line, lastExecutedSequence=8 if line else None),
+                        sides=[side(life[0], graveyard_count), side(life[1], 0)])
+
+        document = dict(schema="yugire-duel-checkpoints-v1", complete=True, checkpoints=[
+            checkpoint(None, (6600, 2600), 0),
+            checkpoint(7, (7600, 3600), 1),
+            checkpoint(9, (7300, 3600), 1),
+        ])
+        pairs = [(1, None), (4, 7), (6, 9)]
+        with tempfile.TemporaryDirectory() as td:
+            path = self.write(td, self.fixture())
+            report = compare(path, document, pairs)
+            self.assertEqual(report["verdict"], "projected_match")
+            self.assertEqual(report["matchedPrefix"], 3)
+            self.assertFalse(report["nativeSamplesAreAtomic"])
+
+            document["checkpoints"][2]["sides"][0]["life"] = 7310
+            result = compare(path, document, pairs)
+            self.assertEqual(result["verdict"], "mismatch")
+            self.assertEqual(result["matchedPrefix"], 2)
+            self.assertEqual(result["firstObservedDifference"], dict(
+                nativeSeq=6, scriptLine=9, lastExecutedSequence=8, afterGap=False,
+                fields=[dict(side=0, field="lifePoints", native=7300, csharp=7310)]))
+
+            gap = compare(path, document, [(1, None), (4, 8), (6, 9)])
+            self.assertEqual(gap["verdict"], "inconclusive")
+            self.assertEqual(gap["matchedPrefix"], 1)
+            self.assertEqual(gap["gaps"], [dict(nativeSeq=4, scriptLine=8,
+                                               missingNativeSample=False, missingScriptCheckpoint=True)])
+            self.assertTrue(gap["firstObservedDifference"]["afterGap"])
+
+            missing_native = compare(path, document, [(1, None), (80, 7)])
+            self.assertEqual(missing_native["verdict"], "inconclusive")
+            self.assertTrue(missing_native["gaps"][0]["missingNativeSample"])
+
+            document["complete"] = False
+            self.assertEqual(compare(path, document, pairs[:2])["verdict"], "inconclusive")
+            with self.assertRaisesRegex(ValueError, "increase strictly"):
+                compare(path, document, [(1, None), (6, 9), (4, 7)])
 
 
 if __name__=="__main__":

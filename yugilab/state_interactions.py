@@ -10,6 +10,7 @@ import argparse
 import copy
 import hashlib
 import json
+from collections.abc import Callable
 from pathlib import Path
 
 from .discovery import _capture_summary
@@ -99,7 +100,9 @@ def _state_changes(event: dict, duel_index: int) -> list[dict]:
     return results
 
 
-def analyze_capture(path: Path, *, span: int = 48) -> dict:
+def analyze_capture(path: Path, *, span: int = 48,
+                    on_sample: Callable[[int, int, list[dict]], None] | None = None) -> dict:
+    """Report state interactions and optionally visit read-only command-entry samples."""
     if not 8 <= span <= 300:
         raise ValueError("span must be 8..300 seq IDs")
     summary, _, _, _, _ = _capture_summary(path)
@@ -172,6 +175,8 @@ def analyze_capture(path: Path, *, span: int = 48) -> dict:
 
             # Count only actually sampled state, not inferred trap activation.
             if event.get("stateSampled") is True and state is not None:
+                if on_sample is not None:
+                    on_sample(duel, seq, state)
                 visible = any(slot["cardIndex"] == SKULL_INDEX
                               for player in state for slot in player["fieldSlots"])
                 skull_presence["presentSamples" if visible else "absentSamples"] += 1
