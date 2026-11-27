@@ -37,10 +37,7 @@ static partial class Game
         diceReviewTextures=diceReviewResources.Select((record,key)=>
         {
             var texture=graphics.Texture(record.Path);
-            int patterns=key<6 ? record.Parameter!.Value : 1;
-            var info=new NativeDiceTexture(texture.Width,texture.Height,patterns);
-            if(key<6)_=info.PatternWidth;
-            return info;
+            return NativeDiceResources.ValidateTexture(key,record,texture.Width,texture.Height);
         }).ToArray();
         diceReviewFrame=diceReview!.Draw(effectCosine,DiceTexture);
     }

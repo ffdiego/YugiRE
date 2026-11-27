@@ -14,8 +14,9 @@ public sealed class NativeCoinTimeline
     public int EndCounter => (Count+4)*128;
     public int Updates => (EndCounter-StartCounter)/UpdateIncrement;
     public bool Active => Counter < EndCounter;
+    public bool BlocksRelease => Active; // vtable +4, 00403080
 
-    // Observed handlers 8E and 8F supply one or three coins.
+    // Raw handlers E0 and E1 supply one or three coins.
     public NativeCoinTimeline(int count, uint resultBits, CardPoint origin)
     {
         if (count is not (1 or 3)) throw new ArgumentOutOfRangeException(nameof(count));

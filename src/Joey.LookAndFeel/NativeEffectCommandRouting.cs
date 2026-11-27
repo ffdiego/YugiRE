@@ -38,6 +38,26 @@ public static class NativeEffectCommandRouting
         return (ushort)(0x8000 | region << 1 | wordA >> 15);
     }
 
+    // Handler arguments after conversion, not gameplay RNG semantics.
+    public static (int Count,uint Bits,int Highlight,ushort Descriptor) CoinArguments(
+        ushort wordA,ushort wordB,ushort wordC,ushort wordD)
+    {
+        int count = (wordA & 0xfff) switch
+        {
+            0xe0 => 1, 0xe1 => 3, _ => throw new ArgumentOutOfRangeException(nameof(wordA))
+        };
+        uint bits = count == 1 ? (wordC == 0 ? 1u : 0u) : (~(uint)wordC & 7u);
+        return (count,bits,wordB == 0 ? 1 : 0,
+            BankAnchorDescriptor(wordA,wordA,(uint)wordC | ((uint)wordD << 16)));
+    }
+
+    public static (int Index,ushort Descriptor) DiceArguments(ushort wordA,ushort wordB,ushort wordC,ushort wordD)
+    {
+        if (Family(wordA) != NativeEffectCommandFamily.DiceBank)
+            throw new ArgumentOutOfRangeException(nameof(wordA));
+        return (wordB,BankAnchorDescriptor(wordA,wordA,(uint)wordC | ((uint)wordD << 16)));
+    }
+
     /// <summary>00450C30 sorts region 11 separately; all other regions use 0x110.</summary>
     public static int BreakLayer(ushort descriptor) =>
         (descriptor & 0x3e) == 0x16

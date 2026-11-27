@@ -6,6 +6,11 @@ static partial class Game
 {
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
+    sealed record CoinResultVisual(NativeCoinTimeline Timeline, int Highlight, NativeDiceTexture[] Textures) : CardEffect;
+    sealed record DiceResultVisual(NativeDiceTimeline Timeline, NativeDiceTexture[] Textures) : CardEffect
+    {
+        public NativeDiceDraw? Frame { get; set; }
+    }
     sealed record BreakDestruction(Card Card, NativeBreakFieldTarget Target,
         int Perspective, string CardPath, string ShinePath, NativeBreakTimeline Timeline) : CardEffect;
     sealed record TributePlacement(DemoMonsterTribute Tribute, CardPoint[] ParticleOrigins) : CardEffect;
@@ -74,6 +79,8 @@ static partial class Game
             ShowPlayedCardDetail(normal.Card,
                 hiddenFromPlayer: normal.Player != ViewPlayer && normal.FaceDown);
         };
+        duel.LabCoinResultReported += QueueLiveCoin;
+        duel.LabDiceResultReported += QueueLiveDice;
         duel.MonsterDestroyed += monster =>
         {
             if (!presentation.Style.PlayAnimations) return;
@@ -230,6 +237,14 @@ static partial class Game
         }
         int remaining = current.Updates - cardEffects.ElapsedUpdates;
         int consumed = Math.Min(updates, remaining);
+        // One virtual native Update/Draw per rendered step for these banks.
+        // Drop excess catch-up rather than skip their Draw-dependent motion.
+        if (current.Kind is CoinResultVisual or DiceResultVisual)
+            consumed = Math.Min(consumed, 1);
+        if (consumed != 0 && current.Kind is CoinResultVisual coin)
+            coin.Timeline.AdvanceNativeUpdate();
+        if (consumed != 0 && current.Kind is DiceResultVisual dice)
+            dice.Timeline.AdvanceNativeUpdate();
         if (current.Kind is GeneralFusionPlacement fusion)
             fusion.Playback.AdvanceTo(
                 Math.Min(NativeFusionPlayback.LastSample, cardEffects.ElapsedUpdates + consumed),
@@ -327,6 +342,12 @@ static partial class Game
         if (!playing) return;
         switch (cardEffects.Current?.Kind)
         {
+            case CoinResultVisual coin:
+                DrawLiveCoin(coin);
+                break;
+            case DiceResultVisual die:
+                DrawLiveDice(die);
+                break;
             case BreakDestruction broken:
                 DrawLiveBreak(broken);
                 break;

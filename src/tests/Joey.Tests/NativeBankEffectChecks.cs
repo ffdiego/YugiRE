@@ -5,6 +5,18 @@ internal static class NativeBankEffectChecks
     public static void Run(Action<bool,string> check,Action<Action,string> reject)
     {
         int[] cosine=NativeCosineCapture.GenerateTable();
+        check(NativeEffectCommandRouting.CoinArguments(0x80e0,0,0,7)==(1,1u,1,(ushort)0x800f) &&
+              NativeEffectCommandRouting.CoinArguments(0xe0,4,1,2)==(1,0u,0,(ushort)0x8004) &&
+              NativeEffectCommandRouting.CoinArguments(0xe1,1,2,6)==(3,5u,0,(ushort)0x800c),
+              "V20: E0/E1 decode raw constructor count, low bits, highlight and region D");
+        foreach(ushort op in new ushort[]{0xe2,0xe3,0xe4})
+            check(NativeEffectCommandRouting.DiceArguments((ushort)(op|0x8000),6,9,1)==(6,(ushort)0x8013),
+                "V21: raw dice index B and region C");
+        check(NativeDiceResources.ValidateTexture(0,new("dice_random.bmp",6),270,46).PatternWidth==45 &&
+              NativeDiceResources.ValidateTexture(3,new("dice_shadow2.yga",4),152,43).PatternWidth==38,
+            "V21: original DAT strip dimensions");
+        reject(()=>NativeDiceResources.ValidateTexture(3,new("dice_shadow2.yga",4),151,43),
+            "V21: reject wrong DAT geometry");
         NativeDiceTexture Tex(int key)=>key<6 ? new(160,40,4) :
             key==6 ? new(41,44,1) : new(32,35,1);
         for(int face=1;face<=6;face++)
@@ -14,6 +26,7 @@ internal static class NativeBankEffectChecks
             int n=0;
             while(d.Active)
             {
+                check(d.BlocksRelease,"V21: active blocks release");
                 int t=d.Counter;
                 var before=d.Center;
                 var preview=d.Sample(cosine,Tex)!.Value;
@@ -40,7 +53,7 @@ internal static class NativeBankEffectChecks
                 d.AdvanceNativeUpdate();
                 n++;
             }
-            check(n==128 && d.Counter==768 && d.Draw(cosine,Tex) is null,
+            check(n==128 && !d.BlocksRelease && d.Counter==768 && d.Draw(cosine,Tex) is null,
                 "V21: 128 updates, inactive at 768");
         }
         var repeat=new NativeDiceTimeline(1,new(369,460));
@@ -81,6 +94,7 @@ internal static class NativeBankEffectChecks
             int n=0;
             while(coin.Active)
             {
+                check(coin.BlocksRelease,"V20: active blocks release");
                 for(int i=0;i<count;i++)
                 {
                     var sample=coin.Sample(i,cosine);
@@ -95,7 +109,7 @@ internal static class NativeBankEffectChecks
                 coin.AdvanceNativeUpdate();
                 n++;
             }
-            check(n==(count==1?96:128),"V20: single/triple terminal counter");
+            check(n==(count==1?96:128) && !coin.BlocksRelease,"V20: single/triple terminal counter");
         }
 
         var b=new NativeBreakTimeline();

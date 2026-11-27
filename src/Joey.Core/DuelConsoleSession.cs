@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed partial class DuelConsoleSession
 {
-    public const string Help = "draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]] | set INDEX [SLOT [tribute...]] | respond-summon pass|SIDE SLOT | respond-attack pass|SIDE SLOT | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | activate field | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
+    public const string Help = "coin SIDE REGION COUNT BITS HIGHLIGHT | dice SIDE REGION INDEX | draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]] | set INDEX [SLOT [tribute...]] | respond-summon pass|SIDE SLOT | respond-attack pass|SIDE SLOT | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | activate field | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -139,6 +139,22 @@ public sealed partial class DuelConsoleSession
                     batch = Enumerable.Range(0, amount).Select(_ => (DuelCommand)new DrawCommand(side)).ToArray();
                 }
                 else batch = [op == "damage" ? new DamageCommand(side, amount) : new HealCommand(side, amount)];
+                break;
+            case "coin":
+                if (words.Length != 6 || !Side(words[1], out int coinSide) ||
+                    !Index(words[2], out int coinRegion) || coinRegion > 10 ||
+                    !Positive(words[3], out int count) || count is not (1 or 3) ||
+                    !Index(words[4], out int bits) || bits >= (1 << count) ||
+                    !Index(words[5], out int highlight) || highlight > 1)
+                    return new(false, "Expected coin SIDE REGION(0–10) COUNT(1|3) BITS HIGHLIGHT(0|1).");
+                batch = [new LabCoinResultCommand(new(coinSide,coinRegion,count,(uint)bits,highlight))];
+                break;
+            case "dice":
+                if (words.Length != 4 || !Side(words[1], out int diceSide) ||
+                    !Index(words[2], out int diceRegion) || diceRegion > 10 ||
+                    !Positive(words[3], out int face) || face > 6)
+                    return new(false, "Expected dice SIDE REGION(0–10) INDEX(1–6).");
+                batch = [new LabDiceResultCommand(new(diceSide,diceRegion,face))];
                 break;
             case "destroy":
                 if (words.Length != 3 || !Side(words[1], out int owner) ||

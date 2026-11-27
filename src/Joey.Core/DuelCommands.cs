@@ -24,6 +24,13 @@ public readonly record struct CardOccurrenceId(long Value);
 public readonly record struct CardTarget(CardOccurrenceId Occurrence, int Side, DuelZone Zone);
 
 public abstract record DuelCommand(int Side);
+
+// Laboratory result reports, not random decisions or card rule producers.
+// Region 0..10 is a field anchor; bits and highlight are constructor inputs.
+public sealed record LabCoinResult(int Side, int Region, int Count, uint Bits, int Highlight);
+public sealed record LabDiceResult(int Side, int Region, int Index);
+internal sealed record LabCoinResultCommand(LabCoinResult Result) : DuelCommand(Result.Side);
+internal sealed record LabDiceResultCommand(LabDiceResult Result) : DuelCommand(Result.Side);
 public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) : DuelCommand(Side);
 public sealed record DeclareTargetedAttackCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
 internal sealed record RevealBattleDefenderCommand(int Side, CardTarget Attacker, CardTarget Defender) : DuelCommand(Side);
@@ -191,6 +198,12 @@ internal static class DuelCommandValidation
             throw new ArgumentOutOfRangeException(nameof(command), "Invalid side.");
         switch (command)
         {
+            case LabCoinResultCommand coin when coin.Result.Region is >= 0 and <= 10 &&
+                coin.Result.Count is 1 or 3 && coin.Result.Bits < (1u << coin.Result.Count) &&
+                coin.Result.Highlight is 0 or 1:
+            case LabDiceResultCommand die when die.Result.Region is >= 0 and <= 10 &&
+                die.Result.Index is >= 1 and <= 6:
+                break;
             case ResolveBattleDamageDiscardCommand discard when discard.DamagedSide == 1 - discard.Side:
                 break;
             case ResolveBattleDamageDrawCommand battleDraw when IsValidBattleDamageDraw(battleDraw.Intent, battleDraw.Side):
