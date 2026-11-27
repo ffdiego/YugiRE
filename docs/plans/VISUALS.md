@@ -154,6 +154,23 @@ A coleta 35 identificou quatro entradas Draw registradas para bustos no
 agendador da cena. O inventário passou de 34 para 38 rotinas, com as
 quatro novas em Pending. A evidência e a análise do gate estão em V31.
 
+V16, 27/11/2026. `00483B10` é o consumidor de saída do manifesto
+`duel/effect/duelend.txt`. Registra o objeto com máscara 1 em
+`00483B34` e instala a vtable `005DBC48` em `00483BA5`. Vai
+para a posição `obj+2Ch` do objeto pai em `004836C9`.
+O slot Update `004481F0` é retorno imediato. O Draw `00444490`
+soma 16 a `obj+10h` quando `obj+14h` está ativo e calcula
+intensidade `256 - contador`. O gate virtual `00483C40` exige
+`obj+14h` e `obj+04h`. O Draw limpa o byte ativo em
+`00444529` se a intensidade fica não positiva ou o índice
+fica negativo. O índice normal é
+`byte[005F3257 + byte[005F325B]] - 1`; `005BDAC0` pode
+forçar 3, a entrada `aborted_?.bmp` no DAT. O Draw entrega
+a imagem, (400,300) e a intensidade ao destino pelo slot
+`+50h` em `0044451F`. Faltam o produtor de `obj+14h`
+e a comparação da sequência com a execução original.
+A coleta 36 foi importada no snapshot privado v10.
+
 ## V17 — Cadência nativa de update/draw e blending
 
 <a id="v17"></a>

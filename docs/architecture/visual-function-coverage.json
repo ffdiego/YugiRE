@@ -212,6 +212,11 @@
       "address": "00416BC0",
       "family": "Busto de reação",
       "status": "Pending"
+    },
+    {
+      "address": "00444490",
+      "family": "Saída do banner de resultado",
+      "status": "Pending"
     }
   ]
 }

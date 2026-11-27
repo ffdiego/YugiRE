@@ -1,5 +1,26 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
+## Complemento cumulativo v10 — saída do banner de resultado (27/11/2026)
+
+O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v10.zip`
+contém o SQLite cumulativo e as auditorias da v9 e da v10. A coleta
+36/V16 acrescenta o Draw `00444490`, o predicado `00483C40`,
+a vtable `005DBC48` e o bloco da referência ao manifesto em
+`005EBD80`. O fingerprint do executável é o mesmo da v9.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `5e2c4b7e9f5ae66a6fc6278c9d0519d4fedc63b0f1ff4c8788c7d7a4fa5a7fd9` |
+| SHA-256 do ZIP v10 | `96ac30f2561aa3f4bd97e546752eaff1c1d1732d696496c345ebd6e947205e00` |
+| SHA-256 do bundle 36 | `b74125599c0162c1e6349a20d0eb66d39225f165c3eb5a5d0a6dac334b33f4f9` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+Todas as linhas da v9 foram preservadas. A v10 tem 37 bundles,
+241 relatórios, 373 registros de funções (302 VAs distintas),
+229.750 instruções indexadas e 43 blocos de memória.
+[Relato V16](../plans/VISUALS.md#v16).
+
 ## Complemento cumulativo v9 — Draw dos bustos (27/11/2026)
 
 O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v9.zip`

@@ -5,8 +5,8 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 21/38 (55.26%).**
-**Validadas no Joey original: 0/38.**
+**Implementadas (inclusive parciais): 21/39 (53.85%).**
+**Validadas no Joey original: 0/39.**
 
 Partial indica um componente visual C# relacionado, mas divergências
 conhecidas. Done exige escopo visual concluído em C#; Verified exige
@@ -57,6 +57,7 @@ desconhecido ainda não entram neste denominador. Ver
 | `00415840` | Busto de abertura | Pending | — |
 | `00416260` | Busto de resultado | Pending | — |
 | `00416BC0` | Busto de reação | Pending | — |
+| `00444490` | Saída do banner de resultado | Pending | — |
 
 O conjunto de endereços deve corresponder ao inventário.
 Diálogos e ícones com Draw desconhecido permanecem listados no

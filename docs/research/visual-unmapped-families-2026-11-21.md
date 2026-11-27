@@ -29,7 +29,7 @@ inclusive podendo cair o percentual mesmo sem regressões.
 | Corrente desativada | `00408730` verifica término de outros objetos e condições do estado; instancia `00452F20`, vtable `005DB374`, layer `0x111`, `duel/chain/disable.txt` | Draw `004531C0`, seleção de sprite, duração |
 | Efeito persistente/HUD | `0044C3E0` chama `0040DAC0` na inicialização do gerenciador; vtable `005DA44C`, `duel/effect/affect.txt`, layer `0x101` | Draw `0040E260`; não presumir que o objeto signifique ícone visível |
 | Camadas de texto | `00404580` instancia `00455D90` quando `0044B990` indica modo interno 5/7, ou `00456100` quando `0044B980` indica modo 3; vtables `005DB3C4`/`005DB3D4`; ambos usam `layerfont.txt` | Resolver os dois Draws, suas variantes e o significado dos modos |
-| Busto e transições | `004152D0` usa `bust_up/start.txt` e vtable própria; `00483B10` carrega `duelend.txt` em outra classe | Draws e cenários; não duplicar Draw do banner normal |
+| Busto e transições | `004152D0` usa `bust_up/start.txt` e a fábrica instala a vtable final com Draw `00415840`. `00483B10` carrega `duelend.txt` para o Draw `00444490`. | Mapear produtores e modos da cena. [Entradas confirmadas](../architecture/native-renderer-inventory.md) |
 
 **Detalhe novo de corrente:** `0041FD60` compara `obj+0x14` com uma chave antes de alocar
 outro indicador. Isso indica deduplicação de apresentação nessa lista, sem
