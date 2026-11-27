@@ -31,7 +31,7 @@ static partial class Game
                 return;
             }
         }
-        if (Button("Pass attack response", 540, 460, 205, 34))
+        if (Button("Pass", 540, 460, 205, 34))
         {
             if (duel.TryQueueAttackResponse(response, null, out message))
             {

@@ -128,7 +128,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Capturar cor-chave da seleção e destino do blit. Validar a fusão geral e investigar o gatilho da fusão vinculada. [Detalhes](docs/plans/VISUALS.md#v11)
 - [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`. DAT, compositor e gatilho pela fila. [Detalhes](docs/plans/VISUALS.md#v12)
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
-- [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Restam respostas de combate, descarte e o compositor da lista de seleção. [Detalhes](docs/plans/VISUALS.md#v14)
+- [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Respostas e descarte auditados. Fechar composição da seleção e revisar sobreposição dos controles provisórios. [Detalhes](docs/plans/VISUALS.md#v14)
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
 - [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`. Índice das Draws restantes; V20–V31 têm IDs próprios. [Detalhes](docs/plans/VISUALS.md#v16)
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Fronteiras surface/blend e cadência por medição. [Detalhes](docs/plans/VISUALS.md#v17)
