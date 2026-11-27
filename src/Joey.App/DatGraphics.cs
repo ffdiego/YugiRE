@@ -178,9 +178,21 @@ sealed class DatGraphics : IDisposable
                 fonts, System.IO.Path.GetFileName(LifeFloatingFonts[i].Replace('\\', '/')));
         return archive;
     }
-    public Texture2D Texture(string name)
+    public Texture2D Texture(string name) => Texture(name, NativeFieldAttributeFrame.ActiveOpacity);
+
+    public Texture2D FieldAttributeTexture(string name, int intensity)
     {
-        if (textures.TryGetValue(name, out var cached)) return cached;
+        if (!FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
+            intensity is not (NativeFieldAttributeFrame.ActiveOpacity or NativeFieldAttributeFrame.InactiveOpacity))
+            throw new ArgumentException("Unsupported field attribute texture variant.");
+        return Texture(name, intensity);
+    }
+
+    private Texture2D Texture(string name, int fieldIntensity)
+    {
+        string cacheKey = fieldIntensity == NativeFieldAttributeFrame.ActiveOpacity
+            ? name : name + "#field-160";
+        if (textures.TryGetValue(cacheKey, out var cached)) return cached;
         Texture2D texture;
         if (name.EndsWith(".yga", StringComparison.OrdinalIgnoreCase))
         {
@@ -194,14 +206,14 @@ sealed class DatGraphics : IDisposable
         }
         else
         {
-            var image = ReadImage(name);
+            var image = ReadImage(name, fieldIntensity);
             try { texture = Raylib.LoadTextureFromImage(image); }
             finally { Raylib.UnloadImage(image); }
         }
         if (texture.Id == 0) throw new InvalidDataException($"Cannot upload texture {name}");
         Raylib.SetTextureFilter(texture, TextureFilter.Point);
-        textures.Add(name, texture);
-        loaded.Enqueue(name);
+        textures.Add(cacheKey, texture);
+        loaded.Enqueue(cacheKey);
         return texture;
     }
     private static unsafe Texture2D UploadYga(NativeYgaSprite sprite)
@@ -217,7 +229,7 @@ sealed class DatGraphics : IDisposable
         }
     }
 
-    Image ReadImage(string name)
+    unsafe Image ReadImage(string name, int fieldIntensity = NativeFieldAttributeFrame.ActiveOpacity)
     {
         byte[] bytes = (archive ?? throw new InvalidOperationException("No DAT open")).Read(name);
         BitmapInfo info;
@@ -232,6 +244,23 @@ sealed class DatGraphics : IDisposable
             Raylib.UnloadImage(image);
             throw new InvalidDataException($"Cannot decode BMP {name}");
         }
+        if (FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
+                if (image.Data == null || image.Format != PixelFormat.UncompressedR8G8B8A8)
+                    throw new InvalidDataException("Cannot convert field attribute atlas to RGBA8: " + name);
+                NativeFieldAttributePixels.Prepare(
+                    new Span<byte>(image.Data, checked(image.Width * image.Height * 4)), fieldIntensity);
+            }
+            catch
+            {
+                Raylib.UnloadImage(image);
+                throw;
+            }
+            return image;
+        }
         if (NativeCardSelectionFrame.IsFrame(name) ||
             name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
@@ -245,7 +274,6 @@ sealed class DatGraphics : IDisposable
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFallback, StringComparison.OrdinalIgnoreCase) ||
             LifeFloatingFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
-            FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(DuelStartEnglish, StringComparison.OrdinalIgnoreCase) ||
             ShuffleSprites.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
@@ -305,6 +333,9 @@ sealed class DatGraphics : IDisposable
                     (image.Width != DuelSurfaceLayout.PhaseWidth * NativePhaseTurnFlip.FrameCount ||
                      image.Height != DuelSurfaceLayout.PhaseHeight))
                     throw new InvalidDataException($"Unexpected phase turn atlas: {name}");
+                if (FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase) &&
+                    Raylib.GetImageColor(image, 0, 0).A != 0)
+                    throw new InvalidDataException("Field attribute color key is not transparent: " + name);
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
                 if ((name is AttackSword or AttackSwordPartial || IsPhaseBanner(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)

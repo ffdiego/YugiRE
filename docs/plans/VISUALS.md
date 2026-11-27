@@ -501,3 +501,11 @@ zerado e uma reação de fala única foi desativada no contador 256.
 O assembly confirma que, nesse modo, o predicado de áudio deixa
 passar o primeiro Draw que atinge o limiar.
 [Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v315--término-com-áudio-desativado).
+
+### V05.6 — composição dos glifos em RGB565 no cliente
+
+Implementado no fluxo real do App: cache por atlas/intensidade, chave
+0x8D85 em domínio RGB565, escala inteira 10/15 para intensidade 160 e
+alpha binário. Nenhuma alteração no Core ou timeline. Checks exaustivos
+sintéticos; CI, captura pareada e outros formatos Windows pendentes.
+[Contrato](../research/native-field-attributes-2026-11-22.md#v056--composição-rgb565-no-cliente).

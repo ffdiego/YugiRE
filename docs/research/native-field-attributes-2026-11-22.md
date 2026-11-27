@@ -333,3 +333,18 @@ não sobrescrever o snapshot global durante a importação inicial. A
 [v7 cumulativa](joey-knowledge-sqlite.md#complemento-cumulativo-v7--centros-do-campo-25112026)
 incorporou o mesmo bundle sobre a base v6. Roteiro 33 movido para completed.
 Não repetir coleta; falta comparação gráfica e mistura/cadência.
+
+## V05.6 — composição RGB565 no cliente
+
+O caminho real de `DrawFieldAttributes` e do separador usa duas variantes
+em cache dos três atlas originais, preparadas no carregamento. A chave
+amostrada no canto deve quantizar para 0x8D85; a comparação acontece antes
+da modulação e no domínio RGB565. Para 160, os canais do pixel são
+escalados independentemente por 10/15 com truncamento; para 256, são
+preservados. A expansão para RGBA8 replica os bits altos e usa alpha
+binário: nenhum glifo mistura com o fundo. O filtro Point, geometria,
+ordem dos passes, visibilidade e relógio existente foram preservados.
+O formato RGB565 é uma escolha explícita baseada no caminho observado
+em Proton, não detecção do formato nativo em Windows. Testes sintéticos
+cobrem todas as 65536 cores nas duas intensidades, colisão da chave e
+validação do canto. CI e comparação gráfica pareada pendentes; Partial.
