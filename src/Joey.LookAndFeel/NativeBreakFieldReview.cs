@@ -98,3 +98,20 @@ public static class NativeBreakFieldReview
         _ => throw new ArgumentOutOfRangeException(nameof(rotation))
     };
 }
+
+/// <summary>First live V22 slice, restricted to successful monster
+/// removals from the recovered 00585C80 callback family. Other removals
+/// retain the existing visual. IDs are resource IDs, not native opcodes.</summary>
+public static class NativeLiveBreak
+{
+    public static bool SupportsMonsterEffect(ushort? source) =>
+        source is 500 or 119 or 1023 or 1211;
+
+    public static NativeBreakFieldTarget MonsterTarget(int side, int slot, bool faceDown, bool defense)
+    {
+        if (side is not (0 or 1) || slot is < 0 or >= 5)
+            throw new ArgumentOutOfRangeException(nameof(slot));
+        return new((ushort)(side | slot << 6 | (faceDown ? 0 : 0x8000) | (defense ? 0x4000 : 0)));
+    }
+    public const int BlockingUpdates = NativeBreakTimeline.ReleaseCounter / NativeBreakTimeline.UpdateIncrement;
+}

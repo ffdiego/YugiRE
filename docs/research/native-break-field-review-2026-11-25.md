@@ -155,3 +155,24 @@ Os modos de revisão existentes foram preservados. O fluxo vivo ainda
 não escolhe Break: remover monstros por efeitos e por combate exige
 proveniência explícita do produtor e snapshot anterior à mutação.
 O roteiro 56 registra a validação gráfica pendente. CI novo obrigatório.
+
+## V22.2 — integração de Break no duelo
+
+Primeiro recorte vivo: remoção de monstros por Man-Eater Bug (500),
+Dream Clown (119), Tribute to the Doomed (1023) e Thousand Knives (1211),
+callbacks confirmados em 00585C80. DestroyCommand guarda somente a
+proveniência opcional da carta de efeito, e RemoveMonster a transporta
+no snapshot já capturado antes de ClearMonsterSlot. Nenhuma regra,
+ordem de comandos ou alteração de RNG. Sem origem confirmada, ou sem
+banco/miniatura, preservar a explosão atual. Alvos ocultos usam verso.
+A fase bloqueante pertence ao comando por 4 updates; a cauda visual
+é um objeto independente por mais 12, não FIFO lógico e não bloqueia
+MotionBusy. F6/F7 usam o mesmo tempo de apresentação. A contagem visual
+do cemitério deixa de ocultar a remoção quando libera a ação; sua
+cadência exata ainda precisa comparação. O App mantém orientação do
+campo para o snapshot vivo e usa a composição GPU compartilhada com
+review; a equivalência da orientação do banco nativo, ordenação de
+camadas sobre outros objetos, som 0x10000008 e +AC/+C permanecem
+pendentes. Sem atribuir Break a todo efeito de destruição. S/T,
+combate FF, outros produtores e teste real com DAT separados.
+Badge sobe para Partial somente pela integração viva; não Verified.

@@ -87,6 +87,7 @@ static partial class Game
             ConfigureFusionReview(args, archive);
             ConfigureGeneralFusionReview(args, archive);
             ConfigureLiveGeneralFusion(archive);
+            ConfigureLiveBreak(archive);
             ConfigureLayerFontReview(args, archive);
             ConfigureDiceReview(args, archive);
             ConfigureCoinReview(args, archive);

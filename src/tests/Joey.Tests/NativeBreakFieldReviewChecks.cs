@@ -5,6 +5,33 @@ internal static class NativeBreakFieldReviewChecks
     public static void Run(Action<bool,string> check)
     {
         int[] cosine=NativeCosineCapture.GenerateTable();
+        check(new ushort?[]{500,119,1023,1211}.All(NativeLiveBreak.SupportsMonsterEffect) &&
+            new ushort?[]{null,1001,1451,24,0}.All(id=>!NativeLiveBreak.SupportsMonsterEffect(id)),
+            "V22 live route limited to confirmed callback family");
+        foreach(int side in new[]{0,1})
+        foreach(int perspective in new[]{0,1})
+        foreach(bool hidden in new[]{false,true})
+        foreach(bool defense in new[]{false,true})
+        {
+            var target=NativeLiveBreak.MonsterTarget(side,3,hidden,defense);
+            check(target.Side==side && target.FieldZone==3 &&
+                ((target.Descriptor&0x8000)==0)==hidden &&
+                NativeBreakTimeline.CardRotationDegrees(target.Descriptor,perspective)==DuelCardLayout.Rotation(side==perspective,defense),
+                "V22 live snapshot geometry matches board and preserves hidden identity flag");
+        }
+        var scope=new CommandPresentationSteps<NativeBreakTimeline>();
+        var live=new NativeBreakTimeline();
+        scope.Begin(1);
+        scope.For(1).Enqueue(live,NativeLiveBreak.BlockingUpdates);
+        for(int i=0;i<NativeLiveBreak.BlockingUpdates;i++) live.AdvanceNativeUpdate();
+        scope.For(1).Advance(NativeLiveBreak.BlockingUpdates);
+        scope.Release(1);
+        scope.Begin(2);
+        check(live.Active && !live.BlocksRelease && live.Counter==64 && scope.Sequence==2,
+            "V22 visible detached tail never holds released action scope");
+        for(int i=0;i<12;i++) live.AdvanceNativeUpdate();
+        check(!live.Active && scope.Sequence==2,"V22 detached visual expires without changing next action");
+        scope.Release(2);
         int[] nativeParameters=[256,231,207,182,159,136,114,94,75,59,44,31,20,12,5,2];
         check(NativeBreakResources.Parse("shine.bmp\r\n",[NativeBreakResources.Shine])==NativeBreakResources.Shine,
             "V22: original one-entry manifest");

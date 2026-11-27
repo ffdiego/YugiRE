@@ -70,13 +70,20 @@ static partial class Game
             Raylib.DrawTexturePro(board,new Rectangle(0,0,board.Width,board.Height),
                 ToRectangle(DuelSurfaceLayout.Board),Vector2.Zero,0,Color.White);
         if(CurrentBreakFieldReview() is not {} frame)return;
-        var shine=graphics.Texture(breakReviewShinePath);
+        DrawBreakFrame(frame,breakReviewCardPath!,breakReviewShinePath);
+    }
+
+    // Shared by review and live presentation. Packed +AC/+C are not yet
+    // reproduced; retain this diagnostic GPU composition.
+    static void DrawBreakFrame(NativeBreakFieldFrame frame,string cardPath,string shinePath)
+    {
+        var shine=graphics.Texture(shinePath);
         foreach(var particle in frame.Particles)
             // Diagnostic low-byte tint only. The native +AC argument
             // retains high bits and its actual blending is unresolved.
             Raylib.DrawTexture(shine,particle.Bounds.X,particle.Bounds.Y,
                 new Color(255,255,255,particle.Intensity));
-        var card=graphics.Texture(breakReviewCardPath!);
+        var card=graphics.Texture(cardPath);
         foreach(var fragment in frame.Fragments)
         {
             var src=fragment.Source;

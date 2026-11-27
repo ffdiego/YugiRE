@@ -8,7 +8,10 @@ public sealed record DuelCheckpoint(int Turn, DemoPhase Phase = DemoPhase.Main,
     bool DrawTaken = false, IReadOnlyList<Card?>? Side0SetSpells = null,
     IReadOnlyList<Card?>? Side1SetSpells = null);
 
-public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
+public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense)
+{
+    public ushort? EffectSourceResourceId { get; init; }
+}
 /// <summary>A tribute paid as a normal-summon cost; distinct from destruction.</summary>
 public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
 public sealed record DemoHandTransfer(int Player, int Index, Card Card, bool FromDeck);
@@ -2443,7 +2446,8 @@ public sealed partial class DemoDuel
     }
 
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,
-        bool isFusionMaterial = false, bool queueLinkedConsequences = false)
+        bool isFusionMaterial = false, bool queueLinkedConsequences = false,
+        ushort? effectSourceResourceId = null)
     {
         Card removed = Monsters[p, z]!;
         bool faceDown = MonsterFaceDown[p, z];
@@ -2486,7 +2490,8 @@ public sealed partial class DemoDuel
         if (isTribute)
             MonsterTributed?.Invoke(new(p, z, removed, faceDown, defense));
         else if (!isFusionMaterial)
-            MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense));
+            MonsterDestroyed?.Invoke(new(p, z, removed, faceDown, defense)
+                { EffectSourceResourceId = effectSourceResourceId });
     }
 
     private void ReturnMonsterToHand(int player, int zone, bool removeEquipment = true)

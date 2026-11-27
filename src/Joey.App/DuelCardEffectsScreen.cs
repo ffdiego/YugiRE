@@ -6,6 +6,8 @@ static partial class Game
 {
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
+    sealed record BreakDestruction(DemoMonsterDestruction Monster, NativeBreakFieldTarget Target,
+        int Perspective, string CardPath, string ShinePath, NativeBreakTimeline Timeline) : CardEffect;
     sealed record TributePlacement(DemoMonsterTribute Tribute, CardPoint[] ParticleOrigins) : CardEffect;
     // Capture the departure before Joey.Core's committed hand is reflowed.
     // The moving card is drawn independently while its neighbours shift.
@@ -56,6 +58,8 @@ static partial class Game
         legacyCardEffects.Clear();
         commandCardEffects.Reset();
         cardEffectClock.Reset();
+        breakTails.Clear();
+        breakTailClock.Reset();
         lastSignatureCandidate = null;
         lastDestinyBoardCandidate = null;
         duel.DestinyBoardCompleted += completed =>
@@ -70,7 +74,14 @@ static partial class Game
             ShowPlayedCardDetail(normal.Card,
                 hiddenFromPlayer: normal.Player != ViewPlayer && normal.FaceDown);
         };
-        duel.MonsterDestroyed += monster => QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
+        duel.MonsterDestroyed += monster =>
+        {
+            if (!presentation.Style.PlayAnimations) return;
+            if (TryCreateLiveBreak(monster) is { } effect)
+                QueueCardEffect(effect,NativeLiveBreak.BlockingUpdates);
+            else
+                QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
+        };
         duel.MonsterTributed += tribute => QueueTributeEffect(tribute);
         duel.HandTransferred += transfer =>
         {
@@ -221,6 +232,17 @@ static partial class Game
         if (consumed > 0 && cardEffects.ElapsedUpdates == 0 &&
             current.Kind is SpecialSummonPlacement { RevealDetailOnStart: true } special)
             ShowPlayedCardDetail(special.Summon.Card);
+        if (current.Kind is BreakDestruction broken)
+        {
+            for (int i=0;i<consumed;i++) broken.Timeline.AdvanceNativeUpdate();
+            if (consumed == remaining)
+            {
+                // Release the command scope at t=64. No logical action is
+                // stored here: only the already committed visual snapshot.
+                if (breakTails.Count == 0) breakTailClock.Reset();
+                breakTails.Add(broken);
+            }
+        }
         cardEffects.Advance(consumed);
         // Pay tribute(s) visually before revealing the new summon flight.
         // The flight has already been committed logically by Joey.Core.
@@ -252,6 +274,7 @@ static partial class Game
 
     static int VisibleGraveCount(int player) => Math.Max(0, duel.Graveyard(player).Count -
         cardEffects.Pending.Count(step => step.Kind is Destruction { Monster.Player: var owner } && owner == player ||
+            step.Kind is BreakDestruction { Monster.Player: var breakOwner } && breakOwner == player ||
             step.Kind is HandTransfer { Transfer: { Player: var side, FromDeck: false } } && side == player));
 
     static int VisibleDeckCount(int player) => duel.DeckCount(player) +
@@ -289,10 +312,18 @@ static partial class Game
         // Deferred removals stay beneath the active effect, even in adjacent zones.
         foreach (var step in cardEffects.Pending.Skip(playing ? 1 : 0))
             if (step.Kind is Destruction { Monster: var queued }) DrawDestructionCard(queued);
+            else if (step.Kind is BreakDestruction { Monster: var queuedBreak }) DrawDestructionCard(queuedBreak);
+
+        // Detached tails continue during later commands and never enter
+        // CardEffectsBusy / MotionBusy or keep a command scope alive.
+        foreach (var tail in breakTails) DrawLiveBreak(tail);
 
         if (!playing) return;
         switch (cardEffects.Current?.Kind)
         {
+            case BreakDestruction broken:
+                DrawLiveBreak(broken);
+                break;
             case Destruction { Monster: var monster }:
                 DrawDestruction(monster, cardEffects.ElapsedUpdates);
                 break;

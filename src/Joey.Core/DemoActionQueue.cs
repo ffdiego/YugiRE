@@ -686,7 +686,7 @@ public sealed partial class DemoDuel
                     }
                     return bounce.Target.Zone == DuelZone.Monster ? ReturnQueuedMonster(bounce.Target, followups) : ReturnQueuedSpellTrap(bounce.Target);
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
-                    return DestroyMonster(destroy.Target, followups);
+                    return DestroyMonster(destroy.Target, followups, destroy.EffectSourceResourceId);
                 case DestroyCommand destroy when destroy.Target.Zone is DuelZone.SpellTrap or DuelZone.FieldSpell:
                     return DestroyQueuedSpellTrap(destroy.Target);
                 default:
@@ -861,7 +861,8 @@ public sealed partial class DemoDuel
             // Existing standalone DestroyMonster reserves live linked
             // consequences at execution, and opens deferred triggers only
             // after those commands drain. No replacement is selected.
-            queue.Enqueue(new DestroyCommand(resolve.Target.Side,resolve.Target));
+            queue.Enqueue(new DestroyCommand(resolve.Target.Side,resolve.Target)
+                { EffectSourceResourceId = reserved.ResourceId });
             return new(CommandOutcome.Applied);
         }
 
@@ -2144,7 +2145,8 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult DestroyMonster(CardTarget target, IActionCommandSink followups)
+        private CommandResult DestroyMonster(CardTarget target, IActionCommandSink followups,
+            ushort? effectSourceResourceId = null)
         {
             if (!duel.TryResolveCardTarget(target, out int slot, out _))
             {
@@ -2170,7 +2172,8 @@ public sealed partial class DemoDuel
             }
             bool hidden = duel.MonsterFaceDown[target.Side, slot];
             duel.deferringFieldRemovalTriggers = true;
-            try { duel.RemoveMonster(target.Side, slot, queueLinkedConsequences: true); }
+            try { duel.RemoveMonster(target.Side, slot, queueLinkedConsequences: true,
+                effectSourceResourceId: effectSourceResourceId); }
             finally { duel.deferringFieldRemovalTriggers = false; }
             if (wipe is { } current && current.Targets.Remove(target))
             {

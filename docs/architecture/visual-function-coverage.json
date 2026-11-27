@@ -81,7 +81,8 @@
     {
       "address": "00450FD0",
       "family": "Quebra / remoção alternativa",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelBreakPresentation.cs"
     },
     {
       "address": "0044F390",

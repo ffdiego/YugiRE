@@ -47,7 +47,12 @@ public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destinatio
 public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record BanishCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(Side);
-public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side);
+public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side)
+{
+    // Provenance of an explicitly selected effect, not a visual or a
+    // new rule. Console, battle cleanup and unannotated producers omit it.
+    public ushort? EffectSourceResourceId { get; internal init; }
+}
 public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side)
 {
     public int? AffectedCombatantSlot { get; internal init; }

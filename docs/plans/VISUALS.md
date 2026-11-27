@@ -386,7 +386,7 @@ Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, ban
 
 As coletas 16 e 29 sustentam o modelo de cinco partículas e a dispersão da carta. A rota bruta `79 → 4F → 00404B40` identifica Break. Explosion usa `7C → 52 → 00405190`. A reconciliação de #160, #168 e #186 reúne o divisor inteiro, a orientação antes da partição 4×2, a revisão de campo com miniatura ou verso do DAT e o snapshot de batalha com slot FF. A consulta de liberação de Break deixa de bloquear após quatro updates, enquanto o objeto permanece ativo por 16.
 
-`--review-break` é uma revisão isolada. O compositor nativo +AC/+C, a leitura da ocorrência antes da mutação, a integração via A03 e a comparação gráfica permanecem abertas. `00450FD0` permanece Pending na cobertura do duelo. [Contrato e revisão](../../docs/research/native-break-field-review-2026-11-25.md)
+`--review-break` é uma revisão isolada. O compositor nativo +AC/+C, a leitura da ocorrência antes da mutação, a integração via A03 e a comparação gráfica permanecem abertas. `00450FD0` é Partial no recorte vivo V22.2; review e composição pareada permanecem pendentes. [Contrato e revisão](../../docs/research/native-break-field-review-2026-11-25.md)
 
 ## V23 — Corrente (0041F870)
 
