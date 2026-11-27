@@ -76,7 +76,7 @@ def render_report(scopes, sources):
              f"- **Joey:** {j['done']}/{j['total']} = {j['pct']:.2f}%",
              f"- **Partial:** {a['statuses']['Partial']}; **Verified:** {a['statuses']['Verified']} (trilogia).",
              f"- **Partial no Joey:** {j['statuses']['Partial']}.",
-             "A badge mostra Done+Verified e, separadamente, o número de Partial. Migração de regras já Done para a fila (C12) não altera a cobertura jogável.", "",
+             "A badge mostra Done+Verified e, separadamente, o número de Partial. C12 pode reduzir temporariamente a cobertura; o manifesto deve refletir suporte real.", "",
              "## Por categoria", "",
              "| Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |",
              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
@@ -93,7 +93,7 @@ def render_report(scopes, sources):
     lines += ["", "## Como interpretar", "",
               "- Os 771 recursos da união dos packs e os 350 do Joey vêm do DAT original, mas o índice versionado tem somente IDs, flags e categorias, nunca textos ou arquivos de jogo.",
               "- Monster Normal/Effect/Fusion/Ritual são referências externas por nome exato ou normalizado; ToReview permanece explicitamente desconhecido.",
-              "- O status Done vem exclusivamente do manifest C# com testes de cenário; classificação não promove carta a Done.",
+              "- O status Done vem do manifesto de implementação jogável; classificação ou testes históricos não comprovam paridade.",
               "- A infraestrutura genérica de invocação não significa que cada monstro esteja completo.",
               "- Verified exige comparação do mesmo efeito com o jogo original, não só um teste C#.",
               "", "### Fontes externas para subtipos", ""]

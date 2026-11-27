@@ -4,7 +4,6 @@ using Raylib_cs;
 
 static partial class Game
 {
-    static bool useQueuedActions = true;
     static ActionQueue? queuedDuel;
     static CardTarget? queuedPreviewSource;
 

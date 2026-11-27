@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Joey.Cards/Joey.Cards.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="../../docs/cards/monster-subtypes.json" LogicalName="Joey.Core.monster-subtypes.json" />
   </ItemGroup>
 </Project>

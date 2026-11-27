@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Joey.Lab", "src\Joey.Lab\Jo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Joey.LookAndFeel", "src\\Joey.LookAndFeel\\Joey.LookAndFeel.csproj", "{8F4151EF-DF9D-40D9-A176-E2EB83E21A9B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Joey.Cards", "src\Joey.Cards\Joey.Cards.csproj", "{0F9BE7CE-DB10-449A-A693-5D104AE506E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,18 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Debug|x86.Build.0 = Debug|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Release|x64.Build.0 = Release|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Release|x86.ActiveCfg = Release|Any CPU
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4}.Release|x86.Build.0 = Release|Any CPU
 		{3EE35A6F-D5D0-450A-AE65-9DC48B24CCCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3EE35A6F-D5D0-450A-AE65-9DC48B24CCCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EE35A6F-D5D0-450A-AE65-9DC48B24CCCC}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -122,6 +136,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{0F9BE7CE-DB10-449A-A693-5D104AE506E4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{8F4151EF-DF9D-40D9-A176-E2EB83E21A9B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{3EE35A6F-D5D0-450A-AE65-9DC48B24CCCC} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{C21F4D78-E4FB-4A8F-9AE5-31983E6FAB8C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}

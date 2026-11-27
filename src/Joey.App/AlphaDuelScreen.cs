@@ -62,7 +62,7 @@ static partial class Game
         var deck = AlphaDeck.Create(playableCards);
         var fusion = AlphaDeck.CreateFusionDeck(playableCards);
         var match = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
-        var queue = useQueuedActions ? match.CreatePrimitiveActionQueue() : null;
+        var queue = match.CreatePrimitiveActionQueue();
         CpuDuelController[] sides = [new(0), new(1)];
         for (int i = 0; i < 5000 && !match.GameOver; i++)
         {
@@ -90,8 +90,7 @@ static partial class Game
     static void StartDuelPresentation()
     {
         ResetDuelPresentation();
-        if (useQueuedActions)
-            queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
+        queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
     }
 
     static void ResetDuelPresentation()
@@ -294,14 +293,7 @@ static partial class Game
 
     static void CommitHumanAttack(int target)
     {
-        if (queuedDuel is not null &&
-            (duel.TryQueueAttack(attacker, target, out message, out bool unsupported) || !unsupported))
-            return;
-
-        int player = duel.ActivePlayer;
-        var hidden = CaptureHiddenAttackTarget(1 - player, target);
-        if (duel.Attack(attacker, target, out message) && duel.PendingAttackResponse is null)
-            BeginAttackCue(player, attacker, target, hidden);
+        duel.TryQueueAttack(attacker, target, out message);
     }
 
     static void AdvanceAlpha(TimeSpan elapsed)

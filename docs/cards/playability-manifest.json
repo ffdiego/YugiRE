@@ -247,7 +247,7 @@
       ],
       "evidence": [
         "src/Joey.Core/LifePointSpellRules.cs",
-        "src/tests/Joey.Tests/LifePointSpellChecks.cs"
+        "archive/card-tests/LifePointSpellChecks.cs"
       ]
     },
     {
@@ -267,7 +267,7 @@
       ],
       "evidence": [
         "src/Joey.Core/LifePointSpellRules.cs",
-        "src/tests/Joey.Tests/LifePointSpellChecks.cs"
+        "archive/card-tests/LifePointSpellChecks.cs"
       ]
     },
     {
@@ -287,7 +287,7 @@
       "evidence": [
         "src/Joey.Core/DrawSpellRules.cs",
         "src/Joey.Core/Demo.cs",
-        "src/tests/Joey.Tests/DrawSpellChecks.cs"
+        "archive/card-tests/DrawSpellChecks.cs"
       ],
       "limitations": [
         "C# sandbox: activation requires enough cards to complete the draw immediately.",

@@ -279,13 +279,9 @@ public sealed class CpuDuelController
             : duel.EndTurn(out pending);
         bool AttackFrom(int source, int target, out string pending)
         {
-            if (queueTurnActions)
-            {
-                if (duel.TryQueueAttack(source, target, out pending, out bool unsupported, ActionOrigin.Cpu))
-                    return true;
-                if (!unsupported) return false;
-            }
-            return duel.Attack(source, target, out pending);
+            return queueTurnActions
+                ? duel.TryQueueAttack(source, target, out pending, ActionOrigin.Cpu)
+                : duel.Attack(source, target, out pending);
         }
 
         if (duel.PendingEndDiscards > 0)

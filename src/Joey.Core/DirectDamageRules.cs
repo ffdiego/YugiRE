@@ -16,11 +16,7 @@ public sealed record DirectDamageResult(DirectDamageStatus Status, DirectDamageC
 public static class DirectDamageRules
 {
     // Resource IDs, never internal indices. No alias/+2000 normalization.
-    public static int? Amount(ushort resourceId) => resourceId switch
-    {
-        342 => 200, 343 => 500, 344 => 600, 345 => 800, 1007 => 300,
-        _ => null
-    };
+    public static int? Amount(ushort resourceId) => Joey.Cards.FixedSpellEffects.OpponentDamage(resourceId);
 
     // 00593CC0 scalar value appended by 00592A50; does not model buffer counters.
     public static int? PrepareTarget(byte? sourceByte) => sourceByte.HasValue ? 1 - (sourceByte.Value & 1) : null;
