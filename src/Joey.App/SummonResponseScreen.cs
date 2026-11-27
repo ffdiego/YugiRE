@@ -31,19 +31,7 @@ static partial class Game
 
     static bool CommitSummonResponse(DemoSummonResponse response, DemoSummonTrapOption? option)
     {
-        if (duel.UsesQueuedSummonResponse(response))
-        {
-            if (!duel.TryQueueSummonResponse(response, option, out message)) return false;
-        }
-        else if (option is null)
-        {
-            if (!duel.PassSummonResponse(out message)) return false;
-        }
-        else
-        {
-            if (!duel.ActivateSummonTrap(option.Owner, option.Zone, out message)) return false;
-            BeginCardActivation(option.Trap, ZoneBounds(option.Owner, option.Zone, true), nearSide: option.Owner == ViewPlayer);
-        }
+        if (!duel.TryQueueSummonResponse(response, option, out message)) return false;
         ClearDuelSelection();
         return true;
     }

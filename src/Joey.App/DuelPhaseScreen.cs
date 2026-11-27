@@ -103,16 +103,8 @@ static partial class Game
             ShowPhase(DuelPhaseDisplay.Draw);
             if (duel.CanDraw)
             {
-                if (queuedDuel is not null)
-                {
-                    var origin = alphaCpu?.Player == duel.ActivePlayer ? ActionOrigin.Cpu : ActionOrigin.Player;
-                    queuedTurnDraw = duel.TryQueueTurnDraw(out _, origin);
-                }
-                else
-                {
-                    duel.Draw(out message);
-                    ClearDuelSelection();
-                }
+                var origin = alphaCpu?.Player == duel.ActivePlayer ? ActionOrigin.Cpu : ActionOrigin.Player;
+                queuedTurnDraw = duel.TryQueueTurnDraw(out message, origin);
             }
             if (presentation.Style.PlayAnimations || queuedTurnDraw) return;
         }
@@ -168,24 +160,14 @@ static partial class Game
 
     static bool TryChooseDuelPhase(DuelPhaseDisplay phase)
     {
-        bool accepted = queuedDuel is not null
-            ? phase switch
-            {
-                DuelPhaseDisplay.Battle => duel.TryQueueBattlePhaseChange(true, out message),
-                DuelPhaseDisplay.Main2 => duel.TryQueueBattlePhaseChange(false, out message),
-                DuelPhaseDisplay.End => duel.TryQueueEndTurn(out message),
-                _ => false
-            }
-            : phase switch
-            {
-                DuelPhaseDisplay.Battle => duel.BeginBattle(out message),
-                DuelPhaseDisplay.Main2 => duel.EndBattle(out message),
-                DuelPhaseDisplay.End => duel.EndTurn(out message),
-                _ => false
-            };
+        bool accepted = phase switch
+        {
+            DuelPhaseDisplay.Battle => duel.TryQueueBattlePhaseChange(true, out message),
+            DuelPhaseDisplay.Main2 => duel.TryQueueBattlePhaseChange(false, out message),
+            DuelPhaseDisplay.End => duel.TryQueueEndTurn(out message),
+            _ => false
+        };
         if (!accepted) return false;
-        // The queue must start before the presentation observes the phase.
-        if (queuedDuel is null) ShowPhase(phase);
         ClearDuelSelection();
         return true;
     }

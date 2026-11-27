@@ -49,7 +49,7 @@ static partial class Game
                     ? QueuedEquipChoices(DuelZone.Hand, index).Count != 0
                     : queuedDuel is not null && DemoDuel.SupportsQueuedFixedSpell(ViewHand[index])
                         ? duel.CanQueueFixedSpellActivation(DuelZone.Hand, index)
-                        : duel.CanActivateFromHand(index);
+                        : duel.CanBeginQueuedFusionSelection(DuelZone.Hand, index);
 
     static (CardTarget Source, IReadOnlyList<QueuedTargetedMonsterSpellCandidate> Choices, int Turn)? fissureSelection;
 
@@ -275,9 +275,7 @@ static partial class Game
         var card = ViewHand[index];
         if (duel.PendingEndDiscards > 0)
         {
-            bool discarded = duel.HasQueuedEndDiscard
-                ? duel.TryQueueEndTurnDiscard(index, out message)
-                : duel.DiscardForEndTurn(index, out message);
+            bool discarded = duel.TryQueueEndTurnDiscard(index, out message);
             if (discarded) ClearDuelSelection();
             return;
         }
@@ -297,37 +295,12 @@ static partial class Game
         }
         else if (action == NativeCursorAction.Set)
         {
-            if (queuedDuel is not null)
-            {
-                if (duel.TryQueueSpellTrapSet(index, out message)) ClearDuelSelection();
-                return;
-            }
-            int zone = duel.FirstFreeSpellZone();
-            var origin = HandBounds(index);
-            if (duel.SetFromHand(index, out message))
-            {
-                ShowPlayedCardDetail(card);
-                handLayouts[ViewPlayer].RemoveAt(index);
-                bool field = FieldSpellRules.Supports(card.Id);
-                if (field || zone >= 0)
-                {
-                    int destination = field ? 0 : zone;
-                    BeginFlight(card, ViewPlayer, destination, origin, true, true, field);
-                    QueueSetEffect(ViewPlayer, destination, spell: true, field: field);
-                }
-                ClearDuelSelection();
-            }
+            if (duel.TryQueueSpellTrapSet(index, out message)) ClearDuelSelection();
         }
         else if (action == NativeCursorAction.Activate && queuedDuel is not null && RitualSearchRules.IsRitualSpell(card))
             TryStartRitualBoardChoice(DuelZone.Hand, index);
         else if (action == NativeCursorAction.Activate && queuedDuel is not null && IsQueuedEquip(card))
             StartQueuedEquipChoice(DuelZone.Hand, index);
-        else if (action == NativeCursorAction.Activate &&
-                 EquipmentRules.Supports(card.Id) && duel.CanActivateFromHand(index))
-        {
-            choosingEquip = true;
-            message = $"Choose a compatible face-up monster for {card.Name}.";
-        }
         else if (action == NativeCursorAction.Activate)
         {
             if (queuedDuel is not null && IsFissure(card))
@@ -345,41 +318,15 @@ static partial class Game
                 if (TryQueuedFixedSpell(DuelZone.Hand, index, out message)) ClearDuelSelection();
                 return;
             }
-            int zone = duel.FirstFreeSpellZone();
-            var origin = HandBounds(index);
-            if (!duel.Play(index, out message)) return;
-            if (duel.PendingSpellTrapTarget is not null || duel.PendingFusionSummon is not null)
-            {
+            if (duel.TryBeginQueuedFusionSelection(DuelZone.Hand, index, out message))
                 ClearDuelSelection();
-                return;
-            }
-            ShowPlayedCardDetail(card);
-            handLayouts[ViewPlayer].RemoveAt(index);
-            if (FieldSpellRules.Supports(card.Id))
-                BeginCardActivation(card, FieldZoneBounds(ViewPlayer), origin);
-            else if (zone >= 0 && card.ClassCode == 22)
-                BeginCardActivation(card, ZoneBounds(ViewPlayer, zone, true), origin);
-            ClearDuelSelection();
         }
     }
+
     static bool CommitHumanSummon(int index)
     {
-        var card = ViewHand[index];
         int zone = duel.FirstFreeMonsterZone(tributeZones);
-        if (queuedDuel is not null)
-        {
-            if (!duel.TryQueueNormalPlacement(index, zone, setHandAction, out message, tributeZones)) return false;
-            ClearDuelSelection();
-            return true;
-        }
-        var origin = HandBounds(index);
-        if (!duel.SummonLeftmost(index, setHandAction, out message, tributeZones)) return false;
-        ShowPlayedCardDetail(card);
-        handLayouts[ViewPlayer].RemoveAt(index);
-        bool set = setHandAction;
-        BeginFlight(card, ViewPlayer, zone, origin, false, set);
-        if (set) QueueSetEffect(ViewPlayer, zone, spell: false);
-        else QueueNormalSummonEffect(card, ViewPlayer, zone);
+        if (!duel.TryQueueNormalPlacement(index, zone, setHandAction, out message, tributeZones)) return false;
         ClearDuelSelection();
         return true;
     }
@@ -559,10 +506,7 @@ static partial class Game
                     duel.PendingSpellTrapTarget is null &&
                     PointerPressed(MouseButton.Left) && Hit(fieldRect))
                 {
-                    if (queuedDuel is not null)
-                        duel.TryQueueFieldSpellActivation(DuelZone.FieldSpell, 0, out message);
-                    else if (duel.ActivateSetFieldSpell(out message))
-                        BeginCardActivation(fieldCard, fieldRect);
+                    duel.TryQueueFieldSpellActivation(DuelZone.FieldSpell, 0, out message);
                 }
                 else if (!blockInput && fissureSelection is null && queuedSpellTrapSelection is null &&
                     queuedEquipChoice is null && Hit(fieldRect) && duel.CanUseFusionGate(player))
@@ -654,9 +598,7 @@ static partial class Game
                     {
                         if (monster is not null)
                         {
-                            bool accepted = queuedDuel is not null && duel.UsesQueuedMonsterFlipSelection(flipRequest)
-                                ? duel.TrySelectQueuedMonsterFlipTarget(flipRequest, player, zone, out message)
-                                : duel.ResolveFlipTarget(player, zone, out message);
+                            bool accepted = duel.TrySelectQueuedMonsterFlipTarget(flipRequest, player, zone, out message);
                             if (accepted) ClearDuelSelection();
                         }
                     }
@@ -667,17 +609,10 @@ static partial class Game
                         if (tributeZones.Count != needed || !CommitHumanSummon(hand))
                             message = $"Choose {needed - tributeZones.Count} more tribute(s).";
                     }
-                    else if (choosingEquip && monster != null)
+                    else if (choosingEquip)
                     {
-                        var equip = ViewHand[hand];
-                        int sourceZone = duel.FirstFreeSpellZone();
-                        var origin = HandBounds(hand);
-                        if (duel.Equip(hand, player, zone, out message))
-                        {
-                            handLayouts[ViewPlayer].RemoveAt(hand);
-                            BeginCardActivation(equip, ZoneBounds(ViewPlayer, sourceZone, true), origin);
-                            ClearDuelSelection();
-                        }
+                        // A queued equipment choice is handled above using tracked occurrences.
+                        message = "Choose a supported queued equipment target.";
                     }
                     else if (duel.Phase == DemoPhase.Battle)
                     {
@@ -693,21 +628,7 @@ static partial class Game
                     }
                     else if (own && monster != null)
                     {
-                        if (queuedDuel is not null)
-                        {
-                            duel.TryQueueChangePosition(zone, out message);
-                            continue;
-                        }
-                        bool reveal = duel.MonsterFaceDown[player, zone];
-                        if (duel.ChangePosition(zone, out message) && reveal)
-                        {
-                            ShowActivatedDetail(monster);
-                            if (alphaCpu is not null)
-                            {
-                                var center = NativeDuelLayout.MonsterCenter(zone, own);
-                                BeginSpellActivation(center.X, center.Y, category: 1);
-                            }
-                        }
+                        duel.TryQueueChangePosition(zone, out message);
                     }
                 }
                 else if (own && Hit(spellRect) && duel.Spells[player, zone] is Card setSpell)
@@ -722,9 +643,8 @@ static partial class Game
                         StartQueuedEquipChoice(DuelZone.SpellTrap, zone);
                     else if (queuedDuel is not null && IsQueuedFixedSpell(setSpell))
                         TryQueuedFixedSpell(DuelZone.SpellTrap, zone, out message);
-                    else if (duel.ActivateSetSpell(zone, out message) && duel.PendingSpellTrapTarget is null &&
-                             duel.PendingFusionSummon is null)
-                        BeginCardActivation(setSpell, spellRect);
+                    else
+                        duel.TryBeginQueuedFusionSelection(DuelZone.SpellTrap, zone, out message);
                 }
             }
         }
@@ -738,9 +658,7 @@ static partial class Game
             var area = target.IsFieldZone ? FieldZoneBounds(target.Player) :
                 ZoneBounds(target.Player, target.Zone, true);
             if (!Hit(area)) continue;
-            bool accepted = queuedDuel is not null && duel.UsesQueuedFlipSpellTrapSelection(pending)
-                ? duel.TrySelectQueuedFlipSpellTrapTarget(pending, target.Player, target.Zone, out message)
-                : duel.SelectFlipSpellTrapTarget(target.Player, target.Zone, out message);
+            bool accepted = duel.TrySelectQueuedFlipSpellTrapTarget(pending, target.Player, target.Zone, out message);
             if (accepted && (duel.PendingFlipSpellTrapTargets is null || queuedDuel?.IsBusy == true))
                 ClearDuelSelection();
             return;
@@ -749,27 +667,10 @@ static partial class Game
 
     static void ReadSpellTrapTarget(PendingSpellTrapTarget pending)
     {
+        // No legacy activation may resolve. Cancellation only clears the prompt.
+        message = "Legacy Spell/Trap selection is unsupported.";
         if (Raylib.IsKeyPressed(KeyboardKey.Backspace))
-        {
             duel.CancelSpellTrapTarget(out message);
-            return;
-        }
-        if (!PointerPressed(MouseButton.Left)) return;
-        foreach (var target in pending.EligibleTargets)
-        {
-            var area = target.IsFieldZone ? FieldZoneBounds(target.Player) : ZoneBounds(target.Player, target.Zone, true);
-            if (!Hit(area)) continue;
-            int sourceZone = pending.FromSet ? pending.SourceIndex : duel.FirstFreeSpellZone();
-            Rectangle? origin = pending.FromSet ? null : HandBounds(pending.SourceIndex);
-            if (duel.ResolveSpellTrapTarget(target.Player, target.Zone, out message))
-            {
-                if (!pending.FromSet) handLayouts[pending.Owner].RemoveAt(pending.SourceIndex);
-                ShowPlayedCardDetail(pending.Spell);
-                BeginCardActivation(pending.Spell, ZoneBounds(pending.Owner, sourceZone, true), origin);
-                ClearDuelSelection();
-            }
-            return;
-        }
     }
     static void DrawDuelHand()
     {
@@ -814,8 +715,6 @@ static partial class Game
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
-        if (labSession is null && !ConsoleCapturesInput && !visualReviewPaused && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy != true &&
-            (alphaCpu is null || HumanChoice)) ApplyOptionalEffectPromptPolicy();
         for (int player = 0; player < 2; player++)
             SynchronizeHand(player, VisibleHand(player), hoverUpdates);
         AdvanceAlpha(frameElapsed);
@@ -890,9 +789,7 @@ static partial class Game
         if (duel.PendingFlipTarget is { Effect: DemoFlipEffect.ReturnUpToTwo } optionalFlip &&
             Button("Done", 132, 584, 76, 16, choiceInput))
         {
-            bool accepted = queuedDuel is not null && duel.UsesQueuedMonsterFlipSelection(optionalFlip)
-                ? duel.TryFinishQueuedMonsterFlipSelection(optionalFlip, out message)
-                : duel.FinishFlipTargets(out message);
+            bool accepted = duel.TryFinishQueuedMonsterFlipSelection(optionalFlip, out message);
             if (accepted) ClearDuelSelection();
         }
         DrawSidePiles();

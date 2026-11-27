@@ -27,6 +27,25 @@ public sealed partial class DemoDuel
             BeginFusionSummon(FieldSpells[owner]!, -1, false, out message, fieldOwner: owner);
     }
 
+    // Opening a choice reserves no cards and applies no effect. Only the
+    // typed fusion producer can commit the selection in the queued duel.
+    public bool CanBeginQueuedFusionSelection(DuelZone zone, int index) =>
+        primitiveActionQueue is { IsBusy: false } && !ActionsBlocked &&
+        Phase == DemoPhase.Main && zone is DuelZone.Hand or DuelZone.SpellTrap &&
+        TryCaptureCardTarget(ActivePlayer, zone, index, out var target) &&
+        TryResolveCardTarget(target, out _, out var card) && FusionRules.Supports(card) &&
+        (zone == DuelZone.Hand ? FirstFreeSpellZone() >= 0 : SpellFaceDown[ActivePlayer, index]) &&
+        HasFusionCombination();
+
+    public bool TryBeginQueuedFusionSelection(DuelZone zone, int index, out string message)
+    {
+        message = "Choose a supported Fusion spell in Main Phase.";
+        if (!CanBeginQueuedFusionSelection(zone, index)) return false;
+        bool fromSet = zone == DuelZone.SpellTrap;
+        return BeginFusionSummon(fromSet ? Spells[ActivePlayer, index]! : Hand[index],
+            index, fromSet, out message);
+    }
+
     private void LoadFusionDeck(int player, IReadOnlyList<Card>? cards)
     {
         if (cards is null) return;

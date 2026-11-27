@@ -60,7 +60,12 @@ static partial class Game
 
         bool queuedHandSelection = queuedDuel is not null && duel.UsesQueuedHandSelection(request);
         bool queuedFieldSelection = queuedDuel is not null && duel.UsesQueuedFieldSelection(request);
-        int SelectedCount() => queuedFieldSelection ? queuedFieldPicks.Count : duel.SelectedBatchIndices.Count;
+        if (!queuedHandSelection && !queuedFieldSelection)
+        {
+            message = "Legacy card selection is unsupported.";
+            return;
+        }
+        int SelectedCount() => queuedFieldSelection ? queuedFieldPicks.Count : 0;
         int visibleSlots = cardSelectionList?.Window.VisibleCount ?? CardSelectionPageSize;
         for (int slot = 0; slot < visibleSlots; slot++)
         {
@@ -68,7 +73,7 @@ static partial class Game
             if (index < 0 || index >= request.EligibleCards.Count) break;
             var option = request.EligibleCards[index];
             bool chosen = queuedFieldSelection ? queuedFieldPicks.Any(p => p.Index == option.SourceIndex)
-                : duel.SelectedBatchIndices.Contains(option.SourceIndex);
+                : false;
             if (cardSelectionList is { } list ? DrawNativeSelectionCard(list, option.Card, slot, chosen)
                 : DrawSelectionCard(option.Card, slot, chosen))
             {
@@ -88,12 +93,7 @@ static partial class Game
                     else message = $"Selected {queuedFieldPicks.Count}/{request.MaxSelections} copies.";
                     return;
                 }
-                bool resolved = queuedHandSelection
-                    ? duel.TrySubmitQueuedHandSelection(request, option.SourceIndex, out message)
-                    : request.MaxSelections > 1
-                    ? duel.SelectBatchCard(option.SourceIndex, out message)
-                    : duel.ResolveCardSelection(option.SourceIndex, null,
-                        request.MaySelectFaceDownDefense && selectionFaceDownDefense, out message);
+                bool resolved = duel.TrySubmitQueuedHandSelection(request, option.SourceIndex, out message);
                 if (resolved && !ReferenceEquals(request, duel.PendingCardSelection))
                 {
                     cardSelectionPage = 0;
@@ -114,7 +114,7 @@ static partial class Game
                 449, 500, 13, Gold);
             if (Button("Done", 608, 493, 110, 30, SelectedCount() > 0))
             {
-                if (queuedFieldSelection ? SubmitQueuedFieldPicks(request) : duel.FinishOptionalCardSelection(out message))
+                if (queuedFieldSelection && SubmitQueuedFieldPicks(request))
                 {
                     cardSelectionPage = 0;
                     ClearDuelSelection();
@@ -129,7 +129,7 @@ static partial class Game
         {
             bool skipped = queuedHandSelection
                 ? duel.TrySubmitQueuedHandSelection(request, null, out message)
-                : queuedFieldSelection ? SubmitQueuedFieldPicks(request) : duel.SkipOptionalCardSelection(out message);
+                : queuedFieldSelection && SubmitQueuedFieldPicks(request);
             if (skipped)
             {
                 cardSelectionPage = 0;
