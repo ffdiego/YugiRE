@@ -48,6 +48,9 @@ public readonly record struct NativeAttackFrame(
             int flightAngle = AimRotation(target.X - point.X, target.Y - point.Y);
             return new(point, flightAngle, false, 0, 255);
         }
-        return new(target, start + turn, true, (t - 0x100) << 9, Math.Min(255, 2 * (0x200 - t)));
+        // 004147B0 uses FPATAN of the original vector, not the
+        // interpolated preparation index plus the side's half-turn.
+        // Truncation before adding 256 can differ by one index.
+        return new(target, AimRotation(dx, dy), true, (t - 0x100) << 9, Math.Min(255, 2 * (0x200 - t)));
     }
 }

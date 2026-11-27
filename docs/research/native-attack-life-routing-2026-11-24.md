@@ -347,3 +347,19 @@ Exemplo -10: t32 glifos 0 e 1 em y=-28 e 0; t64 0/1/- em
 y=-40/-28/0; t160 primeiro glifo em -10. C# CI pendente, sem
 SDK local. Não declarar Verified; falta slot de batalha via A03,
 comparação gráfica/cadência e composição.
+
+## V04.8 — quadriláteros inteiros no renderer de ataque
+
+A apresentação do ataque declarado usa `NativeRotatedQuad.Project` no App
+para os passes da lâmina e do impacto. A orientação da lâmina no contato
+usa o ângulo assinado do vetor original (em vez do ângulo de preparação
+somado ao giro de lado), conforme 004147B0. O adapter GPU converte cantos
+inclusivos em uma aproximação de contorno de células de pixel e mantém a
+ordem dos cantos da fonte. Os pontos negativos no ataque direto são
+preservados e o viewport faz o recorte; não clamp dos vértices. A mira
+interativa continua no caminho existente. Permanecem provisórios o
+rasterizador GPU, o blending, a precisão x87 nas fronteiras, o bypass
+alreadyAimed e a comparação gráfica do resultado. Não se afirma que o
+viewport implementa o recorte do compositor nativo. Testes sintéticos
+cobrem os extremos observados em 480/496, o giro e a cobertura de células
+no caso ortogonal. CI e captura gráfica pareada pendentes.
