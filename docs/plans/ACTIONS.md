@@ -410,3 +410,15 @@ usa roteiro sintético. A correlação com checkpoints nativos
 equivalentes, incluindo associação de ocorrências e RNG,
 permanece pendente.
 [Contrato de checkpoints](../architecture/duel-differential-policy.md#checkpoints-do-laboratório).
+
+### A09.6 — Comparação explícita de checkpoints
+
+O comparador reaproveita a validação de integridade e a reconstrução do
+estado da captura nativa na entrada do produtor. Recebe pares ordenados
+de sequência nativa e linha C#, incluindo o estado inicial. Compara LP,
+ordem da mão por índice interno e contagens de deck e cemitério por lado.
+Relata o prefixo concordante, a primeira diferença observada e as lacunas.
+Fixtures sintéticas exercitam concordância, divergência e resultado
+inconclusivo. Ainda falta parear uma captura real com decisões e estado
+equivalentes. A comparação de campo, fase e ocorrências segue pendente.
+[Uso e limites](../architecture/duel-differential-policy.md#comparação-de-checkpoints-pareados).

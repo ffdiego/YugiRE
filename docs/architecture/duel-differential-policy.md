@@ -27,3 +27,27 @@ precisam de associação ao comparar engines. O export contém mão e
 deck de ambos os lados para análise privada. O arquivo representa
 o C# e ainda precisa de decisões, contexto e checkpoints nativos
 correlacionados para uma comparação diferencial.
+
+## Comparação de checkpoints pareados
+
+```sh
+python -m yugilab.compare_duel_checkpoints captura.jsonl checkpoints.json \
+  --pair 120:initial --pair 124:3 --pair 130:5
+```
+
+Cada par informa a sequência do JSONL nativo com `--trace-state` e a
+linha do roteiro C#. O primeiro par aponta para o estado inicial do
+roteiro. Os demais pares devem seguir a ordem das duas fontes e
+pertencer ao mesmo duelo. Quem monta os pares precisa confirmar
+decisões, estado e momento equivalentes. O estado do JSONL é lido na
+entrada do produtor do comando, antes de seu enfileiramento, e pode
+perder estados transitórios.
+
+A projeção compara LP, ordem dos índices internos na mão e contagens
+de deck e cemitério por lado. O relatório inclui o hash do JSONL, o
+prefixo pareado, as lacunas e a primeira diferença observada. Uma
+diferença após uma lacuna fica visível com `afterGap: true`. Códigos de
+saída 0 para concordância na projeção solicitada, 1 para diferença no
+prefixo, 2 para entrada inválida e 3 para resultado inconclusivo. Ainda
+faltam campos visíveis do tabuleiro, identidade das ocorrências e uma
+captura equivalente com decisões correlacionadas.
