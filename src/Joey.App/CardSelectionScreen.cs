@@ -27,8 +27,11 @@ static partial class Game
             queuedFieldPicks.Clear();
             selectionFaceDownDefense = false;
             cardSelectionPage = 0;
-            cardSelectionList = CreateSelectionList(request.Source == CardSelectionSource.Graveyard ? 3 : 2,
-                request.Owner, request.EligibleCards.Select(option => option.Card).ToArray());
+            // The native hand-reveal layout belongs to VISUALS. Use the
+            // existing generic list instead of claiming deck/GY geometry.
+            cardSelectionList = request.Source == CardSelectionSource.Hand ? null :
+                CreateSelectionList(request.Source == CardSelectionSource.Graveyard ? 3 : 2,
+                    request.Owner, request.EligibleCards.Select(option => option.Card).ToArray());
         }
 
         int lastPage = Math.Max(0, (request.EligibleCards.Count - 1) / CardSelectionPageSize);
@@ -49,7 +52,7 @@ static partial class Game
         Label(heading, 250, 95, 21, Gold);
         string rule = request.RequiredAttributeCode is byte attribute
             ? $"attribute {attribute}, ATK <= 1500" : request.Filter.ToString();
-        Label($"{request.Source} -> {request.Destination} | {rule}", 250, 126, 17);
+        Label($"P{request.SourceSide + 1} {request.Source} -> {request.Destination} | {rule}", 250, 126, 17);
         Label(request.MinSelections == 0
             ? request.MaxSelections > 1
                 ? $"Choose up to {request.MaxSelections} copies, then Done (or Skip)."

@@ -30,7 +30,7 @@ public sealed partial class DuelConsoleSession
     }
 
     private PendingCardSelection? PendingHandSelection =>
-        duel.PendingCardSelection is { Destination: CardSelectionDestination.Hand, MaxSelections: 1 } request
+        duel.PendingCardSelection is { MaxSelections: 1 } request && duel.UsesQueuedHandSelection(request)
             ? request
             : null;
 
@@ -396,11 +396,13 @@ public sealed partial class DuelConsoleSession
     {
         if (Queue.IsBusy || PendingHandSelection is not { } request)
             return new(false, "No pending hand selection available.");
-        var choices = request.Source == CardSelectionSource.Deck
-            ? duel.QueuedDeckSearchCandidates(request).Select(item => (item.SourceIndex, item.Card))
-            : duel.QueuedGraveyardRecoveryCandidates(request).Select(item => (item.SourceIndex, item.Card));
+        var choices = request.Source == CardSelectionSource.Hand
+            ? request.EligibleCards.Select(item => (item.SourceIndex,item.Card))
+            : request.Source == CardSelectionSource.Deck
+                ? duel.QueuedDeckSearchCandidates(request).Select(item => (item.SourceIndex, item.Card))
+                : duel.QueuedGraveyardRecoveryCandidates(request).Select(item => (item.SourceIndex, item.Card));
         var lines = choices.Select(item => $"{item.SourceIndex}: {item.Card.Id}").ToArray();
-        string prompt = $"Side {request.Owner} {request.Source} → Hand (source indices):";
+        string prompt = $"Chooser {request.Owner}: side {request.SourceSide} {request.Source} → {request.Destination} (source indices):";
         if (request.MinSelections == 0) prompt += " select-hand decline is available.";
         return new(true, string.Join("\n", new[] { prompt }.Concat(lines)));
     }
@@ -412,6 +414,12 @@ public sealed partial class DuelConsoleSession
         if (words.Length != 2)
             return new(false, "Expected select-hand INDEX|decline.");
 
+        if (request.Source == CardSelectionSource.Hand)
+        {
+            if (!Index(words[1],out int handIndex)) return new(false,"Choose a hand index.");
+            bool ok = duel.TrySubmitQueuedHandSelection(request,handIndex,out string handMessage,ActionOrigin.Console);
+            return new(ok,handMessage,ok);
+        }
         bool fromDeck = request.Source == CardSelectionSource.Deck;
         CardTarget? target = null;
         if (words[1] != "decline")

@@ -97,6 +97,9 @@ internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source,
     int ExpectedTurn) : DuelCommand(Side);
 internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateHandManipulationSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record AdvanceHandManipulationCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ResolveHandManipulationCommand(int Side, PendingCardSelection Request, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateDeckSearchSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateGraveyardRevivalSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record OpenGraveyardRevivalSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -300,7 +303,7 @@ internal static class DuelCommandValidation
                 if (recover.Target is { } selected) Target(selected, recover.Side, DuelZone.Graveyard);
                 break;
             case ReturnToDeckCommand returnDeck:
-                Target(returnDeck.Target, returnDeck.Side, DuelZone.Monster);
+                Target(returnDeck.Target, returnDeck.Side, DuelZone.Monster, DuelZone.Hand);
                 break;
             case ReturnToHandCommand bounce:
                 Target(bounce.Target, bounce.Side, DuelZone.Monster, DuelZone.SpellTrap, DuelZone.FieldSpell);
@@ -347,6 +350,16 @@ internal static class DuelCommandValidation
             case ResolveTemporaryStatCommand modifier:
                 Target(modifier.Source, modifier.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 Target(modifier.Target, modifier.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateHandManipulationSpellCommand handSpell:
+                Target(handSpell.Source,handSpell.Side,DuelZone.Hand,DuelZone.SpellTrap);
+                break;
+            case AdvanceHandManipulationCommand handAdvance:
+                Target(handAdvance.Source,handAdvance.Side,DuelZone.Hand,DuelZone.SpellTrap);
+                break;
+            case ResolveHandManipulationCommand handAnswer when handAnswer.Request is not null &&
+                handAnswer.Request.Owner == handAnswer.Side:
+                Target(handAnswer.Target,handAnswer.Request.SourceSide,DuelZone.Hand);
                 break;
             case ActivateDrawSpellCommand drawSpell:
                 Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);

@@ -24,6 +24,7 @@ public sealed partial class DemoDuel
                 admittingQueuedFlipSpellTrapPair && CanAdmitQueuedFlipSpellTrapPair() ||
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
                 admittingQueuedGraveyardRevival && CanAdmitQueuedGraveyardRevival() ||
+                admittingHandManipulationAnswer && CanAdmitHandManipulationAnswer() ||
                 admittingQueuedDeckSearch && CanAdmitQueuedDeckSearch() ||
                 admittingQueuedDeckRecruitment && CanAdmitQueuedDeckRecruitment() ||
                 admittingQueuedFusion && CanAdmitQueuedFusion() ||
@@ -100,7 +101,7 @@ public sealed partial class DemoDuel
         card.ClassCode == 22 &&
         (DrawSpellRules.SupportsQueued(card) || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
-         SpellTrapWipeRules.SupportsQueued(card.Id) || IsRevivalSpell(card));
+         SpellTrapWipeRules.SupportsQueued(card.Id) || IsRevivalSpell(card) || IsHandManipulationSpell(card));
 
     /// <summary>Read-only UI/CPU admission query. Reuses the same source and target
     /// validators as the producer; does not reserve, spend or enqueue a card.</summary>
@@ -115,6 +116,7 @@ public sealed partial class DemoDuel
         if (FieldSpellRules.Supports(card.Id)) return TryPlanFieldActivation(source, out _);
         if (SupportsQueuedContinuousSpell(card)) return CanActivateContinuousSpell(source, out _);
         if (IsRevivalSpell(card)) return CanResolveRevivalSpell(source);
+        if (IsHandManipulationSpell(card)) return CanResolveHandManipulationSpell(source);
         if (DrawSpellRules.SupportsQueued(card))
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -143,6 +145,7 @@ public sealed partial class DemoDuel
         if (card.ClassCode != 22 && !(card.ClassCode == 21 &&
             (DrawSpellRules.SupportsQueued(card) || LifePointSpellRules.SupportsQueued(card)))) return false;
         if (IsRevivalSpell(card)) return TryQueueRevivalSpell(source, out message, origin);
+        if (IsHandManipulationSpell(card)) return TryQueueHandManipulationSpell(source,out message,origin);
         if (DrawSpellRules.SupportsQueued(card))
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -375,6 +378,10 @@ public sealed partial class DemoDuel
                 return FinishDeckSearch(finishSearch.Side);
             if (command is OpenGraveyardRevivalSpellCommand openRevivalSpell)
                 return OpenRevivalSpell(openRevivalSpell);
+            if (command is ResolveHandManipulationCommand handAnswer)
+                return ResolveHandManipulation(handAnswer,followups);
+            if (command is AdvanceHandManipulationCommand handAdvance)
+                return AdvanceHandManipulation(handAdvance,followups);
             if (command is ResolveGraveyardRevivalCommand revival)
                 return ResolveGraveyardRevival(revival, followups);
             if (command is ResolveGraveyardRecoveryCommand recovery)
@@ -552,7 +559,7 @@ public sealed partial class DemoDuel
                         duel.Winner = 1 - draw.Side;
                         return new(CommandOutcome.Applied, "Empty deck: player loses (sandbox policy).");
                     }
-                    duel.DrawToHand(draw.Side, checkExodia: !resolvingCardDestructionDraws);
+                    duel.DrawToHand(draw.Side, checkExodia: !resolvingCardDestructionDraws && !DeferHandManipulationExodia);
                     return new(CommandOutcome.Applied);
                 case DamageCommand damage:
                     duel.ChangeLife(damage.Side, -damage.Amount, damage.DeferDuelResult);
@@ -578,6 +585,8 @@ public sealed partial class DemoDuel
                     return ResolveTemporaryStat(temporaryStatResult);
                 case ActivateGraveyardRevivalSpellCommand reviveSpell:
                     return ActivateRevivalSpell(reviveSpell, followups);
+                case ActivateHandManipulationSpellCommand handSpell:
+                    return ActivateHandManipulation(handSpell,followups);
                 case ActivateDrawSpellCommand drawSpell:
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateDiscardMonsterSpellCommand paidSpellActivation:
@@ -661,7 +670,8 @@ public sealed partial class DemoDuel
                 case ShuffleDeckCommand shuffle:
                     return ShuffleDeck(shuffle.Side);
                 case ReturnToDeckCommand returnDeck:
-                    return ReturnMonsterToDeck(returnDeck.Target);
+                    return returnDeck.Target.Zone == DuelZone.Hand
+                        ? ReturnHandToDeck(returnDeck.Target) : ReturnMonsterToDeck(returnDeck.Target);
                 case ReturnToHandCommand bounce:
                     if (duel.queuedEndReturn == bounce.Target)
                     {
@@ -690,6 +700,8 @@ public sealed partial class DemoDuel
             if (ritualSummon?.Spell == target) ritualSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (temporaryStatActivation?.Source == target)
                 temporaryStatSourceSpent = result.Outcome == CommandOutcome.Applied;
+            if (handManipulation is { } handBatch && handBatch.Source == target)
+                handBatch.SourceSpent = result.Outcome == CommandOutcome.Applied;
             if (revivalSpellSource == target) revivalSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
@@ -958,7 +970,8 @@ public sealed partial class DemoDuel
             bool fixedSpell = card.ClassCode == 22 && (LifePointSpellRules.SupportsQueued(card.Id) ||
                 DrawSpellRules.SupportsQueued(card) || MonsterWipeRules.SupportsQueued(card.Id) ||
                 DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || IsRevivalSpell(card) || card.Id == FinalDestiny ||
+                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || IsRevivalSpell(card) ||
+                handManipulation?.Source == target && IsHandManipulationSpell(card) || card.Id == FinalDestiny ||
                 ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
             bool ownMainTrap = card.ClassCode == 21 &&
                 (LifePointSpellRules.SupportsQueued(card) || DrawSpellRules.SupportsQueued(card)) &&
