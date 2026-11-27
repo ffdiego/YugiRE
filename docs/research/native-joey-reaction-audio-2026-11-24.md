@@ -253,3 +253,35 @@ Sem crossfade, seleção LP dinâmica, streaming nativo ou falas.
 Falha de arquivo/dispositivo/recurso não impede partida.
 --no-audio / --no-music; --mute-joey não é mute global.
 Testes sintéticos de nomes/roteamento; CI e desktop pendentes.
+
+## V18.3 — descritores e estado do Voice.dat
+
+A coleta 27 (bundle `9c86f197fd6c4353af56a0846bd0427f33332ece62ea4527b08970614cc88ff7`)
+já tinha as duas tabelas. Os cinco blocos de memória em `005EFD48`,
+`005EFF48`, `005F0148`, `005F0348` e `005F0A30` no SQLite v8
+conferem byte a byte com a seção `.data` do EXE atestado. Cada
+descritor tem stride 16 e começa com um ponteiro para o nome. Os
+inicializadores `005C0B60` e `005C1180` avançam de 16 em 16 até
+encontrar um ponteiro nulo. Internal tem 110 entradas em `005EFD48`
+e sentinela `005F0428`. Stream tem 14 entradas em `005F0A30`
+e sentinela `005F0B10`.
+
+Os três estados da seleção normal em `0044C320` podem levar a
+`m_duel2.wav` (Stream 4), `m_duel3.wav` (5) ou `m_duel1.wav` (6).
+As duas alternativas por diferença de LP são `m_yuri.wav` (7) e
+`m_furi.wav` (8). Os IDs Stream `0B` e `0C` dos pedidos de
+cinemática resolvem para `m_red.wav` e `m_sum.wav`.
+Entre os efeitos, Internal `06` é `attack.wav`, `0F` é
+`card_move.wav` e `10` é `card_open.wav`. Todos os nomes das duas
+tabelas foram encontrados nas respectivas pastas do Voice.dat em
+inglês, com comparação sem distinção de maiúsculas e minúsculas.
+Essa associação descreve o índice do arquivo e as tabelas do EXE.
+
+Em 27/11, `--inspect-voice-dat` retornou 2. Entre as 111 entradas
+em Internal, 106 passaram e cinco falharam por inconsistência PCM.
+Em Stream, as 19 entradas que couberam no limite do leitor foram
+rejeitadas por PCM, e a vigésima ultrapassou o limite de 16 MiB.
+Isso inclui as músicas atualmente configuradas no cliente para menu
+e duelo. A leitura de duração em `005C0F80` explica o tamanho
+declarado, enquanto o tratamento do quadro estéreo incompleto
+durante reprodução segue em aberto.
