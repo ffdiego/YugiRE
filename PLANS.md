@@ -126,7 +126,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`. Elegibilidade conferida na Alpha. Comparar precedência, hotspot e seleção de alvo com o original. [Detalhes](docs/plans/VISUALS.md#v09)
 - [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Variantes conferidas na Alpha. Comparar code → asset, hotspot e prioridade com o original. [Detalhes](docs/plans/VISUALS.md#v10)
 - [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Capturar cor-chave da seleção e destino do blit. Validar a fusão geral e investigar o gatilho da fusão vinculada. [Detalhes](docs/plans/VISUALS.md#v11)
-- [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`. DAT, compositor e gatilho pela fila. [Detalhes](docs/plans/VISUALS.md#v12)
+- [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`. Confirmar o compositor e ligar os gatilhos específicos à fila. [Detalhes](docs/plans/VISUALS.md#v12)
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Respostas e descarte auditados. Fechar composição da seleção e revisar sobreposição dos controles provisórios. [Detalhes](docs/plans/VISUALS.md#v14)
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)

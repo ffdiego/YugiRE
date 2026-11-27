@@ -112,7 +112,15 @@ V11/V01 (27/11/2026). A amostra dos BMPs do DAT mostrou dois valores de canto su
 
 <a id="v12"></a>
 
-Bundle 02 concluído: opcode bruto 0xB1 (índice 0x72), gates, descritor, rotação 0x4000, 24 updates (dois ciclos de seis quadros), bit 0x40 e seis texturas inteiras documentados. `NativeDisabledChainTimeline` tem testes sintéticos. **Draw Pending no duelo:** modo de revisão isolada `--review-disabled-chain=` agora carrega as seis entradas de `disable.txt` em runtime, usa descritor/centro/rotação e captura F12. Falta testar com DAT real, confirmar compositor e mapear o gatilho do comando para a fila; não tratar B1 como negação genérica. Produtores 00583510/00588D90/0059CCF0/005BB720; ver [auditoria de despacho](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). Ver [contrato](../../docs/research/native-chain-disabled-2026-11-22.md). Não repetir coleta 02.
+Bundle 02 concluído: opcode bruto 0xB1 (índice 0x72), gates, descritor, rotação 0x4000, 24 updates (dois ciclos de seis quadros), bit 0x40 e seis texturas inteiras documentados. `NativeDisabledChainTimeline` tem testes sintéticos. **Draw Pending no duelo:** modo de revisão isolada `--review-disabled-chain=` carrega as seis entradas de `disable.txt` em runtime, usa descritor/centro/rotação e captura F12. Faltam a confirmação do compositor e a associação dos gatilhos do comando à fila. Produtores 00583510/00588D90/0059CCF0/005BB720. [Auditoria de despacho](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). [Contrato](../../docs/research/native-chain-disabled-2026-11-22.md).
+
+V12.1 (27/11/2026). A revisão em Xvfb com o DAT local validou os dois
+lados e as orientações de 0° e 90° com os descritores `0081` e `4080`.
+Os quadros capturados nos contadores 0, 2, 12 e 23 usaram as chaves
+0, 1, 0 e 5. As dimensões e a centralização registradas no JSON
+conferem com os metadados do BMP, com os eixos trocados a 90°.
+No contador 24, o canvas voltou ao tabuleiro sem indicador,
+pixel a pixel. A validação se limita à revisão isolada do cliente.
 
 ## V13 — `DebugOverlayEnabled` na UI
 
@@ -147,8 +155,10 @@ V15.1 (27/11/2026). A matriz aceita regiões por quadro-chave e orçamentos inde
 V15.2 (27/11/2026). F12 na revisão de corrente ativa agora encaminha
 o quadro apenas para a captura específica de V23. Antes, o mesmo
 acionamento também caía na captura genérica do duelo. O build e
-os testes da matriz passaram. A confirmação gráfica do atalho
-ficou pendente por timeout ao conectar ao display Xwayland isolado.
+os testes da matriz passaram. O teste em Xvfb com DAT local confirmou
+um par PNG/JSON de 800×600 por F12 nas revisões de corrente ativa e
+desativada. A matriz leu os contadores 0 e 4 dos JSONs de corrente ativa
+e registrou a diferença de pixels do quadro após F7.
 
 V15.3 (27/11/2026). A matriz passou a ler contadores dos JSONs de
 captura e checar campos de estado antes de pontuar pixels. Com
@@ -252,6 +262,14 @@ Bundle 16 recebido; NativeBreakTimeline porta cinco partículas, 16 updates, ori
 <a id="v23"></a>
 
 NativeChainTimeline porta estados e seletores de 0041F810/830/870; comandos brutos 0A/0B (índices 08/09; produtor 005BA230) e espera 128 não equivalem a bloqueio contínuo. Roteiro 17 e manifests v3 confirmam lista de sprites, recortes e geometria dos dígitos. Revisão isolada `--review-chain=` usa DAT, contagem manual e compositor diagnóstico. Integração à fila e comparação de pixels pendentes. [Contrato](../../docs/research/native-chain-affect-contract-2026-11-24.md).
+
+V23.1 (27/11/2026). A revisão em Xvfb com o DAT local produziu cinco
+pares F12, um por acionamento. Um F7 adicional em contador 128 manteve
+contador, seletor e pixels. F5 seguido de F7 avançou a 132 e trocou o
+seletor de 25 para 14, com mudança de pixels. O contador 192 removeu
+o indicador e restaurou o canvas inicial pixel a pixel. O teste cobre
+a revisão manual do cliente. A fila do duelo e a comparação com
+quadros do executável original continuam pendentes.
 
 ## V24 — Destaque contextual affect (0040E260)
 
