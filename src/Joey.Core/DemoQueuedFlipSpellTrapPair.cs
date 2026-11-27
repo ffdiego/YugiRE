@@ -178,7 +178,7 @@ public sealed partial class DemoDuel
                 !SpellTrapRemovalLinkMatches(side,DuelZone.SpellTrap,z,piece)) return false;
             if (targets.Contains(target)) continue;
             extra.Add(target);
-            commands.Add(new DestroyCommand(side,target));
+            commands.Add(new DestroyCommand(side,target) { Cause = RemovalCause.LinkedCleanup });
         }
         cascade = extra.ToArray();
         batch = commands.ToArray();

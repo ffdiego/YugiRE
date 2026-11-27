@@ -688,7 +688,7 @@ public sealed partial class DemoDuel
                 case DestroyCommand destroy when destroy.Target.Zone == DuelZone.Monster:
                     return DestroyMonster(destroy.Target, followups, destroy.Cause);
                 case DestroyCommand destroy when destroy.Target.Zone is DuelZone.SpellTrap or DuelZone.FieldSpell:
-                    return DestroyQueuedSpellTrap(destroy.Target);
+                    return DestroyQueuedSpellTrap(destroy.Target, destroy.Cause);
                 default:
                     return new(CommandOutcome.Rejected, "Command not migrated to DemoDuel.");
             }
@@ -1008,12 +1008,13 @@ public sealed partial class DemoDuel
             {
                 queue.EnqueueBatch([.. context.Commands,
                     new ReturnToHandCommand(activate.Target.Side, activate.Target),
-                    .. targets.Where(t => t != activate.Target).Select(t => (DuelCommand)new DestroyCommand(t.Side, t))]);
+                    .. targets.Where(t => t != activate.Target).Select(t => (DuelCommand)new DestroyCommand(t.Side, t)
+                         { Cause = RemovalCause.LinkedCleanup })]);
             }
             else
             {
-                foreach (var target in targets) context.Destroy(target);
-                queue.EnqueueBatch(context.Commands);
+                queue.EnqueueBatch([.. context.Commands, .. targets.Select(t => (DuelCommand)new DestroyCommand(t.Side,t)
+                    { Cause = t == activate.Target ? RemovalCause.EffectDestruction : RemovalCause.LinkedCleanup })]);
             }
             wipe = new(activate.Side, spell.Id, activate.Source, targets, monsterWipe: false)
                 { PrimaryTarget = activate.Target };
@@ -2184,7 +2185,8 @@ public sealed partial class DemoDuel
             return new(CommandOutcome.Applied);
         }
 
-        private CommandResult DestroyQueuedSpellTrap(CardTarget target)
+        private CommandResult DestroyQueuedSpellTrap(CardTarget target,
+            RemovalCause cause = RemovalCause.LinkedCleanup)
         {
             bool reserved = wipe is { MonsterWipe: false, SourceSpent: true } current &&
                 current.Targets.Contains(target);
@@ -2235,7 +2237,7 @@ public sealed partial class DemoDuel
             bool wasHidden = duel.IsSpellTrapFaceDown(target.Side, removedZone);
             // Primary selected targets and direct wipes are effect destruction.
             // Do not synthesize Break for dependent equipment/Board cleanup.
-            bool directEffect = reserved && wipe is { } removal &&
+            bool directEffect = cause == RemovalCause.EffectDestruction && reserved && wipe is { } removal &&
                 (removal.PrimaryTarget is null || removal.PrimaryTarget == target) &&
                 (removal.FlipPair is not { } directPair || directPair.Contains(target));
             duel.DestroySpellTrapCard(target.Side, removedZone);

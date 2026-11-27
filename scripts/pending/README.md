@@ -215,3 +215,16 @@ registrar divergências de +AC/+C e compositor. O review anterior no
 PR #186 aceitou DAT real; este roteiro valida a versão reconciliada e
 comparação gráfica, não repete Ghidra 29. Integração A03 separada.
 [Contrato](../../docs/research/native-break-field-review-2026-11-25.md).
+
+### V22.3 — complemento vivo do roteiro 56
+
+Com a mesma versão do cliente, observar em duelo real/console:
+Man-Eater Bug ao ser atacado (efeito vs baixa de combate), Raigeki/Dark
+Hole (múltiplos alvos), MST sobre S/T Set e FIELD, tributo normal,
+ritual, Polymerization e Fusion Gate. Confirmar que Break se libera
+após quatro updates, desenha a cauda por mais doze mesmo com a ação
+seguinte, oculta identidade de Set e não dispara para material ou
+limpeza dependente. Comparar com o EXE, registrar diferenças, em
+especial 7A e flags excepcionais, sem assumir equivalência universal.
+Saída privada: log e capturas de estados equivalentes; nenhuma coleta
+estática nova obrigatória.

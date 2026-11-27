@@ -156,7 +156,7 @@ não escolhe Break: remover monstros por efeitos e por combate exige
 proveniência explícita do produtor e snapshot anterior à mutação.
 O roteiro 56 registra a validação gráfica pendente. CI novo obrigatório.
 
-## V22.2 — integração de Break no duelo
+## V22.2 — integração inicial de Break no duelo (histórico; política substituída em V22.3)
 
 Primeiro recorte vivo: remoção de monstros por Man-Eater Bug (500),
 Dream Clown (119), Tribute to the Doomed (1023) e Thousand Knives (1211),
@@ -176,3 +176,41 @@ camadas sobre outros objetos, som 0x10000008 e +AC/+C permanecem
 pendentes. Sem atribuir Break a todo efeito de destruição. S/T,
 combate FF, outros produtores e teste real com DAT separados.
 Badge sobe para Partial somente pela integração viva; não Verified.
+
+## V22.3 — causa da remoção independente de destino
+
+A hipótese de trabalho aprovada é que destruição por efeito usa Break
+(79), e destruição normal em combate usa Explosion (7C). Os produtores
+00576960/00576B30 e 00577CF0 sustentam a distinção; 7A e exceções de
+flags/IDs ainda não foram classificados exaustivamente. Não alegar que
+toda carta foi validada no original. Removida a lista de quatro IDs do
+renderer. Console Destroy também segue o padrão de destruição por efeito.
+
+Core expõe `RemovalCause` e `ICardRemovalCommand.Cause` nas operações
+relevantes. Destroy, snapshot/finish de batalha, Tribute, SendToGraveyard,
+Banish, Discard e retornos preservam seu tipo e destino. Polymerization
+marca os pagamentos de material enviados ao GY como FusionMaterial;
+Fusion Gate usa a mesma causa nos BanishCommand. O gasto da magia não
+é material. Ritual marca TributeCommand como RitualMaterial, enquanto
+invocação normal conserva Tribute. Limpezas dependentes de equipamento
+e cascatas explicitamente reservadas de Destiny Board são LinkedCleanup.
+A separação não adiciona comandos, muda regras ou reclassifica eventos
+de fusão como destruição. Os snapshots de MonsterDestroyed distinguem
+BattleDestruction e EffectDestruction inclusive Man-Eater durante combate.
+MonsterTributed informa Tribute ou RitualMaterial sem trocar seu renderer.
+
+S/T: o executor emite SpellTrapDestroyed depois de remover diretamente
+um alvo reservado de efeito, usando carta, lado, zona e visibilidade
+capturados antes da mutação. Break aceita os onze centros de campo e
+usa verso quando oculto. Não introduz evento para custos, reposição de
+FIELD, limpeza dependente, retorno, banimento ou material. Mantém os
+4 updates de bloqueio e a cauda independente por 12. No recorte de
+monstros sem banco/miniatura, conserva o fallback antigo de explosão;
+S/T sem recursos mantém o comportamento anterior sem animação.
+
+Testes de contrato exercitam Man-Eater durante batalha, MST, causa de
+materiais de Fusion Gate/Polymerization e tributos de ritual. As
+rotinas de fusão e sacrifício existentes continuam independentes.
+Ainda não é um evento único de todas as remoções: mão, deck, custos
+especializados e todas as rotas excepcionais exigem inventário próprio.
+Comparação nativa de duração/compositor/ordem e som Break pendente.
