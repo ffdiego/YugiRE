@@ -156,7 +156,8 @@ public sealed class CpuDuelController
         {
             var candidate = selection.EligibleCards
                 .Where(c => !duel.SelectedBatchIndices.Contains(c.SourceIndex))
-                .OrderByDescending(c => CardValue(c.Card)).ThenBy(c => c.SourceIndex).FirstOrDefault();
+                .OrderByDescending(c => selection.Source == CardSelectionSource.Hand && selection.SourceSide == Player
+                    ? -CardValue(c.Card) : CardValue(c.Card)).ThenBy(c => c.SourceIndex).FirstOrDefault();
             if (duel.UsesQueuedHandSelection(selection))
             {
                 if (candidate is not null || selection.MinSelections == 0)
@@ -249,6 +250,7 @@ public sealed class CpuDuelController
                             change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
                         if (!(useLpSpell ||
                               candidate is { ClassCode: 22, Id: Joey.Cards.RevivalSpellEffects.MonsterReborn } ||
+                              candidate.ClassCode == 22 && Joey.Cards.HandManipulationEffects.For(candidate.Id) is not null ||
                               duel.ShouldPlayAttackRestrictionSpell(Player, candidate) ||
                               candidate is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.DestinyBoard } ||
                               ShouldClearSpellTraps(duel, candidate.Id,

@@ -2913,6 +2913,98 @@
       "limitations": [
         "Opposing Graveyard requires ownership/control tracking; non-normal revival legality and face-up DEF choice remain pending. Selection opens after spend as a bounded no-chain sandbox flow, not native timing evidence."
       ]
+    },
+    {
+      "id": "spell.hand.graceful-charity",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        968
+      ],
+      "mechanics": [
+        "Draw three then choose two own cards to discard; defer Exodia check until completed effect.",
+        "Shared queued Hand → Graveyard/Deck selection, tracked occurrence and chooser distinct from affected side"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedHandSelection.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Bounded no-chain sandbox; LP cost uses existing LP decrease primitive, RNG is seeded C# not native-equivalent, visual list is provisional. No native differential validation."
+      ]
+    },
+    {
+      "id": "spell.hand.delinquent-duo",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1071
+      ],
+      "mechanics": [
+        "Pay 1000 LP; random opposing hand discard, then opponent chooses a second if available.",
+        "Shared queued Hand → Graveyard/Deck selection, tracked occurrence and chooser distinct from affected side"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedHandSelection.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Bounded no-chain sandbox; LP cost uses existing LP decrease primitive, RNG is seeded C# not native-equivalent, visual list is provisional. No native differential validation."
+      ]
+    },
+    {
+      "id": "spell.hand.confiscation",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1070
+      ],
+      "mechanics": [
+        "Pay 1000 LP; caster selects a card from revealed opponent hand to discard.",
+        "Shared queued Hand → Graveyard/Deck selection, tracked occurrence and chooser distinct from affected side"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedHandSelection.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Bounded no-chain sandbox; LP cost uses existing LP decrease primitive, RNG is seeded C# not native-equivalent, visual list is provisional. No native differential validation."
+      ]
+    },
+    {
+      "id": "spell.hand.the-forceful-sentry",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1077
+      ],
+      "mechanics": [
+        "Caster selects a card from revealed opponent hand, returns it to its deck, then shuffles.",
+        "Shared queued Hand → Graveyard/Deck selection, tracked occurrence and chooser distinct from affected side"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedHandSelection.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Bounded no-chain sandbox; LP cost uses existing LP decrease primitive, RNG is seeded C# not native-equivalent, visual list is provisional. No native differential validation."
+      ]
     }
   ]
 }

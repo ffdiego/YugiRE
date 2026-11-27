@@ -60,6 +60,15 @@ IDs verificados no SQLite v3 e pack-index; texto integral DAT não disponível. 
 
 Monster Reborn usa o seletor existente de GY → campo. Falta distinguir dono/controlador, validar revival de monstros especiais, escolha de defesa revelada e alvo antes de ativar na futura janela de correntes. Premature Burial adiado até vínculo de revival e pagamento de LP estarem disponíveis.
 
+## Lote CARDS — manipulação da mão
+
+- 968 (graceful-charity): Draw three then choose two own cards to discard; defer Exodia check until completed effect.
+- 1071 (delinquent-duo): Pay 1000 LP; random opposing hand discard, then opponent chooses a second if available.
+- 1070 (confiscation): Pay 1000 LP; caster selects a card from revealed opponent hand to discard.
+- 1077 (the-forceful-sentry): Caster selects a card from revealed opponent hand, returns it to its deck, then shuffles.
+
+Escolha de mão distingue quem escolhe de quem possui as cartas. App reutiliza lista genérica provisória; CPU escolhe cartas próprias de menor valor e adversárias de maior valor; console usa choices/select-hand. IDs confirmados em SQLite v3 e pack-index, sem DAT integral ou comparação nativa. ACTIONS: distinguir custo de LP de dano e mapear RNG; VISUALS: janela de mão revelada original.
+
 ## Inventário atual (sem extrapolar números do DAT)
 
 | Família / mecânica | Estado atual | Evidência de implementação | Limitação principal |

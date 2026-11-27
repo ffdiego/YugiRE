@@ -758,3 +758,7 @@ Definições puras em Joey.Cards/PositionAndRemovalEffects.cs. Stop Defense (319
 ### Lote CARDS — revival por magia
 
 Monster Reborn (1008) Partial. Definição em Joey.Cards, produtor ativação→gasto→abertura do seletor existente→SpecialSummonCommand. App/CPU/console usam a mesma seleção; somente Normal do próprio cemitério e ataque revelado, sem inferir dono/controlador ou histórico de invocação adequada. Sem novos testes por carta; CI estrutural, sem paridade nativa. ACTIONS precisa de ownership/control, posição de invocação e seleção de alvo pré-ativação/correntes. Premature Burial depende de vínculo, custo e remoção consequente. Cobertura prevista 469/771, 38 Partial.
+
+### Lote CARDS — manipulação da mão
+
+Graceful Charity (968), Delinquent Duo (1071), Confiscation (1070), The Forceful Sentry (1077) Done no escopo sem correntes. Definições puras em Joey.Cards e produtor genérico de seleção Hand→GY/Deck. Owner é quem escolhe, SourceSide é quem possui a mão; escolha obrigatória sequencial, ocorrência revalidada, RNG somente no executor. Reutilizados Draw/Discard/ReturnToDeck/Shuffle e lista genérica; CPU usa valores somente na janela de escolha. Graceful adia Exodia ao fim do efeito. Custo de LP usa primitiva existente, não significa dano de efeito nativo; ACTIONS distinguir semântica, RNG nativo e correntes. VISUALS deve reproduzir janela original da mão. Sem teste individual novo, CI estrutural e validação diferencial pendente. Cobertura proposta 473/771, 38 Partial.

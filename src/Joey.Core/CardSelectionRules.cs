@@ -1,9 +1,9 @@
 namespace Joey.Core;
 
 /// <summary>Position in the source zone (not the DAT catalog index) identifies each copy.</summary>
-public enum CardSelectionSource { Deck, Graveyard }
-public enum CardSelectionDestination { Hand, Field }
-public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500, SameNameMonster, AnyMonster, RitualSpell, RitualMonster, Polymerization }
+public enum CardSelectionSource { Deck, Graveyard, Hand }
+public enum CardSelectionDestination { Hand, Field, Graveyard, Deck }
+public enum CardSelectionFilter { Spell, Trap, MonsterAttackAtMost1500, MonsterDefenseAtMost1500, MonsterAttributeAttackAtMost1500, SameNameMonster, AnyMonster, RitualSpell, RitualMonster, Polymerization, AnyCard }
 public enum CardSelectionPosition { FaceUpAttack, FaceDownDefense }
 public sealed record CardSelectionCandidate(int SourceIndex, Card Card);
 
@@ -12,7 +12,10 @@ public sealed record PendingCardSelection(
     CardSelectionFilter Filter, IReadOnlyList<CardSelectionCandidate> EligibleCards,
     int MinSelections, int MaxSelections, ushort EffectResourceId, byte? RequiredAttributeCode = null,
     ushort? RequiredResourceId = null, bool MaySelectFaceDownDefense = false,
-    CardSelectionPosition SummonPosition = CardSelectionPosition.FaceUpAttack);
+    CardSelectionPosition SummonPosition = CardSelectionPosition.FaceUpAttack, int? HandSourceSide = null)
+{
+    public int SourceSide => HandSourceSide ?? Owner;
+}
 
 /// <summary>
 /// Shared selection contract: currently resolves Graveyard -> Hand (P018)
@@ -68,6 +71,7 @@ public static class CardSelectionRules
     // Original DAT: class 22 = Spell, 21 = Trap (not the reverse).
     public static bool IsEligible(Card card, CardSelectionFilter filter, byte? requiredAttributeCode = null, ushort? requiredResourceId = null) => filter switch
     {
+        CardSelectionFilter.AnyCard => true,
         CardSelectionFilter.Spell => card.ClassCode == 22,
         CardSelectionFilter.Trap => card.ClassCode == 21,
         CardSelectionFilter.MonsterAttackAtMost1500 => card.IsMonster && card.Attack <= 1500,

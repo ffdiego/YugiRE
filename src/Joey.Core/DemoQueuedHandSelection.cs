@@ -9,6 +9,7 @@ public sealed partial class DemoDuel
     public bool UsesQueuedHandSelection(PendingCardSelection request) =>
         primitiveActionQueue is not null && ReferenceEquals(PendingCardSelection, request) &&
         deferredBattle is null &&
+        (IsHandManipulationRequest(request) ||
         request is { Destination: CardSelectionDestination.Hand, MaxSelections: 1 } &&
         (request.Source == CardSelectionSource.Deck &&
             ((request.MinSelections == 1 &&
@@ -18,7 +19,7 @@ public sealed partial class DemoDuel
                 RitualSearchRules.OnNormalOrFlipSummon(request.EffectResourceId) == request.Filter)) ||
          request.Source == CardSelectionSource.Graveyard && (Phase == DemoPhase.Main || HasQueuedBattleRecoveryChoice) &&
             request.MinSelections == 1 &&
-            CardSelectionRules.FlipGraveyardFilter(request.EffectResourceId) == request.Filter);
+            CardSelectionRules.FlipGraveyardFilter(request.EffectResourceId) == request.Filter));
 
     /// <summary>Shared UI/CPU producer for supported hand-selection prompts.
     /// The old list index must still identify the same eligible occurrence.
@@ -29,6 +30,8 @@ public sealed partial class DemoDuel
         message = "Choose a current eligible queued hand selection.";
         if (!UsesQueuedHandSelection(request) || primitiveActionQueue is not { IsBusy: false })
             return false;
+        if (IsHandManipulationRequest(request))
+            return TrySubmitHandManipulationAnswer(request,sourceIndex,out message,origin);
         if (request.Source == CardSelectionSource.Graveyard && FlipEffectsNegated)
             return TryQueueGraveyardRecovery(request, null, out message, origin);
         if (sourceIndex is null)
