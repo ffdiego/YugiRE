@@ -93,8 +93,8 @@ public sealed partial class DemoDuel
             if (!gate) commands.Add(new SendToGraveyardCommand(prepare.Side, prepare.Source));
             foreach (var payment in prepare.Payments)
             {
-                commands.Add(gate ? new BanishCommand(prepare.Side, payment) :
-                    new SendToGraveyardCommand(prepare.Side, payment));
+                commands.Add(gate ? new BanishCommand(prepare.Side, payment) { Cause = RemovalCause.FusionMaterial } :
+                    new SendToGraveyardCommand(prepare.Side, payment) { Cause = RemovalCause.FusionMaterial });
                 if (links.TryGetValue(payment, out var linked)) commands.AddRange(linked);
             }
             commands.Add(new SpecialSummonCommand(prepare.Side, prepare.Result, prepare.Slot, FaceUpDefense: prepare.Defense));

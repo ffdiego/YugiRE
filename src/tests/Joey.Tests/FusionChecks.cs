@@ -194,6 +194,9 @@ internal static class FusionChecks
                     d.Banished(side).Count == 0 && d.Spells[side, 0] is null),
                 "Queued Fusion preserves committed state, result occurrence and material semantics");
             var executed = q.Trace.Where(t => t.Stage == ActionTraceStage.Executed).ToArray();
+            check(executed.Select(t=>t.Entry.Command).OfType<ICardRemovalCommand>()
+                .Count(c=>c.Cause==RemovalCause.FusionMaterial)==2,
+                "Fusion: material cause independent of Polymerization or Fusion Gate destination");
             check(executed.All(t => t.Result?.Outcome == CommandOutcome.Applied) &&
                 executed.Count(t => t.Entry.Command is SendToGraveyardCommand) == (gate ? 0 : 3) &&
                 executed.Count(t => t.Entry.Command is BanishCommand) == (gate ? 2 : 0) &&

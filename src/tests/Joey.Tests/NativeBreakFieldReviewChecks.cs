@@ -5,9 +5,13 @@ internal static class NativeBreakFieldReviewChecks
     public static void Run(Action<bool,string> check)
     {
         int[] cosine=NativeCosineCapture.GenerateTable();
-        check(new ushort?[]{500,119,1023,1211}.All(NativeLiveBreak.SupportsMonsterEffect) &&
-            new ushort?[]{null,1001,1451,24,0}.All(id=>!NativeLiveBreak.SupportsMonsterEffect(id)),
-            "V22 live route limited to confirmed callback family");
+        foreach(int side in new[]{0,1})
+        foreach(int zone in Enumerable.Range(0,11))
+        {
+            var field = NativeLiveBreak.FieldTarget(side,zone,true);
+            check(field.Side==side && field.FieldZone==zone && (field.Descriptor&0x8000)==0,
+                "V22 live descriptor supports hidden monster, S/T and FIELD");
+        }
         foreach(int side in new[]{0,1})
         foreach(int perspective in new[]{0,1})
         foreach(bool hidden in new[]{false,true})

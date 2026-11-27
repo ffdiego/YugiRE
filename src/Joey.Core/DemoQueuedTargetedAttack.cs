@@ -536,7 +536,8 @@ public sealed partial class DemoDuel
         ClearMonsterSlot(command.Side,slot,removeEquipment:false);
         r.Detached=true;
         // Existing visual event marks field disappearance, NOT GY arrival.
-        MonsterDestroyed?.Invoke(new(command.Side,slot,card,false,r.Defense));
+        MonsterDestroyed?.Invoke(new(command.Side,slot,card,false,r.Defense)
+            { Cause = RemovalCause.BattleDestruction });
         return new(CommandOutcome.Applied) { BattleRemoval=new(r.Target,card.Id,slot,command.Role) };
     }
 

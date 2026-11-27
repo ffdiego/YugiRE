@@ -5,6 +5,19 @@ namespace Joey.Core;
 public enum ActionOrigin { Player, Cpu, Effect, Console, Test }
 public enum DuelZone { Deck, Hand, Monster, SpellTrap, FieldSpell, Graveyard, Banished, FusionDeck }
 
+// Reason for the movement, independent of its destination and presentation.
+// The same fusion-material cause can use a graveyard or banishment command.
+public enum RemovalCause
+{
+    EffectDestruction, BattleDestruction, Tribute, RitualMaterial, FusionMaterial,
+    Banish, SendToGraveyard, Discard, ReturnToHand, ReturnToDeck, LinkedCleanup
+}
+
+public interface ICardRemovalCommand
+{
+    RemovalCause Cause { get; }
+}
+
 // The state adapter owns allocation and resolution of occurrence IDs. Never use
 // resource ID, catalogue object reference, or current slot as an occurrence ID.
 public readonly record struct CardOccurrenceId(long Value);
@@ -21,12 +34,18 @@ internal sealed record OpenBattleFlipDeckFlowCommand(int Side, CardTarget Defend
 internal sealed record ResolveBattleFlipDamageCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record OpenBattleFlipTargetsCommand(int Side, CardTarget Defender) : DuelCommand(Side);
 internal sealed record FinishBattleFlipCommand(int Side, CardTarget Defender) : DuelCommand(Side);
-internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+internal sealed record SnapshotBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause => RemovalCause.BattleDestruction;
+}
 internal sealed record ResolveBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent) : DuelCommand(Side);
 internal sealed record ResolveBattleDamageDiscardCommand(int Side, int DamagedSide) : DuelCommand(Side);
 internal sealed record FinishBattleDamageDrawCommand(int Side, BattleDamageEffectIntent Intent, int Drawn) : DuelCommand(Side);
 internal sealed record OpenBattleRecruitmentCommand(int Side) : DuelCommand(Side);
-internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side);
+internal sealed record FinishBattleRemovalCommand(int Side, CardTarget Target, int Role) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause => RemovalCause.BattleDestruction;
+}
 internal sealed record ApplyBattleDestructionStatChangeCommand(int Side, CardTarget Survivor, CardTarget Destroyed) : DuelCommand(Side);
 internal sealed record ResolveSlateWarriorFlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangeBattlePhaseCommand(int Side, int ExpectedTurn, bool EnterBattle) : DuelCommand(Side);
@@ -34,7 +53,10 @@ internal sealed record FinishBattlePhaseCommand(int Side, int ExpectedTurn) : Du
 internal sealed record GoblinAttackForceDefenseCommand(int Side, int ExpectedTurn, CardTarget Source) : DuelCommand(Side);
 public sealed record EndTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 internal sealed record FinishEndPhaseReturnCommand(int Side, int ExpectedTurn, CardTarget Source) : DuelCommand(Side);
-public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side);
+public sealed record EndTurnDiscardCommand(int Side, int ExpectedTurn, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause => RemovalCause.Discard;
+}
 internal sealed record PlaceEndPhaseMessageCommand(int Side, int ExpectedTurn, CardTarget Source, int Slot) : DuelCommand(Side);
 internal sealed record AdvanceTurnCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 public sealed record TurnDrawCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
@@ -44,14 +66,23 @@ public sealed record DrawCommand(int Side) : DuelCommand(Side); // exactly one c
 internal sealed record FinishCardDestructionCommand(int Side, bool OpponentDeckOut) : DuelCommand(Side);
 public sealed record SummonCommand(int Side, CardTarget Source, int Slot) : DuelCommand(Side);
 public sealed record SetCommand(int Side, CardTarget Source, DuelZone Destination, int Slot) : DuelCommand(Side);
-public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelCommand(Side);
-public sealed record BanishCommand(int Side, CardTarget Target) : DuelCommand(Side);
-public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(Side);
-public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side)
+public sealed record SendToGraveyardCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
 {
-    // Provenance of an explicitly selected effect, not a visual or a
-    // new rule. Console, battle cleanup and unannotated producers omit it.
-    public ushort? EffectSourceResourceId { get; internal init; }
+    public RemovalCause Cause { get; internal init; } = RemovalCause.SendToGraveyard;
+}
+public sealed record BanishCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause { get; internal init; } = RemovalCause.Banish;
+}
+public sealed record DiscardCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause => RemovalCause.Discard;
+}
+public sealed record DestroyCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    // Battle uses its own reserved snapshot/finish commands. Explicit
+    // destruction is by effect unless it is dependent equipment cleanup.
+    public RemovalCause Cause { get; internal init; } = RemovalCause.EffectDestruction;
 }
 public sealed record DamageCommand(int Side, int Amount) : DuelCommand(Side)
 {
@@ -67,8 +98,14 @@ internal sealed record ChangePositionByFlipCommand(int Side, CardTarget Target, 
 public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false, bool FaceUpDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
-public sealed record ReturnToDeckCommand(int Side, CardTarget Target) : DuelCommand(Side);
-public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side);
+public sealed record ReturnToDeckCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause => RemovalCause.ReturnToDeck;
+}
+public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause => RemovalCause.ReturnToHand;
+}
 public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
 // Explicit setup edits, separate from gameplay commands.
@@ -129,7 +166,10 @@ internal sealed record ActivateRaigekiCommand(int Side, CardTarget Source) : Due
 internal sealed record FinishFieldRemovalCommand(int Side) : DuelCommand(Side);
 internal sealed record PrepareNormalPlacementCommand(int Side, CardTarget Source, int Slot, bool FaceDown,
     CardTarget? FirstTribute, CardTarget? SecondTribute) : DuelCommand(Side);
-internal sealed record TributeCommand(int Side, CardTarget Target) : DuelCommand(Side);
+internal sealed record TributeCommand(int Side, CardTarget Target) : DuelCommand(Side), ICardRemovalCommand
+{
+    public RemovalCause Cause { get; internal init; } = RemovalCause.Tribute;
+}
 internal sealed record FinishNormalPlacementCommand(int Side, CardTarget Target, bool FaceDown) : DuelCommand(Side);
 internal sealed record OpenAttackResponseCommand(int Side, CardTarget Attacker, CardTarget? Defender, ActionOrigin DeclarationOrigin) : DuelCommand(Side);
 internal sealed record ResolveAttackResponseCommand(int Side, DemoAttackResponse Request, CardTarget? Source) : DuelCommand(Side);

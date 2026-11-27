@@ -6,7 +6,7 @@ static partial class Game
 {
     abstract record CardEffect;
     sealed record Destruction(DemoMonsterDestruction Monster) : CardEffect;
-    sealed record BreakDestruction(DemoMonsterDestruction Monster, NativeBreakFieldTarget Target,
+    sealed record BreakDestruction(Card Card, NativeBreakFieldTarget Target,
         int Perspective, string CardPath, string ShinePath, NativeBreakTimeline Timeline) : CardEffect;
     sealed record TributePlacement(DemoMonsterTribute Tribute, CardPoint[] ParticleOrigins) : CardEffect;
     // Capture the departure before Joey.Core's committed hand is reflowed.
@@ -81,6 +81,12 @@ static partial class Game
                 QueueCardEffect(effect,NativeLiveBreak.BlockingUpdates);
             else
                 QueueCardEffect(new Destruction(monster), NativeExplosionTimeline.Updates);
+        };
+        duel.SpellTrapDestroyed += removal =>
+        {
+            if (!presentation.Style.PlayAnimations) return;
+            if (TryCreateLiveBreak(removal) is { } effect)
+                QueueCardEffect(effect,NativeLiveBreak.BlockingUpdates);
         };
         duel.MonsterTributed += tribute => QueueTributeEffect(tribute);
         duel.HandTransferred += transfer =>
@@ -274,7 +280,7 @@ static partial class Game
 
     static int VisibleGraveCount(int player) => Math.Max(0, duel.Graveyard(player).Count -
         cardEffects.Pending.Count(step => step.Kind is Destruction { Monster.Player: var owner } && owner == player ||
-            step.Kind is BreakDestruction { Monster.Player: var breakOwner } && breakOwner == player ||
+            step.Kind is BreakDestruction { Target.Side: var breakOwner } && breakOwner == player ||
             step.Kind is HandTransfer { Transfer: { Player: var side, FromDeck: false } } && side == player));
 
     static int VisibleDeckCount(int player) => duel.DeckCount(player) +
@@ -312,7 +318,7 @@ static partial class Game
         // Deferred removals stay beneath the active effect, even in adjacent zones.
         foreach (var step in cardEffects.Pending.Skip(playing ? 1 : 0))
             if (step.Kind is Destruction { Monster: var queued }) DrawDestructionCard(queued);
-            else if (step.Kind is BreakDestruction { Monster: var queuedBreak }) DrawDestructionCard(queuedBreak);
+            else if (step.Kind is BreakDestruction queuedBreak) DrawPendingBreakCard(queuedBreak);
 
         // Detached tails continue during later commands and never enter
         // CardEffectsBusy / MotionBusy or keep a command scope alive.

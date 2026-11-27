@@ -241,7 +241,7 @@ public sealed partial class DemoDuel
             var plans = new Dictionary<CardTarget, DuelCommand[]>();
             foreach (var material in prepare.Materials)
             {
-                batch.Add(new TributeCommand(prepare.Side, material));
+                batch.Add(new TributeCommand(prepare.Side, material) { Cause = RemovalCause.RitualMaterial });
                 if (material.Zone != DuelZone.Monster) continue;
                 if (!duel.TryResolveCardTarget(material, out int slot, out _) ||
                     !duel.TryPlanRemovalLinks(prepare.Side, slot, out var links))

@@ -99,19 +99,21 @@ public static class NativeBreakFieldReview
     };
 }
 
-/// <summary>First live V22 slice, restricted to successful monster
-/// removals from the recovered 00585C80 callback family. Other removals
-/// retain the existing visual. IDs are resource IDs, not native opcodes.</summary>
+/// <summary>Live field descriptor. The host chooses the effect by removal
+/// cause; this math layer has no dependency on the rules engine or card IDs.</summary>
 public static class NativeLiveBreak
 {
-    public static bool SupportsMonsterEffect(ushort? source) =>
-        source is 500 or 119 or 1023 or 1211;
-
     public static NativeBreakFieldTarget MonsterTarget(int side, int slot, bool faceDown, bool defense)
     {
-        if (side is not (0 or 1) || slot is < 0 or >= 5)
-            throw new ArgumentOutOfRangeException(nameof(slot));
-        return new((ushort)(side | slot << 6 | (faceDown ? 0 : 0x8000) | (defense ? 0x4000 : 0)));
+        if (slot is < 0 or >= 5) throw new ArgumentOutOfRangeException(nameof(slot));
+        return FieldTarget(side, slot, faceDown, defense);
+    }
+
+    public static NativeBreakFieldTarget FieldTarget(int side, int fieldZone, bool faceDown, bool defense = false)
+    {
+        if (side is not (0 or 1) || fieldZone is < 0 or > 10)
+            throw new ArgumentOutOfRangeException(nameof(fieldZone));
+        return new((ushort)(side | fieldZone << 6 | (faceDown ? 0 : 0x8000) | (defense ? 0x4000 : 0)));
     }
     public const int BlockingUpdates = NativeBreakTimeline.ReleaseCounter / NativeBreakTimeline.UpdateIncrement;
 }

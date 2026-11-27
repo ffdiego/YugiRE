@@ -230,8 +230,7 @@ public sealed partial class DemoDuel
                 !TryPlanRemovalLinks(target.Side,slot,out var links,toGraveyard: !bounce))
                 return false;
             plans.Add(target,links);
-            result.Add(bounce ? new ReturnToHandCommand(target.Side,target) :
-                new DestroyCommand(target.Side,target) { EffectSourceResourceId = pending.SourceCard.Id });
+            result.Add(bounce ? new ReturnToHandCommand(target.Side,target) : new DestroyCommand(target.Side,target));
             result.AddRange(links);
         }
         batch = result.ToArray();

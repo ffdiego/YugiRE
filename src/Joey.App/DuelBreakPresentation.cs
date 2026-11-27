@@ -27,17 +27,32 @@ static partial class Game
         }
     }
 
-    static BreakDestruction? TryCreateLiveBreak(DemoMonsterDestruction monster)
+    static BreakDestruction? TryCreateLiveBreak(DemoMonsterDestruction monster) =>
+        TryCreateLiveBreak(monster.Cause, monster.Card,
+            NativeLiveBreak.MonsterTarget(monster.Player,monster.Zone,monster.FaceDown,monster.Defense));
+
+    static BreakDestruction? TryCreateLiveBreak(DemoSpellTrapDestruction removal) =>
+        TryCreateLiveBreak(removal.Cause, removal.Card, NativeLiveBreak.FieldTarget(removal.Player,
+            removal.Zone == SpellTrapTargetRules.FieldZone ? 10 : 5 + removal.Zone, removal.FaceDown));
+
+    static BreakDestruction? TryCreateLiveBreak(RemovalCause cause, Card card, NativeBreakFieldTarget target)
     {
-        if (liveBreakShine is not { } shine || !NativeLiveBreak.SupportsMonsterEffect(monster.EffectSourceResourceId))
-            return null;
-        // Never select artwork for a face-down snapshot. Capture the
-        // perspective now; later turns and slot replacements cannot
-        // change the departing card or its original anchor.
-        string? resource = monster.FaceDown ? DatGraphics.MiniCardBack : graphics.Artwork.MiniFor(monster.Card);
+        // Default visual policy supported by the native producer split.
+        // Individual exceptional routes can override later, with evidence.
+        if (cause != RemovalCause.EffectDestruction || liveBreakShine is not { } shine) return null;
+        bool hidden = (target.Descriptor & 0x8000) == 0;
+        string? resource = hidden ? DatGraphics.MiniCardBack : graphics.Artwork.MiniFor(card);
         if (resource is null) return null;
-        return new(monster,NativeLiveBreak.MonsterTarget(monster.Player,monster.Zone,
-            monster.FaceDown,monster.Defense),ViewPlayer,resource,shine,new());
+        return new(card,target,ViewPlayer,resource,shine,new());
+    }
+
+    static void DrawPendingBreakCard(BreakDestruction broken)
+    {
+        var target = broken.Target;
+        int zone = target.FieldZone;
+        var cardZone = zone < 5 ? DuelCardZone.Monster : zone < 10 ? DuelCardZone.Spell : DuelCardZone.Field;
+        DrawDuelCard(broken.Card,DuelCardLayout.OnBoard(cardZone,target.Side==broken.Perspective,zone%5,
+            (target.Descriptor&0x4000)!=0,(target.Descriptor&0x8000)==0));
     }
 
     static void AdvanceBreakTails(TimeSpan elapsed)

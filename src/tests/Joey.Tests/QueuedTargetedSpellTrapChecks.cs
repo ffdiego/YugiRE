@@ -33,6 +33,8 @@ internal static class QueuedTargetedSpellTrapChecks
             check(d.Equip(0,side,0,out _)&&d.SetFromHand(0,out _)&&d.SetFromHand(0,out _),
                 "MST setup: real equip, FIELD and hidden trap");
             d.NextTurn();
+            var removed=new List<DemoSpellTrapDestruction>();
+            d.SpellTrapDestroyed+=removed.Add;
             var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
             q.Enqueue(new DrawCommand(side));Drain(q);
             var source=Capture(d,side,DuelZone.Hand,0);
@@ -47,6 +49,9 @@ internal static class QueuedTargetedSpellTrapChecks
             gate.Release=false;q.Tick();q.Tick();
             check(d.EquipmentCards.Count==0&&d.AttackValue(side,0)==1000&&q.IsBusy,
                 "MST removes only selected equipment, once during gate");
+            check(removed.Count==1 && removed[0].Cause==RemovalCause.EffectDestruction &&
+                removed[0].Card.Id==300 && removed[0].Player==enemy && removed[0].Zone==0 && !removed[0].FaceDown,
+                "V22 MST emits one committed pre-mutation S/T destruction snapshot");
             gate.Release=true;Drain(q);
             check(d.FieldSpells[enemy]?.Id==332&&d.Spells[enemy,1]?.Id==1056&&
                 d.Graveyard(enemy).Single().Id==300&&d.Graveyard(side).Single().Id==1079,

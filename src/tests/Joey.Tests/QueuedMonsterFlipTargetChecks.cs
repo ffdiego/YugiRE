@@ -57,7 +57,7 @@ internal static class QueuedMonsterFlipTargetChecks
             q.Tick();gate.Release=false;q.Tick();q.Tick();
             check(d.Monsters[enemy,0] is null&&d.EquipmentCards.Count==1&&q.IsBusy,
                 "FLIP first movement applied once; linked equipment waits");
-            check(id==500 ? removals.Count==1 && removals[0].EffectSourceResourceId==500 &&
+            check(id==500 ? removals.Count==1 && removals[0].Cause==RemovalCause.EffectDestruction &&
                 removals[0].Card==other && removals[0].Player==enemy && removals[0].Zone==0
                 : removals.Count==0, "V22 removal provenance and pre-mutation snapshot; bounce not destruction");
             gate.Release=true;Drain(q);
