@@ -509,3 +509,12 @@ Implementado no fluxo real do App: cache por atlas/intensidade, chave
 alpha binário. Nenhuma alteração no Core ou timeline. Checks exaustivos
 sintéticos; CI, captura pareada e outros formatos Windows pendentes.
 [Contrato](../research/native-field-attributes-2026-11-22.md#v056--composição-rgb565-no-cliente).
+
+### V04.8 — geometria nativa no fluxo real do ataque
+
+O App usa NativeRotatedQuad no ataque declarado e um adapter GPU de
+cantos inclusivos, preservando vértices fora do canvas. Ângulo de contato
+usa o vetor assinado original; mira interativa, timeline, áudio e gate
+inalterados. Recorte e raster GPU não equivalem ao compositor nativo;
+comparação de pixels e precisão x87 nas fronteiras continuam pendentes.
+[Contrato](../research/native-attack-life-routing-2026-11-24.md#v048--quadriláteros-inteiros-no-renderer-de-ataque).

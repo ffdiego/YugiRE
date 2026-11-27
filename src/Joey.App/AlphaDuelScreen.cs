@@ -241,9 +241,38 @@ static partial class Game
         var frame = NativeAttackFrame.Sample(attackUpdates, cue.Origin, cue.Target, cue.NearSide, effectCosine,
             cue.AlreadyAimed);
         if (frame.ImpactScaleFixed16 > 0)
-            DrawEffectStamp(DatGraphics.AttackImpact, frame.Position, 0, frame.ImpactScaleFixed16, frame.Opacity);
-        DrawEffectStamp(frame.PartialSword ? DatGraphics.AttackSwordPartial : DatGraphics.AttackSword,
+            DrawDeclaredAttackStamp(DatGraphics.AttackImpact, frame.Position, 0, frame.ImpactScaleFixed16, frame.Opacity);
+        DrawDeclaredAttackStamp(frame.PartialSword ? DatGraphics.AttackSwordPartial : DatGraphics.AttackSword,
             frame.Position, frame.RotationIndex, 0x10000, frame.Opacity);
+    }
+
+    // Use the native integer geometry validated by recipe 54 for the declared
+    // attack. Texture mapping, rasterization, and blending remain GPU preview
+    // paths. No clamping of individual corners at the canvas boundary.
+    static void DrawDeclaredAttackStamp(string name, CardPoint center, int rotation, int scale, int opacity)
+    {
+        var sprite = graphics.Texture(name);
+        var projection = NativeRotatedQuad.Project(center,
+            new CardBounds(0, 0, sprite.Width, sprite.Height), sprite.Width, sprite.Height,
+            rotation, scale, scale, effectCosine);
+        if (projection is not { } projected ||
+            NativeAttackGpuQuad.FromProjection(projected) is not { } quad) return;
+        Rlgl.CheckRenderBatchLimit(4);
+        Rlgl.SetTexture(sprite.Id);
+        Rlgl.Begin(DrawMode.Quads);
+        Rlgl.Color4ub(255, 255, 255, (byte)opacity);
+        void Vertex(Vector2 position, float u, float v)
+        {
+            Rlgl.TexCoord2f(u, v);
+            Rlgl.Vertex2f(position.X, position.Y);
+        }
+        // Raylib texture winding, with the corresponding source corners.
+        Vertex(quad.TopLeft, 0, 0);
+        Vertex(quad.BottomLeft, 0, 1);
+        Vertex(quad.BottomRight, 1, 1);
+        Vertex(quad.TopRight, 1, 0);
+        Rlgl.End();
+        Rlgl.SetTexture(0);
     }
 
     static void DrawEffectStamp(string name, CardPoint center, int rotation, int scale, int opacity)

@@ -1,4 +1,5 @@
 using Joey.LookAndFeel;
+using System.Numerics;
 
 internal static class NativeRotatedQuadChecks
 {
@@ -16,6 +17,31 @@ internal static class NativeRotatedQuadChecks
         check(P(0).Destination==new NativeQuad(new(508,265),new(542,265),
             new(542,335),new(508,335)) && !P(0).Degenerate,
             "V04: sword dimensions minus one and inclusive endpoints");
+        var gpu=NativeAttackGpuQuad.FromProjection(P(0));
+        check(gpu==new NativeAttackGpuQuad(new(508,265),new(543,265),
+            new(543,336),new(508,336)), "V04: GPU rectangle encloses inclusive pixels");
+        var reversed=NativeAttackGpuQuad.FromProjection(P(256));
+        check(reversed==new NativeAttackGpuQuad(new(543,336),new(508,336),
+            new(508,265),new(543,265)), "V04: GPU adapter preserves rotated source corner order");
+        var diagonal=NativeAttackGpuQuad.FromProjection(P(64));
+        check(diagonal.HasValue && diagonal.Value.TopLeft != new Vector2(537,263) &&
+            diagonal.Value.BottomRight != diagonal.Value.TopLeft, "V04: rotated GPU pixel-cell adapter");
+        // Recipe 54 direct impact, last two projected quads: keep negative
+        // Y vertices for the viewport, never shrink the source by clamping.
+        foreach(var (update, x, y) in new[] {(30,456,-5),(31,451,-10)})
+        {
+            var a=NativeAttackFrame.Sample(update,new(447,352),NativeAttackFrame.DirectTarget(true),true,c);
+            var impact=NativeRotatedQuad.Project(a.Position,new(0,0,80,80),80,80,
+                0,a.ImpactScaleFixed16,a.ImpactScaleFixed16,c);
+            check(impact is { } i && i.Destination.TopLeft==new CardPoint(x,y) &&
+                NativeAttackGpuQuad.FromProjection(i) is { } g &&
+                g.TopLeft==new Vector2(x,y), "V04: direct impact above canvas retains geometry");
+        }
+        var farOrigin=new CardPoint(681,248);
+        var nearTarget=new CardPoint(369,352);
+        var contact=NativeAttackFrame.Sample(16,farOrigin,nearTarget,false,c);
+        check(contact.RotationIndex==NativeAttackFrame.AimRotation(-312,104),
+            "V04: impact angle uses the original signed vector");
         check(P(256).Destination==new NativeQuad(new(542,335),new(508,335),
             new(508,265),new(542,265)),
             "V04: opposite side 180-degree rotation preserves source corner order");
