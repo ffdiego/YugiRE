@@ -25,6 +25,20 @@ internal static class NativeSelectionManifestChecks
         reject(() => NativeSelectionManifest.Parse(manifest,names.Skip(1)), "V11: missing background");
         reject(() => NativeSelectionManifest.Parse(manifest.Replace("000083","invalid"),names), "V11: unknown offset");
         reject(() => NativeSelectionManifest.Parse(manifest.Replace("select_scroll.txt","../select_scroll.txt"),names), "V11: unsafe record");
+        const string grave = @"j\duel\list\list_grave0.bmp";
+        const string deck = @"j\duel\list\list_select0.bmp";
+        byte[] gravePixels = [0,255,0,255, 7,252,7,255, 0,255,48,255, 255,255,255,255];
+        NativeSelectionBackgroundPixels.Prepare(grave,gravePixels);
+        check(gravePixels.SequenceEqual(new byte[] {0,0,0,0, 0,0,0,0, 0,255,49,255, 255,255,255,255}),
+            "V11 RGB565 key collision and preserve distinct green");
+        byte[] deckPixels = [0,255,48,255, 0,255,0,255, 7,252,55,255];
+        NativeSelectionBackgroundPixels.Prepare(deck,deckPixels);
+        check(deckPixels.SequenceEqual(new byte[] {0,0,0,0, 0,255,0,255, 0,0,0,0}),
+            "V11 deck sample uses its own 0x07E6 key");
+        reject(() => NativeSelectionBackgroundPixels.Prepare(grave,new byte[] {0,255,48,255}),
+            "V11 unexpected corner rejected");
+        check(!NativeSelectionBackgroundPixels.IsBackground(@"j\duel\list\unmapped.bmp"),
+            "V11 no implicit policy for unobserved resources");
         var list = new NativeSelectionWindow(8);
         check(!list.FocusVisibleSlot(2), "V11: no input during entrance");
         list.AdvanceOpening(8);
