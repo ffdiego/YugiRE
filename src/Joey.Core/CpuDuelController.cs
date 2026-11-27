@@ -238,15 +238,17 @@ public sealed class CpuDuelController
                     for (int i = 0; i < count; i++)
                     {
                         var candidate = zone == DuelZone.Hand ? duel.Hand[i] : duel.Spells[Player, i];
-                        if (candidate is not { ClassCode: 22 }) continue;
-                        var lp = LifePointSpellRules.ResolveQueued(candidate.Id, Player);
+                        if (candidate is not { ClassCode: 21 or 22 }) continue;
+                        var lp = LifePointSpellRules.SupportsQueued(candidate)
+                            ? duel.ResolveQueuedLifePoints(candidate.Id, Player) : null;
                         bool useLpSpell = lp is { } change && (duel.Life[Player] > -change.CasterDelta ||
                             change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
                         if (!(useLpSpell ||
                               duel.ShouldPlayAttackRestrictionSpell(Player, candidate) ||
+                              candidate is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.DestinyBoard } ||
                               ShouldClearSpellTraps(duel, candidate.Id,
                                   excludedSlot: zone == DuelZone.SpellTrap ? i : -1) ||
-                              DrawSpellRules.Effect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards ||
+                              DrawSpellRules.QueuedEffect(candidate) is { } draw && duel.DeckCount(Player) > draw.Cards ||
                               DrawSpellRules.IsCardDestruction(candidate) &&
                                   duel.DeckCount(1 - Player) < duel.HandFor(1 - Player).Count) ||
                             !duel.CanQueueFixedSpellActivation(zone, i)) continue;
@@ -374,7 +376,8 @@ public sealed class CpuDuelController
                 }
             }
             int trapIndex = Enumerable.Range(0, duel.Hand.Count).FirstOrDefault(i =>
-                (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id)) && duel.CanSetFromHand(i), -1);
+                (SummonTrapRules.Supports(duel.Hand[i].Id) || AttackTrapRules.Supports(duel.Hand[i].Id) ||
+                 duel.Hand[i].ClassCode == 21 && DemoDuel.SupportsQueuedFixedSpell(duel.Hand[i])) && duel.CanSetFromHand(i), -1);
             if (trapIndex >= 0)
                 return Act(CpuAction.Set, (out string m) => duel.TryQueueSpellTrapSet(trapIndex, out m, ActionOrigin.Cpu), duel.Hand[trapIndex], target: duel.FirstFreeSpellZone(), handIndex: trapIndex);
             if (duel.CanBeginBattle) return Act(CpuAction.BeginBattle, EnterBattle);

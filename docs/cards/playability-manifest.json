@@ -15,7 +15,7 @@
       "mechanics": [
         "Continuous ATK modifier"
       ],
-      "status": "Partial",
+      "status": "Done",
       "resourceIds": [
         491,
         523,
@@ -27,11 +27,13 @@
       "evidence": [
         "src/Joey.Core/MonsterAuraRules.cs",
         "src/tests/Joey.Tests/MonsterBattleRuleChecks.cs",
-        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
+        "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl",
+        "src/Joey.Cards/CountedAndContinuousEffects.cs",
+        "src/Joey.Core/DemoQueuedTargetedAttack.cs"
       ],
       "limitations": [
         "Sandbox uses the DAT attribute. Native dynamic attribute changes and effect suppression are outside scope.",
-        "C12: static ATK modifier remains, but the active queued battle pilot rejects these effect monsters as combatants/bystanders. Restore combat admission through the queue."
+        "Queued ordinary combat admission restored for aura sources and bystanders; native suppression/timing remains outside scope."
       ]
     },
     {
@@ -1275,14 +1277,16 @@
         "src/Joey.Core/FlipEffectSuppressionRules.cs",
         "src/Joey.Core/Demo.cs",
         "src/tests/Joey.Tests/RoyalCommandSuppressionChecks.cs",
-        "docs/cards/royal-command.md"
+        "docs/cards/royal-command.md",
+        "src/Joey.Cards/CountedAndContinuousEffects.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs"
       ],
       "limitations": [
         "Bounded Royal Command implementation compiled and passed 3,254 synthetic checks (22 new Royal Command cases) in PR #56 CI; additional non-FLIP and multiple-source cases appended for follow-up CI. Partial due to absent chain timing and native differential validation.",
         "Royal Command can be activated from Set on its owner's later Main Phase only; no opponent turn Trap responses or full priority/chains.",
         "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
         "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions.",
-        "C12: direct Set activation was removed; the queued activation dispatcher does not yet admit Royal Command."
+        "Typed Set activation restored in own later Main Phase; under suppression bounded producer rejects rather than simulating a negated chain."
       ]
     },
     {
@@ -2485,6 +2489,112 @@
       "limitations": [
         "Bounded headless sandbox after CI; no general chains, discard-trigger/replacement rules, native empty-field legality, UI/CPU or native comparison.",
         "P144 preparation 0057D7C0 confirms count five; primary 00589970 and availability 005813D0 absent in v3."
+      ]
+    },
+    {
+      "id": "trap.counted-life-points",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Gift of The Mystical Elf: gain 300 LP per monster on either side"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1092
+      ],
+      "evidence": [
+        "src/Joey.Cards/CountedAndContinuousEffects.cs",
+        "src/Joey.Core/DemoQueuedLifePointSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs"
+      ],
+      "limitations": [
+        "Own later Main Phase Set activation only. Includes face-down monsters. General Trap timing/chain responses pending; no parity claim."
+      ]
+    },
+    {
+      "id": "trap.fixed-draw",
+      "kind": "Trap",
+      "subtype": "Normal",
+      "mechanics": [
+        "Jar of Greed: draw one card"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1447
+      ],
+      "evidence": [
+        "src/Joey.Cards/CountedAndContinuousEffects.cs",
+        "src/Joey.Core/DrawSpellRules.cs",
+        "src/Joey.Core/DemoQueuedDrawSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs"
+      ],
+      "limitations": [
+        "Own later Main Phase Set activation only; existing draw availability guard and typed movement. General Trap timing and chains pending."
+      ]
+    },
+    {
+      "id": "trap.continuous.gravity-bind",
+      "kind": "Trap",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Face-up Gravity Bind prevents Level 4 or higher monsters from attacking on either side"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1323
+      ],
+      "evidence": [
+        "src/Joey.Cards/CountedAndContinuousEffects.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs",
+        "src/Joey.Core/DemoQueuedAttackResponse.cs"
+      ],
+      "limitations": [
+        "Own later Main Phase Set activation only; live effect suppressed by Jinzo or Royal Decree. No general response windows/chains or native parity."
+      ]
+    },
+    {
+      "id": "trap.continuous.destiny-board",
+      "kind": "Trap",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Face-up Destiny Board places the next Spirit Message during opposing End Phase",
+        "Completion of F-I-N-A-L wins; linked cleanup through supported removal producers"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1528
+      ],
+      "evidence": [
+        "src/Joey.Cards/CountedAndContinuousEffects.cs",
+        "src/Joey.Core/DestinyBoardRules.cs",
+        "src/Joey.Core/DemoQueuedEndTurn.cs",
+        "src/Joey.Core/DemoQueuedPersistentSpells.cs"
+      ],
+      "limitations": [
+        "Own later Main Phase Set activation, no general chain windows; no native parity."
+      ]
+    },
+    {
+      "id": "spell.spirit-messages",
+      "kind": "Spell",
+      "subtype": "Continuous",
+      "mechanics": [
+        "Placed in order by Destiny Board, not independently activated"
+      ],
+      "status": "Partial",
+      "resourceIds": [
+        1541,
+        1542,
+        1543,
+        1544
+      ],
+      "evidence": [
+        "src/Joey.Core/DestinyBoardRules.cs",
+        "src/Joey.Core/DemoQueuedEndTurn.cs",
+        "src/Joey.Core/Demo.cs"
+      ],
+      "limitations": [
+        "Dependent on bounded Destiny Board activation; complete timing and chains pending."
       ]
     }
   ]

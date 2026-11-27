@@ -9,7 +9,11 @@ public static class DrawSpellRules
     public const ushort CardDestruction = 1221;
 
     public static bool SupportsQueued(Card card) =>
-        IsCardDestruction(card) || Effect(card) is not null;
+        IsCardDestruction(card) || QueuedEffect(card) is not null;
+
+    public static DrawSpellEffect? QueuedEffect(Card card) =>
+        card is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.JarOfGreed }
+            ? new(1, 0) : Effect(card);
 
     public static bool IsCardDestruction(Card card) => card is { ClassCode: 22, Id: CardDestruction };
 
