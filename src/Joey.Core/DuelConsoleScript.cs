@@ -2,6 +2,7 @@ namespace Joey.Core;
 
 public enum DuelScriptStatus { Advanced, Waiting, WaitingForDecision, Completed, Failed }
 public sealed record DuelScriptStep(DuelScriptStatus Status, int? Line = null, string Message = "");
+public sealed record DuelScriptBoundary(int? Line, string? Input, bool HasPendingChoice, long? LastExecutedSequence);
 
 /// <summary>Same script admission driver for headless and graphical hosts.
 /// The host alone advances the scheduler; one line per passage, no direct mutation.
@@ -11,14 +12,18 @@ public sealed class DuelConsoleScript
 {
     private readonly DuelConsoleSession session;
     private readonly (int Line,string Text)[] lines;
+    private readonly Action<DuelScriptBoundary>? observeBoundary;
     private int cursor, traceCursor;
+    private int observedCursor = -1;
     private DuelScriptStep? terminal;
     public int Count => lines.Length;
     public int AdmittedLines => cursor;
 
-    public DuelConsoleScript(DuelConsoleSession session, IEnumerable<string> script)
+    public DuelConsoleScript(DuelConsoleSession session, IEnumerable<string> script,
+        Action<DuelScriptBoundary>? observeBoundary = null)
     {
         this.session = session;
+        this.observeBoundary = observeBoundary;
         lines = script.Select((text,index)=>(Line:index+1,Text:text.Trim()))
             .Where(line=>line.Text.Length>0 && !line.Text.StartsWith('#')).ToArray();
         traceCursor=session.Queue.Trace.Count;
@@ -42,6 +47,13 @@ public sealed class DuelConsoleScript
                     $"Command {t.Entry.Sequence} {t.Result?.Outcome}: {t.Result?.Detail}");
         }
         traceCursor=trace.Count;
+        if (observeBoundary is not null && observedCursor != cursor)
+        {
+            observedCursor = cursor;
+            var lastLine = cursor == 0 ? ((int? Line, string? Text))(null, null) : lines[cursor - 1];
+            long? lastSequence = trace.LastOrDefault(entry => entry.Stage == ActionTraceStage.Executed)?.Entry.Sequence;
+            observeBoundary(new(lastLine.Line, lastLine.Text, session.HasPendingChoice, lastSequence));
+        }
         if (session.HasPendingChoice &&
             (cursor == lines.Length || !session.AllowsPendingChoiceInput(lines[cursor].Text)))
         {

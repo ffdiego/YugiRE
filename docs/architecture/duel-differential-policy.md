@@ -5,3 +5,25 @@ Mesmo estado inicial (decks em ordem, LP, fase, ocorrências e contexto), mesmas
 Joey.Cards fornece definições e planos; Core executa somente na fila tipada. Primeira fatia: definições fixas de LP e compra, adaptadores preservam API durante migração. C12 retira executores/fallbacks antigos. AI usa decisões legais comuns e snapshots pré-decisão.
 
 Checkpoints parciais podem hidratar turno e fase conhecidos e cartas previamente Set, sem usar ações antigas para alcançar o estado. Não inferir campos desconhecidos nem tratar o checkpoint como save/load nativo. O caminho efetivo é sempre a fila tipada; manter entradas incompletas como inconclusivas.
+
+## Checkpoints do laboratório
+
+```sh
+dotnet run --project src/Joey.Lab -- duel-console --fixture roteiro.txt \
+  --trace-output=trace.json --checkpoint-output=checkpoints.json
+```
+
+O documento `yugire-duel-checkpoints-v1` começa com o estado inicial.
+Cada checkpoint seguinte identifica a linha executada e a última
+sequência de comando executada até aquele limite. Uma linha de
+leitura pode repetir a sequência anterior. Uma escolha bloqueante
+também pode delimitar um checkpoint e fica marcada no campo
+`hasPendingChoice`. Um roteiro interrompido por falha ou escolha
+sem resposta conserva o prefixo com `complete: false`.
+
+Os lados incluem LP, zonas em ordem, posições e atributos efetivos
+de monstros revelados. IDs de ocorrência são locais ao duelo e
+precisam de associação ao comparar engines. O export contém mão e
+deck de ambos os lados para análise privada. O arquivo representa
+o C# e ainda precisa de decisões, contexto e checkpoints nativos
+correlacionados para uma comparação diferencial.

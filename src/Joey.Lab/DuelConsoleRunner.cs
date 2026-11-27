@@ -8,6 +8,14 @@ public static class DuelConsoleRunner
     public static int Run(string[] args, TextReader input, TextWriter output, TextWriter error)
     {
         const string traceOption = "--trace-output=";
+        const string checkpointOption = "--checkpoint-output=";
+        var checkpointOptions = args.Where(a => a.StartsWith(checkpointOption, StringComparison.Ordinal)).ToArray();
+        string? checkpointPath = checkpointOptions.Length == 1 ? checkpointOptions[0][checkpointOption.Length..] : null;
+        if (checkpointOptions.Length > 0 && string.IsNullOrWhiteSpace(checkpointPath))
+        {
+            error.WriteLine("Expected one nonempty --checkpoint-output=path.");
+            return 2;
+        }
         var traceOptions = args.Where(a => a.StartsWith(traceOption, StringComparison.Ordinal)).ToArray();
         string? tracePath = traceOptions.Length == 1 ? traceOptions[0][traceOption.Length..] : null;
         if (traceOptions.Length > 0 && string.IsNullOrWhiteSpace(tracePath))
@@ -15,18 +23,19 @@ public static class DuelConsoleRunner
             error.WriteLine("Expected one nonempty --trace-output=path.");
             return 2;
         }
-        args = args.Where(a => !a.StartsWith(traceOption, StringComparison.Ordinal)).ToArray();
+        args = args.Where(a => !a.StartsWith(traceOption, StringComparison.Ordinal) &&
+            !a.StartsWith(checkpointOption, StringComparison.Ordinal)).ToArray();
         bool fixture = args.Length is 1 or 2 && args[0] == "--fixture";
         bool dat = args.Length is 2 or 3 && args[0] == "--dat";
         if (!fixture && !dat)
         {
-            error.WriteLine("Usage: duel-console (--fixture | --dat data.dat) [script.txt] [--trace-output=path]");
+            error.WriteLine("Usage: duel-console (--fixture | --dat data.dat) [script.txt] [--trace-output=path] [--checkpoint-output=path]");
             return 2;
         }
         int scriptIndex = fixture ? 1 : 2;
-        if (tracePath is not null && args.Length == scriptIndex)
+        if ((tracePath is not null || checkpointPath is not null) && args.Length == scriptIndex)
         {
-            error.WriteLine("--trace-output requires a script file.");
+            error.WriteLine("Output files require a script file.");
             return 2;
         }
         try
@@ -46,9 +55,20 @@ public static class DuelConsoleRunner
             using var script = File.OpenText(args[scriptIndex]);
             var session = new DuelConsoleSession(duel, cards: catalog);
             // Reserve new output before executing; never overwrite existing data.
+            if (tracePath is not null && checkpointPath is not null &&
+                string.Equals(Path.GetFullPath(tracePath), Path.GetFullPath(checkpointPath),
+                    OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+                throw new ArgumentException("Trace and checkpoint outputs require distinct files.");
             using var traceOutput = tracePath is null ? null :
                 new StreamWriter(new FileStream(tracePath, FileMode.CreateNew, FileAccess.Write, FileShare.None));
-            int result = RunScript(session, script, output, error);
+            using var checkpointOutput = checkpointPath is null ? null :
+                new StreamWriter(new FileStream(checkpointPath, FileMode.CreateNew, FileAccess.Write, FileShare.None));
+            List<DuelCheckpointExport.Checkpoint> checkpoints = [];
+            int result = RunScript(session, script, output, error, checkpointOutput is null ? null :
+                boundary => checkpoints.Add(DuelCheckpointExport.Capture(duel, boundary)));
+            if (checkpointOutput is not null)
+                DuelCheckpointExport.Write(checkpointOutput, result == 0 && !session.Queue.IsBusy && !session.HasPendingChoice,
+                    checkpoints);
             if (traceOutput is not null)
             {
                 var document = ActionTraceJson.Capture(session.Queue, "laboratory-script");
@@ -60,13 +80,14 @@ public static class DuelConsoleRunner
         { error.WriteLine(ex.Message); return 2; }
     }
 
-    private static int RunScript(DuelConsoleSession session, TextReader input, TextWriter output, TextWriter error)
+    private static int RunScript(DuelConsoleSession session, TextReader input, TextWriter output, TextWriter error,
+        Action<DuelScriptBoundary>? observeBoundary)
     {
         IEnumerable<string> Lines()
         {
             while(input.ReadLine() is string line) yield return line;
         }
-        var script=new DuelConsoleScript(session,Lines());
+        var script=new DuelConsoleScript(session,Lines(),observeBoundary);
         int traceCursor=0;
         for(int passage=0;passage<Math.Max(512L,512L*(script.Count+1));passage++)
         {

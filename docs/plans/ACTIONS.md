@@ -398,3 +398,15 @@ comando por objeto que ainda não tem Draw/contrato de conclusão.
 ### C12/A09 — Sandbox headless usa o mesmo executor
 
 O runner de política restrita não resolve mais diretamente ações. JSONL conserva snapshots e acrescenta comandos executados; resultado Unsupported não significa derrota, empate ou validação do original. Para A09 ainda são necessários estados/decisões equivalentes e comparação com o executável. Não confundir esse smoke sintético com duelo diferencial.
+
+### A09.5 — Checkpoints do roteiro headless
+
+O Lab exporta o estado inicial e os estados após as linhas
+admitidas, com o número da linha, a decisão pendente e a última
+sequência executada. As observações usam o estado do Core no
+limite em que o roteiro pode avançar. Uma falha conserva o
+prefixo observado e marca a saída como incompleta. A validação
+usa roteiro sintético. A correlação com checkpoints nativos
+equivalentes, incluindo associação de ocorrências e RNG,
+permanece pendente.
+[Contrato de checkpoints](../architecture/duel-differential-policy.md#checkpoints-do-laboratório).
