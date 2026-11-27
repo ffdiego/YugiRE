@@ -495,6 +495,33 @@ no cliente (não Verified): cobertura 20/34, 58,82%.
 As duas Draws de fusão continuam Pending.
 
 
+### Cor-chave do fundo da seleção
+
+Em 27/11, a leitura do BMP no DAT local confirmou RGB `00FF30`
+no canto (0,0) de `list_select0/1.bmp`. Os pares de cemitério,
+fusão e os quatro BMPs de exclusão têm RGB `00FF00` no mesmo
+ponto. A captura V14 mostra o fundo do cemitério composto
+de forma opaca no cliente. A posição da amostra vem da orientação
+do cabeçalho BMP e do stride das linhas.
+
+No assembly do PE atestado, `00481AD0` aloca através de
+`004A9CC0`, que instala a vtable `005DC6EC`. O slot `+54`
+leva a `004AA4B0`, que executa `+D8` antes de carregar o
+arquivo por `+DC`. O reset em `004AA4A0` seleciona chave por
+coordenada (`+55=1`, `+5C=0`, `+60=0`). No carregador,
+`004AC110` aplica essa opção por `+64` → `004AC170` →
+`004AA660` (leitura de pixel) e guarda a chave convertida em
+`+64`. O caminho alternativo lê o COLORREF explícito em `+58`.
+
+`0043B47E` chama `+4C` no destino da Draw estável. Para a
+vtable `005DC6EC`, ele aponta para `0041AB40`, que lê o flag
+`+78` da origem através de `0041AD10`. O ramo de flag zero
+passa por `0041AD50` para `004B1760`. Nos caminhos de formatos
+iguais, esse compositor consulta a chave da origem no slot `+74`
+→ `0041AC50`. A resolução estática estabelece o comportamento
+para essa vtable. A amostra do receptor real e dos campos da
+origem antes do blit estável segue no modo `selection` da coleta 34.
+
 ## V11 — banco de fusão e revisão do objeto vinculado
 
 Consulta ao SQLite existente (sem repetir bundle 01): construtores

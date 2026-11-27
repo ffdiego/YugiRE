@@ -125,7 +125,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Banco DAT confirmado; semântica A/B, compositor, integração e validação. [Detalhes](docs/plans/VISUALS.md#v08)
 - [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`. Manifesto confirmado; precedência e hotspot no dispatcher. [Detalhes](docs/plans/VISUALS.md#v09)
 - [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Nuvens de posição integradas; validar desktop, code → asset/hotspot e prioridade. [Detalhes](docs/plans/VISUALS.md#v10)
-- [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Validar composição da fusão geral e investigar o gatilho da fusão vinculada. [Detalhes](docs/plans/VISUALS.md#v11)
+- [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Capturar cor-chave da seleção e destino do blit. Validar a fusão geral e investigar o gatilho da fusão vinculada. [Detalhes](docs/plans/VISUALS.md#v11)
 - [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`. DAT, compositor e gatilho pela fila. [Detalhes](docs/plans/VISUALS.md#v12)
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Restam respostas de combate, descarte e o compositor da lista de seleção. [Detalhes](docs/plans/VISUALS.md#v14)

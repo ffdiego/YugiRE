@@ -3,6 +3,8 @@
 // RVAs for the fingerprint checked by the companion Python runner.
 const ROTATED = 0x22840;
 const INTENSITY = 0x22c00;
+const SELECTION_BACKGROUND_CALL = 0x3b47e;
+const SURFACE_VTABLE = 0x1dc6ec;
 const sites = new Map([
     [0x146ea, { primitive: ROTATED, key: 0, pass: 'flight' }],
     [0x14777, { primitive: INTENSITY, key: 2, pass: 'impact' }],
@@ -68,6 +70,48 @@ function watchPrimitive(primitive) {
     });
 }
 
+function imageRva(address) {
+    const rva = address.sub(image.base).toUInt32();
+    return rva < image.size ? rva : null;
+}
+
+function watchSelectionBackground() {
+    const call = image.base.add(SELECTION_BACKGROUND_CALL);
+    if (call.readU8() !== 0xff || call.add(1).readU8() !== 0x50 || call.add(2).readU8() !== 0x4c)
+        throw new Error('Unexpected stable selection blit instruction');
+    hook(SELECTION_BACKGROUND_CALL, {
+        onEnter() {
+            const frame = scenes.get(this.threadId);
+            if (frame === undefined) return;
+            const { esp, ecx: destination, edx } = this.context;
+            const source = esp.readPointer();
+            const sourceVtable = source.readPointer();
+            const destinationVtable = destination.readPointer();
+            const sourceLayoutKnown = imageRva(sourceVtable) === SURFACE_VTABLE;
+            const keyFromPixel = sourceLayoutKnown ? source.add(0x55).readU8() !== 0 : null;
+            record({
+                kind: 'selection-background',
+                frame,
+                drawRva: 0x3b280,
+                callRva: SELECTION_BACKGROUND_CALL,
+                manifestKey: edx.toUInt32(),
+                x: esp.add(4).readS32(),
+                y: esp.add(8).readS32(),
+                destinationVtableRva: imageRva(destinationVtable),
+                destinationMethodRva: imageRva(destinationVtable.add(0x4c).readPointer()),
+                sourceVtableRva: imageRva(sourceVtable),
+                sourceFormat: sourceLayoutKnown ? source.add(0x74).readU32() : null,
+                sourceFlag78: sourceLayoutKnown ? source.add(0x78).readU8() : null,
+                keyFromPixel,
+                keyX: keyFromPixel === true ? source.add(0x5c).readS32() : null,
+                keyY: keyFromPixel === true ? source.add(0x60).readS32() : null,
+                keyColorRef: keyFromPixel === false ? source.add(0x58).readU32() : null,
+                packedKey: sourceLayoutKnown ? source.add(0x64).readU32() : null,
+            });
+        },
+    });
+}
+
 function stop() {
     for (const listener of hooks.splice(0)) listener.detach();
     return { frames, dropped, events };
@@ -75,10 +119,16 @@ function stop() {
 
 rpc.exports = {
     imagePath() { return image.path; },
-    start() {
+    start(mode = 'attack') {
         if (Process.arch !== 'ia32' || image.size < 0x4dd01)
             throw new Error('Unexpected original process architecture or image size');
+        if (mode !== 'attack' && mode !== 'selection')
+            throw new Error('Unexpected capture mode');
         if (hooks.length !== 0) throw new Error('Capture is already active');
+        events.length = 0;
+        frames = dropped = 0;
+        scenes.clear();
+        draws.clear();
         try {
             hook(0x4dd00, {
                 onEnter() {
@@ -90,6 +140,10 @@ rpc.exports = {
                     else scenes.set(this.threadId, this.previous);
                 },
             });
+            if (mode === 'selection') {
+                watchSelectionBackground();
+                return;
+            }
             hook(0x14110, {
                 onEnter() {
                     const frame = scenes.get(this.threadId);

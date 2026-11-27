@@ -53,3 +53,24 @@ ordem dos passes e os contadores de um mesmo ataque e manter os
 traces privados. O recorte cobre a espada e o impacto. Elegibilidade,
 reflexo, rasterização, demais famílias e cadência sem instrumentação
 têm validação própria.
+
+### V01/V11 — fundo da seleção no roteiro 34
+
+No mesmo ambiente, abra uma seleção de cemitério, deck ou fusão.
+Deixe a janela chegar ao estado estável durante a captura. Grave
+um relatório por família e por variante com e sem scroll.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --mode selection --pid <PID> --exe ..\passion\joey_pc.exe --output scratch/visual-review/selection-grave.json
+```
+
+O ponto `0043B47E` registra a chamada `+4C`, as vtables de
+destino e origem, o destino virtual resolvido e chave de manifesto
+em EDX. Para a origem `005DC6EC`, inclui o formato, o flag
+`+78`, a chave empacotada e os parâmetros que selecionam a
+chave por coordenada ou COLORREF. A captura limita o acesso aos
+campos dessa vtable e grava somente metadados. Saída 0 significa
+que houve pelo menos um pedido de fundo estável sem eventos
+perdidos. Para resolver a lacuna, confronte o alvo e os campos da
+chave com a imagem de referência e as variantes do DAT. O modo
+ainda aguarda execução no Windows.

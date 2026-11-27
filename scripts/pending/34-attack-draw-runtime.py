@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V01/V04: record attack Update, Draw and rotated blit requests in a live duel."""
+"""V01/V04/V11: record attack or selection-window Draw requests in a live duel."""
 from __future__ import annotations
 
 import argparse
@@ -43,7 +43,7 @@ def verify_image(pid: int, exe: Path):
     return kernel, handle
 
 
-def capture(pid: int, exe: Path, seconds: int) -> dict:
+def capture(pid: int, exe: Path, seconds: int, mode: str) -> dict:
     import frida
 
     kernel, handle = verify_image(pid, exe)
@@ -57,8 +57,9 @@ def capture(pid: int, exe: Path, seconds: int) -> dict:
             script.load()
             if not Path(script.exports_sync.image_path()).samefile(exe):
                 raise ValueError("Attached process image changed")
-            script.exports_sync.start()
-            print(f"Recording for {seconds} seconds. Perform one targeted or direct attack.", flush=True)
+            script.exports_sync.start(mode)
+            action = "Open a card-selection window." if mode == "selection" else "Perform one targeted or direct attack."
+            print(f"Recording for {seconds} seconds. {action}", flush=True)
             time.sleep(seconds)
             result = script.exports_sync.stop()
             if errors:
@@ -75,14 +76,15 @@ def main() -> int:
     parser.add_argument("--pid", type=int, required=True)
     parser.add_argument("--exe", type=Path, required=True)
     parser.add_argument("--seconds", type=int, default=20)
-    parser.add_argument("--output", type=Path,
-                        default=ROOT / "scratch/visual-review/native-attack-draw.json")
+    parser.add_argument("--mode", choices=("attack", "selection"), default="attack")
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if sys.platform != "win32":
         parser.error("Run on Windows with an original duel already open")
     if args.pid <= 0 or not 1 <= args.seconds <= 60:
         parser.error("Expected a positive PID and --seconds in [1, 60]")
-    output = args.output.resolve()
+    default_output = ROOT / "scratch/visual-review" / f"native-{args.mode}-draw.json"
+    output = (args.output or default_output).resolve()
     if not output.is_relative_to(ROOT / "scratch") or output.exists():
         parser.error("Write a new output file under scratch/")
     exe = args.exe.resolve(strict=True)
@@ -90,14 +92,18 @@ def main() -> int:
         if hashlib.file_digest(binary, "sha256").hexdigest() != EXPECTED:
             parser.error("Unexpected joey_pc.exe SHA-256")
     try:
-        result = capture(args.pid, exe, args.seconds)
+        result = capture(args.pid, exe, args.seconds, args.mode)
     except (OSError, ValueError, RuntimeError, ImportError) as error:
         parser.exit(2, f"{error}\n")
-    passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
-    complete = result["dropped"] == 0 and {"aim", "flight", "impact", "partial-sword"} <= passes
+    if args.mode == "selection":
+        observed = any(event["kind"] == "selection-background" for event in result["events"])
+    else:
+        passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
+        observed = {"aim", "flight", "impact", "partial-sword"} <= passes
+    complete = result["dropped"] == 0 and observed
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("x", encoding="utf-8") as report:
-        json.dump({"schemaVersion": 1, "executableSha256": EXPECTED, "complete": complete,
+        json.dump({"schemaVersion": 1, "executableSha256": EXPECTED, "mode": args.mode, "complete": complete,
                    **result}, report, indent=2)
         report.write("\n")
     print(f"{result['frames']} scene calls, {len(result['events'])} events, "

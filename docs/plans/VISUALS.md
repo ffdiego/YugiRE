@@ -102,6 +102,8 @@ A reconciliação de #143 usa o snapshot imutável `DemoSpecialSummon.FusionMate
 
 V11/V14 (27/11/2026). No laboratório gráfico com DAT real, a seleção de cemitério para o recurso 1008 abriu `list_grave0.bmp` com uma opção elegível. O clique na miniatura resolveu a escolha e o recurso 81 apareceu no campo. O canvas F12 da lista contém 19.933 pixels RGB `00FF00`. O assembly da Draw estável em `0043B47E` chama o slot virtual `+4C` do destino. A vtable candidata `005DC6EC` aponta esse slot para `0041AB40`, que escolhe entre `+08` e `+28` pelo resultado de `+40` da superfície de origem. Falta demonstrar o receptor ativo e a origem da cor-chave antes de modificar a composição. Capturas privadas `yugire-20261127-050448-500` e `yugire-20261127-050531-688`.
 
+V11/V01 (27/11/2026). A amostra dos BMPs do DAT mostrou dois valores de canto superior esquerdo, `00FF30` nas duas variantes de seleção do deck e `00FF00` nas variantes de fusão, cemitério e exclusão observadas. O carregador de superfície confirma um caminho que amostra a chave por coordenada. A coleta 34 ganhou o modo `selection` para registrar receptor, chave e formato no blit estável. [Rastreio estático](../../docs/research/native-selection-window-fusion-2026-11-22.md#cor-chave-do-fundo-da-seleção).
+
 ## V12 — Indicador de corrente desativada (`004531C0`)
 
 <a id="v12"></a>
