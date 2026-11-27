@@ -158,10 +158,14 @@ class NativeStateInteractionsTests(unittest.TestCase):
     def test_compare_explicit_checkpoint_pairs(self):
         def checkpoint(line, life, graveyard_count):
             def side(lp, count):
-                return dict(life=lp, hand=[], deck=[{}] * 28, graveyard=[{}] * count)
+                return dict(life=lp, hand=[], deck=[{}] * 28, graveyard=[{}] * count,
+                            monsters=[None] * 5, spells=[None] * 5, fieldSpell=None)
 
-            return dict(boundary=dict(line=line, lastExecutedSequence=8 if line else None),
-                        sides=[side(life[0], graveyard_count), side(life[1], 0)])
+            sides = [side(life[0], graveyard_count), side(life[1], 0)]
+            sides[0]["spells"][0] = dict(card=dict(internalIndex=414), faceDown=False)
+            if line is None:
+                sides[0]["spells"][1] = dict(card=dict(internalIndex=969), faceDown=False)
+            return dict(boundary=dict(line=line, lastExecutedSequence=8 if line else None), sides=sides)
 
         document = dict(schema="yugire-duel-checkpoints-v1", complete=True, checkpoints=[
             checkpoint(None, (6600, 2600), 0),
@@ -199,6 +203,42 @@ class NativeStateInteractionsTests(unittest.TestCase):
             self.assertEqual(compare(path, document, pairs[:2])["verdict"], "inconclusive")
             with self.assertRaisesRegex(ValueError, "increase strictly"):
                 compare(path, document, [(1, None), (6, 9), (4, 7)])
+
+    def test_compare_field_slot_identity_and_pose(self):
+        records = self.fixture()
+        observed = records[1]["stateObservation"]["sides"]
+        observed[0]["fieldSlots"][3].update(cardIndex=81, positionWord=0x201)
+        observed[1]["fieldSlots"][10].update(cardIndex=82, positionWord=2)
+        observed[1]["fieldSlots"][4].update(positionWord=3, occurrenceWord=77)
+        checkpoint = dict(boundary=dict(line=None, lastExecutedSequence=None), sides=[
+            dict(life=6600, hand=[], deck=[{}] * 28, graveyard=[],
+                 monsters=[None, None, None, dict(card=dict(internalIndex=81, occurrence=900),
+                                                  faceDown=True, defense=True), None],
+                 spells=[dict(card=dict(internalIndex=414), faceDown=False),
+                         dict(card=dict(internalIndex=969), faceDown=False), None, None, None],
+                 fieldSpell=None),
+            dict(life=2600, hand=[], deck=[{}] * 28, graveyard=[], monsters=[None] * 5,
+                 spells=[None] * 5, fieldSpell=dict(card=dict(internalIndex=82), faceDown=False)),
+        ])
+        document = dict(schema="yugire-duel-checkpoints-v1", complete=True, checkpoints=[checkpoint])
+        with tempfile.TemporaryDirectory() as td:
+            path = self.write(td, records)
+            self.assertEqual(compare(path, document, [(1, None)])["verdict"], "projected_match")
+
+            checkpoint["sides"][0]["monsters"][3]["defense"] = False
+            checkpoint["sides"][0]["spells"][1] = None
+            checkpoint["sides"][1]["fieldSpell"]["faceDown"] = True
+            report = compare(path, document, [(1, None)])
+            self.assertEqual(report["verdict"], "mismatch")
+            self.assertEqual(report["firstObservedDifference"]["fields"], [
+                dict(side=0, field="monsters", slot=3,
+                     native=dict(internalIndex=81, faceDown=True, defense=True),
+                     csharp=dict(internalIndex=81, faceDown=True, defense=False)),
+                dict(side=0, field="spells", slot=1,
+                     native=dict(internalIndex=969, faceDown=False), csharp=None),
+                dict(side=1, field="fieldSpell", native=dict(internalIndex=82, faceDown=False),
+                     csharp=dict(internalIndex=82, faceDown=True)),
+            ])
 
 
 if __name__=="__main__":

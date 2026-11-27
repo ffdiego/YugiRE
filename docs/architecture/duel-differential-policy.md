@@ -43,11 +43,13 @@ decisões, estado e momento equivalentes. O estado do JSONL é lido na
 entrada do produtor do comando, antes de seu enfileiramento, e pode
 perder estados transitórios.
 
-A projeção compara LP, ordem dos índices internos na mão e contagens
-de deck e cemitério por lado. O relatório inclui o hash do JSONL, o
+A projeção compara LP, ordem dos índices internos na mão, contagens de
+deck e cemitério e os onze slots do campo por lado. Cada slot compara
+ocupação, índice interno e face. Posição de ataque ou defesa também é
+comparada para monstros. O relatório inclui o hash do JSONL, o
 prefixo pareado, as lacunas e a primeira diferença observada. Uma
 diferença após uma lacuna fica visível com `afterGap: true`. Códigos de
 saída 0 para concordância na projeção solicitada, 1 para diferença no
 prefixo, 2 para entrada inválida e 3 para resultado inconclusivo. Ainda
-faltam campos visíveis do tabuleiro, identidade das ocorrências e uma
-captura equivalente com decisões correlacionadas.
+faltam atributos efetivos, identidade das ocorrências e uma captura
+equivalente com decisões correlacionadas.

@@ -8,7 +8,9 @@ from pathlib import Path
 from .state_interactions import analyze_capture
 
 Pair = tuple[int, int | None]
-FIELDS = ("lifePoints", "handIndices", "deckCount", "graveyardCount")
+COUNTER_FIELDS = ("lifePoints", "handIndices", "deckCount", "graveyardCount")
+SLOT_FIELDS = ("monsters", "spells")
+FIELDS = (*COUNTER_FIELDS, *SLOT_FIELDS, "fieldSpell")
 
 
 def _pair(raw: str) -> Pair:
@@ -23,14 +25,48 @@ def _pair(raw: str) -> Pair:
     raise argparse.ArgumentTypeError("Use N:initial or N:LINE with positive integers")
 
 
-def _observed_fields(side: dict, native: bool) -> dict:
-    if native:
-        return {key: side[key] for key in FIELDS}
+def _native_slot(slot: dict, *, monster: bool = False) -> dict | None:
+    index = slot["cardIndex"]
+    if index == 0:
+        return None
+    # The native field record stores defense in bit 0 and face-up in bit 1.
+    position = slot["positionWord"]
+    result = {"internalIndex": index, "faceDown": not bool(position & 2)}
+    if monster:
+        result["defense"] = bool(position & 1)
+    return result
+
+
+def _csharp_slot(slot: dict | None, *, monster: bool = False) -> dict | None:
+    if slot is None:
+        return None
+    result = {"internalIndex": slot["card"]["internalIndex"], "faceDown": slot["faceDown"]}
+    if monster:
+        result["defense"] = slot["defense"]
+    return result
+
+
+def _native_fields(side: dict) -> dict:
+    slots = side["fieldSlots"]
+    return {
+        **{key: side[key] for key in COUNTER_FIELDS},
+        "monsters": [_native_slot(slot, monster=True) for slot in slots[:5]],
+        "spells": [_native_slot(slot) for slot in slots[5:10]],
+        "fieldSpell": _native_slot(slots[10]),
+    }
+
+
+def _csharp_fields(side: dict) -> dict:
+    if len(side["monsters"]) != 5 or len(side["spells"]) != 5:
+        raise ValueError("C# checkpoint needs five monster and five spell/trap slots per side")
     return {
         "lifePoints": side["life"],
         "handIndices": [card["internalIndex"] for card in side["hand"]],
         "deckCount": len(side["deck"]),
         "graveyardCount": len(side["graveyard"]),
+        "monsters": [_csharp_slot(slot, monster=True) for slot in side["monsters"]],
+        "spells": [_csharp_slot(slot) for slot in side["spells"]],
+        "fieldSpell": _csharp_slot(side["fieldSpell"]),
     }
 
 
@@ -57,7 +93,7 @@ def compare(capture: Path, document: dict, pairs: list[Pair]) -> dict:
 
     def observe(duel: int, seq: int, sides: list[dict]) -> None:
         if seq in wanted:
-            samples[seq] = (duel, [_observed_fields(side, native=True) for side in sides])
+            samples[seq] = (duel, [_native_fields(side) for side in sides])
 
     source = analyze_capture(capture, on_sample=observe)
     if len({duel for duel, _ in samples.values()}) > 1:
@@ -82,15 +118,18 @@ def compare(capture: Path, document: dict, pairs: list[Pair]) -> dict:
         _, native_sides = samples[seq]
         differences = []
         for side in range(2):
-            sandbox = _observed_fields(sides[side], native=False)
+            sandbox = _csharp_fields(sides[side])
             for field, native_value in native_sides[side].items():
-                if native_value != sandbox[field]:
-                    differences.append({
-                        "side": side,
-                        "field": field,
-                        "native": native_value,
-                        "csharp": sandbox[field],
-                    })
+                csharp_value = sandbox[field]
+                if native_value == csharp_value:
+                    continue
+                if field in SLOT_FIELDS:
+                    for slot, (native_slot, csharp_slot) in enumerate(zip(native_value, csharp_value)):
+                        if native_slot != csharp_slot:
+                            differences.append(dict(side=side, field=field, slot=slot,
+                                                    native=native_slot, csharp=csharp_slot))
+                else:
+                    differences.append(dict(side=side, field=field, native=native_value, csharp=csharp_value))
         if differences and first_difference is None:
             first_difference = {
                 **reference,

@@ -422,3 +422,16 @@ Fixtures sintéticas exercitam concordância, divergência e resultado
 inconclusivo. Ainda falta parear uma captura real com decisões e estado
 equivalentes. A comparação de campo, fase e ocorrências segue pendente.
 [Uso e limites](../architecture/duel-differential-policy.md#comparação-de-checkpoints-pareados).
+
+### A09.7 — Campo nos checkpoints pareados
+
+O comparador passa a apontar o lado e o slot da primeira diferença de
+ocupação, índice interno, face ou posição de defesa. O SQLite cumulativo
+v7 foi conferido com o fingerprint do EXE. `0056C537` testa os 12 bits
+do índice e zero indica slot vazio. As decompilações de `00568610` e
+`005686E0` confirmam o bit 0 de defesa de monstro e o bit 1 de face
+aberta em registro +6. `00405CB0` e o decodificador CE/CF documentam
+os slots 5–9 de magia/armadilha e 10 de magia de campo. Testes
+sintéticos cobrem divergência de postura, remoção e face, além de bit
+alto irrelevante e slot vazio com flags residuais. Atributos
+efetivos, associações e identidade de ocorrências seguem em aberto.
