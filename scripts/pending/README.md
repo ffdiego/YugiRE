@@ -22,3 +22,34 @@ Próxima ação em Windows com o cliente atualizado: validar a decodificação c
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1 -SkipPlayback
 powershell -ExecutionPolicy Bypass -File scripts/pending/28-voice-audio-windows.ps1 -Samples joey_01.wav
 ```
+
+## V01/V04 — 34-attack-draw-runtime.py (aguardando Windows)
+
+Com Frida na venv e um duelo aberto no executável original, indique o
+PID do jogo. Durante os 20 segundos de captura, execute um ataque.
+Use saídas diferentes para ataque a monstro e ataque direto, dos dois
+lados quando possível. O roteiro anexa ao processo indicado e desanexa
+no fim. O relatório fica em `scratch/`.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --pid <PID> --exe ..\passion\joey_pc.exe --output scratch/visual-review/attack-targeted.json
+```
+
+O frame é ordinal da entrada em `0044DD00` durante a captura.
+`00414110` e `004142C0` registram estado e contador antes de
+Update e Draw. Os retornos `004146EA`, `00414777`, `00414805`
+e `004148FA` identificam respectivamente voo, impacto, lâmina
+parcial e mira nas entradas de `00422840` ou `00422C00`.
+A chave vem do chamador e do manifesto `attack.txt`.
+X/Y são o centro passado ao blitter. O índice de ângulo, as escalas
+16.16 e a intensidade bruta vêm da pilha na entrada. O log registra
+pedidos de blit antes de clipping, formato, cor-chave ou descarte
+por escala zero. O ordinal da cena também não é um flip do buffer.
+
+Saída 0 significa que houve amostras dos quatro passes e o limite
+de eventos não descartou registros. Saída 1 preserva o traço
+incompleto para diagnóstico. Antes de encerrar a coleta, conferir a
+ordem dos passes e os contadores de um mesmo ataque e manter os
+traces privados. O recorte cobre a espada e o impacto. Elegibilidade,
+reflexo, rasterização, demais famílias e cadência sem instrumentação
+têm validação própria.

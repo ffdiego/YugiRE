@@ -115,7 +115,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 
 > Assembly-first; apresentação das ações ligada à fila, sem confundir Draws independentes com comandos. [Histórico](docs/plans/VISUALS.md#histórico-concluído-sem-id). [Cobertura visual](docs/architecture/VISUAL_COVERAGE.md).
 
-- [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`. Log de blit por frame; tabela de cosseno já capturada. [Detalhes](docs/plans/VISUALS.md#v01)
+- [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`. Validar coleta 34 dos blits da espada no Windows e ampliar para as demais famílias. [Detalhes](docs/plans/VISUALS.md#v01)
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Validação DAT passa. Investigar os controles transitórios de seleção e descarte. [Detalhes](docs/plans/VISUALS.md#v03)
 - [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Coleta 32 confirmou constantes x87 e truncamento. Confirmar formato, chave e compositor do quadrilátero e comparar frames. [Detalhes](docs/plans/VISUALS.md#v04)

@@ -23,6 +23,8 @@ Histórico e contratos movidos de PLANS.md na revisão de 24/11/2026 (base `42f7
 O snapshot privado v3 contém os 512 valores x16.16 de `00A52EE8`, capturados após a inicialização em `0055DCF0`. A geração por truncamento reproduz todos os valores e é o padrão do cliente. O loader `--native-cosine=` continua disponível para comparação, e F12 registra a origem usada. [Evidência e teste](../../docs/research/native-cosine-runtime-2026-11-24.md).
   Falta registrar o primitivo de blit comum por frame de duelo (rotina Draw, recurso, x, y, alpha/blend, ângulo/escala, quadro) para comparar as rotinas do inventário com o original.
 
+V01.1 (27/11/2026). A coleta 34 observa as entradas de Update e Draw da espada e quatro chamadas de blit rotacionado, agrupadas por chamada da cena. O traço guarda coordenadas e parâmetros brutos, além da chave de manifesto confirmada pelos chamadores. A captura no Windows permanece pendente. [Roteiro e critério](../../scripts/pending/README.md#v01v04--34-attack-draw-runtimepy-aguardando-windows).
+
 ## V02 — Contrato nativo de renderização da carta
 
 <a id="v02"></a>
