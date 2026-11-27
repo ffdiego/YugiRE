@@ -29,14 +29,19 @@ internal static class NativeEquipmentTravelChecks
                   NativeEquipmentTravel.Sample(192,source,target,owner,perspective,cosine).Center==target,
                 "B2: starts on source, max half-scale, ends at target");
         }
-        reject(()=>NativeEquipmentTravel.Sample(200,new(0,0),new(1,1),0,0,cosine),"B2: reject beyond terminal");
-        reject(()=>NativeEquipmentTravel.Sample(7,new(0,0),new(1,1),0,0,cosine),"B2: reject fractional update");
+        foreach(int invalid in new[]{200,7,-8})
+        {
+            bool rejected=false;
+            try { _=NativeEquipmentTravel.Sample(invalid,new(0,0),new(1,1),0,0,cosine); }
+            catch(ArgumentOutOfRangeException) { rejected=true; }
+            check(rejected,"B2: invalid counter rejected");
+        }
 
         foreach(int owner in new[]{0,1})
         foreach(int targetSide in new[]{0,1})
         {
             var spell=new Card(300,300,"Sword","",22u<<20);
-            var unit=new Card(77,77,"Warrior","",(15u<<20)|(4u<<25)|(100u<<9)|100u);
+            var unit=new Card(77,77,"Warrior","",(15u<<20)|(2u<<29)|(4u<<25)|(100u<<9)|100u);
             Card?[] own=[unit,null,null,null,null];
             var d=DemoDuel.FromPartialObservation(owner,[spell],targetSide==0?own:new Card?[5],
                 targetSide==1?own:new Card?[5],8000,equipmentContextResolved:true);
@@ -51,7 +56,7 @@ internal static class NativeEquipmentTravelChecks
                 "B2: exactly one successful queued equip observation");
         }
         var stale=DemoDuel.FromPartialObservation(0,[new Card(300,300,"Sword","",22u<<20)],
-            [new Card(77,77,"Warrior","",(15u<<20)|(4u<<25)|(100u<<9)|100u),null,null,null,null],
+            [new Card(77,77,"Warrior","",(15u<<20)|(2u<<29)|(4u<<25)|(100u<<9)|100u),null,null,null,null],
             new Card?[5],8000,equipmentContextResolved:true);
         int count=0;stale.EquipmentActivated+=_=>count++;
         var sq=stale.CreatePrimitiveActionQueue();
