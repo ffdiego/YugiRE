@@ -296,3 +296,22 @@ o limite de 128 amostras. Confira a continuidade dos valores,
 a fórmula e o atlas escolhido em relação ao valor de catálogo.
 Confira o contador do laço separadamente. Um prazo sem a
 linha de conclusão deixa a transição sem amostra completa.
+
+### 54 — V04, despacho da espada em Proton
+
+No [prefixo isolado](../../docs/research/joey-proton-validation.md),
+confirme o fingerprint e o PID. Anexe antes de um ataque da
+demonstração. O roteiro usa GDB com Python e quatro breakpoints
+de hardware. Desanexa ao ver a lâmina parcial no contador 496.
+
+```bash
+timeout --signal=INT 125s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/54-wine-attack-quad-dispatch.gdb > scratch/attack-quad-dispatch.log 2>&1
+```
+
+Confira o JSON em `attack-quad-dispatch`. `bankMatch` indica que a
+origem corresponde ao índice registrado do banco. Para cada par,
+confira o pedido de impacto seguido da lâmina parcial e a escala
+zero no primeiro pedido de impacto. Os compositores base e por
+intensidade devem aparecer dos dois lados da transição de 384
+para 400. Use `targetSlot=-1` para identificar ataque direto.

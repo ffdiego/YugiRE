@@ -155,6 +155,8 @@ O [52](../../scripts/regression/README.md#52--v05-composição-dos-atributos-em-
 registra os pesos das superfícies no compositor dos números.
 O [53](../../scripts/regression/README.md#53--v05-transição-dos-atributos-em-proton)
 acompanha a mudança de um atributo até o número atingir o novo valor.
+O [54](../../scripts/regression/README.md#54--v04-despacho-da-espada-em-proton)
+registra a troca de variante da espada e o compositor usado a cada passo.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

@@ -49,6 +49,15 @@ Roteiro 21 recebido: Draw 004142C0 confirma chaves 0/2/1 e ângulo recalculado n
 
 V04.4 (27/11/2026). A coleta 32 em Ghidra local obteve a função `005C3E40` e os dois blocos de constantes. O assembly confirma truncamento x87 e restauração da palavra de controle, e os bytes do PE confirmam os três doubles. A evidência foi integrada ao snapshot privado v8. O formato de superfície, a chave de transparência e os frames pareados continuam pendentes. [Achados e proveniência](../../docs/research/native-attack-life-routing-2026-11-24.md#v044--constantes-e-conversão-x87-2711).
 
+V04.5. O roteiro 54 capturou um ataque adversário a monstro e um
+ataque direto do lado próprio em Proton. Os dois confirmaram a lâmina
+parcial no contador 256, o primeiro despacho do impacto em 272 e
+a mudança de compositor no contador 400.
+As espadas chegaram em RGB565 com chave `0x07E0`, e o impacto usou
+o formato 10 com destino RGB565. A comparação em Python conferiu
+os 80 pedidos dos dois ataques. Faltam vértices do compositor e
+quadros pareados. [Evidência e roteiro](../../docs/research/native-attack-life-routing-2026-11-24.md#v045--despacho-da-espada-observado-em-proton).
+
 ## V05 — ATK/DEF em monstros no campo
 
 <a id="v05"></a>

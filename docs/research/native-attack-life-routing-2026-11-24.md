@@ -8,6 +8,37 @@ Consulta direta às decompilações persistentes 00413BC0, 004140B0,
 004142C0 nem 0047C660. Nenhuma nova evidência assembly nesta fatia.
 As notas históricas sobre o Draw não substituem instruções reais.
 
+## V04.5 — despacho da espada observado em Proton
+
+Na demonstração do EXE de referência em Proton 9.0, Xvfb a 800×600
+e llvmpipe, o roteiro 54 capturou um ataque do slot adversário 0
+ao slot próprio 1 e um ataque direto do slot próprio 1. O centro de
+impacto foi (447,352) no primeiro caso e (525,64) no segundo.
+Cada ataque teve uma amostra de mira no contador 128, sete pedidos
+da espada inteira de 144 a 240 e 16 pares a partir de 256.
+Os ponteiros de origem conferiram com o banco ativo do manifesto.
+
+| Chave | Recurso | Origem | Amostra de chave RGB565 | Destino |
+| --- | --- | --- | --- | --- |
+| 0 | `atk_icon.bmp` | 3 (RGB565) | (0,0) → `0x07E0` | 3 |
+| 1 | `atk_icon2.bmp` | 3 (RGB565) | (0,0) → `0x07E0` | 3 |
+| 2 | `atk_eff.yga` | 10 (RGB565 com alpha) | (0,0) → `0x0000` | 3 |
+
+No contador 256, o Draw pediu o impacto com escala zero e a lâmina
+parcial com escala 65536, em 16.16. O impacto ficou sem chamada ao
+compositor nesse passo. O primeiro pedido de impacto que chegou ao
+compositor foi o de 272, com escala 8192. A lâmina parcial chegou
+ao compositor de base `0051EBD0` já em 256. Daí até o contador 384,
+as chamadas com escala positiva usaram esse compositor. Em 400,
+quando a intensidade passou a 224, os dois passes passaram por
+`00422E30` e seguiram nele até o último par, no contador 496.
+
+A validação conferiu a ordem, o manifesto, as escalas, as intensidades,
+os formatos e as entradas dos compositores. O valor no campo de
+chave do YGA registra a amostra da superfície. A contribuição do
+alpha do YGA, os vértices efetivos e os pixels de saída ficam para
+capturas específicas. [Roteiro 54](../../scripts/regression/README.md#54--v04-despacho-da-espada-em-proton).
+
 ## V04 — espada
 
 00413BC0 carrega duel/effect/attack.txt, três recursos, camada
