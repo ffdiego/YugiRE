@@ -35,11 +35,15 @@ public sealed class CpuDuelController
             for (int index = 0; index < count; index++)
             {
                 Card? card = zone == DuelZone.Hand ? duel.Hand[index] : duel.Spells[player, index];
-                if (card is not { ClassCode: 22, Id: TargetedMonsterSpellRules.Fissure } ||
+                if (card is not { ClassCode: 22 } ||
+                    card.Id != TargetedMonsterSpellRules.Fissure && !TargetedMonsterSpellRules.SupportsPosition(card) ||
                     !duel.TryCaptureCardTarget(player, zone, index, out var source)) continue;
                 // Deterministic CPU tie choice. The selected occurrence still
                 // passes the same legality checks as a player's choice.
-                if (duel.QueuedTargetedMonsterSpellCandidates(source).FirstOrDefault() is { } choice)
+                if (duel.QueuedTargetedMonsterSpellCandidates(source)
+                    .FirstOrDefault(c => card.Id == TargetedMonsterSpellRules.Fissure ||
+                        card.Id == 1043 && duel.AttackValue(c.Target.Side,c.Zone) > duel.DefenseValue(c.Target.Side,c.Zone) ||
+                        card.Id == 319 && duel.AttackValue(c.Target.Side,c.Zone) < duel.DefenseValue(c.Target.Side,c.Zone)) is { } choice)
                     return (source, choice.Target);
             }
         }

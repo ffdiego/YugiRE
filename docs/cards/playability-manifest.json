@@ -2825,6 +2825,72 @@
       "limitations": [
         "No general suppression, ownership change or native differential validation. DAT resource identity confirmed; full historical DAT text not available."
       ]
+    },
+    {
+      "id": "spell.position.stop-defense",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Partial",
+      "resourceIds": [
+        319
+      ],
+      "mechanics": [
+        "Opponent face-up defense → face-up attack"
+      ],
+      "evidence": [
+        "src/Joey.Cards/PositionAndRemovalEffects.cs",
+        "src/Joey.Core/DemoQueuedTargetedMonsterSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/Joey.App/DuelScreen.cs"
+      ],
+      "limitations": [
+        "All hidden targets excluded until effect reveal/FLIP continuation exists, without leaking hidden identity."
+      ]
+    },
+    {
+      "id": "spell.position.block-attack",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1043
+      ],
+      "mechanics": [
+        "Opponent face-up attack → face-up defense",
+        "Forced change does not consume manual position change; Dream Clown trigger opens existing selection"
+      ],
+      "evidence": [
+        "src/Joey.Cards/PositionAndRemovalEffects.cs",
+        "src/Joey.Core/DemoQueuedTargetedMonsterSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/Joey.App/DuelScreen.cs"
+      ],
+      "limitations": [
+        "No chains or native differential validation."
+      ]
+    },
+    {
+      "id": "spell.targeted-de-spell",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Partial",
+      "resourceIds": [
+        1009
+      ],
+      "mechanics": [
+        "Destroy selected face-up Spell including FIELD via existing linked removal"
+      ],
+      "evidence": [
+        "src/Joey.Cards/PositionAndRemovalEffects.cs",
+        "src/Joey.Core/SpellTrapTargetRules.cs",
+        "src/Joey.Core/DemoQueuedTargetedSpellTrap.cs",
+        "src/Joey.Core/DemoActionQueue.cs"
+      ],
+      "limitations": [
+        "Set targets need reveal/classification/re-set without exposing hidden identity; not admitted in this slice."
+      ]
     }
   ]
 }

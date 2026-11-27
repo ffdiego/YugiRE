@@ -833,6 +833,12 @@ public sealed partial class DemoDuel
             if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
                 return skipDraw ? new(CommandOutcome.Applied, "Next Draw Phase skipped; target no longer eligible.") :
                     new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
+            if (Joey.Cards.PositionAndRemovalEffects.DesiredDefense(reserved.ResourceId) is bool defense)
+            {
+                queue.Enqueue(new ChangePositionByFlipCommand(resolve.Target.Side, resolve.Target, defense,
+                    FromPositionSpell: true));
+                return new(CommandOutcome.Applied);
+            }
             // Existing standalone DestroyMonster reserves live linked
             // consequences at execution, and opens deferred triggers only
             // after those commands drain. No replacement is selected.
@@ -2080,7 +2086,9 @@ public sealed partial class DemoDuel
                 duel.MonsterFaceDown[command.Side, slot] || duel.DefensePosition[command.Side, slot] == command.Defense)
                 return new(CommandOutcome.Skipped, "FLIP position target is no longer eligible.");
 
-            duel.CommitManualPosition(command.Side, slot, countsAsManualChange: false);
+            var change = duel.CommitManualPosition(command.Side, slot, countsAsManualChange: false);
+            if (command.FromPositionSpell)
+                duel.FinishManualPosition(change, resolveFlip: false, out _);
             return new(CommandOutcome.Applied);
         }
 

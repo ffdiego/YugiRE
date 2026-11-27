@@ -57,7 +57,8 @@ internal sealed record FinishJointDamageCommand(int Side) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
-internal sealed record ChangePositionByFlipCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+internal sealed record ChangePositionByFlipCommand(int Side, CardTarget Target, bool Defense,
+    bool FromPositionSpell = false) : DuelCommand(Side);
 public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false, bool FaceUpDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
