@@ -120,3 +120,25 @@ um despacho correspondente. Use o registro `selected` e a origem
 do manifesto para conferir a posição final. As omissões dependem
 dos bits de estado. Confira o encerramento em `reaction-end` e a
 desanexação no log.
+
+### 45 — V31, reação com duas falas em Proton
+
+Use o prefixo e o PID confirmados no roteiro 43. Anexe no menu e
+deixe a demonstração progredir. A reação com dois IDs apareceu
+depois de várias reações com um só ID no piloto. O roteiro usa
+quatro breakpoints de hardware e desanexa ao término do primeiro
+objeto observado com ID secundário diferente de zero.
+
+```bash
+timeout --signal=INT 190s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/45-wine-reaction-two-voices.gdb > scratch/reaction-two-voices-wine.log 2>&1
+```
+
+Confira que `first` solicita o primário no contador 8 e que
+`second` ocorre no mesmo contador do primeiro `primary-status`
+diferente de zero. O novo primário, o pedido e o secundário
+guardado em `expected` devem coincidir. O secundário deve estar
+zerado e o objeto ainda ativo nesse ponto. Confira uma promoção,
+objeto inativo em `reaction-end` e a confirmação de desanexação.
+Se o prazo expirar após registrar só reações sem segundo ID, a
+transição ficou sem amostra nesse duelo.

@@ -127,7 +127,7 @@ done
 test -n "$joey_test_pid"
 ```
 
-Use o PID confirmado nos [roteiros de regressão 41 a 44](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+Use o PID confirmado nos [roteiros de regressão 41 a 45](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
 O 41 lê três chamadas de cena. O 42 deve estar anexado antes do
 clique na pilha do cemitério e desanexa após o primeiro blit estável.
 Para o [43](../../scripts/regression/README.md#43--v31-quadrilátero-base-da-reação-em-proton),
@@ -137,6 +137,8 @@ os argumentos do Draw base e desanexa no término do objeto.
 Em uma nova execução da demonstração, o
 [44](../../scripts/regression/README.md#44--v31-camadas-da-reação-em-proton)
 registra a escolha e a posição das camadas de boca e olhos.
+O [45](../../scripts/regression/README.md#45--v31-reação-com-duas-falas-em-proton)
+aguarda uma reação com duas falas e registra a troca do ID ativo.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

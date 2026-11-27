@@ -406,3 +406,12 @@ ocorreu no contador 520 nesta execução, ante 504 no piloto anterior.
 Os demais seletores, a troca de fala e a comparação pareada do
 resultado composto continuam pendentes.
 [Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v313--camadas-da-reação-observadas-em-proton-2711).
+
+V31.4. O roteiro 45 observou uma reação com duas falas na
+demonstração em Proton. O pedido inicial saiu no contador 8.
+Após 108 consultas com retorno zero, a primeira consulta aceita
+promoveu e pediu a segunda fala no contador 880. O mesmo objeto
+foi desativado no contador 1520. A validação em Python conferiu a
+sequência e os campos do objeto. A alternância dos seletores de
+camada em outras reações e a comparação de pixels continuam pendentes.
+[Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v314--troca-de-fala-observada-em-proton-2711).

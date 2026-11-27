@@ -90,6 +90,28 @@ pilotos registram contadores finais distintos sob GDB. A composição
 em pixels, a cadência sem debugger e os demais ramos não foram medidos.
 [Roteiro 44](../../scripts/regression/README.md#44--v31-camadas-da-reação-em-proton).
 
+## V31.4 — troca de fala observada em Proton (27/11)
+
+O roteiro 45 acompanhou o mesmo objeto da primeira chamada de som
+até a desativação na demonstração do original, em Proton 9.0,
+Xvfb a 800×600 e llvmpipe. Em `0041797D`, no contador 8, o pedido
+foi `0x10000028` e o ID secundário era `0x1000002B`.
+
+Na inspeção do PE, `005C0490` retorna 1 pelo atalho de áudio
+desabilitado. Na captura, em `004179A5`, o retorno foi zero nos
+108 contadores de 16 a 872, em passos de 8. No contador 880, o
+primeiro retorno 1 precedeu o pedido em `004179BB` no mesmo Draw.
+Nesse ponto, o primário já era `0x1000002B`, o secundário estava
+zerado e o objeto continuava ativo. Em `004179F0`, ele terminou
+com o novo primário, contador 1520 e byte ativo zero. A comparação
+em Python confirmou os IDs, a ordem das consultas e uma única
+promoção. Os SHA-256 do original e da cópia conferiram após o piloto.
+
+Os contadores foram observados sob GDB. A captura confirma a
+transição e os pedidos, com a escuta e a cadência real ainda por
+validar. O chamador da invocação ficou fora deste traço.
+[Roteiro 45](../../scripts/regression/README.md#45--v31-reação-com-duas-falas-em-proton).
+
 ## Objetos distintos
 
 00402E00(reaction,sound): sound=0 não cria objeto; reaction=0 cria
