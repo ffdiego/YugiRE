@@ -93,6 +93,57 @@ class VisualFrameMatrixTests(unittest.TestCase):
                 self.assertIn("recovery.candidateUpdate", process.stderr)
         self.assertFalse(self.output.exists())
 
+    def test_compares_capture_fields_before_scoring_pixels(self):
+        (self.root / "reference.json").write_text(json.dumps({
+            "drawCounter": 18, "duelPhase": "Battle", "overlay": False,
+        }), encoding="utf-8")
+        for name, debug in (("candidate", False), ("incompatible", 0)):
+            (self.root / f"{name}.json").write_text(json.dumps({
+                "cardEffectUpdate": 16, "phase": "Battle", "debugVisible": debug,
+            }), encoding="utf-8")
+        pair = self.pair | {
+            "referenceMetadata": "reference.json",
+            "candidateMetadata": "candidate.json",
+            "referenceUpdate": "drawCounter",
+            "candidateUpdate": "cardEffectUpdate",
+            "stateFields": {"phase": ["duelPhase", "phase"], "debug": ["overlay", "debugVisible"]},
+        }
+        incompatible = pair | {"id": "mismatch", "candidateMetadata": "incompatible.json"}
+        process = self.run_matrix([incompatible, pair])
+        self.assertEqual(process.returncode, 1, process.stderr)
+        report = json.loads((self.output / "matrix-report.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["pairsIncomparable"], 1)
+        self.assertEqual(report["pairsOverLimit"], 0)
+        mismatch, match = report["pairs"]
+        self.assertEqual(mismatch["stateMismatches"], ["debug"])
+        self.assertIsNone(mismatch["report"])
+        self.assertIsNone(mismatch["mismatchedPixels"])
+        self.assertFalse((self.output / "mismatch").exists())
+        self.assertEqual(match["updateDelta"], -2)
+        self.assertEqual(match["mismatchedPixels"], 1)
+        self.assertEqual(match["captureMetadata"]["candidate"]["updateField"], "cardEffectUpdate")
+        self.assertTrue(match["stateChecks"]["phase"]["matches"])
+
+        invalid = pair | {"id": "missing", "candidateUpdate": "missingCounter"}
+        process = self.run_matrix([pair, invalid])
+        self.assertEqual(process.returncode, 2, process.stderr)
+        self.assertIn("missing.candidateUpdate", process.stderr)
+        process = self.run_matrix([incompatible | {"id": "only-mismatch"}])
+        self.assertEqual(process.returncode, 1, process.stderr)
+
+    def test_protects_metadata_from_output_overwrite(self):
+        capture = self.root / "capture.json"
+        original = json.dumps({"step": 16})
+        capture.write_text(original, encoding="utf-8")
+        self.output.mkdir()
+        os.link(capture, self.output / "matrix-report.json")
+        process = self.run_matrix([self.pair | {
+            "candidateMetadata": "capture.json", "candidateUpdate": "step",
+        }])
+        self.assertEqual(process.returncode, 2, process.stderr)
+        self.assertIn("Output would overwrite an input", process.stderr)
+        self.assertEqual(capture.read_text(encoding="utf-8"), original)
+
     def test_rejects_output_hard_linked_to_another_pairs_input(self):
         first_report = self.output / "impact" / "difference.png"
         first_report.parent.mkdir(parents=True)

@@ -150,6 +150,13 @@ acionamento também caía na captura genérica do duelo. O build e
 os testes da matriz passaram. A confirmação gráfica do atalho
 ficou pendente por timeout ao conectar ao display Xwayland isolado.
 
+V15.3 (27/11/2026). A matriz passou a ler contadores dos JSONs de
+captura e checar campos de estado antes de pontuar pixels. Com
+capturas locais do YugiRE, dois frames limpos ficaram idênticos
+e a comparação com debug ligado ficou sem pontuação. A suite
+da matriz e do comparador passou. Falta o par equivalente no
+original. [Formato dos pares](../../docs/research/visual-frame-comparison-2026-11-22.md#matriz-de-quadros-chave).
+
 ## V16 — Demais Draws do inventário
 
 <a id="v16"></a>

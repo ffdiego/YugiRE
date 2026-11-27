@@ -139,6 +139,36 @@ O limite de pixels da região é opcional e usa o mesmo limiar RGB do par.
 Uma região que excede seu limite faz o par falhar mesmo quando a diferença
 total está dentro do limite. Os retângulos no exemplo são ilustrativos.
 
+Quando as capturas tiverem JSONs de estado, o manifesto pode apontar para
+eles com `referenceMetadata` e `candidateMetadata`. Cada contador
+aceita um inteiro declarado ou o nome de um campo no JSON daquela captura.
+Os nomes em `stateFields` identificam os campos do nível superior, na
+ordem referência e candidato.
+
+```json
+{
+  "id": "example-impact-with-metadata",
+  "reference": "reference-impact.png",
+  "candidate": "candidate-impact.png",
+  "referenceMetadata": "reference-impact.json",
+  "candidateMetadata": "candidate-impact.json",
+  "referenceUpdate": "elapsedUpdates",
+  "candidateUpdate": "cardEffectUpdate",
+  "stateFields": {
+    "phase": ["duelPhase", "phase"],
+    "perspective": ["perspective", "playerPerspective"]
+  }
+}
+```
+
+Se os campos declarados divergem, o relatório indica quais deram
+diferença, deixa o par sem pontuação e segue com os outros pares.
+O processo retorna 1 quando houver um par nesse estado. Campo
+ausente ou contador inválido impede a comparação antes da primeira
+gravação. Use as mesmas unidades e a mesma origem para os contadores.
+A seleção dos campos e o vínculo de cada JSON com seu PNG continuam
+sob responsabilidade de quem monta o par.
+
 ```bash
 python -m unittest discover -s scripts/tests -p 'test_compare_visual_frame*.py' -v
 ```
