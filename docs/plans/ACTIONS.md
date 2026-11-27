@@ -478,3 +478,14 @@ infraestrutura cobrem identidade/slot, gate imediato/atrasado, direto,
 alvo revelado e oculto, resposta e cancelamento. CI pendente; falta
 comparador de atributos com pareamento explícito e primeiro cenário real.
 [Contrato](../architecture/duel-differential-policy.md#observações-c-no-cálculo-de-batalha).
+
+### A09.11 — Comparador de atributos de batalha
+
+`yugilab.compare_battle_calculations` recebe pares explícitos de sequência
+nativa 0x31 e sequência executada C#. Valida fontes, correlaciona atores
+pelo contrato A09.9 e compara com o snapshot A09.10, preservando lacunas,
+primeira diferença e prefixo. Não compara valores de atores distintos,
+não mapeia ocorrências entre engines nem presume equivalência por LP/ATK.
+Testes sintéticos cobrem ambos os lados, direto/com alvo, divergência de
+atributo/slot, erro, falta de amostra e integridade. CI pendente; primeiro
+cenário nativo equivalente continua em aberto. [Uso](../architecture/duel-differential-policy.md#comparação-de-atributos-de-batalha-pareados).

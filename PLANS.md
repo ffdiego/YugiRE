@@ -70,7 +70,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`. Ampliar o piloto para outros FLIPs, combatentes e contínuas; coordenar C12. [Detalhes](docs/plans/ACTIONS.md#a06)
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Parcial`. Completar turno/fases na fila e correlacionar dispatcher, bits de fase e rótulos. [Detalhes](docs/plans/ACTIONS.md#a07)
 - [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`. Iniciar imediatamente com regras puras e adaptadores; remover regras de cartas do Core por fatias sem dependência circular. [Detalhes](docs/plans/ACTIONS.md#a08)
-- [ ] **A09 — Laboratório diferencial de duelos.** Status: `Parcial`. Trace C# registra cálculo de batalha por ocorrência. Comparar atributos nativos e C# em pares explícitos e validar um duelo real equivalente. [Detalhes](docs/plans/ACTIONS.md#a09)
+- [ ] **A09 — Laboratório diferencial de duelos.** Status: `Parcial`. Comparador de atributos usa pares explícitos de cálculo. Validar um cenário nativo real equivalente, com decisões e contexto correlacionados. [Detalhes](docs/plans/ACTIONS.md#a09)
 
 ## Trilha CARDS
 
