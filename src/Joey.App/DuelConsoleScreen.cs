@@ -151,10 +151,9 @@ static partial class Game
         foreach (bool pass in new[] { false, true })
         {
             Card?[] monsters = flip ? [null, null, monster, null, null] : new Card?[5];
-            duel = DemoDuel.FromPartialObservation(0, [trap], new Card?[5], monsters, 8000,
-                side1Deck: [monster]);
+            duel = DemoDuel.FromPartialObservation(1, [monster], new Card?[5], monsters, 8000,
+                checkpoint: new(2, DrawTaken: true, Side0SetSpells: [trap, null, null, null, null]));
             if (flip) duel.MonsterFaceDown[1, 2] = duel.DefensePosition[1, 2] = true;
-            if (!duel.SetFromHand(0, out _) || !duel.EndTurn(out _) || !duel.Draw(out _)) return false;
             presentation.SetStyle(style);
             ResetDuelPresentation();
             labSession = new DuelConsoleSession(duel, new AppActionPresentationGate());
@@ -382,7 +381,8 @@ static partial class Game
         Card other = new(24, 24, "Other monster fixture", "", (3u << 20) | (4u << 25) | (200u << 9));
         Card?[] enemies = targeted ? [null, other, null, defender, null] : new Card?[5];
         DemoDuel Setup() => DemoDuel.FromPartialObservation(1, [], enemies,
-            [null, null, card, null, null], 8000);
+            [null, null, card, null, null], 8000,
+            checkpoint: new(2, DemoPhase.Battle, DrawTaken: true));
 
         bool Failed(string stage)
         {
@@ -391,7 +391,6 @@ static partial class Game
         }
 
         var headless = Setup();
-        if (!headless.BeginBattle(out _)) return Failed("headless phase");
         var headlessQueue = headless.CreatePrimitiveActionQueue();
         if (new CpuDuelController(1).Step(headless).Action != CpuAction.Attack)
             return Failed("headless admission");
@@ -404,7 +403,6 @@ static partial class Game
         foreach (DuelLookAndFeel style in new DuelLookAndFeel[] { new(), new InstantLookAndFeel() })
         {
             duel = Setup();
-            if (!duel.BeginBattle(out _)) return Failed("App phase");
             alphaCpu = new(1);
             alphaBlocked = false;
             cpuDelay = TimeSpan.Zero;

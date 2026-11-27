@@ -2,6 +2,12 @@ namespace Joey.Core;
 
 public enum DemoPhase { Main, Battle, End }
 
+/// <summary>Explicit observed setup, not a gameplay action or full save-state.
+/// Set cards here are assumed to have been set on an earlier turn.</summary>
+public sealed record DuelCheckpoint(int Turn, DemoPhase Phase = DemoPhase.Main,
+    bool DrawTaken = false, IReadOnlyList<Card?>? Side0SetSpells = null,
+    IReadOnlyList<Card?>? Side1SetSpells = null);
+
 public sealed record DemoMonsterDestruction(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
 /// <summary>A tribute paid as a normal-summon cost; distinct from destruction.</summary>
 public sealed record DemoMonsterTribute(int Player, int Zone, Card Card, bool FaceDown, bool Defense);
@@ -323,7 +329,8 @@ public sealed partial class DemoDuel
         IReadOnlyList<Card>? side1Deck = null,
         int effectShuffleSeed = 1979,
         IReadOnlyList<Card>? side0FusionDeck = null,
-        IReadOnlyList<Card>? side1FusionDeck = null)
+        IReadOnlyList<Card>? side1FusionDeck = null,
+        DuelCheckpoint? checkpoint = null)
     {
         if (activeSide is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(activeSide));
@@ -338,9 +345,17 @@ public sealed partial class DemoDuel
         if (activeHand.Any(card => card is null))
             throw new ArgumentException("Active hand must not contain null cards.", nameof(activeHand));
 
+        int turn = checkpoint?.Turn ?? activeSide + 1;
+        var phase = checkpoint?.Phase ?? DemoPhase.Main;
+        if (turn < 1 || (turn - 1) % 2 != activeSide ||
+            phase is not (DemoPhase.Main or DemoPhase.Battle) ||
+            phase == DemoPhase.Battle && turn == 1)
+            throw new ArgumentException("Checkpoint turn, side or phase is inconsistent.", nameof(checkpoint));
         var duel = new DemoDuel
         {
-            Turn = activeSide + 1,
+            Turn = turn,
+            Phase = phase,
+            drawn = checkpoint?.DrawTaken ?? false,
             equipmentContextResolved = equipmentContextResolved,
             effectRandom = new Random(effectShuffleSeed)
         };
@@ -357,6 +372,22 @@ public sealed partial class DemoDuel
             duel.Monsters[0, slot] = side0Monsters[slot] is Card a ? duel.NewOccurrence(a) : null;
             duel.Monsters[1, slot] = side1Monsters[slot] is Card b ? duel.NewOccurrence(b) : null;
         }
+        void LoadSetSpells(int side, IReadOnlyList<Card?>? setSpells)
+        {
+            if (setSpells is null) return;
+            if (setSpells.Count != 5 || setSpells.Any(c => c is not null && c.ClassCode is not (21 or 22 or 23)) ||
+                turn == 1 && setSpells.Any(c => c is not null))
+                throw new ArgumentException("Checkpoint requires five legal previously Set Spell/Trap slots.", nameof(checkpoint));
+            for (int slot = 0; slot < 5; slot++)
+            {
+                if (setSpells[slot] is not Card spell) continue;
+                duel.Spells[side, slot] = duel.NewOccurrence(spell);
+                duel.SpellFaceDown[side, slot] = true;
+                duel.spellSetTurn[side, slot] = turn - 1;
+            }
+        }
+        LoadSetSpells(0, checkpoint?.Side0SetSpells);
+        LoadSetSpells(1, checkpoint?.Side1SetSpells);
         duel.CheckExodia(activeSide);
         return duel;
     }
@@ -414,7 +445,7 @@ public sealed partial class DemoDuel
             ? GraveyardBanishSummonRules.Candidates(Hand[handIndex].Id, graves[ActivePlayer])
             : Array.Empty<CardSelectionCandidate>();
 
-    public bool SpecialSummonByGraveyardBanish(int handIndex, int zone,
+    internal bool SpecialSummonByGraveyardBanish(int handIndex, int zone,
         Card expectedHandCard, IReadOnlyList<CardSelectionCandidate> cost,
         bool defense, out string message)
     {
@@ -459,9 +490,9 @@ public sealed partial class DemoDuel
             (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
                 Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
     // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
-    public bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
+    internal bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
         Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
-    public bool SetFromHand(int index, out string message, IReadOnlyList<int>? tributes = null)
+    internal bool SetFromHand(int index, out string message, IReadOnlyList<int>? tributes = null)
     {
         message = "Set unavailable: choose a card in main phase with a free matching zone.";
         if (!CanSetFromHand(index)) return false;
@@ -478,7 +509,7 @@ public sealed partial class DemoDuel
         message = "Card set face-down in the leftmost free spell/trap zone.";
         return true;
     }
-    public bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null, bool faceDown = false)
+    internal bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null, bool faceDown = false)
     {
         message = "Choose an empty monster zone on the active player's side.";
         if (ActionsBlocked || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
@@ -571,7 +602,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    public bool Draw(out string message)
+    internal bool Draw(out string message)
     {
         message = "Draw available once per turn in main phase.";
         if (!CanDraw) return false;
@@ -608,7 +639,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    public bool Play(int index, out string message)
+    internal bool Play(int index, out string message)
     {
         message = "Choose a supported spell. Equipment needs a compatible face-up monster.";
         if (ActionsBlocked || Phase != DemoPhase.Main || index < 0 || index >= Hand.Count) return false;
@@ -675,7 +706,7 @@ public sealed partial class DemoDuel
         message = $"{card.Name}: LP changed (self {change.Value.CasterDelta}, opponent {change.Value.OpponentDelta}).";
         return true;
     }
-    public bool ActivateSetSpell(int zone, out string message)
+    internal bool ActivateSetSpell(int zone, out string message)
     {
         message = "This set card's activation is not implemented in the demo.";
         int p = ActivePlayer;
@@ -781,7 +812,7 @@ public sealed partial class DemoDuel
     /// field. Final resolution rechecks both occurrences before moving either.
     /// The same zone can be clicked again to deselect it.
     /// </summary>
-    public bool SelectFlipSpellTrapTarget(int player, int zone, out string message)
+    internal bool SelectFlipSpellTrapTarget(int player, int zone, out string message)
     {
         message = "No eligible FLIP Spell/Trap target is pending.";
         if (primitiveActionQueue?.IsBusy == true) return false;
@@ -916,7 +947,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    public bool ResolveSpellTrapTarget(int player, int zone, out string message)
+    internal bool ResolveSpellTrapTarget(int player, int zone, out string message)
     {
         message = "Choose an eligible Spell or Trap still in its original zone.";
         if (primitiveActionQueue?.IsBusy == true) return false;
@@ -1036,7 +1067,7 @@ public sealed partial class DemoDuel
             ? $" Opponent gained {effect.OpponentLifeGain} LP." : "");
     }
 
-    public bool ActivateSetFieldSpell(out string message)
+    internal bool ActivateSetFieldSpell(out string message)
     {
         message = "Only a set Field Spell in your own zone can activate during Main Phase.";
         int owner = ActivePlayer;
@@ -1066,7 +1097,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Sandbox removal hook; not a claim about native destruction timing.</summary>
-    public bool RemoveFieldSpell(int owner)
+    internal bool RemoveFieldSpell(int owner)
     {
         if (ActionsBlocked || owner is < 0 or > 1 || FieldSpells[owner] is null) return false;
         SendFieldSpellToGraveyard(owner);
@@ -1162,7 +1193,7 @@ public sealed partial class DemoDuel
             return NativeAiResult<bool>.Supported(false);
         return EquipmentRules.Eligibility(Hand[index].Id, DemoEquipmentTarget(targetPlayer, targetZone));
     }
-    public bool Equip(int index, int targetPlayer, int targetZone, out string message)
+    internal bool Equip(int index, int targetPlayer, int targetZone, out string message)
     {
         message = "Equipment needs a compatible face-up monster and a free own spell zone.";
         // Re-read the live target and hand at resolution, after UI selection. No mutation before validation.
@@ -1176,7 +1207,7 @@ public sealed partial class DemoDuel
         message = $"{card.Name} equipped."; return true;
     }
     /// <summary>Explicit sandbox removal, not an activation, native movement rule or trigger.</summary>
-    public bool RemoveEquipment(int owner, int sourceZone) =>
+    internal bool RemoveEquipment(int owner, int sourceZone) =>
         !ActionsBlocked && RemoveEquipmentCore(owner, sourceZone);
 
     // Cleanup from combat/returns is mandatory even while a duel is ending
@@ -1197,7 +1228,7 @@ public sealed partial class DemoDuel
     /// Sandbox hook for cards that reveal a monster by an external effect.
     /// It does not impose a Flip Summon or change its battle position.
     /// </summary>
-    public bool RevealMonsterByEffect(int player, int zone, out string message)
+    internal bool RevealMonsterByEffect(int player, int zone, out string message)
     {
         message = "The monster must be face-down on the field.";
         if (ActionsBlocked || player is < 0 or > 1 || zone is < 0 or >= 5 ||
@@ -1211,7 +1242,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    public bool ChangePosition(int zone, out string message)
+    internal bool ChangePosition(int zone, out string message)
     {
         message = "Change position in main phase, once per turn, after the monster's summon turn.";
         int owner = ActivePlayer;
@@ -1272,7 +1303,7 @@ public sealed partial class DemoDuel
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
     }
-    public bool BeginBattle(out string message)
+    internal bool BeginBattle(out string message)
     {
         message = "Battle unavailable on the opening turn or after game over.";
         if (!CanBeginBattle) return false;
@@ -1281,7 +1312,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    public bool EndBattle(out string message)
+    internal bool EndBattle(out string message)
     {
         message = "Battle Phase must be active and all decisions resolved.";
         if (ActionsBlocked || !AllowsBattlePhaseChange(enterBattle: false)) return false;
@@ -1310,7 +1341,7 @@ public sealed partial class DemoDuel
     /// Attack declaration and Battle Step response are distinct from damage
     /// calculation and the following Damage Step FLIP resolution.
     /// </summary>
-    public bool Attack(int source, int target, out string message)
+    internal bool Attack(int source, int target, out string message)
     {
         message = "Select an unused attacker and a valid enemy target in battle phase.";
         int p = ActivePlayer, enemy = 1 - p;
@@ -1366,7 +1397,7 @@ public sealed partial class DemoDuel
     /// Continue the *same* declared attack after Pass. Do not re-declare,
     /// consume a second attack or reopen the Mirror Force window.
     /// </summary>
-    public bool PassAttackResponse(out string message)
+    internal bool PassAttackResponse(out string message)
     {
         message = "No attack declaration is awaiting a response.";
         if (primitiveActionQueue?.IsBusy == true) return false;
@@ -1376,7 +1407,7 @@ public sealed partial class DemoDuel
         return ResolveDeclaredAttack(pending.Attack, out message);
     }
 
-    public bool ActivateAttackTrap(int owner, int zone, out string message)
+    internal bool ActivateAttackTrap(int owner, int zone, out string message)
     {
         message = "Choose an eligible set Trap in the attack response.";
         if (primitiveActionQueue?.IsBusy == true) return false;
@@ -1879,13 +1910,13 @@ public sealed partial class DemoDuel
     /// occurrence, never its catalog index. P168 with two copies has a
     /// separate atomic batch path.
     /// </summary>
-    public bool ResolveCardSelection(int sourceIndex, out string message) =>
+    internal bool ResolveCardSelection(int sourceIndex, out string message) =>
         ResolveCardSelection(sourceIndex, null, false, out message);
 
-    public bool ResolveCardSelection(int sourceIndex, int? destinationZone, out string message) =>
+    internal bool ResolveCardSelection(int sourceIndex, int? destinationZone, out string message) =>
         ResolveCardSelection(sourceIndex, destinationZone, false, out message);
 
-    public bool ResolveCardSelection(int sourceIndex, int? destinationZone, bool faceDownDefense,
+    internal bool ResolveCardSelection(int sourceIndex, int? destinationZone, bool faceDownDefense,
         out string message)
     {
         message = "Choose an eligible card in the pending source zone.";
@@ -1973,7 +2004,7 @@ public sealed partial class DemoDuel
     /// Accumulate source occurrence indices; no deck or field mutation occurs
     /// until Done (or the maximum is selected), then shuffle exactly once.
     /// </summary>
-    public bool SelectBatchCard(int sourceIndex, out string message)
+    internal bool SelectBatchCard(int sourceIndex, out string message)
     {
         message = "A multiple-card recruitment is not pending.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
@@ -1999,7 +2030,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Commit selected P168 same-name copies as a single transaction.</summary>
-    public bool FinishOptionalCardSelection(out string message)
+    internal bool FinishOptionalCardSelection(out string message)
     {
         message = "No multiple same-name recruitment is pending.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
@@ -2057,7 +2088,7 @@ public sealed partial class DemoDuel
         MonsterSpecialSummoned?.Invoke(new(owner, zone, card, faceDownDefense, faceUpDefense) { FusionMaterials = fusionMaterials });
     }
 
-    public bool SkipOptionalCardSelection(out string message)
+    internal bool SkipOptionalCardSelection(out string message)
     {
         message = "No optional card selection is pending.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleRemovalSelectionChoice) return false;
@@ -2107,7 +2138,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Pass the only response window, without spending either Trap.</summary>
-    public bool PassSummonResponse(out string message)
+    internal bool PassSummonResponse(out string message)
     {
         message = "No summon response is awaiting a decision.";
         if (primitiveActionQueue?.IsBusy == true) return false;
@@ -2118,7 +2149,7 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    public bool ActivateSummonTrap(int owner, int zone, out string message)
+    internal bool ActivateSummonTrap(int owner, int zone, out string message)
     {
         message = "Choose an eligible set Trap during a summon response.";
         if (primitiveActionQueue?.IsBusy == true) return false;
@@ -2264,7 +2295,7 @@ public sealed partial class DemoDuel
     /// Hane-Hane requires exactly one if any target is eligible. A monster
     /// already marked for battle destruction cannot be returned to hand.
     /// </summary>
-    public bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
+    internal bool ResolveFlipTarget(int targetPlayer, int targetZone, out string message)
     {
         message = "Choose an eligible monster in either monster zone.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice ||
@@ -2312,7 +2343,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Finish Penguin Soldier with zero or one selected target.</summary>
-    public bool FinishFlipTargets(out string message)
+    internal bool FinishFlipTargets(out string message)
     {
         message = "No optional FLIP target selection is pending.";
         if (primitiveActionQueue?.IsBusy == true || HasQueuedBattleTargetChoice) return false;
@@ -2474,8 +2505,8 @@ public sealed partial class DemoDuel
                 RemoveEquipmentCore(e.Owner, e.SourceZone);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
-    public void NextTurn() => EndTurn(out _);
-    public bool EndTurn(out string message)
+    internal void NextTurn() => EndTurn(out _);
+    internal bool EndTurn(out string message)
     {
         message = "The duel has ended.";
         if (ActionsBlocked || queuedEndTurn) return false;
@@ -2496,7 +2527,7 @@ public sealed partial class DemoDuel
         }
         return true;
     }
-    public bool DiscardForEndTurn(int index, out string message)
+    internal bool DiscardForEndTurn(int index, out string message)
     {
         message = "Select a hand card while resolving the end-phase hand limit.";
         if (ActionsBlocked || queuedEndTurn || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
@@ -2564,7 +2595,7 @@ public sealed partial class DemoDuel
     /// Consumes one optional cost request by stable ID; no UI dependency and no
     /// mutation on a stale request or invalid payment.
     /// </summary>
-    public bool ResolveEffectDecision(long id, EffectDecisionAnswer answer, out string message)
+    internal bool ResolveEffectDecision(long id, EffectDecisionAnswer answer, out string message)
     {
         message = "No matching optional effect decision is pending.";
         if (primitiveActionQueue?.IsBusy == true) return false;
