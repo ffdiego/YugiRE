@@ -53,6 +53,33 @@ internal static class DuelConsoleLabEditChecks
         check(Run("spawn 336 1 spell 0") == CommandOutcome.Applied && d.SpellFaceDown[1,0] &&
             Run("move 1 spell 0 hand") == CommandOutcome.Applied && d.HandFor(1).Single() == spell,
             "A04.2 setup spell moves without activation");
+        var coinResults=new List<LabCoinResult>();
+        var diceResults=new List<LabDiceResult>();
+        d.LabCoinResultReported+=coinResults.Add;
+        d.LabDiceResultReported+=diceResults.Add;
+        string beforeRandom=console.Execute("state").Message;
+        int traceBefore=console.Queue.Trace.Count;
+        check(!console.Execute("coin 0 10 2 0 0").Success &&
+              !console.Execute("coin 0 10 3 8 0").Success &&
+              !console.Execute("dice 1 11 6").Success &&
+              !console.Execute("dice 1 10 7").Success &&
+              console.Queue.Trace.Count==traceBefore,
+            "V20/V21: invalid diagnostic inputs reject before admission");
+        check(console.Execute("coin 0 2 3 5 1").Enqueued && coinResults.Count==0,
+            "V20: admission does not report the result");
+        Drain();
+        check(coinResults.SequenceEqual([new LabCoinResult(0,2,3,5,1)]) &&
+              Run("dice 1 7 6")==CommandOutcome.Applied &&
+              diceResults.SequenceEqual([new LabDiceResult(1,7,6)]) &&
+              console.Execute("state").Message==beforeRandom,
+            "V20/V21: deterministic reported results, no duel state mutation");
+        var ordinary=DuelConsoleSession.EmptyLabDuel();
+        ordinary.CreatePrimitiveActionQueue();
+        var attached=DuelConsoleSession.Attach(ordinary);
+        check(!attached.Execute("coin 0 0 1 1 0").Success &&
+              !attached.Execute("dice 0 0 1").Success &&
+              attached.Queue.Trace.Count==0,
+            "V20/V21: attaching console cannot authorize lab commands");
         check(console.Execute("state").Message.Contains("#" + first.Occurrence.Value),
             "A04.2 state includes physical identity");
     }

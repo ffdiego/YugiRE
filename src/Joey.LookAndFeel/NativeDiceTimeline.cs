@@ -48,6 +48,7 @@ public sealed class NativeDiceTimeline
     public const uint BounceSound = 0x1000001c;
     public int Counter { get; private set; } = StartCounter;
     public bool Active => Counter < EndCounter;
+    public bool BlocksRelease => Active; // vtable +4, 00403080
     public CardPoint Center { get; private set; }
     public int NativeIndex { get; }
 

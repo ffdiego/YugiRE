@@ -3,6 +3,8 @@ namespace Joey.Core;
 public sealed partial class DemoDuel
 {
     private ActionQueue? primitiveActionQueue;
+    public event Action<LabCoinResult>? LabCoinResultReported;
+    public event Action<LabDiceResult>? LabDiceResultReported;
     internal bool HasActionQueue => primitiveActionQueue is not null;
     internal bool ActionQueueBusy => primitiveActionQueue?.IsBusy == true;
 
@@ -514,6 +516,13 @@ public sealed partial class DemoDuel
             {
                 case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
                 case LabMoveCommand move: return duel.ExecuteLabMove(move);
+                case LabCoinResultCommand coin:
+                    duel.LabCoinResultReported?.Invoke(coin.Result);
+                    return new(CommandOutcome.Applied,
+                        $"region={coin.Result.Region}; count={coin.Result.Count}; bits={coin.Result.Bits}; highlight={coin.Result.Highlight}");
+                case LabDiceResultCommand die:
+                    duel.LabDiceResultReported?.Invoke(die.Result);
+                    return new(CommandOutcome.Applied, $"region={die.Result.Region}; index={die.Result.Index}");
                 case DeclareDirectAttackCommand attack:
                     return duel.ExecuteQueuedDirectAttack(attack, followups);
                 case DeclareTargetedAttackCommand attack:

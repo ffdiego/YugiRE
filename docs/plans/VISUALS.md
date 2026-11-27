@@ -370,14 +370,14 @@ Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 
 <a id="v20"></a>
 
-Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. NativeCoinPassLayout recupera keys 0/1/2, recortes de giro/sombra, âncoras, halo e fade global, sinaliza ramo scratch/reflexo; SQLite v3 confirma coin.txt (14/4 divisores) e dimensões dos seis assets. NativeCoinResources e --review-coin=COUNT,BITS,X,Y,HIGHLIGHT renderizam passes 0/1/2 isoladamente com captura F12; NativeCoinExtraLayout confirma brilho key5 (cinco fases) e plano de scratch 3/4; review desenha brilho, exporta plano de reflexo sem inventar máscara. Remap, +94/+A0, composição nativa e integração A03 pendentes. Não contar revisão como Draw no duelo. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
+Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. NativeCoinPassLayout recupera keys 0/1/2, recortes de giro/sombra, âncoras, halo e fade global, sinaliza ramo scratch/reflexo; SQLite v3 confirma coin.txt (14/4 divisores) e dimensões dos seis assets. NativeCoinResources e --review-coin=COUNT,BITS,X,Y,HIGHLIGHT renderizam passes 0/1/2 isoladamente com captura F12; NativeCoinExtraLayout confirma brilho key5 (cinco fases) e plano de scratch 3/4; review desenha brilho, exporta plano de reflexo sem inventar máscara. Remap, +94/+A0 e composição nativa pendentes. Ponte A03 exercitada pelo console lab (coin), sem produtor de carta ou RNG; não contar como gameplay real. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas brutas E0/E1 (índices 8E/8F) confirmadas por coleta 29; corrigido NativeEffectCommandRouting e testes. Produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md); [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md).
 
 ## V21 — Banco dice (00456B90)
 
 <a id="v21"></a>
 
-Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT. Remap/blend e integração A03 pendentes; não contar review como gameplay. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
+Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT. Remap/blend pendentes; ponte A03 pelo console lab (dice) com Draw cacheado por contador, sem produtor de carta; não contar como gameplay real. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas brutas E2/E3/E4 (índices 90/91/92) confirmadas por coleta 29; produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md).
 
 ## V22 — Remoção break (00450FD0)
