@@ -1144,10 +1144,26 @@ public sealed partial class DemoDuel
                     unchecked(sum.Defense + contribution.Delta.Defense));
                 continue;
             }
+            if (Joey.Cards.EquipmentEffects.For(e.Card.Id) is { } definition)
+            {
+                sum = new(sum.Attack + definition.Attack, sum.Defense + definition.Defense);
+                continue;
+            }
             if (e.Card.Id == EquipmentRules.FairyMeteorCrush) continue;
             var delta = NativeAiAttributes.EquipmentDelta(e.Card.Id, stats, monster.Id);
             if (!delta.IsSupported) throw new InvalidOperationException("Unsupported equipment in demo link list");
             sum = new(unchecked(sum.Attack + delta.Value.Attack), unchecked(sum.Defense + delta.Value.Defense));
+        }
+        // Global effects are derived from live links, never from a detached
+        // card or a cached modifier. This includes the equipped WATER monster.
+        foreach (var e in equipment)
+        {
+            if (!ReferenceEquals(Spells[e.Owner, e.SourceZone], e.Card) ||
+                SpellFaceDown[e.Owner, e.SourceZone] ||
+                !ReferenceEquals(Monsters[e.TargetPlayer, e.TargetZone], e.TargetCard) ||
+                MonsterFaceDown[e.TargetPlayer, e.TargetZone]) continue;
+            sum = new(sum.Attack + Joey.Cards.EquipmentEffects.GlobalAttackDelta(
+                e.Card.Id, stats.AttributeCode), sum.Defense);
         }
         // Field Spell is a separate global modifier, not an equipment link.
         // Do not cache: activation, replacement or removal changes stats immediately.

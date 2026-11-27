@@ -28,6 +28,25 @@ O manifesto é a fonte de status atual; as tabelas antigas abaixo registram esco
 
 IDs conferidos no SQLite cumulativo v3 e índice de packs; efeitos a partir do texto conhecido das cartas e contratos existentes, sem ler o DAT integral nem afirmar paridade. Restructer Revolution (1039) e Just Desserts (1032) constam nas identidades mas não nos packs; não implementadas neste lote. Traps não são acionáveis fora do recorte Main própria até ACTIONS fornecer janela de resposta geral.
 
+## Lote CARDS — equipamentos aditivos
+
+`Joey.Cards/EquipmentEffects.cs` define os modificadores por resource ID; o vínculo e remoção permanecem na fila existente. IDs conferidos em card_identities (SQLite cumulativo v3) e pack-index. Texto completo do DAT indisponível; comportamento histórico assumido.
+
+| ID | Efeito implementado | Estado / lacuna |
+| --- | --- | --- |
+| 303 | Axe of Despair: +1000 ATK | Partial — Optional Tribute to return the card from Graveyard to top of Deck |
+| 310 | Black Pendant: +500 ATK | Partial — 500 damage when sent from field to Graveyard |
+| 312 | Horn of Light: +800 DEF | Partial — Optional 500 LP payment for return to top of Deck |
+| 313 | Horn of the Unicorn: +700 ATK/DEF | Partial — Mandatory return to top of Deck when sent from field to Graveyard |
+| 320 | Malevolent Nuzzler: +700 ATK | Partial — Optional 500 LP payment for return to top of Deck |
+| 1042 | Sword of Deep-Seated: +500 ATK/DEF | Partial — Mandatory top-of-Deck placement when sent to Graveyard |
+| 1058 | Ring of Magnetism: -500 ATK/DEF | Partial — restrição de alvo próprio aplicada, falta redirecionar ataques |
+| 1182 | Sword of Dragon's Soul: Warrior +700 ATK | Partial — Destroy opposing Dragon after battle |
+| 1420 | Mask of Brutality: +1000 ATK / -1000 DEF | Partial — Standby LP maintenance or destruction |
+| 1422 | Lightning Blade: Warrior +800 ATK; all face-up WATER monsters -500 ATK | Done (sandbox) |
+
+CPU não ativa os nove equipamentos Partial por enquanto; jogador e console podem usar o recorte. Lightning Blade recalcula o efeito global de cada vínculo válido, sem gravar ATK na carta. 7 Completed, Stim-Pack, Snatch Steal e equipamentos de transformação, manutenção dinâmica e controle ficam para fatias próprias. Não há promoção a Verified.
+
 ## Inventário atual (sem extrapolar números do DAT)
 
 | Família / mecânica | Estado atual | Evidência de implementação | Limitação principal |

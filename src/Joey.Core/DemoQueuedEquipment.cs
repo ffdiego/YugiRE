@@ -68,6 +68,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(source, out sourceIndex, out card) ||
             !TryResolveCardTarget(target, out targetIndex, out monster) ||
             card.ClassCode != 22 || !monster.IsMonster ||
+            card.Id == 1058 && target.Side != source.Side ||
             EquipmentRules.QueuedEligibility(card.Id, DemoEquipmentTarget(target.Side, targetIndex))
                 is not { IsSupported: true, Value: true }) return false;
 
