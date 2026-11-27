@@ -13,10 +13,46 @@ using System.Text.Json;
 static class VisualManifestProbe
 {
     private const int MaxManifestBytes = 8192;
+    private const string HelpPrefix = @"j\duel\help\";
 
     private sealed record ManifestRecord(string Name, int Bytes, string Latin1, string Hex);
     private sealed record ImageRecord(string Name, uint StoredBytes, uint DecodedBytes,
         int? Width, int? Height, string? Sha256, string? Error);
+    private sealed record HelpRequest(int Key, string Pattern, string[] MissingLanguages,
+        ImageRecord[] Variants);
+
+    private static HelpRequest[]? InspectHelpBank(IEnumerable<ManifestRecord> manifests,
+        IEnumerable<ImageRecord> images)
+    {
+        var manifest = manifests.FirstOrDefault(record =>
+            record.Name.Equals(HelpPrefix + "help.txt", StringComparison.OrdinalIgnoreCase));
+        if (manifest is null) return null;
+        var lookup = images.Where(image => image.Name.StartsWith(HelpPrefix, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(image => image.Name, StringComparer.OrdinalIgnoreCase);
+        var requests = new List<HelpRequest>();
+        foreach (var line in manifest.Latin1.Split('\n'))
+        {
+            // The original loader treats nonempty manifest rows as indexed
+            // entries. Comments contain non-ASCII bytes and have no key.
+            string pattern = line.Split("//", 2)[0].Trim();
+            if (pattern.Length == 0) continue;
+            if (!pattern.EndsWith("_?.yga", StringComparison.OrdinalIgnoreCase) ||
+                pattern.Count(c => c == '?') != 1 || pattern.IndexOfAny(['/', '\\', ':']) >= 0 ||
+                pattern.Any(char.IsWhiteSpace))
+                throw new InvalidDataException("Invalid help manifest resource pattern: " + pattern);
+
+            var variants = new List<ImageRecord>();
+            var missingLanguages = new List<string>();
+            foreach (char language in "efgijs")
+            {
+                var resource = HelpPrefix + pattern.Replace('?', language);
+                if (lookup.TryGetValue(resource, out var image)) variants.Add(image);
+                else missingLanguages.Add(language.ToString());
+            }
+            requests.Add(new(requests.Count, pattern, [..missingLanguages], [..variants]));
+        }
+        return [..requests];
+    }
 
     public static int Export(Archive archive, string outputPath = "scratch/visual-review/dat-manifests.json")
     {
@@ -80,7 +116,8 @@ static class VisualManifestProbe
             source = "data.dat original — manifest text and graphics metadata only",
             archiveEntries = archive.Entries.Count,
             manifests,
-            images
+            images,
+            helpRequests = InspectHelpBank(manifests, images)
         };
 
         string? folder = Path.GetDirectoryName(outputPath);

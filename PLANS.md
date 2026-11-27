@@ -143,7 +143,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Remap/blend e integração A03; não disparar em todo banimento. [Detalhes](docs/plans/VISUALS.md#v26)
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
-- [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Ligar produtores ao Draw real; modelo isolado não conta. [Detalhes](docs/plans/VISUALS.md#v29)
+- [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Banco DAT e resolvedor padrão confirmados. Validar o compositor e ligar os produtores à apresentação. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
 - [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Posição, compositor, Update/Draw e gate do bust-up. [Detalhes](docs/plans/VISUALS.md#v31)
 

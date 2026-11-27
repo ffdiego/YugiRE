@@ -241,6 +241,8 @@ Modelo Draw de entrada/saída condicionado a 005BDAD0/0044BA10, modo 3; revisão
 
 Roteiro 19 recebido no SQLite v2: NativeHelpTimeline porta request por update, gates, identidade 0x3FFF, escala vertical em 4 updates, clamps e âncora contextual. NativeHelpMailbox e NativeHelpProducers portam last-write-wins e precedência de requests de posição, batalha, hover, invocação normal e custo (decompilação dos produtores; não duplicam regras). Faltam textos/remap dos IDs, manifest help.txt, resolução/medidas DAT, compositor +4C e integração de apresentação. Não repetir coleta 19; não contar modelo isolado como Draw. [Contrato](../../docs/research/native-layerfont-help-2026-11-24.md).
 
+V29.2 (27/11/2026). A inspeção do DAT passou a listar as 24 chaves da ajuda contextual por ordem do manifesto, com as dimensões e os idiomas disponíveis por chave. O resolvedor padrão passa o índice adiante sem alteração. Os cinco bancos ocidentais estão completos e oito variantes japonesas estão ausentes. Faltam compositor, entrega do contexto e validação no original. [Banco e resolvedor](../../docs/research/native-layerfont-help-2026-11-24.md#v292--banco-de-ajuda-e-resolvedor-padrão).
+
 ## V30 — Vija / Destiny Board (004584C0)
 
 <a id="v30"></a>

@@ -114,6 +114,33 @@ Não criar mensagens por aproximação nem ligar ao Core por nome.
 A Draw segue Pending no inventário; V29 é Partial (modelo isolado).
 Sem fila paralela, sem gate de conclusão.
 
+### V29.2 — banco de ajuda e resolvedor padrão
+
+Em 27/11, o manifesto de 1.119 bytes e os metadados de imagem
+foram conferidos no SQLite v8 e no DAT local. O manifesto tem
+24 linhas de recursos em ordem, de `help01_?.yga` a
+`help24_?.yga`. O campo após `//` é comentário. O construtor
+`0045E28B` chama `00549520` para o subobjeto em `+1C`.
+`005495B6` instala a vtable `005DC9F4` no resolvedor padrão
+e `005495CD` guarda essa instância em `+50` do subobjeto.
+O slot zero de `005DC9F4` é `0043A5D0`, cujo único
+comando é `RET 4`. Assim, a chamada de `0045E53F` com um
+ponteiro para o índice deixa o valor intacto nesse caminho.
+`0045E541…0045E564` usa o índice resultante para carregar e
+buscar a entrada da lista, com stride de oito bytes.
+
+O relatório `--inspect-visual-dat` lista esse índice no campo
+`helpRequests`. Por exemplo, o seletor `09` é a décima linha
+(`help10_?.yga`) e `17h` é a última (`help24_?.yga`).
+Estão presentes 136 YGAs, com 24 variantes para cada sufixo
+`e/f/g/i/s` e 16 para `j`. O DAT omite `help17_j` a
+`help24_j`. O relatório sinaliza a ausência e guarda
+dimensões e erros de decodificação dos recursos encontrados.
+As variantes inglesas medem de 164 a 250 pixels de largura
+e todas têm altura 38. A comparação cobre a ordem, o
+resolvedor padrão e os metadados do banco. A substituição efetiva
+de idioma e a composição em tela aguardam observação no original.
+
 ## A03
 
 Draw-driven != Update-driven. A03 continua dona da ponte,
