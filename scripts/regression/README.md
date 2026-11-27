@@ -99,3 +99,24 @@ superfícies e 63 chamadas base com contador de 8 a 504, em passos de
 8. O log deve terminar com `reaction-end` e a confirmação de
 desanexação. O manifesto encontrado e o contador final podem variar
 conforme a reação. O recorte mede argumentos e contadores do processo.
+
+### 44 — V31, camadas da reação em Proton
+
+Use o mesmo cenário e a mesma identificação de PID do roteiro 43,
+em uma nova execução da demonstração. O roteiro seleciona uma reação
+cujo primeiro cabeçalho é 1 no contador 8. Ele registra os dois
+despachos, suas variantes, as posições nos slots `+0C` e `+4C` e o
+término. Usa quatro breakpoints de hardware.
+
+```bash
+timeout --signal=INT 115s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/44-wine-reaction-overlays.gdb > scratch/reaction-overlays-wine.log 2>&1
+```
+
+O piloto capturou as duas variantes da boca e dos olhos de
+`reaction07.txt` no slot `+0C`. Confira que o primeiro despacho
+precede o segundo no mesmo contador e que cada linha `layer` tem
+um despacho correspondente. Use o registro `selected` e a origem
+do manifesto para conferir a posição final. As omissões dependem
+dos bits de estado. Confira o encerramento em `reaction-end` e a
+desanexação no log.

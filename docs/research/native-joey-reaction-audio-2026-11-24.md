@@ -60,6 +60,36 @@ cadência em tempo real. Ainda faltam os outros passes, o caminho de
 duas falas e a comparação de pixels com o cliente.
 [Roteiro 43](../../scripts/regression/README.md#43--v31-quadrilátero-base-da-reação-em-proton).
 
+## V31.3 — camadas da reação observadas em Proton (27/11)
+
+A coleta 35 no SQLite v14 contém o trecho `00416D4C..004171BF`.
+A inspeção da tabela `00417A10` e do trecho `00417947..00417971`
+no PE com o mesmo SHA-256 completou a leitura do despacho. Após o
+quadrilátero base, o Draw processa duas posições de grupo, em ordem.
+A soma de três registros avança do grupo com primeiro candidato 6
+para o grupo com primeiro candidato 9 (índices a partir de zero). O
+cabeçalho é o registro imediatamente anterior. Seu resto por 1000
+seleciona o ramo.
+
+Para os cabeçalhos 1 e 2, o assembly em `00416D8E..00416DE3`
+indexa os deslocamentos −1, 0, 1, 0 pelos bits 1–2 do estado em
+`005F2FB4`. O deslocamento negativo omite a camada. O cabeçalho 2
+também a omite quando a máscara `0x18` do estado está ativa.
+Nesses dois casos o quociente do cabeçalho por 1000 é zero, levando
+ao slot de desenho `+0C` em `00416EDE`. A posição do candidato
+selecionado é somada à origem do manifesto.
+
+O roteiro 44 confirmou a ordem em 65 Draws do mesmo objeto. Dos 130
+despachos, 60 chegaram a `+0C`. O grupo 6 desenhou os registros 6
+e 7 em (572,264), 32 e 16 vezes. O grupo 9 desenhou os registros 9
+e 10 em (541,219), 8 e 4 vezes. Os cabeçalhos e as posições
+corresponderam unicamente a `reaction07.txt` no DAT. A comparação
+em Python confirmou a variante ou a omissão em cada despacho
+registrado. O objeto ficou inativo no contador 520. Os logs dos dois
+pilotos registram contadores finais distintos sob GDB. A composição
+em pixels, a cadência sem debugger e os demais ramos não foram medidos.
+[Roteiro 44](../../scripts/regression/README.md#44--v31-camadas-da-reação-em-proton).
+
 ## Objetos distintos
 
 00402E00(reaction,sound): sound=0 não cria objeto; reaction=0 cria

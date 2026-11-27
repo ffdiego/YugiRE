@@ -397,3 +397,12 @@ contador 8 ao 504, quando o objeto foi desativado. O SHA-256 da
 cópia e do original foi conferido após a execução. Faltam os passes
 adicionais, o caminho de duas falas e a comparação pareada com o cliente.
 [Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v312--quadrilátero-base-observado-em-proton-2711).
+
+V31.3. Na demonstração em Proton, o roteiro 44 registrou as camadas
+da boca e dos olhos de `reaction07.txt`. As quatro variantes e a
+ordem dos dois grupos foram observadas, com as posições conferidas
+no DAT e as omissões conferidas com o seletor do assembly. O término
+ocorreu no contador 520 nesta execução, ante 504 no piloto anterior.
+Os demais seletores, a troca de fala e a comparação pareada do
+resultado composto continuam pendentes.
+[Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v313--camadas-da-reação-observadas-em-proton-2711).
