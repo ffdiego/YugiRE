@@ -69,7 +69,7 @@ mkdir -p "$game_dir"
 cp --reflink=auto -- "$joey_source"/{joey_pc.exe,data.dat,Region.dat,Voice.dat} "$game_dir/"
 "$wine" reg.exe add 'HKCU\Software\KONAMI\Yu-Gi-Oh! Power Of Chaos' \
   /v InstallDirJ /t REG_SZ /d 'C:\joey' /f >>"$run/wineboot.log" 2>&1
-joey_args=()  # Use joey_args=(-speedy) na sessão de comparação.
+joey_args=()  # Use joey_args=(-speedy) ou joey_args=(-nosound) na sessão correspondente.
 (cd "$game_dir" && exec "$wine" joey_pc.exe "${joey_args[@]}") >"$run/game.log" 2>&1 &
 game_pid=$!
 printf 'Sessão: %s\nLauncher PID: %s\n' "$run" "$game_pid"
@@ -149,6 +149,8 @@ observa a saída no servidor X por dez segundos sem anexar ao processo.
 Os [49 e 50](../../scripts/regression/README.md#49-e-50--v05-atributos-no-campo-em-proton)
 registram os argumentos dos números de ATK/DEF e a cor-chave
 do atlas no executável.
+O [51](../../scripts/regression/README.md#51--v31-reação-com-áudio-desativado-em-proton)
+verifica o término da reação com `-nosound`.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

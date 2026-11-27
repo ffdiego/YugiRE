@@ -454,3 +454,9 @@ foi desativado no contador 1520. A validação em Python conferiu a
 sequência e os campos do objeto. A alternância dos seletores de
 camada em outras reações e a comparação de pixels continuam pendentes.
 [Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v314--troca-de-fala-observada-em-proton-2711).
+
+V31.5. No original iniciado com `-nosound`, o flag de áudio ficou
+zerado e uma reação de fala única foi desativada no contador 256.
+O assembly confirma que, nesse modo, o predicado de áudio deixa
+passar o primeiro Draw que atinge o limiar.
+[Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v315--término-com-áudio-desativado).

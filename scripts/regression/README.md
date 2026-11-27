@@ -239,3 +239,21 @@ variação em relação ao valor de catálogo. O campo
 Para a prova de pixels, use uma captura com um valor em
 intensidade 256 e confronte os pixels do glifo, fora da
 cor-chave, com o DAT em RGB565.
+
+### 51 — V31, reação com áudio desativado em Proton
+
+No [guia de Proton](../../docs/research/joey-proton-validation.md),
+inicie a sessão com `joey_args=(-nosound)`. Confirme o PID, anexe
+no menu e deixe a demonstração progredir.
+
+```bash
+timeout --signal=INT 197s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/51-wine-reaction-nosound.gdb > scratch/reaction-nosound.log 2>&1
+```
+
+Confira `audio-enabled=0`, o primeiro pedido no contador 8
+e a desativação no contador 256. O roteiro separa a primeira
+reação de uma fala da primeira com duas e desanexa após
+amostrar as duas. Para a segunda, confira o retorno do
+predicado e o contador da troca. Se o prazo terminar com
+apenas `single-end`, a amostra cobre só o caso de uma fala.

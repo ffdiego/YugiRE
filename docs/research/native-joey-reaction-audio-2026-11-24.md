@@ -112,6 +112,31 @@ transição e os pedidos, com a escuta e a cadência real ainda por
 validar. O chamador da invocação ficou fora deste traço.
 [Roteiro 45](../../scripts/regression/README.md#45--v31-reação-com-duas-falas-em-proton).
 
+## V31.5 — término com áudio desativado
+
+O parser do EXE em `00411C46` marca a opção `-nosound`.
+Em `00410F8C..00410FA0`, a flag impede a inicialização do
+áudio. O predicado `005C0490` retorna 1 imediatamente
+quando `00A53878` está zerado. Assim, o término já pode
+ocorrer no primeiro Draw com contador ≥256. O Update
+incrementa de 8 em 8, o que corresponde a 32 avanços
+quando a reação começa em zero e segue sem pausas.
+
+O roteiro 51 confirmou o flag em zero no Proton com
+`-nosound`. O pedido de uma reação de fala única apareceu
+em `0041797D` no contador 8, e o objeto foi desativado no
+contador 256. O prazo da coleta terminou sem uma amostra
+de duas falas nesse modo. Com áudio ativo, o roteiro 45 já havia
+observado o objeto de duas falas aguardar os dois pedidos
+e terminar em 1520 naquela execução.
+
+A duração consultada em `00416B80` alimenta os seletores
+de camada e tem um fallback próprio de 32. Já a
+desativação do objeto depende do limiar 256 e do estado
+de reprodução. Os testes usam a opção de inicialização.
+O ajuste de volume durante a sessão não foi exercitado.
+[Roteiro 51](../../scripts/regression/README.md#51--v31-reação-com-áudio-desativado-em-proton).
+
 ## Objetos distintos
 
 00402E00(reaction,sound): sound=0 não cria objeto; reaction=0 cria
