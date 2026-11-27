@@ -379,9 +379,16 @@ public sealed partial class DuelConsoleSession
             !duel.TryCaptureCardTarget(side, targetZone, slot, out var target))
             return new(false, "Choose a tracked source and target.");
 
-        bool enqueued = targetZone == DuelZone.Monster
-            ? duel.TryQueueTemporaryStatModifier(source, target, out string message, ActionOrigin.Console)
-            : duel.TryQueueTargetedSpellTrap(source, target, out message, ActionOrigin.Console);
+        bool enqueued;
+        string message;
+        if (targetZone == DuelZone.Monster)
+        {
+            var card = fromSet ? duel.Spells[duel.ActivePlayer, index] : duel.Hand[index];
+            enqueued = card is not null && TargetedMonsterSpellRules.Supports(card)
+                ? duel.TryQueueTargetedMonsterSpell(source, target, out message, ActionOrigin.Console)
+                : duel.TryQueueTemporaryStatModifier(source, target, out message, ActionOrigin.Console);
+        }
+        else enqueued = duel.TryQueueTargetedSpellTrap(source, target, out message, ActionOrigin.Console);
         return new(enqueued, message, enqueued);
     }
 

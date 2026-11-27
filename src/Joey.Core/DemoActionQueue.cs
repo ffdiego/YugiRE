@@ -100,7 +100,7 @@ public sealed partial class DemoDuel
         card.ClassCode == 22 &&
         (DrawSpellRules.SupportsQueued(card) || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
-         SpellTrapWipeRules.SupportsQueued(card.Id));
+         SpellTrapWipeRules.SupportsQueued(card.Id) || IsRevivalSpell(card));
 
     /// <summary>Read-only UI/CPU admission query. Reuses the same source and target
     /// validators as the producer; does not reserve, spend or enqueue a card.</summary>
@@ -114,6 +114,7 @@ public sealed partial class DemoDuel
             return false;
         if (FieldSpellRules.Supports(card.Id)) return TryPlanFieldActivation(source, out _);
         if (SupportsQueuedContinuousSpell(card)) return CanActivateContinuousSpell(source, out _);
+        if (IsRevivalSpell(card)) return CanResolveRevivalSpell(source);
         if (DrawSpellRules.SupportsQueued(card))
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -141,6 +142,7 @@ public sealed partial class DemoDuel
             return TryQueueFieldSpellActivation(zone,index,out message,origin);
         if (card.ClassCode != 22 && !(card.ClassCode == 21 &&
             (DrawSpellRules.SupportsQueued(card) || LifePointSpellRules.SupportsQueued(card)))) return false;
+        if (IsRevivalSpell(card)) return TryQueueRevivalSpell(source, out message, origin);
         if (DrawSpellRules.SupportsQueued(card))
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -371,6 +373,8 @@ public sealed partial class DemoDuel
                 return ResolveDeckSearch(search, followups);
             if (command is FinishDeckSearchCommand finishSearch)
                 return FinishDeckSearch(finishSearch.Side);
+            if (command is OpenGraveyardRevivalSpellCommand openRevivalSpell)
+                return OpenRevivalSpell(openRevivalSpell);
             if (command is ResolveGraveyardRevivalCommand revival)
                 return ResolveGraveyardRevival(revival, followups);
             if (command is ResolveGraveyardRecoveryCommand recovery)
@@ -572,6 +576,8 @@ public sealed partial class DemoDuel
                     return ActivateTemporaryStat(temporaryStat, followups);
                 case ResolveTemporaryStatCommand temporaryStatResult:
                     return ResolveTemporaryStat(temporaryStatResult);
+                case ActivateGraveyardRevivalSpellCommand reviveSpell:
+                    return ActivateRevivalSpell(reviveSpell, followups);
                 case ActivateDrawSpellCommand drawSpell:
                     return ActivateDrawSpell(drawSpell, followups);
                 case ActivateDiscardMonsterSpellCommand paidSpellActivation:
@@ -684,6 +690,7 @@ public sealed partial class DemoDuel
             if (ritualSummon?.Spell == target) ritualSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (temporaryStatActivation?.Source == target)
                 temporaryStatSourceSpent = result.Outcome == CommandOutcome.Applied;
+            if (revivalSpellSource == target) revivalSpellSpent = result.Outcome == CommandOutcome.Applied;
             if (drawSpellSource == target) drawSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (searchSpellSource == target) searchSpellSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (targetedMonsterSpell is { } paidSpell && paidSpell.Source == target)
@@ -833,6 +840,12 @@ public sealed partial class DemoDuel
             if (!duel.IsMonsterSpellChoice(reserved.ResourceId,reserved.Source.Side,resolve.Target))
                 return skipDraw ? new(CommandOutcome.Applied, "Next Draw Phase skipped; target no longer eligible.") :
                     new(CommandOutcome.Skipped, "Selected occurrence or effect criterion no longer valid.");
+            if (Joey.Cards.PositionAndRemovalEffects.DesiredDefense(reserved.ResourceId) is bool defense)
+            {
+                queue.Enqueue(new ChangePositionByFlipCommand(resolve.Target.Side, resolve.Target, defense,
+                    FromPositionSpell: true));
+                return new(CommandOutcome.Applied);
+            }
             // Existing standalone DestroyMonster reserves live linked
             // consequences at execution, and opens deferred triggers only
             // after those commands drain. No replacement is selected.
@@ -945,7 +958,7 @@ public sealed partial class DemoDuel
             bool fixedSpell = card.ClassCode == 22 && (LifePointSpellRules.SupportsQueued(card.Id) ||
                 DrawSpellRules.SupportsQueued(card) || MonsterWipeRules.SupportsQueued(card.Id) ||
                 DeckSearchSpellRules.Filter(card.Id) is not null || SpellTrapWipeRules.SupportsQueued(card.Id) ||
-                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || card.Id == FinalDestiny ||
+                SpellTrapTargetRules.SupportsQueued(card.Id) || TargetedMonsterSpellRules.Supports(card) || IsRevivalSpell(card) || card.Id == FinalDestiny ||
                 ritualSummon?.Spell == target && RitualSearchRules.IsRitualSpell(card));
             bool ownMainTrap = card.ClassCode == 21 &&
                 (LifePointSpellRules.SupportsQueued(card) || DrawSpellRules.SupportsQueued(card)) &&
@@ -2080,7 +2093,9 @@ public sealed partial class DemoDuel
                 duel.MonsterFaceDown[command.Side, slot] || duel.DefensePosition[command.Side, slot] == command.Defense)
                 return new(CommandOutcome.Skipped, "FLIP position target is no longer eligible.");
 
-            duel.CommitManualPosition(command.Side, slot, countsAsManualChange: false);
+            var change = duel.CommitManualPosition(command.Side, slot, countsAsManualChange: false);
+            if (command.FromPositionSpell)
+                duel.FinishManualPosition(change, resolveFlip: false, out _);
             return new(CommandOutcome.Applied);
         }
 

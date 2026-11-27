@@ -35,7 +35,8 @@ static partial class Game
         return new(card.X, card.Y - 32, card.Width, 27);
     }
 
-    static bool IsFissure(Card card) => card.ClassCode == 22 && card.Id == TargetedMonsterSpellRules.Fissure;
+    static bool IsFissure(Card card) => card.ClassCode == 22 &&
+        (card.Id == TargetedMonsterSpellRules.Fissure || TargetedMonsterSpellRules.SupportsPosition(card));
 
     static bool CanActivateHandCard(int index) =>
         queuedDuel is not null && RitualSearchRules.IsRitualSpell(ViewHand[index])

@@ -6,7 +6,12 @@ public static class TargetedMonsterSpellRules
     public const ushort ThousandKnives = 1211;
     public const ushort Fissure = 1001;
     public const ushort OfferingsToTheDoomed = 1451;
-    public static bool Supports(Card card) => card.ClassCode == 22 && card.Id is TributeToTheDoomed or ThousandKnives or Fissure or OfferingsToTheDoomed;
+    public static bool Supports(Card card) => card.ClassCode == 22 &&
+        (card.Id is TributeToTheDoomed or ThousandKnives or Fissure or OfferingsToTheDoomed ||
+         SupportsPosition(card));
+
+    public static bool SupportsPosition(Card card) => card.ClassCode == 22 &&
+        Joey.Cards.PositionAndRemovalEffects.DesiredDefense(card.Id) is not null;
     // DAT inventory: 34, 1210 (no pack), 2034. Alternate art is still Dark Magician.
     public static bool IsDarkMagician(Card card) => card.IsMonster && card.Id is 34 or 1210 or 2034;
     public static bool RequiresDiscard(Card card) =>
@@ -51,7 +56,9 @@ public sealed partial class DemoDuel
     }
 
     private bool IsMonsterSpellChoice(ushort id, int caster, CardTarget target) =>
-        IsTargetedMonsterSpellTarget(target) && (id switch
+        Joey.Cards.PositionAndRemovalEffects.DesiredDefense(id) is bool defense
+            ? IsPositionSpellChoice(caster, target, defense)
+            : IsTargetedMonsterSpellTarget(target) && (id switch
         {
             TargetedMonsterSpellRules.Fissure => IsLowestFaceUpOpponent(caster,target),
             TargetedMonsterSpellRules.ThousandKnives => target.Side != caster,
@@ -60,6 +67,14 @@ public sealed partial class DemoDuel
             TargetedMonsterSpellRules.TributeToTheDoomed => true,
             _ => false
         });
+
+    // Do not filter hidden monsters by their secret identity: all hidden
+    // targets are out of scope until effect-reveal continuations exist.
+    private bool IsPositionSpellChoice(int caster, CardTarget target, bool defense) =>
+        target.Side == 1 - caster && target.Zone == DuelZone.Monster &&
+        TryResolveCardTarget(target, out int slot, out _) &&
+        !MonsterFaceDown[target.Side, slot] &&
+        DefensePosition[target.Side, slot] != defense;
 
     // Cost and target lists are independent read-only views. The UI must not
     // expose a hidden opposing monster's Card identity.
@@ -91,7 +106,8 @@ public sealed partial class DemoDuel
     {
         if (!CanResolveTargetedMonsterSpellSource(source,out var spell) ||
             !IsMonsterSpellChoice(spell.Id,source.Side,target)) return false;
-        if (spell.Id is TargetedMonsterSpellRules.ThousandKnives or TargetedMonsterSpellRules.Fissure or TargetedMonsterSpellRules.OfferingsToTheDoomed)
+        if (spell.Id is TargetedMonsterSpellRules.ThousandKnives or TargetedMonsterSpellRules.Fissure or TargetedMonsterSpellRules.OfferingsToTheDoomed ||
+            TargetedMonsterSpellRules.SupportsPosition(spell))
             return cost is null;
         return TargetedMonsterSpellRules.RequiresDiscard(spell) &&
             cost is { } payment && payment != source && payment.Side == source.Side &&
@@ -101,11 +117,11 @@ public sealed partial class DemoDuel
     public bool TryQueueTargetedMonsterSpell(CardTarget source, CardTarget target,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = "Choose a legal no-discard monster destruction spell and eligible occurrence.";
+        message = "Choose a legal no-discard targeted monster spell and eligible occurrence.";
         if (primitiveActionQueue is not { IsBusy:false } queue || ActionsBlocked ||
             !TryPlanTargetedMonsterSpell(source,null,target)) return false;
         queue.Enqueue(new ActivateConditionalMonsterSpellCommand(source.Side,source,target),origin);
-        message = "Monster destruction spell admitted.";
+        message = "Targeted monster spell admitted.";
         return true;
     }
 

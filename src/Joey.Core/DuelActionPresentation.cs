@@ -61,6 +61,9 @@ public sealed partial class DemoDuel
             case ActivateTargetedSpellTrapCommand targeted:
                 target = targeted.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
+            case ActivateGraveyardRevivalSpellCommand revival:
+                target = revival.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
             case ActivateDeckSearchSpellCommand search:
                 target = search.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

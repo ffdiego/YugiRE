@@ -57,7 +57,8 @@ internal sealed record FinishJointDamageCommand(int Side) : DuelCommand(Side);
 public sealed record HealCommand(int Side, int Amount) : DuelCommand(Side);
 public sealed record FlipCommand(int Side, CardTarget Target) : DuelCommand(Side);
 public sealed record ChangePositionCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
-internal sealed record ChangePositionByFlipCommand(int Side, CardTarget Target, bool Defense) : DuelCommand(Side);
+internal sealed record ChangePositionByFlipCommand(int Side, CardTarget Target, bool Defense,
+    bool FromPositionSpell = false) : DuelCommand(Side);
 public sealed record SpecialSummonCommand(int Side, CardTarget Source, int Slot, bool FaceDownDefense = false, bool FaceUpDefense = false) : DuelCommand(Side);
 public sealed record ShuffleDeckCommand(int Side) : DuelCommand(Side);
 public sealed record MoveToHandCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -97,6 +98,8 @@ internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source,
 internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateDeckSearchSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record ActivateGraveyardRevivalSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record OpenGraveyardRevivalSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record OpenDeckSearchSpellCommand(int Side, CardTarget Source, ushort ResourceId) : DuelCommand(Side);
 internal sealed record ActivateLifePointSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateTargetedSpellTrapCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
@@ -347,6 +350,12 @@ internal static class DuelCommandValidation
                 break;
             case ActivateDrawSpellCommand drawSpell:
                 Target(drawSpell.Source, drawSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case ActivateGraveyardRevivalSpellCommand revivalSpell:
+                Target(revivalSpell.Source, revivalSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case OpenGraveyardRevivalSpellCommand openRevival:
+                Target(openRevival.Source, openRevival.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateDeckSearchSpellCommand searchSpell:
                 Target(searchSpell.Source, searchSpell.Side, DuelZone.Hand, DuelZone.SpellTrap);

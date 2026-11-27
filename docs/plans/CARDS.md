@@ -750,3 +750,11 @@ Joey.Cards recebe definições puras de Gift of The Mystical Elf, Jar of Greed, 
 ### Lote CARDS — equipamentos aditivos (27/11/2026 UTC)
 
 Dez IDs pela fila EquipCommand existente, com definições puras em Joey.Cards. Lightning Blade (1422) Done: +800 ATK em Warrior, -500 ATK global por vínculo válido em WATER revelados. Nove Partial: 303, 310, 312, 313, 320, 1042, 1058, 1182, 1420. Bônus inicial, elegibilidade e limpeza de vínculo; CPU não ativa efeitos Partial. Riders pendentes: gatilho S/T→GY com dano/retorno ao topo e custo opcional de LP/tributo, manutenção Standby, redirecionamento de ataques, destruição pós-batalha. ACTIONS deve fornecer pontos genéricos de chegada ao cemitério e decisões, não um executor por carta. Identidades do SQLite v3/pack-index; sem DAT integral, comparação nativa ou novos testes individuais. Cobertura proposta 468/771 Done+Verified, 35 Partial.
+
+### Lote CARDS — posição e remoção seletiva
+
+Definições puras em Joey.Cards/PositionAndRemovalEffects.cs. Stop Defense (319) Partial, Block Attack (1043) Done, De-Spell (1009) Partial. Produtores de posição/remoção existentes; posição forçada não consome mudança manual e abre gatilho Dream Clown. Sem FLIP genérico por efeito, Stop Defense só admite revelados; De-Spell somente revelada. Não filtrar Set pela identidade secreta. Sem novos testes por carta; CI estrutural, sem paridade nativa. Cobertura prevista 469/771, 37 Partial.
+
+### Lote CARDS — revival por magia
+
+Monster Reborn (1008) Partial. Definição em Joey.Cards, produtor ativação→gasto→abertura do seletor existente→SpecialSummonCommand. App/CPU/console usam a mesma seleção; somente Normal do próprio cemitério e ataque revelado, sem inferir dono/controlador ou histórico de invocação adequada. Sem novos testes por carta; CI estrutural, sem paridade nativa. ACTIONS precisa de ownership/control, posição de invocação e seleção de alvo pré-ativação/correntes. Premature Burial depende de vínculo, custo e remoção consequente. Cobertura prevista 469/771, 38 Partial.
