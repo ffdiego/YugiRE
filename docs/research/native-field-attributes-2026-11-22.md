@@ -65,6 +65,32 @@ alpha 160. Faltam a comparação pareada com o cliente e as
 capturas das variantes de aumento e redução.
 [Roteiro 52](../../scripts/regression/README.md#52--v05-composição-dos-atributos-em-proton).
 
+## V05.5 — aumento e redução observados em Proton
+
+O roteiro 53 lê os acumuladores `obj+4C/50` e os alvos do
+duelo em `00419570`, após o gate de identidade. Em `0041972F`
+e `00419A11` ele lê os números submetidos e procura o atlas no
+banco ativo do manifesto. O contador observado é o do laço em
+`005F2FB4`.
+
+Na demonstração em Proton, o Tiger Axe adversário passou de
+1300/1100 a 1700/1500. Os dois primeiros valores desenhados foram
+1350/1150 e 1394/1194. O alvo foi atingido no 34º Draw, e o
+contador avançou uma unidade entre todas as chamadas observadas.
+Em cada passo, a fórmula `alvo + trunc((anterior-alvo)*7/8)`
+reproduziu os números capturados. Os dois atributos usaram o
+atlas 2 desde o primeiro Draw da transição. O valor impresso
+foi conferido com `CARD_Prop.bin` do DAT local.
+
+Uma nova amostra na mesma sessão mostrou Zombyra the Dark
+no lado próprio. Seu ATK caiu de 2100 para 1900 em 29 Draws
+consecutivos. O primeiro número foi 2075, já com o atlas 3,
+usado até o alvo. A DEF ficou em 500 com o atlas 1. Os
+contadores consecutivos e a fórmula conferiram também nesse
+caso. As origens das alterações, o retorno à base e a
+comparação com o cliente ficaram fora do recorte.
+[Roteiro 53](../../scripts/regression/README.md#53--v05-transição-dos-atributos-em-proton).
+
 ## Procedência
 
 SQLite privado do usuário `joey-knowledge-visual-decoded.sqlite` (Joey EXE SHA-256

@@ -75,6 +75,14 @@ raylib nesse caminho. As variantes de valores modificados e a
 cadência do tween seguem pendentes.
 [Evidência e roteiro](../../docs/research/native-field-attributes-2026-11-22.md#v054--composição-em-intensidade-160).
 
+V05.5. O roteiro 53 observou o ATK e a DEF de Tiger Axe subirem
+de 1300/1100 a 1700/1500 em 34 Draws consecutivos no original.
+O ATK de Zombyra the Dark desceu de 2100 a 1900 em 29 Draws.
+O contador do laço avançou uma vez entre amostras, e a
+comparação em Python conferiu a fórmula e a escolha dos atlas
+2 e 3 com os valores de base do DAT.
+[Evidência e roteiro](../../docs/research/native-field-attributes-2026-11-22.md#v055--aumento-e-redução-observados-em-proton).
+
 ## V06 — LP flutuante por origem do dano/cura
 
 <a id="v06"></a>

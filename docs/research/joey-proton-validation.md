@@ -153,6 +153,8 @@ O [51](../../scripts/regression/README.md#51--v31-reação-com-áudio-desativado
 verifica o término da reação com `-nosound`.
 O [52](../../scripts/regression/README.md#52--v05-composição-dos-atributos-em-proton)
 registra os pesos das superfícies no compositor dos números.
+O [53](../../scripts/regression/README.md#53--v05-transição-dos-atributos-em-proton)
+acompanha a mudança de um atributo até o número atingir o novo valor.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

@@ -276,3 +276,23 @@ chave `0x8d85`, `src-weight=160` e `dst-weight=0`.
 Na captura, compare os pixels do glifo após escalar os
 canais RGB565 por 10/15. Nas posições da chave, compare
 com uma captura do mesmo fundo sem números.
+
+### 53 — V05, transição dos atributos em Proton
+
+Use o [prefixo isolado](../../docs/research/joey-proton-validation.md)
+e o PID confirmado do original. Anexe ao duelo de demonstração
+ou provoque um efeito de ATK/DEF sobre um monstro que permaneça no
+campo. O roteiro usa GDB com Python e três breakpoints de hardware.
+
+```bash
+timeout --signal=INT 213s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/53-wine-field-attribute-tween.gdb > scratch/field-attribute-tween.log 2>&1
+```
+
+A linha `attribute-change` identifica o primeiro objeto com
+valor exibido diferente do alvo. A linha `attribute-tween`
+lista seus Draws até os dois números chegarem ao alvo ou até
+o limite de 128 amostras. Confira a continuidade dos valores,
+a fórmula e o atlas escolhido em relação ao valor de catálogo.
+Confira o contador do laço separadamente. Um prazo sem a
+linha de conclusão deixa a transição sem amostra completa.
