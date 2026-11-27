@@ -131,7 +131,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Respostas e descarte auditados. Fechar composição da seleção e revisar sobreposição dos controles provisórios. [Detalhes](docs/plans/VISUALS.md#v14)
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
 - [ ] **V16 — Demais Draws do inventário.** Status: `Aguardando evidência`. Índice das Draws restantes; V20–V31 têm IDs próprios. [Detalhes](docs/plans/VISUALS.md#v16)
-- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Fronteiras surface/blend e cadência por medição. [Detalhes](docs/plans/VISUALS.md#v17)
+- [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Medir a cadência no Windows com a coleta 34 e validar as fronteiras surface/blend. [Detalhes](docs/plans/VISUALS.md#v17)
 - [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Leitura PCM e streaming do menu e duelo validados no cliente. Comparar escuta, transições e associação dinâmica no Windows. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Integração A03 e comparação; nome do banco não prova RNG. [Detalhes](docs/plans/VISUALS.md#v20)

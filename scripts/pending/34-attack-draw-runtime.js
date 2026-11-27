@@ -19,7 +19,8 @@ const events = [];
 const hooks = [];
 let frames = 0;
 let dropped = 0;
-const limit = 8192;
+let limit = 8192;
+let cadence = null;
 
 function hook(rva, callbacks) {
     hooks.push(Interceptor.attach(image.base.add(rva), callbacks));
@@ -112,9 +113,52 @@ function watchSelectionBackground() {
     });
 }
 
+function startCadenceClock() {
+    const kernel = Process.getModuleByName('kernel32.dll');
+    const buffer = Memory.alloc(8);
+    const frequency = new NativeFunction(kernel.getExportByName('QueryPerformanceFrequency'),
+        'int', ['pointer'], 'stdcall');
+    const counter = new NativeFunction(kernel.getExportByName('QueryPerformanceCounter'),
+        'int', ['pointer'], 'stdcall');
+    if (frequency(buffer) === 0) throw new Error('QueryPerformanceFrequency failed');
+    const frequencyHz = buffer.readS64().toNumber();
+    if (frequencyHz <= 0) throw new Error('Invalid performance counter frequency');
+    function ticks() {
+        if (counter(buffer) === 0) throw new Error('QueryPerformanceCounter failed');
+        return buffer.readS64();
+    }
+    const origin = ticks();
+    return {
+        frequencyHz,
+        nominalHz: image.base.add(0x1eb618).readU32(),
+        ticks: () => ticks().sub(origin).toNumber(),
+    };
+}
+
+function watchCadenceDispatcher(rva, kind, maskIndex, sceneReturns) {
+    hook(rva, {
+        onEnter(args) {
+            const frame = scenes.get(this.threadId);
+            if (frame === undefined) return;
+            const returnRva = imageRva(this.returnAddress);
+            if (!sceneReturns.includes(returnRva)) return;
+            record({
+                kind, frame, threadId: this.threadId, returnRva,
+                ticks: cadence.ticks(), mask: args[maskIndex].toUInt32(),
+            });
+        },
+    });
+}
+
 function stop() {
     for (const listener of hooks.splice(0)) listener.detach();
-    return { frames, dropped, events };
+    const result = { frames, dropped, events };
+    if (cadence !== null) {
+        result.frequencyHz = cadence.frequencyHz;
+        result.nominalHz = cadence.nominalHz;
+    }
+    cadence = null;
+    return result;
 }
 
 rpc.exports = {
@@ -122,24 +166,33 @@ rpc.exports = {
     start(mode = 'attack') {
         if (Process.arch !== 'ia32' || image.size < 0x4dd01)
             throw new Error('Unexpected original process architecture or image size');
-        if (mode !== 'attack' && mode !== 'selection')
+        if (mode !== 'attack' && mode !== 'selection' && mode !== 'cadence')
             throw new Error('Unexpected capture mode');
         if (hooks.length !== 0) throw new Error('Capture is already active');
         events.length = 0;
         frames = dropped = 0;
+        limit = mode === 'cadence' ? 16384 : 8192;
         scenes.clear();
         draws.clear();
         try {
+            if (mode === 'cadence') cadence = startCadenceClock();
             hook(0x4dd00, {
                 onEnter() {
                     this.previous = scenes.get(this.threadId);
                     scenes.set(this.threadId, ++frames);
+                    if (cadence !== null)
+                        record({ kind: 'scene', frame: frames, threadId: this.threadId, ticks: cadence.ticks() });
                 },
                 onLeave() {
                     if (this.previous === undefined) scenes.delete(this.threadId);
                     else scenes.set(this.threadId, this.previous);
                 },
             });
+            if (mode === 'cadence') {
+                watchCadenceDispatcher(0x5d040, 'dispatch-update', 0, [0x4dd47, 0x4dd8a]);
+                watchCadenceDispatcher(0x5d170, 'dispatch-draw', 1, [0x4dd62, 0x4dd92]);
+                return;
+            }
             if (mode === 'selection') {
                 watchSelectionBackground();
                 return;

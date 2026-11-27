@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V01/V04/V11: record attack or selection-window Draw requests in a live duel."""
+"""Record attack blits, selection backgrounds or dispatcher cadence in a live duel."""
 from __future__ import annotations
 
 import argparse
@@ -7,12 +7,18 @@ import ctypes
 import hashlib
 import json
 from pathlib import Path
+import statistics
 import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de"
 AGENT = Path(__file__).with_suffix(".js")
+SCENARIOS = {
+    "attack": "Perform one targeted or direct attack.",
+    "selection": "Open a card-selection window.",
+    "cadence": "Stay in one duel scene during the recording.",
+}
 
 
 def verify_image(pid: int, exe: Path):
@@ -58,8 +64,7 @@ def capture(pid: int, exe: Path, seconds: int, mode: str) -> dict:
             if not Path(script.exports_sync.image_path()).samefile(exe):
                 raise ValueError("Attached process image changed")
             script.exports_sync.start(mode)
-            action = "Open a card-selection window." if mode == "selection" else "Perform one targeted or direct attack."
-            print(f"Recording for {seconds} seconds. {action}", flush=True)
+            print(f"Recording for {seconds} seconds. {SCENARIOS[mode]}", flush=True)
             time.sleep(seconds)
             result = script.exports_sync.stop()
             if errors:
@@ -71,12 +76,54 @@ def capture(pid: int, exe: Path, seconds: int, mode: str) -> dict:
         kernel.CloseHandle(handle)
 
 
+def summarize_cadence(result: dict) -> list[dict]:
+    """Derive same-thread intervals and check Update/Draw membership by scene call."""
+    frequency = result["frequencyHz"]
+    threads = {}
+    for event in result["events"]:
+        by_frame = threads.setdefault(event["threadId"], {})
+        by_frame.setdefault(event["frame"], []).append(event)
+
+    summary = []
+    for thread_id, by_frame in threads.items():
+        pairs = 0
+        with_no_dispatch = 0
+        out_of_order = 0
+        timestamps = []
+        for events in by_frame.values():
+            order = tuple(event["kind"] for event in events)
+            if order == ("scene",):
+                with_no_dispatch += 1
+            elif order == ("scene", "dispatch-update", "dispatch-draw") and (
+                events[0]["ticks"] <= events[1]["ticks"] <= events[2]["ticks"]
+                and events[1]["mask"] == events[2]["mask"]
+            ):
+                pairs += 1
+            else:
+                out_of_order += 1
+            if events[0]["kind"] == "scene":
+                timestamps.append(events[0]["ticks"])
+
+        elapsed = [1000 * (end - start) / frequency for start, end in zip(timestamps, timestamps[1:])]
+        summary.append({
+            "threadId": thread_id,
+            "orderedUpdateDrawFrames": pairs,
+            "framesWithoutDispatch": with_no_dispatch,
+            "unexpectedDispatchFrames": out_of_order,
+            "sceneIntervals": len(elapsed),
+            "minSceneIntervalMs": min(elapsed, default=None),
+            "medianSceneIntervalMs": statistics.median(elapsed) if elapsed else None,
+            "maxSceneIntervalMs": max(elapsed, default=None),
+        })
+    return summary
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pid", type=int, required=True)
     parser.add_argument("--exe", type=Path, required=True)
     parser.add_argument("--seconds", type=int, default=20)
-    parser.add_argument("--mode", choices=("attack", "selection"), default="attack")
+    parser.add_argument("--mode", choices=SCENARIOS, default="attack")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if sys.platform != "win32":
@@ -97,6 +144,9 @@ def main() -> int:
         parser.exit(2, f"{error}\n")
     if args.mode == "selection":
         observed = any(event["kind"] == "selection-background" for event in result["events"])
+    elif args.mode == "cadence":
+        result["cadenceByThread"] = summarize_cadence(result)
+        observed = any(row["orderedUpdateDrawFrames"] >= 2 for row in result["cadenceByThread"])
     else:
         passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}
         observed = {"aim", "flight", "impact", "partial-sword"} <= passes

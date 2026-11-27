@@ -74,3 +74,30 @@ que houve pelo menos um pedido de fundo estável sem eventos
 perdidos. Para resolver a lacuna, confronte o alvo e os campos da
 chave com a imagem de referência e as variantes do DAT. O modo
 ainda aguarda execução no Windows.
+
+### V01/V17 — cadência da cena no roteiro 34
+
+Com o duelo aberto no Windows, grave um cenário estável em cada
+inicialização do jogo, padrão e com `-speedy`. Use saídas distintas
+e registre se o jogo está em janela ou tela cheia. A notificação de
+sucesso indica pelo menos dois pares instrumentados em um mesmo
+thread e nenhuma perda de eventos.
+
+```powershell
+python scripts/pending/34-attack-draw-runtime.py --mode cadence --pid <PID> --exe ..\passion\joey_pc.exe --seconds 20 --output scratch/visual-review/cadence-standard.json
+```
+
+As entradas de `0044DD00`, `0045D040` e `0045D170` recebem
+timestamps de `QueryPerformanceCounter`. Os endereços de retorno
+`0044DD47/0044DD62` e `0044DD8A/0044DD92` restringem a
+observação aos dois ramos da cena. O relatório guarda a máscara
+de cada dispatcher, a frequência do relógio e o valor nominal de
+`005EB618`. Resume a ordem dos dispatchers e os intervalos entre
+entradas da cena por thread.
+
+As chamadas medem despacho sob instrumentação. Um frame pode entrar
+na cena sem despachar objetos, e o último frame pode ficar incompleto
+se a coleta terminar durante o despacho. Os timestamps ainda não
+cobrem o flip do buffer ou a latência de exibição. Para concluir a
+coleta, compare os intervalos, a máscara e as sequências dos dois
+presets e preserve os relatórios privados.
