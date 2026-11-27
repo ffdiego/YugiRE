@@ -262,6 +262,16 @@ privados em `scratch/native-runtime/`. A origem da seleção, o compositor
 efetivo e a cadência em Windows continuam pendentes.
 [Amostragem reproduzível](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
 
+V17.2. Em duas demonstrações do original no Proton, o roteiro 46
+registrou 360 entradas por preset. Em cada amostra, 344 entradas
+despacharam Update→Draw com máscaras iguais e 16 entraram na cena
+sem os dois despachos durante as transições. No ramo regular, as
+medianas foram 33,29 ms no padrão e 16,72 ms com `-speedy`, sob GDB.
+A comparação em Python conferiu as sequências e os contextos dos
+ramos em todas as entradas. Ainda faltam a medição da apresentação
+do buffer e a coleta equivalente no Windows.
+[Medição e limites](../../docs/architecture/native-visual-contract.md#cadência-observada-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

@@ -69,7 +69,8 @@ mkdir -p "$game_dir"
 cp --reflink=auto -- "$joey_source"/{joey_pc.exe,data.dat,Region.dat,Voice.dat} "$game_dir/"
 "$wine" reg.exe add 'HKCU\Software\KONAMI\Yu-Gi-Oh! Power Of Chaos' \
   /v InstallDirJ /t REG_SZ /d 'C:\joey' /f >>"$run/wineboot.log" 2>&1
-(cd "$game_dir" && exec "$wine" joey_pc.exe) >"$run/game.log" 2>&1 &
+joey_args=()  # Use joey_args=(-speedy) na sessão de comparação.
+(cd "$game_dir" && exec "$wine" joey_pc.exe "${joey_args[@]}") >"$run/game.log" 2>&1 &
 game_pid=$!
 printf 'Sessão: %s\nLauncher PID: %s\n' "$run" "$game_pid"
 ```
@@ -127,7 +128,7 @@ done
 test -n "$joey_test_pid"
 ```
 
-Use o PID confirmado nos [roteiros de regressão 41 a 45](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+Use o PID confirmado nos [roteiros de regressão 41 a 46](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
 O 41 lê três chamadas de cena. O 42 deve estar anexado antes do
 clique na pilha do cemitério e desanexa após o primeiro blit estável.
 Para o [43](../../scripts/regression/README.md#43--v31-quadrilátero-base-da-reação-em-proton),
@@ -139,6 +140,8 @@ Em uma nova execução da demonstração, o
 registra a escolha e a posição das camadas de boca e olhos.
 O [45](../../scripts/regression/README.md#45--v31-reação-com-duas-falas-em-proton)
 aguarda uma reação com duas falas e registra a troca do ID ativo.
+O [46](../../scripts/regression/README.md#46--v17-despacho-da-cena-em-proton)
+registra 360 entradas da cena no preset escolhido, com ou sem despacho.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

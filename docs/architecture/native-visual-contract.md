@@ -150,6 +150,32 @@ mostra a ordem dos efeitos, mas amostra menos quadros que a cadência nominal
 de update. Ela não mede o preset sem a flag. Ainda falta fechar a lógica de
 seleção e movimento da espada, que não deve herdar os tempos de uma carta.
 
+### Cadência observada em Proton
+
+O roteiro 46 observou a entrada `0044DD00`, os dois dispatchers e a
+convergência `0044DD95` em duas demonstrações do EXE de referência.
+Cada amostra começou na primeira entrada da cena de duelo e reuniu
+360 entradas de um único thread. O piloto usou Proton 9.0, Xvfb a
+800×600, llvmpipe e o relógio monotônico do host em callbacks GDB.
+
+| Preset | Nominal em `005EB618` | Pares regulares (máscara 1) | Pares de transição (máscara 2) | Entradas sem despacho | Mediana regular | Mediana de transição |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Padrão | 30 | 267 | 77 | 16 | 33,29 ms | 33,26 ms |
+| `-speedy` | 60 | 304 | 40 | 16 | 16,72 ms | 16,72 ms |
+
+Cada par teve uma chamada de Update seguida de uma chamada de Draw do
+mesmo ramo e com a mesma máscara. As 16 entradas sem esses despachos em
+cada amostra apareceram em duas sequências de oito, com `+1C` assumindo
+valores de 16 a 240 na entrada e de 240 a 16 na saída. As medianas usam
+apenas intervalos entre entradas consecutivas da mesma sequência de
+despacho. Os percentis 10 e 90 para o ramo regular foram 32,50 e
+34,33 ms no padrão e 15,50 e 17,71 ms com `-speedy`.
+
+Os breakpoints afetam os intervalos. A amostra cobre o despacho da
+cena e deixa em aberto a atualização de cada objeto, o flip do buffer
+e a cadência no Windows. As contagens dos ramos são específicas a
+essas demonstrações. [Roteiro 46](../../scripts/regression/README.md#46--v17-despacho-da-cena-em-proton).
+
 ## Primeira prévia em raylib (posterior à análise estática)
 
 A aplicação agora carrega os sprites de ativação `kouka_ue/sita_b/y.yga`

@@ -142,3 +142,27 @@ zerado e o objeto ainda ativo nesse ponto. Confira uma promoção,
 objeto inativo em `reaction-end` e a confirmação de desanexação.
 Se o prazo expirar após registrar só reações sem segundo ID, a
 transição ficou sem amostra nesse duelo.
+
+### 46 — V17, despacho da cena em Proton
+
+Abra duas sessões de teste seguindo o
+[guia de Proton](../../docs/research/joey-proton-validation.md), uma
+no modo padrão e outra com `-speedy`. Para cada sessão, confirme
+o PID e anexe no menu antes de começar a demonstração. Use GDB
+com Python e um nome de log diferente por sessão.
+
+```bash
+preset=standard  # Use speedy para a segunda sessão.
+timeout --signal=INT 105s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/46-wine-scene-cadence.gdb > "scratch/scene-cadence-$preset.log" 2>&1
+```
+
+O roteiro usa quatro breakpoints de hardware. Depois de 360 entradas
+completas na região de despacho, ele escreve uma linha `scene-cadence`
+com JSON e desanexa. Compare o valor `nominal` com o preset e confira
+`dispatches` por entrada. Uma lista vazia registra que a cena passou
+pela convergência sem chamar os dois dispatchers observados. Nos pares,
+confira Update→Draw, ramo e máscara iguais. Use timestamps de entradas
+consecutivas no mesmo thread e com a mesma sequência de despacho para
+comparar os intervalos. O relógio é monotônico e os valores estão em
+nanossegundos. O log fica em `scratch/`.
