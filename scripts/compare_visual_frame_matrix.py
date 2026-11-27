@@ -8,7 +8,13 @@ import json
 from pathlib import Path
 import re
 
-from compare_visual_frames import OUTPUT_FILES, compare_files, validate_output_paths
+from compare_visual_frames import CANVAS, OUTPUT_FILES, REGIONS, compare_files, validate_output_paths
+
+
+@dataclass(frozen=True)
+class FrameRegion:
+    bounds: tuple[int, int, int, int]
+    max_mismatched_pixels: int | None
 
 
 @dataclass(frozen=True)
@@ -21,6 +27,7 @@ class FramePair:
     threshold: int
     max_mismatched_pixels: int | None
     max_update_delta: int | None
+    regions: dict[str, FrameRegion]
 
 
 def nonnegative_integer(value: object, label: str, maximum: int | None = None) -> int:
@@ -28,6 +35,29 @@ def nonnegative_integer(value: object, label: str, maximum: int | None = None) -
         limit = "a nonnegative integer" if maximum is None else f"an integer in [0,{maximum}]"
         raise ValueError(f"{label} must be {limit}")
     return value
+
+
+def read_regions(value: object, pair_name: str) -> dict[str, FrameRegion]:
+    if not isinstance(value, dict):
+        raise ValueError(f"{pair_name}.regions must be an object")
+    regions = {}
+    for name, region in value.items():
+        label = f"{pair_name}.regions.{name}"
+        if not name.strip() or name in REGIONS:
+            raise ValueError(f"{label}: invalid or reserved region name")
+        if not isinstance(region, dict):
+            raise ValueError(f"{label} must be an object")
+        bounds = region.get("boundsExclusive")
+        if not isinstance(bounds, list) or len(bounds) != 4 or any(type(n) is not int for n in bounds):
+            raise ValueError(f"{label}.boundsExclusive must contain four integer coordinates")
+        x0, y0, x1, y1 = bounds
+        if not (0 <= x0 < x1 <= CANVAS[0] and 0 <= y0 < y1 <= CANVAS[1]):
+            raise ValueError(f"{label}.boundsExclusive must be a nonempty rectangle within the canvas")
+        limit = None
+        if "maxMismatchedPixels" in region:
+            limit = nonnegative_integer(region["maxMismatchedPixels"], f"{label}.maxMismatchedPixels")
+        regions[name] = FrameRegion((x0, y0, x1, y1), limit)
+    return regions
 
 
 def read_pairs(manifest: Path) -> list[FramePair]:
@@ -63,6 +93,7 @@ def read_pairs(manifest: Path) -> list[FramePair]:
             if "maxMismatchedPixels" in entry else None,
             nonnegative_integer(entry["maxUpdateDelta"], f"{name}.maxUpdateDelta")
             if "maxUpdateDelta" in entry else None,
+            read_regions(entry.get("regions", {}), name),
         ))
     return pairs
 
@@ -75,14 +106,17 @@ def compare_matrix(manifest: Path, output: Path) -> dict:
     validate_output_paths(inputs, outputs)
     results = []
     for pair in pairs:
-        diff = compare_files(pair.reference, pair.candidate, output / pair.name, pair.threshold)
+        diff = compare_files(
+            pair.reference, pair.candidate, output / pair.name, pair.threshold,
+            regions={name: region.bounds for name, region in pair.regions.items()},
+        )
         update_delta = pair.candidate_update - pair.reference_update
         failed_limits = []
         if pair.max_mismatched_pixels is not None and diff["mismatchedPixels"] > pair.max_mismatched_pixels:
             failed_limits.append("maxMismatchedPixels")
         if pair.max_update_delta is not None and abs(update_delta) > pair.max_update_delta:
             failed_limits.append("maxUpdateDelta")
-        results.append({
+        result = {
             "id": pair.name,
             "report": f"{pair.name}/report.json",
             "referenceUpdate": pair.reference_update,
@@ -93,7 +127,16 @@ def compare_matrix(manifest: Path, output: Path) -> dict:
             "maxMismatchedPixels": pair.max_mismatched_pixels,
             "maxUpdateDelta": pair.max_update_delta,
             "failedLimits": failed_limits,
-        })
+        }
+        if pair.regions:
+            result["regions"] = {}
+            for name, region in pair.regions.items():
+                metrics = diff["regions"][name]
+                limit = region.max_mismatched_pixels
+                if limit is not None and metrics["mismatchedPixels"] > limit:
+                    failed_limits.append(f"regions.{name}.maxMismatchedPixels")
+                result["regions"][name] = {**metrics, "maxMismatchedPixels": limit}
+        results.append(result)
     result = {
         "schemaVersion": 1,
         "manifest": str(manifest),

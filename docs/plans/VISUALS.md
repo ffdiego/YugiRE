@@ -122,6 +122,8 @@ Separar **controles do jogo** de **diagnósticos**; corrigir layout provisório 
 Coordenadas/dimensões/ângulos e contagem de updates por estado/quadro-chave contra o Joey original; registrar valores ainda provisórios em vez de arredondar silenciosamente. Usar `compare_visual_frames.py` e o log de `V01`.
   O comparador aceita regiões nomeadas e registra seus retângulos de divergência em coordenadas do canvas. A matriz de pares agrega diferenças de pixels e contadores fornecidos pelo operador, com limites opcionais e diagnósticos por quadro-chave. Testes com PNGs sintéticos incluídos no CI. Comparações pareadas com o executável continuam pendentes. [Protocolo](../../docs/research/visual-frame-comparison-2026-11-22.md).
 
+V15.1 (27/11/2026). A matriz aceita regiões por quadro-chave e orçamentos independentes por elemento. O relatório inclui os retângulos das divergências em coordenadas do canvas. Os testes sintéticos verificam que uma diferença localizada pode reprovar o par mesmo dentro do limite global, que o limiar RGB é respeitado e que regiões inválidas são rejeitadas antes de gravar diagnósticos. Faltam pares do mesmo estado e contador no original e no cliente.
+
 ## V16 — Demais Draws do inventário
 
 <a id="v16"></a>

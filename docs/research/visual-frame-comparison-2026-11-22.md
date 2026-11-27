@@ -106,7 +106,13 @@ identifica o cenário e o quadro-chave no relatório.
       "candidateUpdate": 17,
       "threshold": 0,
       "maxMismatchedPixels": 12,
-      "maxUpdateDelta": 1
+      "maxUpdateDelta": 1,
+      "regions": {
+        "impact": {
+          "boundsExclusive": [400, 210, 520, 340],
+          "maxMismatchedPixels": 0
+        }
+      }
     }
   ]
 }
@@ -125,6 +131,13 @@ dependem das capturas. Os campos `threshold`, `maxMismatchedPixels` e
 `maxUpdateDelta` são opcionais. O limiar RGB padrão é 0 e o limite de updates
 usa o valor absoluto da diferença. O comando processa todos os pares válidos e
 retorna 1 quando algum excede um limite declarado.
+
+Cada par aceita regiões opcionais com limites direito e inferior
+exclusivos. Os retângulos podem se sobrepor. O relatório resume a contagem
+e os limites da divergência de cada região em coordenadas do canvas.
+O limite de pixels da região é opcional e usa o mesmo limiar RGB do par.
+Uma região que excede seu limite faz o par falhar mesmo quando a diferença
+total está dentro do limite. Os retângulos no exemplo são ilustrativos.
 
 ```bash
 python -m unittest discover -s scripts/tests -p 'test_compare_visual_frame*.py' -v

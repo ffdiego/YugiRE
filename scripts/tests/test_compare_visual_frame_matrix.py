@@ -55,6 +55,33 @@ class VisualFrameMatrixTests(unittest.TestCase):
         within_limits = self.run_matrix([first | {"maxMismatchedPixels": 1}])
         self.assertEqual(within_limits.returncode, 0, within_limits.stderr)
 
+    def test_reports_element_bounds_and_enforces_its_own_pixel_budget(self):
+        pair = self.pair | {"maxMismatchedPixels": 1, "regions": {
+            "impact": {"boundsExclusive": [2, 0, 4, 4], "maxMismatchedPixels": 0},
+            "other": {"boundsExclusive": [0, 0, 2, 4], "maxMismatchedPixels": 0},
+        }}
+        process = self.run_matrix([pair])
+        self.assertEqual(process.returncode, 1, process.stderr)
+        report = json.loads((self.output / "matrix-report.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["pairsOverLimit"], 1)
+        result, = report["pairs"]
+        self.assertEqual(result["failedLimits"], ["regions.impact.maxMismatchedPixels"])
+        self.assertEqual(result["regions"]["impact"]["mismatchBoundsExclusive"], [2, 1, 3, 2])
+        self.assertEqual(result["regions"]["other"]["mismatchedPixels"], 0)
+        matching = self.run_matrix([pair | {"threshold": 7}])
+        self.assertEqual(matching.returncode, 0, matching.stderr)
+
+    def test_rejects_invalid_region_before_any_pair_is_written(self):
+        for bounds in ([0, 0, 800, 601], [0, False, 4, 4], [2, 0, 2, 4]):
+            with self.subTest(bounds=bounds):
+                invalid = self.pair | {"id": "second", "regions": {
+                    "element": {"boundsExclusive": bounds},
+                }}
+                process = self.run_matrix([self.pair, invalid])
+                self.assertEqual(process.returncode, 2, process.stderr)
+                self.assertIn("second.regions.element.boundsExclusive", process.stderr)
+        self.assertFalse(self.output.exists())
+
     def test_rejects_duplicate_ids_and_invalid_counters_before_creating_outputs(self):
         process = self.run_matrix([self.pair, self.pair | {"id": "IMPACT"}])
         self.assertEqual(process.returncode, 2, process.stderr)
