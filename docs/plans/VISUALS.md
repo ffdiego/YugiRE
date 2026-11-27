@@ -389,3 +389,11 @@ do quadrilátero base no executável, com contadores e IDs de som
 antes/depois do Draw. O formato só é lido para a vtable reconhecida.
 A execução do roteiro no original segue pendente.
 [Coleta Windows](../../scripts/pending/README.md#v01v31--reação-no-roteiro-34).
+
+V31.2. Em Proton, a demonstração do original confirmou em execução
+os oito vértices de origem e destino de `reaction07.txt`, com
+superfícies RGB565. Foram observadas 63 chamadas ao Draw base, do
+contador 8 ao 504, quando o objeto foi desativado. O SHA-256 da
+cópia e do original foi conferido após a execução. Faltam os passes
+adicionais, o caminho de duas falas e a comparação pareada com o cliente.
+[Evidência e reprodução](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v312--quadrilátero-base-observado-em-proton-2711).

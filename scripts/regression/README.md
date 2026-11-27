@@ -79,3 +79,23 @@ observou a chave `0x07E0` em `004B2D29` com retorno 0 da chamada.
 Para verificar a transparência na mesma cena, capture o canvas
 antes e depois de abrir a lista e confronte os pixels do canto e
 do interior. A coleta 34 continua disponível para o cenário Windows.
+
+### 43 — V31, quadrilátero base da reação em Proton
+
+Use o [prefixo e display privados do piloto](../../docs/research/joey-proton-validation.md).
+Confirme o fingerprint, o PID da cópia e o mapeamento do PE. Anexe no
+menu e aguarde a demonstração automática. O roteiro usa dois
+breakpoints de hardware e desanexa quando o objeto observado termina.
+
+```bash
+timeout --signal=INT 115s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/43-wine-reaction-geometry.gdb > scratch/reaction-geometry-wine.log 2>&1
+```
+
+Compare os quatro vértices de origem e os quatro de destino com
+`bustUpReactionGeometry` no JSON do inspetor DAT. O piloto encontrou
+uma correspondência única com `reaction07.txt`, formato 3 em ambas as
+superfícies e 63 chamadas base com contador de 8 a 504, em passos de
+8. O log deve terminar com `reaction-end` e a confirmação de
+desanexação. O manifesto encontrado e o contador final podem variar
+conforme a reação. O recorte mede argumentos e contadores do processo.

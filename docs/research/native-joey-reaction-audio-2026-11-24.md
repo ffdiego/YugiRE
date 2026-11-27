@@ -40,6 +40,26 @@ Draws e a transição com uma segunda fala ainda dependem de observação.
 
 [Coleta e proveniência](joey-knowledge-sqlite.md#complemento-cumulativo-v9--draw-dos-bustos-27112026).
 
+## V31.2 — quadrilátero base observado em Proton (27/11)
+
+Na demonstração automática do executável com fingerprint da coleta
+34, em Proton 9.0, Xvfb a 800×600 e llvmpipe, o breakpoint de hardware
+em `00416D47` registrou quatro vértices. A origem, na ordem da chamada,
+foi (0,0), (326,0), (326,508), (0,508). O destino foi (450,40),
+(776,40), (776,548), (450,548). A comparação em Python dos oito
+vértices com os dez manifests do DAT encontrou uma correspondência
+única, `reaction07.txt`. Origem e destino usaram a vtable
+`005DC6EC` e formato 3 (RGB565), com o flag de superfície temporária
+ativo.
+
+O mesmo objeto passou 63 vezes por esse ponto, com contador de 8 a 504
+em passos de 8. O primário observado foi `0x1000003A` e o secundário
+ficou em zero. Em `004179F0`, o objeto tinha contador 504 e byte ativo
+zero. O total é de chamadas ao Draw base sob GDB, sem medição de
+cadência em tempo real. Ainda faltam os outros passes, o caminho de
+duas falas e a comparação de pixels com o cliente.
+[Roteiro 43](../../scripts/regression/README.md#43--v31-quadrilátero-base-da-reação-em-proton).
+
 ## Objetos distintos
 
 00402E00(reaction,sound): sound=0 não cria objeto; reaction=0 cria

@@ -2,8 +2,10 @@
 
 O piloto usou Fedora, Proton 9.0, Xvfb a 800×600, llvmpipe e GDB.
 O mesmo executável abriu o menu, um duelo individual e a lista do
-cemitério adversário. O setup abaixo usa uma cópia privada dos arquivos
-locais do jogo e um prefixo descartável.
+cemitério adversário. A demonstração automática também produziu uma
+reação do Joey que pôde ser inspecionada do primeiro Draw ao término.
+O setup abaixo usa uma cópia privada dos arquivos locais do jogo e um
+prefixo descartável.
 
 ## Preparar o display e o prefixo
 
@@ -113,17 +115,25 @@ os processos com o nome do jogo e confira o diretório da cópia de teste
 e o mapeamento antes de anexar.
 
 ```bash
+joey_test_pid=
 for pid in $(pgrep -x joey_pc.exe); do
-  if [ "$(readlink "/proc/$pid/cwd")" = "$game_dir" ]; then
-    printf 'PID de teste: %s\n' "$pid"
-    grep '^00400000-.*joey_pc\.exe' "/proc/$pid/maps"
+  if [ "$(readlink "/proc/$pid/cwd")" = "$game_dir" ] &&
+      grep '^00400000-.*joey_pc\.exe' "/proc/$pid/maps"; then
+    joey_test_pid="$pid"
+    printf 'PID de teste: %s\n' "$joey_test_pid"
+    break
   fi
 done
+test -n "$joey_test_pid"
 ```
 
-Use o PID confirmado nos [roteiros de regressão 41 e 42](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+Use o PID confirmado nos [roteiros de regressão 41 a 43](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
 O 41 lê três chamadas de cena. O 42 deve estar anexado antes do
 clique na pilha do cemitério e desanexa após o primeiro blit estável.
+Para o [43](../../scripts/regression/README.md#43--v31-quadrilátero-base-da-reação-em-proton),
+anexe ainda no menu e deixe a demonstração começar sem cliques.
+O roteiro espera a primeira reação que atinja o contador 8, registra
+os argumentos do Draw base e desanexa no término do objeto.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 
