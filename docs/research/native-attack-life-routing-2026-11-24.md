@@ -39,6 +39,33 @@ chave do YGA registra a amostra da superfície. A contribuição do
 alpha do YGA, os vértices efetivos e os pixels de saída ficam para
 capturas específicas. [Roteiro 54](../../scripts/regression/README.md#54--v04-despacho-da-espada-em-proton).
 
+## V04.6 — vértices entregues aos compositores
+
+O roteiro 54 agora registra as duas listas de quatro pontos
+nas entradas de `0051EBD0` e `00422E30`, filtradas pelos
+retornos `00422A07` e `00422E10`. O comparador chamou
+`NativeRotatedQuad.Project` em .NET 10 com o centro e a escala
+do pedido, as dimensões do DAT e os coeficientes 16.16 usados
+pelo processo em `00A52EE8`.
+
+Foram conferidos 78 pares de quadriláteros em dois ataques a
+monstros na demonstração em Proton. O atacante adversário saiu
+do slot 1 e mirou o slot próprio 0. O atacante próprio saiu do
+slot 0 e mirou o adversário 0. Cada traço teve 39 chamadas
+comparáveis, cobrindo mira, voo, lâmina parcial e impacto,
+pelos compositores base e por intensidade conforme o passo.
+Os quatro pontos de origem e os quatro de destino coincidiram
+em todas as chamadas. O impacto de escala zero em 256 ficou
+sem quadrilátero nos dois traços.
+
+No primeiro ataque, a lâmina parcial em 256 recebeu os pontos
+de destino (343,381), (330,350), (394,322), (407,353) e os de
+origem (0,0), (34,0), (34,70), (0,70). A ordem é a ordem dos
+cantos na origem, com bordas inclusivas. O teste cobre a
+projeção até a entrada dos compositores. A amostragem dos
+pixels rasterizados, o clipping final e o ataque direto
+ficaram fora deste recorte.
+
 ## V04 — espada
 
 00413BC0 carrega duel/effect/attack.txt, três recursos, camada

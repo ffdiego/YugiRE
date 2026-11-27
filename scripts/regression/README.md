@@ -315,3 +315,11 @@ confira o pedido de impacto seguido da lâmina parcial e a escala
 zero no primeiro pedido de impacto. Os compositores base e por
 intensidade devem aparecer dos dois lados da transição de 384
 para 400. Use `targetSlot=-1` para identificar ataque direto.
+
+Quando o compositor recebe quatro vértices, o roteiro inclui
+`sourceQuad` e `destQuad` na ordem da chamada, com endpoints
+inclusivos. `coefficients` guarda os dois valores 16.16 para
+cada ângulo observado, indexado por `angle & 511`. Use as
+dimensões do DAT e esses valores na chamada de
+`NativeRotatedQuad.Project` para comparar os quatro pontos.
+O pedido de escala zero não chega ao compositor.

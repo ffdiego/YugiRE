@@ -12,6 +12,7 @@ SITES = {
     0x004148FA: ("aim", 0),
 }
 samples = []
+coefficients = {}
 tracked = None
 pending = None
 aim = None
@@ -24,6 +25,9 @@ def read(address, signed=False, size=4):
 
 def thread():
     return gdb.selected_thread().num
+
+def quad(pointer):
+    return [[read(pointer+i*8, signed=True), read(pointer+i*8+4, signed=True)] for i in range(4)]
 
 def surface(pointer):
     table = read(pointer)
@@ -85,14 +89,23 @@ class Compositor(HardwareProbe):
         caller = read(sp)
         if self.name == "base" and caller == 0x00422A07:
             src, dst = read(sp+4), reg("ecx")
+            source_quad, dest_quad, count = read(sp+8), read(sp+12), read(sp+24)
         elif self.name == "intensity" and caller == 0x00422E10:
             src, dst = read(sp+8), read(sp+4)
+            source_quad, dest_quad, count = read(sp+16), read(sp+20), read(sp+32)
         else:
             return False
         if (src, dst) != pending[:2]:
             return False
         row = pending[3]
         row["compositor"] = self.name
+        if count == 4:
+            row["sourceQuad"] = quad(source_quad)
+            row["destQuad"] = quad(dest_quad)
+            angle = row["angle"] & 511
+            if angle not in coefficients:
+                coefficients[angle] = [read(0x00a52ee8+angle*4, signed=True),
+                                       read(0x00a52ee8+((angle-128)&511)*4, signed=True)]
         pending = None
         return tracked is not None and row["pass"] == "partial-sword" and row["counter"] == 496
 
@@ -102,7 +115,7 @@ end
 continue
 python
 if samples:
-    print("attack-quad-dispatch " + json.dumps({"tracked": tracked, "samples": samples}))
+    print("attack-quad-dispatch " + json.dumps({"tracked": tracked, "samples": samples, "coefficients": coefficients}))
 end
 detach
 quit

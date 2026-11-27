@@ -58,6 +58,14 @@ o formato 10 com destino RGB565. A comparação em Python conferiu
 os 80 pedidos dos dois ataques. Faltam vértices do compositor e
 quadros pareados. [Evidência e roteiro](../../docs/research/native-attack-life-routing-2026-11-24.md#v045--despacho-da-espada-observado-em-proton).
 
+V04.6. O roteiro 54 agora inclui os quadriláteros da origem e
+do destino. Em dois ataques a monstros, um de cada lado,
+`NativeRotatedQuad.Project` reproduziu os oito pontos de cada
+uma das 78 chamadas aos compositores, com dimensões do DAT e
+coeficientes lidos no processo. Ainda faltam a comparação de
+pixels, o clipping final e o ataque direto nesse recorte.
+[Validação dos vértices](../../docs/research/native-attack-life-routing-2026-11-24.md#v046--vértices-entregues-aos-compositores).
+
 ## V05 — ATK/DEF em monstros no campo
 
 <a id="v05"></a>
