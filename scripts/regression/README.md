@@ -57,3 +57,23 @@ O piloto em Proton 9.0, Xvfb a 800×600 e llvmpipe retornou
 demonstração. Os breakpoints interferem no tempo de execução.
 A coleta 34 em Windows continua sendo a referência para cadência e
 para a passagem de composição na seleção.
+
+### 42 — V11/V17, compositor do cemitério adversário em Proton
+
+Use a cópia i386 do executável e o display privado do roteiro 41.
+No duelo individual, deixe o adversário com pelo menos uma carta
+no cemitério. Anexe ao processo de teste e clique na pilha do
+cemitério adversário. O roteiro usa quatro breakpoints de hardware
+e desanexa após a primeira passagem estável.
+
+```bash
+timeout --signal=INT 75s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/42-wine-selection-compositor.gdb > scratch/selection-compositor-wine.log 2>&1
+```
+
+O recorte registra vtables, formatos, origem da amostra, chave,
+retorno do blit e a consulta do ramo por cor-chave RGB565. O piloto
+observou a chave `0x07E0` em `004B2D29` com retorno 0 da chamada.
+Para verificar a transparência na mesma cena, capture o canvas
+antes e depois de abrir a lista e confronte os pixels do canto e
+do interior. A coleta 34 continua disponível para o cenário Windows.

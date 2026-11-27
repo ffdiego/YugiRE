@@ -552,6 +552,29 @@ destino. A verificação estática ainda deixa em aberto qual
 ramo foi executado em cada cenário.
 [Coleta de seleção](../../scripts/pending/README.md#v01v11v17--fundo-da-seleção-no-roteiro-34).
 
+#### Observação no cemitério adversário em Proton
+
+Em 27/11, um duelo individual no PE de fingerprint do inventário
+foi executado em Proton 9.0, llvmpipe e Xvfb a 800×600. Após resolver
+Mystical Space Typhoon sobre uma armadilha adversária baixada,
+o clique na pilha do cemitério adversário abriu a lista de uma carta.
+No Draw estável, GDB registrou a seguinte sequência:
+
+| Ponto observado | Resultado |
+| --- | --- |
+| `0043B47E` | Chave de manifesto 0 e destino (319,198) |
+| Origem e destino | Vtable `005DC6EC`, formato 3 (RGB565) |
+| Origem | `+78h=0`, seletor de amostra `+55h=1`, amostra (0,0) e chave empacotada `0x07E0` em `+64h` |
+| `004B1760 → 004B2D29` | Compositor por cor-chave consultou `+64h` da mesma origem |
+| Retorno a `0043B481` | EAX igual a 0 |
+
+Nas capturas do mesmo duelo antes e depois de abrir a lista, os
+pixels em (319,198), (320,199) e (340,220) ficaram iguais. O pixel
+em (460,278), no interior, mudou. O resultado cobre o cemitério
+adversário sem scroll neste ambiente. As capturas e o traço
+ficaram privados em `scratch/native-runtime/`.
+[Procedimento](../../scripts/regression/README.md#42--v11v17-compositor-do-cemitério-adversário-em-proton).
+
 ## V11 — banco de fusão e revisão do objeto vinculado
 
 Consulta ao SQLite existente (sem repetir bundle 01): construtores

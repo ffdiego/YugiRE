@@ -115,6 +115,15 @@ observado durante a mesma passagem. Os cenários simulados
 passaram. Faltam as amostras da execução original.
 [Ramos da composição](../../docs/research/native-selection-window-fusion-2026-11-22.md#v11v17--ramos-de-composição-do-fundo-estável).
 
+V11/V17 (27/11/2026, execução no Proton). Num duelo individual do
+original, a lista estável do cemitério adversário passou posição
+`(319,198)`, chave de manifesto 0 e duas superfícies RGB565 ao blit.
+`004B1760` consultou a chave amostrada em `(0,0)` e leu `0x07E0`.
+Nas capturas de 800×600, o canto manteve os pixels do tabuleiro e o
+interior da lista mudou. Faltam o lado próprio, as demais variantes
+de seleção, os formatos de Windows e a comparação pareada com o
+cliente. [Coleta reproduzível](../../scripts/regression/README.md#42--v11v17-compositor-do-cemitério-adversário-em-proton).
+
 ## V12 — Indicador de corrente desativada (`004531C0`)
 
 <a id="v12"></a>
