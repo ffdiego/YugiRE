@@ -104,7 +104,7 @@ public sealed partial class DemoDuel
         selected.All(option.Materials.Contains) &&
         FusionRules.Complete(option.Recipe, option.Materials, selected, FirstFreeMonsterZone() < 0) is not null;
 
-    public bool ResolveFusionSummon(int deckIndex, IReadOnlyList<FusionMaterial> materials, out string message,
+    internal bool ResolveFusionSummon(int deckIndex, IReadOnlyList<FusionMaterial> materials, out string message,
         bool defense = false)
     {
         message = "Choose separate occurrences that match the recipe.";

@@ -734,3 +734,11 @@ CpuDuelController.Step exige fila anexada e só admite comandos tipados; retirad
 ### C12 — Lab pela fila
 
 SandboxDuelRunner agora admite compra, dano, invocação, combate e fim de turno pela ActionQueue, drena com gate headless e registra comandos executados. Rejeições/limites do piloto encerram o duelo como Unsupported, sem fallback. Fixtures de monstros usam IDs Normais conhecidos com stats sintéticos; não há alegação de paridade nativa. O próximo passo é remover os mutadores públicos e separar inicialização/fixtures do motor.
+
+### C12 — Fechar a fronteira dos mutadores diretos
+
+Mutadores antigos de DemoDuel deixam de ser API pública; apenas Joey.Tests tem acesso interno transitório para preparação e consultas históricas. App e Lab não usam esses métodos. Checkpoints de observação hidratam turno/fase/Set anteriores explicitamente, sem reproduzir a velha execução para preparar testes; EffectPilotComparison usa ativação/equip/destruição tipadas. Isto fecha acesso externo, não apaga o código interno ainda: a próxima fatia deve tornar ActionQueue intrínseca ao duelo, retirar friend access após arquivar testes restantes, apagar resolvedores/estados antigos e reclassificar o manifesto. A fila continua com gate configurável e os checkpoints não são prova de save/load nativo.
+
+### C12 — Reclassificação inicial da cobertura
+
+A auditoria dos gates de combate (IsOrdinaryBattlePilot/IsBattleFlipPilot) demonstrou perda de suporte em 15 resource IDs: 255, 461, 491, 523, 526, 585, 597, 608, 627, 1163, 1307, 1338, 1435, 1436, 1521. Foram reclassificados de Done para Partial, sem descartar a evidência histórica. Morphing Jar #2 foi separado do grupo FLIP básico para preservar os demais. Royal Command permanece Partial, com lacuna de ativação. Badge: 461/771 Done+Verified e 24 Partial. Esta é uma primeira auditoria objetiva, não uma certificação de que os demais Done suportam todas as configurações da fila. Remover asserções Python que congelavam status específicos no teste de publicação da badge; manter invariantes de classificação e geração.

@@ -15,7 +15,7 @@
       "mechanics": [
         "Continuous ATK modifier"
       ],
-      "status": "Done",
+      "status": "Partial",
       "resourceIds": [
         491,
         523,
@@ -30,7 +30,8 @@
         "docs/research/card-static-sweep/10-efeitos-sem-registro.jsonl"
       ],
       "limitations": [
-        "Sandbox uses the DAT attribute. Native dynamic attribute changes and effect suppression are outside scope."
+        "Sandbox uses the DAT attribute. Native dynamic attribute changes and effect suppression are outside scope.",
+        "C12: static ATK modifier remains, but the active queued battle pilot rejects these effect monsters as combatants/bystanders. Restore combat admission through the queue."
       ]
     },
     {
@@ -399,7 +400,7 @@
       "mechanics": [
         "FLIP: destroy opposing face-up Level 4 monsters without selecting targets"
       ],
-      "status": "Done",
+      "status": "Partial",
       "resourceIds": [
         1338
       ],
@@ -410,7 +411,8 @@
         "docs/research/card-static-sweep/05-janelas-invocacao-batalha.jsonl"
       ],
       "limitations": [
-        "Sandbox uses the DAT level and keeps monsters already marked by battle on the battle removal path. Native phase timing, suppression and protection remain outside this scope."
+        "Sandbox uses the DAT level and keeps monsters already marked by battle on the battle removal path. Native phase timing, suppression and protection remain outside this scope.",
+        "C12: manual Flip Summon is queued; battle FLIP is not in IsBattleFlipPilot."
       ]
     },
     {
@@ -984,16 +986,38 @@
         "Battle continuation",
         "Return up to two monsters to owner's hand",
         "Battle destruction determination before FLIP",
-        "Hane-Hane mandatory single-target return, with no-legal-target fallback",
-        "Morphing Jar #2: reshuffle field monsters into owner's Main Deck and excavate monsters quota",
-        "Excavated Level 4-or-lower monster Set by effect; high-level or unsupported cards sent to graveyard"
+        "Hane-Hane mandatory single-target return, with no-legal-target fallback"
       ],
       "status": "Done",
       "resourceIds": [
         500,
         540,
         590,
-        601,
+        601
+      ],
+      "evidence": [
+        "src/Joey.Core/FlipEffectRules.cs",
+        "src/Joey.Core/Demo.cs",
+        "src/tests/Joey.Tests/FlipMonsterChecks.cs",
+        "src/tests/Joey.Tests/HaneHaneChecks.cs",
+        "src/tests/Joey.Tests/MorphingJar2Checks.cs"
+      ],
+      "limitations": [
+        "Battle-destroyed combatants are excluded from shuffle; damage is calculated before FLIP and marked cards go to graveyard at the end of the simplified Damage Step.",
+        "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior.",
+        "Morphing Jar #2 is tracked separately; current status concerns only the four remaining FLIP cards."
+      ]
+    },
+    {
+      "id": "monster.flip.morphing-jar-2",
+      "kind": "Monster",
+      "subtype": "Effect",
+      "mechanics": [
+        "FLIP: reshuffle eligible field monsters into Main Decks and excavate monsters quota",
+        "Set eligible Level 4-or-lower monsters; send other excavated cards to graveyard"
+      ],
+      "status": "Partial",
+      "resourceIds": [
         1163
       ],
       "evidence": [
@@ -1007,7 +1031,8 @@
         "Done is scoped to the C# sandbox: five FLIP monsters. Morphing Jar #2 returns eligible Main Deck monsters from each player's field, shuffles deterministically, excavates up to its monster quota, Sets eligible Level 4-or-lower monsters and sends other excavated cards to graveyards.",
         "Battle-destroyed combatants are excluded from shuffle; damage is calculated before FLIP and marked cards go to graveyard at the end of the simplified Damage Step.",
         "Fusion Monsters return to the Fusion Deck without increasing the excavation quota. Tokens, divergent ownership/control, chained responses, replacement effects and native timing remain pending.",
-        "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior."
+        "Morphing Jar (590) and Morphing Jar #2 (1163) use independent effects. Morphing Jar's two-decks-short policy is a sandbox draw, not certified native behavior.",
+        "C12: manual Flip Summon is queued; Morphing Jar #2 is not admitted by the battle FLIP pilot. Historical comparisons are not current playability."
       ]
     },
     {
@@ -1213,7 +1238,7 @@
         "Two distinct occurrence targets, validated before moving either card",
         "Preserve pending battle continuation and handle equipment/active Destiny Board dependencies"
       ],
-      "status": "Done",
+      "status": "Partial",
       "resourceIds": [
         585,
         1521
@@ -1227,7 +1252,8 @@
       "limitations": [
         "C# .NET 10 full solution build and Joey.Tests suite passed in PR #55 (3,242 synthetic checks, including 14 new two-target FLIP checks); only bounded sandbox coverage, not native Joey parity.",
         "Native 00583120 and 0056A320 substantiate Tornado Bird availability including FIELD, while seven of eight card callback functions remain missing from this SQLite.",
-        "No differential native duel validation, chains, effect negation (Royal Command), altered control/ownership, linked-resolver edge cases, or native visual/timing parity."
+        "No differential native duel validation, chains, effect negation (Royal Command), altered control/ownership, linked-resolver edge cases, or native visual/timing parity.",
+        "C12: queued selection on manual FLIP remains; the battle FLIP producer does not admit these IDs."
       ]
     },
     {
@@ -1255,7 +1281,8 @@
         "Bounded Royal Command implementation compiled and passed 3,254 synthetic checks (22 new Royal Command cases) in PR #56 CI; additional non-FLIP and multiple-source cases appended for follow-up CI. Partial due to absent chain timing and native differential validation.",
         "Royal Command can be activated from Set on its owner's later Main Phase only; no opponent turn Trap responses or full priority/chains.",
         "Native 00588D90 can negate a concurrent FLIP request; simulated late suppression is rechecked when the outstanding selection/decision is handled, not as a full asynchronous chain transition.",
-        "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions."
+        "No original Joey differential replay, Prohibition interaction or complete trap-effect suppression transitions.",
+        "C12: direct Set activation was removed; the queued activation dispatcher does not yet admit Royal Command."
       ]
     },
     {
@@ -1269,7 +1296,7 @@
         "Cost unavailable below 3 Deck or 2 Hand cards produces no mutation or burn in the bounded sandbox",
         "Respect shared Royal Command FLIP admission gate; preserve battle continuation and CPU availability heuristic"
       ],
-      "status": "Done",
+      "status": "Partial",
       "resourceIds": [
         1435,
         1436
@@ -1285,7 +1312,8 @@
         "Callbacks 00582E60 / 00582EA0 and preparation 0057DDD0 / 0057DDF0 are not decompiled in provided SQLite; constraints from existing static sweep and legacy card texts.",
         "Primary 00584E60 is decompiled and confirms 800 damage, but not native availability/cost order.",
         "RNG is .NET sandbox seeded, not Joey RNG; no chain reactions, special banish redirection, counterplay priority or native differential replay.",
-        ".NET 10 solution build and 3,311 synthetic tests passed in PR #58 (16 P051/P052 checks); only bounded sandbox coverage, not Verified against Joey original."
+        ".NET 10 solution build and 3,311 synthetic tests passed in PR #58 (16 P051/P052 checks); only bounded sandbox coverage, not Verified against Joey original.",
+        "C12: manual FLIP cost/burn is queued; battle FLIP is not in IsBattleFlipPilot."
       ]
     },
     {
@@ -1295,7 +1323,7 @@
       "resourceIds": [
         461
       ],
-      "status": "Done",
+      "status": "Partial",
       "mechanics": [
         "The Immortal of Thunder (461) FLIP: gain 3000 LP for its current controller/owner in bounded sandbox",
         "After that same monster occurrence has been flipped, any subsequent field-to-Graveyard movement loses 5000 LP for that owner",
@@ -1315,7 +1343,8 @@
         "Native P065 availability 00581040, preparation 0057C5F0 and primary 00585970 are catalogued but absent from current SQLite decompilations.",
         "Historical text requires flipping before the 5000 LP penalty, whereas the current official TCG card text does not spell out this qualification; the original Joey implementation must be observed.",
         "Relationship of Royal Command to delayed loss, change of control/ownership, effect negation and priority is not proven.",
-        "CI .NET 10 build and 3,325 synthetic tests passed, including 14 P065 checks, on PR #59; this is bounded sandbox only and not native Verified."
+        "CI .NET 10 build and 3,325 synthetic tests passed, including 14 P065 checks, on PR #59; this is bounded sandbox only and not native Verified.",
+        "C12: manual FLIP gain and supported linked-removal loss remain queued; battle FLIP/ordinary targeted battle are not admitted for this card."
       ]
     },
     {
@@ -1325,7 +1354,7 @@
       "resourceIds": [
         255
       ],
-      "status": "Done",
+      "status": "Partial",
       "mechanics": [
         "Dimensional Warrior (255): when it battles a monster, apply normal damage calculation first, then banish both physical combatant occurrences",
         "Shared banished zone with Fusion Gate and P051/P052; no sending battlers to Graveyard",
@@ -1344,7 +1373,8 @@
         "Native P188 primary callback 0058CC00 is catalogued in the SQLite but not decompiled; timing and any suppression/negation rules require native evidence.",
         "Historical 2004 Joey card text says both are removed from play on attacking/being attacked; later rulings indicate after damage calculation; sandbox chooses the latter ordering.",
         "Only direct monster-versus-monster battle with both original combatants still present is modeled; chains, unrelated replacement of slots mid-resolution, return-from-banish, owner/controller divergence and exact timing not native-verified.",
-        "Full .NET 10 solution built and 3,340 synthetic checks passed (15 P188 cases) in PR #60; no native original parity verified."
+        "Full .NET 10 solution built and 3,340 synthetic checks passed (15 P188 cases) in PR #60; no native original parity verified.",
+        "C12: the targeted battle pilot rejects this ID; the historical dual-banish resolver is not reachable from production producers. Reimplement through the queue."
       ]
     },
     {
@@ -1413,7 +1443,7 @@
         "Shuffle own Main Deck once after successful selection",
         "Preserve damage calculation before FLIP and pending battle continuation"
       ],
-      "status": "Done",
+      "status": "Partial",
       "resourceIds": [
         1307
       ],
@@ -1428,7 +1458,8 @@
         "C# .NET 10 solution build and Joey.Tests suite passed in PR #54 (3,238 synthetic checks, including 13 Bubonic Vermin checks); sandbox only, not original Joey parity.",
         "Primary native callback 0058B040 (P168) is not decompiled in the current SQLite; shared same-ID filter 00599E30 is decompiled and historical DAT specifies the FLIP behavior.",
         "No native differential replay, effect suppression, chains, special summon prohibitions, owner/controller divergence or RNG parity.",
-        "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification."
+        "Integrated with Royal Command shared FLIP gate and position-trigger discriminator; synthetic cross-regressions, no native verification.",
+        "C12: manual FLIP and field selection are queued; battle FLIP is not in IsBattleFlipPilot."
       ]
     },
     {

@@ -5,6 +5,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Historical fixtures only; no production assembly can invoke legacy direct mutations. -->
+    <InternalsVisibleTo Include="Joey.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../Joey.Cards/Joey.Cards.csproj" />
   </ItemGroup>
   <ItemGroup>

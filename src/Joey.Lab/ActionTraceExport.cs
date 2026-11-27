@@ -25,12 +25,8 @@ public static class ActionTraceExport
         uint attack = archivedWindow ? 110u : 140u;
         Card monster = new(resource, resource, "Fixture monster", "", (3u << 20) | (4u << 25) | (attack << 9));
         var duel = DemoDuel.FromPartialObservation(side, [], new Card?[5], new Card?[5], 8000,
-            side0Deck: side == 0 ? [monster] : null, side1Deck: side == 1 ? [monster] : null);
-        if (archivedWindow)
-        {
-            duel.NextTurn();
-            duel.NextTurn();
-        }
+            side0Deck: side == 0 ? [monster] : null, side1Deck: side == 1 ? [monster] : null,
+            checkpoint: archivedWindow ? new(3) : null);
         var console = new DuelConsoleSession(duel);
         bool RunScript(params string[] lines)
         {

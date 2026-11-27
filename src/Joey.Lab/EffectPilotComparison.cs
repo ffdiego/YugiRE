@@ -118,6 +118,13 @@ public static class EffectPilotComparison
             byte Byte(string name) => checked((byte)I(name));
             ushort Word(string name) => checked((ushort)I(name));
             void Bound(bool valid) { if (!valid) throw new InvalidDataException("Inputs outside bounded scenario"); }
+            void Drain(ActionQueue queue)
+            {
+                int cursor = queue.Trace.Count;
+                for (int tick = 0; tick < 128 && queue.IsBusy; tick++) queue.Tick();
+                Bound(!queue.IsBusy && queue.Fault is null &&
+                    !queue.Trace.Skip(cursor).Any(entry => entry.Result?.Outcome == CommandOutcome.Rejected));
+            }
             void Identity() => Bound(I("sourceResourceId") == (scenario == "Sparks" ? 342 : 300) &&
                 I("sourceInternalIndex") == (scenario == "Sparks" ? 755 : 614) && I("sourcePlayer") is >= 0 and <= 1);
             var fields = new List<FieldResult>();
@@ -158,7 +165,10 @@ public static class EffectPilotComparison
                     Bound(I("lifeBefore0") is > 0 and <= 65535 && I("lifeBefore1") is > 0 and <= 65535);
                     var d = DemoDuel.FromPartialObservation(I("sourcePlayer"), [new Card(755,342,"Sparks","",22u<<20)],new Card?[5],new Card?[5],8000);
                     d.Life[0]=I("lifeBefore0"); d.Life[1]=I("lifeBefore1");
-                    Bound(d.Play(0,out _)); return d;
+                    var queue = d.CreatePrimitiveActionQueue();
+                    Bound(d.TryQueueActivation(0, false, out _, ActionOrigin.Test));
+                    Drain(queue);
+                    return d;
                 }
                 CompareField("preparedTarget", [], () => JsonValue.Create(DirectDamageRules.PrepareTarget((byte)I("sourcePlayer"))));
                 CompareField("commandTarget", ["requestFlags","preparedTarget"], () => JsonValue.Create(Command().TargetPlayer));
@@ -189,8 +199,19 @@ public static class EffectPilotComparison
                     var sides = new[] { new Card?[5],new Card?[5] };
                     sides[I("targetPlayer")][I("targetZone")]=new Card(I("targetInternalIndex"),Word("targetResourceId"),"Projected target","",((uint)I("dynamicType")<<20)|((uint)I("dynamicAttribute")<<29));
                     var d=DemoDuel.FromPartialObservation(I("sourcePlayer"),[new Card(614,300,"Legendary Sword","",22u<<20)],sides[0],sides[1],8000,equipmentContextResolved:true);
-                    Bound(d.Equip(0,I("targetPlayer"),I("targetZone"),out _));
-                    if (remove) { Bound(B("equipmentRemovalConfirmed")); Bound(d.RemoveEquipment(I("sourcePlayer"),0)); }
+                    var queue = d.CreatePrimitiveActionQueue();
+                    Bound(d.TryQueueEquipment(DuelZone.Hand, 0, I("targetPlayer"), I("targetZone"), out _, ActionOrigin.Test));
+                    Drain(queue);
+                    if (remove)
+                    {
+                        Bound(B("equipmentRemovalConfirmed"));
+                        Bound(d.TryCaptureCardTarget(I("sourcePlayer"), DuelZone.SpellTrap, 0, out var target));
+                        // The reviewed comparison checks only movement/link state.
+                        // Destruction is the supported typed linked removal; it is
+                        // not evidence of the native removal reason.
+                        queue.Enqueue(new DestroyCommand(target.Side, target), ActionOrigin.Test);
+                        Drain(queue);
+                    }
                     return d;
                 }
                 string[] target=["targetPlayer","targetZone","targetInternalIndex","targetResourceId","faceUp","dynamicType","dynamicAttribute","genericGuardsSatisfied"];
