@@ -61,7 +61,7 @@ internal static class QueuedDirectAttackChecks
             }
 
             var answer = pass ? console.Execute("respond-attack pass").Enqueued :
-                new CpuDuelController(responder).Step(duel, queueTurnActions: true) is
+                new CpuDuelController(responder).Step(duel) is
                     { Status: CpuStepStatus.Acted, Action: CpuAction.Response };
             var admitted = queue.Trace.Last().Entry;
             var preview = duel.DescribeActionPresentation(admitted.Command);
