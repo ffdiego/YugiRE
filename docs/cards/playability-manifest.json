@@ -2891,6 +2891,28 @@
       "limitations": [
         "Set targets need reveal/classification/re-set without exposing hidden identity; not admitted in this slice."
       ]
+    },
+    {
+      "id": "spell.monster-reborn",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Partial",
+      "resourceIds": [
+        1008
+      ],
+      "mechanics": [
+        "Activate from hand/Set, spend spell, choose tracked own normal monster in Graveyard, Special Summon face-up ATK"
+      ],
+      "evidence": [
+        "src/Joey.Cards/RevivalSpellEffects.cs",
+        "src/Joey.Core/DemoQueuedRevivalSpells.cs",
+        "src/Joey.Core/DemoActionQueue.cs",
+        "src/Joey.Core/DemoQueuedGraveyardRevival.cs",
+        "src/Joey.Core/DemoQueuedFieldSelection.cs"
+      ],
+      "limitations": [
+        "Opposing Graveyard requires ownership/control tracking; non-normal revival legality and face-up DEF choice remain pending. Selection opens after spend as a bounded no-chain sandbox flow, not native timing evidence."
+      ]
     }
   ]
 }

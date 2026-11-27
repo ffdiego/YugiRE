@@ -248,6 +248,7 @@ public sealed class CpuDuelController
                         bool useLpSpell = lp is { } change && (duel.Life[Player] > -change.CasterDelta ||
                             change.JointDamage && duel.Life[1 - Player] <= -change.OpponentDelta);
                         if (!(useLpSpell ||
+                              candidate is { ClassCode: 22, Id: Joey.Cards.RevivalSpellEffects.MonsterReborn } ||
                               duel.ShouldPlayAttackRestrictionSpell(Player, candidate) ||
                               candidate is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.DestinyBoard } ||
                               ShouldClearSpellTraps(duel, candidate.Id,

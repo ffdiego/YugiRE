@@ -54,8 +54,11 @@ CPU não ativa os nove equipamentos Partial por enquanto; jogador e console pode
 | 319 | Stop Defense: defesa adversária revelada → ataque revelado | Partial |
 | 1043 | Block Attack: ataque adversário → defesa revelada; gatilho de posição | Done |
 | 1009 | De-Spell: destruição de magia revelada incluindo FIELD | Partial |
+| 1008 | Monster Reborn: monstro Normal do próprio cemitério → campo em ATK | Partial |
 
 IDs verificados no SQLite v3 e pack-index; texto integral DAT não disponível. App/CPU/console reutilizam seleção e fila. ACTIONS: revelação por efeito (sem Flip Summon), inspeção/retorno de Set sem revelar informação fora da resolução.
+
+Monster Reborn usa o seletor existente de GY → campo. Falta distinguir dono/controlador, validar revival de monstros especiais, escolha de defesa revelada e alvo antes de ativar na futura janela de correntes. Premature Burial adiado até vínculo de revival e pagamento de LP estarem disponíveis.
 
 ## Inventário atual (sem extrapolar números do DAT)
 

@@ -4,8 +4,8 @@ Métrica de cartas jogáveis no sandbox C#, não paridade com o executável orig
 
 - **Trilogia:** 469/771 = 60.83%
 - **Joey:** 159/350 = 45.43%
-- **Partial:** 37; **Verified:** 0 (trilogia).
-- **Partial no Joey:** 21.
+- **Partial:** 38; **Verified:** 0 (trilogia).
+- **Partial no Joey:** 22.
 A badge mostra Done+Verified e, separadamente, o número de Partial. C12 pode reduzir temporariamente a cobertura; o manifesto deve refletir suporte real.
 
 ## Por categoria
@@ -13,10 +13,10 @@ A badge mostra Done+Verified e, separadamente, o número de Partial. C12 pode re
 | Conjunto | Tipo | Total | Done | Partial | Pending | Verified | % Done+Verified |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Trilogia | Monster | 499 | 376 | 16 | 107 | 0 | 75.35% |
-| Trilogia | Spell | 172 | 85 | 16 | 71 | 0 | 49.42% |
+| Trilogia | Spell | 172 | 85 | 17 | 70 | 0 | 49.42% |
 | Trilogia | Trap | 100 | 8 | 5 | 87 | 0 | 8.00% |
 | Joey | Monster | 194 | 124 | 14 | 56 | 0 | 63.92% |
-| Joey | Spell | 84 | 33 | 3 | 48 | 0 | 39.29% |
+| Joey | Spell | 84 | 33 | 4 | 47 | 0 | 39.29% |
 | Joey | Trap | 72 | 2 | 4 | 66 | 0 | 2.78% |
 
 ## Subtipos de monstros (classificação, não implementação)

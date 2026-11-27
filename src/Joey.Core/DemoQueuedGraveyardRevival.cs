@@ -19,7 +19,8 @@ public sealed partial class DemoDuel
 
     private bool CanAdmitQueuedGraveyardRevival() =>
         !GameOver && deferredBattle is null &&
-        PendingCardSelection is { } request && IsSpearCretinRevival(request) &&
+        PendingCardSelection is { } request && (IsSpearCretinRevival(request) ||
+            IsRevivalSpellRequest(request) && request.Owner == ActivePlayer && Phase == DemoPhase.Main) &&
         PendingFlipTarget is null && PendingFlipSpellTrapTargets is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&
         PendingEffectDecision is null && PendingSpellTrapTarget is null &&
@@ -40,6 +41,7 @@ public sealed partial class DemoDuel
             Card card = graves[side][i];
             if (request.EligibleCards.Any(c => ReferenceEquals(c.Card, card)) &&
                 CardSelectionRules.IsEligible(card, request.Filter) &&
+                (!IsRevivalSpellRequest(request) || IsRevivalSpellMonster(card)) &&
                 TryCaptureCardTarget(side, DuelZone.Graveyard, i, out var target))
                 result.Add(new(target, i, card));
         }
@@ -70,7 +72,8 @@ public sealed partial class DemoDuel
             slot is < 0 or >= 5 || Monsters[request.Owner,slot] is not null ||
             !TryResolveCardTarget(target, out _, out var card) ||
             !request.EligibleCards.Any(c => ReferenceEquals(c.Card, card)) ||
-            !CardSelectionRules.IsEligible(card, request.Filter))
+            !CardSelectionRules.IsEligible(card, request.Filter) ||
+            IsRevivalSpellRequest(request) && (faceDownDefense || !IsRevivalSpellMonster(card)))
             return false;
         movement = new SpecialSummonCommand(request.Owner, target, slot, faceDownDefense);
         return true;
