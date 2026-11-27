@@ -464,3 +464,17 @@ CI pendente. A captura Sogen anterior comprova utilidade dos valores, não
 valida a nova correlação. Atributos de confronto não são necessariamente
 atributos gerais do campo; comparação diferencial de atributos aguarda
 checkpoint C# no estágio de cálculo equivalente. Nenhuma coleta nova pedida.
+
+### A09.10 — Atributos efetivos na execução C#
+
+Resultados de comando incluem `BattleCalculationObservation`, projetado na
+exportação existente App/Lab. Reutiliza os mesmos valores de EquipmentStats
+com bônus específico de confronto e guarda ambas as dimensões antes da
+remoção; ataque direto reutiliza o cálculo que produz dano. Com resposta
+pendente ou defensor oculto, o registro só aparece no comando que calcula
+após passe/revelação; cancelamentos não criam amostra. Preserva a ordem e
+os mapeamentos existentes, sem adicionar 0x31 hipotético. Testes de
+infraestrutura cobrem identidade/slot, gate imediato/atrasado, direto,
+alvo revelado e oculto, resposta e cancelamento. CI pendente; falta
+comparador de atributos com pareamento explícito e primeiro cenário real.
+[Contrato](../architecture/duel-differential-policy.md#observações-c-no-cálculo-de-batalha).

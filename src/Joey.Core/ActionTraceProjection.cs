@@ -4,7 +4,8 @@ namespace Joey.Core;
 /// Unmapped and unsuccessful commands remain visible, with their sequence.</summary>
 public sealed record ProjectedAction(long Sequence, string Command, string Origin, string Outcome,
     int Side, string Mapping, ushort[]? Args, string Detail, PlacementObservation? Placement = null, DirectAttackObservation? DirectAttack = null,
-    TargetedAttackObservation? TargetedAttack = null, BattleRemovalObservation? BattleRemoval = null);
+    TargetedAttackObservation? TargetedAttack = null, BattleRemovalObservation? BattleRemoval = null,
+    BattleCalculationObservation? BattleCalculation = null);
 
 public static class ActionTraceProjection
 {
@@ -42,7 +43,7 @@ public static class ActionTraceProjection
                 if (words is not null) mapping = "mapped";
             }
             rows.Add(new(e.Sequence, command.GetType().Name, e.Origin.ToString(), result.Outcome.ToString(),
-                command.Side, mapping, words, result.Detail, result.Placement, result.DirectAttack, result.TargetedAttack, result.BattleRemoval));
+                command.Side, mapping, words, result.Detail, result.Placement, result.DirectAttack, result.TargetedAttack, result.BattleRemoval, result.BattleCalculation));
         }
         return rows.AsReadOnly();
     }

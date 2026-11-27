@@ -64,6 +64,13 @@ internal static class QueuedTargetedAttackChecks
             gate.Release = true;
             DrainResponseQueue(queue);
 
+            var calculations = ActionTraceProjection.ReadExecuted(queue.Trace)
+                .Where(row => row.BattleCalculation is not null).ToArray();
+            check(pass
+                ? calculations.Length == 1 && calculations[0].Command == "ResolveRevealedBattleCommand" &&
+                  calculations[0].BattleCalculation is { Attacker: { Slot: 2, Attack: 1400 },
+                      Defender: { Slot: 3, FaceDown: false, Defense: true, DefenseValue: 1000 }, Difference: 400 }
+                : calculations.Length == 0, "A09 records the actual post-reveal calculation, not cancelled attacks");
             check(!console.HasPendingChoice && duel.Spells[responder, 1] == setSpell &&
                 duel.SpellFaceDown[responder, 1] && duel.Life[responder] == 8000 &&
                 duel.Life[side] == (answer == AttackTrapRules.MagicCylinder ? 6600 : 8000) &&

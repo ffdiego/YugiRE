@@ -10,12 +10,21 @@ public sealed record DirectAttackObservation(CardTarget Attacker, ushort Resourc
 public sealed record TargetedAttackObservation(CardTarget Attacker, CardTarget Defender, int AttackerSlot, int DefenderSlot);
 public sealed record BattleRemovalObservation(CardTarget Target, ushort ResourceId, int Slot, int Role);
 
+// Immutable calculation inputs from the successful battle resolution, not a
+// prediction at admission or a later read of the field after removal.
+public sealed record BattleActorObservation(CardTarget Target, ushort ResourceId, int InternalIndex,
+    int Slot, bool Defense, bool FaceDown, int Attack, int DefenseValue);
+
+public sealed record BattleCalculationObservation(BattleActorObservation Attacker, BattleActorObservation? Defender,
+    int? Difference, int? RequestedDirectDamage);
+
 public sealed record CommandResult(CommandOutcome Outcome, string Detail = "")
 {
     public PlacementObservation? Placement { get; init; }
     public DirectAttackObservation? DirectAttack { get; init; }
     public TargetedAttackObservation? TargetedAttack { get; init; }
     public BattleRemovalObservation? BattleRemoval { get; init; }
+    public BattleCalculationObservation? BattleCalculation { get; init; }
 }
 public sealed record QueuedDuelCommand(long Sequence, DuelCommand Command, ActionOrigin Origin);
 public enum ActionTraceStage { Admitted, Started, Executed, Completed }

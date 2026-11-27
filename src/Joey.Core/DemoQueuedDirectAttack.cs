@@ -39,8 +39,13 @@ public sealed partial class DemoDuel
     }
 
     private bool TryPlanQueuedDirectAttack(CardTarget source,out int slot,out Card card,out int damage,
-        out bool unsupported, bool declared = false)
+        out bool unsupported, bool declared = false) =>
+        TryPlanQueuedDirectAttack(source, out slot, out card, out damage, out unsupported, out _, declared);
+
+    private bool TryPlanQueuedDirectAttack(CardTarget source,out int slot,out Card card,out int damage,
+        out bool unsupported, out NativeAiStats stats, bool declared = false)
     {
+        stats=default;
         damage=0;
         unsupported=false;
         if (!TryResolveCardTarget(source,out slot,out card)) return false;
@@ -53,7 +58,8 @@ public sealed partial class DemoDuel
             return false;
         unsupported = !SupportsQueuedDirectAttack(side, slot, card);
         if (unsupported) return false;
-        damage=Math.Clamp(AttackValue(side,slot),0,ushort.MaxValue);
+        stats=EquipmentStats(side,slot);
+        damage=Math.Clamp(stats.Attack,0,ushort.MaxValue);
         return true;
     }
 
@@ -80,7 +86,7 @@ public sealed partial class DemoDuel
         if (!TryResolveCardTarget(attack.Attacker,out _,out _))
             return new(CommandOutcome.Skipped,"Declared attacker occurrence gone.");
         if (followups is not IActionBatchSink { PendingCount: 0 } queue ||
-            !TryPlanQueuedDirectAttack(attack.Attacker,out int slot,out var card,out int damage,out _))
+            !TryPlanQueuedDirectAttack(attack.Attacker,out int slot,out var card,out int damage,out _,out var stats))
             return new(CommandOutcome.Rejected,"Direct attack no longer satisfies pilot restrictions.");
         RecordBattleAttack(attack.Side, slot, card);
         if (HasQueuedAttackResponseTrap(attack.Side))
@@ -94,7 +100,8 @@ public sealed partial class DemoDuel
         EnqueueDirectBattleDamage(card, attack.Side, damage, queue);
         return new(CommandOutcome.Applied)
         {
-            DirectAttack=new(attack.Attacker,card.Id,slot,damage)
+            DirectAttack=new(attack.Attacker,card.Id,slot,damage),
+            BattleCalculation=new(CaptureBattleActor(attack.Attacker, slot, card, stats), null, null, damage)
         };
     }
 }
