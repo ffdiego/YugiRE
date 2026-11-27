@@ -176,6 +176,13 @@ interior da lista mudou. Faltam o lado próprio, as demais variantes
 de seleção, os formatos de Windows e a comparação pareada com o
 cliente. [Coleta reproduzível](../../scripts/regression/README.md#42--v11v17-compositor-do-cemitério-adversário-em-proton).
 
+V11/V17. O renderer da seleção agora prepara os fundos conhecidos com
+chave amostrada RGB565 e alpha binário. Cemitério sem scroll confirmado
+no Proton; variantes restantes inferidas pelo DAT e contrato estático.
+Fallback preservado para cantos divergentes. CI, smoke com DAT real e
+comparação pareada ainda pendentes.
+[Contrato](../../docs/research/native-selection-window-fusion-2026-11-22.md#v11v17--composição-do-fundo-no-cliente).
+
 ## V12 — Indicador de corrente desativada (`004531C0`)
 
 <a id="v12"></a>

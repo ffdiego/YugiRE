@@ -157,3 +157,35 @@ no mesmo lado e zona, com o descritor esperado e sem perda de eventos.
 Os eventos são vinculados por ordem e argumentos. Pedidos
 idênticos no mesmo trecho podem ter mais de uma correspondência.
 As saídas ficam em `scratch/` e a coleta aguarda Windows.
+
+## V31 — revisão gráfica de reaction07 (55, aguardando DAT local)
+
+**Ambiente:** Fedora/Linux com display (ou Xvfb) ou Windows, .NET 10 e
+`data.dat` original. Não é nova coleta Ghidra. O renderer isolado já
+está implementado. O objetivo é validar parser, geometria, camadas e
+lifecycle do cliente antes de ligar a reação a eventos reais.
+
+```bash
+bash scripts/pending/55-reaction07-review.sh /path/to/data.dat
+bash scripts/pending/55-reaction07-review.sh /path/to/data.dat --reaction-wait-audio
+```
+
+Em Windows, o comando equivalente é
+`dotnet run --project src/Joey.App -- C:\\passion\\data.dat --review-reaction=07 --no-audio`.
+
+F12 captura PNG/JSON em `scratch/visual-review/` no estado inicial;
+F7 avança um Update/Draw. Capture os estados 8, 16, 24 e 32 (variantes
+ou omissões dos grupos), os contadores 248 e 256 e o reset F8. No modo
+com espera, ultrapasse 256, confirme que o objeto continua ativo, F5
+sinaliza conclusão simulada e F7 encerra. Para comparação pareada
+com o original, alinhe contador e estado de cena do roteiro 44; a
+captura do cliente representa a fronteira pós-step. Não compare
+estados divergentes nem assuma transparência/pixels iguais.
+
+**Saída privada:** pares PNG/JSON, log de execução, observações da
+composição e de discrepâncias. **Encerramento:** DAT aceito, coordenadas,
+variantes, predicado e retorno ao tabuleiro conferidos; composição
+comparada ou divergências registradas. Não incluir recursos do jogo
+no Git. Roteiros 43–45 e 51 já executados no original; não repeti-los
+sem uma pergunta específica. Áudio físico e integração A03 separados.
+[Contrato V31.6](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v316--renderer-isolado-de-reaction07).

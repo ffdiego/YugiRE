@@ -718,3 +718,19 @@ superfície e a passagem dos operandos nesse trecho.
 `DemoSpecialSummon.FusionMaterials` transporta o snapshot imutável dos materiais após o commit de Polymerization ou Fusion Gate. Na fila de ações, `GeneralFusionPlacement` e `SpecialSummonPlacement` são etapas do gate do mesmo `SpecialSummonCommand`. O resultado fica oculto no campo e no hover até a etapa de invocação especial. O perfil Instant descarta ambas as etapas, e a falta de recursos no modo animado preserva a apresentação de invocação especial. O código de regras e a ordem dos comandos vêm de #179.
 
 `NativeFusionPlayback` processa 161 amostras do contador 0 a 640. Essa é uma política de apresentação do cliente que usa o epílogo candidato da decompilação. Frames longos avançam o modelo em ordem, com requests de áudio em 4 e 384. O compositor Raylib e a associação de áudio são provisórios. O pass de superfície intermediária e `+AC` estão pendentes. Testes C# exercitam duas e três miniaturas no modelo e a retenção da continuação até liberar a invocação enfileirada, com ambos os lados e posições de ataque e defesa. `004524F0` é Partial no inventário. Falta comparar no desktop com o EXE em estado equivalente.
+
+### V11/V17 — composição do fundo no cliente
+
+O fluxo de seleção existente passa os dez bitmaps de fundo identificados
+no DAT pelo adaptador RGB565. `list_grave0.bmp` reproduz o caminho de
+cor-chave observado no Proton; nos outros nove a mesma política é uma
+inferência explícita a partir dos cantos e do contrato estático. Os
+pares do deck usam 0x07E6 (RGB 00FF30), não 0x07E0. Pixels com o mesmo
+valor empacotado da amostra ficam transparentes, e os demais são
+opacos com expansão RGB565 para RGBA8. A textura mantém o cache e
+filtro Point. A lista valida o canto dos fundos conhecidos antes de
+entrar no renderer, mantendo o fallback de seleção se o DAT divergir.
+`--check-graphics` verifica também os fundos presentes. Geometria,
+scroll, escolha de cartas, Core e fila permanecem inalterados.
+CI e comparação pareada real pendentes; outros formatos Windows e
+a entrada animada não foram implementados por esta mudança.

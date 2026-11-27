@@ -139,6 +139,14 @@ sealed class DatGraphics : IDisposable
                 var info = BitmapInfo.Read(source.Read(background.Resource));
                 if (info.Width <= 0 || info.Height <= 0)
                     throw new InvalidDataException("Invalid selection background: " + background.Resource);
+                // Check the actual decoded corner before creating a live
+                // selection. Unsupported or changed banks keep the existing
+                // legacy UI fallback instead of throwing during Draw.
+                if (NativeSelectionBackgroundPixels.IsBackground(background.Resource))
+                {
+                    var image = ReadImage(background.Resource);
+                    Raylib.UnloadImage(image);
+                }
             }
             selectionManifests.Add(path, manifest);
             return manifest;
@@ -261,6 +269,23 @@ sealed class DatGraphics : IDisposable
             }
             return image;
         }
+        if (NativeSelectionBackgroundPixels.IsBackground(name))
+        {
+            try
+            {
+                Raylib.ImageFormat(ref image, PixelFormat.UncompressedR8G8B8A8);
+                if (image.Data == null || image.Format != PixelFormat.UncompressedR8G8B8A8)
+                    throw new InvalidDataException("Cannot convert selection background to RGBA8: " + name);
+                NativeSelectionBackgroundPixels.Prepare(name,
+                    new Span<byte>(image.Data, checked(image.Width * image.Height * 4)));
+            }
+            catch
+            {
+                Raylib.UnloadImage(image);
+                throw;
+            }
+            return image;
+        }
         if (NativeCardSelectionFrame.IsFrame(name) ||
             name is CardListResources.Frame or CardListResources.Left or CardListResources.Right or CardListResources.Digits ||
             name.Equals(AttackSword, StringComparison.OrdinalIgnoreCase) ||
@@ -311,6 +336,7 @@ sealed class DatGraphics : IDisposable
             .Concat(PhaseButtons).Concat(PhaseFlipToBlue).Concat(PhaseFlipToRed)
             .Concat(SetSprites).Append(NativePlacementAssets.Rainbow).Concat(LifeSprites).Concat(LifeFloatingFonts)
             .Concat(FieldAttributeFonts).Concat(ShuffleSprites)
+            .Concat(archive.Entries.Where(e => NativeSelectionBackgroundPixels.IsBackground(e.Name)).Select(e => e.Name))
             .Append(DuelDetailBackground).Append(DuelDetailLine)
             .Append(DuelDetailScrollbar).Append(DuelStartEnglish)
             .Append(AttackSword).Append(AttackSwordPartial)
@@ -336,6 +362,9 @@ sealed class DatGraphics : IDisposable
                 if (FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase) &&
                     Raylib.GetImageColor(image, 0, 0).A != 0)
                     throw new InvalidDataException("Field attribute color key is not transparent: " + name);
+                if (NativeSelectionBackgroundPixels.IsBackground(name) &&
+                    Raylib.GetImageColor(image, 0, 0).A != 0)
+                    throw new InvalidDataException("Selection background key is not transparent: " + name);
                 if (name == CardListResources.Frame && Raylib.GetImageColor(image, 20, 20).A != 0)
                     throw new InvalidDataException("Card selection frame color key is not transparent");
                 if ((name is AttackSword or AttackSwordPartial || IsPhaseBanner(name)) && Raylib.GetImageColor(image, 0, 0).A != 0)
