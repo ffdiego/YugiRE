@@ -450,6 +450,8 @@ V29.2 (27/11/2026). A inspeção do DAT passou a listar as 24 chaves da ajuda co
 
 NativeVijaContract porta inicialização e predicado virtual +4 para ambos os modos; NativeVijaResources preserva manifesto e parâmetros de atlas. Roteiro 20 recebido: NativeVijaTimeline porta ordem dos passes, centros, fade, scratch e deformação por linha, 97/177 Draws. Máscara +98/remap e renderer ainda pendentes; não bloquear A03. [Contrato](../../docs/research/native-vija-selection-origins-2026-11-24.md). Roteiro 20 recebido: centros estáticos V11 em NativeSelectionOrigin; descritor D requer ajuste X vivo, sem assumir zero. Ver [handoff](../../docs/research/pending-bundles-handoff-2026-11-24.md).
 
+V30.3: manifesto v7 confirmado, cinco dimensões/ordem e recortes; testes de 97/177 Draws com metadados do DAT. Scratch +98 aponta 004CCD40; compositor ausente do v7. Roteiro 59. Não ligar vitória até compor letras.
+
 ## V31 — Bust-up de reações do Joey
 
 <a id="v31"></a>

@@ -250,3 +250,12 @@ vínculo causal. Não disparar V26 apenas pelo destino de movimento.
 No cliente, `--review-exclusion=250,8080` (ID real) ou `0,0080`
 (oculto), F5 reprodução/pausa, F7/F9 passo, F8 reset, F12 captura.
 Confirma geometria e predicado; não substitui a captura original.
+
+## V30 — máscara das letras de Destiny Board (59)
+
+```bash
+bash scripts/pending/59-vija-mask-compositor.sh
+```
+Apenas Ghidra. V7 contém Draw 004584C0, vtable 005DC6EC e manifesto;
+não repetir coleta 20. Exportar 004CCD40 (+98) e identificar auxiliares,
+formatos e recorte/máscara. Nenhum DAT ou EXE no Git.
