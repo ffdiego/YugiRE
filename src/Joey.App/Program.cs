@@ -90,6 +90,7 @@ static partial class Game
             ConfigureLiveBreak(archive);
             ConfigureLiveRandomBanks(archive);
             ConfigureLiveAffect(archive);
+            ConfigureLiveExclusion(archive);
             ConfigureLayerFontReview(args, archive);
             ConfigureDiceReview(args, archive);
             ConfigureCoinReview(args, archive);

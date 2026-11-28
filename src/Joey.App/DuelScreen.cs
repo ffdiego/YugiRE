@@ -713,6 +713,7 @@ static partial class Game
         presentation.Advance(frameElapsed);
         int hoverUpdates = hoverClock.Advance(frameElapsed, presentation.Style);
         AdvanceBreakTails(frameElapsed);
+        AdvanceLiveExclusions(frameElapsed);
         bool effectsCouldAdvance = CanPlayCardEffects;
         AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
@@ -801,6 +802,7 @@ static partial class Game
         // Draw this AFTER queued destruction cards so no face-up card
         // appears beneath the sword before the impact sample.
         DrawHiddenAttackTargetBeforeImpact();
+        DrawLiveExclusions();
         DrawLiveAffect(hoverUpdates,!joeySpeaking && !ConsoleCapturesInput && !selectingCard &&
             !MotionBusy && !PhaseBusy && !handHovered && hoverCpuHand<0 && pendingOwner is null &&
             queuedSpellTrapSelection is null && queuedEquipChoice is null &&

@@ -140,7 +140,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Affect no duelo para equipamento, campo, aura e restrições modelados; máscara aproximada. Completar contínuos e seletor 58. Viagem Equip em V32. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)
-- [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Capturar uma movimentação real à zona `0x0F` até o despacho em `0041E829` e o início do efeito. [Detalhes](docs/plans/VISUALS.md#v26)
+- [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Efeito ligado a BanishCommand aplicado; confirmar transferência real à zona `0x0F` e despacho, variantes e som. [Detalhes](docs/plans/VISUALS.md#v26)
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Banco DAT e resolvedor padrão confirmados. Validar o compositor e ligar os produtores à apresentação. [Detalhes](docs/plans/VISUALS.md#v29)

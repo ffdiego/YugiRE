@@ -229,6 +229,7 @@ NativeCoinPassChecks.Run(Check, Reject);
 NativeCoinResourceChecks.Run(Check, Reject);
 NativeCoinExtraChecks.Run(Check);
 NativeExclusionDrawChecks.Run(Check, Reject);
+LiveExclusionChecks.Run(Check);
 NativeSurfaceCopyChecks.Run(Check);
 NativeIntensityPixelChecks.Run(Check);
 NativeSourceAlphaPixelChecks.Run(Check);

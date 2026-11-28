@@ -156,7 +156,8 @@
     {
       "address": "0043DBE0",
       "family": "Remoção / exclusão",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelExclusionPresentation.cs"
     },
     {
       "address": "004870B0",

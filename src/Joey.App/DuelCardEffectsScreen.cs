@@ -71,6 +71,8 @@ static partial class Game
         breakTails.Clear();
         breakTailClock.Reset();
         liveAffect=new();
+        liveExclusions.Clear();
+        exclusionClock.Reset();
         lastSignatureCandidate = null;
         lastDestinyBoardCandidate = null;
         duel.DestinyBoardCompleted += completed =>
@@ -86,6 +88,7 @@ static partial class Game
                 hiddenFromPlayer: normal.Player != ViewPlayer && normal.FaceDown);
         };
         duel.EquipmentActivated += QueueEquipmentTravel;
+        duel.CardBanished += QueueLiveExclusion;
         duel.LabCoinResultReported += QueueLiveCoin;
         duel.LabDiceResultReported += QueueLiveDice;
         duel.MonsterDestroyed += monster =>
