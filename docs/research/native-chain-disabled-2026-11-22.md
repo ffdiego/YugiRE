@@ -160,3 +160,18 @@ construtor são atribuídas à execução que as contém. Onde houver mais
 de um pedido idêntico, a coleta conserva a ambiguidade. A captura
 no original e o vínculo com o fluxo normal do cliente permanecem
 pendentes. [Roteiro](../../scripts/pending/README.md#v12--produtor-e-execução-de-b1-no-roteiro-34).
+
+## V12.3 — Jinzo no duelo
+
+Consulta v7 a visual_virtual_methods: 005DB374+4 = 00403080
+(retorna obj+4 ativo; mesmo predicado dos bancos de efeitos),
++8=004531A0, +C=004531C0. Manifesto disable.txt tem seis linhas
+cha_mukou1.yga a cha_mukou6.yga; todas 50x72. O produtor
+0059CCF0 emite B1 em ordem lado 0/1 e slots 5..9; o handler
+00408730 espera os objetos bloqueantes antes de iniciar o próximo.
+Na invocação normal/especial revelada de Jinzo, o App enfileira
+os substeps visuais depois da colocação, dentro do comando ativo.
+Core só projeta ocorrências públicas de armadilhas, sem nova regra.
+24 Updates por alvo; não disparar em Set, por mera presença ou em
+qualquer negação. Flip Summon, demais produtores de B1 e equivalência
+runtime ficam pendentes. Compositor Raylib aproximado. Partial.

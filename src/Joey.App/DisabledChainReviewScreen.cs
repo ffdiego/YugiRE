@@ -55,9 +55,9 @@ static partial class Game
     // 004531C0; for 90 degrees position the unrotated quad's top-left at
     // the rotated rectangle's upper-right boundary. The GPU blend and
     // decoder policies are the existing client ones, not proven native.
-    static void DrawDisabledChainIndicator(CardPoint center, NativeDisabledChainFrame frame)
+    static void DrawDisabledChainIndicator(CardPoint center, NativeDisabledChainFrame frame,string[]? resources=null)
     {
-        var texture = graphics.Texture(disabledChainReviewResources[frame.FrameIndex]);
+        var texture = graphics.Texture((resources??disabledChainReviewResources)[frame.FrameIndex]);
         var bounds = frame.BoundsAt(center, texture.Width, texture.Height);
         if (!frame.DescriptorBit4000)
             Raylib.DrawTexture(texture, bounds.X, bounds.Y, Color.White);

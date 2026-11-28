@@ -151,7 +151,8 @@
     {
       "address": "004531C0",
       "family": "Indicador de corrente desativada",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelDisabledChainPresentation.cs"
     },
     {
       "address": "0043DBE0",
