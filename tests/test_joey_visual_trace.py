@@ -85,13 +85,15 @@ memory.set(0xa550a2,0x0100);
 memory.set(0x90100,0x8000);
 memory.set(0x90200,0x8003);
 call(0x44dd00,{inside(){
-    call(0x5b9170,{args:[0x8083,0x0100,0x0201,0],caller:0x576da4});
+    call(0x5b9170,{args:[0x8087,300,0x0100,3],caller:0x574954});
+    call(0x5b9170,{args:[0x8083,0x0100,0x0201,0],caller:0x5757e0});
     call(0x5b9470,{inside(){
         call(0x40cdb0,{args:[300,0x90100,0x90200],caller:0x571861});
         memory.set(0xa558ac,0x4002);
     }});
 }});
-const [producer,travel,step]=rpc.exports.stop().events;
+const [association,producer,travel,step]=rpc.exports.stop().events;
+assert.deepEqual([association.frame,association.words[0],association.caller],[1,0x8087,0x574954]);
 assert.deepEqual([producer.kind,producer.opcode,producer.frame,producer.words[0]],
                  ['transfer-command-produced',0x83,1,0x8083]);
 assert.deepEqual([travel.sourceDescriptor,travel.destinationDescriptor],[0x8000,0x8003]);

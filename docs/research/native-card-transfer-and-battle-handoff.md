@@ -24,6 +24,39 @@ na investigação. O exemplo de Change of Heart fixa uma rota do
 controlador atual para outro lado, com a propriedade da carta preservada
 no duelo. O caminho de retorno ainda precisa de amostra equivalente.
 
+### Tomada e retorno do controle
+
+O perfil P133 do SQLite liga Change of Heart (resource ID 1027,
+índice interno 300) a `00589200`. No assembly, `0058929D`
+chama `00574900`, que pede 87 em `0057494F`. A mesma
+rotina de efeito chama `005747E0` em `005892BF`, que pede 86.
+Esses dois pedidos manipulam associações. A viagem observada
+chega por 83.
+
+O segundo produtor de 83 é `00575750`. Em `005757DB`,
+só enfileira quando a origem está ocupada e o destino está livre.
+O SQLite v16 mostra a chamada `005BA060 → 005743F0 → 00575750`.
+`005743F0` consulta `0056C210` para escolher o lado da carta e
+`0056A030` para achar espaço. Se faltar espaço, chama `00577840`
+em vez de pedir viagem. A escolha de lado em `0056C210` usa o
+campo do proprietário com um bit de estado como base e pode ser
+sobrescrita por associações. O ramo do tipo 3 compara o ID 1027
+em `0056C333`. Isso oferece o mesmo caminho de viagem para o
+lado escolhido após uma associação mudar. A expiração no fim
+do turno ainda precisa ser correlacionada com o 83 de retorno.
+
+Para Snatch Steal, `005899A0 → 00574990 → 005749B0` chega ao
+pedido B2 de equipamento, com ramos preparatórios 88 e 8A.
+`0056C210` reconhece o resource ID 1068 por associação de
+equipamento do tipo 1. O perfil activation registra 86, 87,
+88, 8A e B2 ao lado de 83 e dos dois descritores. Isso permite
+verificar a ordem em campo cheio, troca em defesa e remoção
+do equipamento sem deduzir timing dos pedidos de associação.
+Em `00571829–0057183C`, o destino de 83 herda os dois bits
+superiores do descritor de origem e pode limpar o bit 14
+conforme o slot. A apresentação de ocultos durante a viagem
+requer um trace pareado.
+
 ## Batalha
 
 O [contrato de ataque e LP](native-attack-life-routing-2026-11-24.md)
