@@ -543,6 +543,37 @@ de resolvedores de batalha, invocação, ativação, posição e escolhas.
 Sem promoção de cobertura ou alegação de fidelidade nativa nova.
 C12 permanece parcial.
 
+### C12 — Resolução de combate somente pela fila (28/11/2026)
+
+Removidos Attack, BeginAttackResponse, PassAttackResponse,
+ActivateAttackTrap, ResolveDeclaredAttack, CalculateBattle,
+DealMonsterBattleDamage, FinishDeferredBattle, ResolveBattleOutcome
+e BanishBattlingMonster do Core. Removida a reserva BattleContinuation
+e seu campo deferredBattle, inclusive predicados e retomadas em
+seletores. IsMarkedForBattleDestruction consulta apenas a reserva
+tipada de combate. Negate Attack só encerra a fase por comando
+no resolvedor de ataque restante. Demo.cs: 2579 → 2248 linhas.
+
+Preservados os executores de declaração direta/alvo, resposta,
+revelação, cálculo, dano, efeitos, remoções reservadas e seleção
+pós-batalha. A06 compara o resultado esperado explícito da matriz
+de defensor oculto e não o motor removido; o console testa
+recrutamento a partir de combate tipado. Adaptação transitória
+somente na suíte histórica opt-in, delegando à fila sem mutação
+direta ou alteração de gate. Não validar a suíte histórica.
+P188 Dimensional Warrior continua Partial: o único resolvedor
+histórico de banimento duplo foi removido, e a configuração
+de batalha já era recusada pela fila. Manifesto registra isso,
+sem alteração de status ou promoção de cobertura.
+
+PR #271 integrado em 9ee59b0 após CI 46150117684 verde.
+Esta fatia aguarda CI integral. Restam resolvedores diretos de
+invocação, posição, ativação, respostas de invocação e escolhas;
+as funções de regra compartilhadas não devem ser confundidas
+com entradas paralelas. Próxima fatia: retirar entradas de
+invocação/Set diretas e adaptar apenas os fixtures ativos.
+C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
