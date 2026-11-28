@@ -141,3 +141,32 @@ para −248, F6 fez a sequência avançar e F8 voltou a −256.
 O roteiro 69 ainda aguarda ativação dirigida no original para
 comparar a sequência completa, o áudio e o compositor. A
 cobertura do Draw é Partial.
+
+## V20.1 — produtores de moeda
+
+O SQLite v15 identifica os callbacks primários de Time Wizard
+(resource 15, P004) e Barrel Dragon (742, P101) em `005835F0`
+e `005871A0`. O assembly do EXE validado confirma dois
+produtores antes ausentes da varredura por opcodes literais,
+pois são montados com `OR AL,imm8`.
+
+| Carta | Chamada a `005B9170` | B | C | D |
+| --- | --- | --- | --- | --- |
+| Time Wizard | `005836CB`, E0 | escolha anterior em `00A558B4` | retorno de `005BDDB0(2)` em `005836A9` | região da fonte |
+| Barrel Dragon | `00587228`, E1 | zero | bit i ligado quando o sorteio i é diferente de zero, três chamadas a `005BDDB0(2)` | região da fonte |
+
+Nos dois casos, o descritor em `contexto+2` fornece o lado
+(bit 0) e região (bits 1–5). Time Wizard compara o sorteio à
+escolha em `005836DB`. Barrel Dragon soma os zeros em
+`005871FB` e encaminha a destruição em `0058723C` se o total
+for maior que um. O handler de E0 exibe `C==0` e E1 exibe
+`(~C)&7`, preservando a ordem em que o callback gerou os
+resultados. O gate da vtable `005DB404` libera após o Update
+`00457500` atingir 640 para uma moeda ou 896 para três,
+partindo de −128 com passo 8.
+
+O roteiro 76 registra argumentos, lado, modo e cadência nativa.
+A ativação de efeito de monstro e a seleção de alvo/escolha
+ainda precisam de um produtor tipado no Alpha. O laboratório
+continua exercitando o renderer isoladamente.
+[Próxima coleta](../../scripts/pending/README.md#v20--moedas-de-time-wizard-e-barrel-dragon-76).

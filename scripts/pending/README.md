@@ -337,3 +337,27 @@ A saída esperada registra um pedido 9 em `0045E240`, o descritor de
 foco, a sequência Draw e uma transição de saída. Guarde em `scratch/`
 um quadro estabilizado e um quadro sem foco para comparar o
 posicionamento e a composição com o Alpha.
+
+## V20 — moedas de Time Wizard e Barrel Dragon (76)
+
+No Proton isolado, anexe GDB antes da ativação de Time Wizard
+com uma escolha de moeda ou de Barrel Dragon com alvo válido.
+Um replay com a ativação pode fornecer a mesma entrada. Guarde
+um log privado por carta e, quando possível, PNGs do giro,
+resultado e liberação no mesmo cenário.
+
+```bash
+timeout --signal=INT 95s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/pending/76-wine-coin-card.gdb > scratch/coin-card.log 2>&1
+```
+
+O piloto com a demonstração em Proton 9.0 chegou ao timeout
+de 60 segundos sem acionar E0 ou E1 nesses produtores. A coleta
+aguarda uma ativação dirigida das cartas acima.
+
+O roteiro captura as quatro palavras nas chamadas `005836CB` e
+`00587228`, uma sequência por execução. Confira uma moeda para
+E0 ou três para E1, passos de oito e 96 ou 128 Updates previstos,
+respectivamente. Compare as faces mostradas com as palavras do
+comando antes de ligar um produtor real ao renderer.
+[Assembly](../../docs/research/native-coin-dice-break-contract-2026-11-23.md#v201--produtores-de-moeda).
