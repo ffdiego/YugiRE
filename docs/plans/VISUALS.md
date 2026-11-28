@@ -529,6 +529,16 @@ Bundle 18 recebido: NativeExclusionTimeline porta 24 Draws, ordem mini/feixes/pa
 
 V26.2: gate +4 sempre falso (0043DBD0), manifesto e dimensões DAT conferidos. Review F5 por Draw. Produtor ainda não encontrado; roteiro 34 modo exclusion pendente. Não ligar automaticamente a banimento ou material de fusão.
 
+V26.3. No PE, a chamada direta ao construtor `0043D810`
+fica em `0043D496`, dentro de `0043D440`. A tabela
+`005DAC74` aponta para essa rotina no slot `+18h`.
+`0043D090` instala a tabela e é chamado para o objeto
+embutido em `+3A0h` em `0044C978`. `0043D440` lê o
+descritor por `00418B50` e encaminha a instância ao
+registro `0044BAD0`. Isso delimita o produtor imediato.
+Falta uma chamada observada ao slot virtual para ligar o
+efeito a um evento do duelo.
+
 ## V27 — Layerfont A (00455FF0)
 
 <a id="v27"></a>
