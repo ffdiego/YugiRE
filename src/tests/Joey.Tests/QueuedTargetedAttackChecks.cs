@@ -137,8 +137,10 @@ internal static class QueuedTargetedAttackChecks
             var queue = console.Queue;
             check(duel.TryQueueEquipment(DuelZone.Hand, 0, side, 2, out _), "Responder equips attacker");
             DrainResponseQueue(queue);
-            check(duel.EndTurn(out _) && duel.Draw(out _) &&
-                duel.TryQueueEquipment(DuelZone.Hand, 0, responder, 3, out _), "Attacker equips defender");
+            check(duel.EndTurn(out _) && duel.TryQueueTurnDraw(out _, ActionOrigin.Test),
+                "Attacker admits the turn draw");
+            DrainResponseQueue(queue);
+            check(duel.TryQueueEquipment(DuelZone.Hand, 0, responder, 3, out _), "Attacker equips defender");
             DrainResponseQueue(queue);
             duel.Life[responder] = lethal ? 300 : 8000;
             check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(2, 3, out _) &&
