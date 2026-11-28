@@ -62,7 +62,7 @@ static partial class Game
         var deck = AlphaDeck.Create(playableCards);
         var fusion = AlphaDeck.CreateFusionDeck(playableCards);
         var match = DemoDuel.FromDecks(deck, deck, seed, fusion, fusion);
-        var queue = match.CreatePrimitiveActionQueue();
+        var queue = match.Actions;
         CpuDuelController[] sides = [new(0), new(1)];
         for (int i = 0; i < 5000 && !match.GameOver; i++)
         {
@@ -90,7 +90,7 @@ static partial class Game
     static void StartDuelPresentation()
     {
         ResetDuelPresentation();
-        queuedDuel = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
+        queuedDuel = duel.ConfigureActionQueue(new AppActionPresentationGate(), allowLabEdits: true);
     }
 
     static void ResetDuelPresentation()
