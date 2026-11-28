@@ -2,27 +2,38 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
-    private ActionQueue? primitiveActionQueue;
+    private readonly ActionQueue primitiveActionQueue;
     public event Action<LabCoinResult>? LabCoinResultReported;
     public event Action<LabDiceResult>? LabDiceResultReported;
     public event Action<DemoBanishment>? CardBanished;
-    internal bool HasActionQueue => primitiveActionQueue is not null;
-    internal bool ActionQueueBusy => primitiveActionQueue?.IsBusy == true;
+    internal bool ActionQueueBusy => primitiveActionQueue.IsBusy;
 
-    // Explicit developer console attachment must reuse this duel's queue.
-    // An existing queue retains its original lab-edit authorization.
-    internal ActionQueue ConsoleQueue(IPresentationGate? gate) =>
-        primitiveActionQueue ?? CreatePrimitiveActionQueue(gate, allowLabEdits: true);
-
-    /// <summary>
-    /// One queue per duel. Effect-level operations, not a general legal input API.
-    /// The host drives the queue. Direct array writes are fixture-only.
-    /// </summary>
-    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false)
+    /// <summary>One queue, owned by the duel from construction.
+    /// The default is immediate presentation without laboratory privileges.
+    /// Obtaining this reference seals its configuration; the host drives Tick.</summary>
+    public ActionQueue Actions
     {
-        if (primitiveActionQueue is not null)
-            throw new InvalidOperationException("A duel already owns an action queue.");
-        return primitiveActionQueue = new(new PrimitiveActionExecutor(this), gate,
+        get
+        {
+            primitiveActionQueue.SealConfiguration();
+            return primitiveActionQueue;
+        }
+    }
+
+    /// <summary>Explicit host configuration before first use. Returns the
+    /// same owned queue; it cannot replace a gate or elevate privileges later.</summary>
+    public ActionQueue ConfigureActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false)
+    {
+        primitiveActionQueue.ConfigureBeforeUse(gate, allowLabEdits);
+        return primitiveActionQueue;
+    }
+
+    // Historical caller compatibility: configure, never create another queue.
+    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false) =>
+        ConfigureActionQueue(gate, allowLabEdits);
+
+    private ActionQueue BuildActionQueue() =>
+        new(new PrimitiveActionExecutor(this), externalAdmission:
             () => (!LegacyActionsBlocked || admittingQueuedMonsterFlipAnswer && CanAdmitQueuedMonsterFlipAnswer() ||
                 admittingQueuedFlipSpellTrapPair && CanAdmitQueuedFlipSpellTrapPair() ||
                 admittingQueuedGraveyardRecovery && CanAdmitQueuedGraveyardRecovery() ||
@@ -33,8 +44,7 @@ public sealed partial class DemoDuel
                 admittingQueuedFusion && CanAdmitQueuedFusion() ||
                 admittingQueuedSummonResponse && CanAdmitQueuedSummonResponse() ||
                 admittingQueuedAttackResponse && CanAdmitQueuedAttackResponse()) &&
-                (PendingEndDiscards == 0 || admittingQueuedEndDiscard && CanAdmitQueuedEndDiscard()), allowLabEdits);
-    }
+                (PendingEndDiscards == 0 || admittingQueuedEndDiscard && CanAdmitQueuedEndDiscard()));
 
     /// <summary>
     /// Opt-in legal hand activation for Raigeki only. No mutation at admission.
