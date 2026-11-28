@@ -37,7 +37,7 @@ static partial class Game
             if(ConsoleSession is null)
             {
                 // Attach the console to the existing action queue.
-                liveConsoleSession=DuelConsoleSession.Attach(duel,new AppActionPresentationGate(),cards);
+                liveConsoleSession=DuelConsoleSession.Attach(duel,cards:cards);
                 queuedDuel=liveConsoleSession.Queue;
                 labStatus=DuelScriptStatus.Completed;
                 ResetConsoleLog();
