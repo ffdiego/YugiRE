@@ -24,11 +24,12 @@ internal static class QueuedDirectAttackChecks
             int side = 1 - responder;
             var duel = DemoDuel.FromPartialObservation(responder, [trap, trap],
                 side == 0 ? Slots(attacker) : Slots(), side == 1 ? Slots(attacker) : Slots(), 8000);
-            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
-                duel.EndTurn(out _) && duel.BeginBattle(out _), "Queued Trap fixture");
-            var gate = new Gate();
+            var gate = new Gate { Release = true };
             var console = new DuelConsoleSession(duel, gate);
             var queue = console.Queue;
+            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
+                TurnFixture.End(duel, out _) && duel.BeginBattle(out _), "Queued Trap fixture");
+            gate.Release = false;
             check(console.Execute("attack 2 direct").Enqueued &&
                 duel.DescribeActionPresentation(queue.Trace.Last().Entry.Command) is null,
                 "Queued response suppresses the attack cue until a pass");
@@ -128,11 +129,11 @@ internal static class QueuedDirectAttackChecks
                 side == 0 ? field : Slots(), side == 1 ? field : Slots(), 8000);
             duel.DefensePosition[side, 1] = duel.DefensePosition[side, 3] = true;
             duel.MonsterFaceDown[side, 3] = true;
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _),
-                "Queued Mirror Force fixture");
             var gate = new Gate { Release = true };
             var console = new DuelConsoleSession(duel, gate);
             var queue = console.Queue;
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && duel.BeginBattle(out _),
+                "Queued Mirror Force fixture");
 
             check(console.Execute("attack 2 direct").Enqueued, "Direct response accepts other supported normal allies");
             Drain(queue);
@@ -195,7 +196,7 @@ internal static class QueuedDirectAttackChecks
                 side0Deck: side == 0 ? [attackingSideTrap] : [],
                 side1Deck: side == 1 ? [attackingSideTrap] : []);
             var queue = duel.Actions;
-            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) && duel.EndTurn(out _) &&
+            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) &&
                 duel.TryQueueTurnDraw(out _, ActionOrigin.Test), "Both sides prepare back-row cards");
             Drain(queue);
             check(duel.SetFromHand(0, out _) && duel.BeginBattle(out _), "Both sides set back-row cards");
@@ -229,7 +230,7 @@ internal static class QueuedDirectAttackChecks
             Drain(queue);
             check(duel.TryCaptureCardTarget(responder, DuelZone.FieldSpell, 0, out var fieldTarget),
                 "Yami has a tracked occurrence in the Field Zone");
-            check(duel.EndTurn(out _) && duel.BeginBattle(out _) && duel.AttackValue(side, 2) == 1600,
+            check(TurnFixture.End(duel, out _) && duel.BeginBattle(out _) && duel.AttackValue(side, 2) == 1600,
                 "Opposing Yami boosts the Fiend before the direct attack");
             check(duel.TryQueueDirectAttack(2, out _) && duel.Life[responder] == 8000,
                 "Field Spell does not prevent read-only attack admission");
@@ -262,7 +263,7 @@ internal static class QueuedDirectAttackChecks
             check(duel.TryQueueEquipment(DuelZone.Hand, 0, side, 2, out _),
                 "Mage Power can equip the opposing monster");
             Drain(queue);
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.BeginBattle(out _) &&
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && duel.BeginBattle(out _) &&
                 duel.AttackValue(side, 2) == 2400 && duel.TryQueueDirectAttack(2, out _),
                 "Equipped direct attack admits the current ATK and the Set response");
             Drain(queue);
