@@ -142,3 +142,18 @@ sem duplicar a mão. Não modifica o hotspot provisório nesta fatia.
 Sem bolha fake, sem fórmula de fade/escala inventada. Roteiro 77 exporta
 as janelas do consumidor e input para localizar produtor e lifecycle de
 cursor_pow. Validação desktop e CI pendentes, badge inalterada.
+
+## V09/V10.3 — diagnóstico do ponteiro pressionado
+
+Captura F12 do operador em 28/11 (18:19:55 UTC): cursor00, actionCloud
+null, mouseCanvas (373,403), turno 1/Main, sem efeitos. Não registra
+botão físico nem versão do build; não permite atribuir a falha à
+entrada ou à versão executada. Não trocar a prioridade ou criar a
+onda de choque por hipótese. O cliente passa a amostrar o ponteiro
+uma vez depois de compor o canvas; F12 e Draw usam o mesmo recurso.
+F12 inclui buildVersion, cursorInput (down/pressed/released, botão
+direito, foco e coordenadas da janela). Opção --trace-cursor escreve
+transições do ponteiro e bordas do botão no stdout sem alterar input
+ou lógica. Comparar clique mantido em área vazia e soltura. O PNG
+continua a excluir o overlay; os dados não provam paridade nativa.
+Roteiro 77 continua pendente. CI/Windows pendentes.

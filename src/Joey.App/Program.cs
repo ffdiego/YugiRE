@@ -261,6 +261,8 @@ static partial class Game
         using var audio = error.Length == 0 ? DuelAudioPlayer.Open(Option(args,"--voice-dat="),dataArchivePath,args.Contains("--no-audio")) : null;
         duelAudio = audio;
         bool quit = false;
+        bool traceCursor = args.Contains("--trace-cursor");
+        (string Sprite, bool LeftDown, bool RightDown, bool Focused)? previousCursor = null;
         while (!Raylib.WindowShouldClose() && !quit)
         {
             const int width = 800, height = 600;
@@ -399,6 +401,16 @@ static partial class Game
             }
 
             Raylib.EndTextureMode();
+            WindowCursorFrame? cursorFrame = useNativeCursor ? SampleWindowCursor() : null;
+            if (traceCursor && cursorFrame is { } pointer)
+            {
+                var state = (pointer.Sprite, pointer.LeftDown, pointer.RightDown, pointer.WindowFocused);
+                if (previousCursor != state || pointer.LeftPressed || pointer.LeftReleased)
+                {
+                    Console.WriteLine($"[cursor] sprite={pointer.Sprite} down={pointer.LeftDown} pressed={pointer.LeftPressed} released={pointer.LeftReleased} right={pointer.RightDown} focused={pointer.WindowFocused} x={pointer.Position.X} y={pointer.Position.Y}");
+                    previousCursor = state;
+                }
+            }
             if ((screen is "duel" or "active-chain-review" or "chain-review" or "status-review" or "fusion-review" or "general-fusion-review" or "layerfont-review" or "dice-review" or "coin-review" or "alt-ex-review" or "reaction-review" or "break-review") && Raylib.IsKeyPressed(KeyboardKey.F12))
             {
                 try
@@ -414,7 +426,7 @@ static partial class Game
                     else if (screen == "dice-review") CaptureDiceReview(canvas);
                     else if (screen == "coin-review") CaptureCoinReview(canvas);
                     else if (screen == "alt-ex-review") CaptureAlternativeExclusionReview(canvas);
-                    else CaptureVisualReview(canvas);
+                    else CaptureVisualReview(canvas, cursorFrame);
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
                 { Console.Error.WriteLine("[visual-review] screenshot failed: " + ex.Message); }
@@ -423,7 +435,7 @@ static partial class Game
             Raylib.DrawTexturePro(canvas.Texture, new Rectangle(0, 0, width, -height),
                 new Rectangle(origin.X, origin.Y, width * scale, height * scale),
                 Vector2.Zero, 0, Color.White);
-            if (useNativeCursor) DrawWindowCursor(scale);
+            if (cursorFrame is { } pointerToDraw) DrawWindowCursor(scale, pointerToDraw);
             Raylib.EndDrawing();
         }
         duelAudio = null;

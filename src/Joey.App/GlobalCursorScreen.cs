@@ -10,9 +10,8 @@ static partial class Game
     /// Action-cloud YGAs are variants of the pointer, not additional
     /// card-anchored overlays.
     /// </summary>
-    static string ActiveWindowCursorSprite()
+    static string ActiveWindowCursorSprite(bool pressed)
     {
-        bool pressed = Raylib.IsMouseButtonDown(MouseButton.Left);
         if (screen == "duel" && !ConsoleCapturesInput && !visualReviewPaused &&
             !MotionBusy && !PhaseBusy && !alphaBlocked &&
             CanPlayTurn && CanPlayMainOrBattle &&
@@ -57,10 +56,23 @@ static partial class Game
     /// scene. This remains visible on menu, cards, deck and duel screens,
     /// including the letterbox area while the window is resized.
     /// </summary>
-    static void DrawWindowCursor(float canvasScale)
+    sealed record WindowCursorFrame(string Sprite, Vector2 Position, bool LeftDown,
+        bool LeftPressed, bool LeftReleased, bool RightDown, bool WindowFocused);
+
+    static WindowCursorFrame SampleWindowCursor()
     {
-        var texture = graphics.Texture(ActiveWindowCursorSprite());
-        Vector2 mousePosition = Raylib.GetMousePosition();
+        bool down = Raylib.IsMouseButtonDown(MouseButton.Left);
+        return new(ActiveWindowCursorSprite(down), Raylib.GetMousePosition(), down,
+            Raylib.IsMouseButtonPressed(MouseButton.Left),
+            Raylib.IsMouseButtonReleased(MouseButton.Left),
+            Raylib.IsMouseButtonDown(MouseButton.Right), Raylib.IsWindowFocused());
+    }
+
+    // F12 and final composition use exactly the same sampled input and resource.
+    static void DrawWindowCursor(float canvasScale, WindowCursorFrame frame)
+    {
+        var texture = graphics.Texture(frame.Sprite);
+        Vector2 mousePosition = frame.Position;
         var origin = NativeDuelCursor.PointerOrigin(
             new CardPoint((int)mousePosition.X, (int)mousePosition.Y));
         Raylib.DrawTextureEx(texture, new Vector2(origin.X, origin.Y),

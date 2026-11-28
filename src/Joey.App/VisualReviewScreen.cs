@@ -9,7 +9,7 @@ static partial class Game
     static bool visualReviewPaused;
     static bool visualReviewStep;
 
-    static void CaptureVisualReview(RenderTexture2D canvas)
+    static void CaptureVisualReview(RenderTexture2D canvas, WindowCursorFrame? cursorFrame)
     {
         string basename = SaveVisualReviewImage(canvas, "yugire");
         string json = basename + ".json";
@@ -17,7 +17,7 @@ static partial class Game
         // Recording counters makes comparing frames with an original-game
         // screenshot easier. This metadata is about YugiRE, not a native trace.
         // Both fields describe the same pointer decision, including field Attack.
-        string cursorSprite = ActiveWindowCursorSprite();
+        string? cursorSprite = cursorFrame?.Sprite;
         var snapshot = new
         {
             schemaVersion = 1,
@@ -38,7 +38,20 @@ static partial class Game
             detailScroll = duelDescriptionScroll,
             detailCardResourceId = detailCard?.Id,
             mouseCanvas = new { x = mouse.X, y = mouse.Y },
-            mousePointerSource = "original-data.dat-window-overlay",
+            mousePointerSource = cursorFrame is null ? "system" : "original-data.dat-window-overlay",
+            buildVersion = typeof(Game).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+                .FirstOrDefault()?.InformationalVersion,
+            cursorInput = cursorFrame is { } pointer ? new
+            {
+                leftDown = pointer.LeftDown,
+                leftPressed = pointer.LeftPressed,
+                leftReleased = pointer.LeftReleased,
+                rightDown = pointer.RightDown,
+                windowFocused = pointer.WindowFocused,
+                windowMouse = new { x = pointer.Position.X, y = pointer.Position.Y }
+            } : null,
             cursorSprite,
             actionCloud = NativeDuelCursor.ActionForSprite(cursorSprite)?.ToString(),
             turn = duel.Turn,
