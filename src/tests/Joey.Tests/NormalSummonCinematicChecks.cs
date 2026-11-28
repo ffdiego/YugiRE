@@ -10,20 +10,19 @@ internal static class NormalSummonCinematicChecks
     {
         Card weak = Monster(140, 44, 4);
         Card redEyes = Monster(81, 1082, 7);
-        var summoned = new DemoDuel([redEyes]);
-        summoned.Monsters[0, 0] = weak;
-        summoned.Monsters[0, 1] = weak;
+        var summoned = DemoDuel.FromPartialObservation(0, [redEyes],
+            [weak, weak, null, null, null], new Card?[5], 8000);
         Card physicalRedEyes = summoned.Hand[0];
         List<DemoNormalSummon> normalEvents = [];
         List<DemoMonsterTribute> tributes = [];
         summoned.MonsterNormalSummoned += normalEvents.Add;
         summoned.MonsterTributed += tributes.Add;
 
-        check(!summoned.Summon(0, 0, 2, true, out _, [0]) &&
+        check(!TurnFixture.Place(summoned, 0, 2, false, out _, [0]) &&
               normalEvents.Count == 0 && tributes.Count == 0 &&
               summoned.Monsters[0, 2] is null,
               "Signature summon: rejected Red-Eyes payment emits no visual cue");
-        check(summoned.Summon(0, 0, 2, true, out _, [0, 1]) &&
+        check(TurnFixture.Place(summoned, 0, 2, false, out _, [0, 1]) &&
               tributes.Select(t => t.Zone).SequenceEqual([0, 1]) &&
               normalEvents is [{ Player: 0, Zone: 2, FaceDown: false, Card: var card }] &&
               ReferenceEquals(card, physicalRedEyes) &&
@@ -34,7 +33,7 @@ internal static class NormalSummonCinematicChecks
         Card physicalWeak = faceDown.Hand[0];
         List<DemoNormalSummon> sets = [];
         faceDown.MonsterNormalSummoned += sets.Add;
-        check(faceDown.Summon(0, 0, 3, true, out _, faceDown: true) &&
+        check(TurnFixture.Place(faceDown, 0, 3, true, out _) &&
               sets is [{ Player: 0, Zone: 3, FaceDown: true, Card: var setCard }] &&
               ReferenceEquals(setCard, physicalWeak) &&
               faceDown.MonsterFaceDown[0, 3],
@@ -44,7 +43,7 @@ internal static class NormalSummonCinematicChecks
         List<DemoNormalSummon> opponentEvents = [];
         cpuSide.MonsterNormalSummoned += opponentEvents.Add;
         TurnFixture.Advance(cpuSide);
-        check(cpuSide.Summon(0, 1, 1, true, out _) &&
+        check(TurnFixture.Place(cpuSide, 0, 1, false, out _) &&
               opponentEvents is [{ Player: 1, Zone: 1, FaceDown: false }],
               "Normal summon cue: player one (CPU perspective) publishes owner and zone");
     }
