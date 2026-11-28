@@ -136,7 +136,7 @@ static partial class Game
                 side0Graveyard: side == 0 ? graveyard : [], side1Graveyard: side == 1 ? graveyard : []);
             alphaCpu = null;
             ClearDuelSelection();
-            var queue = duel.CreatePrimitiveActionQueue();
+            var queue = duel.Actions;
             queuedDuel = queue;
 
             if (CurrentHandAction(0) != NativeCursorAction.Summon) return false;
