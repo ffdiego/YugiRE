@@ -7,7 +7,7 @@ public sealed partial class DemoDuel
     private bool admittingQueuedDeckSearch;
 
     private bool CanAdmitQueuedDeckSearch() =>
-        !GameOver && deferredBattle is null &&
+        !GameOver &&
         PendingCardSelection is { Source: CardSelectionSource.Deck,
             Destination: CardSelectionDestination.Hand, MaxSelections: 1 } pending &&
         ((pending.MinSelections == 1 && CardSelectionRules.OnFieldToGraveyardFilter(pending.EffectResourceId) == pending.Filter) ||
