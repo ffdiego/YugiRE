@@ -43,7 +43,7 @@ static partial class Game
         if (origin is { } from)
         {
             activationOrigin = ToCardBounds(from);
-            activation.Enqueue(ActivationStage.Travel, CardTravel.Updates);
+            activation.Enqueue(ActivationStage.Travel, NativePlacementTravel.DescriptorCommitUpdates);
         }
         activation.Enqueue(ActivationStage.Glow, ActivationEffectPlayback.MaxUpdates);
     }
@@ -58,14 +58,14 @@ static partial class Game
     static void AdvanceSpellActivation(TimeSpan elapsed)
     {
         if (!ActivationBusy) return;
-        int updates=activationClock.Advance(elapsed,presentation.Style);
-        if(updates>0 && activation.Current is { } step)
-        {
-            if(step.Kind==ActivationStage.Glow && activation.ElapsedUpdates==0 ||
-                step.Kind==ActivationStage.Travel && updates>step.Updates-activation.ElapsedUpdates)
-                PlayDuelSound(DuelSoundCue.Activation);
-        }
-        activation.Advance(updates);
+        if (activationClock.Advance(elapsed,presentation.Style)==0 ||
+            activation.Current is not { } step) return;
+        // One observable Update per Draw. In CF the move cue precedes the
+        // first travel update; 72 requests magic_active on its first Update.
+        // Do not cross stages in one catch-up batch or consume their cues.
+        if (activation.ElapsedUpdates==0)
+            PlayDuelSound(step.Kind==ActivationStage.Travel ? DuelSoundCue.CardMove : DuelSoundCue.Activation);
+        activation.Advance(1);
         if (!ActivationBusy) activationCard = null;
     }
 
@@ -81,10 +81,14 @@ static partial class Game
         {
             // A spent spell can already be in the graveyard. This is only its visual copy.
             var portrait = DuelCardLayout.BoardPortrait(DuelCardLayout.FrameCenter(scratch));
-            var bounds = step.Kind == ActivationStage.Travel
-                ? CardTravel.Sample(activationOrigin, portrait, activation.ElapsedUpdates)
-                : portrait;
-            DrawDuelCard(card, DuelCardLayout.InTransit(bounds, activationNearSide, false, false));
+            if (step.Kind == ActivationStage.Travel)
+            {
+                // CF uses the same 00418B60 interpolation as hand placement.
+                var pose=NativePlacementTravel.Sample(activationOrigin,portrait,activationNearSide,
+                    false,false,NativePlacementTravel.MotionSampleUpdate(activation.ElapsedUpdates),effectCosine);
+                DrawPlacementTravelCard(card,pose);
+            }
+            else DrawDuelCard(card, DuelCardLayout.InTransit(portrait, activationNearSide, false, false));
         }
         if (step.Kind != ActivationStage.Glow) return;
 

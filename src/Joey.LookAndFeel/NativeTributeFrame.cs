@@ -13,6 +13,13 @@ public readonly record struct NativeTributeFrame(
 {
     public const int UpdateIncrement = 8;
     public const int HoldCounter = 0x80;
+    public const int SoundCounter = 0x88;
+
+    // 0048708E compares the POST-update counter with 0x88.
+    // A released presentation may consume multiple ticks after a stall.
+    public static bool CrossesSoundUpdate(int previousUpdates,int consumedUpdates) =>
+        consumedUpdates>0 && previousUpdates<SoundCounter/UpdateIncrement &&
+        (long)previousUpdates+consumedUpdates>=SoundCounter/UpdateIncrement;
     public const int EndCounter = 0x180;
     public const int ReleasedUpdates = 49; // 0, 8, ... 384; next Update 392 disables.
 

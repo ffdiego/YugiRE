@@ -179,6 +179,11 @@ static partial class Game
         static CardBounds Bounds(Rectangle rect) => new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
         var pose=NativePlacementTravel.Sample(Bounds(f.Origin),Bounds(f.Destination),
             f.Player==ViewPlayer,f.Defense,f.Hidden,NativePlacementTravel.MotionSampleUpdate(travelUpdate),effectCosine);
+        DrawPlacementTravelCard(f.Card,pose);
+    }
+
+    static void DrawPlacementTravelCard(Card card, NativePlacementTravelSample pose)
+    {
         var cell=pose.Portrait;
         int width=(int)((long)cell.Width*pose.FaceWidthFixed16>>16);
         if(width<=0)return;
@@ -192,8 +197,8 @@ static partial class Game
         }
         else
         {
-            string? name=mini?graphics.Artwork.MiniFor(f.Card):graphics.Artwork.For(f.Card);
-            texture=graphics.Texture(DuelArtworkPolicy.Require(f.Card,name,mini));
+            string? name=mini?graphics.Artwork.MiniFor(card):graphics.Artwork.For(card);
+            texture=graphics.Texture(DuelArtworkPolicy.Require(card,name,mini));
         }
         // The pose carries native accumulators; the GPU rectangle is the
         // explicit client approximation of 00422A20.

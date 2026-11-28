@@ -28,6 +28,20 @@ internal static class NativePlacementChecks
             NativePlacementTravel.MotionSampleUpdate(8)==8 &&
             NativePlacementTravel.MotionSampleUpdate(10)==8,
             "placement: observed Set/Summon effect boundary holds final motion sample");
+        check(NativePlacementTravel.DescriptorCommitUpdates==9 &&
+            NativePlacementTravel.MotionSampleUpdate(8)==8,
+            "placement: CF activation includes terminal descriptor commit");
+        var spell=NativePlacementTravel.Sample(origin,target,true,false,false,4,c);
+        check(spell.Portrait.Width==75 && spell.Portrait.Height==108 &&
+            spell.FaceProgress==256 && spell.AngleIndex==0,
+            "placement: local CF spell shrinks linearly and remains face-up");
+        check(!NativeTributeFrame.CrossesSoundUpdate(0,1) &&
+            !NativeTributeFrame.CrossesSoundUpdate(15,1) &&
+            NativeTributeFrame.CrossesSoundUpdate(16,1) &&
+            NativeTributeFrame.CrossesSoundUpdate(15,3) &&
+            !NativeTributeFrame.CrossesSoundUpdate(17,1) &&
+            !NativeTributeFrame.CrossesSoundUpdate(16,0),
+            "placement: tribute sound on crossing post-update counter 0x88 only");
         string[] bank=NativePlacementAssets.SetBank();
         check(NativePlacementAssets.Aura(false).EndsWith("eff_set_y.bmp")&&
               NativePlacementAssets.Aura(true).EndsWith("eff_set_b.bmp")&&

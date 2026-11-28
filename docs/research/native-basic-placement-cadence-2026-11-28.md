@@ -39,3 +39,42 @@ Sem build local neste ambiente; CI e escuta/compare no cliente pendentes.
 Sem promoção de cobertura. Snapshot v15 não disponível nesta sessão;
 v14 usado para confirmar descritores. Trace privado referenciado, não
 importado neste marco.
+
+## V18.6 — Change of Heart da mão e Tribute Summon
+
+Fonte privada joey-spell-from-hand.json, SHA256
+ d354efbca04ef1e5750c21d9391dfd1b5685a40f1a5009adc241f723cfc208a5.
+Mesmo EXE; 1721 frames, 295 eventos, zero perdas/erros. Mantenedor
+relatou Change of Heart da mão e uso do monstro roubado em Tribute Summon.
+
+| Frame | Opcode | Evidência |
+|---:|---|---|
+|117–125|CF|raw 7 / 1000000F; 8 updates até 256, commit no nono|
+|127|CF|voz 10000057, caller 00417982|
+|165–181|72|1000000D no primeiro Update; 17 Updates/16 Draws|
+|235–250|08|kindRaw 1, tail 256->0 em passos de 16, sem movimento|
+|430–438|83|raw 7/0F; transferência (681,248)->(525,352), ângulo 256->0 em 8 passos de 32, commit no nono|
+|442–450|8F|raw 7/0F; movimento da magia para GY (369,460)->(760,366)|
+|632|E6|voz 10000054|
+|681/702|95|dois pedidos 1000000C, caller 004870A4|
+|699/720|95|commits de descritores associados; não capturam todos os Updates do tributo|
+|724–732|CE|raw 7/0F; viagem da nova carta, commit no nono|
+|735–767|6F|33 Updates/32 Draws, offset 11 confirmado também após tributo|
+
+SQLite v14 (quick_check ok), 00418B60 confirma posição por cosseno,
+escala linear para mão/campo, ângulo por descriptor e commit quando
+contador de entrada é 256. 00487060..004870A7: incrementa 8 se liberado
+ou abaixo de 0x80; em 0048708E compara contador pós-update com 0x88;
+0048709F pede 1000000C. Descriptor 005EFE08 -> 005F0908 = ikenie.wav.
+No cliente, o estágio Travel de ativação agora usa 9 updates, o mesmo
+renderer de pose do placement, e toca card_move na primeira amostra;
+Glow toca magic_active na primeira amostra, sem atravessar etapas no
+catch-up. Tributo liberado toca ikenie ao cruzar 17 updates (0x88),
+não na entrada; mantém o renderer e duração existentes.
+Não introduz voz local, espera fixa de 38 ticks, animação de controle
+ou GY, nem corrige a ordem da reação da CPU nesta fatia. A voz local
+precisa do produtor/predicado e rota visual; o trace não identifica
+cada objeto de reação, nem a liberação da interface. A fase de prévia
+em 0x80 do tributo não está integrada, então o instante absoluto do
+som ainda não é equivalente. O timing de 11 ticks é observado, não
+universal. CI e comparação local pendentes, sem mudança de badge.

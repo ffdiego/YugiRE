@@ -15,7 +15,9 @@ public static class NativePlacementTravel
     // summons started their effect two ticks later than the Sets.
     // This is the observed presentation interval, not a decoded
     // universal gate for every native placement opcode.
-    public static int ObservedEffectStartOffset(bool set) => CardTravel.Updates + (set ? 1 : 3);
+    public const int DescriptorCommitUpdates = CardTravel.Updates + 1;
+
+    public static int ObservedEffectStartOffset(bool set) => DescriptorCommitUpdates + (set ? 0 : 2);
 
     public static int MotionSampleUpdate(int elapsedUpdates) =>
         Math.Clamp(elapsedUpdates, 0, CardTravel.Updates);

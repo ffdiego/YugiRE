@@ -469,6 +469,8 @@ V18.4 (27/11/2026). As 24 entradas que falhavam por alinhamento têm PCM estére
 
 V18.5 (28/11). Captura Windows privada de 90 s (2700 frames, 1249 eventos, zero perdas/erros): CE/CF de Set e Summon pedem Internal 0F antes do primeiro Update da viagem; 91 de revelação no campo pede 10; 72 pede 0D no primeiro Update do brilho. A viagem chega a 256 em oito updates e confirma o descritor no nono. Set começa no offset 9 (três amostras) e Summon no 11 (duas amostras de mão); 22/33 updates respectivamente. O cliente passa a tocar card_move na primeira amostra e conserva a pose terminal até a fronteira observada; não generalizar o atraso para outros opcodes. Ativação previamente baixada tem espera variável (inclui fala), não fixada neste recorte. CI e comparação local pendentes; badge inalterada. [Evidência](../research/native-basic-placement-cadence-2026-11-28.md).
 
+V18.6 (28/11). Segunda captura Windows: Change of Heart da mão, transferência e tributo. CF usa 8 amostras + commit, raw 7/0F, voz 57 antes de 72/0D; 83 gira 180° em 8 updates, 8F move magia ao GY; CE->6F repete offset 11 após tributo. Assembly 0048708E confirma ikenie no contador pós-update 0x88. Cliente compartilha o renderer de placement na viagem CF, toca card_move no primeiro Update, conserva commit e cue de glow sem atravessar estágios; som do tributo cruza 0x88. Voz/gate local, ordem reação CPU, revelação baixada, transferência e GY seguem pendentes; nenhum atraso fixo inventado. [Evidência](../research/native-basic-placement-cadence-2026-11-28.md). CI e validação local pendentes.
+
 ## V19 — Fidelidade sistemática das demais telas/efeitos
 
 <a id="v19"></a>
