@@ -192,6 +192,8 @@ DebugOverlayChecks.Run(Check);
 NativeCursorActionSelectorChecks.Run(Check, Reject);
 NativeJoeyReactionChecks.Run(Check);
 NativeReactionPlaybackChecks.Run(Check);
+NativeOpeningBustChecks.Run(Check);
+NativeResultBustChecks.Run(Check);
 NativeJoeyCinematicRoutingChecks.Run(Check);
 NativeVoiceAudioChecks.Run(Check, Reject);
 NativeDuelAudioCueChecks.Run(Check);

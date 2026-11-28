@@ -467,3 +467,66 @@ puro de lifecycle testa a troca de duas falas nos contadores 880/1520,
 mas o review de reaction07 usa apenas o pedido observado 0x1000003A.
 Não liga gatilhos de gameplay, áudio real ou A03. Draw continua Pending
 até integração; CI e smoke com DAT real pendentes.
+
+## V31.15 — reação à colocação de uma magia do Joey
+
+O GDB registrou `00402BE0(1, 1429, 0)` no opcode `CF`, com modo 7
+(demonstração) e `00A54E5C & 1 = 0`. O catálogo identifica o
+resource 1429 como Card of Safe Return e o índice DAT como 461.
+O retorno `00402D1E` pediu `reaction07.txt` e `0x1000003A`; o primeiro
+Draw observou contador 8, flag `+1Ch=1`, e nenhum ID secundário.
+Outra colocação `CF` no lado 0, resource 1027, não pediu o busto
+pelo mesmo seletor. Com o fingerprint v15, o descritor em `005F00E8`
+aponta para `005F069C` e resolve `Joey_22.wav`.
+
+Em `00405D8E`, `CF` chama o seletor de reação antes de movimentar
+a carta. O teste dos objetos em `00405DE7..00405DF1` espera
+o slot virtual `+4` antes de passar à colocação em `00405E02`.
+Para o busto, `00416BB0` retorna ativo enquanto o flag está ligado.
+O filtro de `00402BE0` usa o lado `(~00A54E5C)&1`, os IDs de
+rotas especiais e a classe 22. No ramo genérico, `00402700` lê o
+subtipo dos bits 17–19 e o subtipo 2 escolhe a fala `0x10000051`.
+Essa variante e os demais ramos ficam fora deste recorte.
+
+O Alpha usa o lado da CPU para a perspectiva do Joey e o snapshot
+tipado de ativação da mão. O gate da ativação conserva seu estágio
+de viagem até o Draw terminal da reação, antes do brilho e dos
+comandos de resolução. O cliente usa o mesmo compositor do review
+e o player existente. O seletor facial acompanha o contador de
+apresentação do tabuleiro, correspondente ao incremento de
+`005F2FB4` em `004112D9..004112E0`. A fase inicial desse contador
+e a composição ainda precisam de comparação pareada. O recorte
+aplica a transposição de perspectiva ao Single Duel do Alpha. O
+traço de produtor desta coleta vem da demonstração.
+[Reprodução](../../scripts/regression/README.md#73--v31-reação-a-colocação-de-magia).
+
+## V31.16 — invocação característica
+
+O SQLite v15 contém `00414A20` e `00414DC0` nas tabelas de
+evidência visual. O PE confirma a vtable `005DA7F0` com predicado
+`00403080`, Update `00414CF0` e Draw `00414DC0`. A rotina de
+`E6` chama `00403C20` em `00407C0C` e espera o slot `+4` em
+`00407C4A` antes de liberar o opcode. O lado deve ser
+`(~00A54E5C)&1`. O selector em `00403310` desvia para o construtor
+para `0x51` e `0x2E8` antes de testar o tipo. A emissão de `E6`
+continua condicionada ao produtor. Os traces existentes mostram
+casos com e sem `E6` e não autorizam conectar toda invocação ao busto.
+
+O construtor pede Stream `0x2000000B` (m_red.wav). Update pede
+Internal `0x1000000B` com contador anterior zero e soma quatro.
+No contador 96, pede `0x1000002D` (Joey_09.wav) para Red-Eyes,
+ou `0x10000064` (Joey_64.wav) para o segundo banco. O primeiro
+poll possível é 356. O sucesso troca o contador para `0x10000`.
+Draw desativa o objeto em `0x10060`. São 113 Updates previstos
+com o áudio desabilitado, a confirmar no original.
+
+Os manifestos do DAT v15 confirmam máscara 412×592 em (195,8),
+personagem 432×600 em (187,0), bocas 51×45 em (437,139),
+dois fundos 800×600 e os letreiros ingleses 743×259 e 709×241.
+O Draw trata a máscara separadamente no contador 64, usa
+`005DA768 = [0,5,6,5]` para a boca e chama `00424E80` a
+partir de 256 com intensidade `4*t-1024`. A composição da
+superfície temporária e a transição do letreiro aguardam
+captura. Nenhum objeto chegou ao seletor em 95 segundos de
+demonstração sob GDB. O roteiro 74 aguarda um replay dirigido.
+[Cenário de coleta](../../scripts/pending/README.md#v31--invocação-característica-de-red-eyes-74).

@@ -5,7 +5,7 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 25/39 (64.10%).**
+**Implementadas (inclusive parciais): 30/39 (76.92%).**
 **Validadas no Joey original: 0/39.**
 
 Partial indica um componente visual C# relacionado, mas divergências
@@ -28,7 +28,7 @@ desconhecido ainda não entram neste denominador. Ver
 | `00481420` | Fases, botões e troca de cor | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
 | `00480C60` | Avisos de fase e novo jogador | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
 | `0043B280` | Seleção nativa de cartas | Partial | `src/Joey.App/NativeSelectionListScreen.cs` |
-| `0045E4A0` | Ajuda | Pending | — |
+| `0045E4A0` | Ajuda | Partial | `src/Joey.App/DuelHelpPresentation.cs` |
 | `0040E260` | Efeito de estado persistente | Partial | `src/Joey.App/DuelAffectPresentation.cs` |
 | `004142C0` | Combate declarado e espada | Partial | `src/Joey.App/AlphaDuelScreen.cs` |
 | `004514B0` | Explosão de destruição | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
@@ -48,15 +48,15 @@ desconhecido ainda não entram neste denominador. Ver
 | `0043DBE0` | Remoção / exclusão | Partial | `src/Joey.App/DuelExclusionPresentation.cs` |
 | `004870B0` | Sacrifício | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `00457520` | Moeda | Pending | — |
-| `00456B90` | Dado | Pending | — |
+| `00456B90` | Dado | Partial | `src/Joey.App/DuelRandomBankPresentation.cs` |
 | `00454010` | Exodia | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `004584C0` | Vija | Pending | — |
 | `00455FF0` | Layerfont A | Pending | — |
 | `00456360` | Layerfont B | Pending | — |
 | `00414DC0` | Invocação signature | Pending | — |
-| `00415840` | Busto de abertura | Pending | — |
-| `00416260` | Busto de resultado | Pending | — |
-| `00416BC0` | Busto de reação | Pending | — |
+| `00415840` | Busto de abertura | Partial | `src/Joey.App/LiveOpeningBust.cs` |
+| `00416260` | Busto de resultado | Partial | `src/Joey.App/LiveResultBust.cs` |
+| `00416BC0` | Busto de reação | Partial | `src/Joey.App/LiveActivationReaction.cs` |
 | `00444490` | Saída do banner de resultado | Pending | — |
 
 O conjunto de endereços deve corresponder ao inventário.

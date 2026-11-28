@@ -296,3 +296,44 @@ Invitation, Thousand-Eyes Restrict e Dragon Capture Jar. Resolver
 kind de vínculo efetivamente emitido e compará-lo aos destinos de
 0040E594/627/7A6. Não coletar novamente toda 0040E260. Importar
 bundle cumulativo quando recebido; nenhum recurso binário no Git.
+
+## V31 — invocação característica de Red-Eyes (74)
+
+A primeira tentativa em Proton 9.0 deixou a demonstração automática
+rodar por 95 segundos. Nenhuma colocação de 0x51 ou 0x2E8 chegou ao
+seletor. A próxima coleta precisa de um replay que contenha uma
+invocação característica do lado do Joey. Em Proton com GDB/Python,
+anexe à cópia isolada antes de carregar esse replay. Repita com
+`-nosound` para separar o limiar de consulta da duração da fala.
+
+```bash
+timeout --signal=INT 95s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/pending/74-wine-signature-summon.gdb > scratch/signature-summon.log 2>&1
+```
+
+A linha `signature-route` registra lado, tipo, orientação e modo.
+O roteiro também registra a variante do construtor em `00414A20`
+e os contadores dos pares Update/Draw até `0x10060`. A coleta fica
+em aberto até uma amostra positiva confirmar a criação e a liberação.
+Compare com o controle no lado do jogador e guarde PNGs dos
+quadros de máscara e do letreiro em `scratch/`.
+[Evidência estática](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v3116--invocação-característica).
+
+## V29 — aviso de alvo inválido (75)
+
+No Joey isolado em Proton, use um baralho válido com uma carta de
+seleção direcionada. Um cenário candidato é Mystical Space Typhoon
+com uma magia/armadilha elegível no campo e um monstro na região de
+hover. Abra a seleção, mova o cursor para a carta inválida e saia
+da região. A tentativa local com um baralho modificado foi barrada
+na validação de cartas do baralho, antes de entrar no duelo.
+
+```bash
+timeout --signal=INT 95s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/pending/75-wine-help-invalid-target.gdb > scratch/help-invalid-target.log 2>&1
+```
+
+A saída esperada registra um pedido 9 em `0045E240`, o descritor de
+foco, a sequência Draw e uma transição de saída. Guarde em `scratch/`
+um quadro estabilizado e um quadro sem foco para comparar o
+posicionamento e a composição com o Alpha.

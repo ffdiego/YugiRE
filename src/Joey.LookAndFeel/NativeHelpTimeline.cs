@@ -67,3 +67,36 @@ public sealed class NativeHelpTimeline
         return new CardBounds(x - spriteWidth / 2, y - spriteHeight / 2 - h / 2, spriteWidth, h);
     }
 }
+
+
+/// <summary>V29 live help resources resolved by verified manifest positions.
+/// Other messages remain unbound.</summary>
+public static class NativeHelpResources
+{
+    public const string Manifest = @"j\duel\help\help.txt";
+    public const int TributeRequiredKey = 0;
+    public const int TributeRequiredWidth = 179;
+    public const int TributeRequiredHeight = 38;
+    public const int InvalidTargetKey = 9;
+    public const int InvalidTargetWidth = 179;
+    public const int InvalidTargetHeight = 38;
+
+    public static string ResolveInvalidTarget(string manifest, IEnumerable<string> available) =>
+        Resolve(manifest, available, InvalidTargetKey, "help10_?.yga");
+
+    public static string ResolveTributeRequired(string manifest, IEnumerable<string> available) =>
+        Resolve(manifest, available, TributeRequiredKey, "help01_?.yga");
+
+    private static string Resolve(string manifest, IEnumerable<string> available, int key, string expected)
+    {
+        var rows = manifest.Split('\n')
+            .Select(line => line.Split("//", 2)[0].Trim())
+            .Where(line => line.Length != 0).ToArray();
+        if (rows.Length != 24 ||
+            !rows[key].Equals(expected, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Unexpected native help manifest.");
+        var name = @"j\duel\help\" + rows[key].Replace('?', 'e');
+        return available.FirstOrDefault(entry => entry.Equals(name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidDataException("Missing native contextual help: " + name);
+    }
+}

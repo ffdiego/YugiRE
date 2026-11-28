@@ -391,8 +391,11 @@ static partial class Game
         if (PointerPressed(MouseButton.Right) &&
             duel.PendingEndDiscards == 0 && CanToggleHandAction(hoverHand))
             setHandAction = !setHandAction;
-        if (PointerPressed(MouseButton.Left) && HandActionEnabled(hoverHand))
-            UseHandAction(hoverHand);
+        if (PointerPressed(MouseButton.Left))
+        {
+            if (HandActionEnabled(hoverHand)) UseHandAction(hoverHand);
+            else RequestTributeHelp(hoverHand);
+        }
         return true;
     }
     static void DrawCardBack(int x, int y, int width, int height, int degrees = 0)
@@ -703,6 +706,7 @@ static partial class Game
         Label(caption, (int)(bubble.X + (bubble.Width - MeasureLabel(caption, 16)) / 2), (int)bubble.Y + 5, 16, Color.Black);
     }
     static bool IsJoeySpeaking() =>
+        liveActivationReaction is not null ||
         presentation.Busy && presentation.ActiveCue == DuelPresentationCue.JoeySpeech;
 
     static void DrawDuel()
@@ -715,7 +719,8 @@ static partial class Game
         AdvanceBreakTails(frameElapsed);
         AdvanceLiveExclusions(frameElapsed);
         bool effectsCouldAdvance = CanPlayCardEffects;
-        AdvanceSpellActivation(frameElapsed);
+        liveReactionScene = unchecked(liveReactionScene + (uint)hoverUpdates);
+        if (!AdvanceLiveActivationReaction(frameElapsed)) AdvanceSpellActivation(frameElapsed);
         if (effectsCouldAdvance) AdvanceCardEffects(frameElapsed);
         AdvanceDuelPhases(frameElapsed);
         for (int player = 0; player < 2; player++)
@@ -810,9 +815,11 @@ static partial class Game
         if (actionInput && duel.CanAttack(attacker) && attackCue is null)
             DrawAttackAim();
         DrawAttackCue();
-        DrawSpellActivation();
+        if (liveActivationReaction is null) DrawSpellActivation();
         DrawLifeFloatingDigits();
         DrawPhaseNotice();
+        DrawLiveHelp(hoverUpdates, actionInput && !joeySpeaking && hoverCpuHand < 0 &&
+            !selectingCard && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy == false, handHovered);
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
             string help = flip.Effect switch
@@ -851,6 +858,7 @@ static partial class Game
             presentation.Show(cue);
             previousDuelMessage = message;
         }
+        DrawLiveActivationReaction();
         DrawDuelResultNotice(frameElapsed);
         if (duelDebug) DrawDuelDebug(selectingCard);
         if (!ConsoleCapturesInput && !visualReviewPaused && !alphaBlocked && !MotionBusy && !PhaseBusy &&
@@ -880,7 +888,11 @@ static partial class Game
         DrawControl("Ocultar debug", DebugOverlayState.HideBounds);
         DrawControl("< Menu", DebugOverlayState.MenuBounds);
         DrawControl("Reset", DebugOverlayState.ResetBounds);
-        if (debugOverlay.PressedControl == DebugOverlayControl.Menu) screen = "menu";
+        if (debugOverlay.PressedControl == DebugOverlayControl.Menu)
+        {
+            StopLiveActivationReaction();
+            screen = "menu";
+        }
         if (debugOverlay.PressedControl == DebugOverlayControl.Reset)
         {
             if (labSession is not null) StartConsoleLab(labOriginalLines);

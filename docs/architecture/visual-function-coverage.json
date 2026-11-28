@@ -59,7 +59,8 @@
     {
       "address": "0045E4A0",
       "family": "Ajuda",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelHelpPresentation.cs"
     },
     {
       "address": "0040E260",
@@ -174,7 +175,8 @@
     {
       "address": "00456B90",
       "family": "Dado",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelRandomBankPresentation.cs"
     },
     {
       "address": "00454010",
@@ -205,17 +207,20 @@
     {
       "address": "00415840",
       "family": "Busto de abertura",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/LiveOpeningBust.cs"
     },
     {
       "address": "00416260",
       "family": "Busto de resultado",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/LiveResultBust.cs"
     },
     {
       "address": "00416BC0",
       "family": "Busto de reação",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/LiveActivationReaction.cs"
     },
     {
       "address": "00444490",

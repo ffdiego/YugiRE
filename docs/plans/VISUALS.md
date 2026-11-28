@@ -505,6 +505,15 @@ contador em `-256`. O Update soma 8 por chamada e libera o gate
 a 768, o que prevê 128 Updates.
 [Coleta em duelo](../../scripts/pending/README.md#v21--comando-e-cadência-do-dado-em-duelo-69).
 
+V21.2 (28/11). Graceful Dice passa pelo produtor legal do jogador
+e da CPU. O Core sorteia uma vez e envia a face ao renderer após
+gastar a carta. O Alpha exibiu face 3 e o bônus de +300/300 em
+Axe Raider com o DAT real. O cenário C# confirmou mão, Set
+anterior e expiração do bônus. Build, 51.773 checks e testes dos
+geradores passam. A cobertura de 00456B90 é Partial. Comparação
+de E2 no original e produtores E3/E4 ficam pendentes.
+[Contrato e validação](../research/native-coin-dice-break-contract-2026-11-23.md#v212--produtor-jogável-de-graceful-dice).
+
 ## V22 — Remoção break (00450FD0)
 
 <a id="v22"></a>
@@ -527,6 +536,8 @@ o indicador e restaurou o canvas inicial pixel a pixel. O teste cobre
 a revisão manual do cliente. A fila do duelo e a comparação com
 quadros do executável original continuam pendentes.
 
+V23.2: assembly do produtor 005BA230 confirma emissão de todos os elos com número 1-based, e liberação do topo antes de cada resolução. Integrar somente quando fatos reais de formação e resolução estiverem disponíveis. [Produtor](../research/native-chain-affect-contract-2026-11-24.md#v232--início-e-liberação-por-elo-2711).
+
 ## V24 — Destaque contextual affect (0040E260)
 
 <a id="v24"></a>
@@ -541,6 +552,8 @@ V24.4: Affect integrado ao duelo: projeção de vínculos reais pelo Core, equip
 
 Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT. Integração A03 e comparação pendentes.
   NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas brutas 72/73/1E (índices 48/49/18; coleta 29). Produtores e [auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+
+V25.1: wrappers 72/73 e três chamadores de 73 confirmados por assembly no v7; Graverobber (duas rotas) e Crush Card. Não aplicar a ativações comuns. [Produtores](../research/native-alternative-activation-exclusion-2026-11-24.md#v251--produtores-identificados-de-7273-2711).
 
 V25.2. O replay local contém uma ativação `0x73` de
 Lightforce Sword. Em Proton com `-speedy`, o roteiro 66
@@ -639,6 +652,21 @@ com solicitação `-1`. Foram 139 e 196 Draws ao todo, com durações
 de permanência diferentes em cada piloto. A evidência cobre a chave
 0 e sua transição, com as demais chaves e a composição pendentes.
 [Reprodução](../../scripts/regression/README.md#70--v29-aviso-de-tributo-na-ajuda-contextual).
+
+V29.4: primeira integração em revisão no cliente para rejeição de alvo nos seletores de magia/equipamento já existentes, com key 9, asset 179×38 e timeline nativa. Gating adaptado e compositor aproximado. Build/CI e teste interativo pendentes; cobertura não promovida antes da validação. [Evidência](../research/native-layerfont-help-2026-11-24.md#v293--primeira-integração-de-ajuda-no-duelo-2711).
+
+V29.5 (28/11/2026). O PR #263 incorpora a captura de tributo da main e liga a chave 0 a uma tentativa de invocação normal sem tributos suficientes, pela consulta de legalidade do Core. Hover sem clique não solicita a ajuda; sair da carta, mudar a ocorrência ou perder a elegibilidade encerra o pedido. O DAT v14 confirma help01_e.yga, 179×38; o descritor de mão usa região 11 e índice do slot. A geometria usa a mão projetada e a altura do banco grande. Sem gate, mutação de regras ou fila adicional. CI e revisão interativa do novo recorte ainda pendentes; cobertura não promovida.
+
+V29.6 (28/11). PR #263 reconciliado com main. O Xvfb a 800×600
+com DAT original mostrou o aviso de tributo no clique em Red-Eyes
+e a saída ao perder foco. O piloto anterior do original observou
+o mesmo aviso em Flame Cerebrus. Na seleção de Mystical Space
+Typhoon, o Alpha mostrou a chave 9 acima de Axe Raider e continuou
+aguardando um alvo. Chave e geometria foram conferidas com o
+assembly/DAT. A captura dessa chave no original fica no roteiro
+75. Build, 51.773 checks com DAT e testes da badge passaram.
+Draw 0045E4A0 passa a Partial.
+[Comparação](../research/native-layerfont-help-2026-11-24.md#v296--validação-do-cliente-e-comparação).
 
 ## V30 — Vija / Destiny Board (004584C0)
 
@@ -754,6 +782,56 @@ saltou de 1504 a `0x10004` e teve 408 Updates e 408 Draws,
 com o mesmo terminal. Os dois bustos terminaram sem outro clique.
 Vitória, empate e outras falas ainda não foram medidos.
 [Reprodução](../../scripts/regression/README.md#68--v31-duração-do-busto-de-resultado).
+
+V31.9 (28/11/2026). O SQLite v14 confirmou o manifesto start.txt, posições e dimensões dos oito recursos ingleses e o assembly 00415580/00415840. NativeOpeningPlayback separa Update e Draw, pede fala no input 128, aceita áudio a partir de 388, salta para 0x10000 e termina no Draw 0x10100. NativeOpeningBank porta plano de camadas e slide por SAR 5. Review isolado `--review-reaction=start:0` (variantes 0..2), F7, F5, F8 e F12; a boca só é desenhada com tabela explicitamente fornecida, nunca presumida. Testes sintéticos reproduzem as duas contagens observadas (162/352). Roteiro 71 pendente para os valores de 005DA798 e as strings dos três IDs de áudio. Sem execução .NET/DAT nesta sessão, compositor aproximado, sem gate no duelo; cobertura continua Pending.
+
+V31.10 (28/11). Roteiro 71 recebido: tabela 005DA798 = 0,5,6,5; descritores 0x10000025..27 = Joey_01..03.wav. Review usa boca automaticamente e fala real opcional com Voice.dat; sem áudio preserva 162 Updates. Mantenedor confirmou composição anterior após color key. CI, nova captura e escuta pendentes; ainda sem integração live. [Contrato](../research/native-opening-bust-2026-11-28.md).
+
+V31.11 (28/11). Busto de abertura ligado ao Alpha vs CPU por tela de apresentação anterior ao Duel Start/deal. O Core e a fila permanecem intactos; a tela usa o mesmo banco/renderer do review, RNG de apresentação, cadência do perfil e áudio sem alterar pitch. Instant pula, Silent mantém animação sem voz, ausência de DAT/áudio não bloqueia. Escape encerra a fala e volta ao menu. RPS ainda não existe no Alpha. O mantenedor confirmou a mesma velocidade das falas e identificou falta de sombra projetada (kage.yga); lacuna registrada sem aprofundar compositor neste marco. CI e validação live pendentes; badge inalterada até aceite.
+
+V31.12 (28/11). SQLite v14 reaberto em modo somente leitura (quick_check=ok). Review de resultado porta Update 00416050 e Draw 00416260: três bancos ingleses, slide do personagem, recomposição e letreiro pelo cosseno nativo. Testes incluem 153/408 pares observados. Roteiro 72 coleta seletor 005DA7E0 e nomes dos IDs 59..5F. Olhos/boca e voz real do resultado ainda não ligados; não presumir a tabela de abertura. Sombra/compositor continuam pendentes, sem aprofundamento agora. Resultado ainda isolado, sem mapear código local ou antecipar o gatilho pós-replay. [Contrato](../research/native-result-bust-2026-11-28.md).
+
+V31.13 (28/11). Roteiro 72 completo: 005DA7E0 = -1,0,1,0; IDs 59..5F = Joey_53..59.wav. Review usa grupos 4/5 (olhos) e 6/7 (boca), offset relativo ao personagem, gates de fase e de saída separados; player de voz reutilizado sem alterar pitch. Testes sintéticos dos seletores, coordenadas e nomes adicionados. CI e validação audiovisual pendentes; sem novo gatilho live ou mudança de cobertura.
+
+V31.14 (28/11). Abertura e resultado passaram pelo fluxo gráfico do
+Alpha com o DAT original em 800×600. O resultado libera o banner
+após a fila e o LP estabilizarem, usa Enter/clique como confirmação
+no lugar da decisão de replay e seleciona o banco pelo resultado do
+jogador. O Draw terminal devolve o controle ao menu. Xvfb exercitou
+derrota sem Voice.dat, vitória Silent com Voice.dat presente,
+Escape na abertura e no resultado, retorno com Voice.dat e saída
+Instant. O console vivo produziu dano letal pela fila nos testes.
+A saída de áudio estava isolada, sem validação auditiva. O build e
+51.764 checks com DAT passaram, além dos testes da badge. CI
+do novo head segue como requisito de integração.
+
+Os dois Draws passam a Partial, com composição e comparação
+pareada ainda pendentes (27/39 no inventário). Os roteiros 71/72
+foram consolidados no SQLite v15. O próximo recorte V31 é a rota
+de reação durante o duelo.
+[Contrato e evidência](../research/native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).
+
+V31.15 (28/11). A demonstração em Proton confirmou que a colocação
+de Card of Safe Return no lado 1, com orientação 0, pediu a
+reaction07 e a voz 0x1000003A. O assembly confirma o gate antes
+da colocação e o descritor Joey_22.wav. O Alpha integrou o ramo
+genérico de magias da mão do Joey, com o estágio de ativação
+existente aguardando o Draw terminal. No Xvfb e DAT real, Sparks
+mostrou o busto no contador 128 com a viagem parada no passo
+zero. A retomada concluiu a ativação e o dano pela mesma fila.
+A reprodução da captura usou a ativação legal pelo console vivo
+no turno do Joey. Build e 51.765 checks com DAT passaram.
+Partial para 00416BC0. A composição pareada e os outros
+produtores continuam em aberto.
+[Contrato e captura](../research/native-joey-reaction-audio-2026-11-24.md#v3115--reação-à-colocação-de-uma-magia-do-joey).
+
+V31.16 (28/11). Confirmados por assembly o gate de E6, a vtable,
+os pedidos de áudio, os contadores de entrada/saída e as dimensões
+dos dois manifestos de invocação característica. A demonstração
+em Proton não produziu os IDs candidatos em 95 segundos. O roteiro
+74 aguarda replay dirigido para confirmar tipos, lado e composição.
+[Contrato](../research/native-joey-reaction-audio-2026-11-24.md#v3116--invocação-característica).
+
 
 ### V05.6 — composição dos glifos em RGB565 no cliente
 

@@ -114,7 +114,7 @@ public sealed partial class DemoDuel
         card.ClassCode == 22 &&
         (DrawSpellRules.SupportsQueued(card) || DeckSearchSpellRules.Filter(card.Id) is not null ||
          LifePointSpellRules.SupportsQueued(card.Id) || MonsterWipeRules.SupportsQueued(card.Id) ||
-         SpellTrapWipeRules.SupportsQueued(card.Id) || IsRevivalSpell(card) || IsHandManipulationSpell(card));
+         SpellTrapWipeRules.SupportsQueued(card.Id) || IsRevivalSpell(card) || IsHandManipulationSpell(card) || IsGracefulDice(card));
 
     /// <summary>Read-only UI/CPU admission query. Reuses the same source and target
     /// validators as the producer; does not reserve, spend or enqueue a card.</summary>
@@ -130,6 +130,7 @@ public sealed partial class DemoDuel
         if (SupportsQueuedContinuousSpell(card)) return CanActivateContinuousSpell(source, out _);
         if (IsRevivalSpell(card)) return CanResolveRevivalSpell(source);
         if (IsHandManipulationSpell(card)) return CanResolveHandManipulationSpell(source);
+        if (IsGracefulDice(card)) return CanResolveGracefulDice(source, out _);
         if (DrawSpellRules.SupportsQueued(card))
             return CanResolveQueuedDrawSpell(source, out _);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -159,6 +160,7 @@ public sealed partial class DemoDuel
             (DrawSpellRules.SupportsQueued(card) || LifePointSpellRules.SupportsQueued(card)))) return false;
         if (IsRevivalSpell(card)) return TryQueueRevivalSpell(source, out message, origin);
         if (IsHandManipulationSpell(card)) return TryQueueHandManipulationSpell(source,out message,origin);
+        if (IsGracefulDice(card)) return TryQueueGracefulDice(source, out message, origin);
         if (DrawSpellRules.SupportsQueued(card))
             return TryQueueDrawSpell(zone, index, out message, origin);
         if (DeckSearchSpellRules.Filter(card.Id) is not null)
@@ -599,6 +601,10 @@ public sealed partial class DemoDuel
                     return new(CommandOutcome.Applied);
                 case EquipCommand equip:
                     return duel.ApplyQueuedEquipment(equip);
+                case ActivateGracefulDiceCommand gracefulDice:
+                    return ActivateGracefulDice(gracefulDice, followups);
+                case RollGracefulDiceCommand gracefulDice:
+                    return RollGracefulDice(gracefulDice);
                 case ActivateTemporaryStatCommand temporaryStat:
                     return ActivateTemporaryStat(temporaryStat, followups);
                 case ResolveTemporaryStatCommand temporaryStatResult:
@@ -718,6 +724,7 @@ public sealed partial class DemoDuel
         {
             if (finalDestinyPayment?.Source == target) finalDestinySpent = result.Outcome == CommandOutcome.Applied;
             if (ritualSummon?.Spell == target) ritualSpellSpent = result.Outcome == CommandOutcome.Applied;
+            if (gracefulDiceSource == target) gracefulDiceSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (temporaryStatActivation?.Source == target)
                 temporaryStatSourceSpent = result.Outcome == CommandOutcome.Applied;
             if (handManipulation is { } handBatch && handBatch.Source == target)
@@ -1003,7 +1010,8 @@ public sealed partial class DemoDuel
                 responseWipe.Source == target && responseWipe.ResourceId == card.Id &&
                 card.ClassCode == 21 && duel.spellSetTurn[target.Side, slot] < duel.Turn;
             bool attackTrap = attackTrapPayment?.Source == target && duel.IsQueuedAttackResponseTrap(target.Side, slot);
-            if (!(fixedSpell || ownMainTrap || temporaryModifier || reservedTrapWipe || attackTrap) || !duel.SpellFaceDown[target.Side, slot] ||
+            bool gracefulDice = gracefulDiceSource == target && IsGracefulDice(card);
+            if (!(fixedSpell || ownMainTrap || temporaryModifier || reservedTrapWipe || attackTrap || gracefulDice) || !duel.SpellFaceDown[target.Side, slot] ||
                 duel.equipment.Any(e => e.Owner == target.Side && e.SourceZone == slot))
                 return new(CommandOutcome.Rejected, "Only supported unlinked Set activations are migrated here.");
             duel.ClearSpellTrapSlot(target.Side, slot);

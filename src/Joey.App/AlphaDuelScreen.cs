@@ -53,6 +53,7 @@ static partial class Game
         QueueDuelOpening();
         QueueOpeningDeal();
         QueueInitialExodiaOpening();
+        BeginLiveOpeningBust();
         message = "Your turn.";
     }
 
@@ -95,6 +96,8 @@ static partial class Game
 
     static void ResetDuelPresentation()
     {
+        ResetLiveOpeningBust();
+        ResetLiveResultBust();
         screen = "duel";
         labSession = null;
         liveConsoleSession = null;
@@ -106,10 +109,13 @@ static partial class Game
         queuedPreviewSource = null;
         ClearDuelSelection();
         StopSpellActivation();
+        StopLiveActivationReaction();
+        liveReactionScene = 0;
         ResetCardEffects();
         foreach (var layout in handLayouts) layout.Clear();
         ResetDuelPhases();
         ResetDuelDetail();
+        ResetLiveHelp();
         ResetDuelResultNotice();
         flight = null;
         deferredTributeFlight = null;

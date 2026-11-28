@@ -2447,6 +2447,26 @@
       ]
     },
     {
+      "id": "spell.graceful-dice",
+      "kind": "Spell",
+      "subtype": "QuickPlay",
+      "status": "Partial",
+      "resourceIds": [
+        1203
+      ],
+      "mechanics": [
+        "Queued activation, deterministic duel RNG and temporary ATK/DEF bonus for face-up monsters on the caster's side"
+      ],
+      "evidence": [
+        "src/Joey.Cards/DiceSpellEffects.cs",
+        "src/Joey.Core/DemoQueuedGracefulDice.cs",
+        "docs/research/native-coin-dice-break-contract-2026-11-23.md"
+      ],
+      "limitations": [
+        "Own Main Phase with an eligible face-up monster, hand or previously Set. Battle Phase, chain windows and native differential comparison remain open."
+      ]
+    },
+    {
       "id": "spell.temporary-stats-p123",
       "kind": "Spell",
       "subtype": "QuickPlay",

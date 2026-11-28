@@ -188,6 +188,14 @@ sealed class DatGraphics : IDisposable
     }
     public Texture2D Texture(string name) => Texture(name, NativeFieldAttributeFrame.ActiveOpacity);
 
+    // Separate cache entry: the same bitmap can also be drawn opaque.
+    public Texture2D CornerKeyedBitmapTexture(string name)
+    {
+        if(!name.EndsWith(".bmp",StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("Corner key applies only to BMP surfaces.",nameof(name));
+        return Texture(name,NativeFieldAttributeFrame.ActiveOpacity,cornerKey:true);
+    }
+
     public Texture2D FieldAttributeTexture(string name, int intensity)
     {
         if (!FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase) ||
@@ -196,10 +204,10 @@ sealed class DatGraphics : IDisposable
         return Texture(name, intensity);
     }
 
-    private Texture2D Texture(string name, int fieldIntensity)
+    private Texture2D Texture(string name, int fieldIntensity, bool cornerKey = false)
     {
-        string cacheKey = fieldIntensity == NativeFieldAttributeFrame.ActiveOpacity
-            ? name : name + "#field-160";
+        string cacheKey = cornerKey ? name + "#corner-key" :
+            fieldIntensity == NativeFieldAttributeFrame.ActiveOpacity ? name : name + "#field-160";
         if (textures.TryGetValue(cacheKey, out var cached)) return cached;
         Texture2D texture;
         if (name.EndsWith(".yga", StringComparison.OrdinalIgnoreCase))
@@ -214,7 +222,7 @@ sealed class DatGraphics : IDisposable
         }
         else
         {
-            var image = ReadImage(name, fieldIntensity);
+            var image = ReadImage(name, fieldIntensity, cornerKey);
             try { texture = Raylib.LoadTextureFromImage(image); }
             finally { Raylib.UnloadImage(image); }
         }
@@ -273,7 +281,7 @@ sealed class DatGraphics : IDisposable
         }
     }
 
-    unsafe Image ReadImage(string name, int fieldIntensity = NativeFieldAttributeFrame.ActiveOpacity)
+    unsafe Image ReadImage(string name, int fieldIntensity = NativeFieldAttributeFrame.ActiveOpacity, bool cornerKey = false)
     {
         byte[] bytes = (archive ?? throw new InvalidOperationException("No DAT open")).Read(name);
         BitmapInfo info;
@@ -287,6 +295,22 @@ sealed class DatGraphics : IDisposable
         {
             Raylib.UnloadImage(image);
             throw new InvalidDataException($"Cannot decode BMP {name}");
+        }
+        if (cornerKey)
+        {
+            try
+            {
+                Raylib.ImageFormat(ref image,PixelFormat.UncompressedR8G8B8A8);
+                if(image.Data==null || image.Format!=PixelFormat.UncompressedR8G8B8A8)
+                    throw new InvalidDataException("Cannot convert keyed bitmap to RGBA8: "+name);
+                BitmapCornerColorKey.Prepare(new Span<byte>(image.Data,checked(image.Width*image.Height*4)));
+            }
+            catch
+            {
+                Raylib.UnloadImage(image);
+                throw;
+            }
+            return image;
         }
         if (FieldAttributeFonts.Contains(name, StringComparer.OrdinalIgnoreCase))
         {
@@ -330,7 +354,6 @@ sealed class DatGraphics : IDisposable
             name.StartsWith(NativeDisabledChainResources.Prefix, StringComparison.OrdinalIgnoreCase) || // diagnostic green key for V23 BMPs
             NativeFusionResources.IsOrbitalBitmap(name) || // diagnostic green key for general fusion review
             NativeCoinResources.IsCoinFaceBitmap(name) || // diagnostic green key; native compositor pending
-            NativeDiceResources.IsDiceBitmap(name) || // diagnostic green-key path; native blend pending
             name.Equals(NativeBreakResources.Shine, StringComparison.OrdinalIgnoreCase) || // V22 review; native +AC pending
             IsPhaseBanner(name) || SetSprites.Contains(name, StringComparer.OrdinalIgnoreCase) ||
             name.Equals(LifeNumberFont, StringComparison.OrdinalIgnoreCase) ||

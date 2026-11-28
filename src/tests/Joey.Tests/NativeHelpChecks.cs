@@ -4,6 +4,28 @@ internal static class NativeHelpChecks
 {
     public static void Run(Action<bool,string> check)
     {
+        var manifest = string.Join("\n", Enumerable.Range(1,24)
+            .Select(i => $"help{i:00}_?.yga\t// comment"));
+        const string invalidTarget = @"j\duel\help\help10_e.yga";
+        check(NativeHelpResources.ResolveInvalidTarget(manifest, [invalidTarget]) == invalidTarget,
+            "V29: invalid target uses original key 9, not generic hover");
+        bool rejected = false;
+        try { NativeHelpResources.ResolveInvalidTarget(manifest.Replace("help10_?", "help09_?"), [invalidTarget]); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "V29: reject unexpected manifest position");
+        rejected = false;
+        try { NativeHelpResources.ResolveInvalidTarget(manifest, []); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "V29: no placeholder for missing original asset");
+
+        const string tribute = @"j\duel\help\help01_e.yga";
+        check(NativeHelpResources.ResolveTributeRequired(manifest, [tribute]) == tribute,
+            "V29: tribute key 0 resolves first original help image");
+        rejected = false;
+        try { NativeHelpResources.ResolveTributeRequired(manifest.Replace("help01_?", "help02_?"), [tribute]); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "V29: reject wrong tribute asset at manifest position");
+
         var help = new NativeHelpTimeline();
         var local = new NativeHelpTarget((ushort)((3 << 6) | (5 << 1)));
         var opponent = new NativeHelpTarget((ushort)(local.Word | 1));
@@ -56,5 +78,19 @@ internal static class NativeHelpChecks
             "V29: hand source is halved before anchor subtraction");
         Step(4,hand,suppressed:true);
         check(!help.Visible,"V29: native suppression closes");
+
+        // The Proton capture used 0x8117 (side 1, region 11, index 4).
+        // The client's descriptor may omit the top flag without changing identity.
+        var tributeHand = new NativeHelpTarget(0x8117);
+        help.AdvanceUpdate(0, tributeHand, 1, true, false, true, false);
+        check(help.Visible && help.MessageKey == 0 && help.Target.Zone == 11 &&
+            help.Target.Index == 4 && help.Target.Identity == 0x117,
+            "V29: tribute key zero is a real request, not the sentinel");
+        for (int i=0; i<4; i++)
+            help.AdvanceUpdate(0, new NativeHelpTarget(0x117), 1, true, false, true, false);
+        check(help.Sample(525,568,290,72,179,38,c) == new CardBounds(436,458,179,38),
+            "V29: tribute uses native large card height and hand anchor");
+        help.AdvanceUpdate(-1, tributeHand, 1, true, false, true, false);
+        check(!help.Visible, "V29: leaving hand stops the tribute request");
     }
 }

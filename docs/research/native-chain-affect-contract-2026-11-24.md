@@ -144,3 +144,26 @@ dos comandos 0A/0B à fila continuam pendentes. A revisão não altera a
 cobertura das Draws integradas ao duelo.
 
 **Correção de 25/11:** a [auditoria da tabela comprimida](native-visual-dispatch-opcode-audit-2026-11-25.md) confirma os opcodes brutos e o produtor 005BA230. Os clocks e gates acima não mudam.
+
+## V23.2 — início e liberação por elo (27/11)
+
+O SQLite cumulativo v7 contém o assembly de 005BA230 na
+janela 005B9470, bundle prefixo 502c6177c5e6, batch-001.
+Quando o segundo argumento é zero, percorre a contagem
+word em base+140h, lendo descritores a partir de base+2
+com stride 14h. Em 005BA286 calcula número i+1 e em
+005BA296/005BA29A emite 0A (lado=bit0 do descritor,
+B=(descritor>>1)&31, C=i+1, D=0).
+Quando argumento não zero, lê o último descritor em
+base+count*14h-12h; 005BA261/005BA265 emite 0B com
+C=count. Não é uma liberação de todos os números de uma vez.
+
+005BAFD0 case 8 chama com argumento zero, depois de conferir
+a contagem >=2 no estágio anterior (decompilação); 005BB720
+case 1 chama com argumento 1 (CALL 005BB7E0 confirmado),
+antes de resolver o elo corrente. A numeração é a ordem de
+inserção e a liberação é por elo no topo, não por qualquer
+ativação isolada. A ponte A03 precisa de fatos de formação
+e início da resolução de elos, além dos eventos de ativação;
+não simular uma corrente visual para uma magia comum.
+Sem alteração na métrica ou no Core.

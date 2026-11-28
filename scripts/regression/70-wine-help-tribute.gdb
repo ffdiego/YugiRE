@@ -8,6 +8,8 @@ import json
 opening = None
 ticks = []
 producers = {}
+requested_key = gdb.convenience_variable("help_key")
+help_key = int(requested_key) if requested_key is not None else 0
 
 def reg(name):
     return int(gdb.parse_and_eval("$" + name)) & 0xffffffff
@@ -23,7 +25,7 @@ class Request(Probe):
     def stop(self):
         sp = reg("esp")
         key = read(sp + 4)
-        if key == 0:
+        if key == help_key:
             caller = read(sp)
             producers[caller] = producers.get(caller, 0) + 1
         return False
@@ -31,7 +33,7 @@ class Request(Probe):
 class Open(Probe):
     def stop(self):
         global opening
-        if opening is None and read(0x005ebee4) == 0:
+        if opening is None and read(0x005ebee4) == help_key:
             opening = {"object": reg("esi"), "key": read(0x005ebee4),
                        "context": reg("ebx") & 0xffff, "thread": gdb.selected_thread().num}
             print(f"opened help: key={opening['key']}, context={opening['context']:#06x}", flush=True)
