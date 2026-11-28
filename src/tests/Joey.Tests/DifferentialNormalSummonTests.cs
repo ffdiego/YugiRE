@@ -125,7 +125,7 @@ internal static class DifferentialNormalSummonTests
             throw new InvalidDataException("Demo initial projection does not match native-known fields");
         if (activeZones[zone] is not null)
             throw new InvalidDataException("First pilot supports placement into an empty destination");
-        bool accepted = duel.Summon(handIndex, side, zone, true, out _);
+        bool accepted = TurnFixture.Place(duel, handIndex, zone, false, out _);
         return (before, Project(duel, accepted), expected.Clone(), hasLp);
     }
 
