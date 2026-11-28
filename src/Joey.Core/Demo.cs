@@ -113,10 +113,6 @@ public sealed partial class DemoDuel
     public IReadOnlyList<int> SelectedBatchIndices => selectedBatchIndices.AsReadOnly();
     public bool[,] SpellFaceDown { get; } = new bool[2, 5];
     private bool summoned, drawn;
-    private sealed record BattleContinuation(int AttackerSide, int AttackerZone, Card Attacker,
-                                              int DefenderSide, int DefenderZone, Card Defender,
-                                              bool DestroyAttacker, bool DestroyDefender);
-    private BattleContinuation? deferredBattle;
     private readonly List<DemoSelectedMonster> flipSelections = [];
     private readonly List<DemoSpellTrapTarget> flipSpellTrapSelections = [];
     public IReadOnlyList<DemoSpellTrapTarget> SelectedFlipSpellTrapTargets =>
@@ -173,7 +169,6 @@ public sealed partial class DemoDuel
                 break;
         }
         if (effectName is null) return false;
-        FinishDeferredBattle();
         BeginNextEffectDecision();
         BeginNextQueuedDeckSearch();
         message = $"{effectName} FLIP effect negated by Royal Command; no effect applied.";
@@ -183,16 +178,7 @@ public sealed partial class DemoDuel
     /// Determined destroyed at damage calculation, but still present during FLIP resolution.
     /// Such monsters cannot be returned to the hand by Penguin Soldier.
     /// </summary>
-    public bool IsMarkedForBattleDestruction(int player, int zone)
-    {
-        if (IsQueuedBattleMarked(player, zone)) return true;
-        var battle = deferredBattle;
-        return battle is not null && (battle.DestroyAttacker &&
-            player == battle.AttackerSide && zone == battle.AttackerZone &&
-            ReferenceEquals(Monsters[player, zone], battle.Attacker) ||
-            battle.DestroyDefender && player == battle.DefenderSide && zone == battle.DefenderZone &&
-            ReferenceEquals(Monsters[player, zone], battle.Defender));
-    }
+    public bool IsMarkedForBattleDestruction(int player, int zone) => IsQueuedBattleMarked(player, zone);
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
     private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue.IsBusy;
@@ -878,7 +864,6 @@ public sealed partial class DemoDuel
                     DestroySpellTrapCard(side, z);
         }
 
-        FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         message = pending.Operation == FlipSpellTrapOperation.Destroy
             ? $"{pending.Source.Name} FLIP: destroyed two Set Spell/Trap Cards."
@@ -1323,302 +1308,6 @@ public sealed partial class DemoDuel
         battlePhaseEndedThisTurn = true;
         firstBattleAttacker = null;
     }
-    /// <summary>
-    /// Attack declaration and Battle Step response are distinct from damage
-    /// calculation and the following Damage Step FLIP resolution.
-    /// </summary>
-    internal bool Attack(int source, int target, out string message)
-    {
-        message = "Select an unused attacker and a valid enemy target in battle phase.";
-        int p = ActivePlayer, enemy = 1 - p;
-        if (!CanAttack(source) || HasDeclaredAttack(p, source)) return false;
-        var attacker = Monsters[p, source]!;
-
-        Card? defender = null;
-        if (target == -1)
-        {
-            if (!DirectAttackAllowed(p, attacker))
-            {
-                message = "Enemy monsters block direct attacks.";
-                return false;
-            }
-        }
-        else
-        {
-            if (target is < 0 or >= 5 || Monsters[enemy, target] is not Card targetCard)
-                return false;
-            defender = targetCard;
-        }
-
-        // An attack declaration consumes the attack regardless of whether
-        // Mirror Force destroys the attacker in the response window.
-        RecordBattleAttack(p, source, attacker);
-        var declaration = new DemoAttackDeclaration(p, source, attacker, target, defender);
-        BeginAttackResponse(declaration);
-        if (PendingAttackResponse is not null)
-        {
-            message = $"Attack declared by {attacker.Name}: choose a set Trap or Pass before damage.";
-            return true;
-        }
-        return ResolveDeclaredAttack(declaration, out message);
-    }
-
-    private void BeginAttackResponse(DemoAttackDeclaration attack)
-    {
-        int defender = 1 - attack.AttackingPlayer;
-        var eligible = new List<DemoAttackTrapOption>();
-        for (int z = 0; z < 5; z++)
-        {
-            if (Spells[defender, z] is not Card trap || !SpellFaceDown[defender, z] ||
-                spellSetTurn[defender, z] >= Turn ||
-                !AttackTrapRules.IsEligible(trap, defender, attack))
-                continue;
-            eligible.Add(new(defender, z, trap));
-        }
-        if (eligible.Count > 0)
-            PendingAttackResponse = new(attack, eligible.AsReadOnly());
-    }
-
-    /// <summary>
-    /// Continue the *same* declared attack after Pass. Do not re-declare,
-    /// consume a second attack or reopen the Mirror Force window.
-    /// </summary>
-    internal bool PassAttackResponse(out string message)
-    {
-        message = "No attack declaration is awaiting a response.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
-        if (PendingAttackResponse is not DemoAttackResponse pending || UsesQueuedAttackResponse(pending))
-            return false;
-        PendingAttackResponse = null;
-        return ResolveDeclaredAttack(pending.Attack, out message);
-    }
-
-    internal bool ActivateAttackTrap(int owner, int zone, out string message)
-    {
-        message = "Choose an eligible set Trap in the attack response.";
-        if (primitiveActionQueue?.IsBusy == true) return false;
-        if (PendingAttackResponse is not DemoAttackResponse pending || UsesQueuedAttackResponse(pending) ||
-            owner is < 0 or > 1 || zone is < 0 or >= 5 ||
-            !pending.EligibleTraps.Any(option => option.Owner == owner &&
-                option.Zone == zone && ReferenceEquals(option.Trap, Spells[owner, zone])) ||
-            Spells[owner, zone] is not Card trap || !SpellFaceDown[owner, zone] ||
-            spellSetTurn[owner, zone] >= Turn ||
-            !AttackTrapRules.IsEligible(trap, owner, pending.Attack))
-            return false;
-
-        var attack = pending.Attack;
-        if (!ReferenceEquals(Monsters[attack.AttackingPlayer, attack.AttackerZone],
-            attack.Attacker) || (attack.TargetZone >= 0 &&
-            !ReferenceEquals(Monsters[owner, attack.TargetZone], attack.Defender)))
-            return false;
-
-        // Verify all effect-dependent constraints before spending the Trap.
-        IReadOnlyList<MonsterWipeTarget>? targets = null;
-        if (trap.Id == AttackTrapRules.MirrorForce)
-        {
-            targets = MonsterWipeRules.AttackPositionTargets(
-                attack.AttackingPlayer, Monsters, MonsterFaceDown, DefensePosition);
-            if (targets.Count == 0) return false;
-        }
-
-        int reflectedDamage = 0;
-        if (trap.Id == AttackTrapRules.MagicCylinder)
-            reflectedDamage = AttackValue(attack.AttackingPlayer, attack.AttackerZone);
-
-        Spells[owner, zone] = null;
-        SpellFaceDown[owner, zone] = false;
-        spellSetTurn[owner, zone] = 0;
-        graves[owner].Add(trap);
-        PendingAttackResponse = null;
-
-        int destroyed = 0;
-        bool endedBattle = false;
-        switch (trap.Id)
-        {
-            case AttackTrapRules.MirrorForce:
-                // Effect destruction, never battle destruction. Finish moving
-                // all matching monsters before resolving field-to-GY triggers.
-                LastMonsterWipe = ResolveMonsterWipe(
-                    trap.Id, owner, explicitTargets: targets);
-                destroyed = LastMonsterWipe.TotalDestroyed;
-                break;
-            case AttackTrapRules.MagicCylinder:
-                // The attacking monster remains on field; the attack is
-                // negated and ATK damage goes to its controller, not defender.
-                Damage(attack.AttackingPlayer, reflectedDamage);
-                break;
-            case AttackTrapRules.NegateAttack:
-                // A counter Trap ends Battle Phase immediately. Later actions
-                // in the turn use the sandbox Main phase; BeginBattle must not
-                // allow re-entry until AdvanceTurn.
-                EnterMainPhase2();
-                endedBattle = true;
-                break;
-            default:
-                throw new InvalidOperationException("Unrecognized attack Trap.");
-        }
-        LastAttackTrap = new(trap.Id, owner, attack.AttackingPlayer,
-            destroyed, AttackContinued: false,
-            ReflectedDamage: reflectedDamage, BattlePhaseEnded: endedBattle);
-        message = trap.Id switch
-        {
-            AttackTrapRules.MirrorForce =>
-                $"{trap.Name}: destroyed {destroyed} Attack Position monster(s); attack canceled.",
-            AttackTrapRules.MagicCylinder =>
-                $"{trap.Name}: negated attack and inflicted {reflectedDamage} damage to P{attack.AttackingPlayer + 1}.",
-            _ => $"{trap.Name}: negated attack and ended the Battle Phase."
-        };
-        return true;
-    }
-
-    private bool ResolveDeclaredAttack(DemoAttackDeclaration attack, out string message)
-    {
-        int p = attack.AttackingPlayer, enemy = 1 - p;
-        int source = attack.AttackerZone, target = attack.TargetZone;
-        if (GameOver || Phase != DemoPhase.Battle ||
-            !ReferenceEquals(Monsters[p, source], attack.Attacker) ||
-            MonsterFaceDown[p, source] || DefensePosition[p, source])
-        {
-            message = "Attack canceled: the declared attacker is no longer available.";
-            return true;
-        }
-
-        if (attack.DirectAttack)
-        {
-            if (!DirectAttackAllowed(p, attack.Attacker))
-            {
-                message = "Attack canceled: direct attack is no longer allowed.";
-                return true;
-            }
-            int damage = AttackValue(p, source);
-            DealMonsterBattleDamage(p, attack.Attacker, damage);
-            message = $"Direct attack: {damage} damage.";
-            return true;
-        }
-
-        if (!ReferenceEquals(Monsters[enemy, target], attack.Defender))
-        {
-            message = "Attack canceled: the declared target left its zone.";
-            return true;
-        }
-        var defender = attack.Defender!;
-        bool wasFaceDown = MonsterFaceDown[enemy, target];
-        MonsterFaceDown[enemy, target] = false;
-        if (wasFaceDown) MonsterWasFlipped[enemy, target] = true;
-        if (!wasFaceDown)
-            return ResolveBattleOutcome(p, source, enemy, target, out message);
-
-        // Damage calculation precedes FLIP effects, but both occur only after
-        // the declaration window has resolved with no cancelling response.
-        var battle = CalculateBattle(p, source, attack.Attacker, enemy, target,
-            defender, out string damageMessage);
-        deferredBattle = battle;
-        TriggerFlip(enemy, target, defender, out string flipMessage);
-        BeginNextEffectDecision();
-        if (PendingFlipTarget is not null || PendingCardSelection is not null ||
-            PendingFlipSpellTrapTargets is not null || PendingEffectDecision is not null)
-        {
-            message = $"{damageMessage} {flipMessage}";
-            return true;
-        }
-        FinishDeferredBattle();
-        message = flipMessage.Length == 0 ? damageMessage : damageMessage + " " + flipMessage;
-        return true;
-    }
-
-    private BattleContinuation CalculateBattle(int attackerSide, int source, Card attacker,
-                                                int defenderSide, int target, Card defender,
-                                                out string message)
-    {
-        bool destroyAttacker = false, destroyDefender = false;
-        int attack = AttackValue(attackerSide, source);
-        if (DefensePosition[defenderSide, target])
-        {
-            int delta = attack - DefenseValue(defenderSide, target);
-            destroyDefender = delta > 0;
-            if (delta < 0) DealMonsterBattleDamage(defenderSide, defender, -delta);
-            message = delta > 0 ? "Battle: defender marked for destruction." :
-                delta == 0 ? "Battle: equal ATK/DEF." :
-                $"Battle: attacker takes {-delta} damage.";
-        }
-        else
-        {
-            int delta = attack - AttackValue(defenderSide, target);
-            if (delta != 0 || attack > 0)
-            {
-                destroyDefender = delta >= 0;
-                destroyAttacker = delta <= 0;
-            }
-            if (delta > 0) DealMonsterBattleDamage(attackerSide, attacker, delta);
-            if (delta < 0) DealMonsterBattleDamage(defenderSide, defender, -delta);
-            message = delta == 0 ? "Battle: equal ATK, no LP damage." :
-                $"Battle: {Math.Abs(delta)} LP damage.";
-        }
-        return new(attackerSide, source, attacker, defenderSide, target, defender,
-                   destroyAttacker, destroyDefender);
-    }
-
-    private void DealMonsterBattleDamage(int controller, Card source, int amount)
-    {
-        if (amount <= 0) return;
-        int opponent = 1 - controller;
-        Damage(opponent, amount);
-
-        // Native battle damage producer 00578540 queues both IDs. The
-        // sandbox resolves mandatory draws here, after LP damage is applied.
-        if (BattleDamageEffectRules.AfterBattleDamage(source.Id, controller, opponent, amount, GameOver) is not
-            { Kind: BattleDamageEffectKind.Draw } draw) return;
-        int recipient = draw.AffectedSide, count = draw.MaximumCount;
-        int drawn = Math.Min(count, DeckCount(recipient));
-        for (int i = 0; i < drawn; i++) DrawToHand(recipient);
-        bool deckOut = drawn < count;
-        if (deckOut && !GameOver) Winner = 1 - recipient;
-        LastDeckFlow = new(source.Id, controller, recipient, count, drawn, drawn, 0, 0, deckOut);
-    }
-
-    private void FinishDeferredBattle()
-    {
-        BattleContinuation? battle = deferredBattle;
-        if (battle is null) return;
-        deferredBattle = null;
-        // P188: removal from play occurs after damage calculation, but before
-        // the normal battle-to-Graveyard movement. A monster that never
-        // reached Graveyard must not run battle-destruction or GY triggers.
-        // Identity checks prevent an unrelated replacement occupying a slot
-        // during the Damage Step from being banished by this old attack.
-        bool bothPresent =
-            ReferenceEquals(Monsters[battle.AttackerSide, battle.AttackerZone], battle.Attacker) &&
-            ReferenceEquals(Monsters[battle.DefenderSide, battle.DefenderZone], battle.Defender);
-        if (bothPresent && DimensionalWarriorRules.BanishBothAfterDamageCalculation(
-                battle.Attacker.Id, battle.Defender.Id))
-        {
-            BanishBattlingMonster(battle.AttackerSide, battle.AttackerZone, battle.Attacker);
-            BanishBattlingMonster(battle.DefenderSide, battle.DefenderZone, battle.Defender);
-            return;
-        }
-        // An effect may already have removed a combatant. Never destroy an
-        // unrelated monster which later occupies the same slot.
-        if (battle.DestroyAttacker &&
-            ReferenceEquals(Monsters[battle.AttackerSide, battle.AttackerZone], battle.Attacker))
-            RemoveMonster(battle.AttackerSide, battle.AttackerZone, destroyedByBattle: true);
-        if (battle.DestroyDefender &&
-            ReferenceEquals(Monsters[battle.DefenderSide, battle.DefenderZone], battle.Defender))
-            RemoveMonster(battle.DefenderSide, battle.DefenderZone, destroyedByBattle: true);
-    }
-
-    // Immediate resolution for face-up combat with no FLIP transition.
-    private bool ResolveBattleOutcome(int attackerSide, int source, int defenderSide,
-                                      int target, out string message)
-    {
-        if (Monsters[attackerSide, source] is not Card attacker ||
-            Monsters[defenderSide, target] is not Card defender)
-        { message = "Battle stopped: a combatant left the field."; return false; }
-        deferredBattle = CalculateBattle(attackerSide, source, attacker, defenderSide, target,
-                                         defender, out message);
-        FinishDeferredBattle();
-        return true;
-    }
-
     private void TriggerFlip(int owner, int zone, Card card, out string message)
     {
         message = "";
@@ -1976,7 +1665,6 @@ public sealed partial class DemoDuel
 
         PendingCardSelection = null;
         selectedBatchIndices.Clear();
-        FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         message = pending.Destination == CardSelectionDestination.Field
             ? $"{option.Card.Name} Special Summoned on P{owner + 1}'s field."
@@ -2055,7 +1743,6 @@ public sealed partial class DemoDuel
 
         PendingCardSelection = null;
         selectedBatchIndices.Clear();
-        FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         message = $"P{owner + 1} Special Summoned {chosen.Length} copies; Main Deck shuffled once.";
         if (PendingCardSelection is not null) message += " Another card selection is pending.";
@@ -2085,7 +1772,6 @@ public sealed partial class DemoDuel
         if (selectedBatchIndices.Count != 0) return false;
         PendingCardSelection = null;
         selectedBatchIndices.Clear();
-        FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         message = pending.Destination == CardSelectionDestination.Hand
             ? $"P{pending.Owner + 1} declined optional card search; deck unchanged."
@@ -2324,7 +2010,6 @@ public sealed partial class DemoDuel
         message = pending.Trigger == DemoMonsterEffectTrigger.PositionChange
             ? $"{pending.SourceCard.Name}: destroyed {target.Name} after changing position."
             : $"{pending.SourceCard.Name} FLIP: destroyed {target.Name}.";
-        FinishDeferredBattle();
         return true;
     }
 
@@ -2359,7 +2044,6 @@ public sealed partial class DemoDuel
                 returned++;
             }
         }
-        FinishDeferredBattle();
         message = $"{pending.SourceCard.Name} FLIP: returned {returned} monster(s).";
         return true;
     }
@@ -2396,20 +2080,6 @@ public sealed partial class DemoDuel
         // P164/P168 do not fire: this was NOT battle destruction.
         BeginNextQueuedDeckSearch();
         return new(resourceId, caster, counts[0], counts[1], faceDownDestroyed);
-    }
-
-    /// <summary>
-    /// A physical field-to-banish movement, not destruction, discarding or a
-    /// field-to-Graveyard event. The existing Fusion Gate out-of-play zone is
-    /// reused. Equips are cleaned by ClearMonsterSlot; neither monster GY
-    /// search nor battle destruction hooks fire.
-    /// </summary>
-    private void BanishBattlingMonster(int player, int zone, Card expected)
-    {
-        if (!ReferenceEquals(Monsters[player, zone], expected))
-            throw new InvalidOperationException("The battle source occurrence has changed.");
-        banished[player].Add(expected);
-        ClearMonsterSlot(player, zone);
     }
 
     private void RemoveMonster(int p, int z, bool destroyedByBattle = false, bool isTribute = false,
@@ -2571,7 +2241,6 @@ public sealed partial class DemoDuel
         if (draw) DrawToHand(request.Owner);
         message = draw ? $"P{request.Owner + 1} drew one card with {request.Source.Name}." :
             $"P{request.Owner + 1} declined the draw from {request.Source.Name}.";
-        FinishDeferredBattle();
         BeginNextQueuedDeckSearch();
         return true;
     }
