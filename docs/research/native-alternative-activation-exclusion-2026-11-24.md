@@ -223,9 +223,9 @@ quick_check=ok. As janelas de assembly 005778F0/00577CF0/
 (OR 72 em 005783B3/005783E9; bit 15 deriva do lado) e
 00578400 (OR 73 em 00578420, CALL 005B9170 em 00578424).
 O wrapper 73 converte o índice interno em resource ID por
-004022E0 e empilha as palavras B=1, C=0, D=0.
+004022E0 e emite A=73|lado<<15, B=resource ID, C=1, D=0.
 005783C0 empacota a zona e o identificador de ocorrência nos
-bytes baixo/alto de B; C=0. O 72 escolhe o ramo pelo objeto
+bytes baixo/alto de C; D=0. O 72 escolhe o ramo pelo objeto
 visual, não simplesmente pelo tipo de carta.
 
 Três chamadores diretos de 00578400 no v7, todos com
