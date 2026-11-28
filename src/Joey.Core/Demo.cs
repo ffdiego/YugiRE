@@ -195,7 +195,7 @@ public sealed partial class DemoDuel
     }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
-    private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue?.IsBusy == true;
+    private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue.IsBusy;
     private bool LegacyActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingFlipSpellTrapTargets is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
@@ -297,7 +297,7 @@ public sealed partial class DemoDuel
         Enumerable.Range(0, 5).Any(z => Spells[p, z]?.Id == 0x593 && !SpellFaceDown[p, z]));
     public int PendingEndDiscards => Phase == DemoPhase.End && queuedEndReturn is null ? ExcessEndTurnCards : 0;
     private int ExcessEndTurnCards => HandLimitDisabled ? 0 : Math.Max(0, Hand.Count - EndTurnHandLimit);
-    private DemoDuel() { }
+    private DemoDuel() { primitiveActionQueue = BuildActionQueue(); }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
     public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979,
         IReadOnlyList<Card>? firstFusionDeck = null, IReadOnlyList<Card>? secondFusionDeck = null)
@@ -405,7 +405,7 @@ public sealed partial class DemoDuel
         return duel;
     }
 
-    public DemoDuel(IEnumerable<Card> cards)
+    public DemoDuel(IEnumerable<Card> cards) : this()
     {
         var all = cards.Where(c => c.Name.Length > 0).ToList();
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
@@ -594,7 +594,7 @@ public sealed partial class DemoDuel
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } attacker &&
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
         (!HasDeclaredAttack(ActivePlayer, zone) ||
-            HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
+            AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
         (attacker.Id != ZombyraTheDark || CountOccupiedMonsters(1 - ActivePlayer) > 0) &&
         !AttackRestrictedByContinuousSpells(ActivePlayer, attacker) && !AttackRestrictedByMonster(attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
