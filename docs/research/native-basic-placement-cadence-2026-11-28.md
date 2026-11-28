@@ -112,3 +112,28 @@ composição do grupo e confirmação do nome apontado pelo descriptor
 nome, duração ou compositor. Rota estática localizada; implementação
 reaction04 e gate variável ainda pendentes, assim como controle/GY.
 Sem promoção de cobertura, validação CI/cliente pendente.
+
+## V18.7 — descritor e término de reaction04
+
+A coleta 76 confirma `005F02B8 → 005F0540 → Joey_51.wav`. O Joey.Tools
+encontrou o recurso inglês em `Voice.dat`. A tabela de saltos em
+`00417A10` resolve o header 12 para `00417681`. O resto de
+`(contador / 24) % (quantidade_do_grupo + 1)` seleciona a camada.
+Resto zero omite o grupo. Restos 1, 2 e 3 selecionam as mãos
+`te1`, `te2` e `te3` na ordem DAT. O blit soma o X/Y codificado
+no campo do manifesto à base que o Draw calculou, com quociente/resto
+por 1000. O grupo de expressão passa por outro ramo do mesmo Draw.
+O compositor escolhe a base antes de percorrer os grupos. A comparação
+de olhos, boca e mãos nos quadros de entrada e saída fica pendente.
+
+`00417971` pede a fala primária no Draw de contador 8. Se +18
+contiver fala secundária, `00417999–004179BB` espera
+`005C0490(primária)` antes de pedir a secundária e promovê-la
+ao campo +14. A saída em `004179D0–004179FD` exige contador
+ao menos `0x100` e `005C0490(+14)` verdadeiro. O primeiro gate
+derruba +4; com flag +1C, também limpa o byte +5 do objeto de
+apresentação externo. `00416BB0` expõe atividade quando +1C está
+armado. O caminho de áudio desabilitado de `005C0490` retorna 1.
+A voz depende do predicado, e o intervalo do trace é só uma amostra.
+As ordens das rotas local e CPU observadas acima são específicas
+dos produtores investigados.

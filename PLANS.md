@@ -118,13 +118,13 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V01 — Instrumentação Frida: tabela de cosseno e log de Draw.** Status: `Parcial`. Validar coleta 34 dos blits da espada no Windows e ampliar para as demais famílias. [Detalhes](docs/plans/VISUALS.md#v01)
 - [ ] **V02 — Contrato nativo de renderização da carta.** Status: `Parcial`. Fechar lados, rotação, pivô e posição ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v02)
 - [ ] **V03 — Sprites originais no lugar de placeholders.** Status: `Parcial`. Validação DAT passa. Investigar os controles transitórios de seleção e descarte. [Detalhes](docs/plans/VISUALS.md#v03)
-- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Comparar pixels e verificar a borda superior após validar o recorte inferior. [Detalhes](docs/plans/VISUALS.md#v04)
+- [ ] **V04 — Troca de sprite da espada de ataque.** Status: `Parcial`. Comparar pixels e verificar o recorte superior. Correlacionar a sequência inteira com o perfil battle. [Detalhes](docs/plans/VISUALS.md#v04)
 - [ ] **V05 — ATK/DEF em monstros no campo.** Status: `Parcial`. Chave e intensidade RGB565 ligadas ao renderer; validar frames pareados e retorno à base. [Detalhes](docs/plans/VISUALS.md#v05)
 - [ ] **V06 — LP flutuante por origem do dano/cura.** Status: `Parcial`. Slot do combate comum ligado à fila. Mapear flags do dano especial, integrar hold e comparar gráficos/cadência. [Detalhes](docs/plans/VISUALS.md#v06)
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Predicado +4 confirmado; rasterizador 0051EBD0 (coleta 25), compositor e integração via A03/A07. [Detalhes](docs/plans/VISUALS.md#v07)
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Banco DAT confirmado; semântica A/B, compositor, integração e validação. [Detalhes](docs/plans/VISUALS.md#v08)
 - [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`. Elegibilidade conferida na Alpha. Comparar precedência, hotspot e seleção de alvo com o original. [Detalhes](docs/plans/VISUALS.md#v09)
-- [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Variantes conferidas na Alpha; ponteiro OFF/ON integrado, validar mouse-down, onda de choque (77), hotspot e prioridade. [Detalhes](docs/plans/VISUALS.md#v10)
+- [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. OFF/ON conferido no cliente. Contrato estático da onda recuperado; falta validar as passagens e a composição. [Detalhes](docs/plans/VISUALS.md#v10)
 - [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Chave RGB565 ligada aos fundos; validar capturas pareadas, ambos os lados, scroll e outras famílias. Validar as duas rotas de fusão. [Detalhes](docs/plans/VISUALS.md#v11)
 - [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`. Jinzo normal/especial ligado à fila; validar captura, demais gatilhos e compositor. [Detalhes](docs/plans/VISUALS.md#v12)
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
@@ -132,7 +132,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
 - [ ] **V16 — Demais Draws do inventário.** Status: `Parcial`. Validar a rota de saída após vitória e os gatilhos das demais famílias pendentes. [Detalhes](docs/plans/VISUALS.md#v16)
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Manter como pendências o caminho base 11→4, os recortes lateral e superior e a entrega do buffer no Windows. [Detalhes](docs/plans/VISUALS.md#v17)
-- [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Correções Set/Summon, ativação da mão, revelação baixada e cue do tributo; validar cliente, fechar reaction04/57 e viagens controle/GY. [Detalhes](docs/plans/VISUALS.md#v18)
+- [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Joey_51.wav e gate de reaction04 confirmados por assembly. Comparar quadros pareados e concluir a validação. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, verificar reflexão, remap e blend. [Detalhes](docs/plans/VISUALS.md#v20)
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Graceful Dice aciona o dado em duelo. Coletar comparação do produtor E2 e seguir com Skull Dice e Blind Destruction. [Detalhes](docs/plans/VISUALS.md#v21)
@@ -146,7 +146,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Avisos de alvo inválido (9) e falta de tributo (0) jogáveis no Alpha. Comparar a chave 9 em captura nativa e ampliar os produtores. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
 - [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Abertura, resultado e reaction07 de magia do Joey jogáveis no Alpha. Investigar invocações características e ampliar produtores confirmados. [Detalhes](docs/plans/VISUALS.md#v31)
-- [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Live EquipCommand, roteiro 57 para gate/despacho e auditoria do inventário. [Detalhes](docs/plans/VISUALS.md#v32)
+- [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Validar gate/despacho de equipamento (57) e variantes das viagens de controle e cemitério. [Detalhes](docs/plans/VISUALS.md#v32)
 
 ## Trilha AI
 

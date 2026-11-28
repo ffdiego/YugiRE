@@ -338,45 +338,39 @@ foco, a sequência Draw e uma transição de saída. Guarde em `scratch/`
 um quadro estabilizado e um quadro sem foco para comparar o
 posicionamento e a composição com o Alpha.
 
-## V18/V31 — reação do jogador à ativação (76)
+## V09/V10, V18/V31 e V32 — validação em execução
 
-A rota 004030F0 -> reaction04/10000057 já foi localizada. Faltam o
-seletor header 12 (00417680..00417750) e o nome em 005F0540.
-Somente Ghidra, sem executar o jogo:
-
-```bash
-bash scripts/pending/76-reaction04-contract-ghidra.sh
-```
-
-Saída privada: scratch/ghidra-reaction04-contract.zip. A coleta
-dinâmica complementar usa o coletor permanente do Windows:
+Windows com Frida e `joey_pc.exe` do fingerprint conhecido. Os
+roteiros estáticos [76–78](../completed/README.md) foram executados e
+migraram para completed. A instrumentação permanente em Python
+continua pendente de validação no Windows. O coletor observa a
+instância indicada, F9 marca e Ctrl+C encerra. Saída JSON privada
+em `scratch/`. Comparar a ordem de eventos do mesmo thread, usando
+`appTick`, `frame` no duelo e `cursorPass` no cursor.
 
 ```powershell
-python scripts/joey_visual_trace.py --label normal --profile activation --scenario local-spell --seconds 90
+python scripts/joey_visual_trace.py --label normal --profile cursor --scenario mouse-edges --seconds 60
+python scripts/joey_visual_trace.py --label normal --profile activation --scenario control-and-graveyard --seconds 90
+python scripts/joey_visual_trace.py --label normal --profile battle --scenario hidden-defender --seconds 90
 ```
 
-Ativar magia da mão e, se possível, magia previamente baixada.
-F9 marca o momento durante o duelo; Ctrl+C encerra. O perfil inclui
-movimento, brilho, rotas de reação, pedidos com nomes dos descritores,
-Draw e polls de áudio, sem escrita no jogo. Comparar com amostra CPU.
-O perfil all significa todos os hooks implementados neste coletor,
-não todas as famílias visuais; battle e demais famílias serão adicionados
-após confirmar os endereços. Validação da nova instrumentação no
-Windows ainda pendente. Não versionar JSON bruto.
+- **Cursor.** Marcar menu, editor de deck e duelo. Fazer clique curto,
+  segurar e arrastar, soltar, clicar duas vezes e clicar com o
+  botão direito. Repetir sobre nuvem de ação. Registrar janela inteira
+  junto do trace para conferir o compositor e o primeiro Draw.
+- **Ativação e viagens.** Marcar magia da mão, revelação de magia Set
+  e uma ativação da CPU. Com Change of Heart, registrar tomada e retorno,
+  em ataque/defesa e com oculto quando elegível. Comparar com equipamento
+  de controle, remoção por efeito, tributo e descarte. Para a reação,
+  relacionar movimento, fala, grupos Draw, poll e brilho. Para viagem,
+  relacionar o produtor, os dois descritores, o som e seu commit.
+- **Batalha.** Marcar declaração, seleção e primeiro input aceito após a
+  resolução. Fazer ataque direto e ataque contra defensor revelado e
+  oculto. O perfil captura estado da espada, pedido/Draw de LP, Draw da
+  explosão, descritores de viagem e subestado/busy dos comandos.
+  Uma captura da janela permite conferir o momento do impacto.
 
-## V09/V10 — ponteiro pressionado e onda de choque (77)
-
-O DAT chama cursor00 OFF, cursor01 ON e cursor_pow onda de choque.
-Recuperar consumidor 0047FE90 e suas chamadas de input/composição;
-identificar condição de criação do efeito, contador, escala, alpha,
-âncora e término. Não assumir que a nuvem de ação é a onda de choque.
-
-```bash
-bash scripts/pending/77-cursor-click-contract-ghidra.sh
-```
-
-Saída privada: scratch/ghidra-cursor-click-contract.zip. Se houver
-janelas sem função reconhecida, conservar instruções disponíveis.
-Complemento manual: comparar clique curto, manter esquerdo pressionado,
-arrastar e soltar, clique direito e clique sobre nuvem de ação. Fazer
-captura da janela inteira (F12 do cliente exclui o cursor).
+`--profile all` combina as famílias instrumentadas. A versão 3 do
+registro traz `appTick` (campo `scene` na versão 2), um contador de
+passagens do cursor e opcode com os 12 bits do despacho. Conservar
+o rodapé com perdas/erros antes de usar a coleta como evidência.

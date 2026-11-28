@@ -1,5 +1,29 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
+## Complemento cumulativo v16 — cursor, reaction04 e viagens (28/11/2026)
+
+O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v16.zip`
+reúne o SQLite e as auditorias v15/v16. As coletas 76–78
+acrescentam assembly, decompilações e memória para a onda de choque,
+reaction04 e as viagens por 83, 8E e 8F.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `e26054261b187ef7feef95f893784cc620a4e1a68f32ce8e10ade82efb78062c` |
+| SHA-256 do ZIP v16 | `de85c26bd7e3eaa5181bb907e5ebbabeb7315bb0ee7ff01344d67227f949c9b2` |
+| SHA-256 do EXE | `db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de` |
+| SHA-256 do bundle 76 | `abdbbcfc8a05b5e60b20ef288994924671c38234a7510e3665f8753a4c4fb387` |
+| SHA-256 do bundle 77 | `7b697d7faee91791ccac11129083e41527873e8d078b07dacb7d8ff6218bbc3d` |
+| SHA-256 do bundle 78 | `de70f4ee12b6ae6ec5dfb94feefbe3b7f2bd3e56681782eb7eda45e2089c2c5e` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+A comparação por conteúdo confirmou todas as linhas das 27 tabelas
+da v15. A v16 contém 46 bundles, 279 relatórios, 402 registros de
+funções (323 VAs distintas), 243.956 instruções e 61 blocos de memória.
+A composição em execução e as variantes de transferência aguardam
+[coleta Windows](../../scripts/pending/README.md#v09v10-v18v31-e-v32--validação-em-execução).
+
 ## Complemento cumulativo v15 — seletores e voz dos bustos (28/11/2026)
 
 O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v15.zip`

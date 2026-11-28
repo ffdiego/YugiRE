@@ -79,3 +79,22 @@ A importação foi validada no snapshot paralelo v4-visuals e consolidada na
 
 - [71-opening-bust-tables-ghidra.sh](71-opening-bust-tables-ghidra.sh) recuperou o seletor de abertura em `005DA798` e os descritores de `Joey_01.wav` a `Joey_03.wav`. Dois blocos de memória e o par Update/Draw foram importados no [SQLite v15](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v15--seletores-e-voz-dos-bustos-28112026) em 28/11/2026.
 - [72-result-bust-tables-ghidra.sh](72-result-bust-tables-ghidra.sh) recuperou o seletor de resultado em `005DA7E0` e os descritores de `Joey_53.wav` a `Joey_59.wav`. Dois blocos de memória e o par Update/Draw foram importados em 28/11/2026. [Evidência e integração](../../docs/research/native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).
+
+## V10/V18/V31/V32 — cursor, reação e viagens (76–78)
+
+Coletas Ghidra concluídas em 28/11/2026 e importadas no
+[SQLite v16](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v16--cursor-reaction04-e-viagens-28112026).
+Cada bundle permanece privado em `scratch/coord-evidence/v16/`.
+
+- [76-reaction04-contract-ghidra.sh](76-reaction04-contract-ghidra.sh)
+  recuperou quatro funções, duas janelas e três blocos de memória.
+  O header 12 é uma janela interna de `00416BC0` a partir de
+  `00417681`. [Evidência V18.7](../../docs/research/native-basic-placement-cadence-2026-11-28.md#v187--descritor-e-término-de-reaction04).
+- [77-cursor-click-contract-ghidra.sh](77-cursor-click-contract-ghidra.sh)
+  recuperou oito funções e duas vtables. Identificou a borda,
+  o objeto da onda e a ordem no Draw.
+  [Evidência V10.3](../../docs/research/native-cursor-dispatch-2026-11-24.md#v103--ciclo-da-onda-de-choque).
+- [78-card-transfer-contract-ghidra.sh](78-card-transfer-contract-ghidra.sh)
+  recuperou seis funções, três janelas e dois blocos de memória.
+  Ligou consumidores e pedidos de viagem de 83, 8E e 8F.
+  [Evidência V32](../../docs/research/native-card-transfer-and-battle-handoff.md).

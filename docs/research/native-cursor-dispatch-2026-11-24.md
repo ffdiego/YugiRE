@@ -142,3 +142,47 @@ sem duplicar a mão. Não modifica o hotspot provisório nesta fatia.
 Sem bolha fake, sem fórmula de fade/escala inventada. Roteiro 77 exporta
 as janelas do consumidor e input para localizar produtor e lifecycle de
 cursor_pow. Validação desktop e CI pendentes, badge inalterada.
+
+## V10.3 — ciclo da onda de choque
+
+Coleta 77 e disassembly do PE de fingerprint
+`db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de`.
+A confirmação do mantenedor cobre o OFF/ON do cliente após #281.
+
+- **Entrada, assembly.** `0054B030` mapeia `0x201/0x202` (esquerdo)
+  no byte +5 e `0x204/0x205` (direito) no +4. `0054B100` atualiza
+  o par atual/anterior. O cursor chama `0054B240` em `0047FF62`:
+  anterior esquerdo zero, esquerdo atual diferente de zero e +1C zero.
+  `0047FF75` exige o flag do cursor +10D. No mesmo objeto, +10
+  governa toda a passagem. Segurar por várias amostras e soltar
+  não criam outra onda. Um segundo clique que atravesse outra borda
+  amostrada cria outro objeto, inclusive enquanto o primeiro existe.
+  O botão direito usa outro byte.
+- **Origem e hotspot, assembly/DAT.** `0040F670` instala o cursor no
+  objeto de aplicação e arma +10D. `0047FFA7` passa as coordenadas
+  lógicas correntes do input para o construtor `00451F70`, que as
+  guarda no objeto. A onda é ancorada no clique e fica na mesma
+  posição quando o ponteiro se move. A subtração do hotspot em
+  `004800D4–004800F5` governa o blit do ponteiro. A branch histórica
+  `03ae747` documenta os hotspots (7,14), (43,15) e (7,30) e não
+  foi mesclada nesta investigação.
+- **Ciclo, assembly.** Vtable `005DB354`, Update `00450FB0`,
+  Draw `00451FB0`. Contador nasce em 0 e soma `0x10` por Update.
+  Ao alcançar `0x100` no 16º Update, +4 é limpo. O Draw seleciona
+  a entrada 0 (`cursor_pow.yga`, 63×63), trunca o tamanho
+  `(dimensão * contador) >> 8`, centra com metade inteira do
+  tamanho escalado e passa intensidade
+  `min(255, cos16_16[(contador / 2) & 0x1ff] >> 8)`.
+  No primeiro Update que pode desenhar a onda, o tamanho é 3×3.
+  No 15º, é 59×59. A intensidade é um argumento do compositor.
+- **Ordem, assembly.** `0047FEB0/0047FEBC` executam Update e Draw da
+  máscara 4 antes do bloco de criação e do blit do ponteiro
+  (`0048010C`). A primeira oportunidade de Draw para uma nova onda
+  é a passagem seguinte, após o Update. O fluxo está no cursor da
+  aplicação. A amostra pareada em menu, deck e duelo deve confirmar
+  as condições de visibilidade de cada tela.
+
+O perfil `cursor` captura mensagens de botão, estado de amostragem e
+IDs de passagem/objeto nos três cenários. A concentração de cliques na
+mesma amostra, o lote de ondas simultâneas e os pixels do compositor
+ainda dependem de captura. [Roteiro Windows](../../scripts/pending/README.md#v09v10-v18v31-e-v32--validação-em-execução).
