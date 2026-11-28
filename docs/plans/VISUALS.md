@@ -805,6 +805,14 @@ Partial para 00416BC0. A composição pareada e os outros
 produtores continuam em aberto.
 [Contrato e captura](../research/native-joey-reaction-audio-2026-11-24.md#v3115--reação-à-colocação-de-uma-magia-do-joey).
 
+V31.16 (28/11). Confirmados por assembly o gate de E6, a vtable,
+os pedidos de áudio, os contadores de entrada/saída e as dimensões
+dos dois manifestos de invocação característica. A demonstração
+em Proton não produziu os IDs candidatos em 95 segundos. O roteiro
+74 aguarda replay dirigido para confirmar tipos, lado e composição.
+[Contrato](../research/native-joey-reaction-audio-2026-11-24.md#v3116--invocação-característica).
+
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave
