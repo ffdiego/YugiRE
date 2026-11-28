@@ -275,3 +275,12 @@ Invitation, Thousand-Eyes Restrict e Dragon Capture Jar. Resolver
 kind de vínculo efetivamente emitido e compará-lo aos destinos de
 0040E594/627/7A6. Não coletar novamente toda 0040E260. Importar
 bundle cumulativo quando recebido; nenhum recurso binário no Git.
+
+## V30 — máscara das letras de Destiny Board (59)
+
+```bash
+bash scripts/pending/59-vija-mask-compositor.sh
+```
+Apenas Ghidra. V7 contém Draw 004584C0, vtable 005DC6EC e manifesto;
+não repetir coleta 20. Exportar 004CCD40 (+98) e identificar auxiliares,
+formatos e recorte/máscara. Nenhum DAT ou EXE no Git.

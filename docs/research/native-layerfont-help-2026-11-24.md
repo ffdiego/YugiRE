@@ -209,3 +209,26 @@ help01_e.yga..help24_e.yga; não supor key+1 até inspecionar
 help.txt (pode ter parâmetros/remap). O comando já existente
 --inspect-visual-dat inclui help.txt e dimensões/hash; não abrir
 nova coleta Ghidra, não solicitar assets/pixels. Draw continua Pending.
+
+## V27/V28.2 — fechamento dos operandos de geometria (27/11)
+
+Consulta read-only ao SQLite cumulativo v7, bundle
+87ff09fe3b5b864c91373efc4c7dea874cab9c547ab47eb12dafded9401ee888,
+batch-000.txt, windows 00455FF0 e 00456360. A em
+004560C9..004560F3 subtrai altura de 0x24C (588) e largura de
+0x314 (788) e chama +48. B em 004563B9 calcula EBX=8*v-1792;
+00456404..00456427 usa CDQ/SUB/SAR para dividir por dois,
+subtrai 128 e mascara 511. 00456452..00456465 calcula
+Y=((altura+16)*C(4*(v-224)-128)>>16)-altura; 00456467..82
+calcula X=[005DB570]-trunc(largura/2), chama +4C. A leitura de
+005DB570:4 e 005DB560:80 confirma DWORD=525 em ambas.
+Com isso não há mais operandos de dimensão provisórios nesse trecho.
+
+Manifesto literal: demo_font_?.bmp, wait_?.bmp. Inventário
+visual_dat_images: demo e=233x30, f=233x37, g=72x30,
+i=233x30, s=215x36; wait 469x34 para os cinco idiomas.
+NativeLayerFontResources valida dimensões por língua; review inglês
+usa Bounds centralizado no modelo. A 233x30 em (555,558);
+B final 469x34 em (291,16). Não confundir modo 3 com espera de
+seleção local ou 5/7 com todo duelo contra CPU. Sem integração normal
+ou equivalência de pixels. Não aumentar cobertura.

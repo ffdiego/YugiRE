@@ -59,6 +59,28 @@ public static class NativeVijaResources
         "vija_moji_mask.bmp", "vija_moji_smo.yga"
     ];
 
+    // DAT manifest inventory in the private cumulative v7 SQLite.
+    // Manifest order is not proof of the virtual bank remap.
+    private static readonly (string Name, int? Parameter, int Width, int Height)[] ObservedBank =
+    [
+        ("vija_smoke.yga",5004,400,80),
+        ("vija_skel.bmp",5004,210,41),
+        ("vija_moji_smo.yga",8031,256,37),
+        ("vija_moji_mask.bmp",5031,160,37),
+        ("vija_moji_iro.bmp",null,160,37)
+    ];
+
+    public static NativeVijaTexture ValidateTexture(int key,NativeVijaResource record,int width,int height)
+    {
+        if(key<0 || key>=ObservedBank.Length)
+            throw new ArgumentOutOfRangeException(nameof(key));
+        var expected=ObservedBank[key];
+        if(!record.Path.Equals(Prefix+expected.Name,StringComparison.OrdinalIgnoreCase) ||
+            record.Parameter!=expected.Parameter || width!=expected.Width || height!=expected.Height)
+            throw new InvalidDataException("Unexpected Vija manifest order, parameter or dimensions: "+record.Path);
+        return new(width,height,record.Parameter ?? 0);
+    }
+
     // Preserve original order and absence of numeric parameters. The
     // exact numeric fields/ordering must come from the owner's DAT.
     public static NativeVijaResource[] Parse(string text, IEnumerable<string> archiveNames)

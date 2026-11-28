@@ -144,3 +144,32 @@ decompilações do SQLite (004AD9C0, 004A9CC0 e xrefs/vtables).
 Obter vija.txt e dimensões via --inspect-visual-dat local.
 Nenhuma nova coleta ampla nem nova espera no scheduler.
 Cobertura 20/34, zero Verified.
+
+## V30.3 — banco real e alvo da máscara (27/11)
+
+SQLite cumulativo v7, quick_check ok, consulta read-only a
+visual_dat_manifests e visual_dat_images:
+
+| Key por ordem DAT | Recurso | Dimensão | Parâmetro |
+|---:|---|---|---:|
+| 0 | vija_smoke.yga | 400x80 | 5004 |
+| 1 | vija_skel.bmp | 210x41 | 5004 |
+| 2 | vija_moji_smo.yga | 256x37 | 8031 |
+| 3 | vija_moji_mask.bmp | 160x37 | 5031 |
+| 4 | vija_moji_iro.bmp | 160x37 | ausente |
+
+Key2: oito quadros 32x37 de fumaça da letra; key3: cinco
+máscaras 32x37; key4: fundo inteiro 160x37 sem parâmetro.
+Fundo usa módulo 160, fumaça (t/8)%8. Validação estrita opcional
+NativeVijaResources.ValidateTexture; novos testes de todas as cinco
+letras e ambos os modos com metadados reais. Ordem DAT não comprova
+remap virtual nem pixels.
+
+004A9CC0 grava 005DC6EC. A janela de 228 bytes da vtable no v7
+confirma +4C=0041AB40, +94=0041AC90, **+98=004CCD40**,
++A0=004EEC70. 004589C8 chama +98 no scratch obj+B0 com argumentos
+após ponteiro fonte: 0,255,0,255,0,0,rect,0,0. Duas cópias de fundo
+via 004AD9C0, faixa de fumaça via +4C antes da máscara. 004CCD40
+não tem decompilação/janela própria no v7. Não reutilizar a semântica
+de +94 de Affect para +98. Coleta 59 direcionada; nenhum renderer
+ou espera artificial, sem mudança na métrica.

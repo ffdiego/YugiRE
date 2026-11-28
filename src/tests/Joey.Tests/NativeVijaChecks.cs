@@ -98,6 +98,46 @@ internal static class NativeVijaChecks
                 v.BlocksCompletion && v.Draw(cos,Tex) is null && visible==v.Counter/4+1,
                 "V30: terminal DrawFlag distinct from inclusive virtual predicate");
         }
+        // Original DAT metadata from cumulative v7.
+        const string observedManifest="vija_smoke.yga 5004\nvija_skel.bmp 5004\nvija_moji_smo.yga 8031\nvija_moji_mask.bmp 5031\nvija_moji_iro.bmp\n";
+        var actual=NativeVijaResources.Parse(observedManifest,paths);
+        (int W,int H)[] dims=[(400,80),(210,41),(256,37),(160,37),(160,37)];
+        var bank=actual.Select((record,key)=>NativeVijaResources.ValidateTexture(key,record,dims[key].W,dims[key].H)).ToArray();
+        check(bank[0].Atlas==new NativeVijaAtlas(5,4,80,80) &&
+            bank[1].Atlas==new NativeVijaAtlas(5,4,42,41) &&
+            bank[2].Atlas==new NativeVijaAtlas(8,31,32,37) &&
+            bank[3].Atlas==new NativeVijaAtlas(5,31,32,37) &&
+            bank[4].Parameter==0 && actual[4].Parameter is null,
+            "V30: real manifest order and packed strip dimensions");
+        reject(()=>NativeVijaResources.ValidateTexture(0,actual[1],210,41),"V30: reject reordered actual bank");
+        reject(()=>NativeVijaResources.ValidateTexture(1,actual[1],211,41),"V30: reject mismatched dimensions");
+        reject(()=>NativeVijaResources.ValidateTexture(4,actual[4] with { Parameter=0 },160,37),"V30: absent parameter distinct from explicit zero");
+        for(ushort letter=0;letter<5;letter++)
+        for(int mode=0;mode<2;mode++)
+        {
+            var v=new NativeVijaTimeline(new(letter,mode==1,0x800a),new(369,460));
+            int count=0;
+            while(v.DrawFlag)
+            {
+                var draw=v.Draw(cos,key=>bank[key]);
+                count++;
+                if(draw is null)continue;
+                int t=draw.Counter;
+                check(draw.Base.Source==new CardBounds(t/8%5*80,0,80,80),
+                    "V30 DAT: base smoke strip");
+                if(draw.Overlay is {} overlay)
+                    check(overlay.Source.Width==42 && overlay.Source.Height==41 &&
+                        overlay.Source.X>=0 && overlay.Source.X+42<=210,
+                        "V30 DAT: skeleton strip");
+                if(draw.Scratch is {} scratch)
+                    check(scratch.Width==32 && scratch.Height==37 &&
+                        scratch.FirstBackgroundX==t%160 && scratch.SecondBackgroundX==t%160-160 &&
+                        scratch.ColorSource==new CardBounds(t/8%8*32,0,32,37) &&
+                        scratch.MaskSource==new CardBounds(letter*32,0,32,37),
+                        "V30 DAT: actual background wrap, eight smoke frames, five masks");
+            }
+            check(count==(mode==0?97:177),"V30 DAT: all letters and both modes complete");
+        }
         check(!NativeCinematicRouting.DestinyBoardVictory(0).HasPlayableDraw,
               "V30: no invisible wait before renderer is complete");
     }
