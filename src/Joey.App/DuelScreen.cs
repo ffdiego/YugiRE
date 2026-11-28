@@ -813,6 +813,8 @@ static partial class Game
         DrawSpellActivation();
         DrawLifeFloatingDigits();
         DrawPhaseNotice();
+        DrawLiveHelp(hoverUpdates, actionInput && !joeySpeaking && !handHovered && hoverCpuHand < 0 &&
+            !selectingCard && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy == false);
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
             string help = flip.Effect switch
