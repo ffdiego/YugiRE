@@ -462,6 +462,33 @@ legados equivalentes do caminho padrão, desacoplar seus `Pending*` de
 `ActionsBlocked` e registrar a redução de Demo.cs por fatia. Regras de
 cartas sem equivalente jogável continuam nos IDs próprios.
 
+### C12 — Posse intrínseca da fila (28/11/2026)
+
+Cada `DemoDuel` constrói uma única `ActionQueue`, imediata e sem
+privilégios de laboratório por padrão. `Actions` devolve essa referência;
+`ConfigureActionQueue` permite ao host escolher gate e privilégios uma
+vez antes da exposição/admissão/continuação/Tick. O alias histórico
+`CreatePrimitiveActionQueue` configura a mesma instância, nunca cria outra.
+App e Lab configuram explicitamente quando precisam de gate gráfico ou
+edições privilegiadas; headless e CPU não dependem de anexação. O console
+`Attach` reutiliza a fila e não pode trocar gate nem elevar privilégios,
+inclusive em duelo novo; use a configuração explícita ou a criação de
+sessão de laboratório antes de expor a fila.
+
+Retirados os predicados de existência que condicionavam ataque,
+atributos contados e seletores. Preservados predicados de posse do pedido,
+ocorrências e admissões. Testes de infraestrutura em ActionQueueChecks:
+identidade, ausência de mutação na admissão, gate, configuração única e
+privilégios do console. Sem alteração deliberada de regras de cartas ou
+manifesto; comparações com o nativo e CI obrigatórios quando aplicáveis.
+
+Esta fatia não remove os mutadores legados, nem transforma automaticamente
+os estados Pending* em comandos; o C12 permanece parcial. Próxima fatia:
+retirar entradas internas sem consumidores modernos, preservando helpers
+do executor e ajustando a compilação dos testes históricos em vez de
+manter resolução paralela.
+
+
 ### C12.1 — Fila padrão
 
 O App cria a fila ao iniciar duelo local ou Alpha. `--alpha-headless`
