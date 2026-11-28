@@ -102,3 +102,26 @@ O snapshot é imutável e não é refeito durante o gate ou após remoção/FLIP
 Não acrescenta opcode nativo, não muda a ordem do scheduler nem substitui
 checkpoint de campo. O pareamento explícito de snapshots 0x31 com esta linha
 e a comparação numérica ainda são próximos passos.
+
+### Comparação de atributos de batalha pareados
+
+```sh
+python -m yugilab.compare_battle_calculations captura.jsonl trace.json \
+  --pair 507:12 --pair 520:21
+```
+
+Os números são exemplos de sequência JSONL e sequência executada C# (não
+linha de roteiro). Requer captura `--trace-state --battle-attributes` e trace
+C# atual com rowCount. O comparador usa os blocos 0x31 correlacionados ao
+campo e os registros battleCalculation, com pares explicitamente escolhidos
+por decisão e contexto equivalentes. Valida integridade do JSONL, contagens
+de amostras/erros e continuidade do trace, inclusive fora dos pares.
+Compara tipo de ataque, lado, slot, índice e postura/face por papel; só
+compara ATK/DEF numéricos se a identidade projetada e a pose concordam.
+Não equipara chaves de ocorrência entre motores nem compara danoWord ao
+dano solicitado, pois destinatário e timing podem depender de flags.
+Amostras ausentes, erros de leitura e atores não correlacionados são lacunas;
+uma diferença após lacuna não vira mismatch no prefixo. Saídas 0/1/2/3
+seguem a política acima. O resultado cobre somente os pares solicitados,
+não toda a batalha, todos os comandos ou a equivalência do duelo. Nenhuma
+promoção automática de cartas Verified. Arquivos privados em scratch.
