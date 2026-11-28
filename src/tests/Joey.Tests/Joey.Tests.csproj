@@ -6,6 +6,10 @@
     <None Include="../../../native_hooks/decks/demo-?.json" Link="Fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Historical direct-resolver fixture; baseline preserved in source. -->
+    <Compile Remove="EndTurnTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="../../Joey.App/DebugOverlayState.cs" Link="DebugOverlayState.cs" />
   </ItemGroup>
   <ItemGroup>
