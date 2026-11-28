@@ -12,6 +12,7 @@ static partial class Game
     /// </summary>
     static string ActiveWindowCursorSprite()
     {
+        bool pressed = Raylib.IsMouseButtonDown(MouseButton.Left);
         if (screen == "duel" && !ConsoleCapturesInput && !visualReviewPaused &&
             !MotionBusy && !PhaseBusy && !alphaBlocked &&
             CanPlayTurn && CanPlayMainOrBattle &&
@@ -22,7 +23,7 @@ static partial class Game
             !duel.GameOver)
         {
             if (hoverHand >= 0 && hoverHand < ViewHand.Count)
-                return NativeDuelCursor.CursorSprite(CurrentHandAction(hoverHand));
+                return NativeDuelCursor.CursorSprite(CurrentHandAction(hoverHand), pressed);
 
             // The Attack balloon is a variant of the SAME native pointer,
             // not an overlay on the card or the on-board sword marker.
@@ -44,11 +45,11 @@ static partial class Game
                         own, duel.CanChangePosition(zone),
                         duel.MonsterFaceDown[ViewPlayer, zone],
                         duel.DefensePosition[ViewPlayer, zone], choosingTarget);
-                return NativeDuelCursor.CursorSprite(action);
+                return NativeDuelCursor.CursorSprite(action, pressed);
             }
         }
 
-        return NativeDuelCursor.DefaultPointer;
+        return NativeDuelCursor.CursorSprite(null, pressed);
     }
 
     /// <summary>

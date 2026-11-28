@@ -41,6 +41,13 @@ internal static class NativeCursorActionSelectorChecks
                   NativeDuelCursor.ActionForSprite(NativeDuelCursor.CursorSprite(selected))==expected,
                 "V10: legal position cloud and diagnostic agree; one pointer only");
         }
+        check(NativeDuelCursor.CursorSprite(null,false)==NativeDuelCursor.DefaultPointer &&
+              NativeDuelCursor.CursorSprite(null,true)==NativeDuelCursor.AlternatePointer &&
+              NativeDuelCursor.ActionForSprite(NativeDuelCursor.AlternatePointer) is null,
+            "V10: OFF/ON base pointer; pressed pointer is not an action");
+        foreach(var action in Enum.GetValues<NativeCursorAction>())
+            check(NativeDuelCursor.CursorSprite(action,true)==NativeDuelCursor.CursorSprite(action,false),
+                "V10: explicit action request takes precedence over base input variant");
         // Original English manifest order and raw fields (DAT metadata).
         string[] names = ["cursor_pow.yga","cursor00.yga","cursor01.yga",
             "cursor_e_summon.yga","cursor_e_flip.yga","cursor_e_atk.yga","cursor_e_act.yga",

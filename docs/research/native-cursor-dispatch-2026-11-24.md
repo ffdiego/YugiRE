@@ -119,3 +119,26 @@ nativas; hotspot continua provisório. Testes cobrem 32
 combinações de elegibilidade, inversão para diagnóstico,
 16 dimensões e rejeições do manifesto. Smoke desktop e CI
 pendentes; nenhuma nova Draw no inventário.
+
+## V09/V10.2 — estado pressionado e onda de choque (28/11)
+
+Observação do mantenedor no original: MouseDown troca o ponteiro e
+cria uma bolha. Reconsulta do manifesto no SQLite v14: comentários
+originais `cursor00.yga // OFF`, `cursor01.yga // ON`,
+`cursor_pow.yga // 衝撃波` (onda de choque); 64x64, 64x64, 63x63.
+A tabela de prioridade e vtable do roteiro 26 estão presentes no v14:
+005DD980 = [2,10,11,3,0,1,4,5,6,7,12,8,9]; 005DA594+10 = 0047FE90.
+A branch histórica visuals/V10-cursor-hotspots-followup documenta
+assembly 0047FEF3..0047FF15: pedido não zero escolhe pedido+2;
+zero escolhe 1 + variante do objeto de input. 0047FF15..0047FF35
+separa packed hotspot por 1000, 004800D4..004800F5 subtrai antes
+do blit. O snapshot v14 não contém a janela de assembly do consumidor;
+a atribuição MouseDown ao bit nativo específico continua aberta.
+
+Cliente: adaptador explícito Raylib IsMouseButtonDown(Left) seleciona
+cursor01 somente quando não existe ação específica; preserva os gates
+Core e ação prioritária. Menu/duelo/letterbox seguem o renderer global,
+sem duplicar a mão. Não modifica o hotspot provisório nesta fatia.
+Sem bolha fake, sem fórmula de fade/escala inventada. Roteiro 77 exporta
+as janelas do consumidor e input para localizar produtor e lifecycle de
+cursor_pow. Validação desktop e CI pendentes, badge inalterada.

@@ -124,7 +124,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V07 — Aviso de mudança de jogador/turno.** Status: `Parcial`. Predicado +4 confirmado; rasterizador 0051EBD0 (coleta 25), compositor e integração via A03/A07. [Detalhes](docs/plans/VISUALS.md#v07)
 - [ ] **V08 — Ícones e indicadores sobre cartas (`00419B70`, `0041A070`, `0041A3B0`).** Status: `Parcial`. Banco DAT confirmado; semântica A/B, compositor, integração e validação. [Detalhes](docs/plans/VISUALS.md#v08)
 - [ ] **V09 — Cursor `Attack` na Battle Phase.** Status: `Parcial`. Elegibilidade conferida na Alpha. Comparar precedência, hotspot e seleção de alvo com o original. [Detalhes](docs/plans/VISUALS.md#v09)
-- [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Variantes conferidas na Alpha. Comparar code → asset, hotspot e prioridade com o original. [Detalhes](docs/plans/VISUALS.md#v10)
+- [ ] **V10 — Cursores `SetAttack`/`SetDefense`.** Status: `Parcial`. Variantes conferidas na Alpha; ponteiro OFF/ON integrado, validar mouse-down, onda de choque (77), hotspot e prioridade. [Detalhes](docs/plans/VISUALS.md#v10)
 - [ ] **V11 — Janela de seleção e fusão (foco de cobertura).** Status: `Parcial`. Chave RGB565 ligada aos fundos; validar capturas pareadas, ambos os lados, scroll e outras famílias. Validar as duas rotas de fusão. [Detalhes](docs/plans/VISUALS.md#v11)
 - [ ] **V12 — Indicador de corrente desativada (`004531C0`).** Status: `Parcial`. Jinzo normal/especial ligado à fila; validar captura, demais gatilhos e compositor. [Detalhes](docs/plans/VISUALS.md#v12)
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
