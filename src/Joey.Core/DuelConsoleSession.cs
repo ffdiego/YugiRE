@@ -8,7 +8,7 @@ public sealed record DuelConsoleResult(bool Success, string Message, bool Enqueu
 /// The host must opt in and drive Queue.Tick; parsing never mutates duel state.</summary>
 public sealed partial class DuelConsoleSession
 {
-    public const string Help = "coin SIDE REGION COUNT BITS HIGHLIGHT | dice SIDE REGION INDEX | draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]] | set INDEX [SLOT [tribute...]] | respond-summon pass|SIDE SLOT | respond-attack pass|SIDE SLOT | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | activate field | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
+    public const string Help = "coin SIDE REGION COUNT BITS HIGHLIGHT | dice SIDE REGION INDEX | draw N [side] | damage N [side] | heal N [side] | destroy side slot | spawn ID side zone [slot [attack|defense|set]] | give NAME|ID | give-to SIDE NAME|ID | reset-summon | move side zone index dest [slot [attack|defense|set]] | move-id ID side zone index dest [slot [attack|defense|set]] | summon INDEX SLOT [tribute...] | summon-banish HAND SLOT attack|defense GRAVE [GRAVE [GRAVE]] | set INDEX [SLOT [tribute...]] | respond-summon pass|SIDE SLOT | respond-attack pass|SIDE SLOT | flip SLOT | position SLOT attack|defense | activate hand|set INDEX [SIDE field|SIDE spell SLOT|SIDE monster SLOT] | activate field | equip hand|set INDEX SIDE SLOT | ritual hand|set SPELL MONSTER SLOT attack|defense (hand|field INDEX)... | battle begin|end | turn draw|end | discard-end INDEX | attack SLOT direct|TARGET_SLOT | discard SIDE INDEX | send SIDE INDEX | state | diff | trace | decision ID accept|decline | choices | select-hand INDEX|decline | select-flip SIDE SLOT [SIDE SLOT]|decline | select-st-pair SIDE SLOT|field SIDE SLOT|field|decline | select-recruit INDEX SLOT|batch INDEX [INDEX]|decline | select-revive INDEX SLOT attack|set | help";
     private readonly DemoDuel duel;
     private readonly Dictionary<ushort, Card> catalog;
     private string[]? baseline;
@@ -172,6 +172,32 @@ public sealed partial class DuelConsoleSession
                     !duel.TryCaptureCardTarget(handSide, DuelZone.Hand, handIndex, out var handTarget))
                     return new(false, $"Expected {op} SIDE INDEX with a tracked hand card.");
                 batch = [op == "discard" ? new DiscardCommand(handSide, handTarget) : new SendToGraveyardCommand(handSide, handTarget)];
+                break;
+            case "give":
+            case "give-to":
+                int recipient = 0;
+                int nameStart = op == "give" ? 1 : 2;
+                if (words.Length <= nameStart || (op == "give-to" && !Side(words[1], out recipient)))
+                    return new(false, "Expected give NAME|ID or give-to SIDE NAME|ID.");
+                string cardNameOrId = string.Join(" ", words.Skip(nameStart));
+                Card? given;
+                if (ushort.TryParse(cardNameOrId, NumberStyles.None, CultureInfo.InvariantCulture, out ushort givenId))
+                    catalog.TryGetValue(givenId, out given);
+                else
+                {
+                    var matches = catalog.Values.Where(c => string.Equals(c.Name, cardNameOrId,
+                        StringComparison.OrdinalIgnoreCase)).OrderBy(c => c.Id).ToArray();
+                    if (matches.Length > 1)
+                        return new(false, "Ambiguous name; use resource ID: " + string.Join(", ", matches.Select(c => c.Id)));
+                    given = matches.SingleOrDefault();
+                }
+                if (given is null)
+                    return new(false, "Unknown card name or resource ID in the selected catalogue.");
+                batch = [new LabSpawnCommand(recipient, given, DuelZone.Hand, -1, false, false)];
+                break;
+            case "reset-summon":
+                if (words.Length != 1) return new(false, "Expected reset-summon (active player only).");
+                batch = [new LabResetSummonCommand(duel.ActivePlayer, duel.Turn)];
                 break;
             case "spawn":
                 if (words.Length < 4 ||
