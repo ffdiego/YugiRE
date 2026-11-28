@@ -87,9 +87,9 @@ internal static class DuelConsoleFlipSelectionChecks
             var d=DemoDuel.FromPartialObservation(enemy,[Spell(332),Spell(1056,21)],
                 side==0?Slots(Monster(id)):Slots(),side==1?Slots(Monster(id)):Slots(),8000);
             check(d.SetFromHand(0,out _) && d.SetFromHand(0,out _),"A06 pair setup");
-            d.NextTurn();
-            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
             var console=new DuelConsoleSession(d);
+            TurnFixture.Advance(d);
+            d.MonsterFaceDown[side,0]=d.DefensePosition[side,0]=true;
             check(Run(console,"flip 0").Status==DuelScriptStatus.WaitingForDecision &&
                 console.Execute("choices").Message.Contains($"{enemy} field: hidden"),"A06 pair lists FIELD separately");
             int count=console.Queue.Trace.Count;
