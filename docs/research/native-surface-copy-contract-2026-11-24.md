@@ -430,7 +430,22 @@ Após a criação, `004AC00D` chama `004A6120`, que consulta
 o descritor pelo slot `+58h` e lê as máscaras. A comparação
 em `004A6190–004A61B8` retorna 3 para RGB565, e
 `004AC012` grava o resultado no objeto. A observação
-explica o 10→3 neste backend. O ramo 11→4 continua sem
-amostra em execução e requer um ambiente que devolva
-`7C00/03E0/001F` para a superfície de duelo.
+explica a execução 10→3 nessa configuração.
 [Roteiro 41](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+
+### RGB555 com display indexado em Proton
+
+Em `-win` com Xvfb 800×600×8, o Proton expôs
+`DDPF_PALETTEINDEXED8` no descritor DirectDraw. Nesse modo,
+`004ABC52` aceita o formato de dispositivo 2 e
+`004ABC68` chama a alocação em memória com formato 4.
+O roteiro 41 confirmou três entradas de cena em formato 4
+com ponteiro DirectDraw nulo.
+
+Em um impacto de intensidade 224, o GDB confirmou origem 11
+e destino 4 no ramo que chama `00424FC0` em `00423CCC`.
+A sonda local amostrou o word antes de `00425B79` e depois
+de `00425BDD`. O comparador do roteiro 60 confirmou os
+144 resultados de `NativePackedAlphaPixel.ApplyToOpaque`,
+incluindo 77 amostras de cor-chave e 51 mudanças de cor.
+O ramo base 11→4 e outras escalas ficam como pendências.

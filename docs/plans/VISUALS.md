@@ -424,6 +424,13 @@ linhas 593 a 599 coincidiram com o modelo C#. Recorte lateral e superior
 seguem em aberto.
 [Recorte vertical](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
 
+V17.15. A configuração `-win` com Xvfb de 8 bits levou o
+original a alocar a superfície da cena em RGB555. O GDB
+confirmou o par 11→4. Na intensidade 224, os 144 valores
+em execução coincidiram com o modelo C#. O caminho base
+11→4 permanece em aberto.
+[Configuração e resultado](../../docs/research/native-surface-copy-contract-2026-11-24.md#rgb555-com-display-indexado-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>
