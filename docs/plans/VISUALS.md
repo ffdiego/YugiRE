@@ -509,6 +509,8 @@ o indicador e restaurou o canvas inicial pixel a pixel. O teste cobre
 a revisão manual do cliente. A fila do duelo e a comparação com
 quadros do executável original continuam pendentes.
 
+V23.2: assembly do produtor 005BA230 confirma emissão de todos os elos com número 1-based, e liberação do topo antes de cada resolução. Integrar somente quando fatos reais de formação e resolução estiverem disponíveis. [Produtor](../research/native-chain-affect-contract-2026-11-24.md#v232--início-e-liberação-por-elo-2711).
+
 ## V24 — Destaque contextual affect (0040E260)
 
 <a id="v24"></a>
@@ -523,6 +525,8 @@ V24.4: Affect integrado ao duelo: projeção de vínculos reais pelo Core, equip
 
 Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT. Integração A03 e comparação pendentes.
   NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas brutas 72/73/1E (índices 48/49/18; coleta 29). Produtores e [auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+
+V25.1: wrappers 72/73 e três chamadores de 73 confirmados por assembly no v7; Graverobber (duas rotas) e Crush Card. Não aplicar a ativações comuns. [Produtores](../research/native-alternative-activation-exclusion-2026-11-24.md#v251--produtores-identificados-de-7273-2711).
 
 ## V26 — Exclusão (0043DBE0)
 
@@ -582,6 +586,8 @@ Modelo Draw de entrada/saída condicionado a 005BDAD0/0044BA10, modo 3; revisão
 Roteiro 19 recebido no SQLite v2: NativeHelpTimeline porta request por update, gates, identidade 0x3FFF, escala vertical em 4 updates, clamps e âncora contextual. NativeHelpMailbox e NativeHelpProducers portam last-write-wins e precedência de requests de posição, batalha, hover, invocação normal e custo (decompilação dos produtores; não duplicam regras). Faltam textos/remap dos IDs, manifest help.txt, resolução/medidas DAT, compositor +4C e integração de apresentação. Não repetir coleta 19; não contar modelo isolado como Draw. [Contrato](../../docs/research/native-layerfont-help-2026-11-24.md).
 
 V29.2 (27/11/2026). A inspeção do DAT passou a listar as 24 chaves da ajuda contextual por ordem do manifesto, com as dimensões e os idiomas disponíveis por chave. O resolvedor padrão passa o índice adiante sem alteração. Os cinco bancos ocidentais estão completos e oito variantes japonesas estão ausentes. Faltam compositor, entrega do contexto e validação no original. [Banco e resolvedor](../../docs/research/native-layerfont-help-2026-11-24.md#v292--banco-de-ajuda-e-resolvedor-padrão).
+
+V29.3: primeira integração em revisão no cliente para rejeição de alvo nos seletores de magia/equipamento já existentes, com key 9, asset 179×38 e timeline nativa. Gating adaptado e compositor aproximado. Build/CI e teste interativo pendentes; cobertura não promovida antes da validação. [Evidência](../research/native-layerfont-help-2026-11-24.md#v293--primeira-integração-de-ajuda-no-duelo-2711).
 
 ## V30 — Vija / Destiny Board (004584C0)
 
