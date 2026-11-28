@@ -7,7 +7,7 @@ public sealed partial class DemoDuel
     // Ownership is independent of queue busy state: rejection must never
     // make a producer fall back to immediate mutation.
     public bool UsesQueuedHandSelection(PendingCardSelection request) =>
-        primitiveActionQueue is not null && ReferenceEquals(PendingCardSelection, request) &&
+        ReferenceEquals(PendingCardSelection, request) &&
         deferredBattle is null &&
         (IsHandManipulationRequest(request) ||
         request is { Destination: CardSelectionDestination.Hand, MaxSelections: 1 } &&

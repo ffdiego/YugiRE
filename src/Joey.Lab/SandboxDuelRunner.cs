@@ -201,7 +201,7 @@ public static class SandboxDuelRunner
         {
             int gameSeed = unchecked(seed + game * 1009);
             DemoDuel duel = DemoDuel.FromDecks(deck0, deck1, gameSeed);
-            var queue = duel.CreatePrimitiveActionQueue();
+            var queue = duel.Actions;
             bool unsupported = false;
             int sequence = 0;
             object Snapshot() => new

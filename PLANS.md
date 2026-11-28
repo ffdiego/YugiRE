@@ -87,7 +87,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Revisar restrições, interações e efeito próprio de Relinquished após o gate C12.1. Produtores UI/CPU de Ritual já feitos pertencem a C09, não ao C12. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
-- [ ] **C12 — Eliminar toda resolução legada de duelo.** Status: `Parcial`. Produtores App/CPU/Lab usam fila; próximo: tornar fila intrínseca, apagar mutadores internos/estados legados e retirar acesso histórico. [Detalhes](docs/plans/CARDS.md#c12)
+- [ ] **C12 — Eliminar toda resolução legada de duelo.** Status: `Parcial`. Produtores App/CPU/Lab usam fila intrínseca (configuração única); próximo: apagar mutadores internos/estados legados e retirar acesso histórico. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Adiado`. Sea Serpent confirmado no DAT; comparação P036 em duelo nativo preservada, sob demanda. [Detalhes](docs/plans/CARDS.md#c14)
 - [ ] **C15 — Fatias `Verified`.** Status: `Adiado`. Comparações por família e interações em duelos dirigidos após massa crítica; antecipar divergências materiais. [Detalhes](docs/plans/CARDS.md#c15)

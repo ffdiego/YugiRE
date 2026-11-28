@@ -88,8 +88,62 @@ internal static class ActionQueueChecks
         if (queue.IsBusy) throw new Exception("Queue failed to drain within bounded test.");
     }
 
+    private static void OwnedQueueChecks(Action<bool, string> check)
+    {
+        DemoDuel Fresh() => DuelConsoleSession.EmptyLabDuel();
+        bool RejectConfiguration(DemoDuel duel)
+        {
+            try { duel.ConfigureActionQueue(new Gate(), allowLabEdits: true); }
+            catch (InvalidOperationException) { return true; }
+            return false;
+        }
+
+        var ordinary = Fresh();
+        var owned = ordinary.Actions;
+        check(ReferenceEquals(owned, ordinary.Actions) && !owned.IsBusy &&
+              RejectConfiguration(ordinary), "C12 one intrinsic queue and sealed default configuration");
+        owned.Enqueue(new DamageCommand(1, 100), ActionOrigin.Test);
+        check(ordinary.Life[1] == 8000, "C12 intrinsic queue admission does not mutate state");
+        Drain(owned);
+        check(ordinary.Life[1] == 7900 && RejectConfiguration(ordinary),
+            "C12 drained queue retains its identity and configuration");
+        var attached = DuelConsoleSession.Attach(ordinary, new Gate { CanAdvance = false });
+        check(ReferenceEquals(owned, attached.Queue) && !attached.Execute("dice 0 0 1").Success,
+            "C12 console attachment cannot change default gate or elevate laboratory privileges");
+        owned.Enqueue(new HealCommand(1, 50), ActionOrigin.Test);
+        Drain(owned);
+        check(ordinary.Life[1] == 7950, "C12 attached console did not replace the immediate gate");
+
+        var fresh = Fresh();
+        var console = DuelConsoleSession.Attach(fresh);
+        check(ReferenceEquals(fresh.Actions, console.Queue) && !console.Execute("dice 0 0 1").Success &&
+              RejectConfiguration(fresh), "C12 attaching to a fresh duel does not grant lab privileges");
+
+        var configured = Fresh();
+        var gate = new Gate { CanAdvance = false };
+        var q = configured.ConfigureActionQueue(gate, allowLabEdits: true);
+        check(ReferenceEquals(q, configured.Actions) && RejectConfiguration(configured),
+            "C12 explicit host configuration returns the owned queue exactly once");
+        q.Enqueue(new DamageCommand(1, 100), ActionOrigin.Test);
+        check(q.Tick() == ActionTickResult.Blocked && configured.Life[1] == 8000,
+            "C12 configured presentation gate blocks execution");
+        gate.CanAdvance = true;
+        gate.Release = true;
+        Drain(q);
+        check(configured.Life[1] == 7900, "C12 configured gate releases the same command");
+        check(DuelConsoleSession.Attach(configured).Execute("dice 0 0 1").Success,
+            "C12 attachment preserves explicitly granted laboratory privileges");
+
+        var admitted = Fresh();
+        check(admitted.TryQueueTurnDraw(out _) && RejectConfiguration(admitted),
+            "C12 admission through a producer seals configuration before queue exposure");
+        Drain(admitted.Actions);
+        check(admitted.GameOver, "C12 default headless queue executes the admitted turn draw");
+    }
+
     public static void Run(Action<bool, string> check)
     {
+        OwnedQueueChecks(check);
         var a = new CardTarget(new(1), 0, DuelZone.Monster);
         var b = a with { Occurrence = new(2) };
         var c = a with { Occurrence = new(3) };

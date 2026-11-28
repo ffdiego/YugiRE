@@ -91,14 +91,15 @@ public sealed class ActionQueue : IActionCommandSink
     private readonly List<ActionTraceEntry> trace = new();
     private readonly HashSet<long> decisionIds = new();
     private readonly IDuelCommandExecutor executor;
-    private readonly IPresentationGate gate;
+    private IPresentationGate gate;
     private readonly IActionBatchSink effectSink;
     private long sequence;
     private bool ticking;
     private bool executingCommand;
     private bool startedBatch;
     private readonly Func<bool>? externalAdmission;
-    private readonly bool allowLabEdits;
+    private bool allowLabEdits;
+    private bool configurationSealed;
     private ActionContinuation? decisionContinuation;
     private EffectDecisionAnswer? decisionAnswer;
 
@@ -110,6 +111,20 @@ public sealed class ActionQueue : IActionCommandSink
         this.allowLabEdits = allowLabEdits;
         effectSink = new ExecutorSink(this);
     }
+
+    // A duel owns its queue from construction. The host may select its
+    // presentation and explicit lab privileges once, before exposing or using it.
+    // Never swap the queue, upgrade an active duel, or discard its trace.
+    internal void ConfigureBeforeUse(IPresentationGate? presentation, bool enableLabEdits)
+    {
+        if (configurationSealed)
+            throw new InvalidOperationException("The duel action queue configuration is already sealed.");
+        gate = presentation ?? ImmediatePresentationGate.Instance;
+        allowLabEdits = enableLabEdits;
+        configurationSealed = true;
+    }
+
+    internal void SealConfiguration() => configurationSealed = true;
 
     public QueuedDuelCommand? Active { get; private set; }
     public CommandResult? ActiveResult { get; private set; }
@@ -128,6 +143,7 @@ public sealed class ActionQueue : IActionCommandSink
     {
         EnsureHealthy();
         CheckAdmission();
+        SealConfiguration();
         AppendBatch(commands, origin);
     }
 
@@ -157,6 +173,7 @@ public sealed class ActionQueue : IActionCommandSink
     {
         EnsureHealthy();
         CheckAdmission();
+        SealConfiguration();
         AppendContinuation(continuation);
     }
 
@@ -182,6 +199,7 @@ public sealed class ActionQueue : IActionCommandSink
     {
         EnsureHealthy();
         if (ticking) throw new InvalidOperationException("Recursive ActionQueue.Tick is forbidden.");
+        SealConfiguration();
         ticking = true;
         try
         {
