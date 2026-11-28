@@ -2109,7 +2109,7 @@ public sealed partial class DemoDuel
                 }
             }
             // Clear only this pending interaction inside its command, not at
-            // admission. Never invoke legacy FinishDeferredBattle here.
+            // admission. The reserved queued battle owns its continuation.
             duel.PendingFlipTarget = null;
             duel.resumedSummonMonsterFlip = null;
             duel.flipSelections.Clear();
