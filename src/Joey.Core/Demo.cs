@@ -581,7 +581,12 @@ public sealed partial class DemoDuel
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } card &&
         !IsManualPositionLocked(ActivePlayer, zone, card);
     public bool CanAttack(int zone) => !ActionsBlocked && Phase == DemoPhase.Battle &&
-        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } attacker &&
+        IsEligibleAttacker(zone);
+
+    // Shared, phase-independent predicate. The phase executor must also
+    // evaluate this while its own command occupies the queue.
+    private bool IsEligibleAttacker(int zone) =>
+        zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { IsMonster: true } attacker &&
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
         (!HasDeclaredAttack(ActivePlayer, zone) ||
             AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
@@ -1303,7 +1308,8 @@ public sealed partial class DemoDuel
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
     }
     private bool AllowsBattlePhaseChange(bool enterBattle) => enterBattle
-        ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn
+        ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn &&
+            Enumerable.Range(0, 5).Any(IsEligibleAttacker)
         : Phase == DemoPhase.Battle;
 
     private void ApplyBattlePhaseChange(bool enterBattle)

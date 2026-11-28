@@ -120,6 +120,7 @@ internal static class QueuedEndTurnChecks
 
         CheckEndPhaseMessage(check, card);
         CheckCpuTurn(check);
+        CheckBattleEntry(check);
         CheckEndPhaseReturns(check, card);
     }
 
@@ -179,6 +180,74 @@ internal static class QueuedEndTurnChecks
             "A stale End Phase return leaves the replacement alone and lets the turn advance");
     }
 
+    private static void CheckBattleEntry(Action<bool, string> check)
+    {
+        Card level4 = new(24, 24, "Battle fixture", "", (3u << 20) | (4u << 25) | (140u << 9));
+        Card level3 = new(25, 25, "Eligible fixture", "", (3u << 20) | (3u << 25) | (100u << 9));
+        Card gravity = new(1323, 1323, "Gravity Bind", "", 21u << 20);
+        Card?[] Slots(params Card[] cards) =>
+            Enumerable.Range(0, 5).Select(i => i < cards.Length ? cards[i] : null).ToArray();
+
+        foreach (int side in new[] { 0, 1 })
+        {
+            DemoDuel State(Card?[] own, Card?[] other) => DemoDuel.FromPartialObservation(
+                side, [], side == 0 ? own : other, side == 1 ? own : other, 8000,
+                checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2, DrawTaken: true));
+
+            void Reject(DemoDuel duel, string label)
+            {
+                var console = new DuelConsoleSession(duel);
+                var queue = console.Queue;
+                int baseline = queue.Trace.Count;
+                check(!duel.CanBeginBattle &&
+                    !duel.TryQueueBattlePhaseChange(true, out _) &&
+                    !console.Execute("battle begin").Success &&
+                    queue.Trace.Count == baseline && duel.Phase == DemoPhase.Main, label);
+                // Even a directly injected phase command must revalidate.
+                queue.Enqueue(new ChangeBattlePhaseCommand(side, duel.Turn, EnterBattle: true));
+                Drain(queue);
+                check(duel.Phase == DemoPhase.Main &&
+                    queue.Trace.Last().Result?.Outcome == CommandOutcome.Rejected,
+                    "A07 executor also rejects battle without eligible attacker");
+            }
+
+            Reject(State(Slots(), Slots(level4)), "A07 an opposing monster alone cannot open Battle Phase");
+            var defense = State(Slots(level4, level4), Slots());
+            defense.DefensePosition[side, 0] = true;
+            defense.DefensePosition[side, 1] = defense.MonsterFaceDown[side, 1] = true;
+            Reject(defense, "A07 defense and Set monsters cannot open Battle Phase");
+
+            var restricted = State(Slots(level4), Slots());
+            // Observed face-up back-row state for a read-only legality fixture.
+            restricted.Spells[1 - side, 0] = gravity;
+            Reject(restricted, "A07 all attackers restricted by a continuous effect skips battle");
+
+            var mixed = State(Slots(level4, level3), Slots());
+            mixed.Spells[1 - side, 0] = gravity;
+            var queue = mixed.Actions;
+            check(mixed.CanBeginBattle && mixed.TryQueueBattlePhaseChange(true, out _) &&
+                mixed.Phase == DemoPhase.Main, "A07 one eligible attacker admits battle without early mutation");
+            Drain(queue);
+            check(mixed.Phase == DemoPhase.Battle && !mixed.CanAttack(0) && mixed.CanAttack(1),
+                "A07 entry and attack declaration share eligibility");
+            check(mixed.TryQueueBattlePhaseChange(false, out _), "A07 exit remains legal");
+            Drain(queue);
+            check(mixed.IsMainPhase2 && !mixed.CanBeginBattle, "A07 cannot enter Battle Phase twice");
+
+            var stale = State(Slots(level4), Slots());
+            var staleQueue = stale.Actions;
+            check(stale.TryQueueBattlePhaseChange(true, out _), "A07 phase change admitted with available attacker");
+            stale.DefensePosition[side, 0] = true; // fixture-only invalidation before execution
+            Drain(staleQueue);
+            check(stale.Phase == DemoPhase.Main && staleQueue.Trace.Last().Result?.Outcome == CommandOutcome.Rejected,
+                "A07 revalidates changed attacker eligibility before committing phase");
+        }
+
+        var opening = DemoDuel.FromPartialObservation(0, [], Slots(level4), Slots(), 8000);
+        check(!opening.CanBeginBattle && !opening.TryQueueBattlePhaseChange(true, out _),
+            "A07 an eligible monster does not override opening-turn restriction");
+    }
+
     private static void CheckCpuTurn(Action<bool, string> check)
     {
         Card inert = new(25, 25, "Inert CPU fixture", "", 22u << 20);
@@ -186,8 +255,7 @@ internal static class QueuedEndTurnChecks
             new Card?[5], new Card?[5], 8000, side1Deck: [inert]);
         var queue = duel.CreatePrimitiveActionQueue();
         var cpu = new CpuDuelController(1);
-        CpuAction[] actions = [CpuAction.Draw, CpuAction.BeginBattle, CpuAction.EndBattle, CpuAction.EndTurn,
-            CpuAction.Discard, CpuAction.Discard];
+        CpuAction[] actions = [CpuAction.Draw, CpuAction.EndTurn, CpuAction.Discard, CpuAction.Discard];
         foreach (var action in actions)
         {
             var step = cpu.Step(duel);

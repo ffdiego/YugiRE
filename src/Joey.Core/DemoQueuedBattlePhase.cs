@@ -7,7 +7,8 @@ public sealed partial class DemoDuel
 
     public bool TryQueueBattlePhaseChange(bool enterBattle, out string message, ActionOrigin origin = ActionOrigin.Player)
     {
-        message = enterBattle ? "Battle Phase is unavailable." : "Battle Phase must be active and all decisions resolved.";
+        message = enterBattle ? "Battle Phase requires an eligible attacker and a legal phase transition." :
+            "Battle Phase must be active and all decisions resolved.";
         if (primitiveActionQueue is not { IsBusy: false } queue || ActionsBlocked || !AllowsBattlePhaseChange(enterBattle))
             return false;
 
