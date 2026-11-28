@@ -139,7 +139,11 @@ function watchBattle() {
 
 function watchTravelRequests() {
     // The low 12 bits of word 0 carry the command, including when its side bit is set.
-    const transferCommands = new Set([0x79,0x7a,0x7c,0x83,0x8d,0x8e,0x8f,0x91,0x95]);
+    const transferCommands = new Set([
+        0x79,0x7a,0x7c,0x83,0x8d,0x8e,0x8f,0x91,0x95,
+        // Control associations and Equip may precede the actual trip.
+        0x86,0x87,0x88,0x8a,0xb2
+    ]);
     hook(0x005b9170,{onEnter(args){
         const word=args[0].toUInt32()&0xffff;
         if(transferCommands.has(word&0xfff))
