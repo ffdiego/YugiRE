@@ -476,3 +476,74 @@ timeout --signal=INT 90s gdb -nx -q -batch -p "$joey_test_pid" \
 Compare os offsets `+3A0h` e `+800h` e o destino do slot
 `+18h` para ambos. O roteiro cobre a ligação na abertura do
 duelo. O cenário de banimento do roteiro 34 cobre o disparo.
+
+### 66 — V25, cadência da ativação alternativa em replay
+
+Copie um replay do original com uma ocorrência de ativação
+alternativa para o diretório comum do prefixo isolado. No
+piloto foi usado um replay local com um comando `0x73` de
+Lightforce Sword. Anexe antes de carregar o replay pelo menu.
+
+```bash
+timeout --signal=INT 230s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/66-wine-alternative-activation.gdb > scratch/alternative-activation.log 2>&1
+```
+
+O roteiro registra o retorno do construtor e se desanexa após
+a desativação do mesmo objeto. Na ocorrência observada, confira
+retorno `0040704D`, 33 Updates, 32 Draws e contador terminal 400.
+
+### 67 — V31, gatilho e duração do busto de abertura
+
+Inicie a [cópia isolada do original em Proton](../../docs/research/joey-proton-validation.md).
+Anexe antes de escolher Single Duel e aguarde a seleção de pedra,
+papel e tesoura sem clicar novamente. Repita com `-nosound`.
+
+```bash
+timeout --signal=INT 90s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/67-wine-opening-bust.gdb > scratch/opening-bust.log 2>&1
+```
+
+O roteiro registra o retorno da fábrica, a variante, os contadores
+de entrada de Update e Draw e a primeira passagem que limpa o byte
+ativo. Confira o retorno `0041814E` e o terminal `0x10100`. No
+piloto `-nosound`, o contador salta de 388 a `0x10000`. Compare
+as contagens de callbacks, pois os breakpoints interferem na
+duração em tempo real.
+
+### 68 — V31, duração do busto de resultado
+
+Abra Single Duel na [cópia isolada do original em Proton](../../docs/research/joey-proton-validation.md).
+Anexe antes do último ataque e deixe o duelo terminar por LP zero.
+Na tela de resultado, recuse salvar o replay e aguarde o fim do busto.
+Para reproduzir o fallback, inicie a cópia com `-nosound`.
+
+```bash
+timeout --signal=INT 120s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/68-wine-result-bust.gdb > scratch/result-bust.log 2>&1
+```
+
+O relatório inclui o retorno da fábrica, o resultado, o ID usado
+na consulta de áudio e os contadores de Update e Draw. O roteiro
+desanexa na primeira passagem que desativa o busto em `004166C3`.
+Nos dois pilotos de derrota com fala `0x1000005A`, o terminal
+foi `0x10080`. Foram 153 Updates e 153 Draws com `-nosound`
+e 408 de cada com áudio.
+
+### 70 — V29, aviso de tributo na ajuda contextual
+
+Em um duelo individual na [cópia de teste em Proton](../../docs/research/joey-proton-validation.md),
+tenha na mão um monstro de nível 5 ou 6, com o próprio campo vazio.
+Anexe na Fase Principal, clique na carta, deixe o cursor sobre
+ela até o aviso aparecer e mova-o para fora da mão.
+
+```bash
+timeout --signal=INT 60s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/70-wine-help-tribute.gdb > scratch/help-tribute.log 2>&1
+```
+
+O roteiro lê os chamadores do produtor da chave 0, o descritor
+aceito, os contadores de Draw e a solicitação no fechamento.
+Confira o retorno `005AAD94`, a progressão de 0 a 256 em passos
+de 4 e a solicitação `-1` no fechamento. O lado e o índice da
+carta na mão determinam o descritor observado.

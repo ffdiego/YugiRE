@@ -260,6 +260,10 @@ def main() -> int:
     elif args.mode == "exclusion":
         observed = observed_exclusion(result["events"])
         result["constructorCalls"] = sum(e["kind"] == "exclusion-construct" for e in result["events"])
+        result["zoneArrivalCalls"] = sum(
+            e["kind"] == "exclusion-zone-arrival" and e["zone"] == 0x0F and e["returnRva"] == 0x1E82C
+            for e in result["events"]
+        )
         result["contextTransfers"] = sum(e["kind"] == "exclusion-context-transfer" for e in result["events"])
     else:
         passes = {event["pass"] for event in result["events"] if event["kind"] == "blit-request"}

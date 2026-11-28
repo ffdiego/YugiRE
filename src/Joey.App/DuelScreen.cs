@@ -391,8 +391,11 @@ static partial class Game
         if (PointerPressed(MouseButton.Right) &&
             duel.PendingEndDiscards == 0 && CanToggleHandAction(hoverHand))
             setHandAction = !setHandAction;
-        if (PointerPressed(MouseButton.Left) && HandActionEnabled(hoverHand))
-            UseHandAction(hoverHand);
+        if (PointerPressed(MouseButton.Left))
+        {
+            if (HandActionEnabled(hoverHand)) UseHandAction(hoverHand);
+            else RequestTributeHelp(hoverHand);
+        }
         return true;
     }
     static void DrawCardBack(int x, int y, int width, int height, int degrees = 0)
@@ -813,8 +816,8 @@ static partial class Game
         DrawSpellActivation();
         DrawLifeFloatingDigits();
         DrawPhaseNotice();
-        DrawLiveHelp(hoverUpdates, actionInput && !joeySpeaking && !handHovered && hoverCpuHand < 0 &&
-            !selectingCard && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy == false);
+        DrawLiveHelp(hoverUpdates, actionInput && !joeySpeaking && hoverCpuHand < 0 &&
+            !selectingCard && !MotionBusy && !PhaseBusy && queuedDuel?.IsBusy == false, handHovered);
         if (duel.PendingFlipTarget is DemoFlipTarget flip)
         {
             string help = flip.Effect switch

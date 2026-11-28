@@ -438,11 +438,21 @@ public sealed partial class DemoDuel
         CheckExodia(1);
     }
     public static int NormalTributes(Card card) => card.Level <= 4 ? 0 : card.Level <= 6 ? 1 : 2;
-    public bool CanSummonFromHand(int index) => !ActionsBlocked && Phase == DemoPhase.Main && !summoned &&
+    private bool CanAttemptNormalSummon(int index) => !ActionsBlocked && Phase == DemoPhase.Main && !summoned &&
         index >= 0 && index < Hand.Count && Hand[index].IsMonster &&
-        !NormalSummonRules.RequiresSpecialSummon(Hand[index]) &&
-        Enumerable.Range(0, 5).Count(z => Monsters[ActivePlayer, z] != null) >= NormalTributes(Hand[index]) &&
+        !NormalSummonRules.RequiresSpecialSummon(Hand[index]);
+
+    private int AvailableNormalTributes() =>
+        Enumerable.Range(0, 5).Count(z => Monsters[ActivePlayer, z] != null);
+
+    public bool CanSummonFromHand(int index) => CanAttemptNormalSummon(index) &&
+        AvailableNormalTributes() >= NormalTributes(Hand[index]) &&
         (NormalTributes(Hand[index]) > 0 || FirstFreeMonsterZone() >= 0);
+
+    // Read-only reason from the same normal-placement eligibility checks.
+    // Does not admit a command or duplicate the summon rule in presentation.
+    public bool HasInsufficientNormalSummonTributes(int index) =>
+        CanAttemptNormalSummon(index) && AvailableNormalTributes() < NormalTributes(Hand[index]);
     /// <summary>Inherent Special Summon: P252 cost only. This does not grant
     /// the delayed Equip/control effect or model summon negation chains.</summary>
     public bool CanSpecialSummonByGraveyardBanish(int handIndex) =>

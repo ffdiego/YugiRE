@@ -169,6 +169,10 @@ O [63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadril
 faz a comparação no quadrilátero inclinado desenhado durante o voo.
 O [64](../../scripts/regression/README.md#64--v16-avanço-da-cena-de-resultado)
 acompanha a transição de resultado até a saída da cena.
+O [67](../../scripts/regression/README.md#67--v31-gatilho-e-duração-do-busto-de-abertura)
+mede o busto de abertura após escolher Single Duel. O
+[68](../../scripts/regression/README.md#68--v31-duração-do-busto-de-resultado)
+mede o busto de resultado após o banner e a decisão de salvar o replay.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

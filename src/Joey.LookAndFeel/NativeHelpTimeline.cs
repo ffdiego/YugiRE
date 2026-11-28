@@ -69,25 +69,34 @@ public sealed class NativeHelpTimeline
 }
 
 
-/// <summary>V29 first live slice: resolve the original target-rejection
-/// artwork by manifest position. The other messages remain unbound.</summary>
+/// <summary>V29 live help resources resolved by verified manifest positions.
+/// Other messages remain unbound.</summary>
 public static class NativeHelpResources
 {
     public const string Manifest = @"j\duel\help\help.txt";
+    public const int TributeRequiredKey = 0;
+    public const int TributeRequiredWidth = 179;
+    public const int TributeRequiredHeight = 38;
     public const int InvalidTargetKey = 9;
     public const int InvalidTargetWidth = 179;
     public const int InvalidTargetHeight = 38;
 
-    public static string ResolveInvalidTarget(string manifest, IEnumerable<string> available)
+    public static string ResolveInvalidTarget(string manifest, IEnumerable<string> available) =>
+        Resolve(manifest, available, InvalidTargetKey, "help10_?.yga");
+
+    public static string ResolveTributeRequired(string manifest, IEnumerable<string> available) =>
+        Resolve(manifest, available, TributeRequiredKey, "help01_?.yga");
+
+    private static string Resolve(string manifest, IEnumerable<string> available, int key, string expected)
     {
         var rows = manifest.Split('\n')
             .Select(line => line.Split("//", 2)[0].Trim())
             .Where(line => line.Length != 0).ToArray();
         if (rows.Length != 24 ||
-            !rows[InvalidTargetKey].Equals("help10_?.yga", StringComparison.OrdinalIgnoreCase))
+            !rows[key].Equals(expected, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Unexpected native help manifest.");
-        var name = @"j\duel\help\" + rows[InvalidTargetKey].Replace('?', 'e');
+        var name = @"j\duel\help\" + rows[key].Replace('?', 'e');
         return available.FirstOrDefault(entry => entry.Equals(name, StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidDataException("Missing native target-rejection help: " + name);
+            ?? throw new InvalidDataException("Missing native contextual help: " + name);
     }
 }

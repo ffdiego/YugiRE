@@ -485,7 +485,25 @@ Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, ce
 <a id="v21"></a>
 
 Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT. Remap/blend pendentes; ponte A03 pelo console lab (dice) com Draw cacheado por contador, sem produtor de carta; não contar como gameplay real. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
-  Rotas brutas E2/E3/E4 (índices 90/91/92) confirmadas por coleta 29; produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md).
+  Rotas brutas E2/E3/E4 (índices 90/91/92) confirmadas pela coleta 29. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md).
+
+V21.1. O SQLite v14 associa o callback primário `0058CA70`
+a Graceful Dice (1203) e Skull Dice (1204). No assembly, o callback
+chama `005BDDB0(6)` e soma 1 ao retorno. Após verificar o bit 2
+em `contexto+4`, resolve o resource ID e emite `E2` para Graceful
+ou `E3` para Skull na chamada `0058CAF1 → 005B9170`. O valor
+sorteado é o segundo argumento, a região é o terceiro e o quarto é
+zero. O bit 15 do comando vem do lado do contexto.
+
+Em `005A5DA4`, o ramo associado a Blind Destruction (1536) na
+varredura de cartas emite `E4`. Também passa `005BDDB0(6) + 1`
+como segundo argumento. O terceiro vem do índice de magia/armadilha
+somado a 5 em `005A5D4C`. Esse vínculo foi rastreado estaticamente.
+O handler comum `0040A6A0` lê o segundo argumento como índice
+do banco e repassa a região ao construtor. O construtor inicia o
+contador em `-256`. O Update soma 8 por chamada e libera o gate
+a 768, o que prevê 128 Updates.
+[Coleta em duelo](../../scripts/pending/README.md#v21--comando-e-cadência-do-dado-em-duelo-69).
 
 ## V22 — Remoção break (00450FD0)
 
@@ -528,6 +546,17 @@ Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grand
 
 V25.1: wrappers 72/73 e três chamadores de 73 confirmados por assembly no v7; Graverobber (duas rotas) e Crush Card. Não aplicar a ativações comuns. [Produtores](../research/native-alternative-activation-exclusion-2026-11-24.md#v251--produtores-identificados-de-7273-2711).
 
+V25.2. O replay local contém uma ativação `0x73` de
+Lightforce Sword. Em Proton com `-speedy`, o roteiro 66
+observou a criação com retorno `0040704D`. O modelo C#
+coincidiu nos 33 contadores de entrada do Update e no
+terminal 400. Houve 32 chamadas de Draw, com contadores de
+−112 a 384. O primeiro Draw ocorreu após o primeiro Update
+e a desativação encerrou a sequência. A captura cobre
+esse replay. Faltam os gatilhos em duelo ao vivo e as rotas
+`0x72` e `0x1E`.
+[Roteiro 66](../../scripts/regression/README.md#66--v25-cadência-da-ativação-alternativa-em-replay).
+
 ## V26 — Exclusão (0043DBE0)
 
 <a id="v26"></a>
@@ -567,6 +596,19 @@ precisa de captura positiva.
 
 V26.5: BanishCommand aplicado emite observação da movimentação, liga efeito não bloqueante à zona 0F. Tabela 005DB5F0 do v7 confirma (762,308)/(292,292). Deck/mão mascarados, cemitério público; 24 Draws e terminal retido por uma amostra. Rota inferida pela associação do produtor 0043D440/0041E829, ainda sem captura positiva. Não estender a destruição de batalha ou materiais de fusão. Blend aproximado e som pendente. Draw Partial.
 
+V26.6. O controle em Proton registrou 11 despachos em
+`0041E829` com destino `0x0E`, seis no lado 0 e cinco
+no lado 1. Todos encaminharam o argumento da movimentação
+pendente ao slot `+18h` do receptor. O último despacho
+precedeu o Draw da cena no mesmo ciclo. O contêiner de cemitério
+resolveu `0043C5A0` e a sonda não registrou exclusão.
+O baralho temporário para provocar banimento foi
+rejeitado pelo jogo. O save de teste não tinha as duas
+cartas escolhidas. O roteiro 34 passou a registrar
+separadamente chegadas à zona `0x0F` em `0043D440`.
+A captura positiva continua pendente. O roteiro atualizado
+passou pelos testes offline e aguarda execução no Windows.
+
 ## V27 — Layerfont A (00455FF0)
 
 <a id="v27"></a>
@@ -587,7 +629,24 @@ Roteiro 19 recebido no SQLite v2: NativeHelpTimeline porta request por update, g
 
 V29.2 (27/11/2026). A inspeção do DAT passou a listar as 24 chaves da ajuda contextual por ordem do manifesto, com as dimensões e os idiomas disponíveis por chave. O resolvedor padrão passa o índice adiante sem alteração. Os cinco bancos ocidentais estão completos e oito variantes japonesas estão ausentes. Faltam compositor, entrega do contexto e validação no original. [Banco e resolvedor](../../docs/research/native-layerfont-help-2026-11-24.md#v292--banco-de-ajuda-e-resolvedor-padrão).
 
-V29.3: primeira integração em revisão no cliente para rejeição de alvo nos seletores de magia/equipamento já existentes, com key 9, asset 179×38 e timeline nativa. Gating adaptado e compositor aproximado. Build/CI e teste interativo pendentes; cobertura não promovida antes da validação. [Evidência](../research/native-layerfont-help-2026-11-24.md#v293--primeira-integração-de-ajuda-no-duelo-2711).
+V29.3. Em Proton 9.0 Beta, clicar em Flame Cerebrus na mão
+com o campo próprio vazio exibiu o aviso de tributo. Apenas
+posicionar o cursor sobre essa carta ficou sem aviso no piloto.
+O roteiro 70 registrou a chave 0 em `0045E240`, com retorno
+`005AAD94` do caminho de invocação, e o descritor `0x8117`
+(lado 1, região 11, índice 4).
+
+As duas capturas registraram Draw em todos os contadores de 0 a
+256, de 4 em 4. O Draw continuou em 256 enquanto a solicitação
+era renovada. Ao mover o cursor para fora da mão, o objeto fechou
+com solicitação `-1`. Foram 139 e 196 Draws ao todo, com durações
+de permanência diferentes em cada piloto. A evidência cobre a chave
+0 e sua transição, com as demais chaves e a composição pendentes.
+[Reprodução](../../scripts/regression/README.md#70--v29-aviso-de-tributo-na-ajuda-contextual).
+
+V29.4: primeira integração em revisão no cliente para rejeição de alvo nos seletores de magia/equipamento já existentes, com key 9, asset 179×38 e timeline nativa. Gating adaptado e compositor aproximado. Build/CI e teste interativo pendentes; cobertura não promovida antes da validação. [Evidência](../research/native-layerfont-help-2026-11-24.md#v293--primeira-integração-de-ajuda-no-duelo-2711).
+
+V29.5 (28/11/2026). O PR #263 incorpora a captura de tributo da main e liga a chave 0 a uma tentativa de invocação normal sem tributos suficientes, pela consulta de legalidade do Core. Hover sem clique não solicita a ajuda; sair da carta, mudar a ocorrência ou perder a elegibilidade encerra o pedido. O DAT v14 confirma help01_e.yga, 179×38; o descritor de mão usa região 11 e índice do slot. A geometria usa a mão projetada e a altura do banco grande. Sem gate, mutação de regras ou fila adicional. CI e revisão interativa do novo recorte ainda pendentes; cobertura não promovida.
 
 ## V30 — Vija / Destiny Board (004584C0)
 
@@ -663,6 +722,46 @@ estado pós-step. Lifecycle puro cobre uma e duas falas. Composição
 Raylib provisória, reprodução real, outros seletores, ligação à fila
  e captura pareada pendentes. CI e DAT real ainda por validar.
 [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v316--renderer-isolado-de-reaction07).
+
+V31.7. O busto de abertura (`00415840`, Pending no inventário) foi
+observado em Proton antes de pedra, papel e tesoura. A chamada em
+`00418149` cria o objeto pela fábrica `00415130`. As duas sessões
+avançaram automaticamente depois de selecionar Single Duel.
+
+O assembly mostra que o Update `00415580` soma 4 a `obj+14h` e
+solicita a fala `0x10000025 + variante` no contador 128. A consulta
+de término em `005C0490` começa com contador maior que 384 e menor
+que `0x10000`. Com o áudio desabilitado, o predicado devolve 1 e o
+primeiro valor consultado (388) já provoca o salto a `0x10000`.
+O Draw limpa o byte ativo em `00415ACB` a partir de `0x10100`.
+
+O roteiro 67 registrou 352 Updates e 352 Draws com áudio (variante
+1, salto de 1148 a `0x10000`) e 162 de cada com `-nosound`
+(variante 2, salto de 388 a `0x10000`). Os dois Draws terminais
+chegaram a `0x10100`. As contagens descrevem essas amostras.
+Faltam medir as outras falas e avaliar a composição.
+[Reprodução](../../scripts/regression/README.md#67--v31-gatilho-e-duração-do-busto-de-abertura).
+
+V31.8. O SQLite v14 e o assembly identificam outro contrato para o
+busto de resultado (`00416260`, Pending). A chamada `004180DE`
+cria o objeto via `00415AF0`. O Update usa o contador `obj+10h`
+e solicita `[obj+14h] + [obj+18h]` em `00416214` quando o
+contador é 96. Consulta o mesmo predicado de áudio com contador
+maior que 480 e menor que `0x10000`. O salto em `00416242`
+passa pelo incremento no mesmo Update, portanto o primeiro
+Draw após o salto pode receber `0x10004`. A partir de
+`0x10080`, o Draw desativa o objeto em `004166C3`.
+No Proton 9.0 Beta com `-speedy -nosound`, um duelo individual
+terminou por LP zero. O banner de derrota apareceu primeiro. Ao
+recusar o salvamento do replay, o roteiro 68 observou o retorno
+`004180E3`, resultado 2 e ID de fala `0x1000005A`. Houve 153
+Updates e 153 Draws. O contador saltou de 484 a `0x10004` e o
+último Draw desativou o objeto em `0x10080`, conforme o assembly.
+Um segundo duelo individual, com áudio e o mesmo ID de fala,
+saltou de 1504 a `0x10004` e teve 408 Updates e 408 Draws,
+com o mesmo terminal. Os dois bustos terminaram sem outro clique.
+Vitória, empate e outras falas ainda não foram medidos.
+[Reprodução](../../scripts/regression/README.md#68--v31-duração-do-busto-de-resultado).
 
 ### V05.6 — composição dos glifos em RGB565 no cliente
 

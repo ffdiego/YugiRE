@@ -242,3 +242,23 @@ Checks adicionados: chave/ordem do manifesto e rejeição de asset
 ausente. Sem SDK .NET no ambiente desta alteração; build, CI,
 captura pareada e teste interativo dos seletores ainda pendentes.
 Inventário/badge permanecem Pending até validar a integração.
+
+## V29.5 — aviso de tributo no fluxo real (28/11)
+
+O snapshot cumulativo v14 foi aberto somente para leitura, quick_check=ok.
+O manifesto confirma a primeira linha help01_?.yga, comentário de
+tributo necessário; a variante inglesa e help10_e.yga medem 179×38.
+A captura do roteiro 70 na main observou a chave 0 e descritor 0x8117
+após clique em Flame Cerebrus sem tributo; hover isolado não disparou.
+A timeline já modelava o contador 0..256, incremento 4 e encerramento
+por pedido -1. O cliente usa a consulta de falta de tributos da própria
+legalidade de invocação normal, registra a ocorrência quando um clique
+não admite ação e renova apenas enquanto o foco e a condição persistem.
+O descritor usa região 11, lado e índice; a âncora usa HandBounds e a
+altura 290 do banco grande descrita por HandPresentation. Não cria
+comando, nova espera, mutação ou cálculo de tributos em LookAndFeel.
+A equivalência de foco, a precedência de outros avisos, as restrições
+não modeladas e a composição +4C seguem pendentes. Testes sintéticos
+adicionam chave 0, manifesto, geometria e encerramento; build/CI e
+revisão interativa ainda não executados nesta sessão. Cobertura oficial
+continua Pending até validação do PR #263.

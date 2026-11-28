@@ -361,8 +361,7 @@ function watchDisabledChain() {
     });
 }
 
-// Observe actual callers of the unlinked exclusion object. The command
-// log gives context, not a claimed opcode mapping. No calls or writes to the game.
+// Capture the arrival route alongside the exclusion lifetime.
 function watchExclusion() {
     const live = new Map();
     let nextId = 0;
@@ -387,6 +386,16 @@ function watchExclusion() {
             record({ kind:'exclusion-context-transfer', threadId:this.threadId,
                 frame:scenes.get(this.threadId) ?? null, returnRva:imageRva(this.returnAddress),
                 source:args[1].readU16(), destination:args[2].readU16() });
+        },
+    });
+    hook(0x3d440, {
+        onEnter() {
+            const receiver = this.context.ecx;
+            if (imageRva(receiver.readPointer()) !== 0x1dac74) return;
+            const descriptor = receiver.add(0x24).readU16();
+            record({kind:'exclusion-zone-arrival', threadId:this.threadId,
+                frame:scenes.get(this.threadId) ?? null, returnRva:imageRva(this.returnAddress),
+                side:descriptor & 1, zone:(descriptor >> 1) & 31});
         },
     });
     hook(0x3d810, {
