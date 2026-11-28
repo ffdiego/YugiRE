@@ -490,6 +490,34 @@ resolvedores de batalha, invocação, ativação e escolhas. Preservar
 AdvanceTurn e PlaceEndPhaseMessage, usados pelo executor tipado.
 C12 permanece parcial.
 
+### C12 — Encerramento e avanço de turno somente pela fila (28/11/2026)
+
+Removidos `DemoDuel.EndTurn`, `NextTurn` e
+`ResolveDestinyBoardEndPhase`. Os primitivos privados `AdvanceTurn`
+e `PlaceEndPhaseMessage` permanecem sob os comandos tipados.
+`EndTurnCommand` abre a fase, resolve retornos/limite de mão e
+programa a colocação de mensagem ou `AdvanceTurnCommand`.
+Nenhum resolvedor de turno alternativo no Core; compra e descarte
+obrigatório já foram retirados pelas fatias anteriores.
+
+Fixtures ativos usam `TurnFixture` (admissão real com origem Test,
+drain limitado, sem limpar trace) ou checkpoints explícitos para
+turnos posteriores. Configurar gate antes da preparação, liberar
+essa preparação e delimitar o trecho observado. As extensões de
+compatibilidade para fontes históricos ficam exclusivamente em
+Joey.Tests, rejeitam uso na suíte padrão e não reintroduzem
+mutação direta ou outra fila. Não há promessa de paridade da
+suíte histórica, a retirar da compilação por fatias.
+
+PR #269 integrou a compra após CI 46147492719 verde, corrigindo
+também as duas compras dos fixtures de importação de deck.
+Esta nova fatia exige CI antes de merge. Sem alteração de manifesto
+ou alegação de paridade nativa de fases. Restam caminhos diretos
+de invocação, ativação, batalha, posição e respostas; próxima fatia:
+eliminar a entrada de Battle Phase direta (BeginBattle/EndBattle)
+e depois resolvedores de combate, preservando primitivos usados
+pelo executor. C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
