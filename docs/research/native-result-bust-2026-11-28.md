@@ -40,3 +40,26 @@ aproximada; sombra não refinada por orientação do mantenedor.
 O original dispara após a recusa de salvamento do replay; não
 inventar gatilho por LP zero. Sem integração ao duelo neste recorte.
 CI e DAT real pendentes; cobertura inalterada.
+
+## V31.13 — roteiro 72 recebido
+
+Bundle privado ghidra-result-bust-tables.zip SHA256
+8c7cbb1d88756751cb781ca97a17db2f6b3579300dbddb2586185327350a2a91.
+EXE db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de.
+manifest.json: memoryComplete=true, missing=[], 00416050 e 00416260
+recuperados. memory-read.txt confirma:
+005DA7E0 FF FF FF FF 00 00 00 00 01 00 00 00 00 00 00 00.
+005F04E0 Joey_59.wav; 005F04EC Joey_58.wav; 005F04F8 Joey_57.wav;
+005F0504 Joey_56.wav; 005F0510 Joey_55.wav; 005F051C Joey_54.wav;
+005F0528 Joey_53.wav. Descritores 59..5F em ordem inversa dos
+endereços, logo Joey_53..59.wav. Sem WAVs no bundle.
+004162D2 usa JL (inclui t=64); primeiro sprite fora da tela.
+004163E0 usa JL (inclui t=96); phase zero omite ambos os grupos.
+00416419 e 004164BD confirmam offsets 4/6 e teste de parâmetro zero;
+posição relativa a X atual e Y do personagem. Olhos ativos apenas
+quando ((t>>5)&7)==0; boca suprimida no exit. Testes sintéticos
+incluem fases, coordenadas e saída. O review reutiliza o player
+existente, sem mudança de velocidade do WAV. Use --no-audio para
+passo a passo sem esperar fala, ou --reaction-wait-audio + F9 para
+predicado manual. Sem essas opções, Voice.dat é usado quando disponível.
+Sombra/composição e gatilho pós-replay continuam pendentes.

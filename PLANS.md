@@ -145,7 +145,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Banco DAT e resolvedor padrão confirmados. Validar o compositor e ligar os produtores à apresentação. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
-- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Abertura live; review de resultado com três bancos e cadência nativa. Validar abertura/resultado, coletar seletor de rosto e nomes de voz (72), depois ligar resultado ao fluxo pós-replay. [Detalhes](docs/plans/VISUALS.md#v31)
+- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Abertura live; review de resultado com três bancos, seletor facial e voz originais (72 recebido). Validar DAT/Voice.dat e fluxo pós-replay antes da integração do resultado. [Detalhes](docs/plans/VISUALS.md#v31)
 - [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Live EquipCommand, roteiro 57 para gate/despacho e auditoria do inventário. [Detalhes](docs/plans/VISUALS.md#v32)
 
 ## Trilha AI

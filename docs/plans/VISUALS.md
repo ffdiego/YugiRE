@@ -763,6 +763,8 @@ V31.11 (28/11). Busto de abertura ligado ao Alpha vs CPU por tela de apresentaç
 
 V31.12 (28/11). SQLite v14 reaberto em modo somente leitura (quick_check=ok). Review de resultado porta Update 00416050 e Draw 00416260: três bancos ingleses, slide do personagem, recomposição e letreiro pelo cosseno nativo. Testes incluem 153/408 pares observados. Roteiro 72 coleta seletor 005DA7E0 e nomes dos IDs 59..5F. Olhos/boca e voz real do resultado ainda não ligados; não presumir a tabela de abertura. Sombra/compositor continuam pendentes, sem aprofundamento agora. Resultado ainda isolado, sem mapear código local ou antecipar o gatilho pós-replay. [Contrato](../research/native-result-bust-2026-11-28.md).
 
+V31.13 (28/11). Roteiro 72 completo: 005DA7E0 = -1,0,1,0; IDs 59..5F = Joey_53..59.wav. Review usa grupos 4/5 (olhos) e 6/7 (boca), offset relativo ao personagem, gates de fase e de saída separados; player de voz reutilizado sem alterar pitch. Testes sintéticos dos seletores, coordenadas e nomes adicionados. CI e validação audiovisual pendentes; sem novo gatilho live ou mudança de cobertura.
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

@@ -11,6 +11,14 @@ public sealed class NativeResultPlayback
     public bool Active { get; private set; }=true;
     public bool VoiceRequested { get; private set; }
     public uint VoiceRequest { get; }
+
+    // Roteiro 72: seven descriptors point to Joey_53 through Joey_59.
+    public static string VoicePath(uint request)
+    {
+        if(request is <0x10000059u or >0x1000005fu)
+            throw new ArgumentOutOfRangeException(nameof(request));
+        return DuelSoundAssets.InternalPrefix+"joey_"+(53+request-0x10000059u).ToString("00",CultureInfo.InvariantCulture)+".wav";
+    }
     public NativeResultPlayback(int nativeResult,int variant)
     {
         if(variant<0 || variant>=(nativeResult==3?1:3))
@@ -49,7 +57,7 @@ public readonly record struct NativeResultLayer(int Key,string Path,CardPoint Po
 
 /// <summary>English result bank, manifest order and observed dimensions.
 /// Temporary surface composition is represented by ordered diagnostic layers.
-/// Missing native selector 005DA7E0 is intentionally not guessed.</summary>
+/// Facial selector 005DA7E0 recovered in collection 72.</summary>
 public sealed class NativeResultBank
 {
     public string Manifest { get; }
@@ -140,6 +148,12 @@ public sealed class NativeResultBank
         return new(x+(x+banner.Width/2<400?travel-banner.Width:banner.Width-travel),y);
     }
 
+    // 005DA7E0: signed dwords -1,0,1,0. Phase zero branches away.
+    public static int FaceOffset(int counter) => ((counter>>3)&3) switch
+    {
+        0=>-1, 2=>1, _=>0
+    };
+
     public NativeResultLayer[] Sample(int counter,int variant,IReadOnlyList<int> cosine)
     {
         if(counter<0 || counter>NativeResultPlayback.ExitEnd || variant<0 || variant>=VariantCount)
@@ -154,11 +168,21 @@ public sealed class NativeResultBank
         // 00416050 composes shadow and dialogue on INPUT 96; their
         // first post-update Draw is 100. Character is drawn separately.
         if(counter>96){Add(1);Add(8+variant);}
-        if(counter>64)
+        if(counter>=64)
         {
             int x=CharacterX(counter);
             Add(3,new(x,resources[3]!.Value.Position.Y));
-            // Eye/mouth selector 005DA7E0 remains uncaptured; no fabricated overlays.
+            int offset=FaceOffset(counter);
+            if(counter>=96 && offset>=0)
+            {
+                void Overlay(int key)
+                {
+                    if(resources[key] is { } r && r.Parameter!=0)
+                        Add(key,new(x+r.Position.X,resources[3]!.Value.Position.Y+r.Position.Y));
+                }
+                if(((counter>>5)&7)==0)Overlay(4+offset);
+                if(counter<NativeResultPlayback.ExitStart)Overlay(6+offset);
+            }
         }
         if(counter>96)Add(2,BannerPosition(counter,cosine));
         return layers.ToArray();

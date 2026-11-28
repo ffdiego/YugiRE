@@ -98,11 +98,13 @@ internal sealed class DuelAudioPlayer : IDisposable
 
     // One owned playback for the V31 review. The cache owns the Sound;
     // reset/exit stops it without unloading or affecting music.
-    internal bool PlayOpeningVoice(uint request)
+    internal bool PlayOpeningVoice(uint request) => PlayBustVoice(NativeOpeningPlayback.VoicePath(request));
+    internal bool PlayResultVoice(uint request) => PlayBustVoice(NativeResultPlayback.VoicePath(request));
+
+    private bool PlayBustVoice(string path)
     {
         StopOpeningVoice();
         if(disposed)return false;
-        string path=NativeOpeningPlayback.VoicePath(request);
         if(!effects.TryGetValue(path,out var sound))
         {
             if(Load(path) is not { } loaded)return false;

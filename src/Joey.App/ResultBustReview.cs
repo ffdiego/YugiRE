@@ -9,7 +9,7 @@ static partial class Game
     static NativeResultBank? resultBustReview;
     static NativeResultPlayback? resultBustPlayback;
     static int resultBustVariant;
-    static bool resultBustWaitAudio,resultBustAudioComplete;
+    static bool resultBustWaitAudio,resultBustAudioComplete,resultBustVoiceStarted;
     static uint? resultBustSound;
     static void ConfigureResultBustReview(string value,string[] args,Archive archive)
     {
@@ -27,6 +27,8 @@ static partial class Game
 
     static void ResetResultBustReview()
     {
+        duelAudio?.StopOpeningVoice();
+        resultBustVoiceStarted=false;
         resultBustPlayback=new(resultBustReview!.NativeResult,resultBustVariant);
         resultBustAudioComplete=!resultBustWaitAudio;
         resultBustSound=null;
@@ -47,13 +49,31 @@ static partial class Game
         var playback=resultBustPlayback!;
         if(resultBustWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) && playback.VoiceRequested)
             resultBustAudioComplete=true;
-        if(ReviewReactionStep(playback.Active,ResetResultBustReview))
+        bool advance=ReviewReactionStep(playback.Active,ResetResultBustReview);
+        bool paused=reactionReviewClock.FramesPerSecond==0;
+        duelAudio?.SetOpeningVoicePaused(paused);
+        if(advance)
         {
             playback=resultBustPlayback!;
+            if(!resultBustWaitAudio && resultBustVoiceStarted)
+                resultBustAudioComplete=duelAudio?.OpeningVoiceComplete!=false;
             if(playback.AdvanceNativeUpdate(resultBustAudioComplete) is uint request)
+            {
                 resultBustSound=request;
+                if(!resultBustWaitAudio && presentation.Style.PlayJoeyVoice)
+                    resultBustVoiceStarted=duelAudio?.PlayResultVoice(request)==true;
+                if(resultBustVoiceStarted)
+                {
+                    resultBustAudioComplete=false;
+                    duelAudio?.SetOpeningVoicePaused(paused);
+                }
+            }
             playback.CompleteNativeDraw();
-            if(!playback.Active)reactionReviewClock.Pause();
+            if(!playback.Active)
+            {
+                reactionReviewClock.Pause();
+                duelAudio?.StopOpeningVoice();
+            }
         }
         foreach(var l in ResultBustLayers())
         {
@@ -71,7 +91,9 @@ static partial class Game
             nativeResult=resultBustReview.NativeResult,variant=resultBustVariant,
             counter=p.Counter,active=p.Active,voiceRequested=p.VoiceRequested,
             lastSoundRequest=resultBustSound,audioPredicate=resultBustAudioComplete,
-            simulatedAudio=true,selectorKnown=false,playbackFps=reactionReviewClock.FramesPerSecond,
+            simulatedAudio=resultBustWaitAudio || !resultBustVoiceStarted,selectorKnown=true,
+            faceTable=new[]{-1,0,1,0},voiceStarted=resultBustVoiceStarted,
+            voiceResource=NativeResultPlayback.VoicePath(p.VoiceRequest),playbackFps=reactionReviewClock.FramesPerSecond,
             layers=ResultBustLayers(),compositor="diagnostic layered preview; shadow/blend not verified"
         },new JsonSerializerOptions{WriteIndented=true})+Environment.NewLine);
     }

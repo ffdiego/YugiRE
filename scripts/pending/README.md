@@ -296,8 +296,3 @@ Invitation, Thousand-Eyes Restrict e Dragon Capture Jar. Resolver
 kind de vínculo efetivamente emitido e compará-lo aos destinos de
 0040E594/627/7A6. Não coletar novamente toda 0040E260. Importar
 bundle cumulativo quando recebido; nenhum recurso binário no Git.
-
-
-## V31 — seletor facial e nomes de áudio do resultado (72)
-
-`bash scripts/pending/72-result-bust-tables-ghidra.sh` coleta 005DA7E0 e strings em 005F04E0..005F0533, referenciadas por descritores Internal 59..5F. Saída privada `scratch/ghidra-result-bust-tables.zip`. Aceite: três offsets da tabela e sete strings terminadas em NUL. Não mede nem altera velocidade do áudio.
