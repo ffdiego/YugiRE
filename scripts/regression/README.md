@@ -510,3 +510,22 @@ ativo. Confira o retorno `0041814E` e o terminal `0x10100`. No
 piloto `-nosound`, o contador salta de 388 a `0x10000`. Compare
 as contagens de callbacks, pois os breakpoints interferem na
 duração em tempo real.
+
+### 68 — V31, duração do busto de resultado
+
+Abra Single Duel na [cópia isolada do original em Proton](../../docs/research/joey-proton-validation.md).
+Anexe antes do último ataque e deixe o duelo terminar por LP zero.
+Na tela de resultado, recuse salvar o replay e aguarde o fim do busto.
+Para reproduzir o fallback, inicie a cópia com `-nosound`.
+
+```bash
+timeout --signal=INT 120s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/68-wine-result-bust.gdb > scratch/result-bust.log 2>&1
+```
+
+O relatório inclui o retorno da fábrica, o resultado, o ID usado
+na consulta de áudio e os contadores de Update e Draw. O roteiro
+desanexa na primeira passagem que desativa o busto em `004166C3`.
+Nos dois pilotos de derrota com fala `0x1000005A`, o terminal
+foi `0x10080`. Foram 153 Updates e 153 Draws com `-nosound`
+e 408 de cada com áudio.

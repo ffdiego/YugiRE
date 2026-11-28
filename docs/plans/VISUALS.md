@@ -710,9 +710,17 @@ maior que 480 e menor que `0x10000`. O salto em `00416242`
 passa pelo incremento no mesmo Update, portanto o primeiro
 Draw após o salto pode receber `0x10004`. A partir de
 `0x10080`, o Draw desativa o objeto em `004166C3`.
-O assembly prevê o primeiro salto em 484 com `-nosound`.
-Falta medir a sequência de callbacks após um resultado real e
-o início da transição seguinte.
+No Proton 9.0 Beta com `-speedy -nosound`, um duelo individual
+terminou por LP zero. O banner de derrota apareceu primeiro. Ao
+recusar o salvamento do replay, o roteiro 68 observou o retorno
+`004180E3`, resultado 2 e ID de fala `0x1000005A`. Houve 153
+Updates e 153 Draws. O contador saltou de 484 a `0x10004` e o
+último Draw desativou o objeto em `0x10080`, conforme o assembly.
+Um segundo duelo individual, com áudio e o mesmo ID de fala,
+saltou de 1504 a `0x10004` e teve 408 Updates e 408 Draws,
+com o mesmo terminal. Os dois bustos terminaram sem outro clique.
+Vitória, empate e outras falas ainda não foram medidos.
+[Reprodução](../../scripts/regression/README.md#68--v31-duração-do-busto-de-resultado).
 
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
