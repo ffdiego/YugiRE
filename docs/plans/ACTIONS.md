@@ -352,6 +352,8 @@ A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi receb
 
   *A07.1 — correlação estática das fases (28/11):* SQLite v14 (quick_check ok) e replay de 1062 registros. Produtores 50/51/52/54/55 conferidos em assembly, 53 por decompilação; stubs do consumidor recebem 0..5 e o Draw de nomes usa fase + 6 * seletor de lado, coerente com a ordem dos manifestos DAT. Em 38 turnos concluídos, 26 sem Battle, 9 com Battle/Main2, 3 com Battle diretamente para End. Compra 61 é separada de 50; guardas nativas permitem pular etapas. Ainda faltam bytes da tabela comprimida 005B9AEC para validar o vínculo exato opcode/stub e observação pareada dos bits e rótulos; nenhuma mudança C# ou promoção de status. [Evidência](../20-turn-scheduling.md#a07--fases-seletores-e-replay-sqlite-v14-28112026).
 
+  *A07.2 — supressão de fases:* assembly v14 confirma flags de Draw (bit 1), Standby (bit 2) e supressão mais ampla (bit 23) no DWORD A56430 + side*D44h. Draw suprimida termina sem compra; Standby suprimida ainda executa subestado 200; End com bit 23 ainda passa pelo trabalho de encerramento. Distinguir estágio e fase publicada. Roteiro 57 de VISUALS já coleta ambas as tabelas necessárias ao dispatcher; reutilizar a saída, sem nova coleta. [Evidência e critérios](../20-turn-scheduling.md#a072--supressão-de-fases-não-equivale-a-suprimir-trabalho). Sem mudança no motor; A07 continua parcial.
+
 ## A08 — Extrair `Joey.Cards` e definir `EffectContext`
 
 <a id="a08"></a>
