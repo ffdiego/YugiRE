@@ -67,3 +67,27 @@ public sealed class NativeHelpTimeline
         return new CardBounds(x - spriteWidth / 2, y - spriteHeight / 2 - h / 2, spriteWidth, h);
     }
 }
+
+
+/// <summary>V29 first live slice: resolve the original target-rejection
+/// artwork by manifest position. The other messages remain unbound.</summary>
+public static class NativeHelpResources
+{
+    public const string Manifest = @"j\duel\help\help.txt";
+    public const int InvalidTargetKey = 9;
+    public const int InvalidTargetWidth = 179;
+    public const int InvalidTargetHeight = 38;
+
+    public static string ResolveInvalidTarget(string manifest, IEnumerable<string> available)
+    {
+        var rows = manifest.Split('\n')
+            .Select(line => line.Split("//", 2)[0].Trim())
+            .Where(line => line.Length != 0).ToArray();
+        if (rows.Length != 24 ||
+            !rows[InvalidTargetKey].Equals("help10_?.yga", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Unexpected native help manifest.");
+        var name = @"j\duel\help\" + rows[InvalidTargetKey].Replace('?', 'e');
+        return available.FirstOrDefault(entry => entry.Equals(name, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidDataException("Missing native target-rejection help: " + name);
+    }
+}
