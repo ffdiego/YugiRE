@@ -365,6 +365,38 @@ Novo assembly com as definições de cartas por resource ID e as famílias de ef
 
   *Reconciliação:* PR #101 preserva A06/A07; CI anterior 45392730663 verde, extração de Joey.Cards ainda pendente.
 
+### A08 — Definições puras de efeitos de fase (28/11)
+
+`Joey.Cards/TurnPhaseEffects.cs` concentra a tabela ordenada de
+curas de Standby, cura de Marie no GY, classificação dos monstros
+com cura de Standby, IDs de Dark Zebra/Wicked Worm Beast/Goblin
+Attack Force e deslocamento de turnos do bloqueio de posição de
+Goblin. Os produtores em Core continuam responsáveis por zonas,
+ocorrências, pose, ordem, admissão, comandos, gates e execução.
+Conservar a ordem da tabela anterior (1437, 1438, 1441, depois GY)
+e a política de retomada atual; nenhum efeito novo nem promoção
+de carta. O projeto Core já referencia Cards; esta fatia segue a
+direção real do grafo de referências, sem criar dependência circular.
+
+**Limite:** revisão estática, sem SDK .NET neste ambiente; CI obrigatório
+antes de integrar. Não é encerramento de A08/C12.
+
+**Inventário C12 (base 08db55c):** o App/CPU/Lab já usam os
+produtores de fila; Core ainda tem `ActionQueue?` anexável e
+`LegacyActionsBlocked` compartilhado com admissões de respostas
+tipadas. Não apagar todos os `Pending*` por nome: alguns são
+estado observado pelos produtores da fila. Em Demo.cs permanecem
+entradas legadas internas (Draw, Play, Summon, Attack, EndTurn,
+DiscardForEndTurn, ResolveEffectDecision e demais respostas).
+Separar chamadas de testes históricos das pontes usadas pelo
+executor; `AdvanceTurn`, `TakeTurnDraw`, `CommitManualPosition`
+e `PlaceEndPhaseMessage` são helpers efetivamente usados por
+comandos da fila, não candidatos a remoção indiscriminada.
+Próxima fatia: tornar a posse da fila intrínseca sem perder a
+configuração de gate/lab, retirar entradas legadas e estados que
+não têm produtor atual; verificar cobertura e manter as regras
+de supressão A07 separadas. Nenhuma remoção nesta fatia.
+
 ## A09 — Comparar combate em condição equivalente e apresentar o trace no App
 
 <a id="a09"></a>

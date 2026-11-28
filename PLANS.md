@@ -69,7 +69,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [x] **A05 — Trace de comandos comparável.** Status: `Concluído`. Trace comparável compra → invocação → ataque → dano; [contrato](docs/architecture/native-replay-scenarios.md). [Detalhes](docs/plans/ACTIONS.md#a05)
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`. Ampliar o piloto para outros FLIPs, combatentes e contínuas; coordenar C12. [Detalhes](docs/plans/ACTIONS.md#a06)
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Parcial`. Completar turno/fases na fila e correlacionar dispatcher, bits de fase e rótulos. [Detalhes](docs/plans/ACTIONS.md#a07)
-- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`. Iniciar imediatamente com regras puras e adaptadores; remover regras de cartas do Core por fatias sem dependência circular. [Detalhes](docs/plans/ACTIONS.md#a08)
+- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`. Regras puras iniciais em Joey.Cards; continuar a extração por família e separar a posse da fila e a resolução legada (C12). [Detalhes](docs/plans/ACTIONS.md#a08)
 - [ ] **A09 — Laboratório diferencial de duelos.** Status: `Parcial`. Trace C# registra cálculo de batalha por ocorrência. Comparar atributos nativos e C# em pares explícitos e validar um duelo real equivalente. [Detalhes](docs/plans/ACTIONS.md#a09)
 
 ## Trilha CARDS

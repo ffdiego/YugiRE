@@ -2,23 +2,16 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
-    private readonly record struct StandbyFieldLifeRule(ushort ResourceId, int Amount, bool? Defense);
-
-    private const ushort MarieTheFallenOne = 1446;
-    private const ushort DarkZebra = 1113;
-    private static readonly StandbyFieldLifeRule[] StandbyFieldLifeRules =
-    [
-        new(1437, 1000, Defense: false), // Spirit of the Breeze
-        new(1438, 1000, Defense: true),  // Dancing Fairy
-        new(1441, 800, Defense: null),   // Cure Mermaid
-    ];
+    // Shared aliases for the partial-class combat eligibility checks.
+    private const ushort MarieTheFallenOne = Joey.Cards.TurnPhaseEffects.MarieTheFallenOne;
+    private const ushort DarkZebra = Joey.Cards.TurnPhaseEffects.DarkZebra;
 
     private static bool IsStandbyLifeMonster(Card card) => card.IsMonster &&
-        (card.Id == MarieTheFallenOne || StandbyFieldLifeRules.Any(rule => rule.ResourceId == card.Id));
+        Joey.Cards.TurnPhaseEffects.IsStandbyLifeMonster(card.Id);
 
     private IEnumerable<DuelCommand> StandbyLifeEffects(int side)
     {
-        foreach (var rule in StandbyFieldLifeRules)
+        foreach (var rule in Joey.Cards.TurnPhaseEffects.StandbyFieldLifeRules)
         for (int slot = 0; slot < 5; slot++)
         {
             if (Monsters[side, slot] is { IsMonster: true } card && card.Id == rule.ResourceId &&
@@ -27,8 +20,8 @@ public sealed partial class DemoDuel
         }
         foreach (var card in graves[side])
         {
-            if (card.IsMonster && card.Id == MarieTheFallenOne)
-                yield return new HealCommand(side, 200);
+            if (card.IsMonster && Joey.Cards.TurnPhaseEffects.StandbyGraveyardHeal(card.Id) is int amount)
+                yield return new HealCommand(side, amount);
         }
     }
 
