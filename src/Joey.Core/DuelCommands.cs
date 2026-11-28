@@ -29,6 +29,7 @@ public abstract record DuelCommand(int Side);
 // Region 0..10 is a field anchor; bits and highlight are constructor inputs.
 public sealed record LabCoinResult(int Side, int Region, int Count, uint Bits, int Highlight);
 public sealed record LabDiceResult(int Side, int Region, int Index);
+public readonly record struct DiceRollPresentation(int Side, int Region, int Face);
 internal sealed record LabCoinResultCommand(LabCoinResult Result) : DuelCommand(Result.Side);
 internal sealed record LabDiceResultCommand(LabDiceResult Result) : DuelCommand(Result.Side);
 public sealed record DeclareDirectAttackCommand(int Side, CardTarget Attacker) : DuelCommand(Side);
@@ -145,6 +146,8 @@ internal sealed record BindMonsterAttackCommand(int Side, CardTarget Source, Car
 internal sealed record ActivateTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target,
     int ExpectedTurn) : DuelCommand(Side);
 internal sealed record ResolveTemporaryStatCommand(int Side, CardTarget Source, CardTarget Target) : DuelCommand(Side);
+internal sealed record ActivateGracefulDiceCommand(int Side, CardTarget Source) : DuelCommand(Side);
+internal sealed record RollGracefulDiceCommand(int Side, CardTarget Source, int Region) : DuelCommand(Side);
 internal sealed record ActivateDrawSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record ActivateHandManipulationSpellCommand(int Side, CardTarget Source) : DuelCommand(Side);
 internal sealed record AdvanceHandManipulationCommand(int Side, CardTarget Source) : DuelCommand(Side);
@@ -400,6 +403,12 @@ internal static class DuelCommandValidation
                 Target(equip.Source, equip.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 if (equip.Target.Side is not (0 or 1)) throw new ArgumentException("Invalid equipment target side.");
                 Target(equip.Target, equip.Target.Side, DuelZone.Monster);
+                break;
+            case ActivateGracefulDiceCommand dice:
+                Target(dice.Source, dice.Side, DuelZone.Hand, DuelZone.SpellTrap);
+                break;
+            case RollGracefulDiceCommand dice when dice.Region is >= 5 and <= 9:
+                Target(dice.Source, dice.Side, DuelZone.Hand, DuelZone.SpellTrap);
                 break;
             case ActivateTemporaryStatCommand modifier when modifier.ExpectedTurn > 0:
                 Target(modifier.Source, modifier.Side, DuelZone.Hand, DuelZone.SpellTrap);

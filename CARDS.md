@@ -13,6 +13,12 @@ Este é o inventário **funcional** de `Joey.Core`/`DemoDuel`, não uma contagem
 - **Done:** funcional **no escopo indicado**, acionável em um duelo C# e coberto por testes; não exige RE exaustiva.
 - **Verified:** `Done` e resultado relevante comparado com execução observada do Joey original. Traces de uma regra ainda não implementada em C# **não** tornam a carta Verified.
 
+## V21 — Graceful Dice
+
+| Carta | Estado | Contrato atual |
+| --- | --- | --- |
+| Graceful Dice (1203) | Partial | Ativação da mão ou Set de turno anterior na própria Main Phase. Um sorteio pelo Core aumenta ATK/DEF dos monstros próprios revelados em 100×face até a troca de turno. Jogador e CPU usam a fila comum. Battle Phase, janelas de resposta e paridade nativa seguem pendentes. |
+
 ## Lote CARDS — efeitos contados e contínuos (27/11/2026 UTC)
 
 O manifesto é a fonte de status atual; as tabelas antigas abaixo registram escopos históricos.

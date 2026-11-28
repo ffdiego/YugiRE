@@ -70,6 +70,9 @@ public sealed partial class DemoDuel
             case ActivateHandManipulationSpellCommand handSpell:
                 target = handSpell.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
+            case ActivateGracefulDiceCommand dice:
+                target = dice.Source; kind = ActionPresentationKind.Activate;
+                destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;
             case ActivateDrawSpellCommand draw:
                 target = draw.Source; kind = ActionPresentationKind.Activate;
                 destination = DuelZone.SpellTrap; slot = FirstFreeSpellZone(); break;

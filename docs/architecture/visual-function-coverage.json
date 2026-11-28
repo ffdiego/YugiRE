@@ -175,7 +175,8 @@
     {
       "address": "00456B90",
       "family": "Dado",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelRandomBankPresentation.cs"
     },
     {
       "address": "00454010",

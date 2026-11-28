@@ -36,7 +36,7 @@ static partial class Game
     {
         diceReviewTextures=diceReviewResources.Select((record,key)=>
         {
-            var texture=graphics.Texture(record.Path);
+            var texture=DiceBankTexture(record.Path);
             return NativeDiceResources.ValidateTexture(key,record,texture.Width,texture.Height);
         }).ToArray();
         diceReviewFrame=diceReview!.Draw(effectCosine,DiceTexture);
@@ -44,18 +44,12 @@ static partial class Game
 
     static void DrawDiceReview()
     {
-        if(Raylib.IsKeyPressed(KeyboardKey.F8))
+        if (ReviewNativeStep(diceReview!.Active, ResetDiceReview))
         {
-            diceReview=new(diceReviewIndex,diceReviewOrigin);
-            diceReviewFrame=diceReview.Draw(effectCosine,DiceTexture);
+            diceReview.AdvanceNativeUpdate();
+            diceReviewFrame = diceReview.Draw(effectCosine, DiceTexture);
+            if (!diceReview.Active) nativeReviewClock.Pause();
         }
-        else if(Raylib.IsKeyPressed(KeyboardKey.F7))
-        {
-            diceReview!.AdvanceNativeUpdate();
-            diceReviewFrame=diceReview.Draw(effectCosine,DiceTexture);
-        }
-        else if(Raylib.IsKeyPressed(KeyboardKey.F9))
-            diceReviewFrame=diceReview!.Draw(effectCosine,DiceTexture);
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground),0,0,Color.White);
         if(duelTheme.Board is Texture2D board)
             Raylib.DrawTexturePro(board,new Rectangle(0,0,board.Width,board.Height),
@@ -67,12 +61,18 @@ static partial class Game
         }
     }
 
+    static void ResetDiceReview()
+    {
+        diceReview = new(diceReviewIndex, diceReviewOrigin);
+        diceReviewFrame = diceReview.Draw(effectCosine, DiceTexture);
+    }
+
     // Diagnostic compositor: same native pass order and rectangles, but
     // Raylib blend/keying has not been compared with the original blit.
     static void DrawDicePass(NativeDicePass pass)
     {
         if(pass.Destination.Width<=0 || pass.Destination.Height<=0)return;
-        Raylib.DrawTexturePro(graphics.Texture(diceReviewResources[pass.Key].Path),
+        Raylib.DrawTexturePro(DiceBankTexture(diceReviewResources[pass.Key].Path),
             ToRectangle(pass.Source),ToRectangle(pass.Destination),Vector2.Zero,0,
             new Color(255,255,255,Math.Clamp(pass.Intensity,0,255)));
     }
