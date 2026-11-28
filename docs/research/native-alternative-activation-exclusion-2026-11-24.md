@@ -213,3 +213,42 @@ mascarados porque o Core não registra face de banimento. O App cria
 24 Draws com recursos DAT, sem espera no gate. Não conecta outros
 caminhos legados, battle replacement ou material de Fusion Gate.
 Compositor aproximado e som 10000024 pendente. Partial no inventário.
+
+## V25.1 — produtores identificados de 72/73 (27/11)
+
+SQLite cumulativo v7, SHA256
+`a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379`,
+quick_check=ok. As janelas de assembly 005778F0/00577CF0/
+005783C0 confirmam os wrappers 00578390 e 005783C0
+(OR 72 em 005783B3/005783E9; bit 15 deriva do lado) e
+00578400 (OR 73 em 00578420, CALL 005B9170 em 00578424).
+O wrapper 73 converte o índice interno em resource ID por
+004022E0 e empilha as palavras B=1, C=0, D=0.
+005783C0 empacota a zona e o identificador de ocorrência nos
+bytes baixo/alto de B; C=0. O 72 escolhe o ramo pelo objeto
+visual, não simplesmente pelo tipo de carta.
+
+Três chamadores diretos de 00578400 no v7, todos com
+CALL confirmado por assembly:
+- 00575A62 (00575A10): após 00570C70 não zero, converte
+  resource 443h (Graverobber, índice 703), emite 73 e então
+  chama 005784E0 com 2000. Decompilação: consulta a marca de
+  ocorrência do empréstimo, não uma ativação ordinária.
+- 005BBB41 (005BB720): a mesma sequência de Graverobber
+  na fase 7 de resolução da corrente, guardada por descritor
+  e pelo retorno de 00570C70; 005BBB52 emite os 2000.
+- 005788E8 (00578860): quando a quantidade pedida é não zero
+  e 005709D0 retorna não zero, converte resource 294h
+  (Crush Card, índice 369) e emite 73 para o lado oposto
+  antes do laço que movimenta cartas. A descrição de 005709D0
+  vem da decompilação, não de uma nova captura.
+
+O 1E também aparece nos produtores de Dragon Capture Jar
+(0059CBB0, 148h), Ring of Magnetism (005A1580, 422h)
+e Goblin Fan (005AC990, 2AEh), por decompilação. Esses
+chamadores não demonstram que o fallback alternativo seja
+escolhido: o handler procura ocorrências elegíveis primeiro.
+Não tratar ativação de mão ou qualquer gatilho no cemitério
+como prova de 73. Para integrar, portar eventos específicos
+dos efeitos com snapshots de origem e validar sua sequência
+contra o original. Não alterar regras de cartas neste lote.
