@@ -2,6 +2,16 @@ using Joey.Core;
 
 static class DeckTests
 {
+    private static bool DrawThroughQueue(DemoDuel duel)
+    {
+        if (!duel.TryQueueTurnDraw(out _, ActionOrigin.Test)) return false;
+        var queue = duel.Actions;
+        for (int tick = 0; tick < 100 && queue.IsBusy; tick++) queue.Tick();
+        if (queue.IsBusy || queue.Fault is not null)
+            throw new InvalidOperationException("Deck fixture draw did not drain.");
+        return true;
+    }
+
     public static void Run(Action<bool, string> check, Action<Action, string> reject)
     {
         byte[] bytes = Convert.FromHexString("0100000091B6B15402000000F50701002C030000");
@@ -36,7 +46,7 @@ static class DeckTests
         duel.NextTurn();
         check(duel.Hand.Count == 5 && duel.DeckCount(1) == 75 && duel.Hand.All(c => c == gaia),
             "Imported demo keeps player decks independent");
-        check(duel.Draw(out _) && duel.Hand.Count == 6 && duel.DeckCount(1) == 74,
+        check(DrawThroughQueue(duel) && duel.Hand.Count == 6 && duel.DeckCount(1) == 74,
             "Imported demo draw conserves hand and deck cards");
         bool rejected = false;
         try { DemoDuel.FromDecks([], second); } catch (ArgumentException) { rejected = true; }
@@ -55,7 +65,7 @@ static class DeckTests
         var duel = DemoDuel.FromDecks(main, main);
         check(duel.Hand.Count == 5 && duel.DeckCount(0) == 37 && duel.DeckCount(1) == 37 &&
             duel.Hand.All(card => main.Contains(card)), "Reference YDC starts a local demo using its real main deck");
-        check(duel.Draw(out _) && duel.Hand.Count == 6 && duel.DeckCount(0) == 36,
+        check(DrawThroughQueue(duel) && duel.Hand.Count == 6 && duel.DeckCount(0) == 36,
             "Reference YDC draw uses imported cards");
     }
 }

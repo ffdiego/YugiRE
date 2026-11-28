@@ -615,25 +615,6 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    internal bool Draw(out string message)
-    {
-        message = "Draw available once per turn in main phase.";
-        if (!CanDraw) return false;
-        if (!TakeTurnDraw(out bool skipped))
-        {
-            message = "Empty deck: active player loses (demo policy).";
-            return true;
-        }
-        if (ExodiaWinner == ActivePlayer)
-        {
-            message = "Exodia complete: all five Forbidden One pieces in hand.";
-            return true;
-        }
-        // Native human trace: Draw precedes Revival Jam's return (P002).
-        // This is a bounded synthetic Standby hook; no full phase engine yet.
-        ResolvePostDrawStandbyEffects();
-        message = skipped ? "Draw Phase skipped." : "Drew one card."; return true;
-    }
     private bool TakeTurnDraw(out bool skipped)
     {
         skipped = ConsumeDueDrawPhaseSkip();
@@ -2569,27 +2550,7 @@ public sealed partial class DemoDuel
         firstBattleAttacker = null;
         Array.Clear(attackDeclarations); Array.Clear(changedPosition);
         // A Standby opportunity follows the turn-draw opportunity (including a skipped Draw Phase); see
-        // ResolvePostDrawStandbyEffects, not the turn increment itself.
-    }
-
-    private void ResolvePostDrawStandbyEffects()
-    {
-        for (int i = delayedRevivals.Count - 1; i >= 0; i--)
-        {
-            var effect = delayedRevivals[i];
-            if (effect.Owner != ActivePlayer || Turn < effect.DueTurn) continue;
-            delayedRevivals.RemoveAt(i);
-            int graveIndex = graves[effect.Owner].FindIndex(
-                c => ReferenceEquals(c, effect.Source));
-            int zone = Enumerable.Range(0, 5).FirstOrDefault(
-                z => Monsters[effect.Owner, z] is null, -1);
-            if (GameOver || graveIndex < 0 || zone < 0) continue;
-            // A consumed promise does not refund the LP, even if the monster
-            // is no longer in the GY or cannot be placed on the field.
-            graves[effect.Owner].RemoveAt(graveIndex);
-            PlaceSelectedMonster(effect.Owner, zone, effect.Source, false);
-            DefensePosition[effect.Owner, zone] = true;
-        }
+        // ExecuteQueuedTurnDraw, not the turn increment itself.
     }
 
     private void BeginNextEffectDecision()
