@@ -47,6 +47,16 @@ public sealed partial class DemoDuel
         }
     }
 
+    // A single turn allowance, not a new turn. Do not clear position,
+    // attack, draw, phase, or Set-age restrictions.
+    private CommandResult ExecuteLabResetSummon(LabResetSummonCommand command)
+    {
+        if (GameOver || ActivePlayer != command.Side || Turn != command.ExpectedTurn)
+            return new(CommandOutcome.Rejected, "Active turn changed.");
+        summoned = false;
+        return new(CommandOutcome.Applied, $"Normal Summon/Set allowance reset for side {command.Side}, turn {Turn}.");
+    }
+
     private CommandResult ExecuteLabSpawn(LabSpawnCommand command)
     {
         if (!CanLabPlace(command.Side, command.Template, command.Destination, command.Slot))

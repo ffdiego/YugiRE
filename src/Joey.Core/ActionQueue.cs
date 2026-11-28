@@ -157,7 +157,7 @@ public sealed class ActionQueue : IActionCommandSink
         foreach (var command in batch)
         {
             DuelCommandValidation.Validate(command);
-            if ((command is LabSpawnCommand or LabMoveCommand or LabCoinResultCommand or LabDiceResultCommand) && (!allowLabEdits || origin is not (ActionOrigin.Console or ActionOrigin.Test)))
+            if ((command is LabSpawnCommand or LabMoveCommand or LabCoinResultCommand or LabDiceResultCommand or LabResetSummonCommand) && (!allowLabEdits || origin is not (ActionOrigin.Console or ActionOrigin.Test)))
                 throw new InvalidOperationException("Laboratory edit requires an explicitly enabled lab queue and privileged origin.");
         }
         if (sequence > long.MaxValue - batch.Length) throw new OverflowException("Command sequence exhausted.");

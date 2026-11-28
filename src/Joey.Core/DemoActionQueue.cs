@@ -527,6 +527,7 @@ public sealed partial class DemoDuel
 
             switch (command)
             {
+                case LabResetSummonCommand reset: return duel.ExecuteLabResetSummon(reset);
                 case LabSpawnCommand spawn: return duel.ExecuteLabSpawn(spawn);
                 case LabMoveCommand move: return duel.ExecuteLabMove(move);
                 case LabCoinResultCommand coin:

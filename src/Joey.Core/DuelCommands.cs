@@ -117,6 +117,7 @@ public sealed record ReturnToHandCommand(int Side, CardTarget Target) : DuelComm
 public sealed record EquipCommand(int Side, CardTarget Source, CardTarget Target, int SpellSlot) : DuelCommand(Side);
 
 // Explicit setup edits, separate from gameplay commands.
+internal sealed record LabResetSummonCommand(int Side, int ExpectedTurn) : DuelCommand(Side);
 internal sealed record LabSpawnCommand(int Side, Card Template, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
 internal sealed record LabMoveCommand(int Side, CardTarget Source, DuelZone Destination, int Slot, bool FaceDown, bool Defense) : DuelCommand(Side);
 
@@ -226,6 +227,8 @@ internal static class DuelCommandValidation
                 break;
             case ResolveSummonResponseCommand response when response.Request is not null:
                 if (response.Source is { } trapSource) Target(trapSource, response.Side, DuelZone.SpellTrap);
+                break;
+            case LabResetSummonCommand { ExpectedTurn: > 0 }:
                 break;
             case LabSpawnCommand spawn when spawn.Template is not null:
                 LabDestination(spawn.Destination, spawn.Slot, spawn.FaceDown, spawn.Defense);

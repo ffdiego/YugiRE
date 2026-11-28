@@ -142,3 +142,23 @@ fechar o overlay. Spawn e move exigem origem Console/Test. Enquanto o
 overlay está aberto, o App suspende a CPU e a entrada do tabuleiro.
 O gate e as fases continuam. Leituras e respostas a decisões ficam
 acessíveis durante animações. Outros comandos aguardam a fila.
+
+## A04 — atalhos para testes manuais de apresentação
+
+F10 no duelo ativo, Enter envia, Esc recolhe. `give NAME|ID` cria uma
+cópia na mão do lado 0 (lado do jogador no Alpha padrão); `give-to SIDE
+NAME|ID` escolhe o lado 0/1. Nome completo do DAT, sem aspas, ignorando
+maiúsculas/minúsculas; IDs decimais, não índices DAT. Nomes ambíguos
+listam IDs e não são admitidos. Ex.: `give Change of Heart`,
+`give Axe Raider`, `give 336`. Ambos são aliases de LabSpawnCommand,
+sem compra animada, gatilho ou alteração do deck.
+
+`reset-summon` enfileira LabResetSummonCommand com lado ativo e turno
+esperado; executor revalida o turno e limpa somente o flag summoned.
+Não muda fase, jogador, idade de Set, ataques, posições, compra ou
+restrições de tributo. A próxima invocação/Set real consome novamente
+a permissão. Todos são privilegiados Console/Test em fila lab, inclusive
+console retrátil já habilitado pelo App. Não funcionam durante espera de
+decisão, fila ocupada ou fim do duelo. Não são comandos do original.
+Checks sintéticos de parser, fila, nome/ID e duas colocações reais no
+mesmo turno; validação gráfica manual pendente.

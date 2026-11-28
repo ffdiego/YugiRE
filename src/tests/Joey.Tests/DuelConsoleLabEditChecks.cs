@@ -80,6 +80,50 @@ internal static class DuelConsoleLabEditChecks
               !attached.Execute("dice 0 0 1").Success &&
               attached.Queue.Trace.Count==0,
             "V20/V21: attaching console cannot authorize lab commands");
+        // Give is an alias for the same privileged spawn command; use exact
+        // multiword DAT name, case-insensitive, or decimal resource ID.
+        var named = monster with { Name = "Test Normal Monster" };
+        var duplicateName = monster with { Id = 47, Name = "Ambiguous Card" };
+        var duplicateName2 = monster with { Id = 48, Name = "Ambiguous Card" };
+        var scenario = DuelConsoleSession.EmptyLabDuel();
+        var tools = new DuelConsoleSession(scenario, cards: [named, duplicateName, duplicateName2, spell]);
+        void Flush()
+        {
+            for (int i=0;i<100 && tools.Queue.IsBusy;i++) tools.Queue.Tick();
+            if (tools.Queue.IsBusy) throw new Exception("Console convenience command did not drain.");
+        }
+        check(!tools.Execute("give missing card").Success &&
+            !tools.Execute("give ambiguous card").Success &&
+            !tools.Execute("give-to 2 24").Success &&
+            !tools.Execute("reset-summon 1").Success &&
+            tools.Queue.Trace.Count==0,"A04 give rejects unknown/ambiguous names and invalid side");
+        check(tools.Execute("give tEsT normal MONSTER").Enqueued &&
+            scenario.Hand.Count==0,"A04 give name admits without mutation");
+        Flush();
+        check(scenario.Hand.Single()==named && tools.Execute("give 24").Enqueued,
+            "A04 give resolves decimal resource ID");
+        Flush();
+        check(tools.Execute("give-to 1 Fixture Spell").Enqueued,"A04 give-to other side");
+        Flush();
+        check(scenario.Hand.Count==2 && scenario.HandFor(1).Single()==spell &&
+            tools.Execute("summon 0 0").Enqueued,"A04 setup card can be normally summoned");
+        Flush();
+        check(!tools.Execute("summon 0 1").Success && !tools.Execute("set 0 1").Success,
+            "A04 ordinary allowance still consumed");
+        int turn = scenario.Turn;
+        var phase = scenario.Phase;
+        check(tools.Execute("reset-summon").Enqueued &&
+            !tools.Execute("summon 0 1").Success,"A04 reset goes through queue");
+        Flush();
+        check(scenario.Turn==turn && scenario.Phase==phase && scenario.Monsters[0,0]==named &&
+            tools.Execute("set 0 1").Enqueued,"A04 reset permits next normal Set in same turn");
+        Flush();
+        check(scenario.MonsterFaceDown[0,1] && scenario.Hand.Count==0 &&
+            tools.Queue.Trace.Any(t=>t.Entry.Command is LabResetSummonCommand &&
+                t.Entry.Origin==ActionOrigin.Console && t.Result?.Outcome==CommandOutcome.Applied),
+            "A04 reset is traced as lab edit; normal Set still uses ordinary executor");
+        check(!attached.Execute("reset-summon").Success && attached.Queue.Trace.Count==0,
+            "A04 reset cannot elevate a non-lab queue");
         check(console.Execute("state").Message.Contains("#" + first.Occurrence.Value),
             "A04.2 state includes physical identity");
     }
