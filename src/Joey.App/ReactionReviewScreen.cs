@@ -13,6 +13,38 @@ static partial class Game
     static uint reactionInitialScene, reactionScene;
     static bool reactionWaitAudio, reactionAudioComplete;
     static NativeReactionStep? reactionLastStep;
+    static readonly NativeReviewClock reactionReviewClock = new();
+
+    // Shared transport for opening and ordinary reaction review. F9 is
+    // exclusively the optional simulated audio predicate.
+    static bool ReviewReactionStep(bool active, Action reset)
+    {
+        if(Raylib.IsKeyPressed(KeyboardKey.F8))
+        {
+            reactionReviewClock.Pause();
+            reset();
+            return false;
+        }
+        if(Raylib.IsKeyPressed(KeyboardKey.F7))
+        {
+            reactionReviewClock.Pause();
+            return active;
+        }
+        int requestedRate=Raylib.IsKeyPressed(KeyboardKey.F5)?30:
+            Raylib.IsKeyPressed(KeyboardKey.F6)?60:0;
+        if(requestedRate!=0)
+        {
+            if(!active)
+            {
+                reactionReviewClock.Pause();
+                reset();
+                active=true;
+            }
+            reactionReviewClock.Toggle(requestedRate);
+        }
+        if(!active) { reactionReviewClock.Pause(); return false; }
+        return reactionReviewClock.Advance(Raylib.GetFrameTime());
+    }
 
     static void ConfigureReactionReview(string[] args, Archive archive)
     {
@@ -57,18 +89,13 @@ static partial class Game
     {
         if (openingBustReview is not null) { DrawOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
-        if (Raylib.IsKeyPressed(KeyboardKey.F8)) ResetReactionReview();
-        else
+        if (reactionWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) &&
+            reactionPlayback.Counter >= 8) reactionAudioComplete = true;
+        if (ReviewReactionStep(reactionPlayback.Active,ResetReactionReview))
         {
-            // F5 supplies the simulated audio predicate. No actual sound is
-            // played in this review; a device cannot change the frame index.
-            if (reactionWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F5) &&
-                reactionPlayback.Counter >= 8) reactionAudioComplete = true;
-            if (Raylib.IsKeyPressed(KeyboardKey.F7) && reactionPlayback.Active)
-            {
-                reactionScene = unchecked(reactionScene+1);
-                reactionLastStep = reactionPlayback.Step(reactionAudioComplete);
-            }
+            reactionScene = unchecked(reactionScene+1);
+            reactionLastStep = reactionPlayback.Step(reactionAudioComplete);
+            if(!reactionPlayback.Active) reactionReviewClock.Pause();
         }
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground),0,0,Color.White);
         if (duelTheme.Board is Texture2D board)
@@ -100,6 +127,7 @@ static partial class Game
             sceneState=reactionScene,
             audioPredicate= reactionAudioComplete,
             simulatedAudio=true,
+            playbackFps=reactionReviewClock.FramesPerSecond,
             lastStep=reactionLastStep,
             baseResource=visible?reaction.BaseResource:null,
             origin=reaction.Origin,

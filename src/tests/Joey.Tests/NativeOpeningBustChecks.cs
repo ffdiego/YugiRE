@@ -61,6 +61,23 @@ internal static class NativeOpeningBustChecks
             bank.Sample(144,0,synthetic)[^1].Key==6 &&
             bank.Sample(0x10000,0,synthetic).Length==4,
             "V31 injected mouth keys and exit suppression");
+        check(bank.Resources.Where(r=>NativeOpeningBank.UsesGreenKey(r.Path)).Select(r=>r.Key)
+            .SequenceEqual(new[]{2,5,6,7,8,9}) &&
+            !NativeOpeningBank.UsesGreenKey(@"other\reaction16.bmp"),
+            "V31 keying scoped to opening foreground, not background or YGA");
+
+        var clock=new NativeReviewClock();
+        check(!clock.Advance(1),"V31 paused review never advances");
+        clock.Toggle(30);
+        check(!clock.Advance(1.0/60) && clock.Advance(1.0/60),
+            "V31 30 FPS consumes one native step per two 60 FPS frames");
+        clock.Toggle(60);
+        check(clock.Advance(1.0/60) && clock.Advance(1.0/60),
+            "V31 speedy consumes one native step per 60 FPS frame");
+        check(clock.Advance(1) && !clock.Advance(0),
+            "V31 slow host does not skip intermediate samples");
+        clock.Toggle(60);
+        check(clock.FramesPerSecond==0 && !clock.Advance(1),"V31 toggle pauses");
         bool rejected=false;
         try { NativeOpeningBank.Parse(manifest.Replace("206208","206209"),available); }
         catch(InvalidDataException) { rejected=true; }

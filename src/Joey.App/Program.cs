@@ -175,7 +175,7 @@ static partial class Game
                 {
                     InitializeReactionReview();
                     screen = "reaction-review";
-                    Console.WriteLine("[V31 review] F7 step, F5 complete simulated audio, F8 reset, F12 capture; diagnostic compositor");
+                    Console.WriteLine("[V31 review] F5 play/pause 30 FPS, F6 speedy 60 FPS, F7 step, F8 reset, F9 optional audio release, F12 capture");
                 }
                 if (chainReview is not null)
                 {

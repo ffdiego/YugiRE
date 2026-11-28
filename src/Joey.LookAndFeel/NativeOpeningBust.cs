@@ -56,6 +56,19 @@ public sealed class NativeOpeningBank
     private NativeOpeningBank(NativeOpeningResource?[] resources) => this.resources = resources;
     public IEnumerable<NativeOpeningResource> Resources => resources.OfType<NativeOpeningResource>();
 
+    // The 28/11 client capture shows opaque pure-green on opening sprites.
+    // Apply the existing BMP diagnostic color-key path only to the known
+    // character, mouth and dialogue resources, never to the backdrop/YGA.
+    public static bool UsesGreenKey(string path)
+    {
+        const string prefix = NativeJoeyCinematicRouting.Prefix + @"start\";
+        if (!path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase)) return false;
+        string name=path[prefix.Length..];
+        return new[]{"reaction16.bmp","reaction16_kuti1.bmp","reaction16_kuti2.bmp",
+            "stato_e_01.bmp","stato_e_02.bmp","stato_e_03.bmp"}
+            .Contains(name,StringComparer.OrdinalIgnoreCase);
+    }
+
     public static NativeOpeningBank Parse(string manifest, IEnumerable<string> archiveNames)
     {
         string[] expected = ["start/statobg_?.bmp","start/kage.yga","start/reaction16.bmp",

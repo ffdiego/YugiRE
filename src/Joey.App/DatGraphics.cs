@@ -329,6 +329,7 @@ sealed class DatGraphics : IDisposable
             NativeExclusionResources.IsParticleBitmap(name) || // diagnostic keying
             name.StartsWith(NativeDisabledChainResources.Prefix, StringComparison.OrdinalIgnoreCase) || // diagnostic green key for V23 BMPs
             NativeFusionResources.IsOrbitalBitmap(name) || // diagnostic green key for general fusion review
+            NativeOpeningBank.UsesGreenKey(name) || // opening review: observed opaque green key
             NativeCoinResources.IsCoinFaceBitmap(name) || // diagnostic green key; native compositor pending
             NativeDiceResources.IsDiceBitmap(name) || // diagnostic green-key path; native blend pending
             name.Equals(NativeBreakResources.Shine, StringComparison.OrdinalIgnoreCase) || // V22 review; native +AC pending

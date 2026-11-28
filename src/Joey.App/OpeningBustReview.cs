@@ -55,16 +55,13 @@ static partial class Game
 
     static void DrawOpeningBustReview()
     {
-        if(Raylib.IsKeyPressed(KeyboardKey.F8)) ResetOpeningBustReview();
-        else
+        if(openingBustWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) && openingBustPlayback.VoiceRequested)
+            openingBustAudioComplete=true;
+        if(ReviewReactionStep(openingBustPlayback.Active,ResetOpeningBustReview))
         {
-            if(Raylib.IsKeyPressed(KeyboardKey.F5) && openingBustPlayback.VoiceRequested)
-                openingBustAudioComplete=true;
-            if(Raylib.IsKeyPressed(KeyboardKey.F7) && openingBustPlayback.Active)
-            {
-                openingBustRequestedSound=openingBustPlayback.AdvanceNativeUpdate(openingBustAudioComplete);
-                openingBustPlayback.CompleteNativeDraw();
-            }
+            openingBustRequestedSound=openingBustPlayback.AdvanceNativeUpdate(openingBustAudioComplete);
+            openingBustPlayback.CompleteNativeDraw();
+            if(!openingBustPlayback.Active) reactionReviewClock.Pause();
         }
 
         // Post-step review: once the terminal native Draw clears active,
@@ -88,6 +85,7 @@ static partial class Game
             lastSoundRequest=openingBustRequestedSound,
             audioPredicate=openingBustAudioComplete,
             simulatedAudio=true,
+            playbackFps=reactionReviewClock.FramesPerSecond,
             mouthTable=openingBustMouthKeys,
             mouthTableKnown=openingBustMouthKeys is not null,
             layers=OpeningBustLayers(),
