@@ -53,6 +53,7 @@ static partial class Game
         QueueDuelOpening();
         QueueOpeningDeal();
         QueueInitialExodiaOpening();
+        BeginLiveOpeningBust();
         message = "Your turn.";
     }
 
@@ -95,6 +96,8 @@ static partial class Game
 
     static void ResetDuelPresentation()
     {
+        ResetLiveOpeningBust();
+        ResetLiveResultBust();
         screen = "duel";
         labSession = null;
         liveConsoleSession = null;

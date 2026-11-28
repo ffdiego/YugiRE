@@ -13,14 +13,56 @@ static partial class Game
     static uint reactionInitialScene, reactionScene;
     static bool reactionWaitAudio, reactionAudioComplete;
     static NativeReactionStep? reactionLastStep;
+    static readonly NativeReviewClock reactionReviewClock = new();
+
+    // Shared transport for opening and ordinary reaction review. F9 is
+    // exclusively the optional simulated audio predicate.
+    static bool ReviewReactionStep(bool active, Action reset)
+    {
+        if(Raylib.IsKeyPressed(KeyboardKey.F8))
+        {
+            reactionReviewClock.Pause();
+            reset();
+            return false;
+        }
+        if(Raylib.IsKeyPressed(KeyboardKey.F7))
+        {
+            reactionReviewClock.Pause();
+            return active;
+        }
+        int requestedRate=Raylib.IsKeyPressed(KeyboardKey.F5)?30:
+            Raylib.IsKeyPressed(KeyboardKey.F6)?60:0;
+        if(requestedRate!=0)
+        {
+            if(!active)
+            {
+                reactionReviewClock.Pause();
+                reset();
+                active=true;
+            }
+            reactionReviewClock.Toggle(requestedRate);
+        }
+        if(!active) { reactionReviewClock.Pause(); return false; }
+        return reactionReviewClock.Advance(Raylib.GetFrameTime());
+    }
 
     static void ConfigureReactionReview(string[] args, Archive archive)
     {
         if (Option(args,"--review-reaction=") is not string value) return;
-        if (value != "07") throw new InvalidDataException("Only observed reaction07 is supported.");
         if (args.Contains("--duel-console") || Option(args,"--duel-script=") is not null ||
             args.Contains("--alpha-headless"))
             throw new InvalidDataException("Reaction review requires an isolated graphical session.");
+        if (value.StartsWith("start:",StringComparison.Ordinal))
+        {
+            ConfigureOpeningBustReview(value[6..],args,archive);
+            return;
+        }
+        if (value.StartsWith("result:",StringComparison.Ordinal))
+        {
+            ConfigureResultBustReview(value[7..],args,archive);
+            return;
+        }
+        if (value != "07") throw new InvalidDataException("Expected reaction07, start:0..2 or result:win/lose/draw:variant.");
         if (Option(args,"--reaction-scene-state=") is string phase &&
             !uint.TryParse(phase,NumberStyles.None,CultureInfo.InvariantCulture,out reactionInitialScene))
             throw new InvalidDataException("Expected unsigned decimal scene state.");
@@ -40,6 +82,8 @@ static partial class Game
 
     static void InitializeReactionReview()
     {
+        if (resultBustReview is not null) { InitializeResultBustReview(); return; }
+        if (openingBustReview is not null) { InitializeOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
         foreach (string resource in reaction.Resources) _ = graphics.Texture(resource);
         var basis = graphics.Texture(reaction.BaseResource);
@@ -49,19 +93,16 @@ static partial class Game
 
     static void DrawReactionReview()
     {
+        if (resultBustReview is not null) { DrawResultBustReview(); return; }
+        if (openingBustReview is not null) { DrawOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
-        if (Raylib.IsKeyPressed(KeyboardKey.F8)) ResetReactionReview();
-        else
+        if (reactionWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) &&
+            reactionPlayback.Counter >= 8) reactionAudioComplete = true;
+        if (ReviewReactionStep(reactionPlayback.Active,ResetReactionReview))
         {
-            // F5 supplies the simulated audio predicate. No actual sound is
-            // played in this review; a device cannot change the frame index.
-            if (reactionWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F5) &&
-                reactionPlayback.Counter >= 8) reactionAudioComplete = true;
-            if (Raylib.IsKeyPressed(KeyboardKey.F7) && reactionPlayback.Active)
-            {
-                reactionScene = unchecked(reactionScene+1);
-                reactionLastStep = reactionPlayback.Step(reactionAudioComplete);
-            }
+            reactionScene = unchecked(reactionScene+1);
+            reactionLastStep = reactionPlayback.Step(reactionAudioComplete);
+            if(!reactionPlayback.Active) reactionReviewClock.Pause();
         }
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground),0,0,Color.White);
         if (duelTheme.Board is Texture2D board)
@@ -77,6 +118,8 @@ static partial class Game
 
     static void CaptureReactionReview(RenderTexture2D canvas)
     {
+        if (resultBustReview is not null) { CaptureResultBustReview(canvas); return; }
+        if (openingBustReview is not null) { CaptureOpeningBustReview(canvas); return; }
         if (reactionReview is not { } reaction) return;
         string basename = SaveVisualReviewImage(canvas,"reaction07");
         bool visible = reactionPlayback.Active && reactionPlayback.Counter != 0;
@@ -92,6 +135,7 @@ static partial class Game
             sceneState=reactionScene,
             audioPredicate= reactionAudioComplete,
             simulatedAudio=true,
+            playbackFps=reactionReviewClock.FramesPerSecond,
             lastStep=reactionLastStep,
             baseResource=visible?reaction.BaseResource:null,
             origin=reaction.Origin,

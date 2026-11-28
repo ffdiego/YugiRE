@@ -74,3 +74,8 @@ de Spell/Trap e a ordenação invertida do lado adversário.
 A importação foi validada no snapshot paralelo v4-visuals e consolidada na
 [v7 compartilhada](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v7--centros-do-campo-25112026).
 [Contrato V05](../../docs/research/native-field-attributes-2026-11-22.md).
+
+## V31 — seletores e descritores de voz dos bustos
+
+- [71-opening-bust-tables-ghidra.sh](71-opening-bust-tables-ghidra.sh) recuperou o seletor de abertura em `005DA798` e os descritores de `Joey_01.wav` a `Joey_03.wav`. Dois blocos de memória e o par Update/Draw foram importados no [SQLite v15](../../docs/research/joey-knowledge-sqlite.md#complemento-cumulativo-v15--seletores-e-voz-dos-bustos-28112026) em 28/11/2026.
+- [72-result-bust-tables-ghidra.sh](72-result-bust-tables-ghidra.sh) recuperou o seletor de resultado em `005DA7E0` e os descritores de `Joey_53.wav` a `Joey_59.wav`. Dois blocos de memória e o par Update/Draw foram importados em 28/11/2026. [Evidência e integração](../../docs/research/native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).

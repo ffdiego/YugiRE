@@ -755,6 +755,34 @@ com o mesmo terminal. Os dois bustos terminaram sem outro clique.
 Vitória, empate e outras falas ainda não foram medidos.
 [Reprodução](../../scripts/regression/README.md#68--v31-duração-do-busto-de-resultado).
 
+V31.9 (28/11/2026). O SQLite v14 confirmou o manifesto start.txt, posições e dimensões dos oito recursos ingleses e o assembly 00415580/00415840. NativeOpeningPlayback separa Update e Draw, pede fala no input 128, aceita áudio a partir de 388, salta para 0x10000 e termina no Draw 0x10100. NativeOpeningBank porta plano de camadas e slide por SAR 5. Review isolado `--review-reaction=start:0` (variantes 0..2), F7, F5, F8 e F12; a boca só é desenhada com tabela explicitamente fornecida, nunca presumida. Testes sintéticos reproduzem as duas contagens observadas (162/352). Roteiro 71 pendente para os valores de 005DA798 e as strings dos três IDs de áudio. Sem execução .NET/DAT nesta sessão, compositor aproximado, sem gate no duelo; cobertura continua Pending.
+
+V31.10 (28/11). Roteiro 71 recebido: tabela 005DA798 = 0,5,6,5; descritores 0x10000025..27 = Joey_01..03.wav. Review usa boca automaticamente e fala real opcional com Voice.dat; sem áudio preserva 162 Updates. Mantenedor confirmou composição anterior após color key. CI, nova captura e escuta pendentes; ainda sem integração live. [Contrato](../research/native-opening-bust-2026-11-28.md).
+
+V31.11 (28/11). Busto de abertura ligado ao Alpha vs CPU por tela de apresentação anterior ao Duel Start/deal. O Core e a fila permanecem intactos; a tela usa o mesmo banco/renderer do review, RNG de apresentação, cadência do perfil e áudio sem alterar pitch. Instant pula, Silent mantém animação sem voz, ausência de DAT/áudio não bloqueia. Escape encerra a fala e volta ao menu. RPS ainda não existe no Alpha. O mantenedor confirmou a mesma velocidade das falas e identificou falta de sombra projetada (kage.yga); lacuna registrada sem aprofundar compositor neste marco. CI e validação live pendentes; badge inalterada até aceite.
+
+V31.12 (28/11). SQLite v14 reaberto em modo somente leitura (quick_check=ok). Review de resultado porta Update 00416050 e Draw 00416260: três bancos ingleses, slide do personagem, recomposição e letreiro pelo cosseno nativo. Testes incluem 153/408 pares observados. Roteiro 72 coleta seletor 005DA7E0 e nomes dos IDs 59..5F. Olhos/boca e voz real do resultado ainda não ligados; não presumir a tabela de abertura. Sombra/compositor continuam pendentes, sem aprofundamento agora. Resultado ainda isolado, sem mapear código local ou antecipar o gatilho pós-replay. [Contrato](../research/native-result-bust-2026-11-28.md).
+
+V31.13 (28/11). Roteiro 72 completo: 005DA7E0 = -1,0,1,0; IDs 59..5F = Joey_53..59.wav. Review usa grupos 4/5 (olhos) e 6/7 (boca), offset relativo ao personagem, gates de fase e de saída separados; player de voz reutilizado sem alterar pitch. Testes sintéticos dos seletores, coordenadas e nomes adicionados. CI e validação audiovisual pendentes; sem novo gatilho live ou mudança de cobertura.
+
+V31.14 (28/11). Abertura e resultado passaram pelo fluxo gráfico do
+Alpha com o DAT original em 800×600. O resultado libera o banner
+após a fila e o LP estabilizarem, usa Enter/clique como confirmação
+no lugar da decisão de replay e seleciona o banco pelo resultado do
+jogador. O Draw terminal devolve o controle ao menu. Xvfb exercitou
+derrota sem Voice.dat, vitória Silent com Voice.dat presente,
+Escape na abertura e no resultado, retorno com Voice.dat e saída
+Instant. O console vivo produziu dano letal pela fila nos testes.
+A saída de áudio estava isolada, sem validação auditiva. O build e
+51.764 checks com DAT passaram, além dos testes da badge. CI
+do novo head segue como requisito de integração.
+
+Os dois Draws passam a Partial, com composição e comparação
+pareada ainda pendentes (27/39 no inventário). Os roteiros 71/72
+foram consolidados no SQLite v15. O próximo recorte V31 é a rota
+de reação durante o duelo.
+[Contrato e evidência](../research/native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave
