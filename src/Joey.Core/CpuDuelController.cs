@@ -74,8 +74,6 @@ public sealed class CpuDuelController
     public CpuStep Step(DemoDuel duel)
     {
         ArgumentNullException.ThrowIfNull(duel);
-        if (!duel.HasActionQueue)
-            return new(CpuStepStatus.Blocked, CpuAction.None, Player, "Attach the duel action queue before stepping the CPU.");
         if (!ReferenceEquals(duel, observedDuel) || observedTurn != duel.Turn)
         {
             observedDuel = duel; observedTurn = duel.Turn;
