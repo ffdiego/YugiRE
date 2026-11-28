@@ -492,14 +492,15 @@ public sealed partial class DemoDuel
                 SpellTrapTargets(Hand[index].Id).Any()) ||
             (Hand[index].ClassCode == 22 && MonsterWipeRules.Targets(
                 Hand[index].Id, ActivePlayer, Monsters, MonsterFaceDown).Count > 0))));
-    // Leftmost placement follows the operator's observed UI. No native animation timing is implied.
-    internal bool SummonLeftmost(int index, bool faceDown, out string message, IReadOnlyList<int>? tributes = null) =>
-        Summon(index, ActivePlayer, FirstFreeMonsterZone(tributes), true, out message, tributes, faceDown);
     internal bool SetFromHand(int index, out string message, IReadOnlyList<int>? tributes = null)
     {
         message = "Set unavailable: choose a card in main phase with a free matching zone.";
         if (!CanSetFromHand(index)) return false;
-        if (Hand[index].IsMonster) return SummonLeftmost(index, true, out message, tributes);
+        if (Hand[index].IsMonster)
+        {
+            message = "Monster Set requires queued normal placement.";
+            return false;
+        }
         if (FieldSpellRules.Supports(Hand[index].Id))
         {
             // Setting a new field spell does not replace the opponent's active one.
@@ -512,36 +513,6 @@ public sealed partial class DemoDuel
         message = "Card set face-down in the leftmost free spell/trap zone.";
         return true;
     }
-    internal bool Summon(int index, int player, int zone, bool monsterZone, out string message, IReadOnlyList<int>? tributeZones = null, bool faceDown = false)
-    {
-        message = "Choose an empty monster zone on the active player's side.";
-        if (ActionsBlocked || Phase != DemoPhase.Main || summoned) { message = "Summon unavailable: main phase, once per turn."; return false; }
-        if (index < 0 || index >= Hand.Count || player != ActivePlayer || zone < 0 || zone >= 5 || !monsterZone) return false;
-        if (!Hand[index].IsMonster) { message = "Only monsters can be summoned here."; return false; }
-        if (NormalSummonRules.RequiresSpecialSummon(Hand[index]))
-        { message = "This monster requires a special summon, which is not implemented in this demo."; return false; }
-        int required = NormalTributes(Hand[index]);
-        int[] tributes = tributeZones?.ToArray() ?? [];
-        if (tributes.Length != required)
-        { message = $"This monster needs {required} tribute(s). Select own monsters, then a destination."; return false; }
-        if (tributes.Distinct().Count() != tributes.Length || tributes.Any(z => z < 0 || z >= 5 || Monsters[player, z] == null))
-        { message = "Tributes must be distinct occupied monster zones on your side."; return false; }
-        if (Monsters[player, zone] != null && !tributes.Contains(zone))
-        { message = "Choose an empty zone or one of the selected tribute zones."; return false; }
-        // RE base count: 0x005AAB90. All validation precedes payment in this compact demo transaction.
-        // Special summon restrictions, Soul Exchange and token-specific restrictions remain unsupported.
-        resolvingSummon = true;
-        try
-        {
-            foreach (int tribute in tributes) RemoveMonster(player, tribute, isTribute: true);
-            CommitNormalPlacement(index, player, zone, faceDown);
-        }
-        finally { resolvingSummon = false; }
-        message = $"Monster {(faceDown ? "set in face-down defense" : "summoned in attack position")}; {required} tribute(s).";
-        FinishNormalPlacement(player, zone, faceDown, ref message);
-        return true;
-    }
-
     private void CommitNormalPlacement(int index, int player, int zone, bool faceDown)
     {
         Monsters[player, zone] = hands[player][index];

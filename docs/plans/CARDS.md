@@ -574,6 +574,32 @@ com entradas paralelas. Próxima fatia: retirar entradas de
 invocação/Set diretas e adaptar apenas os fixtures ativos.
 C12 permanece parcial.
 
+### C12 — Invocação normal e Set de monstros pela fila (28/11/2026)
+
+Removidos `DemoDuel.Summon` e `SummonLeftmost`. `SetFromHand`
+agora rejeita monstros sem mutação; resta somente seu caminho
+direto de Set de Spell/Trap, a retirar na próxima fatia.
+`TryQueueNormalPlacement` → `PrepareNormalPlacementCommand` →
+pagamento tipado de tributos → colocação → `FinishNormalPlacementCommand`
+é o caminho único para Normal Summon/Set de monstros. Os primitivos
+CommitNormalPlacement e FinishNormalPlacement continuam sob o
+executor, incluindo janela de resposta e buscas subsequentes.
+Não alterados os predicados de apresentação de tributos insuficientes.
+
+Fixtures ativos de identidade, comparação diferencial de CE e
+cinemática de invocação usam TurnFixture.Place, que admite e drena
+a fila real. O fixture de tributos da cinemática parte de ocorrências
+registradas em FromPartialObservation, não escreve diretamente
+os slots. As extensões de compatibilidade histórica permanecem
+exclusivamente em Joey.Tests e não restauram resolução direta.
+Demo.cs: 2258 → 2229 linhas. Sem mudança de status de cartas.
+
+PR #272 integrado em 40763c5 após reconciliar com a main e CI
+46156105351 verde; preservados Graceful Dice e motivo de
+tributos insuficientes. Esta fatia aguarda CI integral. Restam Set
+de Spell/Trap, resolução direta de posição/FLIP, ativação,
+respostas de invocação e escolhas. C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já

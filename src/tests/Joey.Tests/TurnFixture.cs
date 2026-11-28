@@ -26,6 +26,19 @@ internal static class TurnFixture
         return duel.Phase == (enterBattle ? DemoPhase.Battle : DemoPhase.Main);
     }
 
+    internal static bool Place(DemoDuel duel, int index, int zone, bool faceDown,
+        out string message, IReadOnlyList<int>? tributeZones = null)
+    {
+        if (!duel.TryQueueNormalPlacement(index, zone, faceDown, out message, tributeZones, ActionOrigin.Test))
+            return false;
+        var queue = duel.Actions;
+        for (int tick = 0; tick < 1000 && queue.IsBusy; tick++)
+            queue.Tick();
+        if (queue.IsBusy || queue.Fault is not null)
+            throw new InvalidOperationException("Fixture placement queue did not drain.");
+        return true;
+    }
+
     internal static void Advance(DemoDuel duel)
     {
         int turn = duel.Turn;
