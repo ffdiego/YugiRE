@@ -1,5 +1,27 @@
 # Joey knowledge SQLite: como consultar antes de reabrir o Ghidra
 
+## Complemento cumulativo v15 — seletores e voz dos bustos (28/11/2026)
+
+O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v15.zip`
+contém o SQLite e as auditorias v14/v15. Os roteiros 71 e 72
+acrescentam os seletores em `005DA798` e `005DA7E0`, os descritores
+de voz e janelas de assembly dos pares Update/Draw da abertura e
+do resultado. O fingerprint do EXE permanece o mesmo da v14.
+
+| Validação | Valor |
+| --- | --- |
+| SHA-256 do SQLite | `9ecaea7e222199c708ea7b1ddf6f97c121615f8c464a69e719355c9f9d9e7c82` |
+| SHA-256 do ZIP v15 | `f5dae6f9fab6cd9cb15ac4f12c35755acbd3dac468beb8a9e059e0d9e83ecf95` |
+| SHA-256 do bundle 71 | `d237583f8b66dac0b50fc405b9cb56b5b59cfaf84aa0e5a81dfb243a7e742454` |
+| SHA-256 do bundle 72 | `8c7cbb1d88756751cb781ca97a17db2f6b3579300dbddb2586185327350a2a91` |
+| `PRAGMA integrity_check` | ok |
+| `PRAGMA foreign_key_check` | sem violações |
+
+A auditoria confirmou a preservação das linhas da v14. A v15 tem
+43 bundles, 264 relatórios, 384 registros de funções (309 VAs
+distintas), 240.036 instruções e 54 blocos de memória.
+[Instalação no Alpha](native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).
+
 ## Complemento cumulativo v14 — composição do fundo da seleção (27/11/2026)
 
 O ZIP privado `scratch/coord-evidence/joey-knowledge-visual-cumulative-2026-11-24-v14.zip`

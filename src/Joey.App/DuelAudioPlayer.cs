@@ -96,7 +96,7 @@ internal sealed class DuelAudioPlayer : IDisposable
         Raylib.PlaySound(sound);
     }
 
-    // One owned playback for the V31 review. The cache owns the Sound;
+    // One owned voice playback for V31 busts. The cache owns the Sound;
     // reset/exit stops it without unloading or affecting music.
     internal bool PlayOpeningVoice(uint request) => PlayBustVoice(NativeOpeningPlayback.VoicePath(request));
     internal bool PlayResultVoice(uint request) => PlayBustVoice(NativeResultPlayback.VoicePath(request));

@@ -205,12 +205,14 @@
     {
       "address": "00415840",
       "family": "Busto de abertura",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/LiveOpeningBust.cs"
     },
     {
       "address": "00416260",
       "family": "Busto de resultado",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/LiveResultBust.cs"
     },
     {
       "address": "00416BC0",

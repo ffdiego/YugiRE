@@ -1,7 +1,6 @@
 using Joey.Core;
 using Joey.LookAndFeel;
 using Raylib_cs;
-using System.Text;
 using System.Text.Json;
 
 static partial class Game
@@ -18,9 +17,7 @@ static partial class Game
         if(code==0 || parts.Length!=2 || !int.TryParse(parts[1],out resultBustVariant) ||
             resultBustVariant<0 || resultBustVariant>=(code==3?1:3))
             throw new InvalidDataException("Expected result:win:0..2, result:lose:0..2 or result:draw:0.");
-        string manifest=NativeJoeyCinematicRouting.Result(code).Manifest;
-        resultBustReview=NativeResultBank.Parse(code,Encoding.Latin1.GetString(archive.Read(manifest)),
-            archive.Entries.Select(e=>e.Name));
+        resultBustReview=ReadResultBustBank(archive,code);
         resultBustWaitAudio=args.Contains("--reaction-wait-audio");
         ResetResultBustReview();
     }
@@ -33,15 +30,7 @@ static partial class Game
         resultBustAudioComplete=!resultBustWaitAudio;
         resultBustSound=null;
     }
-    static void InitializeResultBustReview()
-    {
-        foreach(var r in resultBustReview!.Resources)
-        {
-            var t=r.CornerKey?graphics.CornerKeyedBitmapTexture(r.Path):graphics.Texture(r.Path);
-            if(t.Width!=r.Width || t.Height!=r.Height)
-                throw new InvalidDataException("Unexpected result texture dimensions: "+r.Path);
-        }
-    }
+    static void InitializeResultBustReview() => ValidateResultBustTextures(resultBustReview!);
     static NativeResultLayer[] ResultBustLayers()=>resultBustPlayback!.Active
         ?resultBustReview!.Sample(resultBustPlayback.Counter,resultBustVariant,effectCosine):[];
     static void DrawResultBustReview()
@@ -75,11 +64,7 @@ static partial class Game
                 duelAudio?.StopOpeningVoice();
             }
         }
-        foreach(var l in ResultBustLayers())
-        {
-            var t=l.CornerKey?graphics.CornerKeyedBitmapTexture(l.Path):graphics.Texture(l.Path);
-            Raylib.DrawTexture(t,l.Position.X,l.Position.Y,Color.White);
-        }
+        DrawResultBustLayers(ResultBustLayers());
     }
     static void CaptureResultBustReview(RenderTexture2D canvas)
     {

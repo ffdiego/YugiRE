@@ -765,6 +765,24 @@ V31.12 (28/11). SQLite v14 reaberto em modo somente leitura (quick_check=ok). Re
 
 V31.13 (28/11). Roteiro 72 completo: 005DA7E0 = -1,0,1,0; IDs 59..5F = Joey_53..59.wav. Review usa grupos 4/5 (olhos) e 6/7 (boca), offset relativo ao personagem, gates de fase e de saída separados; player de voz reutilizado sem alterar pitch. Testes sintéticos dos seletores, coordenadas e nomes adicionados. CI e validação audiovisual pendentes; sem novo gatilho live ou mudança de cobertura.
 
+V31.14 (28/11). Abertura e resultado passaram pelo fluxo gráfico do
+Alpha com o DAT original em 800×600. O resultado libera o banner
+após a fila e o LP estabilizarem, usa Enter/clique como confirmação
+no lugar da decisão de replay e seleciona o banco pelo resultado do
+jogador. O Draw terminal devolve o controle ao menu. Xvfb exercitou
+derrota sem Voice.dat, vitória Silent com Voice.dat presente,
+Escape na abertura e no resultado, retorno com Voice.dat e saída
+Instant. O console vivo produziu dano letal pela fila nos testes.
+A saída de áudio estava isolada, sem validação auditiva. O build e
+51.764 checks com DAT passaram, além dos testes da badge. CI
+do novo head segue como requisito de integração.
+
+Os dois Draws passam a Partial, com composição e comparação
+pareada ainda pendentes (27/39 no inventário). Os roteiros 71/72
+foram consolidados no SQLite v15. O próximo recorte V31 é a rota
+de reação durante o duelo.
+[Contrato e evidência](../research/native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

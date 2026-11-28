@@ -63,3 +63,39 @@ existente, sem mudança de velocidade do WAV. Use --no-audio para
 passo a passo sem esperar fala, ou --reaction-wait-audio + F9 para
 predicado manual. Sem essas opções, Voice.dat é usado quando disponível.
 Sombra/composição e gatilho pós-replay continuam pendentes.
+
+## V31.14 — resultado no Alpha
+
+O assembly do EXE com fingerprint da v15 confirma o caminho do
+resultado. Em `005BC4E8` e `005BD3EF`, o produtor passa os bits 6–7
+de `00A577FA` a `0044B9E0`. A rotina `0044BAF0` registra o código
+do duelo e, fora do modo Match, grava-o em `005F3254` em `0044BBBE`.
+No Match, a rotina conta os códigos 1 e 2 e decide o resultado
+agregado. `00415D12` lê `005F3254` via `0044B9F0`. Os códigos
+1, 2 e 3 selecionam vitória do jogador, derrota do jogador e
+empate, respectivamente. A derrota observada em Proton selecionou
+`lose.txt` e `0x1000005A`.
+
+Na saída da cena pós-replay, `0044777F` inicia a transição.
+O ramo Single Duel (modo 0) em `00447812` arma `005F2FCC=1`,
+consumido em `0041802E` antes da chamada à fábrica em `004180DE`.
+No Match (modo 1), `004477FF` desvia ao próximo duelo enquanto
+o resultado agregado é zero. O piloto de V16.3 observou o fade e
+a confirmação do placar intermediário antes desse desvio.
+Na derrota Single Duel dos pilotos do roteiro 68, o busto apareceu
+após recusar o replay e retornou ao menu sem confirmação extra.
+
+No Alpha vs CPU, o fim dos comandos e da animação de LP libera o
+banner existente. O jogador confirma o banner estabilizado com
+Enter ou clique para continuar. Essa confirmação substitui a
+decisão de salvar replay no Alpha. A apresentação seleciona o
+banco pela perspectiva do jogador, reutiliza os recursos, o
+renderizador e o predicado de áudio do review e retorna ao menu
+no Draw terminal. Escape sai e interrompe a fala do busto.
+Instant libera o menu ao confirmar o banner. Silent e Voice.dat
+ausente mantêm a animação com o predicado de áudio liberado.
+
+A integração cobre o duelo individual do Alpha e usa a composição
+em camadas do review. As sombras, a composição de superfícies,
+o fluxo de Match e as telas de replay e pedra, papel e tesoura
+continuam pendentes.

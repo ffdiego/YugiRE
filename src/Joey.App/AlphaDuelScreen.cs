@@ -97,6 +97,7 @@ static partial class Game
     static void ResetDuelPresentation()
     {
         ResetLiveOpeningBust();
+        ResetLiveResultBust();
         screen = "duel";
         labSession = null;
         liveConsoleSession = null;
