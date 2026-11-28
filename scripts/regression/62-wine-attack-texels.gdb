@@ -8,10 +8,14 @@ import json
 capture = None
 active_row = None
 samples = []
+clip_requested = gdb.convenience_variable("packed_bottom_clip")
+bottom_clip = clip_requested is not None and bool(int(clip_requested))
 requested = gdb.convenience_variable("packed_intensity")
-intensity = 224 if requested is None else int(requested)
+intensity = (32 if bottom_clip else 224) if requested is None else int(requested)
 if intensity not in range(32, 257, 32):
     raise ValueError("Choose an impact intensity from 32 to 256 in steps of 32")
+if bottom_clip and intensity != 32:
+    raise ValueError("The bottom clip sample uses the last seven rows of an intensity-32 impact")
 base = intensity == 256
 step = 5 if base else 7
 
@@ -55,12 +59,24 @@ class Impact(HardwareProbe):
             source_offset, destination_offset, flag_offset = 0x10, 0x14, 0x1c
         if read(destination + 0x74) != 3 or read(source + 0x74) != 10:
             return False
+        points = vertices(read(sp + destination_offset))
+        if bottom_clip:
+            clip = read(sp + flag_offset - 4) or destination + 0x18
+            if [read(clip + axis) for axis in (0, 4, 8, 12)] != [0, 0, 800, 600]:
+                return False
+            xs = {x for x, _ in points}
+            ys = {y for _, y in points}
+            # Seven visible rows must supply all 144 samples, including Y=599.
+            if len(xs) != 2 or len(ys) != 2 or min(ys) > 593 or max(ys) < 600:
+                return False
+            if min(xs) < 0 or max(xs) >= 800 or (max(xs) - min(xs)) // step != 21:
+                return False
         capture = {
             "thread": thread(),
             "intensity": intensity,
             "extraDivisor": bool(read(sp + flag_offset, 1)),
             "sourceVertices": vertices(read(sp + source_offset)),
-            "destinationVertices": vertices(read(sp + destination_offset)),
+            "destinationVertices": points,
         }
         return False
 
@@ -70,7 +86,7 @@ class Row(HardwareProbe):
         if capture is None or thread() != capture["thread"]:
             return False
         y = read(reg("esp") + 0x34, signed=True)
-        pixel.enabled = y % step == 0
+        pixel.enabled = 593 <= y < 600 if bottom_clip else y % step == 0
         if pixel.enabled:
             active_row = {"x": reg("ecx"), "y": y, "count": reg("eax"), "i": 0}
         return False

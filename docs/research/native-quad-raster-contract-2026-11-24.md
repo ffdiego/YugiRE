@@ -144,6 +144,15 @@ O log guarda contagens e coordenadas. Verificar o peso do
 alpha na cor final requer amostrar os pixels de entrada e
 saída do helper. [Roteiro 59](../../scripts/regression/README.md#59--v04v17-recorte-do-impacto-em-proton).
 
+Num duelo individual com `-speedy`, encerrar o turno com
+campo vazio provocou um ataque direto adversário. O retorno
+`00414777` confirmou o chamador. Em intensidade 32 apareceu
+o mesmo recorte inferior. O comparador conferiu 288 pares U/V
+nas linhas 593…599 em duas chamadas, incluindo 24 pares na
+linha 599. O quadrilátero termina em Y=610 e a textura mantém a escala
+do quadrilátero completo na parte visível.
+[Modo de recorte do roteiro 62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton).
+
 ## Seleção de texels do impacto em Proton
 
 No ramo 10→3, `00422E30` recebe os vértices de origem em

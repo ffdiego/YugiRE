@@ -412,6 +412,13 @@ O padrão é intensidade 224. Para repetir em outra escala, passe
 Para medir o compositor base, use `-ex 'set $packed_intensity = 256'`
 e salve a captura em outro log. O mesmo comparador lê os dois caminhos.
 
+Para medir o recorte inferior a 800×600, passe
+`-ex 'set $packed_bottom_clip = 1'`. Esse modo seleciona
+intensidade 32 e coleta as sete últimas linhas visíveis.
+No piloto em duelo individual com `-speedy`, encerrar o turno
+com campo vazio permitiu o ataque direto adversário. Confira os
+144 pares U/V e a presença de amostras em Y=599.
+
 ### 63 — V17, seleção de texels em quadrilátero inclinado
 
 Anexe antes do voo da espada na demonstração, com os mesmos

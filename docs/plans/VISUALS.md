@@ -417,6 +417,13 @@ texels e valores RGB565 coincidiram com os modelos C#.
 Houve 264 amostras de cor-chave e 22 alterações no destino.
 [Intensidade reduzida](../../docs/research/native-quad-raster-contract-2026-11-24.md#intensidade-reduzida-em-rgb565-em-proton).
 
+V17.14. Em um duelo individual no Proton, um ataque direto
+adversário produziu um impacto 10→3 que atravessou a borda
+inferior. Os 288 texels amostrados em duas chamadas nas
+linhas 593 a 599 coincidiram com o modelo C#. Recorte lateral e superior
+seguem em aberto.
+[Recorte vertical](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>
