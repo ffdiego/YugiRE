@@ -350,6 +350,8 @@ A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi receb
   *Curas de Standby (C03.4):* o produtor de compra agenda a continuação de cura após a compra e os gates dos retornos atrasados. A compra pulada também entrega a fase e deck-out encerra antes das curas. Os testes cobrem CPU, ambos os lados, pose, duplicatas e um comando por ocorrência. [Cartas e limites](CARDS.md#c034--ganhos-de-lp-na-standby).
   *Retornos de End Phase (C03.6):* o produtor serializa as ocorrências de The Wicked Worm Beast, deixa a limpeza vinculada passar pelo gate e só então consulta o limite de mão. O descarte obrigatório e a troca de turno continuam tipados. [Cartas e limites](CARDS.md#c036--retorno-de-the-wicked-worm-beast-no-fim-do-turno).
 
+  *A07.1 — correlação estática das fases (28/11):* SQLite v14 (quick_check ok) e replay de 1062 registros. Produtores 50/51/52/54/55 conferidos em assembly, 53 por decompilação; stubs do consumidor recebem 0..5 e o Draw de nomes usa fase + 6 * seletor de lado, coerente com a ordem dos manifestos DAT. Em 38 turnos concluídos, 26 sem Battle, 9 com Battle/Main2, 3 com Battle diretamente para End. Compra 61 é separada de 50; guardas nativas permitem pular etapas. Ainda faltam bytes da tabela comprimida 005B9AEC para validar o vínculo exato opcode/stub e observação pareada dos bits e rótulos; nenhuma mudança C# ou promoção de status. [Evidência](../20-turn-scheduling.md#a07--fases-seletores-e-replay-sqlite-v14-28112026).
+
 ## A08 — Extrair `Joey.Cards` e definir `EffectContext`
 
 <a id="a08"></a>
