@@ -43,9 +43,10 @@ internal static class QueuedDirectAttackChecks
             check(console.HasPendingChoice && duel.PendingAttackResponse is { } choice &&
                 duel.UsesQueuedAttackResponse(choice) && choice.EligibleTraps.Count == 2 &&
                 console.Execute("choices").Message.Contains(id.ToString()) &&
-                !console.Execute("battle end").Success && !duel.PassAttackResponse(out _) &&
-                !duel.ActivateAttackTrap(responder, 0, out _),
-                "Queued response owns the only pass or activation path");
+                !console.Execute("battle end").Success &&
+                !duel.TryQueueAttack(2, -1, out _) &&
+                !duel.TryQueueAttackResponse(choice, new DemoAttackTrapOption(side, 0, trap), out _),
+                "Queued response rejects a new declaration and a wrong-owner answer");
 
             if (!pass)
             {
