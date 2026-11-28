@@ -382,6 +382,14 @@ incluindo casos fora da chave cujo alpha efetivo ficou
 zero após a quantização.
 [Amostras adicionais](../../docs/research/native-surface-copy-contract-2026-11-24.md#amostras-de-intensidade-32-e-128).
 
+V17.9. Em Proton, `NativeQuadScanlines` coincidiu com
+os texels selecionados pelo ramo 10→3 em impactos alinhados
+aos eixos e dentro do canvas. As amostras cobriram escalas
+diferentes e usaram a flag de divisor da chamada original.
+O roteiro 62 reproduz a comparação. Ainda faltam outros
+quadriláteros, o caminho base e o par 11→4.
+[Seleção de texels](../../docs/research/native-quad-raster-contract-2026-11-24.md#seleção-de-texels-do-impacto-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

@@ -143,3 +143,29 @@ incluindo 71 na linha 599. A rotina retornou zero.
 O log guarda contagens e coordenadas. Verificar o peso do
 alpha na cor final requer amostrar os pixels de entrada e
 saída do helper. [Roteiro 59](../../scripts/regression/README.md#59--v04v17-recorte-do-impacto-em-proton).
+
+## Seleção de texels do impacto em Proton
+
+No ramo 10→3, `00422E30` recebe os vértices de origem em
+`[esp+10h]` e os de destino em `[esp+14h]`. O byte em
+`[esp+1Ch]` controla o acréscimo ao divisor de UV. A partir de
+`0042353B` o raster guarda pitch e base da superfície de
+origem bloqueada. Em `00423BAB`, o segundo argumento de
+`00439B60` já aponta para o texel selecionado. Dividir o
+deslocamento desse endereço pelo pitch dá V e o resto, em
+passos de quatro bytes, dá U. A leitura independe da cor, da
+cor-chave e da composição.
+
+Na demonstração em Proton, coletas em intensidade 32, 128 e
+224 amostraram 144 texels cada. Nos três impactos, os quatro
+vértices ficaram dentro do canvas, os quadriláteros estavam
+alinhados aos eixos e a flag de divisor era zero.
+`NativeQuadScanlines.Samples` reproduziu todos os 432 pares
+U/V nas coordenadas X/Y amostradas. No caso 224, ativar a
+flag só no comparador produziu 87 divergências, o que
+distingue os dois divisores nessa escala.
+
+O recorte cobre a seleção de texels do ramo de intensidade
+10→3 para os impactos medidos. Resta medir a amostragem no
+caminho base, com recorte lateral e com quadriláteros inclinados.
+[Roteiro 62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton).

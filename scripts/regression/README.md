@@ -388,3 +388,20 @@ timeout --signal=INT 105s gdb -nx -q -batch -p "$joey_test_pid" \
   -x scripts/regression/61-wine-packed-alpha-base-pixels.gdb > scratch/attack-packed-base-pixels.log 2>&1
 dotnet run --file scripts/regression/60-compare-packed-alpha-pixels.cs -- scratch/attack-packed-base-pixels.log
 ```
+
+### 62 — V17, seleção de texels no impacto em Proton
+
+No mesmo prefixo isolado do roteiro 60, anexe antes de um ataque.
+A sonda lê os quatro vértices de origem e destino e amostra o
+endereço do texel antes de o compositor ler sua cor. O comparador
+usa as coordenadas e a flag de divisor da chamada original.
+
+```bash
+timeout --signal=INT 115s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/62-wine-attack-texels.gdb > scratch/attack-texels.log 2>&1
+dotnet run --file scripts/regression/62-compare-attack-texels.cs -- scratch/attack-texels.log
+```
+
+O padrão é intensidade 224. Para repetir em outra escala, passe
+`-ex 'set $packed_intensity = 32'` antes de `-x`. Confira as
+144 amostras e a mensagem de desanexação no log privado.
