@@ -242,7 +242,6 @@ static partial class Game
             {
                 Destruction=>DuelSoundCue.Destruction,
                 HandTransfer=>DuelSoundCue.CardMove,
-                TributePlacement=>DuelSoundCue.Tribute,
                 SpecialSummonPlacement=>DuelSoundCue.SpecialSummon,
                 DuelOpening=>DuelSoundCue.Start,
                 _=>null
@@ -251,6 +250,9 @@ static partial class Game
         }
         int remaining = current.Updates - cardEffects.ElapsedUpdates;
         int consumed = Math.Min(updates, remaining);
+        if (current.Kind is TributePlacement &&
+            NativeTributeFrame.CrossesSoundUpdate(cardEffects.ElapsedUpdates,consumed))
+            PlayDuelSound(DuelSoundCue.Tribute);
         // One virtual native Update/Draw per rendered step for these banks.
         // Drop excess catch-up rather than skip their Draw-dependent motion.
         if (current.Kind is CoinResultVisual or DiceResultVisual or EquipmentTravelVisual)

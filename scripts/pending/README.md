@@ -337,3 +337,29 @@ A saída esperada registra um pedido 9 em `0045E240`, o descritor de
 foco, a sequência Draw e uma transição de saída. Guarde em `scratch/`
 um quadro estabilizado e um quadro sem foco para comparar o
 posicionamento e a composição com o Alpha.
+
+## V18/V31 — reação do jogador à ativação (76)
+
+A rota 004030F0 -> reaction04/10000057 já foi localizada. Faltam o
+seletor header 12 (00417680..00417750) e o nome em 005F0540.
+Somente Ghidra, sem executar o jogo:
+
+```bash
+bash scripts/pending/76-reaction04-contract-ghidra.sh
+```
+
+Saída privada: scratch/ghidra-reaction04-contract.zip. A coleta
+dinâmica complementar usa o coletor permanente do Windows:
+
+```powershell
+python scripts/joey_visual_trace.py --label normal --profile activation --scenario local-spell --seconds 90
+```
+
+Ativar magia da mão e, se possível, magia previamente baixada.
+F9 marca o momento durante o duelo; Ctrl+C encerra. O perfil inclui
+movimento, brilho, rotas de reação, pedidos com nomes dos descritores,
+Draw e polls de áudio, sem escrita no jogo. Comparar com amostra CPU.
+O perfil all significa todos os hooks implementados neste coletor,
+não todas as famílias visuais; battle e demais famílias serão adicionados
+após confirmar os endereços. Validação da nova instrumentação no
+Windows ainda pendente. Não versionar JSON bruto.

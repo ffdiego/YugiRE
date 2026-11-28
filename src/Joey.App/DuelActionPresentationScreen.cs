@@ -7,7 +7,8 @@ static partial class Game
     static ActionQueue? queuedDuel;
     static CardTarget? queuedPreviewSource;
 
-    sealed record ActionVisualSnapshot(DuelActionPresentation Action, Rectangle? Origin, ActionOrigin CommandOrigin);
+    sealed record ActionVisualSnapshot(DuelActionPresentation Action, Rectangle? Origin, ActionOrigin CommandOrigin,
+        bool SourceFaceDown);
 
     sealed class AppActionPresentationGate : ICommandPresentationGate
     {
@@ -30,8 +31,16 @@ static partial class Game
             if (description is { Source.Zone: DuelZone.Hand } hand)
                 origin = hand.Source.Side == ViewPlayer ? HandBounds(hand.SourceIndex)
                     : CpuHandBounds(hand.SourceIndex, duel.HandFor(hand.Source.Side).Count);
+            // Preserve the face before the command mutates or consumes the source.
+            bool sourceFaceDown = description is { Kind: ActionPresentationKind.Activate } a &&
+                (a.Source.Zone switch
+                {
+                    DuelZone.SpellTrap => duel.SpellFaceDown[a.Source.Side,a.SourceIndex],
+                    DuelZone.FieldSpell => duel.FieldSpellFaceDown[a.Source.Side],
+                    _ => false
+                });
             active.Capture(command.Sequence, description is null ? null :
-                new(description, origin, description.DeclarationOrigin ?? command.Origin));
+                new(description, origin, description.DeclarationOrigin ?? command.Origin, sourceFaceDown));
         }
 
         public bool CanComplete(QueuedDuelCommand command, CommandResult result)
@@ -67,7 +76,8 @@ static partial class Game
                 // damage/destruction yet. Show the existing travel + glow.
                 queuedPreviewSource = presentation.Style.PlayAnimations ? a.Source : null;
                 BeginCardActivation(a.Card, a.Destination == DuelZone.FieldSpell
-                    ? FieldZoneBounds(side) : ZoneBounds(side, slot, true), snapshot.Origin, near);
+                    ? FieldZoneBounds(side) : ZoneBounds(side, slot, true), snapshot.Origin, near,
+                    revealFromField: snapshot.SourceFaceDown);
                 BeginLiveActivationReaction(a);
                 break;
             case ActionPresentationKind.Summon:

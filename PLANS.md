@@ -132,7 +132,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
 - [ ] **V16 — Demais Draws do inventário.** Status: `Parcial`. Validar a rota de saída após vitória e os gatilhos das demais famílias pendentes. [Detalhes](docs/plans/VISUALS.md#v16)
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Manter como pendências o caminho base 11→4, os recortes lateral e superior e a entrega do buffer no Windows. [Detalhes](docs/plans/VISUALS.md#v17)
-- [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Leitura PCM e streaming do menu e duelo validados no cliente. Comparar escuta, transições e associação dinâmica no Windows. [Detalhes](docs/plans/VISUALS.md#v18)
+- [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Correções Set/Summon, ativação da mão, revelação baixada e cue do tributo; validar cliente, fechar reaction04/57 e viagens controle/GY. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, verificar reflexão, remap e blend. [Detalhes](docs/plans/VISUALS.md#v20)
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Graceful Dice aciona o dado em duelo. Coletar comparação do produtor E2 e seguir com Skull Dice e Blind Destruction. [Detalhes](docs/plans/VISUALS.md#v21)

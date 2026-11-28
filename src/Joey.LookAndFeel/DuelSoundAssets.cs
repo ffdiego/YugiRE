@@ -3,7 +3,7 @@ namespace Joey.LookAndFeel;
 public enum DuelSoundCue
 {
     Start, TurnChange, BattlePhase, CardMove, Activation, Attack,
-    Destruction, Tribute, SpecialSummon, Damage, Heal, FusionStart, FusionResult, DiceBounce
+    Destruction, Tribute, SpecialSummon, Damage, Heal, FusionStart, FusionResult, DiceBounce, CardOpen
 }
 
 /// <summary>Original DAT filenames with provisional semantic associations,
@@ -18,6 +18,7 @@ public static class DuelSoundAssets
         DuelSoundCue.TurnChange=>"turn_change.wav",
         DuelSoundCue.BattlePhase=>"battle_turn.wav",
         DuelSoundCue.CardMove=>"card_move.wav",
+        DuelSoundCue.CardOpen=>"card_open.wav",
         DuelSoundCue.Activation=>"magic_active.wav",
         DuelSoundCue.Attack=>"attack.wav",
         DuelSoundCue.Destruction=>"card_attacked_brake.wav",

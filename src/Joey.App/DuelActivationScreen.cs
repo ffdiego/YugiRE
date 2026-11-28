@@ -5,7 +5,7 @@ using System.Numerics;
 
 static partial class Game
 {
-    enum ActivationStage { Travel, Glow }
+    enum ActivationStage { Travel, Reveal, Glow }
 
     static readonly PresentationSequence<ActivationStage> activation = new();
     static readonly PresentationTickClock activationClock = new();
@@ -20,11 +20,12 @@ static partial class Game
     static CardBounds ToCardBounds(Rectangle rect) =>
         new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
 
-    static void BeginCardActivation(Card card, Rectangle zone, Rectangle? origin = null, bool nearSide = true)
+    static void BeginCardActivation(Card card, Rectangle zone, Rectangle? origin = null, bool nearSide = true,
+        bool revealFromField = false)
     {
         activationNearSide = nearSide;
         ShowActivatedDetail(card);
-        BeginActivation(ToCardBounds(zone), 0, card, origin);
+        BeginActivation(ToCardBounds(zone), 0, card, origin, revealFromField);
     }
 
     static void BeginSpellActivation(int centerX, int centerY, int category)
@@ -33,7 +34,8 @@ static partial class Game
         BeginActivation(new(centerX - width / 2, centerY - height / 2, width, height), category);
     }
 
-    static void BeginActivation(CardBounds zone, int category, Card? card = null, Rectangle? origin = null)
+    static void BeginActivation(CardBounds zone, int category, Card? card = null, Rectangle? origin = null,
+        bool revealFromField = false)
     {
         StopSpellActivation();
         if (!presentation.Style.PlayAnimations) return;
@@ -43,8 +45,10 @@ static partial class Game
         if (origin is { } from)
         {
             activationOrigin = ToCardBounds(from);
-            activation.Enqueue(ActivationStage.Travel, CardTravel.Updates);
+            activation.Enqueue(ActivationStage.Travel, NativePlacementTravel.DescriptorCommitUpdates);
         }
+        else if (revealFromField && card is not null)
+            activation.Enqueue(ActivationStage.Reveal, NativePlacementTravel.DescriptorCommitUpdates);
         activation.Enqueue(ActivationStage.Glow, ActivationEffectPlayback.MaxUpdates);
     }
 
@@ -58,19 +62,25 @@ static partial class Game
     static void AdvanceSpellActivation(TimeSpan elapsed)
     {
         if (!ActivationBusy) return;
-        int updates=activationClock.Advance(elapsed,presentation.Style);
-        if(updates>0 && activation.Current is { } step)
-        {
-            if(step.Kind==ActivationStage.Glow && activation.ElapsedUpdates==0 ||
-                step.Kind==ActivationStage.Travel && updates>step.Updates-activation.ElapsedUpdates)
-                PlayDuelSound(DuelSoundCue.Activation);
-        }
-        activation.Advance(updates);
+        if (activationClock.Advance(elapsed,presentation.Style)==0 ||
+            activation.Current is not { } step) return;
+        // One observable Update per Draw. In CF the move cue precedes the
+        // first travel update; 72 requests magic_active on its first Update.
+        // Do not cross stages in one catch-up batch or consume their cues.
+        if (activation.ElapsedUpdates==0)
+            PlayDuelSound(step.Kind switch
+            {
+                ActivationStage.Travel => DuelSoundCue.CardMove,
+                ActivationStage.Reveal => DuelSoundCue.CardOpen,
+                _ => DuelSoundCue.Activation
+            });
+        activation.Advance(1);
         if (!ActivationBusy) activationCard = null;
     }
 
     static bool ActivationInFlight(Rectangle zone) =>
-        activation.Current?.Kind == ActivationStage.Travel && activationBounds == ToCardBounds(zone);
+        (activation.Current?.Kind is ActivationStage.Travel or ActivationStage.Reveal) &&
+        activationBounds == ToCardBounds(zone);
 
     static void DrawSpellActivation()
     {
@@ -81,10 +91,20 @@ static partial class Game
         {
             // A spent spell can already be in the graveyard. This is only its visual copy.
             var portrait = DuelCardLayout.BoardPortrait(DuelCardLayout.FrameCenter(scratch));
-            var bounds = step.Kind == ActivationStage.Travel
-                ? CardTravel.Sample(activationOrigin, portrait, activation.ElapsedUpdates)
-                : portrait;
-            DrawDuelCard(card, DuelCardLayout.InTransit(bounds, activationNearSide, false, false));
+            if (step.Kind == ActivationStage.Travel)
+            {
+                // CF uses the same 00418B60 interpolation as hand placement.
+                var pose=NativePlacementTravel.Sample(activationOrigin,portrait,activationNearSide,
+                    false,false,NativePlacementTravel.MotionSampleUpdate(activation.ElapsedUpdates),effectCosine);
+                DrawPlacementTravelCard(card,pose);
+            }
+            else if (step.Kind == ActivationStage.Reveal)
+            {
+                var pose=NativePlacementTravel.SampleFieldReveal(portrait,activationNearSide,
+                    NativePlacementTravel.MotionSampleUpdate(activation.ElapsedUpdates),effectCosine);
+                DrawPlacementTravelCard(card,pose);
+            }
+            else DrawDuelCard(card, DuelCardLayout.InTransit(portrait, activationNearSide, false, false));
         }
         if (step.Kind != ActivationStage.Glow) return;
 

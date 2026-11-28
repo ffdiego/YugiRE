@@ -9,6 +9,7 @@ internal static class DuelSoundAssetChecks
             cues.All(c=>DuelSoundAssets.Effect(c).StartsWith(DuelSoundAssets.InternalPrefix)),
             "V18: distinct named effect resources");
         check(DuelSoundAssets.Effect(DuelSoundCue.Activation).EndsWith("magic_active.wav") &&
+            DuelSoundAssets.Effect(DuelSoundCue.CardOpen).EndsWith("card_open.wav") &&
             DuelSoundAssets.Effect(DuelSoundCue.Damage).EndsWith("damage.wav") &&
             DuelSoundAssets.Effect(DuelSoundCue.Heal).EndsWith("life_up.wav") &&
             DuelSoundAssets.Effect(DuelSoundCue.DiceBounce).EndsWith("dice.wav"),
