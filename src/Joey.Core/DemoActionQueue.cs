@@ -5,6 +5,7 @@ public sealed partial class DemoDuel
     private ActionQueue? primitiveActionQueue;
     public event Action<LabCoinResult>? LabCoinResultReported;
     public event Action<LabDiceResult>? LabDiceResultReported;
+    public event Action<DemoBanishment>? CardBanished;
     internal bool HasActionQueue => primitiveActionQueue is not null;
     internal bool ActionQueueBusy => primitiveActionQueue?.IsBusy == true;
 
@@ -1557,7 +1558,10 @@ public sealed partial class DemoDuel
                 banishSummonCosts.Dequeue();
                 banishSummonPaid++;
             }
-            // Neither discard, draw nor GY arrival: no corresponding event.
+            // Observe the committed destination, without turning it into a
+            // destruction/discard event. No private hand/deck identity escapes.
+            duel.CardBanished?.Invoke(new(target.Side,target.Zone,
+                target.Zone==DuelZone.Graveyard ? card : null));
             return new(CommandOutcome.Applied);
         }
 

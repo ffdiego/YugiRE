@@ -197,3 +197,19 @@ resultado inconclusivo sobre produtor, não erro de regra; guardar
 controle com contexto de transferência. Associação temporal não
 prova causalidade; examinar retorno do construtor antes de ligar
 uma rota A03. Sem ativação sintética no duelo ou aumento da badge.
+
+## V26.5 — primeira integração no duelo
+
+A evidência posterior do Codex localiza 0043D440 no slot +18 de
+005DAC74, usado pelas zonas 0F e pelo despachante 0041E7B0.
+Não houve ainda uma captura positiva de transferência a 0F.
+Leitura do bloco v7 em 005DB5B0 (80 bytes) confirma a geometria
+para 0F: pares em 005DB5F0 e 005DB5F8, (762,308) e (292,292).
+Ordem relativa ao campo/deck do cliente, perspectiva nativa fina
+pendente. Usar BanishCommand aplicado como inferência de rota de
+destino, não prova de que toda remoção dispare V26. A observação
+CardBanished só contém Card para origem pública (cemitério); deck/mão
+mascarados porque o Core não registra face de banimento. O App cria
+24 Draws com recursos DAT, sem espera no gate. Não conecta outros
+caminhos legados, battle replacement ou material de Fusion Gate.
+Compositor aproximado e som 10000024 pendente. Partial no inventário.

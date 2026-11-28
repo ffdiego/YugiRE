@@ -559,6 +559,8 @@ movimentação real com destino `0x0F` ao despacho ainda
 precisa de captura positiva.
 [Roteiro 65](../../scripts/regression/README.md#65--v26-associação-das-zonas-de-exclusão).
 
+V26.5: BanishCommand aplicado emite observação da movimentação, liga efeito não bloqueante à zona 0F. Tabela 005DB5F0 do v7 confirma (762,308)/(292,292). Deck/mão mascarados, cemitério público; 24 Draws e terminal retido por uma amostra. Rota inferida pela associação do produtor 0043D440/0041E829, ainda sem captura positiva. Não estender a destruição de batalha ou materiais de fusão. Blend aproximado e som pendente. Draw Partial.
+
 ## V27 — Layerfont A (00455FF0)
 
 <a id="v27"></a>

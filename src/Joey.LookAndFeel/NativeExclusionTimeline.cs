@@ -10,6 +10,18 @@ public readonly record struct NativeExclusionDraw(int Counter,NativeExclusionPas
 /// SampleNextDraw is a pure query. Never advance in CanComplete.
 /// Geometry callback resolves the descriptor for the current Draw;
 /// no implicit interpretation of graveyard/banishment commands.</summary>
+public static class NativeExclusionDestination
+{
+    // 0045C280, region 0F. Two XY pairs at 005DB5F0, confirmed
+    // in the cumulative v7 table (same order as the existing board).
+    public static CardPoint Center(bool nearSide) => nearSide ? new(762,308) : new(292,292);
+    public static NativeExclusionStart Start(int side,bool revealed,uint internalIndex)
+    {
+        if(side is not (0 or 1))throw new ArgumentOutOfRangeException(nameof(side));
+        return NativeExclusionStart.FromConstructor((ushort)(side|0x1e|(revealed?0x8000:0)),internalIndex);
+    }
+}
+
 public sealed class NativeExclusionTimeline
 {
     public const int Increment=8,EndCounter=256,Draws=24;
