@@ -9,7 +9,7 @@ public sealed partial class DemoDuel
 
     public bool UsesQueuedFlipSpellTrapSelection(PendingFlipSpellTrapTargets request) =>
         ReferenceEquals(PendingFlipSpellTrapTargets, request) &&
-        deferredBattle is null && Phase == DemoPhase.Main &&
+        Phase == DemoPhase.Main &&
         FlipSpellTrapSelectionRules.Effect(request.Source.Id) == request.Operation;
 
     public bool TrySelectQueuedFlipSpellTrapTarget(PendingFlipSpellTrapTargets request, int player, int zone,
@@ -69,7 +69,7 @@ public sealed partial class DemoDuel
     }
 
     private bool CanAdmitQueuedFlipSpellTrapPair() =>
-        !GameOver && deferredBattle is null && Phase == DemoPhase.Main &&
+        !GameOver && Phase == DemoPhase.Main &&
         PendingFlipSpellTrapTargets is { } pending &&
         FlipSpellTrapSelectionRules.Effect(pending.Source.Id) == pending.Operation &&
         PendingFlipTarget is null && PendingCardSelection is null &&
