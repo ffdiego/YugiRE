@@ -256,3 +256,51 @@ correlação. Próximo: recuperar tabela comprimida (índices 0x50..0x55
 e os destinos) no Ghidra e comparar o ciclo C# com os três caminhos
 observados, incluindo fase pulada, gates, decisão de descarte e limpeza
 02. Não há alteração C# neste checkpoint.
+
+### A07.2 — Supressão de fases não equivale a suprimir trabalho
+
+SQLite v14, mesma proveniência de A07.1. Assembly e decompilações
+do roteiro 11 confirmam guardas sobre DWORD A56430 + side * D44h:
+
+| Trabalho | Guarda | Consequência |
+| --- | --- | --- |
+| Draw, 005A41C0 | bit 1 ou bit 23 | 005A4200/4204 saltam para 005A4251; termina o trabalho sem emitir 50 nem passar pela compra do subestado 2 |
+| Standby, 005A8090 | bit 2 ou bit 23 | 005A80C4/80C8, 005A8101–8127 escrevem subestado C8 (200 decimal), retornam ocupado sem emitir 51 |
+| End, 005A5120 | bit 23 | 005A515C–5162 e 005A5181–51B0 saltam a emissão 55 e pedido de callback; ambos os caminhos armam subestado 2 e retornam ocupado |
+
+A decompilação do subestado 200 de Standby contém varreduras
+de campo e chamadas 0059C8D0/0059CA20/005B9170, além de
+00579930(side,2,0). Não atribuir a cada chamada um efeito de carta
+sem investigação própria. Em End, subestado 2 chama 005A46B0 e
+aguarda seu retorno antes das demais varreduras. O bit 23 altera
+outros ramos posteriores; não concluir que todos os efeitos
+ordinários de End devam executar durante supressão.
+
+00579930 compara o bit atual, chama 005706B0 para alterá-lo e
+emite 0D(side, bit_index, value, 0) somente quando há mudança.
+Confirmação por decompilação, não prova da semântica completa
+do consumidor de 0D. 005A59B0 emite 01 em 005A5A08; na passagem
+seguinte verifica 005709D0(side,0x517) e pode armar bit 23
+via 00579930(side,0x17,1). O catálogo associa 0x517 a Gamble;
+a duração e origem do marcador ainda não foram fechadas.
+O caminho Draw suprimido limpa bit 1 via 00579930; Standby
+subestado 200 limpa bit 2. Evitar modelar todas as supressões
+como simples salto de enum ou como um comando universal de limpeza.
+
+Implicação normativa para o Core: distinguir fase publicada, estágio
+de trabalho, admissão de comandos e flags de duração. Não implementar
+efeitos específicos de supressão apenas por este recorte. Casos de
+aceitação futuros: fase normal, supressão isolada de Draw, supressão
+isolada de Standby e bit 23, ambos os lados; verificar ausência do
+opcode correspondente, trabalho residual permitido, limpeza e
+ordem 02 -> 03, com gates imediato e atrasado. A captura real
+dessas variantes continua pendente.
+
+**Coleta compartilhada:** o roteiro existente
+`scripts/pending/57-equipment-travel-contract.sh` já pede
+`005B9AEC:256` e `005B9838:692`. É suficiente para fechar a
+associação estática de 50..55 e 01/02/03 (índice = opcode - 1,
+destino DWORD little-endian na segunda tabela).
+Não criar coleta duplicada; o bundle 57 ainda não está no
+SQLite v14 consultado. Validar o fingerprint e importar quando
+recebido. Nenhuma alteração C# e nenhum novo teste de carta.
