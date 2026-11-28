@@ -96,7 +96,7 @@ internal static class ActionQueueRemovalChecks
         // equality is unchanged and identical copies cannot alias in the duel.
         var movement = DemoDuel.FromPartialObservation(0, [normal, normal], Slots(), Slots(), 8000);
         check(movement.TryCaptureCardTarget(0, DuelZone.Hand, 1, out var before) &&
-            movement.Summon(1, 0, 0, true, out _) &&
+            TurnFixture.Place(movement, 1, 0, false, out _) &&
             movement.TryCaptureCardTarget(0, DuelZone.Monster, 0, out var after) &&
             before.Occurrence == after.Occurrence &&
             movement.TryCaptureCardTarget(0, DuelZone.Hand, 0, out var remaining) &&
