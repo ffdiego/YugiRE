@@ -139,7 +139,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Break por causa de remoção (efeitos em campo), Explosion para combate; validar DAT, exceções, cauda e compositor. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Affect no duelo para equipamento, campo, aura e restrições modelados; máscara aproximada. Completar contínuos e seletor 58. Viagem Equip em V32. [Detalhes](docs/plans/VISUALS.md#v24)
-- [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)
+- [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Confirmar gatilhos ao vivo e as rotas `0x72` e `0x1E`, com a cadência `0x73` já observada em replay. [Detalhes](docs/plans/VISUALS.md#v25)
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Efeito ligado a BanishCommand aplicado; confirmar transferência real à zona `0x0F` e despacho, variantes e som. [Detalhes](docs/plans/VISUALS.md#v26)
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)

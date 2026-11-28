@@ -524,6 +524,17 @@ V24.4: Affect integrado ao duelo: projeção de vínculos reais pelo Core, equip
 Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT. Integração A03 e comparação pendentes.
   NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas brutas 72/73/1E (índices 48/49/18; coleta 29). Produtores e [auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
 
+V25.2. O replay local contém uma ativação `0x73` de
+Lightforce Sword. Em Proton com `-speedy`, o roteiro 66
+observou a criação com retorno `0040704D`. O modelo C#
+coincidiu nos 33 contadores de entrada do Update e no
+terminal 400. Houve 32 chamadas de Draw, com contadores de
+−112 a 384. O primeiro Draw ocorreu após o primeiro Update
+e a desativação encerrou a sequência. A captura cobre
+esse replay. Faltam os gatilhos em duelo ao vivo e as rotas
+`0x72` e `0x1E`.
+[Roteiro 66](../../scripts/regression/README.md#66--v25-cadência-da-ativação-alternativa-em-replay).
+
 ## V26 — Exclusão (0043DBE0)
 
 <a id="v26"></a>

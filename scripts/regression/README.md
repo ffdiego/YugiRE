@@ -476,3 +476,19 @@ timeout --signal=INT 90s gdb -nx -q -batch -p "$joey_test_pid" \
 Compare os offsets `+3A0h` e `+800h` e o destino do slot
 `+18h` para ambos. O roteiro cobre a ligação na abertura do
 duelo. O cenário de banimento do roteiro 34 cobre o disparo.
+
+### 66 — V25, cadência da ativação alternativa em replay
+
+Copie um replay do original com uma ocorrência de ativação
+alternativa para o diretório comum do prefixo isolado. No
+piloto foi usado um replay local com um comando `0x73` de
+Lightforce Sword. Anexe antes de carregar o replay pelo menu.
+
+```bash
+timeout --signal=INT 230s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/66-wine-alternative-activation.gdb > scratch/alternative-activation.log 2>&1
+```
+
+O roteiro registra o retorno do construtor e se desanexa após
+a desativação do mesmo objeto. Na ocorrência observada, confira
+retorno `0040704D`, 33 Updates, 32 Draws e contador terminal 400.
