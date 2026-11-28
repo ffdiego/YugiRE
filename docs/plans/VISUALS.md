@@ -682,6 +682,25 @@ Raylib provisória, reprodução real, outros seletores, ligação à fila
  e captura pareada pendentes. CI e DAT real ainda por validar.
 [Contrato](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v316--renderer-isolado-de-reaction07).
 
+V31.7. O busto de abertura (`00415840`, Pending no inventário) foi
+observado em Proton antes de pedra, papel e tesoura. A chamada em
+`00418149` cria o objeto pela fábrica `00415130`. As duas sessões
+avançaram automaticamente depois de selecionar Single Duel.
+
+O assembly mostra que o Update `00415580` soma 4 a `obj+14h` e
+solicita a fala `0x10000025 + variante` no contador 128. A consulta
+de término em `005C0490` começa com contador maior que 384 e menor
+que `0x10000`. Com o áudio desabilitado, o predicado devolve 1 e o
+primeiro valor consultado (388) já provoca o salto a `0x10000`.
+O Draw limpa o byte ativo em `00415ACB` a partir de `0x10100`.
+
+O roteiro 67 registrou 352 Updates e 352 Draws com áudio (variante
+1, salto de 1148 a `0x10000`) e 162 de cada com `-nosound`
+(variante 2, salto de 388 a `0x10000`). Os dois Draws terminais
+chegaram a `0x10100`. As contagens descrevem essas amostras.
+Faltam medir as outras falas e avaliar a composição.
+[Reprodução](../../scripts/regression/README.md#67--v31-gatilho-e-duração-do-busto-de-abertura).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

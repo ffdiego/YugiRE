@@ -492,3 +492,21 @@ timeout --signal=INT 230s gdb -nx -q -batch -p "$joey_test_pid" \
 O roteiro registra o retorno do construtor e se desanexa após
 a desativação do mesmo objeto. Na ocorrência observada, confira
 retorno `0040704D`, 33 Updates, 32 Draws e contador terminal 400.
+
+### 67 — V31, gatilho e duração do busto de abertura
+
+Inicie a [cópia isolada do original em Proton](../../docs/research/joey-proton-validation.md).
+Anexe antes de escolher Single Duel e aguarde a seleção de pedra,
+papel e tesoura sem clicar novamente. Repita com `-nosound`.
+
+```bash
+timeout --signal=INT 90s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/67-wine-opening-bust.gdb > scratch/opening-bust.log 2>&1
+```
+
+O roteiro registra o retorno da fábrica, a variante, os contadores
+de entrada de Update e Draw e a primeira passagem que limpa o byte
+ativo. Confira o retorno `0041814E` e o terminal `0x10100`. No
+piloto `-nosound`, o contador salta de 388 a `0x10000`. Compare
+as contagens de callbacks, pois os breakpoints interferem na
+duração em tempo real.
