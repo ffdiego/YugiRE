@@ -563,6 +563,19 @@ precisa de captura positiva.
 
 V26.5: BanishCommand aplicado emite observação da movimentação, liga efeito não bloqueante à zona 0F. Tabela 005DB5F0 do v7 confirma (762,308)/(292,292). Deck/mão mascarados, cemitério público; 24 Draws e terminal retido por uma amostra. Rota inferida pela associação do produtor 0043D440/0041E829, ainda sem captura positiva. Não estender a destruição de batalha ou materiais de fusão. Blend aproximado e som pendente. Draw Partial.
 
+V26.6. O controle em Proton registrou 11 despachos em
+`0041E829` com destino `0x0E`, seis no lado 0 e cinco
+no lado 1. Todos encaminharam o argumento da movimentação
+pendente ao slot `+18h` do receptor. O último despacho
+precedeu o Draw da cena no mesmo ciclo. O contêiner de cemitério
+resolveu `0043C5A0` e a sonda não registrou exclusão.
+O baralho temporário para provocar banimento foi
+rejeitado pelo jogo. O save de teste não tinha as duas
+cartas escolhidas. O roteiro 34 passou a registrar
+separadamente chegadas à zona `0x0F` em `0043D440`.
+A captura positiva continua pendente. O roteiro atualizado
+passou pelos testes offline e aguarda execução no Windows.
+
 ## V27 — Layerfont A (00455FF0)
 
 <a id="v27"></a>

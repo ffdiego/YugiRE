@@ -247,6 +247,10 @@ Saída 1 pode conter transferência mas nenhum objeto de exclusão; NÃO
 converter isso em prova de inexistência. Comparar returnRva, argumentos
 de 79/7A/7C/8E/8F/95 e descritores de transferência; contexto não é
 vínculo causal. Não disparar V26 apenas pelo destino de movimento.
+O evento `exclusion-zone-arrival` registra o receptor e o endereço de
+retorno de `0043D440`. O resumo `zoneArrivalCalls` conta apenas o retorno
+`0041E82C` para a zona `0x0F`. Compare a chegada e a criação no mesmo
+thread e frame antes de atribuir o disparo à movimentação.
 No cliente, `--review-exclusion=250,8080` (ID real) ou `0,0080`
 (oculto), F5 reprodução/pausa, F7/F9 passo, F8 reset, F12 captura.
 Confirma geometria e predicado; não substitui a captura original.
