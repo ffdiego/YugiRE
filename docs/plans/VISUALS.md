@@ -625,6 +625,21 @@ Roteiro 19 recebido no SQLite v2: NativeHelpTimeline porta request por update, g
 
 V29.2 (27/11/2026). A inspeção do DAT passou a listar as 24 chaves da ajuda contextual por ordem do manifesto, com as dimensões e os idiomas disponíveis por chave. O resolvedor padrão passa o índice adiante sem alteração. Os cinco bancos ocidentais estão completos e oito variantes japonesas estão ausentes. Faltam compositor, entrega do contexto e validação no original. [Banco e resolvedor](../../docs/research/native-layerfont-help-2026-11-24.md#v292--banco-de-ajuda-e-resolvedor-padrão).
 
+V29.3. Em Proton 9.0 Beta, clicar em Flame Cerebrus na mão
+com o campo próprio vazio exibiu o aviso de tributo. Apenas
+posicionar o cursor sobre essa carta ficou sem aviso no piloto.
+O roteiro 70 registrou a chave 0 em `0045E240`, com retorno
+`005AAD94` do caminho de invocação, e o descritor `0x8117`
+(lado 1, região 11, índice 4).
+
+As duas capturas registraram Draw em todos os contadores de 0 a
+256, de 4 em 4. O Draw continuou em 256 enquanto a solicitação
+era renovada. Ao mover o cursor para fora da mão, o objeto fechou
+com solicitação `-1`. Foram 139 e 196 Draws ao todo, com durações
+de permanência diferentes em cada piloto. A evidência cobre a chave
+0 e sua transição, com as demais chaves e a composição pendentes.
+[Reprodução](../../scripts/regression/README.md#70--v29-aviso-de-tributo-na-ajuda-contextual).
+
 ## V30 — Vija / Destiny Board (004584C0)
 
 <a id="v30"></a>

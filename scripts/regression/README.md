@@ -529,3 +529,21 @@ desanexa na primeira passagem que desativa o busto em `004166C3`.
 Nos dois pilotos de derrota com fala `0x1000005A`, o terminal
 foi `0x10080`. Foram 153 Updates e 153 Draws com `-nosound`
 e 408 de cada com áudio.
+
+### 70 — V29, aviso de tributo na ajuda contextual
+
+Em um duelo individual na [cópia de teste em Proton](../../docs/research/joey-proton-validation.md),
+tenha na mão um monstro de nível 5 ou 6, com o próprio campo vazio.
+Anexe na Fase Principal, clique na carta, deixe o cursor sobre
+ela até o aviso aparecer e mova-o para fora da mão.
+
+```bash
+timeout --signal=INT 60s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/70-wine-help-tribute.gdb > scratch/help-tribute.log 2>&1
+```
+
+O roteiro lê os chamadores do produtor da chave 0, o descritor
+aceito, os contadores de Draw e a solicitação no fechamento.
+Confira o retorno `005AAD94`, a progressão de 0 a 256 em passos
+de 4 e a solicitação `-1` no fechamento. O lado e o índice da
+carta na mão determinam o descritor observado.
