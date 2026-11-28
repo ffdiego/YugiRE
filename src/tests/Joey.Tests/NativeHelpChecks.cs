@@ -4,6 +4,20 @@ internal static class NativeHelpChecks
 {
     public static void Run(Action<bool,string> check)
     {
+        var manifest = string.Join("\n", Enumerable.Range(1,24)
+            .Select(i => $"help{i:00}_?.yga\t// comment"));
+        const string invalidTarget = @"j\duel\help\help10_e.yga";
+        check(NativeHelpResources.ResolveInvalidTarget(manifest, [invalidTarget]) == invalidTarget,
+            "V29: invalid target uses original key 9, not generic hover");
+        bool rejected = false;
+        try { NativeHelpResources.ResolveInvalidTarget(manifest.Replace("help10_?", "help09_?"), [invalidTarget]); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "V29: reject unexpected manifest position");
+        rejected = false;
+        try { NativeHelpResources.ResolveInvalidTarget(manifest, []); }
+        catch (InvalidDataException) { rejected = true; }
+        check(rejected, "V29: no placeholder for missing original asset");
+
         var help = new NativeHelpTimeline();
         var local = new NativeHelpTarget((ushort)((3 << 6) | (5 << 1)));
         var opponent = new NativeHelpTarget((ushort)(local.Word | 1));
