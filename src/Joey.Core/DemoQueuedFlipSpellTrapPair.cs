@@ -8,7 +8,7 @@ public sealed partial class DemoDuel
     private (PendingFlipSpellTrapTargets Request, CardTarget Target)? queuedFlipSpellTrapFirstPick;
 
     public bool UsesQueuedFlipSpellTrapSelection(PendingFlipSpellTrapTargets request) =>
-        primitiveActionQueue is not null && ReferenceEquals(PendingFlipSpellTrapTargets, request) &&
+        ReferenceEquals(PendingFlipSpellTrapTargets, request) &&
         deferredBattle is null && Phase == DemoPhase.Main &&
         FlipSpellTrapSelectionRules.Effect(request.Source.Id) == request.Operation;
 

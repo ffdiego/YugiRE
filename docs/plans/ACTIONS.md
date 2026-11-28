@@ -350,6 +350,10 @@ A05 enfileira entrada e saída de batalha no sandbox. O roteiro 11 já foi receb
   *Curas de Standby (C03.4):* o produtor de compra agenda a continuação de cura após a compra e os gates dos retornos atrasados. A compra pulada também entrega a fase e deck-out encerra antes das curas. Os testes cobrem CPU, ambos os lados, pose, duplicatas e um comando por ocorrência. [Cartas e limites](CARDS.md#c034--ganhos-de-lp-na-standby).
   *Retornos de End Phase (C03.6):* o produtor serializa as ocorrências de The Wicked Worm Beast, deixa a limpeza vinculada passar pelo gate e só então consulta o limite de mão. O descarte obrigatório e a troca de turno continuam tipados. [Cartas e limites](CARDS.md#c036--retorno-de-the-wicked-worm-beast-no-fim-do-turno).
 
+  *A07.1 — correlação estática das fases (28/11):* SQLite v14 (quick_check ok) e replay de 1062 registros. Produtores 50/51/52/54/55 conferidos em assembly, 53 por decompilação; stubs do consumidor recebem 0..5 e o Draw de nomes usa fase + 6 * seletor de lado, coerente com a ordem dos manifestos DAT. Em 38 turnos concluídos, 26 sem Battle, 9 com Battle/Main2, 3 com Battle diretamente para End. Compra 61 é separada de 50; guardas nativas permitem pular etapas. Ainda faltam bytes da tabela comprimida 005B9AEC para validar o vínculo exato opcode/stub e observação pareada dos bits e rótulos; nenhuma mudança C# ou promoção de status. [Evidência](../20-turn-scheduling.md#a07--fases-seletores-e-replay-sqlite-v14-28112026).
+
+  *A07.2 — supressão de fases:* assembly v14 confirma flags de Draw (bit 1), Standby (bit 2) e supressão mais ampla (bit 23) no DWORD A56430 + side*D44h. Draw suprimida termina sem compra; Standby suprimida ainda executa subestado 200; End com bit 23 ainda passa pelo trabalho de encerramento. Distinguir estágio e fase publicada. Roteiro 57 de VISUALS já coleta ambas as tabelas necessárias ao dispatcher; reutilizar a saída, sem nova coleta. [Evidência e critérios](../20-turn-scheduling.md#a072--supressão-de-fases-não-equivale-a-suprimir-trabalho). Sem mudança no motor; A07 continua parcial.
+
 ## A08 — Extrair `Joey.Cards` e definir `EffectContext`
 
 <a id="a08"></a>
@@ -364,6 +368,38 @@ Novo assembly com as definições de cartas por resource ID e as famílias de ef
   *Pronto quando:* Raigeki, Dark Hole e uma carta com continuação (ex.: escolha + destruição) vivem em `Joey.Cards`, passam pelo console (`A04`) e produzem a mesma lista de comandos com e sem gate visual.
 
   *Reconciliação:* PR #101 preserva A06/A07; CI anterior 45392730663 verde, extração de Joey.Cards ainda pendente.
+
+### A08 — Definições puras de efeitos de fase (28/11)
+
+`Joey.Cards/TurnPhaseEffects.cs` concentra a tabela ordenada de
+curas de Standby, cura de Marie no GY, classificação dos monstros
+com cura de Standby, IDs de Dark Zebra/Wicked Worm Beast/Goblin
+Attack Force e deslocamento de turnos do bloqueio de posição de
+Goblin. Os produtores em Core continuam responsáveis por zonas,
+ocorrências, pose, ordem, admissão, comandos, gates e execução.
+Conservar a ordem da tabela anterior (1437, 1438, 1441, depois GY)
+e a política de retomada atual; nenhum efeito novo nem promoção
+de carta. O projeto Core já referencia Cards; esta fatia segue a
+direção real do grafo de referências, sem criar dependência circular.
+
+**Limite:** revisão estática, sem SDK .NET neste ambiente; CI obrigatório
+antes de integrar. Não é encerramento de A08/C12.
+
+**Inventário C12 (base 08db55c):** o App/CPU/Lab já usam os
+produtores de fila; Core ainda tem `ActionQueue?` anexável e
+`LegacyActionsBlocked` compartilhado com admissões de respostas
+tipadas. Não apagar todos os `Pending*` por nome: alguns são
+estado observado pelos produtores da fila. Em Demo.cs permanecem
+entradas legadas internas (Draw, Play, Summon, Attack, EndTurn,
+DiscardForEndTurn, ResolveEffectDecision e demais respostas).
+Separar chamadas de testes históricos das pontes usadas pelo
+executor; `AdvanceTurn`, `TakeTurnDraw`, `CommitManualPosition`
+e `PlaceEndPhaseMessage` são helpers efetivamente usados por
+comandos da fila, não candidatos a remoção indiscriminada.
+Próxima fatia: tornar a posse da fila intrínseca sem perder a
+configuração de gate/lab, retirar entradas legadas e estados que
+não têm produtor atual; verificar cobertura e manter as regras
+de supressão A07 separadas. Nenhuma remoção nesta fatia.
 
 ## A09 — Comparar combate em condição equivalente e apresentar o trace no App
 

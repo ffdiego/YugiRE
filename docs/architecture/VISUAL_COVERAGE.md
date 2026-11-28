@@ -5,7 +5,7 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 25/39 (64.10%).**
+**Implementadas (inclusive parciais): 28/39 (71.79%).**
 **Validadas no Joey original: 0/39.**
 
 Partial indica um componente visual C# relacionado, mas divergências
@@ -54,9 +54,9 @@ desconhecido ainda não entram neste denominador. Ver
 | `00455FF0` | Layerfont A | Pending | — |
 | `00456360` | Layerfont B | Pending | — |
 | `00414DC0` | Invocação signature | Pending | — |
-| `00415840` | Busto de abertura | Pending | — |
-| `00416260` | Busto de resultado | Pending | — |
-| `00416BC0` | Busto de reação | Pending | — |
+| `00415840` | Busto de abertura | Partial | `src/Joey.App/LiveOpeningBust.cs` |
+| `00416260` | Busto de resultado | Partial | `src/Joey.App/LiveResultBust.cs` |
+| `00416BC0` | Busto de reação | Partial | `src/Joey.App/LiveActivationReaction.cs` |
 | `00444490` | Saída do banner de resultado | Pending | — |
 
 O conjunto de endereços deve corresponder ao inventário.

@@ -165,7 +165,7 @@ public static class EffectPilotComparison
                     Bound(I("lifeBefore0") is > 0 and <= 65535 && I("lifeBefore1") is > 0 and <= 65535);
                     var d = DemoDuel.FromPartialObservation(I("sourcePlayer"), [new Card(755,342,"Sparks","",22u<<20)],new Card?[5],new Card?[5],8000);
                     d.Life[0]=I("lifeBefore0"); d.Life[1]=I("lifeBefore1");
-                    var queue = d.CreatePrimitiveActionQueue();
+                    var queue = d.Actions;
                     Bound(d.TryQueueActivation(0, false, out _, ActionOrigin.Test));
                     Drain(queue);
                     return d;
@@ -199,7 +199,7 @@ public static class EffectPilotComparison
                     var sides = new[] { new Card?[5],new Card?[5] };
                     sides[I("targetPlayer")][I("targetZone")]=new Card(I("targetInternalIndex"),Word("targetResourceId"),"Projected target","",((uint)I("dynamicType")<<20)|((uint)I("dynamicAttribute")<<29));
                     var d=DemoDuel.FromPartialObservation(I("sourcePlayer"),[new Card(614,300,"Legendary Sword","",22u<<20)],sides[0],sides[1],8000,equipmentContextResolved:true);
-                    var queue = d.CreatePrimitiveActionQueue();
+                    var queue = d.Actions;
                     Bound(d.TryQueueEquipment(DuelZone.Hand, 0, I("targetPlayer"), I("targetZone"), out _, ActionOrigin.Test));
                     Drain(queue);
                     if (remove)

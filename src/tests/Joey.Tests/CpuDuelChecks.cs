@@ -9,11 +9,22 @@ internal static class CpuDuelChecks
     private static Card Spell(ushort id, int type = 22) => new(id + 2000, id, "Fixture " + id, "", (uint)type << 20);
     private static Card?[] Slots(Card? first = null) => [first, null, null, null, null];
     private static DemoDuel State(int side, IReadOnlyList<Card> hand, Card? own = null, Card? enemy = null,
-        IReadOnlyList<Card>? grave = null, IReadOnlyList<Card>? deck = null) =>
+        IReadOnlyList<Card>? grave = null, IReadOnlyList<Card>? deck = null, DemoPhase phase = DemoPhase.Main) =>
         DemoDuel.FromPartialObservation(side, hand, Slots(side == 0 ? own : enemy),
             Slots(side == 1 ? own : enemy), 8000, true,
             side == 0 ? grave : null, side == 1 ? grave : null,
-            side == 0 ? deck : null, side == 1 ? deck : null);
+            side == 0 ? deck : null, side == 1 ? deck : null,
+            checkpoint: new DuelCheckpoint(side + 1, phase));
+
+    private static bool DrawThroughQueue(DemoDuel duel)
+    {
+        if (!duel.TryQueueTurnDraw(out _, ActionOrigin.Test)) return false;
+        var queue = duel.Actions;
+        for (int tick = 0; tick < 100 && queue.IsBusy; tick++) queue.Tick();
+        if (queue.IsBusy || queue.Fault is not null)
+            throw new InvalidOperationException("Turn draw fixture did not drain.");
+        return true;
+    }
 
     private static void QueuedFissure(Action<bool, string> check)
     {
@@ -27,8 +38,9 @@ internal static class CpuDuelChecks
             duel.MonsterFaceDown[1 - side, 3] = true;
             duel.DefensePosition[1 - side, 3] = true;
             if (fromSet) check(duel.SetFromHand(0, out _), "C12 Fissure fixture Set");
-            check(duel.Draw(out _), "C12 Fissure fixture draw before Main");
-            var queue = duel.CreatePrimitiveActionQueue();
+            check(DrawThroughQueue(duel), "C12 Fissure fixture draw before Main");
+            var queue = duel.Actions;
+            int baseline = queue.Trace.Count;
             var cpu = new CpuDuelController(side);
             check(duel.TryCaptureCardTarget(1 - side, DuelZone.Monster, 0, out var first) &&
                 duel.TryCaptureCardTarget(1 - side, DuelZone.Monster, 1, out var second) &&
@@ -37,7 +49,7 @@ internal static class CpuDuelChecks
             check(cpu.Step(duel) is { Status: CpuStepStatus.Acted, Action: CpuAction.Selection } &&
                 queue.IsBusy && duel.Graveyard(side).Count == 0 && duel.Monsters[1 - side, 0] is not null,
                 "C12 CPU chooses tied Fissure target without mutating during admission");
-            var entry = queue.Trace.Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
+            var entry = queue.Trace.Skip(baseline).Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
             var presentation = duel.DescribeActionPresentation(entry.Command);
             check(entry.Origin == ActionOrigin.Cpu && presentation is { Kind: ActionPresentationKind.Activate } &&
                 presentation.Source.Zone == (fromSet ? DuelZone.SpellTrap : DuelZone.Hand) &&
@@ -76,13 +88,15 @@ internal static class CpuDuelChecks
             var duel = DemoDuel.FromPartialObservation(enemy, [trap], Slots(), Slots(), 8000,
                 equipmentContextResolved: true, side0Deck: side == 0 ? deck : null,
                 side1Deck: side == 1 ? deck : null);
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.Draw(out _),
+            var gate = new FixedSpellGate { Release = true };
+            var queue = duel.ConfigureActionQueue(gate);
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && DrawThroughQueue(duel),
                 "C12 fixed spell fixture: tracked enemy Set, draw source");
+            gate.Release = false;
+            int baseline = queue.Trace.Count;
             if (fromSet) check(duel.SetFromHand(0, out _), "C12 fixed spell fixture Set");
             var zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
-            check(!duel.CanQueueFixedSpellActivation(zone, 0), "No queue: fixed producer unavailable");
-            var gate = new FixedSpellGate();
-            var queue = duel.CreatePrimitiveActionQueue(gate);
+            check(duel.CanQueueFixedSpellActivation(zone, 0), "C12 fixed producer available on the intrinsic queue");
             if (fromSet)
             {
                 duel.SpellFaceDown[side, 0] = false;
@@ -91,7 +105,7 @@ internal static class CpuDuelChecks
             }
             check(DemoDuel.SupportsQueuedFixedSpell(spell) &&
                 duel.CanQueueFixedSpellActivation(zone, 0) && !queue.IsBusy &&
-                queue.Trace.Count == 0 && duel.Graveyard(side).Count == 0 &&
+                queue.Trace.Count == baseline && duel.Graveyard(side).Count == 0 &&
                 duel.DeckCount(side) == 4 && duel.Life.All(lp => lp == 8000),
                 "C12 UI query uses tracked legality without mutation");
             var step = new CpuDuelController(side).Step(duel);
@@ -100,7 +114,7 @@ internal static class CpuDuelChecks
                 duel.Graveyard(side).Count == 0 && duel.DeckCount(side) == 4 &&
                 duel.Spells[enemy, 0] is not null && duel.Life.All(lp => lp == 8000),
                 "C12 CPU admission only; no immediate mutation or duplicate legacy presentation metadata");
-            var entry = queue.Trace.Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
+            var entry = queue.Trace.Skip(baseline).Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
             var preview = duel.DescribeActionPresentation(entry.Command);
             check(entry.Origin == ActionOrigin.Cpu && preview is { Kind: ActionPresentationKind.Activate } &&
                 preview.Card.Id == id && preview.Source.Zone == zone && preview.SourceIndex == 0 &&
@@ -173,28 +187,31 @@ internal static class CpuDuelChecks
             var duel = DemoDuel.FromPartialObservation(enemy, [targetCard], Slots(), Slots(), 8000,
                 equipmentContextResolved: true, side0Deck: side == 0 ? deck : null,
                 side1Deck: side == 1 ? deck : null);
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && duel.Draw(out _),
+            var gate = new FixedSpellGate { Release = true };
+            var queue = duel.ConfigureActionQueue(gate);
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && DrawThroughQueue(duel),
                 "C12 targeted S/T fixture: tracked opponent card and drawn source");
+            int baseline = queue.Trace.Count;
             if (id == SpellTrapTargetRules.RemoveTrap) duel.SpellFaceDown[enemy, 0] = false;
             if (fromSet) check(duel.SetFromHand(0, out _), "C12 targeted S/T fixture Set");
             var zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
-            var gate = new FixedSpellGate();
-            var queue = duel.CreatePrimitiveActionQueue(gate);
             if (fromSet && id == SpellTrapTargetRules.MysticalSpaceTyphoon)
             {
                 check(duel.TryCaptureCardTarget(side, zone, 0, out var sameTurn) &&
-                    duel.QueuedSpellTrapTargetCandidates(sameTurn).Count == 0 && queue.Trace.Count == 0,
+                    duel.QueuedSpellTrapTargetCandidates(sameTurn).Count == 0 && queue.Trace.Count == baseline,
                     "C12 MST cannot activate on its Set turn");
-                check(duel.EndTurn(out _) && duel.EndTurn(out _) && duel.Draw(out _),
+                check(TurnFixture.End(duel, out _) && TurnFixture.End(duel, out _) && DrawThroughQueue(duel),
                     "C12 MST later-turn fixture");
+                baseline = queue.Trace.Count;
             }
+            gate.Release = false;
             check(duel.TryCaptureCardTarget(side, zone, 0, out var source),
                 "C12 tracked source occurrence");
             var choices = duel.QueuedSpellTrapTargetCandidates(source);
             check(choices.Count == 1 && choices[0].Target.Side == enemy &&
                 choices[0].Target.Zone == (field ? DuelZone.FieldSpell : DuelZone.SpellTrap) &&
                 choices[0].Zone == (field ? SpellTrapTargetRules.FieldZone : 0) &&
-                duel.PendingSpellTrapTarget is null && !queue.IsBusy && queue.Trace.Count == 0,
+                duel.PendingSpellTrapTarget is null && !queue.IsBusy && queue.Trace.Count == baseline,
                 "C12 local target query has no legacy prompt or state mutation");
             var target = choices[0].Target;
             check(new CpuDuelController(side).Step(duel) is
@@ -202,7 +219,7 @@ internal static class CpuDuelChecks
                 queue.IsBusy && duel.PendingSpellTrapTarget is null && duel.Graveyard(side).Count == 0 &&
                 duel.TryCaptureCardTarget(enemy, target.Zone, 0, out var stillPresent) && stillPresent == target,
                 "C12 CPU admits exact target, no legacy spend or movement");
-            var entry = queue.Trace.Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
+            var entry = queue.Trace.Skip(baseline).Single(e => e.Stage == ActionTraceStage.Admitted).Entry;
             var preview = duel.DescribeActionPresentation(entry.Command);
             check(entry.Origin == ActionOrigin.Cpu && preview is { Kind: ActionPresentationKind.Activate } &&
                 preview.Source == source && preview.Card.Id == id && preview.DestinationSlot == 0,
@@ -223,15 +240,16 @@ internal static class CpuDuelChecks
 
         var stale = DemoDuel.FromPartialObservation(1, [Spell(1056, 21)], Slots(), Slots(), 8000,
             side0Deck: [Spell(SpellTrapTargetRules.MysticalSpaceTyphoon)]);
-        check(stale.SetFromHand(0, out _) && stale.EndTurn(out _) && stale.Draw(out _),
+        check(stale.SetFromHand(0, out _) && TurnFixture.End(stale, out _) && DrawThroughQueue(stale),
             "C12 stale S/T fixture");
-        var staleQueue = stale.CreatePrimitiveActionQueue();
+        var staleQueue = stale.Actions;
+        int staleBaseline = staleQueue.Trace.Count;
         check(stale.TryCaptureCardTarget(0, DuelZone.Hand, 0, out var staleSource),
             "C12 stale source captured");
         var oldChoice = stale.QueuedSpellTrapTargetCandidates(staleSource).Single();
         stale.Spells[1, 0] = Spell(1056, 21); // same ID, different/untracked occurrence
         check(!stale.TryQueueTargetedSpellTrap(staleSource, oldChoice.Target, out _) &&
-            !staleQueue.IsBusy && staleQueue.Trace.Count == 0 && stale.Hand.Count == 1 &&
+            !staleQueue.IsBusy && staleQueue.Trace.Count == staleBaseline && stale.Hand.Count == 1 &&
             stale.Graveyard(0).Count == 0,
             "C12 stale target never spends source or falls back to legacy resolution");
     }
@@ -251,9 +269,7 @@ internal static class CpuDuelChecks
         var strong = Monster(1); var weak = Monster(2, 500, 500);
         var cpu = new CpuDuelController(1);
         var empty = State(1, []);
-        check(cpu.Step(empty).Status == CpuStepStatus.Blocked && empty.Winner is null,
-            "CPU refuses to execute without an attached queue");
-        var emptyQueue = empty.CreatePrimitiveActionQueue();
+        var emptyQueue = empty.Actions;
         check(cpu.Step(empty) is { Status: CpuStepStatus.Acted, Action: CpuAction.Draw } &&
             empty.Winner is null && emptyQueue.IsBusy, "CPU admits deck-out through the queue");
         for (int i = 0; i < 100 && emptyQueue.IsBusy; i++) emptyQueue.Tick();
@@ -265,8 +281,8 @@ internal static class CpuDuelChecks
             var fire = State(1, [Spell(LifePointSpellRules.TremendousFire)], deck: [weak]);
             fire.Life[0] = opponentLife;
             fire.Life[1] = 500;
-            check(fire.Draw(out _), "CPU: Tremendous Fire fixture drew for the turn");
-            var queue = fire.CreatePrimitiveActionQueue();
+            check(DrawThroughQueue(fire), "CPU: Tremendous Fire fixture drew for the turn");
+            var queue = fire.Actions;
             var action = cpu.Step(fire);
             for (int tick = 0; tick < 15 && queue.IsBusy; tick++) queue.Tick();
             check(opponentLife == 1000
@@ -275,10 +291,9 @@ internal static class CpuDuelChecks
                 "CPU: Tremendous Fire can tie the duel and is skipped when only its own damage is lethal");
         }
 
-        var direct = State(1, [], own: strong);
+        var direct = State(1, [], own: strong, phase: DemoPhase.Battle);
         var directQueue = direct.CreatePrimitiveActionQueue();
-        check(direct.BeginBattle(out _) &&
-            cpu.Step(direct) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
+        check(cpu.Step(direct) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
             direct.Life[0] == 8000 && directQueue.IsBusy,
             "CPU: direct attack admission defers damage in queued mode");
         for (int tick = 0; tick < 10 && directQueue.IsBusy; tick++) directQueue.Tick();
@@ -293,17 +308,17 @@ internal static class CpuDuelChecks
         check(unsupportedDirect.SetFromHand(0, out _) && unsupportedDirect.ActivateSetSpell(0, out _),
             "CPU: Infinite Cards is a tracked face-up continuous card outside the battle pilot");
         var unsupportedQueue = unsupportedDirect.CreatePrimitiveActionQueue();
-        check(unsupportedDirect.BeginBattle(out _) &&
-            !unsupportedDirect.TryQueueAttack(0, -1, out _, out bool unsupported) && unsupported &&
-            unsupportedQueue.Trace.Count == 0 && unsupportedDirect.Life[0] == 8000 &&
+        check(TurnFixture.Battle(unsupportedDirect, true, out _), "CPU: queued phase entry");
+        int unsupportedBaseline = unsupportedQueue.Trace.Count;
+        check(!unsupportedDirect.TryQueueAttack(0, -1, out _, out bool unsupported) && unsupported &&
+            unsupportedQueue.Trace.Count == unsupportedBaseline && unsupportedDirect.Life[0] == 8000 &&
             cpu.Step(unsupportedDirect) is { Status: CpuStepStatus.Blocked, Action: CpuAction.Attack } &&
-            unsupportedDirect.Life[0] == 8000 && !unsupportedQueue.IsBusy && unsupportedQueue.Trace.Count == 0,
+            unsupportedDirect.Life[0] == 8000 && !unsupportedQueue.IsBusy && unsupportedQueue.Trace.Count == unsupportedBaseline,
             "CPU: unsupported attack is rejected without compatibility execution");
 
-        var rejectedAttack = State(1, [], own: strong);
+        var rejectedAttack = State(1, [], own: strong, phase: DemoPhase.Battle);
         var rejectedQueue = rejectedAttack.CreatePrimitiveActionQueue();
-        check(rejectedAttack.BeginBattle(out _) &&
-            !rejectedAttack.TryQueueAttack(0, 0, out _, out bool missingTarget) && !missingTarget &&
+        check(!rejectedAttack.TryQueueAttack(0, 0, out _, out bool missingTarget) && !missingTarget &&
             rejectedAttack.TryQueueAttack(0, -1, out _) &&
             !rejectedAttack.TryQueueAttack(0, -1, out _, out bool busy) && !busy &&
             cpu.Step(rejectedAttack).Status == CpuStepStatus.Blocked && rejectedAttack.Life[0] == 8000,
@@ -312,9 +327,9 @@ internal static class CpuDuelChecks
         check(!rejectedAttack.TryQueueAttack(0, -1, out _, out bool alreadyAttacked) && !alreadyAttacked,
             "CPU: an already used attacker cannot authorize compatibility execution");
 
-        var untrackedAttack = State(1, [], own: strong);
+        var untrackedAttack = State(1, [], own: strong, phase: DemoPhase.Battle);
         var untrackedQueue = untrackedAttack.CreatePrimitiveActionQueue();
-        check(untrackedAttack.BeginBattle(out _), "CPU: untracked attack is tested in Battle Phase");
+        check(untrackedAttack.Phase == DemoPhase.Battle, "CPU: untracked attack is tested in Battle Phase");
         untrackedAttack.Monsters[1, 0] = strong with { };
         check(cpu.Step(untrackedAttack) is { Status: CpuStepStatus.Blocked, Action: CpuAction.Attack } &&
             untrackedAttack.Life[0] == 8000 && untrackedAttack.CanAttack(0) && untrackedQueue.Trace.Count == 0,

@@ -69,7 +69,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [x] **A05 — Trace de comandos comparável.** Status: `Concluído`. Trace comparável compra → invocação → ataque → dano; [contrato](docs/architecture/native-replay-scenarios.md). [Detalhes](docs/plans/ACTIONS.md#a05)
 - [ ] **A06 — Quebrar `DemoDuel` em motor + fila.** Status: `Parcial`. Ampliar o piloto para outros FLIPs, combatentes e contínuas; coordenar C12. [Detalhes](docs/plans/ACTIONS.md#a06)
 - [ ] **A07 — Turno e fases como comandos/estágios da fila.** Status: `Parcial`. Completar turno/fases na fila e correlacionar dispatcher, bits de fase e rótulos. [Detalhes](docs/plans/ACTIONS.md#a07)
-- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`. Iniciar imediatamente com regras puras e adaptadores; remover regras de cartas do Core por fatias sem dependência circular. [Detalhes](docs/plans/ACTIONS.md#a08)
+- [ ] **A08 — Extrair `Joey.Cards` e definir `EffectContext`.** Status: `Parcial`. Regras puras iniciais em Joey.Cards; continuar a extração por família e separar a posse da fila e a resolução legada (C12). [Detalhes](docs/plans/ACTIONS.md#a08)
 - [ ] **A09 — Laboratório diferencial de duelos.** Status: `Parcial`. Trace C# registra cálculo de batalha por ocorrência. Comparar atributos nativos e C# em pares explícitos e validar um duelo real equivalente. [Detalhes](docs/plans/ACTIONS.md#a09)
 
 ## Trilha CARDS
@@ -87,7 +87,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **C09 — Rituais (`P269`).** Status: `Parcial`. Revisar restrições, interações e efeito próprio de Relinquished após o gate C12.1. Produtores UI/CPU de Ritual já feitos pertencem a C09, não ao C12. [Detalhes](docs/plans/CARDS.md#c09)
 - [ ] **C10 — Fusões restantes.** Status: `Pronto`. Confirmar migração das fusões existentes em C12; novos efeitos depois. [Detalhes](docs/plans/CARDS.md#c10)
 - [ ] **C11 — Casos emblemáticos.** Status: `Pronto`. Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais; ampliação após C12. [Detalhes](docs/plans/CARDS.md#c11)
-- [ ] **C12 — Eliminar toda resolução legada de duelo.** Status: `Parcial`. Produtores App/CPU/Lab usam fila; próximo: tornar fila intrínseca, apagar mutadores internos/estados legados e retirar acesso histórico. [Detalhes](docs/plans/CARDS.md#c12)
+- [ ] **C12 — Eliminar toda resolução legada de duelo.** Status: `Parcial`. Produtores App/CPU/Lab usam fila intrínseca (configuração única); próximo: apagar mutadores internos/estados legados e retirar acesso histórico. [Detalhes](docs/plans/CARDS.md#c12)
 - [x] **C13 — Conferir os 264 Normal com o DAT real.** Status: `Concluído`. 264 Normal validados com DAT real. [Detalhes](docs/plans/CARDS.md#c13)
 - [ ] **C14 — Confirmar Sea Serpent `classCode=5` e testar P036 em duelo real.** Status: `Adiado`. Sea Serpent confirmado no DAT; comparação P036 em duelo nativo preservada, sob demanda. [Detalhes](docs/plans/CARDS.md#c14)
 - [ ] **C15 — Fatias `Verified`.** Status: `Adiado`. Comparações por família e interações em duelos dirigidos após massa crítica; antecipar divergências materiais. [Detalhes](docs/plans/CARDS.md#c15)
@@ -145,7 +145,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Avisos de alvo inválido (9) e falta de tributo (0) ligados ao cliente em PR; validar CI, DAT e interação antes de promover a cobertura. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
-- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Review reaction07 implementado; validar DAT/capturas, compositor e outros seletores antes de ligar áudio e fila. [Detalhes](docs/plans/VISUALS.md#v31)
+- [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Abertura, resultado e reaction07 de magia do Joey jogáveis no Alpha. Investigar invocações características e ampliar produtores confirmados. [Detalhes](docs/plans/VISUALS.md#v31)
 - [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Live EquipCommand, roteiro 57 para gate/despacho e auditoria do inventário. [Detalhes](docs/plans/VISUALS.md#v32)
 
 ## Trilha AI

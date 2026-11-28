@@ -98,8 +98,11 @@ static partial class Game
             ConfigureCoinReview(args, archive);
             ConfigureAlternativeExclusionReview(args, archive);
             ConfigureReactionReview(args, archive);
+            ConfigureLiveActivationReaction(archive);
+            ConfigureLiveOpeningBust(archive);
+            ConfigureLiveResultBust(archive);
             ConfigureBreakFieldReview(args, archive);
-            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, reactionReview is not null, breakReviewCardPath is not null }.Count(active => active) > 1)
+            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, ReactionReviewActive, breakReviewCardPath is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
@@ -142,7 +145,7 @@ static partial class Game
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
-        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && reactionReview is null && breakReviewCardPath is null && args.Contains("--alpha")) StartAlpha();
+        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && !ReactionReviewActive && breakReviewCardPath is null && args.Contains("--alpha")) StartAlpha();
         // Suppress routine INFO texture/cache messages, not warnings/errors.
         // Do not initialize raylib solely to configure logging in headless modes.
         Raylib.SetTraceLogLevel(args.Contains("--raylib-verbose") ? TraceLogLevel.Info : TraceLogLevel.Warning);
@@ -172,11 +175,11 @@ static partial class Game
                     screen = "break-review";
                     Console.WriteLine("[V22 review] F7 native Update, F8 reset, F12 capture; field-only diagnostic compositor");
                 }
-                if (reactionReview is not null)
+                if (ReactionReviewActive)
                 {
                     InitializeReactionReview();
                     screen = "reaction-review";
-                    Console.WriteLine("[V31 review] F7 step, F5 complete simulated audio, F8 reset, F12 capture; diagnostic compositor");
+                    Console.WriteLine("[V31 review] F5 play/pause 30 FPS, F6 speedy 60 FPS, F7 step, F8 reset, F9 optional audio release, F12 capture");
                 }
                 if (chainReview is not null)
                 {
@@ -273,6 +276,20 @@ static partial class Game
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawBreakFieldReview();
             }
+            else if (screen == "opening-bust")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape))
+                {
+                    ResetLiveOpeningBust();
+                    screen = "menu";
+                }
+                else DrawLiveOpeningBust();
+            }
+            else if (screen == "result-bust")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) EndLiveResultBust();
+                else DrawLiveResultBust();
+            }
             else if (screen == "reaction-review")
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
@@ -359,7 +376,11 @@ static partial class Game
             else
             {
                 if (screen == "duel") ReadDuelConsoleToggle();
-                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput) screen = "menu";
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput)
+                {
+                    StopLiveActivationReaction();
+                    screen = "menu";
+                }
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel")
                 {

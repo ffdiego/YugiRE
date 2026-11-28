@@ -195,7 +195,7 @@ public sealed partial class DemoDuel
     }
     public bool IsDraw { get; private set; } // Sandbox draw when both decks cannot complete Morphing Jar.
     public bool GameOver => Winner is not null || IsDraw;
-    private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue?.IsBusy == true;
+    private bool ActionsBlocked => LegacyActionsBlocked || primitiveActionQueue.IsBusy;
     private bool LegacyActionsBlocked => GameOver || PendingFlipTarget is not null ||
         PendingFlipSpellTrapTargets is not null ||
         PendingCardSelection is not null || PendingSummonResponse is not null ||
@@ -253,12 +253,6 @@ public sealed partial class DemoDuel
         return null;
     }
 
-    private void ResolveDestinyBoardEndPhase(int endingPlayer)
-    {
-        if (!GameOver && FindEndPhaseMessage(endingPlayer) is { } placement)
-            PlaceEndPhaseMessage(1 - endingPlayer, placement.Source, placement.Index, placement.Slot);
-    }
-
     private void PlaceEndPhaseMessage(int owner, DuelZone source, int index, int slot)
     {
         bool fromDeck = source == DuelZone.Deck;
@@ -297,7 +291,7 @@ public sealed partial class DemoDuel
         Enumerable.Range(0, 5).Any(z => Spells[p, z]?.Id == 0x593 && !SpellFaceDown[p, z]));
     public int PendingEndDiscards => Phase == DemoPhase.End && queuedEndReturn is null ? ExcessEndTurnCards : 0;
     private int ExcessEndTurnCards => HandLimitDisabled ? 0 : Math.Max(0, Hand.Count - EndTurnHandLimit);
-    private DemoDuel() { }
+    private DemoDuel() { primitiveActionQueue = BuildActionQueue(); }
     // Demo orchestration: seeded shuffle and identical-deck local matches are not native RE claims.
     public static DemoDuel FromDecks(IReadOnlyList<Card> first, IReadOnlyList<Card> second, int seed = 1979,
         IReadOnlyList<Card>? firstFusionDeck = null, IReadOnlyList<Card>? secondFusionDeck = null)
@@ -405,7 +399,7 @@ public sealed partial class DemoDuel
         return duel;
     }
 
-    public DemoDuel(IEnumerable<Card> cards)
+    public DemoDuel(IEnumerable<Card> cards) : this()
     {
         var all = cards.Where(c => c.Name.Length > 0).ToList();
         var monsters = all.Where(c => c.IsMonster).Take(12).ToList();
@@ -604,7 +598,7 @@ public sealed partial class DemoDuel
         zone is >= 0 and < 5 && Monsters[ActivePlayer, zone] is { } attacker &&
         !DefensePosition[ActivePlayer, zone] && !MonsterFaceDown[ActivePlayer, zone] &&
         (!HasDeclaredAttack(ActivePlayer, zone) ||
-            HasActionQueue && AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
+            AllowsQueuedAttackUse(ActivePlayer, zone, attacker, declared: false)) &&
         (attacker.Id != ZombyraTheDark || CountOccupiedMonsters(1 - ActivePlayer) > 0) &&
         !AttackRestrictedByContinuousSpells(ActivePlayer, attacker) && !AttackRestrictedByMonster(attacker);
     public bool CanAttackDirectly(int zone) => CanAttack(zone) &&
@@ -625,25 +619,6 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    internal bool Draw(out string message)
-    {
-        message = "Draw available once per turn in main phase.";
-        if (!CanDraw) return false;
-        if (!TakeTurnDraw(out bool skipped))
-        {
-            message = "Empty deck: active player loses (demo policy).";
-            return true;
-        }
-        if (ExodiaWinner == ActivePlayer)
-        {
-            message = "Exodia complete: all five Forbidden One pieces in hand.";
-            return true;
-        }
-        // Native human trace: Draw precedes Revival Jam's return (P002).
-        // This is a bounded synthetic Standby hook; no full phase engine yet.
-        ResolvePostDrawStandbyEffects();
-        message = skipped ? "Draw Phase skipped." : "Drew one card."; return true;
-    }
     private bool TakeTurnDraw(out bool skipped)
     {
         skipped = ConsumeDueDrawPhaseSkip();
@@ -1342,24 +1317,6 @@ public sealed partial class DemoDuel
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
     }
-    internal bool BeginBattle(out string message)
-    {
-        message = "Battle unavailable on the opening turn or after game over.";
-        if (!CanBeginBattle) return false;
-        ApplyBattlePhaseChange(enterBattle: true);
-        message = "Select your monster, then an enemy monster or Direct attack.";
-        return true;
-    }
-
-    internal bool EndBattle(out string message)
-    {
-        message = "Battle Phase must be active and all decisions resolved.";
-        if (ActionsBlocked || !AllowsBattlePhaseChange(enterBattle: false)) return false;
-        ApplyBattlePhaseChange(enterBattle: false);
-        message = "Main Phase 2.";
-        return true;
-    }
-
     private bool AllowsBattlePhaseChange(bool enterBattle) => enterBattle
         ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn
         : Phase == DemoPhase.Battle;
@@ -2548,49 +2505,6 @@ public sealed partial class DemoDuel
                 RemoveEquipmentCore(e.Owner, e.SourceZone);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
-    internal void NextTurn() => EndTurn(out _);
-    internal bool EndTurn(out string message)
-    {
-        message = "The duel has ended.";
-        if (ActionsBlocked || queuedEndTurn) return false;
-        // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
-        if (ExcessEndTurnCards > 0)
-        {
-            Phase = DemoPhase.End;
-            message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
-            return true;
-        }
-        ResolveDestinyBoardEndPhase(ActivePlayer);
-        if (GameOver)
-            message = "Destiny Board: F-I-N-A-L complete.";
-        else
-        {
-            AdvanceTurn();
-            message = "Turn changed.";
-        }
-        return true;
-    }
-    internal bool DiscardForEndTurn(int index, out string message)
-    {
-        message = "Select a hand card while resolving the end-phase hand limit.";
-        if (ActionsBlocked || queuedEndTurn || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
-        var card = hands[ActivePlayer][index];
-        hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
-        HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
-        if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";
-        else
-        {
-            ResolveDestinyBoardEndPhase(ActivePlayer);
-            if (GameOver)
-                message = $"Discarded {card.Name}. Destiny Board: F-I-N-A-L complete.";
-            else
-            {
-                AdvanceTurn();
-                message = $"Discarded {card.Name}. Turn changed.";
-            }
-        }
-        return true;
-    }
     private void AdvanceTurn()
     {
         ExpireDrawPhaseSkipOnTurnExit();
@@ -2600,27 +2514,7 @@ public sealed partial class DemoDuel
         firstBattleAttacker = null;
         Array.Clear(attackDeclarations); Array.Clear(changedPosition);
         // A Standby opportunity follows the turn-draw opportunity (including a skipped Draw Phase); see
-        // ResolvePostDrawStandbyEffects, not the turn increment itself.
-    }
-
-    private void ResolvePostDrawStandbyEffects()
-    {
-        for (int i = delayedRevivals.Count - 1; i >= 0; i--)
-        {
-            var effect = delayedRevivals[i];
-            if (effect.Owner != ActivePlayer || Turn < effect.DueTurn) continue;
-            delayedRevivals.RemoveAt(i);
-            int graveIndex = graves[effect.Owner].FindIndex(
-                c => ReferenceEquals(c, effect.Source));
-            int zone = Enumerable.Range(0, 5).FirstOrDefault(
-                z => Monsters[effect.Owner, z] is null, -1);
-            if (GameOver || graveIndex < 0 || zone < 0) continue;
-            // A consumed promise does not refund the LP, even if the monster
-            // is no longer in the GY or cannot be placed on the field.
-            graves[effect.Owner].RemoveAt(graveIndex);
-            PlaceSelectedMonster(effect.Owner, zone, effect.Source, false);
-            DefensePosition[effect.Owner, zone] = true;
-        }
+        // ExecuteQueuedTurnDraw, not the turn increment itself.
     }
 
     private void BeginNextEffectDecision()

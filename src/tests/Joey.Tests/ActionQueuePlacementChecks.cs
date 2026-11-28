@@ -42,7 +42,7 @@ internal static class ActionQueuePlacementChecks
                     "A02 placement rejects repeated costs and occupied destination atomically");
                 check(duel.TryQueueNormalPlacement(0, 1, faceDown, out _, [0, 1]) &&
                     duel.Hand.Count == 2 && duel.Graveyard(side).Count == 0 &&
-                    !duel.EndTurn(out _), "A02 placement admitted without paying or advancing turn");
+                    !duel.TryQueueEndTurn(out _), "A02 placement admitted without paying or advancing turn");
                 if (delayed)
                 {
                     // Release each stage separately; execute the following stage

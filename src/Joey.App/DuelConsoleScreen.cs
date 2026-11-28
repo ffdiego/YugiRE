@@ -37,7 +37,7 @@ static partial class Game
             if(ConsoleSession is null)
             {
                 // Attach the console to the existing action queue.
-                liveConsoleSession=DuelConsoleSession.Attach(duel,new AppActionPresentationGate(),cards);
+                liveConsoleSession=DuelConsoleSession.Attach(duel,cards:cards);
                 queuedDuel=liveConsoleSession.Queue;
                 labStatus=DuelScriptStatus.Completed;
                 ResetConsoleLog();
@@ -391,7 +391,7 @@ static partial class Game
         }
 
         var headless = Setup();
-        var headlessQueue = headless.CreatePrimitiveActionQueue();
+        var headlessQueue = headless.Actions;
         if (new CpuDuelController(1).Step(headless).Action != CpuAction.Attack)
             return Failed("headless admission");
         for (int tick = 0; tick < 10 && headlessQueue.IsBusy; tick++) headlessQueue.Tick();
@@ -410,7 +410,7 @@ static partial class Game
             ResetDuelPresentation();
             displayedTurn = duel.Turn;
             displayedPhase = LogicalPhase();
-            var queue = duel.CreatePrimitiveActionQueue(new AppActionPresentationGate());
+            var queue = duel.ConfigureActionQueue(new AppActionPresentationGate());
             queuedDuel = queue;
 
             AdvanceAlpha(elapsed);

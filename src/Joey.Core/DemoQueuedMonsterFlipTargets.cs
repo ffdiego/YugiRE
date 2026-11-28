@@ -41,7 +41,7 @@ public sealed partial class DemoDuel
     private (DemoFlipTarget Request, CardTarget Source, CardTarget Target)? queuedFlipFirstPick;
 
     public bool UsesQueuedMonsterFlipSelection(DemoFlipTarget request) =>
-        primitiveActionQueue is not null && ReferenceEquals(PendingFlipTarget, request) &&
+        ReferenceEquals(PendingFlipTarget, request) &&
         deferredBattle is null && SupportsQueuedMonsterSelection(request) &&
         (Phase == DemoPhase.Main || HasQueuedBattleTargetChoice);
 

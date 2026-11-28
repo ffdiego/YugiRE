@@ -40,6 +40,8 @@ public sealed partial class DuelConsoleSession
     public DuelConsoleSession(DemoDuel duel, IPresentationGate? gate = null, IEnumerable<Card>? cards = null)
         : this(duel, gate, cards, attach: false) { }
 
+    // Attachment never configures an existing duel. The optional gate argument
+    // is retained for source compatibility; configure the duel before attaching.
     public static DuelConsoleSession Attach(DemoDuel duel, IPresentationGate? gate = null, IEnumerable<Card>? cards = null) =>
         new(duel, gate, cards, attach: true);
 
@@ -47,7 +49,7 @@ public sealed partial class DuelConsoleSession
     {
         this.duel = duel ?? throw new ArgumentNullException(nameof(duel));
         catalog = (cards ?? []).GroupBy(c => c.Id).Where(g => g.Count() == 1).ToDictionary(g => g.Key, g => g.Single());
-        Queue = attach ? duel.ConsoleQueue(gate) : duel.CreatePrimitiveActionQueue(gate, allowLabEdits: true);
+        Queue = attach ? duel.Actions : duel.ConfigureActionQueue(gate, allowLabEdits: true);
     }
 
     public DuelConsoleResult Execute(string line)

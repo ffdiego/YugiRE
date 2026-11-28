@@ -34,13 +34,16 @@ internal static class DuelConsoleTargetedChecks
             {
                 check(duel.SetFromHand(0, out _) && !session.Execute(command).Success && !session.Queue.IsBusy,
                     "A06 targeted console rejects activating a Quick-Play spell in the turn it was Set");
-                duel.NextTurn();
-                duel.NextTurn();
+                gate.Release = true;
+                TurnFixture.Advance(duel);
+                TurnFixture.Advance(duel);
+                gate.Release = false;
             }
+            int baseline = session.Queue.Trace.Count;
 
             check(duel.TryCaptureCardTarget(side, targetZone, 0, out var expected) &&
                 !session.Execute($"activate hand 0 {side} spell 5").Success &&
-                !session.Execute($"activate hand 0 {side} field 0").Success && session.Queue.Trace.Count == 0,
+                !session.Execute($"activate hand 0 {side} field 0").Success && session.Queue.Trace.Count == baseline,
                 "A06 invalid target syntax cannot admit work");
             check(session.Execute(command).Enqueued && duel.Graveyard(side).Count == 0 &&
                 duel.TryCaptureCardTarget(side, targetZone, 0, out var stillPresent) && stillPresent == expected,

@@ -147,7 +147,6 @@ CommandScopedPresentationChecks.Run(Check);
 DifferentialNormalSummonTests.Run(Check,
     Environment.GetEnvironmentVariable("YUGIRE_DIFFERENTIAL_FIXTURES"));
 DeckTests.Run(Check, Reject);
-if (historicalCards) EndTurnTests.Run(Check);
 if (historicalCards) SummonTests.Run(Check);
 NormalSummonCinematicChecks.Run(Check);
 if (historicalCards) NormalMonsterPlayabilityChecks.Run(Check);
@@ -193,6 +192,8 @@ DebugOverlayChecks.Run(Check);
 NativeCursorActionSelectorChecks.Run(Check, Reject);
 NativeJoeyReactionChecks.Run(Check);
 NativeReactionPlaybackChecks.Run(Check);
+NativeOpeningBustChecks.Run(Check);
+NativeResultBustChecks.Run(Check);
 NativeJoeyCinematicRoutingChecks.Run(Check);
 NativeVoiceAudioChecks.Run(Check, Reject);
 NativeDuelAudioCueChecks.Run(Check);

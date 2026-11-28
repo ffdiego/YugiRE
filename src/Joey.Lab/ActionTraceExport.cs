@@ -61,7 +61,7 @@ public static class ActionTraceExport
         Card sparks = new(342,342,"Sparks","",22u<<20);
         var duel = DemoDuel.FromPartialObservation(0,[upstart,sparks,monster],new Card?[5],new Card?[5],8000,
             side0Deck:[monster]);
-        var queue = duel.CreatePrimitiveActionQueue();
+        var queue = duel.Actions;
         bool Drain()
         {
             for (int i=0;i<128 && queue.IsBusy;i++) queue.Tick();

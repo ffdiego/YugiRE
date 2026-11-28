@@ -23,9 +23,10 @@ internal static class ActionTraceProjectionChecks
                 var defender = new Card(77, 77, "Fixture", "", (15u<<20)|(4u<<25)|(200u<<9)|150u);
                 Card?[] a = [null, attacker, null, null, null];
                 Card?[] b = direct ? new Card?[5] : [null, null, null, defender, null];
-                var duel = DemoDuel.FromPartialObservation(1, [], b, a, 8000);
+                var duel = DemoDuel.FromPartialObservation(1, [], b, a, 8000,
+                    checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
                 duel.DefensePosition[0,3] = duel.MonsterFaceDown[0,3] = hidden;
-                check(duel.BeginBattle(out _), "A09 calculation fixture enters Battle Phase");
+                check(duel.Phase == DemoPhase.Battle, "A09 calculation fixture starts in observed Battle Phase");
                 var gate = new Gate();
                 var queue = duel.CreatePrimitiveActionQueue(delayed ? gate : null);
                 check(duel.TryCaptureCardTarget(1, DuelZone.Monster, 1, out var source) &&

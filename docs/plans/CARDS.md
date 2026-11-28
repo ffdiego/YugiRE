@@ -440,6 +440,109 @@ Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 
 O histórico abaixo registra os gates e estados vigentes em cada entrega, inclusive os requisitos anteriores de paridade; não deve ser interpretado como bloqueio adicional ao gate reduzido. #177 incorporou os persistentes de #150, #179 integrou Polymerization/Fusion Gate. Manter esses resultados e os testes existentes.
 
+### C12 — Descarte obrigatório somente por comando (28/11/2026)
+
+Removido `DemoDuel.DiscardForEndTurn`, que movimentava cartas, emitia
+evento e avançava o turno imediatamente. O único resolvedor de descarte
+obrigatório passa a ser `EndTurnDiscardCommand` no executor tipado,
+seguido pela resolução de End Phase/avanço e pelos gates existentes.
+O atalho interno `EndTurn` ainda usado para preparar fixtures rejeita
+mão acima do limite sem alterar a fase; não abre pedido que só o
+resolvedor removido poderia atender.
+
+O histórico `EndTurnTests.cs` permanece no repositório como baseline,
+mas foi retirado da compilação e runner. `QueuedEndTurnChecks` mantém
+a cobertura de infraestrutura A07 e verifica rejeição de índices
+inválidos, de novo fim de turno, compra e descarte genérico enquanto
+o pedido obrigatório está aberto. Sem novas regras ou promoção de carta.
+Demo.cs: 2685 → 2664 linhas. CI obrigatório antes da integração.
+
+Restam os atalhos internos Draw/EndTurn/NextTurn e os resolvedores
+legados de invocação, ativação, batalha e escolhas, além de Pending*
+compartilhados. Os primeiros são usados por fixtures ativos de CPU,
+apresentação e scheduler; substituir a preparação por checkpoints
+explícitos ou setup tipado, sem criar mecanismo paralelo para limpar
+trace/reconfigurar gate. C12 segue parcial.
+
+### C12 — Compra de turno e Standby por uma única fila (28/11/2026)
+
+Removidos do Core `DemoDuel.Draw` e `ResolvePostDrawStandbyEffects`.
+`TakeTurnDraw` continua como primitivo privado do executor de
+`TurnDrawCommand`; a oportunidade de Standby subsequente é composta
+por `ResolveStandbyRevivalCommand`, invocação especial, continuação
+de posição e LP existentes. Nenhum novo efeito de carta ou mudança
+de política de fase. Demo.cs: 2664 → 2625 linhas.
+
+Fixtures de CPU, ataques e FLIP que preparavam mãos por compra direta
+passaram a admitir e drenar TurnDrawCommand na fila do próprio duelo;
+quando há gate, configurá-lo antes da preparação e liberar essa
+preparação. Os testes delimitam o trecho observado por offset do
+trace, sem apagar entradas, substituir fila ou alterar autorização.
+O helper transitório HistoricalTurnDrawFixture existe apenas no
+assembly de testes para compilar os fontes históricos ainda opt-in;
+ele também usa a fila, rejeita uso na suíte padrão e não preserva
+a semântica antiga de configuração após mutações. A suíte histórica
+não foi validada e será retirada da compilação por fatias. Sem
+restabelecer o resolvedor antigo. CI integral obrigatório.
+
+Restam EndTurn/NextTurn e ResolveDestinyBoardEndPhase, além dos
+resolvedores de batalha, invocação, ativação e escolhas. Preservar
+AdvanceTurn e PlaceEndPhaseMessage, usados pelo executor tipado.
+C12 permanece parcial.
+
+### C12 — Encerramento e avanço de turno somente pela fila (28/11/2026)
+
+Removidos `DemoDuel.EndTurn`, `NextTurn` e
+`ResolveDestinyBoardEndPhase`. Os primitivos privados `AdvanceTurn`
+e `PlaceEndPhaseMessage` permanecem sob os comandos tipados.
+`EndTurnCommand` abre a fase, resolve retornos/limite de mão e
+programa a colocação de mensagem ou `AdvanceTurnCommand`.
+Nenhum resolvedor de turno alternativo no Core; compra e descarte
+obrigatório já foram retirados pelas fatias anteriores.
+
+Fixtures ativos usam `TurnFixture` (admissão real com origem Test,
+drain limitado, sem limpar trace) ou checkpoints explícitos para
+turnos posteriores. Configurar gate antes da preparação, liberar
+essa preparação e delimitar o trecho observado. As extensões de
+compatibilidade para fontes históricos ficam exclusivamente em
+Joey.Tests, rejeitam uso na suíte padrão e não reintroduzem
+mutação direta ou outra fila. Não há promessa de paridade da
+suíte histórica, a retirar da compilação por fatias.
+
+PR #269 integrou a compra após CI 46147492719 verde, corrigindo
+também as duas compras dos fixtures de importação de deck.
+Esta nova fatia exige CI antes de merge. Sem alteração de manifesto
+ou alegação de paridade nativa de fases. Restam caminhos diretos
+de invocação, ativação, batalha, posição e respostas; próxima fatia:
+eliminar a entrada de Battle Phase direta (BeginBattle/EndBattle)
+e depois resolvedores de combate, preservando primitivos usados
+pelo executor. C12 permanece parcial.
+
+### C12 — Transições da Battle Phase pela fila (28/11/2026)
+
+Removidos `DemoDuel.BeginBattle` e `EndBattle`. A entrada/saída
+normal é admitida por `TryQueueBattlePhaseChange` e executada por
+`ChangeBattlePhaseCommand`, incluindo os comandos de defesa e
+`FinishBattlePhaseCommand` já existentes. Preservados os primitivos
+privados `AllowsBattlePhaseChange`, `ApplyBattlePhaseChange` e
+`EnterMainPhase2`. O último ainda é chamado pelo resolvedor direto
+legado de resposta de ataque (Negate Attack); retirar esse caminho
+na próxima fatia de combate, não o confundir com a transição normal.
+
+Fixtures ativos com preparação real usam TurnFixture.Battle e a
+mesma fila, antes de fechar o gate; matrizes que observam um ataque
+isolado usam DuelCheckpoint com Battle Phase e turno legal.
+A05.7 conserva a rejeição de ataque em Main e a entrada tipada,
+delimitando o trace de combate por offset. Nenhuma limpeza do trace,
+reconfiguração de gate ou segunda fila. Extensões antigas restritas
+à suíte histórica opt-in de testes, sem mutação direta.
+
+PR #270 integrado em fb9f46c após CI 46147696121 verde. Esta fatia
+aguarda CI integral. Restam Attack/ResolveAttackResponse e a família
+de resolvedores de batalha, invocação, ativação, posição e escolhas.
+Sem promoção de cobertura ou alegação de fidelidade nativa nova.
+C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
@@ -461,6 +564,42 @@ Para fechar o C12 completo após o gate reduzido, retirar os resolvedores
 legados equivalentes do caminho padrão, desacoplar seus `Pending*` de
 `ActionsBlocked` e registrar a redução de Demo.cs por fatia. Regras de
 cartas sem equivalente jogável continuam nos IDs próprios.
+
+### C12 — Posse intrínseca da fila (28/11/2026)
+
+Cada `DemoDuel` constrói uma única `ActionQueue`, imediata e sem
+privilégios de laboratório por padrão. `Actions` devolve essa referência;
+`ConfigureActionQueue` permite ao host escolher gate e privilégios uma
+vez antes da exposição/admissão/continuação/Tick. O alias histórico
+`CreatePrimitiveActionQueue` configura a mesma instância, nunca cria outra.
+App e Lab configuram explicitamente quando precisam de gate gráfico ou
+edições privilegiadas; headless e CPU não dependem de anexação. O console
+`Attach` reutiliza a fila e não pode trocar gate nem elevar privilégios,
+inclusive em duelo novo; use a configuração explícita ou a criação de
+sessão de laboratório antes de expor a fila.
+
+Retirados os predicados de existência que condicionavam ataque,
+atributos contados e seletores. Preservados predicados de posse do pedido,
+ocorrências e admissões. Testes de infraestrutura em ActionQueueChecks:
+identidade, ausência de mutação na admissão, gate, configuração única e
+privilégios do console. Sem alteração deliberada de regras de cartas ou
+manifesto; comparações com o nativo e CI obrigatórios quando aplicáveis.
+
+CI 46144985857: build e verificações Python/Node passaram; a suíte
+C# parou na expectativa histórica de CPU sem fila. As duas expectativas
+de ausência de fila em CpuDuelChecks foram substituídas pela admissão
+intrínseca, mantendo as verificações de não mutação e de bloqueio.
+App/Lab passaram a usar Actions ou ConfigureActionQueue também nos
+reviews, comparadores e exportadores; alias CreatePrimitiveActionQueue
+e overload Step(duel, bool) agora são internos para a suíte histórica,
+não API de produção. Nova validação integral pendente.
+
+Esta fatia não remove os mutadores legados, nem transforma automaticamente
+os estados Pending* em comandos; o C12 permanece parcial. Próxima fatia:
+retirar entradas internas sem consumidores modernos, preservando helpers
+do executor e ajustando a compilação dos testes históricos em vez de
+manter resolução paralela.
+
 
 ### C12.1 — Fila padrão
 

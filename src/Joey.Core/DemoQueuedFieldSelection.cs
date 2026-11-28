@@ -5,7 +5,7 @@ public sealed partial class DemoDuel
     // Includes P164 requests from a completed queued or legacy battle.
     // A still-deferred legacy Damage Step remains outside this producer.
     public bool UsesQueuedFieldSelection(PendingCardSelection request) =>
-        primitiveActionQueue is not null && ReferenceEquals(PendingCardSelection, request) &&
+        ReferenceEquals(PendingCardSelection, request) &&
         deferredBattle is null && request.Destination == CardSelectionDestination.Field &&
         (request.Source == CardSelectionSource.Deck && request.MinSelections == 0 &&
             (IsElementalRecruitment(request) || IsSameNameRecruitment(request)) ||

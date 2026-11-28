@@ -68,6 +68,7 @@ static partial class Game
                 queuedPreviewSource = presentation.Style.PlayAnimations ? a.Source : null;
                 BeginCardActivation(a.Card, a.Destination == DuelZone.FieldSpell
                     ? FieldZoneBounds(side) : ZoneBounds(side, slot, true), snapshot.Origin, near);
+                BeginLiveActivationReaction(a);
                 break;
             case ActionPresentationKind.Summon:
             case ActionPresentationKind.Set:
