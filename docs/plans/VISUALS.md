@@ -485,7 +485,25 @@ Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, ce
 <a id="v21"></a>
 
 Bundle 16 recebido; NativeDiceTimeline porta 128 updates, mutação no Draw, bancos, recortes, sombra e fade; --review-dice exige DAT. Remap/blend pendentes; ponte A03 pelo console lab (dice) com Draw cacheado por contador, sem produtor de carta; não contar como gameplay real. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
-  Rotas brutas E2/E3/E4 (índices 90/91/92) confirmadas por coleta 29; produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md).
+  Rotas brutas E2/E3/E4 (índices 90/91/92) confirmadas pela coleta 29. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md).
+
+V21.1. O SQLite v14 associa o callback primário `0058CA70`
+a Graceful Dice (1203) e Skull Dice (1204). No assembly, o callback
+chama `005BDDB0(6)` e soma 1 ao retorno. Após verificar o bit 2
+em `contexto+4`, resolve o resource ID e emite `E2` para Graceful
+ou `E3` para Skull na chamada `0058CAF1 → 005B9170`. O valor
+sorteado é o segundo argumento, a região é o terceiro e o quarto é
+zero. O bit 15 do comando vem do lado do contexto.
+
+Em `005A5DA4`, o ramo associado a Blind Destruction (1536) na
+varredura de cartas emite `E4`. Também passa `005BDDB0(6) + 1`
+como segundo argumento. O terceiro vem do índice de magia/armadilha
+somado a 5 em `005A5D4C`. Esse vínculo foi rastreado estaticamente.
+O handler comum `0040A6A0` lê o segundo argumento como índice
+do banco e repassa a região ao construtor. O construtor inicia o
+contador em `-256`. O Update soma 8 por chamada e libera o gate
+a 768, o que prevê 128 Updates.
+[Coleta em duelo](../../scripts/pending/README.md#v21--comando-e-cadência-do-dado-em-duelo-69).
 
 ## V22 — Remoção break (00450FD0)
 

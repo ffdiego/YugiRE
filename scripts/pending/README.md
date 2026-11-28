@@ -12,6 +12,23 @@ registrar conclusões em docs/research e mover o roteiro para [completed](../com
 
 Ficha mínima para novos scripts: `número | ID da trilha | ambiente | pré-requisitos | comando | saída | pergunta | estado da coleta/importação | referência de conclusão`. Não executar automaticamente.
 
+## V21 — Comando e cadência do dado em duelo (69)
+
+Use o [Joey original em Proton isolado](../../docs/research/joey-proton-validation.md)
+e GDB com Python. Anexe antes de resolver Graceful Dice com um monstro
+próprio revelado ou Skull Dice com um monstro adversário revelado.
+
+```bash
+timeout --signal=INT 100s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/pending/69-wine-dice-card.gdb > scratch/dice-card.log 2>&1
+```
+
+O roteiro espera `E2` ou `E3` em `0058CAF1` e lê o resultado, a
+região, o centro resolvido, os contadores e a liberação em `00456B84`.
+Confira se o resultado de 1 a 6 chega ao Draw e se o objeto encerra
+em 768, com 128 Updates previstos. Estado: coleta positiva pendente.
+[Evidência estática](../../docs/plans/VISUALS.md#v21).
+
 ## V18 — smoke de áudio Windows (28)
 
 A execução anterior registrou 129 falhas no cabeçalho RIFF. Com o adaptador para a variante PCM e o limite de inspeção para entradas armazenadas sem compressão, o cliente atual validou as 131 entradas no Linux. A captura Windows anterior está no SQLite cumulativo.
