@@ -31,7 +31,7 @@ internal static class QueuedTargetedAttackChecks
             var console = new DuelConsoleSession(duel, gate);
             var queue = console.Queue;
             check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
-                TurnFixture.End(duel, out _) && duel.BeginBattle(out _),
+                TurnFixture.End(duel, out _) && TurnFixture.Battle(duel, true, out _),
                 "Targeted attack response fixture");
             gate.Release = false;
 
@@ -106,7 +106,7 @@ internal static class QueuedTargetedAttackChecks
             check(console.Execute(fieldActive ? "activate hand 0" : "set 0").Enqueued,
                 "Field defense fixture activates or Sets Chorus");
             DrainResponseQueue(queue);
-            check(TurnFixture.End(duel, out _) && duel.BeginBattle(out _) &&
+            check(TurnFixture.End(duel, out _) && TurnFixture.Battle(duel, true, out _) &&
                 duel.DefenseValue(responder, 3) == 1000 && duel.TryQueueTargetedAttack(2, 3, out _),
                 "The hidden defender uses base DEF before reveal, even under an active Field Spell");
             DrainResponseQueue(queue);
@@ -144,7 +144,7 @@ internal static class QueuedTargetedAttackChecks
             check(duel.TryQueueEquipment(DuelZone.Hand, 0, responder, 3, out _), "Attacker equips defender");
             DrainResponseQueue(queue);
             duel.Life[responder] = lethal ? 300 : 8000;
-            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(2, 3, out _) &&
+            check(TurnFixture.Battle(duel, true, out _) && duel.TryQueueTargetedAttack(2, 3, out _) &&
                 duel.EquipmentCards.Count == 2, "Targeted battle admits tracked equipment on both combatants");
             DrainResponseQueue(queue);
 
@@ -191,10 +191,10 @@ internal static class QueuedTargetedAttackChecks
             var a=Monster(24,atk,500);var b=Monster(1351,other,other);
             var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(a,2):Slots(b,3),
                 side==1?Slots(a,2):Slots(b,3),8000,
-                checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2));
+                checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2, DemoPhase.Battle));
             d.DefensePosition[1-side,3]=defense;
             var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
-            check(d.BeginBattle(out _) && d.TryCaptureCardTarget(side,DuelZone.Monster,2,out var at) &&
+            check(d.TryCaptureCardTarget(side,DuelZone.Monster,2,out var at) &&
                 d.TryCaptureCardTarget(1-side,DuelZone.Monster,3,out var dt),"A05.8 fixture battle");
             // Capture independently for definite assignment and identity comparison.
             d.TryCaptureCardTarget(side,DuelZone.Monster,2,out var originalA);
@@ -244,18 +244,18 @@ internal static class QueuedTargetedAttackChecks
             {
                 var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(a,2):Slots(b,3),
                     side==1?Slots(a,2):Slots(b,3),8000,
-                    checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2));
+                    checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2, DemoPhase.Battle));
                 d.MonsterFaceDown[1-side,3]=d.DefensePosition[1-side,3]=true;
                 return d;
             }
             var legacy=State();
-            check(legacy.BeginBattle(out _) && legacy.Attack(2,3,out _),"A06 hidden defender legacy comparator");
+            check(legacy.Attack(2,3,out _),"A06 hidden defender legacy comparator");
             var d=State();var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
             int positionChanges=0, summons=0;
             d.MonsterPositionChanged+=_=>positionChanges++;
             d.MonsterSpecialSummoned+=_=>summons++;
             d.MonsterNormalSummoned+=_=>summons++;
-            check(d.BeginBattle(out _) && d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defender admitted");
+            check(d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defender admitted");
             d.TryCaptureCardTarget(1-side,DuelZone.Monster,3,out var original);
             q.Tick();q.Tick();
             check(d.MonsterFaceDown[1-side,3] && !d.MonsterWasFlipped[1-side,3] &&
@@ -297,10 +297,10 @@ internal static class QueuedTargetedAttackChecks
         foreach(bool afterReveal in new[]{false,true})
         {
             var stale=DemoDuel.FromPartialObservation(1,[],Slots(Monster(1351,500,500),3),
-                Slots(Monster(24,1400,500),2),8000);
+                Slots(Monster(24,1400,500),2),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
             stale.MonsterFaceDown[0,3]=stale.DefensePosition[0,3]=true;
             var gate=new Gate();var sq=stale.CreatePrimitiveActionQueue(gate);
-            check(stale.BeginBattle(out _) && stale.TryQueueTargetedAttack(2,3,out _),"A06 stale fixture admitted");
+            check(stale.TryQueueTargetedAttack(2,3,out _),"A06 stale fixture admitted");
             sq.Tick();sq.Tick();gate.Release=true;sq.Tick();
             if(afterReveal)
             {
@@ -316,26 +316,26 @@ internal static class QueuedTargetedAttackChecks
         }
 
         var hiddenEffect=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.ImmortalOfThunder,500,500),3),
-            Slots(Monster(24,1400,500),2),8000);
+            Slots(Monster(24,1400,500),2),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
         hiddenEffect.MonsterFaceDown[0,3]=hiddenEffect.DefensePosition[0,3]=true;
-        var hq=hiddenEffect.CreatePrimitiveActionQueue();hiddenEffect.BeginBattle(out _);
+        var hq=hiddenEffect.CreatePrimitiveActionQueue();
         check(!hiddenEffect.TryQueueTargetedAttack(2,3,out _) && hq.Trace.Count==0 &&
             hiddenEffect.MonsterFaceDown[0,3],"A06 unsupported FLIP remains legacy, no partial reveal");
 
         var withUnsupportedExtra = DemoDuel.FromPartialObservation(1, [], Slots(Monster(1351, 500, 500), 3),
-            Slots(Monster(24, 1400, 500), 2), 8000);
+            Slots(Monster(24, 1400, 500), 2), 8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
         withUnsupportedExtra.Monsters[1, 0] = Monster(540, 500, 500);
         var unsupportedQueue = withUnsupportedExtra.CreatePrimitiveActionQueue();
-        check(withUnsupportedExtra.BeginBattle(out _) && !withUnsupportedExtra.TryQueueTargetedAttack(2, 3, out _) &&
+        check(!withUnsupportedExtra.TryQueueTargetedAttack(2, 3, out _) &&
             unsupportedQueue.Trace.Count == 0 && withUnsupportedExtra.CanAttack(2),
             "A06 an unsupported extra monster keeps the battle outside the pilot");
 
-        var d2=DemoDuel.FromPartialObservation(1,[],Slots(Monster(1351,500,500),3),Slots(Monster(24,1400,500),2),8000);
-        d2.Life[0]=100;var q2=d2.CreatePrimitiveActionQueue();d2.BeginBattle(out _);
+        var d2=DemoDuel.FromPartialObservation(1,[],Slots(Monster(1351,500,500),3),Slots(Monster(24,1400,500),2),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+        d2.Life[0]=100;var q2=d2.CreatePrimitiveActionQueue();
         d2.TryQueueTargetedAttack(2,3,out _);for(int i=0;i<30 && q2.IsBusy;i++)q2.Tick();
         check(d2.Winner==1 && d2.Graveyard(0).Count==1 && !q2.IsBusy,"A05.8 reserved cleanup after lethal (sandbox policy)");
-        var d3=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.MorphingJar2,500,500),3),Slots(Monster(24,1400,500),2),8000);
-        var q3=d3.CreatePrimitiveActionQueue();d3.BeginBattle(out _);
+        var d3=DemoDuel.FromPartialObservation(1,[],Slots(Monster(FlipEffectRules.MorphingJar2,500,500),3),Slots(Monster(24,1400,500),2),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+        var q3=d3.CreatePrimitiveActionQueue();
         check(!d3.TryQueueTargetedAttack(2,3,out _) && q3.Trace.Count==0,"A05.8 effect ID rejected");
     }
 }

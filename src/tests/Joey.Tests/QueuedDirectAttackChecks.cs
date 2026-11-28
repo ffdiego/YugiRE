@@ -28,7 +28,7 @@ internal static class QueuedDirectAttackChecks
             var console = new DuelConsoleSession(duel, gate);
             var queue = console.Queue;
             check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
-                TurnFixture.End(duel, out _) && duel.BeginBattle(out _), "Queued Trap fixture");
+                TurnFixture.End(duel, out _) && TurnFixture.Battle(duel, true, out _), "Queued Trap fixture");
             gate.Release = false;
             check(console.Execute("attack 2 direct").Enqueued &&
                 duel.DescribeActionPresentation(queue.Trace.Last().Entry.Command) is null,
@@ -132,7 +132,7 @@ internal static class QueuedDirectAttackChecks
             var gate = new Gate { Release = true };
             var console = new DuelConsoleSession(duel, gate);
             var queue = console.Queue;
-            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && duel.BeginBattle(out _),
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && TurnFixture.Battle(duel, true, out _),
                 "Queued Mirror Force fixture");
 
             check(console.Execute("attack 2 direct").Enqueued, "Direct response accepts other supported normal allies");
@@ -199,7 +199,7 @@ internal static class QueuedDirectAttackChecks
             check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) &&
                 duel.TryQueueTurnDraw(out _, ActionOrigin.Test), "Both sides prepare back-row cards");
             Drain(queue);
-            check(duel.SetFromHand(0, out _) && duel.BeginBattle(out _), "Both sides set back-row cards");
+            check(duel.SetFromHand(0, out _) && TurnFixture.Battle(duel, true, out _), "Both sides set back-row cards");
             int baseline = queue.Trace.Count;
             duel.SpellFaceDown[responder, 0] = false;
             check(!duel.TryQueueDirectAttack(2, out _) && queue.Trace.Count == baseline,
@@ -230,7 +230,7 @@ internal static class QueuedDirectAttackChecks
             Drain(queue);
             check(duel.TryCaptureCardTarget(responder, DuelZone.FieldSpell, 0, out var fieldTarget),
                 "Yami has a tracked occurrence in the Field Zone");
-            check(TurnFixture.End(duel, out _) && duel.BeginBattle(out _) && duel.AttackValue(side, 2) == 1600,
+            check(TurnFixture.End(duel, out _) && TurnFixture.Battle(duel, true, out _) && duel.AttackValue(side, 2) == 1600,
                 "Opposing Yami boosts the Fiend before the direct attack");
             check(duel.TryQueueDirectAttack(2, out _) && duel.Life[responder] == 8000,
                 "Field Spell does not prevent read-only attack admission");
@@ -263,7 +263,7 @@ internal static class QueuedDirectAttackChecks
             check(duel.TryQueueEquipment(DuelZone.Hand, 0, side, 2, out _),
                 "Mage Power can equip the opposing monster");
             Drain(queue);
-            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && duel.BeginBattle(out _) &&
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && TurnFixture.Battle(duel, true, out _) &&
                 duel.AttackValue(side, 2) == 2400 && duel.TryQueueDirectAttack(2, out _),
                 "Equipped direct attack admits the current ATK and the Set response");
             Drain(queue);
@@ -293,7 +293,11 @@ internal static class QueuedDirectAttackChecks
         var d=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000);
         var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
         check(!d.TryQueueDirectAttack(2,out _),"A05.7 Main Phase rejects attack");
-        check(d.BeginBattle(out _) && d.TryQueueDirectAttack(2,out _),"A05.7 Battle attack admitted");
+        gate.Release=true;
+        check(TurnFixture.Battle(d, true, out _), "A05.7 queued phase entry");
+        gate.Release=false;
+        int baseline=q.Trace.Count;
+        check(d.TryQueueDirectAttack(2,out _),"A05.7 Battle attack admitted");
         check(d.Life[0]==8000,"A05.7 admission read only");
         q.Tick();q.Tick();
         check(d.Life[0]==8000 && q.Active?.Command is DeclareDirectAttackCommand && q.PendingCount==1,
@@ -303,32 +307,32 @@ internal static class QueuedDirectAttackChecks
         check(d.Life[0]==6600 && q.Active?.Command is DamageCommand,"A05.7 one separate damage mutation");
         q.Tick();check(d.Life[0]==6600,"A05.7 no repeated damage while stalled");
         gate.Release=true;q.Tick();
-        var rows=ActionTraceProjection.ReadExecuted(q.Trace);
+        var rows=ActionTraceProjection.ReadExecuted(q.Trace.Skip(baseline));
         check(!q.IsBusy && rows.Count==2 && rows[0].Args!.SequenceEqual(new ushort[]{0x8034,2,1,0}) &&
             rows[1].Args!.SequenceEqual(new ushort[]{0x43,1400,0,1}) &&
             !d.TryQueueDirectAttack(2,out _),"A05.7 declaration/damage and once-per-turn");
         foreach(var enemy in new[]{false,true})
         {
             var blocked=DemoDuel.FromPartialObservation(1,[],Slots(enemy?Monster(1000):null),
-                Slots(Monster(1000,BattleDamageEffectRules.DrillBug)),8000);
-            var bq=blocked.CreatePrimitiveActionQueue();blocked.BeginBattle(out _);
+                Slots(Monster(1000,BattleDamageEffectRules.DrillBug)),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+            var bq=blocked.CreatePrimitiveActionQueue();
             check(!blocked.TryQueueDirectAttack(2,out _) && bq.Trace.Count==0,"A05.7 rejects effects/other monsters");
         }
-        var stale=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1000)),8000);
-        var sq=stale.CreatePrimitiveActionQueue();stale.BeginBattle(out _);
+        var stale=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1000)),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+        var sq=stale.CreatePrimitiveActionQueue();
         check(stale.TryQueueDirectAttack(2,out _),"A05.7 stale admitted");
         stale.Monsters[1,2]=null; // fixture-only invalidation
         sq.Tick();
         check(stale.Life[0]==8000 && sq.Trace.Last().Result?.Outcome==CommandOutcome.Skipped &&
             ActionTraceProjection.ReadExecuted(sq.Trace).Single().Mapping=="non_applied","A05.7 stale attack not projected");
-        var zero=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(0)),8000);
-        var zq=zero.CreatePrimitiveActionQueue();zero.BeginBattle(out _);
+        var zero=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(0)),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+        var zq=zero.CreatePrimitiveActionQueue();
         check(zero.TryQueueDirectAttack(2,out _),"A05.7 zero ATK declaration");
         zq.Tick();
         check(!zq.IsBusy && zero.Life[0]==8000 && ActionTraceProjection.ReadExecuted(zq.Trace).Count==1,
             "A05.7 zero damage emits no LP command");
-        var lethal=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000);
-        lethal.Life[0]=1000;var lq=lethal.CreatePrimitiveActionQueue();lethal.BeginBattle(out _);
+        var lethal=DemoDuel.FromPartialObservation(1,[],Slots(),Slots(Monster(1400)),8000, checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+        lethal.Life[0]=1000;var lq=lethal.CreatePrimitiveActionQueue();
         lethal.TryQueueDirectAttack(2,out _);lq.Tick();lq.Tick();
         check(lethal.Winner==1 && lethal.Life[0]==0 && !lq.IsBusy,"A05.7 lethal attack completes");
         using var output=new StringWriter();using var error=new StringWriter();

@@ -144,11 +144,12 @@ internal static class ActionQueueFlipChecks
             if (!duel.TryQueueTurnDraw(out _, ActionOrigin.Test)) throw new InvalidOperationException("Battle FLIP setup draw rejected.");
             Drain(queue);
             TurnFixture.Advance(duel);
+            if (!TurnFixture.Battle(duel, true, out _)) throw new InvalidOperationException("FLIP battle setup rejected.");
             gate.Release = false;
             duel.MonsterFaceDown[owner, 0] = duel.DefensePosition[owner, 0] = true;
             List<DemoHandTransfer> transfers = [];
             duel.HandTransferred += transfers.Add;
-            check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, 0, out _) &&
+            check(duel.TryQueueTargetedAttack(0, 0, out _) &&
                 duel.MonsterFaceDown[owner, 0] && transfers.Count == 0, "Morphing Jar battle admission is nonmutating");
             for (int i = 0; i < 25 && transfers.Count == 0; i++) queue.Tick();
             queue.Tick();
@@ -177,10 +178,10 @@ internal static class ActionQueueFlipChecks
         var exodia = ExodiaRules.RequiredNames.Select((name, index) =>
             Monster((ushort)(3100 + index)) with { Name = name }).ToArray();
         var ending = DemoDuel.FromPartialObservation(1, [], Slots(jar), Slots(attacker), 8000,
-            side0Deck: exodia, side1Deck: [ordinary, ordinary]);
+            side0Deck: exodia, side1Deck: [ordinary, ordinary], checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
         ending.MonsterFaceDown[0, 0] = ending.DefensePosition[0, 0] = true;
         var endingQueue = ending.CreatePrimitiveActionQueue();
-        check(ending.BeginBattle(out _) && ending.TryQueueTargetedAttack(0, 0, out _), "Battle Jar Exodia fixture");
+        check(ending.TryQueueTargetedAttack(0, 0, out _), "Battle Jar Exodia fixture");
         Drain(endingQueue);
         check(ending.ExodiaWinner == 0 && ending.Winner == 0 && ending.HandFor(1).Count == 2 &&
             ending.Graveyard(0).Single() == jar,

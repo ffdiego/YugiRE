@@ -15,6 +15,17 @@ internal static class TurnFixture
         return true;
     }
 
+    internal static bool Battle(DemoDuel duel, bool enterBattle, out string message)
+    {
+        if (!duel.TryQueueBattlePhaseChange(enterBattle, out message, ActionOrigin.Test)) return false;
+        var queue = duel.Actions;
+        for (int tick = 0; tick < 1000 && queue.IsBusy; tick++)
+            queue.Tick();
+        if (queue.IsBusy || queue.Fault is not null)
+            throw new InvalidOperationException("Fixture battle-phase queue did not drain.");
+        return duel.Phase == (enterBattle ? DemoPhase.Battle : DemoPhase.Main);
+    }
+
     internal static void Advance(DemoDuel duel)
     {
         int turn = duel.Turn;

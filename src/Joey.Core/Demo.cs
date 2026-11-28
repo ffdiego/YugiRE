@@ -1307,24 +1307,6 @@ public sealed partial class DemoDuel
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
     }
-    internal bool BeginBattle(out string message)
-    {
-        message = "Battle unavailable on the opening turn or after game over.";
-        if (!CanBeginBattle) return false;
-        ApplyBattlePhaseChange(enterBattle: true);
-        message = "Select your monster, then an enemy monster or Direct attack.";
-        return true;
-    }
-
-    internal bool EndBattle(out string message)
-    {
-        message = "Battle Phase must be active and all decisions resolved.";
-        if (ActionsBlocked || !AllowsBattlePhaseChange(enterBattle: false)) return false;
-        ApplyBattlePhaseChange(enterBattle: false);
-        message = "Main Phase 2.";
-        return true;
-    }
-
     private bool AllowsBattlePhaseChange(bool enterBattle) => enterBattle
         ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn
         : Phase == DemoPhase.Battle;
