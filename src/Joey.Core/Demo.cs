@@ -253,12 +253,6 @@ public sealed partial class DemoDuel
         return null;
     }
 
-    private void ResolveDestinyBoardEndPhase(int endingPlayer)
-    {
-        if (!GameOver && FindEndPhaseMessage(endingPlayer) is { } placement)
-            PlaceEndPhaseMessage(1 - endingPlayer, placement.Source, placement.Index, placement.Slot);
-    }
-
     private void PlaceEndPhaseMessage(int owner, DuelZone source, int index, int slot)
     {
         bool fromDeck = source == DuelZone.Deck;
@@ -1313,24 +1307,6 @@ public sealed partial class DemoDuel
         else message = DefensePosition[owner, zone] ?
             "Monster in face-up defense (demo)." : "Monster in attack position (demo).";
     }
-    internal bool BeginBattle(out string message)
-    {
-        message = "Battle unavailable on the opening turn or after game over.";
-        if (!CanBeginBattle) return false;
-        ApplyBattlePhaseChange(enterBattle: true);
-        message = "Select your monster, then an enemy monster or Direct attack.";
-        return true;
-    }
-
-    internal bool EndBattle(out string message)
-    {
-        message = "Battle Phase must be active and all decisions resolved.";
-        if (ActionsBlocked || !AllowsBattlePhaseChange(enterBattle: false)) return false;
-        ApplyBattlePhaseChange(enterBattle: false);
-        message = "Main Phase 2.";
-        return true;
-    }
-
     private bool AllowsBattlePhaseChange(bool enterBattle) => enterBattle
         ? Turn > 1 && Phase == DemoPhase.Main && !battlePhaseEndedThisTurn
         : Phase == DemoPhase.Battle;
@@ -2519,28 +2495,6 @@ public sealed partial class DemoDuel
                 RemoveEquipmentCore(e.Owner, e.SourceZone);
     }
     private void Damage(int p, int value) => ChangeLife(p, -value);
-    internal void NextTurn() => EndTurn(out _);
-    internal bool EndTurn(out string message)
-    {
-        message = "The duel has ended.";
-        if (ActionsBlocked || queuedEndTurn) return false;
-        // Historical fixture shortcut only. A hand-limit choice must be
-        // opened and resolved by the typed EndTurn/EndTurnDiscard commands.
-        if (ExcessEndTurnCards > 0)
-        {
-            message = "Use the queued End Phase for mandatory hand-limit discards.";
-            return false;
-        }
-        ResolveDestinyBoardEndPhase(ActivePlayer);
-        if (GameOver)
-            message = "Destiny Board: F-I-N-A-L complete.";
-        else
-        {
-            AdvanceTurn();
-            message = "Turn changed.";
-        }
-        return true;
-    }
     private void AdvanceTurn()
     {
         ExpireDrawPhaseSkipOnTurnExit();

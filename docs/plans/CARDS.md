@@ -490,6 +490,59 @@ resolvedores de batalha, invocação, ativação e escolhas. Preservar
 AdvanceTurn e PlaceEndPhaseMessage, usados pelo executor tipado.
 C12 permanece parcial.
 
+### C12 — Encerramento e avanço de turno somente pela fila (28/11/2026)
+
+Removidos `DemoDuel.EndTurn`, `NextTurn` e
+`ResolveDestinyBoardEndPhase`. Os primitivos privados `AdvanceTurn`
+e `PlaceEndPhaseMessage` permanecem sob os comandos tipados.
+`EndTurnCommand` abre a fase, resolve retornos/limite de mão e
+programa a colocação de mensagem ou `AdvanceTurnCommand`.
+Nenhum resolvedor de turno alternativo no Core; compra e descarte
+obrigatório já foram retirados pelas fatias anteriores.
+
+Fixtures ativos usam `TurnFixture` (admissão real com origem Test,
+drain limitado, sem limpar trace) ou checkpoints explícitos para
+turnos posteriores. Configurar gate antes da preparação, liberar
+essa preparação e delimitar o trecho observado. As extensões de
+compatibilidade para fontes históricos ficam exclusivamente em
+Joey.Tests, rejeitam uso na suíte padrão e não reintroduzem
+mutação direta ou outra fila. Não há promessa de paridade da
+suíte histórica, a retirar da compilação por fatias.
+
+PR #269 integrou a compra após CI 46147492719 verde, corrigindo
+também as duas compras dos fixtures de importação de deck.
+Esta nova fatia exige CI antes de merge. Sem alteração de manifesto
+ou alegação de paridade nativa de fases. Restam caminhos diretos
+de invocação, ativação, batalha, posição e respostas; próxima fatia:
+eliminar a entrada de Battle Phase direta (BeginBattle/EndBattle)
+e depois resolvedores de combate, preservando primitivos usados
+pelo executor. C12 permanece parcial.
+
+### C12 — Transições da Battle Phase pela fila (28/11/2026)
+
+Removidos `DemoDuel.BeginBattle` e `EndBattle`. A entrada/saída
+normal é admitida por `TryQueueBattlePhaseChange` e executada por
+`ChangeBattlePhaseCommand`, incluindo os comandos de defesa e
+`FinishBattlePhaseCommand` já existentes. Preservados os primitivos
+privados `AllowsBattlePhaseChange`, `ApplyBattlePhaseChange` e
+`EnterMainPhase2`. O último ainda é chamado pelo resolvedor direto
+legado de resposta de ataque (Negate Attack); retirar esse caminho
+na próxima fatia de combate, não o confundir com a transição normal.
+
+Fixtures ativos com preparação real usam TurnFixture.Battle e a
+mesma fila, antes de fechar o gate; matrizes que observam um ataque
+isolado usam DuelCheckpoint com Battle Phase e turno legal.
+A05.7 conserva a rejeição de ataque em Main e a entrada tipada,
+delimitando o trace de combate por offset. Nenhuma limpeza do trace,
+reconfiguração de gate ou segunda fila. Extensões antigas restritas
+à suíte histórica opt-in de testes, sem mutação direta.
+
+PR #270 integrado em fb9f46c após CI 46147696121 verde. Esta fatia
+aguarda CI integral. Restam Attack/ResolveAttackResponse e a família
+de resolvedores de batalha, invocação, ativação, posição e escolhas.
+Sem promoção de cobertura ou alegação de fidelidade nativa nova.
+C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já

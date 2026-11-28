@@ -85,7 +85,7 @@ internal static class ActionQueueLinkedChecks
             for (int i = 0; i < 20 && q.PendingDecision is null; i++) q.Tick();
             var pending = q.PendingDecision ?? throw new Exception("Skelengel did not expose queue decision.");
             check(q.Tick() == ActionTickResult.WaitingForDecision && d.Hand.Count == 0 &&
-                !d.EndTurn(out _) && !d.ResolveEffectDecision(pending.Id, answer, out _),
+                !d.TryQueueEndTurn(out _) && !d.ResolveEffectDecision(pending.Id, answer, out _),
                 "A02 real optional draw waits on scheduler decision, no legacy bypass");
             bool rejected = false;
             try { q.Enqueue(new DrawCommand(0)); } catch (InvalidOperationException) { rejected = true; }

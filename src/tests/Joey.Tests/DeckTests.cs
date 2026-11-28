@@ -43,7 +43,7 @@ static class DeckTests
         var duel = DemoDuel.FromDecks(first, second);
         check(duel.Hand.Count == 5 && duel.DeckCount(0) == 35 && duel.Hand.All(c => c == blue) && first.Length == 40,
             "Imported demo deals five cards and conserves player one's main deck");
-        duel.NextTurn();
+        TurnFixture.Advance(duel);
         check(duel.Hand.Count == 5 && duel.DeckCount(1) == 75 && duel.Hand.All(c => c == gaia),
             "Imported demo keeps player decks independent");
         check(DrawThroughQueue(duel) && duel.Hand.Count == 6 && duel.DeckCount(1) == 74,

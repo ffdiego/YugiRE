@@ -83,8 +83,8 @@ internal static class DuelConsoleFieldSelectionChecks
             var recruit=Monster(id,1400);
             var good=id==1123?Monster(24,1000):recruit;
             var d=DemoDuel.FromPartialObservation(1,[],Slots(recruit),Slots(Monster(800,2200,1)),8000,
-                side0Deck:[good,Monster(25,1600),good]);
-            check(d.BeginBattle(out _) && d.Attack(0,0,out _) && d.PendingCardSelection is {Owner:0},
+                side0Deck:[good,Monster(25,1600),good], checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
+            check(d.Attack(0,0,out _) && d.PendingCardSelection is {Owner:0},
                 "A06 completed battle creates non-active owner request");
             var gate=new Gate(); var console=new DuelConsoleSession(d,gate);
             check(!Complete(console) && Run(console).Status==DuelScriptStatus.WaitingForDecision,
