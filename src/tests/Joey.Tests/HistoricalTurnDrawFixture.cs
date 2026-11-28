@@ -6,6 +6,15 @@ using Joey.Core;
 // migrated; the active suite must use explicit typed admission instead.
 internal static class HistoricalTurnDrawFixture
 {
+    internal static void NextTurn(this DemoDuel duel) => EndTurn(duel, out _);
+
+    internal static bool EndTurn(this DemoDuel duel, out string message)
+    {
+        if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
+            throw new InvalidOperationException("Use explicit queued end-turn admission in active fixtures.");
+        return TurnFixture.End(duel, out message);
+    }
+
     internal static bool Draw(this DemoDuel duel, out string message)
     {
         if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
