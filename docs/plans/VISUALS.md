@@ -480,6 +480,15 @@ Depois da fatia carta/ATK/DEF, sem congelar o progresso funcional da alpha.
 Bundle 16 recebido; NativeCoinTimeline porta relógio 96/128, bits/defasagem, centros e escala. NativeCoinPassLayout recupera keys 0/1/2, recortes de giro/sombra, âncoras, halo e fade global, sinaliza ramo scratch/reflexo; SQLite v3 confirma coin.txt (14/4 divisores) e dimensões dos seis assets. NativeCoinResources e --review-coin=COUNT,BITS,X,Y,HIGHLIGHT renderizam passes 0/1/2 isoladamente com captura F12; NativeCoinExtraLayout confirma brilho key5 (cinco fases) e plano de scratch 3/4; review desenha brilho, exporta plano de reflexo sem inventar máscara. Remap, +94/+A0 e composição nativa pendentes. Ponte A03 exercitada pelo console lab (coin), sem produtor de carta ou RNG; não contar como gameplay real. [Draws](../../docs/research/native-bank-effect-draws-2026-11-24.md).
   Rotas brutas E0/E1 (índices 8E/8F) confirmadas por coleta 29; corrigido NativeEffectCommandRouting e testes. Produtores/RNG ainda não mapeados. [Auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md); [contrato](../../docs/research/native-coin-dice-break-contract-2026-11-23.md).
 
+V20.1 (28/11). O SQLite v15 e o assembly confirmam Time Wizard
+e Barrel Dragon como produtores de E0/E1. Time Wizard envia
+a escolha, o sorteio e a região da fonte. Barrel Dragon envia
+três resultados em bits e destrói o alvo somente se pelo menos
+dois sorteios forem zero. Roteiro 76 para registrar o comando
+e o ciclo de Draw no original. O Alpha requer um produtor
+jogável de efeito de monstro para usar o renderer.
+[Contrato](../research/native-coin-dice-break-contract-2026-11-23.md#v201--produtores-de-moeda).
+
 ## V21 — Banco dice (00456B90)
 
 <a id="v21"></a>

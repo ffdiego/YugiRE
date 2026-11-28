@@ -134,7 +134,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Manter como pendências o caminho base 11→4, os recortes lateral e superior e a entrega do buffer no Windows. [Detalhes](docs/plans/VISUALS.md#v17)
 - [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Leitura PCM e streaming do menu e duelo validados no cliente. Comparar escuta, transições e associação dinâmica no Windows. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
-- [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, verificar reflexão, remap e blend. [Detalhes](docs/plans/VISUALS.md#v20)
+- [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Produtores E0/E1 identificados. Capturar Time Wizard e Barrel Dragon e ligar o primeiro efeito de monstro à fila. [Detalhes](docs/plans/VISUALS.md#v20)
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Graceful Dice aciona o dado em duelo. Coletar comparação do produtor E2 e seguir com Skull Dice e Blind Destruction. [Detalhes](docs/plans/VISUALS.md#v21)
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Break por causa de remoção (efeitos em campo), Explosion para combate; validar DAT, exceções, cauda e compositor. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Produtor por elo confirmado; ligar formação/resolução de corrente real e comparar pixels. [Detalhes](docs/plans/VISUALS.md#v23)
