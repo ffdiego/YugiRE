@@ -209,3 +209,36 @@ help01_e.yga..help24_e.yga; não supor key+1 até inspecionar
 help.txt (pode ter parâmetros/remap). O comando já existente
 --inspect-visual-dat inclui help.txt e dimensões/hash; não abrir
 nova coleta Ghidra, não solicitar assets/pixels. Draw continua Pending.
+
+## V29.3 — primeira integração de ajuda no duelo (27/11)
+
+Fonte privada cumulativa v7, SHA256
+`a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379`,
+PRAGMA quick_check=ok. O manifesto help.txt em Shift-JIS confirma
+que o comentário da décima linha (chave 9) é 対象に出来ません
+("não pode ser alvo"). `help10_e.yga` mede 179×38 no inventário
+do DAT, sem erro de decodificação. A chave não é uma dica de hover
+genérica. As decompilações de 00593440, 00591040 e 005A9500
+chamam 005929D0 durante a escolha de alvo, antes de verificar
+o retorno do input. 0040BAD0 escreve 005F2FE0=1 quando o
+descritor de foco coincide com o selecionável; 0044DBC0 zera
+os dois globals de foco por iteração. A dimensão 005F3008 é
+obtida em 00418560 consultando o banco mini via +38, não a
+altura do retângulo de destaque.
+
+O App liga apenas a chave 9 a cartas ocupadas não elegíveis nas
+seleções não comprometidas de equipamento, magia direcionada
+a monstro e magia direcionada a S/T. Reutiliza os predicados
+existentes e os centros de campo. O adaptador de foco/seleção
+é provisório: não demonstra equivalência do virtual +2C ou
+grupo 6. A timeline mantém o pedido a cada update, fecha quando
+o alvo muda, e a amostra usa a altura da miniatura e o DAT
+inglês. Instant mostra a mensagem inteira. Não há alteração de
+regra, divulgação de identidade oculta, nova espera ou FIFO.
+O renderer usa a política YGA existente e composição Raylib,
+não a implementação exata do +4C.
+
+Checks adicionados: chave/ordem do manifesto e rejeição de asset
+ausente. Sem SDK .NET no ambiente desta alteração; build, CI,
+captura pareada e teste interativo dos seletores ainda pendentes.
+Inventário/badge permanecem Pending até validar a integração.
