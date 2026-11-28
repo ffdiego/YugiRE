@@ -399,6 +399,13 @@ correlação. A execução 11→4 depende de um backend que exponha
 RGB555 para essa superfície.
 [Negociação do formato](../../docs/research/native-surface-copy-contract-2026-11-24.md#seleção-do-formato-pelo-directdraw-em-proton).
 
+V17.11. As coletas do kernel 3→3 compararam 288 texels
+em dois quadriláteros inclinados dentro do canvas. As coordenadas
+coincidiram em C# e no original em Proton. Recorte lateral
+e escrita da cor seguem em aberto para esse kernel. O roteiro
+63 reproduz a comparação.
+[Amostragem inclinada](../../docs/research/native-quad-raster-contract-2026-11-24.md#quadrilátero-inclinado-em-rgb565-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

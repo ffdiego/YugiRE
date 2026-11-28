@@ -411,3 +411,20 @@ O padrão é intensidade 224. Para repetir em outra escala, passe
 144 amostras e a mensagem de desanexação no log privado.
 Para medir o compositor base, use `-ex 'set $packed_intensity = 256'`
 e salve a captura em outro log. O mesmo comparador lê os dois caminhos.
+
+### 63 — V17, seleção de texels em quadrilátero inclinado
+
+Anexe antes do voo da espada na demonstração, com os mesmos
+requisitos do roteiro 62. A sonda entra apenas em chamadas
+RGB565→RGB565 com um quadrilátero inclinado. O comparador
+verifica cada endereço de amostragem em coordenadas de texel.
+
+```bash
+timeout --signal=INT 130s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/63-wine-rgb565-rotated-texels.gdb > scratch/rotated-texels.log 2>&1
+dotnet run --file scripts/regression/62-compare-attack-texels.cs -- scratch/rotated-texels.log
+```
+
+Confira as 144 amostras e a mensagem de desanexação. Uma passagem
+curta pode produzir menos amostras. Nesse caso, a sonda descarta
+essa passagem e aguarda a próxima.

@@ -165,6 +165,8 @@ O [61](../../scripts/regression/README.md#61--v17-pixels-do-compositor-base-10-p
 repete a comparação no compositor base.
 O [62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton)
 compara as coordenadas dos texels do impacto com o modelo .NET.
+O [63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado)
+faz a comparação no quadrilátero inclinado desenhado durante o voo.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

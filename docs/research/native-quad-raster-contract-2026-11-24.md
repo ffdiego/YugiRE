@@ -174,6 +174,22 @@ também reproduziu os 144 pares U/V amostrados. Os vértices
 estavam alinhados aos eixos, com um texel por pixel de destino
 e flag de divisor zero.
 
-Resta medir a seleção com recorte lateral e com quadriláteros
-inclinados.
+Resta medir a seleção com recorte lateral.
 [Roteiro 62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton).
+
+## Quadrilátero inclinado em RGB565 em Proton
+
+Para o voo da espada, o retorno `004146EA` identifica o
+chamador de `00422840`. Com origem e destino no formato 3,
+o ramo de formatos iguais de `0051EBD0` entra em `0052C230`
+pela chamada `0051FFDC`. O kernel compara a cor-chave após ler
+o texel em `0052CE20`. O roteiro 63 amostra, nesse ponto,
+os endereços de origem e destino e calcula as coordenadas com
+as bases e os pitches das superfícies bloqueadas.
+
+O comparador .NET reproduziu 144 pares U/V em cada um de dois
+quadriláteros inclinados dentro do canvas. Os recortes cobrem
+interpolação nas duas direções e a primeira troca de aresta.
+A comparação valida endereços de amostragem. A cor-chave e a
+escrita desse kernel ainda pedem comparação.
+[Roteiro 63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado).
