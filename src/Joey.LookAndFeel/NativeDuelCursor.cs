@@ -51,8 +51,12 @@ public static class NativeDuelCursor
     /// outside an actionable card it uses cursor00. Never draw both on the
     /// same frame.
     /// </summary>
-    public static string CursorSprite(NativeCursorAction? action) =>
-        action is { } selected ? ActionSprite(selected) : DefaultPointer;
+    // 0047FEF3..0047FF15: when request is nonzero, action sprite
+    // takes precedence; with request zero the base bank uses 1+input variant.
+    // The DAT labels cursor00/01 OFF/ON. Mouse-down is the client adapter
+    // for the operator's observation; exact native input mask remains open.
+    public static string CursorSprite(NativeCursorAction? action, bool pressed = false) =>
+        action is { } selected ? ActionSprite(selected) : pressed ? AlternatePointer : DefaultPointer;
 
     /// <summary>
     /// Inverse of the DAT action-cloud resource map, for F12 diagnostics.

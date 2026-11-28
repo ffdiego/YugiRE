@@ -363,3 +363,20 @@ O perfil all significa todos os hooks implementados neste coletor,
 não todas as famílias visuais; battle e demais famílias serão adicionados
 após confirmar os endereços. Validação da nova instrumentação no
 Windows ainda pendente. Não versionar JSON bruto.
+
+## V09/V10 — ponteiro pressionado e onda de choque (77)
+
+O DAT chama cursor00 OFF, cursor01 ON e cursor_pow onda de choque.
+Recuperar consumidor 0047FE90 e suas chamadas de input/composição;
+identificar condição de criação do efeito, contador, escala, alpha,
+âncora e término. Não assumir que a nuvem de ação é a onda de choque.
+
+```bash
+bash scripts/pending/77-cursor-click-contract-ghidra.sh
+```
+
+Saída privada: scratch/ghidra-cursor-click-contract.zip. Se houver
+janelas sem função reconhecida, conservar instruções disponíveis.
+Complemento manual: comparar clique curto, manter esquerdo pressionado,
+arrastar e soltar, clique direito e clique sobre nuvem de ação. Fazer
+captura da janela inteira (F12 do cliente exclui o cursor).

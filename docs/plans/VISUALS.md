@@ -153,6 +153,8 @@ Recuperar condições/alternância nativas de mudança de posição e as variant
 
 No mesmo smoke, a Main Phase registrou `SetDefense`, `SetAttack` e `Flip` respectivamente sobre ataque próprio revelado, defesa própria revelada e carta própria oculta. Sobre o adversário, registrou o ponteiro padrão. Antes da correção, a Alpha ainda anunciava `SetDefense` sobre o campo atrás do console. A seleção do cursor passou a consultar o mesmo bloqueio de entrada `ConsoleCapturesInput` que já controla os cliques. Repetindo o cenário na mesma zona, o console aberto produziu o ponteiro padrão e os demais resultados se mantiveram. Capturas privadas `yugire-20261127-052630` a `yugire-20261127-052633`. A branch histórica `origin/visuals/V10-cursor-hotspots-followup` ainda não está integrada. A auditoria usou a implementação presente na main e deixa em aberto a comparação de hotspot e precedência nativos.
 
+V09/V10.2 (28/11). Manifesto v14 confirma cursor00 OFF, cursor01 ON e cursor_pow (onda de choque). Branch histórica documenta 0047FEF3..0047FF15: pedido explícito tem prioridade, sem pedido usa variante de input. App usa MouseDown esquerdo no ponteiro base como adaptação da observação; sem duplicar o cursor. Roteiro 77 pendente para assembly completo do consumidor e onda de choque. Hotspot, cadência, comparação de pixels e input nativo não confirmados nesta fatia. [Contrato](../../docs/research/native-cursor-dispatch-2026-11-24.md).
+
 ## V11 — Janela de seleção e fusão (foco de cobertura)
 
 <a id="v11"></a>
