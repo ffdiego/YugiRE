@@ -35,7 +35,7 @@ public sealed partial class DemoDuel
 
     private NativeAiAttributeDelta CountedMonsterAttributes(int side, ushort resourceId)
     {
-        if (!HasActionQueue || !CountedAttributeRules.TryGetValue(resourceId, out var rule)) return default;
+        if (!CountedAttributeRules.TryGetValue(resourceId, out var rule)) return default;
         int delta = rule.PerCard * rule.Count(this, side);
         return new(delta, rule.IncludesDefense ? delta : 0);
     }
