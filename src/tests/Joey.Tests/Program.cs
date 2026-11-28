@@ -203,6 +203,7 @@ NativeFieldAttributePixelChecks.Run(Check);
 NativePlacementChecks.Run(Check, Reject);
 NativeFusionChecks.Run(Check, Reject);
 NativeDisabledChainChecks.Run(Check, Reject);
+LiveDisabledChainChecks.Run(Check);
 NativeCardStatusCompositionChecks.Run(Check, Reject);
 NativeSelectionManifestChecks.Run(Check, Reject);
 NativeFusionResourceChecks.Run(Check, Reject);

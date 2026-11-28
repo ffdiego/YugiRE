@@ -209,6 +209,8 @@ escrita do bit 5 e o descritor entregue ao construtor. Os testes
 simulados passaram. Falta capturar o cenário e o controle no
 original. [Rastreio](../../docs/research/native-chain-disabled-2026-11-22.md#v122--varredura-disparada-pelo-ramo-de-jinzo-2711).
 
+V12.3: v7 confirma seis YGAs cha_mukou1..6 (50x72), vtable +4 00403080 (ativo). Invocação normal/especial revelada de Jinzo no cliente gera substeps de 24 Updates para as armadilhas reveladas em ordem lado/slot, sem segunda fila e sem afetar as regras. Outras negações e Flip Summon ainda não ligados, composição aproximada e captura original pendente. Draw Partial.
+
 ## V13 — `DebugOverlayEnabled` na UI
 
 <a id="v13"></a>

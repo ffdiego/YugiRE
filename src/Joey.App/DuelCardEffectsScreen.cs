@@ -11,6 +11,7 @@ static partial class Game
     {
         public bool TerminalDrawn { get; set; }
     }
+    sealed record DisabledChainVisual(DemoSuppressedTrap Trap,NativeDisabledChainTarget Target,int Perspective) : CardEffect;
     sealed record CoinResultVisual(NativeCoinTimeline Timeline, int Highlight, NativeDiceTexture[] Textures) : CardEffect;
     sealed record DiceResultVisual(NativeDiceTimeline Timeline, NativeDiceTexture[] Textures) : CardEffect
     {
@@ -123,6 +124,7 @@ static partial class Game
                 ShowPlayedCardDetail(summon.Card, hiddenFromPlayer:
                     summon.Player != ViewPlayer && summon.FaceDownDefense);
             QueueCardEffect(new SpecialSummonPlacement(summon, generalFusionQueued), NativeSpecialSummonFrame.Updates);
+            if(!summon.FaceDownDefense)QueueJinzoSuppression(summon.Card,summon.Player,summon.Zone);
         };
         duel.DeckShuffled += player =>
             QueueCardEffect(new ShuffleDeck(player), NativeShuffleFrame.Updates);
@@ -175,6 +177,7 @@ static partial class Game
         // Native 0044F9F0: 33 updates. Core has already applied the summon.
         // The same queue keeps the visual presentation after the hand flight.
         QueueCardEffect(new NormalSummonPlacement(card, player, zone), NativeNormalSummonFrame.Updates);
+        QueueJinzoSuppression(card,player,zone);
     }
 
     static void QueueExodiaOpening(DemoExodiaCompletion completion)
@@ -357,6 +360,9 @@ static partial class Game
         if (!playing) return;
         switch (cardEffects.Current?.Kind)
         {
+            case DisabledChainVisual disabled:
+                DrawLiveDisabledChain(disabled,cardEffects.ElapsedUpdates);
+                break;
             case EquipmentTravelVisual equip:
                 DrawEquipmentTravel(equip,cardEffects.ElapsedUpdates);
                 break;
