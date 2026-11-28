@@ -194,11 +194,14 @@ internal static class QueuedDirectAttackChecks
                 side == 0 ? Slots(attacker) : Slots(), side == 1 ? Slots(attacker) : Slots(), 8000,
                 side0Deck: side == 0 ? [attackingSideTrap] : [],
                 side1Deck: side == 1 ? [attackingSideTrap] : []);
+            var queue = duel.Actions;
             check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) && duel.EndTurn(out _) &&
-                duel.Draw(out _) && duel.SetFromHand(0, out _) && duel.BeginBattle(out _), "Both sides set back-row cards");
-            var queue = duel.CreatePrimitiveActionQueue();
+                duel.TryQueueTurnDraw(out _, ActionOrigin.Test), "Both sides prepare back-row cards");
+            Drain(queue);
+            check(duel.SetFromHand(0, out _) && duel.BeginBattle(out _), "Both sides set back-row cards");
+            int baseline = queue.Trace.Count;
             duel.SpellFaceDown[responder, 0] = false;
-            check(!duel.TryQueueDirectAttack(2, out _) && queue.Trace.Count == 0,
+            check(!duel.TryQueueDirectAttack(2, out _) && queue.Trace.Count == baseline,
                 "Face-up Spell/Trap still falls outside the queued battle pilot");
             duel.SpellFaceDown[responder, 0] = true;
             check(duel.TryQueueDirectAttack(2, out _), "Direct attack admits both sides' Set cards");
