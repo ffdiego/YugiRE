@@ -2,7 +2,7 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
-    private const ushort GoblinAttackForce = 1344;
+    private const ushort GoblinAttackForce = Joey.Cards.TurnPhaseEffects.GoblinAttackForce;
     private readonly Dictionary<Card, int> positionLockedThroughTurn = new(ReferenceEqualityComparer.Instance);
 
     public bool TryQueueBattlePhaseChange(bool enterBattle, out string message, ActionOrigin origin = ActionOrigin.Player)
@@ -57,7 +57,7 @@ public sealed partial class DemoDuel
             !TryResolveCardTarget(command.Source, out int slot, out var card) || !IsGoblinForcedDefenseSource(command.Side, slot))
             return new(CommandOutcome.Skipped, "Goblin Attack Force is no longer eligible.");
 
-        positionLockedThroughTurn[card] = Turn + 2;
+        positionLockedThroughTurn[card] = Turn + Joey.Cards.TurnPhaseEffects.GoblinPositionLockTurnOffset;
         if (!DefensePosition[command.Side, slot])
             CommitManualPosition(command.Side, slot);
         else
