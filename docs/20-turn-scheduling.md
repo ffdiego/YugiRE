@@ -168,3 +168,139 @@ lacuna de associação entre índice, bits de fase e rótulo em execução.
 [guardas de interface/invocação](evidence/ritual-scheduler-pending-gates.txt).
 Relatórios `phase-handler-*` e `duel-phase-table-indexer.txt` registram a
 investigação inicial, antes de distinguir índice sequencial e bits de fase.
+
+## A07 — Fases, seletores e replay (SQLite v14, 28/11/2026)
+
+Proveniência: snapshot privado `joey-knowledge-visual-cumulative-v14.zip`,
+SQLite SHA256 `e4778b59f6d679a36657d212499a5718f8e697c0457047d38a7933aaf9bcb428`,
+`PRAGMA quick_check=ok`, metadata.executable_sha256 igual ao fingerprint
+acima. Consulta sem alterações. Evidência anterior do roteiro 11
+(bundle `c3f2fc53f0af6554aa90e65e75d2fc6a558ba5b19547f405a34c865fccea54b3`)
+e assembly de apresentação e dispatcher já presentes; nenhuma coleta nova.
+
+### Separar fase de interface, índice de trabalho e opcode
+
+A decompilação de 00404920 (consumidor comum de fase) atualiza
+`word[A577FA] = (word[A577FA] & 0xFFF1) | ((param & 7) << 1)`
+e chama 00481230 com lado do word0 bit15 e o parâmetro de fase.
+No subestado posterior aguarda vtable+4 de 005F33F0 antes de limpar o
+bit ativo 0x4000. Não confundir com a espera anterior da fila.
+A sequência de stubs no assembly de 005B9470 confirma PUSH 0..5
+em 005B958B/96/A1/AC/B7/C2, CALL 00404920 em cada um.
+O snapshot não contém os bytes da tabela comprimida de índices
+005B9AEC; a associação opcode -> stub ainda precisa dessa conferência
+direta. Não usar números de case da decompilação como opcodes.
+
+00481230 armazena lado em +144 e fase em +148; encaminha a 00480B40
+que guarda fase em +A0. As vtables 005DBB1C e 005DBB2C apontam
+respectivamente Draw 00480C60 e 00481420. Assembly 00480C6D–00480CB9:
+lê +A0, testa <6 (ramo de fase normal), calcula fase + 6 * seletor de
+lado relativo, passa chave ao resolvedor. 004809A0 referencia
+phase_name.txt e 00481040 referencia phase.txt. O manifesto privado
+DAT em visual_dat_manifests (visual-dat-20261124) lista, em ambos,
+os seis recursos na ordem dr, st, m1, ba, m2, en. Portanto o índice
+0..5 é coerente com Draw, Standby, Main1, Battle, Main2, End;
+3 tem tratamento de animação próprio. O índice do dispatcher baixo
+A577FE continua distinto. 004048C0 alterna lado e força bits 1..3
+a 111 (sentinela 7, não uma fase jogável).
+
+| Opcode candidato | Fase / índice | Evidência do produtor | Registros no replay |
+| --- | --- | --- | ---: |
+| 50 | Draw / 0 | índice de trabalho 1, 005A421F; subestado 2 chama 00578B60(side,1) | 39 |
+| 51 | Standby / 1 | índice 2, 005A813C, antes dos trabalhos de Standby | 39 |
+| 52 | Main1 / 2 | índice 3 no caminho 005A5A40, 005A5AA6 | 39 |
+| 53 | Battle / 3 | decompilação 005A1200 emite 32(1,0,0) e depois 53(0,0,0) | 13 |
+| 54 | Main2 / 4 | índice 3, 005A5C02 após rotina 005A4090 | 9 |
+| 55 | End / 5 | índice 4, 005A5196, antes da resolução de fim de turno | 38 |
+
+Os CALLs dos produtores 50/51/52/54/55 foram conferidos nas
+instruções do bundle 11; 53 foi conferido por decompilação e replay,
+não por assembly do produtor neste lote. No caminho alternativo
+005B7B50 o índice de trabalho 3 usa seu próprio dispatcher
+A579A0/tabela 005EFB50; não supor que o caminho CPU seja idêntico
+ao 005A5A40 nem que o índice de trabalho represente fase.
+
+### Conferência dos 1062 registros do replay arquivado
+
+Filtrando opcodes 01/02/03/50..55 (sem alterar o CSV), os 38 turnos
+concluídos apresentam:
+- 26 turnos sem Battle: 01 50 51 52 55 02 03.
+- 9 com Battle e Main2: 01 50 51 52 53 54 55 02 03.
+- 3 com Battle sem Main2 (33,35,37): 01 50 51 52 53 55 02 03.
+- turno 39 termina antes de 55/02/03: 01 50 51 52 53.
+
+Todos os registros 01/02/03/50..55 têm três operandos zero.
+Há 49 registros 61 no total, incluindo duas compras iniciais (turno
+0); em cada um dos 39 turnos há um 61 entre 50 e 51. Há compras
+adicionais por efeitos, inclusive em Battle. Não contar qualquer
+61 como compra de turno. A amostra não prova que fases nunca
+possam ser puladas: 005A41C0 tem guardas que encerram o trabalho
+sem emitir 50, 005A8090 também tem guarda antes de 51.
+
+### Consequências para implementação e validação
+
+Separar BeginTurn, fase, Draw(1), Standby work, limpeza e AdvanceTurn.
+A fase é uma alteração observável e deve poder aguardar a apresentação,
+não ser avançada implicitamente por uma compra. O estado do scheduler,
+o estado lógico de fase e a timeline visual não são o mesmo contador.
+Aceitar Main1 -> End e Battle -> End sem inventar Main2; revalidar
+as permissões e as respostas do motor. Não inferir ordem universal
+de efeitos por essa única amostra. Perfis headless/Classic devem manter
+a sequência lógica de comandos, independentemente do tempo de gate.
+
+Limites: ainda não há prova direta dos bytes da tabela 005B9AEC ligando
+cada opcode ao stub, nem confronto em execução de A577FA, A577FE,
+A550A0 e rótulo apresentado nos dois modos de controle. Não promover
+A07 a Concluído e não mudar o adaptador de trace apenas por esta
+correlação. Próximo: recuperar tabela comprimida (índices 0x50..0x55
+e os destinos) no Ghidra e comparar o ciclo C# com os três caminhos
+observados, incluindo fase pulada, gates, decisão de descarte e limpeza
+02. Não há alteração C# neste checkpoint.
+
+### A07.2 — Supressão de fases não equivale a suprimir trabalho
+
+SQLite v14, mesma proveniência de A07.1. Assembly e decompilações
+do roteiro 11 confirmam guardas sobre DWORD A56430 + side * D44h:
+
+| Trabalho | Guarda | Consequência |
+| --- | --- | --- |
+| Draw, 005A41C0 | bit 1 ou bit 23 | 005A4200/4204 saltam para 005A4251; termina o trabalho sem emitir 50 nem passar pela compra do subestado 2 |
+| Standby, 005A8090 | bit 2 ou bit 23 | 005A80C4/80C8, 005A8101–8127 escrevem subestado C8 (200 decimal), retornam ocupado sem emitir 51 |
+| End, 005A5120 | bit 23 | 005A515C–5162 e 005A5181–51B0 saltam a emissão 55 e pedido de callback; ambos os caminhos armam subestado 2 e retornam ocupado |
+
+A decompilação do subestado 200 de Standby contém varreduras
+de campo e chamadas 0059C8D0/0059CA20/005B9170, além de
+00579930(side,2,0). Não atribuir a cada chamada um efeito de carta
+sem investigação própria. Em End, subestado 2 chama 005A46B0 e
+aguarda seu retorno antes das demais varreduras. O bit 23 altera
+outros ramos posteriores; não concluir que todos os efeitos
+ordinários de End devam executar durante supressão.
+
+00579930 compara o bit atual, chama 005706B0 para alterá-lo e
+emite 0D(side, bit_index, value, 0) somente quando há mudança.
+Confirmação por decompilação, não prova da semântica completa
+do consumidor de 0D. 005A59B0 emite 01 em 005A5A08; na passagem
+seguinte verifica 005709D0(side,0x517) e pode armar bit 23
+via 00579930(side,0x17,1). O catálogo associa 0x517 a Gamble;
+a duração e origem do marcador ainda não foram fechadas.
+O caminho Draw suprimido limpa bit 1 via 00579930; Standby
+subestado 200 limpa bit 2. Evitar modelar todas as supressões
+como simples salto de enum ou como um comando universal de limpeza.
+
+Implicação normativa para o Core: distinguir fase publicada, estágio
+de trabalho, admissão de comandos e flags de duração. Não implementar
+efeitos específicos de supressão apenas por este recorte. Casos de
+aceitação futuros: fase normal, supressão isolada de Draw, supressão
+isolada de Standby e bit 23, ambos os lados; verificar ausência do
+opcode correspondente, trabalho residual permitido, limpeza e
+ordem 02 -> 03, com gates imediato e atrasado. A captura real
+dessas variantes continua pendente.
+
+**Coleta compartilhada:** o roteiro existente
+`scripts/pending/57-equipment-travel-contract.sh` já pede
+`005B9AEC:256` e `005B9838:692`. É suficiente para fechar a
+associação estática de 50..55 e 01/02/03 (índice = opcode - 1,
+destino DWORD little-endian na segunda tabela).
+Não criar coleta duplicada; o bundle 57 ainda não está no
+SQLite v14 consultado. Validar o fingerprint e importar quando
+recebido. Nenhuma alteração C# e nenhum novo teste de carta.
