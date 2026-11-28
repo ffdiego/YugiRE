@@ -387,7 +387,8 @@ os texels selecionados pelo ramo 10→3 em impactos alinhados
 aos eixos e dentro do canvas. As amostras cobriram escalas
 diferentes e usaram a flag de divisor da chamada original.
 O roteiro 62 reproduz a comparação. Ainda faltam outros
-quadriláteros, o caminho base e o par 11→4.
+quadriláteros e o par 11→4. A comparação no caminho base
+10→3 conferiu 144 texels em um impacto 1:1, com intensidade 256.
 [Seleção de texels](../../docs/research/native-quad-raster-contract-2026-11-24.md#seleção-de-texels-do-impacto-em-proton).
 
 ## V18 — Áudio e vozes

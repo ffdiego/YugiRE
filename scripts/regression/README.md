@@ -405,3 +405,5 @@ dotnet run --file scripts/regression/62-compare-attack-texels.cs -- scratch/atta
 O padrão é intensidade 224. Para repetir em outra escala, passe
 `-ex 'set $packed_intensity = 32'` antes de `-x`. Confira as
 144 amostras e a mensagem de desanexação no log privado.
+Para medir o compositor base, use `-ex 'set $packed_intensity = 256'`
+e salve a captura em outro log. O mesmo comparador lê os dois caminhos.

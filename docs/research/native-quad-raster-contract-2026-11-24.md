@@ -165,7 +165,15 @@ U/V nas coordenadas X/Y amostradas. No caso 224, ativar a
 flag só no comparador produziu 87 divergências, o que
 distingue os dois divisores nessa escala.
 
-O recorte cobre a seleção de texels do ramo de intensidade
-10→3 para os impactos medidos. Resta medir a amostragem no
-caminho base, com recorte lateral e com quadriláteros inclinados.
+Em intensidade 256, `0051EBD0` recebe origem em `[esp+08h]`,
+destino em `[esp+0Ch]` e a flag em `[esp+14h]`. O raster
+carrega a base e o pitch da superfície de origem em `0051F23E`
+e `0051F249`. Em `0051F897`, o primeiro argumento na pilha
+aponta para o texel de origem. Nesse caminho base, o comparador
+também reproduziu os 144 pares U/V amostrados. Os vértices
+estavam alinhados aos eixos, com um texel por pixel de destino
+e flag de divisor zero.
+
+Resta medir a seleção com recorte lateral e com quadriláteros
+inclinados.
 [Roteiro 62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton).
