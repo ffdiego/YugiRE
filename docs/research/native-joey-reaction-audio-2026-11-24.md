@@ -467,3 +467,35 @@ puro de lifecycle testa a troca de duas falas nos contadores 880/1520,
 mas o review de reaction07 usa apenas o pedido observado 0x1000003A.
 Não liga gatilhos de gameplay, áudio real ou A03. Draw continua Pending
 até integração; CI e smoke com DAT real pendentes.
+
+## V31.15 — reação à colocação de uma magia do Joey
+
+O GDB registrou `00402BE0(1, 1429, 0)` no opcode `CF`, com modo 7
+(demonstração) e `00A54E5C & 1 = 0`. O catálogo identifica o
+resource 1429 como Card of Safe Return e o índice DAT como 461.
+O retorno `00402D1E` pediu `reaction07.txt` e `0x1000003A`; o primeiro
+Draw observou contador 8, flag `+1Ch=1`, e nenhum ID secundário.
+Outra colocação `CF` no lado 0, resource 1027, não pediu o busto
+pelo mesmo seletor. Com o fingerprint v15, o descritor em `005F00E8`
+aponta para `005F069C` e resolve `Joey_22.wav`.
+
+Em `00405D8E`, `CF` chama o seletor de reação antes de movimentar
+a carta. O teste dos objetos em `00405DE7..00405DF1` espera
+o slot virtual `+4` antes de passar à colocação em `00405E02`.
+Para o busto, `00416BB0` retorna ativo enquanto o flag está ligado.
+O filtro de `00402BE0` usa o lado `(~00A54E5C)&1`, os IDs de
+rotas especiais e a classe 22. No ramo genérico, `00402700` lê o
+subtipo dos bits 17–19 e o subtipo 2 escolhe a fala `0x10000051`.
+Essa variante e os demais ramos ficam fora deste recorte.
+
+O Alpha usa o lado da CPU para a perspectiva do Joey e o snapshot
+tipado de ativação da mão. O gate da ativação conserva seu estágio
+de viagem até o Draw terminal da reação, antes do brilho e dos
+comandos de resolução. O cliente usa o mesmo compositor do review
+e o player existente. O seletor facial acompanha o contador de
+apresentação do tabuleiro, correspondente ao incremento de
+`005F2FB4` em `004112D9..004112E0`. A fase inicial desse contador
+e a composição ainda precisam de comparação pareada. O recorte
+aplica a transposição de perspectiva ao Single Duel do Alpha. O
+traço de produtor desta coleta vem da demonstração.
+[Reprodução](../../scripts/regression/README.md#73--v31-reação-a-colocação-de-magia).

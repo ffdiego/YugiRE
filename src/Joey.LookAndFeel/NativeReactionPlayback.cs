@@ -62,7 +62,16 @@ public sealed class NativeReaction07
 {
     public const string Manifest = NativeJoeyCinematicRouting.Prefix + "reaction07.txt";
     public const uint ObservedPrimarySound = 0x1000003a;
+    // Internal descriptor 005F00E8 points at 005F069C.
+    public const string ActivationVoice = DuelSoundAssets.InternalPrefix + "joey_22.wav";
     public const int Width = 327, Height = 509;
+
+    // 00402BE0: selected side, generic Spell branch, 00402700 subtype.
+    // Explicit IDs take an earlier branch and do not request this voice.
+    public static bool IsGenericSpellActivation(ushort resourceId, int cardClass, uint properties) =>
+        cardClass == 22 && ((properties >> 17) & 7) != 2 &&
+        resourceId is not (0x28a or 0x3c7 or 0x3de or 0x3f0 or 0x420 or 0x438 or
+            0x443 or 0x447 or 0x487 or 0x4b3 or 0x4b4 or 0x4de or 0x76e);
     public CardPoint Origin { get; }
     public string BaseResource { get; }
     private readonly NativeReactionLayer[] layers;

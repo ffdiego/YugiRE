@@ -97,6 +97,7 @@ static partial class Game
             ConfigureCoinReview(args, archive);
             ConfigureAlternativeExclusionReview(args, archive);
             ConfigureReactionReview(args, archive);
+            ConfigureLiveActivationReaction(archive);
             ConfigureLiveOpeningBust(archive);
             ConfigureLiveResultBust(archive);
             ConfigureBreakFieldReview(args, archive);
@@ -374,7 +375,11 @@ static partial class Game
             else
             {
                 if (screen == "duel") ReadDuelConsoleToggle();
-                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput) screen = "menu";
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape) && !ConsoleCapturesInput)
+                {
+                    StopLiveActivationReaction();
+                    screen = "menu";
+                }
                 if (screen == "cards") DrawCards();
                 else if (screen == "duel")
                 {

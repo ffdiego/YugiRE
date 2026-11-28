@@ -3,7 +3,6 @@ using Joey.LookAndFeel;
 using Raylib_cs;
 using System.Globalization;
 using System.Numerics;
-using System.Text;
 using System.Text.Json;
 
 static partial class Game
@@ -67,8 +66,7 @@ static partial class Game
             !uint.TryParse(phase,NumberStyles.None,CultureInfo.InvariantCulture,out reactionInitialScene))
             throw new InvalidDataException("Expected unsigned decimal scene state.");
         reactionWaitAudio = args.Contains("--reaction-wait-audio");
-        reactionReview = NativeReaction07.Parse(Encoding.Latin1.GetString(archive.Read(NativeReaction07.Manifest)),
-            archive.Entries.Select(entry => entry.Name));
+        reactionReview = ReadActivationReaction(archive);
         ResetReactionReview();
     }
 
@@ -85,10 +83,7 @@ static partial class Game
         if (resultBustReview is not null) { InitializeResultBustReview(); return; }
         if (openingBustReview is not null) { InitializeOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
-        foreach (string resource in reaction.Resources) _ = graphics.Texture(resource);
-        var basis = graphics.Texture(reaction.BaseResource);
-        if (basis.Width != NativeReaction07.Width || basis.Height != NativeReaction07.Height)
-            throw new InvalidDataException("Unexpected reaction07 base bitmap dimensions.");
+        ValidateActivationReactionTextures(reaction);
     }
 
     static void DrawReactionReview()
@@ -111,9 +106,7 @@ static partial class Game
         // Review displays the post-step boundary. On the terminating step,
         // show the board again rather than replaying the final native Draw.
         if (!reactionPlayback.Active || reactionPlayback.Counter == 0) return;
-        Raylib.DrawTexture(graphics.Texture(reaction.BaseResource),reaction.Origin.X,reaction.Origin.Y,Color.White);
-        foreach (var layer in reaction.Sample(reactionScene))
-            Raylib.DrawTexture(graphics.Texture(layer.Resource),layer.Position.X,layer.Position.Y,Color.White);
+        DrawActivationReactionLayers(reaction, reactionScene);
     }
 
     static void CaptureReactionReview(RenderTexture2D canvas)
