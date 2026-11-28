@@ -130,7 +130,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [x] **V13 — `DebugOverlayEnabled` na UI.** Status: `Concluído`. [Detalhes](docs/plans/VISUALS.md#v13)
 - [ ] **V14 — Auditoria visual da Alpha em 800×600.** Status: `Parcial`. Respostas e descarte auditados. Fechar composição da seleção e revisar sobreposição dos controles provisórios. [Detalhes](docs/plans/VISUALS.md#v14)
 - [ ] **V15 — Matriz de comparação por elemento visual.** Status: `Parcial`. Comparações pareadas com executável e log V01. [Detalhes](docs/plans/VISUALS.md#v15)
-- [ ] **V16 — Demais Draws do inventário.** Status: `Parcial`. Capturar a saída do resultado e investigar as famílias ainda sem Draw confirmado. [Detalhes](docs/plans/VISUALS.md#v16)
+- [ ] **V16 — Demais Draws do inventário.** Status: `Parcial`. Validar a rota de saída após vitória e os gatilhos das demais famílias pendentes. [Detalhes](docs/plans/VISUALS.md#v16)
 - [ ] **V17 — Cadência nativa de update/draw e blending.** Status: `Parcial`. Manter como pendências o caminho base 11→4, os recortes lateral e superior e a entrega do buffer no Windows. [Detalhes](docs/plans/VISUALS.md#v17)
 - [ ] **V18 — Áudio e vozes.** Status: `Parcial`. Leitura PCM e streaming do menu e duelo validados no cliente. Comparar escuta, transições e associação dinâmica no Windows. [Detalhes](docs/plans/VISUALS.md#v18)
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)

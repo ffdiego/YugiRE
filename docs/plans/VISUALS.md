@@ -297,6 +297,29 @@ blits (intensidades 240 a 16), seguidos pela desativação na
 esse recorte e aguarda execução no Windows.
 [Coleta de saída](../../scripts/pending/README.md#v16--saída-do-resultado-no-roteiro-34).
 
+V16.2. Em duelo individual no Proton com `-speedy`, após
+uma derrota por LP zero e a recusa de salvar o replay,
+`00447000` passou pelas fases 0, 1, 2, 5 e 6. O modo
+observado foi 0. Na fase 6, o bit 6 de `00A54E5C` estava
+limpo, mas `005F3254` valia 2. A comparação em `004475DE`
+explica o salto para a saída sem habilitar o contador.
+O byte `+40h` do pai ficou em zero até a saída observada
+em `0044777F`. Esse é um controle negativo para a rota de
+derrota em duelo individual.
+
+V16.3. Em uma partida melhor de três com `-speedy`,
+o primeiro duelo terminou por LP zero. Ao recusar salvar o
+replay, a cena entrou na fase 5 no modo 1 e iniciou o
+contador de saída. O roteiro 64 observou 16 chamadas de
+Draw com o contador em execução e a desativação com
+contador 256 ainda na fase 5. Antes disso, a mesma rotina
+desenhou o resultado com o contador parado. A saída
+observada em `0044777F` ocorreu na fase 6 após a confirmação
+do placar intermediário. A evidência cobre essa passagem em
+Proton. A rotina continua como Pending no inventário de
+implementação.
+[Roteiro 64](../../scripts/regression/README.md#64--v16-avanço-da-cena-de-resultado).
+
 ## V17 — Cadência nativa de update/draw e blending
 
 <a id="v17"></a>

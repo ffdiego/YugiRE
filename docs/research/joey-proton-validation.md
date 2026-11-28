@@ -167,6 +167,8 @@ O [62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto
 compara as coordenadas dos texels do impacto com o modelo .NET.
 O [63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado)
 faz a comparação no quadrilátero inclinado desenhado durante o voo.
+O [64](../../scripts/regression/README.md#64--v16-avanço-da-cena-de-resultado)
+acompanha a transição de resultado até a saída da cena.
 Confira a mensagem de desanexação no log. Feche o jogo e saia do shell
 para encerrar o servidor Wine desse prefixo e o Xvfb da sessão.
 

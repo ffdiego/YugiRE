@@ -442,3 +442,22 @@ O padrão 256 mede o compositor base. Para medir o compositor
 de intensidade reduzida, acrescente `-ex 'set $rotated_intensity = 224'`
 antes de `-x` e use outro log. Os passos disponíveis vão de
 32 a 224 em múltiplos de 32.
+
+### 64 — V16, avanço da cena de resultado
+
+Anexe à cópia de teste durante um duelo em uma partida
+melhor de três. No cenário observado, o primeiro duelo
+terminou por LP zero. Na tela de resultado, recuse salvar
+o replay e confirme o placar intermediário.
+
+```bash
+timeout --signal=INT 120s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/64-wine-result-exit-gate.gdb > scratch/result-exit-gate.log 2>&1
+```
+
+O registro inclui fase, modo, estado do contador e a
+desativação do objeto. Para o caso acima, confira 16
+entradas de Draw com `running=true` e uma desativação
+antes de a cena sair. O controle em duelo individual
+perdido mantém o contador de saída desabilitado.
+A comparação no Windows permanece no roteiro 34.
