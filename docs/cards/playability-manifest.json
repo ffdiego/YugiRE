@@ -3005,6 +3005,81 @@
       "limitations": [
         "Bounded no-chain sandbox; LP cost uses existing LP decrease primitive, RNG is seeded C# not native-equivalent, visual list is provisional. No native differential validation."
       ]
+    },
+    {
+      "id": "spell.selection.cheerful-coffin",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1025
+      ],
+      "mechanics": [
+        "Discard one to three chosen monsters from own hand.",
+        "Shared selection and existing Discard/Banish commands"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/Joey.Core/DuelConsoleSession.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "CPU does not activate voluntarily until graveyard-value strategy exists.",
+        "No native differential validation; identity confirmed with SQLite v7 and pack-index."
+      ]
+    },
+    {
+      "id": "spell.selection.gravedigger-ghoul",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Partial",
+      "resourceIds": [
+        1011
+      ],
+      "mechanics": [
+        "Banish one or two chosen monsters from opposing Graveyard.",
+        "Shared selection and existing Discard/Banish commands"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/Joey.Core/DuelConsoleSession.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Historical exact/minimum target count not confirmed against DAT or original.",
+        "No native differential validation; identity confirmed with SQLite v7 and pack-index."
+      ]
+    },
+    {
+      "id": "spell.selection.soul-release",
+      "kind": "Spell",
+      "subtype": "Normal",
+      "status": "Done",
+      "resourceIds": [
+        1024
+      ],
+      "mechanics": [
+        "Banish one to five chosen cards from either Graveyard; tracked side and occurrence.",
+        "Shared selection and existing Discard/Banish commands"
+      ],
+      "evidence": [
+        "src/Joey.Cards/HandManipulationEffects.cs",
+        "src/Joey.Core/DemoQueuedHandManipulation.cs",
+        "src/Joey.Core/CardSelectionRules.cs",
+        "src/Joey.Core/DuelCommands.cs",
+        "src/Joey.Core/DuelConsoleSession.cs",
+        "src/Joey.App/CardSelectionScreen.cs"
+      ],
+      "limitations": [
+        "Sequential selections, no chains; mixed-side list is provisional.",
+        "No native differential validation; identity confirmed with SQLite v7 and pack-index."
+      ]
     }
   ]
 }

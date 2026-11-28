@@ -69,6 +69,14 @@ Monster Reborn usa o seletor existente de GY → campo. Falta distinguir dono/co
 
 Escolha de mão distingue quem escolhe de quem possui as cartas. App reutiliza lista genérica provisória; CPU escolhe cartas próprias de menor valor e adversárias de maior valor; console usa choices/select-hand. IDs confirmados em SQLite v3 e pack-index, sem DAT integral ou comparação nativa. ACTIONS: distinguir custo de LP de dano e mapear RNG; VISUALS: janela de mão revelada original.
 
+## Lote CARDS — descarte e banimento selecionado
+
+- The Cheerful Coffin (1025): descarta 1–3 monstros próprios, Done no recorte sem correntes. CPU não ativa voluntariamente.
+- Gravedigger Ghoul (1011): bane 1–2 monstros adversários, Partial até confirmar quantidade histórica.
+- Soul Release (1024): bane 1–5 cartas de qualquer cemitério, Done no recorte sem correntes.
+
+O seletor distingue índice físico, lado da origem e chave da resposta para listas mistas. Comandos Discard/Banish existentes. Escolha sequencial, com opção de parar após o primeiro alvo. Interface provisória; DAT integral e validação diferencial pendentes. IDs confirmados no SQLite cumulativo v7 e pack-index.
+
 ## Inventário atual (sem extrapolar números do DAT)
 
 | Família / mecânica | Estado atual | Evidência de implementação | Limitação principal |

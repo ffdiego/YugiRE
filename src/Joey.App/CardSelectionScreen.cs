@@ -29,7 +29,8 @@ static partial class Game
             cardSelectionPage = 0;
             // The native hand-reveal layout belongs to VISUALS. Use the
             // existing generic list instead of claiming deck/GY geometry.
-            cardSelectionList = request.Source == CardSelectionSource.Hand ? null :
+            cardSelectionList = request.Source == CardSelectionSource.Hand ||
+                request.Destination == CardSelectionDestination.Banished ? null :
                 CreateSelectionList(request.Source == CardSelectionSource.Graveyard ? 3 : 2,
                     request.Owner, request.EligibleCards.Select(option => option.Card).ToArray());
         }
@@ -52,13 +53,17 @@ static partial class Game
         Label(heading, 250, 95, 21, Gold);
         string rule = request.RequiredAttributeCode is byte attribute
             ? $"attribute {attribute}, ATK <= 1500" : request.Filter.ToString();
-        Label($"P{request.SourceSide + 1} {request.Source} -> {request.Destination} | {rule}", 250, 126, 17);
+        string sourceLabel = request.EligibleCards.Select(c => c.SourceSide ?? request.SourceSide).Distinct().Count() > 1
+            ? "Both" : $"P{request.EligibleCards.FirstOrDefault()?.SourceSide + 1 ?? request.SourceSide + 1}";
+        Label($"{sourceLabel} {request.Source} -> {request.Destination} | {rule}", 250, 126, 17);
         Label(request.MinSelections == 0
             ? request.MaxSelections > 1
                 ? $"Choose up to {request.MaxSelections} copies, then Done (or Skip)."
                 : request.Destination == CardSelectionDestination.Hand
                     ? "Optional search: select a card to add to hand, or Skip."
-                    : "Optional recruit: select a monster or Skip."
+                    : request.Destination == CardSelectionDestination.Field
+                        ? "Optional recruit: select a monster or Skip."
+                        : "Choose another card or Skip."
             : "Select one card (mandatory).", 250, 151, 13);
 
         bool queuedHandSelection = queuedDuel is not null && duel.UsesQueuedHandSelection(request);
@@ -78,7 +83,9 @@ static partial class Game
             bool chosen = queuedFieldSelection ? queuedFieldPicks.Any(p => p.Index == option.SourceIndex)
                 : false;
             if (cardSelectionList is { } list ? DrawNativeSelectionCard(list, option.Card, slot, chosen)
-                : DrawSelectionCard(option.Card, slot, chosen))
+                : DrawSelectionCard(option.Card, slot, chosen,
+                    request.Destination == CardSelectionDestination.Banished
+                        ? $"P{(option.SourceSide ?? request.SourceSide) + 1}" : null))
             {
                 if (queuedFieldSelection)
                 {
@@ -96,7 +103,7 @@ static partial class Game
                     else message = $"Selected {queuedFieldPicks.Count}/{request.MaxSelections} copies.";
                     return;
                 }
-                bool resolved = duel.TrySubmitQueuedHandSelection(request, option.SourceIndex, out message);
+                bool resolved = duel.TrySubmitQueuedHandSelection(request, option.AnswerIndex, out message);
                 if (resolved && !ReferenceEquals(request, duel.PendingCardSelection))
                 {
                     cardSelectionPage = 0;
