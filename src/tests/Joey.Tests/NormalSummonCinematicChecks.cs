@@ -43,7 +43,7 @@ internal static class NormalSummonCinematicChecks
         var cpuSide = new DemoDuel([weak]);
         List<DemoNormalSummon> opponentEvents = [];
         cpuSide.MonsterNormalSummoned += opponentEvents.Add;
-        cpuSide.NextTurn();
+        TurnFixture.Advance(cpuSide);
         check(cpuSide.Summon(0, 1, 1, true, out _) &&
               opponentEvents is [{ Player: 1, Zone: 1, FaceDown: false }],
               "Normal summon cue: player one (CPU perspective) publishes owner and zone");
