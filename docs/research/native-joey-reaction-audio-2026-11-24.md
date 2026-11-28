@@ -499,3 +499,34 @@ e a composição ainda precisam de comparação pareada. O recorte
 aplica a transposição de perspectiva ao Single Duel do Alpha. O
 traço de produtor desta coleta vem da demonstração.
 [Reprodução](../../scripts/regression/README.md#73--v31-reação-a-colocação-de-magia).
+
+## V31.16 — invocação característica
+
+O SQLite v15 contém `00414A20` e `00414DC0` nas tabelas de
+evidência visual. O PE confirma a vtable `005DA7F0` com predicado
+`00403080`, Update `00414CF0` e Draw `00414DC0`. A rotina de
+`E6` chama `00403C20` em `00407C0C` e espera o slot `+4` em
+`00407C4A` antes de liberar o opcode. O lado deve ser
+`(~00A54E5C)&1`. O selector em `00403310` desvia para o construtor
+para `0x51` e `0x2E8` antes de testar o tipo. A emissão de `E6`
+continua condicionada ao produtor. Os traces existentes mostram
+casos com e sem `E6` e não autorizam conectar toda invocação ao busto.
+
+O construtor pede Stream `0x2000000B` (m_red.wav). Update pede
+Internal `0x1000000B` com contador anterior zero e soma quatro.
+No contador 96, pede `0x1000002D` (Joey_09.wav) para Red-Eyes,
+ou `0x10000064` (Joey_64.wav) para o segundo banco. O primeiro
+poll possível é 356. O sucesso troca o contador para `0x10000`.
+Draw desativa o objeto em `0x10060`. São 113 Updates previstos
+com o áudio desabilitado, a confirmar no original.
+
+Os manifestos do DAT v15 confirmam máscara 412×592 em (195,8),
+personagem 432×600 em (187,0), bocas 51×45 em (437,139),
+dois fundos 800×600 e os letreiros ingleses 743×259 e 709×241.
+O Draw trata a máscara separadamente no contador 64, usa
+`005DA768 = [0,5,6,5]` para a boca e chama `00424E80` a
+partir de 256 com intensidade `4*t-1024`. A composição da
+superfície temporária e a transição do letreiro aguardam
+captura. Nenhum objeto chegou ao seletor em 95 segundos de
+demonstração sob GDB. O roteiro 74 aguarda um replay dirigido.
+[Cenário de coleta](../../scripts/pending/README.md#v31--invocação-característica-de-red-eyes-74).
