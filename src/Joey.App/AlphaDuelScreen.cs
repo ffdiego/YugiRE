@@ -109,6 +109,8 @@ static partial class Game
         queuedPreviewSource = null;
         ClearDuelSelection();
         StopSpellActivation();
+        StopLiveActivationReaction();
+        liveReactionScene = 0;
         ResetCardEffects();
         foreach (var layout in handLayouts) layout.Clear();
         ResetDuelPhases();

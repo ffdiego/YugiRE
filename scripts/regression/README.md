@@ -547,3 +547,20 @@ aceito, os contadores de Draw e a solicitação no fechamento.
 Confira o retorno `005AAD94`, a progressão de 0 a 256 em passos
 de 4 e a solicitação `-1` no fechamento. O lado e o índice da
 carta na mão determinam o descritor observado.
+
+### 73 — V31, reação a colocação de magia
+
+Anexe à cópia isolada no Proton antes de uma ativação ou deixe a
+demonstração automática iniciar. Use `-nosound` para isolar a
+janela de 32 Draws.
+
+```bash
+timeout --signal=INT 95s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/73-wine-reaction-activation.gdb > scratch/reaction-activation.log 2>&1
+```
+
+O roteiro registra o ramo `00402D1E` da colocação `CF`, com lado,
+orientação, resource ID e o pedido `(7, 0x1000003A)`. A série de
+Draws inclui o contador de cena usado pelos seletores e o flag de
+bloqueio. O primeiro Draw esperado é 8 e o último sem som é 256.
+Registre o modo capturado e mantenha os logs em `scratch/`.

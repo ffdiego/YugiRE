@@ -93,6 +93,8 @@ static partial class Game
             attackUpdate = attackCue is null ? (int?)null : attackUpdates,
             activationEffect = activation.Current?.Kind.ToString() ?? "None",
             activationUpdate = activation.ElapsedUpdates,
+            activationReactionCounter = liveActivationReaction?.Counter,
+            activationReactionScene = liveActivationReaction is null ? (uint?)null : liveReactionScene,
             selectionWindow = (duel.PendingFusionSummon is not null ? fusionSelectionList :
                 duel.PendingCardSelection is not null ? cardSelectionList : null) is { } list ? new
             {

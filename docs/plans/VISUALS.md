@@ -783,6 +783,20 @@ foram consolidados no SQLite v15. O próximo recorte V31 é a rota
 de reação durante o duelo.
 [Contrato e evidência](../research/native-result-bust-2026-11-28.md#v3114--resultado-no-alpha).
 
+V31.15 (28/11). A demonstração em Proton confirmou que a colocação
+de Card of Safe Return no lado 1, com orientação 0, pediu a
+reaction07 e a voz 0x1000003A. O assembly confirma o gate antes
+da colocação e o descritor Joey_22.wav. O Alpha integrou o ramo
+genérico de magias da mão do Joey, com o estágio de ativação
+existente aguardando o Draw terminal. No Xvfb e DAT real, Sparks
+mostrou o busto no contador 128 com a viagem parada no passo
+zero. A retomada concluiu a ativação e o dano pela mesma fila.
+A reprodução da captura usou a ativação legal pelo console vivo
+no turno do Joey. Build e 51.765 checks com DAT passaram.
+Partial para 00416BC0. A composição pareada e os outros
+produtores continuam em aberto.
+[Contrato e captura](../research/native-joey-reaction-audio-2026-11-24.md#v3115--reação-à-colocação-de-uma-magia-do-joey).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

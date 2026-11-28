@@ -4,6 +4,12 @@ internal static class NativeReactionPlaybackChecks
 {
     internal static void Run(Action<bool,string> check)
     {
+        check(NativeReaction07.IsGenericSpellActivation(1429, 22, 4u << 17) &&
+            NativeReaction07.IsGenericSpellActivation(342, 22, 0) &&
+            !NativeReaction07.IsGenericSpellActivation(342, 22, 2u << 17) &&
+            !NativeReaction07.IsGenericSpellActivation(342, 21, 0) &&
+            !NativeReaction07.IsGenericSpellActivation(0x420, 22, 0),
+            "V31 activation reaction selects the generic Spell branch only");
         var single=new NativeReactionPlayback(0x1000003a);
         var first=single.Step(true);
         check(first.Counter==8 && first.RequestedSound==0x1000003a && first.Active,

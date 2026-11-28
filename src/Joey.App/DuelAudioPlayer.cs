@@ -3,7 +3,7 @@ using Joey.LookAndFeel;
 using Raylib_cs;
 using System.Runtime.InteropServices;
 
-// Optional playback; audio completion never controls the action queue.
+// Optional playback. Presentation reads the voice predicate through this player.
 internal sealed class DuelAudioPlayer : IDisposable
 {
     readonly Archive archive;
@@ -100,6 +100,8 @@ internal sealed class DuelAudioPlayer : IDisposable
     // reset/exit stops it without unloading or affecting music.
     internal bool PlayOpeningVoice(uint request) => PlayBustVoice(NativeOpeningPlayback.VoicePath(request));
     internal bool PlayResultVoice(uint request) => PlayBustVoice(NativeResultPlayback.VoicePath(request));
+
+    internal bool PlayActivationReactionVoice() => PlayBustVoice(NativeReaction07.ActivationVoice);
 
     private bool PlayBustVoice(string path)
     {
