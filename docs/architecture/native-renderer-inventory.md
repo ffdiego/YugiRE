@@ -46,7 +46,7 @@ rotina ainda não foi atribuída, e não ausência de Update ou Draw.
 | Seleção nativa de cartas | `0043A060` / `005DABD8` | `0043B0F0` | `0043B280` | `list/selectlist*.txt`, `gravelist*.txt`, `fusionlist*.txt`, `excludelist*.txt`, `list_icon/list_icon.txt` | **Pending:** lista de cinco cartões, navegação e renderização de transição; a UI provisória do cliente usa dez cartões em duas filas. Vtable confirmada no lote 22/11; a decompilação tem warning de tipagem. Ver `docs/research/visual-virtual-methods-2026-11-22.md`. |
 | Diálogos e seleções | `00487E70` (manifesto) | Aberto | Aberto | `dialog/dialog.txt`, `button_?.txt`, `ritualdlg.txt` | Placeholder/procedural inventado. `DrawCardSelectionOverlay`, `DrawSummonResponseOverlay`, `DrawAttackResponseOverlay` e `DrawEffectDecisionOverlay` usam painéis de gameplay do cliente. |
 | Ajuda | `0045E250` / `005DB630` | `0045E3D0` | `0045E4A0` | `help/help.txt`, YGAs por idioma | Não implementado. |
-| Efeito de estado persistente | `0040DAC0` / `005DA44C` | `0040E010` | `0040E260` | `effect/affect.txt` | Não implementado. Associação por manifesto e vtable; sem mapa dos ícones e flags. |
+| Efeito de estado persistente | `0040DAC0` / `005DA44C` | `0040E010` | `0040E260` | `effect/affect.txt` | Parcial no duelo: vínculos de equipamentos, campo, aura e restrições modelados; scratch DAT com máscara aproximada, somente extremos face-up. Demais relações e compositor nativo pendentes. |
 
 ## Objetos de efeito e eventos
 

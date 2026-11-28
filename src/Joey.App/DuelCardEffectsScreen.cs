@@ -70,6 +70,7 @@ static partial class Game
         cardEffectClock.Reset();
         breakTails.Clear();
         breakTailClock.Reset();
+        liveAffect=new();
         lastSignatureCandidate = null;
         lastDestinyBoardCandidate = null;
         duel.DestinyBoardCompleted += completed =>

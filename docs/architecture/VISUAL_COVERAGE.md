@@ -5,7 +5,7 @@ Denominador: **rotinas Draw nativas distintas identificadas** em
 compartilhada por várias famílias conta uma vez. Funções Draw ainda
 desconhecidas não entram no denominador, que poderá aumentar.
 
-**Implementadas (inclusive parciais): 22/39 (56.41%).**
+**Implementadas (inclusive parciais): 23/39 (58.97%).**
 **Validadas no Joey original: 0/39.**
 
 Partial indica um componente visual C# relacionado, mas divergências
@@ -29,7 +29,7 @@ desconhecido ainda não entram neste denominador. Ver
 | `00480C60` | Avisos de fase e novo jogador | Partial | `src/Joey.App/DuelPhaseScreen.cs` |
 | `0043B280` | Seleção nativa de cartas | Partial | `src/Joey.App/NativeSelectionListScreen.cs` |
 | `0045E4A0` | Ajuda | Pending | — |
-| `0040E260` | Efeito de estado persistente | Pending | — |
+| `0040E260` | Efeito de estado persistente | Partial | `src/Joey.App/DuelAffectPresentation.cs` |
 | `004142C0` | Combate declarado e espada | Partial | `src/Joey.App/AlphaDuelScreen.cs` |
 | `004514B0` | Explosão de destruição | Partial | `src/Joey.App/DuelCardEffectsScreen.cs` |
 | `00450FD0` | Quebra / remoção alternativa | Partial | `src/Joey.App/DuelBreakPresentation.cs` |
