@@ -15,6 +15,19 @@ internal static class HistoricalTurnDrawFixture
         return TurnFixture.End(duel, out message);
     }
 
+    internal static bool BeginBattle(this DemoDuel duel, out string message) =>
+        HistoricalBattle(duel, true, out message);
+
+    internal static bool EndBattle(this DemoDuel duel, out string message) =>
+        HistoricalBattle(duel, false, out message);
+
+    private static bool HistoricalBattle(DemoDuel duel, bool enterBattle, out string message)
+    {
+        if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
+            throw new InvalidOperationException("Use explicit queued phase admission or an observed checkpoint.");
+        return TurnFixture.Battle(duel, enterBattle, out message);
+    }
+
     internal static bool Draw(this DemoDuel duel, out string message)
     {
         if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
