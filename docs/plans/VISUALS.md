@@ -761,6 +761,8 @@ V31.10 (28/11). Roteiro 71 recebido: tabela 005DA798 = 0,5,6,5; descritores 0x10
 
 V31.11 (28/11). Busto de abertura ligado ao Alpha vs CPU por tela de apresentação anterior ao Duel Start/deal. O Core e a fila permanecem intactos; a tela usa o mesmo banco/renderer do review, RNG de apresentação, cadência do perfil e áudio sem alterar pitch. Instant pula, Silent mantém animação sem voz, ausência de DAT/áudio não bloqueia. Escape encerra a fala e volta ao menu. RPS ainda não existe no Alpha. O mantenedor confirmou a mesma velocidade das falas e identificou falta de sombra projetada (kage.yga); lacuna registrada sem aprofundar compositor neste marco. CI e validação live pendentes; badge inalterada até aceite.
 
+V31.12 (28/11). SQLite v14 reaberto em modo somente leitura (quick_check=ok). Review de resultado porta Update 00416050 e Draw 00416260: três bancos ingleses, slide do personagem, recomposição e letreiro pelo cosseno nativo. Testes incluem 153/408 pares observados. Roteiro 72 coleta seletor 005DA7E0 e nomes dos IDs 59..5F. Olhos/boca e voz real do resultado ainda não ligados; não presumir a tabela de abertura. Sombra/compositor continuam pendentes, sem aprofundamento agora. Resultado ainda isolado, sem mapear código local ou antecipar o gatilho pós-replay. [Contrato](../research/native-result-bust-2026-11-28.md).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

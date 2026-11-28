@@ -57,7 +57,12 @@ static partial class Game
             ConfigureOpeningBustReview(value[6..],args,archive);
             return;
         }
-        if (value != "07") throw new InvalidDataException("Expected reaction07 (07) or opening (start:0..2).");
+        if (value.StartsWith("result:",StringComparison.Ordinal))
+        {
+            ConfigureResultBustReview(value[7..],args,archive);
+            return;
+        }
+        if (value != "07") throw new InvalidDataException("Expected reaction07, start:0..2 or result:win/lose/draw:variant.");
         if (Option(args,"--reaction-scene-state=") is string phase &&
             !uint.TryParse(phase,NumberStyles.None,CultureInfo.InvariantCulture,out reactionInitialScene))
             throw new InvalidDataException("Expected unsigned decimal scene state.");
@@ -77,6 +82,7 @@ static partial class Game
 
     static void InitializeReactionReview()
     {
+        if (resultBustReview is not null) { InitializeResultBustReview(); return; }
         if (openingBustReview is not null) { InitializeOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
         foreach (string resource in reaction.Resources) _ = graphics.Texture(resource);
@@ -87,6 +93,7 @@ static partial class Game
 
     static void DrawReactionReview()
     {
+        if (resultBustReview is not null) { DrawResultBustReview(); return; }
         if (openingBustReview is not null) { DrawOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
         if (reactionWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) &&
@@ -111,6 +118,7 @@ static partial class Game
 
     static void CaptureReactionReview(RenderTexture2D canvas)
     {
+        if (resultBustReview is not null) { CaptureResultBustReview(canvas); return; }
         if (openingBustReview is not null) { CaptureOpeningBustReview(canvas); return; }
         if (reactionReview is not { } reaction) return;
         string basename = SaveVisualReviewImage(canvas,"reaction07");

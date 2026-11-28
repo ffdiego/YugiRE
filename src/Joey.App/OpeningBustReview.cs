@@ -12,7 +12,7 @@ static partial class Game
     static bool openingBustWaitAudio, openingBustAudioComplete;
     static uint? openingBustRequestedSound;
     static bool openingBustVoiceStarted;
-    static bool ReactionReviewActive => reactionReview is not null || openingBustReview is not null;
+    static bool ReactionReviewActive => reactionReview is not null || openingBustReview is not null || resultBustReview is not null;
 
     static void ConfigureOpeningBustReview(string variant, string[] args, Archive archive)
     {
