@@ -89,7 +89,7 @@ internal static class CpuDuelChecks
                 side1Deck: side == 1 ? deck : null);
             var gate = new FixedSpellGate { Release = true };
             var queue = duel.ConfigureActionQueue(gate);
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && DrawThroughQueue(duel),
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && DrawThroughQueue(duel),
                 "C12 fixed spell fixture: tracked enemy Set, draw source");
             gate.Release = false;
             int baseline = queue.Trace.Count;
@@ -188,7 +188,7 @@ internal static class CpuDuelChecks
                 side1Deck: side == 1 ? deck : null);
             var gate = new FixedSpellGate { Release = true };
             var queue = duel.ConfigureActionQueue(gate);
-            check(duel.SetFromHand(0, out _) && duel.EndTurn(out _) && DrawThroughQueue(duel),
+            check(duel.SetFromHand(0, out _) && TurnFixture.End(duel, out _) && DrawThroughQueue(duel),
                 "C12 targeted S/T fixture: tracked opponent card and drawn source");
             int baseline = queue.Trace.Count;
             if (id == SpellTrapTargetRules.RemoveTrap) duel.SpellFaceDown[enemy, 0] = false;
@@ -199,7 +199,7 @@ internal static class CpuDuelChecks
                 check(duel.TryCaptureCardTarget(side, zone, 0, out var sameTurn) &&
                     duel.QueuedSpellTrapTargetCandidates(sameTurn).Count == 0 && queue.Trace.Count == baseline,
                     "C12 MST cannot activate on its Set turn");
-                check(duel.EndTurn(out _) && duel.EndTurn(out _) && DrawThroughQueue(duel),
+                check(TurnFixture.End(duel, out _) && TurnFixture.End(duel, out _) && DrawThroughQueue(duel),
                     "C12 MST later-turn fixture");
                 baseline = queue.Trace.Count;
             }
@@ -239,7 +239,7 @@ internal static class CpuDuelChecks
 
         var stale = DemoDuel.FromPartialObservation(1, [Spell(1056, 21)], Slots(), Slots(), 8000,
             side0Deck: [Spell(SpellTrapTargetRules.MysticalSpaceTyphoon)]);
-        check(stale.SetFromHand(0, out _) && stale.EndTurn(out _) && DrawThroughQueue(stale),
+        check(stale.SetFromHand(0, out _) && TurnFixture.End(stale, out _) && DrawThroughQueue(stale),
             "C12 stale S/T fixture");
         var staleQueue = stale.Actions;
         int staleBaseline = staleQueue.Trace.Count;
