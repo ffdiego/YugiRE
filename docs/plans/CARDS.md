@@ -482,6 +482,15 @@ identidade, ausência de mutação na admissão, gate, configuração única e
 privilégios do console. Sem alteração deliberada de regras de cartas ou
 manifesto; comparações com o nativo e CI obrigatórios quando aplicáveis.
 
+CI 46144985857: build e verificações Python/Node passaram; a suíte
+C# parou na expectativa histórica de CPU sem fila. As duas expectativas
+de ausência de fila em CpuDuelChecks foram substituídas pela admissão
+intrínseca, mantendo as verificações de não mutação e de bloqueio.
+App/Lab passaram a usar Actions ou ConfigureActionQueue também nos
+reviews, comparadores e exportadores; alias CreatePrimitiveActionQueue
+e overload Step(duel, bool) agora são internos para a suíte histórica,
+não API de produção. Nova validação integral pendente.
+
 Esta fatia não remove os mutadores legados, nem transforma automaticamente
 os estados Pending* em comandos; o C12 permanece parcial. Próxima fatia:
 retirar entradas internas sem consumidores modernos, preservando helpers
