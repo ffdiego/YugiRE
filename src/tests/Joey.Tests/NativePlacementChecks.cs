@@ -53,8 +53,10 @@ internal static class NativePlacementChecks
             NativePlacementTravel.SampleFieldReveal(target,false,8,c).AngleIndex==256 &&
             !NativePlacementTravel.SampleFieldReveal(target,false,8,c).FaceDown,
             "placement: 91 far-side reveal retains orientation");
-        reject(()=>NativePlacementTravel.SampleFieldReveal(target,true,9,c),
-            "placement: reject reveal motion beyond terminal counter");
+        bool invalidRevealRejected=false;
+        try { NativePlacementTravel.SampleFieldReveal(target,true,9,c); }
+        catch (ArgumentOutOfRangeException) { invalidRevealRejected=true; }
+        check(invalidRevealRejected,"placement: reject reveal motion beyond terminal counter");
         string[] bank=NativePlacementAssets.SetBank();
         check(NativePlacementAssets.Aura(false).EndsWith("eff_set_y.bmp")&&
               NativePlacementAssets.Aura(true).EndsWith("eff_set_b.bmp")&&
