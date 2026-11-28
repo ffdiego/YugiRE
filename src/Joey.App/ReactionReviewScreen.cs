@@ -17,10 +17,15 @@ static partial class Game
     static void ConfigureReactionReview(string[] args, Archive archive)
     {
         if (Option(args,"--review-reaction=") is not string value) return;
-        if (value != "07") throw new InvalidDataException("Only observed reaction07 is supported.");
         if (args.Contains("--duel-console") || Option(args,"--duel-script=") is not null ||
             args.Contains("--alpha-headless"))
             throw new InvalidDataException("Reaction review requires an isolated graphical session.");
+        if (value.StartsWith("start:",StringComparison.Ordinal))
+        {
+            ConfigureOpeningBustReview(value[6..],args,archive);
+            return;
+        }
+        if (value != "07") throw new InvalidDataException("Expected reaction07 (07) or opening (start:0..2).");
         if (Option(args,"--reaction-scene-state=") is string phase &&
             !uint.TryParse(phase,NumberStyles.None,CultureInfo.InvariantCulture,out reactionInitialScene))
             throw new InvalidDataException("Expected unsigned decimal scene state.");
@@ -40,6 +45,7 @@ static partial class Game
 
     static void InitializeReactionReview()
     {
+        if (openingBustReview is not null) { InitializeOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
         foreach (string resource in reaction.Resources) _ = graphics.Texture(resource);
         var basis = graphics.Texture(reaction.BaseResource);
@@ -49,6 +55,7 @@ static partial class Game
 
     static void DrawReactionReview()
     {
+        if (openingBustReview is not null) { DrawOpeningBustReview(); return; }
         if (reactionReview is not { } reaction) return;
         if (Raylib.IsKeyPressed(KeyboardKey.F8)) ResetReactionReview();
         else
@@ -77,6 +84,7 @@ static partial class Game
 
     static void CaptureReactionReview(RenderTexture2D canvas)
     {
+        if (openingBustReview is not null) { CaptureOpeningBustReview(canvas); return; }
         if (reactionReview is not { } reaction) return;
         string basename = SaveVisualReviewImage(canvas,"reaction07");
         bool visible = reactionPlayback.Active && reactionPlayback.Counter != 0;

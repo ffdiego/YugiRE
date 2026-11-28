@@ -98,7 +98,7 @@ static partial class Game
             ConfigureAlternativeExclusionReview(args, archive);
             ConfigureReactionReview(args, archive);
             ConfigureBreakFieldReview(args, archive);
-            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, reactionReview is not null, breakReviewCardPath is not null }.Count(active => active) > 1)
+            if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, ReactionReviewActive, breakReviewCardPath is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
             orderedCards = CardListResources.Sort(cards, archive.Read(@"bin#\card_sorteng.bin"));
             byte[] packs = archive.Read(@"bin#\card_pack.bin");
@@ -141,7 +141,7 @@ static partial class Game
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             { Console.Error.WriteLine(ex.Message); return 1; }
         }
-        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && reactionReview is null && breakReviewCardPath is null && args.Contains("--alpha")) StartAlpha();
+        else if (error.Length == 0 && chainReview is null && disabledChainReviewTarget is null && statusReviewCard is null && fusionReviewCard is null && generalFusionReview is null && layerFontReviewMode is null && diceReview is null && coinReview is null && altExReviewMode is null && !ReactionReviewActive && breakReviewCardPath is null && args.Contains("--alpha")) StartAlpha();
         // Suppress routine INFO texture/cache messages, not warnings/errors.
         // Do not initialize raylib solely to configure logging in headless modes.
         Raylib.SetTraceLogLevel(args.Contains("--raylib-verbose") ? TraceLogLevel.Info : TraceLogLevel.Warning);
@@ -171,7 +171,7 @@ static partial class Game
                     screen = "break-review";
                     Console.WriteLine("[V22 review] F7 native Update, F8 reset, F12 capture; field-only diagnostic compositor");
                 }
-                if (reactionReview is not null)
+                if (ReactionReviewActive)
                 {
                     InitializeReactionReview();
                     screen = "reaction-review";
