@@ -68,6 +68,21 @@ internal static class HistoricalTurnDrawFixture
         return true;
     }
 
+    internal static bool Summon(this DemoDuel duel, int index, int player, int zone, bool monsterZone,
+        out string message, IReadOnlyList<int>? tributeZones = null, bool faceDown = false)
+    {
+        if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
+            throw new InvalidOperationException("Use explicit queued normal placement in active fixtures.");
+        message = "Choose a monster zone on the active side.";
+        return monsterZone && player == duel.ActivePlayer &&
+            TurnFixture.Place(duel, index, zone, faceDown, out message, tributeZones);
+    }
+
+    internal static bool SummonLeftmost(this DemoDuel duel, int index, bool faceDown,
+        out string message, IReadOnlyList<int>? tributes = null) =>
+        Summon(duel, index, duel.ActivePlayer, duel.FirstFreeMonsterZone(tributes), true,
+            out message, tributes, faceDown);
+
     internal static bool Draw(this DemoDuel duel, out string message)
     {
         if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
