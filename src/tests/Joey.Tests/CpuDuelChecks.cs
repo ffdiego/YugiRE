@@ -80,7 +80,7 @@ internal static class CpuDuelChecks
                 "C12 fixed spell fixture: tracked enemy Set, draw source");
             if (fromSet) check(duel.SetFromHand(0, out _), "C12 fixed spell fixture Set");
             var zone = fromSet ? DuelZone.SpellTrap : DuelZone.Hand;
-            check(!duel.CanQueueFixedSpellActivation(zone, 0), "No queue: fixed producer unavailable");
+            check(duel.CanQueueFixedSpellActivation(zone, 0), "C12 fixed producer available on the intrinsic queue before host configuration");
             var gate = new FixedSpellGate();
             var queue = duel.CreatePrimitiveActionQueue(gate);
             if (fromSet)
@@ -251,9 +251,7 @@ internal static class CpuDuelChecks
         var strong = Monster(1); var weak = Monster(2, 500, 500);
         var cpu = new CpuDuelController(1);
         var empty = State(1, []);
-        check(cpu.Step(empty).Status == CpuStepStatus.Blocked && empty.Winner is null,
-            "CPU refuses to execute without an attached queue");
-        var emptyQueue = empty.CreatePrimitiveActionQueue();
+        var emptyQueue = empty.Actions;
         check(cpu.Step(empty) is { Status: CpuStepStatus.Acted, Action: CpuAction.Draw } &&
             empty.Winner is null && emptyQueue.IsBusy, "CPU admits deck-out through the queue");
         for (int i = 0; i < 100 && emptyQueue.IsBusy; i++) emptyQueue.Tick();
