@@ -48,6 +48,7 @@ try
     }
 }
 finally { File.Delete(malformed); }
+DatToolChecks.Run(Check);
 if (historicalCards)
 {
 var weak = new Card(1, 1, "Weak", "", (1u << 20) | (4u << 25) | (100u << 9));

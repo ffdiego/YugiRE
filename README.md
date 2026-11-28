@@ -107,6 +107,17 @@ sem DAT, use `--fixture`; para construir o pool de 100 cartas,
 Nenhuma carta recebe validação nativa pela execução do runner.
 [Procedimento, limites e revisão do pool](docs/research/headless-sandbox-duels-v1.md).
 
+## Joey.Tools — utilitários locais
+
+Listagem e extração do DAT original por nome, pasta, extensão ou arquivo inteiro:
+
+```sh
+dotnet run --project src/tools/Joey.Tools -- dat list ../passion/data.dat --folder j/duel
+dotnet run --project src/tools/Joey.Tools -- dat extract ../passion/data.dat --folder j/duel --ext bmp
+```
+
+Saída em `scratch/dat-extracted/`. [Opções e exemplos](src/tools/Joey.Tools/README.md).
+
 ## Joey.Lab — análise offline em .NET
 
 ```sh
