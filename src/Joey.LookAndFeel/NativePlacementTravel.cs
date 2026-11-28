@@ -10,6 +10,16 @@ public readonly record struct NativePlacementTravelSample(CardBounds Portrait,in
 /// destination sizing are client adapters, not native pixel parity.</summary>
 public static class NativePlacementTravel
 {
+    // Windows capture 2026-11-28: eight motion samples, then a ninth
+    // Update commits the destination descriptor. The two ordinary
+    // summons started their effect two ticks later than the Sets.
+    // This is the observed presentation interval, not a decoded
+    // universal gate for every native placement opcode.
+    public static int ObservedEffectStartOffset(bool set) => CardTravel.Updates + (set ? 1 : 3);
+
+    public static int MotionSampleUpdate(int elapsedUpdates) =>
+        Math.Clamp(elapsedUpdates, 0, CardTravel.Updates);
+
     public static NativePlacementTravelSample Sample(CardBounds origin,CardBounds destination,
         bool nearSide,bool destinationDefense,bool destinationFaceDown,int update,
         ReadOnlySpan<int> cosine)

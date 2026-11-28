@@ -23,6 +23,11 @@ internal static class NativePlacementChecks
         var cpuSet=NativePlacementTravel.Sample(origin,target,false,true,true,4,c);
         check(cpuSet.FaceDown&&cpuSet.FaceWidthFixed16==65536&&cpuSet.AngleIndex==320,
             "placement: enemy set never reveals identity");
+        check(NativePlacementTravel.ObservedEffectStartOffset(true)==9 &&
+            NativePlacementTravel.ObservedEffectStartOffset(false)==11 &&
+            NativePlacementTravel.MotionSampleUpdate(8)==8 &&
+            NativePlacementTravel.MotionSampleUpdate(10)==8,
+            "placement: observed Set/Summon effect boundary holds final motion sample");
         string[] bank=NativePlacementAssets.SetBank();
         check(NativePlacementAssets.Aura(false).EndsWith("eff_set_y.bmp")&&
               NativePlacementAssets.Aura(true).EndsWith("eff_set_b.bmp")&&

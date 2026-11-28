@@ -178,7 +178,7 @@ static partial class Game
         if (flight is not { } f) return;
         static CardBounds Bounds(Rectangle rect) => new((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height);
         var pose=NativePlacementTravel.Sample(Bounds(f.Origin),Bounds(f.Destination),
-            f.Player==ViewPlayer,f.Defense,f.Hidden,travelUpdate,effectCosine);
+            f.Player==ViewPlayer,f.Defense,f.Hidden,NativePlacementTravel.MotionSampleUpdate(travelUpdate),effectCosine);
         var cell=pose.Portrait;
         int width=(int)((long)cell.Width*pose.FaceWidthFixed16>>16);
         if(width<=0)return;
@@ -338,10 +338,16 @@ static partial class Game
             attackUpdates += Math.Min(NativeAttackFrame.Updates, attackClock.Advance(elapsed, presentation.Style));
             if (attackUpdates >= NativeAttackFrame.Updates) attackCue = null;
         }
-        if (flight is not null)
+        if (flight is { } placement && travelClock.Advance(elapsed, presentation.Style) > 0)
         {
-            travelUpdate += Math.Min(CardTravel.Updates, travelClock.Advance(elapsed, presentation.Style));
-            if (travelUpdate >= CardTravel.Updates) flight = null;
+            // Native CE/CF: raw event 7, Internal 0F (card_move.wav),
+            // immediately before the first travel Update, not on arrival.
+            if (travelUpdate == 0) PlayDuelSound(DuelSoundCue.CardMove);
+            // Preserve the terminal pose through the observed descriptor
+            // commit / summon transition. At most one sample per Draw.
+            travelUpdate++;
+            if (travelUpdate >= NativePlacementTravel.ObservedEffectStartOffset(placement.Hidden))
+                flight = null;
         }
         // F7 steps presentation, never authorizes a new CPU decision.
         // Without this gate a paused idle duel could still mutate Joey.Core.

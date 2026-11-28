@@ -467,6 +467,8 @@ V18.3 (27/11/2026). A coleta 27 já continha as duas tabelas de descritores. A v
 
 V18.4 (27/11/2026). As 24 entradas que falhavam por alinhamento têm PCM estéreo de 16 bits com dois bytes restantes depois do último quadro completo. O adaptador de decodificação remove essa amostra isolada apenas na variante do contêiner do Voice.dat e preserva o tamanho declarado na inspeção, que validou 131/131 entradas. A música passa a decodificar em blocos, com buffer de origem retido pela vida do stream. O smoke Linux com ALSA nulo avançou a reprodução de menu e duelo, inclusive após GC compactante e troca de faixa, e tocou `card_move.wav`. Ainda falta escuta no Windows e comparação de seleção, transição e volume com o original. [Contrato e validação](../../docs/research/native-joey-reaction-audio-2026-11-24.md#v184--quadros-pcm-e-streaming-no-cliente).
 
+V18.5 (28/11). Captura Windows privada de 90 s (2700 frames, 1249 eventos, zero perdas/erros): CE/CF de Set e Summon pedem Internal 0F antes do primeiro Update da viagem; 91 de revelação no campo pede 10; 72 pede 0D no primeiro Update do brilho. A viagem chega a 256 em oito updates e confirma o descritor no nono. Set começa no offset 9 (três amostras) e Summon no 11 (duas amostras de mão); 22/33 updates respectivamente. O cliente passa a tocar card_move na primeira amostra e conserva a pose terminal até a fronteira observada; não generalizar o atraso para outros opcodes. Ativação previamente baixada tem espera variável (inclui fala), não fixada neste recorte. CI e comparação local pendentes; badge inalterada. [Evidência](../research/native-basic-placement-cadence-2026-11-28.md).
+
 ## V19 — Fidelidade sistemática das demais telas/efeitos
 
 <a id="v19"></a>
