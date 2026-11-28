@@ -122,7 +122,7 @@ static partial class Game
                 8000, equipmentContextResolved: true);
             alphaCpu = null;
             ClearDuelSelection();
-            var queue = duel.CreatePrimitiveActionQueue();
+            var queue = duel.Actions;
             queuedDuel = queue;
 
             if (fromSet)
