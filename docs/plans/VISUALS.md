@@ -759,6 +759,8 @@ V31.9 (28/11/2026). O SQLite v14 confirmou o manifesto start.txt, posições e d
 
 V31.10 (28/11). Roteiro 71 recebido: tabela 005DA798 = 0,5,6,5; descritores 0x10000025..27 = Joey_01..03.wav. Review usa boca automaticamente e fala real opcional com Voice.dat; sem áudio preserva 162 Updates. Mantenedor confirmou composição anterior após color key. CI, nova captura e escuta pendentes; ainda sem integração live. [Contrato](../research/native-opening-bust-2026-11-28.md).
 
+V31.11 (28/11). Busto de abertura ligado ao Alpha vs CPU por tela de apresentação anterior ao Duel Start/deal. O Core e a fila permanecem intactos; a tela usa o mesmo banco/renderer do review, RNG de apresentação, cadência do perfil e áudio sem alterar pitch. Instant pula, Silent mantém animação sem voz, ausência de DAT/áudio não bloqueia. Escape encerra a fala e volta ao menu. RPS ainda não existe no Alpha. O mantenedor confirmou a mesma velocidade das falas e identificou falta de sombra projetada (kage.yga); lacuna registrada sem aprofundar compositor neste marco. CI e validação live pendentes; badge inalterada até aceite.
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

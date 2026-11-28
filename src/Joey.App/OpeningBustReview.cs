@@ -36,7 +36,12 @@ static partial class Game
 
     static void InitializeOpeningBustReview()
     {
-        foreach(var r in openingBustReview!.Resources)
+        ValidateOpeningBustTextures(openingBustReview!);
+    }
+
+    static void ValidateOpeningBustTextures(NativeOpeningBank bank)
+    {
+        foreach(var r in bank.Resources)
         {
             // Prime the same texture variant used by the compositor.
             var texture=new NativeOpeningLayer(r.Key,r.Path,r.Position).UsesCornerColorKey
@@ -84,7 +89,12 @@ static partial class Game
 
         // Post-step review: once the terminal native Draw clears active,
         // show the neutral canvas. This review never runs duel rules.
-        foreach(var layer in OpeningBustLayers())
+        DrawOpeningBustLayers(OpeningBustLayers());
+    }
+
+    static void DrawOpeningBustLayers(IEnumerable<NativeOpeningLayer> layers)
+    {
+        foreach(var layer in layers)
         {
             var texture=layer.UsesCornerColorKey ? graphics.CornerKeyedBitmapTexture(layer.Resource)
                 : graphics.Texture(layer.Resource);

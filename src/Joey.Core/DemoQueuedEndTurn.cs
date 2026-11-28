@@ -2,7 +2,7 @@ namespace Joey.Core;
 
 public sealed partial class DemoDuel
 {
-    private const ushort WickedWormBeast = 22;
+    private const ushort WickedWormBeast = Joey.Cards.TurnPhaseEffects.WickedWormBeast;
     private bool queuedEndTurn;
     private bool admittingQueuedEndDiscard;
     private readonly Queue<CardTarget> queuedEndReturns = new();

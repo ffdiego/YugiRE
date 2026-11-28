@@ -97,6 +97,7 @@ static partial class Game
             ConfigureCoinReview(args, archive);
             ConfigureAlternativeExclusionReview(args, archive);
             ConfigureReactionReview(args, archive);
+            ConfigureLiveOpeningBust(archive);
             ConfigureBreakFieldReview(args, archive);
             if (new[] { chainReview is not null, statusReviewCard is not null, disabledChainReviewTarget is not null, fusionReviewCard is not null, generalFusionReview is not null, layerFontReviewMode is not null, diceReview is not null, coinReview is not null, altExReviewMode is not null, ReactionReviewActive, breakReviewCardPath is not null }.Count(active => active) > 1)
                 throw new InvalidDataException("Choose one isolated review mode.");
@@ -271,6 +272,15 @@ static partial class Game
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.Escape)) quit = true;
                 DrawBreakFieldReview();
+            }
+            else if (screen == "opening-bust")
+            {
+                if (Raylib.IsKeyPressed(KeyboardKey.Escape))
+                {
+                    ResetLiveOpeningBust();
+                    screen = "menu";
+                }
+                else DrawLiveOpeningBust();
             }
             else if (screen == "reaction-review")
             {

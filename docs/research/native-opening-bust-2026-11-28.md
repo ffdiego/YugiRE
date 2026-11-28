@@ -98,3 +98,20 @@ Ausência de arquivo/dispositivo segue o caminho sem áudio. A captura do
 mantenedor confirmou aparência após correção do color key, antes desta
 mudança. Nova captura da boca e teste real de Voice.dat pendentes.
 Não há integração ao fluxo de duelo ainda; cobertura permanece Pending.
+
+## V31.11 — abertura no Alpha vs CPU
+
+O mantenedor confirmou que a velocidade de fala é igual no original
+normal e -speedy. Não alterar pitch, duração ou investigar novamente.
+A captura do original mostra sombra projetada atrás do personagem,
+ainda ausente no cliente; kage.yga já está no plano de camadas, mas
+falta confirmar composição. Deferida por orientação do mantenedor.
+A tela opening-bust é um estado exclusivamente de apresentação, antes
+de consumir os passos Duel Start/deal/Exodia já enfileirados. Não avança
+CPU, scheduler, console ou input de duelo. Ao terminar, retorna a duel;
+Escape volta ao menu e para voz. Usa perfil Classic/Fast (30/60 Hz),
+sem mudar áudio; Instant pula, Silent desabilita voz. Valida GPU no
+primeiro frame porque --alpha inicializa antes da janela. Banco inválido
+ou ausente não cria espera invisível. Sem alterações de regras, RNG de
+regras ou segunda fila. RPS não implementado no Alpha. Build/CI e teste
+com DAT e Voice.dat pendentes. Cobertura oficial permanece inalterada.

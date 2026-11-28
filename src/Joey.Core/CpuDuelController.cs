@@ -67,15 +67,13 @@ public sealed class CpuDuelController
 
     // Historical source compatibility only: false cannot select an executor.
     [Obsolete("Use Step(duel); the typed action queue is mandatory.")]
-    public CpuStep Step(DemoDuel duel, bool queueTurnActions) =>
+    internal CpuStep Step(DemoDuel duel, bool queueTurnActions) =>
         queueTurnActions ? Step(duel) : new(CpuStepStatus.Blocked, CpuAction.None, Player,
             "Legacy CPU execution has been removed.");
 
     public CpuStep Step(DemoDuel duel)
     {
         ArgumentNullException.ThrowIfNull(duel);
-        if (!duel.HasActionQueue)
-            return new(CpuStepStatus.Blocked, CpuAction.None, Player, "Attach the duel action queue before stepping the CPU.");
         if (!ReferenceEquals(duel, observedDuel) || observedTurn != duel.Turn)
         {
             observedDuel = duel; observedTurn = duel.Turn;
