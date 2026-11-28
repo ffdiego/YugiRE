@@ -28,6 +28,46 @@ internal static class HistoricalTurnDrawFixture
         return TurnFixture.Battle(duel, enterBattle, out message);
     }
 
+    // Historical source compatibility only; no parallel combat or response execution.
+    internal static bool Attack(this DemoDuel duel, int source, int target, out string message)
+    {
+        RequireHistoricalCombat();
+        return DrainCombat(duel, duel.TryQueueAttack(source, target, out message, ActionOrigin.Test));
+    }
+
+    internal static bool PassAttackResponse(this DemoDuel duel, out string message)
+    {
+        RequireHistoricalCombat();
+        message = "No queued attack response.";
+        return duel.PendingAttackResponse is { } request &&
+            DrainCombat(duel, duel.TryQueueAttackResponse(request, null, out message, ActionOrigin.Test));
+    }
+
+    internal static bool ActivateAttackTrap(this DemoDuel duel, int owner, int zone, out string message)
+    {
+        RequireHistoricalCombat();
+        message = "No matching queued attack Trap.";
+        return duel.PendingAttackResponse is { } request &&
+            request.EligibleTraps.FirstOrDefault(option => option.Owner == owner && option.Zone == zone) is { } selected &&
+            DrainCombat(duel, duel.TryQueueAttackResponse(request, selected, out message, ActionOrigin.Test));
+    }
+
+    private static void RequireHistoricalCombat()
+    {
+        if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
+            throw new InvalidOperationException("Use explicit queued attack admission in active fixtures.");
+    }
+
+    private static bool DrainCombat(DemoDuel duel, bool admitted)
+    {
+        if (!admitted) return false;
+        var queue = duel.Actions;
+        for (int tick = 0; tick < 1000 && queue.IsBusy; tick++) queue.Tick();
+        if (queue.IsBusy || queue.Fault is not null)
+            throw new InvalidOperationException("Historical combat fixture did not drain.");
+        return true;
+    }
+
     internal static bool Draw(this DemoDuel duel, out string message)
     {
         if (Environment.GetEnvironmentVariable("YUGIRE_HISTORICAL_CARD_TESTS") != "1")
