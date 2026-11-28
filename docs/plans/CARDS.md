@@ -518,6 +518,31 @@ eliminar a entrada de Battle Phase direta (BeginBattle/EndBattle)
 e depois resolvedores de combate, preservando primitivos usados
 pelo executor. C12 permanece parcial.
 
+### C12 — Transições da Battle Phase pela fila (28/11/2026)
+
+Removidos `DemoDuel.BeginBattle` e `EndBattle`. A entrada/saída
+normal é admitida por `TryQueueBattlePhaseChange` e executada por
+`ChangeBattlePhaseCommand`, incluindo os comandos de defesa e
+`FinishBattlePhaseCommand` já existentes. Preservados os primitivos
+privados `AllowsBattlePhaseChange`, `ApplyBattlePhaseChange` e
+`EnterMainPhase2`. O último ainda é chamado pelo resolvedor direto
+legado de resposta de ataque (Negate Attack); retirar esse caminho
+na próxima fatia de combate, não o confundir com a transição normal.
+
+Fixtures ativos com preparação real usam TurnFixture.Battle e a
+mesma fila, antes de fechar o gate; matrizes que observam um ataque
+isolado usam DuelCheckpoint com Battle Phase e turno legal.
+A05.7 conserva a rejeição de ataque em Main e a entrada tipada,
+delimitando o trace de combate por offset. Nenhuma limpeza do trace,
+reconfiguração de gate ou segunda fila. Extensões antigas restritas
+à suíte histórica opt-in de testes, sem mutação direta.
+
+PR #270 integrado em fb9f46c após CI 46147696121 verde. Esta fatia
+aguarda CI integral. Restam Attack/ResolveAttackResponse e a família
+de resolvedores de batalha, invocação, ativação, posição e escolhas.
+Sem promoção de cobertura ou alegação de fidelidade nativa nova.
+C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já
