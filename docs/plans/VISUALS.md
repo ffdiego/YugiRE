@@ -406,6 +406,12 @@ e escrita da cor seguem em aberto para esse kernel. O roteiro
 63 reproduz a comparação.
 [Amostragem inclinada](../../docs/research/native-quad-raster-contract-2026-11-24.md#quadrilátero-inclinado-em-rgb565-em-proton).
 
+V17.12. A sonda 63 passou a comparar a escrita RGB565
+do compositor base 3→3. Duas amostras somaram 288 valores
+conferidos, com 200 preservações por cor-chave e 87 alterações
+no destino. O compositor 3→3 com redução de intensidade ainda
+precisa dessa comparação.
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

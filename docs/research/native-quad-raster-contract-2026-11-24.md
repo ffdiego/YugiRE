@@ -190,6 +190,11 @@ as bases e os pitches das superfícies bloqueadas.
 O comparador .NET reproduziu 144 pares U/V em cada um de dois
 quadriláteros inclinados dentro do canvas. Os recortes cobrem
 interpolação nas duas direções e a primeira troca de aresta.
-A comparação valida endereços de amostragem. A cor-chave e a
-escrita desse kernel ainda pedem comparação.
+A sonda também lê o RGB565 antes de `0052CE20` e depois da
+comparação e da escrita condicional em `0052CE34`. Duas
+amostras somaram 288 pixels. Desses, 200 coincidiam com a
+cor-chave e preservaram o destino. Os 88 restantes terminaram
+com o word de origem, incluindo 87 pixels cujo valor mudou.
+O comparador confirmou cada endereço de amostragem e cada
+valor final.
 [Roteiro 63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado).

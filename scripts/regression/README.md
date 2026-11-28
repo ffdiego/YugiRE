@@ -417,7 +417,9 @@ e salve a captura em outro log. O mesmo comparador lê os dois caminhos.
 Anexe antes do voo da espada na demonstração, com os mesmos
 requisitos do roteiro 62. A sonda entra apenas em chamadas
 RGB565→RGB565 com um quadrilátero inclinado. O comparador
-verifica cada endereço de amostragem em coordenadas de texel.
+verifica cada endereço de amostragem em coordenadas de texel,
+a preservação do destino na cor-chave e a cópia RGB565 nos
+demais pontos.
 
 ```bash
 timeout --signal=INT 130s gdb -nx -q -batch -p "$joey_test_pid" \
