@@ -47,6 +47,8 @@ public sealed class NativeDisabledChainTimeline
 
     public int Counter { get; private set; }
     public bool Active { get; private set; } = true;
+    // 005DB378 points to 00403080 (return obj+4 active).
+    public bool BlocksRelease => Active;
 
     public NativeDisabledChainFrame? Sample(uint descriptorFlags) =>
         Active ? NativeDisabledChainFrame.FromCounter(Counter, descriptorFlags) : null;

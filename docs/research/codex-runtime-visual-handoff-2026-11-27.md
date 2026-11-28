@@ -1,3 +1,5 @@
+> **Prioridade atual (27/11):** este handoff histórico de precisão gráfica é secundário. Seguir PLANS.md: ampliar efeitos integrados primeiro; aceitar composição aproximada com sprites originais e adiar equivalência de pixels. Não bloquear efeitos funcionais por diferenças de cor.
+
 # Handoff — runtime visual no Proton/GDB (27/11)
 
 ## Objetivo único

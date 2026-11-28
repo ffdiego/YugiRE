@@ -224,6 +224,42 @@ sealed class DatGraphics : IDisposable
         loaded.Enqueue(cacheKey);
         return texture;
     }
+    // Derived assets are owned and disposed with the usual texture cache.
+    public unsafe Texture2D AffectTexture(string background,string mask)
+    {
+        string key=mask+"#affect-atlas";
+        if(textures.TryGetValue(key,out var cached))return cached;
+        byte[] Pixels(string path,int width,int height)
+        {
+            var image=ReadImage(path);
+            try
+            {
+                if(image.Width!=width || image.Height!=height)
+                    throw new InvalidDataException("Unexpected Affect bitmap: "+path);
+                Raylib.ImageFormat(ref image,PixelFormat.UncompressedR8G8B8A8);
+                if(image.Data==null || image.Format!=PixelFormat.UncompressedR8G8B8A8)
+                    throw new InvalidDataException("Cannot decode Affect pixels: "+path);
+                return new ReadOnlySpan<byte>(image.Data,checked(width*height*4)).ToArray();
+            }
+            finally { Raylib.UnloadImage(image); }
+        }
+        var rgba=NativeAffectPixels.BuildAtlas(
+            Pixels(background,NativeAffectPixels.LoopWidth,NativeAffectPixels.LoopHeight),
+            Pixels(mask,NativeAffectPixels.Width,NativeAffectPixels.Height));
+        fixed(byte* pixels=rgba)
+        {
+            var image=new Image { Data=pixels,Width=NativeAffectPixels.Width,
+                Height=NativeAffectPixels.Height*NativeAffectPixels.Phases,Mipmaps=1,
+                Format=PixelFormat.UncompressedR8G8B8A8 };
+            var texture=Raylib.LoadTextureFromImage(image);
+            if(texture.Id==0)throw new InvalidDataException("Cannot upload Affect atlas.");
+            Raylib.SetTextureFilter(texture,TextureFilter.Point);
+            textures.Add(key,texture);
+            loaded.Enqueue(key);
+            return texture;
+        }
+    }
+
     private static unsafe Texture2D UploadYga(NativeYgaSprite sprite)
     {
         fixed (byte* pixels = sprite.Rgba)

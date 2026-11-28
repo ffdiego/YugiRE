@@ -46,7 +46,7 @@ rotina ainda não foi atribuída, e não ausência de Update ou Draw.
 | Seleção nativa de cartas | `0043A060` / `005DABD8` | `0043B0F0` | `0043B280` | `list/selectlist*.txt`, `gravelist*.txt`, `fusionlist*.txt`, `excludelist*.txt`, `list_icon/list_icon.txt` | **Pending:** lista de cinco cartões, navegação e renderização de transição; a UI provisória do cliente usa dez cartões em duas filas. Vtable confirmada no lote 22/11; a decompilação tem warning de tipagem. Ver `docs/research/visual-virtual-methods-2026-11-22.md`. |
 | Diálogos e seleções | `00487E70` (manifesto) | Aberto | Aberto | `dialog/dialog.txt`, `button_?.txt`, `ritualdlg.txt` | Placeholder/procedural inventado. `DrawCardSelectionOverlay`, `DrawSummonResponseOverlay`, `DrawAttackResponseOverlay` e `DrawEffectDecisionOverlay` usam painéis de gameplay do cliente. |
 | Ajuda | `0045E250` / `005DB630` | `0045E3D0` | `0045E4A0` | `help/help.txt`, YGAs por idioma | Não implementado. |
-| Efeito de estado persistente | `0040DAC0` / `005DA44C` | `0040E010` | `0040E260` | `effect/affect.txt` | Não implementado. Associação por manifesto e vtable; sem mapa dos ícones e flags. |
+| Efeito de estado persistente | `0040DAC0` / `005DA44C` | `0040E010` | `0040E260` | `effect/affect.txt` | Parcial no duelo: vínculos de equipamentos, campo, aura e restrições modelados; scratch DAT com máscara aproximada, somente extremos face-up. Demais relações e compositor nativo pendentes. |
 
 ## Objetos de efeito e eventos
 
@@ -71,8 +71,8 @@ sem inferir todos os argumentos ou o comportamento de cada fase.
 | Fusão | `004520E0` / `005DB364` e `004874C0` / `005DBD54` | `004524E0 / 004877B0` | `004524F0 / 004877F0` | `effect/fusion.txt` | Fusão geral parcial no duelo; fusão vinculada em revisão isolada. |
 | Embaralhamento | `004532C0` / `005DB384` | `00453540` | `00453560` | `effect/shuffle.txt`, `deck_shuf1..5.bmp`, `deck_shuf_waku_e.yga` | Parcial: 41 Updates com 5 quadros originais e movimento deck→centro→deck; eventos em buscas no deck e Morphing Jar #2. Centro `DAT_005DB570`, escala/composição e ordem do manifesto ainda não comprovados. |
 | Corrente | `0041F5C0` / `005DABA8` | `0041F830` | `0041F870` | `chain/chain.txt` | Não implementado. |
-| Indicador de corrente desativada | `00452F20` / `005DB374` | `004531A0` | `004531C0` | `chain/disable.txt` | **Draw Pending:** modelo temporal isolado em `NativeDisabledChainFrame.cs` (24 Updates, 6 índices repetidos, bit `0x40`) e testes C#; faltam recursos/posições/composição/disparo e integração raylib. |
-| Remoção / exclusão | `0043D810` / `005DACB4` | `004481F0` | `0043DBE0` | `effect/exclusion.txt` | Não implementado como animação. |
+| Indicador de corrente desativada | `00452F20` / `005DB374` | `004531A0` | `004531C0` | `chain/disable.txt` | Parcial: Jinzo revelado em invocação normal/especial, varredura de armadilhas face-up e 24 Updates por alvo na apresentação do comando; outras negações e comparação pendentes. |
+| Remoção / exclusão | `0043D810` / `005DACB4` | `004481F0` | `0043DBE0` | `effect/exclusion.txt` | Parcial: BanishCommand aplicado, zona de destino 0F, 24 Draws independentes e identidade mascarada. Associação positiva no original e outras rotas pendentes. |
 | Sacrifício | `00486D80` / `005DBD24` | `00487060` | `004870B0` | `effect/sacrifice.txt`, estrelas do Set provisórias | Implementação parcial: evento para cada monstro usado como tributo; aguarda counter 128 em modo 0, modo 1 +8 até 384; oito partículas radiais; animações de tributos ocorrem antes do voo da nova invocação. Ordem real dos sprites, rotação/scratch, som e temporização pareada pendentes. |
 | Moeda | `004571D0` / `005DB404` | `00457500` | `00457520` | `effect/coin.txt`, 14 padrões na tira principal | Não implementado. Variante e relógio têm análise parcial na branch histórica. |
 | Dado | `004568C0` / `005DB3F4` | `00456B70` | `00456B90` | `effect/dice.txt` | Não implementado. |

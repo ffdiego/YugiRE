@@ -209,6 +209,8 @@ escrita do bit 5 e o descritor entregue ao construtor. Os testes
 simulados passaram. Falta capturar o cenário e o controle no
 original. [Rastreio](../../docs/research/native-chain-disabled-2026-11-22.md#v122--varredura-disparada-pelo-ramo-de-jinzo-2711).
 
+V12.3: v7 confirma seis YGAs cha_mukou1..6 (50x72), vtable +4 00403080 (ativo). Invocação normal/especial revelada de Jinzo no cliente gera substeps de 24 Updates para as armadilhas reveladas em ordem lado/slot, sem segunda fila e sem afetar as regras. Outras negações e Flip Summon ainda não ligados, composição aproximada e captura original pendente. Draw Partial.
+
 ## V13 — `DebugOverlayEnabled` na UI
 
 <a id="v13"></a>
@@ -513,6 +515,8 @@ quadros do executável original continuam pendentes.
 
 NativeAffectTimeline porta fase, reset por identidade visual e ramo recuperável de vínculos. Foco por hit-test e comandos brutos 1F/21 (índices 19/1B). O roteiro 17 e o DAT confirmam scratch 50×50, recortes verticais com wrap e recomposição por troca de seletor. O PR #139 porta o plano de composição e testa a ordem dos passes. Faltam ramos de vínculos, compositor e validação em tela. V24.2 corrige reset por Draw (0040E288); viagem específica de equipamento separada em V32. V24.3 confirma Jar key2 nos dois sentidos, TER key4 no próprio foco, distinção de resource consultado nos links e os ramos campo/poder. Roteiro 58 para três jump tables e callback Spellbinding Circle. [Evidência](../research/native-affect-scratch-2026-11-24.md).
 
+V24.4: Affect integrado ao duelo: projeção de vínculos reais pelo Core, equipamentos, campo, aura e restrições já modelados. Foco por ocorrência; somente extremos revelados, sem novo gate. Scratch com atlas de 32 fases e máscara azul aproximada do DAT. Instant mantém ícone estático. Roteiro 58 e relações contínuas não modeladas permanecem pendentes; sem pixel-perfect. Draw Partial.
+
 ## V25 — Ativação alternativa (00450AD0)
 
 <a id="v25"></a>
@@ -556,6 +560,8 @@ Uma demonstração separada registrou 73 transferências em
 movimentação real com destino `0x0F` ao despacho ainda
 precisa de captura positiva.
 [Roteiro 65](../../scripts/regression/README.md#65--v26-associação-das-zonas-de-exclusão).
+
+V26.5: BanishCommand aplicado emite observação da movimentação, liga efeito não bloqueante à zona 0F. Tabela 005DB5F0 do v7 confirma (762,308)/(292,292). Deck/mão mascarados, cemitério público; 24 Draws e terminal retido por uma amostra. Rota inferida pela associação do produtor 0043D440/0041E829, ainda sem captura positiva. Não estender a destruição de batalha ou materiais de fusão. Blend aproximado e som pendente. Draw Partial.
 
 ## V27 — Layerfont A (00455FF0)
 
