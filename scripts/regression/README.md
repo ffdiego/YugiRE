@@ -56,7 +56,11 @@ timeout --signal=INT 15s gdb -nx -q -batch -p "$joey_test_pid" \
 
 O piloto em Proton 9.0, Xvfb a 800×600 e llvmpipe retornou
 `0x005dc6ec format=3 flag78=0` nas três amostras do duelo de
-demonstração. Os breakpoints interferem no tempo de execução.
+demonstração. Para conferir a negociação, inicie o jogo com
+`WINEDEBUG=-all,+ddraw` e procure o ponteiro `ddraw` do roteiro
+em `ddraw_surface1_GetSurfaceDesc` no `game.log` da mesma execução.
+Confira o pedido em `CreateSurface` e as máscaras devolvidas.
+Os breakpoints e o trace interferem no tempo de execução.
 A coleta 34 em Windows continua sendo a referência para cadência e
 para a passagem de composição na seleção.
 

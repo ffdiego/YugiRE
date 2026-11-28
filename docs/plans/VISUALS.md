@@ -391,6 +391,14 @@ quadriláteros e o par 11→4. A comparação no caminho base
 10→3 conferiu 144 texels em um impacto 1:1, com intensidade 256.
 [Seleção de texels](../../docs/research/native-quad-raster-contract-2026-11-24.md#seleção-de-texels-do-impacto-em-proton).
 
+V17.10. No teste em Xvfb de profundidade 15, o descritor
+da superfície de duelo chegou ao DirectDraw sem formato de
+pixel explícito. O retorno para a mesma interface trouxe RGB565
+e pitch 1600. O roteiro 41 agora registra o ponteiro usado na
+correlação. A execução 11→4 depende de um backend que exponha
+RGB555 para essa superfície.
+[Negociação do formato](../../docs/research/native-surface-copy-contract-2026-11-24.md#seleção-do-formato-pelo-directdraw-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

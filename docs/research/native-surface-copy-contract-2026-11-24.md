@@ -411,3 +411,26 @@ e flag `+78h=0`. Nesse ambiente, mudar a profundidade do
 display não acionou RGB555 no buffer de duelo. O Pillow
 também rejeitou a captura nesse display, por isso a
 execução medida dispensou PNG e observou o formato via GDB.
+
+### Seleção do formato pelo DirectDraw em Proton
+
+Com `-win` e Xvfb 800×600×15, uma nova execução registrou
+`WINEDEBUG=-all,+ddraw` desde a inicialização. A correlação
+com o ponteiro da cena em `0044DD00` identificou a chamada
+`CreateSurface` correspondente. O jogo pediu 800×600 com
+`DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY` e deixou
+`DDSD_PIXELFORMAT` fora do descritor de entrada. Em
+`GetSurfaceDesc`, o Proton devolveu 16 bits, pitch 1600 e
+máscaras `F800/07E0/001F`. O roteiro 41 confirmou formato 3
+nas três chamadas à cena com essa interface.
+
+O assembly em `004ABC9B` escreve as flags `0x07` no
+descritor que chega a `CreateSurface` em `004ABCF7`.
+Após a criação, `004AC00D` chama `004A6120`, que consulta
+o descritor pelo slot `+58h` e lê as máscaras. A comparação
+em `004A6190–004A61B8` retorna 3 para RGB565, e
+`004AC012` grava o resultado no objeto. A observação
+explica o 10→3 neste backend. O ramo 11→4 continua sem
+amostra em execução e requer um ambiente que devolva
+`7C00/03E0/001F` para a superfície de duelo.
+[Roteiro 41](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
