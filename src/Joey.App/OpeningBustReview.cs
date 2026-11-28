@@ -43,7 +43,9 @@ static partial class Game
     {
         foreach(var r in openingBustReview!.Resources)
         {
-            var texture=graphics.Texture(r.Path);
+            // Prime the same texture variant used by the compositor.
+            var texture=new NativeOpeningLayer(r.Key,r.Path,r.Position).UsesCornerColorKey
+                ? graphics.CornerKeyedBitmapTexture(r.Path) : graphics.Texture(r.Path);
             if(texture.Width!=r.Width || texture.Height!=r.Height)
                 throw new InvalidDataException("Unexpected opening resource dimensions: "+r.Path);
         }
@@ -67,7 +69,11 @@ static partial class Game
         // Post-step review: once the terminal native Draw clears active,
         // show the neutral canvas. No real audio or duel is running.
         foreach(var layer in OpeningBustLayers())
-            Raylib.DrawTexture(graphics.Texture(layer.Resource),layer.Position.X,layer.Position.Y,Color.White);
+        {
+            var texture=layer.UsesCornerColorKey ? graphics.CornerKeyedBitmapTexture(layer.Resource)
+                : graphics.Texture(layer.Resource);
+            Raylib.DrawTexture(texture,layer.Position.X,layer.Position.Y,Color.White);
+        }
     }
 
     static void CaptureOpeningBustReview(RenderTexture2D canvas)

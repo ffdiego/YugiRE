@@ -58,3 +58,22 @@ o fundo statobg e a sombra YGA não passam por essa substituição.
 É uma correção diagnóstica baseada na captura do cliente, não prova
 de equivalência ao compositor DirectDraw original. Nova comparação
 visual e CI pendentes. Nenhuma mudança de cobertura.
+
+## Correção da chave de cor (28/11, segunda captura)
+
+O PNG opening-bust-20261128-122316-018.png (800×600) contém
+159808 pixels RGB(0,255,6), inclusive (0,0), todos opacos. A
+substituição RGB(0,255,0) do commit anterior não resolveu o defeito.
+O contrato já documentado em native-surface-copy-contract registra
+004AACDD -> virtual +64h(0,0), com 004AC170 armazenando a chave
+convertida em surface+64h. A chave é da superfície, não um verde fixo.
+BitmapCornerColorKey converte a chave do canto do BMP decodificado em
+alpha zero, sem mudar os outros pixels. DatGraphics permite solicitar
+essa operação por Draw (cache separado), sem lista de nomes de arquivos.
+A abertura solicita chave apenas para personagem, boca e texto. Fundo
+opaco e YGA preservam suas políticas anteriores. A comparação é RGB888
+exata no cliente, não reprodução do domínio packed do original;
+verificar posteriormente o formato e predicado da superfície nativa.
+Outros caminhos legados de textura ainda usam suas políticas existentes,
+sem alteração global não validada. Testes sintéticos incluem a cor
+observada e uma chave não verde. Build/CI e nova captura pendentes.

@@ -45,7 +45,12 @@ public sealed class NativeOpeningPlayback
 
 public readonly record struct NativeOpeningResource(int Key, string Path, CardPoint Position,
     int Width, int Height);
-public readonly record struct NativeOpeningLayer(int Key, string Resource, CardPoint Position);
+public readonly record struct NativeOpeningLayer(int Key, string Resource, CardPoint Position)
+{
+    // The opening's background is copied opaque; the shadow is YGA.
+    // Foreground BMP draws use the decoded surface's color key.
+    public bool UsesCornerColorKey => Key is 2 or 5 or 6 or 7 or 8 or 9;
+}
 
 /// <summary>DAT contract from start.txt in cumulative v14. Draw is expressed
 /// as a layer plan; the original temporary-surface compositor is not ported.</summary>
@@ -55,19 +60,6 @@ public sealed class NativeOpeningBank
     private readonly NativeOpeningResource?[] resources;
     private NativeOpeningBank(NativeOpeningResource?[] resources) => this.resources = resources;
     public IEnumerable<NativeOpeningResource> Resources => resources.OfType<NativeOpeningResource>();
-
-    // The 28/11 client capture shows opaque pure-green on opening sprites.
-    // Apply the existing BMP diagnostic color-key path only to the known
-    // character, mouth and dialogue resources, never to the backdrop/YGA.
-    public static bool UsesGreenKey(string path)
-    {
-        const string prefix = NativeJoeyCinematicRouting.Prefix + @"start\";
-        if (!path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase)) return false;
-        string name=path[prefix.Length..];
-        return new[]{"reaction16.bmp","reaction16_kuti1.bmp","reaction16_kuti2.bmp",
-            "stato_e_01.bmp","stato_e_02.bmp","stato_e_03.bmp"}
-            .Contains(name,StringComparer.OrdinalIgnoreCase);
-    }
 
     public static NativeOpeningBank Parse(string manifest, IEnumerable<string> archiveNames)
     {

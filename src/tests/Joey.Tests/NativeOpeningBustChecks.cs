@@ -61,10 +61,19 @@ internal static class NativeOpeningBustChecks
             bank.Sample(144,0,synthetic)[^1].Key==6 &&
             bank.Sample(0x10000,0,synthetic).Length==4,
             "V31 injected mouth keys and exit suppression");
-        check(bank.Resources.Where(r=>NativeOpeningBank.UsesGreenKey(r.Path)).Select(r=>r.Key)
-            .SequenceEqual(new[]{2,5,6,7,8,9}) &&
-            !NativeOpeningBank.UsesGreenKey(@"other\reaction16.bmp"),
-            "V31 keying scoped to opening foreground, not background or YGA");
+        check(bank.Resources.Where(r=>new NativeOpeningLayer(r.Key,r.Path,r.Position).UsesCornerColorKey)
+            .Select(r=>r.Key).SequenceEqual(new[]{2,5,6,7,8,9}),
+            "V31 keying selected by draw layer, not filename");
+
+        // The maintainer's PNG showed exactly RGB(0,255,6), not pure green.
+        byte[] green=[0,255,6,255, 0,255,6,128, 0,255,0,255, 7,8,9,255];
+        BitmapCornerColorKey.Prepare(green);
+        check(green.SequenceEqual(new byte[]{0,255,6,0, 0,255,6,0, 0,255,0,255, 7,8,9,255}),
+            "V31 decoded corner key removes matching RGB without changing other colors");
+        byte[] other=[141,178,43,255, 0,255,6,255, 141,178,43,255, 12,20,30,123];
+        BitmapCornerColorKey.Prepare(other);
+        check(other[3]==0 && other[7]==255 && other[11]==0 && other[15]==123,
+            "V31 non-green corner and preservation of non-key alpha");
 
         var clock=new NativeReviewClock();
         check(!clock.Advance(1),"V31 paused review never advances");
