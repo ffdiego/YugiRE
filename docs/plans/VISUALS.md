@@ -701,6 +701,19 @@ chegaram a `0x10100`. As contagens descrevem essas amostras.
 Faltam medir as outras falas e avaliar a composição.
 [Reprodução](../../scripts/regression/README.md#67--v31-gatilho-e-duração-do-busto-de-abertura).
 
+V31.8. O SQLite v14 e o assembly identificam outro contrato para o
+busto de resultado (`00416260`, Pending). A chamada `004180DE`
+cria o objeto via `00415AF0`. O Update usa o contador `obj+10h`
+e solicita `[obj+14h] + [obj+18h]` em `00416214` quando o
+contador é 96. Consulta o mesmo predicado de áudio com contador
+maior que 480 e menor que `0x10000`. O salto em `00416242`
+passa pelo incremento no mesmo Update, portanto o primeiro
+Draw após o salto pode receber `0x10004`. A partir de
+`0x10080`, o Draw desativa o objeto em `004166C3`.
+O assembly prevê o primeiro salto em 484 com `-nosound`.
+Falta medir a sequência de callbacks após um resultado real e
+o início da transição seguinte.
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave
