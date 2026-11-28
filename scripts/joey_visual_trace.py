@@ -10,22 +10,32 @@ from pathlib import Path
 import sys
 import time
 
+PROFILES = ("placement", "activation", "reactions", "cursor", "battle", "all")
 EXPECTED = "db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de"
 AGENT = r'''
 'use strict';
 const image = Process.mainModule, base = image.base;
 const hooks = [], events = [], frames = new Map();
+const cursorPasses = new Map();
 const limit = 100000;
-let frame = 0, dropped = 0, origin = Date.now();
+let frame = 0, cursorPass = 0, dropped = 0, origin = Date.now();
 function at(va) { return base.add(va - 0x400000); }
 function va(p) { const n = p.sub(base).toUInt32(); return n < image.size ? n + 0x400000 : null; }
 function read(p, offset, kind) { try { return p.add(offset)[kind](); } catch (_) { return null; } }
 function push(event) { if (events.length >= limit) { dropped++; return; } events.push(event); }
 function record(kind, ctx, fields) {
     push(Object.assign({kind, ms:Date.now()-origin, thread:ctx.threadId,
-        frame:frames.get(ctx.threadId)||null, caller:va(ctx.returnAddress),
-        scene:read(at(0x005f2fb4),0,'readU32'),
-        opcode:read(at(0x00a550a0),0,'readU8')},fields));
+        frame:frames.get(ctx.threadId)||null, cursorPass:cursorPasses.get(ctx.threadId)||null,
+        caller:va(ctx.returnAddress),
+        appTick:read(at(0x005f2fb4),0,'readU32'),
+        opcode:currentOpcode()},fields));
+}
+function commandWords() {
+    return [0,2,4,6].map(off=>read(at(0x00a550a0),off,'readU16'));
+}
+function currentOpcode() {
+    const word=read(at(0x00a550a0),0,'readU16');
+    return word===null?null:word&0xfff;
 }
 function hook(address, callbacks) { hooks.push(Interceptor.attach(at(address),callbacks)); }
 function snapshot(p, offsets) {
@@ -44,6 +54,102 @@ const travelFields = [['counter',0x14,'readS32'],['kindRaw',0x18,'readS32'],
 function watch(address, name, fields) {
     hook(address,{onEnter(){this.obj=this.context.ecx;record(name+'-enter',this,snapshot(this.obj,fields));},
         onLeave(){record(name+'-exit',this,snapshot(this.obj,fields));}});
+}
+// 0054B030 stores the Windows left/right messages in +05/+04.
+const mouseFields = [['rawLeft',5,'readU8'],['rawRight',4,'readU8'],
+    ['previousLeft',7,'readU8'],['previousRight',6,'readU8'],
+    ['left',0x0d,'readU8'],['right',0x0c,'readU8'],
+    ['x',0x14,'readS32'],['y',0x18,'readS32'],['inhibit',0x1c,'readU32']];
+const cursorFields = [['enabled',0x10,'readU8'],['request',0x108,'readU32'],
+    ['waveEnabled',0x10d,'readU8']];
+function watchMouseButtons() {
+    const mouseMessages = new Set([0x201,0x202,0x204,0x205]);
+    hook(0x0054b030,{onEnter(args){
+        const message=args[1].toUInt32();
+        if(!mouseMessages.has(message))return;
+        const position=args[3].toUInt32();
+        record('mouse-button',this,{message,x:(position<<16)>>16,y:position>>16});
+    }});
+}
+function watchCursor() {
+    hook(0x0047fe90,{
+        onEnter(){
+            this.previous=cursorPasses.get(this.threadId);
+            cursorPasses.set(this.threadId,++cursorPass);
+            const mouse=read(at(0x005f33e0),0,'readPointer');
+            record('cursor-pass',this,{...snapshot(this.context.ecx,cursorFields),
+                input:mouse===null||mouse.isNull()?null:snapshot(mouse,mouseFields)});
+        },
+        onLeave(){
+            if(this.previous===undefined)cursorPasses.delete(this.threadId);
+            else cursorPasses.set(this.threadId,this.previous);
+        }
+    });
+    hook(0x00451f70,{onLeave(result){
+        record('cursor-wave-created',this,snapshot(result,effectFields));
+    }});
+    hook(0x00450fb0,{
+        onEnter(){this.obj=this.context.ecx;},
+        onLeave(){record('cursor-wave-update',this,snapshot(this.obj,effectFields));}
+    });
+    hook(0x00451fb0,{onEnter(){
+        record('cursor-wave-draw',this,snapshot(this.context.ecx,effectFields));
+    }});
+}
+
+const attackFields = [['active',4,'readU8'],['state',0x10,'readS32'],['counter',0x14,'readS32'],
+    ['attackerSide',0x18,'readS32'],['attackerSlot',0x1c,'readS32'],
+    ['targetSide',0x20,'readS32'],['targetSlot',0x24,'readS32']];
+function watchBattle() {
+    hook(0x005aa480,{onLeave(result){
+        const bits=result.toUInt32();
+        if(bits!==0)record('duel-confirm-input',this,{bits,
+            side:read(at(0x00a55044),0,'readS32'),zone:read(at(0x00a55048),0,'readS32'),
+            slot:read(at(0x00a5504c),0,'readS32')});
+    }});
+    hook(0x00414110,{
+        onEnter(){this.obj=this.context.ecx;this.before=snapshot(this.obj,attackFields);},
+        onLeave(){
+            const after=snapshot(this.obj,attackFields);
+            if(this.before.active===1||after.active===1)
+                record('battle-attack-update',this,{before:this.before,after});
+        }
+    });
+    hook(0x004142c0,{onEnter(){
+        record('battle-attack-draw',this,snapshot(this.context.ecx,attackFields));
+    }});
+    hook(0x0047c4f0,{onEnter(args){
+        record('battle-lp-request',this,{delta:args[0].toInt32(),slot:args[1].toInt32(),flags:args[2].toUInt32()});
+    }});
+    hook(0x0047c660,{onEnter(){
+        record('battle-lp-draw',this,snapshot(this.context.ecx,[['slot',0x2c,'readS32'],['delta',0x28,'readS32']]));
+    }});
+    hook(0x004514b0,{onEnter(){
+        record('battle-explosion-draw',this,snapshot(this.context.ecx,[['active',4,'readU8'],['counter',0x10,'readS32']]));
+    }});
+    hook(0x005b9470,{
+        onEnter(){this.words=commandWords();},
+        onLeave(){
+            const state=read(at(0x00a558ac),0,'readU16');
+            record('battle-command-step',this,{words:this.words,
+                substate:state===null?null:state&0x7f, busy:state===null?null:(state&0x4000)!==0});
+        }
+    });
+}
+
+function watchTravelRequests() {
+    // The low 12 bits of word 0 carry the command, including when its side bit is set.
+    const transferCommands = new Set([0x79,0x7a,0x7c,0x83,0x8d,0x8e,0x8f,0x91,0x95]);
+    hook(0x005b9170,{onEnter(args){
+        const word=args[0].toUInt32()&0xffff;
+        if(transferCommands.has(word&0xfff))
+            record('transfer-command-produced',this,{words:[word,...[1,2,3].map(i=>args[i].toUInt32()&0xffff)]});
+    }});
+    // 83 and 8F pass the source and destination descriptor addresses here.
+    hook(0x0040cdb0,{onEnter(args){
+        record('travel-request',this,{cardIndex:args[0].toUInt32()&0xffff,
+            sourceDescriptor:read(args[1],0,'readU16'),destinationDescriptor:read(args[2],0,'readU16')});
+    }});
 }
 function soundName(id) {
     const bank=id>>>28, index=id&0x0fffffff;
@@ -64,12 +170,17 @@ rpc.exports = {
         hook(0x005c03d0,{onEnter(args){const id=args[0].toUInt32();
             record('sound-request',this,{id,parameter:args[1].toInt32(),resource:soundName(id)});}});
         hook(0x0044ef40,{onEnter(args){record('raw-presentation-event',this,{code:args[0].toUInt32()});}});
-        if(profile==='all'||profile==='placement'||profile==='activation'){
+        if(profile==='all'||profile==='placement'||profile==='activation'||profile==='battle'){
+            watchTravelRequests();
             hook(0x00418b60,{onEnter(){this.obj=this.context.ecx;this.before=snapshot(this.obj,travelFields);},
                 onLeave(){const after=snapshot(this.obj,travelFields),b=this.before;
-                    if(b.counter!==after.counter||b.tail!==after.tail||b.sourceDescriptor!==after.sourceDescriptor)
+                    if(b.counter!==after.counter||b.tail!==after.tail||b.sourceDescriptor!==after.sourceDescriptor||
+                       b.destinationDescriptor!==after.destinationDescriptor||b.face!==after.face)
                         record('travel-update',this,{before:b,after});}});
         }
+        if(profile==='all'||profile==='cursor'||profile==='battle')watchMouseButtons();
+        if(profile==='all'||profile==='cursor')watchCursor();
+        if(profile==='all'||profile==='battle')watchBattle();
         if(profile==='all'||profile==='placement'){
             watch(0x0044f370,'set-update',effectFields);watch(0x0044f390,'set-draw',effectFields);
             watch(0x0044f9f0,'summon-update',effectFields);watch(0x0044fa10,'summon-draw',effectFields);
@@ -92,9 +203,9 @@ rpc.exports = {
             },onLeave(ret){if(this.reaction)record('reaction-audio-poll',this,{id:this.id,complete:(ret.toUInt32()&255)!==0});}});
         }
     },
-    mark(){push({kind:'marker',ms:Date.now()-origin,frame,scene:read(at(0x005f2fb4),0,'readU32'),
-        opcode:read(at(0x00a550a0),0,'readU8'),label:'F9'});},
-    stop(){hooks.forEach(h=>h.detach());return {frames:frame,dropped,events};}
+    mark(){push({kind:'marker',ms:Date.now()-origin,frame,cursorPass,appTick:read(at(0x005f2fb4),0,'readU32'),
+        opcode:currentOpcode(),label:'F9'});},
+    stop(){hooks.forEach(h=>h.detach());return {frames:frame,cursorPasses:cursorPass,dropped,events};}
 };
 '''
 
@@ -145,7 +256,8 @@ def main():
     p.add_argument("--seconds", type=int, default=90)
     p.add_argument("--label", choices=["normal", "speedy"], required=True, help="Label only; does not change speed")
     p.add_argument("--scenario", default="", help="Free-form scenario label")
-    p.add_argument("--profile", choices=["placement", "activation", "reactions", "all"], default="all")
+    p.add_argument("--profile", choices=PROFILES, default="all",
+                   help="Limit instrumentation to the selected family (all enables every profile)")
     p.add_argument("--output", type=Path)
     a = p.parse_args()
     if sys.platform != "win32":
@@ -189,7 +301,7 @@ def main():
         result = script.exports_sync.stop()
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("x", encoding="utf-8") as out:
-            json.dump(dict(schemaVersion=2, exeSha256=digest, modeLabel=a.label,
+            json.dump(dict(schemaVersion=3, exeSha256=digest, modeLabel=a.label,
                 profile=a.profile, scenario=a.scenario, pid=a.pid, errors=errors, **result), out, indent=2)
         counts = {}
         for event in result["events"]:
