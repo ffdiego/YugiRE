@@ -9,11 +9,12 @@ internal static class CpuDuelChecks
     private static Card Spell(ushort id, int type = 22) => new(id + 2000, id, "Fixture " + id, "", (uint)type << 20);
     private static Card?[] Slots(Card? first = null) => [first, null, null, null, null];
     private static DemoDuel State(int side, IReadOnlyList<Card> hand, Card? own = null, Card? enemy = null,
-        IReadOnlyList<Card>? grave = null, IReadOnlyList<Card>? deck = null) =>
+        IReadOnlyList<Card>? grave = null, IReadOnlyList<Card>? deck = null, DemoPhase phase = DemoPhase.Main) =>
         DemoDuel.FromPartialObservation(side, hand, Slots(side == 0 ? own : enemy),
             Slots(side == 1 ? own : enemy), 8000, true,
             side == 0 ? grave : null, side == 1 ? grave : null,
-            side == 0 ? deck : null, side == 1 ? deck : null);
+            side == 0 ? deck : null, side == 1 ? deck : null,
+            checkpoint: new DuelCheckpoint(side + 1, phase));
 
     private static bool DrawThroughQueue(DemoDuel duel)
     {
@@ -290,10 +291,9 @@ internal static class CpuDuelChecks
                 "CPU: Tremendous Fire can tie the duel and is skipped when only its own damage is lethal");
         }
 
-        var direct = State(1, [], own: strong);
+        var direct = State(1, [], own: strong, phase: DemoPhase.Battle);
         var directQueue = direct.CreatePrimitiveActionQueue();
-        check(direct.BeginBattle(out _) &&
-            cpu.Step(direct) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
+        check(cpu.Step(direct) is { Status: CpuStepStatus.Acted, Action: CpuAction.Attack, TargetZone: -1 } &&
             direct.Life[0] == 8000 && directQueue.IsBusy,
             "CPU: direct attack admission defers damage in queued mode");
         for (int tick = 0; tick < 10 && directQueue.IsBusy; tick++) directQueue.Tick();
@@ -308,17 +308,17 @@ internal static class CpuDuelChecks
         check(unsupportedDirect.SetFromHand(0, out _) && unsupportedDirect.ActivateSetSpell(0, out _),
             "CPU: Infinite Cards is a tracked face-up continuous card outside the battle pilot");
         var unsupportedQueue = unsupportedDirect.CreatePrimitiveActionQueue();
-        check(unsupportedDirect.BeginBattle(out _) &&
-            !unsupportedDirect.TryQueueAttack(0, -1, out _, out bool unsupported) && unsupported &&
-            unsupportedQueue.Trace.Count == 0 && unsupportedDirect.Life[0] == 8000 &&
+        check(TurnFixture.Battle(unsupportedDirect, true, out _), "CPU: queued phase entry");
+        int unsupportedBaseline = unsupportedQueue.Trace.Count;
+        check(!unsupportedDirect.TryQueueAttack(0, -1, out _, out bool unsupported) && unsupported &&
+            unsupportedQueue.Trace.Count == unsupportedBaseline && unsupportedDirect.Life[0] == 8000 &&
             cpu.Step(unsupportedDirect) is { Status: CpuStepStatus.Blocked, Action: CpuAction.Attack } &&
-            unsupportedDirect.Life[0] == 8000 && !unsupportedQueue.IsBusy && unsupportedQueue.Trace.Count == 0,
+            unsupportedDirect.Life[0] == 8000 && !unsupportedQueue.IsBusy && unsupportedQueue.Trace.Count == unsupportedBaseline,
             "CPU: unsupported attack is rejected without compatibility execution");
 
-        var rejectedAttack = State(1, [], own: strong);
+        var rejectedAttack = State(1, [], own: strong, phase: DemoPhase.Battle);
         var rejectedQueue = rejectedAttack.CreatePrimitiveActionQueue();
-        check(rejectedAttack.BeginBattle(out _) &&
-            !rejectedAttack.TryQueueAttack(0, 0, out _, out bool missingTarget) && !missingTarget &&
+        check(!rejectedAttack.TryQueueAttack(0, 0, out _, out bool missingTarget) && !missingTarget &&
             rejectedAttack.TryQueueAttack(0, -1, out _) &&
             !rejectedAttack.TryQueueAttack(0, -1, out _, out bool busy) && !busy &&
             cpu.Step(rejectedAttack).Status == CpuStepStatus.Blocked && rejectedAttack.Life[0] == 8000,
@@ -327,9 +327,9 @@ internal static class CpuDuelChecks
         check(!rejectedAttack.TryQueueAttack(0, -1, out _, out bool alreadyAttacked) && !alreadyAttacked,
             "CPU: an already used attacker cannot authorize compatibility execution");
 
-        var untrackedAttack = State(1, [], own: strong);
+        var untrackedAttack = State(1, [], own: strong, phase: DemoPhase.Battle);
         var untrackedQueue = untrackedAttack.CreatePrimitiveActionQueue();
-        check(untrackedAttack.BeginBattle(out _), "CPU: untracked attack is tested in Battle Phase");
+        check(untrackedAttack.Phase == DemoPhase.Battle, "CPU: untracked attack is tested in Battle Phase");
         untrackedAttack.Monsters[1, 0] = strong with { };
         check(cpu.Step(untrackedAttack) is { Status: CpuStepStatus.Blocked, Action: CpuAction.Attack } &&
             untrackedAttack.Life[0] == 8000 && untrackedAttack.CanAttack(0) && untrackedQueue.Trace.Count == 0,
