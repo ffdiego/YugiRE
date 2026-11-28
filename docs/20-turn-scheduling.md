@@ -304,3 +304,43 @@ destino DWORD little-endian na segunda tabela).
 Não criar coleta duplicada; o bundle 57 ainda não está no
 SQLite v14 consultado. Validar o fingerprint e importar quando
 recebido. Nenhuma alteração C# e nenhum novo teste de carta.
+
+### A07.3 — Entrada em Battle exige atacante elegível (28/11/2026)
+
+SQLite v14, quick_check ok. A janela de instruções 005A0CD0 contém o
+assembly dos dois métodos abaixo. Referências estáticas corroboram
+os consumidores humano e CPU:
+
+- 00481A20 chama 005A0DD0 em 00481A4E quando a seleção é Main1 → Battle
+  (decompilação); 005B0A50 chama o mesmo predicado em 005B0A81 antes
+  de avaliar ataques da CPU. A CPU ainda chama 005B0B90, uma escolha
+  adicional, não parte da legalidade comum.
+- 005A0DD0 rejeita A577F8 == 0 (005A0DD0–005A0DDE) e o bit 18 do
+  DWORD A56430 + side*D44h (005A0DFA–005A0E09).
+  Chama 005A0D60 em 005A0E14 e testa máscara WORD A55D6E + side*D44h
+  em 005A0E1F–005A0E2B; retorna 1 apenas para máscara não vazia.
+- 005A0D60 zera a máscara, salva/zera temporariamente WORD +0C,
+  testa cinco slots via 0056B730(side, slot, 1) em 005A0D9E,
+  acrescenta bits em 005A0DAA–005A0DB3 e restaura WORD +0C.
+- Decompilação 0056B730 rejeita slot vazio, verifica bits de pose,
+  possui exceção resource 031Ch e testa a máscara de ataques antes
+  de delegar a 0056B7D0. Esta última verifica diversas restrições,
+  incluindo 052Bh (Gravity Bind). Não temos aqui confirmação em
+  assembly de todos os predicados, nem semântica completa de bit 18
+  ou da exceção 031Ch. Não inferir proibição geral por ATK zero.
+
+C# usa um único predicado de elegibilidade independente da fase,
+compartilhado por CanAttack e AllowsBattlePhaseChange. A fase
+continua proibida no primeiro turno e após Main2. Campo vazio,
+apenas defesa/Set e todos os atacantes impedidos por regras já
+implementadas rejeitam entrada; um atacante elegível basta,
+inclusive se a CPU decidir não atacar. Revalidação na execução
+usa o mesmo predicado sem consultar IsBusy da própria fila.
+UI, CPU e console não recebem regras duplicadas; CPU sem atacante
+segue para End. O teste de scheduler cobre ambos os lados, campo
+vazio próprio, pose, restrição contínua, estado misto, invalidação
+entre admissão/execução, primeiro turno e não reentrada.
+Sem alegação de fidelidade para restrições de cartas ainda não
+implementadas, flag nativa bit 18 ou exceção 031Ch; validação
+diferencial com o original continua pendente.
+
