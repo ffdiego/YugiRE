@@ -18,7 +18,7 @@ public sealed partial class DemoDuel
     }
 
     private bool CanAdmitQueuedGraveyardRevival() =>
-        !GameOver && deferredBattle is null &&
+        !GameOver &&
         PendingCardSelection is { } request && (IsSpearCretinRevival(request) ||
             IsRevivalSpellRequest(request) && request.Owner == ActivePlayer && Phase == DemoPhase.Main) &&
         PendingFlipTarget is null && PendingFlipSpellTrapTargets is null &&
