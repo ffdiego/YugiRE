@@ -29,7 +29,7 @@ public sealed partial class DemoDuel
     }
 
     // Historical caller compatibility: configure, never create another queue.
-    public ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false) =>
+    internal ActionQueue CreatePrimitiveActionQueue(IPresentationGate? gate = null, bool allowLabEdits = false) =>
         ConfigureActionQueue(gate, allowLabEdits);
 
     private ActionQueue BuildActionQueue() =>
