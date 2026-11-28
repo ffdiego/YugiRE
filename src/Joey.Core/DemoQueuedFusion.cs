@@ -5,7 +5,7 @@ public sealed partial class DemoDuel
     private bool admittingQueuedFusion;
 
     public bool UsesQueuedFusionSelection(PendingFusionSummon request) =>
-        primitiveActionQueue is not null && ReferenceEquals(PendingFusionSummon, request);
+        ReferenceEquals(PendingFusionSummon, request);
 
     private bool CanAdmitQueuedFusion() =>
         !GameOver && Phase == DemoPhase.Main && PendingFusionSummon is { Owner: var owner } &&
