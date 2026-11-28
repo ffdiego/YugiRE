@@ -2543,12 +2543,12 @@ public sealed partial class DemoDuel
     {
         message = "The duel has ended.";
         if (ActionsBlocked || queuedEndTurn) return false;
-        // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
+        // Historical fixture shortcut only. A hand-limit choice must be
+        // opened and resolved by the typed EndTurn/EndTurnDiscard commands.
         if (ExcessEndTurnCards > 0)
         {
-            Phase = DemoPhase.End;
-            message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
-            return true;
+            message = "Use the queued End Phase for mandatory hand-limit discards.";
+            return false;
         }
         ResolveDestinyBoardEndPhase(ActivePlayer);
         if (GameOver)
@@ -2557,27 +2557,6 @@ public sealed partial class DemoDuel
         {
             AdvanceTurn();
             message = "Turn changed.";
-        }
-        return true;
-    }
-    internal bool DiscardForEndTurn(int index, out string message)
-    {
-        message = "Select a hand card while resolving the end-phase hand limit.";
-        if (ActionsBlocked || queuedEndTurn || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
-        var card = hands[ActivePlayer][index];
-        hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
-        HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
-        if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";
-        else
-        {
-            ResolveDestinyBoardEndPhase(ActivePlayer);
-            if (GameOver)
-                message = $"Discarded {card.Name}. Destiny Board: F-I-N-A-L complete.";
-            else
-            {
-                AdvanceTurn();
-                message = $"Discarded {card.Name}. Turn changed.";
-            }
         }
         return true;
     }
