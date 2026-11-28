@@ -757,6 +757,8 @@ Vitória, empate e outras falas ainda não foram medidos.
 
 V31.9 (28/11/2026). O SQLite v14 confirmou o manifesto start.txt, posições e dimensões dos oito recursos ingleses e o assembly 00415580/00415840. NativeOpeningPlayback separa Update e Draw, pede fala no input 128, aceita áudio a partir de 388, salta para 0x10000 e termina no Draw 0x10100. NativeOpeningBank porta plano de camadas e slide por SAR 5. Review isolado `--review-reaction=start:0` (variantes 0..2), F7, F5, F8 e F12; a boca só é desenhada com tabela explicitamente fornecida, nunca presumida. Testes sintéticos reproduzem as duas contagens observadas (162/352). Roteiro 71 pendente para os valores de 005DA798 e as strings dos três IDs de áudio. Sem execução .NET/DAT nesta sessão, compositor aproximado, sem gate no duelo; cobertura continua Pending.
 
+V31.10 (28/11). Roteiro 71 recebido: tabela 005DA798 = 0,5,6,5; descritores 0x10000025..27 = Joey_01..03.wav. Review usa boca automaticamente e fala real opcional com Voice.dat; sem áudio preserva 162 Updates. Mantenedor confirmou composição anterior após color key. CI, nova captura e escuta pendentes; ainda sem integração live. [Contrato](../research/native-opening-bust-2026-11-28.md).
+
 ### V05.6 — composição dos glifos em RGB565 no cliente
 
 Implementado no fluxo real do App: cache por atlas/intensidade, chave

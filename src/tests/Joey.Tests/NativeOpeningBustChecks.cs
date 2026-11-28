@@ -53,14 +53,18 @@ internal static class NativeOpeningBustChecks
                 scene[3].Position==new CardPoint(320,22),
                 "V31 opening static passes and variant selection");
         }
-        check(bank.Sample(136,0).Length==4,"V31 absent mouth table does not invent frame");
-        // Synthetic table only exercises indexing; not native selector evidence.
-        int[] synthetic=[5,6,5];
-        var mouth=bank.Sample(136,0,synthetic)[^1];
+        // 005DA798 from the completed collection 71.
+        check(Enumerable.Range(0,4).Select(i=>NativeOpeningBank.MouthKey(i*8))
+            .SequenceEqual(new[]{0,5,6,5}),"V31 native mouth selector table");
+        var mouth=bank.Sample(136,0)[^1];
         check(mouth.Key==5 && mouth.Position==new CardPoint(206,208) &&
-            bank.Sample(144,0,synthetic)[^1].Key==6 &&
-            bank.Sample(0x10000,0,synthetic).Length==4,
-            "V31 injected mouth keys and exit suppression");
+            bank.Sample(144,0)[^1].Key==6 && bank.Sample(152,0)[^1].Key==5 &&
+            bank.Sample(160,0).Length==4 && bank.Sample(0x10000,0).Length==4,
+            "V31 real mouth keys, wraparound and exit suppression");
+        for(int variant=0;variant<3;variant++)
+            check(NativeOpeningPlayback.VoicePath(new NativeOpeningPlayback(variant).VoiceRequest)
+                ==DuelSoundAssets.InternalPrefix+$"joey_{variant+1:00}.wav",
+                "V31 exact opening voice descriptor mapping");
         check(bank.Resources.Where(r=>new NativeOpeningLayer(r.Key,r.Path,r.Position).UsesCornerColorKey)
             .Select(r=>r.Key).SequenceEqual(new[]{2,5,6,7,8,9}),
             "V31 keying selected by draw layer, not filename");

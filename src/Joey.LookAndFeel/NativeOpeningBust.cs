@@ -10,6 +10,15 @@ public sealed class NativeOpeningPlayback
     public const int ExitStart = 0x10000, ExitEnd = 0x10100;
     public int Variant { get; }
     public uint VoiceRequest => 0x10000025u + (uint)Variant;
+
+    // Roteiro 71: descriptor pointers 005F0798, 005F078C, 005F0780.
+    public static string VoicePath(uint request) => DuelSoundAssets.InternalPrefix + (request switch
+    {
+        0x10000025u => "joey_01.wav",
+        0x10000026u => "joey_02.wav",
+        0x10000027u => "joey_03.wav",
+        _ => throw new ArgumentOutOfRangeException(nameof(request))
+    });
     public int Counter { get; private set; }
     public bool Active { get; private set; } = true;
     public bool VoiceRequested { get; private set; }
@@ -96,12 +105,19 @@ public sealed class NativeOpeningBank
     public static int CharacterX(int counter, int width = 672) =>
         (Math.Min(counter - 64,32)*width >> 5) - width;
 
-    public NativeOpeningLayer[] Sample(int counter, int variant, IReadOnlyList<int>? mouthKeys = null)
+    // 005DA798, roteiro 71: four little-endian dwords 0,5,6,5.
+    public static int MouthKey(int counter) =>
+        counter >= NativeOpeningPlayback.ExitStart ? 0 : ((counter >> 3) & 3) switch
+        {
+            1 or 3 => 5,
+            2 => 6,
+            _ => 0
+        };
+
+    public NativeOpeningLayer[] Sample(int counter, int variant)
     {
         if (variant is < 0 or > 2 || counter < 0 || counter > NativeOpeningPlayback.ExitEnd)
             throw new ArgumentOutOfRangeException();
-        if (mouthKeys is not null && (mouthKeys.Count != 3 || mouthKeys.Any(key => key is not (5 or 6))))
-            throw new ArgumentException("Expected three captured mouth keys (5 or 6).",nameof(mouthKeys));
         var layers = new List<NativeOpeningLayer>();
         void Add(int key,int offsetX=0,int offsetY=0)
         {
@@ -120,12 +136,8 @@ public sealed class NativeOpeningBank
             Add(7+variant);
         }
 
-        int phase = (counter >> 3) & 3;
-        // The three nonzero phases read 005DA798[phase]. No table bytes
-        // were captured in v14. A diagnostic may supply observed keys;
-        // never synthesize a mouth sequence or count this as parity.
-        if (counter < NativeOpeningPlayback.ExitStart && phase != 0 && mouthKeys is not null)
-            Add(mouthKeys[phase-1],CharacterX(counter));
+        int mouthKey = MouthKey(counter);
+        if (mouthKey != 0) Add(mouthKey,CharacterX(counter));
         return layers.ToArray();
     }
 }

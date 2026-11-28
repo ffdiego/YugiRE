@@ -35,12 +35,13 @@ F5 = reproduzir/pausar a 30 FPS; F6 = reproduzir/pausar a 60 FPS (-speedy);
 F7 pausa e avança um Update/Draw; F8 reinicia pausado; F12 exporta PNG/JSON.
 F5/F6 reiniciam automaticamente se a animação terminou. O relógio não pula
 amostras em um host lento e não modifica os incrementos nativos.
---reaction-wait-audio mantém o predicado falso até F9 após pedir fala;
-sem essa opção, o predicado já é verdadeiro (simulação de áudio desligado).
-Os mesmos controles atendem reaction07. A fala real continua pendente.
---opening-mouth-table=K1,K2,K3 aceita somente chaves 5/6 fornecidas
-a partir de uma captura real da tabela. Sem a opção omite boca e
-registra a lacuna no JSON. Não usar valores de teste como evidência.
+--reaction-wait-audio mantém o predicado falso até F9 após pedir fala
+e não toca WAV. Sem essa opção, a abertura toca a voz original quando
+Voice.dat e o dispositivo de áudio estão disponíveis; --no-audio ou
+--mute-joey preservam o caminho sem fala. F7 pausa inclusive a voz;
+para percorrer toda a animação manualmente use --no-audio.
+Os mesmos controles atendem reaction07, que ainda não toca voz real.
+A tabela de boca confirmada pelo roteiro 71 é usada automaticamente.
 
 Compositor Raylib de camadas, não equivalência dos blits da superfície
 temporária. Revisão pós-step omite objeto inativo no frame terminal.
@@ -77,3 +78,23 @@ verificar posteriormente o formato e predicado da superfície nativa.
 Outros caminhos legados de textura ainda usam suas políticas existentes,
 sem alteração global não validada. Testes sintéticos incluem a cor
 observada e uma chave não verde. Build/CI e nova captura pendentes.
+
+## Roteiro 71 recebido (28/11)
+
+Bundle privado ghidra-opening-bust-tables.zip, SHA256
+ d237583f8b66dac0b50fc405b9cb56b5b59cfaf84aa0e5a81dfb243a7e742454.
+EXE db8fe7b7ea4b12f18a9bb1777b5f5b8eab254011db2a52571a0264725505b6de.
+manifest.json: memoryComplete=true, missing=[], assembly e decompilação
+recuperados de 00415580 e 00415840. memory-read.txt confirma:
+005DA798: 00 00 00 00 05 00 00 00 06 00 00 00 05 00 00 00.
+005F0780 Joey_03.wav, 005F078C Joey_02.wav, 005F0798 Joey_01.wav.
+Com os ponteiros de descritor anteriores, IDs 10000025..27 correspondem
+a Joey_01..03; 004157DB/004157FE somam a variante à base 10000025.
+NativeOpeningBank usa 0,5,6,5; não desenha boca no exit. O review
+carrega a fala real no request, consulta a conclusão pelo player Raylib,
+para no reset e acompanha pausa/reprodução. O pitch não muda em speedy;
+isso é política diagnóstica, não prova da cadência do áudio original.
+Ausência de arquivo/dispositivo segue o caminho sem áudio. A captura do
+mantenedor confirmou aparência após correção do color key, antes desta
+mudança. Nova captura da boca e teste real de Voice.dat pendentes.
+Não há integração ao fluxo de duelo ainda; cobertura permanece Pending.

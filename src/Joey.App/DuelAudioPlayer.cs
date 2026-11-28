@@ -13,6 +13,8 @@ internal sealed class DuelAudioPlayer : IDisposable
     GCHandle musicBytes;
     string? musicPath;
     bool disposed;
+    Sound? openingVoice;
+    bool openingVoicePaused;
 
     private DuelAudioPlayer(Archive archive) => this.archive=archive;
 
@@ -94,6 +96,46 @@ internal sealed class DuelAudioPlayer : IDisposable
         Raylib.PlaySound(sound);
     }
 
+    // One owned playback for the V31 review. The cache owns the Sound;
+    // reset/exit stops it without unloading or affecting music.
+    internal bool PlayOpeningVoice(uint request)
+    {
+        StopOpeningVoice();
+        if(disposed)return false;
+        string path=NativeOpeningPlayback.VoicePath(request);
+        if(!effects.TryGetValue(path,out var sound))
+        {
+            if(Load(path) is not { } loaded)return false;
+            sound=loaded;
+            effects.Add(path,sound);
+        }
+        openingVoice=sound;
+        Raylib.PlaySound(sound);
+        return true;
+    }
+
+    internal bool OpeningVoiceComplete => openingVoice is not { } sound ||
+        (!openingVoicePaused && !Raylib.IsSoundPlaying(sound));
+
+    internal void SetOpeningVoicePaused(bool paused)
+    {
+        if(openingVoice is not { } sound || paused==openingVoicePaused)return;
+        if(paused)
+        {
+            if(!Raylib.IsSoundPlaying(sound))return;
+            Raylib.PauseSound(sound);
+        }
+        else Raylib.ResumeSound(sound);
+        openingVoicePaused=paused;
+    }
+
+    internal void StopOpeningVoice()
+    {
+        if(openingVoice is { } sound)Raylib.StopSound(sound);
+        openingVoice=null;
+        openingVoicePaused=false;
+    }
+
     // Keep the bounded WAV input in memory and let raylib feed decoded
     // frames to the device in blocks.
     internal void UpdateMusic(string? path)
@@ -164,6 +206,7 @@ internal sealed class DuelAudioPlayer : IDisposable
     {
         if(disposed)return;
         disposed=true;
+        StopOpeningVoice();
         StopMusic();
         foreach(var sound in effects.Values)
         {

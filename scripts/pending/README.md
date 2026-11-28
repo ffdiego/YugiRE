@@ -297,6 +297,3 @@ kind de vínculo efetivamente emitido e compará-lo aos destinos de
 0040E594/627/7A6. Não coletar novamente toda 0040E260. Importar
 bundle cumulativo quando recebido; nenhum recurso binário no Git.
 
-## V31 — tabelas restantes do busto de abertura (roteiro 71)
-
-`bash scripts/pending/71-opening-bust-tables-ghidra.sh` coleta os quatro dwords de `005DA798` e os nomes apontados pelos descritores Internal 0x25..0x27 (005F0798, 005F078C, 005F0780). Saída privada `scratch/ghidra-opening-bust-tables.zip`. Os endereços dos ponteiros já constam do v14; não deduzir o nome pelo espaçamento das strings. Aceite: três índices não-zero da tabela vinculados às linhas do manifesto, três strings terminadas em NUL associadas aos IDs. Não requer Windows nem Voice.dat para a coleta estática.
