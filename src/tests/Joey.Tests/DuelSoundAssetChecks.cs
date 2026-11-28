@@ -4,12 +4,14 @@ internal static class DuelSoundAssetChecks
 {
     internal static void Run(Action<bool,string> check)
     {
-        check(Enum.GetValues<DuelSoundCue>().Select(DuelSoundAssets.Effect).Distinct().Count()==13 &&
-            Enum.GetValues<DuelSoundCue>().All(c=>DuelSoundAssets.Effect(c).StartsWith(DuelSoundAssets.InternalPrefix)),
+        var cues = Enum.GetValues<DuelSoundCue>();
+        check(cues.Select(DuelSoundAssets.Effect).Distinct().Count() == cues.Length &&
+            cues.All(c=>DuelSoundAssets.Effect(c).StartsWith(DuelSoundAssets.InternalPrefix)),
             "V18: distinct named effect resources");
         check(DuelSoundAssets.Effect(DuelSoundCue.Activation).EndsWith("magic_active.wav") &&
             DuelSoundAssets.Effect(DuelSoundCue.Damage).EndsWith("damage.wav") &&
-            DuelSoundAssets.Effect(DuelSoundCue.Heal).EndsWith("life_up.wav"),
+            DuelSoundAssets.Effect(DuelSoundCue.Heal).EndsWith("life_up.wav") &&
+            DuelSoundAssets.Effect(DuelSoundCue.DiceBounce).EndsWith("dice.wav"),
             "V18: semantic resource adapter");
         check(DuelSoundAssets.Music("duel")==DuelSoundAssets.StreamPrefix+"m_duel1.wav" &&
             DuelSoundAssets.Music("cards")==DuelSoundAssets.Music("menu") &&

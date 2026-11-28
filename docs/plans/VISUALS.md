@@ -505,6 +505,15 @@ contador em `-256`. O Update soma 8 por chamada e libera o gate
 a 768, o que prevê 128 Updates.
 [Coleta em duelo](../../scripts/pending/README.md#v21--comando-e-cadência-do-dado-em-duelo-69).
 
+V21.2 (28/11). Graceful Dice passa pelo produtor legal do jogador
+e da CPU. O Core sorteia uma vez e envia a face ao renderer após
+gastar a carta. O Alpha exibiu face 3 e o bônus de +300/300 em
+Axe Raider com o DAT real. O cenário C# confirmou mão, Set
+anterior e expiração do bônus. Build, 51.773 checks e testes dos
+geradores passam. A cobertura de 00456B90 é Partial. Comparação
+de E2 no original e produtores E3/E4 ficam pendentes.
+[Contrato e validação](../research/native-coin-dice-break-contract-2026-11-23.md#v212--produtor-jogável-de-graceful-dice).
+
 ## V22 — Remoção break (00450FD0)
 
 <a id="v22"></a>

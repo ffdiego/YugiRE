@@ -51,16 +51,16 @@ static partial class Game
         { Console.Error.WriteLine("[coin] presentation skipped: "+ex.Message); }
     }
 
-    static void QueueLiveDice(LabDiceResult result)
+    static void QueueLiveDice(int side, int region, int face)
     {
         if(!presentation.Style.PlayAnimations || liveDiceResources.Length!=13) return;
         try
         {
             var sizes=liveDiceResources.Select((r,k)=>{
-                var t=graphics.Texture(r.Path);
+                var t=DiceBankTexture(r.Path);
                 return NativeDiceResources.ValidateTexture(k,r,t.Width,t.Height);
             }).ToArray();
-            var timeline=new NativeDiceTimeline(result.Index,RandomBankOrigin(result.Side,result.Region));
+            var timeline=new NativeDiceTimeline(face, RandomBankOrigin(side, region));
             QueueCardEffect(new DiceResultVisual(timeline,sizes),NativeDiceTimeline.Updates);
         }
         catch(Exception ex) when(ex is IOException or InvalidDataException or KeyNotFoundException)
@@ -77,7 +77,7 @@ static partial class Game
             var extras=NativeCoinExtraLayout.Sample(timeline,i,frame,k=>visual.Textures[k]);
             // Reflection plan is known, its native compositor is not.
             foreach(var pass in frame.Passes.Concat(extras.Sparkles))
-                DrawRandomBankPass(liveCoinResources[pass.Key].Path,pass.Source,pass.Destination,pass.Parameter256);
+                DrawRandomBankPass(graphics.Texture(liveCoinResources[pass.Key].Path), pass.Source, pass.Destination, pass.Parameter256);
         }
     }
 
@@ -86,16 +86,25 @@ static partial class Game
         // Render a cached sample on repeated host frames or while paused.
         // A new native step alone authorizes another state-mutating Draw.
         if(visual.Frame is not { } frame || frame.Counter!=visual.Timeline.Counter)
+        {
             visual.Frame=visual.Timeline.Draw(effectCosine,k=>visual.Textures[k]);
+            if(visual.Frame?.SoundRequest is not null) PlayDuelSound(DuelSoundCue.DiceBounce);
+        }
         if(visual.Frame is not { } sample)return;
-        DrawRandomBankPass(liveDiceResources[sample.Shadow.Key].Path,sample.Shadow.Source,sample.Shadow.Destination,sample.Shadow.Intensity);
-        DrawRandomBankPass(liveDiceResources[sample.Die.Key].Path,sample.Die.Source,sample.Die.Destination,sample.Die.Intensity);
+        DrawRandomBankPass(DiceBankTexture(liveDiceResources[sample.Shadow.Key].Path),
+            sample.Shadow.Source, sample.Shadow.Destination, sample.Shadow.Intensity);
+        DrawRandomBankPass(DiceBankTexture(liveDiceResources[sample.Die.Key].Path),
+            sample.Die.Source, sample.Die.Destination, sample.Die.Intensity);
     }
 
-    static void DrawRandomBankPass(string resource,CardBounds source,CardBounds destination,int intensity)
+    static Texture2D DiceBankTexture(string path) => NativeDiceResources.IsDiceBitmap(path)
+        ? graphics.CornerKeyedBitmapTexture(path)
+        : graphics.Texture(path);
+
+    static void DrawRandomBankPass(Texture2D texture, CardBounds source, CardBounds destination, int intensity)
     {
         if(destination.Width<=0 || destination.Height<=0)return;
-        Raylib.DrawTexturePro(graphics.Texture(resource),ToRectangle(source),ToRectangle(destination),Vector2.Zero,0,
+        Raylib.DrawTexturePro(texture,ToRectangle(source),ToRectangle(destination),Vector2.Zero,0,
             new Color(255,255,255,Math.Clamp(intensity,0,255)));
     }
 }

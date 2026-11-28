@@ -91,7 +91,8 @@ static partial class Game
         duel.EquipmentActivated += QueueEquipmentTravel;
         duel.CardBanished += QueueLiveExclusion;
         duel.LabCoinResultReported += QueueLiveCoin;
-        duel.LabDiceResultReported += QueueLiveDice;
+        duel.LabDiceResultReported += result => QueueLiveDice(result.Side, result.Region, result.Index);
+        duel.DiceRolled += result => QueueLiveDice(result.Side, result.Region, result.Face);
         duel.MonsterDestroyed += monster =>
         {
             if (!presentation.Style.PlayAnimations) return;

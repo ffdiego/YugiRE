@@ -12,21 +12,21 @@ static partial class Game
     static uint reactionInitialScene, reactionScene;
     static bool reactionWaitAudio, reactionAudioComplete;
     static NativeReactionStep? reactionLastStep;
-    static readonly NativeReviewClock reactionReviewClock = new();
+    static readonly NativeReviewClock nativeReviewClock = new();
 
-    // Shared transport for opening and ordinary reaction review. F9 is
+    // Shared transport for native Update/Draw reviews. F9 is
     // exclusively the optional simulated audio predicate.
-    static bool ReviewReactionStep(bool active, Action reset)
+    static bool ReviewNativeStep(bool active, Action reset)
     {
         if(Raylib.IsKeyPressed(KeyboardKey.F8))
         {
-            reactionReviewClock.Pause();
+            nativeReviewClock.Pause();
             reset();
             return false;
         }
         if(Raylib.IsKeyPressed(KeyboardKey.F7))
         {
-            reactionReviewClock.Pause();
+            nativeReviewClock.Pause();
             return active;
         }
         int requestedRate=Raylib.IsKeyPressed(KeyboardKey.F5)?30:
@@ -35,14 +35,14 @@ static partial class Game
         {
             if(!active)
             {
-                reactionReviewClock.Pause();
+                nativeReviewClock.Pause();
                 reset();
                 active=true;
             }
-            reactionReviewClock.Toggle(requestedRate);
+            nativeReviewClock.Toggle(requestedRate);
         }
-        if(!active) { reactionReviewClock.Pause(); return false; }
-        return reactionReviewClock.Advance(Raylib.GetFrameTime());
+        if(!active) { nativeReviewClock.Pause(); return false; }
+        return nativeReviewClock.Advance(Raylib.GetFrameTime());
     }
 
     static void ConfigureReactionReview(string[] args, Archive archive)
@@ -93,11 +93,11 @@ static partial class Game
         if (reactionReview is not { } reaction) return;
         if (reactionWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) &&
             reactionPlayback.Counter >= 8) reactionAudioComplete = true;
-        if (ReviewReactionStep(reactionPlayback.Active,ResetReactionReview))
+        if (ReviewNativeStep(reactionPlayback.Active,ResetReactionReview))
         {
             reactionScene = unchecked(reactionScene+1);
             reactionLastStep = reactionPlayback.Step(reactionAudioComplete);
-            if(!reactionPlayback.Active) reactionReviewClock.Pause();
+            if(!reactionPlayback.Active) nativeReviewClock.Pause();
         }
         Raylib.DrawTexture(graphics.Texture(DatGraphics.DuelDetailBackground),0,0,Color.White);
         if (duelTheme.Board is Texture2D board)
@@ -128,7 +128,7 @@ static partial class Game
             sceneState=reactionScene,
             audioPredicate= reactionAudioComplete,
             simulatedAudio=true,
-            playbackFps=reactionReviewClock.FramesPerSecond,
+            playbackFps=nativeReviewClock.FramesPerSecond,
             lastStep=reactionLastStep,
             baseResource=visible?reaction.BaseResource:null,
             origin=reaction.Origin,

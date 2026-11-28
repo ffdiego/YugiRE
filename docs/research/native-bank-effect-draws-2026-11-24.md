@@ -46,7 +46,8 @@ Não transformar a solicitação em áudio efetivamente tocado.
 
 NativeDiceTimeline amostra dois passes e possui Draw explícito.
 A revisão --review-dice=INDEX,X,Y, com --native-cosine=,
-avança F7 Update+Draw, F9 Draw isolado, F8 reset, F12 PNG/JSON.
+usa F5/F6 para rodar ou pausar, F7 para avançar um Update/Draw,
+F8 para reiniciar e F12 para gravar PNG/JSON.
 O adapter NativeDiceResources tenta a ordem do manifesto local
 e exige divisores positivos, sombra decide e seis faces nos keys
 esperados. Se a remap virtual ou o formato real for diferente,

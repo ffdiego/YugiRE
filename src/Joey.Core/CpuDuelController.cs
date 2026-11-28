@@ -249,6 +249,7 @@ public sealed class CpuDuelController
                         if (!(useLpSpell ||
                               candidate is { ClassCode: 22, Id: Joey.Cards.RevivalSpellEffects.MonsterReborn } ||
                               candidate.ClassCode == 22 && Joey.Cards.HandManipulationEffects.For(candidate.Id) is not null ||
+                              candidate is { ClassCode: 22, Id: Joey.Cards.DiceSpellEffects.GracefulDice } ||
                               duel.ShouldPlayAttackRestrictionSpell(Player, candidate) ||
                               candidate is { ClassCode: 21, Id: Joey.Cards.CountedAndContinuousEffects.DestinyBoard } ||
                               ShouldClearSpellTraps(duel, candidate.Id,

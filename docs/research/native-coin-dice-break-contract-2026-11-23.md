@@ -101,3 +101,43 @@ de paridade. Sem nova Draw integrada, badge permanece 20/34, 0 Verified.
 SQLite v7 read-only, quick_check ok, SHA256 a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379. As janelas 0040A7C0/0040A900/0040A6A0 e 00457309..21 / 00456A0B..12 confirmam os argumentos de construtor: E0 count=1, bits=(C==0), highlight=(B==0); E1 count=3, bits=(~C)&7 (somente os três bits consumidos), highlight=(B==0); E2/E3/E4 índice=B. Region vem de D para moeda, C para dado. Não afirmar se bit 0/1 significa cara/coroa nem significado das variantes E2/E3/E4 em regras. Vtables 005DB404 e 005DB3F4 +4 = 00403080, MOV AL,[ECX+4]; RET, logo bloqueiam até Active=false. Coin 96/128 updates, dice 128. Inventário do DAT confirma os treze registros de dice, incluindo sombra repetida, dimensões verificadas no loader. Não há produtor literal E0..E4 entre as chamadas de 005B9170/005B9370 indexadas com literal; callbacks de Time Wizard, Barrel Dragon, Graceful/Skull Dice não possuem decompilação disponível no v7.
 
 Ponte de laboratório: `coin SIDE REGION COUNT BITS HIGHLIGHT` e `dice SIDE REGION INDEX`, regiões de campo 0..10. Ambos usam a fila existente, exigem autorização lab, emitem resultado imutável no executor, não geram RNG, não alteram cartas ou LP. Cliente recebe evento só uma vez, carrega banco e usa sequência de subpassos do comando ativo; no modo instantâneo não enfileira visual. Dice guarda Draw por contador, não muta o centro em consulta de gate; a cadência do host limita a uma amostra nova por frame, sem catch-up que pule amostras. O remap, reflexão e compositor continuam aproximados; pedidos de áudio não tocados. Nenhuma carta nova, nenhuma inferência de produtor de regra, sem mudança na badge até ligar produtores reais.
+
+## V21.2 — produtor jogável de Graceful Dice
+
+O assembly de `0058CA70` encaminha o resultado sorteado a `E2` em
+`0058CAF1`. A região vem dos bits 1–5 do descritor da fonte em
+`contexto+2` e o lado vem do bit 0. O laço em `0058CB1A` visita os
+cinco slots no lado do lançador e aplica o modificador aos monstros
+revelados. O cliente usa a região do slot de ativação S/T (5–9).
+O descritor `005EFF08` aponta para `005F0808` e resolve
+`0x1000001C` como `dice.wav`. O App toca esse pedido uma vez em
+cada Draw novo nos contadores 256 e 384.
+
+O produtor do Alpha admite Graceful Dice no Main próprio,
+da mão ou de Set de turno anterior. A fila apresenta a ativação,
+consome a ocorrência e sorteia uma vez com o RNG do Core. O evento
+com a face e o slot usa a mesma apresentação dos dados do lab.
+ATK e DEF recebem `100 * face` nos monstros próprios revelados e
+o bônus expira na mudança de turno. O recorte exige ao menos um
+monstro elegível. A CPU usa a mesma admissão. O baralho padrão
+troca uma cópia de Man-Eater Bug por Graceful Dice. Respostas,
+Battle Phase e os produtores E3/E4 ficam pendentes.
+
+O atlas BMP usa a color key do canto da superfície. As sombras
+YGA usam o decodificador YGA existente. O Xvfb com o DAT original
+capturou quadros de contadores 432 e 728 após clicar em Graceful
+Dice no Alpha. A face foi 3 e Axe Raider passou de 1700/1150
+para 2000/1450. O dado saiu no quadro seguinte. Um cenário em
+C# exercitou mão e Set anterior, os dois lados, ausência de
+monstro revelado, face-down intacto e expiração. A amostra de
+CPU headless ativou a carta antes de encontrar uma configuração
+de batalha fora do recorte atual. A main anterior também
+interrompe o duelo headless por uma configuração de batalha
+fora do recorte, em outra sequência.
+
+No review isolado, o F9 manteve o contador em −256, F7 avançou
+para −248, F6 fez a sequência avançar e F8 voltou a −256.
+
+O roteiro 69 ainda aguarda ativação dirigida no original para
+comparar a sequência completa, o áudio e o compositor. A
+cobertura do Draw é Partial.

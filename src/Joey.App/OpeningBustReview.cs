@@ -59,8 +59,8 @@ static partial class Game
     {
         if(openingBustWaitAudio && Raylib.IsKeyPressed(KeyboardKey.F9) && openingBustPlayback.VoiceRequested)
             openingBustAudioComplete=true;
-        bool advance=ReviewReactionStep(openingBustPlayback.Active,ResetOpeningBustReview);
-        bool paused=reactionReviewClock.FramesPerSecond==0;
+        bool advance=ReviewNativeStep(openingBustPlayback.Active,ResetOpeningBustReview);
+        bool paused=nativeReviewClock.FramesPerSecond==0;
         // Pause/resume the actual voice with the review transport. Speedy
         // changes the visual cadence, not the WAV pitch or playback rate.
         duelAudio?.SetOpeningVoicePaused(paused);
@@ -82,7 +82,7 @@ static partial class Game
             openingBustPlayback.CompleteNativeDraw();
             if(!openingBustPlayback.Active)
             {
-                reactionReviewClock.Pause();
+                nativeReviewClock.Pause();
                 duelAudio?.StopOpeningVoice();
             }
         }
@@ -119,7 +119,7 @@ static partial class Game
             simulatedAudio=openingBustWaitAudio || !openingBustVoiceStarted,
             voiceStarted=openingBustVoiceStarted,
             voiceResource=NativeOpeningPlayback.VoicePath(openingBustPlayback.VoiceRequest),
-            playbackFps=reactionReviewClock.FramesPerSecond,
+            playbackFps=nativeReviewClock.FramesPerSecond,
             mouthTable=new[]{0,5,6,5},
             mouthTableKnown=true,
             layers=OpeningBustLayers(),
