@@ -27,12 +27,13 @@ internal static class QueuedTargetedAttackChecks
                 side == 0 ? Slots(attacker, 2) : Slots(defender, 3),
                 side == 1 ? Slots(attacker, 2) : Slots(defender, 3), 8000);
             duel.DefensePosition[responder, 3] = duel.MonsterFaceDown[responder, 3] = true;
-            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
-                duel.EndTurn(out _) && duel.BeginBattle(out _),
-                "Targeted attack response fixture");
-            var gate = new Gate();
+            var gate = new Gate { Release = true };
             var console = new DuelConsoleSession(duel, gate);
             var queue = console.Queue;
+            check(duel.SetFromHand(0, out _) && duel.SetFromHand(0, out _) &&
+                TurnFixture.End(duel, out _) && duel.BeginBattle(out _),
+                "Targeted attack response fixture");
+            gate.Release = false;
 
             check(duel.TryQueueTargetedAttack(2, 3, out _) &&
                 duel.DescribeActionPresentation(queue.Trace.Last().Entry.Command) is null,
@@ -105,7 +106,7 @@ internal static class QueuedTargetedAttackChecks
             check(console.Execute(fieldActive ? "activate hand 0" : "set 0").Enqueued,
                 "Field defense fixture activates or Sets Chorus");
             DrainResponseQueue(queue);
-            check(duel.EndTurn(out _) && duel.BeginBattle(out _) &&
+            check(TurnFixture.End(duel, out _) && duel.BeginBattle(out _) &&
                 duel.DefenseValue(responder, 3) == 1000 && duel.TryQueueTargetedAttack(2, 3, out _),
                 "The hidden defender uses base DEF before reveal, even under an active Field Spell");
             DrainResponseQueue(queue);
@@ -137,7 +138,7 @@ internal static class QueuedTargetedAttackChecks
             var queue = console.Queue;
             check(duel.TryQueueEquipment(DuelZone.Hand, 0, side, 2, out _), "Responder equips attacker");
             DrainResponseQueue(queue);
-            check(duel.EndTurn(out _) && duel.TryQueueTurnDraw(out _, ActionOrigin.Test),
+            check(TurnFixture.End(duel, out _) && duel.TryQueueTurnDraw(out _, ActionOrigin.Test),
                 "Attacker admits the turn draw");
             DrainResponseQueue(queue);
             check(duel.TryQueueEquipment(DuelZone.Hand, 0, responder, 3, out _), "Attacker equips defender");
@@ -189,9 +190,8 @@ internal static class QueuedTargetedAttackChecks
         {
             var a=Monster(24,atk,500);var b=Monster(1351,other,other);
             var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(a,2):Slots(b,3),
-                side==1?Slots(a,2):Slots(b,3),8000);
-            if(side==0) d.NextTurn(); // turn 2 (side 1), then turn 3 (side 0)
-            if(side==0) d.NextTurn();
+                side==1?Slots(a,2):Slots(b,3),8000,
+                checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2));
             d.DefensePosition[1-side,3]=defense;
             var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
             check(d.BeginBattle(out _) && d.TryCaptureCardTarget(side,DuelZone.Monster,2,out var at) &&
@@ -243,8 +243,8 @@ internal static class QueuedTargetedAttackChecks
             DemoDuel State()
             {
                 var d=DemoDuel.FromPartialObservation(side,[],side==0?Slots(a,2):Slots(b,3),
-                    side==1?Slots(a,2):Slots(b,3),8000);
-                if(side==0){d.NextTurn();d.NextTurn();}
+                    side==1?Slots(a,2):Slots(b,3),8000,
+                    checkpoint: new DuelCheckpoint(side == 0 ? 3 : 2));
                 d.MonsterFaceDown[1-side,3]=d.DefensePosition[1-side,3]=true;
                 return d;
             }
