@@ -344,3 +344,108 @@ sem afirmar pixel parity. Roteiro 25 ampliado para os cinco
 kernels específicos e, quando necessário, janelas dos loops
 a partir da decompilação; não repetir os alvos anteriores.
 Sem novo gate ou aumento de coverage.
+
+### Validação de pixels do par 10 para 3 em Proton
+
+O roteiro 60 filtrou o impacto pelo retorno a `00414777`
+na pilha de `00422E30`, com origem 10, destino 3 e intensidade
+224. Em `00423BAB` e `00423BB0`, leu a origem selecionada,
+a cor-chave e o RGB565 de destino imediatamente antes e
+depois de `00439B60`. Foram amostrados pixels e linhas em
+passos de sete, até obter 144 amostras no mesmo impacto.
+
+O comparador .NET executou `NativePackedAlphaPixel.ApplyToOpaque`
+para cada entrada e obteve o mesmo valor final nas 144 amostras.
+Houve 71 amostras de cor-chave, 57 diferenças entre entrada e
+saída e alphas 0, 1, 2, 3, 4, 5, 7, 9, 10 e 11 fora da chave.
+Esse recorte valida o helper com os pixels escolhidos pelo
+original. O mapeamento de texels de uma implementação C#,
+outras intensidades, o caminho base e o par 11→4 seguem em aberto.
+O log bruto fica em `scratch/`.
+[Roteiro e comparador 60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton).
+
+### Validação do caminho base 10 para 3 em Proton
+
+Em intensidade 256, as chamadas do impacto entram em
+`0051EBD0` por `00422C00 → 00422840`. A rotina do par
+10→3 chama `004CBDE0` a partir de `0051F897`.
+O assembly usa o byte de alpha, na faixa 0…15, para
+indexar diretamente `0062EE04`, com peso complementar
+15−alpha no destino. Esse helper aplica o cálculo a
+cada pixel recebido.
+
+O roteiro 61 confirmou a cadeia de retornos do impacto
+e mediu 144 pixels imediatamente antes e depois de
+`004CBDE0`. O comparador obteve os mesmos 144 valores
+RGB565 com `NativePackedAlphaPixel.ApplyBaseToRgb565`.
+Houve 59 pixels alterados e 77 amostras cujo word da
+origem era zero. Os alphas observados foram 0, 1, 2, 3,
+5, 6, 7, 8, 9, 10 e 11. Testes sintéticos cobrem os
+extremos 0 e 15 e a composição de preto com alpha 8.
+O recorte valida o cálculo por pixel com amostragem do
+original. Rasterização, integração e 11→4 seguem
+pendentes. [Roteiro 61](../../scripts/regression/README.md#61--v17-pixels-do-compositor-base-10-para-3).
+
+### Amostras de intensidade 32 e 128
+
+O roteiro 60 mediu dois outros impactos, ambos no ramo
+10→3 com os texels selecionados pelo original. O comparador
+.NET reproduziu os 144 valores finais em cada intensidade.
+
+| Intensidade | Amostras | Cor-chave | Pixels alterados |
+| --- | ---: | ---: | ---: |
+| 32 | 144 | 66 | 53 |
+| 128 | 144 | 73 | 61 |
+
+Em intensidade 32, 23 amostras fora da chave tiveram peso
+de origem quantizado em 0, e 55 tiveram peso 1. A comparação
+já cobre os passos 32, 128 e 224 do ramo de intensidade,
+com o 256 no compositor base. O mapeamento de texels e o
+par 11→4 seguem pendentes.
+[Roteiro 60](../../scripts/regression/README.md#60--v17-pixels-do-compositor-10-para-3-em-proton).
+
+Para buscar 11→4, uma sessão em modo `-win` usou Xvfb
+800×600 com profundidade 15. O roteiro 41 voltou a observar
+formato 3 nas três entradas da cena, com vtable `005DC6EC`
+e flag `+78h=0`. Nesse ambiente, mudar a profundidade do
+display não acionou RGB555 no buffer de duelo. O Pillow
+também rejeitou a captura nesse display, por isso a
+execução medida dispensou PNG e observou o formato via GDB.
+
+### Seleção do formato pelo DirectDraw em Proton
+
+Com `-win` e Xvfb 800×600×15, uma nova execução registrou
+`WINEDEBUG=-all,+ddraw` desde a inicialização. A correlação
+com o ponteiro da cena em `0044DD00` identificou a chamada
+`CreateSurface` correspondente. O jogo pediu 800×600 com
+`DDSCAPS_OFFSCREENPLAIN | DDSCAPS_SYSTEMMEMORY` e deixou
+`DDSD_PIXELFORMAT` fora do descritor de entrada. Em
+`GetSurfaceDesc`, o Proton devolveu 16 bits, pitch 1600 e
+máscaras `F800/07E0/001F`. O roteiro 41 confirmou formato 3
+nas três chamadas à cena com essa interface.
+
+O assembly em `004ABC9B` escreve as flags `0x07` no
+descritor que chega a `CreateSurface` em `004ABCF7`.
+Após a criação, `004AC00D` chama `004A6120`, que consulta
+o descritor pelo slot `+58h` e lê as máscaras. A comparação
+em `004A6190–004A61B8` retorna 3 para RGB565, e
+`004AC012` grava o resultado no objeto. A observação
+explica a execução 10→3 nessa configuração.
+[Roteiro 41](../../scripts/regression/README.md#41--v17-formato-da-superfície-da-cena-em-wine).
+
+### RGB555 com display indexado em Proton
+
+Em `-win` com Xvfb 800×600×8, o Proton expôs
+`DDPF_PALETTEINDEXED8` no descritor DirectDraw. Nesse modo,
+`004ABC52` aceita o formato de dispositivo 2 e
+`004ABC68` chama a alocação em memória com formato 4.
+O roteiro 41 confirmou três entradas de cena em formato 4
+com ponteiro DirectDraw nulo.
+
+Em um impacto de intensidade 224, o GDB confirmou origem 11
+e destino 4 no ramo que chama `00424FC0` em `00423CCC`.
+A sonda local amostrou o word antes de `00425B79` e depois
+de `00425BDD`. O comparador do roteiro 60 confirmou os
+144 resultados de `NativePackedAlphaPixel.ApplyToOpaque`,
+incluindo 77 amostras de cor-chave e 51 mudanças de cor.
+O ramo base 11→4 e outras escalas ficam como pendências.

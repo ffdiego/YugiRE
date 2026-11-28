@@ -51,7 +51,17 @@ internal static class NativePackedAlphaPixelChecks
         bool rejected=false;
         try { NativePackedAlphaPixel.ApplyToOpaque(new byte[]{1,0,15,0},new byte[2],10,NativeSurfaceFormat.Rgb565,0,256); }
         catch(ArgumentOutOfRangeException){rejected=true;}
-        check(rejected,"V17: base cross-format behavior remains unsupported");
+        check(rejected,"V17: intensity compositor rejects base dispatch");
+        opaque = [0xff, 0xff, 0x55];
+        NativePackedAlphaPixel.ApplyBaseToRgb565([0, 0, 8, 0x99], opaque);
+        check(opaque.SequenceEqual(new byte[] {0xae, 0x73, 0x55}),
+            "V17: base 10->3 blends black at nibble 8 and preserves neighbor bytes");
+        NativePackedAlphaPixel.ApplyBaseToRgb565([0, 0xf8, 0, 0x99], opaque);
+        check(opaque.SequenceEqual(new byte[] {0xae, 0x73, 0x55}),
+            "V17: base 10->3 keeps destination color at nibble zero");
+        NativePackedAlphaPixel.ApplyBaseToRgb565([0, 0xf8, 15, 0x99], opaque);
+        check(opaque.SequenceEqual(new byte[] {0, 0xf8, 0x55}),
+            "V17: base 10->3 takes the source at nibble 15");
         rejected=false;
         try { NativePackedAlphaPixel.EffectiveIntensity(16,255); }
         catch(ArgumentOutOfRangeException){rejected=true;}

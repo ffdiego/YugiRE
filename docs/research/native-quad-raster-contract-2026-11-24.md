@@ -116,3 +116,113 @@ não afirmar equivalência de pixels até assembly + comparação.
 Sem suporte a outros formatos, vtables, máscaras, alpha por
 pixel neste raster, perspectiva com divisão por profundidade,
 ou integração de A03. Sem mudança na cobertura Draw.
+
+## Recorte vertical do impacto em Proton
+
+No ramo de origem 10 e destino 3 de `00422E30`, o assembly
+em `004235D1..00423611` lê o retângulo de recorte e usa
+a borda inferior menos um como limite inclusivo de Y.
+`00423B99` recebe a faixa de destino com o comprimento em
+pixels e `00423BF6` é a saída do laço dessa faixa. O helper
+por pixel observado no assembly é `00439B60`.
+
+Em Proton 9.0 com Xvfb e llvmpipe, o roteiro 59 capturou um
+quadrilátero de intensidade 32 de (451,462) a (599,610),
+com âncora (525,536), correspondente à geometria prevista
+para impacto direto adversário. A sonda seleciona o formato,
+a intensidade e os vértices. O chamador do ataque fica fora
+do traço.
+
+O destino tinha recorte (0,0,800,600) e passo de 1600 bytes.
+As 138 faixas corresponderam a todas as linhas Y=462…599,
+com X inicial 451 e 149 pixels por linha. Todos os ponteiros
+coincidiram com `base + Y*1600 + X*2`. Das 20.562 posições
+visitadas, 6.022 tiveram cor diferente à saída da faixa,
+incluindo 71 na linha 599. A rotina retornou zero.
+
+O log guarda contagens e coordenadas. Verificar o peso do
+alpha na cor final requer amostrar os pixels de entrada e
+saída do helper. [Roteiro 59](../../scripts/regression/README.md#59--v04v17-recorte-do-impacto-em-proton).
+
+Num duelo individual com `-speedy`, encerrar o turno com
+campo vazio provocou um ataque direto adversário. O retorno
+`00414777` confirmou o chamador. Em intensidade 32 apareceu
+o mesmo recorte inferior. O comparador conferiu 288 pares U/V
+nas linhas 593…599 em duas chamadas, incluindo 24 pares na
+linha 599. O quadrilátero termina em Y=610 e a textura mantém a escala
+do quadrilátero completo na parte visível.
+[Modo de recorte do roteiro 62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton).
+
+## Seleção de texels do impacto em Proton
+
+No ramo 10→3, `00422E30` recebe os vértices de origem em
+`[esp+10h]` e os de destino em `[esp+14h]`. O byte em
+`[esp+1Ch]` controla o acréscimo ao divisor de UV. A partir de
+`0042353B` o raster guarda pitch e base da superfície de
+origem bloqueada. Em `00423BAB`, o segundo argumento de
+`00439B60` já aponta para o texel selecionado. Dividir o
+deslocamento desse endereço pelo pitch dá V e o resto, em
+passos de quatro bytes, dá U. A leitura independe da cor, da
+cor-chave e da composição.
+
+Na demonstração em Proton, coletas em intensidade 32, 128 e
+224 amostraram 144 texels cada. Nos três impactos, os quatro
+vértices ficaram dentro do canvas, os quadriláteros estavam
+alinhados aos eixos e a flag de divisor era zero.
+`NativeQuadScanlines.Samples` reproduziu todos os 432 pares
+U/V nas coordenadas X/Y amostradas. No caso 224, ativar a
+flag só no comparador produziu 87 divergências, o que
+distingue os dois divisores nessa escala.
+
+Em intensidade 256, `0051EBD0` recebe origem em `[esp+08h]`,
+destino em `[esp+0Ch]` e a flag em `[esp+14h]`. O raster
+carrega a base e o pitch da superfície de origem em `0051F23E`
+e `0051F249`. Em `0051F897`, o primeiro argumento na pilha
+aponta para o texel de origem. Nesse caminho base, o comparador
+também reproduziu os 144 pares U/V amostrados. Os vértices
+estavam alinhados aos eixos, com um texel por pixel de destino
+e flag de divisor zero.
+
+Resta medir a seleção com recorte lateral.
+[Roteiro 62](../../scripts/regression/README.md#62--v17-seleção-de-texels-no-impacto-em-proton).
+
+## Quadrilátero inclinado em RGB565 em Proton
+
+Para o voo da espada, o retorno `004146EA` identifica o
+chamador de `00422840`. Com origem e destino no formato 3,
+o ramo de formatos iguais de `0051EBD0` entra em `0052C230`
+pela chamada `0051FFDC`. O kernel compara a cor-chave após ler
+o texel em `0052CE20`. O roteiro 63 amostra, nesse ponto,
+os endereços de origem e destino e calcula as coordenadas com
+as bases e os pitches das superfícies bloqueadas.
+
+O comparador .NET reproduziu 144 pares U/V em cada um de dois
+quadriláteros inclinados dentro do canvas. Os recortes cobrem
+interpolação nas duas direções e a primeira troca de aresta.
+A sonda também lê o RGB565 antes de `0052CE20` e depois da
+comparação e da escrita condicional em `0052CE34`. Duas
+amostras somaram 288 pixels. Desses, 200 coincidiam com a
+cor-chave e preservaram o destino. Os 88 restantes terminaram
+com o word de origem, incluindo 87 pixels cujo valor mudou.
+O comparador confirmou cada endereço de amostragem e cada
+valor final.
+[Roteiro 63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado).
+
+## Intensidade reduzida em RGB565 em Proton
+
+Quando a passagem inclinada usa intensidade abaixo de 256 e
+ambas as superfícies estão em formato 3, `00422E30` despacha
+para `00431750` em `0042430F`. O kernel lê o word de origem
+em `00432338`, pula a escrita quando a origem coincide com a
+chave ou com o destino. Nos demais casos, usa duas entradas de
+`0062EE04`. O assembly quantiza o peso da origem em `intensidade >> 4` e
+aplica o complementar até 15 ao destino.
+
+Em intensidades 32 e 224, os 288 texels coincidiram com
+`NativeQuadScanlines` e os 288 valores RGB565 finais com
+`NativeIntensityPixel.Apply`. Em cada intensidade houve 132
+amostras de cor-chave. O destino mudou em 10 pontos na
+intensidade 32 e em 12 pontos na 224. Cada amostra cobriu uma
+chamada do compositor com o quadrilátero inclinado dentro
+do canvas.
+[Roteiro 63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado).

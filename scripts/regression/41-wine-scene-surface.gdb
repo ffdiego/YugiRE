@@ -12,6 +12,7 @@ set $vtable = *(unsigned int *)$surface
 printf "scene surface-vtable=0x%08x", $vtable
 if $vtable == 0x005dc6ec
 printf " format=%u flag78=%u", *(unsigned int *)($surface+0x74), *(unsigned char *)($surface+0x78)
+printf " ddraw=0x%08x", *(unsigned int *)($surface+4)
 end
 printf "\n"
 set $samples = $samples + 1

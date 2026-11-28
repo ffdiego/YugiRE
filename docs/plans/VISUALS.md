@@ -73,6 +73,11 @@ impacto chegaram com dois vértices acima da área de 800×600.
 A aplicação do recorte dentro do rasterizador segue pendente.
 [Validação do ataque direto](../../docs/research/native-attack-life-routing-2026-11-24.md#v047--vértices-do-ataque-direto).
 
+O roteiro 59 observou a escrita do impacto na borda inferior.
+O quadrilátero terminou em Y=610 e as faixas de saída pararam
+em Y=599. A borda superior e os pixels compostos seguem
+pendentes de comparação. [Recorte em Proton](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
+
 ## V05 — ATK/DEF em monstros no campo
 
 <a id="v05"></a>
@@ -292,6 +297,29 @@ blits (intensidades 240 a 16), seguidos pela desativação na
 esse recorte e aguarda execução no Windows.
 [Coleta de saída](../../scripts/pending/README.md#v16--saída-do-resultado-no-roteiro-34).
 
+V16.2. Em duelo individual no Proton com `-speedy`, após
+uma derrota por LP zero e a recusa de salvar o replay,
+`00447000` passou pelas fases 0, 1, 2, 5 e 6. O modo
+observado foi 0. Na fase 6, o bit 6 de `00A54E5C` estava
+limpo, mas `005F3254` valia 2. A comparação em `004475DE`
+explica o salto para a saída sem habilitar o contador.
+O byte `+40h` do pai ficou em zero até a saída observada
+em `0044777F`. Esse é um controle negativo para a rota de
+derrota em duelo individual.
+
+V16.3. Em uma partida melhor de três com `-speedy`,
+o primeiro duelo terminou por LP zero. Ao recusar salvar o
+replay, a cena entrou na fase 5 no modo 1 e iniciou o
+contador de saída. O roteiro 64 observou 16 chamadas de
+Draw com o contador em execução e a desativação com
+contador 256 ainda na fase 5. Antes disso, a mesma rotina
+desenhou o resultado com o contador parado. A saída
+observada em `0044777F` ocorreu na fase 6 após a confirmação
+do placar intermediário. A evidência cobre essa passagem em
+Proton. A rotina continua como Pending no inventário de
+implementação.
+[Roteiro 64](../../scripts/regression/README.md#64--v16-avanço-da-cena-de-resultado).
+
 ## V17 — Cadência nativa de update/draw e blending
 
 <a id="v17"></a>
@@ -348,6 +376,83 @@ os retângulos e a progressão dos timestamps. O teste cobre o
 servidor virtual. Ainda faltam a exibição física e a comparação
 com o caminho do Windows.
 [Notificações de desenho em Xvfb](../../docs/architecture/native-visual-contract.md#notificações-de-desenho-em-xvfb).
+
+V17.5. No ramo 10→3 de `00422E30`, o roteiro 59 registrou
+138 faixas consecutivas dentro do buffer RGB565 e 6.022 pixels
+com alteração entre a entrada e a saída das faixas. Falta
+confrontar as cores de entrada com o resultado do compositor
+e do modelo C#. [Recorte em Proton](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
+
+V17.6. O roteiro 60 comparou 144 pixels de uma chamada 10→3
+do impacto em intensidade 224 com `NativePackedAlphaPixel`.
+Os resultados RGB565 coincidiram em todos os pontos, com
+71 amostras de cor-chave e 57 pixels cujo conteúdo mudou.
+O comparador .NET aceita o mesmo formato de traço para 11→4.
+Ainda faltam outras intensidades, o caminho base e amostras
+do par 11→4. [Validação dos pixels](../../docs/research/native-surface-copy-contract-2026-11-24.md#validação-de-pixels-do-par-10-para-3-em-proton).
+
+V17.7. O compositor base 10→3 usa o nibble diretamente
+como peso. O helper `NativePackedAlphaPixel.ApplyBaseToRgb565`
+coincidiu com os 144 pixels capturados pelo roteiro 61 em
+intensidade 256. O teste cobre o helper em execução e deixa
+em aberto a rasterização do cliente e o par 11→4.
+[Validação do caminho base](../../docs/research/native-surface-copy-contract-2026-11-24.md#validação-do-caminho-base-10-para-3-em-proton).
+
+V17.8. O roteiro 60 passou a aceitar uma intensidade
+selecionada. A comparação .NET conferiu todos os 288
+pixels amostrados nas intensidades 32 e 128 em Proton,
+incluindo casos fora da chave cujo alpha efetivo ficou
+zero após a quantização.
+[Amostras adicionais](../../docs/research/native-surface-copy-contract-2026-11-24.md#amostras-de-intensidade-32-e-128).
+
+V17.9. Em Proton, `NativeQuadScanlines` coincidiu com
+os texels selecionados pelo ramo 10→3 em impactos alinhados
+aos eixos e dentro do canvas. As amostras cobriram escalas
+diferentes e usaram a flag de divisor da chamada original.
+O roteiro 62 reproduz a comparação. Ainda faltam outros
+quadriláteros e o par 11→4. A comparação no caminho base
+10→3 conferiu 144 texels em um impacto 1:1, com intensidade 256.
+[Seleção de texels](../../docs/research/native-quad-raster-contract-2026-11-24.md#seleção-de-texels-do-impacto-em-proton).
+
+V17.10. No teste em Xvfb de profundidade 15, o descritor
+da superfície de duelo chegou ao DirectDraw sem formato de
+pixel explícito. O retorno para a mesma interface trouxe RGB565
+e pitch 1600. O roteiro 41 agora registra o ponteiro usado na
+correlação. A execução 11→4 depende de um backend que exponha
+RGB555 para essa superfície.
+[Negociação do formato](../../docs/research/native-surface-copy-contract-2026-11-24.md#seleção-do-formato-pelo-directdraw-em-proton).
+
+V17.11. As coletas do kernel 3→3 compararam 288 texels
+em dois quadriláteros inclinados dentro do canvas. As coordenadas
+coincidiram em C# e no original em Proton. Recorte lateral
+e escrita da cor seguem em aberto para esse kernel. O roteiro
+63 reproduz a comparação.
+[Amostragem inclinada](../../docs/research/native-quad-raster-contract-2026-11-24.md#quadrilátero-inclinado-em-rgb565-em-proton).
+
+V17.12. A sonda 63 passou a comparar a escrita RGB565
+do compositor base 3→3. Duas amostras somaram 288 valores
+conferidos, com 200 preservações por cor-chave e 87 alterações
+no destino. O compositor 3→3 com redução de intensidade ainda
+precisa dessa comparação.
+
+V17.13. No compositor 3→3 com intensidade 32 e 224, os 288
+texels e valores RGB565 coincidiram com os modelos C#.
+Houve 264 amostras de cor-chave e 22 alterações no destino.
+[Intensidade reduzida](../../docs/research/native-quad-raster-contract-2026-11-24.md#intensidade-reduzida-em-rgb565-em-proton).
+
+V17.14. Em um duelo individual no Proton, um ataque direto
+adversário produziu um impacto 10→3 que atravessou a borda
+inferior. Os 288 texels amostrados em duas chamadas nas
+linhas 593 a 599 coincidiram com o modelo C#. Recorte lateral e superior
+seguem em aberto.
+[Recorte vertical](../../docs/research/native-quad-raster-contract-2026-11-24.md#recorte-vertical-do-impacto-em-proton).
+
+V17.15. A configuração `-win` com Xvfb de 8 bits levou o
+original a alocar a superfície da cena em RGB555. O GDB
+confirmou o par 11→4. Na intensidade 224, os 144 valores
+em execução coincidiram com o modelo C#. O caminho base
+11→4 permanece em aberto.
+[Configuração e resultado](../../docs/research/native-surface-copy-contract-2026-11-24.md#rgb555-com-display-indexado-em-proton).
 
 ## V18 — Áudio e vozes
 
@@ -423,6 +528,34 @@ Bundle 18 recebido: NativeExclusionTimeline porta 24 Draws, ordem mini/feixes/pa
   NativeExclusionStart: descritor, argumento mascarado face-up, contador 64 e camada 0x120. Update vazio, Draw e produtor não mapeados. Não inventar duração nem disparar para todo banimento. Roteiro 18; mesmo contrato.
 
 V26.2: gate +4 sempre falso (0043DBD0), manifesto e dimensões DAT conferidos. Review F5 por Draw. Produtor ainda não encontrado; roteiro 34 modo exclusion pendente. Não ligar automaticamente a banimento ou material de fusão.
+
+V26.3. No PE, a chamada direta ao construtor `0043D810`
+fica em `0043D496`, dentro de `0043D440`. A tabela
+`005DAC74` aponta para essa rotina no slot `+18h`.
+`0043D090` instala a tabela e é chamado para o objeto
+embutido em `+3A0h` em `0044C978`. `0043D440` lê o
+descritor por `00418B50` e encaminha a instância ao
+registro `0044BAD0`. Isso delimita o produtor imediato.
+Falta uma chamada observada ao slot virtual para ligar o
+efeito a um evento do duelo.
+
+V26.4. Em Proton, o roteiro 65 observou a inicialização da
+zona `0x0F` dos lados 0 e 1 nos offsets `+3A0h` e
+`+800h` do gerenciador. Os dois receptores usaram
+`005DAC74`, com `0043D440` no slot `+18h`. O assembly
+localiza o despacho em `0041E829`: `0041E7B0` percorre
+as zonas `0x0C…0x0F` de ambos os lados e chama esse slot
+quando há uma movimentação pendente cujo predicado `+4h`
+retorna falso. Para `0x0F`, `0041CF60` devolve o receptor
+confirmado pelo GDB. A cena chama esse despachante em
+`0044DD50`, entre Update e Draw, no ramo observado em assembly.
+
+Uma demonstração separada registrou 73 transferências em
+`0040CDB0`. Nenhuma tinha destino `0x0F` e o método
+`0043D440` permaneceu sem chamadas. O vínculo de uma
+movimentação real com destino `0x0F` ao despacho ainda
+precisa de captura positiva.
+[Roteiro 65](../../scripts/regression/README.md#65--v26-associação-das-zonas-de-exclusão).
 
 ## V27 — Layerfont A (00455FF0)
 

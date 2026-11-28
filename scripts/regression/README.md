@@ -56,7 +56,11 @@ timeout --signal=INT 15s gdb -nx -q -batch -p "$joey_test_pid" \
 
 O piloto em Proton 9.0, Xvfb a 800×600 e llvmpipe retornou
 `0x005dc6ec format=3 flag78=0` nas três amostras do duelo de
-demonstração. Os breakpoints interferem no tempo de execução.
+demonstração. Para conferir a negociação, inicie o jogo com
+`WINEDEBUG=-all,+ddraw` e procure o ponteiro `ddraw` do roteiro
+em `ddraw_surface1_GetSurfaceDesc` no `game.log` da mesma execução.
+Confira o pedido em `CreateSurface` e as máscaras devolvidas.
+Os breakpoints e o trace interferem no tempo de execução.
 A coleta 34 em Windows continua sendo a referência para cadência e
 para a passagem de composição na seleção.
 
@@ -330,3 +334,145 @@ ignora os pedidos com alvo em um slot de monstro.
 Em um ataque direto do lado próprio, os dois últimos
 quadriláteros do impacto chegaram com Y negativo, antes
 do clipping interno.
+
+### 59 — V04/V17, recorte do impacto em Proton
+
+Use o [prefixo isolado](../../docs/research/joey-proton-validation.md)
+e o PID confirmado do original. Anexe antes da demonstração ou
+provoque um ataque direto. O roteiro procura uma chamada em
+intensidade 32 de origem 10 para destino 3 com vértices além
+da borda vertical. Use GDB com Python.
+
+```bash
+timeout --signal=INT 183s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/59-wine-attack-impact-clip.gdb > scratch/attack-impact-clip.log 2>&1
+```
+
+Confira `attack-impact-clip` e a desanexação. Para cada faixa,
+compare `y` com o recorte e `offset` com `y*stride+x*2`.
+`changed` conta as posições cujo RGB565 mudou entre a entrada
+e a saída da faixa. O piloto do recorte inferior chegou a Y=599,
+com 138 faixas e 6.022 alterações. A amostra pode variar conforme
+a borda do impacto.
+
+### 60 — V17, pixels do compositor 10 para 3 em Proton
+
+Confirme o fingerprint e o PID no
+[prefixo isolado](../../docs/research/joey-proton-validation.md).
+Anexe antes de um ataque. Use GDB com Python e .NET 10.
+A sonda procura o impacto em intensidade 224 e se desanexa
+ao reunir 144 amostras antes e depois do helper por pixel.
+
+```bash
+timeout --signal=INT 115s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/60-wine-packed-alpha-pixels.gdb > scratch/attack-packed-pixels.log 2>&1
+dotnet run --file scripts/regression/60-compare-packed-alpha-pixels.cs -- scratch/attack-packed-pixels.log
+```
+
+Confira quantas amostras foram comparadas, quantas passaram
+pela cor-chave e quantas mudaram de valor. O comparador informa
+a primeira divergência em RGB565. O piloto cobriu 144 pontos,
+com 71 amostras de cor-chave e 57 mudanças. Os pixels lidos
+permanecem no log privado.
+
+O padrão é 224. Para selecionar outro passo do impacto,
+acrescente `-ex 'set $packed_intensity = 32'` antes de
+`-x`, com um nome de log específico. Os passos possíveis
+vão de 32 a 224 em múltiplos de 32.
+
+### 61 — V17, pixels do compositor base 10 para 3
+
+Com os mesmos requisitos do roteiro 60, anexe antes de
+um ataque. O roteiro seleciona intensidade 256 e coleta
+144 amostras no helper base. O comparador do roteiro 60
+reconhece o cabeçalho `attack-packed-base-pixels`.
+
+```bash
+timeout --signal=INT 105s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/61-wine-packed-alpha-base-pixels.gdb > scratch/attack-packed-base-pixels.log 2>&1
+dotnet run --file scripts/regression/60-compare-packed-alpha-pixels.cs -- scratch/attack-packed-base-pixels.log
+```
+
+### 62 — V17, seleção de texels no impacto em Proton
+
+No mesmo prefixo isolado do roteiro 60, anexe antes de um ataque.
+A sonda lê os quatro vértices de origem e destino e amostra o
+endereço do texel antes de o compositor ler sua cor. O comparador
+usa as coordenadas e a flag de divisor da chamada original.
+
+```bash
+timeout --signal=INT 115s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/62-wine-attack-texels.gdb > scratch/attack-texels.log 2>&1
+dotnet run --file scripts/regression/62-compare-attack-texels.cs -- scratch/attack-texels.log
+```
+
+O padrão é intensidade 224. Para repetir em outra escala, passe
+`-ex 'set $packed_intensity = 32'` antes de `-x`. Confira as
+144 amostras e a mensagem de desanexação no log privado.
+Para medir o compositor base, use `-ex 'set $packed_intensity = 256'`
+e salve a captura em outro log. O mesmo comparador lê os dois caminhos.
+
+Para medir o recorte inferior a 800×600, passe
+`-ex 'set $packed_bottom_clip = 1'`. Esse modo seleciona
+intensidade 32 e coleta as sete últimas linhas visíveis.
+No piloto em duelo individual com `-speedy`, encerrar o turno
+com campo vazio permitiu o ataque direto adversário. Confira os
+144 pares U/V e a presença de amostras em Y=599.
+
+### 63 — V17, seleção de texels em quadrilátero inclinado
+
+Anexe antes do voo da espada na demonstração, com os mesmos
+requisitos do roteiro 62. A sonda entra apenas em chamadas
+RGB565→RGB565 com um quadrilátero inclinado. O comparador
+verifica cada endereço de amostragem em coordenadas de texel,
+a preservação do destino na cor-chave e a cópia RGB565 nos
+demais pontos.
+
+```bash
+timeout --signal=INT 130s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/63-wine-rgb565-rotated-texels.gdb > scratch/rotated-texels.log 2>&1
+dotnet run --file scripts/regression/62-compare-attack-texels.cs -- scratch/rotated-texels.log
+```
+
+Confira as 144 amostras e a mensagem de desanexação. Uma passagem
+curta pode produzir menos amostras. Nesse caso, a sonda descarta
+essa passagem e aguarda a próxima.
+
+O padrão 256 mede o compositor base. Para medir o compositor
+de intensidade reduzida, acrescente `-ex 'set $rotated_intensity = 224'`
+antes de `-x` e use outro log. Os passos disponíveis vão de
+32 a 224 em múltiplos de 32.
+
+### 64 — V16, avanço da cena de resultado
+
+Anexe à cópia de teste durante um duelo em uma partida
+melhor de três. No cenário observado, o primeiro duelo
+terminou por LP zero. Na tela de resultado, recuse salvar
+o replay e confirme o placar intermediário.
+
+```bash
+timeout --signal=INT 120s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/64-wine-result-exit-gate.gdb > scratch/result-exit-gate.log 2>&1
+```
+
+O registro inclui fase, modo, estado do contador e a
+desativação do objeto. Para o caso acima, confira 16
+entradas de Draw com `running=true` e uma desativação
+antes de a cena sair. O controle em duelo individual
+perdido mantém o contador de saída desabilitado.
+A comparação no Windows permanece no roteiro 34.
+
+### 65 — V26, associação das zonas de exclusão
+
+No prefixo isolado, anexe antes de entrar em um duelo ou
+de a demonstração começar. O roteiro desanexa após ler
+a associação da zona `0x0F` para os dois lados.
+
+```bash
+timeout --signal=INT 90s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/65-wine-exclusion-zone-binding.gdb > scratch/exclusion-zone-binding.log 2>&1
+```
+
+Compare os offsets `+3A0h` e `+800h` e o destino do slot
+`+18h` para ambos. O roteiro cobre a ligação na abertura do
+duelo. O cenário de banimento do roteiro 34 cobre o disparo.
