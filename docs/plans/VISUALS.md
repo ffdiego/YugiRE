@@ -545,6 +545,12 @@ As coletas 16 e 29 sustentam o modelo de cinco partículas e a dispersão da car
 
 `--review-break` é uma revisão isolada. O compositor nativo +AC/+C, a leitura da ocorrência antes da mutação, a integração via A03 e a comparação gráfica permanecem abertas. `00450FD0` é Partial no recorte vivo V22.3: causa de remoção orienta Break de monstros/S/T por efeito, Explosion preservada para batalha. Materiais de fusão, ritual e tributo têm causas separadas; review e composição pareada permanecem pendentes. [Contrato e revisão](../../docs/research/native-break-field-review-2026-11-25.md)
 
+O App adia a contagem visível do cemitério enquanto a etapa de tributo
+está na sequência de apresentação. Enquanto aguarda, o snapshot retém
+a carta no slot com sua posição e face anteriores. Quando a etapa começa,
+o próprio efeito assume o desenho. A validação gráfica pareada do tributo
+continua pendente.
+
 ## V23 — Corrente (0041F870)
 
 <a id="v23"></a>
@@ -890,3 +896,10 @@ produtores com descritores, som e commit. Faltam amostras de retorno,
 equipamento de controle, defesa e oculto, além da sequência de
 destruição até o cemitério.
 [Evidência](../research/native-card-transfer-and-battle-handoff.md#controle-e-cemitério).
+
+Colocação e revelação existentes agora compartilham a amostragem de
+duas poses independentes, com posição, dimensões, ângulo e face.
+Os chamadores continuam responsáveis pelos dados de lado e zona.
+Testes sintéticos cobrem os extremos, o ponto intermediário e a
+preservação de faces em trajetos nos dois sentidos. As rotas 83 e 8F
+ainda aguardam integração à apresentação do duelo.

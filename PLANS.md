@@ -136,7 +136,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V19 — Fidelidade sistemática das demais telas/efeitos.** Status: `Pronto`. Demais telas e efeitos depois de carta/ATK/DEF. [Detalhes](docs/plans/VISUALS.md#v19)
 - [ ] **V20 — Banco coin (00457520).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, verificar reflexão, remap e blend. [Detalhes](docs/plans/VISUALS.md#v20)
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Graceful Dice aciona o dado em duelo. Coletar comparação do produtor E2 e seguir com Skull Dice e Blind Destruction. [Detalhes](docs/plans/VISUALS.md#v21)
-- [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Break por causa de remoção (efeitos em campo), Explosion para combate; validar DAT, exceções, cauda e compositor. [Detalhes](docs/plans/VISUALS.md#v22)
+- [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Validar a apresentação do tributo e as exceções, caudas e composição das remoções. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Produtor por elo confirmado; ligar formação/resolução de corrente real e comparar pixels. [Detalhes](docs/plans/VISUALS.md#v23)
 - [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Affect no duelo para equipamento, campo, aura e restrições modelados; máscara aproximada. Completar contínuos e seletor 58. Viagem Equip em V32. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Cadência 73 observada em replay; produtores específicos de Graverobber/Crush Card identificados. Ligar eventos específicos A03, confirmar gatilhos ao vivo e rotas 72/1E. [Detalhes](docs/plans/VISUALS.md#v25)
@@ -146,7 +146,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Avisos de alvo inválido (9) e falta de tributo (0) jogáveis no Alpha. Comparar a chave 9 em captura nativa e ampliar os produtores. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
 - [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Abertura, resultado e reaction07 de magia do Joey jogáveis no Alpha. Investigar invocações características e ampliar produtores confirmados. [Detalhes](docs/plans/VISUALS.md#v31)
-- [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Validar gate/despacho de equipamento (57) e variantes das viagens de controle e cemitério. [Detalhes](docs/plans/VISUALS.md#v32)
+- [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Validar gate/despacho de equipamento (57). Ligar as viagens de controle e cemitério ao modelo com poses independentes. [Detalhes](docs/plans/VISUALS.md#v32)
 
 ## Trilha AI
 

@@ -53,6 +53,22 @@ internal static class NativePlacementChecks
             NativePlacementTravel.SampleFieldReveal(target,false,8,c).AngleIndex==256 &&
             !NativePlacementTravel.SampleFieldReveal(target,false,8,c).FaceDown,
             "placement: 91 far-side reveal retains orientation");
+        var sourcePose = new CardTravelPose(origin, 384, true);
+        var targetPose = new CardTravelPose(target, 128, true);
+        var first = NativePlacementTravel.Sample(sourcePose, targetPose, 0, c);
+        var middle = NativePlacementTravel.Sample(sourcePose, targetPose, 4, c);
+        var last = NativePlacementTravel.Sample(sourcePose, targetPose, CardTravel.Updates, c);
+        check(first.Portrait == origin && first.AngleIndex == 384 &&
+            last.Portrait == target && last.AngleIndex == 128,
+            "card travel: independently supplied bounds and orientation reach both endpoints");
+        check(middle.Portrait == new CardBounds(378, 321, 75, 108) &&
+            middle.AngleIndex == 256 && middle.FaceDown &&
+            middle.FaceWidthFixed16 == 65536,
+            "card travel: descending orientation and size interpolate without revealing a hidden card");
+        var reverse = NativePlacementTravel.Sample(targetPose with { FaceDown = false },
+            sourcePose with { FaceDown = false }, 4, c);
+        check(reverse.AngleIndex == 256 && !reverse.FaceDown && reverse.FaceProgress == 256,
+            "card travel: reverse path can preserve its revealed face throughout");
         bool invalidRevealRejected=false;
         try { NativePlacementTravel.SampleFieldReveal(target,true,9,c); }
         catch (ArgumentOutOfRangeException) { invalidRevealRejected=true; }
