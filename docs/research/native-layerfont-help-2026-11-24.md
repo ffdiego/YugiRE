@@ -209,3 +209,75 @@ help01_e.yga..help24_e.yga; não supor key+1 até inspecionar
 help.txt (pode ter parâmetros/remap). O comando já existente
 --inspect-visual-dat inclui help.txt e dimensões/hash; não abrir
 nova coleta Ghidra, não solicitar assets/pixels. Draw continua Pending.
+
+## V29.3 — primeira integração de ajuda no duelo (27/11)
+
+Fonte privada cumulativa v7, SHA256
+`a210880f69a0997492d81dd00e405e1e306d6cc4201f4948d7b8855e4236d379`,
+PRAGMA quick_check=ok. O manifesto help.txt em Shift-JIS confirma
+que o comentário da décima linha (chave 9) é 対象に出来ません
+("não pode ser alvo"). `help10_e.yga` mede 179×38 no inventário
+do DAT, sem erro de decodificação. A chave não é uma dica de hover
+genérica. As decompilações de 00593440, 00591040 e 005A9500
+chamam 005929D0 durante a escolha de alvo, antes de verificar
+o retorno do input. 0040BAD0 escreve 005F2FE0=1 quando o
+descritor de foco coincide com o selecionável; 0044DBC0 zera
+os dois globals de foco por iteração. A dimensão 005F3008 é
+obtida em 00418560 consultando o banco mini via +38, não a
+altura do retângulo de destaque.
+
+O App liga apenas a chave 9 a cartas ocupadas não elegíveis nas
+seleções não comprometidas de equipamento, magia direcionada
+a monstro e magia direcionada a S/T. Reutiliza os predicados
+existentes e os centros de campo. O adaptador de foco/seleção
+é provisório: não demonstra equivalência do virtual +2C ou
+grupo 6. A timeline mantém o pedido a cada update, fecha quando
+o alvo muda, e a amostra usa a altura da miniatura e o DAT
+inglês. Instant mostra a mensagem inteira. Não há alteração de
+regra, divulgação de identidade oculta, nova espera ou FIFO.
+O renderer usa a política YGA existente e composição Raylib,
+não a implementação exata do +4C.
+
+Checks adicionados: chave/ordem do manifesto e rejeição de asset
+ausente. Sem SDK .NET no ambiente desta alteração; build, CI,
+captura pareada e teste interativo dos seletores ainda pendentes.
+Inventário/badge permanecem Pending até validar a integração.
+
+## V29.5 — aviso de tributo no fluxo real (28/11)
+
+O snapshot cumulativo v14 foi aberto somente para leitura, quick_check=ok.
+O manifesto confirma a primeira linha help01_?.yga, comentário de
+tributo necessário; a variante inglesa e help10_e.yga medem 179×38.
+A captura do roteiro 70 na main observou a chave 0 e descritor 0x8117
+após clique em Flame Cerebrus sem tributo; hover isolado não disparou.
+A timeline já modelava o contador 0..256, incremento 4 e encerramento
+por pedido -1. O cliente usa a consulta de falta de tributos da própria
+legalidade de invocação normal, registra a ocorrência quando um clique
+não admite ação e renova apenas enquanto o foco e a condição persistem.
+O descritor usa região 11, lado e índice; a âncora usa HandBounds e a
+altura 290 do banco grande descrita por HandPresentation. Não cria
+comando, nova espera, mutação ou cálculo de tributos em LookAndFeel.
+A equivalência de foco, a precedência de outros avisos, as restrições
+não modeladas e a composição +4C seguem pendentes. Testes sintéticos
+adicionam chave 0, manifesto, geometria e encerramento; build/CI e
+revisão interativa ainda não executados nesta sessão. Cobertura oficial
+continua Pending até validação do PR #263.
+
+## V29.6 — validação do cliente e comparação
+
+No Alpha em Xvfb a 800×600, o DAT original mostrou o aviso de
+tributos ao clicar em Red-Eyes com o campo próprio vazio. Tirar o
+cursor da carta removeu o aviso. O PNG nativo do roteiro 70 com
+Flame Cerebrus confirmou o mesmo recurso inglês, a ancoragem
+acima da mão e a saída por perda de foco. As cartas ocupavam
+slots diferentes. A comparação é visual, sem pareamento de
+pixels ou contadores de abertura.
+
+Na seleção de Mystical Space Typhoon do Alpha, mover o cursor
+para o Axe Raider com uma armadilha elegível em campo mostrou
+o aviso de alvo inválido acima do monstro e manteve a seleção.
+O texto, o tamanho 179×38 e a chave 9 conferem com o conjunto
+DAT/assembly nativo. A comparação em execução dessa chave
+continua pendente no roteiro 75. O cenário local foi preparado
+com edições de cenário do console vivo, seguido pelos cliques
+normais do jogador. A cobertura passa a Partial.

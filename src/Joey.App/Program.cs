@@ -92,6 +92,7 @@ static partial class Game
             ConfigureLiveAffect(archive);
             ConfigureLiveExclusion(archive);
             ConfigureLiveDisabledChain(archive);
+            ConfigureLiveHelp(archive);
             ConfigureLayerFontReview(args, archive);
             ConfigureDiceReview(args, archive);
             ConfigureCoinReview(args, archive);

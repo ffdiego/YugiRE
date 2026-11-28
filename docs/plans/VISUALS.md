@@ -527,6 +527,8 @@ o indicador e restaurou o canvas inicial pixel a pixel. O teste cobre
 a revisão manual do cliente. A fila do duelo e a comparação com
 quadros do executável original continuam pendentes.
 
+V23.2: assembly do produtor 005BA230 confirma emissão de todos os elos com número 1-based, e liberação do topo antes de cada resolução. Integrar somente quando fatos reais de formação e resolução estiverem disponíveis. [Produtor](../research/native-chain-affect-contract-2026-11-24.md#v232--início-e-liberação-por-elo-2711).
+
 ## V24 — Destaque contextual affect (0040E260)
 
 <a id="v24"></a>
@@ -541,6 +543,8 @@ V24.4: Affect integrado ao duelo: projeção de vínculos reais pelo Core, equip
 
 Bundle 18 recebido: NativeAlternativeActivationTimeline.Sample porta carta grande, escala/fade e glow herdado; revisão --review-alternative=ID,CATEGORY com DAT. Integração A03 e comparação pendentes.
   NativeAlternativeActivationTimeline: -128, passo 16, 33 Updates, som em entrada zero, centro 525/300, camada 0x110; rotas brutas 72/73/1E (índices 48/49/18; coleta 29). Produtores e [auditoria](../../docs/research/native-visual-dispatch-opcode-audit-2026-11-25.md). [Contrato](../../docs/research/native-alternative-activation-exclusion-2026-11-24.md).
+
+V25.1: wrappers 72/73 e três chamadores de 73 confirmados por assembly no v7; Graverobber (duas rotas) e Crush Card. Não aplicar a ativações comuns. [Produtores](../research/native-alternative-activation-exclusion-2026-11-24.md#v251--produtores-identificados-de-7273-2711).
 
 V25.2. O replay local contém uma ativação `0x73` de
 Lightforce Sword. Em Proton com `-speedy`, o roteiro 66
@@ -639,6 +643,21 @@ com solicitação `-1`. Foram 139 e 196 Draws ao todo, com durações
 de permanência diferentes em cada piloto. A evidência cobre a chave
 0 e sua transição, com as demais chaves e a composição pendentes.
 [Reprodução](../../scripts/regression/README.md#70--v29-aviso-de-tributo-na-ajuda-contextual).
+
+V29.4: primeira integração em revisão no cliente para rejeição de alvo nos seletores de magia/equipamento já existentes, com key 9, asset 179×38 e timeline nativa. Gating adaptado e compositor aproximado. Build/CI e teste interativo pendentes; cobertura não promovida antes da validação. [Evidência](../research/native-layerfont-help-2026-11-24.md#v293--primeira-integração-de-ajuda-no-duelo-2711).
+
+V29.5 (28/11/2026). O PR #263 incorpora a captura de tributo da main e liga a chave 0 a uma tentativa de invocação normal sem tributos suficientes, pela consulta de legalidade do Core. Hover sem clique não solicita a ajuda; sair da carta, mudar a ocorrência ou perder a elegibilidade encerra o pedido. O DAT v14 confirma help01_e.yga, 179×38; o descritor de mão usa região 11 e índice do slot. A geometria usa a mão projetada e a altura do banco grande. Sem gate, mutação de regras ou fila adicional. CI e revisão interativa do novo recorte ainda pendentes; cobertura não promovida.
+
+V29.6 (28/11). PR #263 reconciliado com main. O Xvfb a 800×600
+com DAT original mostrou o aviso de tributo no clique em Red-Eyes
+e a saída ao perder foco. O piloto anterior do original observou
+o mesmo aviso em Flame Cerebrus. Na seleção de Mystical Space
+Typhoon, o Alpha mostrou a chave 9 acima de Axe Raider e continuou
+aguardando um alvo. Chave e geometria foram conferidas com o
+assembly/DAT. A captura dessa chave no original fica no roteiro
+75. Build, 51.773 checks com DAT e testes da badge passaram.
+Draw 0045E4A0 passa a Partial.
+[Comparação](../research/native-layerfont-help-2026-11-24.md#v296--validação-do-cliente-e-comparação).
 
 ## V30 — Vija / Destiny Board (004584C0)
 

@@ -115,6 +115,7 @@ static partial class Game
         foreach (var layout in handLayouts) layout.Clear();
         ResetDuelPhases();
         ResetDuelDetail();
+        ResetLiveHelp();
         ResetDuelResultNotice();
         flight = null;
         deferredTributeFlight = null;
