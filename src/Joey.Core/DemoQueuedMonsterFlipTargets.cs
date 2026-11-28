@@ -42,7 +42,7 @@ public sealed partial class DemoDuel
 
     public bool UsesQueuedMonsterFlipSelection(DemoFlipTarget request) =>
         ReferenceEquals(PendingFlipTarget, request) &&
-        deferredBattle is null && SupportsQueuedMonsterSelection(request) &&
+        SupportsQueuedMonsterSelection(request) &&
         (Phase == DemoPhase.Main || HasQueuedBattleTargetChoice);
 
     internal bool TryGetQueuedFlipSource(DemoFlipTarget request, out CardTarget source)
@@ -134,7 +134,7 @@ public sealed partial class DemoDuel
     }
 
     private bool CanAdmitQueuedMonsterFlipAnswer() =>
-        !GameOver && deferredBattle is null && (Phase == DemoPhase.Main ||
+        !GameOver && (Phase == DemoPhase.Main ||
             HasQueuedBattleTargetChoice && queuedBattleReveal is { } battle && ValidateBattleReveal(battle,faceDown:false)) &&
         PendingFlipTarget is { } pending && SupportsQueuedMonsterSelection(pending) &&
         PendingFlipSpellTrapTargets is null && PendingCardSelection is null &&
