@@ -46,7 +46,7 @@ public sealed partial class DemoDuel
     }
 
     private bool CanAdmitHandManipulationAnswer() =>
-        !GameOver && Phase == DemoPhase.Main && deferredBattle is null &&
+        !GameOver && Phase == DemoPhase.Main &&
         PendingCardSelection is { } request && IsHandManipulationRequest(request) &&
         PendingFlipTarget is null && PendingFlipSpellTrapTargets is null &&
         PendingSummonResponse is null && PendingAttackResponse is null &&

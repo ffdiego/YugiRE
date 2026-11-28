@@ -8,7 +8,6 @@ public sealed partial class DemoDuel
     // make a producer fall back to immediate mutation.
     public bool UsesQueuedHandSelection(PendingCardSelection request) =>
         ReferenceEquals(PendingCardSelection, request) &&
-        deferredBattle is null &&
         (IsHandManipulationRequest(request) ||
         request is { Destination: CardSelectionDestination.Hand, MaxSelections: 1 } &&
         (request.Source == CardSelectionSource.Deck &&

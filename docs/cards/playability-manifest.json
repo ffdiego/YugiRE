@@ -1378,7 +1378,7 @@
         "Historical 2004 Joey card text says both are removed from play on attacking/being attacked; later rulings indicate after damage calculation; sandbox chooses the latter ordering.",
         "Only direct monster-versus-monster battle with both original combatants still present is modeled; chains, unrelated replacement of slots mid-resolution, return-from-banish, owner/controller divergence and exact timing not native-verified.",
         "Full .NET 10 solution built and 3,340 synthetic checks passed (15 P188 cases) in PR #60; no native original parity verified.",
-        "C12: the targeted battle pilot rejects this ID; the historical dual-banish resolver is not reachable from production producers. Reimplement through the queue."
+        "C12: the targeted battle executor rejects this ID; the historical dual-banish resolver has been removed. Reimplement through the queue. Partial status unchanged."
       ]
     },
     {

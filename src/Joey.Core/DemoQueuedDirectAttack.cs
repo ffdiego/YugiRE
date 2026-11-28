@@ -8,8 +8,8 @@ public sealed partial class DemoDuel
         ActionOrigin origin = ActionOrigin.Player) =>
         TryQueueAttack(attackerSlot, defenderSlot, out message, out _, origin);
 
-    /// <summary>Only a legal declaration outside the queue's supported battle
-    /// configurations may be routed to the compatibility resolver.</summary>
+    /// <summary>Report a legal-looking declaration outside supported queued
+    /// configurations without mutating or selecting a fallback.</summary>
     public bool TryQueueAttack(int attackerSlot, int defenderSlot, out string message,
         out bool unsupported, ActionOrigin origin = ActionOrigin.Player) => defenderSlot == -1
             ? TryQueueDirectAttack(attackerSlot, out message, out unsupported, origin)

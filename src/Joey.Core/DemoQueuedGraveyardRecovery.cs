@@ -7,7 +7,7 @@ public sealed partial class DemoDuel
     private bool admittingQueuedGraveyardRecovery;
 
     private bool CanAdmitQueuedGraveyardRecovery() =>
-        !GameOver && AllowsQueuedRecoveryPhase() && deferredBattle is null &&
+        !GameOver && AllowsQueuedRecoveryPhase() &&
         PendingCardSelection is { Source: CardSelectionSource.Graveyard,
             Destination: CardSelectionDestination.Hand, MinSelections: 1, MaxSelections: 1 } pending &&
         CardSelectionRules.FlipGraveyardFilter(pending.EffectResourceId) == pending.Filter &&

@@ -5,7 +5,7 @@ public sealed partial class DemoDuel
     private bool admittingQueuedDeckRecruitment;
 
     private bool CanAdmitQueuedDeckRecruitment() =>
-        !GameOver && deferredBattle is null &&
+        !GameOver &&
         PendingCardSelection is { Source: CardSelectionSource.Deck,
             Destination: CardSelectionDestination.Field, MinSelections: 0 } pending &&
         (IsElementalRecruitment(pending) || IsSameNameRecruitment(pending)) &&
@@ -54,7 +54,7 @@ public sealed partial class DemoDuel
     }
 
     /// <summary>Accept one occurrence and a free monster slot, or decline
-    /// with both arguments null. Requests may originate from a completed queued or legacy battle.</summary>
+    /// with both arguments null. Requests may originate from completed queued battle removal.</summary>
     public bool TryQueueDeckRecruitment(PendingCardSelection request, CardTarget? target, int? slot,
         out string message, ActionOrigin origin = ActionOrigin.Player)
     {

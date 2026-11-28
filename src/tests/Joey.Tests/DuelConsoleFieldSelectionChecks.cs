@@ -76,17 +76,19 @@ internal static class DuelConsoleFieldSelectionChecks
                 "A06 Bubonic preserves selected copy and set position");
         }
 
-        // A completed legacy battle supplies the requests; not a claim
-        // that the console can yet declare these battles through A05.
+        // Resolve the battle through the real queue before the owner chooses
+        // the recruited occurrence. The same queue owns both operations.
         foreach(ushort id in new ushort[]{1123,1114,1115})
         {
             var recruit=Monster(id,1400);
             var good=id==1123?Monster(24,1000):recruit;
-            var d=DemoDuel.FromPartialObservation(1,[],Slots(recruit),Slots(Monster(800,2200,1)),8000,
+            var d=DemoDuel.FromPartialObservation(1,[],Slots(recruit),Slots(Monster(24,2200,1)),8000,
                 side0Deck:[good,Monster(25,1600),good], checkpoint: new DuelCheckpoint(2, DemoPhase.Battle));
-            check(d.Attack(0,0,out _) && d.PendingCardSelection is {Owner:0},
-                "A06 completed battle creates non-active owner request");
             var gate=new Gate(); var console=new DuelConsoleSession(d,gate);
+            check(d.TryQueueTargetedAttack(0,0,out _,ActionOrigin.Test), "A06 battle admitted");
+            Drain(console.Queue);
+            check(d.PendingCardSelection is {Owner:0},
+                "A06 completed queued battle creates non-active owner request");
             check(!Complete(console) && Run(console).Status==DuelScriptStatus.WaitingForDecision,
                 "A06 even empty script cannot complete at field prompt");
             check(d.TryCaptureCardTarget(0,DuelZone.Deck,2,out var first),"A06 track selected first copy");
