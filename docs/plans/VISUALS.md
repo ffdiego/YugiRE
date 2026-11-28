@@ -471,6 +471,8 @@ V18.5 (28/11). Captura Windows privada de 90 s (2700 frames, 1249 eventos, zero 
 
 V18.6 (28/11). Segunda captura Windows: Change of Heart da mão, transferência e tributo. CF usa 8 amostras + commit, raw 7/0F, voz 57 antes de 72/0D; 83 gira 180° em 8 updates, 8F move magia ao GY; CE->6F repete offset 11 após tributo. Assembly 0048708E confirma ikenie no contador pós-update 0x88. Cliente compartilha o renderer de placement na viagem CF, toca card_move no primeiro Update, conserva commit e cue de glow sem atravessar estágios; som do tributo cruza 0x88. Voz/gate local, ordem reação CPU, revelação baixada, transferência e GY seguem pendentes; nenhum atraso fixo inventado. [Evidência](../research/native-basic-placement-cadence-2026-11-28.md). CI e validação local pendentes.
 
+V18.7 (28/11). 91 revelação no campo: snapshot face-down pré-mutação, 8 amostras + commit, cue card_open na primeira amostra; não virar cartas já abertas. Seletor 004030F0 e produtor CF 00405CB0 identificam reaction04/57 após viagem (CPU reaction07 antes da viagem permanece). Manifesto reaction04 tem header 12; compositor e nome do descritor aguardam confirmação. Sem mudança de Core/fila, badge ou duração de voz. [Evidência](../research/native-basic-placement-cadence-2026-11-28.md). CI/cliente pendentes.
+
 ## V19 — Fidelidade sistemática das demais telas/efeitos
 
 <a id="v19"></a>

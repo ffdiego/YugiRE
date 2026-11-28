@@ -22,6 +22,18 @@ public static class NativePlacementTravel
     public static int MotionSampleUpdate(int elapsedUpdates) =>
         Math.Clamp(elapsedUpdates, 0, CardTravel.Updates);
 
+    // 91 (Windows trace): position, size and angle remain fixed; only
+    // face changes 0 -> 256 by 32, followed by descriptor commit.
+    public static NativePlacementTravelSample SampleFieldReveal(CardBounds portrait,bool nearSide,
+        int update,ReadOnlySpan<int> cosine)
+    {
+        if(update<0||update>CardTravel.Updates)throw new ArgumentOutOfRangeException(nameof(update));
+        NativeFusionMath.Validate(cosine);
+        int face=update*32;
+        int scale=NativeFusionMath.C(cosine,Math.Min(face,256-face));
+        return new(portrait,nearSide?0:256,face,Math.Max(0,scale),face<128);
+    }
+
     public static NativePlacementTravelSample Sample(CardBounds origin,CardBounds destination,
         bool nearSide,bool destinationDefense,bool destinationFaceDown,int update,
         ReadOnlySpan<int> cosine)

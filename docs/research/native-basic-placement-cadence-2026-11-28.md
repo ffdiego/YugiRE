@@ -78,3 +78,37 @@ cada objeto de reação, nem a liberação da interface. A fase de prévia
 em 0x80 do tributo não está integrada, então o instante absoluto do
 som ainda não é equivalente. O timing de 11 ticks é observado, não
 universal. CI e comparação local pendentes, sem mudança de badge.
+
+## V18.7 — revelação de carta baixada e seletor de reação local
+
+Reabertas ambas as capturas Windows privadas (hashes acima). Em 91,
+frame 22 e 1834: descriptor 000A/000B -> 800A/800B, posição e ângulo
+constantes; face 0..256 (+32), nono Update confirma descritor. raw 6
+(0040D00C), 10000010 (0044EF87) = card_open.wav. Assembly 00418B60
+confirma a interpolação de face independente de geometria. Cliente:
+Snapshot da face ANTES de mutação em AppActionPresentationGate;
+quando fonte baixada face-down, Reveal (9 updates) precede Glow;
+mascara a carta estática no campo durante a revelação. Não revela
+novamente uma magia/armadilha já face-up. Legacy CPU sem snapshot
+não é promovido neste marco. Sem mudança no Core, fila ou pitch.
+
+SQLite cumulativo v14: 004030F0 ramo lado diferente de (~00A54E5C)&1
+seleciona 00402E00(4,10000057) para classe 0x16; 00403BF0 chama o
+seletor indireto se os gates 0044B9B0/0044B980 permitem. CF 00405CB0
+case 0 chama 00403BC0 para colocação ativada; case 1 espera os objetos
+(+4), move a carta; case 2 chama 00403BF0 quando uVar11!=0 e uVar4==0;
+case 3 espera os objetos (+4) antes de liberar. Assim a reação anterior
+à viagem da CPU (00402BE0) permanece correta; não transpor essa ordem
+para o jogador. As duas amostras locais pedem 57 em 00417982 dois ticks
+após commit; glow em 1881/165. 00416BC0 epílogo confirma poll 005C0490
+quando contador>=256, pedido primário no Draw de contador 8.
+
+DAT v14 contém reaction04.txt: base 666x454 em (50,50), header 1
+(rows 6 eyes1, 7 kuti1), header 12 (rows 9..11 te1..3, 477180).
+O caso 12 em 00416BC0 usa contador próprio /24 e contagem do banco,
+não os bits globais de cena. Faltam disassembly preciso do caso 12,
+composição do grupo e confirmação do nome apontado pelo descriptor
+005F02B8 -> 005F0540 (bytes da string ausentes no v14). Não inventar
+nome, duração ou compositor. Rota estática localizada; implementação
+reaction04 e gate variável ainda pendentes, assim como controle/GY.
+Sem promoção de cobertura, validação CI/cliente pendente.

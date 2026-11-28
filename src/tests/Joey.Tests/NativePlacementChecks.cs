@@ -42,6 +42,19 @@ internal static class NativePlacementChecks
             !NativeTributeFrame.CrossesSoundUpdate(17,1) &&
             !NativeTributeFrame.CrossesSoundUpdate(16,0),
             "placement: tribute sound on crossing post-update counter 0x88 only");
+        var reveal0=NativePlacementTravel.SampleFieldReveal(target,true,0,c);
+        var reveal4=NativePlacementTravel.SampleFieldReveal(target,true,4,c);
+        var reveal8=NativePlacementTravel.SampleFieldReveal(target,true,8,c);
+        check(reveal0.Portrait==target && reveal0.FaceDown && reveal0.FaceWidthFixed16==65536 &&
+            reveal4.Portrait==target && reveal4.FaceProgress==128 && reveal4.FaceWidthFixed16==0 &&
+            reveal8.Portrait==target && !reveal8.FaceDown && reveal8.FaceWidthFixed16==65536 &&
+            reveal8.AngleIndex==0,"placement: 91 reveals in place, edge-on at midpoint");
+        check(NativePlacementTravel.SampleFieldReveal(target,false,0,c).FaceDown &&
+            NativePlacementTravel.SampleFieldReveal(target,false,8,c).AngleIndex==256 &&
+            !NativePlacementTravel.SampleFieldReveal(target,false,8,c).FaceDown,
+            "placement: 91 far-side reveal retains orientation");
+        reject(()=>NativePlacementTravel.SampleFieldReveal(target,true,9,c),
+            "placement: reject reveal motion beyond terminal counter");
         string[] bank=NativePlacementAssets.SetBank();
         check(NativePlacementAssets.Aura(false).EndsWith("eff_set_y.bmp")&&
               NativePlacementAssets.Aura(true).EndsWith("eff_set_b.bmp")&&
