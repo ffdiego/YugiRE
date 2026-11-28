@@ -412,6 +412,11 @@ conferidos, com 200 preservações por cor-chave e 87 alterações
 no destino. O compositor 3→3 com redução de intensidade ainda
 precisa dessa comparação.
 
+V17.13. No compositor 3→3 com intensidade 32 e 224, os 288
+texels e valores RGB565 coincidiram com os modelos C#.
+Houve 264 amostras de cor-chave e 22 alterações no destino.
+[Intensidade reduzida](../../docs/research/native-quad-raster-contract-2026-11-24.md#intensidade-reduzida-em-rgb565-em-proton).
+
 ## V18 — Áudio e vozes
 
 <a id="v18"></a>

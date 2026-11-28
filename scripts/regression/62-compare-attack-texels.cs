@@ -17,6 +17,10 @@ using var document = JsonDocument.Parse(record[Prefix.Length..]);
 var data = document.RootElement;
 bool extraDivisor = data.GetProperty("extraDivisor").GetBoolean();
 bool keyedCopy = data.TryGetProperty("keyedCopy", out var keyedCopyFlag) && keyedCopyFlag.GetBoolean();
+bool intensityBlend = data.TryGetProperty("intensityBlend", out var intensityBlendFlag) &&
+    intensityBlendFlag.GetBoolean();
+bool comparePixels = keyedCopy || intensityBlend;
+int intensity = data.GetProperty("intensity").GetInt32();
 var vertices = ReadPoints("destinationVertices").Zip(ReadPoints("sourceVertices"),
     (destination, source) => new NativeQuadVertex(destination, source)).ToArray();
 var prediction = NativeQuadScanlines.Samples(vertices, new CardBounds(0, 0, 800, 600), extraDivisor)
@@ -43,22 +47,22 @@ foreach (var item in samples.EnumerateArray())
     if (observed != expected)
         throw new InvalidDataException($"At {position}, observed ({observed.U}, {observed.V}) " +
             $"and predicted ({expected.U}, {expected.V}).");
-    if (!keyedCopy)
+    if (!comparePixels)
         continue;
 
     ushort source = item.GetProperty("source").GetUInt16();
     ushort key = item.GetProperty("key").GetUInt16();
     ushort before = item.GetProperty("before").GetUInt16();
     ushort after = item.GetProperty("after").GetUInt16();
+    BinaryPrimitives.WriteUInt16LittleEndian(sourcePixel, source);
     BinaryPrimitives.WriteUInt16LittleEndian(destinationPixel, before);
     if (source == key)
         keyed++;
-    else
-    {
-        BinaryPrimitives.WriteUInt16LittleEndian(sourcePixel, source);
+    if (intensityBlend)
+        NativeIntensityPixel.Apply(sourcePixel, destinationPixel, NativeSurfaceFormat.Rgb565, key, intensity);
+    else if (source != key)
         NativeSurfaceCopy.CopyPixel(sourcePixel, NativeSurfaceFormat.Rgb565,
             destinationPixel, NativeSurfaceFormat.Rgb565);
-    }
     ushort expectedPixel = BinaryPrimitives.ReadUInt16LittleEndian(destinationPixel);
     if (after != expectedPixel)
         throw new InvalidDataException($"At {position}, observed RGB565 {after:x4} and predicted {expectedPixel:x4}.");
@@ -66,9 +70,9 @@ foreach (var item in samples.EnumerateArray())
         changed++;
 }
 
-Console.WriteLine($"Intensity {data.GetProperty("intensity").GetInt32()}, " +
+Console.WriteLine($"Intensity {intensity}, " +
     $"extra divisor {extraDivisor}: {coordinates.Count} matching texels.");
-if (keyedCopy)
+if (comparePixels)
     Console.WriteLine($"{coordinates.Count} matching RGB565 pixels, {keyed} key matches and {changed} changed.");
 
 CardPoint[] ReadPoints(string property) => data.GetProperty(property).EnumerateArray()

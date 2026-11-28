@@ -430,3 +430,8 @@ dotnet run --file scripts/regression/62-compare-attack-texels.cs -- scratch/rota
 Confira as 144 amostras e a mensagem de desanexação. Uma passagem
 curta pode produzir menos amostras. Nesse caso, a sonda descarta
 essa passagem e aguarda a próxima.
+
+O padrão 256 mede o compositor base. Para medir o compositor
+de intensidade reduzida, acrescente `-ex 'set $rotated_intensity = 224'`
+antes de `-x` e use outro log. Os passos disponíveis vão de
+32 a 224 em múltiplos de 32.

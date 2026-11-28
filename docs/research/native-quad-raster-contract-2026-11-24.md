@@ -198,3 +198,22 @@ com o word de origem, incluindo 87 pixels cujo valor mudou.
 O comparador confirmou cada endereço de amostragem e cada
 valor final.
 [Roteiro 63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado).
+
+## Intensidade reduzida em RGB565 em Proton
+
+Quando a passagem inclinada usa intensidade abaixo de 256 e
+ambas as superfícies estão em formato 3, `00422E30` despacha
+para `00431750` em `0042430F`. O kernel lê o word de origem
+em `00432338`, pula a escrita quando a origem coincide com a
+chave ou com o destino. Nos demais casos, usa duas entradas de
+`0062EE04`. O assembly quantiza o peso da origem em `intensidade >> 4` e
+aplica o complementar até 15 ao destino.
+
+Em intensidades 32 e 224, os 288 texels coincidiram com
+`NativeQuadScanlines` e os 288 valores RGB565 finais com
+`NativeIntensityPixel.Apply`. Em cada intensidade houve 132
+amostras de cor-chave. O destino mudou em 10 pontos na
+intensidade 32 e em 12 pontos na 224. Cada amostra cobriu uma
+chamada do compositor com o quadrilátero inclinado dentro
+do canvas.
+[Roteiro 63](../../scripts/regression/README.md#63--v17-seleção-de-texels-em-quadrilátero-inclinado).
