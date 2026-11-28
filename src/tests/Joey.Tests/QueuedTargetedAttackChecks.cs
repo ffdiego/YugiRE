@@ -248,8 +248,6 @@ internal static class QueuedTargetedAttackChecks
                 d.MonsterFaceDown[1-side,3]=d.DefensePosition[1-side,3]=true;
                 return d;
             }
-            var legacy=State();
-            check(legacy.Attack(2,3,out _),"A06 hidden defender legacy comparator");
             var d=State();var gate=new Gate();var q=d.CreatePrimitiveActionQueue(gate);
             int positionChanges=0, summons=0;
             d.MonsterPositionChanged+=_=>positionChanges++;
@@ -276,11 +274,11 @@ internal static class QueuedTargetedAttackChecks
                 "A06 calculation only plans later commands");
             gate.Release=true;
             for(int n=0;n<50 && q.IsBusy;n++)q.Tick();
-            check(!q.IsBusy && q.Fault is null && d.Life.SequenceEqual(legacy.Life) &&
+            check(!q.IsBusy && q.Fault is null &&
                 d.Life[side]==8000-loss && d.Life[1-side]==8000 &&
                 (d.Monsters[1-side,3] is null)==removed &&
-                d.Graveyard(1-side).Select(c=>c.Id).SequenceEqual(legacy.Graveyard(1-side).Select(c=>c.Id)) &&
-                !d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defense matrix matches legacy and consumes attack");
+                d.Graveyard(1-side).Select(c=>c.Id).SequenceEqual(removed ? new ushort[] { b.Id } : []) &&
+                !d.TryQueueTargetedAttack(2,3,out _),"A06 hidden defense matrix matches expected outcome and consumes attack");
             check(d.TryCaptureCardTarget(1-side,removed?DuelZone.Graveyard:DuelZone.Monster,removed?0:3,out var placed) &&
                 placed.Occurrence==original.Occurrence,"A06 reveal preserves occurrence through final destination");
             var battleDamage = q.Trace.Where(t => t.Stage == ActionTraceStage.Executed)
