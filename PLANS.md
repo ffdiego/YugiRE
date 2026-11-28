@@ -36,7 +36,7 @@ AI: decisões equivalentes / comparáveis, com cobertura e inconclusivos separad
 4. Core independente de Frida e tempo de animação, mas ordem e granularidade seguem a fila nativa. Preservar laboratório de RE.
 5. Visual: pixels, dimensões, orientação, recursos, composição, contadores e duração originais ([meta](docs/architecture/visual-fidelity-goal.md)); assets DAT em runtime, caches permitidos, sem placeholders finais, preservar quadros intermediários.
 6. Debug desligado por padrão; F3/botão/menu; controles essenciais não somem. Revisar 800×600 com e sem debug.
-7. VISUALS assembly-first: investigar joey_pc.exe antes de escolher sprites, posições, cores e timing. Capturas validam; não substituem análise. [Backlog](docs/research/visual-assembly-first-backlog-2026-11-22.md).
+7. VISUALS assembly-first: priorizar efeitos ainda Pending no duelo. Confirmar gatilhos, sprites, geometria, sequência e gates pelo assembly; aceitar blending e cores aproximados no Raylib quando visualmente adequados. Refinar pixels depois da cobertura, sem bloquear novas famílias por precisão de cor. [Backlog](docs/research/visual-assembly-first-backlog-2026-11-22.md).
 8. **Melhorias ficam para depois da validação.** Evitar generalizações e arquitetura além da fatia necessária.
 
 <a id="espinha-dorsal-a-fila-de-ações-scheduler"></a>
@@ -138,7 +138,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V21 — Banco dice (00456B90).** Status: `Parcial`. Ponte A03 no console lab; ligar produtores reais, validar Draw/remap/blend. [Detalhes](docs/plans/VISUALS.md#v21)
 - [ ] **V22 — Remoção break (00450FD0).** Status: `Parcial`. Break por causa de remoção (efeitos em campo), Explosion para combate; validar DAT, exceções, cauda e compositor. [Detalhes](docs/plans/VISUALS.md#v22)
 - [ ] **V23 — Corrente (0041F870).** Status: `Parcial`. Integração à fila e comparação de pixels. [Detalhes](docs/plans/VISUALS.md#v23)
-- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Reset por Draw, Jar key2 e TER key4 confirmados; roteiro 58 estático para kinds/Spellbinding Circle; compositor pendente. Viagem Equip em V32. [Detalhes](docs/plans/VISUALS.md#v24)
+- [ ] **V24 — Destaque contextual affect (0040E260).** Status: `Parcial`. Affect no duelo para equipamento, campo, aura e restrições modelados; máscara aproximada. Completar contínuos e seletor 58. Viagem Equip em V32. [Detalhes](docs/plans/VISUALS.md#v24)
 - [ ] **V25 — Ativação alternativa (00450AD0).** Status: `Parcial`. Integração A03 e comparação. [Detalhes](docs/plans/VISUALS.md#v25)
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Capturar uma movimentação real à zona `0x0F` até o despacho em `0041E829` e o início do efeito. [Detalhes](docs/plans/VISUALS.md#v26)
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)

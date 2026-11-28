@@ -211,6 +211,7 @@ NativeFusionCardTimelineChecks.Run(Check);
 NativeFusionPlaybackChecks.Run(Check);
 NativeEffectCommandRoutingChecks.Run(Check, Reject);
 NativeContextEffectChecks.Run(Check);
+LiveAffectChecks.Run(Check, Reject);
 NativeAlternativeActivationChecks.Run(Check);
 NativeLayerFontChecks.Run(Check, Reject);
 NativeHelpChecks.Run(Check);

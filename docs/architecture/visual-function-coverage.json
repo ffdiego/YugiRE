@@ -64,7 +64,8 @@
     {
       "address": "0040E260",
       "family": "Efeito de estado persistente",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelAffectPresentation.cs"
     },
     {
       "address": "004142C0",

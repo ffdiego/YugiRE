@@ -801,6 +801,10 @@ static partial class Game
         // Draw this AFTER queued destruction cards so no face-up card
         // appears beneath the sword before the impact sample.
         DrawHiddenAttackTargetBeforeImpact();
+        DrawLiveAffect(hoverUpdates,!joeySpeaking && !ConsoleCapturesInput && !selectingCard &&
+            !MotionBusy && !PhaseBusy && !handHovered && hoverCpuHand<0 && pendingOwner is null &&
+            queuedSpellTrapSelection is null && queuedEquipChoice is null &&
+            banishSummonChoice is null && ritualBoardChoice is null);
         if (actionInput && duel.CanAttack(attacker) && attackCue is null)
             DrawAttackAim();
         DrawAttackCue();
