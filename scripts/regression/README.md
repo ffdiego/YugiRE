@@ -461,3 +461,18 @@ entradas de Draw com `running=true` e uma desativação
 antes de a cena sair. O controle em duelo individual
 perdido mantém o contador de saída desabilitado.
 A comparação no Windows permanece no roteiro 34.
+
+### 65 — V26, associação das zonas de exclusão
+
+No prefixo isolado, anexe antes de entrar em um duelo ou
+de a demonstração começar. O roteiro desanexa após ler
+a associação da zona `0x0F` para os dois lados.
+
+```bash
+timeout --signal=INT 90s gdb -nx -q -batch -p "$joey_test_pid" \
+  -x scripts/regression/65-wine-exclusion-zone-binding.gdb > scratch/exclusion-zone-binding.log 2>&1
+```
+
+Compare os offsets `+3A0h` e `+800h` e o destino do slot
+`+18h` para ambos. O roteiro cobre a ligação na abertura do
+duelo. O cenário de banimento do roteiro 34 cobre o disparo.

@@ -539,6 +539,24 @@ registro `0044BAD0`. Isso delimita o produtor imediato.
 Falta uma chamada observada ao slot virtual para ligar o
 efeito a um evento do duelo.
 
+V26.4. Em Proton, o roteiro 65 observou a inicialização da
+zona `0x0F` dos lados 0 e 1 nos offsets `+3A0h` e
+`+800h` do gerenciador. Os dois receptores usaram
+`005DAC74`, com `0043D440` no slot `+18h`. O assembly
+localiza o despacho em `0041E829`: `0041E7B0` percorre
+as zonas `0x0C…0x0F` de ambos os lados e chama esse slot
+quando há uma movimentação pendente cujo predicado `+4h`
+retorna falso. Para `0x0F`, `0041CF60` devolve o receptor
+confirmado pelo GDB. A cena chama esse despachante em
+`0044DD50`, entre Update e Draw, no ramo observado em assembly.
+
+Uma demonstração separada registrou 73 transferências em
+`0040CDB0`. Nenhuma tinha destino `0x0F` e o método
+`0043D440` permaneceu sem chamadas. O vínculo de uma
+movimentação real com destino `0x0F` ao despacho ainda
+precisa de captura positiva.
+[Roteiro 65](../../scripts/regression/README.md#65--v26-associação-das-zonas-de-exclusão).
+
 ## V27 — Layerfont A (00455FF0)
 
 <a id="v27"></a>
