@@ -59,7 +59,8 @@
     {
       "address": "0045E4A0",
       "family": "Ajuda",
-      "status": "Pending"
+      "status": "Partial",
+      "client": "src/Joey.App/DuelHelpPresentation.cs"
     },
     {
       "address": "0040E260",

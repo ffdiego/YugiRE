@@ -262,3 +262,22 @@ não modeladas e a composição +4C seguem pendentes. Testes sintéticos
 adicionam chave 0, manifesto, geometria e encerramento; build/CI e
 revisão interativa ainda não executados nesta sessão. Cobertura oficial
 continua Pending até validação do PR #263.
+
+## V29.6 — validação do cliente e comparação
+
+No Alpha em Xvfb a 800×600, o DAT original mostrou o aviso de
+tributos ao clicar em Red-Eyes com o campo próprio vazio. Tirar o
+cursor da carta removeu o aviso. O PNG nativo do roteiro 70 com
+Flame Cerebrus confirmou o mesmo recurso inglês, a ancoragem
+acima da mão e a saída por perda de foco. As cartas ocupavam
+slots diferentes. A comparação é visual, sem pareamento de
+pixels ou contadores de abertura.
+
+Na seleção de Mystical Space Typhoon do Alpha, mover o cursor
+para o Axe Raider com uma armadilha elegível em campo mostrou
+o aviso de alvo inválido acima do monstro e manteve a seleção.
+O texto, o tamanho 179×38 e a chave 9 conferem com o conjunto
+DAT/assembly nativo. A comparação em execução dessa chave
+continua pendente no roteiro 75. O cenário local foi preparado
+com edições de cenário do console vivo, seguido pelos cliques
+normais do jogador. A cobertura passa a Partial.

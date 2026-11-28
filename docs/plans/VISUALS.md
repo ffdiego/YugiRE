@@ -648,6 +648,17 @@ V29.4: primeira integração em revisão no cliente para rejeição de alvo nos 
 
 V29.5 (28/11/2026). O PR #263 incorpora a captura de tributo da main e liga a chave 0 a uma tentativa de invocação normal sem tributos suficientes, pela consulta de legalidade do Core. Hover sem clique não solicita a ajuda; sair da carta, mudar a ocorrência ou perder a elegibilidade encerra o pedido. O DAT v14 confirma help01_e.yga, 179×38; o descritor de mão usa região 11 e índice do slot. A geometria usa a mão projetada e a altura do banco grande. Sem gate, mutação de regras ou fila adicional. CI e revisão interativa do novo recorte ainda pendentes; cobertura não promovida.
 
+V29.6 (28/11). PR #263 reconciliado com main. O Xvfb a 800×600
+com DAT original mostrou o aviso de tributo no clique em Red-Eyes
+e a saída ao perder foco. O piloto anterior do original observou
+o mesmo aviso em Flame Cerebrus. Na seleção de Mystical Space
+Typhoon, o Alpha mostrou a chave 9 acima de Axe Raider e continuou
+aguardando um alvo. Chave e geometria foram conferidas com o
+assembly/DAT. A captura dessa chave no original fica no roteiro
+75. Build, 51.773 checks com DAT e testes da badge passaram.
+Draw 0045E4A0 passa a Partial.
+[Comparação](../research/native-layerfont-help-2026-11-24.md#v296--validação-do-cliente-e-comparação).
+
 ## V30 — Vija / Destiny Board (004584C0)
 
 <a id="v30"></a>

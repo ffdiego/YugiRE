@@ -143,7 +143,7 @@ Estes pontos são o contrato de ACTIONS. Itens que dependem de hipótese estão 
 - [ ] **V26 — Exclusão (0043DBE0).** Status: `Parcial`. Efeito ligado a BanishCommand aplicado; confirmar transferência real à zona `0x0F` e despacho, variantes e som. [Detalhes](docs/plans/VISUALS.md#v26)
 - [ ] **V27 — Layerfont A (00455FF0).** Status: `Parcial`. Compositor e integração em modo nativo. [Detalhes](docs/plans/VISUALS.md#v27)
 - [ ] **V28 — Layerfont B (00456360).** Status: `Parcial`. Compositor, dimensões provisórias e integração. [Detalhes](docs/plans/VISUALS.md#v28)
-- [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Avisos de alvo inválido (9) e falta de tributo (0) ligados ao cliente em PR; validar CI, DAT e interação antes de promover a cobertura. [Detalhes](docs/plans/VISUALS.md#v29)
+- [ ] **V29 — Ajuda (0045E4A0).** Status: `Parcial`. Avisos de alvo inválido (9) e falta de tributo (0) jogáveis no Alpha. Comparar a chave 9 em captura nativa e ampliar os produtores. [Detalhes](docs/plans/VISUALS.md#v29)
 - [ ] **V30 — Vija / Destiny Board (004584C0).** Status: `Parcial`. Fechar Draw (+4 por Draw; flag final diverge do predicado inclusivo). [Detalhes](docs/plans/VISUALS.md#v30)
 - [ ] **V31 — Bust-up de reações do Joey.** Status: `Parcial`. Abertura, resultado e reaction07 de magia do Joey jogáveis no Alpha. Investigar invocações características e ampliar produtores confirmados. [Detalhes](docs/plans/VISUALS.md#v31)
 - [ ] **V32 — Viagem de equipamento (00456740).** Status: `Parcial`. Live EquipCommand, roteiro 57 para gate/despacho e auditoria do inventário. [Detalhes](docs/plans/VISUALS.md#v32)
