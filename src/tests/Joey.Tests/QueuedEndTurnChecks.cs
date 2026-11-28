@@ -40,8 +40,11 @@ internal static class QueuedEndTurnChecks
                 "A07 end-turn admission captures the turn without mutation");
             Drain(session.Queue);
             check(duel.Turn == turn && duel.Phase == DemoPhase.End && duel.PendingEndDiscards == 2 &&
-                !duel.DiscardForEndTurn(0, out _) && !duel.EndTurn(out _) && !session.Execute("discard 0 0").Success,
-                "A07 end phase requests typed discards and blocks legacy or unrelated producers");
+                !duel.TryQueueEndTurn(out _) && !duel.TryQueueTurnDraw(out _) &&
+                !duel.TryQueueEndTurnDiscard(-1, out _) && !duel.TryQueueEndTurnDiscard(8, out _) &&
+                !session.Execute("discard 0 0").Success && duel.Hand.Count == 8 &&
+                duel.Graveyard(side).Count == 0,
+                "A07 end phase accepts only valid typed discard choices, without early mutation");
             var incomplete = new DuelConsoleScript(session, []);
             using (var trace = JsonDocument.Parse(session.Execute("trace").Message))
                 check(incomplete.Advance().Status == DuelScriptStatus.WaitingForDecision &&
