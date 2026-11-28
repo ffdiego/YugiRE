@@ -440,6 +440,56 @@ Exodia, Relinquished, Destiny Board, Scapegoat e condições especiais.
 
 O histórico abaixo registra os gates e estados vigentes em cada entrega, inclusive os requisitos anteriores de paridade; não deve ser interpretado como bloqueio adicional ao gate reduzido. #177 incorporou os persistentes de #150, #179 integrou Polymerization/Fusion Gate. Manter esses resultados e os testes existentes.
 
+### C12 — Descarte obrigatório somente por comando (28/11/2026)
+
+Removido `DemoDuel.DiscardForEndTurn`, que movimentava cartas, emitia
+evento e avançava o turno imediatamente. O único resolvedor de descarte
+obrigatório passa a ser `EndTurnDiscardCommand` no executor tipado,
+seguido pela resolução de End Phase/avanço e pelos gates existentes.
+O atalho interno `EndTurn` ainda usado para preparar fixtures rejeita
+mão acima do limite sem alterar a fase; não abre pedido que só o
+resolvedor removido poderia atender.
+
+O histórico `EndTurnTests.cs` permanece no repositório como baseline,
+mas foi retirado da compilação e runner. `QueuedEndTurnChecks` mantém
+a cobertura de infraestrutura A07 e verifica rejeição de índices
+inválidos, de novo fim de turno, compra e descarte genérico enquanto
+o pedido obrigatório está aberto. Sem novas regras ou promoção de carta.
+Demo.cs: 2685 → 2664 linhas. CI obrigatório antes da integração.
+
+Restam os atalhos internos Draw/EndTurn/NextTurn e os resolvedores
+legados de invocação, ativação, batalha e escolhas, além de Pending*
+compartilhados. Os primeiros são usados por fixtures ativos de CPU,
+apresentação e scheduler; substituir a preparação por checkpoints
+explícitos ou setup tipado, sem criar mecanismo paralelo para limpar
+trace/reconfigurar gate. C12 segue parcial.
+
+### C12 — Compra de turno e Standby por uma única fila (28/11/2026)
+
+Removidos do Core `DemoDuel.Draw` e `ResolvePostDrawStandbyEffects`.
+`TakeTurnDraw` continua como primitivo privado do executor de
+`TurnDrawCommand`; a oportunidade de Standby subsequente é composta
+por `ResolveStandbyRevivalCommand`, invocação especial, continuação
+de posição e LP existentes. Nenhum novo efeito de carta ou mudança
+de política de fase. Demo.cs: 2664 → 2625 linhas.
+
+Fixtures de CPU, ataques e FLIP que preparavam mãos por compra direta
+passaram a admitir e drenar TurnDrawCommand na fila do próprio duelo;
+quando há gate, configurá-lo antes da preparação e liberar essa
+preparação. Os testes delimitam o trecho observado por offset do
+trace, sem apagar entradas, substituir fila ou alterar autorização.
+O helper transitório HistoricalTurnDrawFixture existe apenas no
+assembly de testes para compilar os fontes históricos ainda opt-in;
+ele também usa a fila, rejeita uso na suíte padrão e não preserva
+a semântica antiga de configuração após mutações. A suíte histórica
+não foi validada e será retirada da compilação por fatias. Sem
+restabelecer o resolvedor antigo. CI integral obrigatório.
+
+Restam EndTurn/NextTurn e ResolveDestinyBoardEndPhase, além dos
+resolvedores de batalha, invocação, ativação e escolhas. Preservar
+AdvanceTurn e PlaceEndPhaseMessage, usados pelo executor tipado.
+C12 permanece parcial.
+
 ### C12.1 — Estado anterior à decisão de redução do gate
 
 Rituais, fusões de Polymerization/Fusion Gate e janelas de armadilha já

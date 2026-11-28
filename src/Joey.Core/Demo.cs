@@ -615,25 +615,6 @@ public sealed partial class DemoDuel
         return true;
     }
 
-    internal bool Draw(out string message)
-    {
-        message = "Draw available once per turn in main phase.";
-        if (!CanDraw) return false;
-        if (!TakeTurnDraw(out bool skipped))
-        {
-            message = "Empty deck: active player loses (demo policy).";
-            return true;
-        }
-        if (ExodiaWinner == ActivePlayer)
-        {
-            message = "Exodia complete: all five Forbidden One pieces in hand.";
-            return true;
-        }
-        // Native human trace: Draw precedes Revival Jam's return (P002).
-        // This is a bounded synthetic Standby hook; no full phase engine yet.
-        ResolvePostDrawStandbyEffects();
-        message = skipped ? "Draw Phase skipped." : "Drew one card."; return true;
-    }
     private bool TakeTurnDraw(out bool skipped)
     {
         skipped = ConsumeDueDrawPhaseSkip();
@@ -2543,12 +2524,12 @@ public sealed partial class DemoDuel
     {
         message = "The duel has ended.";
         if (ActionsBlocked || queuedEndTurn) return false;
-        // RE: 0x005A58BC..0x005A58F7. Other end-phase effects and native suppression remain unsupported.
+        // Historical fixture shortcut only. A hand-limit choice must be
+        // opened and resolved by the typed EndTurn/EndTurnDiscard commands.
         if (ExcessEndTurnCards > 0)
         {
-            Phase = DemoPhase.End;
-            message = $"End phase: select and discard {PendingEndDiscards} card(s) to keep six.";
-            return true;
+            message = "Use the queued End Phase for mandatory hand-limit discards.";
+            return false;
         }
         ResolveDestinyBoardEndPhase(ActivePlayer);
         if (GameOver)
@@ -2557,27 +2538,6 @@ public sealed partial class DemoDuel
         {
             AdvanceTurn();
             message = "Turn changed.";
-        }
-        return true;
-    }
-    internal bool DiscardForEndTurn(int index, out string message)
-    {
-        message = "Select a hand card while resolving the end-phase hand limit.";
-        if (ActionsBlocked || queuedEndTurn || PendingEndDiscards == 0 || index < 0 || index >= Hand.Count) return false;
-        var card = hands[ActivePlayer][index];
-        hands[ActivePlayer].RemoveAt(index); graves[ActivePlayer].Add(card);
-        HandTransferred?.Invoke(new(ActivePlayer, index, card, FromDeck: false));
-        if (PendingEndDiscards > 0) message = $"Discarded {card.Name}. Discard {PendingEndDiscards} more card(s).";
-        else
-        {
-            ResolveDestinyBoardEndPhase(ActivePlayer);
-            if (GameOver)
-                message = $"Discarded {card.Name}. Destiny Board: F-I-N-A-L complete.";
-            else
-            {
-                AdvanceTurn();
-                message = $"Discarded {card.Name}. Turn changed.";
-            }
         }
         return true;
     }
@@ -2590,27 +2550,7 @@ public sealed partial class DemoDuel
         firstBattleAttacker = null;
         Array.Clear(attackDeclarations); Array.Clear(changedPosition);
         // A Standby opportunity follows the turn-draw opportunity (including a skipped Draw Phase); see
-        // ResolvePostDrawStandbyEffects, not the turn increment itself.
-    }
-
-    private void ResolvePostDrawStandbyEffects()
-    {
-        for (int i = delayedRevivals.Count - 1; i >= 0; i--)
-        {
-            var effect = delayedRevivals[i];
-            if (effect.Owner != ActivePlayer || Turn < effect.DueTurn) continue;
-            delayedRevivals.RemoveAt(i);
-            int graveIndex = graves[effect.Owner].FindIndex(
-                c => ReferenceEquals(c, effect.Source));
-            int zone = Enumerable.Range(0, 5).FirstOrDefault(
-                z => Monsters[effect.Owner, z] is null, -1);
-            if (GameOver || graveIndex < 0 || zone < 0) continue;
-            // A consumed promise does not refund the LP, even if the monster
-            // is no longer in the GY or cannot be placed on the field.
-            graves[effect.Owner].RemoveAt(graveIndex);
-            PlaceSelectedMonster(effect.Owner, zone, effect.Source, false);
-            DefensePosition[effect.Owner, zone] = true;
-        }
+        // ExecuteQueuedTurnDraw, not the turn increment itself.
     }
 
     private void BeginNextEffectDecision()

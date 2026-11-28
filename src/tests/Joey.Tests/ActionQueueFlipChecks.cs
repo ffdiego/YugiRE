@@ -27,7 +27,7 @@ internal static class ActionQueueFlipChecks
         foreach (int side in new[] { 0, 1 })
         foreach (var sizes in new[] { (6, 6), (2, 6), (6, 2), (2, 2) })
         {
-            DemoDuel State()
+            DemoDuel State(Gate? gate = null)
             {
                 var d = DemoDuel.FromPartialObservation(side, [ordinary, ordinary],
                     side == 0 ? Slots(jar) : Slots(), side == 1 ? Slots(jar) : Slots(), 8000,
@@ -35,7 +35,13 @@ internal static class ActionQueueFlipChecks
                     side1Deck: Deck(sizes.Item2 + (side == 0 ? 1 : 0)));
                 // Give opponent one hand card via the existing normal draw
                 // and cycle back. This preserves the specified deck sizes.
-                d.NextTurn(); d.Draw(out _); d.NextTurn();
+                if (gate is not null) gate.Release = true;
+                var queue = d.ConfigureActionQueue(gate);
+                d.NextTurn();
+                if (!d.TryQueueTurnDraw(out _, ActionOrigin.Test)) throw new InvalidOperationException("FLIP setup draw rejected.");
+                Drain(queue);
+                d.NextTurn();
+                if (gate is not null) gate.Release = false;
                 d.MonsterFaceDown[side, 0] = d.DefensePosition[side, 0] = true;
                 return d;
             }
@@ -45,9 +51,9 @@ internal static class ActionQueueFlipChecks
             check(legacy.ChangePosition(0, out _), "A02 legacy Morphing Jar comparison fixture");
             (DemoDuel Duel, ActionQueue Queue, List<DemoHandTransfer> Events) RunPilot(bool delayed)
             {
-                var d = State();
                 var gate = new Gate();
-                var q = d.CreatePrimitiveActionQueue(delayed ? gate : null);
+                var d = State(delayed ? gate : null);
+                var q = d.Actions;
                 List<DemoHandTransfer> events = [];
                 d.HandTransferred += events.Add;
                 check(d.TryQueueChangePosition(0, out _) && d.MonsterFaceDown[side, 0] &&
@@ -132,14 +138,16 @@ internal static class ActionQueueFlipChecks
             var duel = DemoDuel.FromPartialObservation(attackingSide, [ordinary, ordinary],
                 Slots(attackingSide == 0 ? attacker : jar), Slots(attackingSide == 1 ? attacker : jar), 8000,
                 side0Deck: Deck(0, size0), side1Deck: Deck(1, size1));
+            var gate = new Gate(transfersOnly: true) { Release = true };
+            var queue = duel.ConfigureActionQueue(gate);
             duel.NextTurn();
-            duel.Draw(out _);
+            if (!duel.TryQueueTurnDraw(out _, ActionOrigin.Test)) throw new InvalidOperationException("Battle FLIP setup draw rejected.");
+            Drain(queue);
             duel.NextTurn();
+            gate.Release = false;
             duel.MonsterFaceDown[owner, 0] = duel.DefensePosition[owner, 0] = true;
             List<DemoHandTransfer> transfers = [];
             duel.HandTransferred += transfers.Add;
-            var gate = new Gate(transfersOnly: true);
-            var queue = duel.CreatePrimitiveActionQueue(gate);
             check(duel.BeginBattle(out _) && duel.TryQueueTargetedAttack(0, 0, out _) &&
                 duel.MonsterFaceDown[owner, 0] && transfers.Count == 0, "Morphing Jar battle admission is nonmutating");
             for (int i = 0; i < 25 && transfers.Count == 0; i++) queue.Tick();
